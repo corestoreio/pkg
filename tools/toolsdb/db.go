@@ -16,20 +16,19 @@ package toolsdb
 
 import (
 	"database/sql"
-	"os"
 
+	"github.com/gocraft/dbr"
 	"github.com/juju/errgo"
 )
 
-func Connect(dsn string) (*sql.DB, error) {
-	envDSN := os.Getenv("CS_DSN")
-	if envDSN != "" {
-		dsn = envDSN
-	}
+func Connect(dsn string) (*sql.DB, *dbr.Session, error) {
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, nil, errgo.Mask(err)
 	}
-	return db, nil
+
+	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
+
+	return db, dbrSess, nil
 }

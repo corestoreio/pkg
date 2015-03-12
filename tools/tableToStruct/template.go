@@ -28,7 +28,7 @@ const tplCode = `// Copyright 2015 CoreStore Authors
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// auto generated via csTableToStruct
+// Package {{ .Package }} is auto generated via csTableToStruct
 package {{ .Package }}
 import (
 	"time"
@@ -38,9 +38,12 @@ import (
 )
 
 const (
+    // TableNoop has index 0
     TableNoop csdb.Index = iota
-    {{ range .Tables }} Table{{.table}}
-{{ end }} TableMax
+    {{ range .Tables }} // Table{{.table}} is the index to {{.tableOrg}}
+    Table{{.table}}
+{{ end }} // TableMax represents the maximum index, which is not available.
+TableMax
 )
 
 var (
@@ -59,10 +62,12 @@ var (
     }
 )
 
+// GetTableStructure returns for a given index i the table structure or an error it not found.
 func GetTableStructure(i csdb.Index) (*csdb.TableStructure, error) {
 	return tableMap.Structure(i)
 }
 
+// GetTableName returns for a given index the table name. If not found an empty string.
 func GetTableName(i csdb.Index) string {
 	return tableMap.Name(i)
 }
@@ -70,7 +75,9 @@ func GetTableName(i csdb.Index) string {
 type (
 
 {{ range .Tables }}
+    // {{.table}}Slice contains pointers to {{.table}} types
     {{.table}}Slice []*{{.table}}
+    // {{.table}} a type for the MySQL table {{ .tableOrg }}
     {{.table}} struct {
         {{ range .columns }}{{.GoName}} {{.GoType}} {{ $.Tick }}db:"{{.Field.String}}"{{ $.Tick }} {{.Comment}}
         {{ end }} }

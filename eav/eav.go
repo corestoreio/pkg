@@ -35,7 +35,7 @@ func (et *EntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...csdb.
 // IsRealEav checks if those types which have an attribute model and therefore are a real EAV.
 // sales* tables are not real EAV tables as they are already flat tables.
 func (et *EntityType) IsRealEav() bool {
-	return et.EntityTypeId > 0 && et.AttributeModel.Valid == true && et.AttributeModel.String != ""
+	return et.EntityTypeID > 0 && et.AttributeModel.Valid == true && et.AttributeModel.String != ""
 }
 
 func (es EntityTypeSlice) GetByCode(code string) (*EntityType, error) {

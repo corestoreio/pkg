@@ -21,15 +21,22 @@ import (
 	"github.com/juju/errgo"
 )
 
+// Camelize transforms from snake case to camelCase e.g. catalog_product_id to CatalogProductID.
 func Camelize(s string) string {
 	parts := strings.Split(s, "_")
 	ret := ""
 	for _, p := range parts {
+		switch p {
+		case "id":
+			p = "ID"
+			break
+		}
 		ret = ret + strings.Title(p)
 	}
 	return ret
 }
 
+// LogFatal logs an error as fatal with printed location and exists the program.
 func LogFatal(err error) {
 	if err == nil {
 		return

@@ -37,7 +37,7 @@ const tplEav = `// Copyright 2015 CoreStore Authors
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// auto generated via csEavToStruct
+// Package {{ .Package }} file is auto generated via csEavToStruct
 package {{ .Package }}
 import (
     "github.com/corestoreio/csfw/catalog"
@@ -45,9 +45,10 @@ import (
 )
 
 var (
+    // CSEntityTypeCollection contains all entity types mapped to their Go types/interfaces
     CSEntityTypeCollection = CSEntityTypeSlice{
         {{ range .ETypeData }} &CSEntityType {
-            EntityTypeId: {{ .EntityTypeId }},
+            EntityTypeID: {{ .EntityTypeID }},
             EntityTypeCode: "{{ .EntityTypeCode }}",
             EntityModel: {{ .EntityModel }},
             AttributeModel: {{ .AttributeModel }},
@@ -55,7 +56,7 @@ var (
             ValueTablePrefix: "{{ .ValueTablePrefix }}",
             IsDataSharing: {{ .IsDataSharing }},
             DataSharingKey: "{{ .DataSharingKey }}",
-            DefaultAttributeSetId: {{ .DefaultAttributeSetId }},
+            DefaultAttributeSetID: {{ .DefaultAttributeSetID }},
             {{ if ne "" .IncrementModel }}IncrementModel: {{ .IncrementModel }},{{ end }}
             IncrementPerStore: {{ .IncrementPerStore }},
             IncrementPadLength: {{ .IncrementPadLength }},

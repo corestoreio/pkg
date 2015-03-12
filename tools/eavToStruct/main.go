@@ -19,7 +19,6 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 
 	"encoding/json"
@@ -33,7 +32,6 @@ import (
 )
 
 var (
-	cliDsn     = flag.String("dsn", "test:test@tcp(localhost:3306)/test", "MySQL DSN data source name. Can also be provided via ENV with key CS_DSN")
 	pkg        = flag.String("p", "", "Package name in template")
 	run        = flag.Bool("run", false, "If true program runs")
 	outputFile = flag.String("o", "", "Output file name")
@@ -44,16 +42,16 @@ var (
 type (
 	JsonEntityTypeMap map[string]*EntityTypeMap
 	EntityTypeMap     struct {
-		EntityTypeId              int64
+		EntityTypeID              int64
 		EntityTypeCode            string
 		EntityModel               string `json:"entity_model"`
 		AttributeModel            string `json:"attribute_model"`
 		EntityTable               string `json:"entity_table"`
 		ValueTablePrefix          string
-		EntityIdField             string
+		EntityIDField             string
 		IsDataSharing             bool
 		DataSharingKey            string
-		DefaultAttributeSetId     int64
+		DefaultAttributeSetID     int64
 		IncrementModel            string `json:"increment_model"`
 		IncrementPerStore         bool
 		IncrementPadLength        int64
@@ -71,13 +69,11 @@ func main() {
 		os.Exit(1)
 	}
 
-	var dbrConn *dbr.Connection
-	db, err := toolsdb.Connect(*cliDsn)
+	dsn, err := tools.GetDSN()
+	toolsdb.LogFatal(err)
+	db, dbrSess, err := toolsdb.Connect(dsn)
 	toolsdb.LogFatal(err)
 	defer db.Close()
-
-	dbrConn = dbr.NewConnection(db, nil)
-	dbrSess := dbrConn.NewSession(nil)
 
 	type dataContainer struct {
 		ETypeData     JsonEntityTypeMap
@@ -100,8 +96,6 @@ func main() {
 	}
 
 	ioutil.WriteFile(*outputFile, formatted, 0600)
-	log.Println("ok csEavToStruct")
-
 }
 
 func getEntityTypeData(dbrSess *dbr.Session) (JsonEntityTypeMap, error) {
@@ -127,13 +121,13 @@ func getEntityTypeData(dbrSess *dbr.Session) (JsonEntityTypeMap, error) {
 		// now map the values from entityTypeCollection into mapData
 		et, err := entityTypeCollection.GetByCode(typeCode)
 		toolsdb.LogFatal(err)
-		mapData.EntityTypeId = et.EntityTypeId
+		mapData.EntityTypeID = et.EntityTypeID
 		mapData.EntityTypeCode = et.EntityTypeCode
 		mapData.ValueTablePrefix = et.ValueTablePrefix.String
-		mapData.EntityIdField = et.EntityIdField.String
+		mapData.EntityIDField = et.EntityIDField.String
 		mapData.IsDataSharing = et.IsDataSharing
 		mapData.DataSharingKey = et.DataSharingKey.String
-		mapData.DefaultAttributeSetId = et.DefaultAttributeSetId
+		mapData.DefaultAttributeSetID = et.DefaultAttributeSetID
 		mapData.IncrementPerStore = et.IncrementPerStore
 		mapData.IncrementPadLength = et.IncrementPadLength
 		mapData.IncrementPadChar = et.IncrementPadChar

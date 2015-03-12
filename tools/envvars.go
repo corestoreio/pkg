@@ -12,11 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package customer
+package tools
 
-type (
-	// see table customer_eav_attribute.data_model
-	DataModeller interface {
-		TBD()
-	}
+import "os"
+
+const (
+	// EnvDSN is the name of the environment variable
+	EnvDSN string = "CS_DSN"
 )
+
+// GetDSN returns the DSN from env or an error
+func GetDSN() (string, error) {
+	return os.Getenv(EnvDSN), nil
+}

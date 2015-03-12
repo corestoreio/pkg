@@ -15,61 +15,67 @@
 package eav
 
 type (
-	// Defines EntityTypeModel @todo this guy handles everything with the model
+	// EntityTypeModeller defines an entity type model @todo
 	EntityTypeModeller interface {
 		TBD()
 	}
 
-	// used in EntityType to map Mage1+2 data to Go packages
-	// Interface name is the name of the column +er
+	// EntityTypeTabler returns the table name
 	EntityTypeTabler interface {
 		TableName() string
 	}
 
-	// @todo this dude handles everything related to attributes
+	// EntityTypeAttributeModeller defines an attribute model @todo
 	EntityTypeAttributeModeller interface {
 		TBD()
 	}
 
-	// @todo
+	// EntityTypeAdditionalAttributeTabler returns the table name
 	EntityTypeAdditionalAttributeTabler interface {
 		TableName() string
 	}
 
-	// @todo How increment a number e.g. customer, invoice, order ...
+	// EntityTypeIncrementModeller defines who to increment a number @todo
 	EntityTypeIncrementModeller interface {
 		TBD()
 	}
 
+	// EntityAttributeCollectioner defines an attribute collection @todo
 	EntityAttributeCollectioner interface {
 		TBD()
 	}
 
+	// AttributeBackendModeller defines the attribute backend model @todo
 	AttributeBackendModeller interface {
 		TBD()
 	}
+
+	// AttributeFrontendModeller defines the attribute frontend model @todo
 	AttributeFrontendModeller interface {
 		TBD()
 	}
+
+	// AttributeSourceModeller defines the source where an attribute can also be stored @todo
 	AttributeSourceModeller interface {
 		TBD()
 	}
 
-	// Types starting with CS are the CoreStore mappings with the DB data
+	// CSEntityTypeSlice Types starting with CS are the CoreStore mappings with the DB data
 	CSEntityTypeSlice []*CSEntityType
-	CSEntityType      struct {
-		EntityTypeId              int64
+	// CSEntityType Go Type of the Mage database models and types
+	CSEntityType struct {
+		EntityTypeID              int64
 		EntityTypeCode            string
 		EntityModel               EntityTypeModeller
 		AttributeModel            EntityTypeAttributeModeller
 		EntityTable               EntityTypeTabler
 		ValueTablePrefix          string
-		EntityIdField             string
+		EntityIDField             string
 		IsDataSharing             bool
 		DataSharingKey            string
-		DefaultAttributeSetId     int64
+		DefaultAttributeSetID     int64
 		IncrementModel            EntityTypeIncrementModeller
-		IncrementPerStore         int64
+		IncrementPerStore         bool
 		IncrementPadLength        int64
 		IncrementPadChar          string
 		AdditionalAttributeTable  EntityTypeAdditionalAttributeTabler

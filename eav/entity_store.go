@@ -46,7 +46,7 @@ var (
    @todo
    - getIncrementModel e.g. eav/entity_increment_numeric
    and apply this data to the increment model
-       - getIncrementLastId
+       - getIncrementLastID
        - getIncrementPrefix
        - getIncrementPadLength
        - getIncrementPadChar
@@ -77,7 +77,7 @@ func InitEntityStoreMap(dbrSess *dbr.Session) error {
 		}
 
 		for _, es := range ess {
-			EntityStoreMap.Set(es.EntityTypeId, es.StoreId, es)
+			EntityStoreMap.Set(es.EntityTypeID, es.StoreID, es)
 		}
 
 		ess = ess[:len(ess)-1] // delete Struct Slice https://code.google.com/p/go-wiki/wiki/SliceTricks
@@ -111,7 +111,7 @@ func (m entityStoreMap) SetLastIncrementID(typeID, storeID int64, lastIncrementI
 	entityStoreMutex.Lock()
 	defer entityStoreMutex.Unlock()
 	if es, ok := m[getKey(typeID, storeID)]; ok {
-		es.IncrementLastId.String = lastIncrementID
+		es.IncrementLastID.String = lastIncrementID
 		// @todo now use a goroutine to permanently save that data
 	}
 	return errgo.Newf("Failed to save! Key typeID %d storeID %d not found in entity_type map", typeID, storeID)

@@ -8,12 +8,20 @@ Magento is a trademark of [MAGENTO, INC.](http://www.magentocommerce.com/license
 
 ## Usage
 
-Mandatory config settings:
+To properly use the CoreStore framework some environment variables must be set before running `go generate`.
 
+### Required settings
+
+- `CS_DSN` the environment variable for the MySQL connection.
 - ...
+
+### Optional settings
+
+- `CS_EAV_MAP` the environment variable which points to a JSON file for mapping EAV entities.
 - ...
 
 ```
+$ go get github.com/corestoreio/csfw
 $ cd $GOPATH/src/github.com/corestoreio/csfw
 $ go generate
 ```

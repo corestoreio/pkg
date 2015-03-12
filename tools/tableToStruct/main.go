@@ -17,7 +17,6 @@ package main
 import (
 	"flag"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
 
@@ -29,7 +28,6 @@ import (
 )
 
 func main() {
-	cliDsn := flag.String("dsn", "test:test@tcp(localhost:3306)/test", "MySQL DSN data source name. Can also be provided via ENV with key CS_DSN")
 	pkg := flag.String("p", "", "Package name in template")
 	run := flag.Bool("run", false, "If true program runs")
 	outputFile := flag.String("o", "", "Output file name")
@@ -42,7 +40,9 @@ func main() {
 		flag.Usage()
 		os.Exit(1)
 	}
-	db, err := toolsdb.Connect(*cliDsn)
+	dsn, err := tools.GetDSN()
+	toolsdb.LogFatal(err)
+	db, _, err := toolsdb.Connect(dsn)
 	toolsdb.LogFatal(err)
 	defer db.Close()
 
@@ -88,5 +88,4 @@ func main() {
 	}
 
 	ioutil.WriteFile(*outputFile, formatted, 0600)
-	log.Println("ok csTableToStruct")
 }
