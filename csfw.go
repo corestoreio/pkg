@@ -1,6 +1,6 @@
-//go:generate csTableToStruct -p eav -prefixSearch eav -o eav/generated_tables.go -run
-//go:generate go install github.com/corestoreio/csfw/tools/csEavToStruct
-//go:generate csEavToStruct -p eav -o eav/generated_eav.go -run
+//go:generate go build -a github.com/corestoreio/csfw/tools/csMake
+//go:generate ./csMake
+//go:generate rm ./csMake
 
 // Copyright 2015 CoreStore Authors
 //

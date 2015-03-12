@@ -14,7 +14,6 @@ Mandatory config settings:
 - ...
 
 ```
-$ go install github.com/corestoreio/csfw/tools/csTableToStruct
 $ cd $GOPATH/src/github.com/corestoreio/csfw
 $ go generate
 ```

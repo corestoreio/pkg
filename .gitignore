@@ -1,2 +1,5 @@
 eav/generated_eav.go
 eav/generated_tables.go
+/csMake
+/tableToStruct
+/eavToStruct
