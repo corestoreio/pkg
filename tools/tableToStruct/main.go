@@ -27,6 +27,10 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
+func shouldSkipTable(table string) bool {
+	return strings.Index(table, "catalog_") == 0 && strings.Index(table, "_flat_") > 6
+}
+
 func main() {
 	pkg := flag.String("p", "", "Package name in template")
 	run := flag.Bool("run", false, "If true program runs")
@@ -61,6 +65,11 @@ func main() {
 	toolsdb.LogFatal(err)
 
 	for _, table := range tables {
+
+		if shouldSkipTable(table) {
+			continue
+		}
+
 		columns, err := toolsdb.GetColumns(db, *prefixName+table)
 		toolsdb.LogFatal(err)
 

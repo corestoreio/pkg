@@ -24,6 +24,7 @@ import (
 
 	"github.com/corestoreio/csfw/tools"
 	"github.com/mgutz/ansi"
+	_ "github.com/pquerna/ffjson" // @todo
 )
 
 type (
@@ -69,6 +70,16 @@ func main() {
 			name: pwd + "tableToStruct",
 			args: []string{"-p", "eav", "-prefixSearch", "eav", "-o", "eav/generated_tables.go", "-run"},
 			rm:   true,
+		},
+		aCommand{
+			name: pwd + "tableToStruct",
+			args: []string{"-p", "catalog", "-prefixSearch", "catalog\\_", "-o", "catalog/generated_tables.go", "-run"},
+			rm:   false,
+		},
+		aCommand{
+			name: pwd + "tableToStruct",
+			args: []string{"-p", "customer", "-prefixSearch", "customer\\_", "-o", "customer/generated_tables.go", "-run"},
+			rm:   false,
 		},
 		aCommand{
 			// this commands depends on the generated source from tableToStruct 8-)

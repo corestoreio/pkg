@@ -37,10 +37,10 @@ const tplEav = `// Copyright 2015 CoreStore Authors
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package {{ .Package }} file is auto generated via csEavToStruct
+// Package {{ .Package }} file is auto generated via eavToStruct
 package {{ .Package }}
 import (
-    "github.com/corestoreio/csfw/catalog"
+    "github.com/corestoreio/csfw/catalog"   // @todo make configurable via mapping
     "github.com/corestoreio/csfw/customer"
 )
 
