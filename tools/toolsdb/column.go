@@ -23,6 +23,8 @@ import (
 )
 
 type (
+	eStruct struct{}
+
 	column struct {
 		Field, Type, Null, Key, Default, Extra sql.NullString
 		GoType, GoName                         string
@@ -82,10 +84,16 @@ func GetColumns(db *sql.DB, table string) ([]column, error) {
 }
 
 func updateGoType(col *column) {
+	var (
+		boolColumns = map[string]eStruct{
+			"increment_per_store": eStruct{},
+		}
+	)
+
 	// dbr relates to github.com/gocraft/dbr
 	col.GoType = "undefined"
 	col.GoName = Camelize(col.Field.String)
-	if strings.Index(col.Field.String, "is_") == 0 {
+	if _, ok := boolColumns[col.Field.String]; ok || strings.Index(col.Field.String, "is_") == 0 {
 		col.GoType = "bool"
 		if col.Null.String == "YES" {
 			col.GoType = "dbr.NullBool"

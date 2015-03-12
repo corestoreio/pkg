@@ -30,15 +30,15 @@ import (
 
 func main() {
 	cliDsn := flag.String("dsn", "test:test@tcp(localhost:3306)/test", "MySQL DSN data source name. Can also be provided via ENV with key CS_DSN")
-	pkg := flag.String("package", "eav", "Package name in template")
+	pkg := flag.String("p", "", "Package name in template")
 	run := flag.Bool("run", false, "If true program runs")
-	outputFile := flag.String("file", "rename_me.go", "Output file name")
+	outputFile := flag.String("o", "", "Output file name")
 
 	prefixSearch := flag.String("prefixSearch", "eav", "Search Table Prefix. Used in where condition to list tables")
 	prefixName := flag.String("prefixName", "", "Table name prefix")
 	flag.Parse()
 
-	if false == *run {
+	if false == *run || *outputFile == "" || *pkg == "" {
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -88,5 +88,5 @@ func main() {
 	}
 
 	ioutil.WriteFile(*outputFile, formatted, 0600)
-	log.Println("ok")
+	log.Println("ok csTableToStruct")
 }

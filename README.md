@@ -6,6 +6,19 @@ Please see the README files in the sub-packages.
 
 Magento is a trademark of [MAGENTO, INC.](http://www.magentocommerce.com/license/).
 
+## Usage
+
+Mandatory config settings:
+
+- ...
+- ...
+
+```
+$ go install github.com/corestoreio/csfw/tools/csTableToStruct
+$ cd $GOPATH/src/github.com/corestoreio/csfw
+$ go generate
+```
+
 ## Contributing
 
 Please have a look at the [contribution guidelines](https://github.com/corestoreio/corestore/blob/master/CONTRIBUTING.md).

@@ -28,7 +28,7 @@ const tplCode = `// Copyright 2015 CoreStore Authors
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// auto generated via tableToStruct
+// auto generated via csTableToStruct
 package {{ .Package }}
 import (
 	"time"

@@ -36,7 +36,7 @@ type (
 		Columns      []string
 	}
 
-	DbrSessionCallback func(*dbr.Session) *dbr.Session
+	DbrSelectCb func(*dbr.SelectBuilder) *dbr.SelectBuilder
 )
 
 func NewTableStructure(n string, IDs, c []string) *TableStructure {

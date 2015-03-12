@@ -20,65 +20,29 @@ import (
 	"github.com/juju/errgo"
 )
 
-type (
-	// Defines EntityTypeModel @todo this guy handles everything with the model
-	EntityTypeModeller interface {
-		TBD()
-	}
-
-	// used in EntityType to map Mage1+2 data to Go packages
-	// Interface name is the name of the column +er
-	EntityTypeTabler interface {
-		TableName() string
-	}
-
-	// @todo this dude handles everything related to attributes
-	EntityTypeAttributeModeller interface {
-		TBD()
-	}
-
-	// @todo
-	EntityTypeAdditionalAttributeTabler interface {
-		TableName() string
-	}
-
-	// @todo How increment a number e.g. customer, invoice, order ...
-	EntityTypeIncrementModeller interface {
-		TBD()
-	}
-	// not added entity_attribute_collection
-
-	AttributeBackendModeller interface {
-		TBD()
-	}
-	AttributeFrontendModeller interface {
-		TBD()
-	}
-	AttributeSourceModeller interface {
-		TBD()
-	}
-)
-
-func (et *EntityType) LoadByCode(dbrSess *dbr.Session, code string, cb ...csdb.DbrSessionCallback) error {
-
-	// @todo add check entry in EntityTypeCollection
-
+func (et *EntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...csdb.DbrSelectCb) error {
 	s, err := GetTableStructure(TableEntityType)
 	if err != nil {
 		return errgo.Mask(err)
 	}
-
-	return errgo.Mask(
-		dbrSess.
-			Select(s.Columns...).
-			From(s.Name).
-			Where("entity_type_code = ?", code).
-			LoadStruct(et),
-	)
+	qry := dbrSess.Select(s.Columns...).From(s.Name).Where("entity_type_code = ?", code)
+	for _, cb := range cbs {
+		qry = cb(qry)
+	}
+	return errgo.Mask(qry.LoadStruct(et))
 }
 
 // IsRealEav checks if those types which have an attribute model and therefore are a real EAV.
 // sales* tables are not real EAV tables as they are already flat tables.
 func (et *EntityType) IsRealEav() bool {
 	return et.EntityTypeId > 0 && et.AttributeModel.Valid == true && et.AttributeModel.String != ""
+}
+
+func (es EntityTypeSlice) GetByCode(code string) (*EntityType, error) {
+	for _, e := range es {
+		if e.EntityTypeCode == code {
+			return e, nil
+		}
+	}
+	return nil, errgo.Newf("Entity Code %s not found", code)
 }
