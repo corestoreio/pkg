@@ -22,7 +22,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/corestoreio/csfw/tools"
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/mgutz/ansi"
 	_ "github.com/pquerna/ffjson" // @todo
 )
@@ -42,7 +42,7 @@ var (
 )
 
 func checkEnv() {
-	dsn, err := tools.GetDSN()
+	dsn, err := csdb.GetDSN()
 	if dsn == "" || err != nil {
 		log.Fatalln(
 			ansi.Color("Missing environment variable CS_DSN.", "red"),

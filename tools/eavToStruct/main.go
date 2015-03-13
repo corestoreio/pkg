@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 
 	"github.com/corestoreio/csfw/eav"
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/tools"
 	"github.com/corestoreio/csfw/tools/toolsdb"
 	_ "github.com/go-sql-driver/mysql"
@@ -69,9 +70,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	dsn, err := tools.GetDSN()
-	toolsdb.LogFatal(err)
-	db, dbrSess, err := toolsdb.Connect(dsn)
+	db, dbrSess, err := csdb.Connect()
 	toolsdb.LogFatal(err)
 	defer db.Close()
 

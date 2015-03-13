@@ -22,6 +22,7 @@ import (
 
 	"fmt"
 
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/tools"
 	"github.com/corestoreio/csfw/tools/toolsdb"
 	_ "github.com/go-sql-driver/mysql"
@@ -44,9 +45,8 @@ func main() {
 		flag.Usage()
 		os.Exit(1)
 	}
-	dsn, err := tools.GetDSN()
-	toolsdb.LogFatal(err)
-	db, _, err := toolsdb.Connect(dsn)
+
+	db, _, err := csdb.Connect()
 	toolsdb.LogFatal(err)
 	defer db.Close()
 
