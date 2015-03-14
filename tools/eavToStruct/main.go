@@ -43,6 +43,7 @@ var (
 type (
 	JsonEntityTypeMap map[string]*EntityTypeMap
 	EntityTypeMap     struct {
+		ImportPath                string `json:"import_path"`
 		EntityTypeID              int64
 		EntityTypeCode            string
 		EntityModel               string `json:"entity_model"`

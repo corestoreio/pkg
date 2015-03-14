@@ -40,8 +40,8 @@ const tplEav = `// Copyright 2015 CoreStore Authors
 // Package {{ .Package }} file is auto generated via eavToStruct
 package {{ .Package }}
 import (
-    "github.com/corestoreio/csfw/catalog"   // @todo make configurable via mapping
-    "github.com/corestoreio/csfw/customer"
+    {{ range .ETypeData }}{{if ne .ImportPath "" }}"{{.ImportPath}}"
+{{end}}{{end}}
 )
 
 var (
@@ -71,6 +71,7 @@ var (
 
 var defaultMapping = []byte(`{
   "customer": {
+    "import_path": "github.com/corestoreio/csfw/customer",
     "entity_model": "customer.Customer()",
     "attribute_model": "customer.Attribute()",
     "entity_table": "customer.EntityTable",
@@ -79,6 +80,7 @@ var defaultMapping = []byte(`{
     "entity_attribute_collection": "customer.AttributeCollection()"
   },
   "customer_address": {
+    "import_path": "",
     "entity_model": "customer.Address()",
     "attribute_model": "customer.AddressAttribute()",
     "entity_table": "customer.EntityAddressTable",
@@ -86,6 +88,7 @@ var defaultMapping = []byte(`{
     "entity_attribute_collection": "customer.AddressAttributeCollection()"
   },
   "catalog_category": {
+    "import_path": "github.com/corestoreio/csfw/catalog",
     "entity_model": "catalog.Category()",
     "attribute_model": "catalog.Attribute()",
     "entity_table": "catalog.EntityCategoryTable",
@@ -93,6 +96,7 @@ var defaultMapping = []byte(`{
     "entity_attribute_collection": "catalog.CategoryAttributeCollection()"
   },
   "catalog_product": {
+    "import_path": "",
     "entity_model": "catalog.Product()",
     "attribute_model": "catalog.Attribute()",
     "entity_table": "catalog.EntityProductTable",
