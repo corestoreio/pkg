@@ -32,12 +32,14 @@ import (
 	"github.com/juju/errgo"
 )
 
+const (
+    envTableMap string = "CS_EAV_MAP"
+)
+
 var (
 	pkg        = flag.String("p", "", "Package name in template")
 	run        = flag.Bool("run", false, "If true program runs")
 	outputFile = flag.String("o", "", "Output file name")
-	// @todo maybe use also an ENV var for the tableMap
-	tableMap = flag.String("map", "", "JSON file for mapping entity types to real table names and Go interfaces. If empty fall back to default mapping.")
 )
 
 type (
@@ -114,7 +116,7 @@ func getEntityTypeData(dbrSess *dbr.Session) (JsonEntityTypeMap, error) {
 		return nil, errgo.Mask(err)
 	}
 
-	mapCollection, err := getMapping(*tableMap, defaultMapping)
+	mapCollection, err := getMapping(os.Getenv(envTableMap), defaultMapping)
 	toolsdb.LogFatal(err)
 
 	for typeCode, mapData := range mapCollection {
