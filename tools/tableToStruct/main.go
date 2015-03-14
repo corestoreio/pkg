@@ -28,10 +28,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-func shouldSkipTable(table string) bool {
-	return strings.Index(table, "catalog_") == 0 && strings.Index(table, "_flat_") > 6
-}
-
 func main() {
 	pkg := flag.String("p", "", "Package name in template")
 	run := flag.Bool("run", false, "If true program runs")
@@ -82,7 +78,7 @@ func main() {
 		}
 
 		tplData.Tables = append(tplData.Tables, map[string]interface{}{
-			"table":    toolsdb.Camelize(strings.Replace(table, "eav_", "", 1)), //@todo strip table prefix
+			"table":    toolsdb.Camelize(stripPackagePrefix(tplData.Package, table)),
 			"tableOrg": table,
 			"columns":  columns,
 			//"columnsSelect": "`" + strings.Join(rawColumnNames, "`, `") + "`",
@@ -97,4 +93,25 @@ func main() {
 	}
 
 	ioutil.WriteFile(*outputFile, formatted, 0600)
+}
+
+// shouldSkipTable checks if a table is a catalog*flat* table. These tables will get automatically created
+// due to the variable attributes which are used as columns. And also dependent on the store count.
+func shouldSkipTable(table string) bool {
+	return strings.Index(table, "catalog_") == 0 && strings.Index(table, "_flat_") > 6
+}
+
+// stripPackagePrefix removes the package name from the table name to avoid stutter
+func stripPackagePrefix(pkg, t string) string {
+	l := len(pkg) + 1
+
+	if len(t) <= l {
+		return t
+	}
+
+	if t[:l] == pkg+"_" {
+		return t[l:]
+	}
+
+	return t
 }

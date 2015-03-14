@@ -14,9 +14,70 @@
 
 package customer
 
+import "github.com/corestoreio/csfw/eav"
+
 type (
 	// see table customer_eav_attribute.data_model
 	DataModeller interface {
 		TBD()
 	}
+
+	CustomerModel struct {
+		// TBD
+	}
+
+	AttributeModel struct {
+	}
 )
+
+var (
+	_ eav.EntityTypeModeller                  = (*CustomerModel)(nil)
+	_ eav.EntityTypeTabler                    = (*CustomerModel)(nil)
+	_ eav.EntityTypeAttributeModeller         = (*CustomerModel)(nil)
+	_ eav.EntityTypeAdditionalAttributeTabler = (*CustomerModel)(nil)
+	_ eav.EntityAttributeCollectioner         = (*CustomerModel)(nil)
+	_ eav.EntityTypeIncrementModeller         = (*CustomerModel)(nil)
+)
+
+func Attribute() *AttributeModel {
+	return &AttributeModel{}
+}
+
+func (c AttributeModel) TBD() {
+
+}
+
+func (c *CustomerModel) TBD() {
+
+}
+func (c *CustomerModel) AttributeCollection() {
+
+}
+
+func (c *CustomerModel) TableNameBase() string {
+	return GetTableName(TableEntity)
+}
+
+func (c *CustomerModel) TableNameValue(i eav.ValueIndex) string {
+	switch i {
+	case eav.EntityTypeDateTime:
+		return GetTableName(TableEntityDatetime)
+	case eav.EntityTypeDecimal:
+		return GetTableName(TableEntityDecimal)
+	case eav.EntityTypeInt:
+		return GetTableName(TableEntityInt)
+	case eav.EntityTypeText:
+		return GetTableName(TableEntityText)
+	case eav.EntityTypeVarchar:
+		return GetTableName(TableEntityVarchar)
+	}
+	return ""
+}
+
+func (c *CustomerModel) TableNameAdditionalAttribute() string {
+	return GetTableName(TableEavAttribute)
+}
+
+func Customer() *CustomerModel {
+	return &CustomerModel{}
+}

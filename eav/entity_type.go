@@ -14,52 +14,13 @@
 
 package eav
 
+import (
+	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/gocraft/dbr"
+	"github.com/juju/errgo"
+)
+
 type (
-	// EntityTypeModeller defines an entity type model @todo
-	EntityTypeModeller interface {
-		TBD()
-	}
-
-	// EntityTypeTabler returns the table name
-	EntityTypeTabler interface {
-		TableName() string
-	}
-
-	// EntityTypeAttributeModeller defines an attribute model @todo
-	EntityTypeAttributeModeller interface {
-		TBD()
-	}
-
-	// EntityTypeAdditionalAttributeTabler returns the table name
-	EntityTypeAdditionalAttributeTabler interface {
-		TableName() string
-	}
-
-	// EntityTypeIncrementModeller defines who to increment a number @todo
-	EntityTypeIncrementModeller interface {
-		TBD()
-	}
-
-	// EntityAttributeCollectioner defines an attribute collection @todo
-	EntityAttributeCollectioner interface {
-		TBD()
-	}
-
-	// AttributeBackendModeller defines the attribute backend model @todo
-	AttributeBackendModeller interface {
-		TBD()
-	}
-
-	// AttributeFrontendModeller defines the attribute frontend model @todo
-	AttributeFrontendModeller interface {
-		TBD()
-	}
-
-	// AttributeSourceModeller defines the source where an attribute can also be stored @todo
-	AttributeSourceModeller interface {
-		TBD()
-	}
-
 	// CSEntityTypeSlice Types starting with CS are the CoreStore mappings with the DB data
 	CSEntityTypeSlice []*CSEntityType
 	// CSEntityType Go Type of the Mage database models and types
@@ -82,3 +43,39 @@ type (
 		EntityAttributeCollection EntityAttributeCollectioner
 	}
 )
+
+func (et *EntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...csdb.DbrSelectCb) error {
+	s, err := GetTableStructure(TableEntityType)
+	if err != nil {
+		return errgo.Mask(err)
+	}
+	qry := dbrSess.Select(s.Columns...).From(s.Name).Where("entity_type_code = ?", code)
+	for _, cb := range cbs {
+		qry = cb(qry)
+	}
+	return errgo.Mask(qry.LoadStruct(et))
+}
+
+// IsRealEav checks if those types which have an attribute model and therefore are a real EAV.
+// sales* tables are not real EAV tables as they are already flat tables.
+func (et *EntityType) IsRealEav() bool {
+	return et.EntityTypeID > 0 && et.AttributeModel.Valid == true && et.AttributeModel.String != ""
+}
+
+func (es EntityTypeSlice) GetByCode(code string) (*EntityType, error) {
+	for _, e := range es {
+		if e.EntityTypeCode == code {
+			return e, nil
+		}
+	}
+	return nil, errgo.Newf("Entity Code %s not found", code)
+}
+
+func (es CSEntityTypeSlice) GetByCode(code string) (*CSEntityType, error) {
+	for _, e := range es {
+		if e.EntityTypeCode == code {
+			return e, nil
+		}
+	}
+	return nil, errgo.Newf("Entity Code %s not found", code)
+}

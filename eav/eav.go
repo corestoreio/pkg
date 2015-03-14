@@ -14,35 +14,62 @@
 
 package eav
 
-import (
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/gocraft/dbr"
-	"github.com/juju/errgo"
+const (
+	EntityTypeDateTime ValueIndex = iota + 1
+	EntityTypeDecimal
+	EntityTypeInt
+	EntityTypeText
+	EntityTypeVarchar
 )
 
-func (et *EntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...csdb.DbrSelectCb) error {
-	s, err := GetTableStructure(TableEntityType)
-	if err != nil {
-		return errgo.Mask(err)
-	}
-	qry := dbrSess.Select(s.Columns...).From(s.Name).Where("entity_type_code = ?", code)
-	for _, cb := range cbs {
-		qry = cb(qry)
-	}
-	return errgo.Mask(qry.LoadStruct(et))
-}
+type (
+	ValueIndex int
 
-// IsRealEav checks if those types which have an attribute model and therefore are a real EAV.
-// sales* tables are not real EAV tables as they are already flat tables.
-func (et *EntityType) IsRealEav() bool {
-	return et.EntityTypeID > 0 && et.AttributeModel.Valid == true && et.AttributeModel.String != ""
-}
-
-func (es EntityTypeSlice) GetByCode(code string) (*EntityType, error) {
-	for _, e := range es {
-		if e.EntityTypeCode == code {
-			return e, nil
-		}
+	// EntityTypeModeller defines an entity type model @todo
+	EntityTypeModeller interface {
+		TBD()
 	}
-	return nil, errgo.Newf("Entity Code %s not found", code)
-}
+
+	// EntityTypeTabler returns the table name
+	EntityTypeTabler interface {
+		// Base returns the base table name. E.g.: catalog_product_entity
+		TableNameBase() string
+		// Type returns for a type the table name. E.g.: catalog_product_entity_int
+		TableNameValue(ValueIndex) string
+	}
+
+	// EntityTypeAttributeModeller defines an attribute model @todo
+	EntityTypeAttributeModeller interface {
+		TBD()
+	}
+
+	// EntityTypeAdditionalAttributeTabler returns the table name
+	EntityTypeAdditionalAttributeTabler interface {
+		TableNameAdditionalAttribute() string
+	}
+
+	// EntityTypeIncrementModeller defines who to increment a number @todo
+	EntityTypeIncrementModeller interface {
+		TBD()
+	}
+
+	// EntityAttributeCollectioner defines an attribute collection @todo
+	EntityAttributeCollectioner interface {
+		AttributeCollection()
+	}
+
+	// AttributeBackendModeller defines the attribute backend model @todo
+	AttributeBackendModeller interface {
+		TBD()
+	}
+
+	// AttributeFrontendModeller defines the attribute frontend model @todo
+	AttributeFrontendModeller interface {
+		TBD()
+	}
+
+	// AttributeSourceModeller defines the source where an attribute can also be stored @todo
+	AttributeSourceModeller interface {
+		TBD()
+	}
+)

@@ -19,4 +19,15 @@ type (
 	FrontendInputRenderer interface {
 		TBD()
 	}
+
+	AttributeModel struct {
+	}
 )
+
+func Attribute() *AttributeModel {
+	return &AttributeModel{}
+}
+
+func (c AttributeModel) TBD() {
+
+}

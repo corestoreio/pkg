@@ -89,7 +89,7 @@ func main() {
 		},
 		aCommand{
 			name: pwd + "eavToStruct",
-			args: []string{"-p", "eav", "-o", "eav/generated_eav.go", "-run"},
+			args: []string{"-p", "concrete", "-o", "concrete/generated_eav.go", "-run"},
 			rm:   true,
 		},
 	}
