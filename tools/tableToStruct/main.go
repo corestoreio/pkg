@@ -85,19 +85,9 @@ func main() {
 		columns, err := tools.GetColumns(db, *prefixName+table)
 		tools.LogFatal(err)
 
-		structNames := make([]string, len(columns))
-		rawColumnNames := make([]string, len(columns))
-
-		for i, c := range columns {
-			structNames[i] = c.GoName
-			rawColumnNames[i] = c.Field.String
-		}
-
 		tplData.Tables = append(tplData.Tables, map[string]interface{}{
 			"table":   table,
 			"columns": columns,
-			//"columnsSelect": "`" + strings.Join(rawColumnNames, "`, `") + "`",
-			//"columnsScan":   "e." + strings.Join(structNames, ", e."),
 		})
 	}
 

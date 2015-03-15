@@ -99,28 +99,3 @@ type (
 {{ end }}
 )
 `
-
-// maybe for later use include in tpl
-//const tplBody = `
-//func Select{{.table | camelize}}(db *sql.DB, sqlWhere ...string) ({{.table | camelize}}Slice, error) {
-//	rows, err := db.Query("SELECT {{.columnsSelect}} FROM {{ quote .table }} "+strings.Join(sqlWhere," "))
-//	if err != nil {
-//		return nil,err
-//	}
-//	defer rows.Close()
-//    var c = make({{.table | camelize}}Slice, 0, 200)
-//	for rows.Next() {
-//		e := &{{.table | camelize}}{}
-//		err := rows.Scan({{.columnsScan}})
-//		if err != nil {
-//			return nil,err
-//		}
-//		c = append(c, e)
-//	}
-//	err = rows.Err()
-//	if err != nil {
-//		return nil,err
-//	}
-//	return c, nil
-//}
-//`
