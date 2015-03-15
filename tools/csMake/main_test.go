@@ -1,8 +1,3 @@
-//go:generate go build -a github.com/corestoreio/csfw/tools/csMake
-//go:generate ./csMake
-//go:generate rm ./csMake
-//go:generate go test ./...
-
 // Copyright 2015 CoreStore Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,4 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csfw
+// Package csMake replaces the Makefile. csMake is only used via go:generate.
+package main
+
+import (
+	"os"
+	"testing"
+
+	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestCheckEnv(t *testing.T) {
+	envBkp := os.Getenv(csdb.EnvDSN)
+	defer os.Setenv(csdb.EnvDSN, envBkp)
+
+	os.Setenv(csdb.EnvDSN, "testing")
+	assert.NoError(t, checkEnv())
+	os.Setenv(csdb.EnvDSN, "")
+	assert.Error(t, checkEnv())
+}

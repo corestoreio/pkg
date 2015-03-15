@@ -16,6 +16,7 @@
 package main
 
 import (
+	"errors"
 	"go/build"
 	"log"
 	"os"
@@ -24,7 +25,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/mgutz/ansi"
-	_ "github.com/pquerna/ffjson" // @todo
+	// "github.com/pquerna/ffjson" @todo
 )
 
 type (
@@ -94,18 +95,23 @@ func getCommands() []aCommand {
 }
 
 // checkEnv verifies if all env vars are set
-func checkEnv() {
+func checkEnv() error {
 	dsn, err := csdb.GetDSN()
 	if dsn == "" || err != nil {
-		log.Fatalln(
-			ansi.Color("Missing environment variable CS_DSN.", "red"),
-			"Please see https://github.com/corestoreio/csfw#usage",
+		return errors.New(
+			ansi.Color("Missing environment variable CS_DSN.", "red") +
+				"Please see https://github.com/corestoreio/csfw#usage",
 		)
 	}
+	return nil
 }
 
 func main() {
-	checkEnv()
+
+	if err := checkEnv(); err != nil {
+		log.Fatal(err)
+	}
+
 	for _, cmd := range getCommands() {
 		out, err := exec.Command(cmd.name, cmd.args...).CombinedOutput()
 		if cmd.rm {
