@@ -21,6 +21,8 @@ import (
 	"github.com/juju/errgo"
 )
 
+var logFatalln = log.Fatalln
+
 // Camelize transforms from snake case to camelCase e.g. catalog_product_id to CatalogProductID.
 func Camelize(s string) string {
 	parts := strings.Split(s, "_")
@@ -51,5 +53,5 @@ func LogFatal(err error) {
 	if err, ok := err.(errgo.Locationer); ok {
 		s += " " + err.Location().String()
 	}
-	log.Fatalln(s)
+	logFatalln(s)
 }
