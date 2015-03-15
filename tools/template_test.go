@@ -58,7 +58,7 @@ var TableProductEntity = ` + "`Gopher`" + `
 			assert.Error(t, err)
 		} else {
 			assert.Equal(t, test.expTpl, actual)
-			t.Logf("\nExp: %s\nAct: %s", test.expTpl, actual)
+			//t.Logf("\nExp: %s\nAct: %s", test.expTpl, actual)
 		}
 	}
 }

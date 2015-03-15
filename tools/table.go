@@ -81,7 +81,7 @@ func (vs ValueSuffixes) String() string {
 
 func (m TypeCodeValueTable) Empty() bool {
 	_, ok := m[""]
-	return len(m) == 1 && ok
+	return len(m) < 1 || ok
 }
 
 func GetTables(db *sql.DB, prefix string) ([]string, error) {
@@ -144,10 +144,6 @@ func GetEavValueTables(dbrConn *dbr.Connection, prefix string, entityTypeCodes [
 			typeCodeTables[typeCode] = make(map[string]string, len(tableNames))
 		}
 		for _, t := range tableNames {
-			//			parts := strings.Split(t, TableNameSeparator)
-			//			if len(parts) == 1 {
-			//				return nil, errgo.Newf("cannot find value suffix in table '%s'. Missing underscore?", t)
-			//			}
 			valueSuffix := t[len(prefix+vtp):]
 			if TableEntityTypeValueSuffixes.contains(valueSuffix) {
 				/*

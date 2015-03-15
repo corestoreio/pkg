@@ -26,6 +26,7 @@ $ export CS_DSN='magento2:magento2@tcp(localhost:3306)/magento2'
 
 ```
 $ go get github.com/corestoreio/csfw
+$ export CS_DSN_TEST='see next section'
 $ cd $GOPATH/src/github.com/corestoreio/csfw
 $ go generate ./...
 ```
