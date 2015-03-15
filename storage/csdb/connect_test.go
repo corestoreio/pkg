@@ -15,20 +15,38 @@
 package csdb
 
 import (
-    "testing"
-    "errors"
+	"errors"
+	"os"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetDSN(t *testing.T) {
 
-    tests := []struct {
-        env string
-        envContent string
-        err error
-    }{
-        {"TEST_CS_1", "Hello",errors.New("World")},
-    }
+	tests := []struct {
+		env        string
+		envContent string
+		err        error
+		returnErr  bool
+	}{
+		{
+			env:        "TEST_CS_1",
+			envContent: "Hello",
+			err:        errors.New("World"),
+			returnErr:  false,
+		},
+	}
 
-    for _, test := range tests {
-        s,err := getDSN(test.env, test.err)
-    }
+	for _, test := range tests {
+		os.Setenv(test.env, test.envContent)
+		s, aErr := getDSN(test.env, test.err)
+		assert.Equal(t, test.envContent, s)
+		assert.NoError(t, aErr)
+
+		s, aErr = getDSN(test.env+"NOTFOUND", test.err)
+		assert.Equal(t, "", s)
+		assert.Error(t, aErr)
+		assert.Equal(t, test.err, aErr)
+	}
+}
