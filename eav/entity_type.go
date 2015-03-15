@@ -44,8 +44,8 @@ type (
 	}
 )
 
-func (et *EavEntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...csdb.DbrSelectCb) error {
-	s, err := GetTableStructure(TableEavEntityType)
+func (et *EntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...csdb.DbrSelectCb) error {
+	s, err := GetTableStructure(TableEntityType)
 	if err != nil {
 		return errgo.Mask(err)
 	}
@@ -58,11 +58,11 @@ func (et *EavEntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...cs
 
 // IsRealEav checks if those types which have an attribute model and therefore are a real EAV.
 // sales* tables are not real EAV tables as they are already flat tables.
-func (et *EavEntityType) IsRealEav() bool {
+func (et *EntityType) IsRealEav() bool {
 	return et.EntityTypeID > 0 && et.AttributeModel.Valid == true && et.AttributeModel.String != ""
 }
 
-func (es EavEntityTypeSlice) GetByCode(code string) (*EavEntityType, error) {
+func (es EntityTypeSlice) GetByCode(code string) (*EntityType, error) {
 	for _, e := range es {
 		if e.EntityTypeCode == code {
 			return e, nil

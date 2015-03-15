@@ -38,11 +38,11 @@ func (c *ProductModel) AttributeCollection() {
 }
 
 func (c *ProductModel) TableNameBase() string {
-	return GetTableName(TableCatalogProductEntity)
+	return GetTableName(TableProductEntity)
 }
 
 func (c *ProductModel) TableNameValue(i eav.ValueIndex) string {
-	s, err := GetCatalogProductValueStructure(i)
+	s, err := GetProductValueStructure(i)
 	if err != nil {
 		return ""
 	}
@@ -50,7 +50,7 @@ func (c *ProductModel) TableNameValue(i eav.ValueIndex) string {
 }
 
 func (c *ProductModel) TableNameAdditionalAttribute() string {
-	return GetTableName(TableCatalogEavAttribute)
+	return GetTableName(TableEAVAttribute)
 }
 
 func Product() *ProductModel {

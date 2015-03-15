@@ -35,14 +35,17 @@ type (
 	}
 )
 
-func main() {
-	pkg := flag.String("p", "", "Package name in template")
-	run := flag.Bool("run", false, "If true program runs")
-	outputFile := flag.String("o", "", "Output file name")
+var (
+	pkg        = flag.String("p", "", "Package name in template")
+	run        = flag.Bool("run", false, "If true program runs")
+	outputFile = flag.String("o", "", "Output file name")
 
-	prefixSearch := flag.String("prefixSearch", "", "Search Table Prefix. Used in where condition to list tables")
-	prefixName := flag.String("prefixName", "", "Table name prefix") // @todo via env var !?
-	entityTypeCode := flag.String("entityTypeCodes", "", "If provided then eav_entity_type.value_table_prefix will be evaluated for further tables. Use comma to separate codes.")
+	prefixSearch   = flag.String("prefixSearch", "", "Search Table Prefix. Used in where condition to list tables")
+	prefixName     = flag.String("prefixName", "", "Table name prefix") // @todo via env var !?
+	entityTypeCode = flag.String("entityTypeCodes", "", "If provided then eav_entity_type.value_table_prefix will be evaluated for further tables. Use comma to separate codes.")
+)
+
+func main() {
 	flag.Parse()
 
 	if false == *run || *outputFile == "" || *pkg == "" {
@@ -91,7 +94,7 @@ func main() {
 		})
 	}
 
-	formatted, err := tools.GenerateCode(tplCode, tplData)
+	formatted, err := tools.GenerateCode(*pkg, tplCode, tplData)
 	if err != nil {
 		fmt.Printf("\n%s\n", formatted)
 		tools.LogFatal(err)
@@ -114,20 +117,4 @@ func isDuplicate(sl []string, st string) bool {
 // due to the variable attributes which are used as columns. And also dependent on the store count.
 func skipCatalogFlatTable(table string) bool {
 	return strings.Index(table, "catalog_") == 0 && strings.Index(table, "_flat_") > 6
-}
-
-// stripPackagePrefix removes the package name from the table name to avoid stutter.
-// Some more research because we run into weird collisions when using custom entity value tables.
-func stripPackagePrefix(pkg, t string) string {
-	l := len(pkg) + 1
-
-	if len(t) <= l {
-		return t
-	}
-
-	if t[:l] == pkg+"_" {
-		return t[l:]
-	}
-
-	return t
 }

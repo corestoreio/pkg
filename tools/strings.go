@@ -30,6 +30,12 @@ func Camelize(s string) string {
 		case "id":
 			p = "ID"
 			break
+		case "idx":
+			p = "IDX"
+			break
+		case "eav":
+			p = "EAV"
+			break
 		}
 		ret = ret + strings.Title(p)
 	}

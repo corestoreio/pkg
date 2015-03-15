@@ -38,11 +38,11 @@ func (c *CategoryModel) AttributeCollection() {
 }
 
 func (c *CategoryModel) TableNameBase() string {
-	return GetTableName(TableCatalogCategoryEntity)
+	return GetTableName(TableCategoryEntity)
 }
 
 func (c *CategoryModel) TableNameValue(i eav.ValueIndex) string {
-	s, err := GetCatalogCategoryValueStructure(i)
+	s, err := GetCategoryValueStructure(i)
 	if err != nil {
 		return ""
 	}
@@ -50,7 +50,7 @@ func (c *CategoryModel) TableNameValue(i eav.ValueIndex) string {
 }
 
 func (c *CategoryModel) TableNameAdditionalAttribute() string {
-	return GetTableName(TableCatalogEavAttribute)
+	return GetTableName(TableEAVAttribute)
 }
 
 func Category() *CategoryModel {

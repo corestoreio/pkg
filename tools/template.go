@@ -22,11 +22,22 @@ import (
 	"github.com/juju/errgo"
 )
 
-func GenerateCode(tplCode string, data interface{}) ([]byte, error) {
+func GenerateCode(pkg, tplCode string, data interface{}) ([]byte, error) {
+
+	var stripPk = func(t string) string {
+		l := len(pkg) + 1
+		if len(t) <= l {
+			return t
+		}
+		if t[:l] == pkg+TableNameSeparator {
+			return t[l:]
+		}
+		return t
+	}
 
 	fm := template.FuncMap{
-		"quote":    func(s string) string { return "`" + s + "`" },
-		"camelize": Camelize,
+		"quote":      func(s string) string { return "`" + s + "`" },
+		"prepareVar": func(s string) string { return Camelize(stripPk(s)) },
 	}
 	codeTpl := template.Must(template.New("tpl_code").Funcs(fm).Parse(tplCode))
 

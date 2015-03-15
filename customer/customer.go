@@ -67,7 +67,7 @@ func (c *CustomerModel) TableNameValue(i eav.ValueIndex) string {
 }
 
 func (c *CustomerModel) TableNameAdditionalAttribute() string {
-	return GetTableName(TableEavAttribute)
+	return GetTableName(TableEAVAttribute)
 }
 
 func Customer() *CustomerModel {

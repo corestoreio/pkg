@@ -71,7 +71,7 @@ func main() {
 		Tick:      "`",
 	}
 
-	formatted, err := tools.GenerateCode(tplEav, tplData)
+	formatted, err := tools.GenerateCode(*pkg, tplEav, tplData)
 	if err != nil {
 		fmt.Printf("\n%s\n", formatted)
 		tools.LogFatal(err)
@@ -82,12 +82,12 @@ func main() {
 
 func getEntityTypeData(dbrSess *dbr.Session) (JsonEntityTypeMap, error) {
 
-	s, err := eav.GetTableStructure(eav.TableEavEntityType)
+	s, err := eav.GetTableStructure(eav.TableEntityType)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
 
-	var entityTypeCollection eav.EavEntityTypeSlice
+	var entityTypeCollection eav.EntityTypeSlice
 	_, err = dbrSess.
 		Select(s.Columns...).
 		From(s.Name).
