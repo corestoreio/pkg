@@ -36,27 +36,15 @@ type (
 )
 
 var (
-	ctx   = build.Default
-	goCmd = ctx.GOROOT + "/bin/go"
-	pwd   = ctx.GOPATH + "/src/github.com/corestoreio/csfw/"
+	goCmd = build.Default.GOROOT + "/bin/go"
+	pwd   = build.Default.GOPATH + "/src/github.com/corestoreio/csfw/"
 )
 
-func checkEnv() {
-	dsn, err := csdb.GetDSN()
-	if dsn == "" || err != nil {
-		log.Fatalln(
-			ansi.Color("Missing environment variable CS_DSN.", "red"),
-			"Please see https://github.com/corestoreio/csfw#usage",
-		)
-	}
-}
-
-func main() {
-
-	checkEnv()
+// getCommands returns list of shell commands to be execute in its specific order
+func getCommands() []aCommand {
 	// @todo make it configurable if your catalog or customer tables different names.
 	// @todo also include table_prefix for the whole database
-	cmds := []aCommand{
+	return []aCommand{
 		aCommand{
 			name: goCmd,
 			args: []string{"build", "-a", "github.com/corestoreio/csfw/tools/tableToStruct"},
@@ -103,8 +91,22 @@ func main() {
 			rm:   true,
 		},
 	}
+}
 
-	for _, cmd := range cmds {
+// checkEnv verifies if all env vars are set
+func checkEnv() {
+	dsn, err := csdb.GetDSN()
+	if dsn == "" || err != nil {
+		log.Fatalln(
+			ansi.Color("Missing environment variable CS_DSN.", "red"),
+			"Please see https://github.com/corestoreio/csfw#usage",
+		)
+	}
+}
+
+func main() {
+	checkEnv()
+	for _, cmd := range getCommands() {
 		out, err := exec.Command(cmd.name, cmd.args...).CombinedOutput()
 		if cmd.rm {
 			defer os.Remove(cmd.name)
