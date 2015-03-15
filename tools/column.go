@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package toolsdb
+package tools
 
 import (
 	"database/sql"
@@ -23,8 +23,6 @@ import (
 )
 
 type (
-	eStruct struct{}
-
 	column struct {
 		Field, Type, Null, Key, Default, Extra sql.NullString
 		GoType, GoName                         string
@@ -85,8 +83,8 @@ func GetColumns(db *sql.DB, table string) ([]column, error) {
 
 func updateGoType(col *column) {
 	var (
-		boolColumns = map[string]eStruct{
-			"increment_per_store": eStruct{},
+		boolColumns = map[string]struct{}{
+			"increment_per_store": struct{}{},
 		}
 	)
 

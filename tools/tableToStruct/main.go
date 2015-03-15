@@ -24,8 +24,15 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/tools"
-	"github.com/corestoreio/csfw/tools/toolsdb"
 	_ "github.com/go-sql-driver/mysql"
+)
+
+type (
+	dataContainer struct {
+		Tables              []map[string]interface{}
+		Package, Tick       string
+		TypeCodeValueTables tools.TypeCodeValueTable
+	}
 )
 
 func main() {
@@ -33,8 +40,9 @@ func main() {
 	run := flag.Bool("run", false, "If true program runs")
 	outputFile := flag.String("o", "", "Output file name")
 
-	prefixSearch := flag.String("prefixSearch", "eav", "Search Table Prefix. Used in where condition to list tables")
-	prefixName := flag.String("prefixName", "", "Table name prefix")
+	prefixSearch := flag.String("prefixSearch", "", "Search Table Prefix. Used in where condition to list tables")
+	prefixName := flag.String("prefixName", "", "Table name prefix") // @todo via env var !?
+	entityTypeCode := flag.String("entityTypeCodes", "", "If provided then eav_entity_type.value_table_prefix will be evaluated for further tables. Use comma to separate codes.")
 	flag.Parse()
 
 	if false == *run || *outputFile == "" || *pkg == "" {
@@ -42,14 +50,9 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, _, err := csdb.Connect()
-	toolsdb.LogFatal(err)
+	db, dbrConn, err := csdb.Connect()
+	tools.LogFatal(err)
 	defer db.Close()
-
-	type dataContainer struct {
-		Tables        []map[string]interface{}
-		Package, Tick string
-	}
 
 	tplData := &dataContainer{
 		Tables:  make([]map[string]interface{}, 0, 200),
@@ -57,8 +60,19 @@ func main() {
 		Tick:    "`",
 	}
 
-	tables, err := toolsdb.GetTables(db, *prefixName+*prefixSearch)
-	toolsdb.LogFatal(err)
+	tables, err := tools.GetTables(db, *prefixName+*prefixSearch)
+	tools.LogFatal(err)
+
+	entityTypeCodes := strings.Split(*entityTypeCode, ",")
+	if len(entityTypeCodes) > 0 {
+		tplData.TypeCodeValueTables, err = tools.GetEavValueTables(dbrConn, *prefixName, entityTypeCodes)
+		tools.LogFatal(err)
+		for _, vTables := range tplData.TypeCodeValueTables {
+			for t, _ := range vTables {
+				tables = append(tables, t)
+			}
+		}
+	}
 
 	for _, table := range tables {
 
@@ -66,8 +80,8 @@ func main() {
 			continue
 		}
 
-		columns, err := toolsdb.GetColumns(db, *prefixName+table)
-		toolsdb.LogFatal(err)
+		columns, err := tools.GetColumns(db, *prefixName+table)
+		tools.LogFatal(err)
 
 		structNames := make([]string, len(columns))
 		rawColumnNames := make([]string, len(columns))
@@ -78,9 +92,8 @@ func main() {
 		}
 
 		tplData.Tables = append(tplData.Tables, map[string]interface{}{
-			"table":    toolsdb.Camelize(stripPackagePrefix(tplData.Package, table)),
-			"tableOrg": table,
-			"columns":  columns,
+			"table":   table,
+			"columns": columns,
 			//"columnsSelect": "`" + strings.Join(rawColumnNames, "`, `") + "`",
 			//"columnsScan":   "e." + strings.Join(structNames, ", e."),
 		})
@@ -89,7 +102,7 @@ func main() {
 	formatted, err := tools.GenerateCode(tplCode, tplData)
 	if err != nil {
 		fmt.Printf("\n%s\n", formatted)
-		toolsdb.LogFatal(err)
+		tools.LogFatal(err)
 	}
 
 	ioutil.WriteFile(*outputFile, formatted, 0600)
@@ -101,7 +114,8 @@ func shouldSkipTable(table string) bool {
 	return strings.Index(table, "catalog_") == 0 && strings.Index(table, "_flat_") > 6
 }
 
-// stripPackagePrefix removes the package name from the table name to avoid stutter
+// stripPackagePrefix removes the package name from the table name to avoid stutter.
+// Some more research because we run into weird collisions when using custom entity value tables.
 func stripPackagePrefix(pkg, t string) string {
 	l := len(pkg) + 1
 

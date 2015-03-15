@@ -32,7 +32,8 @@ const tplCode = `// Copyright 2015 CoreStore Authors
 package {{ .Package }}
 import (
 	"time"
-
+    {{ if not .TypeCodeValueTables.Empty }}
+	"github.com/corestoreio/csfw/eav"{{end}}
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/gocraft/dbr"
 )
@@ -40,8 +41,8 @@ import (
 const (
     // TableNoop has index 0
     TableNoop csdb.Index = iota
-    {{ range .Tables }} // Table{{.table}} is the index to {{.tableOrg}}
-    Table{{.table}}
+    {{ range .Tables }} // Table{{.table | camelize}} is the index to {{.table}}
+    Table{{.table | camelize}}
 {{ end }} // TableMax represents the maximum index, which is not available.
 TableMax
 )
@@ -49,8 +50,8 @@ TableMax
 var (
     // read only map
     tableMap = csdb.TableMap{
-{{ range .Tables }}Table{{.table}} : csdb.NewTableStructure(
-        "{{.tableOrg}}",
+{{ range .Tables }}Table{{.table | camelize}} : csdb.NewTableStructure(
+        "{{.table}}",
         []string{
         {{ range .columns }}{{ if eq .Key.String "PRI" }} "{{.Field.String}}",{{end}}
         {{ end }} },
@@ -72,13 +73,26 @@ func GetTableName(i csdb.Index) string {
 	return tableMap.Name(i)
 }
 
+{{ if not .TypeCodeValueTables.Empty }}
+{{range $typeCode,$valueTables := .TypeCodeValueTables}}
+// Get{{ $typeCode | camelize }}ValueStructure returns for an eav value index the table structure.
+// Important also if you have custom value tables
+func Get{{ $typeCode | camelize }}ValueStructure(i eav.ValueIndex) (*csdb.TableStructure, error) {
+	switch i {
+	{{range $vt,$v := $valueTables }}case eav.EntityType{{ $v | camelize }}:
+		return GetTableStructure(Table{{ $vt | camelize }})
+    {{end}}	}
+	return nil, eav.ErrEntityTypeValueNotFound
+}
+{{end}}{{end}}
+
 type (
 
 {{ range .Tables }}
-    // {{.table}}Slice contains pointers to {{.table}} types
-    {{.table}}Slice []*{{.table}}
-    // {{.table}} a type for the MySQL table {{ .tableOrg }}
-    {{.table}} struct {
+    // {{.table | camelize}}Slice contains pointers to {{.table | camelize}} types
+    {{.table | camelize}}Slice []*{{.table | camelize}}
+    // {{.table | camelize}} a type for the MySQL table {{ .table }}
+    {{.table | camelize}} struct {
         {{ range .columns }}{{.GoName}} {{.GoType}} {{ $.Tick }}db:"{{.Field.String}}"{{ $.Tick }} {{.Comment}}
         {{ end }} }
 {{ end }}
@@ -87,15 +101,15 @@ type (
 
 // maybe for later use include in tpl
 //const tplBody = `
-//func Select{{.table}}(db *sql.DB, sqlWhere ...string) ({{.table}}Slice, error) {
-//	rows, err := db.Query("SELECT {{.columnsSelect}} FROM {{ quote .tableOrg }} "+strings.Join(sqlWhere," "))
+//func Select{{.table | camelize}}(db *sql.DB, sqlWhere ...string) ({{.table | camelize}}Slice, error) {
+//	rows, err := db.Query("SELECT {{.columnsSelect}} FROM {{ quote .table }} "+strings.Join(sqlWhere," "))
 //	if err != nil {
 //		return nil,err
 //	}
 //	defer rows.Close()
-//    var c = make({{.table}}Slice, 0, 200)
+//    var c = make({{.table | camelize}}Slice, 0, 200)
 //	for rows.Next() {
-//		e := &{{.table}}{}
+//		e := &{{.table | camelize}}{}
 //		err := rows.Scan({{.columnsScan}})
 //		if err != nil {
 //			return nil,err

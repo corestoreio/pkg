@@ -54,7 +54,8 @@ func checkEnv() {
 func main() {
 
 	checkEnv()
-
+	// @todo make it configurable if your catalog or customer tables different names.
+	// @todo also include table_prefix for the whole database
 	cmds := []aCommand{
 		aCommand{
 			name: goCmd,
@@ -62,8 +63,13 @@ func main() {
 			rm:   false,
 		},
 		aCommand{
-			name: "rm",
-			args: []string{"-f", "eav/generated_tables.go", "eav/generated_eav.go"},
+			name: "find",
+			args: []string{pwd, "-name", "generated_tables.go", "-delete"},
+			rm:   false,
+		},
+		aCommand{
+			name: "find",
+			args: []string{pwd, "-name", "generated_eav.go", "-delete"},
 			rm:   false,
 		},
 		aCommand{
@@ -73,13 +79,17 @@ func main() {
 		},
 		aCommand{
 			name: pwd + "tableToStruct",
-			args: []string{"-p", "catalog", "-prefixSearch", "catalog\\_", "-o", "catalog/generated_tables.go", "-run"},
-			rm:   false,
+			args: []string{"-p", "catalog", "-prefixSearch", "catalog\\_",
+				"-entityTypeCodes", "catalog_category,catalog_product",
+				"-o", "catalog/generated_tables.go", "-run"},
+			rm: false,
 		},
 		aCommand{
 			name: pwd + "tableToStruct",
-			args: []string{"-p", "customer", "-prefixSearch", "customer\\_", "-o", "customer/generated_tables.go", "-run"},
-			rm:   false,
+			args: []string{"-p", "customer", "-prefixSearch", "customer\\_",
+				"-entityTypeCodes", "customer,customer_address",
+				"-o", "customer/generated_tables.go", "-run"},
+			rm: false,
 		},
 		aCommand{
 			// this commands depends on the generated source from tableToStruct 8-)

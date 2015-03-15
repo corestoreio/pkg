@@ -38,27 +38,19 @@ func (c *ProductModel) AttributeCollection() {
 }
 
 func (c *ProductModel) TableNameBase() string {
-	return GetTableName(TableProductEntity)
+	return GetTableName(TableCatalogProductEntity)
 }
 
 func (c *ProductModel) TableNameValue(i eav.ValueIndex) string {
-	switch i {
-	case eav.EntityTypeDateTime:
-		return GetTableName(TableProductEntityDatetime)
-	case eav.EntityTypeDecimal:
-		return GetTableName(TableProductEntityDecimal)
-	case eav.EntityTypeInt:
-		return GetTableName(TableProductEntityInt)
-	case eav.EntityTypeText:
-		return GetTableName(TableProductEntityText)
-	case eav.EntityTypeVarchar:
-		return GetTableName(TableProductEntityVarchar)
+	s, err := GetCatalogProductValueStructure(i)
+	if err != nil {
+		return ""
 	}
-	return ""
+	return s.Name
 }
 
 func (c *ProductModel) TableNameAdditionalAttribute() string {
-	return GetTableName(TableEavAttribute)
+	return GetTableName(TableCatalogEavAttribute)
 }
 
 func Product() *ProductModel {

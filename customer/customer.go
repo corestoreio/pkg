@@ -59,19 +59,11 @@ func (c *CustomerModel) TableNameBase() string {
 }
 
 func (c *CustomerModel) TableNameValue(i eav.ValueIndex) string {
-	switch i {
-	case eav.EntityTypeDateTime:
-		return GetTableName(TableEntityDatetime)
-	case eav.EntityTypeDecimal:
-		return GetTableName(TableEntityDecimal)
-	case eav.EntityTypeInt:
-		return GetTableName(TableEntityInt)
-	case eav.EntityTypeText:
-		return GetTableName(TableEntityText)
-	case eav.EntityTypeVarchar:
-		return GetTableName(TableEntityVarchar)
+	s, err := GetCustomerValueStructure(i)
+	if err != nil {
+		return ""
 	}
-	return ""
+	return s.Name
 }
 
 func (c *CustomerModel) TableNameAdditionalAttribute() string {

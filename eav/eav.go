@@ -14,12 +14,18 @@
 
 package eav
 
+import "errors"
+
 const (
-	EntityTypeDateTime ValueIndex = iota + 1
+	EntityTypeDatetime ValueIndex = iota + 1
 	EntityTypeDecimal
 	EntityTypeInt
 	EntityTypeText
 	EntityTypeVarchar
+)
+
+var (
+	ErrEntityTypeValueNotFound = errors.New("Unknown entity type value")
 )
 
 type (

@@ -25,7 +25,8 @@ import (
 func GenerateCode(tplCode string, data interface{}) ([]byte, error) {
 
 	fm := template.FuncMap{
-		"quote": func(s string) string { return "`" + s + "`" },
+		"quote":    func(s string) string { return "`" + s + "`" },
+		"camelize": Camelize,
 	}
 	codeTpl := template.Must(template.New("tpl_code").Funcs(fm).Parse(tplCode))
 

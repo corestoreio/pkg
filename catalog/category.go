@@ -38,27 +38,19 @@ func (c *CategoryModel) AttributeCollection() {
 }
 
 func (c *CategoryModel) TableNameBase() string {
-	return GetTableName(TableCategoryEntity)
+	return GetTableName(TableCatalogCategoryEntity)
 }
 
 func (c *CategoryModel) TableNameValue(i eav.ValueIndex) string {
-	switch i {
-	case eav.EntityTypeDateTime:
-		return GetTableName(TableCategoryEntityDatetime)
-	case eav.EntityTypeDecimal:
-		return GetTableName(TableCategoryEntityDecimal)
-	case eav.EntityTypeInt:
-		return GetTableName(TableCategoryEntityInt)
-	case eav.EntityTypeText:
-		return GetTableName(TableCategoryEntityText)
-	case eav.EntityTypeVarchar:
-		return GetTableName(TableCategoryEntityVarchar)
+	s, err := GetCatalogCategoryValueStructure(i)
+	if err != nil {
+		return ""
 	}
-	return ""
+	return s.Name
 }
 
 func (c *CategoryModel) TableNameAdditionalAttribute() string {
-	return GetTableName(TableEavAttribute)
+	return GetTableName(TableCatalogEavAttribute)
 }
 
 func Category() *CategoryModel {

@@ -51,27 +51,19 @@ func (c *AddressModel) AttributeCollection() {
 }
 
 func (c *AddressModel) TableNameBase() string {
-	return GetTableName(TableEntity)
+	return GetTableName(TableCustomerEntity)
 }
 
 func (c *AddressModel) TableNameValue(i eav.ValueIndex) string {
-	switch i {
-	case eav.EntityTypeDateTime:
-		return GetTableName(TableAddressEntityDatetime)
-	case eav.EntityTypeDecimal:
-		return GetTableName(TableAddressEntityDecimal)
-	case eav.EntityTypeInt:
-		return GetTableName(TableAddressEntityInt)
-	case eav.EntityTypeText:
-		return GetTableName(TableAddressEntityText)
-	case eav.EntityTypeVarchar:
-		return GetTableName(TableAddressEntityVarchar)
+	s, err := GetCustomerAddressValueStructure(i)
+	if err != nil {
+		return ""
 	}
-	return ""
+	return s.Name
 }
 
 func (c *AddressModel) TableNameAdditionalAttribute() string {
-	return GetTableName(TableEavAttribute)
+	return GetTableName(TableCustomerEavAttribute)
 }
 
 func Address() *AddressModel {

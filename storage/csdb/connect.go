@@ -53,7 +53,7 @@ func GetDSNTest() (string, error) {
 	return getDSN(EnvDSNTest, ErrDSNTestNotFound)
 }
 
-func Connect() (*sql.DB, *dbr.Session, error) {
+func Connect() (*sql.DB, *dbr.Connection, error) {
 	dsn, err := GetDSN()
 	if err != nil {
 		return nil, nil, errgo.Mask(err)
@@ -62,9 +62,8 @@ func Connect() (*sql.DB, *dbr.Session, error) {
 	if err != nil {
 		return nil, nil, errgo.Mask(err)
 	}
-	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
-
-	return db, dbrSess, nil
+	dbrConn := dbr.NewConnection(db, nil)
+	return db, dbrConn, nil
 }
 
 // mustConnectTest is a helper function that creates a

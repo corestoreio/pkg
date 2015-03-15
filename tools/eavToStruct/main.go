@@ -26,14 +26,13 @@ import (
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/tools"
-	"github.com/corestoreio/csfw/tools/toolsdb"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gocraft/dbr"
 	"github.com/juju/errgo"
 )
 
 const (
-    envTableMap string = "CS_EAV_MAP"
+	envTableMap string = "CS_EAV_MAP"
 )
 
 var (
@@ -43,26 +42,7 @@ var (
 )
 
 type (
-	JsonEntityTypeMap map[string]*EntityTypeMap
-	EntityTypeMap     struct {
-		ImportPath                string `json:"import_path"`
-		EntityTypeID              int64
-		EntityTypeCode            string
-		EntityModel               string `json:"entity_model"`
-		AttributeModel            string `json:"attribute_model"`
-		EntityTable               string `json:"entity_table"`
-		ValueTablePrefix          string
-		EntityIDField             string
-		IsDataSharing             bool
-		DataSharingKey            string
-		DefaultAttributeSetID     int64
-		IncrementModel            string `json:"increment_model"`
-		IncrementPerStore         bool
-		IncrementPadLength        int64
-		IncrementPadChar          string
-		AdditionalAttributeTable  string `json:"additional_attribute_table"`
-		EntityAttributeCollection string `json:"entity_attribute_collection"`
-	}
+	JsonEntityTypeMap map[string]*tools.EntityTypeMap
 )
 
 func main() {
@@ -73,8 +53,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, dbrSess, err := csdb.Connect()
-	toolsdb.LogFatal(err)
+	db, dbrConn, err := csdb.Connect()
+	tools.LogFatal(err)
 	defer db.Close()
 
 	type dataContainer struct {
@@ -82,8 +62,8 @@ func main() {
 		Package, Tick string
 	}
 
-	etData, err := getEntityTypeData(dbrSess)
-	toolsdb.LogFatal(err)
+	etData, err := getEntityTypeData(dbrConn.NewSession(nil))
+	tools.LogFatal(err)
 
 	tplData := &dataContainer{
 		ETypeData: etData,
@@ -94,7 +74,7 @@ func main() {
 	formatted, err := tools.GenerateCode(tplEav, tplData)
 	if err != nil {
 		fmt.Printf("\n%s\n", formatted)
-		toolsdb.LogFatal(err)
+		tools.LogFatal(err)
 	}
 
 	ioutil.WriteFile(*outputFile, formatted, 0600)
@@ -102,12 +82,12 @@ func main() {
 
 func getEntityTypeData(dbrSess *dbr.Session) (JsonEntityTypeMap, error) {
 
-	s, err := eav.GetTableStructure(eav.TableEntityType)
+	s, err := eav.GetTableStructure(eav.TableEavEntityType)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
 
-	var entityTypeCollection eav.EntityTypeSlice
+	var entityTypeCollection eav.EavEntityTypeSlice
 	_, err = dbrSess.
 		Select(s.Columns...).
 		From(s.Name).
@@ -117,12 +97,12 @@ func getEntityTypeData(dbrSess *dbr.Session) (JsonEntityTypeMap, error) {
 	}
 
 	mapCollection, err := getMapping(os.Getenv(envTableMap), defaultMapping)
-	toolsdb.LogFatal(err)
+	tools.LogFatal(err)
 
 	for typeCode, mapData := range mapCollection {
 		// now map the values from entityTypeCollection into mapData
 		et, err := entityTypeCollection.GetByCode(typeCode)
-		toolsdb.LogFatal(err)
+		tools.LogFatal(err)
 		mapData.EntityTypeID = et.EntityTypeID
 		mapData.EntityTypeCode = et.EntityTypeCode
 		mapData.ValueTablePrefix = et.ValueTablePrefix.String
