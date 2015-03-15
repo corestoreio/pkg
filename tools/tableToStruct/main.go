@@ -69,14 +69,16 @@ func main() {
 		tools.LogFatal(err)
 		for _, vTables := range tplData.TypeCodeValueTables {
 			for t, _ := range vTables {
-				tables = append(tables, t)
+				if false == isDuplicate(tables, t) {
+					tables = append(tables, t)
+				}
 			}
 		}
 	}
 
 	for _, table := range tables {
 
-		if shouldSkipTable(table) {
+		if skipCatalogFlatTable(table) {
 			continue
 		}
 
@@ -108,9 +110,19 @@ func main() {
 	ioutil.WriteFile(*outputFile, formatted, 0600)
 }
 
+// isDuplicate slow duplicate checker ...
+func isDuplicate(sl []string, st string) bool {
+	for _, s := range sl {
+		if s == st {
+			return true
+		}
+	}
+	return false
+}
+
 // shouldSkipTable checks if a table is a catalog*flat* table. These tables will get automatically created
 // due to the variable attributes which are used as columns. And also dependent on the store count.
-func shouldSkipTable(table string) bool {
+func skipCatalogFlatTable(table string) bool {
 	return strings.Index(table, "catalog_") == 0 && strings.Index(table, "_flat_") > 6
 }
 

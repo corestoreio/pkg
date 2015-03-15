@@ -48,6 +48,7 @@ TableMax
 )
 
 var (
+    _ = time.Time{} // just in case if there is no time column
     // read only map
     tableMap = csdb.TableMap{
 {{ range .Tables }}Table{{.table | camelize}} : csdb.NewTableStructure(
