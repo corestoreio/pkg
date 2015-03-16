@@ -17,6 +17,7 @@ type SelectBuilder struct {
 	Columns         []string
 	FromTable       string
 	WhereFragments  []*whereFragment
+	JoinFragments   []string
 	GroupBys        []string
 	HavingFragments []*whereFragment
 	OrderBys        []string
