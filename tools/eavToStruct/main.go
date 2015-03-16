@@ -25,9 +25,9 @@ import (
 
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/tools"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/gocraft/dbr"
 	"github.com/juju/errgo"
 )
 

@@ -16,7 +16,7 @@ package eav
 
 import (
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/gocraft/dbr"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
 )
 

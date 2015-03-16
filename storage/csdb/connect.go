@@ -19,7 +19,7 @@ import (
 	"errors"
 	"os"
 
-	"github.com/gocraft/dbr"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
 )
 

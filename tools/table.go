@@ -16,10 +16,9 @@ package tools
 
 import (
 	"database/sql"
-
 	"strings"
 
-	"github.com/gocraft/dbr"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
 )
 

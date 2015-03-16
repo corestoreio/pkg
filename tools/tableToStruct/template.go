@@ -35,7 +35,7 @@ import (
     {{ if not .TypeCodeValueTables.Empty }}
 	"github.com/corestoreio/csfw/eav"{{end}}
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/gocraft/dbr"
+	"github.com/corestoreio/csfw/storage/dbr"
 )
 
 const (

@@ -14,7 +14,10 @@
 
 package customer
 
-import "github.com/corestoreio/csfw/eav"
+import (
+	"github.com/corestoreio/csfw/eav"
+	"github.com/corestoreio/csfw/storage/csdb"
+)
 
 type (
 	AddressModel struct {
@@ -62,8 +65,14 @@ func (c *AddressModel) TableNameValue(i eav.ValueIndex) string {
 	return s.Name
 }
 
-func (c *AddressModel) TableNameAdditionalAttribute() string {
-	return GetTableName(TableEAVAttribute)
+// EntityTypeAdditionalAttributeTabler
+func (c *AddressModel) TableAdditionalAttribute() (*csdb.TableStructure, error) {
+	return GetTableStructure(TableEAVAttribute)
+}
+
+// EntityTypeAdditionalAttributeTabler
+func (c *AddressModel) TableEavWebsite() (*csdb.TableStructure, error) {
+	return GetTableStructure(TableEAVAttributeWebsite)
 }
 
 func Address() *AddressModel {
