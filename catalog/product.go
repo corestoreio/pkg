@@ -14,7 +14,10 @@
 
 package catalog
 
-import "github.com/corestoreio/csfw/eav"
+import (
+	"github.com/corestoreio/csfw/eav"
+	"github.com/corestoreio/csfw/storage/csdb"
+)
 
 type (
 	ProductModel struct {
@@ -49,8 +52,14 @@ func (c *ProductModel) TableNameValue(i eav.ValueIndex) string {
 	return s.Name
 }
 
-func (c *ProductModel) TableNameAdditionalAttribute() string {
-	return GetTableName(TableEAVAttribute)
+// TableAdditionalAttribute needed for EntityTypeAdditionalAttributeTabler
+func (c *ProductModel) TableAdditionalAttribute() (*csdb.TableStructure, error) {
+	return GetTableStructure(TableEAVAttribute)
+}
+
+// TableEavWebsite needed for EntityTypeAdditionalAttributeTabler
+func (c *ProductModel) TableEavWebsite() (*csdb.TableStructure, error) {
+	return nil, nil
 }
 
 func Product() *ProductModel {

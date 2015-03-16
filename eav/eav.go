@@ -14,7 +14,11 @@
 
 package eav
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/corestoreio/csfw/storage/csdb"
+)
 
 const (
 	EntityTypeDatetime ValueIndex = iota + 1
@@ -49,9 +53,12 @@ type (
 		TBD()
 	}
 
-	// EntityTypeAdditionalAttributeTabler returns the table name
+	// EntityTypeAdditionalAttributeTabler implements methods for EAV table structures to retrieve attributes
 	EntityTypeAdditionalAttributeTabler interface {
-		TableNameAdditionalAttribute() string
+		TableAdditionalAttribute() (*csdb.TableStructure, error)
+		// TableNameEavWebsite gets the table, where website-dependent attribute parameters are stored in.
+		// If an EAV model doesn't demand this functionality, let this function just return an empty string
+		TableEavWebsite() (*csdb.TableStructure, error)
 	}
 
 	// EntityTypeIncrementModeller defines who to increment a number @todo

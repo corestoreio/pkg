@@ -47,6 +47,14 @@ func NewTableStructure(n string, IDs, c []string) *TableStructure {
 	}
 }
 
+func (ts *TableStructure) ColumnAliasQuote(alias string) []string {
+	ret := make([]string, len(ts.Columns))
+	for i, c := range ts.Columns {
+		ret[i] = "`" + alias + "`.`" + c + "`"
+	}
+	return ret
+}
+
 // Structure returns the TableStructure from a read-only map m by a giving index i.
 func (m TableMap) Structure(i Index) (*TableStructure, error) {
 	if t, ok := m[i]; ok {
