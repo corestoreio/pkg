@@ -17,7 +17,7 @@ package main
 
 /*
    Data will be "carved in stone" because it only changes during development.
-   - entity_type with translation of some columns to the Go type
+   - DONE: entity_type with translation of some columns to the Go type
    - attribute_set related tables: eav_attribute_set, eav_entity_attribute, eav_attribute_group, etc
    - label and option tables will not be hard coded
    - eav_attribute full config and from that one the flat table structure
