@@ -15,40 +15,52 @@
 package eav
 
 import (
-	"strconv"
+	"fmt"
 
-	"github.com/gocraft/dbr"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
-	sq "github.com/lann/squirrel"
 )
 
-// @todo dbr should implement handling of joins ... then we can remove squirrel
+func GetAttributeSelect(dbrSess dbr.SessionRunner, et *CSEntityType, websiteId int) error {
 
-func GetAttributeSelect(dbrSess dbr.SessionRunner, et *CSEntityType) error {
-
-	tabelStructs := et.AdditionalAttributeTable
+	tableStructs := et.AdditionalAttributeTable
 	ta, err := GetTableStructure(TableAttribute)
 	if err != nil {
 		return errgo.Mask(err)
 	}
-	taa, err := tabelStructs.TableAdditionalAttribute()
+	taa, err := tableStructs.TableAdditionalAttribute()
 	if err != nil {
 		return errgo.Mask(err)
 	}
-	attr := sq.
-		Select(append(ta.ColumnAliasQuote("main_table"), taa.ColumnAliasQuote("additional_table"))...).
-		From(ta.Name).
-		Join(taa.Name + " AS `additional_table` ON `additional_table`.`attribute_id` = `main_table`.`attribute_id`" +
-		" AND `main_table`.`entity_type_id` = " + strconv.FormatInt(et.EntityTypeID, 10))
 
-	tew, err := tabelStructs.TableEavWebsite()
+	selectSql := dbrSess.
+		Select(ta.ColumnAliasQuote("main_table")...).
+		From(ta.Name+" AS `main_table`").
+		Join(
+		taa.Name+" AS `additional_table`",
+		taa.ColumnAliasQuote("additional_table"),
+		dbr.JoinOn("`additional_table`.`attribute_id` = `main_table`.`attribute_id`"),
+		dbr.JoinOn("`main_table`.`entity_type_id` = ?", et.EntityTypeID),
+	)
+
+	tew, err := tableStructs.TableEavWebsite()
 	if err != nil {
 		return errgo.Mask(err)
 	}
+
 	if tew != nil {
-		attr.Select(taa.ColumnAliasQuote("scope_table"))
-		attr.Join()
+		selectSql.
+			LeftJoin(
+			tew.Name+" AS `scope_table`",
+			tew.ColumnAliasQuote("scope_table"),
+			dbr.JoinOn("scope_table.attribute_id = main_table.attribute_id"),
+			dbr.JoinOn("scope_table.website_id = ?", websiteId),
+		)
 	}
+
+	sql, args := selectSql.ToSql()
+
+	fmt.Printf("\n%s\n%#v\n", sql, args)
 
 	return nil
 }
