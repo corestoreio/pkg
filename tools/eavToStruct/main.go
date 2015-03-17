@@ -89,7 +89,7 @@ func getEntityTypeData(dbrSess *dbr.Session) (JsonEntityTypeMap, error) {
 
 	var entityTypeCollection eav.EntityTypeSlice
 	_, err = dbrSess.
-		Select(s.Columns...).
+		Select(s.AllColumnAliasQuote(s.Name)...).
 		From(s.Name).
 		LoadStructs(&entityTypeCollection)
 	if err != nil {

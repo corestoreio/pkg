@@ -34,10 +34,10 @@ func GetAttributeSelect(dbrSess dbr.SessionRunner, et *CSEntityType, websiteId i
 	}
 
 	selectSql := dbrSess.
-		Select(ta.ColumnAliasQuote("main_table")...).
-		From(ta.Name+" AS `main_table`").
+		Select(ta.AllColumnAliasQuote("main_table")...).
+		From(ta.Name+" AS `main_table`"). // @todo use a []string{"tablename","alias"}
 		Join(
-		taa.Name+" AS `additional_table`",
+		taa.Name+" AS `additional_table`", // @todo use a []string{"tablename","alias"}
 		taa.ColumnAliasQuote("additional_table"),
 		dbr.JoinOn("`additional_table`.`attribute_id` = `main_table`.`attribute_id`"),
 		dbr.JoinOn("`main_table`.`entity_type_id` = ?", et.EntityTypeID),
@@ -60,7 +60,7 @@ func GetAttributeSelect(dbrSess dbr.SessionRunner, et *CSEntityType, websiteId i
 
 	sql, args := selectSql.ToSql()
 
-	fmt.Printf("\n%s\n%#v\n", sql, args)
+	fmt.Printf("\n%#v\n\n%s\n%#v\n", et, sql, args)
 
 	return nil
 }

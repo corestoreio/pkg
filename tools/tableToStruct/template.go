@@ -59,7 +59,7 @@ var (
         {{ range .columns }}{{ if eq .Key.String "PRI" }} "{{.Field.String}}",{{end}}
         {{ end }} },
         []string {
-        {{ range .columns }} "{{.Field.String}}",
+        {{ range .columns }}{{ if ne .Key.String "PRI" }} "{{.Field.String}}",{{end}}
         {{ end }} },
     ),
     {{ end }}

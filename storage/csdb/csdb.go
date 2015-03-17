@@ -47,12 +47,25 @@ func NewTableStructure(n string, IDs, c []string) *TableStructure {
 	}
 }
 
+// remove this once the ALIAS via []string is implemented in DBR
+func (ts *TableStructure) TableAliasQuote(alias string) string {
+	return "`" + ts.Name + "` AS `" + alias + "`"
+}
+
 func (ts *TableStructure) ColumnAliasQuote(alias string) []string {
 	ret := make([]string, len(ts.Columns))
 	for i, c := range ts.Columns {
 		ret[i] = "`" + alias + "`.`" + c + "`"
 	}
 	return ret
+}
+
+func (ts *TableStructure) AllColumnAliasQuote(alias string) []string {
+	ret := make([]string, len(ts.IDFieldNames), len(ts.Columns))
+	for i, c := range ts.IDFieldNames {
+		ret[i] = "`" + alias + "`.`" + c + "`"
+	}
+	return append(ret, ts.ColumnAliasQuote(alias)...)
 }
 
 // Structure returns the TableStructure from a read-only map m by a giving index i.
