@@ -49,12 +49,22 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, et *CSEntityType, websiteI
 	}
 
 	if tew != nil {
+		const scopeTable = "scope_table"
+		l := len(tew.Columns) * 2
+		cols := make([]string, l)
+		j := 0
+		for i := 0; i < l; i = i + 2 {
+			cols[i] = scopeTable + "." + tew.Columns[j] // real column name
+			cols[i+1] = "scope_" + tew.Columns[j]       // alias column name
+			j++
+		}
+
 		selectSql.
 			LeftJoin(
 			dbr.JoinTable(tew.Name, "scope_table"),
-			tew.ColumnAliasQuote("scope_table"),
-			dbr.JoinOn("scope_table.attribute_id = main_table.attribute_id"),
-			dbr.JoinOn("scope_table.website_id = ?", websiteId),
+			dbr.ColumnAlias(cols...),
+			dbr.JoinOn("`scope_table`.`attribute_id` = `main_table`.`attribute_id`"),
+			dbr.JoinOn("`scope_table`.`website_id` = ?", websiteId),
 		)
 	}
 	return selectSql, nil
