@@ -48,8 +48,10 @@ TableMax
 )
 
 var (
-    _ = time.Time{} // just in case if there is no time column
-    // read only map
+    // Always reference these packages, just in case the auto-generated code
+    // below doesn't.
+    _ = time.Time{}
+
     tableMap = csdb.TableMap{
 {{ range .Tables }}Table{{.table | prepareVar}} : csdb.NewTableStructure(
         "{{.table}}",

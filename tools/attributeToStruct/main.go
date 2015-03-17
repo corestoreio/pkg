@@ -68,6 +68,8 @@ to retrieve the attributes. The eav library must implement:
 
 EAV -> handle additional_attribute_table
     -> implements _getEavWebsiteTable -> see Mage_Eav_Model_Resource_Attribute
+    -> requests the two or three struct types and creates a NEW struct type especially for this
+        query: GetAttributeSelect()
 
 SELECT
   `main_table`.*,
