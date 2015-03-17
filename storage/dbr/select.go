@@ -71,9 +71,10 @@ func (b *SelectBuilder) Distinct() *SelectBuilder {
 	return b
 }
 
-// From sets the table to SELECT FROM
-func (b *SelectBuilder) From(from string) *SelectBuilder {
-	b.FromTable = from
+// From sets the table to SELECT FROM. If second argument will be provided this is
+// then considered as the alias. SELECT ... FROM table AS alias.
+func (b *SelectBuilder) From(from ...string) *SelectBuilder {
+	b.FromTable = quoteAs(from...)
 	return b
 }
 

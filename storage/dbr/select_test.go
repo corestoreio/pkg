@@ -338,45 +338,45 @@ func TestSelectJoin(t *testing.T) {
 	s := createRealSessionWithFixtures()
 	sqlObj := s.
 		Select("p1.*", "p2.*").
-		From("dbr_people AS p1").
+		From("dbr_people", "p1").
 		Join(
-		"dbr_people AS `p2`",
+		JoinTable("dbr_people", "p2"),
 		[]string{""},
 		JoinOn("`p2`.`id` = `p1`.`id`"),
 		JoinOn("`p1`.`id` = ?", 42),
 	)
 	sql, _ := sqlObj.ToSql()
 	assert.Equal(t,
-		"SELECT p1.*, p2.* FROM dbr_people AS p1 INNER JOIN dbr_people AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
+		"SELECT p1.*, p2.* FROM `dbr_people` AS `p1` INNER JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
 		sql,
 	)
 
 	sqlObj = s.
 		Select("p1.*").
-		From("dbr_people AS p1").
+		From("dbr_people", "p1").
 		LeftJoin(
-		"dbr_people AS `p2`",
+		JoinTable("dbr_people", "p2"),
 		[]string{"p2.name"},
 		JoinOn("`p2`.`id` = `p1`.`id`"),
 		JoinOn("`p1`.`id` = ?", 42),
 	)
 	sql, _ = sqlObj.ToSql()
 	assert.Equal(t,
-		"SELECT p1.*, p2.name FROM dbr_people AS p1 LEFT JOIN dbr_people AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
+		"SELECT p1.*, p2.name FROM `dbr_people` AS `p1` LEFT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
 		sql,
 	)
 
 	sqlObj = s.
 		Select("p1.*").
-		From("dbr_people AS p1").
+		From("dbr_people", "p1").
 		RightJoin(
-		"dbr_people AS `p2`",
-		[]string{"p2.name"},
+		JoinTable("dbr_people", "p2"),
+		ColumnAlias("p2.name", "p2Name", "p2.email", "p2Email", "id", "internalID"),
 		JoinOn("`p2`.`id` = `p1`.`id`"),
 	)
 	sql, _ = sqlObj.ToSql()
 	assert.Equal(t,
-		"SELECT p1.*, p2.name FROM dbr_people AS p1 RIGHT JOIN dbr_people AS `p2` ON (`p2`.`id` = `p1`.`id`)",
+		"SELECT p1.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email`, `id` AS `internalID` FROM `dbr_people` AS `p1` RIGHT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`)",
 		sql,
 	)
 
