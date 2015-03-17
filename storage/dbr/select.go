@@ -17,7 +17,7 @@ type SelectBuilder struct {
 	Columns         []string
 	FromTable       string
 	WhereFragments  []*whereFragment
-	JoinFragments   []string
+	JoinFragments   []*joinFragment
 	GroupBys        []string
 	HavingFragments []*whereFragment
 	OrderBys        []string
@@ -141,6 +141,12 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 		return b.RawFullSql, b.RawArguments
 	}
 
+	if len(b.JoinFragments) > 0 {
+		for _, f := range b.JoinFragments {
+			b.Columns = append(b.Columns, f.columns...)
+		}
+	}
+
 	if len(b.Columns) == 0 {
 		panic("no columns specified")
 	}
@@ -166,6 +172,17 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 
 	sql.WriteString(" FROM ")
 	sql.WriteString(b.FromTable)
+
+	if len(b.JoinFragments) > 0 {
+		for _, f := range b.JoinFragments {
+			sql.WriteString(" " + f.joinType + " JOIN " + f.table + " ON ")
+			var w []*whereFragment
+			for _, oc := range f.onConditions {
+				w = append(w, newWhereFragment(oc.whereSqlOrMap, oc.args))
+			}
+			writeWhereFragmentsToSql(w, &sql, &args)
+		}
+	}
 
 	if len(b.WhereFragments) > 0 {
 		sql.WriteString(" WHERE ")
