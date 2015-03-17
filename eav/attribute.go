@@ -15,29 +15,29 @@
 package eav
 
 import (
-	"fmt"
-
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
 )
 
-func GetAttributeSelect(dbrSess dbr.SessionRunner, et *CSEntityType, websiteId int) error {
+// GetAttributeSelectSql generates the select query to retrieve full attribute configuration
+// EntityType must implement interface EntityTypeAdditionalAttributeTabler
+func GetAttributeSelectSql(dbrSess dbr.SessionRunner, et *CSEntityType, websiteId int) (*dbr.SelectBuilder, error) {
 
 	tableStructs := et.AdditionalAttributeTable
 	ta, err := GetTableStructure(TableAttribute)
 	if err != nil {
-		return errgo.Mask(err)
+		return nil, errgo.Mask(err)
 	}
 	taa, err := tableStructs.TableAdditionalAttribute()
 	if err != nil {
-		return errgo.Mask(err)
+		return nil, errgo.Mask(err)
 	}
 
 	selectSql := dbrSess.
 		Select(ta.AllColumnAliasQuote("main_table")...).
-		From(ta.Name+" AS `main_table`"). // @todo use a []string{"tablename","alias"}
+		From(ta.Name, "main_table").
 		Join(
-		taa.Name+" AS `additional_table`", // @todo use a []string{"tablename","alias"}
+		dbr.JoinTable(taa.Name, "additional_table"),
 		taa.ColumnAliasQuote("additional_table"),
 		dbr.JoinOn("`additional_table`.`attribute_id` = `main_table`.`attribute_id`"),
 		dbr.JoinOn("`main_table`.`entity_type_id` = ?", et.EntityTypeID),
@@ -45,22 +45,17 @@ func GetAttributeSelect(dbrSess dbr.SessionRunner, et *CSEntityType, websiteId i
 
 	tew, err := tableStructs.TableEavWebsite()
 	if err != nil {
-		return errgo.Mask(err)
+		return nil, errgo.Mask(err)
 	}
 
 	if tew != nil {
 		selectSql.
 			LeftJoin(
-			tew.Name+" AS `scope_table`",
+			dbr.JoinTable(tew.Name, "scope_table"),
 			tew.ColumnAliasQuote("scope_table"),
 			dbr.JoinOn("scope_table.attribute_id = main_table.attribute_id"),
 			dbr.JoinOn("scope_table.website_id = ?", websiteId),
 		)
 	}
-
-	sql, args := selectSql.ToSql()
-
-	fmt.Printf("\n%#v\n\n%s\n%#v\n", et, sql, args)
-
-	return nil
+	return selectSql, nil
 }
