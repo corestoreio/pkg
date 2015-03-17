@@ -334,4 +334,52 @@ func TestSelectReturn(t *testing.T) {
 	assert.Equal(t, counts, []int64{2})
 }
 
+func TestSelectJoin(t *testing.T) {
+	s := createRealSessionWithFixtures()
+	sqlObj := s.
+		Select("p1.*", "p2.*").
+		From("dbr_people AS p1").
+		Join(
+		"dbr_people AS `p2`",
+		[]string{""},
+		JoinOn("`p2`.`id` = `p1`.`id`"),
+		JoinOn("`p1`.`id` = ?", 42),
+	)
+	sql, _ := sqlObj.ToSql()
+	assert.Equal(t,
+		"SELECT p1.*, p2.* FROM dbr_people AS p1 INNER JOIN dbr_people AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
+		sql,
+	)
+
+	sqlObj = s.
+		Select("p1.*").
+		From("dbr_people AS p1").
+		LeftJoin(
+		"dbr_people AS `p2`",
+		[]string{"p2.name"},
+		JoinOn("`p2`.`id` = `p1`.`id`"),
+		JoinOn("`p1`.`id` = ?", 42),
+	)
+	sql, _ = sqlObj.ToSql()
+	assert.Equal(t,
+		"SELECT p1.*, p2.name FROM dbr_people AS p1 LEFT JOIN dbr_people AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
+		sql,
+	)
+
+	sqlObj = s.
+		Select("p1.*").
+		From("dbr_people AS p1").
+		RightJoin(
+		"dbr_people AS `p2`",
+		[]string{"p2.name"},
+		JoinOn("`p2`.`id` = `p1`.`id`"),
+	)
+	sql, _ = sqlObj.ToSql()
+	assert.Equal(t,
+		"SELECT p1.*, p2.name FROM dbr_people AS p1 RIGHT JOIN dbr_people AS `p2` ON (`p2`.`id` = `p1`.`id`)",
+		sql,
+	)
+
+}
+
 // Series of tests that test mapping struct fields to columns
