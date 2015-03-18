@@ -23,8 +23,8 @@ import (
 	"github.com/juju/errgo"
 )
 
-// QueryToStruct generates from a SQL query a Go type struct. Arguments/binds to a query are not considered
-// dbSelect argument can be nil but then you must provide a query string
+// QueryToStruct generates from a SQL query a Go type struct.
+// dbSelect argument can be nil but then you must provide a query strings.
 func QueryToStruct(db *sql.DB, name string, dbSelect *dbr.SelectBuilder, query ...string) ([]byte, error) {
 	const tplQueryStruct = `
 type (
@@ -46,11 +46,13 @@ type (
 	}
 	dropTable()
 	defer dropTable()
+
 	qry := strings.Join(query, " ")
+	var args []interface{}
 	if qry == "" && dbSelect != nil {
-		qry, _ = dbSelect.ToSql() // discard the arguments
+		qry, args = dbSelect.ToSql()
 	}
-	_, err := db.Exec("CREATE TABLE `" + tableName + "` AS " + qry)
+	_, err := db.Exec("CREATE TABLE `"+tableName+"` AS "+qry, args...)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
