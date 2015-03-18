@@ -96,7 +96,7 @@ func getEntityTypeData(dbrSess *dbr.Session) (JsonEntityTypeMap, error) {
 		return nil, errgo.Mask(err)
 	}
 
-	mapCollection, err := getMapping(os.Getenv(envTableMap), defaultMapping)
+	mapCollection, err := getMapping(os.Getenv(envTableMap), tools.JSONMappingEntityTypes)
 	tools.LogFatal(err)
 
 	for typeCode, mapData := range mapCollection {

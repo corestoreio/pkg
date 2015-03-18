@@ -18,29 +18,24 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 
+	"github.com/corestoreio/csfw/concrete"
+	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/tools"
 )
 
 var (
-	pkg        = flag.String("p", "", "Package name in template")
+	//pkg        = flag.String("p", "", "Package name in template")
 	run        = flag.Bool("run", false, "If true program runs")
 	outputFile = flag.String("o", "", "Output file name")
-)
-
-type (
-	dataContainer struct {
-		Package, Tick string
-	}
 )
 
 func main() {
 	flag.Parse()
 
-	if false == *run || *outputFile == "" || *pkg == "" {
+	if false == *run || *outputFile == "" {
 		flag.Usage()
 		os.Exit(1)
 	}
@@ -49,89 +44,35 @@ func main() {
 	tools.LogFatal(err)
 	defer db.Close()
 
-	tplData := &dataContainer{
-		Package: *pkg,
-		Tick:    "`",
+	// mapping see: tools.JSONMappingEntityTypes and tools.JSONMappingEAVAttributeModels
+
+	for _, et := range concrete.CSEntityTypeCollection {
+		dbrSelect, err := eav.GetAttributeSelectSql(dbrConn.NewSession(nil), et, 0)
+		if err != nil {
+			tools.LogFatal(err)
+		}
+		structCode, err := tools.QueryToStruct(db, et.EntityTypeCode+"EavAttributeSelect", dbrSelect)
+		if err != nil {
+			tools.LogFatal(err)
+		}
+
+		fmt.Printf("\n%s\n", structCode)
+		// now aggregate structCode and write then all into the generated files in a package
+		// use the data from JSON mapping
 	}
 
-	formatted, err := tools.GenerateCode(*pkg, tplEav, tplData)
-	if err != nil {
-		fmt.Printf("\n%s\n", formatted)
-		tools.LogFatal(err)
-	}
-
-	ioutil.WriteFile(*outputFile, formatted, 0600)
+	//ioutil.WriteFile(*outputFile, formatted, 0600)
 }
 
 /*
 to retrieve the attributes. The eav library must implement:
 
-EAV -> handle additional_attribute_table
-    -> implements _getEavWebsiteTable -> see Mage_Eav_Model_Resource_Attribute
-    -> requests the two or three struct types and creates a NEW struct type especially for this
-        query: GetAttributeSelect()
+EAV -> Create queries for AttributeSets and AttributeGroups
+    ->
 
-SELECT
-  `main_table`.*,
-  `additional_table`.*
-FROM `eav_attribute` AS `main_table`
-  INNER JOIN `catalog_eav_attribute` AS `additional_table`
-    ON additional_table.attribute_id = main_table.attribute_id AND main_table.entity_type_id = 4
+see defaultMapping JSON:
+  SELECT COUNT(*) AS Rows, backend_model FROM eav_attribute GROUP BY backend_model ORDER BY Rows desc
+  rethink that ... for model columns
 
-see Mage_Customer_Model_Resource_Attribute_Collection
-SELECT
-  `main_table`.`attribute_id`,
-  `main_table`.`entity_type_id`,
-  `main_table`.`attribute_code`,
-  `main_table`.`attribute_model`,
-  `main_table`.`backend_model`,
-  `main_table`.`backend_type`,
-  `main_table`.`backend_table`,
-  `main_table`.`frontend_model`,
-  `main_table`.`frontend_input`,
-  `main_table`.`frontend_label`,
-  `main_table`.`frontend_class`,
-  `main_table`.`source_model`,
-  `main_table`.`is_required`,
-  `main_table`.`is_user_defined`,
-  `main_table`.`default_value`,
-  `main_table`.`is_unique`,
-  `main_table`.`note`,
-  `additional_table`.`is_visible`,
-  `additional_table`.`input_filter`,
-  `additional_table`.`multiline_count`,
-  `additional_table`.`validate_rules`,
-  `additional_table`.`is_system`,
-  `additional_table`.`sort_order`,
-  `additional_table`.`data_model`,
-  `scope_table`.`website_id`      AS `scope_website_id`,
-  `scope_table`.`is_visible`      AS `scope_is_visible`,
-  `scope_table`.`is_required`     AS `scope_is_required`,
-  `scope_table`.`default_value`   AS `scope_default_value`,
-  `scope_table`.`multiline_count` AS `scope_multiline_count`
-FROM `eav_attribute` AS `main_table`
-  INNER JOIN `customer_eav_attribute` AS `additional_table` ON additional_table.attribute_id = main_table.attribute_id
-  LEFT JOIN `customer_eav_attribute_website` AS `scope_table`
-    ON scope_table.attribute_id = main_table.attribute_id AND scope_table.website_id = :scope_website_id
-WHERE (main_table.entity_type_id = :mt_entity_type_id)
 
 */
-
-//func getEntityTypeData(dbrSess *dbr.Session) (JsonEntityTypeMap, error) {
-//
-//	s, err := eav.GetTableStructure(eav.TableEntityType)
-//	if err != nil {
-//		return nil, errgo.Mask(err)
-//	}
-//
-//	var entityTypeCollection eav.EntityTypeSlice
-//	_, err = dbrSess.
-//		Select(s.Columns...).
-//		From(s.Name).
-//		LoadStructs(&entityTypeCollection)
-//	if err != nil {
-//		return nil, errgo.Mask(err)
-//	}
-//
-//	return mapCollection, nil
-//}

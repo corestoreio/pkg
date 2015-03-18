@@ -69,39 +69,3 @@ var (
     }
 )
 `
-
-var defaultMapping = []byte(`{
-  "customer": {
-    "import_path": "github.com/corestoreio/csfw/customer",
-    "entity_model": "customer.Customer()",
-    "attribute_model": "customer.Attribute()",
-    "entity_table": "customer.Customer()",
-    "increment_model": "customer.Customer()",
-    "additional_attribute_table": "customer.Customer()",
-    "entity_attribute_collection": "customer.Customer()"
-  },
-  "customer_address": {
-    "import_path": "",
-    "entity_model": "customer.Address()",
-    "attribute_model": "customer.AddressAttribute()",
-    "entity_table": "customer.Address()",
-    "additional_attribute_table": "customer.Address()",
-    "entity_attribute_collection": "customer.Address()"
-  },
-  "catalog_category": {
-    "import_path": "github.com/corestoreio/csfw/catalog",
-    "entity_model": "catalog.Category()",
-    "attribute_model": "catalog.Attribute()",
-    "entity_table": "catalog.Category()",
-    "additional_attribute_table": "catalog.Category()",
-    "entity_attribute_collection": "catalog.Category()"
-  },
-  "catalog_product": {
-    "import_path": "",
-    "entity_model": "catalog.Product()",
-    "attribute_model": "catalog.Attribute()",
-    "entity_table": "catalog.Product()",
-    "additional_attribute_table": "catalog.Product()",
-    "entity_attribute_collection": "catalog.Product()"
-  }
-}`)

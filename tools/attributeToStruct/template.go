@@ -34,22 +34,4 @@ package {{ .Package }}
 import (
 
 )
-
 `
-
-var defaultMapping = []byte(`{
-  "eav/entity_attribute_backend_datetime": {
-    "import_path": "github.com/corestoreio/csfw/eav",
-    "backend_model": "eav.Attribute().Backend().Datetime()",
-  }
-  "catalog/product_attribute_backend_price": {
-    "import_path": "github.com/corestoreio/csfw/catalog",
-    "backend_model": "catalog.Attribute().Backend().Price()",
-  }
-  SELECT COUNT(*) AS Rows, backend_model FROM eav_attribute GROUP BY backend_model ORDER BY Rows desc
-  rethink that ...
-
-
-    "frontend_model": "customer.Attribute()",
-    "source_model": "customer.Attribute()",
-}`)
