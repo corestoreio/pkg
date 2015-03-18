@@ -25,11 +25,16 @@ func TestQueryToStruct(t *testing.T) {
 	db := csdb.MustConnectTest()
 	defer db.Close()
 
-	structCode, err := QueryToStruct(db, "CatalogProductEavAttributeJoin", testQryEavAttributeJoin)
+	structCode, err := QueryToStruct(db, "CatalogProductEavAttributeJoin", nil, testQryEavAttributeJoin)
 	if err != nil {
 		t.Error(err)
 	}
 	assert.Equal(t, testQryEavAttributeJoinExpected, string(structCode))
+
+	structCode, err = QueryToStruct(db, "CatalogProductEavAttributeJoin", nil)
+	assert.Error(t, err)
+	assert.Nil(t, structCode)
+
 }
 
 const testQryEavAttributeJoin = `SELECT main_table.attribute_id, main_table.entity_type_id,

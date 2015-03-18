@@ -17,11 +17,15 @@ package tools
 import (
 	"database/sql"
 
+	"strings"
+
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
 )
 
-// QueryToStruct generates from a SQL query a Go type struct
-func QueryToStruct(db *sql.DB, name string, query string) ([]byte, error) {
+// QueryToStruct generates from a SQL query a Go type struct. Arguments/binds to a query are not considered
+// dbSelect argument can be nil but then you must provide a query string
+func QueryToStruct(db *sql.DB, name string, dbSelect *dbr.SelectBuilder, query ...string) ([]byte, error) {
 	const tplQueryStruct = `
 type (
     // {{.Name | prepareVar}}Slice contains pointers to {{.Name | prepareVar}} types
@@ -42,8 +46,11 @@ type (
 	}
 	dropTable()
 	defer dropTable()
-
-	_, err := db.Exec("CREATE TABLE `" + tableName + "` AS " + query)
+	qry := strings.Join(query, " ")
+	if qry == "" && dbSelect != nil {
+		qry, _ = dbSelect.ToSql() // discard the arguments
+	}
+	_, err := db.Exec("CREATE TABLE `" + tableName + "` AS " + qry)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
