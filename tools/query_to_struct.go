@@ -14,21 +14,53 @@
 
 package tools
 
-import "database/sql"
+import (
+	"database/sql"
 
-// QueryToStruct generates a struct in Go code to match the query
-func QueryToStruct(db *sql.DB, query string) ([]byte, error) {
+	"github.com/juju/errgo"
+)
 
-	return
-}
-
-const tplQueryStruct = `
+// QueryToStruct generates from a SQL query a Go type struct
+func QueryToStruct(db *sql.DB, name string, query string) ([]byte, error) {
+	const tplQueryStruct = `
 type (
-    // {{.table | prepareVar}}Slice contains pointers to {{.table | prepareVar}} types
-    {{.table | prepareVar}}Slice []*{{.table | prepareVar}}
-    // {{.table | prepareVar}} a type for the MySQL table {{ .table }}
-    {{.table | prepareVar}} struct {
-        {{ range .columns }}{{.GoName}} {{.GoType}} {{ $.Tick }}db:"{{.Field.String}}"{{ $.Tick }} {{.Comment}}
+    // {{.Name | prepareVar}}Slice contains pointers to {{.Name | prepareVar}} types
+    {{.Name | prepareVar}}Slice []*{{.Name | prepareVar}}
+    // {{.Name | prepareVar}} a type for a MySQL Query
+    {{.Name | prepareVar}} struct {
+        {{ range .Columns }}{{.GoName}} {{.GoType}} {{ $.Tick }}db:"{{.Field.String}}"{{ $.Tick }} {{.Comment}}
         {{ end }} }
 )
 `
+
+	tableName := "csQryToStruct_" + name
+	dropTable := func() {
+		_, err := db.Exec("DROP TABLE IF EXISTS `" + tableName + "`")
+		if err != nil {
+			panic(err)
+		}
+	}
+	dropTable()
+	defer dropTable()
+
+	_, err := db.Exec("CREATE TABLE `" + tableName + "` AS " + query)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+
+	cols, err := GetColumns(db, tableName)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+
+	tplData := struct {
+		Name    string
+		Columns []column
+		Tick    string
+	}{
+		Name:    name,
+		Columns: cols,
+		Tick:    "`",
+	}
+	return GenerateCode("", tplQueryStruct, tplData)
+}
