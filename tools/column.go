@@ -27,6 +27,8 @@ type (
 		Field, Type, Null, Key, Default, Extra sql.NullString
 		GoType, GoName                         string
 	}
+
+	ToGoTypeConverter func(col *column)
 )
 
 func (c column) Comment() string {
@@ -49,7 +51,7 @@ func (c column) Comment() string {
 	)
 }
 
-func GetColumns(db *sql.DB, table string) ([]column, error) {
+func GetColumns(db *sql.DB, table string, converter ToGoTypeConverter) ([]column, error) {
 	var columns = make([]column, 0, 200)
 	rows, err := db.Query("SHOW COLUMNS FROM `" + table + "`")
 	if err != nil {
@@ -71,7 +73,7 @@ func GetColumns(db *sql.DB, table string) ([]column, error) {
 			continue
 		}
 
-		updateGoType(&col)
+		converter(&col)
 		columns = append(columns, col)
 	}
 	err = rows.Err()
@@ -81,7 +83,12 @@ func GetColumns(db *sql.DB, table string) ([]column, error) {
 	return columns, nil
 }
 
-func updateGoType(col *column) {
+// @todo does not implement the dbr.Null* structs because not needed. prepares data for creating the same
+// structure as CSEntityType
+func UpdateGoTypeStruct(col *column) {
+}
+
+func UpdateGoType(col *column) {
 	var (
 		boolColumns = map[string]struct{}{
 			"increment_per_store": struct{}{},

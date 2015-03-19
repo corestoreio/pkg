@@ -85,7 +85,7 @@ func main() {
 			continue
 		}
 
-		columns, err := tools.GetColumns(db, *prefixName+table)
+		columns, err := tools.GetColumns(db, *prefixName+table, tools.UpdateGoType)
 		tools.LogFatal(err)
 
 		tplData.Tables = append(tplData.Tables, map[string]interface{}{

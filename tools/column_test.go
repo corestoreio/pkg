@@ -79,7 +79,7 @@ func TestGetColumns(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		cols, err := GetColumns(db, test.table)
+		cols, err := GetColumns(db, test.table, UpdateGoType)
 		if test.expErr {
 			assert.Error(t, err)
 		}

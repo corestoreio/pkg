@@ -51,8 +51,15 @@ var JSONMapEntityTypes = []byte(`{
   }
 }`)
 
+// EavAttributeColumnNameToInterface mapping
+var EavAttributeColumnNameToInterface = columnInterfaceMap{
+	"backend_model":  "eav.AttributeBackendModeller",
+	"frontend_model": "eav.AttributeFrontendModeller",
+	"source_model":   "eav.AttributeSourceModeller",
+}
+
 // EavAttributeModelMap contains default mappings for Mage1+2. A developer has the option to provide a custom map.
-var EavAttributeModelMap = columnMap{
+var EavAttributeModelMap = mageModelMap{
 	EavAttributeFrontendModel: []byte(`{
         "catalog\/product_attribute_frontend_image": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",

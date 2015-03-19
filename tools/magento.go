@@ -15,8 +15,10 @@
 package tools
 
 type (
-	columnModel int
-	columnMap   map[columnModel][]byte
+	columnModel  int
+	mageModelMap map[columnModel][]byte
+	// columnInterfaceMap maps a column name to a Go interface name when producing Go code
+	columnInterfaceMap map[string]string // e.g.: backend_model => eav.AttributeBackendModeller
 )
 
 const (

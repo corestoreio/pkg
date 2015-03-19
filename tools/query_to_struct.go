@@ -57,7 +57,7 @@ type (
 		return nil, errgo.Mask(err)
 	}
 
-	cols, err := GetColumns(db, tableName)
+	cols, err := GetColumns(db, tableName, UpdateGoType)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}

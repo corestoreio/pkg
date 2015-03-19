@@ -17,7 +17,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"os"
 
 	"github.com/corestoreio/csfw/concrete"
@@ -51,12 +50,18 @@ func main() {
 		if err != nil {
 			tools.LogFatal(err)
 		}
-		structCode, err := tools.QueryToStruct(db, et.EntityTypeCode+"EavAttributeSelect", dbrSelect)
-		if err != nil {
-			tools.LogFatal(err)
-		}
+		// create table from select, get all columns from that table
+		// create the struct with interfaces
 
-		fmt.Printf("\n%s\n", structCode)
+		// create the same as with CSEntityTypeSlice and CSEntityType but only for attribtues
+		// auto create the structs containing the Go interfaces and then put in the data
+		// write ann into the concrete package.
+
+		//		structCode, err := tools.QueryToStruct(db, et.EntityTypeCode+"EavAttributeSelect", dbrSelect)
+		//		if err != nil {
+		//			tools.LogFatal(err)
+		//		}
+		//		fmt.Printf("\n%s\n", structCode)
 		// now aggregate structCode and write then all into the generated files in a package
 		// use the data from JSON mapping
 	}
@@ -69,10 +74,4 @@ to retrieve the attributes. The eav library must implement:
 
 EAV -> Create queries for AttributeSets and AttributeGroups
     ->
-
-see defaultMapping JSON:
-  SELECT COUNT(*) AS Rows, backend_model FROM eav_attribute GROUP BY backend_model ORDER BY Rows desc
-  rethink that ... for model columns
-
-
 */
