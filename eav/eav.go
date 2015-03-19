@@ -73,7 +73,21 @@ type (
 
 	// AttributeBackendModeller defines the attribute backend model @todo
 	AttributeBackendModeller interface {
-		TBD()
+		GetTable() string
+		IsStatic() bool
+		GetType()
+		GetEntityIdField()
+		SetValueId(valueId int)
+		GetValueId()
+		//AfterLoad($object);
+		//BeforeSave($object);
+		//AfterSave($object);
+		//BeforeDelete($object);
+		//AfterDelete($object);
+
+		GetEntityValueId(entity *CSEntityType)
+
+		SetEntityValueId(entity *CSEntityType, valueId int)
 	}
 
 	// AttributeFrontendModeller defines the attribute frontend model @todo
