@@ -19,6 +19,37 @@ import (
 	"github.com/juju/errgo"
 )
 
+type (
+	// AttributeBackendModeller defines the attribute backend model @todo
+	AttributeBackendModeller interface {
+		GetTable() string
+		IsStatic() bool
+		GetType()
+		GetEntityIdField()
+		SetValueId(valueId int)
+		GetValueId()
+		//AfterLoad($object);
+		//BeforeSave($object);
+		//AfterSave($object);
+		//BeforeDelete($object);
+		//AfterDelete($object);
+
+		GetEntityValueId(entity *CSEntityType)
+
+		SetEntityValueId(entity *CSEntityType, valueId int)
+	}
+
+	// AttributeFrontendModeller defines the attribute frontend model @todo
+	AttributeFrontendModeller interface {
+		TBD()
+	}
+
+	// AttributeSourceModeller defines the source where an attribute can also be stored @todo
+	AttributeSourceModeller interface {
+		TBD()
+	}
+)
+
 // GetAttributeSelectSql generates the select query to retrieve full attribute configuration
 // EntityType must implement interface EntityTypeAdditionalAttributeTabler
 func GetAttributeSelectSql(dbrSess dbr.SessionRunner, et *CSEntityType, websiteId int) (*dbr.SelectBuilder, error) {
