@@ -15,15 +15,15 @@
 package tools
 
 type (
-	columnModel  int
-	mageModelMap map[columnModel][]byte
-	// columnInterfaceMap maps a column name to a Go interface name when producing Go code
-	columnInterfaceMap map[string]string // e.g.: backend_model => eav.AttributeBackendModeller
+	// mageModelMap key refers to a *_model column and value is a JSON default mapping
+	mageModelMap map[int][]byte
 )
 
 const (
 	// EavAttributeBackendModel relates to table column eav_attribute.backend_model
-	EavAttributeBackendModel columnModel = iota + 1
+	EavAttributeBackendModel int = iota + 1
+	// EavAttributeFrontendModel relates to table column eav_attribute.frontend_model
 	EavAttributeFrontendModel
+	// EavAttributeSourceModel relates to table column eav_attribute.source_model
 	EavAttributeSourceModel
 )

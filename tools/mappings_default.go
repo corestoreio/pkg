@@ -51,14 +51,16 @@ var JSONMapEntityTypes = []byte(`{
   }
 }`)
 
-// EavAttributeColumnNameToInterface mapping
-var EavAttributeColumnNameToInterface = columnInterfaceMap{
+// EavAttributeColumnNameToInterface mapping column name to Go interface name
+var EavAttributeColumnNameToInterface = map[string]string{
 	"backend_model":  "eav.AttributeBackendModeller",
 	"frontend_model": "eav.AttributeFrontendModeller",
 	"source_model":   "eav.AttributeSourceModeller",
 }
 
 // EavAttributeModelMap contains default mappings for Mage1+2. A developer has the option to provide a custom map.
+// Rethink the Go code here ... because catalog.Product().Attribute().Frontend().Image() is pretty long ... BUT
+// developers coming from Magento are already familiar with this code base and naming ...
 var EavAttributeModelMap = mageModelMap{
 	EavAttributeFrontendModel: []byte(`{
         "catalog\/product_attribute_frontend_image": {
