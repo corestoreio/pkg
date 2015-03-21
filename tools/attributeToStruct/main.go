@@ -16,14 +16,19 @@
 package main
 
 import (
+	"database/sql"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 
 	"github.com/corestoreio/csfw/concrete"
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/tools"
+	"github.com/juju/errgo"
 )
 
 var (
@@ -31,6 +36,30 @@ var (
 	run        = flag.Bool("run", false, "If true program runs")
 	outputFile = flag.String("o", "", "Output file name")
 )
+
+const (
+	envModelMap string = "CS_ATTRIBUTE_MODEL_MAP"
+)
+
+type context struct {
+	db       *sql.DB
+	dbrConn  *dbr.Connection
+	et       *eav.CSEntityType // will be updated each iteration
+	modelMap tools.AttributeModelMap
+}
+
+func newContext() *context {
+	db, dbrConn, err := csdb.Connect()
+	tools.LogFatal(err)
+	modelMap, err := getMapping(os.Getenv(envModelMap), tools.JSONMapAttributeModels)
+	tools.LogFatal(err)
+
+	return &context{
+		db:       db,
+		dbrConn:  dbrConn,
+		modelMap: modelMap,
+	}
+}
 
 func main() {
 	flag.Parse()
@@ -40,48 +69,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	db, dbrConn, err := csdb.Connect()
-	tools.LogFatal(err)
-	defer db.Close()
-
-	// mapping see: tools.JSONMappingEntityTypes and tools.JSONMappingEAVAttributeModels
+	ctx := newContext()
+	defer ctx.db.Close()
 
 	for _, et := range concrete.CSEntityTypeCollection {
-		dbrSelect, err := eav.GetAttributeSelectSql(dbrConn.NewSession(nil), et, 0)
-		tools.LogFatal(err)
-
-		c, err := tools.SQLQueryToColumns(db, dbrSelect)
-		tools.LogFatal(err)
-
-		tools.LogFatal(tools.MapSQLToGoType(c, tools.EavAttributeColumnNameToInterface))
-		structName := "CS_" + et.EntityTypeCode
-		structCode, err := tools.ColumnsToStructCode(structName, c, tplQueryStruct)
-		tools.LogFatal(err)
-
-		fmt.Printf("\n%s\n", structCode)
-
-		attributeCollection, err := tools.GetSQL(db, dbrSelect)
-		tools.LogFatal(err)
-
-		// iterate over attributeCollection and escape or not the values to be used as string, int, bool or Go func
-
-		data := struct {
-			QueryStruct []byte
-			Attributes  []tools.StringEntities
-			Name        string
-		}{
-			QueryStruct: structCode,
-			Attributes:  attributeCollection,
-			Name:        structName,
-		}
-
-		code, err := tools.GenerateCode("packageNameTODO", tplQueryData, data)
+		ctx.et = et
+		code, err := prepareAttributeCode(ctx)
 		//tools.LogFatal(err)
 		if err != nil {
 			fmt.Printf("\n%s\n", err)
 		}
 		fmt.Printf("\n%s\n+++++++++++++++++++++++++++++++++++++++++++++++++\n", code)
-
 		// auto create the structs containing the Go interfaces and then put in the data
 		// write ann into the concrete package.
 
@@ -91,4 +89,61 @@ func main() {
 	}
 
 	//ioutil.WriteFile(*outputFile, formatted, 0600)
+}
+
+func prepareAttributeCode(ctx *context) ([]byte, error) {
+	dbrSelect, err := eav.GetAttributeSelectSql(ctx.dbrConn.NewSession(nil), ctx.et, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	columns, err := tools.SQLQueryToColumns(ctx.db, dbrSelect)
+	if err != nil {
+		return nil, err
+	}
+
+	tools.LogFatal(columns.MapSQLToGoType(tools.EavAttributeColumnNameToInterface))
+	structName := "cs_" + ctx.et.EntityTypeCode
+	structCode, err := tools.ColumnsToStructCode(structName, columns, tplQueryStruct)
+	if err != nil {
+		return nil, err
+	}
+
+	attributeCollection, err := tools.GetSQL(ctx.db, dbrSelect)
+	if err != nil {
+		return nil, err
+	}
+
+	tools.PrepareForTemplate(columns, attributeCollection, ctx.modelMap)
+
+	// iterate over attributeCollection and escape or not the values to be used as string, int, bool or Go func
+
+	data := struct {
+		QueryStruct string
+		Attributes  []tools.StringEntities
+		Name        string
+	}{
+		QueryStruct: string(structCode),
+		Attributes:  attributeCollection,
+		Name:        structName,
+	}
+
+	return tools.GenerateCode("packageNameTODO", tplQueryData, data)
+}
+
+func getMapping(fileName string, rawJson []byte) (tools.AttributeModelMap, error) {
+	var err error
+	if fileName != "" && fileName[len(fileName)-5:] == ".json" { // check if file ext is .json
+		rawJson = nil
+		rawJson, err = ioutil.ReadFile(fileName)
+		if err != nil {
+			return nil, errgo.Mask(err)
+		}
+	}
+	mapping := make(tools.AttributeModelMap)
+	err = json.Unmarshal(rawJson, &mapping)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	return mapping, nil
 }

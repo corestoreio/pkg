@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// These global variables are only used during go:generate and can be changed at any time.
 package tools
 
 // JSONMapEntityTypes provides a mapping for Mage1+2. A developer has the option to provide a custom map.
@@ -58,11 +59,10 @@ var EavAttributeColumnNameToInterface = map[string]string{
 	"source_model":   "eav.AttributeSourceModeller",
 }
 
-// EavAttributeModelMap contains default mappings for Mage1+2. A developer has the option to provide a custom map.
+// DefaultAttributeModelMap contains default mappings for Mage1+2. A developer has the option to provide a custom map.
 // Rethink the Go code here ... because catalog.Product().Attribute().Frontend().Image() is pretty long ... BUT
 // developers coming from Magento are already familiar with this code base and naming ...
-var EavAttributeModelMap = mageModelMap{
-	EavAttributeFrontendModel: []byte(`{
+var JSONMapAttributeModels = []byte(`{
         "catalog\/product_attribute_frontend_image": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
             "frontend_model": "catalog.Product().Attribute().Frontend().Image()"
@@ -78,9 +78,7 @@ var EavAttributeModelMap = mageModelMap{
         "Magento\\Eav\\Model\\Entity\\Attribute\\Frontend\\Datetime": {
             "import_path": "github.com\/corestoreio\/csfw\/eav",
             "frontend_model": "eav.Entity().Attribute().Frontend().Datetime()"
-        }
-    }`),
-	EavAttributeBackendModel: []byte(`{
+        },
         "catalog\/attribute_backend_customlayoutupdate": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
             "backend_model": "catalog.Attribute().Backend().Customlayoutupdate()"
@@ -280,9 +278,7 @@ var EavAttributeModelMap = mageModelMap{
         "Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\Time\\Updated": {
             "import_path": "github.com\/corestoreio\/csfw\/eav",
             "backend_model": "eav.Attribute().Backend().Time().Updated()"
-        }
-    }`),
-	EavAttributeSourceModel: []byte(`{
+        },
         "bundle\/product_attribute_source_price_view": {
             "import_path": "github.com\/corestoreio\/csfw\/bundle",
             "source_model": "bundle.Product().Attribute().Source().Price().View()"
@@ -451,5 +447,4 @@ var EavAttributeModelMap = mageModelMap{
             "import_path": "github.com\/corestoreio\/csfw\/theme",
             "source_model": ""
         }
-    }`),
-}
+    }`)

@@ -121,6 +121,7 @@ func getEntityTypeData(dbrSess *dbr.Session) (JsonEntityTypeMap, error) {
 func getMapping(fileName string, rawJson []byte) (JsonEntityTypeMap, error) {
 	var err error
 	if fileName != "" && fileName[len(fileName)-5:] == ".json" { // check if file ext is .json
+		rawJson = nil
 		rawJson, err = ioutil.ReadFile(fileName)
 		if err != nil {
 			return nil, errgo.Mask(err)

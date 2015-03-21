@@ -87,7 +87,7 @@ func main() {
 
 		columns, err := tools.GetColumns(db, *prefixName+table)
 		tools.LogFatal(err)
-		tools.LogFatal(tools.MapSQLToGoDBRType(columns))
+		tools.LogFatal(columns.MapSQLToGoDBRType())
 		tplData.Tables = append(tplData.Tables, map[string]interface{}{
 			"table":   table,
 			"columns": columns,
