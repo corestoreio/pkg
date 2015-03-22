@@ -2,3 +2,4 @@ generated_*.go
 /csMake
 /tableToStruct
 /eavToStruct
+config_*.go

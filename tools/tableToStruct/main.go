@@ -15,14 +15,13 @@
 package main
 
 import (
-	"flag"
+	"database/sql"
 	"io/ioutil"
-	"os"
-	"strings"
 
 	"fmt"
 
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/tools"
 )
 
@@ -34,41 +33,29 @@ type (
 	}
 )
 
-var (
-	pkg        = flag.String("p", "", "Package name in template")
-	run        = flag.Bool("run", false, "If true program runs")
-	outputFile = flag.String("o", "", "Output file name")
-
-	prefixSearch   = flag.String("prefixSearch", "", "Search Table Prefix. Used in where condition to list tables")
-	prefixName     = flag.String("prefixName", "", "Table name prefix") // @todo via env var !?
-	entityTypeCode = flag.String("entityTypeCodes", "", "If provided then eav_entity_type.value_table_prefix will be evaluated for further tables. Use comma to separate codes.")
-)
-
 func main() {
-	flag.Parse()
-
-	if false == *run || *outputFile == "" || *pkg == "" {
-		flag.Usage()
-		os.Exit(1)
-	}
-
 	db, dbrConn, err := csdb.Connect()
 	tools.LogFatal(err)
 	defer db.Close()
+	for _, tStruct := range tools.ConfigTableToStruct {
+		generateStructures(tStruct, db, dbrConn)
+	}
+}
 
+func generateStructures(tStruct *tools.TableToStruct, db *sql.DB, dbrConn *dbr.Connection) {
 	tplData := &dataContainer{
 		Tables:  make([]map[string]interface{}, 0, 200),
-		Package: *pkg,
+		Package: tStruct.Package,
 		Tick:    "`",
 	}
 
-	tables, err := tools.GetTables(db, *prefixName+*prefixSearch)
+	tables, err := tools.GetTables(db, tStruct.QueryString)
 	tools.LogFatal(err)
 
-	entityTypeCodes := strings.Split(*entityTypeCode, ",")
-	if len(entityTypeCodes) > 0 && entityTypeCodes[0] != "" {
-		tplData.TypeCodeValueTables, err = tools.GetEavValueTables(dbrConn, *prefixName, entityTypeCodes)
+	if len(tStruct.EntityTypeCodes) > 0 && tStruct.EntityTypeCodes[0] != "" {
+		tplData.TypeCodeValueTables, err = tools.GetEavValueTables(dbrConn, tStruct.EntityTypeCodes)
 		tools.LogFatal(err)
+
 		for _, vTables := range tplData.TypeCodeValueTables {
 			for t, _ := range vTables {
 				if false == isDuplicate(tables, t) {
@@ -80,11 +67,7 @@ func main() {
 
 	for _, table := range tables {
 
-		if skipCatalogFlatTable(table) {
-			continue
-		}
-
-		columns, err := tools.GetColumns(db, *prefixName+table)
+		columns, err := tools.GetColumns(db, table)
 		tools.LogFatal(err)
 		tools.LogFatal(columns.MapSQLToGoDBRType())
 		tplData.Tables = append(tplData.Tables, map[string]interface{}{
@@ -93,13 +76,13 @@ func main() {
 		})
 	}
 
-	formatted, err := tools.GenerateCode(*pkg, tplCode, tplData)
+	formatted, err := tools.GenerateCode(tStruct.Package, tplCode, tplData)
 	if err != nil {
 		fmt.Printf("\n%s\n", formatted)
 		tools.LogFatal(err)
 	}
 
-	ioutil.WriteFile(*outputFile, formatted, 0600)
+	tools.LogFatal(ioutil.WriteFile(tStruct.OutputFile, formatted, 0600))
 }
 
 // isDuplicate slow duplicate checker ...
@@ -110,10 +93,4 @@ func isDuplicate(sl []string, st string) bool {
 		}
 	}
 	return false
-}
-
-// shouldSkipTable checks if a table is a catalog*flat* table. These tables will get automatically created
-// due to the variable attributes which are used as columns. And also dependent on the store count.
-func skipCatalogFlatTable(table string) bool {
-	return strings.Index(table, "catalog_") == 0 && strings.Index(table, "_flat_") > 6
 }

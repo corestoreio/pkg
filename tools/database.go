@@ -89,12 +89,10 @@ func (m TypeCodeValueTable) Empty() bool {
 
 // GetTables returns all tables from a database which starts with a prefix. % wild card will be added
 // automatically.
-func GetTables(db *sql.DB, prefix string) ([]string, error) {
-
+func GetTables(db *sql.DB, query string) ([]string, error) {
 	var tableNames = make([]string, 0, 200)
-	qry := "SHOW TABLES like '" + prefix + "%'"
 
-	rows, err := db.Query(qry)
+	rows, err := db.Query(query)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
@@ -118,7 +116,7 @@ func GetTables(db *sql.DB, prefix string) ([]string, error) {
 // GetEavValueTables returns a map of all custom and default EAV value tables for entity type codes.
 // Despite value_table_prefix can have in Magento a different table name we treat it here
 // as the table name itself. Not thread safe.
-func GetEavValueTables(dbrConn *dbr.Connection, prefix string, entityTypeCodes []string) (TypeCodeValueTable, error) {
+func GetEavValueTables(dbrConn *dbr.Connection, entityTypeCodes []string) (TypeCodeValueTable, error) {
 
 	typeCodeTables := make(TypeCodeValueTable, len(entityTypeCodes))
 
@@ -126,7 +124,7 @@ func GetEavValueTables(dbrConn *dbr.Connection, prefix string, entityTypeCodes [
 
 		vtp, err := dbrConn.NewSession(nil).
 			Select("`value_table_prefix`").
-			From(prefix+TableEavEntityType).
+			From(TablePrefix+TableEavEntityType).
 			Where("`value_table_prefix` IS NOT NULL").
 			Where("`entity_type_code` = ?", typeCode).
 			ReturnString()
@@ -140,7 +138,7 @@ func GetEavValueTables(dbrConn *dbr.Connection, prefix string, entityTypeCodes [
 			vtp = vtp + TableNameSeparator
 		}
 
-		tableNames, err := GetTables(dbrConn.Db, prefix+vtp)
+		tableNames, err := GetTables(dbrConn.Db, `SHOW TABLES LIKE "`+vtp+`%"`)
 		if err != nil {
 			return nil, errgo.Mask(err)
 		}
@@ -149,7 +147,7 @@ func GetEavValueTables(dbrConn *dbr.Connection, prefix string, entityTypeCodes [
 			typeCodeTables[typeCode] = make(map[string]string, len(tableNames))
 		}
 		for _, t := range tableNames {
-			valueSuffix := t[len(prefix+vtp):]
+			valueSuffix := t[len(vtp):]
 			if TableEntityTypeValueSuffixes.contains(valueSuffix) {
 				/*
 				   other tables like catalog_product_entity_gallery, catalog_product_entity_group_price,

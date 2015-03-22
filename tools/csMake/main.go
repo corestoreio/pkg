@@ -53,32 +53,13 @@ func getCommands() []aCommand {
 		},
 		aCommand{
 			name: "find",
-			args: []string{pwd, "-name", "generated_tables.go", "-delete"},
-			rm:   false,
-		},
-		aCommand{
-			name: "find",
-			args: []string{pwd, "-name", "generated_eav.go", "-delete"},
+			args: []string{pwd, "-name", "generated_*.go", "-delete"},
 			rm:   false,
 		},
 		aCommand{
 			name: pwd + "tableToStruct",
-			args: []string{"-p", "eav", "-prefixSearch", "eav", "-o", "eav/generated_tables.go", "-run"},
+			args: []string{"-run"},
 			rm:   true,
-		},
-		aCommand{
-			name: pwd + "tableToStruct",
-			args: []string{"-p", "catalog", "-prefixSearch", "catalog\\_",
-				"-entityTypeCodes", "catalog_category,catalog_product",
-				"-o", "catalog/generated_tables.go", "-run"},
-			rm: false,
-		},
-		aCommand{
-			name: pwd + "tableToStruct",
-			args: []string{"-p", "customer", "-prefixSearch", "customer\\_",
-				"-entityTypeCodes", "customer,customer_address",
-				"-o", "customer/generated_tables.go", "-run"},
-			rm: false,
 		},
 		aCommand{
 			// this commands depends on the generated source from tableToStruct 8-)
