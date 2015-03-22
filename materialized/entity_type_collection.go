@@ -16,6 +16,9 @@ package materialized
 
 import "github.com/corestoreio/csfw/eav"
 
+// csEntityTypeCollection contains all entity types mapped to their Go types/interfaces
+var csEntityTypeCollection eav.CSEntityTypeSlice
+
 // GetEntityTypeCollection to avoid leaking global variable
 func GetEntityTypeCollection() eav.CSEntityTypeSlice {
 	return csEntityTypeCollection

@@ -17,7 +17,6 @@ package main
 
 import (
 	"database/sql"
-	"os"
 	"sync"
 
 	"go/build"
@@ -31,25 +30,23 @@ import (
 )
 
 type context struct {
-	wg        sync.WaitGroup
-	db        *sql.DB
-	dbrConn   *dbr.Connection
-	et        *eav.CSEntityType // will be updated each iteration
-	modelMap  tools.AttributeModelMap
+	wg      sync.WaitGroup
+	db      *sql.DB
+	dbrConn *dbr.Connection
+	// will be updated each iteration in materializeAttributes
+	et *eav.EntityType
+	// goSrcPath will be used in conjunction with ImportPath to write a file into that directory
 	goSrcPath string
 }
 
 func newContext() *context {
 	db, dbrConn, err := csdb.Connect()
 	tools.LogFatal(err)
-	modelMap, err := getMapping(os.Getenv(envModelMap), tools.JSONMapAttributeModels)
-	tools.LogFatal(err)
 
 	return &context{
 		wg:        sync.WaitGroup{},
 		db:        db,
 		dbrConn:   dbrConn,
-		modelMap:  modelMap,
 		goSrcPath: build.Default.GOPATH + "/src/",
 	}
 }
@@ -66,6 +63,13 @@ func main() {
 
 	ctx.wg.Add(1)
 	go materializeAttributes(ctx)
+
+	// EAV -> Create queries for AttributeSets and AttributeGroups
+	//    ctx.wg.Add(1)
+	//    go materializeAttributeSets(ctx)
+	//
+	//    ctx.wg.Add(1)
+	//    go materializeAttributeGroups(ctx)
 
 	ctx.wg.Wait()
 }

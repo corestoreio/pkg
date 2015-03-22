@@ -34,8 +34,7 @@ import (
 {{end}}{{end}}
 )
 
-var (
-    // csEntityTypeCollection contains all entity types mapped to their Go types/interfaces
+func init(){
     csEntityTypeCollection = eav.CSEntityTypeSlice{
         {{ range .ETypeData }} &eav.CSEntityType {
             EntityTypeID: {{ .EntityTypeID }},
@@ -56,12 +55,13 @@ var (
         },
         {{ end }}
     }
-)
+}
 `
 
-const tplTypeDefinitions = `
+const tplTypeDefinition = `
 type (
     // {{.Name | prepareVar}}Slice contains pointers to {{.Name | prepareVar}} types
+    // @todo website must be present in the slice
     {{.Name | prepareVar}}Slice []*{{.Name | prepareVar}}
     // {{.Name | prepareVar}} a data container for the data from a MySQL query
     {{.Name | prepareVar}} struct {
@@ -70,7 +70,7 @@ type (
 )
 `
 
-const tplFileBody = tools.Copyright + `
+const tplTypeDefinitionFile = tools.Copyright + `
 package {{ .PackageName }}
 {{ if gt (len .ImportPaths) 0 }}
     import (

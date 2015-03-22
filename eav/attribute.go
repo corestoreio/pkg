@@ -51,15 +51,13 @@ type (
 )
 
 // GetAttributeSelectSql generates the select query to retrieve full attribute configuration
-// EntityType must implement interface EntityTypeAdditionalAttributeTabler
-func GetAttributeSelectSql(dbrSess dbr.SessionRunner, et *CSEntityType, websiteId int) (*dbr.SelectBuilder, error) {
+func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAttributeTabler, entityTypeID, websiteId int64) (*dbr.SelectBuilder, error) {
 
-	tableStructs := et.AdditionalAttributeTable
 	ta, err := GetTableStructure(TableAttribute)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	taa, err := tableStructs.TableAdditionalAttribute()
+	taa, err := aat.TableAdditionalAttribute()
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
@@ -71,10 +69,10 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, et *CSEntityType, websiteI
 		dbr.JoinTable(taa.Name, "additional_table"),
 		taa.ColumnAliasQuote("additional_table"),
 		dbr.JoinOn("`additional_table`.`attribute_id` = `main_table`.`attribute_id`"),
-		dbr.JoinOn("`main_table`.`entity_type_id` = ?", et.EntityTypeID),
+		dbr.JoinOn("`main_table`.`entity_type_id` = ?", entityTypeID),
 	)
 
-	tew, err := tableStructs.TableEavWebsite()
+	tew, err := aat.TableEavWebsite()
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}

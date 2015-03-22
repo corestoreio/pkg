@@ -261,6 +261,20 @@ func (cc columns) MapSQLToGoType(ifm map[string]string) error {
 	return nil
 }
 
+func (cc columns) GetFieldNames(pkOnly bool) []string {
+    ret := make([]string,0,len(cc))
+    for _, col := range cc {
+        isPk := col.Key.String == "PRI"
+        if pkOnly && isPk {
+            ret = append(ret,col.Field.String)
+        }
+        if !isPk {
+            ret = append(ret,col.Field.String)
+        }
+    }
+    return ret
+}
+
 // GetColumns returns all columns from a table. It discards the column entity_type_id from some
 // entity tables.
 func GetColumns(db *sql.DB, table string) (columns, error) {
@@ -438,28 +452,27 @@ func (s *rowTransformer) append(ret *[]StringEntities) {
 // int/Float values won't be touched. Bools or IntBools will be converted to true/false. Strings will be quoted.
 // And if there is an entry in the AttributeModelMap then the Go code from the map will be used.
 // Returns a slice containing all the import paths
-func PrepareForTemplate(cols columns, rows []StringEntities, amm AttributeModelMap) []string {
+func PrepareForTemplate(cols columns, rows []StringEntities, mageModelMap AttributeModelDefMap) []string {
 	ip := make([]string, 0, 10) // import_path container
 	for _, row := range rows {
 		for colName, colValue := range row {
 			var c *column = cols.getByName(colName)
 
-			var mageModel map[string]string
-			mageModel, isInterface := amm[colValue]
+			goType, hasModel := mageModelMap[colValue]
 
 			switch true {
-			case isInterface:
-				if goModel, ok := mageModel[colName]; ok && goModel != "" {
-					row[colName] = goModel
-					if path, ok := mageModel["import_path"]; ok {
+			case hasModel:
+				if goType.GoModel != "" {
+					row[colName] = goType.GoModel
+					if goType.ImportPath != "" {
 						add := true
 						for i := 0; i < len(ip); i++ {
-							if ip[i] == path { // check for duplicates
+							if ip[i] == goType.ImportPath { // check for duplicates
 								add = false
 							}
 						}
 						if add {
-							ip = append(ip, path)
+							ip = append(ip, goType.ImportPath)
 						}
 					}
 				} else {

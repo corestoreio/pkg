@@ -51,15 +51,20 @@ type (
 		TempAdditionalAttributeTableWebsite string
 	}
 
-	// AttributeModelMap contains data provided via JSON to map the three eav_attribute columns
-	// (backend|frontend|source)_model to the correct Go function and package
-	// DefaultAttributeModelMap contains default mappings for Mage1+2. A developer has the option to provide a custom map.
+	// AttributeModelDefMap contains data to map the three eav_attribute columns
+	// (backend|frontend|source)_model to the correct Go function and package.
+	// It contains mappings for Magento 1 & 2. A developer has the option to to change/extend the value
+	// using the file config_user.go with the init() func.
 	// Rethink the Go code here ... because catalog.Product().Attribute().Frontend().Image() is pretty long ... BUT
 	// developers coming from Magento are already familiar with this code base and naming ...
-	AttributeModelMap map[string]*AttributeModel
-	AttributeModel    struct {
+	// Def for Definition to avoid a naming conflict :-( Better name?
+	AttributeModelDefMap map[string]*AttributeModelDef
+	// AttributeModelDef defines which Go type/func has which import path
+	AttributeModelDef struct {
 		ImportPath string
-		GoModel    string
+		// GoModel is a function string which implements when later execute one of the three interfaces
+		// for (backend|frontend|source)_model
+		GoModel string
 	}
 )
 
@@ -160,396 +165,397 @@ var ConfigEntityType = EntityTypeMap{
 	// @todo extend for all sales entities
 }
 
-var ConfigAttributeModel = AttributeModelMap{
-	"catalog/product_attribute_frontend_image": &AttributeModel{
+// ConfigAttributeModel contains default configuration. Use the file config_user.go with the func init() to change/extend it.
+var ConfigAttributeModel = AttributeModelDefMap{
+	"catalog/product_attribute_frontend_image": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Frontend().Image()",
 	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Frontend\\Image": &AttributeModel{
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Frontend\\Image": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Frontend().Image()",
 	},
-	"eav/entity_attribute_frontend_datetime": &AttributeModel{
+	"eav/entity_attribute_frontend_datetime": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
 		GoModel:    "eav.Entity().Attribute().Frontend().Datetime()",
 	},
-	"Magento\\Eav\\Model\\Entity\\Attribute\\Frontend\\Datetime": &AttributeModel{
+	"Magento\\Eav\\Model\\Entity\\Attribute\\Frontend\\Datetime": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
 		GoModel:    "eav.Entity().Attribute().Frontend().Datetime()",
 	},
-	"catalog/attribute_backend_customlayoutupdate": &AttributeModel{
+	"catalog/attribute_backend_customlayoutupdate": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Attribute().Backend().Customlayoutupdate()",
 	},
-	"Magento\\Catalog\\Model\\Attribute\\Backend\\Customlayoutupdate": &AttributeModel{
+	"Magento\\Catalog\\Model\\Attribute\\Backend\\Customlayoutupdate": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Attribute().Backend().Customlayoutupdate()",
 	},
-	"catalog/category_attribute_backend_image": &AttributeModel{
+	"catalog/category_attribute_backend_image": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Category().Attribute().Backend().Image()",
 	},
-	"Magento\\Catalog\\Model\\Category\\Attribute\\Backend\\Image": &AttributeModel{
+	"Magento\\Catalog\\Model\\Category\\Attribute\\Backend\\Image": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Category().Attribute().Backend().Image()",
 	},
-	"catalog/category_attribute_backend_sortby": &AttributeModel{
+	"catalog/category_attribute_backend_sortby": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Category().Attribute().Backend().Sortby()",
 	},
-	"Magento\\Catalog\\Model\\Category\\Attribute\\Backend\\Sortby": &AttributeModel{
+	"Magento\\Catalog\\Model\\Category\\Attribute\\Backend\\Sortby": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Category().Attribute().Backend().Sortby()",
 	},
-	"catalog/category_attribute_backend_urlkey": &AttributeModel{
+	"catalog/category_attribute_backend_urlkey": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "",
 	},
-	"catalog/product_attribute_backend_boolean": &AttributeModel{
+	"catalog/product_attribute_backend_boolean": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Boolean()",
 	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Boolean": &AttributeModel{
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Boolean": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Boolean()",
 	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Category": &AttributeModel{
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Category": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Category()",
 	},
-	"catalog/product_attribute_backend_groupprice": &AttributeModel{
+	"catalog/product_attribute_backend_groupprice": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Groupprice()",
 	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\GroupPrice": &AttributeModel{
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\GroupPrice": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().GroupPrice()",
 	},
-	"catalog/product_attribute_backend_media": &AttributeModel{
+	"catalog/product_attribute_backend_media": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Media()",
 	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Media": &AttributeModel{
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Media": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Media()",
 	},
-	"catalog/product_attribute_backend_msrp": &AttributeModel{
+	"catalog/product_attribute_backend_msrp": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Price()",
 	},
-	"catalog/product_attribute_backend_price": &AttributeModel{
+	"catalog/product_attribute_backend_price": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Price()",
 	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Price": &AttributeModel{
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Price": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Price()",
 	},
-	"catalog/product_attribute_backend_recurring": &AttributeModel{
+	"catalog/product_attribute_backend_recurring": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Recurring()",
 	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Recurring": &AttributeModel{
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Recurring": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Recurring()",
 	},
-	"catalog/product_attribute_backend_sku": &AttributeModel{
+	"catalog/product_attribute_backend_sku": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Sku()",
 	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Sku": &AttributeModel{
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Sku": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Sku()",
 	},
-	"catalog/product_attribute_backend_startdate": &AttributeModel{
+	"catalog/product_attribute_backend_startdate": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Startdate()",
 	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Startdate": &AttributeModel{
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Startdate": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Startdate()",
 	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Stock": &AttributeModel{
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Stock": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Stock()",
 	},
-	"catalog/product_attribute_backend_tierprice": &AttributeModel{
+	"catalog/product_attribute_backend_tierprice": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Tierprice()",
 	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Tierprice": &AttributeModel{
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Tierprice": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Tierprice()",
 	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Weight": &AttributeModel{
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Weight": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Backend().Weight()",
 	},
-	"catalog/product_attribute_backend_urlkey": &AttributeModel{
+	"catalog/product_attribute_backend_urlkey": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "",
 	},
-	"customer/attribute_backend_data_boolean": &AttributeModel{
+	"customer/attribute_backend_data_boolean": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Backend().Data().Boolean()",
 	},
-	"Magento\\Customer\\Model\\Attribute\\Backend\\Data\\Boolean": &AttributeModel{
+	"Magento\\Customer\\Model\\Attribute\\Backend\\Data\\Boolean": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Backend().Data().Boolean()",
 	},
-	"customer/customer_attribute_backend_billing": &AttributeModel{
+	"customer/customer_attribute_backend_billing": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Backend().Billing()",
 	},
-	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Billing": &AttributeModel{
+	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Billing": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Backend().Billing()",
 	},
-	"customer/customer_attribute_backend_password": &AttributeModel{
+	"customer/customer_attribute_backend_password": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Backend().Password()",
 	},
-	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Password": &AttributeModel{
+	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Password": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Backend().Password()",
 	},
-	"customer/customer_attribute_backend_shipping": &AttributeModel{
+	"customer/customer_attribute_backend_shipping": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Backend().Shipping()",
 	},
-	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Shipping": &AttributeModel{
+	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Shipping": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Backend().Shipping()",
 	},
-	"customer/customer_attribute_backend_store": &AttributeModel{
+	"customer/customer_attribute_backend_store": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Backend().Store()",
 	},
-	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Store": &AttributeModel{
+	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Store": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Backend().Store()",
 	},
-	"customer/customer_attribute_backend_website": &AttributeModel{
+	"customer/customer_attribute_backend_website": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Backend().Website()",
 	},
-	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Website": &AttributeModel{
+	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Website": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Backend().Website()",
 	},
-	"customer/entity_address_attribute_backend_region": &AttributeModel{
+	"customer/entity_address_attribute_backend_region": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Address().Attribute().Backend().Region()",
 	},
-	"Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Backend\\Region": &AttributeModel{
+	"Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Backend\\Region": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Address().Attribute().Backend().Region()",
 	},
-	"customer/entity_address_attribute_backend_street": &AttributeModel{
+	"customer/entity_address_attribute_backend_street": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Address().Attribute().Backend().Street()",
 	},
-	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\DefaultBackend": &AttributeModel{
+	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\DefaultBackend": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
 		GoModel:    "eav.Attribute().Backend().DefaultBackend()",
 	},
-	"eav/entity_attribute_backend_datetime": &AttributeModel{
+	"eav/entity_attribute_backend_datetime": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
 		GoModel:    "eav.Attribute().Backend().Datetime()",
 	},
-	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\Datetime": &AttributeModel{
+	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\Datetime": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
 		GoModel:    "eav.Attribute().Backend().Datetime()",
 	},
-	"eav/entity_attribute_backend_time_created": &AttributeModel{
+	"eav/entity_attribute_backend_time_created": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
 		GoModel:    "eav.Entity().Attribute().Backend().Time().Created()",
 	},
-	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\Time\\Created": &AttributeModel{
+	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\Time\\Created": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
 		GoModel:    "eav.Attribute().Backend().Time().Created()",
 	},
-	"eav/entity_attribute_backend_time_updated": &AttributeModel{
+	"eav/entity_attribute_backend_time_updated": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
 		GoModel:    "eav.Attribute().Backend().Time().Updated()",
 	},
-	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\Time\\Updated": &AttributeModel{
+	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\Time\\Updated": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
 		GoModel:    "eav.Attribute().Backend().Time().Updated()",
 	},
-	"bundle/product_attribute_source_price_view": &AttributeModel{
+	"bundle/product_attribute_source_price_view": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/bundle",
 		GoModel:    "bundle.Product().Attribute().Source().Price().View()",
 	},
-	"Magento\\Bundle\\Model\\Product\\Attribute\\Source\\Price\\View": &AttributeModel{
+	"Magento\\Bundle\\Model\\Product\\Attribute\\Source\\Price\\View": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/bundle",
 		GoModel:    "bundle.Product().Attribute().Source().Price().View()",
 	},
-	"Magento\\CatalogInventory\\Model\\Source\\Stock": &AttributeModel{
+	"Magento\\CatalogInventory\\Model\\Source\\Stock": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/cataloginventory",
 		GoModel:    "cataloginventory.Source().Stock()",
 	},
-	"catalog/category_attribute_source_layout": &AttributeModel{
+	"catalog/category_attribute_source_layout": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "",
 	},
-	"Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Layout": &AttributeModel{
+	"Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Layout": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "",
 	},
-	"catalog/category_attribute_source_mode": &AttributeModel{
+	"catalog/category_attribute_source_mode": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Category().Attribute().Source().Mode()",
 	},
-	"Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Mode": &AttributeModel{
+	"Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Mode": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Category().Attribute().Source().Mode()",
 	},
-	"catalog/category_attribute_source_page": &AttributeModel{
+	"catalog/category_attribute_source_page": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Category().Attribute().Source().Page()",
 	},
-	"Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Page": &AttributeModel{
+	"Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Page": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Category().Attribute().Source().Page()",
 	},
-	"catalog/category_attribute_source_sortby": &AttributeModel{
+	"catalog/category_attribute_source_sortby": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Category().Attribute().Source().Sortby()",
 	},
-	"Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Sortby": &AttributeModel{
+	"Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Sortby": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Category().Attribute().Source().Sortby()",
 	},
-	"catalog/entity_product_attribute_design_options_container": &AttributeModel{
+	"catalog/entity_product_attribute_design_options_container": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Design().Options().Container()",
 	},
-	"Magento\\Catalog\\Model\\Entity\\Product\\Attribute\\Design\\Options\\Container": &AttributeModel{
+	"Magento\\Catalog\\Model\\Entity\\Product\\Attribute\\Design\\Options\\Container": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Design().Options().Container()",
 	},
-	"catalog/product_attribute_source_countryofmanufacture": &AttributeModel{
+	"catalog/product_attribute_source_countryofmanufacture": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Source().Countryofmanufacture()",
 	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Countryofmanufacture": &AttributeModel{
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Countryofmanufacture": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Source().Countryofmanufacture()",
 	},
-	"catalog/product_attribute_source_layout": &AttributeModel{
+	"catalog/product_attribute_source_layout": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Source().Layout()",
 	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Layout": &AttributeModel{
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Layout": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Source().Layout()",
 	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Status": &AttributeModel{
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Status": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Source().Status()",
 	},
-	"catalog/product_attribute_source_msrp_type_enabled": &AttributeModel{
+	"catalog/product_attribute_source_msrp_type_enabled": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Source().Msrp().Type().Enabled()",
 	},
-	"catalog/product_attribute_source_msrp_type_price": &AttributeModel{
+	"catalog/product_attribute_source_msrp_type_price": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Attribute().Source().Msrp().Type().Price()",
 	},
-	"catalog/product_status": &AttributeModel{
+	"catalog/product_status": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Status()",
 	},
-	"catalog/product_visibility": &AttributeModel{
+	"catalog/product_visibility": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Visibility()",
 	},
-	"Magento\\Catalog\\Model\\Product\\Visibility": &AttributeModel{
+	"Magento\\Catalog\\Model\\Product\\Visibility": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
 		GoModel:    "Product().Visibility()",
 	},
-	"core/design_source_design": &AttributeModel{
+	"core/design_source_design": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/core",
 		GoModel:    "core.Design().Source().Design()",
 	},
-	"customer/customer_attribute_source_group": &AttributeModel{
+	"customer/customer_attribute_source_group": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Source().Group()",
 	},
-	"Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Group": &AttributeModel{
+	"Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Group": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Source().Group()",
 	},
-	"customer/customer_attribute_source_store": &AttributeModel{
+	"customer/customer_attribute_source_store": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Source().Store()",
 	},
-	"Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Store": &AttributeModel{
+	"Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Store": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Source().Store()",
 	},
-	"customer/customer_attribute_source_website": &AttributeModel{
+	"customer/customer_attribute_source_website": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Source().Website()",
 	},
-	"Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Website": &AttributeModel{
+	"Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Website": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Source().Website()",
 	},
-	"customer/entity_address_attribute_source_country": &AttributeModel{
+	"customer/entity_address_attribute_source_country": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Address().Attribute().Source().Country()",
 	},
-	"Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Source\\Country": &AttributeModel{
+	"Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Source\\Country": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Address().Attribute().Source().Country()",
 	},
-	"customer/entity_address_attribute_source_region": &AttributeModel{
+	"customer/entity_address_attribute_source_region": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Address().Attribute().Source().Region()",
 	},
-	"Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Source\\Region": &AttributeModel{
+	"Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Source\\Region": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Address().Attribute().Source().Region()",
 	},
-	"eav/entity_attribute_source_boolean": &AttributeModel{
+	"eav/entity_attribute_source_boolean": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
 		GoModel:    "eav.Attribute().Source().Boolean()",
 	},
-	"Magento\\Eav\\Model\\Entity\\Attribute\\Source\\Boolean": &AttributeModel{
+	"Magento\\Eav\\Model\\Entity\\Attribute\\Source\\Boolean": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
 		GoModel:    "eav.Attribute().Source().Boolean()",
 	},
-	"eav/entity_attribute_source_table": &AttributeModel{
+	"eav/entity_attribute_source_table": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
 		GoModel:    "eav.Attribute().Source().Table()",
 	},
-	"Magento\\Eav\\Model\\Entity\\Attribute\\Source\\Table": &AttributeModel{
+	"Magento\\Eav\\Model\\Entity\\Attribute\\Source\\Table": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
 		GoModel:    "eav.Attribute().Source().Table()",
 	},
-	"Magento\\Msrp\\Model\\Product\\Attribute\\Source\\Type\\Price": &AttributeModel{
+	"Magento\\Msrp\\Model\\Product\\Attribute\\Source\\Type\\Price": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/msrp",
 		GoModel:    "msrp.Product().Attribute().Source().Type().Price()",
 	},
-	"tax/class_source_product": &AttributeModel{
+	"tax/class_source_product": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/tax",
 		GoModel:    "tax.Class().Source().Product()",
 	},
-	"Magento\\Tax\\Model\\TaxClass\\Source\\Product": &AttributeModel{
+	"Magento\\Tax\\Model\\TaxClass\\Source\\Product": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/tax",
 		GoModel:    "tax.TaxClass().Source().Product()",
 	},
-	"Magento\\Theme\\Model\\Theme\\Source\\Theme": &AttributeModel{
+	"Magento\\Theme\\Model\\Theme\\Source\\Theme": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/theme",
 		GoModel:    "",
 	},
-	"customer/attribute_data_postcode": &AttributeModel{
+	"customer/attribute_data_postcode": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Data.Postcode()",
 	},
-	"Magento\\Customer\\Model\\Attribute\\Data\\Postcode": &AttributeModel{
+	"Magento\\Customer\\Model\\Attribute\\Data\\Postcode": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
 		GoModel:    "Attribute().Data.Postcode()",
 	},
