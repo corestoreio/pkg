@@ -18,7 +18,6 @@ import (
 	"errors"
 
 	"github.com/corestoreio/csfw/storage/dbr"
-	_ "github.com/go-sql-driver/mysql"
 	"github.com/juju/errgo"
 )
 
