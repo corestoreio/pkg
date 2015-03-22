@@ -20,11 +20,33 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/corestoreio/csfw/eav"
+	"github.com/corestoreio/csfw/materialized"
 	"github.com/corestoreio/csfw/tools"
 	"github.com/juju/errgo"
 )
+
+func materializeAttributes(ctx *context) {
+	defer ctx.wg.Done()
+	for _, et := range materialized.GetEntityTypeCollection() {
+		ctx.et = et
+		tools.LogFatal(generateAttributeCode(ctx))
+
+		// EAV -> Create queries for AttributeSets and AttributeGroups
+	}
+}
+
+// getName
+func getName(ctx *context, suffix ...string) string {
+	pkg := path.Base(ctx.et.ImportPath)
+	structBaseName := ctx.et.EntityTypeCode
+	if strings.Contains(ctx.et.EntityTypeCode, "_") {
+		structBaseName = strings.Replace(ctx.et.EntityTypeCode, pkg+"_", "", -1)
+	}
+	return structBaseName + "_" + strings.Join(suffix, "_")
+}
 
 func generateAttributeCode(ctx *context) error {
 	dbrSelect, err := eav.GetAttributeSelectSql(ctx.dbrConn.NewSession(nil), ctx.et, 0)

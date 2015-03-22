@@ -58,3 +58,33 @@ var (
     }
 )
 `
+
+const tplTypeDefinitions = `
+type (
+    // {{.Name | prepareVar}}Slice contains pointers to {{.Name | prepareVar}} types
+    {{.Name | prepareVar}}Slice []*{{.Name | prepareVar}}
+    // {{.Name | prepareVar}} a data container for the data from a MySQL query
+    {{.Name | prepareVar}} struct {
+        {{ range .Columns }}{{.GoName}} {{.GoType}}
+        {{ end }} }
+)
+`
+
+const tplFileBody = tools.Copyright + `
+package {{ .PackageName }}
+{{ if gt (len .ImportPaths) 0 }}
+    import (
+    {{ range .ImportPaths }} "{{.}}"
+    {{ end }} )
+{{ end }}
+
+{{.TypeDefinition}}
+
+var private{{.Name | prepareVar}}Collection = {{.Name | prepareVar}}Slice{
+        {{ range $row := .Attributes }} &{{$.Name | prepareVar}} {
+            {{ range $k,$v := $row }} {{ $k | prepareVar }}: {{ $v }},
+            {{ end }}
+        },
+        {{ end }}
+    }
+`

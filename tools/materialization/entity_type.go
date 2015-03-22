@@ -12,43 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generates code for all EAV types
+// Generates code
 package main
 
 import (
 	"fmt"
 	"io/ioutil"
 
-	"sync"
-
 	"github.com/corestoreio/csfw/eav"
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/tools"
 	"github.com/juju/errgo"
 )
 
-func main() {
-	var wg sync.WaitGroup
-	db, dbrConn, err := csdb.Connect()
-	tools.LogFatal(err)
-	defer db.Close()
-
-	wg.Add(1)
-	go materializeEntityType(&wg, dbrConn)
-
-	wg.Wait()
-}
-
-func materializeEntityType(wg *sync.WaitGroup, dbrConn *dbr.Connection) {
-	defer wg.Done()
+func materializeEntityType(ctx *context) {
+	defer ctx.wg.Done()
 	type dataContainer struct {
 		ETypeData     eav.EntityTypeSlice
 		EntityTypeMap tools.EntityTypeMap
 		Package, Tick string
 	}
 
-	etData, err := getEntityTypeData(dbrConn.NewSession(nil))
+	etData, err := getEntityTypeData(ctx.dbrConn.NewSession(nil))
 	tools.LogFatal(err)
 
 	tplData := &dataContainer{
@@ -84,7 +69,7 @@ func getEntityTypeData(dbrSess *dbr.Session) (etc eav.EntityTypeSlice, err error
 	}
 
 	for typeCode, mapData := range tools.ConfigEntityType {
-		// now map the values from entityTypeCollection into mapData
+		// map the fields from the config struct to the data retrieved from the database.
 		et, err := etc.GetByCode(typeCode)
 		tools.LogFatal(err)
 		et.EntityModel = mapData.EntityModel

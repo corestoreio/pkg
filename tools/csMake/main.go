@@ -63,11 +63,11 @@ func getCommands() []aCommand {
 		aCommand{
 			// this commands depends on the generated source from tableToStruct 8-)
 			name: goCmd,
-			args: []string{"build", "-a", "github.com/corestoreio/csfw/tools/eavToStruct"},
+			args: []string{"build", "-a", "github.com/corestoreio/csfw/tools/materialization"},
 			rm:   false,
 		},
 		aCommand{
-			name: pwd + "eavToStruct",
+			name: pwd + "materialization",
 			rm:   true,
 		},
 	}
