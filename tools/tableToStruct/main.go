@@ -24,7 +24,6 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/tools"
-	_ "github.com/go-sql-driver/mysql"
 )
 
 type (
