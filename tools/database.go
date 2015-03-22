@@ -434,12 +434,6 @@ func (s *rowTransformer) append(ret *[]StringEntities) {
 	s.se = make(StringEntities, len(s.colNames))
 }
 
-type (
-	// AttributeModelMap contains data provided via JSON to map the three eav_attribute columns
-	// (backend|frontend|source)_model to the correct Go function and package
-	AttributeModelMap map[string]map[string]string
-)
-
 // PrepareForTemplate uses the columns slice to transform the rows so that correct Go code can be printed.
 // int/Float values won't be touched. Bools or IntBools will be converted to true/false. Strings will be quoted.
 // And if there is an entry in the AttributeModelMap then the Go code from the map will be used.
