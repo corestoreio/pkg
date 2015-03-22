@@ -58,7 +58,6 @@ func getCommands() []aCommand {
 		},
 		aCommand{
 			name: pwd + "tableToStruct",
-			args: []string{"-run"},
 			rm:   true,
 		},
 		aCommand{
@@ -69,7 +68,6 @@ func getCommands() []aCommand {
 		},
 		aCommand{
 			name: pwd + "eavToStruct",
-			args: []string{"-p", "materialized", "-o", "materialized/generated_eav.go", "-run"},
 			rm:   true,
 		},
 	}

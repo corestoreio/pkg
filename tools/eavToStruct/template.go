@@ -30,7 +30,7 @@ const tplEav = tools.Copyright + `
 package {{ .Package }}
 import (
     "github.com/corestoreio/csfw/eav"
-    {{ range .ETypeData }}{{if ne .ImportPath "" }}"{{.ImportPath}}"
+    {{ range .EntityTypeMap }}{{if ne .ImportPath "" }}"{{.ImportPath}}"
 {{end}}{{end}}
 )
 
@@ -41,19 +41,18 @@ var (
             EntityTypeID: {{ .EntityTypeID }},
             EntityTypeCode: "{{ .EntityTypeCode }}",
             EntityModel: {{ .EntityModel }},
-            AttributeModel: {{ .AttributeModel }},
-            EntityTable: {{ .EntityTable }},
-            ValueTablePrefix: "{{ .ValueTablePrefix }}",
+            AttributeModel: {{ .AttributeModel.String }},
+            EntityTable: {{ .EntityTable.String }},
+            ValueTablePrefix: "{{ .ValueTablePrefix.String }}",
             IsDataSharing: {{ .IsDataSharing }},
-            DataSharingKey: "{{ .DataSharingKey }}",
+            DataSharingKey: "{{ .DataSharingKey.String }}",
             DefaultAttributeSetID: {{ .DefaultAttributeSetID }},
-            {{ if ne "" .IncrementModel }}IncrementModel: {{ .IncrementModel }},{{ end }}
+            {{ if ne "" .IncrementModel.String }}IncrementModel: {{ .IncrementModel.String }},{{ end }}
             IncrementPerStore: {{ .IncrementPerStore }},
             IncrementPadLength: {{ .IncrementPadLength }},
             IncrementPadChar: "{{ .IncrementPadChar }}",
-            AdditionalAttributeTable: {{ .AdditionalAttributeTable }},
-            EntityAttributeCollection: {{ .EntityAttributeCollection }},
-            ImportPath: "{{ .ImportPath }}",
+            AdditionalAttributeTable: {{ .AdditionalAttributeTable.String }},
+            EntityAttributeCollection: {{ .EntityAttributeCollection.String }},
         },
         {{ end }}
     }

@@ -16,12 +16,10 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io/ioutil"
-	"os"
 
-	"encoding/json"
+	"sync"
 
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"
@@ -30,34 +28,23 @@ import (
 	"github.com/juju/errgo"
 )
 
-const (
-	envTableMap string = "CS_EAV_MAP"
-)
-
-var (
-	pkg        = flag.String("p", "", "Package name in template")
-	run        = flag.Bool("run", false, "If true program runs")
-	outputFile = flag.String("o", "", "Output file name")
-)
-
-type (
-	JsonEntityTypeMap map[string]*tools.EntityTypeMap
-)
-
 func main() {
-	flag.Parse()
-
-	if false == *run || *outputFile == "" || *pkg == "" {
-		flag.Usage()
-		os.Exit(1)
-	}
-
+	var wg sync.WaitGroup
 	db, dbrConn, err := csdb.Connect()
 	tools.LogFatal(err)
 	defer db.Close()
 
+	wg.Add(1)
+	go materializeEntityType(&wg, dbrConn)
+
+	wg.Wait()
+}
+
+func materializeEntityType(wg *sync.WaitGroup, dbrConn *dbr.Connection) {
+	defer wg.Done()
 	type dataContainer struct {
-		ETypeData     JsonEntityTypeMap
+		ETypeData     eav.EntityTypeSlice
+		EntityTypeMap tools.EntityTypeMap
 		Package, Tick string
 	}
 
@@ -65,71 +52,48 @@ func main() {
 	tools.LogFatal(err)
 
 	tplData := &dataContainer{
-		ETypeData: etData,
-		Package:   *pkg,
-		Tick:      "`",
+		ETypeData:     etData,
+		EntityTypeMap: tools.ConfigEntityType,
+		Package:       tools.ConfigEntityTypeMaterialization.Package,
+		Tick:          "`",
 	}
 
-	formatted, err := tools.GenerateCode(*pkg, tplEav, tplData)
+	formatted, err := tools.GenerateCode(tools.ConfigEntityTypeMaterialization.Package, tplEav, tplData)
 	if err != nil {
 		fmt.Printf("\n%s\n", formatted)
 		tools.LogFatal(err)
 	}
 
-	ioutil.WriteFile(*outputFile, formatted, 0600)
+	ioutil.WriteFile(tools.ConfigEntityTypeMaterialization.OutputFile, formatted, 0600)
 }
 
-func getEntityTypeData(dbrSess *dbr.Session) (JsonEntityTypeMap, error) {
+func getEntityTypeData(dbrSess *dbr.Session) (etc eav.EntityTypeSlice, err error) {
 
 	s, err := eav.GetTableStructure(eav.TableEntityType)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
 
-	var entityTypeCollection eav.EntityTypeSlice
 	_, err = dbrSess.
 		Select(s.AllColumnAliasQuote(s.Name)...).
 		From(s.Name).
-		LoadStructs(&entityTypeCollection)
+		Where("entity_type_code IN ?", tools.ConfigEntityType.Keys()).
+		LoadStructs(&etc)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
 
-	mapCollection, err := getMapping(os.Getenv(envTableMap), tools.JSONMapEntityTypes)
-	tools.LogFatal(err)
-
-	for typeCode, mapData := range mapCollection {
+	for typeCode, mapData := range tools.ConfigEntityType {
 		// now map the values from entityTypeCollection into mapData
-		et, err := entityTypeCollection.GetByCode(typeCode)
+		et, err := etc.GetByCode(typeCode)
 		tools.LogFatal(err)
-		mapData.EntityTypeID = et.EntityTypeID
-		mapData.EntityTypeCode = et.EntityTypeCode
-		mapData.ValueTablePrefix = et.ValueTablePrefix.String
-		mapData.EntityIDField = et.EntityIDField.String
-		mapData.IsDataSharing = et.IsDataSharing
-		mapData.DataSharingKey = et.DataSharingKey.String
-		mapData.DefaultAttributeSetID = et.DefaultAttributeSetID
-		mapData.IncrementPerStore = et.IncrementPerStore
-		mapData.IncrementPadLength = et.IncrementPadLength
-		mapData.IncrementPadChar = et.IncrementPadChar
+		et.EntityModel = mapData.EntityModel
+		et.AttributeModel.String = mapData.AttributeModel
+		et.EntityTable.String = mapData.EntityTable
+		et.IncrementModel.String = mapData.IncrementModel
+		et.AdditionalAttributeTable.String = mapData.AdditionalAttributeTable
+		et.EntityAttributeCollection.String = mapData.EntityAttributeCollection
 	}
 
-	return mapCollection, nil
-}
-
-func getMapping(fileName string, rawJson []byte) (JsonEntityTypeMap, error) {
-	var err error
-	if fileName != "" && fileName[len(fileName)-5:] == ".json" { // check if file ext is .json
-		rawJson = nil
-		rawJson, err = ioutil.ReadFile(fileName)
-		if err != nil {
-			return nil, errgo.Mask(err)
-		}
-	}
-	mapping := make(JsonEntityTypeMap)
-	err = json.Unmarshal(rawJson, &mapping)
-	if err != nil {
-		return nil, errgo.Mask(err)
-	}
-	return mapping, nil
+	return etc, nil
 }

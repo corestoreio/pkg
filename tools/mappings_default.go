@@ -15,43 +15,6 @@
 // These global variables are only used during go:generate and can be changed at any time.
 package tools
 
-// JSONMapEntityTypes provides a mapping for Mage1+2. A developer has the option to provide a custom map.
-var JSONMapEntityTypes = []byte(`{
-  "customer": {
-    "import_path": "github.com/corestoreio/csfw/customer",
-    "entity_model": "customer.Customer()",
-    "attribute_model": "customer.Attribute()",
-    "entity_table": "customer.Customer()",
-    "increment_model": "customer.Customer()",
-    "additional_attribute_table": "customer.Customer()",
-    "entity_attribute_collection": "customer.Customer()"
-  },
-  "customer_address": {
-    "import_path": "github.com/corestoreio/csfw/customer",
-    "entity_model": "customer.Address()",
-    "attribute_model": "customer.AddressAttribute()",
-    "entity_table": "customer.Address()",
-    "additional_attribute_table": "customer.Address()",
-    "entity_attribute_collection": "customer.Address()"
-  },
-  "catalog_category": {
-    "import_path": "github.com/corestoreio/csfw/catalog",
-    "entity_model": "catalog.Category()",
-    "attribute_model": "catalog.Attribute()",
-    "entity_table": "catalog.Category()",
-    "additional_attribute_table": "catalog.Category()",
-    "entity_attribute_collection": "catalog.Category()"
-  },
-  "catalog_product": {
-    "import_path": "github.com/corestoreio/csfw/catalog",
-    "entity_model": "catalog.Product()",
-    "attribute_model": "catalog.Attribute()",
-    "entity_table": "catalog.Product()",
-    "additional_attribute_table": "catalog.Product()",
-    "entity_attribute_collection": "catalog.Product()"
-  }
-}`)
-
 // EavAttributeColumnNameToInterface mapping column name to Go interface name
 var EavAttributeColumnNameToInterface = map[string]string{
 	"backend_model":  "eav.AttributeBackendModeller",

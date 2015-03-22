@@ -46,27 +46,6 @@ var (
 type (
 	ValueSuffixes      []string
 	TypeCodeValueTable map[string]map[string]string // 1. key entity_type_code 2. key table name => value ValueSuffix
-
-	// EntityTypeMap applies a JSON map to the Go type of EntityType struct
-	EntityTypeMap struct {
-		ImportPath                string `json:"import_path"`
-		EntityTypeID              int64  `db:"entity_type_id"`
-		EntityTypeCode            string `db:"entity_type_code"`
-		EntityModel               string `json:"entity_model"`
-		AttributeModel            string `json:"attribute_model"`
-		EntityTable               string `json:"entity_table"`
-		ValueTablePrefix          string `db:"value_table_prefix"`
-		EntityIDField             string
-		IsDataSharing             bool
-		DataSharingKey            string
-		DefaultAttributeSetID     int64
-		IncrementModel            string `json:"increment_model"`
-		IncrementPerStore         bool
-		IncrementPadLength        int64
-		IncrementPadChar          string
-		AdditionalAttributeTable  string `json:"additional_attribute_table"`
-		EntityAttributeCollection string `json:"entity_attribute_collection"`
-	}
 )
 
 func (vs ValueSuffixes) contains(suffix string) bool {
