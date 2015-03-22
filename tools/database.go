@@ -465,16 +465,35 @@ type (
 
 // PrepareForTemplate uses the columns slice to transform the rows so that correct Go code can be printed.
 // int/Float values won't be touched. Bools or IntBools will be converted to true/false. Strings will be quoted.
-// And if there is an entry in the AttributeModelMap then the Go code
-func PrepareForTemplate(cols columns, rows []StringEntities, amm AttributeModelMap) {
+// And if there is an entry in the AttributeModelMap then the Go code from the map will be used.
+// Returns a slice containing all the import paths
+func PrepareForTemplate(cols columns, rows []StringEntities, amm AttributeModelMap) []string {
+	ip := make([]string, 0, 10) // import_path container
 	for _, row := range rows {
 		for colName, colValue := range row {
 			var c *column = cols.getByName(colName)
+
 			var mageModel map[string]string
 			mageModel, isInterface := amm[colValue]
+
 			switch true {
 			case isInterface:
-				row[colName] = mageModel[colValue] // @todo more checks if set
+				if goModel, ok := mageModel[colName]; ok && goModel != "" {
+					row[colName] = goModel
+					if path, ok := mageModel["import_path"]; ok {
+						add := true
+						for i := 0; i < len(ip); i++ {
+							if ip[i] == path { // check for duplicates
+								add = false
+							}
+						}
+						if add {
+							ip = append(ip, path)
+						}
+					}
+				} else {
+					row[colName] = "nil"
+				}
 				break
 			case c.isBool():
 				row[colName] = "false"
@@ -483,21 +502,30 @@ func PrepareForTemplate(cols columns, rows []StringEntities, amm AttributeModelM
 				}
 				break
 			case c.isInt():
-
+				if colValue == "" {
+					row[colName] = "0"
+				}
 				break
 			case c.isString():
 				row[colName] = strconv.Quote(colValue)
 				break
 			case c.isFloat():
-
+				if colValue == "" {
+					row[colName] = "0.0"
+				}
 				break
 			case c.isDate():
-				row[colName] = "time.Parse(`2006-01-02 15:04:05`," + strconv.Quote(colValue) + ")" // @todo timezone
+				if colValue == "" {
+					row[colName] = "nil"
+				} else {
+					row[colName] = "time.Parse(`2006-01-02 15:04:05`," + strconv.Quote(colValue) + ")" // @todo timezone
+				}
 				break
 			default:
-				fmt.Printf("\nERRO: %s -> %s\n%#v\n", colName, colValue, c)
+				panic(fmt.Sprintf("\nERROR cannot detect SQL type: %s -> %s\n%#v\n", colName, colValue, c))
 			}
 
 		}
 	}
+	return ip
 }

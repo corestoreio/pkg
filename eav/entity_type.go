@@ -41,6 +41,7 @@ type (
 		IncrementPadChar          string
 		AdditionalAttributeTable  EntityTypeAdditionalAttributeTabler
 		EntityAttributeCollection EntityAttributeCollectioner
+		ImportPath                string
 	}
 )
 

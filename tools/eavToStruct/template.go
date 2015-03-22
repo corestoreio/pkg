@@ -35,8 +35,8 @@ import (
 )
 
 var (
-    // CSEntityTypeCollection contains all entity types mapped to their Go types/interfaces
-    CSEntityTypeCollection = eav.CSEntityTypeSlice{
+    // csEntityTypeCollection contains all entity types mapped to their Go types/interfaces
+    csEntityTypeCollection = eav.CSEntityTypeSlice{
         {{ range .ETypeData }} &eav.CSEntityType {
             EntityTypeID: {{ .EntityTypeID }},
             EntityTypeCode: "{{ .EntityTypeCode }}",
@@ -53,6 +53,7 @@ var (
             IncrementPadChar: "{{ .IncrementPadChar }}",
             AdditionalAttributeTable: {{ .AdditionalAttributeTable }},
             EntityAttributeCollection: {{ .EntityAttributeCollection }},
+            ImportPath: "{{ .ImportPath }}",
         },
         {{ end }}
     }

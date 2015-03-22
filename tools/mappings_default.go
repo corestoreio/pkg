@@ -65,11 +65,11 @@ var EavAttributeColumnNameToInterface = map[string]string{
 var JSONMapAttributeModels = []byte(`{
         "catalog\/product_attribute_frontend_image": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "frontend_model": "catalog.Product().Attribute().Frontend().Image()"
+            "frontend_model": "Product().Attribute().Frontend().Image()"
         },
         "Magento\\Catalog\\Model\\Product\\Attribute\\Frontend\\Image": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "frontend_model": "catalog.Product().Attribute().Frontend().Image()"
+            "frontend_model": "Product().Attribute().Frontend().Image()"
         },
         "eav\/entity_attribute_frontend_datetime": {
             "import_path": "github.com\/corestoreio\/csfw\/eav",
@@ -81,27 +81,27 @@ var JSONMapAttributeModels = []byte(`{
         },
         "catalog\/attribute_backend_customlayoutupdate": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Attribute().Backend().Customlayoutupdate()"
+            "backend_model": "Attribute().Backend().Customlayoutupdate()"
         },
         "Magento\\Catalog\\Model\\Attribute\\Backend\\Customlayoutupdate": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Attribute().Backend().Customlayoutupdate()"
+            "backend_model": "Attribute().Backend().Customlayoutupdate()"
         },
         "catalog\/category_attribute_backend_image": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Category().Attribute().Backend().Image()"
+            "backend_model": "Category().Attribute().Backend().Image()"
         },
         "Magento\\Catalog\\Model\\Category\\Attribute\\Backend\\Image": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Category().Attribute().Backend().Image()"
+            "backend_model": "Category().Attribute().Backend().Image()"
         },
         "catalog\/category_attribute_backend_sortby": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Category().Attribute().Backend().Sortby()"
+            "backend_model": "Category().Attribute().Backend().Sortby()"
         },
         "Magento\\Catalog\\Model\\Category\\Attribute\\Backend\\Sortby": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Category().Attribute().Backend().Sortby()"
+            "backend_model": "Category().Attribute().Backend().Sortby()"
         },
         "catalog\/category_attribute_backend_urlkey": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
@@ -109,83 +109,83 @@ var JSONMapAttributeModels = []byte(`{
         },
         "catalog\/product_attribute_backend_boolean": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Boolean()"
+            "backend_model": "Product().Attribute().Backend().Boolean()"
         },
         "Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Boolean": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Boolean()"
+            "backend_model": "Product().Attribute().Backend().Boolean()"
         },
         "Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Category": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Category()"
+            "backend_model": "Product().Attribute().Backend().Category()"
         },
         "catalog\/product_attribute_backend_groupprice": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Groupprice()"
+            "backend_model": "Product().Attribute().Backend().Groupprice()"
         },
         "Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\GroupPrice": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().GroupPrice()"
+            "backend_model": "Product().Attribute().Backend().GroupPrice()"
         },
         "catalog\/product_attribute_backend_media": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Media()"
+            "backend_model": "Product().Attribute().Backend().Media()"
         },
         "Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Media": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Media()"
+            "backend_model": "Product().Attribute().Backend().Media()"
         },
         "catalog\/product_attribute_backend_msrp": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Price()"
+            "backend_model": "Product().Attribute().Backend().Price()"
         },
         "catalog\/product_attribute_backend_price": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Price()"
+            "backend_model": "Product().Attribute().Backend().Price()"
         },
         "Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Price": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Price()"
+            "backend_model": "Product().Attribute().Backend().Price()"
         },
         "catalog\/product_attribute_backend_recurring": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Recurring()"
+            "backend_model": "Product().Attribute().Backend().Recurring()"
         },
         "Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Recurring": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Recurring()"
+            "backend_model": "Product().Attribute().Backend().Recurring()"
         },
         "catalog\/product_attribute_backend_sku": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Sku()"
+            "backend_model": "Product().Attribute().Backend().Sku()"
         },
         "Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Sku": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Sku()"
+            "backend_model": "Product().Attribute().Backend().Sku()"
         },
         "catalog\/product_attribute_backend_startdate": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Startdate()"
+            "backend_model": "Product().Attribute().Backend().Startdate()"
         },
         "Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Startdate": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Startdate()"
+            "backend_model": "Product().Attribute().Backend().Startdate()"
         },
         "Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Stock": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Stock()"
+            "backend_model": "Product().Attribute().Backend().Stock()"
         },
         "catalog\/product_attribute_backend_tierprice": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Tierprice()"
+            "backend_model": "Product().Attribute().Backend().Tierprice()"
         },
         "Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Tierprice": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Tierprice()"
+            "backend_model": "Product().Attribute().Backend().Tierprice()"
         },
         "Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Weight": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "backend_model": "catalog.Product().Attribute().Backend().Weight()"
+            "backend_model": "Product().Attribute().Backend().Weight()"
         },
         "catalog\/product_attribute_backend_urlkey": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
@@ -193,63 +193,63 @@ var JSONMapAttributeModels = []byte(`{
         },
         "customer\/attribute_backend_data_boolean": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "backend_model": "customer.Attribute().Backend().Data().Boolean()"
+            "backend_model": "Attribute().Backend().Data().Boolean()"
         },
         "Magento\\Customer\\Model\\Attribute\\Backend\\Data\\Boolean": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "backend_model": "customer.Attribute().Backend().Data().Boolean()"
+            "backend_model": "Attribute().Backend().Data().Boolean()"
         },
         "customer\/customer_attribute_backend_billing": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "backend_model": "customer.Attribute().Backend().Billing()"
+            "backend_model": "Attribute().Backend().Billing()"
         },
         "Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Billing": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "backend_model": "customer.Attribute().Backend().Billing()"
+            "backend_model": "Attribute().Backend().Billing()"
         },
         "customer\/customer_attribute_backend_password": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "backend_model": "customer.Attribute().Backend().Password()"
+            "backend_model": "Attribute().Backend().Password()"
         },
         "Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Password": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "backend_model": "customer.Attribute().Backend().Password()"
+            "backend_model": "Attribute().Backend().Password()"
         },
         "customer\/customer_attribute_backend_shipping": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "backend_model": "customer.Attribute().Backend().Shipping()"
+            "backend_model": "Attribute().Backend().Shipping()"
         },
         "Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Shipping": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "backend_model": "customer.Attribute().Backend().Shipping()"
+            "backend_model": "Attribute().Backend().Shipping()"
         },
         "customer\/customer_attribute_backend_store": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "backend_model": "customer.Attribute().Backend().Store()"
+            "backend_model": "Attribute().Backend().Store()"
         },
         "Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Store": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "backend_model": "customer.Attribute().Backend().Store()"
+            "backend_model": "Attribute().Backend().Store()"
         },
         "customer\/customer_attribute_backend_website": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "backend_model": "customer.Attribute().Backend().Website()"
+            "backend_model": "Attribute().Backend().Website()"
         },
         "Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Website": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "backend_model": "customer.Attribute().Backend().Website()"
+            "backend_model": "Attribute().Backend().Website()"
         },
         "customer\/entity_address_attribute_backend_region": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "backend_model": "customer.Address().Attribute().Backend().Region()"
+            "backend_model": "Address().Attribute().Backend().Region()"
         },
         "Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Backend\\Region": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "backend_model": "customer.Address().Attribute().Backend().Region()"
+            "backend_model": "Address().Attribute().Backend().Region()"
         },
         "customer\/entity_address_attribute_backend_street": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "backend_model": "customer.Address().Attribute().Backend().Street()"
+            "backend_model": "Address().Attribute().Backend().Street()"
         },
         "Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\DefaultBackend": {
             "import_path": "github.com\/corestoreio\/csfw\/eav",
@@ -301,75 +301,75 @@ var JSONMapAttributeModels = []byte(`{
         },
         "catalog\/category_attribute_source_mode": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Category().Attribute().Source().Mode()"
+            "source_model": "Category().Attribute().Source().Mode()"
         },
         "Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Mode": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Category().Attribute().Source().Mode()"
+            "source_model": "Category().Attribute().Source().Mode()"
         },
         "catalog\/category_attribute_source_page": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Category().Attribute().Source().Page()"
+            "source_model": "Category().Attribute().Source().Page()"
         },
         "Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Page": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Category().Attribute().Source().Page()"
+            "source_model": "Category().Attribute().Source().Page()"
         },
         "catalog\/category_attribute_source_sortby": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Category().Attribute().Source().Sortby()"
+            "source_model": "Category().Attribute().Source().Sortby()"
         },
         "Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Sortby": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Category().Attribute().Source().Sortby()"
+            "source_model": "Category().Attribute().Source().Sortby()"
         },
         "catalog\/entity_product_attribute_design_options_container": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Product().Attribute().Design().Options().Container()"
+            "source_model": "Product().Attribute().Design().Options().Container()"
         },
         "Magento\\Catalog\\Model\\Entity\\Product\\Attribute\\Design\\Options\\Container": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Product().Attribute().Design().Options().Container()"
+            "source_model": "Product().Attribute().Design().Options().Container()"
         },
         "catalog\/product_attribute_source_countryofmanufacture": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Product().Attribute().Source().Countryofmanufacture()"
+            "source_model": "Product().Attribute().Source().Countryofmanufacture()"
         },
         "Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Countryofmanufacture": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Product().Attribute().Source().Countryofmanufacture()"
+            "source_model": "Product().Attribute().Source().Countryofmanufacture()"
         },
         "catalog\/product_attribute_source_layout": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Product().Attribute().Source().Layout()"
+            "source_model": "Product().Attribute().Source().Layout()"
         },
         "Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Layout": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Product().Attribute().Source().Layout()"
+            "source_model": "Product().Attribute().Source().Layout()"
         },
         "Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Status": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Product().Attribute().Source().Status()"
+            "source_model": "Product().Attribute().Source().Status()"
         },
         "catalog\/product_attribute_source_msrp_type_enabled": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Product().Attribute().Source().Msrp().Type().Enabled()"
+            "source_model": "Product().Attribute().Source().Msrp().Type().Enabled()"
         },
         "catalog\/product_attribute_source_msrp_type_price": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Product().Attribute().Source().Msrp().Type().Price()"
+            "source_model": "Product().Attribute().Source().Msrp().Type().Price()"
         },
         "catalog\/product_status": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Product().Status()"
+            "source_model": "Product().Status()"
         },
         "catalog\/product_visibility": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Product().Visibility()"
+            "source_model": "Product().Visibility()"
         },
         "Magento\\Catalog\\Model\\Product\\Visibility": {
             "import_path": "github.com\/corestoreio\/csfw\/catalog",
-            "source_model": "catalog.Product().Visibility()"
+            "source_model": "Product().Visibility()"
         },
         "core\/design_source_design": {
             "import_path": "github.com\/corestoreio\/csfw\/core",
@@ -377,43 +377,43 @@ var JSONMapAttributeModels = []byte(`{
         },
         "customer\/customer_attribute_source_group": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "source_model": "customer.Attribute().Source().Group()"
+            "source_model": "Attribute().Source().Group()"
         },
         "Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Group": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "source_model": "customer.Attribute().Source().Group()"
+            "source_model": "Attribute().Source().Group()"
         },
         "customer\/customer_attribute_source_store": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "source_model": "customer.Attribute().Source().Store()"
+            "source_model": "Attribute().Source().Store()"
         },
         "Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Store": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "source_model": "customer.Attribute().Source().Store()"
+            "source_model": "Attribute().Source().Store()"
         },
         "customer\/customer_attribute_source_website": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "source_model": "customer.Attribute().Source().Website()"
+            "source_model": "Attribute().Source().Website()"
         },
         "Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Website": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "source_model": "customer.Attribute().Source().Website()"
+            "source_model": "Attribute().Source().Website()"
         },
         "customer\/entity_address_attribute_source_country": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "source_model": "customer.Address().Attribute().Source().Country()"
+            "source_model": "Address().Attribute().Source().Country()"
         },
         "Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Source\\Country": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "source_model": "customer.Address().Attribute().Source().Country()"
+            "source_model": "Address().Attribute().Source().Country()"
         },
         "customer\/entity_address_attribute_source_region": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "source_model": "customer.Address().Attribute().Source().Region()"
+            "source_model": "Address().Attribute().Source().Region()"
         },
         "Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Source\\Region": {
             "import_path": "github.com\/corestoreio\/csfw\/customer",
-            "source_model": "customer.Address().Attribute().Source().Region()"
+            "source_model": "Address().Attribute().Source().Region()"
         },
         "eav\/entity_attribute_source_boolean": {
             "import_path": "github.com\/corestoreio\/csfw\/eav",
@@ -446,5 +446,13 @@ var JSONMapAttributeModels = []byte(`{
         "Magento\\Theme\\Model\\Theme\\Source\\Theme": {
             "import_path": "github.com\/corestoreio\/csfw\/theme",
             "source_model": ""
+        },
+        "customer/attribute_data_postcode": {
+            "import_path": "github.com\/corestoreio\/csfw\/customer",
+            "data_model": "Attribute().Data.Postcode()"
+        },
+        "Magento\\Customer\\Model\\Attribute\\Data\\Postcode": {
+            "import_path": "github.com\/corestoreio\/csfw\/customer",
+            "data_model": "Attribute().Data.Postcode()"
         }
     }`)

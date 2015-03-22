@@ -19,12 +19,16 @@ import (
 	"database/sql"
 	"encoding/json"
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
 
-	"github.com/corestoreio/csfw/concrete"
+	"go/build"
+
+	"strings"
+
 	"github.com/corestoreio/csfw/eav"
+	"github.com/corestoreio/csfw/materialized"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/tools"
@@ -32,7 +36,6 @@ import (
 )
 
 var (
-	//pkg        = flag.String("p", "", "Package name in template")
 	run        = flag.Bool("run", false, "If true program runs")
 	outputFile = flag.String("o", "", "Output file name")
 )
@@ -42,10 +45,11 @@ const (
 )
 
 type context struct {
-	db       *sql.DB
-	dbrConn  *dbr.Connection
-	et       *eav.CSEntityType // will be updated each iteration
-	modelMap tools.AttributeModelMap
+	db        *sql.DB
+	dbrConn   *dbr.Connection
+	et        *eav.CSEntityType // will be updated each iteration
+	modelMap  tools.AttributeModelMap
+	goSrcPath string
 }
 
 func newContext() *context {
@@ -55,9 +59,10 @@ func newContext() *context {
 	tools.LogFatal(err)
 
 	return &context{
-		db:       db,
-		dbrConn:  dbrConn,
-		modelMap: modelMap,
+		db:        db,
+		dbrConn:   dbrConn,
+		modelMap:  modelMap,
+		goSrcPath: build.Default.GOPATH + "/src/",
 	}
 }
 
@@ -72,63 +77,22 @@ func main() {
 	ctx := newContext()
 	defer ctx.db.Close()
 
-	for _, et := range concrete.CSEntityTypeCollection {
+	for _, et := range materialized.GetEntityTypeCollection() {
 		ctx.et = et
-		code, err := prepareAttributeCode(ctx)
-		//tools.LogFatal(err)
-		if err != nil {
-			fmt.Printf("\n%s\n", err)
-		}
-		fmt.Printf("\n%s\n+++++++++++++++++++++++++++++++++++++++++++++++++\n", code)
-		// auto create the structs containing the Go interfaces and then put in the data
-		// write ann into the concrete package.
+		tools.LogFatal(generateAttributeCode(ctx))
 
-		// now aggregate structCode and write then all into the generated files in a package
-		// use the data from JSON mapping
 		// EAV -> Create queries for AttributeSets and AttributeGroups
 	}
-
-	//ioutil.WriteFile(*outputFile, formatted, 0600)
 }
 
-func prepareAttributeCode(ctx *context) ([]byte, error) {
-	dbrSelect, err := eav.GetAttributeSelectSql(ctx.dbrConn.NewSession(nil), ctx.et, 0)
-	if err != nil {
-		return nil, err
+// getName
+func getName(ctx *context, suffix ...string) string {
+	pkg := path.Base(ctx.et.ImportPath)
+	structBaseName := ctx.et.EntityTypeCode
+	if strings.Contains(ctx.et.EntityTypeCode, "_") {
+		structBaseName = strings.Replace(ctx.et.EntityTypeCode, pkg+"_", "", -1)
 	}
-
-	columns, err := tools.SQLQueryToColumns(ctx.db, dbrSelect)
-	if err != nil {
-		return nil, err
-	}
-
-	tools.LogFatal(columns.MapSQLToGoType(tools.EavAttributeColumnNameToInterface))
-	structName := "cs_" + ctx.et.EntityTypeCode
-	structCode, err := tools.ColumnsToStructCode(structName, columns, tplQueryStruct)
-	if err != nil {
-		return nil, err
-	}
-
-	attributeCollection, err := tools.GetSQL(ctx.db, dbrSelect)
-	if err != nil {
-		return nil, err
-	}
-
-	tools.PrepareForTemplate(columns, attributeCollection, ctx.modelMap)
-
-	// iterate over attributeCollection and escape or not the values to be used as string, int, bool or Go func
-
-	data := struct {
-		QueryStruct string
-		Attributes  []tools.StringEntities
-		Name        string
-	}{
-		QueryStruct: string(structCode),
-		Attributes:  attributeCollection,
-		Name:        structName,
-	}
-
-	return tools.GenerateCode("packageNameTODO", tplQueryData, data)
+	return structBaseName + "_" + strings.Join(suffix, "_")
 }
 
 func getMapping(fileName string, rawJson []byte) (tools.AttributeModelMap, error) {

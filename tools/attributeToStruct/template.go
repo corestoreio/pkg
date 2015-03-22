@@ -15,7 +15,9 @@
 // Generates code for all attribute types
 package main
 
-const tplQueryStruct = `
+import "github.com/corestoreio/csfw/tools"
+
+const tplTypeDefinitions = `
 type (
     // {{.Name | prepareVar}}Slice contains pointers to {{.Name | prepareVar}} types
     {{.Name | prepareVar}}Slice []*{{.Name | prepareVar}}
@@ -26,16 +28,21 @@ type (
 )
 `
 
-const tplQueryData = `
-{{.QueryStruct}}
+const tplFileBody = tools.Copyright + `
+package {{ .PackageName }}
+{{ if gt (len .ImportPaths) 0 }}
+    import (
+    {{ range .ImportPaths }} "{{.}}"
+    {{ end }} )
+{{ end }}
 
-var (
-    {{.Name | prepareVar}}Collection = {{.Name | prepareVar}}Slice{
+{{.TypeDefinition}}
+
+var private{{.Name | prepareVar}}Collection = {{.Name | prepareVar}}Slice{
         {{ range $row := .Attributes }} &{{$.Name | prepareVar}} {
             {{ range $k,$v := $row }} {{ $k | prepareVar }}: {{ $v }},
             {{ end }}
         },
         {{ end }}
     }
-)
 `

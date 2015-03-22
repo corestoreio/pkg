@@ -88,7 +88,7 @@ func getCommands() []aCommand {
 		},
 		aCommand{
 			name: pwd + "eavToStruct",
-			args: []string{"-p", "concrete", "-o", "concrete/generated_eav.go", "-run"},
+			args: []string{"-p", "materialized", "-o", "materialized/generated_eav.go", "-run"},
 			rm:   true,
 		},
 	}
