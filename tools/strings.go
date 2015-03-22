@@ -81,6 +81,7 @@ func GenerateCode(pkg, tplCode string, data interface{}) ([]byte, error) {
 
 // Camelize transforms from snake case to camelCase e.g. catalog_product_id to CatalogProductID.
 func Camelize(s string) string {
+	s = strings.ToLower(s)
 	parts := strings.Split(s, "_")
 	ret := ""
 	for _, p := range parts {

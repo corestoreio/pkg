@@ -66,7 +66,7 @@ func main() {
 	tools.LogFatal(err)
 
 	entityTypeCodes := strings.Split(*entityTypeCode, ",")
-	if len(entityTypeCodes) > 0 {
+	if len(entityTypeCodes) > 0 && entityTypeCodes[0] != "" {
 		tplData.TypeCodeValueTables, err = tools.GetEavValueTables(dbrConn, *prefixName, entityTypeCodes)
 		tools.LogFatal(err)
 		for _, vTables := range tplData.TypeCodeValueTables {
