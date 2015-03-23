@@ -17,11 +17,9 @@ package main
 
 import (
 	"database/sql"
-	"sync"
-
 	"go/build"
-
 	"runtime"
+	"sync"
 
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"

@@ -262,17 +262,17 @@ func (cc columns) MapSQLToGoType(ifm map[string]string) error {
 }
 
 func (cc columns) GetFieldNames(pkOnly bool) []string {
-    ret := make([]string,0,len(cc))
-    for _, col := range cc {
-        isPk := col.Key.String == "PRI"
-        if pkOnly && isPk {
-            ret = append(ret,col.Field.String)
-        }
-        if !isPk {
-            ret = append(ret,col.Field.String)
-        }
-    }
-    return ret
+	ret := make([]string, 0, len(cc))
+	for _, col := range cc {
+		isPk := col.Key.String == "PRI"
+		if pkOnly && isPk {
+			ret = append(ret, col.Field.String)
+		}
+		if !isPk {
+			ret = append(ret, col.Field.String)
+		}
+	}
+	return ret
 }
 
 // GetColumns returns all columns from a table. It discards the column entity_type_id from some
@@ -448,11 +448,30 @@ func (s *rowTransformer) append(ret *[]StringEntities) {
 	s.se = make(StringEntities, len(s.colNames))
 }
 
+func validImportPath(ad *AttributeModelDef, ip []string, targetPkg string) bool {
+	if ad.ImportPath == "" {
+		return false
+	}
+	if len(ad.ImportPath) > 0 && len(targetPkg) > 0 && ad.ImportPath[len(ad.ImportPath)-len(targetPkg):] == targetPkg {
+		return false
+	}
+	add := true
+	for i := 0; i < len(ip); i++ {
+		if ip[i] == ad.ImportPath { // check for duplicates
+			add = false
+		}
+	}
+	if add {
+		return true
+	}
+	return false
+}
+
 // PrepareForTemplate uses the columns slice to transform the rows so that correct Go code can be printed.
 // int/Float values won't be touched. Bools or IntBools will be converted to true/false. Strings will be quoted.
 // And if there is an entry in the AttributeModelMap then the Go code from the map will be used.
-// Returns a slice containing all the import paths
-func PrepareForTemplate(cols columns, rows []StringEntities, mageModelMap AttributeModelDefMap) []string {
+// Returns a slice containing all the import paths. Import paths which are equal to pkg will be filtered out.
+func PrepareForTemplate(cols columns, rows []StringEntities, mageModelMap AttributeModelDefMap, targetPkg string) []string {
 	ip := make([]string, 0, 10) // import_path container
 	for _, row := range rows {
 		for colName, colValue := range row {
@@ -464,16 +483,8 @@ func PrepareForTemplate(cols columns, rows []StringEntities, mageModelMap Attrib
 			case hasModel:
 				if goType.GoModel != "" {
 					row[colName] = goType.GoModel
-					if goType.ImportPath != "" {
-						add := true
-						for i := 0; i < len(ip); i++ {
-							if ip[i] == goType.ImportPath { // check for duplicates
-								add = false
-							}
-						}
-						if add {
-							ip = append(ip, goType.ImportPath)
-						}
+					if validImportPath(goType, ip, targetPkg) {
+						ip = append(ip, goType.ImportPath)
 					}
 				} else {
 					row[colName] = "nil"

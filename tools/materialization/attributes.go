@@ -88,7 +88,8 @@ func generateAttributeCode(ctx *context) error {
 	}
 
 	// @todo ValidateRules field must be converted from PHP serialized string to JSON
-	importPaths := tools.PrepareForTemplate(columns, attributeCollection, tools.ConfigAttributeModel)
+	pkg := getPackage(ctx.et)
+	importPaths := tools.PrepareForTemplate(columns, attributeCollection, tools.ConfigAttributeModel, pkg)
 
 	data := struct {
 		TypeDefinition string
@@ -101,7 +102,7 @@ func generateAttributeCode(ctx *context) error {
 		Attributes:     attributeCollection,
 		Name:           name,
 		ImportPaths:    importPaths,
-		PackageName:    getPackage(ctx.et),
+		PackageName:    pkg,
 	}
 
 	code, err := tools.GenerateCode("", tplTypeDefinitionFile, data)
