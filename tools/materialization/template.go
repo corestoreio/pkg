@@ -79,9 +79,10 @@ package {{ .PackageName }}
 {{ end }}
 
 {{.TypeDefinition}}
+type index{{ .Name | prepareVar }} int
 
 const (
-    {{ range $k, $row := .Attributes }}{{$.Name | prepareVar}}{{index $row "attribute_code" | prepareVar}} {{ if eq $k 0 }} csdb.Index = iota {{ end }}
+    {{ range $k, $row := .Attributes }}{{$.Name | prepareVar}}{{index $row "attribute_code" | prepareVar}} {{ if eq $k 0 }} index{{ $.Name | prepareVar }} = iota {{ end }}
     {{end}}
 )
 
@@ -92,4 +93,15 @@ var private{{.Name | prepareVar}}Collection = {{.Name | prepareVar}}Slice{
         },
         {{ end }}
     }
+
+// Get{{.Name | prepareVar}}Collection returns a slice with all attributes and its configuration
+func Get{{.Name | prepareVar}}Collection() {{.Name | prepareVar}}Slice {
+    return private{{.Name | prepareVar}}Collection
+}
+
+// Get{{.Name | prepareVar}} returns a single attribute
+func Get{{.Name | prepareVar}}(i index{{ .Name | prepareVar }}) (*{{.Name | prepareVar}}, error) {
+    return private{{.Name | prepareVar}}Collection[i], nil
+}
+
 `
