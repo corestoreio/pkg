@@ -80,8 +80,13 @@ package {{ .PackageName }}
 
 {{.TypeDefinition}}
 
+const (
+    {{ range $k, $row := .Attributes }}{{$.Name | prepareVar}}{{index $row "attribute_code" | prepareVar}} {{ if eq $k 0 }} csdb.Index = iota {{ end }}
+    {{end}}
+)
+
 var private{{.Name | prepareVar}}Collection = {{.Name | prepareVar}}Slice{
-        {{ range $row := .Attributes }} &{{$.Name | prepareVar}} {
+        {{ range $row := .Attributes }} {{$.Name | prepareVar}}{{index $row "attribute_code" | prepareVar}}: &{{$.Name | prepareVar}} {
             {{ range $k,$v := $row }} {{ $k | prepareVar }}: {{ $v }},
             {{ end }}
         },

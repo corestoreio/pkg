@@ -79,9 +79,9 @@ func GenerateCode(pkg, tplCode string, data interface{}) ([]byte, error) {
 	return fmt, nil
 }
 
-// Camelize transforms from snake case to camelCase e.g. catalog_product_id to CatalogProductID.
+// Camelize transforms from snake case to camelCase e.g. catalog_product_id to CatalogProductID. Also removes quotes.
 func Camelize(s string) string {
-	s = strings.ToLower(s)
+	s = strings.ToLower(strings.Replace(s, `"`, "", -1))
 	parts := strings.Split(s, "_")
 	ret := ""
 	for _, p := range parts {

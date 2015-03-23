@@ -107,6 +107,7 @@ func generateAttributeCode(ctx *context) error {
 
 	code, err := tools.GenerateCode("", tplTypeDefinitionFile, data)
 	if err != nil {
+		println(string(code))
 		return err
 	}
 
