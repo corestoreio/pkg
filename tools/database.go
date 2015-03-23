@@ -171,11 +171,10 @@ func (c *column) isBool() bool {
 	if len(c.Field.String) < 3 {
 		return false
 	}
-	switch c.Field.String[:3] {
-	case "is_", "has":
-		return true
-	}
-	return strings.Index(c.Field.String, "used_") == 0 || c.Field.String == "increment_per_store"
+	return strings.Index(c.Field.String, "used_") > -1 ||
+		strings.Index(c.Field.String, "is_") > -1 ||
+		strings.Index(c.Field.String, "has_") > -1 ||
+		c.Field.String == "increment_per_store"
 }
 
 func (c *column) isInt() bool {
@@ -478,17 +477,19 @@ func PrepareForTemplate(cols columns, rows []StringEntities, mageModelMap Attrib
 			var c *column = cols.getByName(colName)
 
 			goType, hasModel := mageModelMap[colValue]
-
 			switch true {
 			case hasModel:
+				row[colName] = "nil"
 				if goType.GoModel != "" {
 					row[colName] = goType.GoModel
 					if validImportPath(goType, ip, targetPkg) {
 						ip = append(ip, goType.ImportPath)
 					}
-				} else {
-					row[colName] = "nil"
 				}
+				break
+			case strings.Index(colName, "_model") > 1:
+				// if there is no defined model but column is (backend|frontend|data|source)_model then nil it
+				row[colName] = "nil"
 				break
 			case c.isBool():
 				row[colName] = "false"
