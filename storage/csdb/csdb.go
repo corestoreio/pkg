@@ -18,7 +18,6 @@ import (
 	"errors"
 
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/juju/errgo"
 )
 
 var (
@@ -26,8 +25,8 @@ var (
 )
 
 type (
-	Index    int
-	TableMap map[Index]*TableStructure
+	Index               int
+	TableStructureSlice []*TableStructure
 
 	// temporary place
 	TableStructure struct {
@@ -69,18 +68,12 @@ func (ts *TableStructure) AllColumnAliasQuote(alias string) []string {
 }
 
 // Structure returns the TableStructure from a read-only map m by a giving index i.
-func (m TableMap) Structure(i Index) (*TableStructure, error) {
-	if t, ok := m[i]; ok {
-		return t, nil
-	}
-	return nil, errgo.Mask(ErrTableNotFound)
+func (m TableStructureSlice) Structure(i Index) (*TableStructure, error) {
+	return m[i], nil
 }
 
 // Name is a short hand to return a table name by given index i. Does not return an error
 // when the table can't be found.
-func (m TableMap) Name(i Index) string {
-	if t, ok := m[i]; ok {
-		return t.Name
-	}
-	return ""
+func (m TableStructureSlice) Name(i Index) string {
+	return m[i].Name
 }

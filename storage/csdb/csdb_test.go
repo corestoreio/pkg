@@ -28,7 +28,7 @@ const (
 )
 
 var (
-	tableMap = TableMap{
+	tableMap = TableStructureSlice{
 		table1: NewTableStructure(
 			"catalog_category_anc_categs_index_idx",
 			[]string{},

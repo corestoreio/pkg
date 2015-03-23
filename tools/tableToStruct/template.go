@@ -28,10 +28,8 @@ import (
 )
 
 const (
-    // TableNoop has index 0
-    TableNoop csdb.Index = iota
-    {{ range .Tables }} // Table{{.table | prepareVar}} is the index to {{.table}}
-    Table{{.table | prepareVar}}
+    {{ range $k,$v := .Tables }} // Table{{.table | prepareVar}} is the index to {{.table}}
+    Table{{.table | prepareVar}} {{ if eq $k 0 }}csdb.Index = iota // must start with 0{{ end }}
 {{ end }} // TableMax represents the maximum index, which is not available.
 TableMax
 )
@@ -41,7 +39,7 @@ var (
     // below doesn't.
     _ = time.Time{}
 
-    tableMap = csdb.TableMap{
+    tableMap = csdb.TableStructureSlice{
 {{ range .Tables }}Table{{.table | prepareVar}} : csdb.NewTableStructure(
         "{{.table}}",
         []string{
