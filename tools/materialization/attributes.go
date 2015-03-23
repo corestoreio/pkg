@@ -68,7 +68,7 @@ func generateAttributeCode(ctx *context) error {
 	if err != nil {
 		return err
 	}
-
+    dbrSelect.OrderDir("main_table.attribute_code",true)
 	columns, err := tools.SQLQueryToColumns(ctx.db, dbrSelect)
 	if err != nil {
 		return err
