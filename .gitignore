@@ -3,3 +3,4 @@ generated_*.go
 /tableToStruct
 /eavToStruct
 config_*.go
+!config_test.go
