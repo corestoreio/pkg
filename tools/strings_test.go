@@ -35,6 +35,8 @@ func TestCamelize(t *testing.T) {
 		{"idx_id", "IDXID"},
 		{"idx_eav_id", "IDXEAVID"},
 		{"idxeav_id", "IdxeavID"},
+		{"idxeav_cs", "IdxeavCS"},
+		{"idx_Tmp_cs", "IDXTMPCS"},
 	}
 	for _, test := range tests {
 		assert.Equal(t, test.expected, Camelize(test.actual))
@@ -79,9 +81,34 @@ var TableProductEntity = ` + "`Gopher`" + `
 			expErr: false,
 		},
 		{
+			pkg: "aa",
+			tplCode: `package {{ .Package }}
+		var Table{{ .Table | prepareVar }} = {{ "Gopher" | quote }}`,
+			data: struct {
+				Package, Table string
+			}{"aa", "aa"},
+			expTpl: []byte(`package aa
+
+var TableAa = ` + "`Gopher`\n"),
+			expErr: false,
+		},
+		{
 			pkg: "catalog",
 			tplCode: `package {{ .xPackage }}
 		var Table{{ .Table | prepareVar }} = 1`,
+			data: struct {
+				Package, Table string
+			}{"catalog", "catalog_product_entity"},
+			expTpl: []byte(``),
+			expErr: true,
+		},
+		{
+			pkg: "catalog",
+			tplCode: `package {{ .Package }}
+		var Table{{ .Table | prepareVar }} = ""
+		""
+		struct
+		`,
 			data: struct {
 				Package, Table string
 			}{"catalog", "catalog_product_entity"},
@@ -96,7 +123,21 @@ var TableProductEntity = ` + "`Gopher`" + `
 			assert.Error(t, err)
 		} else {
 			assert.Equal(t, test.expTpl, actual)
-			//t.Logf("\nExp: %s\nAct: %s", test.expTpl, actual)
+			//			t.Logf("\nExp: %s\nAct: %s", test.expTpl, actual)
 		}
+	}
+}
+
+func TestRandSeq(t *testing.T) {
+	assert.Len(t, randSeq(10), 10)
+}
+
+var benchRandSeq = ""
+
+// BenchmarkRandSeq	  100000	     12901 ns/op	     112 B/op	       2 allocs/op
+func BenchmarkRandSeq(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchRandSeq = randSeq(20)
 	}
 }
