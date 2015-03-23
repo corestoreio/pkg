@@ -18,6 +18,8 @@ import (
 	"database/sql"
 	"testing"
 
+	"strings"
+
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/stretchr/testify/assert"
@@ -153,16 +155,37 @@ func TestGetColumns(t *testing.T) {
 		table    string
 		expErr   bool
 		expCount int
+		colName  string
 	}{
+		{
+			table:    "eav_attribute", // table is in mage 1 and 2 equal
+			expErr:   false,
+			expCount: 17,
+			colName:  "attribute_id",
+		},
 		{
 			table:    "catalog_product_entity_decimal",
 			expErr:   false,
 			expCount: 5,
+			colName:  "value_id",
 		},
 		{
 			table:    "customer_entity",
 			expErr:   false,
 			expCount: 11,
+			colName:  "entity_id",
+		},
+		{
+			table:    "catalog_category_entity_datetime",
+			expErr:   false,
+			expCount: 5,
+			colName:  "entity_id",
+		},
+		{
+			table:    "customer_address_entity_decimal",
+			expErr:   false,
+			expCount: 4,
+			colName:  "entity_id",
 		},
 		{
 			table:    "', customer_entity",
@@ -183,11 +206,61 @@ func TestGetColumns(t *testing.T) {
 			t.Error(err)
 		}
 		assert.Len(t, cols, test.expCount)
+
+		col := cols.getByName(test.colName)
+		if test.colName != "" {
+			assert.Equal(t, col.Field.String, test.colName)
+		} else {
+			assert.Nil(t, col)
+		}
+
+		if test.table == "eav_attribute" {
+			if err := cols.MapSQLToGoType(EavAttributeColumnNameToInterface); err != nil {
+				t.Error(err)
+			}
+			hits := 0
+			for _, col := range cols {
+				if interf, ok := EavAttributeColumnNameToInterface[col.Field.String]; ok {
+					assert.Equal(t, interf, col.GoType)
+					hits++
+				}
+				if strings.Contains(col.GoType, "dbr") {
+					t.Errorf("%s contains dbr but it should not. %#v", col.GoType, col)
+				}
+			}
+			assert.Equal(t, len(EavAttributeColumnNameToInterface), hits)
+		}
+
 	}
 }
 
-func TestXXX(t *testing.T) {
+func TestGetFieldNames(t *testing.T) {
 	db := csdb.MustConnectTest()
 	defer db.Close()
 
+	tests := []struct {
+		table  string
+		pkOnly bool
+		count  int
+	}{
+		{
+			table:  "eav_attribute",
+			pkOnly: false,
+			count:  16,
+		},
+		{
+			table:  "catalog_product_entity_decimal",
+			pkOnly: true,
+			count:  1,
+		},
+	}
+
+	for _, test := range tests {
+		cols, err := GetColumns(db, test.table)
+		if err != nil {
+			t.Error(err)
+		}
+		fields := cols.GetFieldNames(test.pkOnly)
+		assert.Len(t, fields, test.count)
+	}
 }

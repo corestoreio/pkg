@@ -30,9 +30,12 @@ type (
 
 	// temporary place
 	TableStructure struct {
-		Name         string
+		// Name is the table name
+		Name string
+		// IDFieldNames contains only primary keys
 		IDFieldNames []string
-		Columns      []string
+		// Columns all other columns which are not primary keys
+		Columns []string
 	}
 
 	DbrSelectCb func(*dbr.SelectBuilder) *dbr.SelectBuilder

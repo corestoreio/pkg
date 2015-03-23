@@ -267,7 +267,7 @@ func (cc columns) GetFieldNames(pkOnly bool) []string {
 		if pkOnly && isPk {
 			ret = append(ret, col.Field.String)
 		}
-		if !isPk {
+		if !pkOnly && !isPk {
 			ret = append(ret, col.Field.String)
 		}
 	}
