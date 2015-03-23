@@ -89,6 +89,12 @@ func Camelize(s string) string {
 		case "id":
 			p = "ID"
 			break
+		case "cs":
+			p = "CS"
+			break
+		case "tmp":
+			p = "TMP"
+			break
 		case "idx":
 			p = "IDX"
 			break
