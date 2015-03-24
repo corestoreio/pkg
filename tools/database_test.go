@@ -16,9 +16,12 @@ package tools
 
 import (
 	"database/sql"
+	"fmt"
 	"testing"
 
 	"strings"
+
+	"bytes"
 
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"
@@ -267,7 +270,7 @@ func TestGetFieldNames(t *testing.T) {
 }
 
 // depends on generated code
-func TestSQLQueryToColumns(t *testing.T) {
+func TestSQLQueryToColumnsToStruct(t *testing.T) {
 	db := csdb.MustConnectTest()
 	defer db.Close()
 
@@ -279,10 +282,40 @@ func TestSQLQueryToColumns(t *testing.T) {
 		t.Error(err)
 	}
 	dbrSelect.OrderDir("main_table.attribute_code", true)
-	columns, err := SQLQueryToColumns(db, dbrSelect)
+	colSliceDbr, err := SQLQueryToColumns(db, dbrSelect)
 	if err != nil {
 		t.Error(err)
 	}
-	assert.Len(t, columns, 36)
-	// @todo deeper checks
+	assert.Len(t, colSliceDbr, 36)
+	for _, col := range colSliceDbr {
+		assert.True(t, col.Field.Valid, fmt.Sprintf("%#v", col))
+		assert.True(t, col.Type.Valid, fmt.Sprintf("%#v", col))
+	}
+
+	columns2, err2 := SQLQueryToColumns(db, nil, "SELECT * FROM `catalog_product_option`", " ORDER BY option_id DESC")
+	if err2 != nil {
+		t.Error(err2)
+	}
+	assert.Len(t, columns2, 10)
+	for _, col := range columns2 {
+		assert.True(t, col.Field.Valid, fmt.Sprintf("%#v", col))
+		assert.True(t, col.Type.Valid, fmt.Sprintf("%#v", col))
+	}
+
+	colSliceDbr.MapSQLToGoDBRType()
+	code, err := ColumnsToStructCode("testStruct", colSliceDbr)
+	if err != nil {
+		t.Error(err, "\n", string(code))
+	}
+
+	checkContains := [][]byte{
+		[]byte(`TeststructSlice`),
+		[]byte(`dbr.NullString`),
+		[]byte("`db:\"is_visible_in_advanced_search\"`"),
+	}
+	for _, s := range checkContains {
+		if false == bytes.Contains(code, s) {
+			t.Errorf("%s\ndoes not contain %s", code, s)
+		}
+	}
 }

@@ -344,6 +344,7 @@ func SQLQueryToColumns(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string)
 }
 
 // ColumnsToStructCode generates Go code from a name and a slice of columns.
+// Make sure that the fields GoType and GoName has been setup
 // If you don't like the template you can provide your own template as 3rd to n-th argument.
 func ColumnsToStructCode(name string, cols columns, templates ...string) ([]byte, error) {
 
