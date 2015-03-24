@@ -25,6 +25,8 @@ import (
 	"github.com/juju/errgo"
 )
 
+// materializeEntityType writes the data from eav_entity_type into a Go file and transforms
+// Magento classes and config strings into Go functions.
 func materializeEntityType(ctx *context) {
 	defer ctx.wg.Done()
 	type dataContainer struct {
@@ -52,6 +54,8 @@ func materializeEntityType(ctx *context) {
 	ioutil.WriteFile(tools.ConfigEntityTypeMaterialization.OutputFile, formatted, 0600)
 }
 
+// getEntityTypeData retrieves all EAV models from table eav_entity_type but only those listed in variable
+// tools.ConfigEntityType. It then applies the mapping data from tools.ConfigEntityType to the entity_type struct.
 func getEntityTypeData(dbrSess *dbr.Session) (etc eav.EntityTypeSlice, err error) {
 
 	s, err := eav.GetTableStructure(eav.TableEntityType)

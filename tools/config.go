@@ -42,12 +42,15 @@ type (
 		// TempAdditionalAttributeTable string which defines the existing table name
 		// and specifies more attribute configuration options besides eav_attribute table.
 		// This table name is used in a DB query while materializing attribute configuration to Go code.
+		// Mage_Eav_Model_Resource_Attribute_Collection::_initSelect()
 		TempAdditionalAttributeTable string
 
 		// TempAdditionalAttributeTableWebsite string which defines the existing table name
 		// and stores website-dependent attribute parameters.
 		// If an EAV model doesn't demand this functionality, let this string empty.
 		// This table name is used in a DB query while materializing attribute configuration to Go code.
+		// Mage_Customer_Model_Resource_Attribute::_getEavWebsiteTable()
+		// Mage_Eav_Model_Resource_Attribute_Collection::_getEavWebsiteTable()
 		TempAdditionalAttributeTableWebsite string
 	}
 
@@ -61,9 +64,10 @@ type (
 	AttributeModelDefMap map[string]*AttributeModelDef
 	// AttributeModelDef defines which Go type/func has which import path
 	AttributeModelDef struct {
+		// Is used when you want to specify your own package
 		ImportPath string
-		// GoModel is a function string which implements when later execute one of the three interfaces
-		// for (backend|frontend|source)_model
+		// GoModel is a function string which implements, when later executed, one of the n interfaces
+		// for (backend|frontend|source|data)_model
 		GoModel string
 	}
 )
@@ -116,12 +120,16 @@ var ConfigTableToStruct = TableToStructMap{
 	// @todo extend for all sales_* tables
 }
 
+// ConfigEntityTypeMaterialization configuration for materializeEntityType() to write the materialized entity types
+// into a folder. Other fields of the struct TableToStruct are ignored. Use the file config_user.go with the
+// func init() to change/extend it.
 var ConfigEntityTypeMaterialization = &TableToStruct{
 	Package:    "materialized",
 	OutputFile: "materialized/generated_eav_entity.go",
 }
 
 // ConfigEntityType contains default configuration. Use the file config_user.go with the func init() to change/extend it.
+// Needed in materializeEntityType()
 var ConfigEntityType = EntityTypeMap{
 	"customer": &EntityType{
 		ImportPath:                          "github.com/corestoreio/csfw/customer",

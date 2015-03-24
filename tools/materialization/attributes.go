@@ -29,6 +29,7 @@ import (
 	"github.com/juju/errgo"
 )
 
+// materializeAttributes ...
 func materializeAttributes(ctx *context) {
 	defer ctx.wg.Done()
 
