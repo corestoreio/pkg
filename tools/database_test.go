@@ -275,18 +275,18 @@ func TestSQLQueryToColumnsToStruct(t *testing.T) {
 	defer db.Close()
 
 	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
-
-	// we assume that catalog_product has entity_type_id 1 in the database ... which it has :-)
-	dbrSelect, err := eav.GetAttributeSelectSql(dbrSess, NewAddAttrTables(db, "catalog_product"), 1, 0)
+	dbrSelect, err := eav.GetAttributeSelectSql(dbrSess, NewAddAttrTables(db, "catalog_product"), 4, 0)
 	if err != nil {
 		t.Error(err)
 	}
-	dbrSelect.OrderDir("main_table.attribute_code", true)
+
 	colSliceDbr, err := SQLQueryToColumns(db, dbrSelect)
 	if err != nil {
 		t.Error(err)
 	}
+
 	assert.Len(t, colSliceDbr, 36)
+
 	for _, col := range colSliceDbr {
 		assert.True(t, col.Field.Valid, fmt.Sprintf("%#v", col))
 		assert.True(t, col.Type.Valid, fmt.Sprintf("%#v", col))
@@ -318,4 +318,46 @@ func TestSQLQueryToColumnsToStruct(t *testing.T) {
 			t.Errorf("%s\ndoes not contain %s", code, s)
 		}
 	}
+}
+
+func TestGetSQLPrepareForTemplate(t *testing.T) {
+	db := csdb.MustConnectTest()
+	defer db.Close()
+
+	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
+	dbrSelect, err := eav.GetAttributeSelectSql(dbrSess, NewAddAttrTables(db, "catalog_product"), 4, 0)
+	if err != nil {
+		t.Error(err)
+	}
+	s, _ := dbrSelect.ToSql()
+	println("\n", s, "\n")
+
+	resultSlice1, err := GetSQL(db, dbrSelect)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Len(t, resultSlice1, 110) // 110 rows
+	for _, row := range resultSlice1 {
+		assert.True(t, len(row["attribute_id"]) > 0, "Incorrect length of attribute_id", fmt.Sprintf("%#v", row))
+	}
+
+	resultSlice2, err := GetSQL(db, nil, "SELECT * FROM `cataloginventory_stock` ", "ORDER BY stock_id")
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Len(t, resultSlice2, 1) // 1 row
+	for _, row := range resultSlice2 {
+		assert.True(t, len(row["stock_id"]) > 0, "Incorrect length of stock_id", fmt.Sprintf("%#v", row))
+	}
+
+	s2, _ := dbrSelect.ToSql() // bug everytime calling ToSql the joins will be added a duplicated
+	println("\n", s2, "\n")
+
+	colSliceDbr, err := SQLQueryToColumns(db, dbrSelect)
+	if err != nil {
+		t.Error(err)
+	}
+	importPaths1 := PrepareForTemplate(colSliceDbr, resultSlice1, nil, "catalog")
+	t.Logf("%#v", importPaths1)
+	// @todo
 }
