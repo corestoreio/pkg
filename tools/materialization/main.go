@@ -27,6 +27,7 @@ import (
 	"github.com/corestoreio/csfw/tools"
 )
 
+// depends on generated code from tableToStruct
 type context struct {
 	wg      sync.WaitGroup
 	db      *sql.DB

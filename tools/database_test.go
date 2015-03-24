@@ -20,6 +20,7 @@ import (
 
 	"strings"
 
+	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/stretchr/testify/assert"
@@ -263,4 +264,25 @@ func TestGetFieldNames(t *testing.T) {
 		fields := cols.GetFieldNames(test.pkOnly)
 		assert.Len(t, fields, test.count)
 	}
+}
+
+// depends on generated code
+func TestSQLQueryToColumns(t *testing.T) {
+	db := csdb.MustConnectTest()
+	defer db.Close()
+
+	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
+
+	// we assume that catalog_product has entity_type_id 1 in the database ... which it has :-)
+	dbrSelect, err := eav.GetAttributeSelectSql(dbrSess, NewAddAttrTables(db, "catalog_product"), 1, 0)
+	if err != nil {
+		t.Error(err)
+	}
+	dbrSelect.OrderDir("main_table.attribute_code", true)
+	columns, err := SQLQueryToColumns(db, dbrSelect)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Len(t, columns, 36)
+	// @todo deeper checks
 }

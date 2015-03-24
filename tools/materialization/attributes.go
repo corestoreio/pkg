@@ -16,7 +16,6 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -24,12 +23,12 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/eav"
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/tools"
 	"github.com/juju/errgo"
 )
 
 // materializeAttributes ...
+// Depends on generated code from tableToStruct.
 func materializeAttributes(ctx *context) {
 	defer ctx.wg.Done()
 
@@ -54,6 +53,7 @@ func getPackage(et *eav.EntityType) string {
 
 // getName generates a nice struct name with a removed package name to avoid stutter but
 // only removes the package name if the entity_type_code contains an underscore
+// Depends on generated code from tableToStruct.
 func getName(ctx *context, suffix ...string) string {
 	structBaseName := ctx.et.EntityTypeCode
 	if strings.Contains(ctx.et.EntityTypeCode, "_") {
@@ -62,10 +62,15 @@ func getName(ctx *context, suffix ...string) string {
 	return structBaseName + "_" + strings.Join(suffix, "_")
 }
 
+// Depends on generated code from tableToStruct.
 func generateAttributeCode(ctx *context) error {
-	// @todo get all website IDs
 
-	dbrSelect, err := eav.GetAttributeSelectSql(ctx.dbrConn.NewSession(nil), newAddAttrTables(ctx), ctx.et.EntityTypeID, 0)
+	dbrSelect, err := eav.GetAttributeSelectSql(
+		ctx.dbrConn.NewSession(nil),
+		tools.NewAddAttrTables(ctx.db, ctx.et.EntityTypeCode),
+		ctx.et.EntityTypeID,
+		0, // @todo get all website IDs
+	)
 	if err != nil {
 		return err
 	}
@@ -120,47 +125,4 @@ func generateAttributeCode(ctx *context) error {
 		getName(ctx, "attribute"),
 	)
 	return errgo.Mask(ioutil.WriteFile(path, code, 0600))
-}
-
-type addAttrTables struct {
-	*eav.EntityType
-	db *sql.DB
-}
-
-// Implements interface eav.EntityTypeAdditionalAttributeTabler
-func newAddAttrTables(ctx *context) *addAttrTables {
-	return &addAttrTables{
-		EntityType: ctx.et,
-		db:         ctx.db,
-	}
-}
-
-// Implements interface eav.EntityTypeAdditionalAttributeTabler
-func (aa *addAttrTables) TableAdditionalAttribute() (*csdb.TableStructure, error) {
-	if t, ok := tools.ConfigEntityType[aa.EntityTypeCode]; ok {
-		if t.TempAdditionalAttributeTable != "" {
-			return aa.newTableStructure(t.TempAdditionalAttributeTable)
-		}
-		return nil, nil
-	}
-	return nil, errgo.Newf("Table for %s not found", aa.EntityTypeCode)
-}
-
-// Implements interface eav.EntityTypeAdditionalAttributeTabler
-func (aa *addAttrTables) TableEavWebsite() (*csdb.TableStructure, error) {
-	if t, ok := tools.ConfigEntityType[aa.EntityTypeCode]; ok {
-		if t.TempAdditionalAttributeTableWebsite != "" {
-			return aa.newTableStructure(t.TempAdditionalAttributeTableWebsite)
-		}
-		return nil, nil
-	}
-	return nil, errgo.Newf("Table for %s not found", aa.EntityTypeCode)
-}
-
-func (aa *addAttrTables) newTableStructure(tableName string) (*csdb.TableStructure, error) {
-	cols, err := tools.GetColumns(aa.db, tableName)
-	if err != nil {
-		return nil, errgo.Mask(err)
-	}
-	return csdb.NewTableStructure(tableName, cols.GetFieldNames(true), cols.GetFieldNames(false)), nil
 }

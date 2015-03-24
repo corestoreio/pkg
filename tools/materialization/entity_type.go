@@ -27,6 +27,7 @@ import (
 
 // materializeEntityType writes the data from eav_entity_type into a Go file and transforms
 // Magento classes and config strings into Go functions.
+// Depends on generated code from tableToStruct.
 func materializeEntityType(ctx *context) {
 	defer ctx.wg.Done()
 	type dataContainer struct {
@@ -56,6 +57,7 @@ func materializeEntityType(ctx *context) {
 
 // getEntityTypeData retrieves all EAV models from table eav_entity_type but only those listed in variable
 // tools.ConfigEntityType. It then applies the mapping data from tools.ConfigEntityType to the entity_type struct.
+// Depends on generated code from tableToStruct.
 func getEntityTypeData(dbrSess *dbr.Session) (etc eav.EntityTypeSlice, err error) {
 
 	s, err := eav.GetTableStructure(eav.TableEntityType)

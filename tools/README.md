@@ -22,3 +22,6 @@ From effective Go:
 > package have evaluated their initializers, and those are evaluated only after all
 > the imported packages have been initialized.
 
+## Testing
+
+All test files depends on generated code. All other files of course not.
