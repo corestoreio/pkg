@@ -376,6 +376,7 @@ func TestGetSQLPrepareForTemplate(t *testing.T) {
 		assert.True(t, len(s["used_in_product_listing"]) >= 4, "Should contain false or true as string: %s", s["used_in_product_listing"])
 		assert.True(t, strings.ContainsRune(s["attribute_code"], '"'), "Should contain double quotes for escaping: %s", s["attribute_code"])
 		assert.Equal(t, unchanged[s["attribute_id"]], s["entity_type_id"], "Columns: %#v", s)
+		assert.Equal(t, s["attribute_model"], `""`, "attribute_model should contain \"\" because unused, is: %s", s["attribute_model"])
 		assert.True(t, len(s["frontend_model"]) >= 3, "Should contain nil or a Go func: %s", s["frontend_model"])
 		assert.True(t, len(s["backend_model"]) >= 3, "Should contain nil or a Go func: %s", s["backend_model"])
 		assert.True(t, len(s["source_model"]) >= 3, "Should contain nil or a Go func: %s", s["source_model"])

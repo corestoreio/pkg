@@ -83,14 +83,15 @@ func (m EntityTypeMap) Keys() []string {
 	return ret
 }
 
-// EavAttributeColumnNameToInterface mapping column name to Go interface name
+// EavAttributeColumnNameToInterface mapping column name to Go interface name. Do not add attribute_model
+// as this column is unused in Magento 1+2
 var EavAttributeColumnNameToInterface = map[string]string{
 	"backend_model":  "eav.AttributeBackendModeller",
 	"frontend_model": "eav.AttributeFrontendModeller",
 	"source_model":   "eav.AttributeSourceModeller",
 }
 
-// TablePrefix defines the global table name prefix. See Magento install tool. Can be override via func init()
+// TablePrefix defines the global table name prefix. See Magento install tool. Can be overridden via func init()
 var TablePrefix string = ""
 
 // ConfigTableToStruct contains default configuration. Use the file config_user.go with the func init() to change/extend it.

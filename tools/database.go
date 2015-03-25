@@ -478,6 +478,7 @@ func PrepareForTemplate(cols columns, rows []StringEntities, mageModelMap Attrib
 			var c *column = cols.getByName(colName)
 
 			goType, hasModel := mageModelMap[colValue]
+			_, isAllowedInterfaceChange := EavAttributeColumnNameToInterface[colName]
 			switch true {
 			case hasModel:
 				row[colName] = "nil"
@@ -488,7 +489,7 @@ func PrepareForTemplate(cols columns, rows []StringEntities, mageModelMap Attrib
 					}
 				}
 				break
-			case strings.Index(colName, "_model") > 1:
+			case isAllowedInterfaceChange:
 				// if there is no defined model but column is (backend|frontend|data|source)_model then nil it
 				row[colName] = "nil"
 				break
