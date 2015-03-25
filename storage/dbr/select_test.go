@@ -59,16 +59,18 @@ func BenchmarkSelectFullSql(b *testing.B) {
 func TestSelectBasicToSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args := s.Select("a", "b").From("c").Where("id = ?", 1).ToSql()
-
-	assert.Equal(t, sql, "SELECT a, b FROM c WHERE (id = ?)")
-	assert.Equal(t, args, []interface{}{1})
+	sel := s.Select("a", "b").From("c").Where("id = ?", 1)
+	for i := 0; i < 3; i++ {
+		sql, args := sel.ToSql()
+		assert.Equal(t, sql, "SELECT a, b FROM c WHERE (id = ?)")
+		assert.Equal(t, args, []interface{}{1})
+	}
 }
 
 func TestSelectFullToSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args := s.Select("a", "b").
+	sel := s.Select("a", "b").
 		Distinct().
 		From("c").
 		Where("d = ? OR e = ?", 1, "wat").
@@ -79,11 +81,13 @@ func TestSelectFullToSql(t *testing.T) {
 		Having("j = k").
 		OrderBy("l").
 		Limit(7).
-		Offset(8).
-		ToSql()
+		Offset(8)
 
-	assert.Equal(t, sql, "SELECT DISTINCT a, b FROM c WHERE (d = ? OR e = ?) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY i HAVING (j = k) ORDER BY l LIMIT 7 OFFSET 8")
-	assert.Equal(t, args, []interface{}{1, "wat", 2, 3, []int{4, 5, 6}})
+	for i := 0; i < 3; i++ {
+		sql, args := sel.ToSql()
+		assert.Equal(t, sql, "SELECT DISTINCT a, b FROM c WHERE (d = ? OR e = ?) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY i HAVING (j = k) ORDER BY l LIMIT 7 OFFSET 8")
+		assert.Equal(t, args, []interface{}{1, "wat", 2, 3, []int{4, 5, 6}})
+	}
 }
 
 func TestSelectPaginateOrderDirToSql(t *testing.T) {
@@ -336,6 +340,7 @@ func TestSelectReturn(t *testing.T) {
 
 func TestSelectJoin(t *testing.T) {
 	s := createRealSessionWithFixtures()
+
 	sqlObj := s.
 		Select("p1.*", "p2.*").
 		From("dbr_people", "p1").
@@ -345,11 +350,13 @@ func TestSelectJoin(t *testing.T) {
 		JoinOn("`p2`.`id` = `p1`.`id`"),
 		JoinOn("`p1`.`id` = ?", 42),
 	)
-	sql, _ := sqlObj.ToSql()
-	assert.Equal(t,
-		"SELECT p1.*, p2.* FROM `dbr_people` AS `p1` INNER JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
-		sql,
-	)
+	for i := 0; i < 3; i++ {
+		sql, _ := sqlObj.ToSql()
+		assert.Equal(t,
+			"SELECT p1.*, p2.* FROM `dbr_people` AS `p1` INNER JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
+			sql,
+		)
+	}
 
 	sqlObj = s.
 		Select("p1.*").
@@ -360,11 +367,13 @@ func TestSelectJoin(t *testing.T) {
 		JoinOn("`p2`.`id` = `p1`.`id`"),
 		JoinOn("`p1`.`id` = ?", 42),
 	)
-	sql, _ = sqlObj.ToSql()
-	assert.Equal(t,
-		"SELECT p1.*, p2.name FROM `dbr_people` AS `p1` LEFT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
-		sql,
-	)
+	for i := 0; i < 3; i++ {
+		sql, _ := sqlObj.ToSql()
+		assert.Equal(t,
+			"SELECT p1.*, p2.name FROM `dbr_people` AS `p1` LEFT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`) AND (`p1`.`id` = ?)",
+			sql,
+		)
+	}
 
 	sqlObj = s.
 		Select("p1.*").
@@ -374,12 +383,13 @@ func TestSelectJoin(t *testing.T) {
 		ColumnAlias("p2.name", "p2Name", "p2.email", "p2Email", "id", "internalID"),
 		JoinOn("`p2`.`id` = `p1`.`id`"),
 	)
-	sql, _ = sqlObj.ToSql()
-	assert.Equal(t,
-		"SELECT p1.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email`, `id` AS `internalID` FROM `dbr_people` AS `p1` RIGHT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`)",
-		sql,
-	)
-
+	for i := 0; i < 3; i++ {
+		sql, _ := sqlObj.ToSql()
+		assert.Equal(t,
+			"SELECT p1.*, `p2`.`name` AS `p2Name`, `p2`.`email` AS `p2Email`, `id` AS `internalID` FROM `dbr_people` AS `p1` RIGHT JOIN `dbr_people` AS `p2` ON (`p2`.`id` = `p1`.`id`)",
+			sql,
+		)
+	}
 }
 
 // Series of tests that test mapping struct fields to columns

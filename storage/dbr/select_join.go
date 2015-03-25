@@ -6,9 +6,15 @@ type (
 		args          []interface{}
 	}
 	joinFragment struct {
-		joinType     string
-		table        string
-		columns      []string
+		// left, right, inner, middle, upper, lower ...
+		joinType string
+		// table name/alias which should be joined
+		table string
+		// contains all column names from the joined table
+		columns []string
+		// if set to yes then the columns have already been added to select.columns slice
+		columnsAdded bool
+		// join on condition
 		onConditions []joinOn // slice is joined via AND
 	}
 )
@@ -30,6 +36,7 @@ func (b *SelectBuilder) join(j string, t, c []string, on ...joinOn) *SelectBuild
 		joinType:     j,
 		table:        quoteAs(t...),
 		columns:      c,
+		columnsAdded: false,
 		onConditions: on,
 	})
 	return b

@@ -144,12 +144,13 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 
 	if len(b.JoinFragments) > 0 {
 		for _, f := range b.JoinFragments {
-			if len(f.columns) > 0 {
+			if f.columnsAdded == false && len(f.columns) > 0 {
 				for _, c := range f.columns {
 					if c != "" {
 						b.Columns = append(b.Columns, c)
 					}
 				}
+				f.columnsAdded = true
 			}
 		}
 	}
