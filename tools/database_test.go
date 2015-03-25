@@ -324,23 +324,6 @@ func TestGetSQLPrepareForTemplate(t *testing.T) {
 	db := csdb.MustConnectTest()
 	defer db.Close()
 
-	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
-	dbrSelect, err := eav.GetAttributeSelectSql(dbrSess, NewAddAttrTables(db, "catalog_product"), 4, 0)
-	if err != nil {
-		t.Error(err)
-	}
-	s, _ := dbrSelect.ToSql()
-	println("\n", s, "\n")
-
-	resultSlice1, err := GetSQL(db, dbrSelect)
-	if err != nil {
-		t.Error(err)
-	}
-	assert.Len(t, resultSlice1, 110) // 110 rows
-	for _, row := range resultSlice1 {
-		assert.True(t, len(row["attribute_id"]) > 0, "Incorrect length of attribute_id", fmt.Sprintf("%#v", row))
-	}
-
 	resultSlice2, err := GetSQL(db, nil, "SELECT * FROM `cataloginventory_stock` ", "ORDER BY stock_id")
 	if err != nil {
 		t.Error(err)
@@ -350,14 +333,51 @@ func TestGetSQLPrepareForTemplate(t *testing.T) {
 		assert.True(t, len(row["stock_id"]) > 0, "Incorrect length of stock_id", fmt.Sprintf("%#v", row))
 	}
 
-	s2, _ := dbrSelect.ToSql() // bug everytime calling ToSql the joins will be added a duplicated
-	println("\n", s2, "\n")
+	// advanced test
+
+	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
+	dbrSelect, err := eav.GetAttributeSelectSql(dbrSess, NewAddAttrTables(db, "catalog_product"), 4, 0)
+	if err != nil {
+		t.Error(err)
+	}
+
+	attributeResultSlice, err := GetSQL(db, dbrSelect)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Len(t, attributeResultSlice, 110) // 110 rows
+	for _, row := range attributeResultSlice {
+		assert.True(t, len(row["attribute_id"]) > 0, "Incorrect length of attribute_id", fmt.Sprintf("%#v", row))
+	}
 
 	colSliceDbr, err := SQLQueryToColumns(db, dbrSelect)
 	if err != nil {
 		t.Error(err)
 	}
-	importPaths1 := PrepareForTemplate(colSliceDbr, resultSlice1, nil, "catalog")
-	t.Logf("%#v", importPaths1)
-	// @todo
+
+	for _, col := range colSliceDbr {
+		assert.Empty(t, col.GoType)
+		assert.Empty(t, col.GoName)
+	}
+
+	var unchanged = make(map[string]string)
+	for _, s := range attributeResultSlice {
+		assert.True(t, len(s["is_wysiwyg_enabled"]) == 1, "Should contain 0 or 1 as string: %s", s["is_wysiwyg_enabled"])
+		assert.True(t, len(s["used_in_product_listing"]) == 1, "Should contain 0 or 1 as string: %s", s["used_in_product_listing"])
+		assert.False(t, strings.ContainsRune(s["attribute_code"], '"'), "Should not contain double quotes for escaping: %s", s["attribute_code"])
+		unchanged[s["attribute_id"]] = s["entity_type_id"]
+	}
+
+	importPaths1 := PrepareForTemplate(colSliceDbr, attributeResultSlice, ConfigAttributeModel, "catalog")
+	assert.True(t, len(importPaths1) > 1, "Should output multiple import paths: %#v", importPaths1)
+
+	for _, s := range attributeResultSlice {
+		assert.True(t, len(s["is_wysiwyg_enabled"]) >= 4, "Should contain false or true as string: %s", s["is_wysiwyg_enabled"])
+		assert.True(t, len(s["used_in_product_listing"]) >= 4, "Should contain false or true as string: %s", s["used_in_product_listing"])
+		assert.True(t, strings.ContainsRune(s["attribute_code"], '"'), "Should contain double quotes for escaping: %s", s["attribute_code"])
+		assert.Equal(t, unchanged[s["attribute_id"]], s["entity_type_id"], "Columns: %#v", s)
+		assert.True(t, len(s["frontend_model"]) >= 3, "Should contain nil or a Go func: %s", s["frontend_model"])
+		assert.True(t, len(s["backend_model"]) >= 3, "Should contain nil or a Go func: %s", s["backend_model"])
+		assert.True(t, len(s["source_model"]) >= 3, "Should contain nil or a Go func: %s", s["source_model"])
+	}
 }
