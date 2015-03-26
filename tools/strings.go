@@ -127,3 +127,9 @@ func randSeq(n int) string {
 	}
 	return string(b)
 }
+
+// ReplaceTablePrefix replaces the {{tableprefix}} place holder with the configure real TablePrefix
+// TablePrefix can be set via init() statement in config_user.go
+func ReplaceTablePrefix(query string) string {
+	return strings.Replace(query, "{{tableprefix}}", TablePrefix, -1)
+}

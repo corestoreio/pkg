@@ -25,6 +25,7 @@ type (
 		// OutputFile specifies the path where to write the newly generated code
 		OutputFile string
 		// QueryString SQL query to filter all the tables which you desire, e.g. SHOW TABLES LIKE 'catalog\_%'
+		// @todo maybe change that to []byte
 		QueryString string
 		// EntityTypeCodes If provided then eav_entity_type.value_table_prefix will be evaluated for further tables.
 		EntityTypeCodes []string
@@ -108,12 +109,48 @@ var EavAttributeColumnNameToInterface = map[string]string{
 // TablePrefix defines the global table name prefix. See Magento install tool. Can be overridden via func init()
 var TablePrefix string = ""
 
+// TableMapMagento1To2 provides mapping between table names. If a table name is in the map then also the struct
+// will be rewritten to that new Magneto2 compatible table name.
+// Magento2 dev/tools/Magento/Tools/Migration/factory_table_names/replace_ce.php
+// @todo implement
+var TableMapMagento1To2 = map[string]string{
+	"core_cache":             "cache",     // not needed but added in case
+	"core_cache_tag":         "cache_tag", // not needed but added in case
+	"core_config_data":       "core_config_data",
+	"core_design_change":     "design_change",
+	"core_directory_storage": "media_storage_directory_storage",
+	"core_email_template":    "email_template", // not needed but added in case
+	"core_file_storage":      "media_storage_file_storage",
+	"core_flag":              "flag",          // not needed but added in case
+	"core_layout_link":       "layout_link",   // not needed but added in case
+	"core_layout_update":     "layout_update", // not needed but added in case
+	"core_resource":          "setup_module",  // not needed but added in case
+	"core_session":           "session",       // not needed but added in case
+	"core_store":             "store",
+	"core_store_group":       "store_group",
+	"core_variable":          "variable",
+	"core_variable_value":    "variable_value",
+	"core_website":           "store_website",
+}
+
 // ConfigTableToStruct contains default configuration. Use the file config_user.go with the func init() to change/extend it.
 var ConfigTableToStruct = TableToStructMap{
 	"eav": &TableToStruct{
 		Package:         "eav",
 		OutputFile:      "eav/generated_tables.go",
-		QueryString:     `SHOW TABLES LIKE "` + TablePrefix + `eav%"`,
+		QueryString:     `SHOW TABLES LIKE "{{tableprefix}}eav%"`,
+		EntityTypeCodes: nil,
+	},
+	"store": &TableToStruct{
+		Package:    "store",
+		OutputFile: "store/generated_tables.go",
+		QueryString: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
+		    TABLE_SCHEMA = DATABASE() AND
+		    TABLE_NAME IN (
+		    	'{{tableprefix}}core_store','{{tableprefix}}store',
+		    	'{{tableprefix}}core_store_group','{{tableprefix}}store_group',
+		    	'{{tableprefix}}core_website','{{tableprefix}}website'
+		    ) GROUP BY TABLE_NAME;`,
 		EntityTypeCodes: nil,
 	},
 	"catalog": &TableToStruct{
@@ -121,18 +158,17 @@ var ConfigTableToStruct = TableToStructMap{
 		OutputFile: "catalog/generated_tables.go",
 		QueryString: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
 		    TABLE_SCHEMA = DATABASE() AND
-		    (TABLE_NAME LIKE '` + TablePrefix + `catalog\_%' OR TABLE_NAME LIKE '` + TablePrefix + `catalogindex%' ) AND
-		    TABLE_NAME NOT LIKE '` + TablePrefix + `%bundle%' AND
-		    TABLE_NAME NOT LIKE '` + TablePrefix + `%\_flat\_%' GROUP BY TABLE_NAME;`,
+		    (TABLE_NAME LIKE '{{tableprefix}}catalog\_%' OR TABLE_NAME LIKE '{{tableprefix}}catalogindex%' ) AND
+		    TABLE_NAME NOT LIKE '{{tableprefix}}%bundle%' AND
+		    TABLE_NAME NOT LIKE '{{tableprefix}}%\_flat\_%' GROUP BY TABLE_NAME;`,
 		EntityTypeCodes: []string{"catalog_category", "catalog_product"},
 	},
 	"customer": &TableToStruct{
 		Package:         "customer",
 		OutputFile:      "customer/generated_tables.go",
-		QueryString:     `SHOW TABLES LIKE "` + TablePrefix + `customer%"`,
+		QueryString:     `SHOW TABLES LIKE "{{tableprefix}}customer%"`,
 		EntityTypeCodes: []string{"customer", "customer_address"},
 	},
-	// @todo extend for all sales_* tables
 }
 
 // ConfigEntityTypeMaterialization configuration for materializeEntityType() to write the materialized entity types
@@ -154,8 +190,8 @@ var ConfigEntityType = EntityTypeMap{
 		IncrementModel:                      "customer.Customer()",
 		AdditionalAttributeTable:            "customer.Customer()",
 		EntityAttributeCollection:           "customer.Customer()",
-		TempAdditionalAttributeTable:        TablePrefix + "customer_eav_attribute",
-		TempAdditionalAttributeTableWebsite: TablePrefix + "customer_eav_attribute_website",
+		TempAdditionalAttributeTable:        "{{tableprefix}}customer_eav_attribute",
+		TempAdditionalAttributeTableWebsite: "{{tableprefix}}customer_eav_attribute_website",
 	},
 	"customer_address": &EntityType{
 		ImportPath:                          "github.com/corestoreio/csfw/customer",
@@ -164,8 +200,8 @@ var ConfigEntityType = EntityTypeMap{
 		EntityTable:                         "customer.Address()",
 		AdditionalAttributeTable:            "customer.Address()",
 		EntityAttributeCollection:           "customer.Address()",
-		TempAdditionalAttributeTable:        TablePrefix + "customer_eav_attribute",
-		TempAdditionalAttributeTableWebsite: TablePrefix + "customer_eav_attribute_website",
+		TempAdditionalAttributeTable:        "{{tableprefix}}customer_eav_attribute",
+		TempAdditionalAttributeTableWebsite: "{{tableprefix}}customer_eav_attribute_website",
 	},
 	"catalog_category": &EntityType{
 		ImportPath:                   "github.com/corestoreio/csfw/catalog",
@@ -174,7 +210,7 @@ var ConfigEntityType = EntityTypeMap{
 		EntityTable:                  "catalog.Category()",
 		AdditionalAttributeTable:     "catalog.Category()",
 		EntityAttributeCollection:    "catalog.Category()",
-		TempAdditionalAttributeTable: TablePrefix + "catalog_eav_attribute",
+		TempAdditionalAttributeTable: "{{tableprefix}}catalog_eav_attribute",
 	},
 	"catalog_product": &EntityType{
 		ImportPath:                   "github.com/corestoreio/csfw/catalog",
@@ -183,7 +219,7 @@ var ConfigEntityType = EntityTypeMap{
 		EntityTable:                  "catalog.Product()",
 		AdditionalAttributeTable:     "catalog.Product()",
 		EntityAttributeCollection:    "catalog.Product()",
-		TempAdditionalAttributeTable: TablePrefix + "catalog_eav_attribute",
+		TempAdditionalAttributeTable: "{{tableprefix}}catalog_eav_attribute",
 	},
 	// @todo extend for all sales entities
 }

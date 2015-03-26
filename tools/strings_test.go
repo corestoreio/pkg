@@ -141,3 +141,29 @@ func BenchmarkRandSeq(b *testing.B) {
 		benchRandSeq = randSeq(20)
 	}
 }
+
+const testStringTablePrefix = `SELECT * FROM {{tableprefix}}store
+		JOIN {{tableprefix}}store_group ON col1=col2
+		WHERE {{tableprefix}}store = 1`
+
+func TestReplaceTablePrefix(t *testing.T) {
+	assert.Equal(t, ReplaceTablePrefix(testStringTablePrefix), `SELECT * FROM store
+		JOIN store_group ON col1=col2
+		WHERE store = 1`)
+
+	TablePrefix = "mystore1_"
+	assert.Equal(t, ReplaceTablePrefix(testStringTablePrefix), `SELECT * FROM mystore1_store
+		JOIN mystore1_store_group ON col1=col2
+		WHERE mystore1_store = 1`)
+	TablePrefix = ""
+}
+
+var benchReplaceTablePrefix = ""
+
+// BenchmarkReplaceTablePrefix	 1000000	      1031 ns/op	     160 B/op	       2 allocs/op
+func BenchmarkReplaceTablePrefix(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchReplaceTablePrefix = ReplaceTablePrefix(testStringTablePrefix)
+	}
+}

@@ -58,6 +58,7 @@ func (aa *AddAttrTables) TableEavWebsite() (*csdb.TableStructure, error) {
 }
 
 func (aa *AddAttrTables) newTableStructure(tableName string) (*csdb.TableStructure, error) {
+	tableName = ReplaceTablePrefix(tableName)
 	cols, err := GetColumns(aa.db, tableName)
 	if err != nil {
 		return nil, errgo.Mask(err)

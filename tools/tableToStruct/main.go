@@ -49,7 +49,7 @@ func generateStructures(tStruct *tools.TableToStruct, db *sql.DB, dbrConn *dbr.C
 		Tick:    "`",
 	}
 
-	tables, err := tools.GetTables(db, tStruct.QueryString)
+	tables, err := tools.GetTables(db, tools.ReplaceTablePrefix(tStruct.QueryString))
 	tools.LogFatal(err)
 
 	if len(tStruct.EntityTypeCodes) > 0 && tStruct.EntityTypeCodes[0] != "" {
