@@ -499,8 +499,8 @@ var ConfigAttributeModel = AttributeModelDefMap{
 		GoModel:    "Product().Visibility()",
 	},
 	"core/design_source_design": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/core",
-		GoModel:    "core.Design().Source().Design()",
+		ImportPath: "",
+		GoModel:    "",
 	},
 	"customer/customer_attribute_source_group": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
