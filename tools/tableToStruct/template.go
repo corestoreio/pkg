@@ -28,10 +28,10 @@ import (
 )
 
 const (
-    {{ range $k,$v := .Tables }} // Table{{.table | prepareVar}} is the index to {{.table}}
-    Table{{.table | prepareVar}} {{ if eq $k 0 }}csdb.Index = iota // must start with 0{{ end }}
-{{ end }} // TableMax represents the maximum index, which is not available.
-TableMax
+    {{ range $k,$v := .Tables }} // Table{{.name | prepareVar}} is the index to {{.table}}
+    Table{{.name | prepareVar}} {{ if eq $k 0 }}csdb.Index = iota // must start with 0{{ end }}
+{{ end }} // TableZMax represents the maximum index, which is not available.
+TableZMax
 )
 
 var (
@@ -40,7 +40,7 @@ var (
     _ = time.Time{}
 
     tableMap = csdb.TableStructureSlice{
-{{ range .Tables }}Table{{.table | prepareVar}} : csdb.NewTableStructure(
+{{ range .Tables }}Table{{.name | prepareVar}} : csdb.NewTableStructure(
         "{{.table}}",
         []string{
         {{ range .columns }}{{ if eq .Key.String "PRI" }} "{{.Field.String}}",{{end}}
@@ -55,12 +55,14 @@ var (
 
 // GetTableStructure returns for a given index i the table structure or an error it not found.
 func GetTableStructure(i csdb.Index) (*csdb.TableStructure, error) {
-	return tableMap.Structure(i)
+    if i < TableZMax { return tableMap.Structure(i) }
+	return nil, csdb.ErrTableNotFound
 }
 
 // GetTableName returns for a given index the table name. If not found an empty string.
 func GetTableName(i csdb.Index) string {
-	return tableMap.Name(i)
+    if i < TableZMax { return tableMap.Name(i) }
+	return ""
 }
 
 {{ if not .TypeCodeValueTables.Empty }}
@@ -79,10 +81,10 @@ func Get{{ $typeCode | prepareVar }}ValueStructure(i eav.ValueIndex) (*csdb.Tabl
 type (
 
 {{ range .Tables }}
-    // {{.table | prepareVar}}Slice contains pointers to {{.table | prepareVar}} types
-    {{.table | prepareVar}}Slice []*{{.table | prepareVar}}
-    // {{.table | prepareVar}} a type for the MySQL table {{ .table }}
-    {{.table | prepareVar}} struct {
+    // {{.name | prepareVar}}Slice contains pointers to {{.name | prepareVar}} types
+    {{.name | prepareVar}}Slice []*{{.name | prepareVar}}
+    // {{.name | prepareVar}} a type for the MySQL table {{ .table }}
+    {{.name | prepareVar}} struct {
         {{ range .columns }}{{.GoName}} {{.GoType}} {{ $.Tick }}db:"{{.Field.String}}"{{ $.Tick }} {{.Comment}}
         {{ end }} }
 {{ end }}

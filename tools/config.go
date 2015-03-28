@@ -25,8 +25,8 @@ type (
 		// OutputFile specifies the path where to write the newly generated code
 		OutputFile string
 		// QueryString SQL query to filter all the tables which you desire, e.g. SHOW TABLES LIKE 'catalog\_%'
-		// @todo maybe change that to []byte
-		QueryString string
+		// This query must specify all tables you need for a package.
+		SQLQuery string
 		// EntityTypeCodes If provided then eav_entity_type.value_table_prefix will be evaluated for further tables.
 		EntityTypeCodes []string
 	}
@@ -109,17 +109,17 @@ var EavAttributeColumnNameToInterface = map[string]string{
 // TablePrefix defines the global table name prefix. See Magento install tool. Can be overridden via func init()
 var TablePrefix string = ""
 
-// TableMapMagento1To2 provides mapping between table names. If a table name is in the map then also the struct
-// will be rewritten to that new Magneto2 compatible table name.
-// Magento2 dev/tools/Magento/Tools/Migration/factory_table_names/replace_ce.php
-// @todo implement
+// TableMapMagento1To2 provides mapping between table names in tableToStruct. If a table name is in
+// the map then the struct name will be rewritten to that new Magneto2 compatible table name.
+// Do not change entries in this map except you can always append.
+// @see Magento2 dev/tools/Magento/Tools/Migration/factory_table_names/replace_ce.php
 var TableMapMagento1To2 = map[string]string{
 	"core_cache":             "cache",     // not needed but added in case
 	"core_cache_tag":         "cache_tag", // not needed but added in case
 	"core_config_data":       "core_config_data",
-	"core_design_change":     "design_change",
+	"core_design_change":     "design_change", // not needed but added in case
 	"core_directory_storage": "media_storage_directory_storage",
-	"core_email_template":    "email_template", // not needed but added in case
+	"core_email_template":    "email_template",
 	"core_file_storage":      "media_storage_file_storage",
 	"core_flag":              "flag",          // not needed but added in case
 	"core_layout_link":       "layout_link",   // not needed but added in case
@@ -138,13 +138,13 @@ var ConfigTableToStruct = TableToStructMap{
 	"eav": &TableToStruct{
 		Package:         "eav",
 		OutputFile:      "eav/generated_tables.go",
-		QueryString:     `SHOW TABLES LIKE "{{tableprefix}}eav%"`,
+		SQLQuery:        `SHOW TABLES LIKE "{{tableprefix}}eav%"`,
 		EntityTypeCodes: nil,
 	},
 	"store": &TableToStruct{
 		Package:    "store",
 		OutputFile: "store/generated_tables.go",
-		QueryString: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
+		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
 		    TABLE_SCHEMA = DATABASE() AND
 		    TABLE_NAME IN (
 		    	'{{tableprefix}}core_store','{{tableprefix}}store',
@@ -156,7 +156,7 @@ var ConfigTableToStruct = TableToStructMap{
 	"catalog": &TableToStruct{
 		Package:    "catalog",
 		OutputFile: "catalog/generated_tables.go",
-		QueryString: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
+		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
 		    TABLE_SCHEMA = DATABASE() AND
 		    (TABLE_NAME LIKE '{{tableprefix}}catalog\_%' OR TABLE_NAME LIKE '{{tableprefix}}catalogindex%' ) AND
 		    TABLE_NAME NOT LIKE '{{tableprefix}}%bundle%' AND
@@ -166,7 +166,7 @@ var ConfigTableToStruct = TableToStructMap{
 	"customer": &TableToStruct{
 		Package:         "customer",
 		OutputFile:      "customer/generated_tables.go",
-		QueryString:     `SHOW TABLES LIKE "{{tableprefix}}customer%"`,
+		SQLQuery:        `SHOW TABLES LIKE "{{tableprefix}}customer%"`,
 		EntityTypeCodes: []string{"customer", "customer_address"},
 	},
 }

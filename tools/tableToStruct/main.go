@@ -17,6 +17,7 @@ package main
 import (
 	"database/sql"
 	"io/ioutil"
+	"strings"
 
 	"fmt"
 
@@ -49,7 +50,7 @@ func generateStructures(tStruct *tools.TableToStruct, db *sql.DB, dbrConn *dbr.C
 		Tick:    "`",
 	}
 
-	tables, err := tools.GetTables(db, tools.ReplaceTablePrefix(tStruct.QueryString))
+	tables, err := tools.GetTables(db, tools.ReplaceTablePrefix(tStruct.SQLQuery))
 	tools.LogFatal(err)
 
 	if len(tStruct.EntityTypeCodes) > 0 && tStruct.EntityTypeCodes[0] != "" {
@@ -70,7 +71,12 @@ func generateStructures(tStruct *tools.TableToStruct, db *sql.DB, dbrConn *dbr.C
 		columns, err := tools.GetColumns(db, table)
 		tools.LogFatal(err)
 		tools.LogFatal(columns.MapSQLToGoDBRType())
+		var name = table
+		if mappedName, ok := tools.TableMapMagento1To2[strings.Replace(table, tools.TablePrefix, "", 1)]; ok {
+			name = mappedName
+		}
 		tplData.Tables = append(tplData.Tables, map[string]interface{}{
+			"name":    name,
 			"table":   table,
 			"columns": columns,
 		})
