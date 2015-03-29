@@ -17,6 +17,7 @@ package csdb
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -58,14 +59,27 @@ var (
 )
 
 func TestTableStructure(t *testing.T) {
-	s, err := tableMap.Structure(table1)
-	assert.NotNil(t, s)
+	db := MustConnectTest()
+	defer db.Close()
+
+	sValid, err := tableMap.Structure(table1)
+	assert.NotNil(t, sValid)
 	assert.NoError(t, err)
 
 	assert.Equal(t, "catalog_category_anc_categs_index_tmp", tableMap.Name(table2))
 	assert.Equal(t, "", tableMap.Name(table4))
 
-	s, err = tableMap.Structure(table4)
-	assert.Nil(t, s)
+	sInvalid, err := tableMap.Structure(table4)
+	assert.Nil(t, sInvalid)
 	assert.Error(t, err)
+
+	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
+	selectBuilder, err := sValid.Select(dbrSess)
+	assert.NoError(t, err)
+	selectString, _ := selectBuilder.ToSql()
+	assert.Equal(t, "SELECT `catalog_category_anc_categs_index_idx`.`category_id`, `catalog_category_anc_categs_index_idx`.`path` FROM catalog_category_anc_categs_index_idx", selectString)
+
+	selectBuilder, err = sInvalid.Select(dbrSess)
+	assert.Error(t, err)
+	assert.Nil(t, selectBuilder)
 }

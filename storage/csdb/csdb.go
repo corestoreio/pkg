@@ -70,13 +70,29 @@ func (ts *TableStructure) AllColumnAliasQuote(alias string) []string {
 	return append(ret, ts.ColumnAliasQuote(alias)...)
 }
 
+// Select generates a SELECT * FROM tableName statement
+func (ts *TableStructure) Select(dbrSess dbr.SessionRunner) (*dbr.SelectBuilder, error) {
+	if ts == nil {
+		return nil, ErrTableNotFound
+	}
+	return dbrSess.
+		Select(ts.AllColumnAliasQuote("main_table")...).
+		From(ts.Name, "main_table"), nil
+}
+
 // Structure returns the TableStructure from a read-only map m by a giving index i.
 func (m TableStructureSlice) Structure(i Index) (*TableStructure, error) {
-	return m[i], nil
+	if i < Index(len(m)) {
+		return m[i], nil
+	}
+	return nil, ErrTableNotFound
 }
 
 // Name is a short hand to return a table name by given index i. Does not return an error
 // when the table can't be found.
 func (m TableStructureSlice) Name(i Index) string {
-	return m[i].Name
+	if i < Index(len(m)) {
+		return m[i].Name
+	}
+	return ""
 }
