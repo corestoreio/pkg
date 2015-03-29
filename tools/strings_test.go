@@ -123,7 +123,7 @@ var TableAa = ` + "`Gopher`\n"),
 			assert.Error(t, err)
 		} else {
 			assert.Equal(t, test.expTpl, actual)
-			//			t.Logf("\nExp: %s\nAct: %s", test.expTpl, actual)
+			//t.Logf("\nExp: %s\nAct: %s", test.expTpl, actual)
 		}
 	}
 }
@@ -165,5 +165,20 @@ func BenchmarkReplaceTablePrefix(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		benchReplaceTablePrefix = ReplaceTablePrefix(testStringTablePrefix)
+	}
+}
+
+func TestPrepareVar(t *testing.T) {
+	tests := []struct {
+		pkg  string
+		have string
+		want string
+	}{
+		{"catalog", "catalog_product", "Product"},
+		{"store", "AU+NZ", "AuNz"},
+		{"store", "Madison Island", "MadisonIsland"},
+	}
+	for _, test := range tests {
+		assert.Equal(t, test.want, prepareVar(test.pkg)(test.have))
 	}
 }

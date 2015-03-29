@@ -16,6 +16,7 @@ package tools
 
 import (
 	"bytes"
+	"fmt"
 	"log"
 	"math/rand"
 	"strings"
@@ -49,21 +50,12 @@ const Copyright = `// Copyright 2015 CoreStore Authors
 
 func GenerateCode(pkg, tplCode string, data interface{}) ([]byte, error) {
 
-	var stripPk = func(t string) string {
-		l := len(pkg) + 1
-		if len(t) <= l {
-			return t
-		}
-		if t[:l] == pkg+TableNameSeparator {
-			return t[l:]
-		}
-		return t
+	fm := template.FuncMap{
+		"quote":           func(s string) string { return "`" + s + "`" },
+		"prepareVar":      prepareVar(pkg),
+		"prepareVarIndex": func(i int, s string) string { return fmt.Sprintf("%03d%s", i, prepareVar(pkg)(s)) },
 	}
 
-	fm := template.FuncMap{
-		"quote":      func(s string) string { return "`" + s + "`" },
-		"prepareVar": func(s string) string { return Camelize(stripPk(s)) },
-	}
 	codeTpl := template.Must(template.New("tpl_code").Funcs(fm).Parse(tplCode))
 
 	var buf = &bytes.Buffer{}
@@ -77,6 +69,38 @@ func GenerateCode(pkg, tplCode string, data interface{}) ([]byte, error) {
 		return buf.Bytes(), err
 	}
 	return fmt, nil
+}
+
+func prepareVar(pkg string) func(s string) string {
+
+	var stripPk = func(t string) string {
+		l := len(pkg) + 1
+		if len(t) <= l {
+			return t
+		}
+		if t[:l] == pkg+TableNameSeparator {
+			return t[l:]
+		}
+		return t
+	}
+
+	var cleanStr = func(r rune) rune {
+		switch {
+		case r >= 'A' && r <= 'Z':
+			return r
+		case r >= 'a' && r <= 'z':
+			return r
+		case r >= '0' && r <= '9':
+			return r
+		}
+		return '_'
+	}
+
+	return func(str string) string {
+		str = stripPk(str)
+		str = strings.Map(cleanStr, str)
+		return Camelize(str)
+	}
 }
 
 // Camelize transforms from snake case to camelCase e.g. catalog_product_id to CatalogProductID. Also removes quotes.
