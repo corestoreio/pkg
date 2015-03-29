@@ -42,17 +42,17 @@ func materializeEntityType(ctx *context) {
 	tplData := &dataContainer{
 		ETypeData:     etData,
 		EntityTypeMap: tools.ConfigEntityType,
-		Package:       tools.ConfigEntityTypeMaterialization.Package,
+		Package:       tools.ConfigMaterializationEntityType.Package,
 		Tick:          "`",
 	}
 
-	formatted, err := tools.GenerateCode(tools.ConfigEntityTypeMaterialization.Package, tplEav, tplData)
+	formatted, err := tools.GenerateCode(tools.ConfigMaterializationEntityType.Package, tplEav, tplData)
 	if err != nil {
 		fmt.Printf("\n%s\n", formatted)
 		tools.LogFatal(err)
 	}
 
-	ioutil.WriteFile(tools.ConfigEntityTypeMaterialization.OutputFile, formatted, 0600)
+	tools.LogFatal(ioutil.WriteFile(tools.ConfigMaterializationEntityType.OutputFile, formatted, 0600))
 }
 
 // getEntityTypeData retrieves all EAV models from table eav_entity_type but only those listed in variable
