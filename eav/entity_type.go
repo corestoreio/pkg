@@ -49,11 +49,11 @@ func (et *EntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...csdb.
 	if err != nil {
 		return errgo.Mask(err)
 	}
-	qry := dbrSess.Select(s.Columns...).From(s.Name).Where("entity_type_code = ?", code)
+	sb := dbrSess.Select(s.Columns...).From(s.Name).Where("entity_type_code = ?", code)
 	for _, cb := range cbs {
-		qry = cb(qry)
+		sb = cb(sb)
 	}
-	return errgo.Mask(qry.LoadStruct(et))
+	return errgo.Mask(sb.LoadStruct(et))
 }
 
 // IsRealEav checks if those types which have an attribute model and therefore are a real EAV.
