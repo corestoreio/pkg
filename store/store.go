@@ -45,9 +45,8 @@ func GetStore(i StoreIndex) (*Store, error) {
 
 // GetStores returns a copy of the main slice of stores.
 // One should not modify the slice and its content.
-// @todo $withDefault bool
 func GetStores() StoreSlice {
-	return storeCollection // return append(StoreSlice(nil), storeCollection...) maybe use this? But additional alloc
+	return storeCollection
 }
 
 // Load uses a dbr session to load all data from the core_store table into the current slice.
@@ -60,6 +59,10 @@ func (s *StoreSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (i
 		sb.OrderBy("main_table.sort_order ASC")
 		return sb.OrderBy("main_table.name ASC")
 	})...)
+}
+
+func (s Store) IsDefault() bool {
+	return s.StoreID == DefaultStoreId
 }
 
 /*
