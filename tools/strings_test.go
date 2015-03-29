@@ -93,6 +93,18 @@ var TableAa = ` + "`Gopher`\n"),
 			expErr: false,
 		},
 		{
+			pkg: "store",
+			tplCode: `package {{ .Package }}
+		var Table{{ prepareVarIndex 5 .Table }} = {{ "Gopher" | quote }}`,
+			data: struct {
+				Package, Table string
+			}{"store", "core_store_group-01"},
+			expTpl: []byte(`package store
+
+var Table005CoreStoreGroup01 = ` + "`Gopher`\n"),
+			expErr: false,
+		},
+		{
 			pkg: "catalog",
 			tplCode: `package {{ .xPackage }}
 		var Table{{ .Table | prepareVar }} = 1`,
