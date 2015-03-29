@@ -19,6 +19,12 @@ import "github.com/corestoreio/csfw/tools"
 const tplMaterializationStore = tools.Copyright + `
 package {{ .PackageName }}
 
+import (
+	"database/sql"
+
+	"github.com/corestoreio/csfw/storage/dbr"
+)
+
 const (
     {{ range $k,$v := .Stores }} // Store{{prepareVarIndex $k $v.Code.String}} is the index to {{$v.Name}} ID: {{$v.StoreID}}
     Store{{prepareVarIndex $k $v.Code.String}} {{ if eq $k 0 }}StoreIndex = iota{{end}}
