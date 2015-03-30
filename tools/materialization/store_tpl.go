@@ -45,7 +45,7 @@ const (
 
 type si struct {}
 
-func (i si) ByID(id int64) (store.StoreIndex, error){
+func (si) ByID(id int64) (store.StoreIndex, error){
 	switch id {
 	{{ range $k,$v := .Stores }} case {{$v.StoreID}}:
 		return Store{{prepareVarIndex $k $v.Code.String}}, nil
@@ -55,7 +55,7 @@ func (i si) ByID(id int64) (store.StoreIndex, error){
 	}
 }
 
-func (i si) ByCode(code string) (store.StoreIndex, error){
+func (si) ByCode(code string) (store.StoreIndex, error){
 	switch code {
 	{{ range $k,$v := .Stores }} case "{{$v.Code.String}}":
 		return Store{{prepareVarIndex $k $v.Code.String}}, nil
@@ -75,7 +75,7 @@ func init(){
 
 type gi struct {}
 
-func (gi gi) ByID(id int64) (store.GroupIndex, error){
+func (gi) ByID(id int64) (store.GroupIndex, error){
 	switch id {
 	{{ range $k,$v := .Groups }} case {{$v.GroupID}}:
 		return Group{{prepareVarIndex $k $v.Name}}, nil
@@ -95,7 +95,7 @@ func init(){
 
 type wi struct {}
 
-func (i wi) ByID(id int64) (store.WebsiteIndex, error){
+func (wi) ByID(id int64) (store.WebsiteIndex, error){
 	switch id {
 	{{ range $k,$v := .Websites }} case {{$v.WebsiteID}}:
 		return Website{{prepareVarIndex $k $v.Code.String}}, nil
@@ -105,7 +105,7 @@ func (i wi) ByID(id int64) (store.WebsiteIndex, error){
 	}
 }
 
-func (i wi) ByCode(code string) (store.WebsiteIndex, error){
+func (wi) ByCode(code string) (store.WebsiteIndex, error){
 	switch code {
 	{{ range $k,$v := .Websites }} case "{{$v.Code.String}}":
 		return Website{{prepareVarIndex $k $v.Code.String}}, nil
