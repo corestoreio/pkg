@@ -6,6 +6,12 @@ Please see the README files in the sub-packages.
 
 Magento is a trademark of [MAGENTO, INC.](http://www.magentocommerce.com/license/).
 
+## Badges
+
+[goreportcard](http://goreportcard.com/report/Corestoreio/csfw)
+
+@todo add travis
+
 ## Usage
 
 To properly use the CoreStore framework some environment variables must be set before running `go generate`.
