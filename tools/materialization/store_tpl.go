@@ -47,33 +47,37 @@ func init(){
 		{{ range $k,$v := .Stores }}Store{{prepareVarIndex $k $v.Code.String}}: {{ $v | printf "%#v" }},
 		{{end}}
 	}
+	fncStoreIndexByID = func(id int64) (StoreIndex, error) {
+		switch id {
+		{{ range $k,$v := .Stores }} case {{$v.StoreID}}:
+			return Store{{prepareVarIndex $k $v.Code.String}}, nil
+		{{end}}
+		default:
+			return -1, ErrStoreNotFound
+		}
+	}
+	fncStoreIndexByCode = func(code string) (StoreIndex, error) {
+		switch code {
+		{{ range $k,$v := .Stores }} case "{{$v.Code.String}}":
+			return Store{{prepareVarIndex $k $v.Code.String}}, nil
+		{{end}}
+		default:
+			return -1, ErrStoreNotFound
+		}
+	}
+}
+
+func init(){
 	groupCollection = GroupSlice{
 		{{ range $k,$v := .Groups }}Group{{prepareVarIndex $k $v.Name}}: {{ $v | printf "%#v" }},
 		{{end}}
 	}
+}
+
+func init(){
 	websiteCollection = WebsiteSlice{
 		{{ range $k,$v := .Websites }}Website{{prepareVarIndex $k $v.Code.String}}: {{ $v | printf "%#v" }},
 		{{end}}
-	}
-}
-
-func GetStoreByID(id int64) (*Store, error) {
-	switch id {
-	{{ range $k,$v := .Stores }} case {{$v.StoreID}}:
-		return storeCollection[Store{{prepareVarIndex $k $v.Code.String}}], nil
-	{{end}}
-	default:
-		return nil, ErrStoreNotFound
-	}
-}
-
-func GetStoreByCode(code string) (*Store, error) {
-	switch code {
-	{{ range $k,$v := .Stores }} case "{{$v.Code.String}}":
-		return storeCollection[Store{{prepareVarIndex $k $v.Code.String}}], nil
-	{{end}}
-	default:
-		return nil, ErrStoreNotFound
 	}
 }
 

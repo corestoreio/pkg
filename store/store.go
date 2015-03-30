@@ -20,6 +20,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/juju/errgo"
 )
 
 const (
@@ -32,6 +33,10 @@ type StoreIndex int
 var (
 	ErrStoreNotFound = errors.New("Store not found")
 	storeCollection  StoreSlice
+	// fncStoreIndexByID will be overloaded in init() in generated_store.go
+	fncStoreIndexByID = func(id int64) (StoreIndex, error) { return 0, nil }
+	// fncStoreByCode will be overloaded in init() in init() in generated_store.go
+	fncStoreIndexByCode = func(code string) (StoreIndex, error) { return 0, nil }
 )
 
 // GetStore uses a StoreIndex to return a store or an error.
@@ -41,6 +46,14 @@ func GetStore(i StoreIndex) (*Store, error) {
 		return storeCollection[i], nil
 	}
 	return nil, ErrStoreNotFound
+}
+
+func GetStoreByID(id int64) (*Store, error) {
+	return storeCollection.StoreByID(id)
+}
+
+func GetStoreByCode(code string) (*Store, error) {
+	return storeCollection.StoreByCode(code)
 }
 
 // GetStores returns a copy of the main slice of stores.
@@ -59,6 +72,22 @@ func (s *StoreSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (i
 		sb.OrderBy("main_table.sort_order ASC")
 		return sb.OrderBy("main_table.name ASC")
 	})...)
+}
+
+func (s StoreSlice) StoreByID(id int64) (*Store, error) {
+	i, err := fncStoreIndexByID(id)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	return s[i], nil
+}
+
+func (s StoreSlice) StoreByCode(code string) (*Store, error) {
+	i, err := fncStoreIndexByCode(code)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	return s[i], nil
 }
 
 func (s Store) IsDefault() bool {
