@@ -19,8 +19,6 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"bytes"
-
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/tools"
 	"github.com/juju/errgo"
@@ -72,9 +70,5 @@ func materializeStore(ctx *context) {
 		tools.LogFatal(err)
 	}
 
-	// hack to remove the package name "store."
-	formatted = bytes.Replace(formatted, []byte(tools.ConfigMaterializationStore.Package+"."), nil, -1)
-
 	tools.LogFatal(ioutil.WriteFile(tools.ConfigMaterializationStore.OutputFile, formatted, 0600))
-
 }

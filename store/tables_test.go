@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store
+package store_test
 
 import (
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/store"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -28,15 +29,15 @@ func TestGetTable(t *testing.T) {
 		ti    csdb.Index
 		isErr bool
 	}{
-		{ti: TableGroup, isErr: false},
-		{ti: TableStore, isErr: false},
-		{ti: TableWebsite, isErr: false},
-		{ti: TableZMax, isErr: true},
+		{ti: store.TableGroup, isErr: false},
+		{ti: store.TableStore, isErr: false},
+		{ti: store.TableWebsite, isErr: false},
+		{ti: store.TableZMax, isErr: true},
 	}
 
 	for _, test := range tests {
-		ts, err := GetTableStructure(test.ti)
-		tn := GetTableName(test.ti)
+		ts, err := store.GetTableStructure(test.ti)
+		tn := store.GetTableName(test.ti)
 		if test.isErr == false {
 			assert.NoError(t, err)
 			assert.NotNil(t, ts)
@@ -46,7 +47,5 @@ func TestGetTable(t *testing.T) {
 			assert.Nil(t, ts)
 			assert.Len(t, tn, 0)
 		}
-
 	}
-
 }

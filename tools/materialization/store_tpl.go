@@ -23,64 +23,103 @@ import (
 	"database/sql"
 
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/store"
 )
 
 const (
     {{ range $k,$v := .Stores }} // Store{{prepareVarIndex $k $v.Code.String}} is the index to {{$v.Name}} ID: {{$v.StoreID}}
-    Store{{prepareVarIndex $k $v.Code.String}} {{ if eq $k 0 }}StoreIndex = iota{{end}}
+    Store{{prepareVarIndex $k $v.Code.String}} {{ if eq $k 0 }}store.StoreIndex = iota{{end}}
 {{ end }} // Store_Max end of index, not available.
 	Store999Max
 
     {{ range $k,$v := .Groups }} // Group{{prepareVarIndex $k $v.Name}} is the index to {{$v.Name}} ID: {{$v.GroupID}}
-    Group{{prepareVarIndex $k $v.Name}} {{ if eq $k 0 }}GroupIndex = iota{{end}}
+    Group{{prepareVarIndex $k $v.Name}} {{ if eq $k 0 }}store.GroupIndex = iota{{end}}
 {{ end }} // Group_Max end of index, not available.
 	Group999Max
 
     {{ range $k,$v := .Websites }} // Website{{prepareVarIndex $k $v.Code.String}} is the index to {{$v.Name.String}} ID: {{$v.WebsiteID}}
-    Website{{prepareVarIndex $k $v.Code.String}} {{ if eq $k 0 }}WebsiteIndex = iota{{end}}
+    Website{{prepareVarIndex $k $v.Code.String}} {{ if eq $k 0 }}store.WebsiteIndex = iota{{end}}
 {{ end }} // Website_Max end of index, not available.
 	Website999Max
 )
 
+type si struct {}
+
+func (i si) ByID(id int64) (store.StoreIndex, error){
+	switch id {
+	{{ range $k,$v := .Stores }} case {{$v.StoreID}}:
+		return Store{{prepareVarIndex $k $v.Code.String}}, nil
+	{{end}}
+	default:
+		return -1, store.ErrStoreNotFound
+	}
+}
+
+func (i si) ByCode(code string) (store.StoreIndex, error){
+	switch code {
+	{{ range $k,$v := .Stores }} case "{{$v.Code.String}}":
+		return Store{{prepareVarIndex $k $v.Code.String}}, nil
+	{{end}}
+	default:
+		return -1, store.ErrStoreNotFound
+	}
+}
+
 func init(){
-	storeCollection = StoreSlice{
+	store.SetStoreGetter(si{})
+	store.SetStoreCollection(store.StoreSlice{
 		{{ range $k,$v := .Stores }}Store{{prepareVarIndex $k $v.Code.String}}: {{ $v | printf "%#v" }},
 		{{end}}
-	}
-	fncStoreIndexByID = func(id int64) (StoreIndex, error) {
-		switch id {
-		{{ range $k,$v := .Stores }} case {{$v.StoreID}}:
-			return Store{{prepareVarIndex $k $v.Code.String}}, nil
-		{{end}}
-		default:
-			return -1, ErrStoreNotFound
-		}
-	}
-	fncStoreIndexByCode = func(code string) (StoreIndex, error) {
-		switch code {
-		{{ range $k,$v := .Stores }} case "{{$v.Code.String}}":
-			return Store{{prepareVarIndex $k $v.Code.String}}, nil
-		{{end}}
-		default:
-			return -1, ErrStoreNotFound
-		}
+	})
+}
+
+type gi struct {}
+
+func (gi gi) ByID(id int64) (store.GroupIndex, error){
+	switch id {
+	{{ range $k,$v := .Groups }} case {{$v.GroupID}}:
+		return Group{{prepareVarIndex $k $v.Name}}, nil
+	{{end}}
+	default:
+		return -1, store.ErrGroupNotFound
 	}
 }
 
 func init(){
-	groupCollection = GroupSlice{
+	store.SetGroupGetter(gi{})
+	store.SetGroupCollection(store.GroupSlice{
 		{{ range $k,$v := .Groups }}Group{{prepareVarIndex $k $v.Name}}: {{ $v | printf "%#v" }},
 		{{end}}
+	})
+}
+
+type wi struct {}
+
+func (i wi) ByID(id int64) (store.WebsiteIndex, error){
+	switch id {
+	{{ range $k,$v := .Websites }} case {{$v.WebsiteID}}:
+		return Website{{prepareVarIndex $k $v.Code.String}}, nil
+	{{end}}
+	default:
+		return -1, store.ErrWebsiteNotFound
+	}
+}
+
+func (i wi) ByCode(code string) (store.WebsiteIndex, error){
+	switch code {
+	{{ range $k,$v := .Websites }} case "{{$v.Code.String}}":
+		return Website{{prepareVarIndex $k $v.Code.String}}, nil
+	{{end}}
+	default:
+		return -1, store.ErrWebsiteNotFound
 	}
 }
 
 func init(){
-	websiteCollection = WebsiteSlice{
+	store.SetWebsiteGetter(wi{})
+	store.SetWebsiteCollection(store.WebsiteSlice{
 		{{ range $k,$v := .Websites }}Website{{prepareVarIndex $k $v.Code.String}}: {{ $v | printf "%#v" }},
 		{{end}}
-	}
+	})
 }
-
-// @todo add GetGroup/s and GetWebsite/s
-
 `

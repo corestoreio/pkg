@@ -20,19 +20,41 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/juju/errgo"
 )
 
 const (
 	DefaultGroupId int64 = 0
 )
 
-// GroupIndex used for iota and for not mixing up indexes
-type GroupIndex int
+type (
+	// GroupIndex used for iota and for not mixing up indexes
+	GroupIndex  int
+	GroupGetter interface {
+		// ByID returns a GroupIndex using the GroupID. This GroupIndex identifies a group within a GroupSlice.
+		ByID(id int64) (GroupIndex, error)
+	}
+)
 
 var (
-	ErrStoreGroupNotFound = errors.New("Store Group not found")
-	groupCollection       GroupSlice
+	ErrGroupNotFound = errors.New("Store Group not found")
+	groupCollection  GroupSlice
+	groupGetter      GroupGetter
 )
+
+func SetGroupCollection(gc GroupSlice) {
+	if len(gc) == 0 {
+		panic("StoreSlice is empty")
+	}
+	groupCollection = gc
+}
+
+func SetGroupGetter(g GroupGetter) {
+	if g == nil {
+		panic("GroupGetter cannot be nil")
+	}
+	groupGetter = g
+}
 
 // GetGroup uses a GroupIndex to return a group or an error.
 // One should not modify the group object.
@@ -40,12 +62,11 @@ func GetGroup(i GroupIndex) (*Group, error) {
 	if int(i) < len(groupCollection) {
 		return groupCollection[i], nil
 	}
-	return nil, ErrStoreGroupNotFound
+	return nil, ErrGroupNotFound
 }
 
 // GetGroups returns a copy of the main slice of store groups.
 // One should not modify the slice and its content.
-// @todo $withDefault bool
 func GetGroups() GroupSlice {
 	return groupCollection
 }
@@ -58,6 +79,14 @@ func (s *GroupSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (i
 	return loadSlice(dbrSess, TableGroup, &(*s), append(cbs, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
 		return sb.OrderBy("main_table.name ASC")
 	})...)
+}
+
+func (s GroupSlice) ByID(id int64) (*Group, error) {
+	i, err := groupGetter.ByID(id)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	return s[i], nil
 }
 
 /*

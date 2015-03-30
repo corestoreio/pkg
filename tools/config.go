@@ -180,9 +180,10 @@ var ConfigMaterializationEntityType = &TableToStruct{
 }
 
 // ConfigMaterializationStore configuration for materializeStore() to write the materialized store data into a folder.
+// For using this in your project you must modify the package name and output file path
 var ConfigMaterializationStore = &TableToStruct{
-	Package:    "store",
-	OutputFile: "store/generated_store.go",
+	Package:    "store_test",
+	OutputFile: "store/generated_store_test.go",
 }
 
 // ConfigEntityType contains default configuration. Use the file config_user.go with the func init() to change/extend it.

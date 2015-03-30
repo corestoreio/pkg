@@ -27,17 +27,38 @@ const (
 	DefaultStoreId int64 = 0
 )
 
-// StoreIndex used for iota and for not mixing up indexes
-type StoreIndex int
+type (
+	// StoreIndex used for iota and for not mixing up indexes
+	StoreIndex int
+	// StoreGetter contains generated code from the database to provide easy and fast methods to
+	// retrieve the stores
+	StoreGetter interface {
+		// ByID returns a StoreIndex using the StoreID.  This StoreIndex identifies a store within a StoreSlice.
+		ByID(id int64) (StoreIndex, error)
+		// ByCode returns a StoreIndex using the code.  This StoreIndex identifies a store within a StoreSlice.
+		ByCode(code string) (StoreIndex, error)
+	}
+)
 
 var (
 	ErrStoreNotFound = errors.New("Store not found")
 	storeCollection  StoreSlice
-	// fncStoreIndexByID will be overloaded in init() in generated_store.go
-	fncStoreIndexByID = func(id int64) (StoreIndex, error) { return 0, nil }
-	// fncStoreByCode will be overloaded in init() in init() in generated_store.go
-	fncStoreIndexByCode = func(code string) (StoreIndex, error) { return 0, nil }
+	storeGetter      StoreGetter
 )
+
+func SetStoreCollection(sc StoreSlice) {
+	if len(sc) == 0 {
+		panic("StoreSlice is empty")
+	}
+	storeCollection = sc
+}
+
+func SetStoreGetter(g StoreGetter) {
+	if g == nil {
+		panic("StoreGetter cannot be nil")
+	}
+	storeGetter = g
+}
 
 // GetStore uses a StoreIndex to return a store or an error.
 // One should not modify the store object.
@@ -49,11 +70,11 @@ func GetStore(i StoreIndex) (*Store, error) {
 }
 
 func GetStoreByID(id int64) (*Store, error) {
-	return storeCollection.StoreByID(id)
+	return storeCollection.ByID(id)
 }
 
 func GetStoreByCode(code string) (*Store, error) {
-	return storeCollection.StoreByCode(code)
+	return storeCollection.ByCode(code)
 }
 
 // GetStores returns a copy of the main slice of stores.
@@ -74,16 +95,16 @@ func (s *StoreSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (i
 	})...)
 }
 
-func (s StoreSlice) StoreByID(id int64) (*Store, error) {
-	i, err := fncStoreIndexByID(id)
+func (s StoreSlice) ByID(id int64) (*Store, error) {
+	i, err := storeGetter.ByID(id)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
 	return s[i], nil
 }
 
-func (s StoreSlice) StoreByCode(code string) (*Store, error) {
-	i, err := fncStoreIndexByCode(code)
+func (s StoreSlice) ByCode(code string) (*Store, error) {
+	i, err := storeGetter.ByCode(code)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}

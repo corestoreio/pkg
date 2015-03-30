@@ -20,19 +20,43 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/juju/errgo"
 )
 
 const (
 	DefaultWebsiteId int64 = 0
 )
 
-// WebsiteIndex used for iota and for not mixing up indexes
-type WebsiteIndex int
+type (
+	// WebsiteIndex used for iota and for not mixing up indexes
+	WebsiteIndex  int
+	WebsiteGetter interface {
+		// ByID returns a WebsiteIndex using the StoreID. This WebsiteIndex identifies a website within a WebsiteSlice.
+		ByID(id int64) (WebsiteIndex, error)
+		// ByCode returns a WebsiteIndex using the code. This WebsiteIndex identifies a website within a WebsiteSlice.
+		ByCode(code string) (WebsiteIndex, error)
+	}
+)
 
 var (
 	ErrWebsiteNotFound = errors.New("Website not found")
 	websiteCollection  WebsiteSlice
+	websiteGetter      WebsiteGetter
 )
+
+func SetWebsiteCollection(sc WebsiteSlice) {
+	if len(sc) == 0 {
+		panic("WebsiteSlice is empty")
+	}
+	websiteCollection = sc
+}
+
+func SetWebsiteGetter(g WebsiteGetter) {
+	if g == nil {
+		panic("WebsiteGetter cannot be nil")
+	}
+	websiteGetter = g
+}
 
 // GetWebsite uses a GroupIndex to return a group or an error.
 // One should not modify the group object.
@@ -43,9 +67,16 @@ func GetWebsite(i WebsiteIndex) (*Website, error) {
 	return nil, ErrWebsiteNotFound
 }
 
-// GetWebsites returns a copy of the main slice of store groups.
+func GetWebsiteByID(id int64) (*Website, error) {
+	return websiteCollection.ByID(id)
+}
+
+func GetWebsiteByCode(code string) (*Website, error) {
+	return websiteCollection.ByCode(code)
+}
+
+// GetWebsites returns a copy of the main slice of websites.
 // One should not modify the slice and its content.
-// @todo $withDefault bool
 func GetWebsites() WebsiteSlice {
 	return websiteCollection
 }
@@ -59,6 +90,27 @@ func (s *WebsiteSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) 
 		return sb.OrderBy("main_table.sort_order ASC").OrderBy("main_table.name ASC")
 	})...)
 }
+
+func (s WebsiteSlice) ByID(id int64) (*Website, error) {
+	i, err := websiteGetter.ByID(id)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	return s[i], nil
+}
+
+func (s WebsiteSlice) ByCode(code string) (*Website, error) {
+	i, err := websiteGetter.ByCode(code)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	return s[i], nil
+}
+
+// @todo review Magento code because of column is_default
+//func (s Website) IsDefault() bool {
+//	return s.WebsiteID == DefaultWebsiteId
+//}
 
 /*
 	@todo implement Magento\Store\Model\Website
