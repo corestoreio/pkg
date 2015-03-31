@@ -24,8 +24,10 @@ import "github.com/corestoreio/csfw/tools"
 */
 
 const tplEav = tools.Copyright + `
-// Package {{ .Package }} file is auto generated via eavToStruct
 package {{ .Package }}
+
+// Package {{ .Package }} file is auto generated via eavToStruct
+
 import (
     "github.com/corestoreio/csfw/eav"
     {{ range .EntityTypeMap }}{{if ne .ImportPath "" }}"{{.ImportPath}}"
@@ -33,7 +35,7 @@ import (
 )
 
 func init(){
-    csEntityTypeCollection = eav.CSEntityTypeSlice{
+    eav.SetEntityTypeCollection(eav.CSEntityTypeSlice{
         {{ range .ETypeData }} &eav.CSEntityType {
             EntityTypeID: {{ .EntityTypeID }},
             EntityTypeCode: "{{ .EntityTypeCode }}",
@@ -52,6 +54,6 @@ func init(){
             EntityAttributeCollection: {{ .EntityAttributeCollection.String }},
         },
         {{ end }}
-    }
+    })
 }
 `

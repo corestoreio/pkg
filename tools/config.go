@@ -175,8 +175,8 @@ var ConfigTableToStruct = TableToStructMap{
 // into a folder. Other fields of the struct TableToStruct are ignored. Use the file config_user.go with the
 // func init() to change/extend it.
 var ConfigMaterializationEntityType = &TableToStruct{
-	Package:    "materialized",
-	OutputFile: "materialized/generated_eav_entity.go",
+	Package:    "eav_test",
+	OutputFile: "eav/generated_entity_type_test.go",
 }
 
 // ConfigMaterializationStore configuration for materializeStore() to write the materialized store data into a folder.

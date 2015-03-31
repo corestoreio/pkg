@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package materialized
+package eav_test
 
 import (
 	"testing"
@@ -27,7 +27,7 @@ func TestGetAttributeSelect(t *testing.T) {
 	db := csdb.MustConnectTest()
 	defer db.Close()
 	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
-	et, err := GetEntityTypeCollection().GetByCode("catalog_product")
+	et, err := eav.GetEntityTypeCollection().GetByCode("catalog_product")
 	if err != nil {
 		t.Error(err)
 	}
@@ -44,7 +44,7 @@ func TestGetAttributeSelect(t *testing.T) {
 		sql,
 	)
 
-	et, err = GetEntityTypeCollection().GetByCode("customer")
+	et, err = eav.GetEntityTypeCollection().GetByCode("customer")
 	if err != nil {
 		t.Error(err)
 	}

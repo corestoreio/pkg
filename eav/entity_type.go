@@ -23,7 +23,8 @@ import (
 type (
 	// CSEntityTypeSlice Types starting with CS are the CoreStore mappings with the DB data
 	CSEntityTypeSlice []*CSEntityType
-	// CSEntityType Go Type of the Mage database models and types
+	// CSEntityType Go Type of the Mage database models and types. The prefix CS indicates
+	// that this EntityType is not generated because it contains special interfaces.
 	CSEntityType struct {
 		EntityTypeID              int64
 		EntityTypeCode            string
@@ -43,6 +44,22 @@ type (
 		EntityAttributeCollection EntityAttributeCollectioner
 	}
 )
+
+// csEntityTypeCollection contains all entity types mapped to their Go types/interfaces
+var csEntityTypeCollection CSEntityTypeSlice
+
+// GetEntityTypeCollection to avoid leaking global variable. Maybe returning a copy?
+func GetEntityTypeCollection() CSEntityTypeSlice {
+	return csEntityTypeCollection
+}
+
+// SetEntityTypeCollection sets the collection
+func SetEntityTypeCollection(sc CSEntityTypeSlice) {
+	if len(sc) == 0 {
+		panic("CSEntityTypeSlice is empty")
+	}
+	csEntityTypeCollection = sc
+}
 
 func (et *EntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...csdb.DbrSelectCb) error {
 	s, err := GetTableStructure(TableEntityType)
