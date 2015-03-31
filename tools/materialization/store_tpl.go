@@ -31,12 +31,14 @@ const (
     Store{{prepareVarIndex $k $v.Code.String}} {{ if eq $k 0 }}store.StoreIndex = iota{{end}}
 {{ end }} // Store_Max end of index, not available.
 	Store999Max
-
+)
+const (
     {{ range $k,$v := .Groups }} // Group{{prepareVarIndex $k $v.Name}} is the index to {{$v.Name}} ID: {{$v.GroupID}}
     Group{{prepareVarIndex $k $v.Name}} {{ if eq $k 0 }}store.GroupIndex = iota{{end}}
 {{ end }} // Group_Max end of index, not available.
 	Group999Max
-
+)
+const (
     {{ range $k,$v := .Websites }} // Website{{prepareVarIndex $k $v.Code.String}} is the index to {{$v.Name.String}} ID: {{$v.WebsiteID}}
     Website{{prepareVarIndex $k $v.Code.String}} {{ if eq $k 0 }}store.WebsiteIndex = iota{{end}}
 {{ end }} // Website_Max end of index, not available.
