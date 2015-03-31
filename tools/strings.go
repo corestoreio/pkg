@@ -48,6 +48,8 @@ const Copyright = `// Copyright 2015 CoreStore Authors
 // limitations under the License.
 `
 
+// GenerateCode uses text/template for create Go code. package name pkg will also be used
+// to remove stutter in variable names.
 func GenerateCode(pkg, tplCode string, data interface{}) ([]byte, error) {
 
 	fm := template.FuncMap{
@@ -71,6 +73,8 @@ func GenerateCode(pkg, tplCode string, data interface{}) ([]byte, error) {
 	return fmt, nil
 }
 
+// prepareVar converts a string into a Go code variable. Removes the package name if this string
+// starts with the package name.
 func prepareVar(pkg string) func(s string) string {
 
 	return func(str string) string {
@@ -81,12 +85,11 @@ func prepareVar(pkg string) func(s string) string {
 		}
 
 		str = strings.Map(func(r rune) rune {
-			ret := '_'
 			switch {
 			case r >= 'A' && r <= 'Z', r >= 'a' && r <= 'z', r >= '0' && r <= '9':
-				ret = r
+				return r
 			}
-			return ret
+			return '_'
 		}, str)
 
 		return Camelize(str)
@@ -133,6 +136,7 @@ func LogFatal(err error) {
 	logFatalln(s)
 }
 
+// randSeq returns a random string with a defined length n.
 func randSeq(n int) string {
 	rand.Seed(time.Now().UTC().UnixNano())
 	b := make([]rune, n)
