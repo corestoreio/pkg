@@ -194,3 +194,13 @@ func TestPrepareVar(t *testing.T) {
 		assert.Equal(t, test.want, prepareVar(test.pkg)(test.have))
 	}
 }
+
+var benchPrepareVar = ""
+
+// BenchmarkPrepareVar	  500000	      3078 ns/op	     288 B/op	      14 allocs/op
+func BenchmarkPrepareVar(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchPrepareVar = prepareVar("catalog")(`catalog_product_attribute_collection `)
+	}
+}

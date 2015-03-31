@@ -73,32 +73,22 @@ func GenerateCode(pkg, tplCode string, data interface{}) ([]byte, error) {
 
 func prepareVar(pkg string) func(s string) string {
 
-	var stripPk = func(t string) string {
-		l := len(pkg) + 1
-		if len(t) <= l {
-			return t
-		}
-		if t[:l] == pkg+TableNameSeparator {
-			return t[l:]
-		}
-		return t
-	}
-
-	var cleanStr = func(r rune) rune {
-		switch {
-		case r >= 'A' && r <= 'Z':
-			return r
-		case r >= 'a' && r <= 'z':
-			return r
-		case r >= '0' && r <= '9':
-			return r
-		}
-		return '_'
-	}
-
 	return func(str string) string {
-		str = stripPk(str)
-		str = strings.Map(cleanStr, str)
+
+		l := len(pkg) + 1
+		if len(str) > l && str[:l] == pkg+TableNameSeparator {
+			str = str[l:]
+		}
+
+		str = strings.Map(func(r rune) rune {
+			ret := '_'
+			switch {
+			case r >= 'A' && r <= 'Z', r >= 'a' && r <= 'z', r >= '0' && r <= '9':
+				ret = r
+			}
+			return ret
+		}, str)
+
 		return Camelize(str)
 	}
 }
