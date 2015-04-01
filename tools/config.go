@@ -231,6 +231,34 @@ var ConfigEntityType = EntityTypeMap{
 	// @todo extend for all sales entities
 }
 
+var ConfigMaterializationAttributes = TableToStructMap{
+	// _type defines a type which embeds an attribute type
+	"customer_type": &TableToStruct{
+		Package:    "customer",
+		OutputFile: "customer/generated_customer_attribute.go",
+	},
+	"customer_attributes": &TableToStruct{
+		Package:    "customer_test",
+		OutputFile: "customer/generated_customer_attribute_test.go",
+	},
+	"address_type": &TableToStruct{
+		Package:    "customer",
+		OutputFile: "customer/generated_address_attribute.go",
+	},
+	"address_attributes": &TableToStruct{
+		Package:    "customer_test",
+		OutputFile: "customer/generated_address_attribute_test.go",
+	},
+	"product_type": &TableToStruct{
+		Package:    "catalog",
+		OutputFile: "catalog/generated_product_attribute.go",
+	},
+	"product_attributes": &TableToStruct{
+		Package:    "catalog_test",
+		OutputFile: "catalog/generated_product_attribute_test.go",
+	},
+}
+
 // ConfigAttributeModel contains default configuration. Use the file config_user.go with the func init() to change/extend it.
 var ConfigAttributeModel = AttributeModelDefMap{
 	"catalog/product_attribute_frontend_image": &AttributeModelDef{

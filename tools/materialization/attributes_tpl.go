@@ -29,7 +29,7 @@ type (
     // @todo website must be present in the slice
     {{.Name | prepareVar}}Slice []*{{.Name | prepareVar}}
     // {{.Name | prepareVar}} a data container for the data from a MySQL query
-    {{.Name | prepareVar}} struct {
+    lowercase{{.Name | prepareVar}} struct {
         {{ range .Columns }}{{.GoName}} {{.GoType}}
         {{ end }} }
 )
