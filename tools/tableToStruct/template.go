@@ -28,10 +28,10 @@ import (
 )
 
 const (
-    {{ range $k,$v := .Tables }} // Table{{.name | prepareVar}} is the index to {{.table}}
-    Table{{.name | prepareVar}} {{ if eq $k 0 }}csdb.Index = iota // must start with 0{{ end }}
-{{ end }} // TableZMax represents the maximum index, which is not available.
-TableZMax
+    {{ range $k,$v := .Tables }} // TableIndex{{.name | prepareVar}} is the index to {{.table}}
+    TableIndex{{.name | prepareVar}} {{ if eq $k 0 }}csdb.Index = iota // must start with 0{{ end }}
+{{ end }} // TableIndex999Max represents the maximum index, which is not available.
+TableIndex999Max
 )
 
 var (
@@ -40,7 +40,7 @@ var (
     _ = time.Time{}
 
     tableMap = csdb.TableStructureSlice{
-{{ range .Tables }}Table{{.name | prepareVar}} : csdb.NewTableStructure(
+{{ range .Tables }}TableIndex{{.name | prepareVar}} : csdb.NewTableStructure(
         "{{.table}}",
         []string{
         {{ range .columns }}{{ if eq .Key.String "PRI" }} "{{.Field.String}}",{{end}}
@@ -55,13 +55,13 @@ var (
 
 // GetTableStructure returns for a given index i the table structure or an error it not found.
 func GetTableStructure(i csdb.Index) (*csdb.TableStructure, error) {
-    if i < TableZMax { return tableMap.Structure(i) }
+    if i < TableIndex999Max { return tableMap.Structure(i) }
 	return nil, csdb.ErrTableNotFound
 }
 
 // GetTableName returns for a given index the table name. If not found an empty string.
 func GetTableName(i csdb.Index) string {
-    if i < TableZMax { return tableMap.Name(i) }
+    if i < TableIndex999Max { return tableMap.Name(i) }
 	return ""
 }
 
@@ -72,7 +72,7 @@ func GetTableName(i csdb.Index) string {
 func Get{{ $typeCode | prepareVar }}ValueStructure(i eav.ValueIndex) (*csdb.TableStructure, error) {
 	switch i {
 	{{range $vt,$v := $valueTables }}case eav.EntityType{{ $v | prepareVar }}:
-		return GetTableStructure(Table{{ $vt | prepareVar }})
+		return GetTableStructure(TableIndex{{ $vt | prepareVar }})
     {{end}}	}
 	return nil, eav.ErrEntityTypeValueNotFound
 }
@@ -81,10 +81,10 @@ func Get{{ $typeCode | prepareVar }}ValueStructure(i eav.ValueIndex) (*csdb.Tabl
 type (
 
 {{ range .Tables }}
-    // {{.name | prepareVar}}Slice contains pointers to {{.name | prepareVar}} types
-    {{.name | prepareVar}}Slice []*{{.name | prepareVar}}
-    // {{.name | prepareVar}} a type for the MySQL table {{ .table }}
-    {{.name | prepareVar}} struct {
+    // Table{{.name | prepareVar}}Slice contains pointers to Table{{.name | prepareVar}} types
+    Table{{.name | prepareVar}}Slice []*Table{{.name | prepareVar}}
+    // Table{{.name | prepareVar}} a type for the MySQL table {{ .table }}
+    Table{{.name | prepareVar}} struct {
         {{ range .columns }}{{.GoName}} {{.GoType}} {{ $.Tick }}db:"{{.Field.String}}"{{ $.Tick }} {{.Comment}}
         {{ end }} }
 {{ end }}

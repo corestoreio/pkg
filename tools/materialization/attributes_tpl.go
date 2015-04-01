@@ -55,6 +55,7 @@ package {{ .PackageName }}
 const (
     {{ range $k, $row := .Attributes }}{{$.Name | prepareVar}}{{index $row "attribute_code" | prepareVar}} {{ if eq $k 0 }} eav.AttributeIndex = iota {{ end }}
     {{end}}
+    {{$.Name | prepareVar}}999Max
 )
 
 type si{{$.Name | prepareVar}} struct {}
