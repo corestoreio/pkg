@@ -303,7 +303,7 @@ func TestSQLQueryToColumnsToStruct(t *testing.T) {
 	}
 
 	colSliceDbr.MapSQLToGoDBRType()
-	code, err := ColumnsToStructCode("testStruct", colSliceDbr)
+	code, err := ColumnsToStructCode(nil, "testStruct", colSliceDbr)
 	if err != nil {
 		t.Error(err, "\n", string(code))
 	}

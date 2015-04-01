@@ -16,7 +16,6 @@ package main
 
 import (
 	"io/ioutil"
-	"path"
 	"strings"
 
 	"github.com/corestoreio/csfw/eav"
@@ -37,13 +36,6 @@ func materializeAttributes(ctx *context) {
 	}
 }
 
-func getImportPath(et *eav.EntityType) string {
-	if etConfig, ok := tools.ConfigEntityType[et.EntityTypeCode]; ok {
-		return etConfig.ImportPath
-	}
-	return ""
-}
-
 func getEAVPackage(et *eav.EntityType) string {
 	if etConfig, ok := tools.ConfigMaterializationAttributes[et.EntityTypeCode]; ok {
 		return etConfig.EAVPackage
@@ -59,7 +51,10 @@ func getOutputFile(et *eav.EntityType) string {
 }
 
 func getPackage(et *eav.EntityType) string {
-	return path.Base(getImportPath(et))
+	if etConfig, ok := tools.ConfigMaterializationAttributes[et.EntityTypeCode]; ok {
+		return etConfig.Package
+	}
+	panic("You must specify a package name")
 }
 
 // getName generates a nice struct name with a removed package name to avoid stutter but
@@ -94,7 +89,10 @@ func generateAttributeCode(ctx *context) error {
 	tools.LogFatal(columns.MapSQLToGoType(tools.EavAttributeColumnNameToInterface))
 
 	name := getName(ctx, "attribute")
-	structCode, err := tools.ColumnsToStructCode(name, columns, tplTypeDefinition)
+	typeTplData := map[string]interface{}{
+		"EAVPackage": getEAVPackage(ctx.et),
+	}
+	structCode, err := tools.ColumnsToStructCode(typeTplData, name, columns, tplTypeDefinition)
 	if err != nil {
 		println(string(structCode))
 		return err
@@ -130,13 +128,6 @@ func generateAttributeCode(ctx *context) error {
 		println(string(code))
 		return err
 	}
-	// @todo better path OR we expect the full path from the config
-	//	path := fmt.Sprintf(
-	//		"%s%s%sgenerated_%s.go",
-	//		ctx.goSrcPath,
-	//		getImportPath(ctx.et),
-	//		string(os.PathSeparator),
-	//		getName(ctx, "attribute"),
-	//	)
+
 	return errgo.Mask(ioutil.WriteFile(getOutputFile(ctx.et), code, 0600))
 }

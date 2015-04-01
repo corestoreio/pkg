@@ -41,6 +41,7 @@ var _ {{.EAVPackage}}.Attributer = (*{{.Name | prepareVar | toLowerFirst}})(nil)
 
 `
 
+// here iota must start with 0 because constants are used as slice index.
 const tplTypeDefinitionFile = tools.Copyright + `
 package {{ .PackageName }}
     import (
@@ -55,6 +56,30 @@ const (
     {{ range $k, $row := .Attributes }}{{$.Name | prepareVar}}{{index $row "attribute_code" | prepareVar}} {{ if eq $k 0 }} eav.AttributeIndex = iota {{ end }}
     {{end}}
 )
+
+type si{{$.Name | prepareVar}} struct {}
+
+func (si{{$.Name | prepareVar}}) ByID(id int64) (eav.AttributeIndex, error){
+	switch id {
+	{{ range $k, $row := .Attributes }} case {{index $row "attribute_id"}}:
+		return {{$.Name | prepareVar}}{{index $row "attribute_code" | prepareVar}}, nil
+	{{end}}
+	default:
+		return eav.AttributeIndex(0), eav.ErrAttributeNotFound
+	}
+}
+
+func (si{{$.Name | prepareVar}}) ByCode(code string) (eav.AttributeIndex, error){
+	switch code {
+	{{ range $k, $row := .Attributes }} case {{index $row "attribute_code"}}:
+		return {{$.Name | prepareVar}}{{index $row "attribute_code" | prepareVar}}, nil
+	{{end}}
+	default:
+		return eav.AttributeIndex(0), eav.ErrAttributeNotFound
+	}
+}
+
+var _ eav.AttributeGetter = (*si{{$.Name | prepareVar}})(nil)
 
 func init(){
     {{.EAVPackage}}.SetAttributeCollection({{.EAVPackage}}.AttributeSlice{

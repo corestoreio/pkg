@@ -20,16 +20,6 @@ import (
 )
 
 type (
-	// Attributer defines the minimum fields needed.
-	// Custom struct types will use this interface for embedding.
-	// materializer creates all required methods plus of course the additional definied ones
-	// then generate an empty struct which has the values coded in it!
-	/*
-		type myCategoryAttributeAllChildren struct{}
-		func (myCategoryAttributeAllChildren) AttributeID() int64 { return 2 }
-		func (myCategoryAttributeAllChildren) EntityTypeID() int64 { return 2 }
-	*/
-
 	// @todo website must be present in the slice
 	AttributeSlice []Attributer
 
