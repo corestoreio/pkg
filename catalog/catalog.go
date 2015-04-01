@@ -15,17 +15,12 @@
 package catalog
 
 type (
-	// FrontendInputRenderer see table catalog_eav_attribute.frontend_input_renderer
-	FrontendInputRenderer interface {
-		TBD()
-	}
-
-	// AttributeModel implements how attributes are handled
+	// AttributeModel implements how attributes are handled @todo
 	AttributeModel struct {
 	}
 )
 
-// Attribute generates a new attribute model
+// Attribute generates a new attribute model @todo
 func Attribute() *AttributeModel {
 	return &AttributeModel{}
 }

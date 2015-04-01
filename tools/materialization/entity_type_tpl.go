@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generates code for all EAV types
 package main
 
 import "github.com/corestoreio/csfw/tools"

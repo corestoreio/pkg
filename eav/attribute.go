@@ -15,11 +15,55 @@
 package eav
 
 import (
+	"errors"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
 )
 
+var (
+	ErrAttributeNotFound = errors.New("Attribute not found")
+)
+
 type (
+	// AttributeIndex used for index in a slice with constants (iota)
+	AttributeIndex uint
+
+	// Attributer defines the minimal requirements for one attribute. The interface relates to the table
+	// eav_attribute. Developers can even extend this table with additional columns. Additional columns
+	// will result into more generated functions. Even other EAV entities can embed this interface to
+	// extend an attribute. For example the customer attributes
+	// extends this interface two times. The column of func AttributeModel() has been removed because
+	// it is not used and misplaced in the eav_attribute table. This interface can be extended to more than
+	// 40 functions which is of course not idiomatic but for generated code it provides the best
+	// flexibility.
+	Attributer interface {
+		AttributeID() int64
+		EntityTypeID() int64
+		AttributeCode() string
+		BackendModel() AttributeBackendModeller
+		BackendType() string
+		BackendTable() string
+		FrontendModel() AttributeFrontendModeller
+		FrontendInput() string
+		FrontendLabel() string
+		FrontendClass() string
+		SourceModel() AttributeSourceModeller
+		IsRequired() bool
+		IsUserDefined() bool
+		DefaultValue() string
+		IsUnique() bool
+		Note() string
+	}
+
+	// AttributeGetter implements functions on how to retrieve directly a certain attribute
+	AttributeGetter interface {
+		// ByID returns an index using the AttributeID. This index identifies an attribute within an AttributeSlice.
+		ByID(id int64) (AttributeIndex, error)
+		// ByCode returns an index using the AttributeCode. This index identifies an attribute within an AttributeSlice.
+		ByCode(code string) (AttributeIndex, error)
+	}
+
 	// AttributeBackendModeller defines the attribute backend model @todo
 	AttributeBackendModeller interface {
 		GetTable() string

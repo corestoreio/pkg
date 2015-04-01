@@ -31,6 +31,15 @@ type (
 		EntityTypeCodes []string
 	}
 
+	AttributeToStruct struct {
+		// EAVPackage defines the package name to import and use: possible ATM: customer,catalog
+		EAVPackage string
+		// Package defines the name of the target package, must be external.
+		Package string
+		// OutputFile specifies the path where to write the newly generated code
+		OutputFile string
+	}
+
 	// EntityTypeMap uses a string key as easy identifier, which must also exists in the table eav_EntityTable,
 	// for maybe later manipulation in config_user.go
 	// and as value a pointer to a EntityType struct. Developers can later use the init() func in config_user.go to change
@@ -231,32 +240,28 @@ var ConfigEntityType = EntityTypeMap{
 	// @todo extend for all sales entities
 }
 
-var ConfigMaterializationAttributes = TableToStructMap{
-	// _type defines a type which embeds an attribute type
-	"customer_type": &TableToStruct{
-		Package:    "customer",
-		OutputFile: "customer/generated_customer_attribute.go",
-	},
-	"customer_attributes": &TableToStruct{
-		Package:    "customer_test",
+var ConfigMaterializationAttributes = map[string]*AttributeToStruct{
+	"customer": &AttributeToStruct{
+		EAVPackage: "customer",
+		Package:    "customer_test", // external package name
 		OutputFile: "customer/generated_customer_attribute_test.go",
 	},
-	"address_type": &TableToStruct{
-		Package:    "customer",
-		OutputFile: "customer/generated_address_attribute.go",
-	},
-	"address_attributes": &TableToStruct{
+	"customer_address": &AttributeToStruct{
+		EAVPackage: "customer",
 		Package:    "customer_test",
 		OutputFile: "customer/generated_address_attribute_test.go",
 	},
-	"product_type": &TableToStruct{
-		Package:    "catalog",
-		OutputFile: "catalog/generated_product_attribute.go",
-	},
-	"product_attributes": &TableToStruct{
+	"catalog_product": &AttributeToStruct{
+		EAVPackage: "catalog",
 		Package:    "catalog_test",
 		OutputFile: "catalog/generated_product_attribute_test.go",
 	},
+	"catalog_category": &AttributeToStruct{
+		EAVPackage: "catalog",
+		Package:    "catalog_test",
+		OutputFile: "catalog/generated_category_attribute_test.go",
+	},
+	// extend here for other EAV attributes (not sales* types)
 }
 
 // ConfigAttributeModel contains default configuration. Use the file config_user.go with the func init() to change/extend it.

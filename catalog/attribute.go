@@ -16,11 +16,10 @@ package catalog
 
 import (
 	"github.com/corestoreio/csfw/eav"
+	"github.com/juju/errgo"
 )
 
 type (
-	indexCSCategoryAttribute int
-
 	// Attributer defines the minimum fields needed.
 	// Custom struct types will use this interface for embedding.
 	// materializer creates all required methods plus of course the additional definied ones
@@ -31,30 +30,16 @@ type (
 		func (myCategoryAttributeAllChildren) EntityTypeID() int64 { return 2 }
 	*/
 
-	// CSCategoryAttributeSlice contains pointers to CSCategoryAttribute types
 	// @todo website must be present in the slice
-	AttributeSlicer []Attributer
+	AttributeSlice []Attributer
 
-	// use eav.Attributer as embedded ... because eav_attribute :-)
+	// Attributer defines the minimal requirements for a catalog attribute. This interface consists
+	// of one more tables: catalog_eav_attribute. Developers can also extend this table to add more columns.
+	// These columns will be automatically transformed into more functions.
 	Attributer interface {
-		AttributeID() int64
-		EntityTypeID() int64
-		AttributeCode() string
-		AttributeModel() string
-		BackendModel() eav.AttributeBackendModeller
-		BackendType() string
-		BackendTable() string
-		FrontendModel() eav.AttributeFrontendModeller
-		FrontendInput() string
-		FrontendLabel() string
-		FrontendClass() string
-		SourceModel() eav.AttributeSourceModeller
-		IsRequired() bool
-		IsUserDefined() bool
-		DefaultValue() string
-		IsUnique() bool
-		Note() string
-		FrontendInputRenderer() string
+		eav.Attributer
+
+		FrontendInputRenderer() FrontendInputRendererIFace
 		IsGlobal() bool
 		IsVisible() bool
 		IsSearchable() bool
@@ -66,7 +51,7 @@ type (
 		IsFilterableInSearch() bool
 		UsedInProductListing() bool
 		UsedForSortBy() bool
-		IsConfigurable() bool
+		// IsConfigurable() bool not used anymore in Magento2
 		ApplyTo() string
 		IsVisibleInAdvancedSearch() bool
 		Position() int64
@@ -74,4 +59,68 @@ type (
 		IsUsedForPromoRules() bool
 		SearchWeight() int64
 	}
+
+	// FrontendInputRendererIFace see table catalog_eav_attribute.frontend_input_renderer @todo
+	// Stupid name :-( Fix later.
+	FrontendInputRendererIFace interface {
+		TBD()
+	}
 )
+
+var (
+	attributeCollection AttributeSlice
+	attributeGetter     eav.AttributeGetter
+)
+
+func SetAttributeCollection(ac AttributeSlice) {
+	if len(ac) == 0 {
+		panic("AttributeSlice is empty")
+	}
+	attributeCollection = ac
+}
+
+func SetAttributeGetter(g eav.AttributeGetter) {
+	if g == nil {
+		panic("AttributeGetter cannot be nil")
+	}
+	attributeGetter = g
+}
+
+func (s AttributeSlice) ByID(id int64) (Attributer, error) {
+	i, err := attributeGetter.ByID(id)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	return s[i], nil
+}
+
+func (s AttributeSlice) ByCode(code string) (Attributer, error) {
+	i, err := attributeGetter.ByCode(code)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	return s[i], nil
+}
+
+// GetAttribute uses an AttributeIndex to return a attribute or an error.
+// One should not modify the attribute object.
+func GetAttribute(i eav.AttributeIndex) (Attributer, error) {
+	if int(i) < len(attributeCollection) {
+		return attributeCollection[i], nil
+	}
+	return nil, eav.ErrAttributeNotFound
+}
+
+func GetAttributeByID(id int64) (Attributer, error) {
+	return attributeCollection.ByID(id)
+}
+
+func GetAttributeByCode(code string) (Attributer, error) {
+	return attributeCollection.ByCode(code)
+}
+
+// GetAttributes returns a copy of the main slice of attributes.
+// One should not modify the slice and its content.
+func GetAttributes() AttributeSlice {
+	return attributeCollection
+}

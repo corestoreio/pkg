@@ -55,6 +55,7 @@ func GenerateCode(pkg, tplCode string, data interface{}) ([]byte, error) {
 	fm := template.FuncMap{
 		"quote":           func(s string) string { return "`" + s + "`" },
 		"prepareVar":      prepareVar(pkg),
+		"toLowerFirst":    toLowerFirst,
 		"prepareVarIndex": func(i int, s string) string { return fmt.Sprintf("%03d%s", i, prepareVar(pkg)(s)) },
 	}
 
@@ -71,6 +72,13 @@ func GenerateCode(pkg, tplCode string, data interface{}) ([]byte, error) {
 		return buf.Bytes(), err
 	}
 	return fmt, nil
+}
+
+func toLowerFirst(s string) string {
+	if len(s) == 0 {
+		return ""
+	}
+	return strings.ToLower(s[:1]) + s[1:]
 }
 
 // prepareVar converts a string into a Go code variable. Removes the package name if this string

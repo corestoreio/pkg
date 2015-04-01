@@ -14,31 +14,21 @@
 
 package customer
 
-import "github.com/corestoreio/csfw/eav"
+import (
+	"github.com/corestoreio/csfw/eav"
+	"github.com/juju/errgo"
+)
 
 type (
-	indexCSAddressAttribute int
+	AttributeSlice []Attributer
 
-	AttributeSlicer []Attributer
-
+	// Attributer defines the minimal requirements for a customer attribute. This interface consists
+	// of two more tables: customer_eav_attribute and customer_eav_attribute_website. Developers
+	// can also extend these tables to add more columns. These columns will be automatically transformed
+	// into functions.
 	Attributer interface {
-		AttributeID() int64
-		EntityTypeID() int64
-		AttributeCode() string
-		AttributeModel() string
-		BackendModel() eav.AttributeBackendModeller
-		BackendType() string
-		BackendTable() string
-		FrontendModel() eav.AttributeFrontendModeller
-		FrontendInput() string
-		FrontendLabel() string
-		FrontendClass() string
-		SourceModel() eav.AttributeSourceModeller
-		IsRequired() bool
-		IsUserDefined() bool
-		DefaultValue() string
-		IsUnique() bool
-		Note() string
+		eav.Attributer
+
 		IsVisible() bool
 		InputFilter() string
 		MultilineCount() int64
@@ -47,9 +37,68 @@ type (
 		SortOrder() int64
 		DataModel() string
 		IsUsedForCustomerSegment() bool
+
 		ScopeIsVisible() bool
 		ScopeIsRequired() bool
 		ScopeDefaultValue() string
 		ScopeMultilineCount() int64
 	}
 )
+
+var (
+	attributeCollection AttributeSlice
+	attributeGetter     eav.AttributeGetter
+)
+
+func SetAttributeCollection(ac AttributeSlice) {
+	if len(ac) == 0 {
+		panic("AttributeSlice is empty")
+	}
+	attributeCollection = ac
+}
+
+func SetAttributeGetter(g eav.AttributeGetter) {
+	if g == nil {
+		panic("AttributeGetter cannot be nil")
+	}
+	attributeGetter = g
+}
+
+func (s AttributeSlice) ByID(id int64) (Attributer, error) {
+	i, err := attributeGetter.ByID(id)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	return s[i], nil
+}
+
+func (s AttributeSlice) ByCode(code string) (Attributer, error) {
+	i, err := attributeGetter.ByCode(code)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	return s[i], nil
+}
+
+// GetAttribute uses an AttributeIndex to return a attribute or an error.
+// One should not modify the attribute object.
+func GetAttribute(i eav.AttributeIndex) (Attributer, error) {
+	if int(i) < len(attributeCollection) {
+		return attributeCollection[i], nil
+	}
+	return nil, eav.ErrAttributeNotFound
+}
+
+func GetAttributeByID(id int64) (Attributer, error) {
+	return attributeCollection.ByID(id)
+}
+
+func GetAttributeByCode(code string) (Attributer, error) {
+	return attributeCollection.ByCode(code)
+}
+
+// GetAttributes returns a copy of the main slice of attributes.
+// One should not modify the slice and its content.
+func GetAttributes() AttributeSlice {
+	return attributeCollection
+}

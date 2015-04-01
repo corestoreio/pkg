@@ -12,13 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Generates code for all EAV attribute types
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
-	"os"
 	"path"
 	"strings"
 
@@ -45,6 +42,20 @@ func getImportPath(et *eav.EntityType) string {
 		return etConfig.ImportPath
 	}
 	return ""
+}
+
+func getEAVPackage(et *eav.EntityType) string {
+	if etConfig, ok := tools.ConfigMaterializationAttributes[et.EntityTypeCode]; ok {
+		return etConfig.EAVPackage
+	}
+	return ""
+}
+
+func getOutputFile(et *eav.EntityType) string {
+	if etConfig, ok := tools.ConfigMaterializationAttributes[et.EntityTypeCode]; ok {
+		return etConfig.OutputFile
+	}
+	panic("You must specify an output file")
 }
 
 func getPackage(et *eav.EntityType) string {
@@ -82,9 +93,10 @@ func generateAttributeCode(ctx *context) error {
 
 	tools.LogFatal(columns.MapSQLToGoType(tools.EavAttributeColumnNameToInterface))
 
-	name := "CS_" + getName(ctx, "attribute")
+	name := getName(ctx, "attribute")
 	structCode, err := tools.ColumnsToStructCode(name, columns, tplTypeDefinition)
 	if err != nil {
+		println(string(structCode))
 		return err
 	}
 
@@ -103,12 +115,14 @@ func generateAttributeCode(ctx *context) error {
 		Name           string
 		ImportPaths    []string
 		PackageName    string
+		EAVPackage     string
 	}{
 		TypeDefinition: string(structCode),
 		Attributes:     attributeCollection,
 		Name:           name,
 		ImportPaths:    importPaths,
 		PackageName:    pkg,
+		EAVPackage:     getEAVPackage(ctx.et),
 	}
 
 	code, err := tools.GenerateCode("", tplTypeDefinitionFile, data)
@@ -116,13 +130,13 @@ func generateAttributeCode(ctx *context) error {
 		println(string(code))
 		return err
 	}
-
-	path := fmt.Sprintf(
-		"%s%s%sgenerated_%s.go",
-		ctx.goSrcPath,
-		getImportPath(ctx.et),
-		string(os.PathSeparator),
-		getName(ctx, "attribute"),
-	)
-	return errgo.Mask(ioutil.WriteFile(path, code, 0600))
+	// @todo better path OR we expect the full path from the config
+	//	path := fmt.Sprintf(
+	//		"%s%s%sgenerated_%s.go",
+	//		ctx.goSrcPath,
+	//		getImportPath(ctx.et),
+	//		string(os.PathSeparator),
+	//		getName(ctx, "attribute"),
+	//	)
+	return errgo.Mask(ioutil.WriteFile(getOutputFile(ctx.et), code, 0600))
 }
