@@ -27,6 +27,7 @@ var (
 type (
 	Index               int
 	TableStructureSlice []*TableStructure
+	TableCoreColumns    []string
 
 	// temporary place
 	TableStructure struct {
@@ -95,4 +96,14 @@ func (m TableStructureSlice) Name(i Index) string {
 		return m[i].Name
 	}
 	return ""
+}
+
+// Contains checks if this slice contains this name
+func (c TableCoreColumns) Contains(name string) bool {
+	for i := 0; i < len(c); i++ {
+		if c[i] == name {
+			return true
+		}
+	}
+	return false
 }
