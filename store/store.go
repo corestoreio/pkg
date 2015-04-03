@@ -42,11 +42,11 @@ type (
 
 var (
 	ErrStoreNotFound = errors.New("Store not found")
-	storeCollection  StoreSlice
+	storeCollection  TableStoreSlice
 	storeGetter      StoreGetter
 )
 
-func SetStoreCollection(sc StoreSlice) {
+func SetStoreCollection(sc TableStoreSlice) {
 	if len(sc) == 0 {
 		panic("StoreSlice is empty")
 	}
@@ -62,24 +62,24 @@ func SetStoreGetter(g StoreGetter) {
 
 // GetStore uses a StoreIndex to return a store or an error.
 // One should not modify the store object.
-func GetStore(i StoreIndex) (*Store, error) {
+func GetStore(i StoreIndex) (*TableStore, error) {
 	if int(i) < len(storeCollection) {
 		return storeCollection[i], nil
 	}
 	return nil, ErrStoreNotFound
 }
 
-func GetStoreByID(id int64) (*Store, error) {
+func GetStoreByID(id int64) (*TableStore, error) {
 	return storeCollection.ByID(id)
 }
 
-func GetStoreByCode(code string) (*Store, error) {
+func GetStoreByCode(code string) (*TableStore, error) {
 	return storeCollection.ByCode(code)
 }
 
 // GetStores returns a copy of the main slice of stores.
 // One should not modify the slice and its content.
-func GetStores() StoreSlice {
+func GetStores() TableStoreSlice {
 	return storeCollection
 }
 
@@ -87,15 +87,15 @@ func GetStores() StoreSlice {
 // The variadic 2nd argument can be a call back function to manipulate the select.
 // Additional columns or joins cannot be added. This method receiver should only be used in development.
 // @see app/code/Magento/Store/Model/Resource/Store/Collection.php::Load() for sort order
-func (s *StoreSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
-	return loadSlice(dbrSess, TableStore, &(*s), append(cbs, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
+func (s *TableStoreSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
+	return loadSlice(dbrSess, TableIndexStore, &(*s), append(cbs, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
 		sb.OrderBy("CASE WHEN main_table.store_id = 0 THEN 0 ELSE 1 END ASC")
 		sb.OrderBy("main_table.sort_order ASC")
 		return sb.OrderBy("main_table.name ASC")
 	})...)
 }
 
-func (s StoreSlice) ByID(id int64) (*Store, error) {
+func (s TableStoreSlice) ByID(id int64) (*TableStore, error) {
 	i, err := storeGetter.ByID(id)
 	if err != nil {
 		return nil, errgo.Mask(err)
@@ -103,7 +103,7 @@ func (s StoreSlice) ByID(id int64) (*Store, error) {
 	return s[i], nil
 }
 
-func (s StoreSlice) ByCode(code string) (*Store, error) {
+func (s TableStoreSlice) ByCode(code string) (*TableStore, error) {
 	i, err := storeGetter.ByCode(code)
 	if err != nil {
 		return nil, errgo.Mask(err)
@@ -111,7 +111,7 @@ func (s StoreSlice) ByCode(code string) (*Store, error) {
 	return s[i], nil
 }
 
-func (s Store) IsDefault() bool {
+func (s TableStore) IsDefault() bool {
 	return s.StoreID == DefaultStoreId
 }
 

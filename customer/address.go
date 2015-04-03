@@ -54,7 +54,7 @@ func (c *AddressModel) AttributeCollection() {
 }
 
 func (c *AddressModel) TableNameBase() string {
-	return GetTableName(TableEntity)
+	return GetTableName(TableIndexAddressEntity)
 }
 
 func (c *AddressModel) TableNameValue(i eav.ValueIndex) string {
@@ -67,12 +67,12 @@ func (c *AddressModel) TableNameValue(i eav.ValueIndex) string {
 
 // EntityTypeAdditionalAttributeTabler
 func (c *AddressModel) TableAdditionalAttribute() (*csdb.TableStructure, error) {
-	return GetTableStructure(TableEAVAttribute)
+	return GetTableStructure(TableIndexEAVAttribute)
 }
 
 // EntityTypeAdditionalAttributeTabler
 func (c *AddressModel) TableEavWebsite() (*csdb.TableStructure, error) {
-	return GetTableStructure(TableEAVAttributeWebsite)
+	return GetTableStructure(TableIndexEAVAttributeWebsite)
 }
 
 func Address() *AddressModel {

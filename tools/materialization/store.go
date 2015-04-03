@@ -26,9 +26,9 @@ import (
 type (
 	storeTplData struct {
 		PackageName string
-		Stores      store.StoreSlice
-		Groups      store.GroupSlice
-		Websites    store.WebsiteSlice
+		Stores      store.TableStoreSlice
+		Groups      store.TableGroupSlice
+		Websites    store.TableWebsiteSlice
 	}
 )
 
@@ -63,7 +63,7 @@ func materializeStore(ctx *context) {
 	defer ctx.wg.Done()
 
 	tplData := newStoreTplData(ctx)
-	formatted, err := tools.GenerateCode(tools.ConfigMaterializationStore.Package, tplMaterializationStore, tplData)
+	formatted, err := tools.GenerateCode(tools.ConfigMaterializationStore.Package, tplMaterializationStore, tplData, nil)
 	if err != nil {
 		fmt.Printf("\n%s\n", formatted)
 		tools.LogFatal(err)

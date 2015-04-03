@@ -35,7 +35,7 @@ type (
 		ValidateRules() string
 		IsSystem() bool
 		SortOrder() int64
-		DataModel() string
+		DataModel() eav.AttributeDataModeller
 		IsUsedForCustomerSegment() bool
 
 		ScopeIsVisible() bool

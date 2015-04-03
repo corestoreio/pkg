@@ -54,7 +54,7 @@ func (c *ProductModel) TableNameValue(i eav.ValueIndex) string {
 
 // TableAdditionalAttribute needed for EntityTypeAdditionalAttributeTabler
 func (c *ProductModel) TableAdditionalAttribute() (*csdb.TableStructure, error) {
-	return GetTableStructure(TableEAVAttribute)
+	return GetTableStructure(TableIndexEAVAttribute)
 }
 
 // TableEavWebsite needed for EntityTypeAdditionalAttributeTabler

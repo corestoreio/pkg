@@ -32,7 +32,7 @@ type context struct {
 	db      *sql.DB
 	dbrConn *dbr.Connection
 	// will be updated each iteration in materializeAttributes
-	et *eav.EntityType
+	et *eav.TableEntityType
 	// goSrcPath will be used in conjunction with ImportPath to write a file into that directory
 	goSrcPath string
 }

@@ -41,7 +41,7 @@ func init(){
             EntityModel: {{ .EntityModel }},
             AttributeModel: {{ .AttributeModel.String }},
             EntityTable: {{ .EntityTable.String }},
-            ValueTablePrefix: "{{ .ValueTablePrefix.String }}",
+            valueTablePrefix: "{{ .ValueTablePrefix.String }}",
             IsDataSharing: {{ .IsDataSharing }},
             DataSharingKey: "{{ .DataSharingKey.String }}",
             DefaultAttributeSetID: {{ .DefaultAttributeSetID }},

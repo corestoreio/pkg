@@ -18,6 +18,8 @@ import (
 	"io/ioutil"
 	"strings"
 
+	"text/template"
+
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/tools"
 	"github.com/juju/errgo"
@@ -36,21 +38,21 @@ func materializeAttributes(ctx *context) {
 	}
 }
 
-func getEAVPackage(et *eav.EntityType) string {
+func getEAVPackage(et *eav.TableEntityType) string {
 	if etConfig, ok := tools.ConfigMaterializationAttributes[et.EntityTypeCode]; ok {
 		return etConfig.EAVPackage
 	}
 	return ""
 }
 
-func getOutputFile(et *eav.EntityType) string {
+func getOutputFile(et *eav.TableEntityType) string {
 	if etConfig, ok := tools.ConfigMaterializationAttributes[et.EntityTypeCode]; ok {
 		return etConfig.OutputFile
 	}
 	panic("You must specify an output file")
 }
 
-func getPackage(et *eav.EntityType) string {
+func getPackage(et *eav.TableEntityType) string {
 	if etConfig, ok := tools.ConfigMaterializationAttributes[et.EntityTypeCode]; ok {
 		return etConfig.Package
 	}
@@ -66,6 +68,18 @@ func getName(ctx *context, suffix ...string) string {
 		structBaseName = strings.Replace(ctx.et.EntityTypeCode, getPackage(ctx.et)+"_", "", -1)
 	}
 	return structBaseName + "_" + strings.Join(suffix, "_")
+}
+
+// stripEavAttributeColumns returns a copy of columns and removes all eav_attribute columns
+func stripEavAttributeColumns(cols tools.Columns) tools.Columns {
+	ret := make(tools.Columns, 0, len(cols))
+	for _, col := range cols {
+		if eav.AttributeCoreColumns.Contains(col.Field.String) {
+			continue
+		}
+		ret = append(ret, col)
+	}
+	return ret
 }
 
 // Depends on generated code from tableToStruct.
@@ -92,7 +106,7 @@ func generateAttributeCode(ctx *context) error {
 	typeTplData := map[string]interface{}{
 		"EAVPackage": getEAVPackage(ctx.et),
 	}
-	structCode, err := tools.ColumnsToStructCode(typeTplData, name, columns, tplTypeDefinition)
+	structCode, err := tools.ColumnsToStructCode(typeTplData, name, stripEavAttributeColumns(columns), tplTypeDefinition)
 	if err != nil {
 		println(string(structCode))
 		return err
@@ -111,6 +125,7 @@ func generateAttributeCode(ctx *context) error {
 		TypeDefinition string
 		Attributes     []tools.StringEntities
 		Name           string
+		MyStruct       string
 		ImportPaths    []string
 		PackageName    string
 		EAVPackage     string
@@ -118,12 +133,17 @@ func generateAttributeCode(ctx *context) error {
 		TypeDefinition: string(structCode),
 		Attributes:     attributeCollection,
 		Name:           name,
+		MyStruct:       tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].MyStruct,
 		ImportPaths:    importPaths,
 		PackageName:    pkg,
 		EAVPackage:     getEAVPackage(ctx.et),
 	}
 
-	code, err := tools.GenerateCode("", tplTypeDefinitionFile, data)
+	funcMap := template.FuncMap{
+		"isCoreAttribute": func(a string) bool { return eav.AttributeCoreColumns.Contains(a) },
+	}
+
+	code, err := tools.GenerateCode("", tplTypeDefinitionFile, data, funcMap)
 	if err != nil {
 		println(string(code))
 		return err

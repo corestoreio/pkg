@@ -30,19 +30,19 @@ const (
     {{ range $k,$v := .Stores }} // Store{{prepareVarIndex $k $v.Code.String}} is the index to {{$v.Name}} ID: {{$v.StoreID}}
     Store{{prepareVarIndex $k $v.Code.String}} {{ if eq $k 0 }}store.StoreIndex = iota{{end}}
 {{ end }} // Store_Max end of index, not available.
-	Store999Max
+	StoreIndexZZZ
 )
 const (
     {{ range $k,$v := .Groups }} // Group{{prepareVarIndex $k $v.Name}} is the index to {{$v.Name}} ID: {{$v.GroupID}}
     Group{{prepareVarIndex $k $v.Name}} {{ if eq $k 0 }}store.GroupIndex = iota{{end}}
 {{ end }} // Group_Max end of index, not available.
-	Group999Max
+	GroupIndexZZZ
 )
 const (
     {{ range $k,$v := .Websites }} // Website{{prepareVarIndex $k $v.Code.String}} is the index to {{$v.Name.String}} ID: {{$v.WebsiteID}}
     Website{{prepareVarIndex $k $v.Code.String}} {{ if eq $k 0 }}store.WebsiteIndex = iota{{end}}
 {{ end }} // Website_Max end of index, not available.
-	Website999Max
+	WebsiteIndexZZZ
 )
 
 type si struct {}
@@ -69,7 +69,7 @@ func (si) ByCode(code string) (store.StoreIndex, error){
 
 func init(){
 	store.SetStoreGetter(si{})
-	store.SetStoreCollection(store.StoreSlice{
+	store.SetStoreCollection(store.TableStoreSlice{
 		{{ range $k,$v := .Stores }}Store{{prepareVarIndex $k $v.Code.String}}: {{ $v | printf "%#v" }},
 		{{end}}
 	})
@@ -89,7 +89,7 @@ func (gi) ByID(id int64) (store.GroupIndex, error){
 
 func init(){
 	store.SetGroupGetter(gi{})
-	store.SetGroupCollection(store.GroupSlice{
+	store.SetGroupCollection(store.TableGroupSlice{
 		{{ range $k,$v := .Groups }}Group{{prepareVarIndex $k $v.Name}}: {{ $v | printf "%#v" }},
 		{{end}}
 	})
@@ -119,7 +119,7 @@ func (wi) ByCode(code string) (store.WebsiteIndex, error){
 
 func init(){
 	store.SetWebsiteGetter(wi{})
-	store.SetWebsiteCollection(store.WebsiteSlice{
+	store.SetWebsiteCollection(store.TableWebsiteSlice{
 		{{ range $k,$v := .Websites }}Website{{prepareVarIndex $k $v.Code.String}}: {{ $v | printf "%#v" }},
 		{{end}}
 	})

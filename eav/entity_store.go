@@ -27,7 +27,7 @@ import (
 const maxUint64 = ^uint64(0)
 
 type (
-	entityStoreMap map[uint64]*EntityStore
+	entityStoreMap map[uint64]*TableEntityStore
 	once           struct {
 		m    sync.Mutex
 		done uint32
@@ -63,11 +63,11 @@ func InitEntityStoreMap(dbrSess *dbr.Session) error {
 	if initMapDone.done == 0 {
 		defer atomic.StoreUint32(&initMapDone.done, 1)
 
-		s, err := GetTableStructure(TableEntityStore)
+		s, err := GetTableStructure(TableIndexEntityStore)
 		if err != nil {
 			return errgo.Mask(err)
 		}
-		var ess EntityStoreSlice
+		var ess TableEntityStoreSlice
 		_, err = dbrSess.
 			Select(s.Columns...).
 			From(s.Name).
@@ -95,7 +95,7 @@ func getKey(typeID, storeID int64) uint64 {
 	return k
 }
 
-func (m entityStoreMap) Get(typeID, storeID int64) (*EntityStore, error) {
+func (m entityStoreMap) Get(typeID, storeID int64) (*TableEntityStore, error) {
 	entityStoreMutex.RLock()
 	defer entityStoreMutex.RUnlock()
 	if es, ok := m[getKey(typeID, storeID)]; ok {
@@ -117,7 +117,7 @@ func (m entityStoreMap) SetLastIncrementID(typeID, storeID int64, lastIncrementI
 	return errgo.Newf("Failed to save! Key typeID %d storeID %d not found in entity_type map", typeID, storeID)
 }
 
-func (m entityStoreMap) Set(typeID, storeID int64, es *EntityStore) error {
+func (m entityStoreMap) Set(typeID, storeID int64, es *TableEntityStore) error {
 	entityStoreMutex.Lock()
 	defer entityStoreMutex.Unlock()
 	*(m[getKey(typeID, storeID)]) = *es // copy pointer

@@ -50,16 +50,19 @@ const Copyright = `// Copyright 2015 CoreStore Authors
 
 // GenerateCode uses text/template for create Go code. package name pkg will also be used
 // to remove stutter in variable names.
-func GenerateCode(pkg, tplCode string, data interface{}) ([]byte, error) {
+func GenerateCode(pkg, tplCode string, data interface{}, addFM template.FuncMap) ([]byte, error) {
 
-	fm := template.FuncMap{
+	funcMap := template.FuncMap{
 		"quote":           func(s string) string { return "`" + s + "`" },
 		"prepareVar":      prepareVar(pkg),
 		"toLowerFirst":    toLowerFirst,
 		"prepareVarIndex": func(i int, s string) string { return fmt.Sprintf("%03d%s", i, prepareVar(pkg)(s)) },
 	}
+	for k, v := range addFM {
+		funcMap[k] = v
+	}
 
-	codeTpl := template.Must(template.New("tpl_code").Funcs(fm).Parse(tplCode))
+	codeTpl := template.Must(template.New("tpl_code").Funcs(funcMap).Parse(tplCode))
 
 	var buf = &bytes.Buffer{}
 	err := codeTpl.Execute(buf, data)

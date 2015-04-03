@@ -53,7 +53,7 @@ func GetEntityTypeCollection() CSEntityTypeSlice {
 	return csEntityTypeCollection
 }
 
-// SetEntityTypeCollection sets the collection
+// SetEntityTypeCollection sets the collection. Panics if slice is empty.
 func SetEntityTypeCollection(sc CSEntityTypeSlice) {
 	if len(sc) == 0 {
 		panic("CSEntityTypeSlice is empty")
@@ -61,8 +61,8 @@ func SetEntityTypeCollection(sc CSEntityTypeSlice) {
 	csEntityTypeCollection = sc
 }
 
-func (et *EntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...csdb.DbrSelectCb) error {
-	s, err := GetTableStructure(TableEntityType)
+func (et *TableEntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...csdb.DbrSelectCb) error {
+	s, err := GetTableStructure(TableIndexEntityType)
 	if err != nil {
 		return errgo.Mask(err)
 	}
@@ -75,11 +75,12 @@ func (et *EntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...csdb.
 
 // IsRealEav checks if those types which have an attribute model and therefore are a real EAV.
 // sales* tables are not real EAV tables as they are already flat tables.
-func (et *EntityType) IsRealEav() bool {
+func (et *TableEntityType) IsRealEav() bool {
 	return et.EntityTypeID > 0 && et.AttributeModel.Valid == true && et.AttributeModel.String != ""
 }
 
-func (es EntityTypeSlice) GetByCode(code string) (*EntityType, error) {
+// GetByCode returns a TableEntityType using the entity code
+func (es TableEntityTypeSlice) GetByCode(code string) (*TableEntityType, error) {
 	for _, e := range es {
 		if e.EntityTypeCode == code {
 			return e, nil
@@ -88,6 +89,7 @@ func (es EntityTypeSlice) GetByCode(code string) (*EntityType, error) {
 	return nil, errgo.Newf("Entity Code %s not found", code)
 }
 
+// GetByCode returns a CSEntityType using the entity code
 func (es CSEntityTypeSlice) GetByCode(code string) (*CSEntityType, error) {
 	for _, e := range es {
 		if e.EntityTypeCode == code {
@@ -95,4 +97,29 @@ func (es CSEntityTypeSlice) GetByCode(code string) (*CSEntityType, error) {
 		}
 	}
 	return nil, errgo.Newf("Entity Code %s not found", code)
+}
+
+// GetByID returns a CSEntityType using the entity id
+func (es CSEntityTypeSlice) GetByID(id int64) (*CSEntityType, error) {
+	for _, e := range es {
+		if e.EntityTypeID == id {
+			return e, nil
+		}
+	}
+	return nil, errgo.Newf("Entity ID %d not found", id)
+}
+
+// EntityTablePrefix eav table name prefix
+// @see magento2/site/app/code/Magento/Eav/Model/Entity/AbstractEntity.php::getEntityTablePrefix()
+func (e *CSEntityType) GetEntityTablePrefix() string {
+	return e.GetValueTablePrefix()
+}
+
+// ValueTablePrefix returns the table prefix for all value tables
+// @see magento2/site/app/code/Magento/Eav/Model/Entity/AbstractEntity.php::getValueTablePrefix()
+func (e *CSEntityType) GetValueTablePrefix() string {
+	if e.ValueTablePrefix == "" {
+		return e.EntityTable.TableNameBase()
+	}
+	return e.ValueTablePrefix
 }

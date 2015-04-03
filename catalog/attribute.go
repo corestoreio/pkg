@@ -29,7 +29,7 @@ type (
 	Attributer interface {
 		eav.Attributer
 
-		FrontendInputRenderer() FrontendInputRendererIFace
+		FrontendInputRenderer() eav.FrontendInputRendererIFace
 		IsGlobal() bool
 		IsVisible() bool
 		IsSearchable() bool
@@ -48,12 +48,6 @@ type (
 		IsWysiwygEnabled() bool
 		IsUsedForPromoRules() bool
 		SearchWeight() int64
-	}
-
-	// FrontendInputRendererIFace see table catalog_eav_attribute.frontend_input_renderer @todo
-	// Stupid name :-( Fix later.
-	FrontendInputRendererIFace interface {
-		TBD()
 	}
 )
 

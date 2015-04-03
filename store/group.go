@@ -38,11 +38,11 @@ type (
 
 var (
 	ErrGroupNotFound = errors.New("Store Group not found")
-	groupCollection  GroupSlice
+	groupCollection  TableGroupSlice
 	groupGetter      GroupGetter
 )
 
-func SetGroupCollection(gc GroupSlice) {
+func SetGroupCollection(gc TableGroupSlice) {
 	if len(gc) == 0 {
 		panic("StoreSlice is empty")
 	}
@@ -58,7 +58,7 @@ func SetGroupGetter(g GroupGetter) {
 
 // GetGroup uses a GroupIndex to return a group or an error.
 // One should not modify the group object.
-func GetGroup(i GroupIndex) (*Group, error) {
+func GetGroup(i GroupIndex) (*TableGroup, error) {
 	if int(i) < len(groupCollection) {
 		return groupCollection[i], nil
 	}
@@ -67,7 +67,7 @@ func GetGroup(i GroupIndex) (*Group, error) {
 
 // GetGroups returns a copy of the main slice of store groups.
 // One should not modify the slice and its content.
-func GetGroups() GroupSlice {
+func GetGroups() TableGroupSlice {
 	return groupCollection
 }
 
@@ -75,13 +75,13 @@ func GetGroups() GroupSlice {
 // The variadic 2nd argument can be a call back function to manipulate the select.
 // Additional columns or joins cannot be added. This method receiver should only be used in development.
 // @see app/code/Magento/Store/Model/Resource/Group/Collection.php::_beforeLoad()
-func (s *GroupSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
-	return loadSlice(dbrSess, TableGroup, &(*s), append(cbs, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
+func (s *TableGroupSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
+	return loadSlice(dbrSess, TableIndexGroup, &(*s), append(cbs, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
 		return sb.OrderBy("main_table.name ASC")
 	})...)
 }
 
-func (s GroupSlice) ByID(id int64) (*Group, error) {
+func (s TableGroupSlice) ByID(id int64) (*TableGroup, error) {
 	i, err := groupGetter.ByID(id)
 	if err != nil {
 		return nil, errgo.Mask(err)

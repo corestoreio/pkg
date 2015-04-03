@@ -69,7 +69,7 @@ func TestEntityTypeSliceGetByCode(t *testing.T) {
 	defer db.Close()
 	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
 
-	s, err := GetTableStructure(TableEntityType)
+	s, err := GetTableStructure(TableIndexEntityType)
 	if err != nil {
 		t.Error(err)
 	}

@@ -30,7 +30,7 @@ import (
 func materializeEntityType(ctx *context) {
 	defer ctx.wg.Done()
 	type dataContainer struct {
-		ETypeData     eav.EntityTypeSlice
+		ETypeData     eav.TableEntityTypeSlice
 		EntityTypeMap tools.EntityTypeMap
 		Package, Tick string
 	}
@@ -45,7 +45,7 @@ func materializeEntityType(ctx *context) {
 		Tick:          "`",
 	}
 
-	formatted, err := tools.GenerateCode(tools.ConfigMaterializationEntityType.Package, tplEav, tplData)
+	formatted, err := tools.GenerateCode(tools.ConfigMaterializationEntityType.Package, tplEav, tplData, nil)
 	if err != nil {
 		fmt.Printf("\n%s\n", formatted)
 		tools.LogFatal(err)
@@ -57,9 +57,9 @@ func materializeEntityType(ctx *context) {
 // getEntityTypeData retrieves all EAV models from table eav_entity_type but only those listed in variable
 // tools.ConfigEntityType. It then applies the mapping data from tools.ConfigEntityType to the entity_type struct.
 // Depends on generated code from tableToStruct.
-func getEntityTypeData(dbrSess *dbr.Session) (etc eav.EntityTypeSlice, err error) {
+func getEntityTypeData(dbrSess *dbr.Session) (etc eav.TableEntityTypeSlice, err error) {
 
-	s, err := eav.GetTableStructure(eav.TableEntityType)
+	s, err := eav.GetTableStructure(eav.TableIndexEntityType)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}

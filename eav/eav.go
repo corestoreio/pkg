@@ -42,7 +42,7 @@ type (
 
 	// EntityTypeTabler returns the table name
 	EntityTypeTabler interface {
-		// Base returns the base table name. E.g.: catalog_product_entity
+		// Base returns the base/prefix table name. E.g.: catalog_product_entity
 		TableNameBase() string
 		// Type returns for a type the table name. E.g.: catalog_product_entity_int
 		TableNameValue(ValueIndex) string

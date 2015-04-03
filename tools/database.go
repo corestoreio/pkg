@@ -144,7 +144,7 @@ func GetEavValueTables(dbrConn *dbr.Connection, entityTypeCodes []string) (TypeC
 }
 
 type (
-	columns []*column
+	Columns []*column
 	// column contains info about one database column retrieve from SHOW COLUMNS FROM tbl`
 	column struct {
 		Field, Type, Null, Key, Default, Extra sql.NullString
@@ -228,8 +228,8 @@ func (c *column) updateGoPrimitive(useSQL bool) {
 	}
 }
 
-// getByName returns a column from columns slice by a give name
-func (cc columns) getByName(name string) *column {
+// getByName returns a column from Columns slice by a give name
+func (cc Columns) getByName(name string) *column {
 	for _, c := range cc {
 		if c.Field.String == name {
 			return c
@@ -238,9 +238,9 @@ func (cc columns) getByName(name string) *column {
 	return nil
 }
 
-// MapSQLToGoDBRType takes a slice of columns an sets the fields GoType and GoName to the correct value
+// MapSQLToGoDBRType takes a slice of Columns an sets the fields GoType and GoName to the correct value
 // to create a Go struct. These generated structs are mainly used in a result from a SQL query
-func (cc columns) MapSQLToGoDBRType() error {
+func (cc Columns) MapSQLToGoDBRType() error {
 	for _, col := range cc {
 		col.updateGoPrimitive(true)
 	}
@@ -250,7 +250,7 @@ func (cc columns) MapSQLToGoDBRType() error {
 // MapSQLToGoType maps a column to a GoType. This GoType is not a dbr.Null* struct. This function only updates
 // the fields GoType and GoName of column struct. The 2nd argument ifm interface map replaces the primitive type
 // with an interface type, the column name must be found as a key in the map.
-func (cc columns) MapSQLToGoType(ifm map[string]string) error {
+func (cc Columns) MapSQLToGoType(ifm map[string]string) error {
 	for _, col := range cc {
 		col.updateGoPrimitive(false)
 		if val, ok := ifm[col.Field.String]; ok {
@@ -260,7 +260,7 @@ func (cc columns) MapSQLToGoType(ifm map[string]string) error {
 	return nil
 }
 
-func (cc columns) GetFieldNames(pkOnly bool) []string {
+func (cc Columns) GetFieldNames(pkOnly bool) []string {
 	ret := make([]string, 0, len(cc))
 	for _, col := range cc {
 		isPk := col.Key.String == "PRI"
@@ -274,18 +274,29 @@ func (cc columns) GetFieldNames(pkOnly bool) []string {
 	return ret
 }
 
+// isIgnoredColumn Drop unused column entity_type_id in customer__* and catalog_* tables
+func isIgnoredColumn(t, c string) bool {
+	const etid = "entity_type_id"
+	switch {
+	case strings.Index(t, "catalog_") >= 0 && c == etid:
+		return true
+	case strings.Index(t, "customer_") >= 0 && c == etid:
+		return true
+	case strings.Index(t, "eav_attribute") >= 0 && c == "attribute_model":
+		return true
+	}
+	return false
+}
+
 // GetColumns returns all columns from a table. It discards the column entity_type_id from some
 // entity tables.
-func GetColumns(db *sql.DB, table string) (columns, error) {
-	var columns = make(columns, 0, 200)
+func GetColumns(db *sql.DB, table string) (Columns, error) {
+	var cols = make(Columns, 0, 200)
 	rows, err := db.Query("SHOW COLUMNS FROM `" + table + "`")
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
 	defer rows.Close()
-
-	// Drop unused column entity_type_id in customer__* and catalog_* tables
-	isEntityTypeIdFree := strings.Index(table, "catalog_") >= 0 || strings.Index(table, "customer_") >= 0
 
 	for rows.Next() {
 		col := &column{}
@@ -293,16 +304,16 @@ func GetColumns(db *sql.DB, table string) (columns, error) {
 		if err != nil {
 			return nil, errgo.Mask(err)
 		}
-		if isEntityTypeIdFree && col.Field.String == "entity_type_id" {
+		if isIgnoredColumn(table, col.Field.String) {
 			continue
 		}
-		columns = append(columns, col)
+		cols = append(cols, col)
 	}
 	err = rows.Err()
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	return columns, nil
+	return cols, nil
 }
 
 const tplQueryDBRStruct = `
@@ -318,7 +329,7 @@ type (
 
 // SQLQueryToColumns generates from a SQL query an array containing all the column properties.
 // dbSelect argument can be nil but then you must provide query strings which will be joined to the final query.
-func SQLQueryToColumns(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string) (columns, error) {
+func SQLQueryToColumns(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string) (Columns, error) {
 
 	tableName := "tmp_" + randSeq(20)
 	dropTable := func() {
@@ -346,7 +357,7 @@ func SQLQueryToColumns(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string)
 // ColumnsToStructCode generates Go code from a name and a slice of columns.
 // Make sure that the fields GoType and GoName has been setup
 // If you don't like the template you can provide your own template as 3rd to n-th argument.
-func ColumnsToStructCode(tplData map[string]interface{}, name string, cols columns, templates ...string) ([]byte, error) {
+func ColumnsToStructCode(tplData map[string]interface{}, name string, cols Columns, templates ...string) ([]byte, error) {
 
 	if nil == tplData {
 		tplData = make(map[string]interface{})
@@ -361,7 +372,7 @@ func ColumnsToStructCode(tplData map[string]interface{}, name string, cols colum
 		tpl = tplQueryDBRStruct
 	}
 
-	return GenerateCode("", tpl, tplData)
+	return GenerateCode("", tpl, tplData, nil)
 }
 
 // GetSQL executes a SELECT query and returns a slice containing columns names and its string values
@@ -465,11 +476,11 @@ func validImportPath(ad *AttributeModelDef, ip []string, targetPkg string) bool 
 	return false
 }
 
-// PrepareForTemplate uses the columns slice to transform the rows so that correct Go code can be printed.
+// PrepareForTemplate uses the Columns slice to transform the rows so that correct Go code can be printed.
 // int/Float values won't be touched. Bools or IntBools will be converted to true/false. Strings will be quoted.
 // And if there is an entry in the AttributeModelMap then the Go code from the map will be used.
 // Returns a slice containing all the import paths. Import paths which are equal to pkg will be filtered out.
-func PrepareForTemplate(cols columns, rows []StringEntities, mageModelMap AttributeModelDefMap, targetPkg string) []string {
+func PrepareForTemplate(cols Columns, rows []StringEntities, mageModelMap AttributeModelDefMap, targetPkg string) []string {
 	ip := make([]string, 0, 10) // import_path container
 	for _, row := range rows {
 		for colName, colValue := range row {

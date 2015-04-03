@@ -58,7 +58,7 @@ func (c *CustomerModel) AttributeCollection() {
 }
 
 func (c *CustomerModel) TableNameBase() string {
-	return GetTableName(TableEntity)
+	return GetTableName(TableIndexEntity)
 }
 
 func (c *CustomerModel) TableNameValue(i eav.ValueIndex) string {
@@ -71,12 +71,12 @@ func (c *CustomerModel) TableNameValue(i eav.ValueIndex) string {
 
 // EntityTypeAdditionalAttributeTabler
 func (c *CustomerModel) TableAdditionalAttribute() (*csdb.TableStructure, error) {
-	return GetTableStructure(TableEAVAttribute)
+	return GetTableStructure(TableIndexEAVAttribute)
 }
 
 // EntityTypeAdditionalAttributeTabler
 func (c *CustomerModel) TableEavWebsite() (*csdb.TableStructure, error) {
-	return GetTableStructure(TableEAVAttributeWebsite)
+	return GetTableStructure(TableIndexEAVAttributeWebsite)
 }
 
 func Customer() *CustomerModel {

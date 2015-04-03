@@ -30,8 +30,8 @@ import (
 const (
     {{ range $k,$v := .Tables }} // TableIndex{{.name | prepareVar}} is the index to {{.table}}
     TableIndex{{.name | prepareVar}} {{ if eq $k 0 }}csdb.Index = iota // must start with 0{{ end }}
-{{ end }} // TableIndex999Max represents the maximum index, which is not available.
-TableIndex999Max
+{{ end }} // TableIndexZZZ represents the maximum index, which is not available.
+TableIndexZZZ
 )
 
 var (
@@ -55,13 +55,13 @@ var (
 
 // GetTableStructure returns for a given index i the table structure or an error it not found.
 func GetTableStructure(i csdb.Index) (*csdb.TableStructure, error) {
-    if i < TableIndex999Max { return tableMap.Structure(i) }
+    if i < TableIndexZZZ { return tableMap.Structure(i) }
 	return nil, csdb.ErrTableNotFound
 }
 
 // GetTableName returns for a given index the table name. If not found an empty string.
 func GetTableName(i csdb.Index) string {
-    if i < TableIndex999Max { return tableMap.Name(i) }
+    if i < TableIndexZZZ { return tableMap.Name(i) }
 	return ""
 }
 

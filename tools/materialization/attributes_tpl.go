@@ -25,8 +25,10 @@ import "github.com/corestoreio/csfw/tools"
 const tplTypeDefinition = `
 type (
     // @todo website must be present in the slice
-    // {{.Name | prepareVar}} a data container for the data from a MySQL query
+    // {{.Name | prepareVar}} a data container for attributes. You can use this struct to
+    // embed into your own struct for maybe overriding some method receivers.
     {{.Name | prepareVar | toLowerFirst}} struct {
+        *eav.Attribute
         {{ range .Columns }}{{.GoName | toLowerFirst}} {{.GoType}}
         {{ end }} }
 )
@@ -47,15 +49,15 @@ package {{ .PackageName }}
     import (
         "github.com/corestoreio/csfw/eav"
         "github.com/corestoreio/csfw/{{ .EAVPackage }}"
-    {{ range .ImportPaths }} "{{.}}"
-    {{ end }} )
+        {{ range .ImportPaths }}"{{.}}"
+        {{ end }} )
 
 {{.TypeDefinition}}
 
 const (
     {{ range $k, $row := .Attributes }}{{$.Name | prepareVar}}{{index $row "attribute_code" | prepareVar}} {{ if eq $k 0 }} eav.AttributeIndex = iota {{ end }}
     {{end}}
-    {{$.Name | prepareVar}}999Max
+    {{$.Name | prepareVar}}ZZZ
 )
 
 type si{{$.Name | prepareVar}} struct {}
@@ -83,11 +85,19 @@ func (si{{$.Name | prepareVar}}) ByCode(code string) (eav.AttributeIndex, error)
 var _ eav.AttributeGetter = (*si{{$.Name | prepareVar}})(nil)
 
 func init(){
+    {{.EAVPackage}}.SetAttributeGetter(si{{$.Name | prepareVar}}{})
     {{.EAVPackage}}.SetAttributeCollection({{.EAVPackage}}.AttributeSlice{
-        {{ range $row := .Attributes }} {{$.Name | prepareVar}}{{index $row "attribute_code" | prepareVar}}: &{{$.Name | prepareVar | toLowerFirst}} {
-            {{ range $k,$v := $row }} {{ $k | prepareVar | toLowerFirst }}: {{ $v }},
-            {{ end }}
+        {{ range $row := .Attributes }} {{$.Name | prepareVar}}{{index $row "attribute_code" | prepareVar}}: {{ if ne $.MyStruct "" }} &{{$.MyStruct}} {
+        {{end}} &{{$.Name | prepareVar | toLowerFirst}} {
+            Attribute: eav.NewAttribute(
+            // @todo we may run into trouble regarding the args to eav.NewAttribute() because $row is a map. fix that
+            {{ range $k,$v := $row }} {{ if (isCoreAttribute $k) }} {{$v}}, // {{ $k }}
+            {{end}}{{end}}
+            ),
+            {{ range $k,$v := $row }} {{ if not (isCoreAttribute $k) }} {{ $k | prepareVar | toLowerFirst }}: {{ $v }},
+            {{end}}{{ end }}
         },
+        {{ if ne $.MyStruct "" }} }, {{end}}
         {{ end }}
     })
 }

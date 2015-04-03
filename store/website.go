@@ -40,11 +40,11 @@ type (
 
 var (
 	ErrWebsiteNotFound = errors.New("Website not found")
-	websiteCollection  WebsiteSlice
+	websiteCollection  TableWebsiteSlice
 	websiteGetter      WebsiteGetter
 )
 
-func SetWebsiteCollection(sc WebsiteSlice) {
+func SetWebsiteCollection(sc TableWebsiteSlice) {
 	if len(sc) == 0 {
 		panic("WebsiteSlice is empty")
 	}
@@ -60,24 +60,24 @@ func SetWebsiteGetter(g WebsiteGetter) {
 
 // GetWebsite uses a GroupIndex to return a group or an error.
 // One should not modify the group object.
-func GetWebsite(i WebsiteIndex) (*Website, error) {
+func GetWebsite(i WebsiteIndex) (*TableWebsite, error) {
 	if int(i) < len(websiteCollection) {
 		return websiteCollection[i], nil
 	}
 	return nil, ErrWebsiteNotFound
 }
 
-func GetWebsiteByID(id int64) (*Website, error) {
+func GetWebsiteByID(id int64) (*TableWebsite, error) {
 	return websiteCollection.ByID(id)
 }
 
-func GetWebsiteByCode(code string) (*Website, error) {
+func GetWebsiteByCode(code string) (*TableWebsite, error) {
 	return websiteCollection.ByCode(code)
 }
 
 // GetWebsites returns a copy of the main slice of websites.
 // One should not modify the slice and its content.
-func GetWebsites() WebsiteSlice {
+func GetWebsites() TableWebsiteSlice {
 	return websiteCollection
 }
 
@@ -85,13 +85,13 @@ func GetWebsites() WebsiteSlice {
 // The variadic 2nd argument can be a call back function to manipulate the select.
 // Additional columns or joins cannot be added. This method receiver should only be used in development.
 // @see app/code/Magento/Store/Model/Resource/Website/Collection.php::Load()
-func (s *WebsiteSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
-	return loadSlice(dbrSess, TableWebsite, &(*s), append(cbs, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
+func (s *TableWebsiteSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
+	return loadSlice(dbrSess, TableIndexWebsite, &(*s), append(cbs, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
 		return sb.OrderBy("main_table.sort_order ASC").OrderBy("main_table.name ASC")
 	})...)
 }
 
-func (s WebsiteSlice) ByID(id int64) (*Website, error) {
+func (s TableWebsiteSlice) ByID(id int64) (*TableWebsite, error) {
 	i, err := websiteGetter.ByID(id)
 	if err != nil {
 		return nil, errgo.Mask(err)
@@ -99,7 +99,7 @@ func (s WebsiteSlice) ByID(id int64) (*Website, error) {
 	return s[i], nil
 }
 
-func (s WebsiteSlice) ByCode(code string) (*Website, error) {
+func (s TableWebsiteSlice) ByCode(code string) (*TableWebsite, error) {
 	i, err := websiteGetter.ByCode(code)
 	if err != nil {
 		return nil, errgo.Mask(err)

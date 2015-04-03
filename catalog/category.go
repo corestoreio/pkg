@@ -54,7 +54,7 @@ func (c *CategoryModel) TableNameValue(i eav.ValueIndex) string {
 
 // TableAdditionalAttribute needed for eav.EntityTypeAdditionalAttributeTabler
 func (c *CategoryModel) TableAdditionalAttribute() (*csdb.TableStructure, error) {
-	return GetTableStructure(TableEAVAttribute)
+	return GetTableStructure(TableIndexEAVAttribute)
 }
 
 // TableEavWebsite needed for eav.EntityTypeAdditionalAttributeTabler

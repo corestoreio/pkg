@@ -39,12 +39,20 @@ type (
 		EntityTypeCodes []string
 	}
 
+	// AttributeToStructMap is a map which points to the AttributeToStruct configuration. Default entries can be
+	// overriden by your configuration.
 	AttributeToStructMap map[string]*AttributeToStruct
-	AttributeToStruct    struct {
-		// EAVPackage defines the package name to import and use: possible ATM: customer,catalog
+	// AttributeToStruct contains the configuration to materialize all attributes belonging to one EAV model
+	AttributeToStruct struct {
+		// EAVPackage defines the package name to import and use: possible ATM: customer and catalog and your custom
+		// EAV package
 		EAVPackage string
-		// Package defines the name of the target package, must be external.
+		// Package defines the name of the target package, must be external. Default is {{.EAVPackage}}_test but
+		// for your project you must provide your package name.
 		Package string
+		// MyStruct is the optional name of your struct from your package. MyStruct must embed a pointer to the
+		// generated private attribute struct. This is useful if you want to override the method receivers.
+		MyStruct string
 		// OutputFile specifies the full path where to write the newly generated code
 		OutputFile string
 	}
@@ -119,12 +127,13 @@ func (m EntityTypeMap) Keys() []string {
 var myPath = build.Default.GOPATH + PS + "src" + PS + CSImportPath + PS
 
 // EavAttributeColumnNameToInterface mapping column name to Go interface name. Do not add attribute_model
-// as this column is unused in Magento 1+2
+// as this column is unused in Magento 1+2. If you have custom column then add it here.
 var EavAttributeColumnNameToInterface = map[string]string{
 	"backend_model":           "eav.AttributeBackendModeller",
 	"frontend_model":          "eav.AttributeFrontendModeller",
 	"source_model":            "eav.AttributeSourceModeller",
-	"frontend_input_renderer": "catalog.FrontendInputRendererIFace",
+	"frontend_input_renderer": "eav.FrontendInputRendererIFace",
+	"data_model":              "eav.AttributeDataModeller",
 }
 
 // TablePrefix defines the global table name prefix. See Magento install tool. Can be overridden via func init()
@@ -207,7 +216,8 @@ var ConfigMaterializationStore = &TableToStruct{
 	OutputFile: myPath + "store" + PS + "generated_store_test.go",
 }
 
-// ConfigEntityType contains default configuration. Use the file config_user.go with the func init() to change/extend it.
+// ConfigEntityType contains default configuration o materialize the entity types.
+// Use the file config_user.go with the func init() to change/extend it.
 // Needed in materializeEntityType()
 var ConfigEntityType = EntityTypeMap{
 	"customer": &EntityType{
@@ -252,24 +262,30 @@ var ConfigEntityType = EntityTypeMap{
 	// @todo extend for all sales entities
 }
 
+// ConfigMaterializationAttributes contains the configuration to materialize all attributes for the defined
+// EAV entity types.
 var ConfigMaterializationAttributes = AttributeToStructMap{
 	"customer": &AttributeToStruct{
 		EAVPackage: "customer",
+		MyStruct:   "",
 		Package:    "customer_test", // external package name
 		OutputFile: myPath + "customer" + PS + "generated_customer_attribute_test.go",
 	},
 	"customer_address": &AttributeToStruct{
 		EAVPackage: "customer",
+		MyStruct:   "",
 		Package:    "customer_test",
 		OutputFile: myPath + "customer" + PS + "generated_address_attribute_test.go",
 	},
 	"catalog_product": &AttributeToStruct{
 		EAVPackage: "catalog",
+		MyStruct:   "",
 		Package:    "catalog_test",
 		OutputFile: myPath + "catalog" + PS + "generated_product_attribute_test.go",
 	},
 	"catalog_category": &AttributeToStruct{
 		EAVPackage: "catalog",
+		MyStruct:   "",
 		Package:    "catalog_test",
 		OutputFile: myPath + "catalog" + PS + "generated_category_attribute_test.go",
 	},
@@ -456,11 +472,11 @@ var ConfigAttributeModel = AttributeModelDefMap{
 	},
 	"customer/entity_address_attribute_backend_region": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Address().Attribute().Backend().Region()",
+		GoModel:    "customer.AddressAttributeBackendRegion()",
 	},
 	"Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Backend\\Region": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Address().Attribute().Backend().Region()",
+		GoModel:    "customer.AddressAttributeBackendRegion()",
 	},
 	"customer/entity_address_attribute_backend_street": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
@@ -616,11 +632,11 @@ var ConfigAttributeModel = AttributeModelDefMap{
 	},
 	"customer/entity_address_attribute_source_country": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Address().Attribute().Source().Country()",
+		GoModel:    "customer.AddressAttributeSourceCountry()",
 	},
 	"Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Source\\Country": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Address().Attribute().Source().Country()",
+		GoModel:    "customer.AddressAttributeSourceCountry()",
 	},
 	"customer/entity_address_attribute_source_region": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
@@ -664,10 +680,10 @@ var ConfigAttributeModel = AttributeModelDefMap{
 	},
 	"customer/attribute_data_postcode": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Data.Postcode()",
+		GoModel:    "customer.AddressAttributeDataPostcode()",
 	},
 	"Magento\\Customer\\Model\\Attribute\\Data\\Postcode": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Data.Postcode()",
+		GoModel:    "customer.AddressAttributeDataPostcode()",
 	},
 }

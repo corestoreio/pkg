@@ -232,7 +232,7 @@ func TestGetColumns(t *testing.T) {
 					t.Errorf("%s contains dbr but it should not. %#v", col.GoType, col)
 				}
 			}
-			assert.Equal(t, len(EavAttributeColumnNameToInterface), hits)
+			assert.Equal(t, 3, hits)
 		}
 
 	}

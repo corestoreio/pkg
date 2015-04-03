@@ -17,12 +17,41 @@ package eav
 import (
 	"errors"
 
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
 )
 
 var (
 	ErrAttributeNotFound = errors.New("Attribute not found")
+	// AttributeCoreColumns defnies the minimal required coulmns for table eav_attribute.
+	// Developers can extend the table eav_attribute with additional columns but these additional
+	// columns with its method receivers must get generated in the attribute materialize function.
+	// These core columns are already defined below.
+	AttributeCoreColumns = csdb.TableCoreColumns{
+		"attribute_id",
+		"entity_type_id",
+		"attribute_code",
+		"attribute_model", // this column is unused by Mage1+2
+		"backend_model",
+		"backend_type",
+		"backend_table",
+		"frontend_model",
+		"frontend_input",
+		"frontend_label",
+		"frontend_class",
+		"source_model",
+		"is_required",
+		"is_user_defined",
+		"default_value",
+		"is_unique",
+		"note",
+	}
+)
+
+const (
+	// TypeStatic use to check if an attribute is static, means part of the eav prefix table
+	TypeStatic string = "static"
 )
 
 type (
@@ -36,8 +65,25 @@ type (
 	// extends this interface two times. The column of func AttributeModel() has been removed because
 	// it is not used and misplaced in the eav_attribute table. This interface can be extended to more than
 	// 40 functions which is of course not idiomatic but for generated code it provides the best
-	// flexibility.
+	// flexibility to extend with other custom structs.
+	// @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/AbstractAttribute.php
 	Attributer interface {
+		// IsStatic checks if an attribute is a static one
+		IsStatic() bool
+		// EntityType returns EntityType object or an error
+		EntityType() (*CSEntityType, error)
+		// UsesSource checks whether possible attribute values are retrieved from a finite source
+		UsesSource() bool
+		// IsInSet checks if attribute in specified attribute set
+		IsInSet(int64) bool
+		// IsInGroup checks if attribute in specified attribute group
+		IsInGroup(int64) bool
+
+		//@see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/AbstractAttribute.php
+		//FlatColumns() []fancyTableColumnType @todo
+		//FlatIndexes() []fancyTableColumnIndex @todo
+		//Options()
+
 		AttributeID() int64
 		EntityTypeID() int64
 		AttributeCode() string
@@ -56,48 +102,180 @@ type (
 		Note() string
 	}
 
-	// AttributeGetter implements functions on how to retrieve directly a certain attribute
+	// Attribute defines properties for an attribute. This struct must be embedded in other EAV attributes.
+	Attribute struct {
+		attributeID   int64
+		entityTypeID  int64
+		attributeCode string
+		backendModel  AttributeBackendModeller
+		backendType   string
+		backendTable  string
+		frontendModel AttributeFrontendModeller
+		frontendInput string
+		frontendLabel string
+		frontendClass string
+		sourceModel   AttributeSourceModeller
+		isRequired    bool
+		isUserDefined bool
+		defaultValue  string
+		isUnique      bool
+		note          string
+	}
+
+	// AttributeGetter implements functions on how to retrieve directly a certain attribute. This interface
+	// is used in concrete entity models by generated code.
 	AttributeGetter interface {
 		// ByID returns an index using the AttributeID. This index identifies an attribute within an AttributeSlice.
 		ByID(id int64) (AttributeIndex, error)
 		// ByCode returns an index using the AttributeCode. This index identifies an attribute within an AttributeSlice.
 		ByCode(code string) (AttributeIndex, error)
 	}
-
-	// AttributeBackendModeller defines the attribute backend model @todo
-	AttributeBackendModeller interface {
-		GetTable() string
-		IsStatic() bool
-		GetType()
-		GetEntityIdField()
-		SetValueId(valueId int)
-		GetValueId()
-		//AfterLoad($object);
-		//BeforeSave($object);
-		//AfterSave($object);
-		//BeforeDelete($object);
-		//AfterDelete($object);
-
-		GetEntityValueId(entity *CSEntityType)
-
-		SetEntityValueId(entity *CSEntityType, valueId int)
-	}
-
-	// AttributeFrontendModeller defines the attribute frontend model @todo
-	AttributeFrontendModeller interface {
-		TBD()
-	}
-
-	// AttributeSourceModeller defines the source where an attribute can also be stored @todo
-	AttributeSourceModeller interface {
-		TBD()
-	}
 )
+
+var _ Attributer = (*Attribute)(nil)
+
+// NewAttribute only for use in auto generated code. Looks terrible 8-)
+func NewAttribute(
+	attributeCode string,
+	attributeID int64,
+	backendModel AttributeBackendModeller,
+	backendTable string,
+	backendType string,
+	defaultValue string,
+	entityTypeID int64,
+	frontendClass string,
+	frontendInput string,
+	frontendLabel string,
+	frontendModel AttributeFrontendModeller,
+	isRequired bool,
+	isUnique bool,
+	isUserDefined bool,
+	note string,
+	sourceModel AttributeSourceModeller,
+) *Attribute {
+	return &Attribute{
+		attributeID:   attributeID,
+		entityTypeID:  entityTypeID,
+		attributeCode: attributeCode,
+		backendModel:  backendModel,
+		backendType:   backendType,
+		backendTable:  backendTable,
+		frontendModel: frontendModel,
+		frontendInput: frontendInput,
+		frontendLabel: frontendLabel,
+		frontendClass: frontendClass,
+		sourceModel:   sourceModel,
+		isRequired:    isRequired,
+		isUserDefined: isUserDefined,
+		defaultValue:  defaultValue,
+		isUnique:      isUnique,
+		note:          note,
+	}
+}
+
+// IsStatic checks if an attribute is a static one
+func (a *Attribute) IsStatic() bool {
+	return a.backendType == TypeStatic || a.backendType == ""
+}
+
+// EntityType returns EntityType object or an error
+func (a *Attribute) EntityType() (*CSEntityType, error) {
+	return GetEntityTypeCollection().GetByID(a.entityTypeID)
+}
+
+// UsesSource checks whether possible attribute values are retrieved from a finite source
+func (a *Attribute) UsesSource() bool {
+	switch {
+	case a.frontendInput == "select":
+		return true
+	case a.frontendInput == "multiselect":
+		return true
+	case a.sourceModel != nil:
+		return true
+	}
+	return false
+}
+
+// IsInSet checks if attribute in specified attribute set @todo
+func (a *Attribute) IsInSet(_ int64) bool {
+	return false
+}
+
+// IsInGroup checks if attribute in specified attribute group @todo
+func (a *Attribute) IsInGroup(_ int64) bool {
+	return false
+}
+
+func (a *Attribute) AttributeID() int64 {
+	return a.attributeID
+}
+func (a *Attribute) EntityTypeID() int64 {
+	return a.entityTypeID
+}
+func (a *Attribute) AttributeCode() string {
+	return a.attributeCode
+}
+func (a *Attribute) BackendModel() AttributeBackendModeller {
+	return a.backendModel
+}
+func (a *Attribute) BackendType() string {
+	return a.backendType
+}
+
+// BackendTable returns the attribute backend table name. This function panics.
+// @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/AbstractAttribute.php::getBackendTable
+func (a *Attribute) BackendTable() string {
+	et, err := a.EntityType()
+	if err != nil {
+		panic("EntityType not found for attribute " + a.attributeCode)
+	}
+
+	if a.IsStatic() {
+		// this means that the attribute is directly a column of the base entity table like
+		// catalog_product_entity or customer_entity or eav_entity
+		return et.GetValueTablePrefix()
+	}
+	if a.backendTable != "" {
+		return a.backendTable
+	}
+	return et.GetEntityTablePrefix() + "_" + a.backendType
+}
+
+func (a *Attribute) FrontendModel() AttributeFrontendModeller {
+	return a.frontendModel
+}
+func (a *Attribute) FrontendInput() string {
+	return a.frontendInput
+}
+func (a *Attribute) FrontendLabel() string {
+	return a.frontendLabel
+}
+func (a *Attribute) FrontendClass() string {
+	return a.frontendClass
+}
+func (a *Attribute) SourceModel() AttributeSourceModeller {
+	return a.sourceModel
+}
+func (a *Attribute) IsRequired() bool {
+	return a.isRequired
+}
+func (a *Attribute) IsUserDefined() bool {
+	return a.isUserDefined
+}
+func (a *Attribute) DefaultValue() string {
+	return a.defaultValue
+}
+func (a *Attribute) IsUnique() bool {
+	return a.isUnique
+}
+func (a *Attribute) Note() string {
+	return a.note
+}
 
 // GetAttributeSelectSql generates the select query to retrieve full attribute configuration
 func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAttributeTabler, entityTypeID, websiteId int64) (*dbr.SelectBuilder, error) {
 
-	ta, err := GetTableStructure(TableAttribute)
+	ta, err := GetTableStructure(TableIndexAttribute)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}

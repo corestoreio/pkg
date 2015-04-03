@@ -130,7 +130,7 @@ var Table005CoreStoreGroup01 = ` + "`Gopher`\n"),
 	}
 
 	for _, test := range tests {
-		actual, err := GenerateCode(test.pkg, test.tplCode, test.data)
+		actual, err := GenerateCode(test.pkg, test.tplCode, test.data, nil)
 		if test.expErr {
 			assert.Error(t, err)
 		} else {
