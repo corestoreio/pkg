@@ -16,17 +16,28 @@ package customer
 
 import "github.com/corestoreio/csfw/eav"
 
-var _ eav.AttributeSourceModeller = (*todoAASC)(nil)
-
-type (
-	todoAASC struct{}
+var (
+	_ eav.AttributeSourceModeller = (*todoAASC)(nil)
+	_ eav.AttributeSourceModeller = (*todoAASR)(nil)
 )
 
-func (todoAASC) GetAllOptions() {}
-func (todoAASC) GetOptionText() {}
+type (
+	todoAASC struct {
+		*eav.AttributeSource
+	}
+	todoAASR struct {
+		*eav.AttributeSource
+	}
+)
 
 // AddressAttributeSourceCountry retrieves slice of countries @todo
 // @see magento2/site/app/code/Magento/Customer/Model/Resource/Address/Attribute/Source/Country.php
 func AddressAttributeSourceCountry() todoAASC {
 	return todoAASC{}
+}
+
+// AddressAttributeSourceRegion
+// @see magento2/site/app/code/Magento/Customer/Model/Resource/Address/Attribute/Source/Region.php
+func AddressAttributeSourceRegion() todoAASR {
+	return todoAASR{}
 }

@@ -304,11 +304,11 @@ var ConfigAttributeModel = AttributeModelDefMap{
 	},
 	"eav/entity_attribute_frontend_datetime": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.Entity().Attribute().Frontend().Datetime()",
+		GoModel:    "eav.AttributeFrontendDatetime()",
 	},
 	"Magento\\Eav\\Model\\Entity\\Attribute\\Frontend\\Datetime": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.Entity().Attribute().Frontend().Datetime()",
+		GoModel:    "eav.AttributeFrontendDatetime()",
 	},
 	"catalog/attribute_backend_customlayoutupdate": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/catalog",
@@ -424,51 +424,51 @@ var ConfigAttributeModel = AttributeModelDefMap{
 	},
 	"customer/attribute_backend_data_boolean": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Backend().Data().Boolean()",
+		GoModel:    "customer.AttributeBackendDataBoolean()",
 	},
 	"Magento\\Customer\\Model\\Attribute\\Backend\\Data\\Boolean": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Backend().Data().Boolean()",
+		GoModel:    "customer.AttributeBackendDataBoolean()",
 	},
 	"customer/customer_attribute_backend_billing": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Backend().Billing()",
+		GoModel:    "customer.AttributeBackendBilling()",
 	},
 	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Billing": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Backend().Billing()",
+		GoModel:    "customer.AttributeBackendBilling()",
 	},
 	"customer/customer_attribute_backend_password": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Backend().Password()",
+		GoModel:    "customer.AttributeBackendPassword()",
 	},
 	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Password": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Backend().Password()",
+		GoModel:    "customer.AttributeBackendPassword()",
 	},
 	"customer/customer_attribute_backend_shipping": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Backend().Shipping()",
+		GoModel:    "customer.AttributeBackendShipping()",
 	},
 	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Shipping": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Backend().Shipping()",
+		GoModel:    "customer.AttributeBackendShipping()",
 	},
 	"customer/customer_attribute_backend_store": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "Attribute().Backend().Store()",
+		GoModel:    "customer.AttributeBackendStore()",
 	},
 	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Store": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Backend().Store()",
+		GoModel:    "customer.AttributeBackendStore()",
 	},
 	"customer/customer_attribute_backend_website": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Backend().Website()",
+		GoModel:    "customer.AttributeBackendWebsite()",
 	},
 	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Website": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Backend().Website()",
+		GoModel:    "customer.AttributeBackendWebsite()",
 	},
 	"customer/entity_address_attribute_backend_region": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
@@ -480,7 +480,7 @@ var ConfigAttributeModel = AttributeModelDefMap{
 	},
 	"customer/entity_address_attribute_backend_street": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Address().Attribute().Backend().Street()",
+		GoModel:    "customer.AddressAttributeBackendStreet()",
 	},
 	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\DefaultBackend": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
@@ -488,11 +488,11 @@ var ConfigAttributeModel = AttributeModelDefMap{
 	},
 	"eav/entity_attribute_backend_datetime": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.Attribute().Backend().Datetime()",
+		GoModel:    "eav.AttributeBackendDatetime()",
 	},
 	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\Datetime": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.Attribute().Backend().Datetime()",
+		GoModel:    "eav.AttributeBackendDatetime()",
 	},
 	"eav/entity_attribute_backend_time_created": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
@@ -608,27 +608,27 @@ var ConfigAttributeModel = AttributeModelDefMap{
 	},
 	"customer/customer_attribute_source_group": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Source().Group()",
+		GoModel:    "customer.AttributeSourceGroup()",
 	},
 	"Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Group": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Source().Group()",
+		GoModel:    "customer.AttributeSourceGroup()",
 	},
 	"customer/customer_attribute_source_store": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Source().Store()",
+		GoModel:    "customer.AttributeSourceStore()",
 	},
 	"Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Store": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Source().Store()",
+		GoModel:    "customer.AttributeSourceStore()",
 	},
 	"customer/customer_attribute_source_website": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Source().Website()",
+		GoModel:    "customer.AttributeSourceWebsite()",
 	},
 	"Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Website": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Attribute().Source().Website()",
+		GoModel:    "customer.AttributeSourceWebsite()",
 	},
 	"customer/entity_address_attribute_source_country": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
@@ -640,11 +640,11 @@ var ConfigAttributeModel = AttributeModelDefMap{
 	},
 	"customer/entity_address_attribute_source_region": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Address().Attribute().Source().Region()",
+		GoModel:    "customer.AddressAttributeSourceRegion()",
 	},
 	"Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Source\\Region": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/customer",
-		GoModel:    "customer.Address().Attribute().Source().Region()",
+		GoModel:    "customer.AddressAttributeSourceRegion()",
 	},
 	"eav/entity_attribute_source_boolean": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
@@ -656,11 +656,11 @@ var ConfigAttributeModel = AttributeModelDefMap{
 	},
 	"eav/entity_attribute_source_table": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.Attribute().Source().Table()",
+		GoModel:    "eav.AttributeSourceTable()",
 	},
 	"Magento\\Eav\\Model\\Entity\\Attribute\\Source\\Table": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.Attribute().Source().Table()",
+		GoModel:    "eav.AttributeSourceTable()",
 	},
 	"Magento\\Msrp\\Model\\Product\\Attribute\\Source\\Type\\Price": &AttributeModelDef{
 		ImportPath: "github.com/corestoreio/csfw/msrp",

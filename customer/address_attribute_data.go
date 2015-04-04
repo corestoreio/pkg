@@ -20,7 +20,7 @@ var _ eav.AttributeDataModeller = (*todoADPC)(nil)
 
 type (
 	todoADPC struct {
-		eav.AttributeData
+		*eav.AttributeData
 	}
 )
 

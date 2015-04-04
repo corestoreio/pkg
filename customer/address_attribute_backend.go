@@ -16,11 +16,17 @@ package customer
 
 import "github.com/corestoreio/csfw/eav"
 
-var _ eav.AttributeBackendModeller = (*todoAABR)(nil)
+var (
+	_ eav.AttributeBackendModeller = (*todoAABR)(nil)
+	_ eav.AttributeBackendModeller = (*todoAABS)(nil)
+)
 
 type (
 	todoAABR struct {
-		eav.AttributeBackend
+		*eav.AttributeBackend
+	}
+	todoAABS struct {
+		*eav.AttributeBackend
 	}
 )
 
@@ -28,4 +34,10 @@ type (
 // @see magento2/site/app/code/Magento/Customer/Model/Attribute/Data/Postcode.php
 func AddressAttributeBackendRegion() *todoAABR {
 	return &todoAABR{}
+}
+
+// AddressAttributeBackendStreet handles multiline street address
+// @see Mage_Customer_Model_Resource_Address_Attribute_Backend_Street
+func AddressAttributeBackendStreet() *todoAABS {
+	return &todoAABS{}
 }
