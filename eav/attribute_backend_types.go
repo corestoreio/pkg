@@ -16,11 +16,19 @@ package eav
 
 var (
 	_ AttributeBackendModeller = (*todoABDT)(nil)
+	_ AttributeBackendModeller = (*todoABTC)(nil)
+	_ AttributeBackendModeller = (*todoABTU)(nil)
 )
 
 type (
 	todoABDT struct {
-		AttributeBackend
+		*AttributeBackend
+	}
+	todoABTC struct {
+		*AttributeBackend
+	}
+	todoABTU struct {
+		*AttributeBackend
 	}
 )
 
@@ -28,4 +36,16 @@ type (
 // @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/Backend/Datetime.php
 func AttributeBackendDatetime() *todoABDT {
 	return &todoABDT{}
+}
+
+// AttributeBackendTimeCreated @todo
+// @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/Backend/Time/Created.php
+func AttributeBackendTimeCreated() *todoABTC {
+	return &todoABTC{}
+}
+
+// AttributeBackendTimeUpdated @todo
+// @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/Backend/Time/Updated.php
+func AttributeBackendTimeUpdated() *todoABTU {
+	return &todoABTU{}
 }

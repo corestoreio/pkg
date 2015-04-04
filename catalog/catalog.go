@@ -13,18 +13,3 @@
 // limitations under the License.
 
 package catalog
-
-type (
-	// AttributeModel implements how attributes are handled @todo
-	AttributeModel struct {
-	}
-)
-
-// Attribute generates a new attribute model @todo
-func Attribute() *AttributeModel {
-	return &AttributeModel{}
-}
-
-func (c AttributeModel) TBD() {
-
-}

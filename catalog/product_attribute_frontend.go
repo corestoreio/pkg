@@ -12,30 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package eav
+package catalog
+
+import "github.com/corestoreio/csfw/eav"
 
 var (
-	_ AttributeSourceModeller = (*todoAST)(nil)
-	_ AttributeSourceModeller = (*todoASB)(nil)
+	_ eav.AttributeFrontendModeller = (*todoPAFI)(nil)
 )
 
 type (
-	todoAST struct {
-		*AttributeSource
-	}
-	todoASB struct {
-		*AttributeSource
+	todoPAFI struct {
+		*eav.AttributeFrontend
 	}
 )
 
-// AttributeSourceTable @todo
-// @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/Source/Table.php
-func AttributeSourceTable() *todoAST {
-	return &todoAST{}
-}
-
-// AttributeSourceBoolean @todo
-// @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/Source/Boolean.php
-func AttributeSourceBoolean() *todoASB {
-	return &todoASB{}
+// ProductAttributeFrontendImage @todo
+// @see magento2/site/app/code/Magento/Catalog/Model/Product/Attribute/Frontend/Image.php
+func ProductAttributeFrontendImage() *todoPAFI {
+	return &todoPAFI{}
 }

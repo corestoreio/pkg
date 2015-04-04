@@ -12,30 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package eav
+package tax
+
+import "github.com/corestoreio/csfw/eav"
 
 var (
-	_ AttributeSourceModeller = (*todoAST)(nil)
-	_ AttributeSourceModeller = (*todoASB)(nil)
+	_ eav.AttributeSourceModeller = (*todoASTCP)(nil)
+	_ eav.AttributeSourceModeller = (*todoASTCC)(nil)
 )
 
 type (
-	todoAST struct {
-		*AttributeSource
+	todoASTCP struct {
+		*eav.AttributeSource
 	}
-	todoASB struct {
-		*AttributeSource
+	todoASTCC struct {
+		*eav.AttributeSource
 	}
 )
 
-// AttributeSourceTable @todo
-// @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/Source/Table.php
-func AttributeSourceTable() *todoAST {
-	return &todoAST{}
+// AttributeSourceTaxClassProduct @todo
+// @see magento2/site/app/code/Magento/Tax/Model/TaxClass/Source/Product.php
+func AttributeSourceTaxClassProduct() *todoASTCP {
+	return &todoASTCP{}
 }
 
-// AttributeSourceBoolean @todo
-// @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/Source/Boolean.php
-func AttributeSourceBoolean() *todoASB {
-	return &todoASB{}
+// AttributeSourceTaxClassCustomer @todo
+// @see magento2/site/app/code/Magento/Tax/Model/TaxClass/Source/Customer.php
+func AttributeSourceTaxClassCustomer() *todoASTCC {
+	return &todoASTCC{}
 }

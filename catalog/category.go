@@ -41,7 +41,7 @@ func (c *CategoryModel) AttributeCollection() {
 }
 
 func (c *CategoryModel) TableNameBase() string {
-	return GetTableName(TableCategoryEntity)
+	return GetTableName(TableIndexCategoryEntity)
 }
 
 func (c *CategoryModel) TableNameValue(i eav.ValueIndex) string {

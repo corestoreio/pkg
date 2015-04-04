@@ -41,7 +41,7 @@ func (c *ProductModel) AttributeCollection() {
 }
 
 func (c *ProductModel) TableNameBase() string {
-	return GetTableName(TableProductEntity)
+	return GetTableName(TableIndexProductEntity)
 }
 
 func (c *ProductModel) TableNameValue(i eav.ValueIndex) string {

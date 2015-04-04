@@ -12,30 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package eav
+package cataloginventory
+
+import "github.com/corestoreio/csfw/eav"
 
 var (
-	_ AttributeSourceModeller = (*todoAST)(nil)
-	_ AttributeSourceModeller = (*todoASB)(nil)
+	_ eav.AttributeSourceModeller = (*todoASStock)(nil)
 )
 
 type (
-	todoAST struct {
-		*AttributeSource
-	}
-	todoASB struct {
-		*AttributeSource
+	todoASStock struct {
+		*eav.AttributeSource
 	}
 )
 
-// AttributeSourceTable @todo
-// @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/Source/Table.php
-func AttributeSourceTable() *todoAST {
-	return &todoAST{}
-}
-
-// AttributeSourceBoolean @todo
-// @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/Source/Boolean.php
-func AttributeSourceBoolean() *todoASB {
-	return &todoASB{}
+// AttributeSourceStock @todo
+// @see magento2/site/app/code/Magento/CatalogInventory/Model/Source/Stock.php
+func AttributeSourceStock() *todoASStock {
+	return &todoASStock{}
 }
