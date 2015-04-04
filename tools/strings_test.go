@@ -19,6 +19,8 @@ import (
 	"log"
 	"testing"
 
+	"text/template"
+
 	"github.com/juju/errgo"
 	"github.com/stretchr/testify/assert"
 )
@@ -66,6 +68,7 @@ func TestGenerateCode(t *testing.T) {
 		data         interface{}
 		expTpl       []byte
 		expErr       bool
+		fncMap       template.FuncMap
 	}{
 		{
 			pkg: "catalog",
@@ -79,6 +82,7 @@ func TestGenerateCode(t *testing.T) {
 var TableProductEntity = ` + "`Gopher`" + `
 `),
 			expErr: false,
+			fncMap: nil,
 		},
 		{
 			pkg: "aa",
@@ -91,18 +95,24 @@ var TableProductEntity = ` + "`Gopher`" + `
 
 var TableAa = ` + "`Gopher`\n"),
 			expErr: false,
+			fncMap: nil,
 		},
 		{
 			pkg: "store",
 			tplCode: `package {{ .Package }}
-		var Table{{ prepareVarIndex 5 .Table }} = {{ "Gopher" | quote }}`,
+		var Table{{ prepareVarIndex 5 .Table }} = {{ "Gopher" | quote }}
+		var Gogento = "{{ "GoGentö" | toLowerFirstTest}}"{{"" | toLowerFirstTest}}`,
 			data: struct {
 				Package, Table string
 			}{"store", "core_store_group-01"},
 			expTpl: []byte(`package store
 
-var Table005CoreStoreGroup01 = ` + "`Gopher`\n"),
+var Table005CoreStoreGroup01 = ` + "`Gopher`" + `
+var Gogento = "goGentö"` + "\n"),
 			expErr: false,
+			fncMap: template.FuncMap{
+				"toLowerFirstTest": toLowerFirst,
+			},
 		},
 		{
 			pkg: "catalog",
@@ -113,6 +123,7 @@ var Table005CoreStoreGroup01 = ` + "`Gopher`\n"),
 			}{"catalog", "catalog_product_entity"},
 			expTpl: []byte(``),
 			expErr: true,
+			fncMap: nil,
 		},
 		{
 			pkg: "catalog",
@@ -126,11 +137,12 @@ var Table005CoreStoreGroup01 = ` + "`Gopher`\n"),
 			}{"catalog", "catalog_product_entity"},
 			expTpl: []byte(``),
 			expErr: true,
+			fncMap: nil,
 		},
 	}
 
 	for _, test := range tests {
-		actual, err := GenerateCode(test.pkg, test.tplCode, test.data, nil)
+		actual, err := GenerateCode(test.pkg, test.tplCode, test.data, test.fncMap)
 		if test.expErr {
 			assert.Error(t, err)
 		} else {
