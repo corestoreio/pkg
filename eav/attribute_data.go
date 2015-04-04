@@ -46,7 +46,9 @@ type (
 		OutputValue(format uint8)
 	}
 
-	AttributeData struct{}
+	AttributeData struct {
+		*Attribute
+	}
 )
 
 func (AttributeData) ExtractValue(req *http.Request) {}

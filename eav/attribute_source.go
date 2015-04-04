@@ -24,4 +24,15 @@ type (
 		GetAllOptions()
 		GetOptionText()
 	}
+	// AttributeSource should implement all abstract ideas of
+	// @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/Source/AbstractSource.php
+	// maybe extend also the interface
+	AttributeSource struct {
+		*Attribute
+	}
 )
+
+var _ AttributeSourceModeller = (*AttributeSource)(nil)
+
+func (as AttributeSource) GetAllOptions() {}
+func (as AttributeSource) GetOptionText() {}
