@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package catalog
+package catattr
 
 import "github.com/corestoreio/csfw/eav"
 
@@ -58,29 +58,37 @@ type (
 	}
 )
 
-// ProductAttributeBackendPrice prices @todo
+// ProductBackendPrice prices @todo
 // @see magento2/site/app/code/Magento/Catalog/Model/Product/Attribute/Backend/Price.php
-func ProductAttributeBackendPrice() *todoPABP {
-	return &todoPABP{}
+func ProductBackendPrice() *todoPABP {
+	return &todoPABP{
+		AttributeBackend: eav.NewAttributeBackend(),
+	}
 }
 
-// ProductAttributeBackendStartDate @todo
+// ProductBackendStartDate @todo
 // @see magento2/site/app/code/Magento/Catalog/Model/Product/Attribute/Backend/Startdate.php
-func ProductAttributeBackendStartDate() *todoPABSD {
-	return &todoPABSD{}
+func ProductBackendStartDate() *todoPABSD {
+	return &todoPABSD{
+		AttributeBackend: eav.NewAttributeBackend(),
+	}
 }
 
-// ProductAttributeBackendBoolean @todo
+// ProductBackendBoolean @todo
 // @see magento2/site/app/code/Magento/Catalog/Model/Product/Attribute/Backend/Boolean.php
-func ProductAttributeBackendBoolean() *todoPABB {
-	return &todoPABB{}
+func ProductBackendBoolean() *todoPABB {
+	return &todoPABB{
+		AttributeBackend: eav.NewAttributeBackend(),
+	}
 }
 
-// ProductAttributeBackendGroupPrice @todo ... pretty complex
+// ProductBackendGroupPrice @todo ... pretty complex
 // @see magento2/site/app/code/Magento/Catalog/Model/Product/Attribute/Backend/GroupPrice.php
 // @see magento2/site/app/code/Magento/Catalog/Model/Product/Attribute/Backend/GroupPrice/AbstractGroupPrice.php
-func ProductAttributeBackendGroupPrice() *todoPABGP {
-	return &todoPABGP{}
+func ProductBackendGroupPrice() *todoPABGP {
+	return &todoPABGP{
+		AttributeBackend: eav.NewAttributeBackend(),
+	}
 }
 
 // IsScalar returns false because a group price is not a scalar type
@@ -88,11 +96,13 @@ func (gp *todoPABGP) IsScalar() bool {
 	return false
 }
 
-// ProductAttributeBackendTierPrice @todo ... pretty complex
+// ProductBackendTierPrice @todo ... pretty complex
 // @see magento2/site/app/code/Magento/Catalog/Model/Product/Attribute/Backend/TierPrice.php
 // @see magento2/site/app/code/Magento/Catalog/Model/Product/Attribute/Backend/GroupPrice/AbstractGroupPrice.php
-func ProductAttributeBackendTierPrice() *todoPABTP {
-	return &todoPABTP{}
+func ProductBackendTierPrice() *todoPABTP {
+	return &todoPABTP{
+		AttributeBackend: eav.NewAttributeBackend(),
+	}
 }
 
 // IsScalar returns false because a tier price is not a scalar type
@@ -100,10 +110,12 @@ func (gp *todoPABTP) IsScalar() bool {
 	return false
 }
 
-// ProductAttributeBackendMedia @todo ... pretty complex
+// ProductBackendMedia @todo ... pretty complex
 // @see magento2/site/app/code/Magento/Catalog/Model/Product/Attribute/Backend/Media.php
-func ProductAttributeBackendMedia() *todoPABM {
-	return &todoPABM{}
+func ProductBackendMedia() *todoPABM {
+	return &todoPABM{
+		AttributeBackend: eav.NewAttributeBackend(),
+	}
 }
 
 // IsScalar returns false because a media is not a scalar type
@@ -111,20 +123,26 @@ func (gp *todoPABM) IsScalar() bool {
 	return false
 }
 
-// ProductAttributeRecurring @todo
+// ProductRecurring @todo
 // @see Mage_Catalog_Model_Product_Attribute_Backend_Recurring
-func ProductAttributeBackendRecurring() *todoPABR {
-	return &todoPABR{}
+func ProductBackendRecurring() *todoPABR {
+	return &todoPABR{
+		AttributeBackend: eav.NewAttributeBackend(),
+	}
 }
 
-// ProductAttributeBackendSku @todo
+// ProductBackendSku @todo
 // @see magento2/site/app/code/Magento/Catalog/Model/Product/Attribute/Backend/Sku.php
-func ProductAttributeBackendSku() *todoPABSku {
-	return &todoPABSku{}
+func ProductBackendSku() *todoPABSku {
+	return &todoPABSku{
+		AttributeBackend: eav.NewAttributeBackend(),
+	}
 }
 
-// ProductAttributeBackendStock @todo
+// ProductBackendStock @todo
 // @see magento2/site/app/code/Magento/Catalog/Model/Product/Attribute/Backend/Stock.php
-func ProductAttributeBackendStock() *todoPABStock {
-	return &todoPABStock{}
+func ProductBackendStock() *todoPABStock {
+	return &todoPABStock{
+		AttributeBackend: eav.NewAttributeBackend(),
+	}
 }

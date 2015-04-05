@@ -12,16 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package eav
+package custattr
 
-// AttributeSourceTable @todo
-// @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/Source/Table.php
-func AttributeSourceTable() *AttributeSource {
-	return NewAttributeSource()
+import "github.com/corestoreio/csfw/eav"
+
+// AddressDataPostcode post code data model @todo
+// @see magento2/site/app/code/Magento/Customer/Model/Attribute/Data/Postcode.php
+func AddressBackendRegion() *eav.AttributeBackend {
+	return eav.NewAttributeBackend()
 }
 
-// AttributeSourceBoolean @todo
-// @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/Source/Boolean.php
-func AttributeSourceBoolean() *AttributeSource {
-	return NewAttributeSource()
+// AddressBackendStreet handles multiline street address @todo
+// @see Mage_Customer_Model_Resource_Address_Attribute_Backend_Street
+func AddressBackendStreet() *eav.AttributeBackend {
+	return eav.NewAttributeBackend()
 }

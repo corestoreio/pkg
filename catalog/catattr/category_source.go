@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package catalog
+package catattr
 
 import "github.com/corestoreio/csfw/eav"
 
@@ -34,20 +34,26 @@ type (
 	}
 )
 
-// CategoryAttributeSourceSortby sorting @todo
+// CategorySourceSortby sorting @todo
 // @see magento2/site/app/code/Magento/Catalog/Model/Category/Attribute/Source/Sortby.php
-func CategoryAttributeSourceSortby() *todoCASSB {
-	return &todoCASSB{}
+func CategorySourceSortby() *todoCASSB {
+	return &todoCASSB{
+		AttributeSource: eav.NewAttributeSource(),
+	}
 }
 
-// CategoryAttributeSourcePage @todo
+// CategorySourcePage @todo
 // @see magento2/site/app/code/Magento/Catalog/Model/Category/Attribute/Source/Page.php
-func CategoryAttributeSourcePage() *todoCASP {
-	return &todoCASP{}
+func CategorySourcePage() *todoCASP {
+	return &todoCASP{
+		AttributeSource: eav.NewAttributeSource(),
+	}
 }
 
-// CategoryAttributeSourceMode @todo
+// CategorySourceMode @todo
 // @see magento2/site/app/code/Magento/Catalog/Model/Category/Attribute/Source/Mode.php
-func CategoryAttributeSourceMode() *todoCASMode {
-	return &todoCASMode{}
+func CategorySourceMode() *todoCASMode {
+	return &todoCASMode{
+		AttributeSource: eav.NewAttributeSource(),
+	}
 }

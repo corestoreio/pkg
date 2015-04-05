@@ -44,12 +44,44 @@ type (
 
 		//OutputValue return formatted attribute value from entity model
 		OutputValue(format uint8)
+
+		// Config to configure the current instance
+		Config(...AttributeDataConfig) AttributeDataModeller
 	}
 
 	AttributeData struct {
-		*Attribute
+		a *Attribute
+		// idx references to the generated constant and therefore references to itself. mainly used in
+		// backend|source|frontend|etc_model
+		idx AttributeIndex
 	}
+	AttributeDataConfig func(*AttributeData)
 )
+
+var _ AttributeDataModeller = (*AttributeData)(nil)
+
+// NewAttributeData creates a pointer to a new attribute source
+func NewAttributeData(cfgs ...AttributeDataConfig) *AttributeData {
+	ad := &AttributeData{
+		a: nil,
+	}
+	ad.Config(cfgs...)
+	return ad
+}
+
+// AttributeDataIdx only used in generated code to set the current index in the attribute slice
+func AttributeDataIdx(i AttributeIndex) AttributeDataConfig {
+	return func(as *AttributeData) {
+		as.idx = i
+	}
+}
+
+func (as *AttributeData) Config(configs ...AttributeDataConfig) AttributeDataModeller {
+	for _, cfg := range configs {
+		cfg(as)
+	}
+	return as
+}
 
 func (AttributeData) ExtractValue(req *http.Request) {}
 func (AttributeData) ValidateValue(value []string)   {}

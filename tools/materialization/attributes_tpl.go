@@ -25,21 +25,21 @@ import "github.com/corestoreio/csfw/tools"
 const tplTypeDefinition = `
 type (
     // @todo website must be present in the slice
-    // {{.Name | prepareVar}} a data container for attributes. You can use this struct to
+    // {{ .Name | prepareVar }} a data container for attributes. You can use this struct to
     // embed into your own struct for maybe overriding some method receivers.
-    {{.Name | prepareVar | toLowerFirst}} struct {
+    {{ .Name | prepareVar | toLowerFirst }} struct {
         *eav.Attribute
-        {{ range .Columns }}{{.GoName | toLowerFirst}} {{.GoType}}
+        {{ range .Columns }}{{ .GoName | toLowerFirst }} {{ .GoType }}
         {{ end }} }
 )
 
-{{ range .Columns }} func (a *{{$.Name | prepareVar | toLowerFirst}}) {{.GoName}}() {{.GoType}}{
-    return a.{{.GoName | toLowerFirst}}
+{{ range .Columns }} func (a *{{ $.Name | prepareVar | toLowerFirst }}) {{ .GoName }}() {{ .GoType }}{
+    return a.{{ .GoName | toLowerFirst }}
 }
 {{ end }}
 
 // Check if Attributer interface has been successfully implemented
-var _ {{.EAVPackage}}.Attributer = (*{{.Name | prepareVar | toLowerFirst}})(nil)
+var _ {{ .AttrPkg }}.Attributer = (*{{ .Name | prepareVar | toLowerFirst }})(nil)
 
 `
 
@@ -48,57 +48,61 @@ const tplTypeDefinitionFile = tools.Copyright + `
 package {{ .PackageName }}
     import (
         "github.com/corestoreio/csfw/eav"
-        "github.com/corestoreio/csfw/{{ .EAVPackage }}"
-        {{ range .ImportPaths }}"{{.}}"
+        "{{ .AttrPkgImp }}"
+        {{ range .ImportPaths }}"{{ . }}"
         {{ end }} )
 
-{{.TypeDefinition}}
+{{ .TypeDefinition }}
 
 const (
-    {{ range $k, $row := .Attributes }}{{$.Name | prepareVar}}{{index $row "attribute_code" | prepareVar}} {{ if eq $k 0 }} eav.AttributeIndex = iota {{ end }}
-    {{end}}
-    {{$.Name | prepareVar}}ZZZ
+    {{ range $k, $row := .Attributes }}{{ $.Name | prepareVar }}{{ index $row "attribute_code" | prepareVar }} {{ if eq $k 0 }} eav.AttributeIndex = iota {{ end }}
+    {{ end }}
+    {{ $.Name | prepareVar }}ZZZ
 )
 
-type si{{$.Name | prepareVar}} struct {}
+type si{{ $.Name | prepareVar }} struct {}
 
-func (si{{$.Name | prepareVar}}) ByID(id int64) (eav.AttributeIndex, error){
+func (si{{ $.Name | prepareVar }}) ByID(id int64) (eav.AttributeIndex, error){
 	switch id {
-	{{ range $k, $row := .Attributes }} case {{index $row "attribute_id"}}:
-		return {{$.Name | prepareVar}}{{index $row "attribute_code" | prepareVar}}, nil
-	{{end}}
+	{{ range $k, $row := .Attributes }} case {{ index $row "attribute_id" }}:
+		return {{ $.Name | prepareVar }}{{ index $row "attribute_code" | prepareVar }}, nil
+	{{ end }}
 	default:
 		return eav.AttributeIndex(0), eav.ErrAttributeNotFound
 	}
 }
 
-func (si{{$.Name | prepareVar}}) ByCode(code string) (eav.AttributeIndex, error){
+func (si{{ $.Name | prepareVar }}) ByCode(code string) (eav.AttributeIndex, error){
 	switch code {
-	{{ range $k, $row := .Attributes }} case {{index $row "attribute_code"}}:
-		return {{$.Name | prepareVar}}{{index $row "attribute_code" | prepareVar}}, nil
-	{{end}}
+	{{ range $k, $row := .Attributes }} case {{ index $row "attribute_code" }}:
+		return {{ $.Name | prepareVar }}{{ index $row "attribute_code" | prepareVar }}, nil
+	{{ end }}
 	default:
 		return eav.AttributeIndex(0), eav.ErrAttributeNotFound
 	}
 }
 
-var _ eav.AttributeGetter = (*si{{$.Name | prepareVar}})(nil)
+var _ eav.AttributeGetter = (*si{{ $.Name | prepareVar }})(nil)
 
 func init(){
-    {{.EAVPackage}}.SetAttributeGetter(si{{$.Name | prepareVar}}{})
-    {{.EAVPackage}}.SetAttributeCollection({{.EAVPackage}}.AttributeSlice{
-        {{ range $row := .Attributes }} {{$.Name | prepareVar}}{{index $row "attribute_code" | prepareVar}}: {{ if ne $.MyStruct "" }} &{{$.MyStruct}} {
-        {{end}} &{{$.Name | prepareVar | toLowerFirst}} {
-            Attribute: eav.NewAttribute(
-            // @todo we may run into trouble regarding the args to eav.NewAttribute() because $row is a map. fix that
-            {{ range $k,$v := $row }} {{ if (isCoreAttribute $k) }} {{$v}}, // {{ $k }}
-            {{end}}{{end}}
+    {{ .AttrPkg }}.{{ .FuncGetter }}(si{{ $.Name | prepareVar }}{})
+    {{ .AttrPkg }}.{{ .FuncCollection }}({{ .AttrPkg }}.AttributeSlice{
+        {{ range $row := .Attributes }}
+        {{ $const := sprintf "%s%s" (prepareVar $.Name) (prepareVar (index $row "attribute_code")) }}
+        {{ $const }}: {{ if ne $.MyStruct "" }} &{{ $.MyStruct }} {
+        {{ end }} &{{ $.Name | prepareVar | toLowerFirst }} {
+            Attribute: eav.NewAttribute({{ range $k,$v := $row }} {{ if (isEavAttr $k) }} {{ setAttrIdx $v $const }}, // {{ $k }}
+            {{ end }}{{ end }}
             ),
-            {{ range $k,$v := $row }} {{ if not (isCoreAttribute $k) }} {{ $k | prepareVar | toLowerFirst }}: {{ $v }},
-            {{end}}{{ end }}
+            {{ range $k,$v := $row }} {{ if not (isEavAttr $k) }} {{ $k | prepareVar | toLowerFirst }}: {{ setAttrIdx $v $const }},
+            {{ end }}{{ end }}
         },
-        {{ if ne $.MyStruct "" }} }, {{end}}
+        {{ if ne $.MyStruct "" }} }, {{ end }}
         {{ end }}
     })
 }
 `
+
+/*
+@todo eav.NewAttribute() we may run into trouble regarding the args to eav.NewAttribute() because $row is a map. fix that
+*/

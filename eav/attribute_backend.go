@@ -41,19 +41,51 @@ type (
 
 		// IsScalar By default attribute value is considered scalar that can be stored in a generic way
 		IsScalar() bool
+		// Config to configure the current instance
+		Config(...AttributeBackendConfig) AttributeBackendModeller
 	}
 	// AttributeBackend implements abstract functions @todo
 	// @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/Backend/AbstractBackend.php
 	AttributeBackend struct {
-		*Attribute
+		// a is the reference to the already created attribute during init() call in a package.
+		// Do not modify the attribute here
+		a *Attribute
+		// idx references to the generated constant and therefore references to itself. mainly used in
+		// backend|source|frontend|etc_model
+		idx AttributeIndex
 	}
+	AttributeBackendConfig func(*AttributeBackend)
 )
 
 var _ AttributeBackendModeller = (*AttributeBackend)(nil)
 
-func (ab *AttributeBackend) IsStatic() bool           { return ab.Attribute.IsStatic() }
+// NewAttributeBackend creates a pointer to a new attribute source
+func NewAttributeBackend(cfgs ...AttributeBackendConfig) *AttributeBackend {
+	as := &AttributeBackend{
+		a: nil,
+	}
+	as.Config(cfgs...)
+	return as
+}
+
+// AttributeBackendIdx only used in generated code to set the current index in the attribute slice
+func AttributeBackendIdx(i AttributeIndex) AttributeBackendConfig {
+	return func(as *AttributeBackend) {
+		as.idx = i
+	}
+}
+
+// Config runs the configuration functions
+func (as *AttributeBackend) Config(configs ...AttributeBackendConfig) AttributeBackendModeller {
+	for _, cfg := range configs {
+		cfg(as)
+	}
+	return as
+}
+
+func (ab *AttributeBackend) IsStatic() bool           { return ab.a.IsStatic() }
 func (ab *AttributeBackend) GetTable() string         { return "" }
-func (ab *AttributeBackend) GetType() string          { return ab.Attribute.BackendType() }
+func (ab *AttributeBackend) GetType() string          { return ab.a.BackendType() }
 func (ab *AttributeBackend) GetEntityIdField() string { return "" }
 func (ab *AttributeBackend) Validate() bool           { return true }
 func (ab *AttributeBackend) IsScalar() bool           { return true }

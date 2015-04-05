@@ -20,6 +20,9 @@ import (
 	"github.com/corestoreio/csfw/storage/dbr"
 )
 
+// MainTable used in SQL to refer to the main table
+const MainTable = "main_table"
+
 var (
 	ErrTableNotFound = errors.New("Table not found")
 )

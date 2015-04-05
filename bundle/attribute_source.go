@@ -16,18 +16,8 @@ package bundle
 
 import "github.com/corestoreio/csfw/eav"
 
-var (
-	_ eav.AttributeSourceModeller = (*todoASPriceView)(nil)
-)
-
-type (
-	todoASPriceView struct {
-		*eav.AttributeSource
-	}
-)
-
 // AttributeSourcePriceView sorting @todo
 // @see magento2/site/app/code/Magento/Bundle/Model/Product/Attribute/Source/Price/View.php
-func AttributeSourcePriceView() *todoASPriceView {
-	return &todoASPriceView{}
+func AttributeSourcePriceView() *eav.AttributeSource {
+	return eav.NewAttributeSource()
 }

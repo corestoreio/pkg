@@ -16,28 +16,14 @@ package tax
 
 import "github.com/corestoreio/csfw/eav"
 
-var (
-	_ eav.AttributeSourceModeller = (*todoASTCP)(nil)
-	_ eav.AttributeSourceModeller = (*todoASTCC)(nil)
-)
-
-type (
-	todoASTCP struct {
-		*eav.AttributeSource
-	}
-	todoASTCC struct {
-		*eav.AttributeSource
-	}
-)
-
 // AttributeSourceTaxClassProduct @todo
 // @see magento2/site/app/code/Magento/Tax/Model/TaxClass/Source/Product.php
-func AttributeSourceTaxClassProduct() *todoASTCP {
-	return &todoASTCP{}
+func AttributeSourceTaxClassProduct() *eav.AttributeSource {
+	return eav.NewAttributeSource()
 }
 
 // AttributeSourceTaxClassCustomer @todo
 // @see magento2/site/app/code/Magento/Tax/Model/TaxClass/Source/Customer.php
-func AttributeSourceTaxClassCustomer() *todoASTCC {
-	return &todoASTCC{}
+func AttributeSourceTaxClassCustomer() *eav.AttributeSource {
+	return eav.NewAttributeSource()
 }

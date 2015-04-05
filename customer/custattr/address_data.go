@@ -12,20 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package customer
+package custattr
 
 import "github.com/corestoreio/csfw/eav"
 
-var _ eav.AttributeDataModeller = (*todoADPC)(nil)
-
-type (
-	todoADPC struct {
-		*eav.AttributeData
-	}
-)
-
-// AddressAttributeDataPostcode post code data model @todo
+// AddressDataPostcode post code data model @todo
 // @see magento2/site/app/code/Magento/Customer/Model/Attribute/Data/Postcode.php
-func AddressAttributeDataPostcode() todoADPC {
-	return todoADPC{}
+func AddressDataPostcode() *eav.AttributeData {
+	return eav.NewAttributeData()
 }

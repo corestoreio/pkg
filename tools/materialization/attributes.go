@@ -23,6 +23,7 @@ import (
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/tools"
 	"github.com/juju/errgo"
+	"path"
 )
 
 // materializeAttributes ...
@@ -38,9 +39,9 @@ func materializeAttributes(ctx *context) {
 	}
 }
 
-func getEAVPackage(et *eav.TableEntityType) string {
+func getAttrPkg(et *eav.TableEntityType) string {
 	if etConfig, ok := tools.ConfigMaterializationAttributes[et.EntityTypeCode]; ok {
-		return etConfig.EAVPackage
+		return path.Base(etConfig.AttrPkgImp)
 	}
 	return ""
 }
@@ -104,7 +105,7 @@ func generateAttributeCode(ctx *context) error {
 
 	name := getName(ctx, "attribute")
 	typeTplData := map[string]interface{}{
-		"EAVPackage": getEAVPackage(ctx.et),
+		"AttrPkg": getAttrPkg(ctx.et),
 	}
 	structCode, err := tools.ColumnsToStructCode(typeTplData, name, stripEavAttributeColumns(columns), tplTypeDefinition)
 	if err != nil {
@@ -120,27 +121,23 @@ func generateAttributeCode(ctx *context) error {
 	// @todo ValidateRules field must be converted from PHP serialized string to JSON
 	pkg := getPackage(ctx.et)
 	importPaths := tools.PrepareForTemplate(columns, attributeCollection, tools.ConfigAttributeModel, pkg)
-
-	data := struct {
-		TypeDefinition string
-		Attributes     []tools.StringEntities
-		Name           string
-		MyStruct       string
-		ImportPaths    []string
-		PackageName    string
-		EAVPackage     string
-	}{
-		TypeDefinition: string(structCode),
-		Attributes:     attributeCollection,
-		Name:           name,
-		MyStruct:       tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].MyStruct,
-		ImportPaths:    importPaths,
-		PackageName:    pkg,
-		EAVPackage:     getEAVPackage(ctx.et),
+	data := map[string]interface{}{
+		"TypeDefinition": string(structCode),
+		"Attributes":     attributeCollection,
+		"Name":           name,
+		"MyStruct":       tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].MyStruct,
+		"ImportPaths":    importPaths,
+		"PackageName":    pkg,
+		"AttrPkg":        getAttrPkg(ctx.et),
+		"AttrPkgImp":     tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].AttrPkgImp,
+		"FuncCollection": tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].FuncCollection,
+		"FuncGetter":     tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].FuncGetter,
 	}
-
 	funcMap := template.FuncMap{
-		"isCoreAttribute": func(a string) bool { return eav.AttributeCoreColumns.Contains(a) },
+		"isEavAttr": func(a string) bool { return eav.AttributeCoreColumns.Contains(a) },
+		"setAttrIdx": func(value, constName string) string {
+			return strings.Replace(value, "{{.AttributeIndex}}", constName, -1)
+		},
 	}
 
 	code, err := tools.GenerateCode("", tplTypeDefinitionFile, data, funcMap)

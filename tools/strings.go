@@ -57,6 +57,7 @@ func GenerateCode(pkg, tplCode string, data interface{}, addFM template.FuncMap)
 		"prepareVar":      prepareVar(pkg),
 		"toLowerFirst":    toLowerFirst,
 		"prepareVarIndex": func(i int, s string) string { return fmt.Sprintf("%03d%s", i, prepareVar(pkg)(s)) },
+		"sprintf":         fmt.Sprintf,
 	}
 	for k, v := range addFM {
 		funcMap[k] = v

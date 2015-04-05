@@ -285,8 +285,8 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 	}
 
 	selectSql := dbrSess.
-		Select(ta.AllColumnAliasQuote("main_table")...).
-		From(ta.Name, "main_table").
+		Select(ta.AllColumnAliasQuote(csdb.MainTable)...).
+		From(ta.Name, csdb.MainTable).
 		Join(
 		dbr.JoinTable(taa.Name, "additional_table"),
 		taa.ColumnAliasQuote("additional_table"),

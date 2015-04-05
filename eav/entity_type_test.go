@@ -17,14 +17,15 @@ package eav_test
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/stretchr/testify/assert"
 )
 
 var (
-	csEntityTypeCollection = CSEntityTypeSlice{
-		&CSEntityType{
+	csEntityTypeCollection = eav.CSEntityTypeSlice{
+		&eav.CSEntityType{
 			EntityTypeID:          3,
 			EntityTypeCode:        "catalog_category",
 			EntityModel:           nil,
@@ -48,7 +49,7 @@ func TestEntityType(t *testing.T) {
 	db := csdb.MustConnectTest()
 	defer db.Close()
 	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
-	var et EntityType
+	var et eav.TableEntityType
 	et.LoadByCode(
 		dbrSess,
 		"catalog_product",
@@ -60,7 +61,7 @@ func TestEntityType(t *testing.T) {
 
 	assert.NotEmpty(t, et.EntityModel)
 	assert.NotEmpty(t, et.AttributeModel.String)
-	assert.True(t, et.EntityTypeID > 0)
+	assert.True(t, et.EntityTypeID > 0, "EntityTypeID should be greater 0 but is: %#v\n", et)
 	assert.True(t, et.IsRealEav())
 }
 
@@ -69,12 +70,12 @@ func TestEntityTypeSliceGetByCode(t *testing.T) {
 	defer db.Close()
 	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
 
-	s, err := GetTableStructure(TableIndexEntityType)
+	s, err := eav.GetTableStructure(eav.TableIndexEntityType)
 	if err != nil {
 		t.Error(err)
 	}
 
-	var entityTypeCollection EntityTypeSlice
+	var entityTypeCollection eav.TableEntityTypeSlice
 	_, err = dbrSess.
 		Select(s.Columns...).
 		From(s.Name).

@@ -66,7 +66,7 @@ func (et *TableEntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...
 	if err != nil {
 		return errgo.Mask(err)
 	}
-	sb := dbrSess.Select(s.Columns...).From(s.Name).Where("entity_type_code = ?", code)
+	sb := dbrSess.Select(s.AllColumnAliasQuote(csdb.MainTable)...).From(s.Name, csdb.MainTable).Where("entity_type_code = ?", code)
 	for _, cb := range cbs {
 		sb = cb(sb)
 	}

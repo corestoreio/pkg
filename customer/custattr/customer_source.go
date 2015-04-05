@@ -12,42 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package customer
+package custattr
 
 import "github.com/corestoreio/csfw/eav"
 
 var (
 	_ eav.AttributeSourceModeller = (*todoASG)(nil)
-	_ eav.AttributeSourceModeller = (*todoASStore)(nil)
-	_ eav.AttributeSourceModeller = (*todoASWebsite)(nil)
 )
 
 type (
+	// example when you want to add custom struct fields ...
 	todoASG struct {
-		*eav.AttributeSource
-	}
-	todoASStore struct {
-		*eav.AttributeSource
-	}
-	todoASWebsite struct {
 		*eav.AttributeSource
 	}
 )
 
-// AttributeSourceGroup customer group handling @todo
+// CustomerSourceGroup customer group handling @todo
 // @see magento2/site/app/code/Magento/Customer/Model/Customer/Attribute/Source/Group.php
-func AttributeSourceGroup() todoASG {
-	return todoASG{}
+func CustomerSourceGroup() todoASG {
+	return todoASG{
+		AttributeSource: eav.NewAttributeSource(),
+	}
 }
 
-// AttributeSourceStore handle store source @todo
+// CustomerSourceStore handle store source @todo
 // @see magento2/site/app/code/Magento/Customer/Model/Customer/Attribute/Source/Store.php
-func AttributeSourceStore() todoASStore {
-	return todoASStore{}
+func CustomerSourceStore() *eav.AttributeSource {
+	return eav.NewAttributeSource()
 }
 
-// AttributeSourceWebsite handle store source @todo
+// CustomerSourceWebsite handle store source @todo
 // @see magento2/site/app/code/Magento/Customer/Model/Customer/Attribute/Source/Website.php
-func AttributeSourceWebsite() todoASWebsite {
-	return todoASWebsite{}
+func CustomerSourceWebsite() *eav.AttributeSource {
+	return eav.NewAttributeSource()
 }

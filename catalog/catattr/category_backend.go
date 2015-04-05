@@ -12,32 +12,36 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package customer
+package catattr
 
 import "github.com/corestoreio/csfw/eav"
 
 var (
-	_ eav.AttributeBackendModeller = (*todoAABR)(nil)
-	_ eav.AttributeBackendModeller = (*todoAABS)(nil)
+	_ eav.AttributeBackendModeller = (*todoCABSB)(nil)
+	_ eav.AttributeBackendModeller = (*todoCABI)(nil)
 )
 
 type (
-	todoAABR struct {
+	todoCABSB struct {
 		*eav.AttributeBackend
 	}
-	todoAABS struct {
+	todoCABI struct {
 		*eav.AttributeBackend
 	}
 )
 
-// AddressAttributeDataPostcode post code data model @todo
-// @see magento2/site/app/code/Magento/Customer/Model/Attribute/Data/Postcode.php
-func AddressAttributeBackendRegion() *todoAABR {
-	return &todoAABR{}
+// CategoryBackendSortby sorting @todo
+// @see magento2/site/app/code/Magento/Catalog/Model/Category/Attribute/Backend/Sortby.php
+func CategoryBackendSortby() *todoCABSB {
+	return &todoCABSB{
+		AttributeBackend: eav.NewAttributeBackend(),
+	}
 }
 
-// AddressAttributeBackendStreet handles multiline street address
-// @see Mage_Customer_Model_Resource_Address_Attribute_Backend_Street
-func AddressAttributeBackendStreet() *todoAABS {
-	return &todoAABS{}
+// CategoryBackendImage @todo file uploading and saving
+// @see magento2/site/app/code/Magento/Catalog/Model/Category/Attribute/Backend/Image.php
+func CategoryBackendImage() *todoCABI {
+	return &todoCABI{
+		AttributeBackend: eav.NewAttributeBackend(),
+	}
 }

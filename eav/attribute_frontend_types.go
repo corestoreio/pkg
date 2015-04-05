@@ -14,18 +14,8 @@
 
 package eav
 
-var (
-	_ AttributeFrontendModeller = (*todoAFDT)(nil)
-)
-
-type (
-	todoAFDT struct {
-		*AttributeFrontend
-	}
-)
-
 // AttributeFrontendDatetime handles date times @todo
 // @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/Frontend/Datetime.php
-func AttributeFrontendDatetime() *todoAFDT {
-	return &todoAFDT{}
+func AttributeFrontendDatetime() *AttributeFrontend {
+	return NewAttributeFrontend()
 }

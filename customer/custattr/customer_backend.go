@@ -12,72 +12,55 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package customer
+package custattr
 
 import "github.com/corestoreio/csfw/eav"
 
 var (
 	_ eav.AttributeBackendModeller = (*todoABB)(nil)
-	_ eav.AttributeBackendModeller = (*todoABS)(nil)
-	_ eav.AttributeBackendModeller = (*todoABDB)(nil)
-	_ eav.AttributeBackendModeller = (*todoABP)(nil)
-	_ eav.AttributeBackendModeller = (*todoABStore)(nil)
-	_ eav.AttributeBackendModeller = (*todoABWebsite)(nil)
 )
 
 type (
+	// example for your own struct
 	todoABB struct {
-		*eav.AttributeBackend
-	}
-	todoABS struct {
-		*eav.AttributeBackend
-	}
-	todoABDB struct {
-		*eav.AttributeBackend
-	}
-	todoABP struct {
-		*eav.AttributeBackend
-	}
-	todoABStore struct {
-		*eav.AttributeBackend
-	}
-	todoABWebsite struct {
 		*eav.AttributeBackend
 	}
 )
 
-// AttributeBackendBilling handles billing address @todo
+// CustomerBackendBilling handles billing address @todo
 // @see magento2/site/app/code/Magento/Customer/Model/Customer/Attribute/Backend/Billing.php
-func AttributeBackendBilling() *todoABB {
-	return &todoABB{}
+func CustomerBackendBilling() *todoABB {
+	return &todoABB{
+		AttributeBackend: eav.NewAttributeBackend(),
+	}
 }
 
-// AttributeBackendShipping handles shipping address @todo
+// CustomerBackendShipping handles shipping address @todo
 // @see magento2/site/app/code/Magento/Customer/Model/Customer/Attribute/Backend/Shipping.php
-func AttributeBackendShipping() *todoABS {
-	return &todoABS{}
+func CustomerBackendShipping() *eav.AttributeBackend {
+	return eav.NewAttributeBackend()
 }
 
-// AttributeBackendDataBoolean converts 1 or 0 to bool @todo
+// CustomerBackendDataBoolean converts 1 or 0 to bool @todo
 // @see magento2/site/app/code/Magento/Customer/Model/Attribute/Backend/Data/Boolean.php
-func AttributeBackendDataBoolean() *todoABDB {
-	return &todoABDB{}
+func CustomerBackendDataBoolean() *eav.AttributeBackend {
+	return eav.NewAttributeBackend()
 }
 
-// AttributeBackendPassword handles customer passwords @todo
+// CustomerBackendPassword handles customer passwords @todo
 // @see magento2/site/app/code/Magento/Customer/Model/Customer/Attribute/Backend/Password.php
-func AttributeBackendPassword() *todoABP {
-	return &todoABP{}
+func CustomerBackendPassword() *eav.AttributeBackend {
+	return eav.NewAttributeBackend()
 }
 
-// AttributeBackendStore handles store
+// CustomerBackendStore handles store
 // @see magento2/site/app/code/Magento/Customer/Model/Customer/Attribute/Backend/Store.php
-func AttributeBackendStore() *todoABStore {
-	return &todoABStore{}
+func CustomerBackendStore() *eav.AttributeBackend {
+	return eav.NewAttributeBackend()
 }
 
-// AttributeBackendWebsite handles website
+// CustomerBackendWebsite handles website
 // @see magento2/site/app/code/Magento/Customer/Model/Customer/Attribute/Backend/Website.php
-func AttributeBackendWebsite() *todoABWebsite {
-	return &todoABWebsite{}
+func CustomerBackendWebsite() *eav.AttributeBackend {
+	return eav.NewAttributeBackend()
 }

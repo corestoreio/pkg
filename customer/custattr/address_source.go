@@ -12,32 +12,38 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package customer
+package custattr
 
 import "github.com/corestoreio/csfw/eav"
 
-var (
-	_ eav.AttributeSourceModeller = (*todoAASC)(nil)
-	_ eav.AttributeSourceModeller = (*todoAASR)(nil)
-)
-
-type (
-	todoAASC struct {
-		*eav.AttributeSource
-	}
-	todoAASR struct {
-		*eav.AttributeSource
-	}
-)
-
-// AddressAttributeSourceCountry retrieves slice of countries @todo
+// AddressSourceCountry retrieves slice of countries @todo
 // @see magento2/site/app/code/Magento/Customer/Model/Resource/Address/Attribute/Source/Country.php
-func AddressAttributeSourceCountry() todoAASC {
-	return todoAASC{}
+func AddressSourceCountry() *eav.AttributeSource {
+	return eav.NewAttributeSource(
+		// temporary because later these values comes from another slice/container/database
+		func(as *eav.AttributeSource) {
+			as.Source = []string{
+				"AU", "Straya",
+				"NZ", "Kiwi land",
+				"DE", "Autobahn",
+				"SE", "Smørrebrød",
+			}
+		},
+	)
 }
 
-// AddressAttributeSourceRegion
+// AddressSourceRegion
 // @see magento2/site/app/code/Magento/Customer/Model/Resource/Address/Attribute/Source/Region.php
-func AddressAttributeSourceRegion() todoAASR {
-	return todoAASR{}
+func AddressSourceRegion() *eav.AttributeSource {
+	return eav.NewAttributeSource(
+		// temporary because later these values comes from another slice/container/database
+		func(as *eav.AttributeSource) {
+			as.Source = []string{
+				"BAY", "Bavaria",
+				"BAW", "Baden-Würstchenberg",
+				"HAM", "Hamburg",
+				"BER", "Bärlin",
+			}
+		},
+	)
 }
