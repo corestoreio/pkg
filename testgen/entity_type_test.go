@@ -15,9 +15,10 @@
 package testgen
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/eav"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 // TestGetCSEntityType uses the generated CSEntityTypeSlice from the test DB

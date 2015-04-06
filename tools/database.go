@@ -468,15 +468,15 @@ func (s *rowTransformer) append(ret *[]StringEntities) {
 }
 
 func validImportPath(ad *AttributeModelDef, ip []string, targetPkg string) bool {
-	if ad.ImportPath == "" {
+	if ad.GoFunc == "" {
 		return false
 	}
-	if len(ad.ImportPath) > 0 && len(targetPkg) > 0 && ad.ImportPath[len(ad.ImportPath)-len(targetPkg):] == targetPkg {
+	if len(targetPkg) > 0 && ad.Import()[len(ad.Import())-len(targetPkg):] == targetPkg {
 		return false
 	}
 	add := true
 	for i := 0; i < len(ip); i++ {
-		if ip[i] == ad.ImportPath { // check for duplicates
+		if ip[i] == ad.Import() { // check for duplicates
 			add = false
 		}
 	}
@@ -501,10 +501,10 @@ func PrepareForTemplate(cols Columns, rows []StringEntities, amm AttributeModelD
 			switch true {
 			case hasModel:
 				row[colName] = "nil"
-				if goType.GoModel != "" {
-					row[colName] = goType.GoModel
+				if goType.GoFunc != "" {
+					row[colName] = goType.Func()
 					if validImportPath(goType, ip, targetPkg) {
-						ip = append(ip, goType.ImportPath)
+						ip = append(ip, goType.Import())
 					}
 				}
 				break

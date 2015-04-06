@@ -112,13 +112,40 @@ type (
 	AttributeModelDefMap map[string]*AttributeModelDef
 	// AttributeModelDef defines which Go type/func has which import path
 	AttributeModelDef struct {
-		// Is used when you want to specify your own package
-		ImportPath string
-		// GoModel is a function string which implements, when later executed, one of the n interfaces
-		// for (backend|frontend|source|data)_model
-		GoModel string
+		// GoFunc is a function string which implements, when later executed, one of the n interfaces
+		// for (backend|frontend|source|data)_model. The GoFunc expects the fully qualified import path to the
+		// final method, e.g.: github.com/corestoreio/csfw/customer.Customer()
+		GoFunc string
+		// i cached import path
+		i string
+		// f cached func name
+		f string
 	}
 )
+
+// NewAMD NewAttributeModelDef NewAttributeModelDef creates a new attribute model definition
+func NewAMD(GoFuncWithPath string) *AttributeModelDef {
+	i, err := ExtractImportPath(GoFuncWithPath)
+	LogFatal(err)
+	f, err := ExtractFuncType(GoFuncWithPath)
+	LogFatal(err)
+
+	return &AttributeModelDef{
+		GoFunc: GoFuncWithPath,
+		i:      i,
+		f:      f,
+	}
+}
+
+// Import extracts the import path
+func (d *AttributeModelDef) Import() string {
+	return d.i
+}
+
+// Func extracts the function
+func (d *AttributeModelDef) Func() string {
+	return d.f
+}
 
 // Keys returns all keys from a EntityTypeMap
 func (m EntityTypeMap) Keys() []string {
@@ -305,404 +332,104 @@ var ConfigMaterializationAttributes = AttributeToStructMap{
 
 // ConfigAttributeModel contains default configuration. Use the file config_user.go with the func init() to change/extend it.
 var ConfigAttributeModel = AttributeModelDefMap{
-	"catalog/product_attribute_frontend_image": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductFrontendImage().Config(eav.AttributeFrontendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Frontend\\Image": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductFrontendImage().Config(eav.AttributeFrontendIdx({{.AttributeIndex}}))",
-	},
-	"eav/entity_attribute_frontend_datetime": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.AttributeFrontendDatetime().Config(eav.AttributeFrontendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Eav\\Model\\Entity\\Attribute\\Frontend\\Datetime": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.AttributeFrontendDatetime().Config(eav.AttributeFrontendIdx({{.AttributeIndex}}))",
-	},
-	"catalog/attribute_backend_customlayoutupdate": &AttributeModelDef{
-		ImportPath: "",
-		GoModel:    "",
-	},
-	"Magento\\Catalog\\Model\\Attribute\\Backend\\Customlayoutupdate": &AttributeModelDef{
-		ImportPath: "",
-		GoModel:    "",
-	},
-	"catalog/category_attribute_backend_image": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.CategoryBackendImage().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Category\\Attribute\\Backend\\Image": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.CategoryBackendImage().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"catalog/category_attribute_backend_sortby": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.CategoryBackendSortby().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Category\\Attribute\\Backend\\Sortby": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.CategoryBackendSortby().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"catalog/category_attribute_backend_urlkey": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "",
-	},
-	"catalog/product_attribute_backend_boolean": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendBoolean().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Boolean": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendBoolean().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Category": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendCategory().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"catalog/product_attribute_backend_groupprice": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendGroupPrice().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\GroupPrice": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendGroupPrice().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"catalog/product_attribute_backend_media": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendMedia().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Media": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendMedia().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"catalog/product_attribute_backend_msrp": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendPrice().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"catalog/product_attribute_backend_price": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendPrice().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Price": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendPrice().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"catalog/product_attribute_backend_recurring": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendRecurring().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Recurring": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendRecurring().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"catalog/product_attribute_backend_sku": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendSku().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Sku": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendSku().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"catalog/product_attribute_backend_startdate": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendStartDate().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Startdate": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendStartDate().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Stock": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendStock().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"catalog/product_attribute_backend_tierprice": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendTierPrice().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Tierprice": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendTierPrice().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Weight": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductBackendWeight().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"catalog/product_attribute_backend_urlkey": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "",
-	},
-	"customer/attribute_backend_data_boolean": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerBackendDataBoolean().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Customer\\Model\\Attribute\\Backend\\Data\\Boolean": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerBackendDataBoolean().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"customer/customer_attribute_backend_billing": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerBackendBilling().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Billing": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerBackendBilling().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"customer/customer_attribute_backend_password": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerBackendPassword().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Password": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerBackendPassword().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"customer/customer_attribute_backend_shipping": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerBackendShipping().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Shipping": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerBackendShipping().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"customer/customer_attribute_backend_store": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerBackendStore().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Store": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerBackendStore().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"customer/customer_attribute_backend_website": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerBackendWebsite().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Website": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerBackendWebsite().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"customer/entity_address_attribute_backend_region": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.AddressBackendRegion().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Backend\\Region": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.AddressBackendRegion().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"customer/entity_address_attribute_backend_street": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.AddressBackendStreet().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\DefaultBackend": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.AttributeBackendDefaultBackend().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"eav/entity_attribute_backend_datetime": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.AttributeBackendDatetime().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\Datetime": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.AttributeBackendDatetime().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"eav/entity_attribute_backend_time_created": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.AttributeBackendTimeCreated().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\Time\\Created": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.AttributeBackendTimeCreated().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"eav/entity_attribute_backend_time_updated": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.AttributeBackendTimeUpdated().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\Time\\Updated": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.AttributeBackendTimeUpdated().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))",
-	},
-	"bundle/product_attribute_source_price_view": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/bundle",
-		GoModel:    "bundle.AttributeSourcePriceView().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Bundle\\Model\\Product\\Attribute\\Source\\Price\\View": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/bundle",
-		GoModel:    "bundle.AttributeSourcePriceView().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\CatalogInventory\\Model\\Source\\Stock": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/cataloginventory",
-		GoModel:    "cataloginventory.AttributeSourceStock().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"catalog/category_attribute_source_layout": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "",
-	},
-	"Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Layout": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "",
-	},
-	"catalog/category_attribute_source_mode": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.CategorySourceMode().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Mode": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.CategorySourceMode().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"catalog/category_attribute_source_page": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.CategorySourcePage().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Page": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.CategorySourcePage().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"catalog/category_attribute_source_sortby": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.CategorySourceSortby().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Sortby": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.CategorySourceSortby().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"catalog/entity_product_attribute_design_options_container": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductSourceDesignOptionsContainer().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Entity\\Product\\Attribute\\Design\\Options\\Container": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductSourceDesignOptionsContainer().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"catalog/product_attribute_source_countryofmanufacture": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductSourceCountryOfManufacture().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Countryofmanufacture": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductSourceCountryOfManufacture().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"catalog/product_attribute_source_layout": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductSourceLayout().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Layout": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductSourceLayout().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Status": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductSourceStatus().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"catalog/product_attribute_source_msrp_type_enabled": &AttributeModelDef{
-		ImportPath: "",
-		GoModel:    "",
-	},
-	"catalog/product_attribute_source_msrp_type_price": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/msrp",
-		GoModel:    "msrp.NewAttributeSourcePrice().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Msrp\\Model\\Product\\Attribute\\Source\\Type\\Price": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/msrp",
-		GoModel:    "msrp.NewAttributeSourcePrice().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"catalog/product_status": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductSourceStatus().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"catalog/product_visibility": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductSourceVisibility().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Visibility": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductSourceVisibility().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Visibility": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/catalog",
-		GoModel:    "catattr.ProductSourceVisibility().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"core/design_source_design": &AttributeModelDef{
-		ImportPath: "",
-		GoModel:    "",
-	},
-	"customer/customer_attribute_source_group": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerSourceGroup().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Group": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerSourceGroup().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"customer/customer_attribute_source_store": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerSourceStore().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Store": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerSourceStore().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"customer/customer_attribute_source_website": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerSourceWebsite().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Website": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.CustomerSourceWebsite().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"customer/entity_address_attribute_source_country": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.AddressSourceCountry().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Source\\Country": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.AddressSourceCountry().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"customer/entity_address_attribute_source_region": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.AddressSourceRegion().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Source\\Region": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.AddressSourceRegion().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"eav/entity_attribute_source_boolean": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.AttributeSourceBoolean().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Eav\\Model\\Entity\\Attribute\\Source\\Boolean": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.AttributeSourceBoolean().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"eav/entity_attribute_source_table": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.AttributeSourceTable().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Eav\\Model\\Entity\\Attribute\\Source\\Table": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/eav",
-		GoModel:    "eav.AttributeSourceTable().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"tax/class_source_product": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/tax",
-		GoModel:    "tax.AttributeSourceTaxClassProduct().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Tax\\Model\\TaxClass\\Source\\Product": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/tax",
-		GoModel:    "tax.AttributeSourceTaxClassProduct().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Tax\\Model\\TaxClass\\Source\\Customer": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/tax",
-		GoModel:    "tax.AttributeSourceTaxClassCustomer().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Theme\\Model\\Theme\\Source\\Theme": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/theme",
-		GoModel:    "",
-	},
-	"customer/attribute_data_postcode": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.AddressDataPostcode().Config(eav.AttributeDataIdx({{.AttributeIndex}}))",
-	},
-	"Magento\\Customer\\Model\\Attribute\\Data\\Postcode": &AttributeModelDef{
-		ImportPath: "github.com/corestoreio/csfw/customer/custattr",
-		GoModel:    "custattr.AddressDataPostcode().Config(eav.AttributeDataIdx({{.AttributeIndex}}))",
-	},
+	"catalog/product_attribute_frontend_image":                                        NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductFrontendImage().Config(eav.AttributeFrontendIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Frontend\\Image":                    NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductFrontendImage().Config(eav.AttributeFrontendIdx({{.AttributeIndex}}))"),
+	"eav/entity_attribute_frontend_datetime":                                          NewAMD("github.com/corestoreio/csfw/eav.AttributeFrontendDatetime().Config(eav.AttributeFrontendIdx({{.AttributeIndex}}))"),
+	"Magento\\Eav\\Model\\Entity\\Attribute\\Frontend\\Datetime":                      NewAMD("github.com/corestoreio/csfw/eav.AttributeFrontendDatetime().Config(eav.AttributeFrontendIdx({{.AttributeIndex}}))"),
+	"catalog/attribute_backend_customlayoutupdate":                                    NewAMD(""),
+	"Magento\\Catalog\\Model\\Attribute\\Backend\\Customlayoutupdate":                 NewAMD(""),
+	"catalog/category_attribute_backend_image":                                        NewAMD("github.com/corestoreio/csfw/catalog/catattr.CategoryBackendImage().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Category\\Attribute\\Backend\\Image":                    NewAMD("github.com/corestoreio/csfw/catalog/catattr.CategoryBackendImage().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"catalog/category_attribute_backend_sortby":                                       NewAMD("github.com/corestoreio/csfw/catalog/catattr.CategoryBackendSortby().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Category\\Attribute\\Backend\\Sortby":                   NewAMD("github.com/corestoreio/csfw/catalog/catattr.CategoryBackendSortby().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"catalog/category_attribute_backend_urlkey":                                       NewAMD(""),
+	"catalog/product_attribute_backend_boolean":                                       NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendBoolean().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Boolean":                   NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendBoolean().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Category":                  NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendCategory().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"catalog/product_attribute_backend_groupprice":                                    NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendGroupPrice().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\GroupPrice":                NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendGroupPrice().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"catalog/product_attribute_backend_media":                                         NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendMedia().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Media":                     NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendMedia().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"catalog/product_attribute_backend_msrp":                                          NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendPrice().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"catalog/product_attribute_backend_price":                                         NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendPrice().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Price":                     NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendPrice().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"catalog/product_attribute_backend_recurring":                                     NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendRecurring().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Recurring":                 NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendRecurring().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"catalog/product_attribute_backend_sku":                                           NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendSku().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Sku":                       NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendSku().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"catalog/product_attribute_backend_startdate":                                     NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendStartDate().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Startdate":                 NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendStartDate().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Stock":                     NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendStock().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"catalog/product_attribute_backend_tierprice":                                     NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendTierPrice().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Tierprice":                 NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendTierPrice().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Backend\\Weight":                    NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductBackendWeight().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"catalog/product_attribute_backend_urlkey":                                        NewAMD(""),
+	"customer/attribute_backend_data_boolean":                                         NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerBackendDataBoolean().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Customer\\Model\\Attribute\\Backend\\Data\\Boolean":                     NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerBackendDataBoolean().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"customer/customer_attribute_backend_billing":                                     NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerBackendBilling().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Billing":                 NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerBackendBilling().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"customer/customer_attribute_backend_password":                                    NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerBackendPassword().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Password":                NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerBackendPassword().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"customer/customer_attribute_backend_shipping":                                    NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerBackendShipping().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Shipping":                NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerBackendShipping().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"customer/customer_attribute_backend_store":                                       NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerBackendStore().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Store":                   NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerBackendStore().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"customer/customer_attribute_backend_website":                                     NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerBackendWebsite().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Customer\\Model\\Customer\\Attribute\\Backend\\Website":                 NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerBackendWebsite().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"customer/entity_address_attribute_backend_region":                                NewAMD("github.com/corestoreio/csfw/customer/custattr.AddressBackendRegion().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Backend\\Region":         NewAMD("github.com/corestoreio/csfw/customer/custattr.AddressBackendRegion().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"customer/entity_address_attribute_backend_street":                                NewAMD("github.com/corestoreio/csfw/customer/custattr.AddressBackendStreet().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\DefaultBackend":                 NewAMD("github.com/corestoreio/csfw/eav.AttributeBackendDefaultBackend().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"eav/entity_attribute_backend_datetime":                                           NewAMD("github.com/corestoreio/csfw/eav.AttributeBackendDatetime().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\Datetime":                       NewAMD("github.com/corestoreio/csfw/eav.AttributeBackendDatetime().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"eav/entity_attribute_backend_time_created":                                       NewAMD("github.com/corestoreio/csfw/eav.AttributeBackendTimeCreated().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\Time\\Created":                  NewAMD("github.com/corestoreio/csfw/eav.AttributeBackendTimeCreated().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"eav/entity_attribute_backend_time_updated":                                       NewAMD("github.com/corestoreio/csfw/eav.AttributeBackendTimeUpdated().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"Magento\\Eav\\Model\\Entity\\Attribute\\Backend\\Time\\Updated":                  NewAMD("github.com/corestoreio/csfw/eav.AttributeBackendTimeUpdated().Config(eav.AttributeBackendIdx({{.AttributeIndex}}))"),
+	"bundle/product_attribute_source_price_view":                                      NewAMD("github.com/corestoreio/csfw/bundle.AttributeSourcePriceView().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Bundle\\Model\\Product\\Attribute\\Source\\Price\\View":                 NewAMD("github.com/corestoreio/csfw/bundle.AttributeSourcePriceView().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\CatalogInventory\\Model\\Source\\Stock":                                 NewAMD("github.com/corestoreio/csfw/cataloginventory.AttributeSourceStock().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"catalog/category_attribute_source_layout":                                        NewAMD(""),
+	"Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Layout":                    NewAMD(""),
+	"catalog/category_attribute_source_mode":                                          NewAMD("github.com/corestoreio/csfw/catalog/catattr.CategorySourceMode().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Mode":                      NewAMD("github.com/corestoreio/csfw/catalog/catattr.CategorySourceMode().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"catalog/category_attribute_source_page":                                          NewAMD("github.com/corestoreio/csfw/catalog/catattr.CategorySourcePage().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Page":                      NewAMD("github.com/corestoreio/csfw/catalog/catattr.CategorySourcePage().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"catalog/category_attribute_source_sortby":                                        NewAMD("github.com/corestoreio/csfw/catalog/catattr.CategorySourceSortby().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Category\\Attribute\\Source\\Sortby":                    NewAMD("github.com/corestoreio/csfw/catalog/catattr.CategorySourceSortby().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"catalog/entity_product_attribute_design_options_container":                       NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductSourceDesignOptionsContainer().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Entity\\Product\\Attribute\\Design\\Options\\Container": NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductSourceDesignOptionsContainer().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"catalog/product_attribute_source_countryofmanufacture":                           NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductSourceCountryOfManufacture().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Countryofmanufacture":       NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductSourceCountryOfManufacture().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"catalog/product_attribute_source_layout":                                         NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductSourceLayout().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Layout":                     NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductSourceLayout().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Status":                     NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductSourceStatus().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"catalog/product_attribute_source_msrp_type_enabled":                              NewAMD(""),
+	"catalog/product_attribute_source_msrp_type_price":                                NewAMD("github.com/corestoreio/csfw/msrp.NewAttributeSourcePrice().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Msrp\\Model\\Product\\Attribute\\Source\\Type\\Price":                   NewAMD("github.com/corestoreio/csfw/msrp.NewAttributeSourcePrice().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"catalog/product_status":                                                          NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductSourceStatus().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"catalog/product_visibility":                                                      NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductSourceVisibility().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Visibility":                                    NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductSourceVisibility().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Catalog\\Model\\Product\\Attribute\\Source\\Visibility":                 NewAMD("github.com/corestoreio/csfw/catalog/catattr.ProductSourceVisibility().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"core/design_source_design":                                                       NewAMD(""),
+	"customer/customer_attribute_source_group":                                        NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerSourceGroup().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Group":                    NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerSourceGroup().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"customer/customer_attribute_source_store":                                        NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerSourceStore().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Store":                    NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerSourceStore().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"customer/customer_attribute_source_website":                                      NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerSourceWebsite().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Customer\\Model\\Customer\\Attribute\\Source\\Website":                  NewAMD("github.com/corestoreio/csfw/customer/custattr.CustomerSourceWebsite().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"customer/entity_address_attribute_source_country":                                NewAMD("github.com/corestoreio/csfw/customer/custattr.AddressSourceCountry().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Source\\Country":         NewAMD("github.com/corestoreio/csfw/customer/custattr.AddressSourceCountry().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"customer/entity_address_attribute_source_region":                                 NewAMD("github.com/corestoreio/csfw/customer/custattr.AddressSourceRegion().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Source\\Region":          NewAMD("github.com/corestoreio/csfw/customer/custattr.AddressSourceRegion().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"eav/entity_attribute_source_boolean":                                             NewAMD("github.com/corestoreio/csfw/eav.AttributeSourceBoolean().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Eav\\Model\\Entity\\Attribute\\Source\\Boolean":                         NewAMD("github.com/corestoreio/csfw/eav.AttributeSourceBoolean().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"eav/entity_attribute_source_table":                                               NewAMD("github.com/corestoreio/csfw/eav.AttributeSourceTable().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Eav\\Model\\Entity\\Attribute\\Source\\Table":                           NewAMD("github.com/corestoreio/csfw/eav.AttributeSourceTable().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"tax/class_source_product":                                                        NewAMD("github.com/corestoreio/csfw/tax.AttributeSourceTaxClassProduct().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Tax\\Model\\TaxClass\\Source\\Product":                                  NewAMD("github.com/corestoreio/csfw/tax.AttributeSourceTaxClassProduct().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Tax\\Model\\TaxClass\\Source\\Customer":                                 NewAMD("github.com/corestoreio/csfw/tax.AttributeSourceTaxClassCustomer().Config(eav.AttributeSourceIdx({{.AttributeIndex}}))"),
+	"Magento\\Theme\\Model\\Theme\\Source\\Theme":                                     NewAMD(""),
+	"customer/attribute_data_postcode":                                                NewAMD("github.com/corestoreio/csfw/customer/custattr.AddressDataPostcode().Config(eav.AttributeDataIdx({{.AttributeIndex}}))"),
+	"Magento\\Customer\\Model\\Attribute\\Data\\Postcode":                             NewAMD("github.com/corestoreio/csfw/customer/custattr.AddressDataPostcode().Config(eav.AttributeDataIdx({{.AttributeIndex}}))"),
 }

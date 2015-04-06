@@ -16,14 +16,13 @@ package main
 
 import (
 	"io/ioutil"
+	"path"
 	"strings"
-
 	"text/template"
 
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/tools"
 	"github.com/juju/errgo"
-	"path"
 )
 
 // materializeAttributes ...
