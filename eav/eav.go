@@ -50,7 +50,18 @@ type (
 
 	// EntityTypeAttributeModeller defines an attribute model @todo
 	EntityTypeAttributeModeller interface {
-		TBD()
+		// Creates a new attribute to the corresponding entity. @todo options?
+		// The return type must embed eav.Attributer interface and of course its custom attribute interface
+		New() interface{}
+		Get(i AttributeIndex) (interface{}, error)
+		GetByID(id int64) (interface{}, error)
+		GetByCode(code string) (interface{}, error)
+	}
+
+	// EntityAttributeCollectioner defines an attribute collection @todo
+	// it returns a slice so use type assertion.
+	EntityAttributeCollectioner interface {
+		Collection() interface{}
 	}
 
 	// EntityTypeAdditionalAttributeTabler implements methods for EAV table structures to retrieve attributes
@@ -64,10 +75,5 @@ type (
 	// EntityTypeIncrementModeller defines who to increment a number @todo
 	EntityTypeIncrementModeller interface {
 		TBD()
-	}
-
-	// EntityAttributeCollectioner defines an attribute collection @todo
-	EntityAttributeCollectioner interface {
-		AttributeCollection()
 	}
 )

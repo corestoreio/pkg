@@ -163,3 +163,77 @@ func randSeq(n int) string {
 func ReplaceTablePrefix(query string) string {
 	return strings.Replace(query, "{{tableprefix}}", TablePrefix, -1)
 }
+
+func extractSplit(s string) (path string, tp []string, hasVersion bool, err error) {
+	hasVersion = false
+
+	pp := strings.Split(s, "/")
+	if len(pp) == 1 {
+		return path, tp, hasVersion, errgo.Newf("Path '%s' contains no slashes", s)
+	}
+
+	switch pp[0] { // add more domains here
+	case "gopkg.in":
+		hasVersion = true
+		break
+	}
+	path = strings.Join(pp[:len(pp)-1], "/")
+	tp = strings.Split(pp[len(pp)-1:][0], ".")
+
+	if len(tp) == 1 {
+		return path, tp, hasVersion, errgo.Newf("Missing . in package.Type")
+	}
+	return path, tp, hasVersion, nil
+}
+
+// ExtractImportPath extracts from an extended import path with a function or type call
+// the import path.
+// github.com/corestoreio/csfw/customer.Customer() would become
+// github.com/corestoreio/csfw/customer
+func ExtractImportPath(s string) (string, error) {
+
+	if s == "" {
+		return "", nil
+	}
+	path, tp, hasVersion, err := extractSplit(s)
+	if err != nil {
+		return "", err
+	}
+
+	path = path + "/" + tp[0]
+	if hasVersion {
+		path = path + "." + strings.Join(tp[1:len(tp)-1], ".")
+	}
+
+	return path, nil
+}
+
+// ExtractFuncType extracts from an extended import path with a function or type call
+// the function or type call.
+// github.com/corestoreio/csfw/customer.Customer() would become customer.Customer()
+func ExtractFuncType(s string) (string, error) {
+	if s == "" {
+		return "", nil
+	}
+
+	_, tp, hasVersion, err := extractSplit(s)
+	if err != nil {
+		return "", err
+	}
+
+	if hasVersion {
+		return strings.Join(append(tp[:1], tp[len(tp)-1:]...), "."), nil // cut the version out
+	}
+	return strings.Join(tp, "."), nil
+}
+
+// ParseString text/template for a string. Fails on error.
+func ParseString(tpl string, data interface{}) string {
+	codeTpl := template.Must(template.New("tpl_code").Parse(tpl))
+	var buf = &bytes.Buffer{}
+	err := codeTpl.Execute(buf, data)
+	if err != nil {
+		LogFatal(errgo.Mask(err))
+	}
+	return buf.String()
+}

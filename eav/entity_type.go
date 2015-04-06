@@ -53,6 +53,16 @@ func GetEntityTypeCollection() CSEntityTypeSlice {
 	return csEntityTypeCollection
 }
 
+// GetEntityTypeByID returns an entity type by its id
+func GetEntityTypeByID(id int64) (*CSEntityType, error) {
+	return csEntityTypeCollection.GetByID(id)
+}
+
+// GetEntityTypeByCode returns an entity type by its code
+func GetEntityTypeByCode(code string) (*CSEntityType, error) {
+	return csEntityTypeCollection.GetByCode(code)
+}
+
 // SetEntityTypeCollection sets the collection. Panics if slice is empty.
 func SetEntityTypeCollection(sc CSEntityTypeSlice) {
 	if len(sc) == 0 {

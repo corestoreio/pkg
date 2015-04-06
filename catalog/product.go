@@ -28,15 +28,10 @@ type (
 var (
 	_ eav.EntityTypeModeller                  = (*ProductModel)(nil)
 	_ eav.EntityTypeTabler                    = (*ProductModel)(nil)
-	_ eav.EntityTypeAttributeModeller         = (*ProductModel)(nil)
 	_ eav.EntityTypeAdditionalAttributeTabler = (*ProductModel)(nil)
-	_ eav.EntityAttributeCollectioner         = (*ProductModel)(nil)
 )
 
 func (c *ProductModel) TBD() {
-
-}
-func (c *ProductModel) AttributeCollection() {
 
 }
 

@@ -44,8 +44,11 @@ var (
 )
 
 type (
-	ValueSuffixes      []string
-	TypeCodeValueTable map[string]map[string]string // 1. key entity_type_code 2. key table name => value ValueSuffix
+	// ValueSuffixes contains the suffixes for an entity type table, e.g. datetime, decimal, int ... then a
+	// table value name would be catalog_product_entity_datetime, catalog_product_entity_decimal, ...
+	ValueSuffixes []string
+	// TypeCodeValueTable 2 dimensional map. 1. key entity_type_code 2. key table name => value ValueSuffix
+	TypeCodeValueTable map[string]map[string]string
 )
 
 func (vs ValueSuffixes) contains(suffix string) bool {
@@ -57,10 +60,12 @@ func (vs ValueSuffixes) contains(suffix string) bool {
 	return false
 }
 
+// String joins the slice of strings separated by a comma. Only for debug.
 func (vs ValueSuffixes) String() string {
 	return strings.Join(vs, ", ")
 }
 
+// Empty checks if the map is empty or has an empty "" entry.
 func (m TypeCodeValueTable) Empty() bool {
 	_, ok := m[""]
 	return len(m) < 1 || ok
@@ -144,6 +149,8 @@ func GetEavValueTables(dbrConn *dbr.Connection, entityTypeCodes []string) (TypeC
 }
 
 type (
+	// Columns contains a slice to pointer column types. A column has the fields: Field, Type, Null, Key, Default and
+	// Extra of type sql.NullString and GoType, GoName of type string.
 	Columns []*column
 	// column contains info about one database column retrieve from SHOW COLUMNS FROM tbl`
 	column struct {
@@ -238,8 +245,9 @@ func (cc Columns) getByName(name string) *column {
 	return nil
 }
 
-// MapSQLToGoDBRType takes a slice of Columns an sets the fields GoType and GoName to the correct value
-// to create a Go struct. These generated structs are mainly used in a result from a SQL query
+// MapSQLToGoDBRType takes a slice of Columns and sets the fields GoType and GoName to the correct value
+// to create a Go struct. These generated structs are mainly used in a result from a SQL query. The field GoType
+// will contain dbr.Null* types.
 func (cc Columns) MapSQLToGoDBRType() error {
 	for _, col := range cc {
 		col.updateGoPrimitive(true)
@@ -260,6 +268,8 @@ func (cc Columns) MapSQLToGoType(ifm map[string]string) error {
 	return nil
 }
 
+// GetFieldNames returns from a Columns slice the column names. If pkOnly is true then only the
+// primary key columns will be returned.
 func (cc Columns) GetFieldNames(pkOnly bool) []string {
 	ret := make([]string, 0, len(cc))
 	for _, col := range cc {
@@ -480,13 +490,13 @@ func validImportPath(ad *AttributeModelDef, ip []string, targetPkg string) bool 
 // int/Float values won't be touched. Bools or IntBools will be converted to true/false. Strings will be quoted.
 // And if there is an entry in the AttributeModelMap then the Go code from the map will be used.
 // Returns a slice containing all the import paths. Import paths which are equal to pkg will be filtered out.
-func PrepareForTemplate(cols Columns, rows []StringEntities, mageModelMap AttributeModelDefMap, targetPkg string) []string {
+func PrepareForTemplate(cols Columns, rows []StringEntities, amm AttributeModelDefMap, targetPkg string) []string {
 	ip := make([]string, 0, 10) // import_path container
 	for _, row := range rows {
 		for colName, colValue := range row {
 			var c *column = cols.getByName(colName)
 
-			goType, hasModel := mageModelMap[colValue]
+			goType, hasModel := amm[colValue]
 			_, isAllowedInterfaceChange := EavAttributeColumnNameToInterface[colName]
 			switch true {
 			case hasModel:

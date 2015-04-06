@@ -12,5 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package cataloginventory handles product inventory and indexing
-package cataloginventory
+/*
+package bundle handles the creation of catalog product bundles.
+*/
+package bundle

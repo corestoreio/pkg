@@ -43,7 +43,6 @@ var _ {{ .AttrPkg }}.Attributer = (*{{ .Name | prepareVar | toLowerFirst }})(nil
 
 `
 
-// here iota must start with 0 because constants are used as slice index.
 const tplTypeDefinitionFile = tools.Copyright + `
 package {{ .PackageName }}
     import (
@@ -55,7 +54,7 @@ package {{ .PackageName }}
 {{ .TypeDefinition }}
 
 const (
-    {{ range $k, $row := .Attributes }}{{ $.Name | prepareVar }}{{ index $row "attribute_code" | prepareVar }} {{ if eq $k 0 }} eav.AttributeIndex = iota {{ end }}
+    {{ range $k, $row := .Attributes }}{{ $.Name | prepareVar }}{{ index $row "attribute_code" | prepareVar }} {{ if eq $k 0 }} eav.AttributeIndex = iota + 1{{ end }}
     {{ end }}
     {{ $.Name | prepareVar }}ZZZ
 )
@@ -85,7 +84,7 @@ func (si{{ $.Name | prepareVar }}) ByCode(code string) (eav.AttributeIndex, erro
 var _ eav.AttributeGetter = (*si{{ $.Name | prepareVar }})(nil)
 
 func init(){
-    {{ .AttrPkg }}.{{ .FuncGetter }}(si{{ $.Name | prepareVar }}{})
+    {{ .AttrPkg }}.{{ .FuncGetter }}(&si{{ $.Name | prepareVar }}{})
     {{ .AttrPkg }}.{{ .FuncCollection }}({{ .AttrPkg }}.AttributeSlice{
         {{ range $row := .Attributes }}
         {{ $const := sprintf "%s%s" (prepareVar $.Name) (prepareVar (index $row "attribute_code")) }}

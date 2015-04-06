@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// package customer handles a customer entity with its addresses.
 package customer
 
 import (
@@ -28,32 +29,16 @@ type (
 	CustomerModel struct {
 		// TBD
 	}
-
-	AttributeModel struct {
-	}
 )
 
 var (
 	_ eav.EntityTypeModeller                  = (*CustomerModel)(nil)
 	_ eav.EntityTypeTabler                    = (*CustomerModel)(nil)
-	_ eav.EntityTypeAttributeModeller         = (*CustomerModel)(nil)
 	_ eav.EntityTypeAdditionalAttributeTabler = (*CustomerModel)(nil)
-	_ eav.EntityAttributeCollectioner         = (*CustomerModel)(nil)
 	_ eav.EntityTypeIncrementModeller         = (*CustomerModel)(nil)
 )
 
-func Attribute() *AttributeModel {
-	return &AttributeModel{}
-}
-
-func (c AttributeModel) TBD() {
-
-}
-
 func (c *CustomerModel) TBD() {
-
-}
-func (c *CustomerModel) AttributeCollection() {
 
 }
 

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package custattr_test
+package testgen
 
 import (
 	"testing"
@@ -27,15 +27,29 @@ func init() {
 }
 
 func TestAddressAttributeSource(t *testing.T) {
-	attr, err := custattr.GetAddressByCode("country_id")
+	var err error
+	cae, err := eav.GetEntityTypeByCode("customer_address")
 	if err != nil {
 		t.Error(err)
-	} else {
+		return
+	}
 
-		assert.Equal(
-			t,
-			eav.AttributeSourceOptions{eav.AttributeSourceOption{Value: "AU", Label: "Straya"}, eav.AttributeSourceOption{Value: "NZ", Label: "Kiwi land"}, eav.AttributeSourceOption{Value: "DE", Label: "Autobahn"}, eav.AttributeSourceOption{Value: "SE", Label: "Smørrebrød"}},
-			attr.SourceModel().GetAllOptions(),
-		)
+	countryID, err := cae.AttributeModel.GetByCode("country_ids")
+	if err != nil {
+		t.Error(err)
+		assert.Error(t, err)
+	} else {
+		var ok bool
+		if countryID, ok = countryID.(custattr.Attributer); !ok {
+			t.Error("failed to convert countryID into custattr.Attributer")
+		}
+
+		t.Logf("\n%#v\n", countryID)
+		//		caac.
+		//			assert.Equal(
+		//			t,
+		//			eav.AttributeSourceOptions{eav.AttributeSourceOption{Value: "AU", Label: "Straya"}, eav.AttributeSourceOption{Value: "NZ", Label: "Kiwi land"}, eav.AttributeSourceOption{Value: "DE", Label: "Autobahn"}, eav.AttributeSourceOption{Value: "SE", Label: "Smørrebrød"}},
+		//			attr.SourceModel().GetAllOptions(),
+		//		)
 	}
 }

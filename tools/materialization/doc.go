@@ -12,31 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store_test
+/*
+package main materializes attributes, sets, groups, entity types, stores, websites, etc.
 
-import (
-	"testing"
-
-	"github.com/corestoreio/csfw/store"
-	"github.com/stretchr/testify/assert"
-)
-
-func TestGetStores(t *testing.T) {
-	s1 := store.GetStores()
-	assert.True(t, len(s1) > 1, "There should be at least two stores in the slice")
-	//assert.Equal(t, storeCollection, s1)
-
-	s2 := store.GetStores()
-
-	for i, store := range s2 {
-		t.Logf("\n%d : %#v\n", i, store)
-	}
-
-	//assert.Len(t, s2, len(storeCollection)-1)
-}
-
-func TestGetStoreByID(t *testing.T) {
-	s, err := store.GetStoreByCode("german")
-	assert.NoError(t, err)
-	assert.Equal(t, "german", s.Code.String)
-}
+All data can be materializes which will be changed only during development or in rare cases.
+Compiled code is much faster than a database access.
+*/
+package main

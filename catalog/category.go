@@ -28,15 +28,10 @@ type (
 var (
 	_ eav.EntityTypeModeller                  = (*CategoryModel)(nil)
 	_ eav.EntityTypeTabler                    = (*CategoryModel)(nil)
-	_ eav.EntityTypeAttributeModeller         = (*CategoryModel)(nil)
 	_ eav.EntityTypeAdditionalAttributeTabler = (*CategoryModel)(nil)
-	_ eav.EntityAttributeCollectioner         = (*CategoryModel)(nil)
 )
 
 func (c *CategoryModel) TBD() {
-
-}
-func (c *CategoryModel) AttributeCollection() {
 
 }
 

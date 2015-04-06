@@ -12,5 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package cataloginventory handles product inventory and indexing
-package cataloginventory
+/*
+Package testgen is not testing your genes/DNA ;-). testgen is used to provide testing for the generated
+code which lives in your packages.
+
+The tests for the generated code should be written in a compatible way to allow testing with other
+databases ...
+
+The generated code consists of materialized entity types, attributes and stores including
+store group and websites. More data will be added.
+
+*/
+package testgen

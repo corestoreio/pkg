@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package csMake replaces the Makefile. csMake is only used via go:generate.
+// Package csMake replaces the Makefile and is only used via go:generate.
 package main
 
 import (

@@ -29,5 +29,7 @@ type (
 // NewAttributeSourcePrice @todo
 // @see magento2/site/app/code/Magento/Msrp/Model/Product/Attribute/Source/Type/Price.php
 func NewAttributeSourcePrice() *todoASPrice {
-	return &todoASPrice{}
+	return &todoASPrice{
+		AttributeSource: eav.NewAttributeSource(),
+	}
 }

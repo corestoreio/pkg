@@ -12,5 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package cataloginventory handles product inventory and indexing
-package cataloginventory
+/*
+package eav contains the logic for the Entity-Attribute-Value model based on the Magento database schema.
+*/
+package eav

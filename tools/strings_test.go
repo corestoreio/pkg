@@ -14,6 +14,8 @@
 
 package tools
 
+// global variables in benchmark tests are used to disable compiler optimizations
+
 import (
 	"errors"
 	"log"
@@ -45,7 +47,6 @@ func TestCamelize(t *testing.T) {
 	}
 }
 
-// LogFatal logs an error as fatal with printed location and exists the program.
 func TestLogFatal(t *testing.T) {
 	defer func() { logFatalln = log.Fatalln }()
 	var err error
@@ -214,5 +215,108 @@ func BenchmarkPrepareVar(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		benchPrepareVar = prepareVar("catalog")(`catalog_product_attribute_collection `)
+	}
+}
+
+func TestExtractPathType(t *testing.T) {
+	tests := []struct {
+		have   string
+		wantIP string // IP import path
+		wantFT string // FT FuncType
+		isErr  bool
+	}{
+		{
+			have:   "",
+			wantIP: "",
+			wantFT: "",
+			isErr:  false,
+		},
+		{
+			have:   "gopkg.in_corestoreio)catalog.v3.Product()",
+			wantIP: "",
+			wantFT: "",
+			isErr:  true,
+		},
+		{
+			have:   "gopkg.in/corestoreio/catalog.v3.Product()",
+			wantIP: "gopkg.in/corestoreio/catalog.v3",
+			wantFT: "catalog.Product()",
+			isErr:  false,
+		},
+		{
+			have:   "gopkg.in/corestoreio/catalogv3Product()",
+			wantIP: "",
+			wantFT: "",
+			isErr:  true,
+		},
+		{
+			have:   "gopkg.in/yaml.v2.Unmarshal()",
+			wantIP: "gopkg.in/yaml.v2",
+			wantFT: "yaml.Unmarshal()",
+			isErr:  false,
+		},
+		{
+			have:   "gopkg.in/yaml.v2.1.Unmarshal()",
+			wantIP: "gopkg.in/yaml.v2.1",
+			wantFT: "yaml.Unmarshal()",
+			isErr:  false,
+		},
+		{
+			have:   "gopkg.in/yaml.v2.1.30.Unmarshal()",
+			wantIP: "gopkg.in/yaml.v2.1.30",
+			wantFT: "yaml.Unmarshal()",
+			isErr:  false,
+		},
+		{
+			have:   "github.com/corestoreio/csfw/catalog.Product()",
+			wantIP: "github.com/corestoreio/csfw/catalog",
+			wantFT: "catalog.Product()",
+			isErr:  false,
+		},
+		{
+			have:   "github.com/corestoreio/csfw/catalog/catattr.NewHandler({{.EntityTypeID}})",
+			wantIP: "github.com/corestoreio/csfw/catalog/catattr",
+			wantFT: "catattr.NewHandler({{.EntityTypeID}})",
+			isErr:  false,
+		},
+		{
+			have:   "github.com/corestoreio.ARandomType",
+			wantIP: "github.com/corestoreio",
+			wantFT: "corestoreio.ARandomType",
+			isErr:  false,
+		},
+	}
+	for _, test := range tests {
+		ip, errIP := ExtractImportPath(test.have)
+		ft, errFT := ExtractFuncType(test.have)
+		if test.isErr {
+			assert.Error(t, errIP)
+			assert.Error(t, errFT)
+		} else {
+			assert.NoError(t, errIP)
+			assert.NoError(t, errFT)
+		}
+		assert.Equal(t, test.wantIP, ip)
+		assert.Equal(t, test.wantFT, ft)
+	}
+}
+
+var benchExtractImportPath string
+
+// BenchmarkExtractImportPath	 1000000	      1133 ns/op	     176 B/op	       6 allocs/op
+func BenchmarkExtractImportPath(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchExtractImportPath, _ = ExtractImportPath("gopkg.in/yaml.v2.1.30.Unmarshal()")
+	}
+}
+
+var benchExtractFuncType string
+
+// BenchmarkExtractFuncType	 2000000	       881 ns/op	     144 B/op	       4 allocs/op
+func BenchmarkExtractFuncType(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchExtractFuncType, _ = ExtractFuncType("gopkg.in/yaml.v2.1.30.Unmarshal()")
 	}
 }

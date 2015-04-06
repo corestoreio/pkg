@@ -45,41 +45,50 @@ type (
 		ScopeDefaultValue() string
 		ScopeMultilineCount() int64
 	}
+	// internal wrapper for attribute collection c, getter g and entity type id.
+	container struct {
+		entityTyeID int64
+		c           AttributeSlice
+		g           eav.AttributeGetter
+	}
 )
 
 var (
-	addressCollection  AttributeSlice
-	addressGetter      eav.AttributeGetter
-	customerCollection AttributeSlice
-	customerGetter     eav.AttributeGetter
+	// aa address attribute
+	aa = &container{}
+	// ca customer attribute
+	ca = &container{}
+	// verify if interfaces has been implemented
+	_ eav.EntityTypeAttributeModeller = (*container)(nil)
+	_ eav.EntityAttributeCollectioner = (*container)(nil)
 )
 
-func SetAddressCollection(ac AttributeSlice) {
-	if len(ac) == 0 {
+func SetAddressCollection(s AttributeSlice) {
+	if len(s) == 0 {
 		panic("AttributeSlice is empty")
 	}
-	addressCollection = ac
-}
-
-func SetCustomerCollection(ac AttributeSlice) {
-	if len(ac) == 0 {
-		panic("AttributeSlice is empty")
-	}
-	customerCollection = ac
+	aa.c = s
 }
 
 func SetAddressGetter(g eav.AttributeGetter) {
 	if g == nil {
 		panic("AttributeGetter cannot be nil")
 	}
-	addressGetter = g
+	aa.g = g
+}
+
+func SetCustomerCollection(s AttributeSlice) {
+	if len(s) == 0 {
+		panic("AttributeSlice is empty")
+	}
+	ca.c = s
 }
 
 func SetCustomerGetter(g eav.AttributeGetter) {
 	if g == nil {
 		panic("AttributeGetter cannot be nil")
 	}
-	customerGetter = g
+	ca.g = g
 }
 
 func (s AttributeSlice) byID(g eav.AttributeGetter, id int64) (Attributer, error) {
@@ -104,52 +113,42 @@ func (s AttributeSlice) byCode(g eav.AttributeGetter, code string) (Attributer, 
 	return s[i], nil
 }
 
-// GetAddress uses an AttributeIndex to return an attribute or an error.
-// One should not modify the attribute object.
-func GetAddress(i eav.AttributeIndex) (Attributer, error) {
-	if int(i) < len(addressCollection) {
-		return addressCollection[i], nil
+func Customer(i int64) *container {
+	ca.entityTyeID = i
+	return ca
+}
+
+func Address(i int64) *container {
+	aa.entityTyeID = i
+	return aa
+}
+
+// New creates a new attribute and returns interface custattr.Attributer
+func (h *container) New() interface{} {
+	return nil
+}
+
+// Get uses an AttributeIndex to return an attribute or an error.
+// Use type conversion to convert to Attributer.
+func (h *container) Get(i eav.AttributeIndex) (interface{}, error) {
+	if int(i) < len(h.c) {
+		return h.c[i], nil
 	}
 	return nil, eav.ErrAttributeNotFound
 }
 
-// GetCustomer uses an AttributeIndex to return an attribute or an error.
-// One should not modify the attribute object.
-func GetCustomer(i eav.AttributeIndex) (Attributer, error) {
-	if int(i) < len(customerCollection) {
-		return customerCollection[i], nil
-	}
-	return nil, eav.ErrAttributeNotFound
+// GetByID returns an address attribute by its id. Use type conversion to convert to Attributer.
+func (h *container) GetByID(id int64) (interface{}, error) {
+	return h.c.byID(h.g, id)
 }
 
-// GetAdressByID returns an address attribute by its id
-func GetAdressByID(id int64) (Attributer, error) {
-	return addressCollection.byID(addressGetter, id)
+// GetByCode returns an address attribute by its code. Use type conversion to convert to Attributer.
+func (h *container) GetByCode(code string) (interface{}, error) {
+	return h.c.byCode(h.g, code)
 }
 
-// GetAddressByCode returns an address attribute by its code
-func GetAddressByCode(code string) (Attributer, error) {
-	return addressCollection.byCode(addressGetter, code)
-}
-
-// GetCustomerByID returns a customer attribute by its id
-func GetCustomerByID(id int64) (Attributer, error) {
-	return customerCollection.byID(customerGetter, id)
-}
-
-// GetCustomerByCode returns a customer attribute by its code
-func GetCustomerByCode(code string) (Attributer, error) {
-	return customerCollection.byCode(customerGetter, code)
-}
-
-// GetAddresses returns a copy of the main address attribute slice.
-// One should not modify the slice and its content.
-func GetAddresses() AttributeSlice {
-	return addressCollection
-}
-
-// GetCustomers returns a copy of the main customer attribute slice.
-// One should not modify the slice and its content.
-func GetCustomers() AttributeSlice {
-	return customerCollection
+// Collection returns the full attribute collection AttributeSlice.
+// You must use type hinting for custattr.AttributeSlice.
+func (h *container) Collection() interface{} {
+	return h.c
 }

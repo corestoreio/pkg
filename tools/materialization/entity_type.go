@@ -17,6 +17,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"text/template"
 
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -31,7 +32,7 @@ func materializeEntityType(ctx *context) {
 	defer ctx.wg.Done()
 	type dataContainer struct {
 		ETypeData     eav.TableEntityTypeSlice
-		EntityTypeMap tools.EntityTypeMap
+		ImportPaths   []string
 		Package, Tick string
 	}
 
@@ -39,13 +40,17 @@ func materializeEntityType(ctx *context) {
 	tools.LogFatal(err)
 
 	tplData := &dataContainer{
-		ETypeData:     etData,
-		EntityTypeMap: tools.ConfigEntityType,
-		Package:       tools.ConfigMaterializationEntityType.Package,
-		Tick:          "`",
+		ETypeData:   etData,
+		ImportPaths: getImportPaths(),
+		Package:     tools.ConfigMaterializationEntityType.Package,
+		Tick:        "`",
 	}
 
-	formatted, err := tools.GenerateCode(tools.ConfigMaterializationEntityType.Package, tplEav, tplData, nil)
+	addFM := template.FuncMap{
+		"extractFuncType": tools.ExtractFuncType,
+	}
+
+	formatted, err := tools.GenerateCode(tools.ConfigMaterializationEntityType.Package, tplEav, tplData, addFM)
 	if err != nil {
 		fmt.Printf("\n%s\n", formatted)
 		tools.LogFatal(err)
@@ -77,13 +82,48 @@ func getEntityTypeData(dbrSess *dbr.Session) (etc eav.TableEntityTypeSlice, err 
 		// map the fields from the config struct to the data retrieved from the database.
 		et, err := etc.GetByCode(typeCode)
 		tools.LogFatal(err)
-		et.EntityModel = mapData.EntityModel
-		et.AttributeModel.String = mapData.AttributeModel
-		et.EntityTable.String = mapData.EntityTable
-		et.IncrementModel.String = mapData.IncrementModel
-		et.AdditionalAttributeTable.String = mapData.AdditionalAttributeTable
-		et.EntityAttributeCollection.String = mapData.EntityAttributeCollection
+		et.EntityModel = tools.ParseString(mapData.EntityModel, et)
+		et.AttributeModel.String = tools.ParseString(mapData.AttributeModel, et)
+		et.EntityTable.String = tools.ParseString(mapData.EntityTable, et)
+		et.IncrementModel.String = tools.ParseString(mapData.IncrementModel, et)
+		et.AdditionalAttributeTable.String = tools.ParseString(mapData.AdditionalAttributeTable, et)
+		et.EntityAttributeCollection.String = tools.ParseString(mapData.EntityAttributeCollection, et)
 	}
 
 	return etc, nil
+}
+
+func getImportPaths() []string {
+	var paths []string
+
+	var getPath = func(s string) string {
+		ps, err := tools.ExtractImportPath(s)
+		tools.LogFatal(err)
+		return ps
+	}
+
+	for _, et := range tools.ConfigEntityType {
+		paths = append(paths, getPath(et.EntityModel))
+		paths = append(paths, getPath(et.AttributeModel))
+		paths = append(paths, getPath(et.EntityTable))
+		paths = append(paths, getPath(et.IncrementModel))
+		paths = append(paths, getPath(et.AdditionalAttributeTable))
+		paths = append(paths, getPath(et.EntityAttributeCollection))
+	}
+
+	unique := make([]string, 0, len(paths))
+	for _, p := range paths {
+		found := false
+		for _, u := range unique {
+			if u == p {
+				found = true
+				break
+			}
+		}
+		if false == found && p != "" {
+			unique = append(unique, p)
+		}
+	}
+
+	return unique
 }

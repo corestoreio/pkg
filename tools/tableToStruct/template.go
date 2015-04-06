@@ -17,8 +17,10 @@ package main
 import "github.com/corestoreio/csfw/tools"
 
 const tplCode = tools.Copyright + `
-// Package {{ .Package }} is auto generated via tableToStruct
 package {{ .Package }}
+
+// Package {{ .Package }} is auto generated via tableToStruct
+
 import (
 	"time"
     {{ if not .TypeCodeValueTables.Empty }}

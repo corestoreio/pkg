@@ -29,10 +29,10 @@ func TestGetTable(t *testing.T) {
 		ti    csdb.Index
 		isErr bool
 	}{
-		{ti: store.TableGroup, isErr: false},
-		{ti: store.TableStore, isErr: false},
-		{ti: store.TableWebsite, isErr: false},
-		{ti: store.TableZMax, isErr: true},
+		{ti: store.TableIndexGroup, isErr: false},
+		{ti: store.TableIndexStore, isErr: false},
+		{ti: store.TableIndexWebsite, isErr: false},
+		{ti: store.TableIndexZZZ, isErr: true},
 	}
 
 	for _, test := range tests {

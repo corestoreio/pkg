@@ -67,6 +67,7 @@ type (
 	// 40 functions which is of course not idiomatic but for generated code it provides the best
 	// flexibility to extend with other custom structs.
 	// @see magento2/site/app/code/Magento/Eav/Model/Entity/Attribute/AbstractAttribute.php
+	// @see magento2/site/app/code/Magento/Eav/Api/Data/AttributeInterface.php
 	Attributer interface {
 		// IsStatic checks if an attribute is a static one
 		IsStatic() bool

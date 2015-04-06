@@ -51,41 +51,50 @@ type (
 		IsUsedForPromoRules() bool
 		SearchWeight() int64
 	}
+	// internal wrapper for attribute collection c, getter g and entity type id.
+	container struct {
+		entityTyeID int64
+		c           AttributeSlice
+		g           eav.AttributeGetter
+	}
 )
 
 var (
-	categoryCollection AttributeSlice
-	categoryGetter     eav.AttributeGetter
-	productCollection  AttributeSlice
-	productGetter      eav.AttributeGetter
+	// ca category attribute
+	ca = &container{}
+	// pa product attribute
+	pa = &container{}
+	// verify if interfaces has been implemented
+	_ eav.EntityTypeAttributeModeller = (*container)(nil)
+	_ eav.EntityAttributeCollectioner = (*container)(nil)
 )
 
-func SetCategoryCollection(ac AttributeSlice) {
-	if len(ac) == 0 {
+func SetCategoryCollection(s AttributeSlice) {
+	if len(s) == 0 {
 		panic("AttributeSlice is empty")
 	}
-	categoryCollection = ac
-}
-
-func SetProductCollection(ac AttributeSlice) {
-	if len(ac) == 0 {
-		panic("AttributeSlice is empty")
-	}
-	productCollection = ac
+	ca.c = s
 }
 
 func SetCategoryGetter(g eav.AttributeGetter) {
 	if g == nil {
 		panic("AttributeGetter cannot be nil")
 	}
-	categoryGetter = g
+	ca.g = g
+}
+
+func SetProductCollection(s AttributeSlice) {
+	if len(s) == 0 {
+		panic("AttributeSlice is empty")
+	}
+	pa.c = s
 }
 
 func SetProductGetter(g eav.AttributeGetter) {
 	if g == nil {
 		panic("AttributeGetter cannot be nil")
 	}
-	productGetter = g
+	pa.g = g
 }
 
 func (s AttributeSlice) byID(g eav.AttributeGetter, id int64) (Attributer, error) {
@@ -110,52 +119,44 @@ func (s AttributeSlice) byCode(g eav.AttributeGetter, code string) (Attributer, 
 	return s[i], nil
 }
 
-// GetCategory uses an AttributeIndex to return an attribute or an error.
-// One should not modify the attribute object.
-func GetCategory(i eav.AttributeIndex) (Attributer, error) {
-	if int(i) < len(categoryCollection) {
-		return categoryCollection[i], nil
+func Product(i int64) *container {
+	pa.entityTyeID = i
+	return pa
+}
+
+func Category(i int64) *container {
+	ca.entityTyeID = i
+	return ca
+}
+
+// New creates a new attribute and returns interface custattr.Attributer
+func (h *container) New() interface{} {
+	return nil
+}
+
+// Get uses an AttributeIndex to return an attribute or an error.
+// Use type conversion to convert to Attributer.
+func (h *container) Get(i eav.AttributeIndex) (interface{}, error) {
+	if int(i) < len(h.c) {
+		return h.c[i], nil
 	}
 	return nil, eav.ErrAttributeNotFound
 }
 
-// GetProduct uses an AttributeIndex to return an attribute or an error.
-// One should not modify the attribute object.
-func GetProduct(i eav.AttributeIndex) (Attributer, error) {
-	if int(i) < len(productCollection) {
-		return productCollection[i], nil
-	}
-	return nil, eav.ErrAttributeNotFound
+// GetByID returns an address attribute by its id
+// Use type conversion to convert to Attributer.
+func (h *container) GetByID(id int64) (interface{}, error) {
+	return h.c.byID(h.g, id)
 }
 
-// GetCategoryByID returns an category attribute by its id
-func GetCategoryByID(id int64) (Attributer, error) {
-	return categoryCollection.byID(categoryGetter, id)
+// GetByCode returns an address attribute by its code
+// Use type conversion to convert to Attributer.
+func (h *container) GetByCode(code string) (interface{}, error) {
+	return h.c.byCode(h.g, code)
 }
 
-// GetCategoryByCode returns an category attribute by its code
-func GetCategoryByCode(code string) (Attributer, error) {
-	return categoryCollection.byCode(categoryGetter, code)
-}
-
-// GetProductByID returns a product attribute by its id
-func GetProductByID(id int64) (Attributer, error) {
-	return productCollection.byID(productGetter, id)
-}
-
-// GetProductByCode returns a product attribute by its code
-func GetProductByCode(code string) (Attributer, error) {
-	return productCollection.byCode(productGetter, code)
-}
-
-// GetCategories returns a copy of the main category attribute slice.
-// One should not modify the slice and its content.
-func GetCategories() AttributeSlice {
-	return categoryCollection
-}
-
-// GetProducts returns a copy of the main product attribute slice.
-// One should not modify the slice and its content.
-func GetProducts() AttributeSlice {
-	return productCollection
+// Collection returns the full attribute collection AttributeSlice.
+// You must use type hinting for custattr.AttributeSlice.
+func (h *container) Collection() interface{} {
+	return h.c
 }

@@ -23,33 +23,16 @@ type (
 	AddressModel struct {
 		// TBD
 	}
-
-	AddressAttributeModel struct {
-	}
 )
 
 var (
 	_ eav.EntityTypeModeller                  = (*AddressModel)(nil)
 	_ eav.EntityTypeTabler                    = (*AddressModel)(nil)
-	_ eav.EntityTypeAttributeModeller         = (*AddressModel)(nil)
 	_ eav.EntityTypeAdditionalAttributeTabler = (*AddressModel)(nil)
-	_ eav.EntityAttributeCollectioner         = (*AddressModel)(nil)
 	_ eav.EntityTypeIncrementModeller         = (*AddressModel)(nil)
 )
 
-func AddressAttribute() *AddressAttributeModel {
-	return &AddressAttributeModel{}
-}
-
-func (c AddressAttributeModel) TBD() {
-
-}
-
 func (c *AddressModel) TBD() {
-
-}
-
-func (c *AddressModel) AttributeCollection() {
 
 }
 

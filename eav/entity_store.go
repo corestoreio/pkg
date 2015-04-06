@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Used for e.g. sales, invoice, creditmemo, shipment or customer order number increment.
 package eav
 
 import (

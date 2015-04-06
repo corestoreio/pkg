@@ -77,7 +77,7 @@ func TestTableStructure(t *testing.T) {
 	selectBuilder, err := sValid.Select(dbrSess)
 	assert.NoError(t, err)
 	selectString, _ := selectBuilder.ToSql()
-	assert.Equal(t, "SELECT `catalog_category_anc_categs_index_idx`.`category_id`, `catalog_category_anc_categs_index_idx`.`path` FROM catalog_category_anc_categs_index_idx", selectString)
+	assert.Equal(t, "SELECT `main_table`.`category_id`, `main_table`.`path` FROM `catalog_category_anc_categs_index_idx` AS `main_table`", selectString)
 
 	selectBuilder, err = sInvalid.Select(dbrSess)
 	assert.Error(t, err)

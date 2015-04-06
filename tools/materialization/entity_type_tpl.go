@@ -4,7 +4,7 @@
 // you may not use this file except in compliance with the License.
 // You may obtain a copy of the License at
 //
-//     http://www.apache.org/licenses/LICENSE-2.0
+//	 http://www.apache.org/licenses/LICENSE-2.0
 //
 // Unless required by applicable law or agreed to in writing, software
 // distributed under the License is distributed on an "AS IS" BASIS,
@@ -25,34 +25,33 @@ import "github.com/corestoreio/csfw/tools"
 const tplEav = tools.Copyright + `
 package {{ .Package }}
 
-// Package {{ .Package }} file is auto generated via eavToStruct
+// Package {{ .Package }} file is auto generated
 
 import (
-    "github.com/corestoreio/csfw/eav"
-    {{ range .EntityTypeMap }}{{if ne .ImportPath "" }}"{{.ImportPath}}"
-{{end}}{{end}}
+	"github.com/corestoreio/csfw/eav"{{ range .ImportPaths }}
+	"{{ . }}"{{end}}
 )
 
 func init(){
-    eav.SetEntityTypeCollection(eav.CSEntityTypeSlice{
-        {{ range .ETypeData }} &eav.CSEntityType {
-            EntityTypeID: {{ .EntityTypeID }},
-            EntityTypeCode: "{{ .EntityTypeCode }}",
-            EntityModel: {{ .EntityModel }},
-            AttributeModel: {{ .AttributeModel.String }},
-            EntityTable: {{ .EntityTable.String }},
-            ValueTablePrefix: "{{ .ValueTablePrefix.String }}",
-            IsDataSharing: {{ .IsDataSharing }},
-            DataSharingKey: "{{ .DataSharingKey.String }}",
-            DefaultAttributeSetID: {{ .DefaultAttributeSetID }},
-            {{ if ne "" .IncrementModel.String }}IncrementModel: {{ .IncrementModel.String }},{{ end }}
-            IncrementPerStore: {{ .IncrementPerStore }},
-            IncrementPadLength: {{ .IncrementPadLength }},
-            IncrementPadChar: "{{ .IncrementPadChar }}",
-            AdditionalAttributeTable: {{ .AdditionalAttributeTable.String }},
-            EntityAttributeCollection: {{ .EntityAttributeCollection.String }},
-        },
-        {{ end }}
-    })
+	eav.SetEntityTypeCollection(eav.CSEntityTypeSlice{
+		{{ range .ETypeData }} &eav.CSEntityType {
+			EntityTypeID: {{ .EntityTypeID }},
+			EntityTypeCode: "{{ .EntityTypeCode }}",
+			EntityModel: {{ extractFuncType .EntityModel }},
+			AttributeModel: {{ extractFuncType .AttributeModel.String }},
+			EntityTable: {{ extractFuncType .EntityTable.String }},
+			ValueTablePrefix: "{{ .ValueTablePrefix.String }}",
+			IsDataSharing: {{ .IsDataSharing }},
+			DataSharingKey: "{{ .DataSharingKey.String }}",
+			DefaultAttributeSetID: {{ .DefaultAttributeSetID }},
+			{{ if ne "" .IncrementModel.String }}IncrementModel: {{ extractFuncType .IncrementModel.String }},{{ end }}
+			IncrementPerStore: {{ .IncrementPerStore }},
+			IncrementPadLength: {{ .IncrementPadLength }},
+			IncrementPadChar: "{{ .IncrementPadChar }}",
+			AdditionalAttributeTable: {{ extractFuncType .AdditionalAttributeTable.String }},
+			EntityAttributeCollection: {{ extractFuncType .EntityAttributeCollection.String }},
+		},
+		{{ end }}
+	})
 }
 `

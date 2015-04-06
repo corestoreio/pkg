@@ -41,9 +41,10 @@ type (
 )
 
 var (
-	ErrStoreNotFound = errors.New("Store not found")
-	storeCollection  TableStoreSlice
-	storeGetter      StoreGetter
+	ErrStoreNotFound     = errors.New("Store not found")
+	ErrStoreGetterNotSet = errors.New("StoreGetter not set")
+	storeCollection      TableStoreSlice
+	storeGetter          StoreGetter
 )
 
 func SetStoreCollection(sc TableStoreSlice) {
@@ -77,7 +78,7 @@ func GetStoreByCode(code string) (*TableStore, error) {
 	return storeCollection.ByCode(code)
 }
 
-// GetStores returns a copy of the main slice of stores.
+// GetStores returns a copy of the main slice of stores. There can be nils within the slice.
 // One should not modify the slice and its content.
 func GetStores() TableStoreSlice {
 	return storeCollection
@@ -96,6 +97,9 @@ func (s *TableStoreSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectC
 }
 
 func (s TableStoreSlice) ByID(id int64) (*TableStore, error) {
+	if storeGetter == nil {
+		return nil, ErrStoreGetterNotSet
+	}
 	i, err := storeGetter.ByID(id)
 	if err != nil {
 		return nil, errgo.Mask(err)
@@ -104,6 +108,9 @@ func (s TableStoreSlice) ByID(id int64) (*TableStore, error) {
 }
 
 func (s TableStoreSlice) ByCode(code string) (*TableStore, error) {
+	if storeGetter == nil {
+		return nil, ErrStoreGetterNotSet
+	}
 	i, err := storeGetter.ByCode(code)
 	if err != nil {
 		return nil, errgo.Mask(err)

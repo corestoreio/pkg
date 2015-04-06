@@ -47,9 +47,9 @@ type (
 		// AttrPkgImp defines the package import path to use: possible ATM: custattr and catattr and your custom
 		// EAV package.
 		AttrPkgImp string
-		// FuncCollection specifies the name of the set attribute collection function name within the AttrPkgImp.
+		// FuncCollection specifies the name of the SetAttributeCollection function name within the AttrPkgImp.
 		FuncCollection string
-		// FuncGetter specifies the name of the set attribute getter function name within the AttrPkgImp.
+		// FuncGetter specifies the name of the SetAttributeGetter function name within the AttrPkgImp.
 		FuncGetter string
 		// Package defines the name of the target package, must be external. Default is {{.AttrPkgImp}}_test but
 		// for your project you must provide your package name.
@@ -68,20 +68,25 @@ type (
 	// The values of EntityType will be uses for materialization in Go code of the eav_entity_type table data.
 	EntityTypeMap map[string]*EntityType
 	// EntityType is configuration struct which maps the PHP classes to Go types, interfaces and table names.
+	// Each struct field has a special import path with function to make easier to specify different packages
 	EntityType struct {
-		// ImportPath path to the package
-		ImportPath string
-		// EntityModel Go type which implements eav.EntityTypeModeller
+		// EntityModel Go type which implements eav.EntityTypeModeller.
+		// Will be used as template so you can access the current entity_type from the database.
 		EntityModel string
 		// AttributeModel Go type which implements eav.EntityTypeAttributeModeller
+		// Will be used as template so you can access the current entity_type from the database.
 		AttributeModel string
 		// EntityTable Go type which implements eav.EntityTypeTabler
+		// Will be used as template so you can access the current entity_type from the database.
 		EntityTable string
 		// IncrementModel Go type which implements eav.EntityTypeIncrementModeller
+		// Will be used as template so you can access the current entity_type from the database.
 		IncrementModel string
 		// AdditionalAttributeTable Go type which implements eav.EntityTypeAdditionalAttributeTabler
+		// Will be used as template so you can access the current entity_type from the database.
 		AdditionalAttributeTable string
 		// EntityAttributeCollection Go type which implements eav.EntityAttributeCollectioner
+		// Will be used as template so you can access the current entity_type from the database.
 		EntityAttributeCollection string
 
 		// TempAdditionalAttributeTable string which defines the existing table name
@@ -100,11 +105,9 @@ type (
 	}
 
 	// AttributeModelDefMap contains data to map the three eav_attribute columns
-	// (backend|frontend|source)_model to the correct Go function and package.
+	// (backend | frontend | source | data)_model to the correct Go function and package.
 	// It contains mappings for Magento 1 & 2. A developer has the option to to change/extend the value
 	// using the file config_user.go with the init() func.
-	// Rethink the Go code here ... because catalog.Product().Attribute().Frontend().Image() is pretty long ... BUT
-	// developers coming from Magento are already familiar with this code base and naming ...
 	// Def for Definition to avoid a naming conflict :-( Better name?
 	AttributeModelDefMap map[string]*AttributeModelDef
 	// AttributeModelDef defines which Go type/func has which import path
@@ -209,58 +212,54 @@ var ConfigTableToStruct = TableToStructMap{
 // into a folder. Other fields of the struct TableToStruct are ignored. Use the file config_user.go with the
 // func init() to change/extend it.
 var ConfigMaterializationEntityType = &TableToStruct{
-	Package:    "eav_test",
-	OutputFile: myPath + "eav" + PS + "generated_entity_type_test.go",
+	Package:    "testgen",
+	OutputFile: myPath + "testgen" + PS + "generated_entity_type_test.go",
 }
 
 // ConfigMaterializationStore configuration for materializeStore() to write the materialized store data into a folder.
 // For using this in your project you must modify the package name and output file path
 var ConfigMaterializationStore = &TableToStruct{
-	Package:    "store_test",
-	OutputFile: myPath + "store" + PS + "generated_store_test.go",
+	Package:    "testgen",
+	OutputFile: myPath + "testgen" + PS + "generated_store_test.go",
 }
 
-// ConfigEntityType contains default configuration o materialize the entity types.
+// ConfigEntityType contains default configuration to materialize the entity types.
 // Use the file config_user.go with the func init() to change/extend it.
 // Needed in materializeEntityType()
 var ConfigEntityType = EntityTypeMap{
 	"customer": &EntityType{
-		ImportPath:                          "github.com/corestoreio/csfw/customer",
-		EntityModel:                         "customer.Customer()",
-		AttributeModel:                      "customer.Attribute()",
-		EntityTable:                         "customer.Customer()",
-		IncrementModel:                      "customer.Customer()",
-		AdditionalAttributeTable:            "customer.Customer()",
-		EntityAttributeCollection:           "customer.Customer()",
+		EntityModel:                         "github.com/corestoreio/csfw/customer.Customer()",
+		AttributeModel:                      "github.com/corestoreio/csfw/customer/custattr.Customer({{.EntityTypeID}})",
+		EntityTable:                         "github.com/corestoreio/csfw/customer.Customer()",
+		IncrementModel:                      "github.com/corestoreio/csfw/customer.Customer()",
+		AdditionalAttributeTable:            "github.com/corestoreio/csfw/customer.Customer()",
+		EntityAttributeCollection:           "github.com/corestoreio/csfw/customer/custattr.Customer({{.EntityTypeID}})",
 		TempAdditionalAttributeTable:        "{{tableprefix}}customer_eav_attribute",
 		TempAdditionalAttributeTableWebsite: "{{tableprefix}}customer_eav_attribute_website",
 	},
 	"customer_address": &EntityType{
-		ImportPath:                          "github.com/corestoreio/csfw/customer",
-		EntityModel:                         "customer.Address()",
-		AttributeModel:                      "customer.AddressAttribute()",
-		EntityTable:                         "customer.Address()",
-		AdditionalAttributeTable:            "customer.Address()",
-		EntityAttributeCollection:           "customer.Address()",
+		EntityModel:                         "github.com/corestoreio/csfw/customer.Address()",
+		AttributeModel:                      "github.com/corestoreio/csfw/customer/custattr.Address({{.EntityTypeID}})",
+		EntityTable:                         "github.com/corestoreio/csfw/customer.Address()",
+		AdditionalAttributeTable:            "github.com/corestoreio/csfw/customer.Address()",
+		EntityAttributeCollection:           "github.com/corestoreio/csfw/customer/custattr.Address({{.EntityTypeID}})",
 		TempAdditionalAttributeTable:        "{{tableprefix}}customer_eav_attribute",
 		TempAdditionalAttributeTableWebsite: "{{tableprefix}}customer_eav_attribute_website",
 	},
 	"catalog_category": &EntityType{
-		ImportPath:                   "github.com/corestoreio/csfw/catalog",
-		EntityModel:                  "catalog.Category()",
-		AttributeModel:               "catalog.Attribute()",
-		EntityTable:                  "catalog.Category()",
-		AdditionalAttributeTable:     "catalog.Category()",
-		EntityAttributeCollection:    "catalog.Category()",
+		EntityModel:                  "github.com/corestoreio/csfw/catalog.Category()",
+		AttributeModel:               "github.com/corestoreio/csfw/catalog/catattr.Category({{.EntityTypeID}})",
+		EntityTable:                  "github.com/corestoreio/csfw/catalog.Category()",
+		AdditionalAttributeTable:     "github.com/corestoreio/csfw/catalog.Category()",
+		EntityAttributeCollection:    "github.com/corestoreio/csfw/catalog/catattr.Category({{.EntityTypeID}})",
 		TempAdditionalAttributeTable: "{{tableprefix}}catalog_eav_attribute",
 	},
 	"catalog_product": &EntityType{
-		ImportPath:                   "github.com/corestoreio/csfw/catalog",
-		EntityModel:                  "catalog.Product()",
-		AttributeModel:               "catalog.Attribute()",
-		EntityTable:                  "catalog.Product()",
-		AdditionalAttributeTable:     "catalog.Product()",
-		EntityAttributeCollection:    "catalog.Product()",
+		EntityModel:                  "github.com/corestoreio/csfw/catalog.Product()",
+		AttributeModel:               "github.com/corestoreio/csfw/catalog/catattr.Product({{.EntityTypeID}})",
+		EntityTable:                  "github.com/corestoreio/csfw/catalog.Product()",
+		AdditionalAttributeTable:     "github.com/corestoreio/csfw/catalog.Product()",
+		EntityAttributeCollection:    "github.com/corestoreio/csfw/catalog/catattr.Product({{.EntityTypeID}})",
 		TempAdditionalAttributeTable: "{{tableprefix}}catalog_eav_attribute",
 	},
 	// @todo extend for all sales entities
@@ -274,32 +273,32 @@ var ConfigMaterializationAttributes = AttributeToStructMap{
 		FuncCollection: "SetCustomerCollection",
 		FuncGetter:     "SetCustomerGetter",
 		MyStruct:       "",
-		Package:        "customer_test", // external package name
-		OutputFile:     myPath + "customer" + PS + "generated_customer_attribute_test.go",
+		Package:        "testgen", // external package name
+		OutputFile:     myPath + "testgen" + PS + "generated_customer_attribute_test.go",
 	},
 	"customer_address": &AttributeToStruct{
 		AttrPkgImp:     "github.com/corestoreio/csfw/customer/custattr",
 		FuncCollection: "SetAddressCollection",
 		FuncGetter:     "SetAddressGetter",
 		MyStruct:       "",
-		Package:        "customer_test",
-		OutputFile:     myPath + "customer" + PS + "generated_address_attribute_test.go",
+		Package:        "testgen",
+		OutputFile:     myPath + "testgen" + PS + "generated_address_attribute_test.go",
 	},
 	"catalog_product": &AttributeToStruct{
 		AttrPkgImp:     "github.com/corestoreio/csfw/catalog/catattr",
 		FuncCollection: "SetProductCollection",
 		FuncGetter:     "SetProductGetter",
 		MyStruct:       "",
-		Package:        "catalog_test",
-		OutputFile:     myPath + "catalog" + PS + "generated_product_attribute_test.go",
+		Package:        "testgen",
+		OutputFile:     myPath + "testgen" + PS + "generated_product_attribute_test.go",
 	},
 	"catalog_category": &AttributeToStruct{
 		AttrPkgImp:     "github.com/corestoreio/csfw/catalog/catattr",
 		FuncCollection: "SetCategoryCollection",
 		FuncGetter:     "SetCategoryGetter",
 		MyStruct:       "",
-		Package:        "catalog_test",
-		OutputFile:     myPath + "catalog" + PS + "generated_category_attribute_test.go",
+		Package:        "testgen",
+		OutputFile:     myPath + "testgen" + PS + "generated_category_attribute_test.go",
 	},
 	// extend here for other EAV attributes (not sales* types)
 }
