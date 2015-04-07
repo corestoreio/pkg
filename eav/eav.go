@@ -54,6 +54,7 @@ type (
 		// The return type must embed eav.Attributer interface and of course its custom attribute interface
 		New() interface{}
 		Get(i AttributeIndex) (interface{}, error)
+		MustGet(i AttributeIndex) interface{}
 		GetByID(id int64) (interface{}, error)
 		GetByCode(code string) (interface{}, error)
 	}

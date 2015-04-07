@@ -137,6 +137,14 @@ func (h *container) Get(i eav.AttributeIndex) (interface{}, error) {
 	return nil, eav.ErrAttributeNotFound
 }
 
+func (h *container) MustGet(i eav.AttributeIndex) interface{} {
+	a, err := h.Get(i)
+	if err != nil {
+		panic(err)
+	}
+	return a
+}
+
 // GetByID returns an address attribute by its id. Use type assertion to convert to Attributer.
 func (h *container) GetByID(id int64) (interface{}, error) {
 	return h.c.byID(h.g, id)

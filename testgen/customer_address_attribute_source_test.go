@@ -46,6 +46,9 @@ func TestAddressAttributeFrontendLabel(t *testing.T) {
 		assert.Equal(t, "Country", countryID.FrontendLabel())
 		// t.Logf("\n%#v\n", countryID.SourceModel())
 	}
+
+	apc := cae.AttributeModel.MustGet(CustomerAddressAttributePostcode).(custattr.Attributer)
+	assert.Equal(t, "Zip/Postal Code", apc.FrontendLabel())
 }
 
 var countryIDFrontendLabel string
