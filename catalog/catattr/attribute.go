@@ -135,7 +135,7 @@ func (h *container) New() interface{} {
 }
 
 // Get uses an AttributeIndex to return an attribute or an error.
-// Use type conversion to convert to Attributer.
+// Use type assertion to convert to Attributer.
 func (h *container) Get(i eav.AttributeIndex) (interface{}, error) {
 	if int(i) < len(h.c) {
 		return h.c[i], nil
@@ -144,19 +144,19 @@ func (h *container) Get(i eav.AttributeIndex) (interface{}, error) {
 }
 
 // GetByID returns an address attribute by its id
-// Use type conversion to convert to Attributer.
+// Use type assertion to convert to Attributer.
 func (h *container) GetByID(id int64) (interface{}, error) {
 	return h.c.byID(h.g, id)
 }
 
 // GetByCode returns an address attribute by its code
-// Use type conversion to convert to Attributer.
+// Use type assertion to convert to Attributer.
 func (h *container) GetByCode(code string) (interface{}, error) {
 	return h.c.byCode(h.g, code)
 }
 
 // Collection returns the full attribute collection AttributeSlice.
-// You must use type hinting for custattr.AttributeSlice.
+// You must use type assertion to convert to custattr.AttributeSlice.
 func (h *container) Collection() interface{} {
 	return h.c
 }

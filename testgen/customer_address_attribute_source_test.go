@@ -22,34 +22,59 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-
-}
-
-func TestAddressAttributeSource(t *testing.T) {
+func TestAddressAttributeFrontendLabel(t *testing.T) {
 	var err error
 	cae, err := eav.GetEntityTypeByCode("customer_address")
 	if err != nil {
 		t.Error(err)
 		return
 	}
+	aIFs, err := cae.AttributeModel.GetByCode("country_ids")
+	assert.Error(t, err)
+	assert.Nil(t, aIFs)
 
-	countryID, err := cae.AttributeModel.GetByCode("country_ids")
+	attrIF, err := cae.AttributeModel.GetByCode("country_id")
 	if err != nil {
 		t.Error(err)
 		assert.Error(t, err)
 	} else {
-		var ok bool
-		if countryID, ok = countryID.(custattr.Attributer); !ok {
-			t.Error("failed to convert countryID into custattr.Attributer")
+		var countryID, ok = attrIF.(custattr.Attributer) // type assertion
+		if !ok {
+			t.Error("failed to convert countryID into custattr.Attributer type")
+		}
+		assert.True(t, countryID.SortOrder() > 0)
+		assert.Equal(t, "Country", countryID.FrontendLabel())
+		// t.Logf("\n%#v\n", countryID.SourceModel())
+	}
+}
+
+var countryIDFrontendLabel string
+
+// BenchmarkAddressAttributeFrontendLabel	20.000.000	       115 ns/op	       0 B/op	       0 allocs/op
+// This is the result for selecting the frontend_label from an attribute assigned to an entity.
+// $ac = Mage::getSingleton('eav/config')->getEntityType('customer_address')->getAttributeCollection();
+// $ac->addFieldToFilter('attribute_code', ['eq' => 'country_id']);
+// $fl = $ac->getFirstItem()->getData('frontend_label');
+// PHP 5.5 needs 86600 ns/op (nanosecond) to be fair: with database access but enabled caches with redis and OPcache.
+func BenchmarkAddressAttributeFrontendLabel(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		var err error
+		cae, err := eav.GetEntityTypeByCode("customer_address")
+		if err != nil {
+			b.Error(err)
+			return
 		}
 
-		t.Logf("\n%#v\n", countryID)
-		//		caac.
-		//			assert.Equal(
-		//			t,
-		//			eav.AttributeSourceOptions{eav.AttributeSourceOption{Value: "AU", Label: "Straya"}, eav.AttributeSourceOption{Value: "NZ", Label: "Kiwi land"}, eav.AttributeSourceOption{Value: "DE", Label: "Autobahn"}, eav.AttributeSourceOption{Value: "SE", Label: "Smørrebrød"}},
-		//			attr.SourceModel().GetAllOptions(),
-		//		)
+		attrIF, err := cae.AttributeModel.GetByCode("country_id")
+		if err != nil {
+			b.Error(err)
+		} else {
+			var countryID, ok = attrIF.(custattr.Attributer) // type assertion
+			if !ok {
+				b.Error("failed to convert countryID into custattr.Attributer type")
+			}
+			countryIDFrontendLabel = countryID.FrontendLabel()
+		}
 	}
 }
