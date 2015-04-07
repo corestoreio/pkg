@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package custattr_test with address attribute data contains test data which has
+// Package custattr_test with address attribute data contains test data which has
 // been previously auto generated. So do not touch 8-)
 package custattr_test
 

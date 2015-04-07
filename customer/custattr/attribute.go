@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package custattr handles all customer and address related attributes. The name custattr has been chosen
+// Package custattr handles all customer and address related attributes. The name custattr has been chosen
 // to be unique so that one can use goimports without conflicts.
 package custattr
 
@@ -22,6 +22,7 @@ import (
 )
 
 type (
+	// AttributeSlice implements eav.AttributeSliceGetter @todo website must be present in the slice
 	AttributeSlice []Attributer
 
 	// Attributer defines the minimal requirements for a customer attribute. This interface consists
@@ -46,52 +47,61 @@ type (
 		ScopeMultilineCount() int64
 	}
 	// internal wrapper for attribute collection c, getter g and entity type id.
-	container struct {
-		entityTyeID int64
-		c           AttributeSlice
-		g           eav.AttributeGetter
+	// internal wrapper to override New() method receiver
+	catHandler struct {
+		eav.Handler
 	}
 )
 
 var (
-	// aa address attribute
-	aa = &container{}
-	// ca customer attribute
-	ca = &container{}
 	// verify if interfaces has been implemented
-	_ eav.EntityTypeAttributeModeller = (*container)(nil)
-	_ eav.EntityAttributeCollectioner = (*container)(nil)
+	_ eav.EntityTypeAttributeModeller = (*catHandler)(nil)
+	_ eav.EntityAttributeCollectioner = (*catHandler)(nil)
+
+	// aa address attribute
+	aa = &catHandler{
+		Handler: eav.Handler{},
+	}
+	// ca customer attribute
+	ca = &catHandler{
+		Handler: eav.Handler{},
+	}
 )
 
-func SetAddressCollection(s AttributeSlice) {
-	if len(s) == 0 {
+// SetAddressCollection requires a slice to set the address attribute collection
+func SetAddressCollection(s eav.AttributeSliceGetter) {
+	if s.Len() == 0 {
 		panic("AttributeSlice is empty")
 	}
-	aa.c = s
+	aa.C = s
 }
 
+// SetAddressGetter knows how to get an attribute using an index out of an attribute collection
 func SetAddressGetter(g eav.AttributeGetter) {
 	if g == nil {
 		panic("AttributeGetter cannot be nil")
 	}
-	aa.g = g
+	aa.G = g
 }
 
-func SetCustomerCollection(s AttributeSlice) {
-	if len(s) == 0 {
+// SetCustomerCollection requires a slice to set the customer attribute collection
+func SetCustomerCollection(s eav.AttributeSliceGetter) {
+	if s.Len() == 0 {
 		panic("AttributeSlice is empty")
 	}
-	ca.c = s
+	ca.C = s
 }
 
+// SetCustomerGetter knows how to get an attribute using an index out of an attribute collection
 func SetCustomerGetter(g eav.AttributeGetter) {
 	if g == nil {
 		panic("AttributeGetter cannot be nil")
 	}
-	ca.g = g
+	ca.G = g
 }
 
-func (s AttributeSlice) byID(g eav.AttributeGetter, id int64) (Attributer, error) {
+// ByID returns an custattr.Attributer by int64 id. Use type assertion.
+func (s AttributeSlice) ByID(g eav.AttributeGetter, id int64) (interface{}, error) {
 	if g == nil {
 		panic("AttributeGetter is nil")
 	}
@@ -102,7 +112,8 @@ func (s AttributeSlice) byID(g eav.AttributeGetter, id int64) (Attributer, error
 	return s[i], nil
 }
 
-func (s AttributeSlice) byCode(g eav.AttributeGetter, code string) (Attributer, error) {
+// ByCode returns an custattr.Attributer by code. Use type assertion.
+func (s AttributeSlice) ByCode(g eav.AttributeGetter, code string) (interface{}, error) {
 	if g == nil {
 		panic("AttributeGetter is nil")
 	}
@@ -113,50 +124,28 @@ func (s AttributeSlice) byCode(g eav.AttributeGetter, code string) (Attributer, 
 	return s[i], nil
 }
 
-func Customer(i int64) *container {
-	ca.entityTyeID = i
+// Index returns the current cust.Attributer from index i. Use type assertion.
+func (s AttributeSlice) Index(i eav.AttributeIndex) interface{} {
+	return s[i]
+}
+
+// Len returns the length of a slice
+func (s AttributeSlice) Len() int {
+	return len(s)
+}
+
+func Customer(i int64) *catHandler {
+	ca.EntityTyeID = i
 	return ca
 }
 
-func Address(i int64) *container {
-	aa.entityTyeID = i
+func Address(i int64) *catHandler {
+	aa.EntityTyeID = i
 	return aa
 }
 
 // New creates a new attribute and returns interface custattr.Attributer
-func (h *container) New() interface{} {
+// overrides eav.Handler's New() method receiver
+func (h *catHandler) New() interface{} {
 	return nil
-}
-
-// Get uses an AttributeIndex to return an attribute or an error.
-// Use type assertion to convert to Attributer.
-func (h *container) Get(i eav.AttributeIndex) (interface{}, error) {
-	if int(i) < len(h.c) {
-		return h.c[i], nil
-	}
-	return nil, eav.ErrAttributeNotFound
-}
-
-func (h *container) MustGet(i eav.AttributeIndex) interface{} {
-	a, err := h.Get(i)
-	if err != nil {
-		panic(err)
-	}
-	return a
-}
-
-// GetByID returns an address attribute by its id. Use type assertion to convert to Attributer.
-func (h *container) GetByID(id int64) (interface{}, error) {
-	return h.c.byID(h.g, id)
-}
-
-// GetByCode returns an address attribute by its code. Use type assertion to convert to Attributer.
-func (h *container) GetByCode(code string) (interface{}, error) {
-	return h.c.byCode(h.g, code)
-}
-
-// Collection returns the full attribute collection AttributeSlice.
-// You must use type assertion to convert to custattr.AttributeSlice.
-func (h *container) Collection() interface{} {
-	return h.c
 }

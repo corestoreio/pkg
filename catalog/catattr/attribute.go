@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package catattr handles all product and category related attributes. The name custattr has been chosen
+// Package catattr handles all product and category related attributes. The name catattr has been chosen
 // to be unique so that one can use goimports without conflicts.
 package catattr
 
@@ -22,7 +22,7 @@ import (
 )
 
 type (
-	// @todo website must be present in the slice
+	// AttributeSlice implements eav.AttributeSliceGetter @todo website must be present in the slice
 	AttributeSlice []Attributer
 
 	// Attributer defines the minimal requirements for a catalog attribute. This interface consists
@@ -51,53 +51,61 @@ type (
 		IsUsedForPromoRules() bool
 		SearchWeight() int64
 	}
-	// internal wrapper for attribute collection c, getter g and entity type id.
-	container struct {
-		entityTyeID int64
-		c           AttributeSlice
-		g           eav.AttributeGetter
+	// internal wrapper to override New() method receiver
+	catHandler struct {
+		eav.Handler
 	}
 )
 
 var (
-	// ca category attribute
-	ca = &container{}
-	// pa product attribute
-	pa = &container{}
 	// verify if interfaces has been implemented
-	_ eav.EntityTypeAttributeModeller = (*container)(nil)
-	_ eav.EntityAttributeCollectioner = (*container)(nil)
+	_ eav.EntityTypeAttributeModeller = (*catHandler)(nil)
+	_ eav.EntityAttributeCollectioner = (*catHandler)(nil)
+
+	// ca category attribute
+	ca = &catHandler{
+		Handler: eav.Handler{},
+	}
+	// pa product attribute
+	pa = &catHandler{
+		Handler: eav.Handler{},
+	}
 )
 
-func SetCategoryCollection(s AttributeSlice) {
-	if len(s) == 0 {
+// SetCategoryCollection requires a slice to set the category attribute collection
+func SetCategoryCollection(s eav.AttributeSliceGetter) {
+	if s.Len() == 0 {
 		panic("AttributeSlice is empty")
 	}
-	ca.c = s
+	ca.C = s
 }
 
+// SetCategoryGetter knows how to get an attribute using an index out of an attribute collection
 func SetCategoryGetter(g eav.AttributeGetter) {
 	if g == nil {
 		panic("AttributeGetter cannot be nil")
 	}
-	ca.g = g
+	ca.G = g
 }
 
-func SetProductCollection(s AttributeSlice) {
-	if len(s) == 0 {
+// SetProductCollection requires a slice to set the product attribute collection
+func SetProductCollection(s eav.AttributeSliceGetter) {
+	if s.Len() == 0 {
 		panic("AttributeSlice is empty")
 	}
-	pa.c = s
+	pa.C = s
 }
 
+// SetProductGetter knows how to get an attribute using an index out of an attribute collection
 func SetProductGetter(g eav.AttributeGetter) {
 	if g == nil {
 		panic("AttributeGetter cannot be nil")
 	}
-	pa.g = g
+	pa.G = g
 }
 
-func (s AttributeSlice) byID(g eav.AttributeGetter, id int64) (Attributer, error) {
+// ByID returns an catattr.Attributer by int64 id. Use type assertion.
+func (s AttributeSlice) ByID(g eav.AttributeGetter, id int64) (interface{}, error) {
 	if g == nil {
 		panic("AttributeGetter is nil")
 	}
@@ -105,10 +113,11 @@ func (s AttributeSlice) byID(g eav.AttributeGetter, id int64) (Attributer, error
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	return s[i], nil
+	return s.Index(i), nil
 }
 
-func (s AttributeSlice) byCode(g eav.AttributeGetter, code string) (Attributer, error) {
+// ByCode returns an catattr.Attributer by code. Use type assertion.
+func (s AttributeSlice) ByCode(g eav.AttributeGetter, code string) (interface{}, error) {
 	if g == nil {
 		panic("AttributeGetter is nil")
 	}
@@ -116,55 +125,31 @@ func (s AttributeSlice) byCode(g eav.AttributeGetter, code string) (Attributer, 
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	return s[i], nil
+	return s.Index(i), nil
 }
 
-func Product(i int64) *container {
-	pa.entityTyeID = i
+// Index returns the current catattr.Attributer from index i. Use type assertion.
+func (s AttributeSlice) Index(i eav.AttributeIndex) interface{} {
+	return s[i]
+}
+
+// Len returns the length of a slice
+func (s AttributeSlice) Len() int {
+	return len(s)
+}
+
+func Product(i int64) *catHandler {
+	pa.EntityTyeID = i
 	return pa
 }
 
-func Category(i int64) *container {
-	ca.entityTyeID = i
+func Category(i int64) *catHandler {
+	ca.EntityTyeID = i
 	return ca
 }
 
-// New creates a new attribute and returns interface custattr.Attributer
-func (h *container) New() interface{} {
+// New creates a new attribute and returns interface catattr.Attributer
+// overrides eav.Handler's New() method receiver
+func (h *catHandler) New() interface{} {
 	return nil
-}
-
-// Get uses an AttributeIndex to return an attribute or an error.
-// Use type assertion to convert to Attributer.
-func (h *container) Get(i eav.AttributeIndex) (interface{}, error) {
-	if int(i) < len(h.c) {
-		return h.c[i], nil
-	}
-	return nil, eav.ErrAttributeNotFound
-}
-
-func (h *container) MustGet(i eav.AttributeIndex) interface{} {
-	a, err := h.Get(i)
-	if err != nil {
-		panic(err)
-	}
-	return a
-}
-
-// GetByID returns an address attribute by its id
-// Use type assertion to convert to Attributer.
-func (h *container) GetByID(id int64) (interface{}, error) {
-	return h.c.byID(h.g, id)
-}
-
-// GetByCode returns an address attribute by its code
-// Use type assertion to convert to Attributer.
-func (h *container) GetByCode(code string) (interface{}, error) {
-	return h.c.byCode(h.g, code)
-}
-
-// Collection returns the full attribute collection AttributeSlice.
-// You must use type assertion to convert to custattr.AttributeSlice.
-func (h *container) Collection() interface{} {
-	return h.c
 }

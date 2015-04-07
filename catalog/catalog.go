@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// package catalog implements category tree and product features
+// Package catalog implements category tree and product features
 package catalog

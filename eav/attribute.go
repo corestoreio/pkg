@@ -18,8 +18,6 @@ import (
 	"errors"
 
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/juju/errgo"
 )
 
 var (
@@ -124,12 +122,20 @@ type (
 	}
 
 	// AttributeGetter implements functions on how to retrieve directly a certain attribute. This interface
-	// is used in concrete entity models by generated code.
+	// is used in concrete attribute models by generated code.
+	// The logic behind this interface is to provide a fast access to the AttributeIndex. We will use as
+	// key the id int64 or code string which will then map to the value of an AttributeIndex.
 	AttributeGetter interface {
 		// ByID returns an index using the AttributeID. This index identifies an attribute within an AttributeSlice.
 		ByID(id int64) (AttributeIndex, error)
 		// ByCode returns an index using the AttributeCode. This index identifies an attribute within an AttributeSlice.
 		ByCode(code string) (AttributeIndex, error)
+	}
+	AttributeSliceGetter interface {
+		Index(i AttributeIndex) interface{}
+		Len() int
+		ByID(g AttributeGetter, id int64) (interface{}, error)
+		ByCode(g AttributeGetter, code string) (interface{}, error)
 	}
 )
 
@@ -273,51 +279,58 @@ func (a *Attribute) Note() string {
 	return a.note
 }
 
-// GetAttributeSelectSql generates the select query to retrieve full attribute configuration
-func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAttributeTabler, entityTypeID, websiteId int64) (*dbr.SelectBuilder, error) {
+// Handler internal wrapper for attribute collection C, getter G and entity type id.
+// must be embedded into a concrete attribute struct. Implements interface EntityTypeAttributeModeller
+// and EntityAttributeCollectioner.
+type Handler struct {
+	// EntityTyeID to load the entity type. @todo implementation
+	EntityTyeID int64
+	// C collection of a materialized slice
+	C AttributeSliceGetter
+	// G getter knows how to return an AttributeIndex by id or by code
+	G AttributeGetter
+}
 
-	ta, err := GetTableStructure(TableIndexAttribute)
+var _ EntityTypeAttributeModeller = (*Handler)(nil)
+var _ EntityAttributeCollectioner = (*Handler)(nil)
+
+// New creates a new attribute and returns interface custattr.Attributer
+func (h *Handler) New() interface{} {
+	panic("Please override this method")
+	return nil
+}
+
+// Get uses an AttributeIndex to return an attribute or an error.
+// Use type assertion to convert to Attributer.
+func (h *Handler) Get(i AttributeIndex) (interface{}, error) {
+	if int(i) < h.C.Len() {
+		return h.C.Index(i), nil
+	}
+	return nil, ErrAttributeNotFound
+}
+
+func (h *Handler) MustGet(i AttributeIndex) interface{} {
+	a, err := h.Get(i)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		panic(err)
 	}
-	taa, err := aat.TableAdditionalAttribute()
-	if err != nil {
-		return nil, errgo.Mask(err)
-	}
+	return a
+}
 
-	selectSql := dbrSess.
-		Select(ta.AllColumnAliasQuote(csdb.MainTable)...).
-		From(ta.Name, csdb.MainTable).
-		Join(
-		dbr.JoinTable(taa.Name, "additional_table"),
-		taa.ColumnAliasQuote("additional_table"),
-		dbr.JoinOn("`additional_table`.`attribute_id` = `main_table`.`attribute_id`"),
-		dbr.JoinOn("`main_table`.`entity_type_id` = ?", entityTypeID),
-	)
+// GetByID returns an address attribute by its id
+// Use type assertion to convert to Attributer.
+func (h *Handler) GetByID(id int64) (interface{}, error) {
+	return h.C.ByID(h.G, id)
+}
 
-	tew, err := aat.TableEavWebsite()
-	if err != nil {
-		return nil, errgo.Mask(err)
-	}
+// GetByCode returns an address attribute by its code
+// Use type assertion to convert to Attributer.
+func (h *Handler) GetByCode(code string) (interface{}, error) {
+	return h.C.ByCode(h.G, code)
+}
 
-	if tew != nil {
-		const scopeTable = "scope_table"
-		l := len(tew.Columns) * 2
-		cols := make([]string, l)
-		j := 0
-		for i := 0; i < l; i = i + 2 {
-			cols[i] = scopeTable + "." + tew.Columns[j] // real column name
-			cols[i+1] = "scope_" + tew.Columns[j]       // alias column name
-			j++
-		}
-
-		selectSql.
-			LeftJoin(
-			dbr.JoinTable(tew.Name, "scope_table"),
-			dbr.ColumnAlias(cols...),
-			dbr.JoinOn("`scope_table`.`attribute_id` = `main_table`.`attribute_id`"),
-			dbr.JoinOn("`scope_table`.`website_id` = ?", websiteId),
-		)
-	}
-	return selectSql, nil
+// Collection returns the full attribute collection AttributeSlice.
+// You must use type assertion to convert to custattr.AttributeSlice.
+func (h *Handler) Collection() interface{} {
+	return h.C
 }
