@@ -112,7 +112,7 @@ func generateAttributeCode(ctx *context) error {
 		return err
 	}
 
-	attributeCollection, err := tools.GetSQL(ctx.db, dbrSelect)
+	attributeCollection, err := tools.LoadStringEntities(ctx.db, dbrSelect)
 	if err != nil {
 		return err
 	}

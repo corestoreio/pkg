@@ -385,8 +385,8 @@ func ColumnsToStructCode(tplData map[string]interface{}, name string, cols Colum
 	return GenerateCode("", tpl, tplData, nil)
 }
 
-// GetSQL executes a SELECT query and returns a slice containing columns names and its string values
-func GetSQL(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string) ([]StringEntities, error) {
+// LoadStringEntities executes a SELECT query and returns a slice containing columns names and its string values
+func LoadStringEntities(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string) ([]StringEntities, error) {
 
 	qry := strings.Join(query, " ")
 	var args []interface{}

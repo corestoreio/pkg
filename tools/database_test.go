@@ -324,7 +324,7 @@ func TestGetSQLPrepareForTemplate(t *testing.T) {
 	db := csdb.MustConnectTest()
 	defer db.Close()
 
-	resultSlice2, err := GetSQL(db, nil, "SELECT * FROM `cataloginventory_stock` ", "ORDER BY stock_id")
+	resultSlice2, err := LoadStringEntities(db, nil, "SELECT * FROM `cataloginventory_stock` ", "ORDER BY stock_id")
 	if err != nil {
 		t.Error(err)
 	}
@@ -341,7 +341,7 @@ func TestGetSQLPrepareForTemplate(t *testing.T) {
 		t.Error(err)
 	}
 
-	attributeResultSlice, err := GetSQL(db, dbrSelect)
+	attributeResultSlice, err := LoadStringEntities(db, dbrSelect)
 	if err != nil {
 		t.Error(err)
 	}

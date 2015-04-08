@@ -21,6 +21,7 @@ import (
 )
 
 // GetAttributeSelectSql generates the select query to retrieve full attribute configuration
+// @see magento2/app/code/Magento/Eav/Model/Resource/Attribute/Collection.php::_initSelect()
 func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAttributeTabler, entityTypeID, websiteId int64) (*dbr.SelectBuilder, error) {
 
 	ta, err := GetTableStructure(TableIndexAttribute)
