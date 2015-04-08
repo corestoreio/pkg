@@ -1,4 +1,4 @@
-# product bundle library
+# Package bundle
 
 Implements product bundles
 

@@ -1,3 +1,3 @@
-# tax library
+# Package tax
 
 Implements tax calculations

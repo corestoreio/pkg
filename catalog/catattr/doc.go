@@ -13,6 +13,7 @@
 // limitations under the License.
 
 /*
-package csdb implements MySQL connection and general table functions.
+Package custattr handles all customer and address related attributes.
+The name custattr has been chosen to be unique so that one can use goimports without conflicts.
 */
-package csdb
+package custattr

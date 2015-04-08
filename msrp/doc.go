@@ -13,6 +13,6 @@
 // limitations under the License.
 
 /*
-package msrp handles the manufacturer's suggested retail price.
+Package msrp handles the manufacturer's suggested retail price.
 */
 package msrp

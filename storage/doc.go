@@ -13,6 +13,6 @@
 // limitations under the License.
 
 /*
-package storage provides everything from MySQL, Redis, BoltDB, file, etc functions.
+Package storage provides everything from MySQL, Redis, BoltDB, file, etc functions.
 */
 package storage

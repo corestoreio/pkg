@@ -13,6 +13,6 @@
 // limitations under the License.
 
 /*
-package tax takes care of all kind of taxes.
+Package tax takes care of all kind of taxes.
 */
 package tax

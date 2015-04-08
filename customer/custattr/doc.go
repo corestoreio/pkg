@@ -13,10 +13,7 @@
 // limitations under the License.
 
 /*
-Package eav contains the logic for the Entity-Attribute-Value model based on the Magento database schema.
-
-To use this library with additional columns in the EAV tables you must run from the
-tools folder first `tableToStruct` and then build the program `eavToStruct` and run it.
-
+Package custattr handles all customer and address related attributes.
+The name custattr has been chosen to be unique so that one can use goimports without conflicts.
 */
-package eav
+package custattr

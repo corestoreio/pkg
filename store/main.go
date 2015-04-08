@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package store implements the handling of websites, groups and stores
 package store
 
 import (
@@ -41,6 +40,7 @@ func IsSingleStoreMode() bool {
 	return false
 }
 
+// @todo wrong place for this func here
 func loadSlice(dbrSess dbr.SessionRunner, table csdb.Index, dest interface{}, cbs ...csdb.DbrSelectCb) (int, error) {
 	ts, err := GetTableStructure(table)
 	if err != nil {

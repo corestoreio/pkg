@@ -13,6 +13,6 @@
 // limitations under the License.
 
 /*
-package bundle handles the creation of catalog product bundles.
+Package bundle handles the creation of catalog product bundles.
 */
 package bundle

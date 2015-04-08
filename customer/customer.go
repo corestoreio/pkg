@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package customer handles a customer entity with its addresses.
 package customer
 
 import (
