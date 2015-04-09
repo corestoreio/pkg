@@ -87,7 +87,7 @@ type (
 		// AdditionalAttributeTable Go type which implements eav.EntityTypeAdditionalAttributeTabler
 		// Will be used as template so you can access the current entity_type from the database.
 		AdditionalAttributeTable string
-		// EntityAttributeCollection Go type which implements eav.EntityAttributeCollectioner
+		// EntityAttributeCollection Go type which implements eav.EntityTypeAttributeCollectioner
 		// Will be used as template so you can access the current entity_type from the database.
 		EntityAttributeCollection string
 

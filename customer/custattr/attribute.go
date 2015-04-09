@@ -74,8 +74,8 @@ type (
 
 var (
 	// verify if interfaces has been implemented
-	_ eav.EntityTypeAttributeModeller = (*catHandler)(nil)
-	_ eav.EntityAttributeCollectioner = (*catHandler)(nil)
+	_ eav.EntityTypeAttributeModeller     = (*catHandler)(nil)
+	_ eav.EntityTypeAttributeCollectioner = (*catHandler)(nil)
 	// Check if Attributer interface has been successfully implemented
 	_ Attributer = (*Customer)(nil)
 

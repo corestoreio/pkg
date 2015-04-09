@@ -15,12 +15,67 @@
 package eav
 
 import (
+	"errors"
+
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
 )
 
+const (
+	EntityTypeDatetime ValueIndex = iota + 1
+	EntityTypeDecimal
+	EntityTypeInt
+	EntityTypeText
+	EntityTypeVarchar
+)
+
 type (
+	ValueIndex int
+
+	// EntityTypeModeller defines an entity type model @todo
+	EntityTypeModeller interface {
+		TBD()
+	}
+
+	// EntityTypeTabler returns the table name
+	EntityTypeTabler interface {
+		// Base returns the base/prefix table name. E.g.: catalog_product_entity
+		TableNameBase() string
+		// Type returns for a type the table name. E.g.: catalog_product_entity_int
+		TableNameValue(ValueIndex) string
+	}
+
+	// EntityTypeAttributeModeller defines an attribute model @todo
+	EntityTypeAttributeModeller interface {
+		// Creates a new attribute to the corresponding entity. @todo options?
+		// The return type must embed eav.Attributer interface and of course its custom attribute interface
+		New() interface{}
+		Get(i AttributeIndex) (interface{}, error)
+		MustGet(i AttributeIndex) interface{}
+		GetByID(id int64) (interface{}, error)
+		GetByCode(code string) (interface{}, error)
+	}
+
+	// EntityTypeAttributeCollectioner defines an attribute collection @todo
+	// it returns a slice so use type assertion.
+	EntityTypeAttributeCollectioner interface {
+		Collection() interface{}
+	}
+
+	// EntityTypeAdditionalAttributeTabler implements methods for EAV table structures to retrieve attributes
+	EntityTypeAdditionalAttributeTabler interface {
+		TableAdditionalAttribute() (*csdb.TableStructure, error)
+		// TableNameEavWebsite gets the table, where website-dependent attribute parameters are stored in.
+		// If an EAV model doesn't demand this functionality, let this function just return an empty string
+		TableEavWebsite() (*csdb.TableStructure, error)
+	}
+
+	// EntityTypeIncrementModeller defines who to increment a number @todo
+	EntityTypeIncrementModeller interface {
+		TBD()
+	}
+
 	// CSEntityTypeSlice Types starting with CS are the CoreStore mappings with the DB data
 	CSEntityTypeSlice []*CSEntityType
 	// CSEntityType Go Type of the Mage database models and types. The prefix CS indicates
@@ -41,12 +96,15 @@ type (
 		IncrementPadLength        int64
 		IncrementPadChar          string
 		AdditionalAttributeTable  EntityTypeAdditionalAttributeTabler
-		EntityAttributeCollection EntityAttributeCollectioner
+		EntityAttributeCollection EntityTypeAttributeCollectioner
 	}
 )
 
-// csEntityTypeCollection contains all entity types mapped to their Go types/interfaces
-var csEntityTypeCollection CSEntityTypeSlice
+var (
+	ErrEntityTypeValueNotFound = errors.New("Unknown entity type value")
+	// csEntityTypeCollection contains all entity types mapped to their Go types/interfaces
+	csEntityTypeCollection CSEntityTypeSlice
+)
 
 // GetEntityTypeCollection to avoid leaking global variable. Maybe returning a copy?
 func GetEntityTypeCollection() CSEntityTypeSlice {

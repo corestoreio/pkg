@@ -17,6 +17,7 @@ package testgen
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/catalog/catattr"
 	"github.com/corestoreio/csfw/customer/custattr"
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"
@@ -61,29 +62,27 @@ func TestGetAttributeSelect(t *testing.T) {
 	)
 }
 
+// @todo implement this test also for EntityAttributeCollection
 func TestNewAttributeCustomer(t *testing.T) {
-	t.Skip("@todo implement New() attribute functionality")
-	for _, et := range []string{"customer", "customer_address"} {
+	//t.Skip("@todo implement New() attribute functionality")
+	for _, et := range []string{"customer", "customer_address", "catalog_product", "catalog_category", "@todo demo"} {
 		cu, err := eav.GetEntityTypeByCode(et)
 		assert.NoError(t, err)
 		ca := cu.AttributeModel.New()
-		if _, ok := ca.(eav.Attributer); !ok {
-			t.Errorf("%s Attribute model does not implement interface eav.Attributer", et)
-		}
-		if _, ok := ca.(custattr.Attributer); !ok {
-			t.Errorf("%s Attribute model does not implement interface custattr.Attributer", et)
-		}
-	}
-	for _, et := range []string{"catalog_product", "catalog_category"} {
-		cu, err := eav.GetEntityTypeByCode(et)
-		assert.NoError(t, err)
-		ca := cu.AttributeModel.New()
-		if _, ok := ca.(eav.Attributer); !ok {
-			t.Errorf("%s Attribute model does not implement interface eav.Attributer", et)
-		}
-		if _, ok := ca.(custattr.Attributer); !ok {
-			t.Errorf("%s Attribute model does not implement interface catattr.Attributer", et)
-		}
-	}
 
+		switch ca.(type) {
+		case custattr.Attributer:
+			// do here customer attribute stuff
+			break
+		case catattr.Attributer:
+			// do here catalog stuff
+			break
+		case eav.Attributer:
+			// do here default attribute stuff @todo add a sample EAV model
+			break
+		default:
+			t.Errorf("%s Attribute model does not implement interface eav.Attributer and its child interfaces", et)
+		}
+
+	}
 }

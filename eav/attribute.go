@@ -281,7 +281,7 @@ func (a *Attribute) Note() string {
 
 // Handler internal wrapper for attribute collection C, getter G and entity type id.
 // must be embedded into a concrete attribute struct. Implements interface EntityTypeAttributeModeller
-// and EntityAttributeCollectioner.
+// and EntityTypeAttributeCollectioner.
 type Handler struct {
 	// EntityTyeID to load the entity type. @todo implementation
 	EntityTyeID int64
@@ -292,7 +292,7 @@ type Handler struct {
 }
 
 var _ EntityTypeAttributeModeller = (*Handler)(nil)
-var _ EntityAttributeCollectioner = (*Handler)(nil)
+var _ EntityTypeAttributeCollectioner = (*Handler)(nil)
 
 // New creates a new attribute and returns interface custattr.Attributer
 func (h *Handler) New() interface{} {
