@@ -16,6 +16,7 @@ package custattr
 
 import (
 	"github.com/corestoreio/csfw/eav"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
 )
 
@@ -26,26 +27,46 @@ type (
 	// Attributer defines the minimal requirements for a customer attribute. This interface consists
 	// of two more tables: customer_eav_attribute and customer_eav_attribute_website. Developers
 	// can also extend these tables to add more columns. These columns will be automatically transformed
-	// into functions.
+	// into functions. as soon as there is a scope field and method receiver must cover that scope field.
 	Attributer interface {
 		eav.Attributer
 
-		IsVisible() bool
 		InputFilter() string
-		MultilineCount() int64
-		ValidateRules() string
+		Validate() bool // @todo convert php serialize string into a Go type and do only validation here
 		IsSystem() bool
 		SortOrder() int64
 		DataModel() eav.AttributeDataModeller
-		IsUsedForCustomerSegment() bool
 
-		ScopeIsVisible() bool
-		ScopeIsRequired() bool
-		ScopeDefaultValue() string
-		ScopeMultilineCount() int64
+		// IsVisible must cover also field scopeIsVisible
+		IsVisible() bool
+		// MultilineCount must also cover field scopeMultilineCount
+		MultilineCount() int64
+		// IsRequired must also cover field scopeIsRequired
+		IsRequired() bool
+		// DefaultValue must also cover field scopeDefaultValue
+		DefaultValue() string
 	}
-	// internal wrapper for attribute collection c, getter g and entity type id.
-	// internal wrapper to override New() method receiver
+
+	// Customer defines attribute properties for a customer and an address. You can use this struct to
+	// embed into your own struct for maybe overriding some method receivers.
+	Customer struct {
+		*eav.Attribute
+		isVisible      bool
+		inputFilter    string
+		multilineCount int64
+		validateRules  string
+		isSystem       bool
+		sortOrder      int64
+		dataModel      eav.AttributeDataModeller
+		// every scope property must be a dbr.Null type because only nulls are not set otherwise
+		// it would override the non-scope value
+		scopeIsVisible      dbr.NullBool
+		scopeIsRequired     dbr.NullBool
+		scopeDefaultValue   dbr.NullString
+		scopeMultilineCount dbr.NullInt64
+	}
+
+	// internal wrapper for attribute collection c, getter g and entity type id and to override New() method receiver
 	catHandler struct {
 		eav.Handler
 	}
@@ -55,6 +76,8 @@ var (
 	// verify if interfaces has been implemented
 	_ eav.EntityTypeAttributeModeller = (*catHandler)(nil)
 	_ eav.EntityAttributeCollectioner = (*catHandler)(nil)
+	// Check if Attributer interface has been successfully implemented
+	_ Attributer = (*Customer)(nil)
 
 	// aa address attribute
 	aa = &catHandler{
@@ -65,6 +88,46 @@ var (
 		Handler: eav.Handler{},
 	}
 )
+
+func (a *Customer) IsVisible() bool {
+	if a.scopeIsVisible.Valid {
+		return a.scopeIsVisible.Bool
+	}
+	return a.isVisible
+}
+func (a *Customer) MultilineCount() int64 {
+	if a.scopeMultilineCount.Valid {
+		return a.scopeMultilineCount.Int64
+	}
+	return a.multilineCount
+}
+func (a *Customer) IsRequired() bool {
+	if a.scopeIsRequired.Valid {
+		return a.scopeIsRequired.Bool
+	}
+	return a.Attribute.IsRequired()
+}
+func (a *Customer) DefaultValue() string {
+	if a.scopeDefaultValue.Valid {
+		return a.scopeDefaultValue.String
+	}
+	return a.Attribute.DefaultValue()
+}
+func (a *Customer) InputFilter() string {
+	return a.inputFilter
+}
+func (a *Customer) Validate() bool {
+	return false // a.validateRules
+}
+func (a *Customer) IsSystem() bool {
+	return a.isSystem
+}
+func (a *Customer) SortOrder() int64 {
+	return a.sortOrder
+}
+func (a *Customer) DataModel() eav.AttributeDataModeller {
+	return a.dataModel
+}
 
 // SetAddressCollection requires a slice to set the address attribute collection
 func SetAddressCollection(s eav.AttributeSliceGetter) {

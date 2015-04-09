@@ -70,14 +70,23 @@ func getName(ctx *context, suffix ...string) string {
 	return structBaseName + "_" + strings.Join(suffix, "_")
 }
 
-// stripEavAttributeColumns returns a copy of columns and removes all eav_attribute columns
+// stripEavAttributeColumns returns a copy of columns and removes all core/default eav_attribute columns
 func stripEavAttributeColumns(cols tools.Columns) tools.Columns {
 	ret := make(tools.Columns, 0, len(cols))
 	for _, col := range cols {
 		if eav.AttributeCoreColumns.Contains(col.Field.String) {
 			continue
 		}
-		ret = append(ret, col)
+		f := false
+		for _, et := range tools.ConfigEntityType {
+			if et.AttributeCoreColumns.Contains(col.Field.String) {
+				f = true
+				break
+			}
+		}
+		if f == false {
+			ret = append(ret, col)
+		}
 	}
 	return ret
 }

@@ -51,6 +51,32 @@ type (
 		IsUsedForPromoRules() bool
 		SearchWeight() int64
 	}
+
+	// Catalog a data container for attributes. You can use this struct to
+	// embed into your own struct for maybe overriding some method receivers.
+	Catalog struct {
+		*eav.Attribute
+		frontendInputRenderer     eav.FrontendInputRendererIFace
+		isGlobal                  bool
+		isVisible                 bool
+		isSearchable              bool
+		isFilterable              bool
+		isComparable              bool
+		isVisibleOnFront          bool
+		isHtmlAllowedOnFront      bool
+		isUsedForPriceRules       bool
+		isFilterableInSearch      bool
+		usedInProductListing      bool
+		usedForSortBy             bool
+		isConfigurable            bool
+		applyTo                   string
+		isVisibleInAdvancedSearch bool
+		position                  int64
+		isWysiwygEnabled          bool
+		isUsedForPromoRules       bool
+		searchWeight              int64
+	}
+
 	// internal wrapper to override New() method receiver
 	catHandler struct {
 		eav.Handler
@@ -70,7 +96,67 @@ var (
 	pa = &catHandler{
 		Handler: eav.Handler{},
 	}
+	// Check if Attributer interface has been successfully implemented
+	_ Attributer = (*Catalog)(nil)
 )
+
+func (a *Catalog) FrontendInputRenderer() eav.FrontendInputRendererIFace {
+	return a.frontendInputRenderer
+}
+func (a *Catalog) IsGlobal() bool {
+	return a.isGlobal
+}
+func (a *Catalog) IsVisible() bool {
+	return a.isVisible
+}
+func (a *Catalog) IsSearchable() bool {
+	return a.isSearchable
+}
+func (a *Catalog) IsFilterable() bool {
+	return a.isFilterable
+}
+func (a *Catalog) IsComparable() bool {
+	return a.isComparable
+}
+func (a *Catalog) IsVisibleOnFront() bool {
+	return a.isVisibleOnFront
+}
+func (a *Catalog) IsHtmlAllowedOnFront() bool {
+	return a.isHtmlAllowedOnFront
+}
+func (a *Catalog) IsUsedForPriceRules() bool {
+	return a.isUsedForPriceRules
+}
+func (a *Catalog) IsFilterableInSearch() bool {
+	return a.isFilterableInSearch
+}
+func (a *Catalog) UsedInProductListing() bool {
+	return a.usedInProductListing
+}
+func (a *Catalog) UsedForSortBy() bool {
+	return a.usedForSortBy
+}
+func (a *Catalog) IsConfigurable() bool {
+	return a.isConfigurable
+}
+func (a *Catalog) ApplyTo() string {
+	return a.applyTo
+}
+func (a *Catalog) IsVisibleInAdvancedSearch() bool {
+	return a.isVisibleInAdvancedSearch
+}
+func (a *Catalog) Position() int64 {
+	return a.position
+}
+func (a *Catalog) IsWysiwygEnabled() bool {
+	return a.isWysiwygEnabled
+}
+func (a *Catalog) IsUsedForPromoRules() bool {
+	return a.isUsedForPromoRules
+}
+func (a *Catalog) SearchWeight() int64 {
+	return a.searchWeight
+}
 
 // SetCategoryCollection requires a slice to set the category attribute collection
 func SetCategoryCollection(s eav.AttributeSliceGetter) {

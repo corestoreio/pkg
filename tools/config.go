@@ -17,6 +17,8 @@ package tools
 import (
 	"go/build"
 	"os"
+
+	"github.com/corestoreio/csfw/storage/csdb"
 )
 
 const PS = string(os.PathSeparator)
@@ -102,6 +104,8 @@ type (
 		// Mage_Customer_Model_Resource_Attribute::_getEavWebsiteTable()
 		// Mage_Eav_Model_Resource_Attribute_Collection::_getEavWebsiteTable()
 		TempAdditionalAttributeTableWebsite string
+
+		AttributeCoreColumns csdb.TableCoreColumns
 	}
 
 	// AttributeModelDefMap contains data to map the three eav_attribute columns
@@ -250,6 +254,51 @@ var ConfigMaterializationStore = &TableToStruct{
 	OutputFile: myPath + "testgen" + PS + "generated_store_test.go",
 }
 
+// customerAttributeCoreColumns defines the minimal required columns for table customer_eav_attribute.
+// Developers can extend the table customer_eav_attribute with additional columns but these additional
+// columns with its method receivers must get generated in the attribute materialize function.
+// These core columns are already defined below.
+var customerAttributeCoreColumns = csdb.TableCoreColumns{
+	"is_visible",
+	"input_filter",
+	"multiline_count",
+	"validate_rules",
+	"is_system",
+	"sort_order",
+	"data_model",
+	"scope_is_visible",
+	"scope_is_required",
+	"scope_default_value",
+	"scope_multiline_count",
+	// more scope_ columns? append here!
+}
+
+// catalogAttributeCoreColumns defines the minimal required columns for table catalog_eav_attribute.
+// Developers can extend the table customer_eav_attribute with additional columns but these additional
+// columns with its method receivers must get generated in the attribute materialize function.
+// These core columns are already defined below.
+var catalogAttributeCoreColumns = csdb.TableCoreColumns{
+	"frontend_input_renderer",
+	"is_global",
+	"is_visible",
+	"is_searchable",
+	"is_filterable",
+	"is_comparable",
+	"is_visible_on_front",
+	"is_html_allowed_on_front",
+	"is_used_for_price_rules",
+	"is_filterable_in_search",
+	"used_in_product_listing",
+	"used_for_sort_by",
+	"is_configurable",
+	"apply_to",
+	"is_visible_in_advanced_search",
+	"position",
+	"is_wysiwyg_enabled",
+	"is_used_for_promo_rules",
+	"search_weight",
+}
+
 // ConfigEntityType contains default configuration to materialize the entity types.
 // Use the file config_user.go with the func init() to change/extend it.
 // Needed in materializeEntityType()
@@ -263,6 +312,7 @@ var ConfigEntityType = EntityTypeMap{
 		EntityAttributeCollection:           "github.com/corestoreio/csfw/customer/custattr.Customer({{.EntityTypeID}})",
 		TempAdditionalAttributeTable:        "{{tableprefix}}customer_eav_attribute",
 		TempAdditionalAttributeTableWebsite: "{{tableprefix}}customer_eav_attribute_website",
+		AttributeCoreColumns:                customerAttributeCoreColumns,
 	},
 	"customer_address": &EntityType{
 		EntityModel:                         "github.com/corestoreio/csfw/customer.Address()",
@@ -272,6 +322,7 @@ var ConfigEntityType = EntityTypeMap{
 		EntityAttributeCollection:           "github.com/corestoreio/csfw/customer/custattr.Address({{.EntityTypeID}})",
 		TempAdditionalAttributeTable:        "{{tableprefix}}customer_eav_attribute",
 		TempAdditionalAttributeTableWebsite: "{{tableprefix}}customer_eav_attribute_website",
+		AttributeCoreColumns:                customerAttributeCoreColumns,
 	},
 	"catalog_category": &EntityType{
 		EntityModel:                  "github.com/corestoreio/csfw/catalog.Category()",
@@ -280,6 +331,7 @@ var ConfigEntityType = EntityTypeMap{
 		AdditionalAttributeTable:     "github.com/corestoreio/csfw/catalog.Category()",
 		EntityAttributeCollection:    "github.com/corestoreio/csfw/catalog/catattr.Category({{.EntityTypeID}})",
 		TempAdditionalAttributeTable: "{{tableprefix}}catalog_eav_attribute",
+		AttributeCoreColumns:         catalogAttributeCoreColumns,
 	},
 	"catalog_product": &EntityType{
 		EntityModel:                  "github.com/corestoreio/csfw/catalog.Product()",
@@ -288,6 +340,7 @@ var ConfigEntityType = EntityTypeMap{
 		AdditionalAttributeTable:     "github.com/corestoreio/csfw/catalog.Product()",
 		EntityAttributeCollection:    "github.com/corestoreio/csfw/catalog/catattr.Product({{.EntityTypeID}})",
 		TempAdditionalAttributeTable: "{{tableprefix}}catalog_eav_attribute",
+		AttributeCoreColumns:         catalogAttributeCoreColumns,
 	},
 	// @todo extend for all sales entities
 }

@@ -23,12 +23,15 @@ import "github.com/corestoreio/csfw/tools"
 */
 
 const tplTypeDefinition = `
+
 type (
     // @todo website must be present in the slice
     // {{ .Name | prepareVar }} a data container for attributes. You can use this struct to
     // embed into your own struct for maybe overriding some method receivers.
     {{ .Name | prepareVar | toLowerFirst }} struct {
-        *eav.Attribute
+        // this type contains only custom columns ...
+        *(cust|cat)attr.(Customer/Catalog)
+        // add only those columns which are not in variables AttributeCoreColumns for each attr package
         {{ range .Columns }}{{ .GoName | toLowerFirst }} {{ .GoType }}
         {{ end }} }
 )

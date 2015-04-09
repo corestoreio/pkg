@@ -22,7 +22,7 @@ import (
 
 var (
 	ErrAttributeNotFound = errors.New("Attribute not found")
-	// AttributeCoreColumns defnies the minimal required coulmns for table eav_attribute.
+	// AttributeCoreColumns defines the minimal required columns for table eav_attribute.
 	// Developers can extend the table eav_attribute with additional columns but these additional
 	// columns with its method receivers must get generated in the attribute materialize function.
 	// These core columns are already defined below.
