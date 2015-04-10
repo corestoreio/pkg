@@ -101,7 +101,7 @@ func (m TableStructureSlice) Name(i Index) string {
 	return ""
 }
 
-// Contains checks if this slice contains this name
+// Contains checks if this slice contains this name. Equal check.
 func (c TableCoreColumns) Contains(name string) bool {
 	for i := 0; i < len(c); i++ {
 		if c[i] == name {

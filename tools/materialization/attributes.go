@@ -70,11 +70,11 @@ func getName(ctx *context, suffix ...string) string {
 	return structBaseName + "_" + strings.Join(suffix, "_")
 }
 
-// stripEavAttributeColumns returns a copy of columns and removes all core/default eav_attribute columns
-func stripEavAttributeColumns(cols tools.Columns) tools.Columns {
+// stripCoreAttributeColumns returns a copy of columns and removes all core/default eav_attribute columns
+func stripCoreAttributeColumns(cols tools.Columns) tools.Columns {
 	ret := make(tools.Columns, 0, len(cols))
 	for _, col := range cols {
-		if eav.AttributeCoreColumns.Contains(col.Field.String) {
+		if tools.EAVAttributeCoreColumns.Contains(col.Field.String) {
 			continue
 		}
 		f := false
@@ -113,9 +113,10 @@ func generateAttributeCode(ctx *context) error {
 
 	name := getName(ctx, "attribute")
 	typeTplData := map[string]interface{}{
-		"AttrPkg": getAttrPkg(ctx.et),
+		"AttrPkg":    getAttrPkg(ctx.et),
+		"AttrStruct": tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].AttrStruct,
 	}
-	structCode, err := tools.ColumnsToStructCode(typeTplData, name, stripEavAttributeColumns(columns), tplTypeDefinition)
+	structCode, err := tools.ColumnsToStructCode(typeTplData, name, stripCoreAttributeColumns(columns), tplTypeDefinition)
 	if err != nil {
 		println(string(structCode))
 		return err
@@ -138,11 +139,26 @@ func generateAttributeCode(ctx *context) error {
 		"PackageName":    pkg,
 		"AttrPkg":        getAttrPkg(ctx.et),
 		"AttrPkgImp":     tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].AttrPkgImp,
+		"AttrStruct":     tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].AttrStruct,
 		"FuncCollection": tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].FuncCollection,
 		"FuncGetter":     tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].FuncGetter,
 	}
 	funcMap := template.FuncMap{
-		"isEavAttr": func(a string) bool { return eav.AttributeCoreColumns.Contains(a) },
+		// isEavAttr checks if the attribute/column name belongs to table eav_attribute
+		"isEavAttr": func(a string) bool { return tools.EAVAttributeCoreColumns.Contains(a) },
+		// isEavEntityAttr checks if the attribute/column belongs to (customer|catalog|etc)_eav_attribute
+		"isEavEntityAttr": func(a string) bool {
+			if et, ok := tools.ConfigEntityType[ctx.et.EntityTypeCode]; ok {
+				return false == tools.EAVAttributeCoreColumns.Contains(a) && et.AttributeCoreColumns.Contains(a)
+			}
+			return false
+		},
+		"isUnknownAttr": func(a string) bool {
+			if et, ok := tools.ConfigEntityType[ctx.et.EntityTypeCode]; ok {
+				return false == tools.EAVAttributeCoreColumns.Contains(a) && false == et.AttributeCoreColumns.Contains(a)
+			}
+			return false
+		},
 		"setAttrIdx": func(value, constName string) string {
 			return strings.Replace(value, "{{.AttributeIndex}}", constName, -1)
 		},

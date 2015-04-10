@@ -16,7 +16,6 @@ package custattr
 
 import (
 	"github.com/corestoreio/csfw/eav"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
 )
 
@@ -27,7 +26,7 @@ type (
 	// Attributer defines the minimal requirements for a customer attribute. This interface consists
 	// of two more tables: customer_eav_attribute and customer_eav_attribute_website. Developers
 	// can also extend these tables to add more columns. These columns will be automatically transformed
-	// into functions. as soon as there is a scope field and method receiver must cover that scope field.
+	// into functions. Scope columns are handled transparently in eav.GetAttributeSelectSql
 	Attributer interface {
 		eav.Attributer
 
@@ -36,14 +35,9 @@ type (
 		IsSystem() bool
 		SortOrder() int64
 		DataModel() eav.AttributeDataModeller
-
-		// IsVisible must cover also field scopeIsVisible
 		IsVisible() bool
-		// MultilineCount must also cover field scopeMultilineCount
 		MultilineCount() int64
-		// IsRequired must also cover field scopeIsRequired
-		IsRequired() bool
-		// DefaultValue must also cover field scopeDefaultValue
+		IsRequired() bool // @todo ?? see parent
 		DefaultValue() string
 	}
 
@@ -58,12 +52,7 @@ type (
 		isSystem       bool
 		sortOrder      int64
 		dataModel      eav.AttributeDataModeller
-		// every scope property must be a dbr.Null type because only nulls are not set otherwise
-		// it would override the non-scope value
-		scopeIsVisible      dbr.NullBool
-		scopeIsRequired     dbr.NullBool
-		scopeDefaultValue   dbr.NullString
-		scopeMultilineCount dbr.NullInt64
+		// scope_ columns from eav website table are handled transparently in the function GetAttributeSelectSql
 	}
 
 	// internal wrapper for attribute collection c, getter g and entity type id and to override New() method receiver
@@ -89,29 +78,39 @@ var (
 	}
 )
 
-func (a *Customer) IsVisible() bool {
-	if a.scopeIsVisible.Valid {
-		return a.scopeIsVisible.Bool
+func NewCustomer(
+	a *eav.Attribute,
+	isVisible bool,
+	inputFilter string,
+	multilineCount int64,
+	validateRules string,
+	isSystem bool,
+	sortOrder int64,
+	dataModel eav.AttributeDataModeller,
+) *Customer {
+	return &Customer{
+		Attribute:      a,
+		isVisible:      isVisible,
+		inputFilter:    inputFilter,
+		multilineCount: multilineCount,
+		validateRules:  validateRules,
+		isSystem:       isSystem,
+		sortOrder:      sortOrder,
+		dataModel:      dataModel,
 	}
+}
+
+func (a *Customer) IsVisible() bool {
 	return a.isVisible
 }
 func (a *Customer) MultilineCount() int64 {
-	if a.scopeMultilineCount.Valid {
-		return a.scopeMultilineCount.Int64
-	}
 	return a.multilineCount
 }
 func (a *Customer) IsRequired() bool {
-	if a.scopeIsRequired.Valid {
-		return a.scopeIsRequired.Bool
-	}
-	return a.Attribute.IsRequired()
+	return a.Attribute.IsRequired() // @todo review
 }
 func (a *Customer) DefaultValue() string {
-	if a.scopeDefaultValue.Valid {
-		return a.scopeDefaultValue.String
-	}
-	return a.Attribute.DefaultValue()
+	return a.Attribute.DefaultValue() // @todo review
 }
 func (a *Customer) InputFilter() string {
 	return a.inputFilter

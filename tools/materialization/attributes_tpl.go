@@ -30,7 +30,7 @@ type (
     // embed into your own struct for maybe overriding some method receivers.
     {{ .Name | prepareVar | toLowerFirst }} struct {
         // this type contains only custom columns ...
-        *(cust|cat)attr.(Customer/Catalog)
+        *{{ .AttrPkg }}.{{ .AttrStruct }}
         // add only those columns which are not in variables AttributeCoreColumns for each attr package
         {{ range .Columns }}{{ .GoName | toLowerFirst }} {{ .GoType }}
         {{ end }} }
@@ -89,18 +89,23 @@ var _ eav.AttributeGetter = (*si{{ $.Name | prepareVar }})(nil)
 func init(){
     {{ .AttrPkg }}.{{ .FuncGetter }}(&si{{ $.Name | prepareVar }}{})
     {{ .AttrPkg }}.{{ .FuncCollection }}({{ .AttrPkg }}.AttributeSlice{
-        {{ range $row := .Attributes }}
+    {{ range $row := .Attributes }}
         {{ $const := sprintf "%s%s" (prepareVar $.Name) (prepareVar (index $row "attribute_code")) }}
         {{ $const }}: {{ if ne $.MyStruct "" }} &{{ $.MyStruct }} {
         {{ end }} &{{ $.Name | prepareVar | toLowerFirst }} {
-            Attribute: eav.NewAttribute({{ range $k,$v := $row }} {{ if (isEavAttr $k) }} {{ setAttrIdx $v $const }}, // {{ $k }}
+            {{ $.AttrStruct }}: {{ $.AttrPkg }}.New{{ $.AttrStruct }} (
+                eav.NewAttribute(
+                    {{ range $k,$v := $row }} {{ if (isEavAttr $k) }} {{ setAttrIdx $v $const }}, // {{ $k }}
+                    {{ end }}{{ end }}
+                ),
+            {{ range $k,$v := $row }} {{ if (isEavEntityAttr $k) }} {{ setAttrIdx $v $const }}, // {{ $k }}
             {{ end }}{{ end }}
             ),
-            {{ range $k,$v := $row }} {{ if not (isEavAttr $k) }} {{ $k | prepareVar | toLowerFirst }}: {{ setAttrIdx $v $const }},
+            {{ range $k,$v := $row }} {{ if (isUnknownAttr $k) }} {{ setAttrIdx $v $const }}, // {{ $k }}
             {{ end }}{{ end }}
         },
         {{ if ne $.MyStruct "" }} }, {{ end }}
-        {{ end }}
+    {{ end }}
     })
 }
 `

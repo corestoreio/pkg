@@ -14,37 +14,10 @@
 
 package eav
 
-import (
-	"errors"
-
-	"github.com/corestoreio/csfw/storage/csdb"
-)
+import "errors"
 
 var (
 	ErrAttributeNotFound = errors.New("Attribute not found")
-	// AttributeCoreColumns defines the minimal required columns for table eav_attribute.
-	// Developers can extend the table eav_attribute with additional columns but these additional
-	// columns with its method receivers must get generated in the attribute materialize function.
-	// These core columns are already defined below.
-	AttributeCoreColumns = csdb.TableCoreColumns{
-		"attribute_id",
-		"entity_type_id",
-		"attribute_code",
-		"attribute_model", // this column is unused by Mage1+2
-		"backend_model",
-		"backend_type",
-		"backend_table",
-		"frontend_model",
-		"frontend_input",
-		"frontend_label",
-		"frontend_class",
-		"source_model",
-		"is_required",
-		"is_user_defined",
-		"default_value",
-		"is_unique",
-		"note",
-	}
 )
 
 const (

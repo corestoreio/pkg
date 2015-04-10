@@ -23,6 +23,7 @@ import (
 
 type (
 	// AttributeSlice implements eav.AttributeSliceGetter @todo website must be present in the slice
+	// @todo must create interface to wrap custom columns
 	AttributeSlice []Attributer
 
 	// Attributer defines the minimal requirements for a catalog attribute. This interface consists

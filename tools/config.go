@@ -56,8 +56,11 @@ type (
 		// Package defines the name of the target package, must be external. Default is {{.AttrPkgImp}}_test but
 		// for your project you must provide your package name.
 		Package string
-		// MyStruct is the optional name of your struct from your package. MyStruct must embed a pointer to the
-		// generated private attribute struct. This is useful if you want to override the method receivers.
+		// AttrStruct defines the name of the attribute struct in an EAV package like catattr or custattr.
+		// This struct will have the prefix of AttrPkgImp and will be embedded the newly generated struct
+		// which wraps additional project specific columns.
+		AttrStruct string
+		// MyStruct is the optional name of your struct from your package. @todo review
 		MyStruct string
 		// OutputFile specifies the full path where to write the newly generated code
 		OutputFile string
@@ -253,51 +256,71 @@ var ConfigMaterializationStore = &TableToStruct{
 	Package:    "testgen",
 	OutputFile: myPath + "testgen" + PS + "generated_store_test.go",
 }
+var (
+	// EAVAttributeCoreColumns defines the minimal required columns for table eav_attribute.
+	// Developers can extend the table eav_attribute with additional columns but these additional
+	// columns with its method receivers must get generated in the attribute materialize function.
+	// These core columns are already defined below.
+	EAVAttributeCoreColumns = csdb.TableCoreColumns{
+		"attribute_id",
+		"entity_type_id",
+		"attribute_code",
+		"attribute_model", // this column is unused by Mage1+2
+		"backend_model",
+		"backend_type",
+		"backend_table",
+		"frontend_model",
+		"frontend_input",
+		"frontend_label",
+		"frontend_class",
+		"source_model",
+		"is_required",
+		"is_user_defined",
+		"default_value",
+		"is_unique",
+		"note",
+	}
 
-// customerAttributeCoreColumns defines the minimal required columns for table customer_eav_attribute.
-// Developers can extend the table customer_eav_attribute with additional columns but these additional
-// columns with its method receivers must get generated in the attribute materialize function.
-// These core columns are already defined below.
-var customerAttributeCoreColumns = csdb.TableCoreColumns{
-	"is_visible",
-	"input_filter",
-	"multiline_count",
-	"validate_rules",
-	"is_system",
-	"sort_order",
-	"data_model",
-	"scope_is_visible",
-	"scope_is_required",
-	"scope_default_value",
-	"scope_multiline_count",
-	// more scope_ columns? append here!
-}
+	// customerAttributeCoreColumns defines the minimal required columns for table customer_eav_attribute.
+	// Developers can extend the table customer_eav_attribute with additional columns but these additional
+	// columns with its method receivers must get generated in the attribute materialize function.
+	// These core columns are already defined below.
+	customerAttributeCoreColumns = csdb.TableCoreColumns{
+		"is_visible",
+		"input_filter",
+		"multiline_count",
+		"validate_rules",
+		"is_system",
+		"sort_order",
+		"data_model",
+	}
 
-// catalogAttributeCoreColumns defines the minimal required columns for table catalog_eav_attribute.
-// Developers can extend the table customer_eav_attribute with additional columns but these additional
-// columns with its method receivers must get generated in the attribute materialize function.
-// These core columns are already defined below.
-var catalogAttributeCoreColumns = csdb.TableCoreColumns{
-	"frontend_input_renderer",
-	"is_global",
-	"is_visible",
-	"is_searchable",
-	"is_filterable",
-	"is_comparable",
-	"is_visible_on_front",
-	"is_html_allowed_on_front",
-	"is_used_for_price_rules",
-	"is_filterable_in_search",
-	"used_in_product_listing",
-	"used_for_sort_by",
-	"is_configurable",
-	"apply_to",
-	"is_visible_in_advanced_search",
-	"position",
-	"is_wysiwyg_enabled",
-	"is_used_for_promo_rules",
-	"search_weight",
-}
+	// catalogAttributeCoreColumns defines the minimal required columns for table catalog_eav_attribute.
+	// Developers can extend the table customer_eav_attribute with additional columns but these additional
+	// columns with its method receivers must get generated in the attribute materialize function.
+	// These core columns are already defined below.
+	catalogAttributeCoreColumns = csdb.TableCoreColumns{
+		"frontend_input_renderer",
+		"is_global",
+		"is_visible",
+		"is_searchable",
+		"is_filterable",
+		"is_comparable",
+		"is_visible_on_front",
+		"is_html_allowed_on_front",
+		"is_used_for_price_rules",
+		"is_filterable_in_search",
+		"used_in_product_listing",
+		"used_for_sort_by",
+		"is_configurable",
+		"apply_to",
+		"is_visible_in_advanced_search",
+		"position",
+		"is_wysiwyg_enabled",
+		"is_used_for_promo_rules",
+		"search_weight",
+	}
+)
 
 // ConfigEntityType contains default configuration to materialize the entity types.
 // Use the file config_user.go with the func init() to change/extend it.
@@ -352,6 +375,7 @@ var ConfigMaterializationAttributes = AttributeToStructMap{
 		AttrPkgImp:     "github.com/corestoreio/csfw/customer/custattr",
 		FuncCollection: "SetCustomerCollection",
 		FuncGetter:     "SetCustomerGetter",
+		AttrStruct:     "Customer",
 		MyStruct:       "",
 		Package:        "testgen", // external package name
 		OutputFile:     myPath + "testgen" + PS + "generated_customer_attribute_test.go",
@@ -360,6 +384,7 @@ var ConfigMaterializationAttributes = AttributeToStructMap{
 		AttrPkgImp:     "github.com/corestoreio/csfw/customer/custattr",
 		FuncCollection: "SetAddressCollection",
 		FuncGetter:     "SetAddressGetter",
+		AttrStruct:     "Customer",
 		MyStruct:       "",
 		Package:        "testgen",
 		OutputFile:     myPath + "testgen" + PS + "generated_address_attribute_test.go",
@@ -368,6 +393,7 @@ var ConfigMaterializationAttributes = AttributeToStructMap{
 		AttrPkgImp:     "github.com/corestoreio/csfw/catalog/catattr",
 		FuncCollection: "SetProductCollection",
 		FuncGetter:     "SetProductGetter",
+		AttrStruct:     "Catalog",
 		MyStruct:       "",
 		Package:        "testgen",
 		OutputFile:     myPath + "testgen" + PS + "generated_product_attribute_test.go",
@@ -376,6 +402,7 @@ var ConfigMaterializationAttributes = AttributeToStructMap{
 		AttrPkgImp:     "github.com/corestoreio/csfw/catalog/catattr",
 		FuncCollection: "SetCategoryCollection",
 		FuncGetter:     "SetCategoryGetter",
+		AttrStruct:     "Catalog",
 		MyStruct:       "",
 		Package:        "testgen",
 		OutputFile:     myPath + "testgen" + PS + "generated_category_attribute_test.go",
