@@ -21,8 +21,43 @@ import (
 )
 
 // GetAttributeSelectSql generates the select query to retrieve full attribute configuration
+// Implements the scope on a SQL query basis so that attribute functions does not need to deal with it.
+// Tests see the tools package
 // @see magento2/app/code/Magento/Eav/Model/Resource/Attribute/Collection.php::_initSelect()
 func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAttributeTabler, entityTypeID, websiteId int64) (*dbr.SelectBuilder, error) {
+
+	/*
+			@todo
+		   SELECT
+		     `main_table`.`attribute_id`,
+		     `main_table`.`entity_type_id`,
+		     `main_table`.`attribute_code`,
+		     `main_table`.`backend_model`,
+		     `main_table`.`backend_type`,
+		     `main_table`.`backend_table`,
+		     `main_table`.`frontend_model`,
+		     `main_table`.`frontend_input`,
+		     `main_table`.`frontend_label`,
+		     `main_table`.`frontend_class`,
+		     `main_table`.`source_model`,
+		     `main_table`.`is_user_defined`,
+		     `main_table`.`is_unique`,
+		     `main_table`.`note`,
+		     `additional_table`.`input_filter`,
+		     `additional_table`.`validate_rules`,
+		     `additional_table`.`is_system`,
+		     `additional_table`.`sort_order`,
+		     `additional_table`.`data_model`,
+		     `additional_table`.`is_used_for_customer_segment`,
+		     IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`)               AS `is_required`,
+		     IFNULL(`scope_table`.`default_value`, `main_table`.`default_value`)           AS `default_value`,
+		     IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`)           AS `is_visible`,
+		     IFNULL(`scope_table`.`multiline_count`, `additional_table`.`multiline_count`) AS `multiline_count`
+		   FROM `eav_attribute` AS `main_table` INNER JOIN `customer_eav_attribute` AS `additional_table`
+		       ON (`additional_table`.`attribute_id` = `main_table`.`attribute_id`) AND (`main_table`.`entity_type_id` = 1)
+		     LEFT JOIN `customer_eav_attribute_website` AS `scope_table`
+		       ON (`scope_table`.`attribute_id` = `main_table`.`attribute_id`) AND (`scope_table`.`website_id` = 4)
+	*/
 
 	ta, err := GetTableStructure(TableIndexAttribute)
 	if err != nil {

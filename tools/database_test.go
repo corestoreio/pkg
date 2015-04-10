@@ -269,6 +269,20 @@ func TestGetFieldNames(t *testing.T) {
 	}
 }
 
+func TestGetAttributeSelectSql(t *testing.T) {
+	db := csdb.MustConnectTest()
+	defer db.Close()
+
+	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
+	dbrSelect, err := eav.GetAttributeSelectSql(dbrSess, NewAddAttrTables(db, "customer"), 1, 4)
+	if err != nil {
+		t.Error(err)
+	}
+	sql, _ := dbrSelect.ToSql()
+	t.Logf("\n%s\n", sql)
+
+}
+
 // depends on generated code
 func TestSQLQueryToColumnsToStruct(t *testing.T) {
 	db := csdb.MustConnectTest()
