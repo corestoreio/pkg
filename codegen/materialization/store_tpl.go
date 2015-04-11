@@ -14,9 +14,9 @@
 
 package main
 
-import "github.com/corestoreio/csfw/tools"
+import "github.com/corestoreio/csfw/codegen"
 
-const tplMaterializationStore = tools.Copyright + `
+const tplMaterializationStore = codegen.Copyright + `
 package {{ .PackageName }}
 
 import (

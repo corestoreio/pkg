@@ -48,7 +48,7 @@ func getCommands() []aCommand {
 	return []aCommand{
 		aCommand{
 			name: goCmd,
-			args: []string{"build", "-a", "github.com/corestoreio/csfw/tools/tableToStruct"},
+			args: []string{"build", "-a", "github.com/corestoreio/csfw/codegen/tableToStruct"},
 			rm:   false,
 		},
 		aCommand{
@@ -63,7 +63,7 @@ func getCommands() []aCommand {
 		aCommand{
 			// this commands depends on the generated source from tableToStruct 8-)
 			name: goCmd,
-			args: []string{"build", "-a", "github.com/corestoreio/csfw/tools/materialization"},
+			args: []string{"build", "-a", "github.com/corestoreio/csfw/codegen/materialization"},
 			rm:   false,
 		},
 		aCommand{

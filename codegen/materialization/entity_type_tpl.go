@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/corestoreio/csfw/tools"
+import "github.com/corestoreio/csfw/codegen"
 
 /* @todo
    Data will be "carved in stone" because it only changes during development.
@@ -22,7 +22,7 @@ import "github.com/corestoreio/csfw/tools"
    - eav_attribute full config and from that one the flat table structure
 */
 
-const tplEav = tools.Copyright + `
+const tplEav = codegen.Copyright + `
 package {{ .Package }}
 
 // Package {{ .Package }} file is auto generated

@@ -20,8 +20,8 @@ import (
 	"strings"
 	"text/template"
 
+	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/eav"
-	"github.com/corestoreio/csfw/tools"
 	"github.com/juju/errgo"
 )
 
@@ -31,29 +31,29 @@ func materializeAttributes(ctx *context) {
 	defer ctx.wg.Done()
 
 	etc, err := getEntityTypeData(ctx.dbrConn.NewSession(nil))
-	tools.LogFatal(err)
+	codegen.LogFatal(err)
 	for _, et := range etc {
 		ctx.et = et
-		tools.LogFatal(generateAttributeCode(ctx))
+		codegen.LogFatal(generateAttributeCode(ctx))
 	}
 }
 
 func getAttrPkg(et *eav.TableEntityType) string {
-	if etConfig, ok := tools.ConfigMaterializationAttributes[et.EntityTypeCode]; ok {
+	if etConfig, ok := codegen.ConfigMaterializationAttributes[et.EntityTypeCode]; ok {
 		return path.Base(etConfig.AttrPkgImp)
 	}
 	return ""
 }
 
 func getOutputFile(et *eav.TableEntityType) string {
-	if etConfig, ok := tools.ConfigMaterializationAttributes[et.EntityTypeCode]; ok {
+	if etConfig, ok := codegen.ConfigMaterializationAttributes[et.EntityTypeCode]; ok {
 		return etConfig.OutputFile
 	}
 	panic("You must specify an output file")
 }
 
 func getPackage(et *eav.TableEntityType) string {
-	if etConfig, ok := tools.ConfigMaterializationAttributes[et.EntityTypeCode]; ok {
+	if etConfig, ok := codegen.ConfigMaterializationAttributes[et.EntityTypeCode]; ok {
 		return etConfig.Package
 	}
 	panic("You must specify a package name")
@@ -71,14 +71,14 @@ func getName(ctx *context, suffix ...string) string {
 }
 
 // stripCoreAttributeColumns returns a copy of columns and removes all core/default eav_attribute columns
-func stripCoreAttributeColumns(cols tools.Columns) tools.Columns {
-	ret := make(tools.Columns, 0, len(cols))
+func stripCoreAttributeColumns(cols codegen.Columns) codegen.Columns {
+	ret := make(codegen.Columns, 0, len(cols))
 	for _, col := range cols {
-		if tools.EAVAttributeCoreColumns.Include(col.Field.String) {
+		if codegen.EAVAttributeCoreColumns.Include(col.Field.String) {
 			continue
 		}
 		f := false
-		for _, et := range tools.ConfigEntityType {
+		for _, et := range codegen.ConfigEntityType {
 			if et.AttributeCoreColumns.Include(col.Field.String) {
 				f = true
 				break
@@ -96,7 +96,7 @@ func generateAttributeCode(ctx *context) error {
 
 	dbrSelect, err := eav.GetAttributeSelectSql(
 		ctx.dbrConn.NewSession(nil),
-		tools.NewAddAttrTables(ctx.db, ctx.et.EntityTypeCode),
+		codegen.NewAddAttrTables(ctx.db, ctx.et.EntityTypeCode),
 		ctx.et.EntityTypeID,
 		0, // @todo get all website IDs
 	)
@@ -104,58 +104,58 @@ func generateAttributeCode(ctx *context) error {
 		return err
 	}
 	dbrSelect.OrderDir("main_table.attribute_code", true)
-	columns, err := tools.SQLQueryToColumns(ctx.db, dbrSelect)
+	columns, err := codegen.SQLQueryToColumns(ctx.db, dbrSelect)
 	if err != nil {
 		return err
 	}
 
-	tools.LogFatal(columns.MapSQLToGoType(tools.EavAttributeColumnNameToInterface))
+	codegen.LogFatal(columns.MapSQLToGoType(codegen.EavAttributeColumnNameToInterface))
 
 	name := getName(ctx, "attribute")
 	typeTplData := map[string]interface{}{
 		"AttrPkg":    getAttrPkg(ctx.et),
-		"AttrStruct": tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].AttrStruct,
+		"AttrStruct": codegen.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].AttrStruct,
 	}
-	structCode, err := tools.ColumnsToStructCode(typeTplData, name, stripCoreAttributeColumns(columns), tplTypeDefinition)
+	structCode, err := codegen.ColumnsToStructCode(typeTplData, name, stripCoreAttributeColumns(columns), tplTypeDefinition)
 	if err != nil {
 		println(string(structCode))
 		return err
 	}
 
-	attributeCollection, err := tools.LoadStringEntities(ctx.db, dbrSelect)
+	attributeCollection, err := codegen.LoadStringEntities(ctx.db, dbrSelect)
 	if err != nil {
 		return err
 	}
 
 	// @todo ValidateRules field must be converted from PHP serialized string to JSON
 	pkg := getPackage(ctx.et)
-	importPaths := tools.PrepareForTemplate(columns, attributeCollection, tools.ConfigAttributeModel, pkg)
+	importPaths := codegen.PrepareForTemplate(columns, attributeCollection, codegen.ConfigAttributeModel, pkg)
 	data := map[string]interface{}{
 		"TypeDefinition": string(structCode),
 		"Attributes":     attributeCollection,
 		"Name":           name,
-		"MyStruct":       tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].MyStruct,
+		"MyStruct":       codegen.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].MyStruct,
 		"ImportPaths":    importPaths,
 		"PackageName":    pkg,
 		"AttrPkg":        getAttrPkg(ctx.et),
-		"AttrPkgImp":     tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].AttrPkgImp,
-		"AttrStruct":     tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].AttrStruct,
-		"FuncCollection": tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].FuncCollection,
-		"FuncGetter":     tools.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].FuncGetter,
+		"AttrPkgImp":     codegen.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].AttrPkgImp,
+		"AttrStruct":     codegen.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].AttrStruct,
+		"FuncCollection": codegen.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].FuncCollection,
+		"FuncGetter":     codegen.ConfigMaterializationAttributes[ctx.et.EntityTypeCode].FuncGetter,
 	}
 	funcMap := template.FuncMap{
 		// isEavAttr checks if the attribute/column name belongs to table eav_attribute
-		"isEavAttr": func(a string) bool { return tools.EAVAttributeCoreColumns.Include(a) },
+		"isEavAttr": func(a string) bool { return codegen.EAVAttributeCoreColumns.Include(a) },
 		// isEavEntityAttr checks if the attribute/column belongs to (customer|catalog|etc)_eav_attribute
 		"isEavEntityAttr": func(a string) bool {
-			if et, ok := tools.ConfigEntityType[ctx.et.EntityTypeCode]; ok {
-				return false == tools.EAVAttributeCoreColumns.Include(a) && et.AttributeCoreColumns.Include(a)
+			if et, ok := codegen.ConfigEntityType[ctx.et.EntityTypeCode]; ok {
+				return false == codegen.EAVAttributeCoreColumns.Include(a) && et.AttributeCoreColumns.Include(a)
 			}
 			return false
 		},
 		"isUnknownAttr": func(a string) bool {
-			if et, ok := tools.ConfigEntityType[ctx.et.EntityTypeCode]; ok {
-				return false == tools.EAVAttributeCoreColumns.Include(a) && false == et.AttributeCoreColumns.Include(a)
+			if et, ok := codegen.ConfigEntityType[ctx.et.EntityTypeCode]; ok {
+				return false == codegen.EAVAttributeCoreColumns.Include(a) && false == et.AttributeCoreColumns.Include(a)
 			}
 			return false
 		},
@@ -164,7 +164,7 @@ func generateAttributeCode(ctx *context) error {
 		},
 	}
 
-	code, err := tools.GenerateCode("", tplTypeDefinitionFile, data, funcMap)
+	code, err := codegen.GenerateCode("", tplTypeDefinitionFile, data, funcMap)
 	if err != nil {
 		println(string(code))
 		return err

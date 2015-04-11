@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/corestoreio/csfw/tools"
+import "github.com/corestoreio/csfw/codegen"
 
 /* @todo
    Data will be "carved in stone" because it only changes during development.
@@ -46,7 +46,7 @@ var _ {{ .AttrPkg }}.Attributer = (*{{ .Name | prepareVar | toLowerFirst }})(nil
 
 `
 
-const tplTypeDefinitionFile = tools.Copyright + `
+const tplTypeDefinitionFile = codegen.Copyright + `
 package {{ .PackageName }}
     import (
         "github.com/corestoreio/csfw/eav"

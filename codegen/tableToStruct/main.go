@@ -21,41 +21,41 @@ import (
 
 	"fmt"
 
+	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/tools"
 )
 
 type (
 	dataContainer struct {
 		Tables              []map[string]interface{}
 		Package, Tick       string
-		TypeCodeValueTables tools.TypeCodeValueTable
+		TypeCodeValueTables codegen.TypeCodeValueTable
 	}
 )
 
 func main() {
 	db, dbrConn, err := csdb.Connect()
-	tools.LogFatal(err)
+	codegen.LogFatal(err)
 	defer db.Close()
-	for _, tStruct := range tools.ConfigTableToStruct {
+	for _, tStruct := range codegen.ConfigTableToStruct {
 		generateStructures(tStruct, db, dbrConn)
 	}
 }
 
-func generateStructures(tStruct *tools.TableToStruct, db *sql.DB, dbrConn *dbr.Connection) {
+func generateStructures(tStruct *codegen.TableToStruct, db *sql.DB, dbrConn *dbr.Connection) {
 	tplData := &dataContainer{
 		Tables:  make([]map[string]interface{}, 0, 200),
 		Package: tStruct.Package,
 		Tick:    "`",
 	}
 
-	tables, err := tools.GetTables(db, tools.ReplaceTablePrefix(tStruct.SQLQuery))
-	tools.LogFatal(err)
+	tables, err := codegen.GetTables(db, codegen.ReplaceTablePrefix(tStruct.SQLQuery))
+	codegen.LogFatal(err)
 
 	if len(tStruct.EntityTypeCodes) > 0 && tStruct.EntityTypeCodes[0] != "" {
-		tplData.TypeCodeValueTables, err = tools.GetEavValueTables(dbrConn, tStruct.EntityTypeCodes)
-		tools.LogFatal(err)
+		tplData.TypeCodeValueTables, err = codegen.GetEavValueTables(dbrConn, tStruct.EntityTypeCodes)
+		codegen.LogFatal(err)
 
 		for _, vTables := range tplData.TypeCodeValueTables {
 			for t, _ := range vTables {
@@ -68,11 +68,11 @@ func generateStructures(tStruct *tools.TableToStruct, db *sql.DB, dbrConn *dbr.C
 
 	for _, table := range tables {
 
-		columns, err := tools.GetColumns(db, table)
-		tools.LogFatal(err)
-		tools.LogFatal(columns.MapSQLToGoDBRType())
+		columns, err := codegen.GetColumns(db, table)
+		codegen.LogFatal(err)
+		codegen.LogFatal(columns.MapSQLToGoDBRType())
 		var name = table
-		if mappedName, ok := tools.TableMapMagento1To2[strings.Replace(table, tools.TablePrefix, "", 1)]; ok {
+		if mappedName, ok := codegen.TableMapMagento1To2[strings.Replace(table, codegen.TablePrefix, "", 1)]; ok {
 			name = mappedName
 		}
 		tplData.Tables = append(tplData.Tables, map[string]interface{}{
@@ -82,13 +82,13 @@ func generateStructures(tStruct *tools.TableToStruct, db *sql.DB, dbrConn *dbr.C
 		})
 	}
 
-	formatted, err := tools.GenerateCode(tStruct.Package, tplCode, tplData, nil)
+	formatted, err := codegen.GenerateCode(tStruct.Package, tplCode, tplData, nil)
 	if err != nil {
 		fmt.Printf("\n%s\n", formatted)
-		tools.LogFatal(err)
+		codegen.LogFatal(err)
 	}
 
-	tools.LogFatal(ioutil.WriteFile(tStruct.OutputFile, formatted, 0600))
+	codegen.LogFatal(ioutil.WriteFile(tStruct.OutputFile, formatted, 0600))
 }
 
 // isDuplicate slow duplicate checker ...

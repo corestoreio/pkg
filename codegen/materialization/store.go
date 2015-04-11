@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"io/ioutil"
 
+	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/tools"
 	"github.com/juju/errgo"
 )
 
@@ -34,25 +34,25 @@ type (
 
 func newStoreTplData(ctx *context) *storeTplData {
 	tplData := &storeTplData{
-		PackageName: tools.ConfigMaterializationStore.Package,
+		PackageName: codegen.ConfigMaterializationStore.Package,
 	}
 
 	rowCount, err := tplData.Stores.Load(ctx.dbrConn.NewSession(nil))
-	tools.LogFatal(errgo.Mask(err))
+	codegen.LogFatal(errgo.Mask(err))
 	if rowCount < 1 {
-		tools.LogFatal(errgo.New("There are no stores in the database!"))
+		codegen.LogFatal(errgo.New("There are no stores in the database!"))
 	}
 
 	rowCount, err = tplData.Groups.Load(ctx.dbrConn.NewSession(nil))
-	tools.LogFatal(errgo.Mask(err))
+	codegen.LogFatal(errgo.Mask(err))
 	if rowCount < 1 {
-		tools.LogFatal(errgo.New("There are no groups in the database!"))
+		codegen.LogFatal(errgo.New("There are no groups in the database!"))
 	}
 
 	rowCount, err = tplData.Websites.Load(ctx.dbrConn.NewSession(nil))
-	tools.LogFatal(errgo.Mask(err))
+	codegen.LogFatal(errgo.Mask(err))
 	if rowCount < 1 {
-		tools.LogFatal(errgo.New("There are no groups in the database!"))
+		codegen.LogFatal(errgo.New("There are no groups in the database!"))
 	}
 	return tplData
 }
@@ -63,11 +63,11 @@ func materializeStore(ctx *context) {
 	defer ctx.wg.Done()
 
 	tplData := newStoreTplData(ctx)
-	formatted, err := tools.GenerateCode(tools.ConfigMaterializationStore.Package, tplMaterializationStore, tplData, nil)
+	formatted, err := codegen.GenerateCode(codegen.ConfigMaterializationStore.Package, tplMaterializationStore, tplData, nil)
 	if err != nil {
 		fmt.Printf("\n%s\n", formatted)
-		tools.LogFatal(err)
+		codegen.LogFatal(err)
 	}
 
-	tools.LogFatal(ioutil.WriteFile(tools.ConfigMaterializationStore.OutputFile, formatted, 0600))
+	codegen.LogFatal(ioutil.WriteFile(codegen.ConfigMaterializationStore.OutputFile, formatted, 0600))
 }

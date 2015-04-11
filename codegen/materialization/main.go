@@ -20,10 +20,10 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/tools"
 )
 
 // depends on generated code from tableToStruct
@@ -39,7 +39,7 @@ type context struct {
 
 func newContext() *context {
 	db, dbrConn, err := csdb.Connect()
-	tools.LogFatal(err)
+	codegen.LogFatal(err)
 
 	return &context{
 		wg:        sync.WaitGroup{},
