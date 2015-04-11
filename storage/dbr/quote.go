@@ -40,7 +40,7 @@ func quoteAs(parts ...string) string {
 	return n + " AS " + Quote + parts[1] + Quote
 }
 
-// ColumnAlias is a helper func which transforms variadic arguments into a slice which a special
+// ColumnAlias is a helper func which transforms variadic arguments into a slice with a special
 // converting case that every i%2 index is considered as the alias
 func ColumnAlias(columns ...string) []string {
 	l := len(columns)
