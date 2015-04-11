@@ -22,6 +22,7 @@ import (
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/tools"
+	"github.com/corestoreio/csfw/utils/stringSlice"
 	"github.com/juju/errgo"
 )
 
@@ -94,7 +95,7 @@ func getEntityTypeData(dbrSess *dbr.Session) (etc eav.TableEntityTypeSlice, err 
 }
 
 func getImportPaths() []string {
-	var paths []string
+	var paths stringSlice.Lot
 
 	var getPath = func(s string) string {
 		ps, err := tools.ExtractImportPath(s)
@@ -103,27 +104,14 @@ func getImportPaths() []string {
 	}
 
 	for _, et := range tools.ConfigEntityType {
-		paths = append(paths, getPath(et.EntityModel))
-		paths = append(paths, getPath(et.AttributeModel))
-		paths = append(paths, getPath(et.EntityTable))
-		paths = append(paths, getPath(et.IncrementModel))
-		paths = append(paths, getPath(et.AdditionalAttributeTable))
-		paths = append(paths, getPath(et.EntityAttributeCollection))
+		paths.Append(
+			getPath(et.EntityModel),
+			getPath(et.AttributeModel),
+			getPath(et.EntityTable),
+			getPath(et.IncrementModel),
+			getPath(et.AdditionalAttributeTable),
+			getPath(et.EntityAttributeCollection),
+		)
 	}
-
-	unique := make([]string, 0, len(paths))
-	for _, p := range paths {
-		found := false
-		for _, u := range unique {
-			if u == p {
-				found = true
-				break
-			}
-		}
-		if false == found && p != "" {
-			unique = append(unique, p)
-		}
-	}
-
-	return unique
+	return paths.Unique().ToString()
 }

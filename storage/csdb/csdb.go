@@ -20,8 +20,14 @@ import (
 	"github.com/corestoreio/csfw/storage/dbr"
 )
 
-// MainTable used in SQL to refer to the main table
-const MainTable = "main_table"
+const (
+	// MainTable used in SQL to refer to the main table as an alias
+	MainTable = "main_table"
+	// AddTable additional table
+	AdditionalTable = "additional_table"
+	// ScopeTable used in SQl to refer to a website scope table as an alias
+	ScopeTable = "scope_table"
+)
 
 var (
 	ErrTableNotFound = errors.New("Table not found")
@@ -30,7 +36,6 @@ var (
 type (
 	Index               int
 	TableStructureSlice []*TableStructure
-	TableCoreColumns    []string
 
 	// temporary place
 	TableStructure struct {
@@ -58,20 +63,30 @@ func (ts *TableStructure) TableAliasQuote(alias string) string {
 	return "`" + ts.Name + "` AS `" + alias + "`"
 }
 
+// ColumnAliasQuote prefixes non-id columns with an alias and puts quotes around them. Returns a copy.
 func (ts *TableStructure) ColumnAliasQuote(alias string) []string {
-	ret := make([]string, len(ts.Columns))
-	for i, c := range ts.Columns {
-		ret[i] = "`" + alias + "`.`" + c + "`"
-	}
-	return ret
+	return dbr.TableColumnQuote(alias, append([]string(nil), ts.Columns...)...)
 }
 
+// AllColumnAliasQuote prefixes all columns with an alias and puts quotes around them. Returns a copy.
 func (ts *TableStructure) AllColumnAliasQuote(alias string) []string {
-	ret := make([]string, len(ts.IDFieldNames), len(ts.Columns))
-	for i, c := range ts.IDFieldNames {
-		ret[i] = "`" + alias + "`.`" + c + "`"
+	c := append([]string(nil), ts.IDFieldNames...)
+	return dbr.TableColumnQuote(alias, append(c, ts.Columns...)...)
+}
+
+// In checks if column name n is a column of this table
+func (ts *TableStructure) In(n string) bool {
+	for _, c := range ts.IDFieldNames {
+		if c == n {
+			return true
+		}
 	}
-	return append(ret, ts.ColumnAliasQuote(alias)...)
+	for _, c := range ts.Columns {
+		if c == n {
+			return true
+		}
+	}
+	return false
 }
 
 // Select generates a SELECT * FROM tableName statement
@@ -99,14 +114,4 @@ func (m TableStructureSlice) Name(i Index) string {
 		return m[i].Name
 	}
 	return ""
-}
-
-// Contains checks if this slice contains this name. Equal check.
-func (c TableCoreColumns) Contains(name string) bool {
-	for i := 0; i < len(c); i++ {
-		if c[i] == name {
-			return true
-		}
-	}
-	return false
 }

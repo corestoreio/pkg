@@ -74,12 +74,12 @@ func getName(ctx *context, suffix ...string) string {
 func stripCoreAttributeColumns(cols tools.Columns) tools.Columns {
 	ret := make(tools.Columns, 0, len(cols))
 	for _, col := range cols {
-		if tools.EAVAttributeCoreColumns.Contains(col.Field.String) {
+		if tools.EAVAttributeCoreColumns.Include(col.Field.String) {
 			continue
 		}
 		f := false
 		for _, et := range tools.ConfigEntityType {
-			if et.AttributeCoreColumns.Contains(col.Field.String) {
+			if et.AttributeCoreColumns.Include(col.Field.String) {
 				f = true
 				break
 			}
@@ -145,17 +145,17 @@ func generateAttributeCode(ctx *context) error {
 	}
 	funcMap := template.FuncMap{
 		// isEavAttr checks if the attribute/column name belongs to table eav_attribute
-		"isEavAttr": func(a string) bool { return tools.EAVAttributeCoreColumns.Contains(a) },
+		"isEavAttr": func(a string) bool { return tools.EAVAttributeCoreColumns.Include(a) },
 		// isEavEntityAttr checks if the attribute/column belongs to (customer|catalog|etc)_eav_attribute
 		"isEavEntityAttr": func(a string) bool {
 			if et, ok := tools.ConfigEntityType[ctx.et.EntityTypeCode]; ok {
-				return false == tools.EAVAttributeCoreColumns.Contains(a) && et.AttributeCoreColumns.Contains(a)
+				return false == tools.EAVAttributeCoreColumns.Include(a) && et.AttributeCoreColumns.Include(a)
 			}
 			return false
 		},
 		"isUnknownAttr": func(a string) bool {
 			if et, ok := tools.ConfigEntityType[ctx.et.EntityTypeCode]; ok {
-				return false == tools.EAVAttributeCoreColumns.Contains(a) && false == et.AttributeCoreColumns.Contains(a)
+				return false == tools.EAVAttributeCoreColumns.Include(a) && false == et.AttributeCoreColumns.Include(a)
 			}
 			return false
 		},
