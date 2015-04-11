@@ -151,3 +151,14 @@ func (l *Lot) Unique() Lot {
 	*l = unique
 	return *l
 }
+
+// Join joins the slice using a separator
+func (l Lot) Join(sep string) string {
+	return strings.Join(l, sep)
+}
+
+// Split uses string s and a separator and appends the parts to the slice.
+func (l *Lot) Split(s, sep string) Lot {
+	*l = append(*l, strings.Split(s, sep)...)
+	return *l
+}

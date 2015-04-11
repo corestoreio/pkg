@@ -167,3 +167,9 @@ func BenchmarkUnique(b *testing.B) {
 		benchUnique = l
 	}
 }
+
+func TestSplit(t *testing.T) {
+	l := stringSlice.Lot{"a", "b"}
+	assert.Equal(t, []string{"a", "b", "c", "d"}, l.Split("c,d", ",").ToString())
+	assert.Equal(t, []string{"a", "b", "c", "d", "e", "f", ""}, l.Split("e,f,", ",").ToString())
+}
