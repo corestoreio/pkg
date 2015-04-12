@@ -23,6 +23,8 @@ type (
 	// AttributeSlice implements eav.AttributeSliceGetter @todo website must be present in the slice
 	AttributeSlice []Attributer
 
+	WSASlice []*Customer
+
 	// Attributer defines the minimal requirements for a customer attribute. This interface consists
 	// of two more tables: customer_eav_attribute and customer_eav_attribute_website. Developers
 	// can also extend these tables to add more columns. These columns will be automatically transformed
@@ -37,14 +39,14 @@ type (
 		DataModel() eav.AttributeDataModeller
 		IsVisible() bool
 		MultilineCount() int64
-		IsRequired() bool // @todo ?? see parent
-		DefaultValue() string
 	}
 
 	// Customer defines attribute properties for a customer and an address. You can use this struct to
 	// embed into your own struct for maybe overriding some method receivers.
 	Customer struct {
 		*eav.Attribute
+		// wa website attribute. Can be nil. Overrides other fields if set.
+		wa             WSASlice
 		isVisible      bool
 		inputFilter    string
 		multilineCount int64
@@ -56,30 +58,31 @@ type (
 	}
 
 	// internal wrapper for attribute collection c, getter g and entity type id and to override New() method receiver
-	catHandler struct {
+	custHandler struct {
 		eav.Handler
 	}
 )
 
 var (
 	// verify if interfaces has been implemented
-	_ eav.EntityTypeAttributeModeller     = (*catHandler)(nil)
-	_ eav.EntityTypeAttributeCollectioner = (*catHandler)(nil)
+	_ eav.EntityTypeAttributeModeller     = (*custHandler)(nil)
+	_ eav.EntityTypeAttributeCollectioner = (*custHandler)(nil)
 	// Check if Attributer interface has been successfully implemented
 	_ Attributer = (*Customer)(nil)
 
 	// aa address attribute
-	aa = &catHandler{
+	aa = &custHandler{
 		Handler: eav.Handler{},
 	}
 	// ca customer attribute
-	ca = &catHandler{
+	ca = &custHandler{
 		Handler: eav.Handler{},
 	}
 )
 
 func NewCustomer(
 	a *eav.Attribute,
+	wa WSASlice,
 	isVisible bool,
 	inputFilter string,
 	multilineCount int64,
@@ -90,6 +93,7 @@ func NewCustomer(
 ) *Customer {
 	return &Customer{
 		Attribute:      a,
+		wa:             wa,
 		isVisible:      isVisible,
 		inputFilter:    inputFilter,
 		multilineCount: multilineCount,
@@ -194,18 +198,18 @@ func (s AttributeSlice) Len() int {
 	return len(s)
 }
 
-func Customer(i int64) *catHandler {
+func HandlerCustomer(i int64) *custHandler {
 	ca.EntityTyeID = i
 	return ca
 }
 
-func Address(i int64) *catHandler {
+func HandlerAddress(i int64) *custHandler {
 	aa.EntityTyeID = i
 	return aa
 }
 
 // New creates a new attribute and returns interface custattr.Attributer
 // overrides eav.Handler's New() method receiver
-func (h *catHandler) New() interface{} {
+func (h *custHandler) New() interface{} {
 	return nil
 }

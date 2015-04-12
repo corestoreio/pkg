@@ -14,18 +14,28 @@
 
 package main
 
-import "github.com/corestoreio/csfw/codegen"
-
 /* @todo
    Data will be "carved in stone" because it only changes during development.
    - attribute_set related tables: eav_attribute_set, eav_entity_attribute, eav_attribute_group, etc
    - label and option tables will not be hard coded
 */
+const tplAttrImport = `
+package {{ .PackageName }}
+    import (
+        "github.com/corestoreio/csfw/eav"
+        "{{ .AttrPkgImp }}"
+        {{ range .ImportPaths }}"{{ . }}"
+        {{ end }} )
+`
 
-const tplTypeDefinition = `
+const tplAttrTypes = `
+const (
+    {{ range $k, $row := .AttrCol }}{{ $.Name | prepareVar }}{{ index $row "attribute_code" | prepareVar }} {{ if eq $k 0 }} eav.AttributeIndex = iota + 1{{ end }}
+    {{ end }}
+    {{ $.Name | prepareVar }}ZZZ
+)
 
 type (
-    // @todo website must be present in the slice
     // {{ .Name | prepareVar }} a data container for attributes. You can use this struct to
     // embed into your own struct for maybe overriding some method receivers.
     {{ .Name | prepareVar | toLowerFirst }} struct {
@@ -46,58 +56,34 @@ var _ {{ .AttrPkg }}.Attributer = (*{{ .Name | prepareVar | toLowerFirst }})(nil
 
 `
 
-const tplTypeDefinitionFile = codegen.Copyright + `
-package {{ .PackageName }}
-    import (
-        "github.com/corestoreio/csfw/eav"
-        "{{ .AttrPkgImp }}"
-        {{ range .ImportPaths }}"{{ . }}"
-        {{ end }} )
-
-{{ .TypeDefinition }}
-
-const (
-    {{ range $k, $row := .Attributes }}{{ $.Name | prepareVar }}{{ index $row "attribute_code" | prepareVar }} {{ if eq $k 0 }} eav.AttributeIndex = iota + 1{{ end }}
-    {{ end }}
-    {{ $.Name | prepareVar }}ZZZ
-)
-
-type si{{ $.Name | prepareVar }} struct {}
-
-func (si{{ $.Name | prepareVar }}) ByID(id int64) (eav.AttributeIndex, error){
-	switch id {
-	{{ range $k, $row := .Attributes }} case {{ index $row "attribute_id" }}:
-		return {{ $.Name | prepareVar }}{{ index $row "attribute_code" | prepareVar }}, nil
-	{{ end }}
-	default:
-		return eav.AttributeIndex(0), eav.ErrAttributeNotFound
-	}
-}
-
-func (si{{ $.Name | prepareVar }}) ByCode(code string) (eav.AttributeIndex, error){
-	switch code {
-	{{ range $k, $row := .Attributes }} case {{ index $row "attribute_code" }}:
-		return {{ $.Name | prepareVar }}{{ index $row "attribute_code" | prepareVar }}, nil
-	{{ end }}
-	default:
-		return eav.AttributeIndex(0), eav.ErrAttributeNotFound
-	}
-}
-
-var _ eav.AttributeGetter = (*si{{ $.Name | prepareVar }})(nil)
-
+const tplAttrGetter = `
 func init(){
-    {{ .AttrPkg }}.{{ .FuncGetter }}(&si{{ $.Name | prepareVar }}{})
+    {{ .AttrPkg }}.{{ .FuncGetter }}(eav.NewAttributeMapGet(
+        map[int64]eav.AttributeIndex{
+            {{ range $k, $row := .AttrCol }} {{ index $row "attribute_id" }}: {{ $.Name | prepareVar }}{{ index $row "attribute_code" | prepareVar }},
+            {{ end }} },
+        map[string]eav.AttributeIndex{
+        {{ range $k, $row := .AttrCol }} {{ index $row "attribute_code" }}: {{ $.Name | prepareVar }}{{ index $row "attribute_code" | prepareVar }},
+        {{ end }} },
+    ))
+}
+`
+
+const tplAttrCollection = `
+func init(){
     {{ .AttrPkg }}.{{ .FuncCollection }}({{ .AttrPkg }}.AttributeSlice{
-    {{ range $row := .Attributes }}
+    {{ range $row := .AttrCol }}
         {{ $const := sprintf "%s%s" (prepareVar $.Name) (prepareVar (index $row "attribute_code")) }}
         {{ $const }}: {{ if ne $.MyStruct "" }} &{{ $.MyStruct }} {
         {{ end }} &{{ $.Name | prepareVar | toLowerFirst }} {
-            {{ $.AttrStruct }}: {{ $.AttrPkg }}.New{{ $.AttrStruct }} (
+            {{ $.AttrStruct }}: {{ $.AttrPkg }}.New{{ $.AttrStruct }}(
                 eav.NewAttribute(
+                    {{ printWebsiteEavAttribute (index $row "attribute_id") }},
+                    0, // websiteID always 0
                     {{ range $k,$v := $row }} {{ if (isEavAttr $k) }} {{ setAttrIdx $v $const }}, // {{ $k }}
                     {{ end }}{{ end }}
                 ),
+            {{ printWebsiteEntityAttribute (index $row "attribute_id") }},
             {{ range $k,$v := $row }} {{ if (isEavEntityAttr $k) }} {{ setAttrIdx $v $const }}, // {{ $k }}
             {{ end }}{{ end }}
             ),
@@ -108,6 +94,22 @@ func init(){
     {{ end }}
     })
 }
+`
+
+const tplAttrWebsiteEavAttribute = `
+    eav.NewAttribute(
+        nil,
+        {{ .website_id }},
+        {{ range $k,$v := $row }} {{ if (isEavAttr $k) }} {{ $v }}, // {{ $k }}
+        {{ end }}{{ end }}
+    )
+`
+const tplAttrWebsiteEntityAttribute = `
+    {{ $.AttrPkg }}.New{{ $.AttrStruct }}(
+        nil,
+        {{ range $k,$v := $row }} {{ if (isEavEntityAttr $k) }} {{ $v }}, // {{ $k }}
+        {{ end }}{{ end }}
+    )
 `
 
 /*

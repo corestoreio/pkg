@@ -35,6 +35,8 @@ type context struct {
 	et *eav.TableEntityType
 	// goSrcPath will be used in conjunction with ImportPath to write a file into that directory
 	goSrcPath string
+	// aat = additional attribute table
+	aat *codegen.AddAttrTables
 }
 
 func newContext() *context {

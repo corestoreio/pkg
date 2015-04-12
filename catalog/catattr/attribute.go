@@ -52,11 +52,14 @@ type (
 		IsUsedForPromoRules() bool
 		SearchWeight() int64
 	}
-
+	WSASlice []*Catalog
 	// Catalog a data container for attributes. You can use this struct to
 	// embed into your own struct for maybe overriding some method receivers.
 	Catalog struct {
 		*eav.Attribute
+		// wa website attribute. Can be nil. Overrides other fields if set.
+		// not implemented here, yet.
+		wa                        WSASlice
 		frontendInputRenderer     eav.FrontendInputRendererIFace
 		isGlobal                  bool
 		isVisible                 bool
@@ -100,6 +103,55 @@ var (
 	// Check if Attributer interface has been successfully implemented
 	_ Attributer = (*Catalog)(nil)
 )
+
+// NewCatalog creates a new Catalog attribute. Mainly used in code generation
+func NewCatalog(
+	a *eav.Attribute,
+	_ WSASlice,
+	fir eav.FrontendInputRendererIFace,
+	isGlobal bool,
+	isVisible bool,
+	isSearchable bool,
+	isFilterable bool,
+	isComparable bool,
+	isVisibleOnFront bool,
+	isHtmlAllowedOnFront bool,
+	isUsedForPriceRules bool,
+	isFilterableInSearch bool,
+	usedInProductListing bool,
+	usedForSortBy bool,
+	isConfigurable bool,
+	applyTo string,
+	isVisibleInAdvancedSearch bool,
+	position int64,
+	isWysiwygEnabled bool,
+	isUsedForPromoRules bool,
+	searchWeight int64,
+) *Catalog {
+	return &Catalog{
+		Attribute: a,
+		wa:        nil,
+		frontendInputRenderer:     fir,
+		isGlobal:                  isGlobal,
+		isVisible:                 isVisible,
+		isSearchable:              isSearchable,
+		isFilterable:              isFilterable,
+		isComparable:              isComparable,
+		isVisibleOnFront:          isVisibleOnFront,
+		isHtmlAllowedOnFront:      isHtmlAllowedOnFront,
+		isUsedForPriceRules:       isUsedForPriceRules,
+		isFilterableInSearch:      isFilterableInSearch,
+		usedInProductListing:      usedInProductListing,
+		usedForSortBy:             usedForSortBy,
+		isConfigurable:            isConfigurable,
+		applyTo:                   applyTo,
+		isVisibleInAdvancedSearch: isVisibleInAdvancedSearch,
+		position:                  position,
+		isWysiwygEnabled:          isWysiwygEnabled,
+		isUsedForPromoRules:       isUsedForPromoRules,
+		searchWeight:              searchWeight,
+	}
+}
 
 func (a *Catalog) FrontendInputRenderer() eav.FrontendInputRendererIFace {
 	return a.frontendInputRenderer
@@ -225,12 +277,12 @@ func (s AttributeSlice) Len() int {
 	return len(s)
 }
 
-func Product(i int64) *catHandler {
+func HandlerProduct(i int64) *catHandler {
 	pa.EntityTyeID = i
 	return pa
 }
 
-func Category(i int64) *catHandler {
+func HandlerCategory(i int64) *catHandler {
 	ca.EntityTyeID = i
 	return ca
 }

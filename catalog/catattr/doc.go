@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /*
-Package custattr handles all customer and address related attributes.
-The name custattr has been chosen to be unique so that one can use goimports without conflicts.
+Package catattr handles all category and product related attributes.
+The name catattr has been chosen to be unique so that one can use goimports without conflicts.
 */
-package custattr
+package catattr

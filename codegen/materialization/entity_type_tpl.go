@@ -14,16 +14,13 @@
 
 package main
 
-import "github.com/corestoreio/csfw/codegen"
-
 /* @todo
    Data will be "carved in stone" because it only changes during development.
    - DONE: entity_type with translation of some columns to the Go type
    - eav_attribute full config and from that one the flat table structure
 */
 
-const tplEav = codegen.Copyright + `
-package {{ .Package }}
+const tplEav = `package {{ .Package }}
 
 // Package {{ .Package }} file is auto generated
 

@@ -31,9 +31,7 @@ import (
 var (
 	logFatalln = log.Fatalln
 	letters    = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-)
-
-const Copyright = `// Copyright 2015 CoreStore Authors
+	Copyright  = []byte(`// Copyright 2015 CoreStore Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -46,7 +44,8 @@ const Copyright = `// Copyright 2015 CoreStore Authors
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-`
+`)
+)
 
 // GenerateCode uses text/template for create Go code. package name pkg will also be used
 // to remove stutter in variable names.

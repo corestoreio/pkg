@@ -235,8 +235,8 @@ func (c *column) updateGoPrimitive(useSQL bool) {
 	}
 }
 
-// getByName returns a column from Columns slice by a give name
-func (cc Columns) getByName(name string) *column {
+// GetByName returns a column from Columns slice by a give name
+func (cc Columns) GetByName(name string) *column {
 	for _, c := range cc {
 		if c.Field.String == name {
 			return c
@@ -494,7 +494,7 @@ func PrepareForTemplate(cols Columns, rows []StringEntities, amm AttributeModelD
 	ip := make([]string, 0, 10) // import_path container
 	for _, row := range rows {
 		for colName, colValue := range row {
-			var c *column = cols.getByName(colName)
+			var c *column = cols.GetByName(colName)
 
 			goType, hasModel := amm[colValue]
 			_, isAllowedInterfaceChange := EavAttributeColumnNameToInterface[colName]

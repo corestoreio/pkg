@@ -14,10 +14,7 @@
 
 package main
 
-import "github.com/corestoreio/csfw/codegen"
-
-const tplMaterializationStore = codegen.Copyright + `
-package {{ .PackageName }}
+const tplMaterializationStore = `package {{ .PackageName }}
 
 import (
 	"database/sql"

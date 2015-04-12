@@ -18,6 +18,7 @@ import "errors"
 
 var (
 	ErrAttributeNotFound = errors.New("Attribute not found")
+	ErrCollectionEmpty   = errors.New("Attribute collection is empty")
 )
 
 const (
@@ -74,8 +75,18 @@ type (
 		Note() string
 	}
 
+	// WSASlice WebSiteAttributeSlice is a slice of pointers to attributes. Despite being a slice the websiteID
+	// is used as an index to return the attribute for a specific websiteID.
+	WSASlice []*Attribute
+
 	// Attribute defines properties for an attribute. This struct must be embedded in other EAV attributes.
 	Attribute struct {
+		// wa contains website specific attribute properties which are pulled out from the table
+		// e.g. customer_eav_attribute_website or any other entity eav website table.
+		// This pointer slice is in most cases nil. All struct fields can have different values in a website.
+		wa WSASlice
+		// websiteID if 0 then default values. If greater 0 then we have different values for a website.
+		websiteID     int64
 		attributeID   int64
 		entityTypeID  int64
 		attributeCode string
@@ -113,9 +124,51 @@ type (
 )
 
 var _ Attributer = (*Attribute)(nil)
+var _ AttributeGetter = (*AttributeMapGet)(nil)
+
+// Index returns the attribute from the current index or nil
+func (s WSASlice) Index(i int64) *Attribute {
+	if i > int64(len(s)) || i < 0 {
+		return nil
+	}
+	return s[i] // can also be nil
+}
+
+// NewAttributeMapGet returns a new pointer to an AttributeMapGet.
+func NewAttributeMapGet(i map[int64]AttributeIndex, c map[string]AttributeIndex) *AttributeMapGet {
+	return &AttributeMapGet{
+		i: i,
+		c: c,
+	}
+}
+
+// AttributeMapGet contains two maps for faster retrieving of the attribute index.
+// Only used in generated code. Implements interface AttributeGetter.
+type AttributeMapGet struct {
+	i map[int64]AttributeIndex
+	c map[string]AttributeIndex
+}
+
+// ByID returns an attribute index by the id from the database table
+func (si *AttributeMapGet) ByID(id int64) (AttributeIndex, error) {
+	if i, ok := si.i[id]; ok {
+		return i, nil
+	}
+	return AttributeIndex(0), ErrAttributeNotFound
+}
+
+// ByCode returns an attribute index
+func (si *AttributeMapGet) ByCode(code string) (AttributeIndex, error) {
+	if c, ok := si.c[code]; ok {
+		return c, nil
+	}
+	return AttributeIndex(0), ErrAttributeNotFound
+}
 
 // NewAttribute only for use in auto generated code. Looks terrible 8-)
 func NewAttribute(
+	wa WSASlice,
+	websiteID int64,
 	attributeCode string,
 	attributeID int64,
 	backendModel AttributeBackendModeller,
@@ -134,6 +187,8 @@ func NewAttribute(
 	sourceModel AttributeSourceModeller,
 ) *Attribute {
 	return &Attribute{
+		wa:            wa,
+		websiteID:     websiteID,
 		attributeID:   attributeID,
 		entityTypeID:  entityTypeID,
 		attributeCode: attributeCode,
@@ -153,15 +208,28 @@ func NewAttribute(
 	}
 }
 
-// IsStatic checks if an attribute is a static one
-func (a *Attribute) IsStatic() bool {
-	return a.backendType == TypeStatic || a.backendType == ""
+// hasWA checks if the attribute has a website specific attribute
+func (a *Attribute) hasWA() bool {
+	return a.websiteID > 0 && a.wa.Index(a.websiteID) != nil
 }
 
-// EntityType returns EntityType object or an error
+// IsStatic checks if an attribute is a static one. Considers websiteID.
+func (a *Attribute) IsStatic() bool {
+	wa := a
+	if a.hasWA() {
+		wa = a.wa.Index(a.websiteID)
+	}
+	return wa.backendType == TypeStatic || wa.backendType == ""
+}
+
+// EntityType returns EntityType object or an error. Does not consider websiteID.
 func (a *Attribute) EntityType() (*CSEntityType, error) {
 	return GetEntityTypeCollection().GetByID(a.entityTypeID)
 }
+
+/*
+	@todo implement wa check like in IsStatic()
+*/
 
 // UsesSource checks whether possible attribute values are retrieved from a finite source
 func (a *Attribute) UsesSource() bool {
@@ -276,12 +344,14 @@ func (h *Handler) New() interface{} {
 // Get uses an AttributeIndex to return an attribute or an error.
 // Use type assertion to convert to Attributer.
 func (h *Handler) Get(i AttributeIndex) (interface{}, error) {
-	if int(i) < h.C.Len() {
+	if h.C != nil && int(i) < h.C.Len() {
 		return h.C.Index(i), nil
 	}
 	return nil, ErrAttributeNotFound
 }
 
+// MustGet returns an attribute by AttributeIndex. Panics if not found.
+// Use type assertion to convert to Attributer.
 func (h *Handler) MustGet(i AttributeIndex) interface{} {
 	a, err := h.Get(i)
 	if err != nil {
@@ -293,13 +363,19 @@ func (h *Handler) MustGet(i AttributeIndex) interface{} {
 // GetByID returns an address attribute by its id
 // Use type assertion to convert to Attributer.
 func (h *Handler) GetByID(id int64) (interface{}, error) {
-	return h.C.ByID(h.G, id)
+	if h.C != nil {
+		return h.C.ByID(h.G, id)
+	}
+	return nil, ErrCollectionEmpty
 }
 
 // GetByCode returns an address attribute by its code
 // Use type assertion to convert to Attributer.
 func (h *Handler) GetByCode(code string) (interface{}, error) {
-	return h.C.ByCode(h.G, code)
+	if h.C != nil {
+		return h.C.ByCode(h.G, code)
+	}
+	return nil, ErrCollectionEmpty
 }
 
 // Collection returns the full attribute collection AttributeSlice.
