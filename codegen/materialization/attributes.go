@@ -16,12 +16,12 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"path"
 	"strings"
 	"text/template"
 
-	"fmt"
 	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"
@@ -140,6 +140,13 @@ func attrCollection(ctx *context, data map[string]interface{}) ([]byte, error) {
 	aws := getAttributeValuesForWebsites(ctx)
 
 	fmt.Printf("\n%s : %#v\n\n", ctx.et.EntityTypeCode, aws)
+
+	/*
+		1. codegen: tplAttrWebsiteEavAttribute
+			Need: values from eav_attribute and check from website table of an entity
+		2. codegen: tplAttrWebsiteEntityAttribute and use the code from 1 to embed
+		3. codegen: tplAttrCollection
+	*/
 
 	funcMap := template.FuncMap{
 		// isEavAttr checks if the attribute/column name belongs to table eav_attribute

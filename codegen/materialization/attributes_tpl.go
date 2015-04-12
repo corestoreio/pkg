@@ -76,17 +76,7 @@ func init(){
         {{ $const := sprintf "%s%s" (prepareVar $.Name) (prepareVar (index $row "attribute_code")) }}
         {{ $const }}: {{ if ne $.MyStruct "" }} &{{ $.MyStruct }} {
         {{ end }} &{{ $.Name | prepareVar | toLowerFirst }} {
-            {{ $.AttrStruct }}: {{ $.AttrPkg }}.New{{ $.AttrStruct }}(
-                eav.NewAttribute(
-                    {{ printWebsiteEavAttribute (index $row "attribute_id") }},
-                    0, // websiteID always 0
-                    {{ range $k,$v := $row }} {{ if (isEavAttr $k) }} {{ setAttrIdx $v $const }}, // {{ $k }}
-                    {{ end }}{{ end }}
-                ),
-            {{ printWebsiteEntityAttribute (index $row "attribute_id") }},
-            {{ range $k,$v := $row }} {{ if (isEavEntityAttr $k) }} {{ setAttrIdx $v $const }}, // {{ $k }}
-            {{ end }}{{ end }}
-            ),
+            {{ $.AttrStruct }}: {{ .WebsiteEntityAttribute }},
             {{ range $k,$v := $row }} {{ if (isUnknownAttr $k) }} {{ setAttrIdx $v $const }}, // {{ $k }}
             {{ end }}{{ end }}
         },
@@ -98,16 +88,17 @@ func init(){
 
 const tplAttrWebsiteEavAttribute = `
     eav.NewAttribute(
-        nil,
+        {{ .websiteAttribute }},
         {{ .website_id }},
-        {{ range $k,$v := $row }} {{ if (isEavAttr $k) }} {{ $v }}, // {{ $k }}
+        {{ range $k,$v := $row }} {{ if (isEavAttr $k) }} {{ setAttrIdx $v $const }}, // {{ $k }}
         {{ end }}{{ end }}
     )
 `
 const tplAttrWebsiteEntityAttribute = `
     {{ $.AttrPkg }}.New{{ $.AttrStruct }}(
-        nil,
-        {{ range $k,$v := $row }} {{ if (isEavEntityAttr $k) }} {{ $v }}, // {{ $k }}
+        {{ .WebsiteEavAttribute }}
+        {{ .websiteAttribute }},
+        {{ range $k,$v := $row }} {{ if (isEavEntityAttr $k) }} {{ setAttrIdx $v $const }}, // {{ $k }}
         {{ end }}{{ end }}
     )
 `
