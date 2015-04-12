@@ -110,12 +110,6 @@ func (a *Customer) IsVisible() bool {
 func (a *Customer) MultilineCount() int64 {
 	return a.multilineCount
 }
-func (a *Customer) IsRequired() bool {
-	return a.Attribute.IsRequired() // @todo review
-}
-func (a *Customer) DefaultValue() string {
-	return a.Attribute.DefaultValue() // @todo review
-}
 func (a *Customer) InputFilter() string {
 	return a.inputFilter
 }

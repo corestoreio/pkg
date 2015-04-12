@@ -14,9 +14,7 @@
 
 package main
 
-import "github.com/corestoreio/csfw/codegen"
-
-const tplCode = codegen.Copyright + `
+const tplCode = `
 package {{ .Package }}
 
 // Package {{ .Package }} is auto generated via tableToStruct
