@@ -20,7 +20,6 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/juju/errgo"
 )
 
 const (
@@ -29,56 +28,57 @@ const (
 
 type (
 	// WebsiteIndex used for iota and for not mixing up indexes
-	WebsiteIndex  int
-	WebsiteGetter interface {
-		// ByID returns a WebsiteIndex using the StoreID. This WebsiteIndex identifies a website within a WebsiteSlice.
-		ByID(id int64) (WebsiteIndex, error)
-		// ByCode returns a WebsiteIndex using the code. This WebsiteIndex identifies a website within a WebsiteSlice.
-		ByCode(code string) (WebsiteIndex, error)
+	WebsiteIndex        uint
+	WebsiteIndexCodeMap map[string]WebsiteIndex
+	WebsiteIndexIDMap   map[int64]WebsiteIndex
+	// WebsiteBucket contains two maps for faster retrieving of the store index and the store collection
+	// Only used in generated code. Implements interface WebsiteGetter.
+	WebsiteBucket struct {
+		// store collection
+		s TableWebsiteSlice
+		// c map bei code
+		c WebsiteIndexCodeMap
+		// i map by store_id
+		i WebsiteIndexIDMap
 	}
 )
 
 var (
 	ErrWebsiteNotFound = errors.New("Website not found")
-	websiteCollection  TableWebsiteSlice
-	websiteGetter      WebsiteGetter
 )
 
-func SetWebsiteCollection(sc TableWebsiteSlice) {
-	if len(sc) == 0 {
-		panic("WebsiteSlice is empty")
+// NewWebsiteBucket returns a new pointer to a WebsiteBucket.
+func NewWebsiteBucket(s TableWebsiteSlice, i WebsiteIndexIDMap, c WebsiteIndexCodeMap) *WebsiteBucket {
+	// @todo idea if i and c is nil generate them from s.
+	return &WebsiteBucket{
+		i: i,
+		c: c,
+		s: s,
 	}
-	websiteCollection = sc
 }
 
-func SetWebsiteGetter(g WebsiteGetter) {
-	if g == nil {
-		panic("WebsiteGetter cannot be nil")
-	}
-	websiteGetter = g
-}
-
-// GetWebsite uses a GroupIndex to return a group or an error.
-// One should not modify the group object.
-func GetWebsite(i WebsiteIndex) (*TableWebsite, error) {
-	if int(i) < len(websiteCollection) {
-		return websiteCollection[i], nil
+// ByID uses the database store id to return a TableWebsite struct.
+func (s *WebsiteBucket) ByID(id int64) (*TableWebsite, error) {
+	if i, ok := s.i[id]; ok && id < int64(s.s.Len()) {
+		return s.s[i], nil
 	}
 	return nil, ErrWebsiteNotFound
 }
 
-func GetWebsiteByID(id int64) (*TableWebsite, error) {
-	return websiteCollection.ByID(id)
+// ByCode uses the database store code to return a TableWebsite struct.
+func (s *WebsiteBucket) ByCode(code string) (*TableWebsite, error) {
+	if i, ok := s.c[code]; ok {
+		return s.s[i], nil
+	}
+	return nil, ErrWebsiteNotFound
 }
 
-func GetWebsiteByCode(code string) (*TableWebsite, error) {
-	return websiteCollection.ByCode(code)
-}
-
-// GetWebsites returns a copy of the main slice of websites.
-// One should not modify the slice and its content.
-func GetWebsites() TableWebsiteSlice {
-	return websiteCollection
+// ByIndex returns a TableWebsite struct using the slice index
+func (s *WebsiteBucket) ByIndex(i WebsiteIndex) (*TableWebsite, error) {
+	if int(i) < s.s.Len() {
+		return s.s[i], nil
+	}
+	return nil, ErrWebsiteNotFound
 }
 
 // Load uses a dbr session to load all data from the core_website table into the current slice.
@@ -91,21 +91,8 @@ func (s *TableWebsiteSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelec
 	})...)
 }
 
-func (s TableWebsiteSlice) ByID(id int64) (*TableWebsite, error) {
-	i, err := websiteGetter.ByID(id)
-	if err != nil {
-		return nil, errgo.Mask(err)
-	}
-	return s[i], nil
-}
-
-func (s TableWebsiteSlice) ByCode(code string) (*TableWebsite, error) {
-	i, err := websiteGetter.ByCode(code)
-	if err != nil {
-		return nil, errgo.Mask(err)
-	}
-	return s[i], nil
-}
+// Len returns the length
+func (s TableWebsiteSlice) Len() int { return len(s) }
 
 // @todo review Magento code because of column is_default
 //func (s Website) IsDefault() bool {

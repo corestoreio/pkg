@@ -20,7 +20,6 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/juju/errgo"
 )
 
 const (
@@ -29,60 +28,61 @@ const (
 
 type (
 	// StoreIndex used for iota and for not mixing up indexes
-	StoreIndex int
-	// StoreGetter contains generated code from the database to provide easy and fast methods to
-	// retrieve the stores
-	StoreGetter interface {
-		// ByID returns a StoreIndex using the StoreID.  This StoreIndex identifies a store within a StoreSlice.
-		ByID(id int64) (StoreIndex, error)
-		// ByCode returns a StoreIndex using the code.  This StoreIndex identifies a store within a StoreSlice.
-		ByCode(code string) (StoreIndex, error)
+	StoreIndex        uint
+	StoreIndexCodeMap map[string]StoreIndex
+	StoreIndexIDMap   map[int64]StoreIndex
+	// StoreBucket contains two maps for faster retrieving of the store index and the store collection
+	// Only used in generated code. Implements interface StoreGetter.
+	StoreBucket struct {
+		// store collection
+		s TableStoreSlice
+		// c map bei code
+		c StoreIndexCodeMap
+		// i map by store_id
+		i StoreIndexIDMap
 	}
 )
 
 var (
-	ErrStoreNotFound     = errors.New("Store not found")
-	ErrStoreGetterNotSet = errors.New("StoreGetter not set")
-	storeCollection      TableStoreSlice
-	storeGetter          StoreGetter
+	ErrStoreNotFound = errors.New("Store not found")
 )
 
-func SetStoreCollection(sc TableStoreSlice) {
-	if len(sc) == 0 {
-		panic("StoreSlice is empty")
+// NewStoreBucket returns a new pointer to a StoreBucket.
+func NewStoreBucket(s TableStoreSlice, i StoreIndexIDMap, c StoreIndexCodeMap) *StoreBucket {
+	// @todo idea if i and c is nil generate them from s.
+	return &StoreBucket{
+		i: i,
+		c: c,
+		s: s,
 	}
-	storeCollection = sc
 }
 
-func SetStoreGetter(g StoreGetter) {
-	if g == nil {
-		panic("StoreGetter cannot be nil")
-	}
-	storeGetter = g
-}
-
-// GetStore uses a StoreIndex to return a store or an error.
-// One should not modify the store object.
-func GetStore(i StoreIndex) (*TableStore, error) {
-	if int(i) < len(storeCollection) {
-		return storeCollection[i], nil
+// ByID uses the database store id to return a TableStore struct.
+func (s *StoreBucket) ByID(id int64) (*TableStore, error) {
+	if i, ok := s.i[id]; ok && id < int64(s.s.Len()) {
+		return s.s[i], nil
 	}
 	return nil, ErrStoreNotFound
 }
 
-func GetStoreByID(id int64) (*TableStore, error) {
-	return storeCollection.ByID(id)
+// ByCode uses the database store code to return a TableStore struct.
+func (s *StoreBucket) ByCode(code string) (*TableStore, error) {
+	if i, ok := s.c[code]; ok {
+		return s.s[i], nil
+	}
+	return nil, ErrStoreNotFound
 }
 
-func GetStoreByCode(code string) (*TableStore, error) {
-	return storeCollection.ByCode(code)
+// ByIndex returns a TableStore struct using the slice index
+func (s *StoreBucket) ByIndex(i StoreIndex) (*TableStore, error) {
+	if int(i) < s.s.Len() {
+		return s.s[i], nil
+	}
+	return nil, ErrStoreNotFound
 }
 
-// GetStores returns a copy of the main slice of stores. There can be nils within the slice.
-// One should not modify the slice and its content.
-func GetStores() TableStoreSlice {
-	return storeCollection
-}
+// ByIndex returns the TableStoreSlice
+func (s *StoreBucket) Store() TableStoreSlice { return s.s }
 
 // Load uses a dbr session to load all data from the core_store table into the current slice.
 // The variadic 2nd argument can be a call back function to manipulate the select.
@@ -96,27 +96,8 @@ func (s *TableStoreSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectC
 	})...)
 }
 
-func (s TableStoreSlice) ByID(id int64) (*TableStore, error) {
-	if storeGetter == nil {
-		return nil, ErrStoreGetterNotSet
-	}
-	i, err := storeGetter.ByID(id)
-	if err != nil {
-		return nil, errgo.Mask(err)
-	}
-	return s[i], nil
-}
-
-func (s TableStoreSlice) ByCode(code string) (*TableStore, error) {
-	if storeGetter == nil {
-		return nil, ErrStoreGetterNotSet
-	}
-	i, err := storeGetter.ByCode(code)
-	if err != nil {
-		return nil, errgo.Mask(err)
-	}
-	return s[i], nil
-}
+// Len returns the length
+func (s TableStoreSlice) Len() int { return len(s) }
 
 func (s TableStore) IsDefault() bool {
 	return s.StoreID == DefaultStoreId

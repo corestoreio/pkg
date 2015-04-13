@@ -108,7 +108,7 @@ type (
 		// Mage_Eav_Model_Resource_Attribute_Collection::_getEavWebsiteTable()
 		TempAdditionalAttributeTableWebsite string
 
-		AttributeCoreColumns utils.stringSlice
+		AttributeCoreColumns utils.StringSlice
 	}
 
 	// AttributeModelDefMap contains data to map the three eav_attribute columns
@@ -261,7 +261,7 @@ var (
 	// Developers can extend the table eav_attribute with additional columns but these additional
 	// columns with its method receivers must get generated in the attribute materialize function.
 	// These core columns are already defined below.
-	EAVAttributeCoreColumns = utils.stringSlice{
+	EAVAttributeCoreColumns = utils.StringSlice{
 		"attribute_id",
 		"entity_type_id",
 		"attribute_code",
@@ -285,7 +285,7 @@ var (
 	// Developers can extend the table customer_eav_attribute with additional columns but these additional
 	// columns with its method receivers must get generated in the attribute materialize function.
 	// These core columns are already defined below.
-	customerAttributeCoreColumns = utils.stringSlice{
+	customerAttributeCoreColumns = utils.StringSlice{
 		"is_visible",
 		"input_filter",
 		"multiline_count",
@@ -299,7 +299,7 @@ var (
 	// Developers can extend the table customer_eav_attribute with additional columns but these additional
 	// columns with its method receivers must get generated in the attribute materialize function.
 	// These core columns are already defined below.
-	catalogAttributeCoreColumns = utils.stringSlice{
+	catalogAttributeCoreColumns = utils.StringSlice{
 		"frontend_input_renderer",
 		"is_global",
 		"is_visible",

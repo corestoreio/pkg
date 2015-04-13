@@ -44,8 +44,8 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 	var (
 		ifnull           []string
 		tewAddedCols     []string
-		taColumnsQuoted  = utils.stringSlice(ta.AllColumnAliasQuote(csdb.MainTable))
-		taaColumnsQuoted = utils.stringSlice(taa.ColumnAliasQuote(csdb.AdditionalTable))
+		taColumnsQuoted  = utils.StringSlice(ta.AllColumnAliasQuote(csdb.MainTable))
+		taaColumnsQuoted = utils.StringSlice(taa.ColumnAliasQuote(csdb.AdditionalTable))
 	)
 
 	if tew != nil {

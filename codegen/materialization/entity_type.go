@@ -95,7 +95,7 @@ func getEntityTypeData(dbrSess *dbr.Session) (etc eav.TableEntityTypeSlice, err 
 }
 
 func getImportPaths() []string {
-	var paths utils.stringSlice
+	var paths utils.StringSlice
 
 	var getPath = func(s string) string {
 		ps, err := codegen.ExtractImportPath(s)

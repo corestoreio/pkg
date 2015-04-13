@@ -20,7 +20,6 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/juju/errgo"
 )
 
 const (
@@ -29,47 +28,49 @@ const (
 
 type (
 	// GroupIndex used for iota and for not mixing up indexes
-	GroupIndex  int
-	GroupGetter interface {
-		// ByID returns a GroupIndex using the GroupID. This GroupIndex identifies a group within a GroupSlice.
-		ByID(id int64) (GroupIndex, error)
+	GroupIndex      uint
+	GroupIndexIDMap map[int64]GroupIndex
+	// GroupBucket contains two maps for faster retrieving of the store index and the store collection
+	// Only used in generated code. Implements interface GroupGetter.
+	GroupBucket struct {
+		// store collection
+		s TableGroupSlice
+		// i map by store_id
+		i GroupIndexIDMap
 	}
 )
 
 var (
 	ErrGroupNotFound = errors.New("Store Group not found")
-	groupCollection  TableGroupSlice
-	groupGetter      GroupGetter
 )
 
-func SetGroupCollection(gc TableGroupSlice) {
-	if len(gc) == 0 {
-		panic("StoreSlice is empty")
+// NewGroupBucket returns a new pointer to a GroupBucket.
+func NewGroupBucket(s TableGroupSlice, i GroupIndexIDMap) *GroupBucket {
+	// @todo idea if i and c is nil generate them from s.
+	return &GroupBucket{
+		i: i,
+		s: s,
 	}
-	groupCollection = gc
 }
 
-func SetGroupGetter(g GroupGetter) {
-	if g == nil {
-		panic("GroupGetter cannot be nil")
-	}
-	groupGetter = g
-}
-
-// GetGroup uses a GroupIndex to return a group or an error.
-// One should not modify the group object.
-func GetGroup(i GroupIndex) (*TableGroup, error) {
-	if int(i) < len(groupCollection) {
-		return groupCollection[i], nil
+// ByID uses the database store id to return a TableGroup struct.
+func (s *GroupBucket) ByID(id int64) (*TableGroup, error) {
+	if i, ok := s.i[id]; ok && id < int64(s.s.Len()) {
+		return s.s[i], nil
 	}
 	return nil, ErrGroupNotFound
 }
 
-// GetGroups returns a copy of the main slice of store groups.
-// One should not modify the slice and its content.
-func GetGroups() TableGroupSlice {
-	return groupCollection
+// ByIndex returns a TableGroup struct using the slice index
+func (s *GroupBucket) ByIndex(i GroupIndex) (*TableGroup, error) {
+	if int(i) < s.s.Len() {
+		return s.s[i], nil
+	}
+	return nil, ErrGroupNotFound
 }
+
+// ByIndex returns the TableGroupSlice
+func (s *GroupBucket) Group() TableGroupSlice { return s.s }
 
 // Load uses a dbr session to load all data from the core_store_group table into the current slice.
 // The variadic 2nd argument can be a call back function to manipulate the select.
@@ -81,13 +82,8 @@ func (s *TableGroupSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectC
 	})...)
 }
 
-func (s TableGroupSlice) ByID(id int64) (*TableGroup, error) {
-	i, err := groupGetter.ByID(id)
-	if err != nil {
-		return nil, errgo.Mask(err)
-	}
-	return s[i], nil
-}
+// Len returns the length
+func (s TableGroupSlice) Len() int { return len(s) }
 
 /*
 	@todo implement Magento\Store\Model\Group

@@ -42,83 +42,51 @@ const (
 	WebsiteIndexZZZ
 )
 
-type si struct {}
-
-func (si) ByID(id int64) (store.StoreIndex, error){
-	switch id {
-	{{ range $k,$v := .Stores }} case {{$v.StoreID}}:
-		return Store{{prepareVarIndex $k $v.Code.String}}, nil
-	{{end}}
-	default:
-		return -1, store.ErrStoreNotFound
-	}
-}
-
-func (si) ByCode(code string) (store.StoreIndex, error){
-	switch code {
-	{{ range $k,$v := .Stores }} case "{{$v.Code.String}}":
-		return Store{{prepareVarIndex $k $v.Code.String}}, nil
-	{{end}}
-	default:
-		return -1, store.ErrStoreNotFound
-	}
-}
+var storeBucket *store.StoreBucket
 
 func init(){
-	store.SetStoreGetter(si{})
-	store.SetStoreCollection(store.TableStoreSlice{
-		{{ range $k,$v := .Stores }}Store{{prepareVarIndex $k $v.Code.String}}: {{ $v | printf "%#v" }},
-		{{end}}
-	})
+	storeBucket = store.NewStoreBucket(
+		store.TableStoreSlice{
+			{{ range $k,$v := .Stores }}Store{{prepareVarIndex $k $v.Code.String}}: {{ $v | printf "%#v" }},
+			{{end}}
+		},
+		store.StoreIndexIDMap{
+			{{ range $k,$v := .Stores }} {{$v.StoreID}}: Store{{prepareVarIndex $k $v.Code.String}},
+		{{end}}},
+		store.StoreIndexCodeMap{
+			{{ range $k,$v := .Stores }} "{{$v.Code.String}}": Store{{prepareVarIndex $k $v.Code.String}},
+		{{end}}},
+	)
 }
 
-type gi struct {}
-
-func (gi) ByID(id int64) (store.GroupIndex, error){
-	switch id {
-	{{ range $k,$v := .Groups }} case {{$v.GroupID}}:
-		return Group{{prepareVarIndex $k $v.Name}}, nil
-	{{end}}
-	default:
-		return -1, store.ErrGroupNotFound
-	}
-}
+var GroupBucket *store.GroupBucket
 
 func init(){
-	store.SetGroupGetter(gi{})
-	store.SetGroupCollection(store.TableGroupSlice{
-		{{ range $k,$v := .Groups }}Group{{prepareVarIndex $k $v.Name}}: {{ $v | printf "%#v" }},
-		{{end}}
-	})
+	GroupBucket = store.NewGroupBucket(
+		store.TableGroupSlice{
+			{{ range $k,$v := .Groups }}Group{{prepareVarIndex $k $v.Name}}: {{ $v | printf "%#v" }},
+			{{end}}
+		},
+		store.GroupIndexIDMap{
+			{{ range $k,$v := .Groups }} {{$v.GroupID}}: Group{{prepareVarIndex $k $v.Name}},
+		{{end}}},
+	)
 }
 
-type wi struct {}
-
-func (wi) ByID(id int64) (store.WebsiteIndex, error){
-	switch id {
-	{{ range $k,$v := .Websites }} case {{$v.WebsiteID}}:
-		return Website{{prepareVarIndex $k $v.Code.String}}, nil
-	{{end}}
-	default:
-		return -1, store.ErrWebsiteNotFound
-	}
-}
-
-func (wi) ByCode(code string) (store.WebsiteIndex, error){
-	switch code {
-	{{ range $k,$v := .Websites }} case "{{$v.Code.String}}":
-		return Website{{prepareVarIndex $k $v.Code.String}}, nil
-	{{end}}
-	default:
-		return -1, store.ErrWebsiteNotFound
-	}
-}
+var WebsiteBucket *store.WebsiteBucket
 
 func init(){
-	store.SetWebsiteGetter(wi{})
-	store.SetWebsiteCollection(store.TableWebsiteSlice{
-		{{ range $k,$v := .Websites }}Website{{prepareVarIndex $k $v.Code.String}}: {{ $v | printf "%#v" }},
-		{{end}}
-	})
+	WebsiteBucket = store.NewWebsiteBucket(
+		store.TableWebsiteSlice{
+			{{ range $k,$v := .Websites }}Website{{prepareVarIndex $k $v.Code.String}}: {{ $v | printf "%#v" }},
+			{{end}}
+		},
+		store.WebsiteIndexIDMap{
+			{{ range $k,$v := .Websites }} {{$v.WebsiteID}}: Website{{prepareVarIndex $k $v.Code.String}},
+		{{end}}},
+		store.WebsiteIndexCodeMap{
+			{{ range $k,$v := .Websites }} "{{$v.Code.String}}": Website{{prepareVarIndex $k $v.Code.String}},
+		{{end}}},
+	)
 }
 `
