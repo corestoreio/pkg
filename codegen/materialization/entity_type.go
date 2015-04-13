@@ -22,7 +22,7 @@ import (
 	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/utils/stringSlice"
+	"github.com/corestoreio/csfw/utils"
 	"github.com/juju/errgo"
 )
 
@@ -95,7 +95,7 @@ func getEntityTypeData(dbrSess *dbr.Session) (etc eav.TableEntityTypeSlice, err 
 }
 
 func getImportPaths() []string {
-	var paths stringSlice.Lot
+	var paths utils.stringSlice
 
 	var getPath = func(s string) string {
 		ps, err := codegen.ExtractImportPath(s)

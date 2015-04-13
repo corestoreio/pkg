@@ -17,7 +17,7 @@ package eav
 import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/utils/stringSlice"
+	"github.com/corestoreio/csfw/utils"
 	"github.com/juju/errgo"
 )
 
@@ -44,8 +44,8 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 	var (
 		ifnull           []string
 		tewAddedCols     []string
-		taColumnsQuoted  = stringSlice.Lot(ta.AllColumnAliasQuote(csdb.MainTable))
-		taaColumnsQuoted = stringSlice.Lot(taa.ColumnAliasQuote(csdb.AdditionalTable))
+		taColumnsQuoted  = utils.stringSlice(ta.AllColumnAliasQuote(csdb.MainTable))
+		taaColumnsQuoted = utils.stringSlice(taa.ColumnAliasQuote(csdb.AdditionalTable))
 	)
 
 	if tew != nil {

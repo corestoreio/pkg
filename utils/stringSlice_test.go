@@ -12,23 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package stringSlice_test
+package utils_test
 
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/utils/stringSlice"
+	"github.com/corestoreio/csfw/utils"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFilterContains(t *testing.T) {
+func TestStringSliceFilterContains(t *testing.T) {
 	tests := []struct {
-		haveSL stringSlice.Lot
+		haveSL utils.StringSlice
 		haveIN []string
 		want   []string
 	}{
 		{
-			stringSlice.Lot{
+			utils.StringSlice{
 				"IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`",
 				"IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`) AS `is_required`",
 				"IFNULL(`scope_table`.`default_value`, `main_table`.`default_value`) AS `default_value`",
@@ -48,35 +48,35 @@ func TestFilterContains(t *testing.T) {
 	}
 }
 
-var benchFilterContains stringSlice.Lot
-var benchFilterContainsData = []string{"is_required", "default_value"}
+var benchStringSliceFilterContains utils.StringSlice
+var benchStringSliceFilterContainsData = []string{"is_required", "default_value"}
 
 // BenchmarkFilterContains	 1000000	      1841 ns/op	      96 B/op	       2 allocs/op
-func BenchmarkFilterContains(b *testing.B) {
+func BenchmarkStringSliceFilterContains(b *testing.B) {
 
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		l := stringSlice.Lot{
+		l := utils.StringSlice{
 			"IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`",
 			"IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`) AS `is_required`",
 			"IFNULL(`scope_table`.`default_value`, `main_table`.`default_value`) AS `default_value`",
 			"IFNULL(`scope_table`.`multiline_count`, `additional_table`.`multiline_count`) AS `multiline_count`",
 		}
-		l.FilterContains(benchFilterContainsData...)
-		benchFilterContains = l
+		l.FilterContains(benchStringSliceFilterContainsData...)
+		benchStringSliceFilterContains = l
 	}
 }
 
-func TestUpdate(t *testing.T) {
+func TestStringSliceUpdate(t *testing.T) {
 	tests := []struct {
-		haveSL stringSlice.Lot
+		haveSL utils.StringSlice
 		haveD  string
 		haveI  int
 		err    error
 		want   []string
 	}{
 		{
-			haveSL: stringSlice.Lot{
+			haveSL: utils.StringSlice{
 				"IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`",
 				"IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`) AS `is_required`",
 				"IFNULL(`scope_table`.`default_value`, `main_table`.`default_value`) AS `default_value`",
@@ -93,7 +93,7 @@ func TestUpdate(t *testing.T) {
 			},
 		},
 		{
-			haveSL: stringSlice.Lot{
+			haveSL: utils.StringSlice{
 				"IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`",
 				"IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`) AS `is_required`",
 				"IFNULL(`scope_table`.`default_value`, `main_table`.`default_value`) AS `default_value`",
@@ -101,7 +101,7 @@ func TestUpdate(t *testing.T) {
 			},
 			haveD: "default_value",
 			haveI: 6,
-			err:   stringSlice.ErrOutOfRange,
+			err:   utils.ErrOutOfRange,
 			want: []string{
 				"IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`",
 				"IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`) AS `is_required`",
@@ -117,15 +117,15 @@ func TestUpdate(t *testing.T) {
 	}
 }
 
-func TestLot(t *testing.T) {
-	l := stringSlice.Lot{"Maybe", "GoLang", "should", "have", "generics", "but", "who", "needs", "them", "?", ";-)"}
+func TestStringSlice(t *testing.T) {
+	l := utils.StringSlice{"Maybe", "GoLang", "should", "have", "generics", "but", "who", "needs", "them", "?", ";-)"}
 	assert.Len(t, l, l.Len())
 	assert.Equal(t, 1, l.Index("GoLang"))
 	assert.Equal(t, -1, l.Index("Golang"))
 	assert.True(t, l.Include("GoLang"))
 	assert.False(t, l.Include("Golang"))
 
-	l2 := stringSlice.Lot{"Maybe", "GoLang"}
+	l2 := utils.StringSlice{"Maybe", "GoLang"}
 	l2.Map(func(s string) string {
 		return s + "2"
 	})
@@ -135,41 +135,41 @@ func TestLot(t *testing.T) {
 
 }
 
-func TestDelete(t *testing.T) {
-	l := stringSlice.Lot{"Maybe", "GoLang", "should"}
+func TestStringSliceDelete(t *testing.T) {
+	l := utils.StringSlice{"Maybe", "GoLang", "should"}
 	assert.NoError(t, l.Delete(1))
 	assert.Equal(t, []string{"Maybe", "should"}, l.ToString())
 	assert.NoError(t, l.Delete(1))
 	assert.Equal(t, []string{"Maybe"}, l.ToString())
-	assert.EqualError(t, l.Delete(1), stringSlice.ErrOutOfRange.Error())
+	assert.EqualError(t, l.Delete(1), utils.ErrOutOfRange.Error())
 }
 
-func TestFilter(t *testing.T) {
-	l := stringSlice.Lot{"Maybe", "GoLang", "should"}
+func TestStringSliceFilter(t *testing.T) {
+	l := utils.StringSlice{"Maybe", "GoLang", "should"}
 	assert.Equal(t, []string{"GoLang"}, l.Filter(func(s string) bool {
 		return s == "GoLang"
 	}).ToString())
 }
 
-func TestUnique(t *testing.T) {
-	l := stringSlice.Lot{"Maybe", "GoLang", "GoLang", "GoLang", "or", "or", "RostLang", "RostLang"}
+func TestStringSliceUnique(t *testing.T) {
+	l := utils.StringSlice{"Maybe", "GoLang", "GoLang", "GoLang", "or", "or", "RostLang", "RostLang"}
 	assert.Equal(t, []string{"Maybe", "GoLang", "or", "RostLang"}, l.Unique().ToString())
 }
 
-var benchUnique stringSlice.Lot
+var benchStringSliceUnique utils.StringSlice
 
 // BenchmarkUnique	 2000000	       612 ns/op	     160 B/op	       2 allocs/op
-func BenchmarkUnique(b *testing.B) {
+func BenchmarkStringSliceUnique(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		l := stringSlice.Lot{"Maybe", "GoLang", "GoLang", "GoLang", "or", "or", "RostLang", "RostLang"}
+		l := utils.StringSlice{"Maybe", "GoLang", "GoLang", "GoLang", "or", "or", "RostLang", "RostLang"}
 		l.Unique()
-		benchUnique = l
+		benchStringSliceUnique = l
 	}
 }
 
-func TestSplit(t *testing.T) {
-	l := stringSlice.Lot{"a", "b"}
+func TestStringSliceSplit(t *testing.T) {
+	l := utils.StringSlice{"a", "b"}
 	assert.Equal(t, []string{"a", "b", "c", "d"}, l.Split("c,d", ",").ToString())
 	assert.Equal(t, []string{"a", "b", "c", "d", "e", "f", ""}, l.Split("e,f,", ",").ToString())
 }

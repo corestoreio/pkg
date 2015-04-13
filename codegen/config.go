@@ -18,7 +18,7 @@ import (
 	"go/build"
 	"os"
 
-	"github.com/corestoreio/csfw/utils/stringSlice"
+	"github.com/corestoreio/csfw/utils"
 )
 
 const PS = string(os.PathSeparator)
@@ -108,7 +108,7 @@ type (
 		// Mage_Eav_Model_Resource_Attribute_Collection::_getEavWebsiteTable()
 		TempAdditionalAttributeTableWebsite string
 
-		AttributeCoreColumns stringSlice.Lot
+		AttributeCoreColumns utils.stringSlice
 	}
 
 	// AttributeModelDefMap contains data to map the three eav_attribute columns
@@ -261,7 +261,7 @@ var (
 	// Developers can extend the table eav_attribute with additional columns but these additional
 	// columns with its method receivers must get generated in the attribute materialize function.
 	// These core columns are already defined below.
-	EAVAttributeCoreColumns = stringSlice.Lot{
+	EAVAttributeCoreColumns = utils.stringSlice{
 		"attribute_id",
 		"entity_type_id",
 		"attribute_code",
@@ -285,7 +285,7 @@ var (
 	// Developers can extend the table customer_eav_attribute with additional columns but these additional
 	// columns with its method receivers must get generated in the attribute materialize function.
 	// These core columns are already defined below.
-	customerAttributeCoreColumns = stringSlice.Lot{
+	customerAttributeCoreColumns = utils.stringSlice{
 		"is_visible",
 		"input_filter",
 		"multiline_count",
@@ -299,7 +299,7 @@ var (
 	// Developers can extend the table customer_eav_attribute with additional columns but these additional
 	// columns with its method receivers must get generated in the attribute materialize function.
 	// These core columns are already defined below.
-	catalogAttributeCoreColumns = stringSlice.Lot{
+	catalogAttributeCoreColumns = utils.stringSlice{
 		"frontend_input_renderer",
 		"is_global",
 		"is_visible",

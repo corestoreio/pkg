@@ -12,36 +12,42 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package stringSlice
+package utils
 
 import (
 	"errors"
+	"sort"
 	"strings"
 )
 
 var ErrOutOfRange = errors.New("Out of range")
 
-// Lot is string slice with attached method receivers
-type Lot []string
+// StringSlice contains Map/Filter/Reduce/Sort/Unique/etc method receivers for []string.
+type StringSlice []string
 
 // ToString converts to string slice.
-func (l Lot) ToString() []string {
-	return []string(l)
-}
+func (l StringSlice) ToString() []string { return []string(l) }
 
-// ToString converts to string slice.
-func (l Lot) Len() int {
-	return len(l)
-}
+// Len returns the length
+func (l StringSlice) Len() int { return len(l) }
 
-// Append adds s (variadic) to the Lot
-func (l *Lot) Append(s ...string) Lot {
+// Less compares two slice values
+func (l StringSlice) Less(i, j int) bool { return l[i] < l[j] }
+
+// Swap changes the position
+func (l StringSlice) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
+
+// Sort is a convenience method.
+func (p StringSlice) Sort() { sort.Sort(p) }
+
+// Append adds s (variadic) to the StringSlice
+func (l *StringSlice) Append(s ...string) StringSlice {
 	*l = append(*l, s...)
 	return *l
 }
 
 // Update sets the string s on index i. If index is not found returns an ErrOutOfRange.
-func (l *Lot) Update(i int, s string) error {
+func (l *StringSlice) Update(i int, s string) error {
 	if i > l.Len() || i < 0 {
 		return ErrOutOfRange
 	}
@@ -50,7 +56,7 @@ func (l *Lot) Update(i int, s string) error {
 }
 
 // Delete removes index i from slice
-func (l *Lot) Delete(i int) error {
+func (l *StringSlice) Delete(i int) error {
 	if i > l.Len()-1 || i < 0 {
 		return ErrOutOfRange
 	}
@@ -59,7 +65,7 @@ func (l *Lot) Delete(i int) error {
 }
 
 // Index returns -1 if not found or the current index for target t.
-func (l Lot) Index(t string) int {
+func (l StringSlice) Index(t string) int {
 	for i, v := range l {
 		if v == t {
 			return i
@@ -69,12 +75,12 @@ func (l Lot) Index(t string) int {
 }
 
 // Include returns true if the target string t is in the slice.
-func (l Lot) Include(t string) bool {
+func (l StringSlice) Include(t string) bool {
 	return l.Index(t) >= 0
 }
 
 // Any returns true if one of the strings in the slice satisfies the predicate f.
-func (l Lot) Any(f func(string) bool) bool {
+func (l StringSlice) Any(f func(string) bool) bool {
 	for _, v := range l {
 		if f(v) {
 			return true
@@ -84,7 +90,7 @@ func (l Lot) Any(f func(string) bool) bool {
 }
 
 // All returns true if all of the strings in the slice satisfy the predicate f.
-func (l Lot) All(f func(string) bool) bool {
+func (l StringSlice) All(f func(string) bool) bool {
 	for _, v := range l {
 		if !f(v) {
 			return false
@@ -94,7 +100,7 @@ func (l Lot) All(f func(string) bool) bool {
 }
 
 // Filter reduces itself containing all strings in the slice that satisfy the predicate f.
-func (l *Lot) Filter(f func(string) bool) Lot {
+func (l *StringSlice) Filter(f func(string) bool) StringSlice {
 	vsf := (*l)[:0]
 	for _, v := range *l {
 		if f(v) {
@@ -106,8 +112,7 @@ func (l *Lot) Filter(f func(string) bool) Lot {
 }
 
 // FilterContains reduces itself if the parts of the in slice are contained within itself.
-func (l *Lot) FilterContains(in ...string) Lot {
-	// this algorithm uses less allocs
+func (l *StringSlice) FilterContains(in ...string) StringSlice {
 	r := (*l)[:0]
 	for _, s := range *l {
 		isInScope := false
@@ -126,7 +131,7 @@ func (l *Lot) FilterContains(in ...string) Lot {
 }
 
 // Map changes itself containing the results of applying the function f to each string in itself.
-func (l *Lot) Map(f func(string) string) Lot {
+func (l *StringSlice) Map(f func(string) string) StringSlice {
 	for i, v := range *l {
 		(*l)[i] = f(v)
 	}
@@ -134,7 +139,7 @@ func (l *Lot) Map(f func(string) string) Lot {
 }
 
 // Unique removes duplicate entries and discards "" empty strings.
-func (l *Lot) Unique() Lot {
+func (l *StringSlice) Unique() StringSlice {
 	unique := (*l)[:0]
 	for _, p := range *l {
 		found := false
@@ -153,12 +158,7 @@ func (l *Lot) Unique() Lot {
 }
 
 // Join joins the slice using a separator
-func (l Lot) Join(sep string) string {
-	return strings.Join(l, sep)
-}
+func (l StringSlice) Join(sep string) string { return strings.Join(l, sep) }
 
 // Split uses string s and a separator and appends the parts to the slice.
-func (l *Lot) Split(s, sep string) Lot {
-	*l = append(*l, strings.Split(s, sep)...)
-	return *l
-}
+func (l *StringSlice) Split(s, sep string) StringSlice { return l.Append(strings.Split(s, sep)...) }
