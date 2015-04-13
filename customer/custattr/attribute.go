@@ -126,37 +126,38 @@ func (a *Customer) DataModel() eav.AttributeDataModeller {
 	return a.dataModel
 }
 
+// @todo remove this and all other related stuff
 // SetAddressCollection requires a slice to set the address attribute collection
-func SetAddressCollection(s eav.AttributeSliceGetter) {
-	if s.Len() == 0 {
-		panic("AttributeSlice is empty")
-	}
-	aa.C = s
-}
-
-// SetAddressGetter knows how to get an attribute using an index out of an attribute collection
-func SetAddressGetter(g eav.AttributeGetter) {
-	if g == nil {
-		panic("AttributeGetter cannot be nil")
-	}
-	aa.G = g
-}
-
-// SetCustomerCollection requires a slice to set the customer attribute collection
-func SetCustomerCollection(s eav.AttributeSliceGetter) {
-	if s.Len() == 0 {
-		panic("AttributeSlice is empty")
-	}
-	ca.C = s
-}
-
-// SetCustomerGetter knows how to get an attribute using an index out of an attribute collection
-func SetCustomerGetter(g eav.AttributeGetter) {
-	if g == nil {
-		panic("AttributeGetter cannot be nil")
-	}
-	ca.G = g
-}
+//func SetAddressCollection(s eav.AttributeSliceGetter) {
+//	if s.Len() == 0 {
+//		panic("AttributeSlice is empty")
+//	}
+//	aa.C = s
+//}
+//
+//// SetAddressGetter knows how to get an attribute using an index out of an attribute collection
+//func SetAddressGetter(g eav.AttributeGetter) {
+//	if g == nil {
+//		panic("AttributeGetter cannot be nil")
+//	}
+//	aa.G = g
+//}
+//
+//// SetCustomerCollection requires a slice to set the customer attribute collection
+//func SetCustomerCollection(s eav.AttributeSliceGetter) {
+//	if s.Len() == 0 {
+//		panic("AttributeSlice is empty")
+//	}
+//	ca.C = s
+//}
+//
+//// SetCustomerGetter knows how to get an attribute using an index out of an attribute collection
+//func SetCustomerGetter(g eav.AttributeGetter) {
+//	if g == nil {
+//		panic("AttributeGetter cannot be nil")
+//	}
+//	ca.G = g
+//}
 
 // ByID returns an custattr.Attributer by int64 id. Use type assertion.
 func (s AttributeSlice) ByID(g eav.AttributeGetter, id int64) (interface{}, error) {

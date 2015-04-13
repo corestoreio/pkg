@@ -211,37 +211,38 @@ func (a *Catalog) SearchWeight() int64 {
 	return a.searchWeight
 }
 
+// @todo remove this and all other related stuff
 // SetCategoryCollection requires a slice to set the category attribute collection
-func SetCategoryCollection(s eav.AttributeSliceGetter) {
-	if s.Len() == 0 {
-		panic("AttributeSlice is empty")
-	}
-	ca.C = s
-}
-
-// SetCategoryGetter knows how to get an attribute using an index out of an attribute collection
-func SetCategoryGetter(g eav.AttributeGetter) {
-	if g == nil {
-		panic("AttributeGetter cannot be nil")
-	}
-	ca.G = g
-}
-
-// SetProductCollection requires a slice to set the product attribute collection
-func SetProductCollection(s eav.AttributeSliceGetter) {
-	if s.Len() == 0 {
-		panic("AttributeSlice is empty")
-	}
-	pa.C = s
-}
-
-// SetProductGetter knows how to get an attribute using an index out of an attribute collection
-func SetProductGetter(g eav.AttributeGetter) {
-	if g == nil {
-		panic("AttributeGetter cannot be nil")
-	}
-	pa.G = g
-}
+//func SetCategoryCollection(s eav.AttributeSliceGetter) {
+//	if s.Len() == 0 {
+//		panic("AttributeSlice is empty")
+//	}
+//	ca.C = s
+//}
+//
+//// SetCategoryGetter knows how to get an attribute using an index out of an attribute collection
+//func SetCategoryGetter(g eav.AttributeGetter) {
+//	if g == nil {
+//		panic("AttributeGetter cannot be nil")
+//	}
+//	ca.G = g
+//}
+//
+//// SetProductCollection requires a slice to set the product attribute collection
+//func SetProductCollection(s eav.AttributeSliceGetter) {
+//	if s.Len() == 0 {
+//		panic("AttributeSlice is empty")
+//	}
+//	pa.C = s
+//}
+//
+//// SetProductGetter knows how to get an attribute using an index out of an attribute collection
+//func SetProductGetter(g eav.AttributeGetter) {
+//	if g == nil {
+//		panic("AttributeGetter cannot be nil")
+//	}
+//	pa.G = g
+//}
 
 // ByID returns an catattr.Attributer by int64 id. Use type assertion.
 func (s AttributeSlice) ByID(g eav.AttributeGetter, id int64) (interface{}, error) {
