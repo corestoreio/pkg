@@ -41,10 +41,18 @@ type (
 		// i map by store_id
 		i WebsiteIndexIDMap
 	}
+	// WebsiteGetter methods to retrieve a store pointer
+	WebsiteGetter interface {
+		ByID(id int64) (*TableWebsite, error)
+		ByCode(code string) (*TableWebsite, error)
+		ByIndex(i WebsiteIndex) (*TableWebsite, error)
+		Collection() TableWebsiteSlice
+	}
 )
 
 var (
-	ErrWebsiteNotFound = errors.New("Website not found")
+	ErrWebsiteNotFound               = errors.New("Website not found")
+	_                  WebsiteGetter = (*WebsiteBucket)(nil)
 )
 
 // NewWebsiteBucket returns a new pointer to a WebsiteBucket.
@@ -59,7 +67,7 @@ func NewWebsiteBucket(s TableWebsiteSlice, i WebsiteIndexIDMap, c WebsiteIndexCo
 
 // ByID uses the database store id to return a TableWebsite struct.
 func (s *WebsiteBucket) ByID(id int64) (*TableWebsite, error) {
-	if i, ok := s.i[id]; ok && id < int64(s.s.Len()) {
+	if i, ok := s.i[id]; ok {
 		return s.s[i], nil
 	}
 	return nil, ErrWebsiteNotFound
@@ -80,6 +88,9 @@ func (s *WebsiteBucket) ByIndex(i WebsiteIndex) (*TableWebsite, error) {
 	}
 	return nil, ErrWebsiteNotFound
 }
+
+// Collection returns the TableWebsiteSlice
+func (s *WebsiteBucket) Collection() TableWebsiteSlice { return s.s }
 
 // Load uses a dbr session to load all data from the core_website table into the current slice.
 // The variadic 2nd argument can be a call back function to manipulate the select.

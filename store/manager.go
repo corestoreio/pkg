@@ -30,14 +30,47 @@ const (
 	ScopeWebsite  = "website"
 )
 
+type StoreManager struct {
+	s *StoreBucket
+	g *GroupBucket
+	w *WebsiteBucket
+}
+
+func NewStoreManager(s *StoreBucket, g *GroupBucket, w *WebsiteBucket) *StoreManager {
+	return &StoreManager{
+		g: g.SetStores(s).SetWebSite(w),
+		s: s,
+		w: w,
+	}
+}
+
 // IsSingleStoreModeEnabled @todo implement
-func IsSingleStoreModeEnabled() bool {
+// @see magento2/app/code/Magento/Store/Model/StoreManager.php uses the config from the database
+func (sm *StoreManager) IsSingleStoreModeEnabled() bool {
 	return false
 }
 
 // IsSingleStoreMode @todo implement
-func IsSingleStoreMode() bool {
+func (sm *StoreManager) IsSingleStoreMode() bool {
 	return false
+}
+func (sm *StoreManager) HasSingleStore() bool {
+	return false
+}
+func (sm *StoreManager) Store() *StoreBucket {
+	return sm.s
+}
+func (sm *StoreManager) Website() *WebsiteBucket {
+	return sm.w
+}
+func (sm *StoreManager) Group() *GroupBucket {
+	return sm.g
+}
+func (sm *StoreManager) GetDefaultStoreView() *StoreBucket {
+	return sm.s
+}
+func (sm *StoreManager) ReinitStores() error {
+	return nil
 }
 
 // @todo wrong place for this func here

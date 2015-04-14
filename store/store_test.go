@@ -12,23 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package testgen
+package store_test
 
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/store"
 	"github.com/stretchr/testify/assert"
 )
 
 // @todo add group and websites
 
-func TestGetStores(t *testing.T) {
-	s1 := store.GetStores()
+func TestStore(t *testing.T) {
+	s1 := storeManager.Store().Collection()
 	assert.True(t, len(s1) > 1, "There should be at least two stores in the slice")
 	//assert.Equal(t, storeCollection, s1)
 
-	s2 := store.GetStores()
+	s2 := storeManager.Store().Collection()
 
 	for i, store := range s2 {
 		if i == 0 {
@@ -42,7 +41,7 @@ func TestGetStores(t *testing.T) {
 }
 
 func TestGetStoreByCode(t *testing.T) {
-	s, err := store.GetStoreByCode("german")
+	s, err := storeManager.Store().ByCode("german")
 	if err != nil {
 		t.Error(err)
 		assert.Nil(t, s)
@@ -53,7 +52,7 @@ func TestGetStoreByCode(t *testing.T) {
 }
 
 func TestGetStoreByID(t *testing.T) {
-	s, err := store.GetStoreByID(2)
+	s, err := storeManager.Store().ByID(2)
 	if err != nil {
 		t.Error(err)
 		assert.Nil(t, s)

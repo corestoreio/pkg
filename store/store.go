@@ -41,10 +41,18 @@ type (
 		// i map by store_id
 		i StoreIndexIDMap
 	}
+	// StoreGetter methods to retrieve a store pointer
+	StoreGetter interface {
+		ByID(id int64) (*TableStore, error)
+		ByCode(code string) (*TableStore, error)
+		ByIndex(i StoreIndex) (*TableStore, error)
+		Collection() TableStoreSlice
+	}
 )
 
 var (
-	ErrStoreNotFound = errors.New("Store not found")
+	ErrStoreNotFound             = errors.New("Store not found")
+	_                StoreGetter = (*StoreBucket)(nil)
 )
 
 // NewStoreBucket returns a new pointer to a StoreBucket.
@@ -59,7 +67,7 @@ func NewStoreBucket(s TableStoreSlice, i StoreIndexIDMap, c StoreIndexCodeMap) *
 
 // ByID uses the database store id to return a TableStore struct.
 func (s *StoreBucket) ByID(id int64) (*TableStore, error) {
-	if i, ok := s.i[id]; ok && id < int64(s.s.Len()) {
+	if i, ok := s.i[id]; ok {
 		return s.s[i], nil
 	}
 	return nil, ErrStoreNotFound
@@ -81,8 +89,8 @@ func (s *StoreBucket) ByIndex(i StoreIndex) (*TableStore, error) {
 	return nil, ErrStoreNotFound
 }
 
-// ByIndex returns the TableStoreSlice
-func (s *StoreBucket) Store() TableStoreSlice { return s.s }
+// Collection returns the TableStoreSlice
+func (s *StoreBucket) Collection() TableStoreSlice { return s.s }
 
 // Load uses a dbr session to load all data from the core_store table into the current slice.
 // The variadic 2nd argument can be a call back function to manipulate the select.
@@ -98,6 +106,24 @@ func (s *TableStoreSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectC
 
 // Len returns the length
 func (s TableStoreSlice) Len() int { return len(s) }
+
+// ByGroupID returns a new slice with all stores belonging to a group id
+func (s TableStoreSlice) FilterByGroupID(id int64) TableStoreSlice {
+	return s.Filter(func(store *TableStore) bool {
+		return store.GroupID == id
+	})
+}
+
+// Filter returns a new slice filtered by predicate f
+func (s TableStoreSlice) Filter(f func(*TableStore) bool) TableStoreSlice {
+	var tss TableStoreSlice
+	for _, v := range s {
+		if v != nil && f(v) {
+			tss = append(tss, v)
+		}
+	}
+	return tss
+}
 
 func (s TableStore) IsDefault() bool {
 	return s.StoreID == DefaultStoreId

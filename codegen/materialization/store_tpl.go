@@ -42,51 +42,39 @@ const (
 	WebsiteIndexZZZ
 )
 
-var storeBucket *store.StoreBucket
-
-func init(){
-	storeBucket = store.NewStoreBucket(
-		store.TableStoreSlice{
-			{{ range $k,$v := .Stores }}Store{{prepareVarIndex $k $v.Code.String}}: {{ $v | printf "%#v" }},
-			{{end}}
-		},
-		store.StoreIndexIDMap{
-			{{ range $k,$v := .Stores }} {{$v.StoreID}}: Store{{prepareVarIndex $k $v.Code.String}},
-		{{end}}},
-		store.StoreIndexCodeMap{
-			{{ range $k,$v := .Stores }} "{{$v.Code.String}}": Store{{prepareVarIndex $k $v.Code.String}},
-		{{end}}},
+var	storeManager = store.NewStoreManager(
+		store.NewStoreBucket(
+			store.TableStoreSlice{
+				{{ range $k,$v := .Stores }}Store{{prepareVarIndex $k $v.Code.String}}: {{ $v | printf "%#v" }},
+				{{end}}
+			},
+			store.StoreIndexIDMap{
+				{{ range $k,$v := .Stores }} {{$v.StoreID}}: Store{{prepareVarIndex $k $v.Code.String}},
+			{{end}}},
+			store.StoreIndexCodeMap{
+				{{ range $k,$v := .Stores }} "{{$v.Code.String}}": Store{{prepareVarIndex $k $v.Code.String}},
+			{{end}}},
+		),
+		store.NewGroupBucket(
+			store.TableGroupSlice{
+				{{ range $k,$v := .Groups }}Group{{prepareVarIndex $k $v.Name}}: {{ $v | printf "%#v" }},
+				{{end}}
+			},
+			store.GroupIndexIDMap{
+				{{ range $k,$v := .Groups }} {{$v.GroupID}}: Group{{prepareVarIndex $k $v.Name}},
+			{{end}}},
+		),
+		store.NewWebsiteBucket(
+			store.TableWebsiteSlice{
+				{{ range $k,$v := .Websites }}Website{{prepareVarIndex $k $v.Code.String}}: {{ $v | printf "%#v" }},
+				{{end}}
+			},
+			store.WebsiteIndexIDMap{
+				{{ range $k,$v := .Websites }} {{$v.WebsiteID}}: Website{{prepareVarIndex $k $v.Code.String}},
+			{{end}}},
+			store.WebsiteIndexCodeMap{
+				{{ range $k,$v := .Websites }} "{{$v.Code.String}}": Website{{prepareVarIndex $k $v.Code.String}},
+			{{end}}},
+		),
 	)
-}
-
-var GroupBucket *store.GroupBucket
-
-func init(){
-	GroupBucket = store.NewGroupBucket(
-		store.TableGroupSlice{
-			{{ range $k,$v := .Groups }}Group{{prepareVarIndex $k $v.Name}}: {{ $v | printf "%#v" }},
-			{{end}}
-		},
-		store.GroupIndexIDMap{
-			{{ range $k,$v := .Groups }} {{$v.GroupID}}: Group{{prepareVarIndex $k $v.Name}},
-		{{end}}},
-	)
-}
-
-var WebsiteBucket *store.WebsiteBucket
-
-func init(){
-	WebsiteBucket = store.NewWebsiteBucket(
-		store.TableWebsiteSlice{
-			{{ range $k,$v := .Websites }}Website{{prepareVarIndex $k $v.Code.String}}: {{ $v | printf "%#v" }},
-			{{end}}
-		},
-		store.WebsiteIndexIDMap{
-			{{ range $k,$v := .Websites }} {{$v.WebsiteID}}: Website{{prepareVarIndex $k $v.Code.String}},
-		{{end}}},
-		store.WebsiteIndexCodeMap{
-			{{ range $k,$v := .Websites }} "{{$v.Code.String}}": Website{{prepareVarIndex $k $v.Code.String}},
-		{{end}}},
-	)
-}
 `
