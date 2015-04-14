@@ -17,6 +17,7 @@ package store_test
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/store"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,8 +35,6 @@ func TestGroup(t *testing.T) {
 
 }
 
-// @todo check if a group returns the correct stores and website
-
 func TestGetGroupByID(t *testing.T) {
 	g, err := storeManager.Group().ByID(1)
 	if err != nil {
@@ -46,3 +45,15 @@ func TestGetGroupByID(t *testing.T) {
 		assert.Equal(t, "Madison Island", g.Name)
 	}
 }
+
+func TestGroupGetStores(t *testing.T) {
+	gInvalid, err := storeManager.Group().ByID(10000)
+	assert.EqualError(t, err, store.ErrGroupNotFound.Error())
+	assert.Nil(t, gInvalid)
+
+	stores, err := storeManager.Group().Stores(1)
+	assert.NoError(t, err)
+	t.Logf("\n%#v\n", stores)
+
+}
+func TestGroupGetWebsite(t *testing.T) {}

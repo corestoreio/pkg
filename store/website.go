@@ -27,10 +27,8 @@ const (
 )
 
 type (
-	// WebsiteIndex used for iota and for not mixing up indexes
-	WebsiteIndex        uint
-	WebsiteIndexCodeMap map[string]WebsiteIndex
-	WebsiteIndexIDMap   map[int64]WebsiteIndex
+	WebsiteIndexCodeMap map[string]IDX
+	WebsiteIndexIDMap   map[int64]IDX
 	// WebsiteBucket contains two maps for faster retrieving of the store index and the store collection
 	// Only used in generated code. Implements interface WebsiteGetter.
 	WebsiteBucket struct {
@@ -45,7 +43,6 @@ type (
 	WebsiteGetter interface {
 		ByID(id int64) (*TableWebsite, error)
 		ByCode(code string) (*TableWebsite, error)
-		ByIndex(i WebsiteIndex) (*TableWebsite, error)
 		Collection() TableWebsiteSlice
 	}
 )
@@ -76,14 +73,6 @@ func (s *WebsiteBucket) ByID(id int64) (*TableWebsite, error) {
 // ByCode uses the database store code to return a TableWebsite struct.
 func (s *WebsiteBucket) ByCode(code string) (*TableWebsite, error) {
 	if i, ok := s.c[code]; ok {
-		return s.s[i], nil
-	}
-	return nil, ErrWebsiteNotFound
-}
-
-// ByIndex returns a TableWebsite struct using the slice index
-func (s *WebsiteBucket) ByIndex(i WebsiteIndex) (*TableWebsite, error) {
-	if int(i) < s.s.Len() {
 		return s.s[i], nil
 	}
 	return nil, ErrWebsiteNotFound

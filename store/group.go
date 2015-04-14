@@ -28,9 +28,7 @@ const (
 )
 
 type (
-	// GroupIndex used for iota and for not mixing up indexes
-	GroupIndex      uint
-	GroupIndexIDMap map[int64]GroupIndex
+	GroupIndexIDMap map[int64]IDX
 	// GroupBucket contains two maps for faster retrieving of the store index and the store collection
 	// Only used in generated code. Implements interface GroupGetter.
 	GroupBucket struct {
@@ -48,15 +46,17 @@ type (
 	// GroupGetter methods to retrieve a store pointer
 	GroupGetter interface {
 		ByID(id int64) (*TableGroup, error)
-		ByIndex(i GroupIndex) (*TableGroup, error)
 		Collection() TableGroupSlice
 	}
 )
 
 var (
-	ErrGroupNotFound             = errors.New("Store Group not found")
-	_                GroupGetter = (*GroupBucket)(nil)
+	ErrGroupNotFound        = errors.New("Store Group not found")
+	ErrGroupStoresNotFound  = errors.New("Store Group stores not found")
+	ErrGroupWebsiteNotFound = errors.New("Store Group website not found")
 )
+
+var _ GroupGetter = (*GroupBucket)(nil)
 
 // NewGroupBucket returns a new pointer to a GroupBucket.
 func NewGroupBucket(s TableGroupSlice, i GroupIndexIDMap) *GroupBucket {
@@ -70,14 +70,6 @@ func NewGroupBucket(s TableGroupSlice, i GroupIndexIDMap) *GroupBucket {
 // ByID uses the database store id to return a TableGroup struct.
 func (gb *GroupBucket) ByID(id int64) (*TableGroup, error) {
 	if i, ok := gb.i[id]; ok {
-		return gb.s[i], nil
-	}
-	return nil, ErrGroupNotFound
-}
-
-// ByIndex returns a TableGroup struct using the slice index
-func (gb *GroupBucket) ByIndex(i GroupIndex) (*TableGroup, error) {
-	if int(i) < gb.s.Len() {
 		return gb.s[i], nil
 	}
 	return nil, ErrGroupNotFound
@@ -97,6 +89,20 @@ func (gb *GroupBucket) SetStores(sg StoreGetter) *GroupBucket {
 		gb.stores[i] = sg.Collection().FilterByGroupID(group.GroupID)
 	}
 	return gb
+}
+
+func (gb *GroupBucket) Stores(id int64) (TableStoreSlice, error) {
+	if i, ok := gb.i[id]; ok {
+		return gb.stores[i], nil
+	}
+	return nil, ErrGroupStoresNotFound
+}
+
+func (gb *GroupBucket) Website(id int64) (*TableWebsite, error) {
+	if i, ok := gb.i[id]; ok {
+		return gb.websites[i], nil
+	}
+	return nil, ErrGroupWebsiteNotFound
 }
 
 // SetWebSite assigns a website to a group

@@ -30,11 +30,16 @@ const (
 	ScopeWebsite  = "website"
 )
 
-type StoreManager struct {
-	s *StoreBucket
-	g *GroupBucket
-	w *WebsiteBucket
-}
+type (
+	// IDX internal index used for iota in code generation and for not mixing up indexes
+	IDX uint
+
+	StoreManager struct {
+		s *StoreBucket
+		g *GroupBucket
+		w *WebsiteBucket
+	}
+)
 
 func NewStoreManager(s *StoreBucket, g *GroupBucket, w *WebsiteBucket) *StoreManager {
 	return &StoreManager{

@@ -27,10 +27,8 @@ const (
 )
 
 type (
-	// StoreIndex used for iota and for not mixing up indexes
-	StoreIndex        uint
-	StoreIndexCodeMap map[string]StoreIndex
-	StoreIndexIDMap   map[int64]StoreIndex
+	StoreIndexCodeMap map[string]IDX
+	StoreIndexIDMap   map[int64]IDX
 	// StoreBucket contains two maps for faster retrieving of the store index and the store collection
 	// Only used in generated code. Implements interface StoreGetter.
 	StoreBucket struct {
@@ -45,7 +43,6 @@ type (
 	StoreGetter interface {
 		ByID(id int64) (*TableStore, error)
 		ByCode(code string) (*TableStore, error)
-		ByIndex(i StoreIndex) (*TableStore, error)
 		Collection() TableStoreSlice
 	}
 )
@@ -76,14 +73,6 @@ func (s *StoreBucket) ByID(id int64) (*TableStore, error) {
 // ByCode uses the database store code to return a TableStore struct.
 func (s *StoreBucket) ByCode(code string) (*TableStore, error) {
 	if i, ok := s.c[code]; ok {
-		return s.s[i], nil
-	}
-	return nil, ErrStoreNotFound
-}
-
-// ByIndex returns a TableStore struct using the slice index
-func (s *StoreBucket) ByIndex(i StoreIndex) (*TableStore, error) {
-	if int(i) < s.s.Len() {
 		return s.s[i], nil
 	}
 	return nil, ErrStoreNotFound
