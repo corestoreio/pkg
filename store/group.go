@@ -20,6 +20,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/utils"
 	"github.com/juju/errgo"
 )
 
@@ -51,9 +52,10 @@ type (
 )
 
 var (
-	ErrGroupNotFound        = errors.New("Store Group not found")
-	ErrGroupStoresNotFound  = errors.New("Store Group stores not found")
-	ErrGroupWebsiteNotFound = errors.New("Store Group website not found")
+	ErrGroupNotFound             = errors.New("Store Group not found")
+	ErrGroupStoresNotFound       = errors.New("Store Group stores not found")
+	ErrGroupDefaultStoreNotFound = errors.New("Group default store not found")
+	ErrGroupWebsiteNotFound      = errors.New("Store Group website not found")
 )
 
 var _ GroupGetter = (*GroupBucket)(nil)
@@ -75,21 +77,33 @@ func (gb *GroupBucket) ByID(id int64) (*TableGroup, error) {
 	return nil, ErrGroupNotFound
 }
 
+// DefaultStore returns the default TableStore for a group id
+func (gb *GroupBucket) DefaultStore(id int64) (*TableStore, error) {
+	group, err := gb.ByID(id)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	stores, err := gb.Stores(id)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	for _, store := range stores {
+		if store.StoreID == group.DefaultStoreID {
+			return store, nil
+		}
+	}
+	return nil, ErrGroupDefaultStoreNotFound
+}
+
+// DefaultStoreByLocale returns the default store using a group ip and a locale
+// @todo magento2/app/code/Magento/Store/Model/Group.php::getDefaultStoreByLocale()
+// Based on some config values
+func (gb *GroupBucket) DefaultStoreByLocale(id int64, locale string) (*TableStore, error) {
+	return nil, ErrGroupDefaultStoreNotFound
+}
+
 // Collection returns the TableGroupSlice
 func (gb *GroupBucket) Collection() TableGroupSlice { return gb.s }
-
-// SetStores uses the full store collection to extract the stores which are
-// assigned to a group.
-func (gb *GroupBucket) SetStores(sg StoreGetter) *GroupBucket {
-	gb.stores = make([]TableStoreSlice, len(gb.s), len(gb.s))
-	for i, group := range gb.s {
-		if group == nil {
-			continue
-		}
-		gb.stores[i] = sg.Collection().FilterByGroupID(group.GroupID)
-	}
-	return gb
-}
 
 func (gb *GroupBucket) Stores(id int64) (TableStoreSlice, error) {
 	if i, ok := gb.i[id]; ok {
@@ -103,6 +117,19 @@ func (gb *GroupBucket) Website(id int64) (*TableWebsite, error) {
 		return gb.websites[i], nil
 	}
 	return nil, ErrGroupWebsiteNotFound
+}
+
+// SetStores uses the full store collection to extract the stores which are
+// assigned to a group.
+func (gb *GroupBucket) SetStores(sg StoreGetter) *GroupBucket {
+	gb.stores = make([]TableStoreSlice, len(gb.s), len(gb.s))
+	for i, group := range gb.s {
+		if group == nil {
+			continue
+		}
+		gb.stores[i] = sg.Collection().FilterByGroupID(group.GroupID)
+	}
+	return gb
 }
 
 // SetWebSite assigns a website to a group
@@ -133,6 +160,15 @@ func (s *TableGroupSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectC
 
 // Len returns the length
 func (s TableGroupSlice) Len() int { return len(s) }
+
+// IDs returns an Int64Slice with all group ids
+func (s TableGroupSlice) IDs() utils.Int64Slice {
+	id := make(utils.Int64Slice, len(s))
+	for i, store := range s {
+		id[i] = store.GroupID
+	}
+	return id
+}
 
 /*
 	@todo implement Magento\Store\Model\Group

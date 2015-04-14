@@ -20,6 +20,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/utils"
 )
 
 const (
@@ -112,6 +113,24 @@ func (s TableStoreSlice) Filter(f func(*TableStore) bool) TableStoreSlice {
 		}
 	}
 	return tss
+}
+
+// Codes returns a StringSlice with all store codes
+func (s TableStoreSlice) Codes() utils.StringSlice {
+	c := make(utils.StringSlice, len(s))
+	for i, store := range s {
+		c[i] = store.Code.String
+	}
+	return c
+}
+
+// IDs returns an Int64Slice with all store ids
+func (s TableStoreSlice) IDs() utils.Int64Slice {
+	id := make(utils.Int64Slice, len(s))
+	for i, store := range s {
+		id[i] = store.StoreID
+	}
+	return id
 }
 
 func (s TableStore) IsDefault() bool {

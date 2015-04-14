@@ -29,11 +29,8 @@ func TestStore(t *testing.T) {
 
 	s2 := storeManager.Store().Collection()
 
-	for i, store := range s2 {
-		if i == 0 {
-			assert.Nil(t, store, "Expecting first index to be nil")
-			continue
-		}
+	for _, store := range s2 {
+		assert.NotNil(t, store, "Expecting first index to be nil")
 		assert.True(t, len(store.Code.String) > 1, "store.Code.String should be longer than 1 char: %#v", store)
 		//t.Logf("\n%d : %#v\n", i, store)
 	}
