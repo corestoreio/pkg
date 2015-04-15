@@ -45,7 +45,7 @@ func NewStoreManager(s *StoreBucket, g *GroupBucket, w *WebsiteBucket) *StoreMan
 	return &StoreManager{
 		g: g.SetStores(s).SetWebSite(w),
 		s: s,
-		w: w,
+		w: w.SetGroups(g).SetStores(s),
 	}
 }
 

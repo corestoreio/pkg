@@ -38,6 +38,13 @@ type (
 		c WebsiteIndexCodeMap
 		// i map by store_id
 		i WebsiteIndexIDMap
+
+		// groups contains a slice to all groups associated to one website.
+		// Slice index is the iota value of a website constant.
+		groups []TableGroupSlice
+		// stores contains a slice to all stores associated to one website.
+		// Slice index is the iota value of a website constant.
+		stores []TableStoreSlice
 	}
 	// WebsiteGetter methods to retrieve a store pointer
 	WebsiteGetter interface {
@@ -48,9 +55,9 @@ type (
 )
 
 var (
-	ErrWebsiteNotFound               = errors.New("Website not found")
-	_                  WebsiteGetter = (*WebsiteBucket)(nil)
+	ErrWebsiteNotFound = errors.New("Website not found")
 )
+var _ WebsiteGetter = (*WebsiteBucket)(nil)
 
 // NewWebsiteBucket returns a new pointer to a WebsiteBucket.
 func NewWebsiteBucket(s TableWebsiteSlice, i WebsiteIndexIDMap, c WebsiteIndexCodeMap) *WebsiteBucket {
@@ -80,6 +87,16 @@ func (s *WebsiteBucket) ByCode(code string) (*TableWebsite, error) {
 
 // Collection returns the TableWebsiteSlice
 func (s *WebsiteBucket) Collection() TableWebsiteSlice { return s.s }
+
+// SetGroups @todo
+func (wb *WebsiteBucket) SetGroups(gg GroupGetter) *WebsiteBucket {
+	return wb
+}
+
+// SetStores @todo
+func (wb *WebsiteBucket) SetStores(gg StoreGetter) *WebsiteBucket {
+	return wb
+}
 
 // Load uses a dbr session to load all data from the core_website table into the current slice.
 // The variadic 2nd argument can be a call back function to manipulate the select.
