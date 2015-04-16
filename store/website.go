@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package store implements the handling of websites, groups and stores
 package store
 
 import (
@@ -88,13 +87,35 @@ func (s *WebsiteBucket) ByCode(code string) (*TableWebsite, error) {
 // Collection returns the TableWebsiteSlice
 func (s *WebsiteBucket) Collection() TableWebsiteSlice { return s.s }
 
-// SetGroups @todo
+// GroupByID @todo
+func (s *WebsiteBucket) GroupByID(id int64) *GroupBucket { return nil }
+
+// GroupByCode @todo
+func (s *WebsiteBucket) GroupByCode(code string) *GroupBucket { return nil }
+
+// SetGroups uses the full group collection to extract the groups which are
+// assigned to a website.
 func (wb *WebsiteBucket) SetGroups(gg GroupGetter) *WebsiteBucket {
+	wb.groups = make([]TableGroupSlice, len(wb.s), len(wb.s))
+	for i, website := range wb.s {
+		if website == nil {
+			continue
+		}
+		wb.groups[i] = gg.Collection().FilterByWebsiteID(website.WebsiteID)
+	}
 	return wb
 }
 
-// SetStores @todo
-func (wb *WebsiteBucket) SetStores(gg StoreGetter) *WebsiteBucket {
+// SetStores uses the full store collection to extract the stores which are
+// assigned to a website.
+func (wb *WebsiteBucket) SetStores(sg StoreGetter) *WebsiteBucket {
+	wb.stores = make([]TableStoreSlice, len(wb.s), len(wb.s))
+	for i, website := range wb.s {
+		if website == nil {
+			continue
+		}
+		wb.stores[i] = sg.Collection().FilterByWebsiteID(website.WebsiteID)
+	}
 	return wb
 }
 
@@ -110,6 +131,17 @@ func (s *TableWebsiteSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelec
 
 // Len returns the length
 func (s TableWebsiteSlice) Len() int { return len(s) }
+
+// Filter returns a new slice filtered by predicate f
+func (s TableWebsiteSlice) Filter(f func(*TableWebsite) bool) TableWebsiteSlice {
+	var tws TableWebsiteSlice
+	for _, v := range s {
+		if v != nil && f(v) {
+			tws = append(tws, v)
+		}
+	}
+	return tws
+}
 
 // @todo review Magento code because of column is_default
 //func (s Website) IsDefault() bool {

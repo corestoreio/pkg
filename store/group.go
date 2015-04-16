@@ -161,6 +161,24 @@ func (s *TableGroupSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectC
 // Len returns the length
 func (s TableGroupSlice) Len() int { return len(s) }
 
+// FilterByWebsiteID returns a new slice with all groups belonging to a website id
+func (s TableGroupSlice) FilterByWebsiteID(id int64) TableGroupSlice {
+	return s.Filter(func(w *TableGroup) bool {
+		return w.WebsiteID == id
+	})
+}
+
+// Filter returns a new slice filtered by predicate f
+func (s TableGroupSlice) Filter(f func(*TableGroup) bool) TableGroupSlice {
+	var tgs TableGroupSlice
+	for _, v := range s {
+		if v != nil && f(v) {
+			tgs = append(tgs, v)
+		}
+	}
+	return tgs
+}
+
 // IDs returns an Int64Slice with all group ids
 func (s TableGroupSlice) IDs() utils.Int64Slice {
 	id := make(utils.Int64Slice, len(s))

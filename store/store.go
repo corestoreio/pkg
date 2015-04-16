@@ -104,6 +104,13 @@ func (s TableStoreSlice) FilterByGroupID(id int64) TableStoreSlice {
 	})
 }
 
+// FilterByWebsiteID returns a new slice with all stores belonging to a website id
+func (s TableStoreSlice) FilterByWebsiteID(id int64) TableStoreSlice {
+	return s.Filter(func(store *TableStore) bool {
+		return store.WebsiteID == id
+	})
+}
+
 // Filter returns a new slice filtered by predicate f
 func (s TableStoreSlice) Filter(f func(*TableStore) bool) TableStoreSlice {
 	var tss TableStoreSlice
