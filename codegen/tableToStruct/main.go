@@ -82,7 +82,7 @@ func generateStructures(tStruct *codegen.TableToStruct, db *sql.DB, dbrConn *dbr
 		})
 	}
 
-	formatted, err := codegen.GenerateCode(tStruct.Package, string(codegen.Copyright)+tplCode, tplData, nil)
+	formatted, err := codegen.GenerateCode(tStruct.Package, tplCode, tplData, nil)
 	if err != nil {
 		fmt.Printf("\n%s\n", formatted)
 		codegen.LogFatal(err)
