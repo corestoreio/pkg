@@ -31,7 +31,7 @@ const (
 )
 
 type (
-	// IDX internal index used for iota in code generation and for not mixing up indexes
+	// IDX internal index used for iota in code generation
 	IDX uint
 
 	StoreManager struct {
@@ -41,6 +41,7 @@ type (
 	}
 )
 
+// NewStoreManager creaets a new store manager which handles websites, store groups and stores.
 func NewStoreManager(s *StoreBucket, g *GroupBucket, w *WebsiteBucket) *StoreManager {
 	return &StoreManager{
 		g: g.SetStores(s).SetWebSite(w),
@@ -62,18 +63,28 @@ func (sm *StoreManager) IsSingleStoreMode() bool {
 func (sm *StoreManager) HasSingleStore() bool {
 	return false
 }
-func (sm *StoreManager) Store() *StoreBucket {
-	return sm.s
-}
+
+// Website returns the website bucket
 func (sm *StoreManager) Website() *WebsiteBucket {
 	return sm.w
 }
+
+// Group returns the group bucket
 func (sm *StoreManager) Group() *GroupBucket {
 	return sm.g
 }
+
+// Store returns the store view bucket
+func (sm *StoreManager) Store() *StoreBucket {
+	return sm.s
+}
+
+// GetDefaultStoreView returns the default store view bucket
 func (sm *StoreManager) GetDefaultStoreView() *StoreBucket {
 	return sm.s
 }
+
+// ReinitStores reloads the website, store group and store view data from the database @todo
 func (sm *StoreManager) ReinitStores() error {
 	return nil
 }

@@ -14,5 +14,33 @@
 
 /*
 Package store implements the handling of websites, groups and stores.
+
+@startuml
+object Website {
+  id
+  code
+  default_group_id
+  is_default
+}
+Website "1" -- "m" StoreGroup
+Website "1" -- "m" StoreView
+
+object StoreGroup {
+	id
+	website_id
+	root_category_id
+	default_store_id
+}
+StoreGroup "1" -- "m" StoreView
+
+object StoreView {
+	id
+	code
+	website_id
+	group_id
+	is_active
+}
+@enduml
+
 */
 package store

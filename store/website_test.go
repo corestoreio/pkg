@@ -14,6 +14,35 @@
 
 package store_test
 
-import "testing"
+import (
+	"testing"
 
-func TestWebsite(t *testing.T) {}
+	"github.com/corestoreio/csfw/store"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestWebsite(t *testing.T) {
+	wsInvalid, err := storeManager.Website().ByID(312)
+	assert.Nil(t, wsInvalid)
+	assert.EqualError(t, store.ErrWebsiteNotFound, err.Error())
+
+	ws, err := storeManager.Website().ByID(1)
+	assert.NoError(t, err)
+	assert.Equal(t, `Main Website`, ws.Name.String)
+	assert.Equal(t, "base", ws.Code.String)
+	assert.True(t, ws.Code.Valid)
+
+	wsInvalid, err = storeManager.Website().ByCode("oxid")
+	assert.Nil(t, wsInvalid)
+	assert.EqualError(t, store.ErrWebsiteNotFound, err.Error())
+
+	ws, err = storeManager.Website().ByCode("base")
+	assert.NoError(t, err)
+	assert.Equal(t, `Main Website`, ws.Name.String)
+	assert.Equal(t, "base", ws.Code.String)
+	assert.True(t, ws.Code.Valid)
+
+	wc := storeManager.Website().Collection()
+	assert.NotNil(t, wc)
+	assert.Len(t, wc, 3)
+}
