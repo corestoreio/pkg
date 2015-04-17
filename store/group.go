@@ -29,14 +29,14 @@ const (
 )
 
 type (
-	GroupIndexIDMap map[int64]IDX
+
 	// GroupBucket contains two maps for faster retrieving of the store index and the store collection
 	// Only used in generated code. Implements interface GroupGetter.
 	GroupBucket struct {
 		// store collection
 		s TableGroupSlice
-		// i map by store_id
-		i GroupIndexIDMap
+		// i map of group ids to the slice index
+		im *indexMap
 		// stores contains a slice to all stores associated to one group.
 		// Slice index is the iota value of a group constant.
 		stores []TableStoreSlice
@@ -46,7 +46,7 @@ type (
 	}
 	// GroupGetter methods to retrieve a store pointer
 	GroupGetter interface {
-		ByID(id int64) (*TableGroup, error)
+		Get(int64) (*TableGroup, error)
 		Collection() TableGroupSlice
 	}
 )
@@ -61,17 +61,16 @@ var (
 var _ GroupGetter = (*GroupBucket)(nil)
 
 // NewGroupBucket returns a new pointer to a GroupBucket.
-func NewGroupBucket(s TableGroupSlice, i GroupIndexIDMap) *GroupBucket {
-	// @todo idea if i and c is nil generate them from s.
+func NewGroupBucket(s TableGroupSlice) *GroupBucket {
 	return &GroupBucket{
-		i: i,
-		s: s,
+		im: (&indexMap{}).populateGroup(s),
+		s:  s,
 	}
 }
 
-// ByID uses the database store id to return a TableGroup struct.
-func (gb *GroupBucket) ByID(id int64) (*TableGroup, error) {
-	if i, ok := gb.i[id]; ok {
+// Get uses the database store id to return a TableGroup struct.
+func (gb *GroupBucket) Get(gID int64) (*TableGroup, error) {
+	if i, ok := gb.im.id[gID]; ok {
 		return gb.s[i], nil
 	}
 	return nil, ErrGroupNotFound
@@ -79,7 +78,7 @@ func (gb *GroupBucket) ByID(id int64) (*TableGroup, error) {
 
 // DefaultStore returns the default TableStore for a group id
 func (gb *GroupBucket) DefaultStore(id int64) (*TableStore, error) {
-	group, err := gb.ByID(id)
+	group, err := gb.Get(id)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
@@ -106,14 +105,14 @@ func (gb *GroupBucket) DefaultStoreByLocale(id int64, locale string) (*TableStor
 func (gb *GroupBucket) Collection() TableGroupSlice { return gb.s }
 
 func (gb *GroupBucket) Stores(id int64) (TableStoreSlice, error) {
-	if i, ok := gb.i[id]; ok {
+	if i, ok := gb.im.id[id]; ok {
 		return gb.stores[i], nil
 	}
 	return nil, ErrGroupStoresNotFound
 }
 
 func (gb *GroupBucket) Website(id int64) (*TableWebsite, error) {
-	if i, ok := gb.i[id]; ok {
+	if i, ok := gb.im.id[id]; ok {
 		return gb.websites[i], nil
 	}
 	return nil, ErrGroupWebsiteNotFound
@@ -140,7 +139,7 @@ func (gb *GroupBucket) SetWebSite(wb WebsiteGetter) *GroupBucket {
 			continue
 		}
 		var err error
-		gb.websites[i], err = wb.ByID(group.WebsiteID)
+		gb.websites[i], err = wb.Get(group.WebsiteID)
 		if err != nil {
 			panic(errgo.Mask(err)) // @todo not nice this one. so fix it
 		}

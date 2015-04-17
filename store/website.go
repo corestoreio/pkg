@@ -26,17 +26,13 @@ const (
 )
 
 type (
-	WebsiteIndexCodeMap map[string]IDX
-	WebsiteIndexIDMap   map[int64]IDX
 	// WebsiteBucket contains two maps for faster retrieving of the store index and the store collection
 	// Only used in generated code. Implements interface WebsiteGetter.
 	WebsiteBucket struct {
 		// store collection
 		s TableWebsiteSlice
-		// c map bei code
-		c WebsiteIndexCodeMap
-		// i map by store_id
-		i WebsiteIndexIDMap
+		// im index map by website id and code
+		im *indexMap
 
 		// groups contains a slice to all groups associated to one website.
 		// Slice index is the iota value of a website constant.
@@ -47,38 +43,38 @@ type (
 	}
 	// WebsiteGetter methods to retrieve a store pointer
 	WebsiteGetter interface {
-		ByID(id int64) (*TableWebsite, error)
-		ByCode(code string) (*TableWebsite, error)
+		// Get first arg website id or 2nd arg website code
+		Get(int64, ...string) (*TableWebsite, error)
 		Collection() TableWebsiteSlice
 	}
 )
 
 var (
-	ErrWebsiteNotFound = errors.New("Website not found")
+	ErrWebsiteNotFound       = errors.New("Website not found")
+	ErrWebsiteGroupNotFound  = errors.New("Website Group not found")
+	ErrWebsiteStoresNotFound = errors.New("Website Stores not found")
 )
 var _ WebsiteGetter = (*WebsiteBucket)(nil)
 
 // NewWebsiteBucket returns a new pointer to a WebsiteBucket.
-func NewWebsiteBucket(s TableWebsiteSlice, i WebsiteIndexIDMap, c WebsiteIndexCodeMap) *WebsiteBucket {
-	// @todo idea if i and c is nil generate them from s.
+func NewWebsiteBucket(s TableWebsiteSlice) *WebsiteBucket {
 	return &WebsiteBucket{
-		i: i,
-		c: c,
-		s: s,
+		im: (&indexMap{}).populateWebsite(s),
+		s:  s,
 	}
 }
 
-// ByID uses the database store id to return a TableWebsite struct.
-func (s *WebsiteBucket) ByID(id int64) (*TableWebsite, error) {
-	if i, ok := s.i[id]; ok {
-		return s.s[i], nil
+// Get accepts one or two arguments to return a TableWebsite struct. The 2nd argument
+// can be the website code. If the 2nd arguments is present then website id as 1st argument
+// will be ignored.
+func (s *WebsiteBucket) Get(wID int64, wc ...string) (*TableWebsite, error) {
+	if len(wc) == 1 {
+		if i, ok := s.im.code[wc[0]]; ok {
+			return s.s[i], nil
+		}
+		return nil, ErrWebsiteNotFound
 	}
-	return nil, ErrWebsiteNotFound
-}
-
-// ByCode uses the database store code to return a TableWebsite struct.
-func (s *WebsiteBucket) ByCode(code string) (*TableWebsite, error) {
-	if i, ok := s.c[code]; ok {
+	if i, ok := s.im.id[wID]; ok {
 		return s.s[i], nil
 	}
 	return nil, ErrWebsiteNotFound
@@ -87,11 +83,34 @@ func (s *WebsiteBucket) ByCode(code string) (*TableWebsite, error) {
 // Collection returns the TableWebsiteSlice
 func (s *WebsiteBucket) Collection() TableWebsiteSlice { return s.s }
 
-// GroupByID @todo
-func (s *WebsiteBucket) GroupByID(id int64) *GroupBucket { return nil }
+// Group accepts one or two arguments to return a GroupBucket. The 2nd argument
+// can be the website code. If the 2nd arguments is present then website id as 1st argument
+// will be ignored.
+func (s *WebsiteBucket) Group(wID int64, wc ...string) (*GroupBucket, error) {
+	i, oki := s.im.id[wID]
+	if !oki || s.s[i] == nil {
+		return nil, ErrWebsiteNotFound
+	}
+	if len(s.groups) < int(i) {
+		return nil, ErrWebsiteGroupNotFound
+	}
+	g := s.groups[i]
+	if g == nil {
+		return nil, ErrWebsiteGroupNotFound
+	}
+	st := s.stores[i]
+	if st == nil {
+		return nil, ErrWebsiteStoresNotFound
+	}
 
-// GroupByCode @todo
-func (s *WebsiteBucket) GroupByCode(code string) *GroupBucket { return nil }
+	gb := NewGroupBucket(g)
+	sb := NewStoreBucket(st)
+	gb.SetStores(sb).SetWebSite(s)
+	return gb, nil
+}
+
+// Stores @todo
+func (s *WebsiteBucket) Stores(wID int64, wc ...string) (*StoreBucket, error) { return nil, nil }
 
 // SetGroups uses the full group collection to extract the groups which are
 // assigned to a website.

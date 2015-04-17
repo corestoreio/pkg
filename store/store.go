@@ -28,52 +28,43 @@ const (
 )
 
 type (
-	StoreIndexCodeMap map[string]IDX
-	StoreIndexIDMap   map[int64]IDX
 	// StoreBucket contains two maps for faster retrieving of the store index and the store collection
 	// Only used in generated code. Implements interface StoreGetter.
 	StoreBucket struct {
 		// store collection
-		s TableStoreSlice
-		// c map bei code
-		c StoreIndexCodeMap
-		// i map by store_id
-		i StoreIndexIDMap
+		s  TableStoreSlice
+		im *indexMap
 	}
 	// StoreGetter methods to retrieve a store pointer
 	StoreGetter interface {
-		ByID(id int64) (*TableStore, error)
-		ByCode(code string) (*TableStore, error)
+		Get(int64, ...string) (*TableStore, error)
 		Collection() TableStoreSlice
 	}
 )
 
 var (
-	ErrStoreNotFound             = errors.New("Store not found")
-	_                StoreGetter = (*StoreBucket)(nil)
+	ErrStoreNotFound = errors.New("Store not found")
 )
+var _ StoreGetter = (*StoreBucket)(nil)
 
 // NewStoreBucket returns a new pointer to a StoreBucket.
-func NewStoreBucket(s TableStoreSlice, i StoreIndexIDMap, c StoreIndexCodeMap) *StoreBucket {
-	// @todo idea if i and c is nil generate them from s.
+func NewStoreBucket(s TableStoreSlice) *StoreBucket {
 	return &StoreBucket{
-		i: i,
-		c: c,
-		s: s,
+		im: (&indexMap{}).populateStore(s),
+		s:  s,
 	}
 }
 
-// ByID uses the database store id to return a TableStore struct.
-func (s *StoreBucket) ByID(id int64) (*TableStore, error) {
-	if i, ok := s.i[id]; ok {
-		return s.s[i], nil
+// Get uses the  store id as 1st arg to return a TableStore struct or if a store code is provided
+// as 2nd then ignores the store id
+func (s *StoreBucket) Get(sID int64, sc ...string) (*TableStore, error) {
+	if len(sc) == 1 {
+		if i, ok := s.im.code[sc[0]]; ok {
+			return s.s[i], nil
+		}
+		return nil, ErrStoreNotFound
 	}
-	return nil, ErrStoreNotFound
-}
-
-// ByCode uses the database store code to return a TableStore struct.
-func (s *StoreBucket) ByCode(code string) (*TableStore, error) {
-	if i, ok := s.c[code]; ok {
+	if i, ok := s.im.id[sID]; ok {
 		return s.s[i], nil
 	}
 	return nil, ErrStoreNotFound

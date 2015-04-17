@@ -38,7 +38,7 @@ func TestStore(t *testing.T) {
 }
 
 func TestGetStoreByCode(t *testing.T) {
-	s, err := storeManager.Store().ByCode("german")
+	s, err := storeManager.Store().Get(0, "german")
 	if err != nil {
 		t.Error(err)
 		assert.Nil(t, s)
@@ -49,7 +49,7 @@ func TestGetStoreByCode(t *testing.T) {
 }
 
 func TestGetStoreByID(t *testing.T) {
-	s, err := storeManager.Store().ByID(2)
+	s, err := storeManager.Store().Get(2)
 	if err != nil {
 		t.Error(err)
 		assert.Nil(t, s)
