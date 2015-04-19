@@ -43,7 +43,7 @@ type (
 	}
 	// WebsiteGetter methods to retrieve a store pointer
 	WebsiteGetter interface {
-		// Get first arg website id or 2nd arg website code
+		// Get first arg website id or 2nd arg website code. Multiple 2nd args will be ignored.
 		Get(int64, ...string) (*TableWebsite, error)
 		Collection() TableWebsiteSlice
 	}

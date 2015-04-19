@@ -41,12 +41,13 @@ type (
 )
 
 // NewStoreManager creaets a new store manager which handles websites, store groups and stores.
-func NewStoreManager(s *StoreBucket, g *GroupBucket, w *WebsiteBucket) *StoreManager {
-	return &StoreManager{
-		g: g.SetStores(s).SetWebSite(w),
-		s: s,
-		w: w.SetGroups(g).SetStores(s),
-	}
+func NewStoreManager(tws TableWebsiteSlice, tgs TableGroupSlice, tss TableStoreSlice) *StoreManager {
+	return nil
+	//	return &StoreManager{
+	//		g: g.SetStores(s).SetWebSite(w),
+	//		s: s,
+	//		w: w.SetGroups(g).SetStores(s),
+	//	}
 }
 
 // IsSingleStoreModeEnabled @todo implement
@@ -65,6 +66,11 @@ func (sm *StoreManager) HasSingleStore() bool {
 
 // Website returns the website bucket
 func (sm *StoreManager) Website() *WebsiteBucket {
+	return sm.w
+}
+
+// Websites returns a slice of website buckets
+func (sm *StoreManager) Websites() []*WebsiteBucket {
 	return sm.w
 }
 

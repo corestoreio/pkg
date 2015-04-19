@@ -35,7 +35,7 @@ func TestGroup(t *testing.T) {
 }
 
 func TestGetGroupByID(t *testing.T) {
-	g, err := storeManager.Group().ByID(1)
+	g, err := storeManager.Group().Get(1)
 	if err != nil {
 		t.Error(err)
 		assert.Nil(t, g)
@@ -43,7 +43,7 @@ func TestGetGroupByID(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "Madison Island", g.Name)
 	}
-	gInvalid, err := storeManager.Group().ByID(10000)
+	gInvalid, err := storeManager.Group().Get(10000)
 	assert.EqualError(t, err, store.ErrGroupNotFound.Error())
 	assert.Nil(t, gInvalid)
 }
