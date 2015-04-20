@@ -17,19 +17,10 @@ package store
 import (
 	"sync"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
-)
-
-const (
-	// These strings are stored in the core_config_data table; can be optimized
-	ScopeStores   = "stores"
-	ScopeWebsites = "websites"
-	ScopeDefault  = "default"
-	ScopeStore    = "store"
-	ScopeGroup    = "group"
-	ScopeWebsite  = "website"
 )
 
 type (
@@ -52,14 +43,18 @@ func NewStoreManager(tws TableWebsiteSlice, tgs TableGroupSlice, tss TableStoreS
 
 // IsSingleStoreModeEnabled @todo implement
 // @see magento2/app/code/Magento/Store/Model/StoreManager.php uses the config from the database
-func (sm *StoreManager) IsSingleStoreModeEnabled() bool {
+func (sm *StoreManager) IsSingleStoreModeEnabled(cfg config.ScopeReader) bool {
 	return false
 }
 
-// IsSingleStoreMode @todo implement
+// IsSingleStoreMode check if Single-Store mode is enabled in configuration.
+// This flag only shows that admin does not want to show certain UI components at backend (like store switchers etc)
+// if Magento has only one store view but it does not check the store view collection.
 func (sm *StoreManager) IsSingleStoreMode() bool {
 	return false
 }
+
+//
 func (sm *StoreManager) HasSingleStore() bool {
 	return false
 }
@@ -71,7 +66,7 @@ func (sm *StoreManager) Website() *WebsiteBucket {
 
 // Websites returns a slice of website buckets
 func (sm *StoreManager) Websites() []*WebsiteBucket {
-	return sm.w
+	return nil
 }
 
 // Group returns the group bucket
