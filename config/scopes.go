@@ -14,25 +14,29 @@
 
 package config
 
+import "github.com/spf13/viper"
+
 const (
-	// MageScopeDefault defines the global scope. Stored in table core_config_data.scope.
-	ScopeDefault = "default"
-	// MageScopeWebsites defines the website scope which has default as parent and stores as child.
+	// DataScopeDefault defines the global scope. Stored in table core_config_data.scope.
+	DataScopeDefault = "default"
+	// DataScopeWebsites defines the website scope which has default as parent and stores as child.
 	//  Stored in table core_config_data.scope.
-	MageScopeWebsites = "websites"
-	// MageScopeStores defines the store scope which has default and websites as parent.
+	DataScopeWebsites = "websites"
+	// DataScopeStores defines the store scope which has default and websites as parent.
 	//  Stored in table core_config_data.scope.
-	MageScopeStores = "stores"
+	DataScopeStores = "stores"
 
 	ScopeDefault ScopeID = iota
 	ScopeWebsite
 	ScopeGroup
 	ScopeStore
+
+	PATH_SINGLE_STORE_MODE_ENABLED = "general/single_store_mode/enabled"
 )
 
 type (
 	// ScopeID used in constants where default is the lowest and store the highest
-	ScopeID uint
+	ScopeID int
 
 	// ScopePool reads from consul or etcd
 	ScopePool interface {
@@ -51,3 +55,14 @@ type (
 		WriteString(path, value string, scope ScopeID, scopeCode string /*null*/)
 	}
 )
+
+var (
+	cfgDefault = viper.New()
+	cfgwebsite = viper.New()
+	cfgStore   = viper.New()
+)
+
+func init() {
+	cfgDefault.SetDefault(PATH_SINGLE_STORE_MODE_ENABLED, false)
+	cfgStore.SetDefault(PATH_SINGLE_STORE_MODE_ENABLED, false)
+}

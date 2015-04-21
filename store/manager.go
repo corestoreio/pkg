@@ -105,11 +105,42 @@ type indexMap struct {
 	code map[string]int
 }
 
+func newIndexMap(s interface{}) *indexMap {
+	im := &indexMap{
+		id: make(map[int64]int),
+	}
+	switch s.(type) {
+	case TableWebsiteSlice:
+		im.populateWebsite(s)
+		break
+	case TableGroupSlice:
+		im.populateGroup(s)
+		break
+	case TableStoreSlice:
+		im.populateStore(s)
+		break
+	default:
+		panic("Unsupported slice: Either TableStoreSlice, TableGroupSlice or TableWebsiteSlice")
+	}
+	return im
+}
+
+// populateWebsite fills the map (itself) with the website ids and codes and the index of the slice. Thread safe.
+func (im *indexMap) populateWebsite(s TableWebsiteSlice) *indexMap {
+	im.Lock()
+	defer im.Unlock()
+	im.code = make(map[string]int)
+	for i := 0; i < len(s); i++ {
+		im.id[s[i].WebsiteID] = i
+		im.code[s[i].Code.String] = i
+	}
+	return im
+}
+
 // populateGroup fills the map (itself) with the group ids and the index of the slice. Thread safe.
 func (im *indexMap) populateGroup(s TableGroupSlice) *indexMap {
 	im.Lock()
 	defer im.Unlock()
-	im.id = make(map[int64]int)
 	for i := 0; i < len(s); i++ {
 		im.id[s[i].GroupID] = i
 	}
@@ -120,23 +151,9 @@ func (im *indexMap) populateGroup(s TableGroupSlice) *indexMap {
 func (im *indexMap) populateStore(s TableStoreSlice) *indexMap {
 	im.Lock()
 	defer im.Unlock()
-	im.id = make(map[int64]int)
 	im.code = make(map[string]int)
 	for i := 0; i < len(s); i++ {
 		im.id[s[i].StoreID] = i
-		im.code[s[i].Code.String] = i
-	}
-	return im
-}
-
-// populateWebsite fills the map (itself) with the website ids and codes and the index of the slice. Thread safe.
-func (im *indexMap) populateWebsite(s TableWebsiteSlice) *indexMap {
-	im.Lock()
-	defer im.Unlock()
-	im.id = make(map[int64]int)
-	im.code = make(map[string]int)
-	for i := 0; i < len(s); i++ {
-		im.id[s[i].WebsiteID] = i
 		im.code[s[i].Code.String] = i
 	}
 	return im

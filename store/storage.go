@@ -22,16 +22,16 @@ type (
 func NewStorage(tws TableWebsiteSlice, tgs TableGroupSlice, tss TableStoreSlice) *Storage {
 	return &Storage{
 		Websites:  tws,
-		websiteIM: (&indexMap{}).populateWebsite(tws),
+		websiteIM: newIndexMap(tws),
 		Groups:    tgs,
-		groupIM:   (&indexMap{}).populateGroup(tgs),
+		groupIM:   newIndexMap(tgs),
 		Stores:    tss,
-		storeIM:   (&indexMap{}).populateStore(tss),
+		storeIM:   newIndexMap(tss),
 	}
 }
 
-func (s *Storage) New(scopeCode string, scopeType config.ScopeID) (s *StoreBucket, g *GroupBucket, w *WebsiteBucket) {
-
+func (s *Storage) NewBuckets(scopeCode string, scopeType config.ScopeID) (sb *StoreBucket, gb *GroupBucket, wb *WebsiteBucket) {
+	return nil, nil, nil
 }
 
 // Website returns a table website either by id or code, one of them can be nil but not both.
@@ -40,12 +40,12 @@ func (s *Storage) Website(id IDRetriever, c CodeRetriever) (*WebsiteBucket, erro
 	switch {
 	case id != nil:
 		if i, ok := s.websiteIM.id[id.ID()]; ok {
-			idx = s.Websites[i]
+			idx = i
 		}
 		break
 	case c != nil:
 		if i, ok := s.websiteIM.code[c.Code()]; ok {
-			idx = s.Websites[i]
+			idx = i
 		}
 		break
 	default:
@@ -54,6 +54,7 @@ func (s *Storage) Website(id IDRetriever, c CodeRetriever) (*WebsiteBucket, erro
 	if idx < 0 {
 		return nil, ErrWebsiteNotFound
 	}
+	website := s.Websites[idx]
 
 	return nil, nil
 }
@@ -64,25 +65,40 @@ func (s *Storage) Group(id IDRetriever) (*GroupBucket, error) {
 	switch {
 	case id != nil:
 		if i, ok := s.groupIM.id[id.ID()]; ok {
-			return s.Groups[i], nil
+			idx = i
 		}
 		break
+	default:
+		return nil, ErrGroupNotFound
 	}
-	return nil, ErrGroupNotFound
+	if idx < 0 {
+		return nil, ErrGroupNotFound
+	}
+	group := s.Groups[idx]
+
+	return nil, nil
 }
 
 func (s *Storage) Store(id IDRetriever, c CodeRetriever) (*StoreBucket, error) {
+	var idx int = -1
 	switch {
 	case id != nil:
 		if i, ok := s.storeIM.id[id.ID()]; ok {
-			return s.Stores[i], nil
+			idx = i
 		}
 		break
 	case c != nil:
 		if i, ok := s.storeIM.code[c.Code()]; ok {
-			return s.Stores[i], nil
+			idx = i
 		}
 		break
+	default:
+		return nil, ErrStoreNotFound
 	}
-	return nil, ErrStoreNotFound
+	if idx < 0 {
+		return nil, ErrStoreNotFound
+	}
+	store := s.Stores[idx]
+
+	return nil, nil
 }
