@@ -25,14 +25,22 @@ import (
 
 type (
 	StoreManager struct {
+		// scopeCode is either a store_code or a website_code
+		scopeCode string
+		// scopeType is either store, group or website. If group casts scopeCode to int.
+		// Default scope must not be used.
+		scopeType config.ScopeID
+		// s contains the current store selected from the scope
 		s *StoreBucket
+		// g contains the current group selected from the scope
 		g *GroupBucket
+		// w contains the current website select from the scope
 		w *WebsiteBucket
 	}
 )
 
 // NewStoreManager creaets a new store manager which handles websites, store groups and stores.
-func NewStoreManager(tws TableWebsiteSlice, tgs TableGroupSlice, tss TableStoreSlice) *StoreManager {
+func NewStoreManager() *StoreManager {
 	return nil
 	//	return &StoreManager{
 	//		g: g.SetStores(s).SetWebSite(w),

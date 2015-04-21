@@ -32,8 +32,8 @@ type (
 	// Only used in generated code. Implements interface StoreGetter.
 	StoreBucket struct {
 		// store collection
-		s  TableStoreSlice
-		im *indexMap
+		//		s  TableStoreSlice
+		//		im *indexMap
 	}
 	// StoreGetter methods to retrieve a store pointer
 	StoreGetter interface {

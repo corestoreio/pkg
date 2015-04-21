@@ -34,15 +34,15 @@ type (
 	// Only used in generated code. Implements interface GroupGetter.
 	GroupBucket struct {
 		// store collection
-		s TableGroupSlice
-		// i map of group ids to the slice index
-		im *indexMap
-		// stores contains a slice to all stores associated to one group.
-		// Slice index is the iota value of a group constant.
-		stores []TableStoreSlice
-		// websites is a slice to TableWebsite
-		// Slice index is the iota value of a group constant.
-		websites []*TableWebsite
+		//		s TableGroupSlice
+		//		// i map of group ids to the slice index
+		//		im *indexMap
+		//		// stores contains a slice to all stores associated to one group.
+		//		// Slice index is the iota value of a group constant.
+		//		stores []TableStoreSlice
+		//		// websites is a slice to TableWebsite
+		//		// Slice index is the iota value of a group constant.
+		//		websites []*TableWebsite
 	}
 	// GroupGetter methods to retrieve a store pointer
 	GroupGetter interface {

@@ -31,6 +31,7 @@ const (
 )
 
 type (
+	// ScopeID used in constants where default is the lowest and store the highest
 	ScopeID uint
 
 	// ScopePool reads from consul or etcd

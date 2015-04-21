@@ -30,16 +30,16 @@ type (
 	// Only used in generated code. Implements interface WebsiteGetter.
 	WebsiteBucket struct {
 		// store collection
-		s TableWebsiteSlice
-		// im index map by website id and code
-		im *indexMap
-
-		// groups contains a slice to all groups associated to one website.
-		// Slice index is the iota value of a website constant.
-		groups []TableGroupSlice
-		// stores contains a slice to all stores associated to one website.
-		// Slice index is the iota value of a website constant.
-		stores []TableStoreSlice
+		//		s TableWebsiteSlice
+		//		// im index map by website id and code
+		//		im *indexMap
+		//
+		//		// groups contains a slice to all groups associated to one website.
+		//		// Slice index is the iota value of a website constant.
+		//		groups []TableGroupSlice
+		//		// stores contains a slice to all stores associated to one website.
+		//		// Slice index is the iota value of a website constant.
+		//		stores []TableStoreSlice
 	}
 	// WebsiteGetter methods to retrieve a store pointer
 	WebsiteGetter interface {
@@ -68,16 +68,7 @@ func NewWebsiteBucket(s TableWebsiteSlice) *WebsiteBucket {
 // can be the website code. If the 2nd arguments is present then website id as 1st argument
 // will be ignored.
 func (s *WebsiteBucket) Get(wID int64, wc ...string) (*TableWebsite, error) {
-	if len(wc) == 1 {
-		if i, ok := s.im.code[wc[0]]; ok {
-			return s.s[i], nil
-		}
-		return nil, ErrWebsiteNotFound
-	}
-	if i, ok := s.im.id[wID]; ok {
-		return s.s[i], nil
-	}
-	return nil, ErrWebsiteNotFound
+
 }
 
 // Collection returns the TableWebsiteSlice
