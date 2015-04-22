@@ -31,47 +31,40 @@ type (
 	// StoreBucket contains two maps for faster retrieving of the store index and the store collection
 	// Only used in generated code. Implements interface StoreGetter.
 	StoreBucket struct {
-		// store collection
-		//		s  TableStoreSlice
-		//		im *indexMap
+		Website *WebsiteBucket
+		Group   *GroupBucket
+		s       *TableStore
 	}
 	// StoreGetter methods to retrieve a store pointer
-	StoreGetter interface {
-		Get(int64, ...string) (*TableStore, error)
-		Collection() TableStoreSlice
-	}
+//	StoreGetter interface {
+//		Get(int64, ...string) (*TableStore, error)
+//		Collection() TableStoreSlice
+//	}
 )
 
 var (
 	ErrStoreNotFound = errors.New("Store not found")
 )
-var _ StoreGetter = (*StoreBucket)(nil)
 
-// NewStoreBucket returns a new pointer to a StoreBucket.
-func NewStoreBucket(s TableStoreSlice) *StoreBucket {
+//var _ StoreGetter = (*StoreBucket)(nil)
+
+// NewStoreBucket returns a new pointer to a StoreBucket. Panics if one of the arguments is nil.
+func NewStoreBucket(w *TableWebsite, g *TableGroup, s *TableStore) *StoreBucket {
+	if w == nil || g == nil || s == nil {
+		panic("An argument cannot be nil")
+	}
+	wb := NewWebsiteBucket(w)
 	return &StoreBucket{
-		im: (&indexMap{}).populateStore(s),
-		s:  s,
+		w: wb,
+		g: NewGroupBucket(g),
+		s: s,
 	}
 }
 
-// Get uses the  store id as 1st arg to return a TableStore struct or if a store code is provided
-// as 2nd then ignores the store id
-func (s *StoreBucket) Get(sID int64, sc ...string) (*TableStore, error) {
-	if len(sc) == 1 {
-		if i, ok := s.im.code[sc[0]]; ok {
-			return s.s[i], nil
-		}
-		return nil, ErrStoreNotFound
-	}
-	if i, ok := s.im.id[sID]; ok {
-		return s.s[i], nil
-	}
-	return nil, ErrStoreNotFound
+// Data returns the real store data from the database
+func (s *StoreBucket) Data() *TableStore {
+	return s.s
 }
-
-// Collection returns the TableStoreSlice
-func (s *StoreBucket) Collection() TableStoreSlice { return s.s }
 
 // Load uses a dbr session to load all data from the core_store table into the current slice.
 // The variadic 2nd argument can be a call back function to manipulate the select.

@@ -29,102 +29,73 @@ type (
 	// WebsiteBucket contains two maps for faster retrieving of the store index and the store collection
 	// Only used in generated code. Implements interface WebsiteGetter.
 	WebsiteBucket struct {
-		// store collection
-		//		s TableWebsiteSlice
-		//		// im index map by website id and code
-		//		im *indexMap
-		//
-		//		// groups contains a slice to all groups associated to one website.
-		//		// Slice index is the iota value of a website constant.
-		//		groups []TableGroupSlice
-		//		// stores contains a slice to all stores associated to one website.
-		//		// Slice index is the iota value of a website constant.
-		//		stores []TableStoreSlice
+		w *TableWebsite
+
+		// groups contains a slice to all groups associated to one website. This slice can be nil.
+		groups []*GroupBucket
+		// stores contains a slice to all stores associated to one website. This slice can be nil.
+		stores []*StoreBucket
 	}
 	// WebsiteGetter methods to retrieve a store pointer
-	WebsiteGetter interface {
-		// Get first arg website id or 2nd arg website code. Multiple 2nd args will be ignored.
-		Get(int64, ...string) (*TableWebsite, error)
-		Collection() TableWebsiteSlice
-	}
+//	WebsiteGetter interface {
+//		// Get first arg website id or 2nd arg website code. Multiple 2nd args will be ignored.
+//		Get(int64, ...string) (*TableWebsite, error)
+//		Collection() TableWebsiteSlice
+//	}
 )
 
 var (
-	ErrWebsiteNotFound       = errors.New("Website not found")
-	ErrWebsiteGroupNotFound  = errors.New("Website Group not found")
-	ErrWebsiteStoresNotFound = errors.New("Website Stores not found")
+	ErrWebsiteNotFound             = errors.New("Website not found")
+	ErrWebsiteDefaultGroupNotFound = errors.New("Website Default Group not found")
+	ErrWebsiteGroupsNotAvailable   = errors.New("Website Groups not available")
+	ErrWebsiteStoresNotAvailable   = errors.New("Website Stores not available")
 )
-var _ WebsiteGetter = (*WebsiteBucket)(nil)
+
+//var _ WebsiteGetter = (*WebsiteBucket)(nil)
 
 // NewWebsiteBucket returns a new pointer to a WebsiteBucket.
-func NewWebsiteBucket(s TableWebsiteSlice) *WebsiteBucket {
+func NewWebsiteBucket(w *TableWebsite) *WebsiteBucket {
 	return &WebsiteBucket{
-		im: (&indexMap{}).populateWebsite(s),
-		s:  s,
+		w: w,
 	}
 }
 
-// Get accepts one or two arguments to return a TableWebsite struct. The 2nd argument
-// can be the website code. If the 2nd arguments is present then website id as 1st argument
-// will be ignored.
-func (s *WebsiteBucket) Get(wID int64, wc ...string) (*TableWebsite, error) {
+// Data returns the data from the database
+func (wb *WebsiteBucket) Data() *TableWebsite { return wb.w }
 
+// DefaultGroup returns the default GroupBucket or an error if not found
+func (wb *WebsiteBucket) DefaultGroup() (*GroupBucket, error) {
+	for _, g := range wb.groups {
+		if wb.w.DefaultGroupID == g.Data().GroupID {
+			return g, nil
+		}
+	}
+	return nil, ErrWebsiteDefaultGroupNotFound
 }
 
-// Collection returns the TableWebsiteSlice
-func (s *WebsiteBucket) Collection() TableWebsiteSlice { return s.s }
-
-// Group accepts one or two arguments to return a GroupBucket. The 2nd argument
-// can be the website code. If the 2nd arguments is present then website id as 1st argument
-// will be ignored.
-func (s *WebsiteBucket) Group(wID int64, wc ...string) (*GroupBucket, error) {
-	i, oki := s.im.id[wID]
-	if !oki || s.s[i] == nil {
-		return nil, ErrWebsiteNotFound
+// Stores
+func (wb *WebsiteBucket) Stores() ([]*StoreBucket, error) {
+	if len(wb.stores) > 0 {
+		return wb.stores, nil
 	}
-	if len(s.groups) < int(i) {
-		return nil, ErrWebsiteGroupNotFound
-	}
-	g := s.groups[i]
-	if g == nil {
-		return nil, ErrWebsiteGroupNotFound
-	}
-	st := s.stores[i]
-	if st == nil {
-		return nil, ErrWebsiteStoresNotFound
-	}
-
-	gb := NewGroupBucket(g)
-	sb := NewStoreBucket(st)
-	gb.SetStores(sb).SetWebSite(s)
-	return gb, nil
+	return nil, ErrWebsiteStoresNotAvailable
 }
 
-// Stores @todo
-func (s *WebsiteBucket) Stores(wID int64, wc ...string) (*StoreBucket, error) { return nil, nil }
+// Groups
+func (wb *WebsiteBucket) Groups() ([]*GroupBucket, error) {
+	if len(wb.groups) > 0 {
+		return wb.groups, nil
+	}
+	return nil, ErrWebsiteGroupsNotAvailable
+}
 
-// SetGroups uses the full group collection to extract the groups which are
-// assigned to a website.
-func (wb *WebsiteBucket) SetGroups(gg GroupGetter) *WebsiteBucket {
+func (wb *WebsiteBucket) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *WebsiteBucket {
 	wb.groups = make([]TableGroupSlice, len(wb.s), len(wb.s))
 	for i, website := range wb.s {
 		if website == nil {
 			continue
 		}
 		wb.groups[i] = gg.Collection().FilterByWebsiteID(website.WebsiteID)
-	}
-	return wb
-}
-
-// SetStores uses the full store collection to extract the stores which are
-// assigned to a website.
-func (wb *WebsiteBucket) SetStores(sg StoreGetter) *WebsiteBucket {
-	wb.stores = make([]TableStoreSlice, len(wb.s), len(wb.s))
-	for i, website := range wb.s {
-		if website == nil {
-			continue
-		}
-		wb.stores[i] = sg.Collection().FilterByWebsiteID(website.WebsiteID)
 	}
 	return wb
 }

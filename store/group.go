@@ -21,7 +21,6 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
-	"github.com/juju/errgo"
 )
 
 const (
@@ -33,62 +32,52 @@ type (
 	// GroupBucket contains two maps for faster retrieving of the store index and the store collection
 	// Only used in generated code. Implements interface GroupGetter.
 	GroupBucket struct {
-		// store collection
-		//		s TableGroupSlice
-		//		// i map of group ids to the slice index
-		//		im *indexMap
-		//		// stores contains a slice to all stores associated to one group.
-		//		// Slice index is the iota value of a group constant.
-		//		stores []TableStoreSlice
-		//		// websites is a slice to TableWebsite
-		//		// Slice index is the iota value of a group constant.
-		//		websites []*TableWebsite
+		// g group data
+		g *TableGroup
+		// stores contains a slice to all stores associated to this group.
+		// This slice can be nil
+		stores []*StoreBucket
+		// website which belongs to this group
+		Website *WebsiteBucket
 	}
 	// GroupGetter methods to retrieve a store pointer
-	GroupGetter interface {
-		Get(int64) (*TableGroup, error)
-		Collection() TableGroupSlice
-	}
+//	GroupGetter interface {
+//		Get(int64) (*TableGroup, error)
+//	}
 )
 
 var (
 	ErrGroupNotFound             = errors.New("Store Group not found")
-	ErrGroupStoresNotFound       = errors.New("Store Group stores not found")
+	ErrGroupStoresNotAvailable   = errors.New("Store Group stores not available")
 	ErrGroupDefaultStoreNotFound = errors.New("Group default store not found")
-	ErrGroupWebsiteNotFound      = errors.New("Store Group website not found")
+
+//	ErrGroupWebsiteNotFound      = errors.New("Store Group website not found")
 )
 
-var _ GroupGetter = (*GroupBucket)(nil)
+//var _ GroupGetter = (*GroupBucket)(nil)
 
-// NewGroupBucket returns a new pointer to a GroupBucket.
-func NewGroupBucket(s TableGroupSlice) *GroupBucket {
-	return &GroupBucket{
-		im: (&indexMap{}).populateGroup(s),
-		s:  s,
+// NewGroupBucket returns a new pointer to a GroupBucket. Second argument can be nil.
+func NewGroupBucket(g *TableGroup) *GroupBucket {
+	if g == nil {
+		panic("First argument TableGroup cannot be nil")
 	}
+
+	gb := &GroupBucket{
+		g: g,
+	}
+	return gb
 }
 
-// Get uses the database store id to return a TableGroup struct.
-func (gb *GroupBucket) Get(gID int64) (*TableGroup, error) {
-	if i, ok := gb.im.id[gID]; ok {
-		return gb.s[i], nil
-	}
-	return nil, ErrGroupNotFound
+// Data returns the data from the database
+func (gb *GroupBucket) Data() *TableGroup {
+	return gb.g
 }
 
-// DefaultStore returns the default TableStore for a group id
-func (gb *GroupBucket) DefaultStore(id int64) (*TableStore, error) {
-	group, err := gb.Get(id)
-	if err != nil {
-		return nil, errgo.Mask(err)
-	}
-	stores, err := gb.Stores(id)
-	if err != nil {
-		return nil, errgo.Mask(err)
-	}
-	for _, store := range stores {
-		if store.StoreID == group.DefaultStoreID {
-			return store, nil
+// DefaultStore returns the default StoreBucket or an error
+func (gb *GroupBucket) DefaultStore(id int64) (*StoreBucket, error) {
+	for _, sb := range gb.stores {
+		if sb.Data().StoreID == gb.g.DefaultStoreID {
+			return sb, nil
 		}
 	}
 	return nil, ErrGroupDefaultStoreNotFound
@@ -101,48 +90,27 @@ func (gb *GroupBucket) DefaultStoreByLocale(id int64, locale string) (*TableStor
 	return nil, ErrGroupDefaultStoreNotFound
 }
 
-// Collection returns the TableGroupSlice
-func (gb *GroupBucket) Collection() TableGroupSlice { return gb.s }
-
-func (gb *GroupBucket) Stores(id int64) (TableStoreSlice, error) {
-	if i, ok := gb.im.id[id]; ok {
-		return gb.stores[i], nil
+func (gb *GroupBucket) Stores() ([]*StoreBucket, error) {
+	if len(gb.stores) > 0 {
+		return gb.stores, nil
 	}
-	return nil, ErrGroupStoresNotFound
-}
-
-func (gb *GroupBucket) Website(id int64) (*TableWebsite, error) {
-	if i, ok := gb.im.id[id]; ok {
-		return gb.websites[i], nil
-	}
-	return nil, ErrGroupWebsiteNotFound
+	return ErrGroupStoresNotAvailable, nil
 }
 
 // SetStores uses the full store collection to extract the stores which are
 // assigned to a group.
-func (gb *GroupBucket) SetStores(sg StoreGetter) *GroupBucket {
-	gb.stores = make([]TableStoreSlice, len(gb.s), len(gb.s))
-	for i, group := range gb.s {
-		if group == nil {
-			continue
-		}
-		gb.stores[i] = sg.Collection().FilterByGroupID(group.GroupID)
+func (gb *GroupBucket) SetStores(tss TableStoreSlice) *GroupBucket {
+	if tss == nil {
+		gb.stores = nil
+		return gb
 	}
-	return gb
-}
-
-// SetWebSite assigns a website to a group
-func (gb *GroupBucket) SetWebSite(wb WebsiteGetter) *GroupBucket {
-	gb.websites = make([]*TableWebsite, len(gb.s), len(gb.s))
-	for i, group := range gb.s {
-		if group == nil {
+	@todo
+	gb.stores = make([]TableStoreSlice, len(tss), len(tss))
+	for i, store := range tss {
+		if store == nil {
 			continue
 		}
-		var err error
-		gb.websites[i], err = wb.Get(group.WebsiteID)
-		if err != nil {
-			panic(errgo.Mask(err)) // @todo not nice this one. so fix it
-		}
+		gb.stores[i] = tss.FilterByGroupID(gb.g.GroupID)
 	}
 	return gb
 }

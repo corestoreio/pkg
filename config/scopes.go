@@ -30,8 +30,6 @@ const (
 	ScopeWebsite
 	ScopeGroup
 	ScopeStore
-
-	PATH_SINGLE_STORE_MODE_ENABLED = "general/single_store_mode/enabled"
 )
 
 type (
@@ -61,8 +59,3 @@ var (
 	cfgwebsite = viper.New()
 	cfgStore   = viper.New()
 )
-
-func init() {
-	cfgDefault.SetDefault(PATH_SINGLE_STORE_MODE_ENABLED, false)
-	cfgStore.SetDefault(PATH_SINGLE_STORE_MODE_ENABLED, false)
-}
