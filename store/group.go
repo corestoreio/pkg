@@ -29,52 +29,44 @@ const (
 
 type (
 
-	// GroupBucket contains two maps for faster retrieving of the store index and the store collection
+	// Group contains two maps for faster retrieving of the store index and the store collection
 	// Only used in generated code. Implements interface GroupGetter.
-	GroupBucket struct {
+	Group struct {
 		// g group data
 		g *TableGroup
 		// stores contains a slice to all stores associated to this group.
 		// This slice can be nil
-		stores []*StoreBucket
+		stores []*Store
 		// website which belongs to this group
-		Website *WebsiteBucket
+		Website *Website
 	}
-	// GroupGetter methods to retrieve a store pointer
-//	GroupGetter interface {
-//		Get(int64) (*TableGroup, error)
-//	}
 )
 
 var (
 	ErrGroupNotFound             = errors.New("Store Group not found")
 	ErrGroupStoresNotAvailable   = errors.New("Store Group stores not available")
 	ErrGroupDefaultStoreNotFound = errors.New("Group default store not found")
-
-//	ErrGroupWebsiteNotFound      = errors.New("Store Group website not found")
 )
 
-//var _ GroupGetter = (*GroupBucket)(nil)
-
-// NewGroupBucket returns a new pointer to a GroupBucket. Second argument can be nil.
-func NewGroupBucket(g *TableGroup) *GroupBucket {
+// NewGroup returns a new pointer to a Group. Second argument can be nil.
+func NewGroup(g *TableGroup) *Group {
 	if g == nil {
 		panic("First argument TableGroup cannot be nil")
 	}
 
-	gb := &GroupBucket{
+	gb := &Group{
 		g: g,
 	}
 	return gb
 }
 
 // Data returns the data from the database
-func (gb *GroupBucket) Data() *TableGroup {
+func (gb *Group) Data() *TableGroup {
 	return gb.g
 }
 
-// DefaultStore returns the default StoreBucket or an error
-func (gb *GroupBucket) DefaultStore(id int64) (*StoreBucket, error) {
+// DefaultStore returns the default Store or an error
+func (gb *Group) DefaultStore(id int64) (*Store, error) {
 	for _, sb := range gb.stores {
 		if sb.Data().StoreID == gb.g.DefaultStoreID {
 			return sb, nil
@@ -86,31 +78,34 @@ func (gb *GroupBucket) DefaultStore(id int64) (*StoreBucket, error) {
 // DefaultStoreByLocale returns the default store using a group ip and a locale
 // @todo magento2/app/code/Magento/Store/Model/Group.php::getDefaultStoreByLocale()
 // Based on some config values
-func (gb *GroupBucket) DefaultStoreByLocale(id int64, locale string) (*TableStore, error) {
+func (gb *Group) DefaultStoreByLocale(id int64, locale string) (*TableStore, error) {
 	return nil, ErrGroupDefaultStoreNotFound
 }
 
-func (gb *GroupBucket) Stores() ([]*StoreBucket, error) {
+func (gb *Group) Stores() ([]*Store, error) {
 	if len(gb.stores) > 0 {
 		return gb.stores, nil
 	}
-	return ErrGroupStoresNotAvailable, nil
+	return nil, ErrGroupStoresNotAvailable
 }
 
 // SetStores uses the full store collection to extract the stores which are
-// assigned to a group.
-func (gb *GroupBucket) SetStores(tss TableStoreSlice) *GroupBucket {
+// assigned to a group. Either Website must be set before calling SetStores() or
+// the second argument must be set i.e. 2nd argument can be nil. Panics if both
+// values are nil. If both are set, the 2nd argument will be considered.
+func (gb *Group) SetStores(tss TableStoreSlice, w *TableWebsite) *Group {
 	if tss == nil {
 		gb.stores = nil
 		return gb
 	}
-	@todo
-	gb.stores = make([]TableStoreSlice, len(tss), len(tss))
-	for i, store := range tss {
-		if store == nil {
-			continue
-		}
-		gb.stores[i] = tss.FilterByGroupID(gb.g.GroupID)
+	if gb.Website == nil && w == nil {
+		panic("Please set Website or provide the 2nd argument but both cannot be nil")
+	}
+	if w == nil {
+		w = gb.Website.Data()
+	}
+	for _, s := range tss.FilterByGroupID(gb.g.GroupID) {
+		gb.stores = append(gb.stores, NewStore(w, gb.g, s))
 	}
 	return gb
 }
@@ -127,6 +122,16 @@ func (s *TableGroupSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectC
 
 // Len returns the length
 func (s TableGroupSlice) Len() int { return len(s) }
+
+// FindByID returns a TableGroup if found by id or an error
+func (s TableGroupSlice) FindByID(id int64) (*TableGroup, error) {
+	for _, g := range s {
+		if g.GroupID == id {
+			return g, nil
+		}
+	}
+	return nil, ErrGroupNotFound
+}
 
 // FilterByWebsiteID returns a new slice with all groups belonging to a website id
 func (s TableGroupSlice) FilterByWebsiteID(id int64) TableGroupSlice {

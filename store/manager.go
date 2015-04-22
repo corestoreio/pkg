@@ -28,16 +28,16 @@ type (
 		// scopeType is either store, group or website. If group casts scopeCode to int.
 		// Default scope must not be used.
 		scopeType config.ScopeID
-		// s contains the current store selected from the scope
-		s *StoreBucket
-		// g contains the current group selected from the scope
-		g *GroupBucket
-		// w contains the current website select from the scope
-		w *WebsiteBucket
+		// s contains the current store selected from the scope, internal cache
+		s *Store
+		// g contains the current group selected from the scope, internal cache
+		g *Group
+		// w contains the current website select from the scope, internal cache
+		w *Website
 	}
 )
 
-// NewStoreManager creaets a new store manager which handles websites, store groups and stores.
+// NewStoreManager creates a new store manager which handles websites, store groups and stores.
 func NewStoreManager() *StoreManager {
 	return nil
 	//	return &StoreManager{
@@ -66,27 +66,27 @@ func (sm *StoreManager) HasSingleStore() bool {
 }
 
 // Website returns the website bucket
-func (sm *StoreManager) Website() *WebsiteBucket {
+func (sm *StoreManager) Website() *Website {
 	return sm.w
 }
 
 // Websites returns a slice of website buckets
-func (sm *StoreManager) Websites() []*WebsiteBucket {
+func (sm *StoreManager) Websites() []*Website {
 	return nil
 }
 
 // Group returns the group bucket
-func (sm *StoreManager) Group() *GroupBucket {
+func (sm *StoreManager) Group() *Group {
 	return sm.g
 }
 
 // Store returns the store view bucket
-func (sm *StoreManager) Store() *StoreBucket {
+func (sm *StoreManager) Store() *Store {
 	return sm.s
 }
 
 // GetDefaultStoreView returns the default store view bucket
-func (sm *StoreManager) GetDefaultStoreView() *StoreBucket {
+func (sm *StoreManager) GetDefaultStoreView() *Store {
 	return sm.s
 }
 

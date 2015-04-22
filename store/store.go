@@ -28,41 +28,34 @@ const (
 )
 
 type (
-	// StoreBucket contains two maps for faster retrieving of the store index and the store collection
+	// Store contains two maps for faster retrieving of the store index and the store collection
 	// Only used in generated code. Implements interface StoreGetter.
-	StoreBucket struct {
-		Website *WebsiteBucket
-		Group   *GroupBucket
+	Store struct {
+		Website *Website
+		Group   *Group
 		s       *TableStore
 	}
-	// StoreGetter methods to retrieve a store pointer
-//	StoreGetter interface {
-//		Get(int64, ...string) (*TableStore, error)
-//		Collection() TableStoreSlice
-//	}
 )
 
 var (
 	ErrStoreNotFound = errors.New("Store not found")
 )
 
-//var _ StoreGetter = (*StoreBucket)(nil)
-
-// NewStoreBucket returns a new pointer to a StoreBucket. Panics if one of the arguments is nil.
-func NewStoreBucket(w *TableWebsite, g *TableGroup, s *TableStore) *StoreBucket {
+// NewStore returns a new pointer to a Store. Panics if one of the arguments is nil.
+func NewStore(w *TableWebsite, g *TableGroup, s *TableStore) *Store {
 	if w == nil || g == nil || s == nil {
 		panic("An argument cannot be nil")
 	}
-	wb := NewWebsiteBucket(w)
-	return &StoreBucket{
-		w: wb,
-		g: NewGroupBucket(g),
-		s: s,
+	wb := NewWebsite(w)
+	return &Store{
+		Website: wb,
+		Group:   NewGroup(g),
+		s:       s,
 	}
 }
 
 // Data returns the real store data from the database
-func (s *StoreBucket) Data() *TableStore {
+func (s *Store) Data() *TableStore {
 	return s.s
 }
 
@@ -80,6 +73,16 @@ func (s *TableStoreSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectC
 
 // Len returns the length
 func (s TableStoreSlice) Len() int { return len(s) }
+
+// FindByID returns a TableStore if found by id or an error
+func (s TableStoreSlice) FindByID(id int64) (*TableStore, error) {
+	for _, store := range s {
+		if store.StoreID == id {
+			return store, nil
+		}
+	}
+	return nil, ErrStoreNotFound
+}
 
 // ByGroupID returns a new slice with all stores belonging to a group id
 func (s TableStoreSlice) FilterByGroupID(id int64) TableStoreSlice {
