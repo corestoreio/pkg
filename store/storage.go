@@ -1,18 +1,14 @@
 package store
 
-import (
-	"sync"
-
-	"github.com/corestoreio/csfw/config"
-)
+import "sync"
 
 type (
-	Storage struct {
-		Websites  TableWebsiteSlice
+	storage struct {
+		websites  TableWebsiteSlice
 		websiteIM *indexMap
-		Groups    TableGroupSlice
+		groups    TableGroupSlice
 		groupIM   *indexMap
-		Stores    TableStoreSlice
+		stores    TableStoreSlice
 		storeIM   *indexMap
 	}
 	IDRetriever interface {
@@ -33,24 +29,20 @@ func (i ID) ID() int64 { return int64(i) }
 // Code is convenience helper to satisfy the interface CodeRetriever
 func (c Code) Code() string { return string(c) }
 
-func NewStorage(tws TableWebsiteSlice, tgs TableGroupSlice, tss TableStoreSlice) *Storage {
+func NewStorage(tws TableWebsiteSlice, tgs TableGroupSlice, tss TableStoreSlice) *storage {
 	// maybe we can totally remove the maps and just rely on the for loop to find an entity.
-	return &Storage{
-		Websites:  tws,
+	return &storage{
+		websites:  tws,
 		websiteIM: newIndexMap(tws),
-		Groups:    tgs,
+		groups:    tgs,
 		groupIM:   newIndexMap(tgs),
-		Stores:    tss,
+		stores:    tss,
 		storeIM:   newIndexMap(tss),
 	}
 }
 
-func (s *Storage) News(scopeCode string, scopeType config.ScopeID) (sb *Store, gb *Group, wb *Website) {
-	return nil, nil, nil
-}
-
 // website returns a TableWebsite
-func (s *Storage) website(id IDRetriever, c CodeRetriever) (*TableWebsite, error) {
+func (s *storage) website(id IDRetriever, c CodeRetriever) (*TableWebsite, error) {
 	var idx int = -1
 	switch {
 	case id != nil:
@@ -69,21 +61,22 @@ func (s *Storage) website(id IDRetriever, c CodeRetriever) (*TableWebsite, error
 	if idx < 0 {
 		return nil, ErrWebsiteNotFound
 	}
-	return s.Websites[idx], nil
+	return s.websites[idx], nil
 }
 
 // Website creates a new Website which contains the current website, all its groups and
 // all its related stores. Groups and stores can be nil. It panics when the integrity is incorrect.
-func (s *Storage) Website(id IDRetriever, c CodeRetriever) (*Website, error) {
+func (s *storage) Website(id IDRetriever, c CodeRetriever) (*Website, error) {
 	w, err := s.website(id, c)
 	if err != nil {
 		return nil, err
 	}
-	return NewWebsite(w).SetGroupsStores(s.Groups, s.Stores), nil
+	return NewWebsite(w).SetGroupsStores(s.groups, s.stores), nil
 }
+func (s *storage) Websites() WebsiteSlice { return nil }
 
 // group returns a TableGroup
-func (s *Storage) group(id IDRetriever) (*TableGroup, error) {
+func (s *storage) group(id IDRetriever) (*TableGroup, error) {
 	var idx int = -1
 	switch {
 	case id != nil:
@@ -97,11 +90,11 @@ func (s *Storage) group(id IDRetriever) (*TableGroup, error) {
 	if idx < 0 {
 		return nil, ErrGroupNotFound
 	}
-	return s.Groups[idx], nil
+	return s.groups[idx], nil
 }
 
 // Group creates a new Group which contains all related stores and its website
-func (s *Storage) Group(id IDRetriever) (*Group, error) {
+func (s *storage) Group(id IDRetriever) (*Group, error) {
 	g, err := s.group(id)
 	if err != nil {
 		return nil, err
@@ -111,11 +104,13 @@ func (s *Storage) Group(id IDRetriever) (*Group, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewGroup(g).SetStores(s.Stores, w), nil
+	return NewGroup(g).SetStores(s.stores, w), nil
 }
 
+func (s *storage) Groups() GroupSlice { return nil }
+
 // store returns a TableStore
-func (s *Storage) store(id IDRetriever, c CodeRetriever) (*TableStore, error) {
+func (s *storage) store(id IDRetriever, c CodeRetriever) (*TableStore, error) {
 	var idx int = -1
 	switch {
 	case id != nil:
@@ -134,11 +129,11 @@ func (s *Storage) store(id IDRetriever, c CodeRetriever) (*TableStore, error) {
 	if idx < 0 {
 		return nil, ErrStoreNotFound
 	}
-	return s.Stores[idx], nil
+	return s.stores[idx], nil
 }
 
 // Store creates a new Store which contains the current store, its Group and Website
-func (s *Storage) Store(id IDRetriever, c CodeRetriever) (*Store, error) {
+func (s *storage) Store(id IDRetriever, c CodeRetriever) (*Store, error) {
 	store, err := s.store(id, c)
 	if err != nil {
 		return nil, err
@@ -154,10 +149,12 @@ func (s *Storage) Store(id IDRetriever, c CodeRetriever) (*Store, error) {
 	return NewStore(website, group, store), nil
 }
 
+func (s *storage) Stores() StoreSlice { return nil }
+
 // DefaultStoreView traverses through the websites to find the default website and gets
-// the group which has the default store id assigned to. Only one website can be the default one.
-func (s *Storage) DefaultStoreView() (*Store, error) {
-	for _, website := range s.Websites {
+// the default group which has the default store id assigned to. Only one website can be the default one.
+func (s *storage) DefaultStoreView() (*Store, error) {
+	for _, website := range s.websites {
 		if website.IsDefault.Bool && website.IsDefault.Valid {
 			group, err := s.group(ID(website.DefaultGroupID))
 			if err != nil {

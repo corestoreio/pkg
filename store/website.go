@@ -37,6 +37,7 @@ type (
 		// stores contains a slice to all stores associated to one website. This slice can be nil.
 		stores []*Store
 	}
+	WebsiteSlice []*Website
 )
 
 var (

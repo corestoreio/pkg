@@ -15,6 +15,11 @@
 package store
 
 import (
+	"errors"
+	"sync"
+
+	"net/http"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -22,29 +27,68 @@ import (
 )
 
 type (
-	StoreManager struct {
-		// scopeCode is either a store_code or a website_code
-		scopeCode string
-		// scopeType is either store, group or website. If group casts scopeCode to int.
-		// Default scope must not be used.
-		scopeType config.ScopeID
-		// s contains the current store selected from the scope, internal cache
-		s *Store
-		// g contains the current group selected from the scope, internal cache
-		g *Group
+	sContainer struct {
 		// w contains the current website select from the scope, internal cache
 		w *Website
+		// g contains the current group selected from the scope, internal cache
+		g *Group
+		// s contains the current store selected from the scope, internal cache
+		s *Store
+	}
+
+	StoreManager struct {
+		storage *storage
+		sync.RWMutex
+		// map key is a hash value
+		cache map[uint64]*sContainer
 	}
 )
 
+var (
+	ErrUnsupportedScopeID = errors.New("Unsupported scope id")
+)
+
 // NewStoreManager creates a new store manager which handles websites, store groups and stores.
-func NewStoreManager() *StoreManager {
+func NewStoreManager(s *storage) *StoreManager {
+	return &StoreManager{
+		storage: s,
+	}
+}
+
+// Init @see \Magento\Store\Model\StorageFactory::_reinitStores
+func (sm *StoreManager) Init(scopeCode string, scopeType config.ScopeID) (*Store, error) {
+	switch scopeType {
+	case config.ScopeStore:
+		// init storage store by store code
+		break
+	case config.ScopeGroup:
+		// init storage store by group id
+		break
+	case config.ScopeWebsite:
+		// init storage store by website code
+		break
+	default:
+		return nil, ErrUnsupportedScopeID
+	}
+
 	return nil
-	//	return &StoreManager{
-	//		g: g.SetStores(s).SetWebSite(w),
-	//		s: s,
-	//		w: w.SetGroups(g).SetStores(s),
-	//	}
+}
+
+// Init @see \Magento\Store\Model\StorageFactory::_reinitStores
+func (sm *StoreManager) InitByRequest(r *http.Request, scopeType config.ScopeID) {
+	var scopeCode string
+	// 1. check cookie store
+	// 2. check for ___store variable
+	if keks, err := r.Cookie(CookieName); err == nil { // if cookie not present ignore it
+		scopeCode = keks.Value
+	}
+	if gs := r.URL.Query().Get(HttpRequestParamStore); gs != "" {
+		scopeCode = gs
+	}
+	_ = scopeCode
+	// @todo
+	// now init currentStore and cache
+	// also delete and re-set a new cookie
 }
 
 // IsSingleStoreModeEnabled @todo implement
@@ -65,9 +109,9 @@ func (sm *StoreManager) HasSingleStore() bool {
 	return false
 }
 
-// Website returns the website bucket
-func (sm *StoreManager) Website() *Website {
-	return sm.w
+// Website returns a website by IDRetriever. If IDRetriever is nil then default website will be returned
+func (sm *StoreManager) Website(IDRetriever) *Website {
+	return nil
 }
 
 // Websites returns a slice of website buckets
@@ -76,18 +120,18 @@ func (sm *StoreManager) Websites() []*Website {
 }
 
 // Group returns the group bucket
-func (sm *StoreManager) Group() *Group {
-	return sm.g
+func (sm *StoreManager) Group(IDRetriever) *Group {
+	return nil
 }
 
 // Store returns the store view bucket
-func (sm *StoreManager) Store() *Store {
-	return sm.s
+func (sm *StoreManager) Store(IDRetriever) *Store {
+	return nil
 }
 
 // GetDefaultStoreView returns the default store view bucket
 func (sm *StoreManager) GetDefaultStoreView() *Store {
-	return sm.s
+	return nil
 }
 
 // ReinitStores reloads the website, store group and store view data from the database @todo

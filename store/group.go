@@ -40,6 +40,7 @@ type (
 		// website which belongs to this group
 		Website *Website
 	}
+	GroupSlice []*Group
 )
 
 var (

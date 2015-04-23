@@ -24,17 +24,19 @@ import (
 )
 
 var	storeManager = store.NewStoreManager(
-		store.TableWebsiteSlice{
-			{{ range $k,$v := .Websites }}{{ $v | printf "%#v" }},
-			{{end}}
-		},
-		store.TableGroupSlice{
-			{{ range $k,$v := .Groups }}{{ $v | printf "%#v" }},
-			{{end}}
-		},
-		store.TableStoreSlice{
-			{{ range $k,$v := .Stores }}{{ $v | printf "%#v" }},
-			{{end}}
-		},
+		store.NewStorage(
+			store.TableWebsiteSlice{
+				{{ range $k,$v := .Websites }}{{ $v | printf "%#v" }},
+				{{end}}
+			},
+			store.TableGroupSlice{
+				{{ range $k,$v := .Groups }}{{ $v | printf "%#v" }},
+				{{end}}
+			},
+			store.TableStoreSlice{
+				{{ range $k,$v := .Stores }}{{ $v | printf "%#v" }},
+				{{end}}
+			},
+		),
 	)
 `

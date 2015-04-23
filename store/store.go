@@ -24,7 +24,9 @@ import (
 )
 
 const (
-	DefaultStoreId int64 = 0
+	DefaultStoreId        int64 = 0
+	HttpRequestParamStore       = `___store`
+	CookieName                  = `store`
 )
 
 type (
@@ -35,6 +37,7 @@ type (
 		Group   *Group
 		s       *TableStore
 	}
+	StoreSlice []*Store
 )
 
 var (
