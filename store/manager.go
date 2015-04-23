@@ -40,7 +40,9 @@ type (
 		storage *storage
 		sync.RWMutex
 		// map key is a hash value
-		cache map[uint64]*sContainer
+		cacheW map[uint64]*sContainer
+		cacheG map[uint64]*sContainer
+		cacheS map[uint64]*sContainer
 	}
 )
 
@@ -71,7 +73,7 @@ func (sm *StoreManager) Init(scopeCode string, scopeType config.ScopeID) (*Store
 		return nil, ErrUnsupportedScopeID
 	}
 
-	return nil
+	return nil, nil
 }
 
 // Init @see \Magento\Store\Model\StorageFactory::_reinitStores
@@ -110,12 +112,12 @@ func (sm *StoreManager) HasSingleStore() bool {
 }
 
 // Website returns a website by IDRetriever. If IDRetriever is nil then default website will be returned
-func (sm *StoreManager) Website(IDRetriever) *Website {
+func (sm *StoreManager) Website(id IDRetriever, c CodeRetriever) *Website {
 	return nil
 }
 
 // Websites returns a slice of website buckets
-func (sm *StoreManager) Websites() []*Website {
+func (sm *StoreManager) Websites() WebsiteSlice {
 	return nil
 }
 
@@ -125,7 +127,7 @@ func (sm *StoreManager) Group(IDRetriever) *Group {
 }
 
 // Store returns the store view bucket
-func (sm *StoreManager) Store(IDRetriever) *Store {
+func (sm *StoreManager) Store(id IDRetriever, c CodeRetriever) *Store {
 	return nil
 }
 
