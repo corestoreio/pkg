@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStringSliceFilterContains(t *testing.T) {
+func TestStringSliceReduceContains(t *testing.T) {
 	tests := []struct {
 		haveSL utils.StringSlice
 		haveIN []string
@@ -40,19 +40,25 @@ func TestStringSliceFilterContains(t *testing.T) {
 				"IFNULL(`scope_table`.`multiline_count`, `additional_table`.`multiline_count`) AS `multiline_count`",
 			},
 		},
+		{
+			utils.StringSlice{"GoLang", "RustLang", "PHP Script", "JScript"},
+			[]string{"Script"},
+			[]string{"GoLang", "RustLang"},
+		},
 	}
 
 	for _, test := range tests {
-		test.haveSL.FilterContains(test.haveIN...)
+		test.haveSL.ReduceContains(test.haveIN...)
 		assert.Equal(t, test.want, test.haveSL.ToString())
+		assert.Len(t, test.haveSL, len(test.want))
 	}
 }
 
-var benchStringSliceFilterContains utils.StringSlice
-var benchStringSliceFilterContainsData = []string{"is_required", "default_value"}
+var benchStringSliceReduceContains utils.StringSlice
+var benchStringSliceReduceContainsData = []string{"is_required", "default_value"}
 
-// BenchmarkFilterContains	 1000000	      1841 ns/op	      96 B/op	       2 allocs/op
-func BenchmarkStringSliceFilterContains(b *testing.B) {
+// BenchmarkReduceContains	 1000000	      1841 ns/op	      96 B/op	       2 allocs/op
+func BenchmarkStringSliceReduceContains(b *testing.B) {
 
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -62,8 +68,8 @@ func BenchmarkStringSliceFilterContains(b *testing.B) {
 			"IFNULL(`scope_table`.`default_value`, `main_table`.`default_value`) AS `default_value`",
 			"IFNULL(`scope_table`.`multiline_count`, `additional_table`.`multiline_count`) AS `multiline_count`",
 		}
-		l.FilterContains(benchStringSliceFilterContainsData...)
-		benchStringSliceFilterContains = l
+		l.ReduceContains(benchStringSliceReduceContainsData...)
+		benchStringSliceReduceContains = l
 	}
 }
 
@@ -144,11 +150,25 @@ func TestStringSliceDelete(t *testing.T) {
 	assert.EqualError(t, l.Delete(1), utils.ErrOutOfRange.Error())
 }
 
-func TestStringSliceFilter(t *testing.T) {
+func TestStringSliceReduce(t *testing.T) {
 	l := utils.StringSlice{"Maybe", "GoLang", "should"}
-	assert.Equal(t, []string{"GoLang"}, l.Filter(func(s string) bool {
+	assert.EqualValues(t, []string{"GoLang"}, l.Reduce(func(s string) bool {
 		return s == "GoLang"
 	}).ToString())
+	assert.Len(t, l, 1)
+}
+
+func TestStringSliceFilter(t *testing.T) {
+	l := utils.StringSlice{"All", "Go", "Code", "is"}
+	rl := l.Filter(func(s string) bool {
+		return s == "Go"
+	}).ToString()
+	assert.EqualValues(t, []string{"Go"}, rl)
+	assert.Len(t, l, 4)
+
+	l.Append("incredible", "easy", ",", "sometimes")
+	assert.Len(t, l, 8)
+	assert.EqualValues(t, []string{"Go"}, rl)
 }
 
 func TestStringSliceUnique(t *testing.T) {
@@ -172,4 +192,35 @@ func TestStringSliceSplit(t *testing.T) {
 	l := utils.StringSlice{"a", "b"}
 	assert.Equal(t, []string{"a", "b", "c", "d"}, l.Split("c,d", ",").ToString())
 	assert.Equal(t, []string{"a", "b", "c", "d", "e", "f", ""}, l.Split("e,f,", ",").ToString())
+}
+
+func TestStringSliceJoin(t *testing.T) {
+	l := utils.StringSlice{"a", "b"}
+	assert.Equal(t, "a,b", l.Join(","))
+}
+
+func TestStringSliceSort(t *testing.T) {
+	l := utils.StringSlice{"c", "a", "z", "b"}
+	assert.Equal(t, "a,b,c,z", l.Sort().Join(","))
+}
+
+func TestStringSliceAny(t *testing.T) {
+	l := utils.StringSlice{"c", "a", "z", "b"}
+	assert.True(t, l.Any(func(s string) bool {
+		return s == "z"
+	}))
+	assert.False(t, l.Any(func(s string) bool {
+		return s == "zx"
+	}))
+}
+
+func TestStringSliceAll(t *testing.T) {
+	l := utils.StringSlice{"c", "a", "z", "b"}
+	assert.True(t, l.All(func(s string) bool {
+		return len(s) == 1
+	}))
+	l.Append("xx")
+	assert.False(t, l.All(func(s string) bool {
+		return len(s) == 1
+	}))
 }

@@ -21,6 +21,9 @@ import "sort"
 // +gen slice:"Where,Count,GroupBy[int64]"
 type Int64Slice []int64
 
+// ToInt64 converts to type int64 slice.
+func (l Int64Slice) ToInt64() []int64 { return []int64(l) }
+
 // Len returns the length
 func (l Int64Slice) Len() int { return len(l) }
 
@@ -31,10 +34,10 @@ func (l Int64Slice) Less(i, j int) bool { return l[i] < l[j] }
 func (l Int64Slice) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
 
 // Sort is a convenience method.
-func (l Int64Slice) Sort() { sort.Sort(l) }
+func (l Int64Slice) Sort() Int64Slice { sort.Sort(l); return l }
 
 // Reverse is a convenience method.
-func (l Int64Slice) Reverse() { sort.Sort(sort.Reverse(l)) }
+func (l Int64Slice) Reverse() Int64Slice { sort.Sort(sort.Reverse(l)); return l }
 
 // Append adds s (variadic) to the Int64Slice
 func (l *Int64Slice) Append(s ...int64) Int64Slice {
@@ -95,8 +98,8 @@ func (l Int64Slice) All(f func(int64) bool) bool {
 	return true
 }
 
-// Filter reduces itself containing all int64s in the slice that satisfy the predicate f.
-func (l *Int64Slice) Filter(f func(int64) bool) Int64Slice {
+// Reduce reduces itself containing all int64s in the slice that satisfy the predicate f.
+func (l *Int64Slice) Reduce(f func(int64) bool) Int64Slice {
 	vsf := (*l)[:0]
 	for _, v := range *l {
 		if f(v) {

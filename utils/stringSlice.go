@@ -38,7 +38,7 @@ func (l StringSlice) Less(i, j int) bool { return l[i] < l[j] }
 func (l StringSlice) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
 
 // Sort is a convenience method.
-func (p StringSlice) Sort() { sort.Sort(p) }
+func (l StringSlice) Sort() StringSlice { sort.Sort(l); return l }
 
 // Append adds s (variadic) to the StringSlice
 func (l *StringSlice) Append(s ...string) StringSlice {
@@ -99,8 +99,19 @@ func (l StringSlice) All(f func(string) bool) bool {
 	return true
 }
 
-// Filter reduces itself containing all strings in the slice that satisfy the predicate f.
-func (l *StringSlice) Filter(f func(string) bool) StringSlice {
+// Filter filters all strings in the slice that satisfy the predicate f and returns a new slice
+func (l StringSlice) Filter(f func(string) bool) StringSlice {
+	vsf := l[:0]
+	for _, v := range l {
+		if f(v) {
+			vsf = append(vsf, v)
+		}
+	}
+	return vsf
+}
+
+// Reduce reduces itself containing all strings in the slice that satisfy the predicate f.
+func (l *StringSlice) Reduce(f func(string) bool) StringSlice {
 	vsf := (*l)[:0]
 	for _, v := range *l {
 		if f(v) {
@@ -111,8 +122,8 @@ func (l *StringSlice) Filter(f func(string) bool) StringSlice {
 	return *l
 }
 
-// FilterContains reduces itself if the parts of the in slice are contained within itself.
-func (l *StringSlice) FilterContains(in ...string) StringSlice {
+// ReduceContains reduces itself if the parts of the in slice are contained within itself.
+func (l *StringSlice) ReduceContains(in ...string) StringSlice {
 	r := (*l)[:0]
 	for _, s := range *l {
 		isInScope := false
