@@ -7,6 +7,15 @@ import (
 )
 
 type (
+	Storager interface {
+		Website(id IDRetriever, c CodeRetriever) (*Website, error)
+		Websites() (WebsiteSlice, error)
+		Group(id IDRetriever) (*Group, error)
+		Groups() (GroupSlice, error)
+		Store(id IDRetriever, c CodeRetriever) (*Store, error)
+		Stores() (StoreSlice, error)
+	}
+
 	storage struct {
 		websites  TableWebsiteSlice
 		websiteIM *indexMap
@@ -26,6 +35,9 @@ type (
 	// Code is convenience helper to satisfy the interface CodeRetriever
 	Code string
 )
+
+// check if interface has been implemented
+var _ Storager = (*storage)(nil)
 
 // ID is convenience helper to satisfy the interface IDRetriever
 func (i ID) ID() int64 { return int64(i) }
@@ -69,7 +81,7 @@ func (st *storage) website(id IDRetriever, c CodeRetriever) (*TableWebsite, erro
 }
 
 // Website creates a new Website which contains the current website, all its groups and
-// all its related stores. Groups and stores can be nil. It panics when the integrity is incorrect.
+// all its related stores. It panics when the integrity is incorrect.
 func (st *storage) Website(id IDRetriever, c CodeRetriever) (*Website, error) {
 	w, err := st.website(id, c)
 	if err != nil {
@@ -77,15 +89,18 @@ func (st *storage) Website(id IDRetriever, c CodeRetriever) (*Website, error) {
 	}
 	return NewWebsite(w).SetGroupsStores(st.groups, st.stores), nil
 }
+
+// Websites creates a slice contains all websites with its associated groups and stores.
+// It panics when the integrity is incorrect.
 func (st *storage) Websites() (WebsiteSlice, error) {
 	websites := make(WebsiteSlice, len(st.websites), len(st.websites))
-	for i,w := range st.websites {
-		@todo
+	for i, w := range st.websites {
+		websites[i] = NewWebsite(w).SetGroupsStores(st.groups, st.stores)
 	}
 	return websites, nil
 }
 
-// group returns a TableGroup
+// group returns a TableGroup by using a group id as argument.
 func (st *storage) group(id IDRetriever) (*TableGroup, error) {
 	var idx int = -1
 	switch {
@@ -117,6 +132,8 @@ func (st *storage) Group(id IDRetriever) (*Group, error) {
 	return NewGroup(g).SetStores(st.stores, w), nil
 }
 
+// Groups creates a new group slice containing its website all related stores.
+// May panic when a website pointer is nil.
 func (st *storage) Groups() (GroupSlice, error) {
 	groups := make(GroupSlice, len(st.groups), len(st.groups))
 	for i, g := range st.groups {
@@ -124,12 +141,12 @@ func (st *storage) Groups() (GroupSlice, error) {
 		if err != nil {
 			return nil, errgo.Mask(err)
 		}
-		groups[i] = NewGroup(g).SetStores(st.stores, NewWebsite(w))
+		groups[i] = NewGroup(g).SetStores(st.stores, w)
 	}
 	return groups, nil
 }
 
-// store returns a TableStore
+// store returns a TableStore by an id or code
 func (st *storage) store(id IDRetriever, c CodeRetriever) (*TableStore, error) {
 	var idx int = -1
 	switch {
@@ -152,7 +169,7 @@ func (st *storage) store(id IDRetriever, c CodeRetriever) (*TableStore, error) {
 	return st.stores[idx], nil
 }
 
-// Store creates a new Store which contains the current store, its Group and Website
+// Store creates a new Store which contains the current store, its group and website.
 func (st *storage) Store(id IDRetriever, c CodeRetriever) (*Store, error) {
 	s, err := st.store(id, c)
 	if err != nil {
@@ -169,6 +186,8 @@ func (st *storage) Store(id IDRetriever, c CodeRetriever) (*Store, error) {
 	return NewStore(w, g, s), nil
 }
 
+// Stores creates a new store slice. Can return an error when the website or
+// the group cannot be found.
 func (st *storage) Stores() (StoreSlice, error) {
 	stores := make(StoreSlice, len(st.stores), len(st.stores))
 	for i, s := range st.stores {

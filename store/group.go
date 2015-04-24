@@ -36,7 +36,7 @@ type (
 		g *TableGroup
 		// stores contains a slice to all stores associated to this group.
 		// This slice can be nil
-		stores []*Store
+		stores StoreSlice
 		// website which belongs to this group
 		Website *Website
 	}
@@ -83,7 +83,7 @@ func (gb *Group) DefaultStoreByLocale(id int64, locale string) (*TableStore, err
 	return nil, ErrGroupDefaultStoreNotFound
 }
 
-func (gb *Group) Stores() ([]*Store, error) {
+func (gb *Group) Stores() (StoreSlice, error) {
 	if len(gb.stores) > 0 {
 		return gb.stores, nil
 	}
@@ -110,6 +110,28 @@ func (gb *Group) SetStores(tss TableStoreSlice, w *TableWebsite) *Group {
 	}
 	return gb
 }
+
+/*
+	GroupSlice method receivers
+*/
+
+// Len returns the length
+func (s GroupSlice) Len() int { return len(s) }
+
+// Filter returns a new slice filtered by predicate f
+func (s GroupSlice) Filter(f func(*Group) bool) GroupSlice {
+	var gs GroupSlice
+	for _, v := range s {
+		if v != nil && f(v) {
+			gs = append(gs, v)
+		}
+	}
+	return gs
+}
+
+/*
+	TableGroup and TableGroupSlice method receivers
+*/
 
 // Load uses a dbr session to load all data from the core_store_group table into the current slice.
 // The variadic 2nd argument can be a call back function to manipulate the select.

@@ -37,7 +37,7 @@ type (
 	}
 
 	StoreManager struct {
-		storage *storage
+		storage Storager
 		sync.RWMutex
 		// map key is a hash value
 		cacheW map[uint64]*sContainer
@@ -51,7 +51,7 @@ var (
 )
 
 // NewStoreManager creates a new store manager which handles websites, store groups and stores.
-func NewStoreManager(s *storage) *StoreManager {
+func NewStoreManager(s Storager) *StoreManager {
 	return &StoreManager{
 		storage: s,
 	}

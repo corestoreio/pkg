@@ -41,17 +41,18 @@ type (
 )
 
 var (
-	ErrStoreNotFound = errors.New("Store not found")
+	ErrStoreNotFound  = errors.New("Store not found")
+	ErrStoreNewArgNil = errors.New("An argument cannot be nil")
 )
 
 // NewStore returns a new pointer to a Store. Panics if one of the arguments is nil.
+// The integrity checks are done by the database.
 func NewStore(w *TableWebsite, g *TableGroup, s *TableStore) *Store {
 	if w == nil || g == nil || s == nil {
-		panic("An argument cannot be nil")
+		panic(ErrStoreNewArgNil)
 	}
-	wb := NewWebsite(w)
 	return &Store{
-		Website: wb,
+		Website: NewWebsite(w),
 		Group:   NewGroup(g),
 		s:       s,
 	}
@@ -61,6 +62,27 @@ func NewStore(w *TableWebsite, g *TableGroup, s *TableStore) *Store {
 func (s *Store) Data() *TableStore {
 	return s.s
 }
+
+/*
+	StoreSlice method receivers
+*/
+// Len returns the length
+func (s StoreSlice) Len() int { return len(s) }
+
+// Filter returns a new slice filtered by predicate f
+func (s StoreSlice) Filter(f func(*Store) bool) StoreSlice {
+	var stores StoreSlice
+	for _, v := range s {
+		if v != nil && f(v) {
+			stores = append(stores, v)
+		}
+	}
+	return stores
+}
+
+/*
+	TableStore and TableStoreSlice method receivers
+*/
 
 // Load uses a dbr session to load all data from the core_store table into the current slice.
 // The variadic 2nd argument can be a call back function to manipulate the select.

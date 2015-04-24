@@ -33,9 +33,9 @@ type (
 		w *TableWebsite
 
 		// groups contains a slice to all groups associated to one website. This slice can be nil.
-		groups []*Group
+		groups GroupSlice
 		// stores contains a slice to all stores associated to one website. This slice can be nil.
-		stores []*Store
+		stores StoreSlice
 	}
 	WebsiteSlice []*Website
 )
@@ -69,7 +69,7 @@ func (wb *Website) DefaultGroup() (*Group, error) {
 
 // Stores returns all stores associated to this website or an error when the stores
 // are not available aka not needed.
-func (wb *Website) Stores() ([]*Store, error) {
+func (wb *Website) Stores() (StoreSlice, error) {
 	if len(wb.stores) > 0 {
 		return wb.stores, nil
 	}
@@ -78,7 +78,7 @@ func (wb *Website) Stores() ([]*Store, error) {
 
 // Groups returns all groups associated to this website or an error when the groups
 // are not available aka not needed.
-func (wb *Website) Groups() ([]*Group, error) {
+func (wb *Website) Groups() (GroupSlice, error) {
 	if len(wb.groups) > 0 {
 		return wb.groups, nil
 	}
@@ -89,12 +89,16 @@ func (wb *Website) Groups() ([]*Group, error) {
 // and the stores associated to this website. It panics if the integrity is incorrect.
 func (wb *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *Website {
 	groups := tgs.FilterByWebsiteID(wb.w.WebsiteID)
-	wb.groups = make([]*Group, groups.Len(), groups.Len())
+	wb.groups = make(GroupSlice, groups.Len(), groups.Len())
 	for i, g := range groups {
-		wb.groups[i] = NewGroup(g).SetStores(tss, wb.w)
+		group := NewGroup(g)
+		if err := group.SetStores(tss, wb.w); err != nil {
+			panic(err)
+		}
+		wb.groups[i] = group
 	}
 	stores := tss.FilterByWebsiteID(wb.w.WebsiteID)
-	wb.stores = make([]*Store, stores.Len(), stores.Len())
+	wb.stores = make(StoreSlice, stores.Len(), stores.Len())
 	for i, s := range stores {
 		group, err := tgs.FindByID(s.GroupID)
 		if err != nil {
@@ -104,6 +108,28 @@ func (wb *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *We
 	}
 	return wb
 }
+
+/*
+	WebsiteSlice method receivers
+*/
+
+// Len returns the length
+func (s WebsiteSlice) Len() int { return len(s) }
+
+// Filter returns a new slice filtered by predicate f
+func (s WebsiteSlice) Filter(f func(*Website) bool) WebsiteSlice {
+	var ws WebsiteSlice
+	for _, v := range s {
+		if v != nil && f(v) {
+			ws = append(ws, v)
+		}
+	}
+	return ws
+}
+
+/*
+	TableWebsite and TableWebsiteSlice method receivers
+*/
 
 // Load uses a dbr session to load all data from the core_website table into the current slice.
 // The variadic 2nd argument can be a call back function to manipulate the select.
