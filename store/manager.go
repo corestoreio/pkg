@@ -58,6 +58,7 @@ func NewStoreManager(s Storager) *StoreManager {
 }
 
 // Init @see \Magento\Store\Model\StorageFactory::_reinitStores
+// Mainly used when booting the app
 func (sm *StoreManager) Init(scopeCode string, scopeType config.ScopeID) (*Store, error) {
 	switch scopeType {
 	case config.ScopeStore:
