@@ -23,7 +23,7 @@ import (
 	"github.com/corestoreio/csfw/store"
 )
 
-var	storeManager = store.NewStoreManager(
+var	storeManager = store.NewManager(
 		store.NewStorage(
 			store.TableWebsiteSlice{
 				{{ range $k,$v := .Websites }}{{ $v | printf "%#v" }},

@@ -36,7 +36,7 @@ type (
 		s *Store
 	}
 
-	StoreManager struct {
+	Manager struct {
 		storage Storager
 		sync.RWMutex
 		// map key is a hash value
@@ -50,16 +50,16 @@ var (
 	ErrUnsupportedScopeID = errors.New("Unsupported scope id")
 )
 
-// NewStoreManager creates a new store manager which handles websites, store groups and stores.
-func NewStoreManager(s Storager) *StoreManager {
-	return &StoreManager{
+// NewManager creates a new store manager which handles websites, store groups and stores.
+func NewManager(s Storager) *Manager {
+	return &Manager{
 		storage: s,
 	}
 }
 
 // Init @see \Magento\Store\Model\StorageFactory::_reinitStores
 // Mainly used when booting the app
-func (sm *StoreManager) Init(scopeCode string, scopeType config.ScopeID) (*Store, error) {
+func (sm *Manager) Init(scopeCode string, scopeType config.ScopeID) (*Store, error) {
 	switch scopeType {
 	case config.ScopeStore:
 		// init storage store by store code
@@ -78,14 +78,14 @@ func (sm *StoreManager) Init(scopeCode string, scopeType config.ScopeID) (*Store
 }
 
 // Init @see \Magento\Store\Model\StorageFactory::_reinitStores
-func (sm *StoreManager) InitByRequest(r *http.Request, scopeType config.ScopeID) {
+func (sm *Manager) InitByRequest(r *http.Request, scopeType config.ScopeID) {
 	var scopeCode string
 	// 1. check cookie store
 	// 2. check for ___store variable
 	if keks, err := r.Cookie(CookieName); err == nil { // if cookie not present ignore it
 		scopeCode = keks.Value
 	}
-	if gs := r.URL.Query().Get(HttpRequestParamStore); gs != "" {
+	if gs := r.URL.Query().Get(HTTPRequestParamStore); gs != "" {
 		scopeCode = gs
 	}
 	_ = scopeCode
@@ -95,51 +95,52 @@ func (sm *StoreManager) InitByRequest(r *http.Request, scopeType config.ScopeID)
 }
 
 // IsSingleStoreModeEnabled @todo implement
-// @see magento2/app/code/Magento/Store/Model/StoreManager.php uses the config from the database
-func (sm *StoreManager) IsSingleStoreModeEnabled(cfg config.ScopeReader) bool {
+// @see magento2/app/code/Magento/Store/Model/Manager.php uses the config from the database
+func (sm *Manager) IsSingleStoreModeEnabled(cfg config.ScopeReader) bool {
 	return false
 }
 
 // IsSingleStoreMode check if Single-Store mode is enabled in configuration.
 // This flag only shows that admin does not want to show certain UI components at backend (like store switchers etc)
 // if Magento has only one store view but it does not check the store view collection.
-func (sm *StoreManager) IsSingleStoreMode() bool {
+func (sm *Manager) IsSingleStoreMode() bool {
 	return false
 }
 
 //
-func (sm *StoreManager) HasSingleStore() bool {
+func (sm *Manager) HasSingleStore() bool {
 	return false
 }
 
 // Website returns a website by IDRetriever. If IDRetriever is nil then default website will be returned
-func (sm *StoreManager) Website(id IDRetriever, c CodeRetriever) *Website {
+func (sm *Manager) Website(id IDRetriever, c CodeRetriever) *Website {
 	return nil
 }
 
 // Websites returns a slice of website buckets
-func (sm *StoreManager) Websites() WebsiteSlice {
+func (sm *Manager) Websites() WebsiteSlice {
 	return nil
 }
 
 // Group returns the group bucket
-func (sm *StoreManager) Group(IDRetriever) *Group {
+func (sm *Manager) Group(IDRetriever) *Group {
 	return nil
 }
 
 // Store returns the store view bucket
-func (sm *StoreManager) Store(id IDRetriever, c CodeRetriever) *Store {
+func (sm *Manager) Store(id IDRetriever, c CodeRetriever) *Store {
 	return nil
 }
 
 // GetDefaultStoreView returns the default store view bucket
-func (sm *StoreManager) GetDefaultStoreView() *Store {
+func (sm *Manager) GetDefaultStoreView() *Store {
 	return nil
 }
 
 // ReinitStores reloads the website, store group and store view data from the database @todo
-func (sm *StoreManager) ReinitStores() error {
-	return nil
+func (sm *Manager) ReinitStores(dbrSess dbr.SessionRunner) error {
+	// flush internal caches here
+	return sm.storage.ReInit(dbrSess)
 }
 
 // loadSlice internal global helper func to execute a SQL select. @todo refactor and remove dependency of GetTableS...

@@ -24,25 +24,35 @@ import (
 )
 
 const (
-	DefaultStoreId        int64 = 0
-	HttpRequestParamStore       = `___store`
-	CookieName                  = `store`
+	// DefaultStoreID is always 0.
+	DefaultStoreID int64 = 0
+	// HTTPRequestParamStore name of the GET parameter to set a new store in a current website/group context
+	HTTPRequestParamStore = `___store`
+	// CookieName important when the user selects a different store within the current website/group context.
+	// This cookie permanently saves the new selected store code for one year.
+	// The cookie must be removed when the default store of the current website if equal to the current store.
+	CookieName = `store`
 )
 
 type (
 	// Store contains two maps for faster retrieving of the store index and the store collection
 	// Only used in generated code. Implements interface StoreGetter.
 	Store struct {
-		Website *Website
-		Group   *Group
-		s       *TableStore
+		// Contains the current website for this store. No integrity checks
+		w *Website
+		g *Group
+		// underlaying raw data
+		s *TableStore
 	}
+	// StoreSlice a collection of pointers to the Store structs. StoreSlice has some nifty method receviers.
 	StoreSlice []*Store
 )
 
 var (
-	ErrStoreNotFound  = errors.New("Store not found")
-	ErrStoreNewArgNil = errors.New("An argument cannot be nil")
+	ErrStoreNotFound         = errors.New("Store not found")
+	ErrStoreNewArgNil        = errors.New("An argument cannot be nil")
+	ErrStoreIncorrectGroup   = errors.New("Incorrect group")
+	ErrStoreIncorrectWebsite = errors.New("Incorrect website")
 )
 
 // NewStore returns a new pointer to a Store. Panics if one of the arguments is nil.
@@ -51,16 +61,35 @@ func NewStore(w *TableWebsite, g *TableGroup, s *TableStore) *Store {
 	if w == nil || g == nil || s == nil {
 		panic(ErrStoreNewArgNil)
 	}
+
+	if s.GroupID != g.GroupID {
+		panic(ErrStoreIncorrectGroup)
+	}
+
+	if s.WebsiteID != w.WebsiteID {
+		panic(ErrStoreIncorrectWebsite)
+	}
+
 	return &Store{
-		Website: NewWebsite(w),
-		Group:   NewGroup(g),
-		s:       s,
+		w: NewWebsite(w),
+		g: NewGroup(g, nil),
+		s: s,
 	}
 }
 
 /*
 	@todo implement Magento\Store\Model\Store
 */
+
+// Website returns the website associated to this store
+func (s *Store) Website() *Website {
+	return s.w
+}
+
+// Group returns the group associated to this store
+func (s *Store) Group() *Group {
+	return s.g
+}
 
 // Data returns the real store data from the database
 func (s *Store) Data() *TableStore {
@@ -70,6 +99,7 @@ func (s *Store) Data() *TableStore {
 /*
 	StoreSlice method receivers
 */
+
 // Len returns the length
 func (s StoreSlice) Len() int { return len(s) }
 
@@ -84,13 +114,41 @@ func (s StoreSlice) Filter(f func(*Store) bool) StoreSlice {
 	return stores
 }
 
+// Codes returns a StringSlice with all store codes
+func (s StoreSlice) Codes() utils.StringSlice {
+	if len(s) == 0 {
+		return nil
+	}
+	var c utils.StringSlice
+	for _, st := range s {
+		if st != nil {
+			c.Append(st.Data().Code.String)
+		}
+	}
+	return c
+}
+
+// IDs returns an Int64Slice with all store ids
+func (s StoreSlice) IDs() utils.Int64Slice {
+	if len(s) == 0 {
+		return nil
+	}
+	var ids utils.Int64Slice
+	for _, st := range s {
+		if st != nil {
+			ids.Append(st.Data().StoreID)
+		}
+	}
+	return ids
+}
+
 /*
 	TableStore and TableStoreSlice method receivers
 */
 
 // IsDefault returns true if the current store is the default store.
 func (s TableStore) IsDefault() bool {
-	return s.StoreID == DefaultStoreId
+	return s.StoreID == DefaultStoreID
 }
 
 // Load uses a dbr session to load all data from the core_store table into the current slice.
@@ -110,29 +168,29 @@ func (s TableStoreSlice) Len() int { return len(s) }
 
 // FindByID returns a TableStore if found by id or an error
 func (s TableStoreSlice) FindByID(id int64) (*TableStore, error) {
-	for _, store := range s {
-		if store != nil && store.StoreID == id {
-			return store, nil
+	for _, st := range s {
+		if st != nil && st.StoreID == id {
+			return st, nil
 		}
 	}
 	return nil, ErrStoreNotFound
 }
 
-// ByGroupID returns a new slice with all stores belonging to a group id
+// FilterByGroupID returns a new slice with all TableStores belonging to a group id
 func (s TableStoreSlice) FilterByGroupID(id int64) TableStoreSlice {
-	return s.Filter(func(store *TableStore) bool {
-		return store.GroupID == id
+	return s.Filter(func(ts *TableStore) bool {
+		return ts.GroupID == id
 	})
 }
 
-// FilterByWebsiteID returns a new slice with all stores belonging to a website id
+// FilterByWebsiteID returns a new slice with all TableStores belonging to a website id
 func (s TableStoreSlice) FilterByWebsiteID(id int64) TableStoreSlice {
-	return s.Filter(func(store *TableStore) bool {
-		return store.WebsiteID == id
+	return s.Filter(func(ts *TableStore) bool {
+		return ts.WebsiteID == id
 	})
 }
 
-// Filter returns a new slice filtered by predicate f
+// Filter returns a new slice containing TableStores filtered by predicate f
 func (s TableStoreSlice) Filter(f func(*TableStore) bool) TableStoreSlice {
 	if len(s) == 0 {
 		return nil

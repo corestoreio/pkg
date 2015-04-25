@@ -24,7 +24,8 @@ import (
 )
 
 const (
-	DefaultGroupId int64 = 0
+	// DefaultGroupID defines the default group id which is always 0.
+	DefaultGroupID int64 = 0
 )
 
 type (
@@ -37,55 +38,68 @@ type (
 		// stores contains a slice to all stores associated to this group.
 		// This slice can be nil
 		stores StoreSlice
-		// website which belongs to this group
-		Website *Website
+		// w contains the Website which belongs to this group. Can be nil.
+		w *Website
 	}
+	// GroupSlice collection of Group. GroupSlice has some nice method receivers.
 	GroupSlice []*Group
 )
 
 var (
-	ErrGroupNotFound             = errors.New("Store Group not found")
-	ErrGroupStoresNotAvailable   = errors.New("Store Group stores not available")
+	// ErrGroupNotFound when the group has not been found.
+	ErrGroupNotFound = errors.New("Store Group not found")
+	// ErrGroupStoresNotAvailable not really an error but more an info when the stores has not been set
+	// this usually occurs when the group has been set on a website or a store.
+	ErrGroupStoresNotAvailable = errors.New("Store Group stores not available")
+	// ErrGroupDefaultStoreNotFound default store cannot be found.
 	ErrGroupDefaultStoreNotFound = errors.New("Group default store not found")
+	// ErrGroupWebsiteNotFound the Website struct is nil so we cannot assign the stores to a group.
+	ErrGroupWebsiteNotFound = errors.New("Group: Website not found or nil or ID do not match")
 )
 
 // NewGroup returns a new pointer to a Group. Second argument can be nil.
-func NewGroup(g *TableGroup) *Group {
-	if g == nil {
-		panic("First argument TableGroup cannot be nil")
+func NewGroup(tg *TableGroup, tw *TableWebsite) *Group {
+	if tg == nil {
+		panic(ErrStoreNewArgNil)
 	}
 
-	gb := &Group{
-		g: g,
+	if tw != nil && tg.WebsiteID != tw.WebsiteID {
+		panic(ErrGroupWebsiteNotFound)
 	}
-	return gb
+
+	g := &Group{
+		g: tg,
+	}
+	if tw != nil {
+		g.w = NewWebsite(tw)
+	}
+	return g
 }
 
-// Data returns the data from the database
-func (gb *Group) Data() *TableGroup {
-	return gb.g
+// Data returns the TableGroup data which is raw database data.
+func (g *Group) Data() *TableGroup {
+	return g.g
 }
 
-// DefaultStore returns the default Store or an error
-func (gb *Group) DefaultStore(id int64) (*Store, error) {
-	for _, sb := range gb.stores {
-		if sb.Data().StoreID == gb.g.DefaultStoreID {
+// Website returns the website associated to this group or nil.
+func (g *Group) Website() *Website {
+	return g.w
+}
+
+// DefaultStore returns the default Store or an error.
+func (g *Group) DefaultStore() (*Store, error) {
+	for _, sb := range g.stores {
+		if sb.Data().StoreID == g.g.DefaultStoreID {
 			return sb, nil
 		}
 	}
 	return nil, ErrGroupDefaultStoreNotFound
 }
 
-// DefaultStoreByLocale returns the default store using a group ip and a locale
-// @todo magento2/app/code/Magento/Store/Model/Group.php::getDefaultStoreByLocale()
-// Based on some config values
-func (gb *Group) DefaultStoreByLocale(id int64, locale string) (*TableStore, error) {
-	return nil, ErrGroupDefaultStoreNotFound
-}
-
-func (gb *Group) Stores() (StoreSlice, error) {
-	if len(gb.stores) > 0 {
-		return gb.stores, nil
+// Stores returns all stores associated to a group or an error if stores are not available.
+func (g *Group) Stores() (StoreSlice, error) {
+	if len(g.stores) > 0 {
+		return g.stores, nil
 	}
 	return nil, ErrGroupStoresNotAvailable
 }
@@ -94,22 +108,29 @@ func (gb *Group) Stores() (StoreSlice, error) {
 // assigned to a group. Either Website must be set before calling SetStores() or
 // the second argument must be set i.e. 2nd argument can be nil. Panics if both
 // values are nil. If both are set, the 2nd argument will be considered.
-func (gb *Group) SetStores(tss TableStoreSlice, w *TableWebsite) *Group {
+func (g *Group) SetStores(tss TableStoreSlice, w *TableWebsite) *Group {
 	if tss == nil {
-		gb.stores = nil
-		return gb
+		g.stores = nil
+		return g
 	}
-	if gb.Website == nil && w == nil {
-		panic("Please set Website or provide the 2nd argument but both cannot be nil")
+	if g.Website() == nil && w == nil {
+		panic(ErrGroupWebsiteNotFound)
 	}
 	if w == nil {
-		w = gb.Website.Data()
+		w = g.Website().Data()
 	}
-	for _, s := range tss.FilterByGroupID(gb.g.GroupID) {
-		gb.stores = append(gb.stores, NewStore(w, gb.g, s))
+	if w.WebsiteID != g.Data().WebsiteID {
+		panic(ErrGroupWebsiteNotFound)
 	}
-	return gb
+	for _, s := range tss.FilterByGroupID(g.g.GroupID) {
+		g.stores = append(g.stores, NewStore(w, g.g, s))
+	}
+	return g
 }
+
+/*
+	@todo implement Magento\Store\Model\Group
+*/
 
 /*
 	GroupSlice method receivers
@@ -127,6 +148,20 @@ func (s GroupSlice) Filter(f func(*Group) bool) GroupSlice {
 		}
 	}
 	return gs
+}
+
+// IDs returns an Int64Slice with all store ids
+func (s GroupSlice) IDs() utils.Int64Slice {
+	if len(s) == 0 {
+		return nil
+	}
+	var ids utils.Int64Slice
+	for _, g := range s {
+		if g != nil {
+			ids.Append(g.Data().GroupID)
+		}
+	}
+	return ids
 }
 
 /*
@@ -182,7 +217,3 @@ func (s TableGroupSlice) IDs() utils.Int64Slice {
 	}
 	return id
 }
-
-/*
-	@todo implement Magento\Store\Model\Group
-*/

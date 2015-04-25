@@ -23,7 +23,8 @@ import (
 )
 
 const (
-	DefaultWebsiteId int64 = 0
+	// DefaultWebsiteID is always 0
+	DefaultWebsiteID int64 = 0
 )
 
 type (
@@ -37,18 +38,27 @@ type (
 		// stores contains a slice to all stores associated to one website. This slice can be nil.
 		stores StoreSlice
 	}
+	// WebsiteSlice contains pointer to Website struct and some nifty method receivers.
 	WebsiteSlice []*Website
 )
 
 var (
-	ErrWebsiteNotFound             = errors.New("Website not found")
+	// ErrWebsiteNotFound when the website has not been found within a slice
+	ErrWebsiteNotFound = errors.New("Website not found")
+	// ErrWebsiteDefaultGroupNotFound the default group cannot be found
 	ErrWebsiteDefaultGroupNotFound = errors.New("Website Default Group not found")
-	ErrWebsiteGroupsNotAvailable   = errors.New("Website Groups not available")
-	ErrWebsiteStoresNotAvailable   = errors.New("Website Stores not available")
+	// ErrWebsiteGroupsNotAvailable Groups are in the current context not available and nil
+	ErrWebsiteGroupsNotAvailable = errors.New("Website Groups not available")
+	// ErrWebsiteStoresNotAvailable Stores are in the current context not available and nil
+	ErrWebsiteStoresNotAvailable = errors.New("Website Stores not available")
 )
 
 // NewWebsite returns a new pointer to a Website.
 func NewWebsite(w *TableWebsite) *Website {
+	if w == nil {
+		panic(ErrStoreNewArgNil)
+	}
+
 	return &Website{
 		w: w,
 	}
@@ -91,11 +101,7 @@ func (wb *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *We
 	groups := tgs.FilterByWebsiteID(wb.w.WebsiteID)
 	wb.groups = make(GroupSlice, groups.Len(), groups.Len())
 	for i, g := range groups {
-		group := NewGroup(g)
-		if err := group.SetStores(tss, wb.w); err != nil {
-			panic(err)
-		}
-		wb.groups[i] = group
+		wb.groups[i] = NewGroup(g, wb.w).SetStores(tss, nil)
 	}
 	stores := tss.FilterByWebsiteID(wb.w.WebsiteID)
 	wb.stores = make(StoreSlice, stores.Len(), stores.Len())
@@ -147,7 +153,7 @@ func (s TableWebsiteSlice) Len() int { return len(s) }
 // FindByID returns a TableWebsite if found by id or an error
 func (s TableWebsiteSlice) FindByID(id int64) (*TableWebsite, error) {
 	for _, w := range s {
-		if w.WebsiteID == id {
+		if w != nil && w.WebsiteID == id {
 			return w, nil
 		}
 	}
@@ -157,9 +163,9 @@ func (s TableWebsiteSlice) FindByID(id int64) (*TableWebsite, error) {
 // Filter returns a new slice filtered by predicate f
 func (s TableWebsiteSlice) Filter(f func(*TableWebsite) bool) TableWebsiteSlice {
 	var tws TableWebsiteSlice
-	for _, v := range s {
-		if v != nil && f(v) {
-			tws = append(tws, v)
+	for _, w := range s {
+		if w != nil && f(w) {
+			tws = append(tws, w)
 		}
 	}
 	return tws
