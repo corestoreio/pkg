@@ -220,7 +220,7 @@ var ConfigTableToStruct = TableToStructMap{
 		    TABLE_NAME IN (
 		    	'{{tableprefix}}core_store','{{tableprefix}}store',
 		    	'{{tableprefix}}core_store_group','{{tableprefix}}store_group',
-		    	'{{tableprefix}}core_website','{{tableprefix}}website'
+		    	'{{tableprefix}}core_website','{{tableprefix}}store_website'
 		    ) GROUP BY TABLE_NAME;`,
 		EntityTypeCodes: nil,
 	},

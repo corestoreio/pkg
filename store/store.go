@@ -58,6 +58,10 @@ func NewStore(w *TableWebsite, g *TableGroup, s *TableStore) *Store {
 	}
 }
 
+/*
+	@todo implement Magento\Store\Model\Store
+*/
+
 // Data returns the real store data from the database
 func (s *Store) Data() *TableStore {
 	return s.s
@@ -84,6 +88,11 @@ func (s StoreSlice) Filter(f func(*Store) bool) StoreSlice {
 	TableStore and TableStoreSlice method receivers
 */
 
+// IsDefault returns true if the current store is the default store.
+func (s TableStore) IsDefault() bool {
+	return s.StoreID == DefaultStoreId
+}
+
 // Load uses a dbr session to load all data from the core_store table into the current slice.
 // The variadic 2nd argument can be a call back function to manipulate the select.
 // Additional columns or joins cannot be added. This method receiver should only be used in development.
@@ -102,7 +111,7 @@ func (s TableStoreSlice) Len() int { return len(s) }
 // FindByID returns a TableStore if found by id or an error
 func (s TableStoreSlice) FindByID(id int64) (*TableStore, error) {
 	for _, store := range s {
-		if store.StoreID == id {
+		if store != nil && store.StoreID == id {
 			return store, nil
 		}
 	}
@@ -125,6 +134,9 @@ func (s TableStoreSlice) FilterByWebsiteID(id int64) TableStoreSlice {
 
 // Filter returns a new slice filtered by predicate f
 func (s TableStoreSlice) Filter(f func(*TableStore) bool) TableStoreSlice {
+	if len(s) == 0 {
+		return nil
+	}
 	var tss TableStoreSlice
 	for _, v := range s {
 		if v != nil && f(v) {
@@ -136,26 +148,28 @@ func (s TableStoreSlice) Filter(f func(*TableStore) bool) TableStoreSlice {
 
 // Codes returns a StringSlice with all store codes
 func (s TableStoreSlice) Codes() utils.StringSlice {
-	c := make(utils.StringSlice, len(s))
-	for i, store := range s {
-		c[i] = store.Code.String
+	if len(s) == 0 {
+		return nil
+	}
+	var c utils.StringSlice
+	for _, store := range s {
+		if store != nil {
+			c.Append(store.Code.String)
+		}
 	}
 	return c
 }
 
 // IDs returns an Int64Slice with all store ids
 func (s TableStoreSlice) IDs() utils.Int64Slice {
-	id := make(utils.Int64Slice, len(s))
-	for i, store := range s {
-		id[i] = store.StoreID
+	if len(s) == 0 {
+		return nil
 	}
-	return id
+	var ids utils.Int64Slice
+	for _, store := range s {
+		if store != nil {
+			ids.Append(store.StoreID)
+		}
+	}
+	return ids
 }
-
-func (s TableStore) IsDefault() bool {
-	return s.StoreID == DefaultStoreId
-}
-
-/*
-	@todo implement Magento\Store\Model\Store
-*/

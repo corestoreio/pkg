@@ -142,7 +142,7 @@ func (sm *StoreManager) ReinitStores() error {
 	return nil
 }
 
-// @todo wrong place for this func here
+// loadSlice internal global helper func to execute a SQL select. @todo refactor and remove dependency of GetTableS...
 func loadSlice(dbrSess dbr.SessionRunner, table csdb.Index, dest interface{}, cbs ...csdb.DbrSelectCb) (int, error) {
 	ts, err := GetTableStructure(table)
 	if err != nil {

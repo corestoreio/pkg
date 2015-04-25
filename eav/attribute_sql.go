@@ -65,8 +65,8 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 			ifnull[i] = dbr.IfNullAs(csdb.ScopeTable, tewC, t, tewC, tewC)
 			tewAddedCols = append(tewAddedCols, tewC)
 		}
-		taColumnsQuoted.FilterContains(tewAddedCols...)
-		taaColumnsQuoted.FilterContains(tewAddedCols...)
+		taColumnsQuoted.ReduceContains(tewAddedCols...)
+		taaColumnsQuoted.ReduceContains(tewAddedCols...)
 	}
 
 	selectSql := dbrSess.
