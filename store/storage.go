@@ -255,7 +255,8 @@ func (st *Storage) Persists(dbrSess dbr.SessionRunner) error {
 }
 
 /*
-	INTERNAL
+	INTERNAL @todo investigate if we maybe can remove the maps and just rely on the for range loops
+				   to find a website, group or store.
 */
 
 // indexMap for faster access to the website, store group, store structs instead of
