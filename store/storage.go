@@ -28,13 +28,10 @@ type (
 
 	// Storage private type which holds the slices and maps
 	Storage struct {
-		mu        sync.RWMutex
-		websites  TableWebsiteSlice
-		websiteIM *indexMap
-		groups    TableGroupSlice
-		groupIM   *indexMap
-		stores    TableStoreSlice
-		storeIM   *indexMap
+		mu       sync.RWMutex
+		websites TableWebsiteSlice
+		groups   TableGroupSlice
+		stores   TableStoreSlice
 	}
 	// IDRetriever implements how to get the objects ID
 	IDRetriever interface {
@@ -64,37 +61,23 @@ func (c Code) Code() string { return string(c) }
 func NewStorage(tws TableWebsiteSlice, tgs TableGroupSlice, tss TableStoreSlice) *Storage {
 	// maybe we can totally remove the maps and just rely on the for loop to find an entity.
 	return &Storage{
-		mu:        sync.RWMutex{},
-		websites:  tws,
-		websiteIM: newIndexMap(tws),
-		groups:    tgs,
-		groupIM:   newIndexMap(tgs),
-		stores:    tss,
-		storeIM:   newIndexMap(tss),
+		mu:       sync.RWMutex{},
+		websites: tws,
+		groups:   tgs,
+		stores:   tss,
 	}
 }
 
 // website returns a TableWebsite by using either id or code to find it.
 func (st *Storage) website(id IDRetriever, c CodeRetriever) (*TableWebsite, error) {
-	var idx = -1
 	switch {
 	case id != nil:
-		if i, ok := st.websiteIM.id[id.ID()]; ok {
-			idx = i
-		}
-		break
+		return st.websites.FindByID(id.ID())
 	case c != nil:
-		if i, ok := st.websiteIM.code[c.Code()]; ok {
-			idx = i
-		}
-		break
+		return st.websites.FindByCode(c.Code())
 	default:
 		return nil, ErrWebsiteNotFound
 	}
-	if idx < 0 {
-		return nil, ErrWebsiteNotFound
-	}
-	return st.websites[idx], nil
 }
 
 // Website creates a new Website from an ID or code including all its groups and
@@ -120,20 +103,12 @@ func (st *Storage) Websites() (WebsiteSlice, error) {
 
 // group returns a TableGroup by using a group id as argument.
 func (st *Storage) group(id IDRetriever) (*TableGroup, error) {
-	var idx = -1
 	switch {
 	case id != nil:
-		if i, ok := st.groupIM.id[id.ID()]; ok {
-			idx = i
-		}
-		break
+		return st.groups.FindByID(id.ID())
 	default:
 		return nil, ErrGroupNotFound
 	}
-	if idx < 0 {
-		return nil, ErrGroupNotFound
-	}
-	return st.groups[idx], nil
 }
 
 // Group creates a new Group which contains all related stores and its website
@@ -166,25 +141,14 @@ func (st *Storage) Groups() (GroupSlice, error) {
 
 // store returns a TableStore by an id or code. Only one of the args can be nil.
 func (st *Storage) store(id IDRetriever, c CodeRetriever) (*TableStore, error) {
-	var idx = -1
 	switch {
 	case id != nil:
-		if i, ok := st.storeIM.id[id.ID()]; ok {
-			idx = i
-		}
-		break
+		return st.stores.FindByID(id.ID())
 	case c != nil:
-		if i, ok := st.storeIM.code[c.Code()]; ok {
-			idx = i
-		}
-		break
+		return st.stores.FindByCode(c.Code())
 	default:
 		return nil, ErrStoreNotFound
 	}
-	if idx < 0 {
-		return nil, ErrStoreNotFound
-	}
-	return st.stores[idx], nil
 }
 
 // Store creates a new Store which contains the current store, its group and website.
@@ -252,93 +216,4 @@ func (st *Storage) Persists(dbrSess dbr.SessionRunner) error {
 	// save to DB in a transaction
 	defer st.mu.RUnlock()
 	return errors.New("@todo")
-}
-
-/*
-	INTERNAL @todo investigate if we maybe can remove the maps and just rely on the for range loops
-				   to find a website, group or store.
-*/
-
-// indexMap for faster access to the website, store group, store structs instead of
-// iterating over the slices.
-type indexMap struct {
-	sync.RWMutex
-	id   map[int64]int  // always initialized
-	code map[string]int // lazy initialization
-}
-
-func newIndexMap(s interface{}) *indexMap {
-	im := &indexMap{
-		id: make(map[int64]int),
-	}
-	switch s.(type) {
-	case TableWebsiteSlice:
-		im.populateWebsite(s.(TableWebsiteSlice))
-		break
-	case TableGroupSlice:
-		im.populateGroup(s.(TableGroupSlice))
-		break
-	case TableStoreSlice:
-		im.populateStore(s.(TableStoreSlice))
-		break
-	default:
-		panic("Unsupported slice: Either TableStoreSlice, TableGroupSlice or TableWebsiteSlice supported")
-	}
-	return im
-}
-
-// populateWebsite fills the map (itself) with the website ids and codes and the index of the slice. Thread safe.
-func (im *indexMap) populateWebsite(s TableWebsiteSlice) *indexMap {
-	im.Lock()
-	defer im.Unlock()
-	im.initCode()
-	im.clearID()
-	for i := 0; i < len(s); i++ {
-		im.id[s[i].WebsiteID] = i
-		im.code[s[i].Code.String] = i
-	}
-	return im
-}
-
-// populateGroup fills the map (itself) with the group ids and the index of the slice. Thread safe.
-func (im *indexMap) populateGroup(s TableGroupSlice) *indexMap {
-	im.Lock()
-	defer im.Unlock()
-	im.clearID()
-
-	for i := 0; i < len(s); i++ {
-		im.id[s[i].GroupID] = i
-	}
-	return im
-}
-
-// populateStore fills the map (itself) with the store ids and codes and the index of the slice. Thread safe.
-func (im *indexMap) populateStore(s TableStoreSlice) *indexMap {
-	im.Lock()
-	defer im.Unlock()
-	im.initCode()
-	im.clearID()
-	for i := 0; i < len(s); i++ {
-		im.id[s[i].StoreID] = i
-		im.code[s[i].Code.String] = i
-	}
-	return im
-}
-
-func (im *indexMap) initCode() {
-	if len(im.code) > 0 {
-		for k := range im.code {
-			delete(im.code, k)
-		}
-	} else {
-		im.code = make(map[string]int)
-	}
-}
-
-func (im *indexMap) clearID() {
-	if len(im.id) > 0 {
-		for k := range im.id {
-			delete(im.id, k)
-		}
-	}
 }
