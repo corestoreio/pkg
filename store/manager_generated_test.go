@@ -12,34 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
-
-const tplMaterializationStore = `package {{ .PackageName }}
+package store_test
 
 import (
-	"database/sql"
+	"testing"
 
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 )
 
-func init(){
-	// variable storeManager must be defined somewhere in your package
-	storeManager = store.NewManager(
-			store.NewStorage(
-				store.TableWebsiteSlice{
-					{{ range $k,$v := .Websites }}{{ $v | printf "%#v" }},
-					{{end}}
-				},
-				store.TableGroupSlice{
-					{{ range $k,$v := .Groups }}{{ $v | printf "%#v" }},
-					{{end}}
-				},
-				store.TableStoreSlice{
-					{{ range $k,$v := .Stores }}{{ $v | printf "%#v" }},
-					{{end}}
-				},
-			),
-		)
+var storeManager *store.Manager
+
+func TestGeneratedNewManager(t *testing.T) {
+	if storeManager == nil {
+		t.Skip("storeManager variable is nil. Integration test skipped")
+	}
+	t.Log("@todo")
 }
-`

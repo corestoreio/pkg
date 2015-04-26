@@ -59,8 +59,11 @@ func TestNewStore(t *testing.T) {
 func TestNewStorePanicArgsNil(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			err := r.(error)
-			assert.EqualError(t, store.ErrStoreNewArgNil, err.Error())
+			if err, ok := r.(error); ok {
+				assert.EqualError(t, store.ErrStoreNewArgNil, err.Error())
+			} else {
+				t.Errorf("Failed to convert to type error: %#v", err)
+			}
 		} else {
 			t.Error("Cannot find panic")
 		}
@@ -71,8 +74,11 @@ func TestNewStorePanicArgsNil(t *testing.T) {
 func TestNewStorePanicIncorrectGroup(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			err := r.(error)
-			assert.EqualError(t, store.ErrStoreIncorrectGroup, err.Error())
+			if err, ok := r.(error); ok {
+				assert.EqualError(t, store.ErrStoreIncorrectGroup, err.Error())
+			} else {
+				t.Errorf("Failed to convert to type error: %#v", err)
+			}
 		} else {
 			t.Error("Cannot find panic")
 		}
@@ -87,8 +93,11 @@ func TestNewStorePanicIncorrectGroup(t *testing.T) {
 func TestNewStorePanicIncorrectWebsite(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			err := r.(error)
-			assert.EqualError(t, store.ErrStoreIncorrectWebsite, err.Error())
+			if err, ok := r.(error); ok {
+				assert.EqualError(t, store.ErrStoreIncorrectWebsite, err.Error())
+			} else {
+				t.Errorf("Failed to convert to type error: %#v", err)
+			}
 		} else {
 			t.Error("Cannot find panic")
 		}

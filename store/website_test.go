@@ -95,8 +95,11 @@ func TestNewWebsiteSetGroupsStores(t *testing.T) {
 func TestNewWebsiteSetGroupsStoresPanic(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			str := r.(string)
-			assert.Contains(t, str, "Integrity error")
+			if str, ok := r.(string); ok {
+				assert.Contains(t, str, "Integrity error")
+			} else {
+				t.Errorf("Failed to convert to type error: %#v", str)
+			}
 		} else {
 			t.Error("Cannot find panic")
 		}

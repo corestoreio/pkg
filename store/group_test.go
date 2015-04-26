@@ -44,8 +44,11 @@ func TestNewGroup(t *testing.T) {
 func TestNewGroupPanic(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			err := r.(error)
-			assert.EqualError(t, store.ErrStoreNewArgNil, err.Error())
+			if err, ok := r.(error); ok {
+				assert.EqualError(t, store.ErrStoreNewArgNil, err.Error())
+			} else {
+				t.Errorf("Failed to convert to type error: %#v", err)
+			}
 		} else {
 			t.Error("Cannot find panic")
 		}
@@ -56,8 +59,11 @@ func TestNewGroupPanic(t *testing.T) {
 func TestNewGroupPanicWebsiteIncorrect(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			err := r.(error)
-			assert.EqualError(t, store.ErrGroupWebsiteNotFound, err.Error())
+			if err, ok := r.(error); ok {
+				assert.EqualError(t, store.ErrGroupWebsiteNotFound, err.Error())
+			} else {
+				t.Errorf("Failed to convert to type error: %#v", err)
+			}
 		} else {
 			t.Error("Cannot find panic")
 		}
@@ -73,8 +79,11 @@ func TestNewGroupPanicWebsiteIncorrect(t *testing.T) {
 func TestNewGroupSetStoresPanicWebsiteIsNil(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			err := r.(error)
-			assert.EqualError(t, store.ErrGroupWebsiteNotFound, err.Error())
+			if err, ok := r.(error); ok {
+				assert.EqualError(t, store.ErrGroupWebsiteNotFound, err.Error())
+			} else {
+				t.Errorf("Failed to convert to type error: %#v", err)
+			}
 		} else {
 			t.Error("Cannot find panic")
 		}
@@ -95,8 +104,11 @@ func TestNewGroupSetStoresPanicWebsiteIsNil(t *testing.T) {
 func TestNewGroupSetStoresPanicWebsiteIncorrect(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			err := r.(error)
-			assert.EqualError(t, store.ErrGroupWebsiteNotFound, err.Error())
+			if err, ok := r.(error); ok {
+				assert.EqualError(t, store.ErrGroupWebsiteNotFound, err.Error())
+			} else {
+				t.Errorf("Failed to convert to type error: %#v", err)
+			}
 		} else {
 			t.Error("Cannot find panic")
 		}
@@ -165,6 +177,7 @@ func TestTableGroupSliceLoad(t *testing.T) {
 
 func TestTableGroupSliceIDs(t *testing.T) {
 	assert.EqualValues(t, utils.Int64Slice{3, 1, 0, 2}, testGroups.IDs())
+	assert.True(t, testGroups.Len() == 4)
 }
 
 func TestTableGroupSliceFindByID(t *testing.T) {

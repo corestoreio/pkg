@@ -20,6 +20,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/utils"
 )
 
 const (
@@ -120,17 +121,45 @@ func (wb *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *We
 */
 
 // Len returns the length
-func (s WebsiteSlice) Len() int { return len(s) }
+func (ws WebsiteSlice) Len() int { return len(ws) }
 
 // Filter returns a new slice filtered by predicate f
-func (s WebsiteSlice) Filter(f func(*Website) bool) WebsiteSlice {
-	var ws WebsiteSlice
-	for _, v := range s {
+func (ws WebsiteSlice) Filter(f func(*Website) bool) WebsiteSlice {
+	var nws WebsiteSlice
+	for _, v := range ws {
 		if v != nil && f(v) {
-			ws = append(ws, v)
+			nws = append(nws, v)
 		}
 	}
-	return ws
+	return nws
+}
+
+// Codes returns a StringSlice with all website codes
+func (ws WebsiteSlice) Codes() utils.StringSlice {
+	if len(ws) == 0 {
+		return nil
+	}
+	var c utils.StringSlice
+	for _, w := range ws {
+		if w != nil {
+			c.Append(w.Data().Code.String)
+		}
+	}
+	return c
+}
+
+// IDs returns an Int64Slice with all website ids
+func (ws WebsiteSlice) IDs() utils.Int64Slice {
+	if len(ws) == 0 {
+		return nil
+	}
+	var ids utils.Int64Slice
+	for _, w := range ws {
+		if w != nil {
+			ids.Append(w.Data().WebsiteID)
+		}
+	}
+	return ids
 }
 
 /*

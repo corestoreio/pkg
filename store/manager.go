@@ -37,6 +37,8 @@ type (
 	}
 
 	Manager struct {
+		// storage get set of websites, groups and stores and also type assertion to StorageMutator for
+		// ReInit and Persisting
 		storage Storager
 		sync.RWMutex
 		// map key is a hash value
@@ -47,7 +49,8 @@ type (
 )
 
 var (
-	ErrUnsupportedScopeID = errors.New("Unsupported scope id")
+	ErrUnsupportedScopeID         = errors.New("Unsupported scope id")
+	ErrManagerMutatorNotAvailable = errors.New("Storage Mutator is not implemented")
 )
 
 // NewManager creates a new store manager which handles websites, store groups and stores.
@@ -133,14 +136,27 @@ func (sm *Manager) Store(id IDRetriever, c CodeRetriever) *Store {
 }
 
 // GetDefaultStoreView returns the default store view bucket
-func (sm *Manager) GetDefaultStoreView() *Store {
-	return nil
+func (sm *Manager) DefaultStoreView() (*Store, error) {
+	// cache
+	return sm.storage.DefaultStoreView()
 }
 
-// ReinitStores reloads the website, store group and store view data from the database @todo
-func (sm *Manager) ReinitStores(dbrSess dbr.SessionRunner) error {
+// ReInit reloads the website, store group and store view data from the database @todo
+func (sm *Manager) ReInit(dbrSess dbr.SessionRunner) error {
 	// flush internal caches here
-	return sm.storage.ReInit(dbrSess)
+	if mut, ok := sm.storage.(StorageMutator); ok {
+		return mut.ReInit(dbrSess)
+	}
+	return ErrManagerMutatorNotAvailable
+}
+
+// Persists saves all websites, groups and stores to the database @todo
+func (sm *Manager) Persists(dbrSess dbr.SessionRunner) error {
+
+	if mut, ok := sm.storage.(StorageMutator); ok {
+		return mut.Persists(dbrSess)
+	}
+	return ErrManagerMutatorNotAvailable
 }
 
 // loadSlice internal global helper func to execute a SQL select. @todo refactor and remove dependency of GetTableS...

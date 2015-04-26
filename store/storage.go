@@ -18,8 +18,14 @@ type (
 		Groups() (GroupSlice, error)
 		Store(id IDRetriever, c CodeRetriever) (*Store, error)
 		Stores() (StoreSlice, error)
-		ReInit(dbrSess dbr.SessionRunner) error
+		DefaultStoreView() (*Store, error)
 	}
+
+	StorageMutator interface {
+		ReInit(dbr.SessionRunner) error
+		Persists(dbr.SessionRunner) error
+	}
+
 	// Storage private type which holds the slices and maps
 	Storage struct {
 		mu        sync.RWMutex
@@ -46,6 +52,7 @@ type (
 
 // check if interface has been implemented
 var _ Storager = (*Storage)(nil)
+var _ StorageMutator = (*Storage)(nil)
 
 // ID is convenience helper to satisfy the interface IDRetriever
 func (i ID) ID() int64 { return int64(i) }
@@ -90,8 +97,9 @@ func (st *Storage) website(id IDRetriever, c CodeRetriever) (*TableWebsite, erro
 	return st.websites[idx], nil
 }
 
-// Website creates a new Website which contains the current website, all its groups and
-// all its related stores. It panics when the integrity is incorrect.
+// Website creates a new Website from an ID or code including all its groups and
+// all related stores. It panics when the integrity is incorrect. If both arguments
+// are set then the first one will take effect.
 func (st *Storage) Website(id IDRetriever, c CodeRetriever) (*Website, error) {
 	w, err := st.website(id, c)
 	if err != nil {
@@ -235,6 +243,14 @@ func (st *Storage) ReInit(dbrSess dbr.SessionRunner) error {
 	st.mu.Lock()
 	// fetch from DB, clear internal maps, pointers, etc, check for mem leak ;-) ...
 	defer st.mu.Unlock()
+	return errors.New("@todo")
+}
+
+// Persists writes all websites, groups and stores to the database @todo
+func (st *Storage) Persists(dbrSess dbr.SessionRunner) error {
+	st.mu.RLock()
+	// save to DB in a transaction
+	defer st.mu.RUnlock()
 	return errors.New("@todo")
 }
 
