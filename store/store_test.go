@@ -176,6 +176,18 @@ func TestTableStoreSliceFindByID(t *testing.T) {
 	assert.Equal(t, 6, s2.StoreID)
 }
 
+func TestTableStoreSliceFindByCode(t *testing.T) {
+
+	s1, err := testStores.FindByCode("corestore")
+	assert.Nil(t, s1)
+	assert.EqualError(t, store.ErrStoreNotFound, err.Error())
+
+	s2, err := testStores.FindByCode("ch")
+	assert.NotNil(t, s2)
+	assert.NoError(t, err)
+	assert.Equal(t, "ch", s2.Code.String)
+}
+
 func TestTableStoreSliceFilterByGroupID(t *testing.T) {
 	gStores := testStores.FilterByGroupID(3)
 	assert.NotNil(t, gStores)

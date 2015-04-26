@@ -176,6 +176,16 @@ func (s TableStoreSlice) FindByID(id int64) (*TableStore, error) {
 	return nil, ErrStoreNotFound
 }
 
+// FindByCode returns a TableStore if found by id or an error
+func (s TableStoreSlice) FindByCode(code string) (*TableStore, error) {
+	for _, st := range s {
+		if st != nil && st.Code.Valid && st.Code.String == code {
+			return st, nil
+		}
+	}
+	return nil, ErrStoreNotFound
+}
+
 // FilterByGroupID returns a new slice with all TableStores belonging to a group id
 func (s TableStoreSlice) FilterByGroupID(id int64) TableStoreSlice {
 	return s.Filter(func(ts *TableStore) bool {

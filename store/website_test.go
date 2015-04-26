@@ -140,6 +140,15 @@ func TestTableWebsiteSlice(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, w2.WebsiteID)
 
+	w3, err := websites.FindByCode("euro")
+	assert.NotNil(t, w3)
+	assert.NoError(t, err)
+	assert.Equal(t, "euro", w3.Code.String)
+
+	w4, err := websites.FindByCode("corestore")
+	assert.Nil(t, w4)
+	assert.EqualError(t, store.ErrWebsiteNotFound, err.Error())
+
 	wf1 := websites.Filter(func(w *store.TableWebsite) bool {
 		return w.WebsiteID == 1
 	})

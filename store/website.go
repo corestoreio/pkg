@@ -189,6 +189,16 @@ func (s TableWebsiteSlice) FindByID(id int64) (*TableWebsite, error) {
 	return nil, ErrWebsiteNotFound
 }
 
+// FindByCode returns a TableWebsite if found by code or an error
+func (s TableWebsiteSlice) FindByCode(code string) (*TableWebsite, error) {
+	for _, w := range s {
+		if w != nil && w.Code.Valid && w.Code.String == code {
+			return w, nil
+		}
+	}
+	return nil, ErrWebsiteNotFound
+}
+
 // Filter returns a new slice filtered by predicate f
 func (s TableWebsiteSlice) Filter(f func(*TableWebsite) bool) TableWebsiteSlice {
 	var tws TableWebsiteSlice
