@@ -23,7 +23,6 @@ type (
 
 	StorageMutator interface {
 		ReInit(dbr.SessionRunner) error
-		Persists(dbr.SessionRunner) error
 	}
 
 	// Storage private type which holds the slices and maps
@@ -205,15 +204,7 @@ func (st *Storage) DefaultStoreView() (*Store, error) {
 // ReInit reloads all websites, groups and stores from the database @todo
 func (st *Storage) ReInit(dbrSess dbr.SessionRunner) error {
 	st.mu.Lock()
-	// fetch from DB, clear internal maps, pointers, etc, check for mem leak ;-) ...
+	// fetch from DB, clear slices, pointers, etc, check for mem leak ;-) ...
 	defer st.mu.Unlock()
-	return errors.New("@todo")
-}
-
-// Persists writes all websites, groups and stores to the database @todo
-func (st *Storage) Persists(dbrSess dbr.SessionRunner) error {
-	st.mu.RLock()
-	// save to DB in a transaction
-	defer st.mu.RUnlock()
 	return errors.New("@todo")
 }

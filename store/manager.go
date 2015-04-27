@@ -35,10 +35,15 @@ type (
 		// ReInit and Persisting
 		storage Storager
 		mu      sync.RWMutex
-		// map key is a hash value
-		cacheW map[uint64]*Website
-		cacheG map[uint64]*Group
-		cacheS map[uint64]*Store
+
+		// the next six fields are for internal caching
+		// map key is a hash value which is generated bei either an int64 or a string
+		websiteMap map[uint64]*Website
+		groupMap   map[uint64]*Group
+		storeMap   map[uint64]*Store
+		websites   WebsiteSlice
+		groups     GroupSlice
+		stores     StoreSlice
 
 		// fnv64 used to calculate the uint64 value of a string, especially website code and store code
 		fnv64 hash.Hash64
@@ -57,12 +62,12 @@ var _ Storager = (*Manager)(nil)
 // NewManager creates a new store manager which handles websites, store groups and stores.
 func NewManager(s Storager) *Manager {
 	return &Manager{
-		storage: s,
-		mu:      sync.RWMutex{},
-		cacheW:  make(map[uint64]*Website),
-		cacheG:  make(map[uint64]*Group),
-		cacheS:  make(map[uint64]*Store),
-		fnv64:   fnv.New64(),
+		storage:    s,
+		mu:         sync.RWMutex{},
+		websiteMap: make(map[uint64]*Website),
+		groupMap:   make(map[uint64]*Group),
+		storeMap:   make(map[uint64]*Store),
+		fnv64:      fnv.New64(),
 	}
 }
 
@@ -121,30 +126,76 @@ func (sm *Manager) HasSingleStore() bool {
 	return false
 }
 
-// Website returns a website by IDRetriever. If IDRetriever is nil then default website will be returned
+// Website returns the cached website. Arguments can be nil.
+// If both arguments are not nil then the first one will be taken.
+// If both arguments are nil then it returns the website of the current store view.
 func (sm *Manager) Website(id IDRetriever, c CodeRetriever) (*Website, error) {
-	if id == nil && c == nil {
+	switch {
+	case id == nil && c == nil && sm.currentStore == nil:
 		return nil, ErrWebsiteNotFound
+	case id == nil && c == nil && sm.currentStore != nil:
+		return sm.currentStore.Website(), nil
 	}
-	return nil, nil
+
+	key, err := sm.hash(id, c)
+	if err != nil {
+		return nil, err
+	}
+
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	if w, ok := sm.websiteMap[key]; ok && w != nil {
+		return w, nil
+	}
+
+	w, err := sm.storage.Website(id, c)
+	sm.websiteMap[key] = w
+	return sm.websiteMap[key], errgo.Mask(err)
 }
 
 // Websites returns a slice of websites
 func (sm *Manager) Websites() (WebsiteSlice, error) {
-	return nil, nil
+	if sm.websites != nil {
+		return sm.websites, nil
+	}
+	var err error
+	sm.websites, err = sm.storage.Websites()
+	return sm.websites, err
 }
 
 // Group returns the group bucket
 func (sm *Manager) Group(id IDRetriever) (*Group, error) {
-	if id == nil {
+	switch {
+	case id == nil && sm.currentStore == nil:
 		return nil, ErrGroupNotFound
+	case id == nil && sm.currentStore != nil:
+		return sm.currentStore.Group(), nil
 	}
-	return nil, nil
+
+	key, err := sm.hash(id, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	if g, ok := sm.groupMap[key]; ok && g != nil {
+		return g, nil
+	}
+
+	g, err := sm.storage.Group(id)
+	sm.groupMap[key] = g
+	return sm.groupMap[key], errgo.Mask(err)
 }
 
 // Groups returns a slice of groups
 func (sm *Manager) Groups() (GroupSlice, error) {
-	return nil, nil
+	if sm.groups != nil {
+		return sm.groups, nil
+	}
+	var err error
+	sm.groups, err = sm.storage.Groups()
+	return sm.groups, err
 }
 
 // Store returns the cached store view. Arguments can be nil.
@@ -158,28 +209,30 @@ func (sm *Manager) Store(id IDRetriever, c CodeRetriever) (*Store, error) {
 		return sm.currentStore, nil
 	}
 
-	key := sm.hash(id, c)
-	if key < 1 {
-		return nil, ErrStoreNotFound
+	key, err := sm.hash(id, c)
+	if err != nil {
+		return nil, err
 	}
 
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
-	if s, ok := sm.cacheS[key]; ok && s != nil {
+	if s, ok := sm.storeMap[key]; ok && s != nil {
 		return s, nil
 	}
 
 	s, err := sm.storage.Store(id, c)
-	if err != nil {
-		return nil, errgo.Mask(err)
-	}
-	sm.cacheS[key] = s
-	return sm.cacheS[key], nil
+	sm.storeMap[key] = s
+	return sm.storeMap[key], errgo.Mask(err)
 }
 
-// Stores returns a slice of stores
+// Stores returns a slice of stores.
 func (sm *Manager) Stores() (StoreSlice, error) {
-	return nil, nil
+	if sm.stores != nil {
+		return sm.stores, nil
+	}
+	var err error
+	sm.stores, err = sm.storage.Stores()
+	return sm.stores, err
 }
 
 // GetDefaultStoreView returns the default store view bucket
@@ -197,46 +250,47 @@ func (sm *Manager) ReInit(dbrSess dbr.SessionRunner) error {
 	return ErrManagerMutatorNotAvailable
 }
 
-// Persists saves all websites, groups and stores to the database @todo
-func (sm *Manager) Persists(dbrSess dbr.SessionRunner) error {
-	if mut, ok := sm.storage.(StorageMutator); ok {
-		return mut.Persists(dbrSess)
-	}
-	return ErrManagerMutatorNotAvailable
-}
-
 // hash generates the key for the map from either an id int64 or a code string.
-// If both arguments are nil it returns 0.
-func (sm *Manager) hash(id IDRetriever, c CodeRetriever) uint64 {
+// If both arguments are nil it returns 0 which is default for website, group or store.
+func (sm *Manager) hash(id IDRetriever, c CodeRetriever) (uint64, error) {
+	uz := uint64(0)
 	switch {
 	case id != nil && id.ID() >= 0:
-		return uint64(id.ID())
+		return uint64(id.ID()), nil
 	case c != nil && c.Code() != "":
 		sm.fnv64.Reset()
-		sm.fnv64.Write([]byte(c.Code()))
-		return sm.fnv64.Sum64()
+		_, err := sm.fnv64.Write([]byte(c.Code()))
+		if err != nil {
+			return uz, errgo.Mask(err)
+		}
+		return sm.fnv64.Sum64(), nil
 	}
-	return uint64(0)
+	return uz, nil
 }
 
-// ClearCache resets the internal caches which stores the pointers to a Website, Group or Store.
-// Please use with caution. ReInit() also uses this method.
+// ClearCache resets the internal caches which stores the pointers to a Website, Group or Store and
+// all related slices. Please use with caution. ReInit() also uses this method.
 func (sm *Manager) ClearCache() {
-	if len(sm.cacheW) > 0 {
-		for k := range sm.cacheW {
-			delete(sm.cacheW, k)
+	sm.mu.Lock()
+	defer sm.mu.Unlock()
+	if len(sm.websiteMap) > 0 {
+		for k := range sm.websiteMap {
+			delete(sm.websiteMap, k)
 		}
 	}
-	if len(sm.cacheG) > 0 {
-		for k := range sm.cacheG {
-			delete(sm.cacheG, k)
+	if len(sm.groupMap) > 0 {
+		for k := range sm.groupMap {
+			delete(sm.groupMap, k)
 		}
 	}
-	if len(sm.cacheS) > 0 {
-		for k := range sm.cacheS {
-			delete(sm.cacheS, k)
+	if len(sm.storeMap) > 0 {
+		for k := range sm.storeMap {
+			delete(sm.storeMap, k)
 		}
 	}
+	sm.websites = nil
+	sm.groups = nil
+	sm.stores = nil
 }
 
 // loadSlice internal global helper func to execute a SQL select. @todo refactor and remove dependency of GetTableS...
