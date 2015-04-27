@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/store"
+	"github.com/stretchr/testify/assert"
 )
 
 var storeManager *store.Manager
@@ -26,5 +27,31 @@ func TestGeneratedNewManager(t *testing.T) {
 	if storeManager == nil {
 		t.Skip("storeManager variable is nil. Integration test skipped")
 	}
+
 	t.Log("@todo")
+
+	tests := []struct {
+		haveID   store.IDRetriever
+		haveCode store.CodeRetriever
+		wantErr  error
+		wantCode string
+	}{
+		{nil, store.Code("de"), nil, "de"},
+		{nil, store.Code("cz"), store.ErrStoreNotFound, ""},
+		{nil, store.Code("de"), nil, "de"},
+	}
+
+	for _, test := range tests {
+		s, err := storeManager.Store(test.haveID, test.haveCode)
+		if test.wantErr == nil {
+			assert.NoError(t, err)
+			assert.NotNil(t, s)
+			assert.EqualValues(t, test.wantCode, s.Data().Code.String)
+		} else {
+			assert.Error(t, err)
+			assert.EqualError(t, test.wantErr, err.Error())
+			assert.Nil(t, s)
+		}
+	}
+
 }

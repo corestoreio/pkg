@@ -23,16 +23,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//Storager interface {
-//Website(id IDRetriever, c CodeRetriever) (*Website, error)
-//Websites() (WebsiteSlice, error)
-//Group(id IDRetriever) (*Group, error)
-//Groups() (GroupSlice, error)
-//Store(id IDRetriever, c CodeRetriever) (*Store, error)
-//Stores() (StoreSlice, error)
-//DefaultStoreView() (*Store, error)
-//}
-
 type mockStorage struct {
 	w *store.Website
 	g *store.Group
@@ -55,19 +45,30 @@ func (ts *mockStorage) Store(id store.IDRetriever, c store.CodeRetriever) (*stor
 func (ts *mockStorage) Stores() (store.StoreSlice, error)       { return nil, nil }
 func (ts *mockStorage) DefaultStoreView() (*store.Store, error) { return nil, nil }
 
-func TestNewManager(t *testing.T) {
+func getTestManager(opts ...func(ms *mockStorage)) *store.Manager {
 	ms := &mockStorage{}
-	mgnr := store.NewManager(ms)
-	ms.s = store.NewStore(
-		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
-		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-		&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-	)
+	for _, opt := range opts {
+		opt(ms)
+	}
+	return store.NewManager(ms)
+}
 
-	s, err := mgnr.Store(nil, store.Code("de"))
-	assert.NoError(t, err)
-	assert.NotNil(t, s)
-	t.Logf("\nLOG: %#v\n", s)
+func TestNewManagerStore(t *testing.T) {
+
+	mgnr := getTestManager(func(ms *mockStorage) {
+		ms.s = store.NewStore(
+			&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
+			&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
+			&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+		)
+	})
+	for j := 0; j < 3; j++ {
+		s, err := mgnr.Store(nil, store.Code("notNil"))
+		assert.NoError(t, err)
+		assert.NotNil(t, s)
+		assert.EqualValues(t, "de", s.Data().Code.String)
+	}
+
 }
 
 var benchmarkManagerStore *store.Store
