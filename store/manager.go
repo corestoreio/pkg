@@ -74,8 +74,10 @@ func NewManager(s Storager) *Manager {
 	}
 }
 
-// Init @see \Magento\Store\Model\StorageFactory::_reinitStores
-// Mainly used when booting the app
+// Init initializes the current store from a scope code and a scope type.
+// This func is mainly used when booting the app to set the environment config.
+// Also all other calls to any method receiver with nil arguments depends on the current store
+// @see \Magento\Store\Model\StorageFactory::_reinitStores
 func (sm *Manager) Init(scopeCode string, scopeType config.ScopeID) (*Store, error) {
 	switch scopeType {
 	case config.ScopeStore:
@@ -131,7 +133,7 @@ func (sm *Manager) HasSingleStore() bool {
 // Website returns the cached website. Arguments can be nil.
 // If both arguments are not nil then the first one will be taken.
 // If both arguments are nil then it returns the website of the current store view.
-func (sm *Manager) Website(id IDRetriever, c CodeRetriever) (*Website, error) {
+func (sm *Manager) Website(r ...Retriever) (*Website, error) {
 	switch {
 	case id == nil && c == nil && sm.currentStore == nil:
 		return nil, ErrCurrentStoreNotSet
@@ -139,7 +141,7 @@ func (sm *Manager) Website(id IDRetriever, c CodeRetriever) (*Website, error) {
 		return sm.currentStore.Website(), nil
 	}
 
-	key, err := sm.hash(id, c)
+	key, err := sm.hash(r)
 	if err != nil {
 		return nil, err
 	}
@@ -150,7 +152,7 @@ func (sm *Manager) Website(id IDRetriever, c CodeRetriever) (*Website, error) {
 		return w, nil
 	}
 
-	w, err := sm.storage.Website(id, c)
+	w, err := sm.storage.Website(r)
 	sm.websiteMap[key] = w
 	return sm.websiteMap[key], errgo.Mask(err)
 }
@@ -166,7 +168,7 @@ func (sm *Manager) Websites() (WebsiteSlice, error) {
 }
 
 // Group returns the group bucket
-func (sm *Manager) Group(id IDRetriever) (*Group, error) {
+func (sm *Manager) Group(id Retriever) (*Group, error) {
 	switch {
 	case id == nil && sm.currentStore == nil:
 		return nil, ErrCurrentStoreNotSet
@@ -203,7 +205,7 @@ func (sm *Manager) Groups() (GroupSlice, error) {
 // Store returns the cached store view. Arguments can be nil.
 // If both arguments are not nil then the first one will be taken.
 // If both arguments are nil then it returns the current store view.
-func (sm *Manager) Store(id IDRetriever, c CodeRetriever) (*Store, error) {
+func (sm *Manager) Store(r ...Retriever) (*Store, error) {
 	switch {
 	case id == nil && c == nil && sm.currentStore == nil:
 		return nil, ErrCurrentStoreNotSet
@@ -211,7 +213,7 @@ func (sm *Manager) Store(id IDRetriever, c CodeRetriever) (*Store, error) {
 		return sm.currentStore, nil
 	}
 
-	key, err := sm.hash(id, c)
+	key, err := sm.hash(r)
 	if err != nil {
 		return nil, err
 	}
@@ -222,7 +224,7 @@ func (sm *Manager) Store(id IDRetriever, c CodeRetriever) (*Store, error) {
 		return s, nil
 	}
 
-	s, err := sm.storage.Store(id, c)
+	s, err := sm.storage.Store(r)
 	sm.storeMap[key] = s
 	return sm.storeMap[key], errgo.Mask(err)
 }
@@ -258,7 +260,7 @@ func (sm *Manager) ReInit(dbrSess dbr.SessionRunner) error {
 
 // hash generates the key for the map from either an id int64 or a code string.
 // If both arguments are nil it returns 0 which is default for website, group or store.
-func (sm *Manager) hash(id IDRetriever, c CodeRetriever) (uint64, error) {
+func (sm *Manager) hash(r ...Retriever) (uint64, error) {
 	uz := uint64(0)
 	switch {
 	case id != nil && id.ID() >= 0:

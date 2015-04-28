@@ -12,11 +12,11 @@ type (
 	// Storager implements the requirements to get new websites, groups and store views.
 	// This interface is used in the StoreManager
 	Storager interface {
-		Website(id IDRetriever, c CodeRetriever) (*Website, error)
+		Website(...Retriever) (*Website, error)
 		Websites() (WebsiteSlice, error)
-		Group(id IDRetriever) (*Group, error)
+		Group(Retriever) (*Group, error)
 		Groups() (GroupSlice, error)
-		Store(id IDRetriever, c CodeRetriever) (*Store, error)
+		Store(...Retriever) (*Store, error)
 		Stores() (StoreSlice, error)
 		DefaultStoreView() (*Store, error)
 	}
@@ -32,8 +32,10 @@ type (
 		groups   TableGroupSlice
 		stores   TableStoreSlice
 	}
-	// IDRetriever implements how to get the objects ID
-	IDRetriever interface {
+
+	// Retriever implements how to get the objects ID. If Retriever implements CodeRetriever
+	// then CodeRetriever has precedence.
+	Retriever interface {
 		ID() int64
 	}
 	// CodeRetriever implements how to get the objects Code which can be website or store code.
@@ -50,8 +52,11 @@ type (
 var _ Storager = (*Storage)(nil)
 var _ StorageMutator = (*Storage)(nil)
 
-// ID is convenience helper to satisfy the interface IDRetriever
+// ID is convenience helper to satisfy the interface Retriever
 func (i ID) ID() int64 { return int64(i) }
+
+// ID is a noop method receiver to satisfy the interface Retriever
+func (c Code) ID() int64 { return int64(0) }
 
 // Code is convenience helper to satisfy the interface CodeRetriever
 func (c Code) Code() string { return string(c) }
@@ -68,22 +73,21 @@ func NewStorage(tws TableWebsiteSlice, tgs TableGroupSlice, tss TableStoreSlice)
 }
 
 // website returns a TableWebsite by using either id or code to find it.
-func (st *Storage) website(id IDRetriever, c CodeRetriever) (*TableWebsite, error) {
-	switch {
-	case id != nil:
-		return st.websites.FindByID(id.ID())
-	case c != nil:
-		return st.websites.FindByCode(c.Code())
-	default:
+func (st *Storage) website(r ...Retriever) (*TableWebsite, error) {
+	if r == nil || len(r) > 1 {
 		return nil, ErrWebsiteNotFound
 	}
+	if c, ok := r[0].(CodeRetriever); ok && c.Code() != "" {
+		return st.websites.FindByCode(c.Code())
+	}
+	return st.websites.FindByID(r[0].ID())
 }
 
 // Website creates a new Website from an ID or code including all its groups and
 // all related stores. It panics when the integrity is incorrect. If both arguments
 // are set then the first one will take effect.
-func (st *Storage) Website(id IDRetriever, c CodeRetriever) (*Website, error) {
-	w, err := st.website(id, c)
+func (st *Storage) Website(r ...Retriever) (*Website, error) {
+	w, err := st.website(r...)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +105,7 @@ func (st *Storage) Websites() (WebsiteSlice, error) {
 }
 
 // group returns a TableGroup by using a group id as argument.
-func (st *Storage) group(id IDRetriever) (*TableGroup, error) {
+func (st *Storage) group(id Retriever) (*TableGroup, error) {
 	switch {
 	case id != nil:
 		return st.groups.FindByID(id.ID())
@@ -111,7 +115,7 @@ func (st *Storage) group(id IDRetriever) (*TableGroup, error) {
 }
 
 // Group creates a new Group which contains all related stores and its website
-func (st *Storage) Group(id IDRetriever) (*Group, error) {
+func (st *Storage) Group(id Retriever) (*Group, error) {
 	g, err := st.group(id)
 	if err != nil {
 		return nil, err
@@ -139,7 +143,7 @@ func (st *Storage) Groups() (GroupSlice, error) {
 }
 
 // store returns a TableStore by an id or code. Only one of the args can be nil.
-func (st *Storage) store(id IDRetriever, c CodeRetriever) (*TableStore, error) {
+func (st *Storage) store(r ...Retriever) (*TableStore, error) {
 	switch {
 	case id != nil:
 		return st.stores.FindByID(id.ID())
@@ -152,8 +156,8 @@ func (st *Storage) store(id IDRetriever, c CodeRetriever) (*TableStore, error) {
 
 // Store creates a new Store which contains the current store, its group and website.
 // One of the arguments can be nil.
-func (st *Storage) Store(id IDRetriever, c CodeRetriever) (*Store, error) {
-	s, err := st.store(id, c)
+func (st *Storage) Store(r ...Retriever) (*Store, error) {
+	s, err := st.store(r)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
