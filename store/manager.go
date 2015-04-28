@@ -48,13 +48,16 @@ type (
 		// fnv64 used to calculate the uint64 value of a string, especially website code and store code
 		fnv64 hash.Hash64
 
-		// contains the current selected store from ...
+		// contains the current selected store from init funcs. Cannot be cleared
 		currentStore *Store
+		// default store cache
+		defaultStore *Store
 	}
 )
 
 var (
 	ErrUnsupportedScopeID         = errors.New("Unsupported scope id")
+	ErrCurrentStoreNotSet         = errors.New("Current Store is not initialized")
 	ErrManagerMutatorNotAvailable = errors.New("Storage Mutator is not implemented")
 )
 var _ Storager = (*Manager)(nil)
@@ -87,7 +90,6 @@ func (sm *Manager) Init(scopeCode string, scopeType config.ScopeID) (*Store, err
 	default:
 		return nil, ErrUnsupportedScopeID
 	}
-
 	return nil, nil
 }
 
@@ -132,7 +134,7 @@ func (sm *Manager) HasSingleStore() bool {
 func (sm *Manager) Website(id IDRetriever, c CodeRetriever) (*Website, error) {
 	switch {
 	case id == nil && c == nil && sm.currentStore == nil:
-		return nil, ErrWebsiteNotFound
+		return nil, ErrCurrentStoreNotSet
 	case id == nil && c == nil && sm.currentStore != nil:
 		return sm.currentStore.Website(), nil
 	}
@@ -167,7 +169,7 @@ func (sm *Manager) Websites() (WebsiteSlice, error) {
 func (sm *Manager) Group(id IDRetriever) (*Group, error) {
 	switch {
 	case id == nil && sm.currentStore == nil:
-		return nil, ErrGroupNotFound
+		return nil, ErrCurrentStoreNotSet
 	case id == nil && sm.currentStore != nil:
 		return sm.currentStore.Group(), nil
 	}
@@ -204,7 +206,7 @@ func (sm *Manager) Groups() (GroupSlice, error) {
 func (sm *Manager) Store(id IDRetriever, c CodeRetriever) (*Store, error) {
 	switch {
 	case id == nil && c == nil && sm.currentStore == nil:
-		return nil, ErrStoreNotFound
+		return nil, ErrCurrentStoreNotSet
 	case id == nil && c == nil && sm.currentStore != nil:
 		return sm.currentStore, nil
 	}
@@ -235,10 +237,14 @@ func (sm *Manager) Stores() (StoreSlice, error) {
 	return sm.stores, err
 }
 
-// GetDefaultStoreView returns the default store view bucket
+// DefaultStoreView returns the default store view.
 func (sm *Manager) DefaultStoreView() (*Store, error) {
-	// cache
-	return sm.storage.DefaultStoreView()
+	if sm.defaultStore != nil {
+		return sm.defaultStore, nil
+	}
+	var err error
+	sm.defaultStore, err = sm.storage.DefaultStoreView()
+	return sm.defaultStore, err
 }
 
 // ReInit reloads the website, store group and store view data from the database @todo
@@ -291,6 +297,14 @@ func (sm *Manager) ClearCache() {
 	sm.websites = nil
 	sm.groups = nil
 	sm.stores = nil
+	sm.defaultStore = nil
+	// do not clear currentStore as this one depends on the init funcs
+}
+
+// IsCacheEmpty returns true if the internal cache is empty.
+func (sm *Manager) IsCacheEmpty() bool {
+	return len(sm.websiteMap) == 0 && len(sm.groupMap) == 0 && len(sm.storeMap) == 0 &&
+		sm.websites == nil && sm.groups == nil && sm.stores == nil && sm.defaultStore == nil
 }
 
 // loadSlice internal global helper func to execute a SQL select. @todo refactor and remove dependency of GetTableS...

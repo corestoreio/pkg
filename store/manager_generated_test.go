@@ -28,17 +28,19 @@ func TestGeneratedNewManager(t *testing.T) {
 		t.Skip("storeManager variable is nil. Integration test skipped")
 	}
 
-	t.Log("@todo")
-
 	tests := []struct {
 		haveID   store.IDRetriever
 		haveCode store.CodeRetriever
 		wantErr  error
-		wantCode string
 	}{
-		{nil, store.Code("de"), nil, "de"},
-		{nil, store.Code("cz"), store.ErrStoreNotFound, ""},
-		{nil, store.Code("de"), nil, "de"},
+		{nil, store.Code("de"), nil},
+		{nil, store.Code("cz"), store.ErrStoreNotFound},
+		{nil, store.Code("de"), nil},
+		{store.ID(1), store.Code("cz"), nil},
+		{store.ID(100), store.Code("cz"), store.ErrStoreNotFound},
+		{store.ID(1), store.Code("cz"), nil},
+		{store.ID(2), nil, nil},
+		{nil, nil, store.ErrCurrentStoreNotSet}, // if set returns default store
 	}
 
 	for _, test := range tests {
@@ -46,12 +48,15 @@ func TestGeneratedNewManager(t *testing.T) {
 		if test.wantErr == nil {
 			assert.NoError(t, err)
 			assert.NotNil(t, s)
-			assert.EqualValues(t, test.wantCode, s.Data().Code.String)
+			assert.NotEmpty(t, s.Data().Code.String, "%#v", s.Data())
 		} else {
 			assert.Error(t, err)
 			assert.EqualError(t, test.wantErr, err.Error())
 			assert.Nil(t, s)
 		}
 	}
+	assert.False(t, storeManager.IsCacheEmpty())
+	storeManager.ClearCache()
+	assert.True(t, storeManager.IsCacheEmpty())
 
 }
