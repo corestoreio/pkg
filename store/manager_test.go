@@ -44,7 +44,7 @@ var managerStoreSimpleTest = getTestManager(func(ms *mockStorage) {
 func TestNewManagerStore(t *testing.T) {
 	assert.True(t, managerStoreSimpleTest.IsCacheEmpty())
 	for j := 0; j < 3; j++ {
-		s, err := managerStoreSimpleTest.Store(nil, store.Code("notNil"))
+		s, err := managerStoreSimpleTest.Store(store.Code("notNil"))
 		assert.NoError(t, err)
 		assert.NotNil(t, s)
 		assert.EqualValues(t, "de", s.Data().Code.String)
@@ -101,7 +101,7 @@ var benchmarkManagerStore *store.Store
 func BenchmarkManagerGetStore(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkManagerStore, err = managerStoreSimpleTest.Store(nil, store.Code("de"))
+		benchmarkManagerStore, err = managerStoreSimpleTest.Store(store.Code("de"))
 		if err != nil {
 			b.Error(err)
 		}

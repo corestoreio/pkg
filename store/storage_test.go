@@ -59,8 +59,8 @@ func TestStorageWebsite(t *testing.T) {
 		{store.ID(1), nil, "euro"},
 		{store.Code("asia"), store.ErrWebsiteNotFound, ""},
 		{store.Code("oz"), nil, "oz"},
-		{mockIDCode{1, "oz"}, nil, "euro"},
-		{mockIDCode{111, "oz"}, store.ErrWebsiteNotFound, ""},
+		{mockIDCode{1, "oz"}, nil, "oz"},
+		{mockIDCode{1, "ozzz"}, store.ErrWebsiteNotFound, ""},
 	}
 	for _, test := range tests {
 		w, err := testStorage.Website(test.have)
@@ -68,9 +68,9 @@ func TestStorageWebsite(t *testing.T) {
 			assert.Nil(t, w)
 			assert.EqualError(t, test.err, err.Error())
 		} else {
-			assert.NotNil(t, w)
-			assert.NoError(t, err)
-			assert.Equal(t, test.wantWCode, w.Data().Code.String)
+			assert.NotNil(t, w, "Test: %#v", test)
+			assert.NoError(t, err, "Test: %#v", test)
+			assert.Equal(t, test.wantWCode, w.Data().Code.String, "Test: %#v", test)
 		}
 	}
 
@@ -269,17 +269,17 @@ func TestStorageStore(t *testing.T) {
 		{store.ID(1), nil, "de"},
 		{store.Code("asia"), store.ErrStoreNotFound, ""},
 		{store.Code("nz"), nil, "nz"},
-		{mockIDCode{4, "nz"}, nil, "uk"},
-		{mockIDCode{111, "au"}, store.ErrStoreNotFound, ""},
+		{mockIDCode{4, "nz"}, nil, "nz"},
+		{mockIDCode{4, "auuuuu"}, store.ErrStoreNotFound, ""},
 	}
 	for _, test := range tests {
 		s, err := testStorage.Store(test.have)
 		if test.err != nil {
-			assert.Nil(t, s)
+			assert.Nil(t, s, "%#v", test)
 			assert.EqualError(t, test.err, err.Error())
 		} else {
-			assert.NotNil(t, s)
-			assert.NoError(t, err)
+			assert.NotNil(t, s, "%#v", test)
+			assert.NoError(t, err, "%#v", test)
 			assert.Equal(t, test.wantCode, s.Data().Code.String)
 		}
 	}
