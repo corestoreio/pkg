@@ -78,6 +78,15 @@ func (wb *Website) DefaultGroup() (*Group, error) {
 	return nil, ErrWebsiteDefaultGroupNotFound
 }
 
+// DefaultStore returns the default store which via the default group.
+func (wb *Website) DefaultStore() (*Store, error) {
+	g, err := wb.DefaultGroup()
+	if err != nil {
+		return nil, err
+	}
+	return g.DefaultStore()
+}
+
 // Stores returns all stores associated to this website or an error when the stores
 // are not available aka not needed.
 func (wb *Website) Stores() (StoreSlice, error) {

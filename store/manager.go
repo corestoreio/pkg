@@ -75,28 +75,36 @@ func NewManager(s Storager) *Manager {
 }
 
 // Init initializes the current store from a scope code and a scope type.
-// This func is mainly used when booting the app to set the environment config.
-// Also all other calls to any method receiver with nil arguments depends on the current store
+// This func is mainly used when booting the app to set the environment configuration
+// Also all other calls to any method receiver with nil arguments depends on the current store.
 // @see \Magento\Store\Model\StorageFactory::_reinitStores
-func (sm *Manager) Init(scopeCode string, scopeType config.ScopeID) (*Store, error) {
+func (sm *Manager) Init(scopeCode CodeRetriever, scopeType config.ScopeID) error {
+	var err error
 	switch scopeType {
 	case config.ScopeStore:
-		// init storage store by store code
-		break
+		sm.currentStore, err = sm.Store(scopeCode)
+		return errgo.Mask(err)
 	case config.ScopeGroup:
-		// init storage store by group id
-		break
+		g, err := sm.Group(scopeCode) // this is the group_id
+		if err != nil {
+			return errgo.Mask(err)
+		}
+		sm.currentStore, err = g.DefaultStore()
+		return errgo.Mask(err)
 	case config.ScopeWebsite:
-		// init storage store by website code
-		break
+		w, err := sm.Website(scopeCode)
+		if err != nil {
+			return errgo.Mask(err)
+		}
+		sm.currentStore, err = w.DefaultStore()
+		return errgo.Mask(err)
 	default:
 		return nil, ErrUnsupportedScopeID
 	}
-	return nil, nil
 }
 
 // Init @see \Magento\Store\Model\StorageFactory::_reinitStores
-func (sm *Manager) InitByRequest(r *http.Request, scopeType config.ScopeID) {
+func (sm *Manager) InitByRequest(r *http.Request, scopeType config.ScopeID) error {
 	var scopeCode string
 	// 1. check cookie store
 	// 2. check for ___store variable
@@ -321,7 +329,8 @@ func (sm *Manager) IsCacheEmpty() bool {
 		sm.websites == nil && sm.groups == nil && sm.stores == nil && sm.defaultStore == nil
 }
 
-// notRetriever checks if variadic Retriever is nil or has more than two entries.
+// notRetriever checks if variadic Retriever is nil or has more than two entries
+// or the first index is nil.
 func notRetriever(r ...Retriever) bool {
 	lr := len(r)
 	return r == nil || (lr == 1 && r[0] == nil) || lr > 1
