@@ -54,18 +54,17 @@ func TestNewManagerStore(t *testing.T) {
 	assert.True(t, managerStoreSimpleTest.IsCacheEmpty())
 
 	tests := []struct {
-		haveID   store.IDRetriever
-		haveCode store.CodeRetriever
-		wantErr  error
+		have    store.Retriever
+		wantErr error
 	}{
-		{nil, store.Code("nilSlices"), store.ErrStoreNotFound},
-		{store.ID(2), nil, store.ErrStoreNotFound},
-		{nil, nil, store.ErrCurrentStoreNotSet},
+		{store.Code("nilSlices"), store.ErrStoreNotFound},
+		{store.ID(2), store.ErrStoreNotFound},
+		{nil, store.ErrCurrentStoreNotSet},
 	}
 
 	managerEmpty := getTestManager()
 	for _, test := range tests {
-		s, err := managerEmpty.Store(test.haveID, test.haveCode)
+		s, err := managerEmpty.Store(test.have)
 		assert.Nil(t, s)
 		assert.EqualError(t, test.wantErr, err.Error())
 	}
@@ -113,8 +112,20 @@ func BenchmarkManagerGetStore(b *testing.B) {
 }
 
 /*
-	MOCK STORAGE
+	MOCKS
 */
+
+type mockIDCode struct {
+	id   int64
+	code string
+}
+
+func (ic mockIDCode) ID() int64 {
+	return ic.id
+}
+func (ic mockIDCode) Code() string {
+	return ic.code
+}
 
 type mockStorage struct {
 	w   func() (*store.Website, error)
@@ -128,7 +139,7 @@ type mockStorage struct {
 
 var _ store.Storager = (*mockStorage)(nil)
 
-func (ms *mockStorage) Website(id store.IDRetriever, c store.CodeRetriever) (*store.Website, error) {
+func (ms *mockStorage) Website(_ store.Retriever) (*store.Website, error) {
 	if ms.w == nil {
 		return nil, store.ErrWebsiteNotFound
 	}
@@ -140,7 +151,7 @@ func (ms *mockStorage) Websites() (store.WebsiteSlice, error) {
 	}
 	return ms.ws()
 }
-func (ms *mockStorage) Group(id store.IDRetriever) (*store.Group, error) {
+func (ms *mockStorage) Group(_ store.Retriever) (*store.Group, error) {
 	if ms.g == nil {
 		return nil, store.ErrGroupNotFound
 	}
@@ -152,7 +163,7 @@ func (ms *mockStorage) Groups() (store.GroupSlice, error) {
 	}
 	return ms.gs()
 }
-func (ms *mockStorage) Store(id store.IDRetriever, c store.CodeRetriever) (*store.Store, error) {
+func (ms *mockStorage) Store(_ store.Retriever) (*store.Store, error) {
 	if ms.s == nil {
 		return nil, store.ErrStoreNotFound
 	}

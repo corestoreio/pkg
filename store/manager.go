@@ -59,8 +59,8 @@ var (
 	ErrUnsupportedScopeID         = errors.New("Unsupported scope id")
 	ErrCurrentStoreNotSet         = errors.New("Current Store is not initialized")
 	ErrManagerMutatorNotAvailable = errors.New("Storage Mutator is not implemented")
+	ErrHashRetrieverNil           = errors.New("Hash argument is nil")
 )
-var _ Storager = (*Manager)(nil)
 
 // NewManager creates a new store manager which handles websites, store groups and stores.
 func NewManager(s Storager) *Manager {
@@ -130,18 +130,21 @@ func (sm *Manager) HasSingleStore() bool {
 	return false
 }
 
-// Website returns the cached website. Arguments can be nil.
-// If both arguments are not nil then the first one will be taken.
-// If both arguments are nil then it returns the website of the current store view.
+// Website returns the cached Website pointer from an ID or code including all of its
+// groups and all related stores. It panics when the integrity is incorrect.
+// If ID and code are available then the non-empty code has precedence.
+// If no argument has been supplied then the Website of the internal current store
+// will be returned. If more than one argument has been provided it returns an error.
 func (sm *Manager) Website(r ...Retriever) (*Website, error) {
+	notR := notRetriever(r...)
 	switch {
-	case id == nil && c == nil && sm.currentStore == nil:
+	case notR && sm.currentStore == nil:
 		return nil, ErrCurrentStoreNotSet
-	case id == nil && c == nil && sm.currentStore != nil:
+	case notR && sm.currentStore != nil:
 		return sm.currentStore.Website(), nil
 	}
 
-	key, err := sm.hash(r)
+	key, err := sm.hash(r[0])
 	if err != nil {
 		return nil, err
 	}
@@ -152,12 +155,13 @@ func (sm *Manager) Website(r ...Retriever) (*Website, error) {
 		return w, nil
 	}
 
-	w, err := sm.storage.Website(r)
+	w, err := sm.storage.Website(r[0])
 	sm.websiteMap[key] = w
 	return sm.websiteMap[key], errgo.Mask(err)
 }
 
-// Websites returns a slice of websites
+// Websites returns a cached slice containing all pointers to Websites with its associated
+// groups and stores. It panics when the integrity is incorrect.
 func (sm *Manager) Websites() (WebsiteSlice, error) {
 	if sm.websites != nil {
 		return sm.websites, nil
@@ -167,16 +171,20 @@ func (sm *Manager) Websites() (WebsiteSlice, error) {
 	return sm.websites, err
 }
 
-// Group returns the group bucket
-func (sm *Manager) Group(id Retriever) (*Group, error) {
+// Group returns a cached Group which contains all related stores and its website.
+// Only the argument ID is supported.
+// If no argument has been supplied then the Group of the internal current store
+// will be returned. If more than one argument has been provided it returns an error.
+func (sm *Manager) Group(r ...Retriever) (*Group, error) {
+	notR := notRetriever(r...)
 	switch {
-	case id == nil && sm.currentStore == nil:
+	case notR && sm.currentStore == nil:
 		return nil, ErrCurrentStoreNotSet
-	case id == nil && sm.currentStore != nil:
+	case notR && sm.currentStore != nil:
 		return sm.currentStore.Group(), nil
 	}
 
-	key, err := sm.hash(id, nil)
+	key, err := sm.hash(r[0])
 	if err != nil {
 		return nil, err
 	}
@@ -187,12 +195,13 @@ func (sm *Manager) Group(id Retriever) (*Group, error) {
 		return g, nil
 	}
 
-	g, err := sm.storage.Group(id)
+	g, err := sm.storage.Group(r[0])
 	sm.groupMap[key] = g
 	return sm.groupMap[key], errgo.Mask(err)
 }
 
-// Groups returns a slice of groups
+// Groups returns a cached slice containing all pointers to Groups with its associated
+// stores and websites. It panics when the integrity is incorrect.
 func (sm *Manager) Groups() (GroupSlice, error) {
 	if sm.groups != nil {
 		return sm.groups, nil
@@ -202,18 +211,20 @@ func (sm *Manager) Groups() (GroupSlice, error) {
 	return sm.groups, err
 }
 
-// Store returns the cached store view. Arguments can be nil.
-// If both arguments are not nil then the first one will be taken.
-// If both arguments are nil then it returns the current store view.
+// Store returns the cached Store view containing its group and its website.
+// If ID and code are available then the non-empty code has precedence.
+// If no argument has been supplied then the current store
+// will be returned. If more than one argument has been provided it returns an error.
 func (sm *Manager) Store(r ...Retriever) (*Store, error) {
+	notR := notRetriever(r...)
 	switch {
-	case id == nil && c == nil && sm.currentStore == nil:
+	case notR && sm.currentStore == nil:
 		return nil, ErrCurrentStoreNotSet
-	case id == nil && c == nil && sm.currentStore != nil:
+	case notR && sm.currentStore != nil:
 		return sm.currentStore, nil
 	}
 
-	key, err := sm.hash(r)
+	key, err := sm.hash(r[0])
 	if err != nil {
 		return nil, err
 	}
@@ -224,12 +235,13 @@ func (sm *Manager) Store(r ...Retriever) (*Store, error) {
 		return s, nil
 	}
 
-	s, err := sm.storage.Store(r)
+	s, err := sm.storage.Store(r[0])
 	sm.storeMap[key] = s
 	return sm.storeMap[key], errgo.Mask(err)
 }
 
-// Stores returns a slice of stores.
+// Stores returns a cached Store slice. Can return an error when the website or
+// the group cannot be found.
 func (sm *Manager) Stores() (StoreSlice, error) {
 	if sm.stores != nil {
 		return sm.stores, nil
@@ -260,12 +272,12 @@ func (sm *Manager) ReInit(dbrSess dbr.SessionRunner) error {
 
 // hash generates the key for the map from either an id int64 or a code string.
 // If both arguments are nil it returns 0 which is default for website, group or store.
-func (sm *Manager) hash(r ...Retriever) (uint64, error) {
+func (sm *Manager) hash(r Retriever) (uint64, error) {
 	uz := uint64(0)
-	switch {
-	case id != nil && id.ID() >= 0:
-		return uint64(id.ID()), nil
-	case c != nil && c.Code() != "":
+	if r == nil {
+		return uz, ErrHashRetrieverNil
+	}
+	if c, ok := r.(CodeRetriever); ok && c.Code() != "" {
 		sm.fnv64.Reset()
 		_, err := sm.fnv64.Write([]byte(c.Code()))
 		if err != nil {
@@ -273,7 +285,7 @@ func (sm *Manager) hash(r ...Retriever) (uint64, error) {
 		}
 		return sm.fnv64.Sum64(), nil
 	}
-	return uz, nil
+	return uint64(r.ID()), nil
 }
 
 // ClearCache resets the internal caches which stores the pointers to a Website, Group or Store and
@@ -307,6 +319,12 @@ func (sm *Manager) ClearCache() {
 func (sm *Manager) IsCacheEmpty() bool {
 	return len(sm.websiteMap) == 0 && len(sm.groupMap) == 0 && len(sm.storeMap) == 0 &&
 		sm.websites == nil && sm.groups == nil && sm.stores == nil && sm.defaultStore == nil
+}
+
+// notRetriever checks if variadic Retriever is nil or has more than two entries.
+func notRetriever(r ...Retriever) bool {
+	lr := len(r)
+	return r == nil || (lr == 1 && r[0] == nil) || lr > 1
 }
 
 // loadSlice internal global helper func to execute a SQL select. @todo refactor and remove dependency of GetTableS...

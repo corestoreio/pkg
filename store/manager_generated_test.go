@@ -29,29 +29,29 @@ func TestGeneratedNewManager(t *testing.T) {
 	}
 
 	tests := []struct {
-		haveID   store.IDRetriever
-		haveCode store.CodeRetriever
-		wantErr  error
+		have    store.Retriever
+		wantErr error
 	}{
-		{nil, store.Code("de"), nil},
-		{nil, store.Code("cz"), store.ErrStoreNotFound},
-		{nil, store.Code("de"), nil},
-		{store.ID(1), store.Code("cz"), nil},
-		{store.ID(100), store.Code("cz"), store.ErrStoreNotFound},
-		{store.ID(1), store.Code("cz"), nil},
-		{store.ID(2), nil, nil},
-		{nil, nil, store.ErrCurrentStoreNotSet}, // if set returns default store
+		{store.Code("de"), nil},
+		{store.Code("cz"), store.ErrStoreNotFound},
+		{store.Code("de"), nil},
+		{store.ID(1), nil},
+		{store.ID(100), store.ErrStoreNotFound},
+		{mockIDCode{1, "de"}, nil},
+		{mockIDCode{2, "cz"}, store.ErrStoreNotFound},
+		{mockIDCode{2, ""}, nil},
+		{nil, store.ErrCurrentStoreNotSet}, // if set returns default store
 	}
 
 	for _, test := range tests {
-		s, err := storeManager.Store(test.haveID, test.haveCode)
+		s, err := storeManager.Store(test.have)
 		if test.wantErr == nil {
-			assert.NoError(t, err)
+			assert.NoError(t, err, "For test: %#v", test)
 			assert.NotNil(t, s)
-			assert.NotEmpty(t, s.Data().Code.String, "%#v", s.Data())
+			//			assert.NotEmpty(t, s.Data().Code.String, "%#v", s.Data())
 		} else {
-			assert.Error(t, err)
-			assert.EqualError(t, test.wantErr, err.Error())
+			assert.Error(t, err, "For test: %#v", test)
+			assert.EqualError(t, test.wantErr, err.Error(), "For test: %#v", test)
 			assert.Nil(t, s)
 		}
 	}

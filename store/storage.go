@@ -12,20 +12,37 @@ type (
 	// Storager implements the requirements to get new websites, groups and store views.
 	// This interface is used in the StoreManager
 	Storager interface {
-		Website(...Retriever) (*Website, error)
+		// Website creates a new Website pointer from an ID or code including all of its
+		// groups and all related stores. It panics when the integrity is incorrect.
+		// If ID and code are available then the non-empty code has precedence.
+		Website(Retriever) (*Website, error)
+		// Websites creates a slice containing all pointers to Websites with its associated
+		// groups and stores. It panics when the integrity is incorrect.
 		Websites() (WebsiteSlice, error)
+		// Group creates a new Group which contains all related stores and its website.
+		// Only the argument ID can be used to get a specific Group.
 		Group(Retriever) (*Group, error)
+		// Groups creates a slice containing all pointers to Groups with its associated
+		// stores and websites. It panics when the integrity is incorrect.
 		Groups() (GroupSlice, error)
-		Store(...Retriever) (*Store, error)
+		// Store creates a new Store containing its group and its website.
+		// If ID and code are available then the non-empty code has precedence.
+		Store(Retriever) (*Store, error)
+		// Stores creates a new store slice. Can return an error when the website or
+		// the group cannot be found.
 		Stores() (StoreSlice, error)
+		// DefaultStoreView traverses through the websites to find the default website and gets
+		// the default group which has the default store id assigned to. Only one website can be the default one.
 		DefaultStoreView() (*Store, error)
 	}
 
+	// StorageMutator allows changes to the internal stored slices.
 	StorageMutator interface {
+		// ReInit reloads the websites, groups and stores from the database.
 		ReInit(dbr.SessionRunner) error
 	}
 
-	// Storage private type which holds the slices and maps
+	// Storage contains a mutex and the raw slices from the database.
 	Storage struct {
 		mu       sync.RWMutex
 		websites TableWebsiteSlice
@@ -33,18 +50,19 @@ type (
 		stores   TableStoreSlice
 	}
 
-	// Retriever implements how to get the objects ID. If Retriever implements CodeRetriever
-	// then CodeRetriever has precedence.
+	// Retriever implements how to get the ID. If Retriever implements CodeRetriever
+	// then CodeRetriever has precedence. ID can be any of the website, group or store IDs.
 	Retriever interface {
 		ID() int64
 	}
-	// CodeRetriever implements how to get the objects Code which can be website or store code.
+	// CodeRetriever implements how to get an object by Code which can be website or store code.
+	// Groups doesn't have codes.
 	CodeRetriever interface {
 		Code() string
 	}
-	// ID is convenience helper to satisfy the interface IDRetriever
+	// ID is convenience helper to satisfy the interface IDRetriever.
 	ID int64
-	// Code is convenience helper to satisfy the interface CodeRetriever
+	// Code is convenience helper to satisfy the interface CodeRetriever and IDRetriever.
 	Code string
 )
 
@@ -63,7 +81,6 @@ func (c Code) Code() string { return string(c) }
 
 // NewStorage creates a new storage object from three slice types
 func NewStorage(tws TableWebsiteSlice, tgs TableGroupSlice, tss TableStoreSlice) *Storage {
-	// maybe we can totally remove the maps and just rely on the for loop to find an entity.
 	return &Storage{
 		mu:       sync.RWMutex{},
 		websites: tws,
@@ -72,30 +89,28 @@ func NewStorage(tws TableWebsiteSlice, tgs TableGroupSlice, tss TableStoreSlice)
 	}
 }
 
-// website returns a TableWebsite by using either id or code to find it.
-func (st *Storage) website(r ...Retriever) (*TableWebsite, error) {
-	if r == nil || len(r) > 1 {
+// website returns a TableWebsite by using either id or code to find it. If id and code are
+// available then the non-empty code has precedence.
+func (st *Storage) website(r Retriever) (*TableWebsite, error) {
+	if r == nil {
 		return nil, ErrWebsiteNotFound
 	}
-	if c, ok := r[0].(CodeRetriever); ok && c.Code() != "" {
+	if c, ok := r.(CodeRetriever); ok && c.Code() != "" {
 		return st.websites.FindByCode(c.Code())
 	}
-	return st.websites.FindByID(r[0].ID())
+	return st.websites.FindByID(r.ID())
 }
 
-// Website creates a new Website from an ID or code including all its groups and
-// all related stores. It panics when the integrity is incorrect. If both arguments
-// are set then the first one will take effect.
-func (st *Storage) Website(r ...Retriever) (*Website, error) {
-	w, err := st.website(r...)
+// Website creates a new Website according to the interface definition.
+func (st *Storage) Website(r Retriever) (*Website, error) {
+	w, err := st.website(r)
 	if err != nil {
 		return nil, err
 	}
 	return NewWebsite(w).SetGroupsStores(st.groups, st.stores), nil
 }
 
-// Websites creates a slice contains all websites with its associated groups and stores.
-// It panics when the integrity is incorrect.
+// Websites creates a slice of Website pointers according to the interface definition.
 func (st *Storage) Websites() (WebsiteSlice, error) {
 	websites := make(WebsiteSlice, len(st.websites), len(st.websites))
 	for i, w := range st.websites {
@@ -104,24 +119,24 @@ func (st *Storage) Websites() (WebsiteSlice, error) {
 	return websites, nil
 }
 
-// group returns a TableGroup by using a group id as argument.
-func (st *Storage) group(id Retriever) (*TableGroup, error) {
-	switch {
-	case id != nil:
-		return st.groups.FindByID(id.ID())
-	default:
+// group returns a TableGroup by using a group id as argument. If no argument or more than
+// one has been supplied it returns an error.
+func (st *Storage) group(r Retriever) (*TableGroup, error) {
+	if r == nil {
 		return nil, ErrGroupNotFound
 	}
+	return st.groups.FindByID(r.ID())
 }
 
-// Group creates a new Group which contains all related stores and its website
+// Group creates a new Group which contains all related stores and its website according to the
+// interface definition.
 func (st *Storage) Group(id Retriever) (*Group, error) {
 	g, err := st.group(id)
 	if err != nil {
 		return nil, err
 	}
 
-	w, err := st.website(ID(g.WebsiteID), nil)
+	w, err := st.website(ID(g.WebsiteID))
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +148,7 @@ func (st *Storage) Group(id Retriever) (*Group, error) {
 func (st *Storage) Groups() (GroupSlice, error) {
 	groups := make(GroupSlice, len(st.groups), len(st.groups))
 	for i, g := range st.groups {
-		w, err := st.website(ID(g.WebsiteID), nil)
+		w, err := st.website(ID(g.WebsiteID))
 		if err != nil {
 			return nil, errgo.Mask(err)
 		}
@@ -142,26 +157,26 @@ func (st *Storage) Groups() (GroupSlice, error) {
 	return groups, nil
 }
 
-// store returns a TableStore by an id or code. Only one of the args can be nil.
-func (st *Storage) store(r ...Retriever) (*TableStore, error) {
-	switch {
-	case id != nil:
-		return st.stores.FindByID(id.ID())
-	case c != nil:
-		return st.stores.FindByCode(c.Code())
-	default:
+// store returns a TableStore by an id or code.
+// The non-empty code has precedence if available.
+func (st *Storage) store(r Retriever) (*TableStore, error) {
+	if r == nil {
 		return nil, ErrStoreNotFound
 	}
+	if c, ok := r.(CodeRetriever); ok && c.Code() != "" {
+		return st.stores.FindByCode(c.Code())
+	}
+	return st.stores.FindByID(r.ID())
 }
 
-// Store creates a new Store which contains the current store, its group and website.
-// One of the arguments can be nil.
-func (st *Storage) Store(r ...Retriever) (*Store, error) {
+// Store creates a new Store which contains the the store, its group and website
+// according to the interface definition.
+func (st *Storage) Store(r Retriever) (*Store, error) {
 	s, err := st.store(r)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	w, err := st.website(ID(s.WebsiteID), nil)
+	w, err := st.website(ID(s.WebsiteID))
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
@@ -199,7 +214,7 @@ func (st *Storage) DefaultStoreView() (*Store, error) {
 			if err != nil {
 				return nil, err
 			}
-			return st.Store(ID(g.DefaultStoreID), nil)
+			return st.Store(ID(g.DefaultStoreID))
 		}
 	}
 	return nil, ErrStoreNotFound

@@ -50,21 +50,20 @@ var testStorage = store.NewStorage(
 func TestStorageWebsite(t *testing.T) {
 
 	tests := []struct {
-		id        store.IDRetriever
-		code      store.CodeRetriever
+		have      store.Retriever
 		err       error
 		wantWCode string
 	}{
-		{nil, nil, store.ErrWebsiteNotFound, ""},
-		{store.ID(2015), nil, store.ErrWebsiteNotFound, ""},
-		{store.ID(1), nil, nil, "euro"},
-		{nil, store.Code("asia"), store.ErrWebsiteNotFound, ""},
-		{nil, store.Code("oz"), nil, "oz"},
-		{store.ID(1), store.Code("oz"), nil, "euro"},
-		{store.ID(111), store.Code("oz"), store.ErrWebsiteNotFound, ""},
+		{nil, store.ErrWebsiteNotFound, ""},
+		{store.ID(2015), store.ErrWebsiteNotFound, ""},
+		{store.ID(1), nil, "euro"},
+		{store.Code("asia"), store.ErrWebsiteNotFound, ""},
+		{store.Code("oz"), nil, "oz"},
+		{mockIDCode{1, "oz"}, nil, "euro"},
+		{mockIDCode{111, "oz"}, store.ErrWebsiteNotFound, ""},
 	}
 	for _, test := range tests {
-		w, err := testStorage.Website(test.id, test.code)
+		w, err := testStorage.Website(test.have)
 		if test.err != nil {
 			assert.Nil(t, w)
 			assert.EqualError(t, test.err, err.Error())
@@ -75,7 +74,7 @@ func TestStorageWebsite(t *testing.T) {
 		}
 	}
 
-	w, err := testStorage.Website(nil, store.Code("euro"))
+	w, err := testStorage.Website(store.Code("euro"))
 	assert.NoError(t, err)
 	assert.NotNil(t, w)
 
@@ -100,7 +99,7 @@ var benchmarkStorageWebsiteDefaultGroup *store.Group
 func BenchmarkStorageWebsiteGetDefaultGroup(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStorageWebsite, err = testStorage.Website(nil, store.Code("euro"))
+		benchmarkStorageWebsite, err = testStorage.Website(store.Code("euro"))
 		if err != nil {
 			b.Error(err)
 		}
@@ -152,7 +151,7 @@ func TestWebsiteSliceFilter(t *testing.T) {
 func TestStorageGroup(t *testing.T) {
 
 	tests := []struct {
-		id       store.IDRetriever
+		id       store.Retriever
 		err      error
 		wantName string
 	}{
@@ -261,21 +260,20 @@ func TestStorageGroupNoWebsite(t *testing.T) {
 func TestStorageStore(t *testing.T) {
 
 	tests := []struct {
-		id       store.IDRetriever
-		code     store.CodeRetriever
+		have     store.Retriever
 		err      error
 		wantCode string
 	}{
-		{nil, nil, store.ErrStoreNotFound, ""},
-		{store.ID(2015), nil, store.ErrStoreNotFound, ""},
-		{store.ID(1), nil, nil, "de"},
-		{nil, store.Code("asia"), store.ErrStoreNotFound, ""},
-		{nil, store.Code("nz"), nil, "nz"},
-		{store.ID(4), store.Code("nz"), nil, "uk"},
-		{store.ID(111), store.Code("au"), store.ErrStoreNotFound, ""},
+		{nil, store.ErrStoreNotFound, ""},
+		{store.ID(2015), store.ErrStoreNotFound, ""},
+		{store.ID(1), nil, "de"},
+		{store.Code("asia"), store.ErrStoreNotFound, ""},
+		{store.Code("nz"), nil, "nz"},
+		{mockIDCode{4, "nz"}, nil, "uk"},
+		{mockIDCode{111, "au"}, store.ErrStoreNotFound, ""},
 	}
 	for _, test := range tests {
-		s, err := testStorage.Store(test.id, test.code)
+		s, err := testStorage.Store(test.have)
 		if test.err != nil {
 			assert.Nil(t, s)
 			assert.EqualError(t, test.err, err.Error())
@@ -286,7 +284,7 @@ func TestStorageStore(t *testing.T) {
 		}
 	}
 
-	s, err := testStorage.Store(nil, store.Code("at"))
+	s, err := testStorage.Store(store.Code("at"))
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 
@@ -307,7 +305,7 @@ var benchmarkStorageStoreWebsite *store.Website
 func BenchmarkStorageStoreGetWebsite(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStorageStore, err = testStorage.Store(nil, store.Code("de"))
+		benchmarkStorageStore, err = testStorage.Store(store.Code("de"))
 		if err != nil {
 			b.Error(err)
 		}
@@ -389,7 +387,7 @@ func TestStorageStoreErrors(t *testing.T) {
 			&store.TableStore{StoreID: 6, Code: dbr.NullString{NullString: sql.NullString{String: "nz", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		},
 	)
-	stw, err := nsw.Store(nil, store.Code("nz"))
+	stw, err := nsw.Store(store.Code("nz"))
 	assert.Nil(t, stw)
 	assert.EqualError(t, store.ErrWebsiteNotFound, err.Error())
 
@@ -410,7 +408,7 @@ func TestStorageStoreErrors(t *testing.T) {
 		},
 	)
 
-	stg, err := nsg.Store(nil, store.Code("nz"))
+	stg, err := nsg.Store(store.Code("nz"))
 	assert.Nil(t, stg)
 	assert.EqualError(t, store.ErrGroupNotFound, err.Error())
 
