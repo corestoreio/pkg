@@ -17,6 +17,7 @@ package store
 
 import (
 	"errors"
+	"net/http"
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -94,6 +95,27 @@ func (s *Store) Group() *Group {
 // Data returns the real store data from the database
 func (s *Store) Data() *TableStore {
 	return s.s
+}
+
+// GetCookie @todo
+func (s *Store) GetCookie(req *http.Request) Code {
+	if keks, err := req.Cookie(CookieName); err == nil && keks.Value != "" {
+		return Code(keks.Value)
+	}
+	return Code("")
+}
+
+// SetCookie @todo
+func (s *Store) SetCookie(res http.ResponseWriter) {
+}
+
+// DeleteCookie @todo
+func (s *Store) DeleteCookie(res http.ResponseWriter) {
+	c := http.Cookie{
+		Name:  CookieName,
+		Value: "",
+	}
+	http.SetCookie(res, &c)
 }
 
 /*

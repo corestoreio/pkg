@@ -48,9 +48,12 @@ type (
 		// fnv64 used to calculate the uint64 value of a string, especially website code and store code
 		fnv64 hash.Hash64
 
-		// contains the current selected store from init funcs. Cannot be cleared
+		// currentStore contains the current selected store from init func. Cannot be cleared
+		// when booting the app
+		// @todo you can have per request a different store which overrides the currentStore
 		currentStore *Store
-		// default store cache
+
+		// defaultStore some one must be always default
 		defaultStore *Store
 	}
 )
@@ -58,6 +61,7 @@ type (
 var (
 	ErrUnsupportedScopeID         = errors.New("Unsupported scope id")
 	ErrCurrentStoreNotSet         = errors.New("Current Store is not initialized")
+	ErrCurrentStoreSet            = errors.New("Current Store already initialized")
 	ErrManagerMutatorNotAvailable = errors.New("Storage Mutator is not implemented")
 	ErrHashRetrieverNil           = errors.New("Hash argument is nil")
 )
@@ -78,7 +82,10 @@ func NewManager(s Storager) *Manager {
 // This func is mainly used when booting the app to set the environment configuration
 // Also all other calls to any method receiver with nil arguments depends on the current store.
 // @see \Magento\Store\Model\StorageFactory::_reinitStores
-func (sm *Manager) Init(scopeCode CodeRetriever, scopeType config.ScopeID) error {
+func (sm *Manager) Init(scopeCode Retriever, scopeType config.ScopeID) error {
+	if sm.currentStore != nil {
+		return ErrCurrentStoreSet
+	}
 	var err error
 	switch scopeType {
 	case config.ScopeStore:
@@ -99,25 +106,92 @@ func (sm *Manager) Init(scopeCode CodeRetriever, scopeType config.ScopeID) error
 		sm.currentStore, err = w.DefaultStore()
 		return errgo.Mask(err)
 	default:
-		return nil, ErrUnsupportedScopeID
+		return ErrUnsupportedScopeID
 	}
 }
 
-// Init @see \Magento\Store\Model\StorageFactory::_reinitStores
-func (sm *Manager) InitByRequest(r *http.Request, scopeType config.ScopeID) error {
-	var scopeCode string
-	// 1. check cookie store
-	// 2. check for ___store variable
-	if keks, err := r.Cookie(CookieName); err == nil { // if cookie not present ignore it
-		scopeCode = keks.Value
+// InitByRequest sets the current store via cookie or HTTP request param.
+// The internal current store must be set before hand.
+// scopeType is the same as in Init()
+// 1. check cookie store, always a string and the store code
+// 2. check for ___store variable, always a string and the store code
+// @see \Magento\Store\Model\StorageFactory::_reinitStores
+func (sm *Manager) InitByRequest(req *http.Request, res http.ResponseWriter, scopeType config.ScopeID) error {
+
+	if sm.currentStore == nil {
+		// that means you must call Init() before executing this function.
+		return ErrCurrentStoreNotSet
 	}
-	if gs := r.URL.Query().Get(HTTPRequestParamStore); gs != "" {
-		scopeCode = gs
+
+	if keks := sm.currentStore.GetCookie(req); keks != "" {
+		_ = sm.setRequestStore(keks, scopeType)
 	}
-	_ = scopeCode
-	// @todo
-	// now init currentStore and cache
-	// also delete and re-set a new cookie
+
+	if reqStoreCode := req.URL.Query().Get(HTTPRequestParamStore); reqStoreCode != "" {
+		// @todo reqStoreCode if number ... cast to int64 because then group id if ScopeID is group.
+		if false == sm.setRequestStore(Code(reqStoreCode), scopeType) {
+			return nil
+		}
+		// also delete and re-set a new cookie
+		if sm.currentStore.Data().Code.String == reqStoreCode {
+			wds, err := sm.currentStore.Website().DefaultStore()
+			if err != nil {
+				return errgo.Mask(err)
+			}
+			if wds.Data().Code.String == reqStoreCode {
+				sm.currentStore.DeleteCookie(res) // cookie not needed anymore
+			} else {
+				sm.currentStore.SetCookie(res) // make sure we force set the new store
+				// @todo check httpContext
+			}
+		}
+	}
+	return nil
+}
+
+// setRequestStore is in Magento named setCurrentStore and only used by InitByRequest()
+// Alsp prevents running a store from another website or store group,
+// if website or store group was specified explicitly.
+func (sm *Manager) setRequestStore(r Retriever, scopeType config.ScopeID) bool {
+
+	activeStore := sm.activeStore(r) // this is the active store from Cookie or Request.
+	if activeStore == nil {
+		// store is not active so ignore
+		return false
+	}
+	// only override currentStore if ...
+	allowStoreChange := false
+	switch scopeType {
+	case config.ScopeStore:
+		allowStoreChange = true
+		break
+	case config.ScopeGroup:
+		allowStoreChange = activeStore.Data().GroupID == sm.currentStore.Data().GroupID
+		break
+	case config.ScopeWebsite:
+		allowStoreChange = activeStore.Data().WebsiteID == sm.currentStore.Data().WebsiteID
+		break
+	}
+
+	if allowStoreChange {
+		// @todo architecture BUG!
+		sm.currentStore = activeStore
+	}
+
+	return true
+}
+
+// activeStore returns a new store which is marked as active from a store code or nil
+// no need here to return an error.
+func (sm *Manager) activeStore(r Retriever) *Store {
+	s, err := sm.storage.Store(r)
+	if err != nil {
+		return nil
+	}
+	if s.Data().IsActive {
+		return s
+	}
+	return nil
 }
 
 // IsSingleStoreModeEnabled @todo implement
