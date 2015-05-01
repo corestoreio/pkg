@@ -69,7 +69,9 @@ func TestNewManagerStore(t *testing.T) {
 		assert.EqualError(t, test.wantErr, err.Error())
 	}
 	assert.True(t, managerStoreSimpleTest.IsCacheEmpty())
+}
 
+func TestNewManagerDefaultStoreView(t *testing.T) {
 	managerDefaultStore := getTestManager(func(ms *mockStorage) {
 		ms.dsv = func() (*store.Store, error) {
 			return store.NewStore(

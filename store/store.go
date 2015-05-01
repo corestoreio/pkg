@@ -18,6 +18,7 @@ package store
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -97,25 +98,48 @@ func (s *Store) Data() *TableStore {
 	return s.s
 }
 
-// GetCookie @todo
-func (s *Store) GetCookie(req *http.Request) Code {
+// Path returns the path from the URL or config where CoreStore is installed @todo
+func (s *Store) Path() string {
+	return "/"
+}
+
+// BaseUrl returns the path from the URL or config where CoreStore is installed @todo
+// @see app/code/Magento/Store/Model/Store.php::getBaseUrl
+func (s *Store) BaseUrl() string {
+	return ""
+}
+
+// newCookie creates a new cookie for internal use
+func (s *Store) newCookie() *http.Cookie {
+	return &http.Cookie{
+		Name:     CookieName,
+		Path:     s.Path(),
+		Domain:   s.BaseUrl(),
+		Secure:   true,
+		HttpOnly: true,
+	}
+}
+
+// GetCookie returns from a Request the value of the store cookie or nil.
+func (s *Store) GetCookie(req *http.Request) Retriever {
 	if keks, err := req.Cookie(CookieName); err == nil && keks.Value != "" {
+		// if you know the meaning of keks tweet it to me :-)
 		return Code(keks.Value)
 	}
-	return Code("")
+	return nil
 }
 
 // SetCookie @todo
 func (s *Store) SetCookie(res http.ResponseWriter) {
 }
 
-// DeleteCookie @todo
+// DeleteCookie deletes the store cookie @todo tests
 func (s *Store) DeleteCookie(res http.ResponseWriter) {
-	c := http.Cookie{
-		Name:  CookieName,
-		Value: "",
-	}
-	http.SetCookie(res, &c)
+	expire := time.Now().AddDate(-10, 0, 0)
+	keks := s.newCookie()
+	keks.Expires = expire
+	keks.Value = "" // just in case ;-)
+	http.SetCookie(res, keks)
 }
 
 /*

@@ -60,6 +60,7 @@ type (
 
 var (
 	ErrUnsupportedScopeID         = errors.New("Unsupported scope id")
+	ErrStoreChangeNotAllowed      = errors.New("Store change not allowed")
 	ErrCurrentStoreNotSet         = errors.New("Current Store is not initialized")
 	ErrCurrentStoreSet            = errors.New("Current Store already initialized")
 	ErrManagerMutatorNotAvailable = errors.New("Storage Mutator is not implemented")
@@ -115,21 +116,22 @@ func (sm *Manager) Init(scopeCode Retriever, scopeType config.ScopeID) error {
 // scopeType is the same as in Init()
 // 1. check cookie store, always a string and the store code
 // 2. check for ___store variable, always a string and the store code
+// This function must be used within an HTTP handler.
 // @see \Magento\Store\Model\StorageFactory::_reinitStores
-func (sm *Manager) InitByRequest(req *http.Request, res http.ResponseWriter, scopeType config.ScopeID) error {
-
+func (sm *Manager) InitByRequest(scopeType config.ScopeID, res http.ResponseWriter, req *http.Request) (*Store, error) {
+	var s *Store
 	if sm.currentStore == nil {
 		// that means you must call Init() before executing this function.
-		return ErrCurrentStoreNotSet
+		return nil, ErrCurrentStoreNotSet
 	}
 
-	if keks := sm.currentStore.GetCookie(req); keks != "" {
-		_ = sm.setRequestStore(keks, scopeType)
+	if keks := sm.currentStore.GetCookie(req); keks != nil {
+		s, _ := sm.GetRequestStore(keks, scopeType) // ignore errors
 	}
 
 	if reqStoreCode := req.URL.Query().Get(HTTPRequestParamStore); reqStoreCode != "" {
 		// @todo reqStoreCode if number ... cast to int64 because then group id if ScopeID is group.
-		if false == sm.setRequestStore(Code(reqStoreCode), scopeType) {
+		if false == sm.GetRequestStore(Code(reqStoreCode), scopeType) {
 			return nil
 		}
 		// also delete and re-set a new cookie
@@ -149,17 +151,19 @@ func (sm *Manager) InitByRequest(req *http.Request, res http.ResponseWriter, sco
 	return nil
 }
 
-// setRequestStore is in Magento named setCurrentStore and only used by InitByRequest()
-// Alsp prevents running a store from another website or store group,
+// getRequestStore is in Magento named setCurrentStore and only used by InitByRequest()
+// Also prevents running a store from another website or store group,
 // if website or store group was specified explicitly.
-func (sm *Manager) setRequestStore(r Retriever, scopeType config.ScopeID) bool {
+// It returns either an error or the new Store.
+// This function must be used within an RPC handler.
+func (sm *Manager) GetRequestStore(r Retriever, scopeType config.ScopeID) (*Store, error) {
 
 	activeStore := sm.activeStore(r) // this is the active store from Cookie or Request.
 	if activeStore == nil {
 		// store is not active so ignore
-		return false
+		return nil, ErrStoreNotFound
 	}
-	// only override currentStore if ...
+
 	allowStoreChange := false
 	switch scopeType {
 	case config.ScopeStore:
@@ -174,11 +178,9 @@ func (sm *Manager) setRequestStore(r Retriever, scopeType config.ScopeID) bool {
 	}
 
 	if allowStoreChange {
-		// @todo architecture BUG!
-		sm.currentStore = activeStore
+		return activeStore, nil
 	}
-
-	return true
+	return nil, ErrStoreChangeNotAllowed
 }
 
 // activeStore returns a new store which is marked as active from a store code or nil

@@ -23,7 +23,7 @@ import (
 
 var storeManager *store.Manager
 
-func TestGeneratedNewManager(t *testing.T) {
+func TestGeneratedNewManagerStore(t *testing.T) {
 	if storeManager == nil {
 		t.Skip("storeManager variable is nil. Integration test skipped")
 	}
