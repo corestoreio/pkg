@@ -30,32 +30,54 @@ const (
 	ScopeWebsite
 	ScopeGroup
 	ScopeStore
+
+	// PS defines the path separator for the configuration path
+	PS = "/"
 )
 
 type (
 	// ScopeID used in constants where default is the lowest and store the highest
 	ScopeID int
 
-	// ScopePool reads from consul or etcd
-	ScopePool interface {
+	// DefaultMap contains the default aka global configuration of a package
+	DefaultMap map[string]interface{}
+
+	// Retriever implements how to get the ID. If Retriever implements CodeRetriever
+	// then CodeRetriever has precedence. ID can be any of the website, group or store IDs.
+	// Duplicated to avoid import cycles. @todo refactor
+	Retriever interface {
+		ID() int64
 	}
 
 	ScopeReader interface {
 		// GetString retrieves a config value by path and scope
-		ReadString(path string, scope ScopeID, scopeCode string /*null*/) string
+		ReadString(path string, scope ScopeID, r ...Retriever) string
 
 		// IsSetFlag retrieves a config flag by path and scope
-		IsSetFlag(path string, scope ScopeID, scopeCode string) bool
+		IsSetFlag(path string, scope ScopeID, r ...Retriever) bool
 	}
 
 	ScopeWriter interface {
 		// SetString sets config value in the corresponding config scope
-		WriteString(path, value string, scope ScopeID, scopeCode string /*null*/)
+		WriteString(path, value string, scope ScopeID, r ...Retriever)
+	}
+
+	Scope struct {
+		Config *viper.Viper
 	}
 )
 
-var (
-	cfgDefault = viper.New()
-	cfgwebsite = viper.New()
-	cfgStore   = viper.New()
-)
+func NewScope() *Scope {
+	return &Scope{
+		Config: viper.New(),
+	}
+}
+
+// ApplyDefaults reads the map and applies the keys and values to the default configuration
+func (sp *Scope) ApplyDefaults(m DefaultMap) *Scope {
+	// mutex necessary?
+	for k, v := range m {
+		sp.Config.SetDefault(DataScopeDefault+PS+k, v)
+	}
+	return sp
+}
