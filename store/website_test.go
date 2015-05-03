@@ -35,6 +35,10 @@ func TestNewWebsite(t *testing.T) {
 	assert.Nil(t, dg)
 	assert.EqualError(t, store.ErrWebsiteDefaultGroupNotFound, err.Error())
 
+	ds, err := w.DefaultStore()
+	assert.Nil(t, ds)
+	assert.EqualError(t, store.ErrWebsiteDefaultGroupNotFound, err.Error())
+
 	stores, err := w.Stores()
 	assert.Nil(t, stores)
 	assert.EqualError(t, store.ErrWebsiteStoresNotAvailable, err.Error())
@@ -69,6 +73,11 @@ func TestNewWebsiteSetGroupsStores(t *testing.T) {
 	dg, err := w.DefaultGroup()
 	assert.NotNil(t, dg)
 	assert.EqualValues(t, "DACH Group", dg.Data().Name, "get default group: %#v", dg)
+	assert.NoError(t, err)
+
+	ds, err := w.DefaultStore()
+	assert.NotNil(t, ds)
+	assert.EqualValues(t, "at", ds.Data().Code.String, "get default store: %#v", ds)
 	assert.NoError(t, err)
 
 	dgStores, err := dg.Stores()

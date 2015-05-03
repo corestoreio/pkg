@@ -40,7 +40,7 @@ func TestGeneratedNewManagerStore(t *testing.T) {
 		{mockIDCode{1, "de"}, nil},
 		{mockIDCode{2, "cz"}, store.ErrStoreNotFound},
 		{mockIDCode{2, ""}, nil},
-		{nil, store.ErrCurrentStoreNotSet}, // if set returns default store
+		{nil, store.ErrAppStoreNotSet}, // if set returns default store
 	}
 
 	for _, test := range tests {

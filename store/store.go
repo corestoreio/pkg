@@ -34,6 +34,9 @@ const (
 	// This cookie permanently saves the new selected store code for one year.
 	// The cookie must be removed when the default store of the current website if equal to the current store.
 	CookieName = `store`
+
+	PriceScopeGlobal  = 0
+	PriceScopeWebsite = 1
 )
 
 type (
@@ -83,6 +86,11 @@ func NewStore(w *TableWebsite, g *TableGroup, s *TableStore) *Store {
 	@todo implement Magento\Store\Model\Store
 */
 
+// ID satisfies the interface Retriever and mainly used in the StoreManager for selecting Website,Group ...
+func (s *Store) ID() int64 {
+	return s.s.StoreID
+}
+
 // Website returns the website associated to this store
 func (s *Store) Website() *Website {
 	return s.w
@@ -113,6 +121,7 @@ func (s *Store) BaseUrl() string {
 func (s *Store) newCookie() *http.Cookie {
 	return &http.Cookie{
 		Name:     CookieName,
+		Value:    "",
 		Path:     s.Path(),
 		Domain:   s.BaseUrl(),
 		Secure:   true,
@@ -138,7 +147,6 @@ func (s *Store) DeleteCookie(res http.ResponseWriter) {
 	expire := time.Now().AddDate(-10, 0, 0)
 	keks := s.newCookie()
 	keks.Expires = expire
-	keks.Value = "" // just in case ;-)
 	http.SetCookie(res, keks)
 }
 
@@ -186,6 +194,14 @@ func (s StoreSlice) IDs() utils.Int64Slice {
 		}
 	}
 	return ids
+}
+
+// LastItem returns the last item of this slice or nil
+func (s StoreSlice) LastItem() *Store {
+	if s.Len() > 0 {
+		return s[s.Len()-1]
+	}
+	return nil
 }
 
 /*

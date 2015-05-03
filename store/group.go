@@ -47,14 +47,14 @@ type (
 
 var (
 	// ErrGroupNotFound when the group has not been found.
-	ErrGroupNotFound = errors.New("Store Group not found")
+	ErrGroupNotFound = errors.New("Group not found")
 	// ErrGroupStoresNotAvailable not really an error but more an info when the stores has not been set
 	// this usually occurs when the group has been set on a website or a store.
-	ErrGroupStoresNotAvailable = errors.New("Store Group stores not available")
+	ErrGroupStoresNotAvailable = errors.New("Group stores not available")
 	// ErrGroupDefaultStoreNotFound default store cannot be found.
 	ErrGroupDefaultStoreNotFound = errors.New("Group default store not found")
 	// ErrGroupWebsiteNotFound the Website struct is nil so we cannot assign the stores to a group.
-	ErrGroupWebsiteNotFound = errors.New("Group: Website not found or nil or ID do not match")
+	ErrGroupWebsiteNotFound = errors.New("Group Website not found or nil or ID do not match")
 )
 
 // NewGroup returns a new pointer to a Group. Second argument can be nil.
