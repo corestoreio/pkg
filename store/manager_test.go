@@ -16,6 +16,7 @@ package store_test
 
 import (
 	"database/sql"
+	"net/http"
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
@@ -622,6 +623,26 @@ func TestNewManagerGetRequestStore_ScopeWebsite(t *testing.T) {
 		{store.Code("ch"), "", store.ErrStoreNotFound},
 	}
 	runNewManagerGetRequestStore(t, testScope, tests)
+}
+
+func TestInitByRequest_Group(t *testing.T) {
+	testCode := store.ID(1)
+	testScope := config.ScopeGroup
+	if err := storeManagerRequestStore.Init(testCode, testScope); err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+
+	tests := []struct {
+		res           http.ResponseWriter
+		req           *http.Request
+		wantStoreCode string
+		wantErr       error
+	}{}
+
+	for _, test := range tests {
+		haveStore, haveErr := storeManagerRequestStore.InitByRequest(test.res, test.req, testScope)
+	}
 }
 
 /*

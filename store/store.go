@@ -131,6 +131,9 @@ func (s *Store) newCookie() *http.Cookie {
 
 // GetCookie returns from a Request the value of the store cookie or nil.
 func (s *Store) GetCookie(req *http.Request) Retriever {
+	if req == nil {
+		return nil
+	}
 	if keks, err := req.Cookie(CookieName); err == nil && keks.Value != "" {
 		// if you know the meaning of keks tweet it to me :-)
 		return Code(keks.Value)
@@ -140,14 +143,19 @@ func (s *Store) GetCookie(req *http.Request) Retriever {
 
 // SetCookie @todo
 func (s *Store) SetCookie(res http.ResponseWriter) {
+	if res != nil {
+
+	}
 }
 
 // DeleteCookie deletes the store cookie @todo tests
 func (s *Store) DeleteCookie(res http.ResponseWriter) {
-	expire := time.Now().AddDate(-10, 0, 0)
-	keks := s.newCookie()
-	keks.Expires = expire
-	http.SetCookie(res, keks)
+	if res != nil {
+		expire := time.Now().AddDate(-10, 0, 0)
+		keks := s.newCookie()
+		keks.Expires = expire
+		http.SetCookie(res, keks)
+	}
 }
 
 /*
