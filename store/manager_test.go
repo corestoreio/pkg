@@ -450,36 +450,20 @@ var storeManagerRequestStore = store.NewManager(
 			&store.TableStore{StoreID: 4, Code: dbr.NullString{NullString: sql.NullString{String: "uk", Valid: true}}, WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
 			&store.TableStore{StoreID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "at", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
 			&store.TableStore{StoreID: 6, Code: dbr.NullString{NullString: sql.NullString{String: "nz", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
-			&store.TableStore{StoreID: 3, Code: dbr.NullString{NullString: sql.NullString{String: "ch", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: false},
+			&store.TableStore{IsActive: false, StoreID: 3, Code: dbr.NullString{NullString: sql.NullString{String: "ch", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30},
 		},
 	),
 )
 
-func TestGeneratedNewManagerGetRequestStore(t *testing.T) {
-	t.Log("\n\n@todo\n\n")
-	tests := []struct {
-		haveR         store.Retriever
-		HaveScopeType config.ScopeID
-		wantStoreCode string
-		wantErr       error
-	}{
-		{store.ID(232), config.ScopeDefault, "", store.ErrStoreNotFound},
-		{nil, config.ScopeDefault, "", store.ErrStoreNotFound},
-		{store.Code("Rust"), config.ScopeDefault, "", store.ErrStoreNotFound},
+type testNewManagerGetRequestStore struct {
+	haveR         store.Retriever
+	wantStoreCode string
+	wantErr       error
+}
 
-		{store.ID(6), config.ScopeDefault, "", store.ErrStoreChangeNotAllowed},
-		{store.Code("ch"), config.ScopeDefault, "", store.ErrStoreNotFound}, // not active
-
-		//		{store.Code("ch"), config.ScopeStore, "ch", nil},
-		//		{store.Code("de"), config.ScopeGroup, "de", nil},
-	}
-	err := storeManagerRequestStore.Init(store.Code("de"), config.ScopeStore)
-	if err != nil {
-		t.Error(err)
-		t.Fail()
-	}
+func runNewManagerGetRequestStore(t *testing.T, testScope config.ScopeID, tests []testNewManagerGetRequestStore) {
 	for _, test := range tests {
-		haveStore, haveErr := storeManagerRequestStore.GetRequestStore(test.haveR, test.HaveScopeType)
+		haveStore, haveErr := storeManagerRequestStore.GetRequestStore(test.haveR, testScope)
 		if test.wantErr != nil {
 			assert.Nil(t, haveStore, "%#v", test)
 			assert.EqualError(t, test.wantErr, haveErr.Error(), "%#v", test)
@@ -489,6 +473,155 @@ func TestGeneratedNewManagerGetRequestStore(t *testing.T) {
 			assert.EqualValues(t, test.wantStoreCode, haveStore.Data().Code.String)
 		}
 	}
+	storeManagerRequestStore.ClearCache(true)
+}
+func TestNewManagerGetRequestStore_ScopeStore(t *testing.T) {
+
+	testCode := store.Code("de")
+	testScope := config.ScopeStore
+
+	if haveStore, haveErr := storeManagerRequestStore.GetRequestStore(store.ID(1), testScope); haveErr == nil {
+		t.Error("appStore should not be set!")
+		t.Fail()
+	} else {
+		assert.Nil(t, haveStore)
+		assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
+	}
+
+	// init with scope store
+	if err := storeManagerRequestStore.Init(testCode, testScope); err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+	assert.EqualError(t, store.ErrAppStoreSet, storeManagerRequestStore.Init(testCode, testScope).Error())
+
+	if s, err := storeManagerRequestStore.Store(); err == nil {
+		assert.EqualValues(t, "de", s.Data().Code.String)
+	} else {
+		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+		t.Fail()
+	}
+
+	tests := []testNewManagerGetRequestStore{
+		{store.ID(232), "", store.ErrStoreNotFound},
+		{nil, "", store.ErrStoreNotFound},
+		{store.Code("\U0001f631"), "", store.ErrStoreNotFound},
+
+		{store.ID(6), "nz", nil},
+		{store.Code("ch"), "", store.ErrStoreNotFound},
+
+		{store.Code("nz"), "nz", nil},
+		{store.Code("de"), "de", nil},
+		{store.ID(2), "at", nil},
+
+		{store.ID(2), "at", nil},
+		{store.Code("au"), "au", nil},
+		{store.Code("ch"), "", store.ErrStoreNotFound},
+	}
+	runNewManagerGetRequestStore(t, testScope, tests)
+}
+
+func TestNewManagerGetRequestStore_ScopeGroup(t *testing.T) {
+	testCode := store.ID(1)
+	testScope := config.ScopeGroup
+
+	if haveStore, haveErr := storeManagerRequestStore.GetRequestStore(store.ID(1), testScope); haveErr == nil {
+		t.Error("appStore should not be set!")
+		t.Fail()
+	} else {
+		assert.Nil(t, haveStore)
+		assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
+	}
+
+	assert.EqualError(t, store.ErrGroupNotFound, storeManagerRequestStore.Init(store.ID(123), testScope).Error())
+	if err := storeManagerRequestStore.Init(testCode, testScope); err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+	assert.EqualError(t, store.ErrAppStoreSet, storeManagerRequestStore.Init(testCode, testScope).Error())
+
+	if s, err := storeManagerRequestStore.Store(); err == nil {
+		assert.EqualValues(t, "at", s.Data().Code.String)
+	} else {
+		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+		t.Fail()
+	}
+
+	if g, err := storeManagerRequestStore.Group(); err == nil {
+		assert.EqualValues(t, 1, g.Data().GroupID)
+	} else {
+		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+		t.Fail()
+	}
+
+	tests := []testNewManagerGetRequestStore{
+		{store.ID(232), "", store.ErrStoreNotFound},
+		{nil, "", store.ErrStoreNotFound},
+		{store.Code("\U0001f631"), "", store.ErrStoreNotFound},
+
+		{store.ID(6), "nz", store.ErrStoreChangeNotAllowed},
+		{store.Code("ch"), "", store.ErrStoreNotFound},
+
+		{store.Code("de"), "de", nil},
+		{store.ID(2), "at", nil},
+
+		{store.ID(2), "at", nil},
+		{store.Code("au"), "au", store.ErrStoreChangeNotAllowed},
+		{store.Code("ch"), "", store.ErrStoreNotFound},
+	}
+	runNewManagerGetRequestStore(t, testScope, tests)
+}
+
+func TestNewManagerGetRequestStore_ScopeWebsite(t *testing.T) {
+	testCode := store.ID(1)
+	testScope := config.ScopeWebsite
+
+	if haveStore, haveErr := storeManagerRequestStore.GetRequestStore(store.ID(1), testScope); haveErr == nil {
+		t.Error("appStore should not be set!")
+		t.Fail()
+	} else {
+		assert.Nil(t, haveStore)
+		assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
+	}
+
+	assert.EqualError(t, store.ErrUnsupportedScopeID, storeManagerRequestStore.Init(store.ID(123), config.ScopeDefault).Error())
+	assert.EqualError(t, store.ErrWebsiteNotFound, storeManagerRequestStore.Init(store.ID(123), testScope).Error())
+	if err := storeManagerRequestStore.Init(testCode, testScope); err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+	assert.EqualError(t, store.ErrAppStoreSet, storeManagerRequestStore.Init(testCode, testScope).Error())
+
+	if s, err := storeManagerRequestStore.Store(); err == nil {
+		assert.EqualValues(t, "at", s.Data().Code.String)
+	} else {
+		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+		t.Fail()
+	}
+
+	if w, err := storeManagerRequestStore.Website(); err == nil {
+		assert.EqualValues(t, "euro", w.Data().Code.String)
+	} else {
+		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+		t.Fail()
+	}
+
+	tests := []testNewManagerGetRequestStore{
+		{store.ID(232), "", store.ErrStoreNotFound},
+		{nil, "", store.ErrStoreNotFound},
+		{store.Code("\U0001f631"), "", store.ErrStoreNotFound},
+
+		{store.ID(6), "nz", store.ErrStoreChangeNotAllowed},
+		{store.Code("ch"), "", store.ErrStoreNotFound},
+
+		{store.Code("de"), "de", nil},
+		{store.ID(2), "at", nil},
+
+		{store.ID(2), "at", nil},
+		{store.Code("au"), "au", store.ErrStoreChangeNotAllowed},
+		{store.Code("ch"), "", store.ErrStoreNotFound},
+	}
+	runNewManagerGetRequestStore(t, testScope, tests)
 }
 
 /*

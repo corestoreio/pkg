@@ -385,7 +385,8 @@ func (sm *Manager) hash(r Retriever) (uint64, error) {
 
 // ClearCache resets the internal caches which stores the pointers to a Website, Group or Store and
 // all related slices. Please use with caution. ReInit() also uses this method.
-func (sm *Manager) ClearCache() {
+// Providing argument true clears also the internal appStore cache.
+func (sm *Manager) ClearCache(clearAll ...bool) {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 	if len(sm.websiteMap) > 0 {
@@ -408,6 +409,9 @@ func (sm *Manager) ClearCache() {
 	sm.stores = nil
 	sm.defaultStore = nil
 	// do not clear currentStore as this one depends on the init funcs
+	if 1 == len(clearAll) && clearAll[0] {
+		sm.appStore = nil
+	}
 }
 
 // IsCacheEmpty returns true if the internal cache is empty.
