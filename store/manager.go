@@ -153,13 +153,18 @@ func (sm *Manager) InitByRequest(res http.ResponseWriter, req *http.Request, sco
 	return reqStore, nil // can be nil,nil
 }
 
-// GetRequestStore is in Magento named setCurrentStore and only used by InitByRequest()
+// GetRequestStore is in Magento named setCurrentStore and only used by InitByRequest().
+// First argument is the store ID or store code, 2nd arg the scope from the init process.
 // Also prevents running a store from another website or store group,
 // if website or store group was specified explicitly.
 // It returns either an error or the new Store. The returning errors can get ignored because if
 // a Store Code is invalid the parent calling function must fall back to the appStore.
 // This function must be used within an RPC handler.
 func (sm *Manager) GetRequestStore(r Retriever, scopeType config.ScopeID) (*Store, error) {
+	if sm.appStore == nil {
+		// that means you must call Init() before executing this function.
+		return nil, ErrAppStoreNotSet
+	}
 
 	activeStore := sm.activeStore(r) // this is the active store from Cookie or Request.
 	if activeStore == nil {

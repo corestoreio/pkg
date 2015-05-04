@@ -116,6 +116,8 @@ func TestNewManagerStoreInit(t *testing.T) {
 	}{
 		{tms, store.ID(1), nil},
 		{tms, store.ID(1), store.ErrAppStoreSet},
+		{tms, nil, store.ErrAppStoreSet},
+		{tms, nil, store.ErrAppStoreSet},
 	}
 
 	for _, test := range tests {
@@ -126,6 +128,9 @@ func TestNewManagerStoreInit(t *testing.T) {
 		} else {
 			assert.NoError(t, haveErr)
 		}
+		s, err := test.haveManager.Store()
+		assert.NotNil(t, s)
+		assert.NoError(t, err)
 	}
 }
 
@@ -237,7 +242,6 @@ func TestNewManagerGroup(t *testing.T) {
 	assert.False(t, managerGroupSimpleTest.IsCacheEmpty())
 	managerGroupSimpleTest.ClearCache()
 	assert.True(t, managerGroupSimpleTest.IsCacheEmpty())
-
 }
 
 func TestNewManagerGroupInit(t *testing.T) {
@@ -294,7 +298,197 @@ func TestNewManagerGroups(t *testing.T) {
 	assert.False(t, managerGroups.IsCacheEmpty())
 	managerGroups.ClearCache()
 	assert.True(t, managerGroups.IsCacheEmpty())
+}
 
+func TestNewManagerWebsite(t *testing.T) {
+
+	var managerWebsite = getTestManager(func(ms *mockStorage) {
+		ms.w = func() (*store.Website, error) {
+			return store.NewWebsite(
+				&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
+			), nil
+		}
+	})
+
+	tests := []struct {
+		m               *store.Manager
+		have            store.Retriever
+		wantErr         error
+		wantWebsiteCode string
+	}{
+		{managerWebsite, nil, store.ErrAppStoreNotSet, ""},
+		{getTestManager(), store.ID(20), store.ErrGroupNotFound, ""},
+		{managerWebsite, store.ID(1), nil, "euro"},
+		{managerWebsite, store.ID(1), nil, "euro"},
+		{managerWebsite, store.Code("notImportant"), nil, "euro"},
+		{managerWebsite, store.Code("notImportant"), nil, "euro"},
+	}
+
+	for _, test := range tests {
+		haveW, haveErr := test.m.Website(test.have)
+		if test.wantErr != nil {
+			assert.Error(t, haveErr, "%#v", test)
+			assert.Nil(t, haveW, "%#v", test)
+		} else {
+			assert.NoError(t, haveErr, "%#v", test)
+			assert.NotNil(t, haveW, "%#v", test)
+			assert.Equal(t, test.wantWebsiteCode, haveW.Data().Code.String)
+		}
+	}
+	assert.False(t, managerWebsite.IsCacheEmpty())
+	managerWebsite.ClearCache()
+	assert.True(t, managerWebsite.IsCacheEmpty())
+
+}
+
+func TestNewManagerWebsites(t *testing.T) {
+	managerWebsites := getTestManager(func(ms *mockStorage) {
+		ms.ws = func() (store.WebsiteSlice, error) {
+			return store.WebsiteSlice{}, nil
+		}
+	})
+
+	tests := []struct {
+		m       *store.Manager
+		wantErr error
+		wantNil bool
+	}{
+		{managerWebsites, nil, false},
+		{managerWebsites, nil, false},
+		{getTestManager(func(ms *mockStorage) {
+			ms.ws = func() (store.WebsiteSlice, error) {
+				return nil, nil
+			}
+		}), nil, true},
+	}
+
+	for _, test := range tests {
+		haveWS, haveErr := test.m.Websites()
+		if test.wantErr != nil {
+			assert.Error(t, haveErr, "%#v", test)
+			assert.Nil(t, haveWS, "%#v", test)
+		} else {
+			assert.NoError(t, haveErr, "%#v", test)
+			if test.wantNil {
+				assert.Nil(t, haveWS, "%#v", test)
+			} else {
+				assert.NotNil(t, haveWS, "%#v", test)
+			}
+		}
+	}
+
+	assert.False(t, managerWebsites.IsCacheEmpty())
+	managerWebsites.ClearCache()
+	assert.True(t, managerWebsites.IsCacheEmpty())
+}
+
+func TestNewManagerWebsiteInit(t *testing.T) {
+
+	err := getTestManager(func(ms *mockStorage) {
+		ms.w = func() (*store.Website, error) {
+			return store.NewWebsite(
+				&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
+			), nil
+		}
+	}).Init(store.Code("euro"), config.ScopeWebsite)
+	assert.EqualError(t, store.ErrWebsiteDefaultGroupNotFound, err.Error())
+
+	managerWebsite := getTestManager(func(ms *mockStorage) {
+		ms.w = func() (*store.Website, error) {
+			return store.NewWebsite(
+				&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
+			).SetGroupsStores(
+				store.TableGroupSlice{
+					&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
+				},
+				store.TableStoreSlice{
+					&store.TableStore{StoreID: 0, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
+					&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+					&store.TableStore{StoreID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "at", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
+					&store.TableStore{StoreID: 3, Code: dbr.NullString{NullString: sql.NullString{String: "ch", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
+				},
+			), nil
+		}
+	})
+	w1, err := managerWebsite.Website()
+	assert.EqualError(t, store.ErrAppStoreNotSet, err.Error())
+	assert.Nil(t, w1)
+
+	err = managerWebsite.Init(store.Code("euro"), config.ScopeWebsite)
+	assert.NoError(t, err)
+
+	w2, err := managerWebsite.Website()
+	assert.NoError(t, err)
+	assert.EqualValues(t, "euro", w2.Data().Code.String)
+
+	err3 := getTestManager(func(ms *mockStorage) {}).Init(store.Code("euro"), config.ScopeWebsite)
+	assert.EqualError(t, store.ErrWebsiteNotFound, err3.Error())
+}
+
+func TestNewManagerError(t *testing.T) {
+	err := getTestManager().Init(store.Code("euro"), config.ScopeDefault)
+	assert.EqualError(t, err, store.ErrUnsupportedScopeID.Error())
+}
+
+var storeManagerRequestStore = store.NewManager(
+	store.NewStorage(
+		store.TableWebsiteSlice{
+			&store.TableWebsite{WebsiteID: 0, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
+			&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
+			&store.TableWebsite{WebsiteID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "oz", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "OZ", Valid: true}}, SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
+		},
+		store.TableGroupSlice{
+			&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
+			&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
+			&store.TableGroup{GroupID: 0, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
+			&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
+		},
+		store.TableStoreSlice{
+			&store.TableStore{StoreID: 0, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
+			&store.TableStore{StoreID: 5, Code: dbr.NullString{NullString: sql.NullString{String: "au", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
+			&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+			&store.TableStore{StoreID: 4, Code: dbr.NullString{NullString: sql.NullString{String: "uk", Valid: true}}, WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
+			&store.TableStore{StoreID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "at", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
+			&store.TableStore{StoreID: 6, Code: dbr.NullString{NullString: sql.NullString{String: "nz", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
+			&store.TableStore{StoreID: 3, Code: dbr.NullString{NullString: sql.NullString{String: "ch", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: false},
+		},
+	),
+)
+
+func TestGeneratedNewManagerGetRequestStore(t *testing.T) {
+	t.Log("\n\n@todo\n\n")
+	tests := []struct {
+		haveR         store.Retriever
+		HaveScopeType config.ScopeID
+		wantStoreCode string
+		wantErr       error
+	}{
+		{store.ID(232), config.ScopeDefault, "", store.ErrStoreNotFound},
+		{nil, config.ScopeDefault, "", store.ErrStoreNotFound},
+		{store.Code("Rust"), config.ScopeDefault, "", store.ErrStoreNotFound},
+
+		{store.ID(6), config.ScopeDefault, "", store.ErrStoreChangeNotAllowed},
+		{store.Code("ch"), config.ScopeDefault, "", store.ErrStoreNotFound}, // not active
+
+		//		{store.Code("ch"), config.ScopeStore, "ch", nil},
+		//		{store.Code("de"), config.ScopeGroup, "de", nil},
+	}
+	err := storeManagerRequestStore.Init(store.Code("de"), config.ScopeStore)
+	if err != nil {
+		t.Error(err)
+		t.Fail()
+	}
+	for _, test := range tests {
+		haveStore, haveErr := storeManagerRequestStore.GetRequestStore(test.haveR, test.HaveScopeType)
+		if test.wantErr != nil {
+			assert.Nil(t, haveStore, "%#v", test)
+			assert.EqualError(t, test.wantErr, haveErr.Error(), "%#v", test)
+		} else {
+			assert.NotNil(t, haveStore)
+			assert.NoError(t, haveErr, "%#v", test)
+			assert.EqualValues(t, test.wantStoreCode, haveStore.Data().Code.String)
+		}
+	}
 }
 
 /*

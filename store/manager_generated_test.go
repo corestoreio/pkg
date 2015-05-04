@@ -58,5 +58,4 @@ func TestGeneratedNewManagerStore(t *testing.T) {
 	assert.False(t, storeManager.IsCacheEmpty())
 	storeManager.ClearCache()
 	assert.True(t, storeManager.IsCacheEmpty())
-
 }
