@@ -55,6 +55,7 @@ type (
 
 var (
 	ErrStoreNotFound         = errors.New("Store not found")
+	ErrStoreNotActive        = errors.New("Store not active")
 	ErrStoreNewArgNil        = errors.New("An argument cannot be nil")
 	ErrStoreIncorrectGroup   = errors.New("Incorrect group")
 	ErrStoreIncorrectWebsite = errors.New("Incorrect website")

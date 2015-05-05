@@ -91,25 +91,23 @@ func (sm *Manager) Init(scopeCode Retriever, scopeType config.ScopeID) error {
 	var err error
 	switch scopeType {
 	case config.ScopeStore:
-		sm.appStore, err = sm.Store(scopeCode)
-		return errgo.Mask(err)
+		sm.appStore, err = sm.Store(scopeCode) // @todo same like ActiveStore()
 	case config.ScopeGroup:
-		g, err := sm.Group(scopeCode) // this is the group_id
-		if err != nil {
-			return errgo.Mask(err)
+		if g, err2 := sm.Group(scopeCode); err2 != nil { // this is the group_id
+			return errgo.Mask(err2)
+		} else { // else needed because of scoping of g
+			sm.appStore, err = g.DefaultStore() // @todo same like ActiveStore()
 		}
-		sm.appStore, err = g.DefaultStore()
-		return errgo.Mask(err)
 	case config.ScopeWebsite:
-		w, err := sm.Website(scopeCode)
-		if err != nil {
+		if w, err2 := sm.Website(scopeCode); err2 != nil {
 			return errgo.Mask(err)
+		} else { // else needed because of scoping of w
+			sm.appStore, err = w.DefaultStore() // @todo same like ActiveStore()
 		}
-		sm.appStore, err = w.DefaultStore()
-		return errgo.Mask(err)
 	default:
 		return ErrUnsupportedScopeID
 	}
+	return errgo.Mask(err)
 }
 
 // InitByRequest returns a new Store read from a cookie or HTTP request param.
@@ -136,7 +134,7 @@ func (sm *Manager) InitByRequest(res http.ResponseWriter, req *http.Request, sco
 		var err error
 		// @todo reqStoreCode if number ... cast to int64 because then group id if ScopeID is group.
 		if reqStore, err = sm.GetRequestStore(Code(reqStoreCode), scopeType); err != nil {
-			return nil, err
+			return nil, errgo.Mask(err)
 		}
 		// also delete and re-set a new cookie
 		if reqStore != nil && reqStore.Data().Code.String == reqStoreCode {
@@ -167,10 +165,10 @@ func (sm *Manager) GetRequestStore(r Retriever, scopeType config.ScopeID) (*Stor
 		return nil, ErrAppStoreNotSet
 	}
 
-	activeStore := sm.activeStore(r) // this is the active store from Cookie or Request.
-	if activeStore == nil {
+	activeStore, err := sm.storage.ActiveStore(r) // this is the active store from Cookie or Request.
+	if activeStore == nil || err != nil {
 		// store is not active so ignore
-		return nil, ErrStoreNotFound
+		return nil, errgo.Mask(err)
 	}
 
 	allowStoreChange := false
@@ -190,19 +188,6 @@ func (sm *Manager) GetRequestStore(r Retriever, scopeType config.ScopeID) (*Stor
 		return activeStore, nil
 	}
 	return nil, ErrStoreChangeNotAllowed
-}
-
-// activeStore returns a new store which is marked as active from a store code or nil
-// no need here to return an error.
-func (sm *Manager) activeStore(r Retriever) *Store {
-	s, err := sm.storage.Store(r)
-	if err != nil {
-		return nil
-	}
-	if s.Data().IsActive {
-		return s
-	}
-	return nil
 }
 
 // IsSingleStoreMode check if Single-Store mode is enabled in configuration and from Store count < 3.
