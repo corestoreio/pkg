@@ -117,8 +117,8 @@ func (s *Store) BaseUrl() string {
 	return ""
 }
 
-// newCookie creates a new cookie for internal use
-func (s *Store) newCookie() *http.Cookie {
+// NewCookie creates a new cookie for internal use
+func (s *Store) NewCookie() *http.Cookie {
 	return &http.Cookie{
 		Name:     CookieName,
 		Value:    "",
@@ -152,7 +152,7 @@ func (s *Store) SetCookie(res http.ResponseWriter) {
 func (s *Store) DeleteCookie(res http.ResponseWriter) {
 	if res != nil {
 		expire := time.Now().AddDate(-10, 0, 0)
-		keks := s.newCookie()
+		keks := s.NewCookie()
 		keks.Expires = expire
 		http.SetCookie(res, keks)
 	}

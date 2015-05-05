@@ -17,6 +17,7 @@ package store_test
 import (
 	"database/sql"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
@@ -625,23 +626,70 @@ func TestNewManagerGetRequestStore_ScopeWebsite(t *testing.T) {
 	runNewManagerGetRequestStore(t, testScope, tests)
 }
 
+func getTestRequest(t *testing.T, m, u string, c *http.Cookie) *http.Request {
+	req, err := http.NewRequest(m, u, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c != nil {
+		req.AddCookie(c)
+	}
+	return req
+}
+
 func TestInitByRequest_Group(t *testing.T) {
+
 	testCode := store.ID(1)
 	testScope := config.ScopeGroup
+
+	if _, haveErr := storeManagerRequestStore.InitByRequest(nil, nil, testScope); haveErr != nil {
+		assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
+	} else {
+		t.Fatal("InitByRequest should return an error if used without running Init() first.")
+	}
+
 	if err := storeManagerRequestStore.Init(testCode, testScope); err != nil {
-		t.Error(err)
+		t.Fatal(err)
+	}
+	if s, err := storeManagerRequestStore.Store(); err == nil {
+		assert.EqualValues(t, "at", s.Data().Code.String)
+	} else {
+		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
 		t.Fail()
 	}
 
 	tests := []struct {
-		res           http.ResponseWriter
+		res           *httptest.ResponseRecorder
 		req           *http.Request
-		wantStoreCode string
+		wantStoreCode store.CodeRetriever
 		wantErr       error
-	}{}
-
+	}{
+		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "de"}), store.Code("de"), nil},
+		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io", nil), nil, nil},
+		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=de", nil), store.Code("de"), nil},
+		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=cz", nil), nil, store.ErrStoreNotFound},
+		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil), nil, store.ErrStoreChangeNotAllowed},
+	}
 	for _, test := range tests {
 		haveStore, haveErr := storeManagerRequestStore.InitByRequest(test.res, test.req, testScope)
+		if test.wantErr != nil {
+			assert.Nil(t, haveStore)
+			assert.EqualError(t, test.wantErr, haveErr.Error())
+		} else {
+			assert.NoError(t, haveErr)
+			if test.wantStoreCode != nil {
+				assert.NotNil(t, haveStore, "%#v", test.req.URL.Query())
+				assert.EqualValues(t, test.wantStoreCode.Code(), haveStore.Data().Code.String)
+				t.Logf(
+					"\nStore: %s\nHeader: %#v\nBody: %s\n",
+					test.wantStoreCode.Code(),
+					test.res.HeaderMap,
+					test.res.Body.String(),
+				)
+			} else {
+				assert.Nil(t, haveStore, "%#v", haveStore)
+			}
+		}
 	}
 }
 

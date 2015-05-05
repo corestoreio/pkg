@@ -127,6 +127,7 @@ func (sm *Manager) InitByRequest(res http.ResponseWriter, req *http.Request, sco
 	}
 
 	var reqStore *Store
+	// @todo do we really need GetCookie and other cookie stuff bound to a Store struct?
 	if keks := sm.appStore.GetCookie(req); keks != nil {
 		reqStore, _ = sm.GetRequestStore(keks, scopeType) // ignore errors
 	}
@@ -138,8 +139,8 @@ func (sm *Manager) InitByRequest(res http.ResponseWriter, req *http.Request, sco
 			return nil, err
 		}
 		// also delete and re-set a new cookie
-		if sm.appStore.Data().Code.String == reqStoreCode {
-			wds, err := sm.appStore.Website().DefaultStore()
+		if reqStore != nil && reqStore.Data().Code.String == reqStoreCode {
+			wds, err := reqStore.Website().DefaultStore()
 			if err != nil {
 				return nil, errgo.Mask(err)
 			}
@@ -236,7 +237,7 @@ func (sm *Manager) Website(r ...Retriever) (*Website, error) {
 		return sm.appStore.Website(), nil
 	}
 
-	key, err := sm.hash(r[0])
+	key, err := hash(r[0])
 	if err != nil {
 		return nil, err
 	}
@@ -276,7 +277,7 @@ func (sm *Manager) Group(r ...Retriever) (*Group, error) {
 		return sm.appStore.Group(), nil
 	}
 
-	key, err := sm.hash(r[0])
+	key, err := hash(r[0])
 	if err != nil {
 		return nil, err
 	}
@@ -316,7 +317,7 @@ func (sm *Manager) Store(r ...Retriever) (*Store, error) {
 		return sm.appStore, nil
 	}
 
-	key, err := sm.hash(r[0])
+	key, err := hash(r[0])
 	if err != nil {
 		return nil, err
 	}
@@ -362,27 +363,6 @@ func (sm *Manager) ReInit(dbrSess dbr.SessionRunner) error {
 	return ErrManagerMutatorNotAvailable
 }
 
-// hash generates the key for the map from either an id int64 or a code string.
-// If both interfaces are nil it returns 0 which is default for website, group or store.
-// fnv64a used to calculate the uint64 value of a string, especially website code and store code.
-func (sm *Manager) hash(r Retriever) (uint64, error) {
-	uz := uint64(0)
-	if r == nil {
-		return uz, ErrHashRetrieverNil
-	}
-
-	if c, ok := r.(CodeRetriever); ok && c.Code() != "" {
-		data := []byte(c.Code())
-		var hash uint64 = 14695981039346656037
-		for _, c := range data {
-			hash ^= uint64(c)
-			hash *= 1099511628211
-		}
-		return hash, nil
-	}
-	return uint64(r.ID()), nil
-}
-
 // ClearCache resets the internal caches which stores the pointers to a Website, Group or Store and
 // all related slices. Please use with caution. ReInit() also uses this method.
 // Providing argument true clears also the internal appStore cache.
@@ -425,6 +405,27 @@ func (sm *Manager) IsCacheEmpty() bool {
 func notRetriever(r ...Retriever) bool {
 	lr := len(r)
 	return r == nil || (lr == 1 && r[0] == nil) || lr > 1
+}
+
+// hash generates the key for the map from either an id int64 or a code string.
+// If both interfaces are nil it returns 0 which is default for website, group or store.
+// fnv64a used to calculate the uint64 value of a string, especially website code and store code.
+func hash(r Retriever) (uint64, error) {
+	uz := uint64(0)
+	if r == nil {
+		return uz, ErrHashRetrieverNil
+	}
+
+	if c, ok := r.(CodeRetriever); ok && c.Code() != "" {
+		data := []byte(c.Code())
+		var hash uint64 = 14695981039346656037
+		for _, c := range data {
+			hash ^= uint64(c)
+			hash *= 1099511628211
+		}
+		return hash, nil
+	}
+	return uint64(r.ID()), nil
 }
 
 // loadSlice internal global helper func to execute a SQL select. @todo refactor and remove dependency of GetTableS...
