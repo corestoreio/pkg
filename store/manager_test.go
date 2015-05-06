@@ -27,6 +27,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	store.SetConfigReader(newMockScopeReader(nil, nil))
+}
+
 func getTestManager(opts ...func(ms *mockStorage)) *store.Manager {
 	ms := &mockStorage{}
 	for _, opt := range opts {
@@ -702,6 +706,42 @@ func testInitByRequest(t *testing.T, testCode store.Retriever, testScope config.
 /*
 	MOCKS
 */
+
+//ScopeReader interface {
+//// GetString retrieves a config value by path and scope
+//ReadString(path string, scope ScopeID, r ...Retriever) string
+//
+//// IsSetFlag retrieves a config flag by path and scope
+//IsSetFlag(path string, scope ScopeID, r ...Retriever) bool
+//}
+
+var _ config.ScopeReader = (*mockScopeReader)(nil)
+
+type mockScopeReader struct {
+	s func() string
+	b func() bool
+}
+
+func newMockScopeReader(s func() string, b func() bool) *mockScopeReader {
+	return &mockScopeReader{
+		s: s,
+		b: b,
+	}
+}
+
+func (sr mockScopeReader) ReadString(_ string, _ config.ScopeID, _ ...config.Retriever) string {
+	if sr.s == nil {
+		return ""
+	}
+	return sr.s()
+}
+
+func (sr mockScopeReader) IsSetFlag(_ string, _ config.ScopeID, _ ...config.Retriever) bool {
+	if sr.b == nil {
+		return false
+	}
+	return sr.b()
+}
 
 type mockIDCode struct {
 	id   int64

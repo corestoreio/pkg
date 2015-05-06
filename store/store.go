@@ -124,7 +124,7 @@ func (s *Store) Path() string {
 }
 
 // BaseUrl returns the path from the URL or config where CoreStore is installed @todo
-// @see app/code/Magento/Store/Model/Store.php::getBaseUrl
+// @see https://github.com/magento/magento2/blob/0.74.0-beta7/app/code/Magento/Store/Model/Store.php#L539
 func (s *Store) BaseUrl(ut config.UrlType, isSecure bool) string {
 	//
 	var url string
@@ -279,7 +279,8 @@ func (s TableStore) IsDefault() bool {
 // Load uses a dbr session to load all data from the core_store table into the current slice.
 // The variadic 2nd argument can be a call back function to manipulate the select.
 // Additional columns or joins cannot be added. This method receiver should only be used in development.
-// @see app/code/Magento/Store/Model/Resource/Store/Collection.php::Load() for sort order
+// @see https://github.com/magento/magento2/blob/0.74.0-beta7/app%2Fcode%2FMagento%2FStore%2FModel%2FResource%2FStore%2FCollection.php#L147
+// regarding the sort order.
 func (s *TableStoreSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
 	return loadSlice(dbrSess, TableIndexStore, &(*s), append(cbs, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
 		sb.OrderBy("CASE WHEN main_table.store_id = 0 THEN 0 ELSE 1 END ASC")

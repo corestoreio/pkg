@@ -41,14 +41,10 @@ const (
 	// @see \Magento\Framework\UrlInterface
 	UrlTypeWeb UrlType = iota + 1
 	UrlTypeStatic
-
-//	UrlTypeMedia
-//	UrlTypeDirectLink
-//	UrlTypeLink
-//	UrlTypeJs
 )
 
 type (
+	// UrlType defines the type of the URL @see \Magento\Framework\UrlInterface
 	UrlType int
 
 	// ScopeID used in constants where default is the lowest and store the highest
@@ -65,10 +61,10 @@ type (
 	}
 
 	ScopeReader interface {
-		// GetString retrieves a config value by path and scope
+		// ReadString retrieves a config value by path, ScopeID and/or ID
 		ReadString(path string, scope ScopeID, r ...Retriever) string
 
-		// IsSetFlag retrieves a config flag by path and scope
+		// IsSetFlag retrieves a config flag by path, ScopeID and/or ID
 		IsSetFlag(path string, scope ScopeID, r ...Retriever) bool
 	}
 
