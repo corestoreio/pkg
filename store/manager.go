@@ -91,18 +91,18 @@ func (sm *Manager) Init(scopeCode Retriever, scopeType config.ScopeID) error {
 	var err error
 	switch scopeType {
 	case config.ScopeStore:
-		sm.appStore, err = sm.Store(scopeCode) // @todo same like ActiveStore()
+		sm.appStore, err = sm.Store(scopeCode)
 	case config.ScopeGroup:
-		if g, err2 := sm.Group(scopeCode); err2 != nil { // this is the group_id
-			return errgo.Mask(err2)
+		if g, errG := sm.Group(scopeCode); errG != nil { // this is the group_id
+			return errgo.Mask(errG)
 		} else { // else needed because of scoping of g
-			sm.appStore, err = g.DefaultStore() // @todo same like ActiveStore()
+			sm.appStore, err = g.DefaultStore()
 		}
 	case config.ScopeWebsite:
-		if w, err2 := sm.Website(scopeCode); err2 != nil {
-			return errgo.Mask(err)
+		if w, errW := sm.Website(scopeCode); errW != nil {
+			return errgo.Mask(errW)
 		} else { // else needed because of scoping of w
-			sm.appStore, err = w.DefaultStore() // @todo same like ActiveStore()
+			sm.appStore, err = w.DefaultStore()
 		}
 	default:
 		return ErrUnsupportedScopeID
@@ -125,8 +125,7 @@ func (sm *Manager) InitByRequest(res http.ResponseWriter, req *http.Request, sco
 	}
 
 	var reqStore *Store
-	// @todo do we really need GetCookie and other cookie stuff bound to a Store struct?
-	if keks := sm.appStore.GetCookie(req); keks != nil {
+	if keks := GetCookie(req); keks != nil {
 		reqStore, _ = sm.GetRequestStore(keks, scopeType) // ignore errors
 	}
 
@@ -143,9 +142,9 @@ func (sm *Manager) InitByRequest(res http.ResponseWriter, req *http.Request, sco
 				return nil, errgo.Mask(err)
 			}
 			if wds.Data().Code.String == reqStoreCode {
-				sm.appStore.DeleteCookie(res) // cookie not needed anymore
+				reqStore.DeleteCookie(res) // cookie not needed anymore
 			} else {
-				sm.appStore.SetCookie(res) // make sure we force set the new store
+				reqStore.SetCookie(res) // make sure we force set the new store
 			}
 		}
 	}
@@ -165,7 +164,7 @@ func (sm *Manager) GetRequestStore(r Retriever, scopeType config.ScopeID) (*Stor
 		return nil, ErrAppStoreNotSet
 	}
 
-	activeStore, err := sm.storage.ActiveStore(r) // this is the active store from Cookie or Request.
+	activeStore, err := sm.activeStore(r) // this is the active store from Cookie or Request.
 	if activeStore == nil || err != nil {
 		// store is not active so ignore
 		return nil, errgo.Mask(err)
@@ -337,6 +336,20 @@ func (sm *Manager) DefaultStoreView() (*Store, error) {
 	var err error
 	sm.defaultStore, err = sm.storage.DefaultStoreView()
 	return sm.defaultStore, err
+}
+
+// activeStore returns a new non-cached Store with all its Websites and Groups but only if the Store
+// is marked as active. Argument can be an ID or a Code. Returns nil if Store not found or inactive.
+// No need here to return an error.
+func (sm *Manager) activeStore(r Retriever) (*Store, error) {
+	s, err := sm.storage.Store(r)
+	if err != nil {
+		return nil, err
+	}
+	if s.Data().IsActive {
+		return s, nil
+	}
+	return nil, ErrStoreNotActive
 }
 
 // ReInit reloads the website, store group and store view data from the database @todo

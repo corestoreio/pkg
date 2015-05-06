@@ -293,8 +293,11 @@ func TestStorageStore(t *testing.T) {
 	website := s.Website()
 	assert.EqualValues(t, "euro", website.Data().Code.String)
 	wg, err := website.DefaultGroup()
-	assert.Nil(t, wg)
-	assert.EqualError(t, store.ErrWebsiteDefaultGroupNotFound, err.Error())
+	assert.NotNil(t, wg)
+	assert.EqualValues(t, "DACH Group", wg.Data().Name)
+	wgs, err := wg.DefaultStore()
+	assert.NoError(t, err)
+	assert.EqualValues(t, "at", wgs.Data().Code.String)
 }
 
 var benchmarkStorageStore *store.Store

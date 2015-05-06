@@ -424,7 +424,8 @@ func TestNewManagerWebsiteInit(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, "euro", w2.Data().Code.String)
 
-	err3 := getTestManager(func(ms *mockStorage) {}).Init(store.Code("euro"), config.ScopeWebsite)
+	err3 := getTestManager(func(ms *mockStorage) {}).Init(store.Code("euronen"), config.ScopeWebsite)
+	assert.Error(t, err3, "store.Code(euro), config.ScopeWebsite: %#v => %s", err3, err3)
 	assert.EqualError(t, store.ErrWebsiteNotFound, err3.Error())
 }
 
@@ -468,8 +469,8 @@ func runNewManagerGetRequestStore(t *testing.T, testScope config.ScopeID, tests 
 	for _, test := range tests {
 		haveStore, haveErr := storeManagerRequestStore.GetRequestStore(test.haveR, testScope)
 		if test.wantErr != nil {
-			assert.Nil(t, haveStore, "%#v", test)
-			assert.EqualError(t, test.wantErr, haveErr.Error(), "%#v", test)
+			assert.Nil(t, haveStore, "testScope %d: %#v", testScope, test)
+			assert.EqualError(t, test.wantErr, haveErr.Error(), "testScope %d: %#v", testScope, test)
 		} else {
 			assert.NotNil(t, haveStore)
 			assert.NoError(t, haveErr, "%#v", test)
@@ -511,7 +512,7 @@ func TestNewManagerGetRequestStore_ScopeStore(t *testing.T) {
 		{store.Code("\U0001f631"), "", store.ErrStoreNotFound},
 
 		{store.ID(6), "nz", nil},
-		{store.Code("ch"), "", store.ErrStoreNotFound},
+		{store.Code("ch"), "", store.ErrStoreNotActive},
 
 		{store.Code("nz"), "nz", nil},
 		{store.Code("de"), "de", nil},
@@ -519,7 +520,7 @@ func TestNewManagerGetRequestStore_ScopeStore(t *testing.T) {
 
 		{store.ID(2), "at", nil},
 		{store.Code("au"), "au", nil},
-		{store.Code("ch"), "", store.ErrStoreNotFound},
+		{store.Code("ch"), "", store.ErrStoreNotActive},
 	}
 	runNewManagerGetRequestStore(t, testScope, tests)
 }
@@ -563,14 +564,14 @@ func TestNewManagerGetRequestStore_ScopeGroup(t *testing.T) {
 		{store.Code("\U0001f631"), "", store.ErrStoreNotFound},
 
 		{store.ID(6), "nz", store.ErrStoreChangeNotAllowed},
-		{store.Code("ch"), "", store.ErrStoreNotFound},
+		{store.Code("ch"), "", store.ErrStoreNotActive},
 
 		{store.Code("de"), "de", nil},
 		{store.ID(2), "at", nil},
 
 		{store.ID(2), "at", nil},
 		{store.Code("au"), "au", store.ErrStoreChangeNotAllowed},
-		{store.Code("ch"), "", store.ErrStoreNotFound},
+		{store.Code("ch"), "", store.ErrStoreNotActive},
 	}
 	runNewManagerGetRequestStore(t, testScope, tests)
 }
@@ -615,14 +616,14 @@ func TestNewManagerGetRequestStore_ScopeWebsite(t *testing.T) {
 		{store.Code("\U0001f631"), "", store.ErrStoreNotFound},
 
 		{store.ID(6), "nz", store.ErrStoreChangeNotAllowed},
-		{store.Code("ch"), "", store.ErrStoreNotFound},
+		{store.Code("ch"), "", store.ErrStoreNotActive},
 
 		{store.Code("de"), "de", nil},
 		{store.ID(2), "at", nil},
 
 		{store.ID(2), "at", nil},
 		{store.Code("au"), "au", store.ErrStoreChangeNotAllowed},
-		{store.Code("ch"), "", store.ErrStoreNotFound},
+		{store.Code("ch"), "", store.ErrStoreNotActive},
 	}
 	runNewManagerGetRequestStore(t, testScope, tests)
 }
@@ -665,8 +666,8 @@ func testInitByRequest(t *testing.T, testCode store.Retriever, testScope config.
 		wantStoreCode store.CodeRetriever
 		wantErr       error
 	}{
-		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "de"}), store.Code("de"), nil},
-		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io", nil), nil, nil},
+		//		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "de"}), store.Code("de"), nil},
+		//		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io", nil), nil, nil},
 		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=de", nil), store.Code("de"), nil},
 		//		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=cz", nil), nil, store.ErrStoreNotFound},
 		//		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil), nil, store.ErrStoreChangeNotAllowed},
@@ -751,13 +752,6 @@ func (ms *mockStorage) Groups() (store.GroupSlice, error) {
 	return ms.gs()
 }
 func (ms *mockStorage) Store(_ store.Retriever) (*store.Store, error) {
-	if ms.s == nil {
-		return nil, store.ErrStoreNotFound
-	}
-	return ms.s()
-}
-
-func (ms *mockStorage) ActiveStore(_ store.Retriever) (*store.Store, error) {
 	if ms.s == nil {
 		return nil, store.ErrStoreNotFound
 	}

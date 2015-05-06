@@ -18,6 +18,7 @@ package store
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/corestoreio/csfw/storage/csdb"
@@ -109,6 +110,9 @@ func (s *Store) Data() *TableStore {
 
 // Path returns the path from the URL or config where CoreStore is installed @todo
 func (s *Store) Path() string {
+
+	url, err := url.ParseRequestURI(s.BaseUrl())
+
 	return "/"
 }
 
@@ -118,43 +122,44 @@ func (s *Store) BaseUrl() string {
 	return ""
 }
 
-// NewCookie creates a new cookie for internal use
+// NewCookie creates a new pre-configured cookie
 func (s *Store) NewCookie() *http.Cookie {
 	return &http.Cookie{
 		Name:     CookieName,
 		Value:    "",
 		Path:     s.Path(),
 		Domain:   s.BaseUrl(),
-		Secure:   true,
+		Secure:   false,
 		HttpOnly: true,
 	}
 }
 
 // GetCookie returns from a Request the value of the store cookie or nil.
-func (s *Store) GetCookie(req *http.Request) Retriever {
+func GetCookie(req *http.Request) Retriever {
 	if req == nil {
 		return nil
 	}
 	if keks, err := req.Cookie(CookieName); err == nil && keks.Value != "" {
-		// if you know the meaning of keks tweet it to me :-)
 		return Code(keks.Value)
 	}
 	return nil
 }
 
-// SetCookie @todo
+// SetCookie adds a cookie which contains the store code and is valid for one year.
 func (s *Store) SetCookie(res http.ResponseWriter) {
 	if res != nil {
-
+		keks := s.NewCookie()
+		keks.Value = s.Data().Code.String
+		keks.Expires = time.Now().AddDate(1, 0, 0) // one year valid
+		http.SetCookie(res, keks)
 	}
 }
 
-// DeleteCookie deletes the store cookie @todo tests
+// DeleteCookie deletes the store cookie
 func (s *Store) DeleteCookie(res http.ResponseWriter) {
 	if res != nil {
-		expire := time.Now().AddDate(-10, 0, 0)
 		keks := s.NewCookie()
-		keks.Expires = expire
+		keks.Expires = time.Now().AddDate(-10, 0, 0)
 		http.SetCookie(res, keks)
 	}
 }

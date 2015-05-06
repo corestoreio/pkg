@@ -34,10 +34,6 @@ type (
 		// DefaultStoreView traverses through the websites to find the default website and gets
 		// the default group which has the default store id assigned to. Only one website can be the default one.
 		DefaultStoreView() (*Store, error)
-		// ActiveStore returns a new Store with all its Websites and Groups but only if the Store
-		// is marked as active. Argument can be an ID or a Code. Returns nil if Store not found or inactive.
-		// No need here to return an error.
-		ActiveStore(Retriever) (*Store, error)
 	}
 
 	// StorageMutator allows changes to the internal stored slices.
@@ -188,22 +184,10 @@ func (st *Storage) Store(r Retriever) (*Store, error) {
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	return NewStore(w, g, s), nil
-}
-
-// ActiveStore returns a new Store with all its Websites and Groups but only if the Store
-// is marked as active. Argument can be an ID or a Code. Returns nil if Store not found or inactive.
-// No need here to return an error.
-func (st *Storage) ActiveStore(r Retriever) (*Store, error) {
-	s, err := st.Store(r)
-	if err != nil {
-		return nil, err
-	}
-	if s.Data().IsActive {
-		s.Website().SetGroupsStores(st.groups, st.stores)
-		return s, nil
-	}
-	return nil, ErrStoreNotActive
+	ns := NewStore(w, g, s)
+	ns.Website().SetGroupsStores(st.groups, st.stores)
+	ns.Group().SetStores(st.stores, w)
+	return ns, nil
 }
 
 // Stores creates a new store slice. Can return an error when the website or
@@ -211,15 +195,10 @@ func (st *Storage) ActiveStore(r Retriever) (*Store, error) {
 func (st *Storage) Stores() (StoreSlice, error) {
 	stores := make(StoreSlice, len(st.stores), len(st.stores))
 	for i, s := range st.stores {
-		w, err := st.websites.FindByID(s.WebsiteID)
-		if err != nil {
+		var err error
+		if stores[i], err = st.Store(ID(s.StoreID)); err != nil {
 			return nil, errgo.Mask(err)
 		}
-		g, err := st.groups.FindByID(s.GroupID)
-		if err != nil {
-			return nil, errgo.Mask(err)
-		}
-		stores[i] = NewStore(w, g, s)
 	}
 	return stores, nil
 }
