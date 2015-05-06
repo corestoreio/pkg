@@ -17,6 +17,13 @@ package config
 import "github.com/spf13/viper"
 
 const (
+	ScopeDefault ScopeID = iota + 1
+	ScopeWebsite
+	ScopeGroup
+	ScopeStore
+)
+
+const (
 	// DataScopeDefault defines the global scope. Stored in table core_config_data.scope.
 	DataScopeDefault = "default"
 	// DataScopeWebsites defines the website scope which has default as parent and stores as child.
@@ -26,16 +33,24 @@ const (
 	//  Stored in table core_config_data.scope.
 	DataScopeStores = "stores"
 
-	ScopeDefault ScopeID = iota
-	ScopeWebsite
-	ScopeGroup
-	ScopeStore
-
 	// PS defines the path separator for the configuration path
 	PS = "/"
 )
 
+const (
+	// @see \Magento\Framework\UrlInterface
+	UrlTypeWeb UrlType = iota + 1
+	UrlTypeStatic
+
+//	UrlTypeMedia
+//	UrlTypeDirectLink
+//	UrlTypeLink
+//	UrlTypeJs
+)
+
 type (
+	UrlType int
+
 	// ScopeID used in constants where default is the lowest and store the highest
 	ScopeID int
 

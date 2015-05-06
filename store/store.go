@@ -17,10 +17,13 @@ package store
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
@@ -35,6 +38,8 @@ const (
 	// This cookie permanently saves the new selected store code for one year.
 	// The cookie must be removed when the default store of the current website if equal to the current store.
 	CookieName = `store`
+
+	BaseUrlPlaceholder = "{{base_url}}"
 
 	PriceScopeGlobal  = 0
 	PriceScopeWebsite = 1
@@ -111,15 +116,55 @@ func (s *Store) Data() *TableStore {
 // Path returns the path from the URL or config where CoreStore is installed @todo
 func (s *Store) Path() string {
 
-	url, err := url.ParseRequestURI(s.BaseUrl())
+	url, err := url.ParseRequestURI(s.BaseUrl(config.UrlTypeWeb, false))
+
+	fmt.Printf("\n%#v\n%s\n", url, err)
 
 	return "/"
 }
 
 // BaseUrl returns the path from the URL or config where CoreStore is installed @todo
 // @see app/code/Magento/Store/Model/Store.php::getBaseUrl
-func (s *Store) BaseUrl() string {
-	return ""
+func (s *Store) BaseUrl(ut config.UrlType, isSecure bool) string {
+	//
+	var url string
+	switch ut {
+	case config.UrlTypeWeb:
+		if isSecure {
+			url = s.getConfigString(PathSecureBaseUrl)
+		} else {
+			url = s.getConfigString(PathUnsecureBaseUrl)
+		}
+		break
+	case config.UrlTypeStatic:
+		if isSecure {
+			url = s.getConfigString(PathSecureBaseStaticUrl)
+		} else {
+			url = s.getConfigString(PathUnsecureBaseStaticUrl)
+		}
+		if url == "" {
+			// @todo
+		}
+		break
+	default:
+		panic("Unsupported UrlType")
+	}
+
+	if strings.Contains(url, BaseUrlPlaceholder) {
+		// @todo replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
+	}
+
+	return url
+}
+
+// getConfigString tries to get a value from the scopeStore if empty
+// falls back to default global scope
+func (s *Store) getConfigString(path string) string {
+	val := mustReadConfig().ReadString(path, config.ScopeStore, s)
+	if val == "" {
+		val = mustReadConfig().ReadString(path, config.ScopeDefault)
+	}
+	return val
 }
 
 // NewCookie creates a new pre-configured cookie
@@ -128,21 +173,10 @@ func (s *Store) NewCookie() *http.Cookie {
 		Name:     CookieName,
 		Value:    "",
 		Path:     s.Path(),
-		Domain:   s.BaseUrl(),
+		Domain:   s.BaseUrl(config.UrlTypeWeb, false),
 		Secure:   false,
 		HttpOnly: true,
 	}
-}
-
-// GetCookie returns from a Request the value of the store cookie or nil.
-func GetCookie(req *http.Request) Retriever {
-	if req == nil {
-		return nil
-	}
-	if keks, err := req.Cookie(CookieName); err == nil && keks.Value != "" {
-		return Code(keks.Value)
-	}
-	return nil
 }
 
 // SetCookie adds a cookie which contains the store code and is valid for one year.
@@ -162,6 +196,21 @@ func (s *Store) DeleteCookie(res http.ResponseWriter) {
 		keks.Expires = time.Now().AddDate(-10, 0, 0)
 		http.SetCookie(res, keks)
 	}
+}
+
+/*
+	Global functions
+*/
+
+// GetCookie returns from a Request the value of the store cookie or nil.
+func GetCookie(req *http.Request) Retriever {
+	if req == nil {
+		return nil
+	}
+	if keks, err := req.Cookie(CookieName); err == nil && keks.Value != "" {
+		return Code(keks.Value)
+	}
+	return nil
 }
 
 /*

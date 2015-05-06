@@ -192,8 +192,8 @@ func (sm *Manager) GetRequestStore(r Retriever, scopeType config.ScopeID) (*Stor
 // IsSingleStoreMode check if Single-Store mode is enabled in configuration and from Store count < 3.
 // This flag only shows that admin does not want to show certain UI components at backend (like store switchers etc)
 // if Magento has only one store view but it does not check the store view collection.
-func (sm *Manager) IsSingleStoreMode(cfg config.ScopeReader) bool {
-	return sm.HasSingleStore() && cfg.IsSetFlag(PathSingleStoreModeEnabled, config.ScopeStore, sm.appStore)
+func (sm *Manager) IsSingleStoreMode() bool {
+	return sm.HasSingleStore() && mustReadConfig().IsSetFlag(PathSingleStoreModeEnabled, config.ScopeStore, sm.appStore)
 }
 
 // HasSingleStore checks if we only have one store view besides the admin store view.

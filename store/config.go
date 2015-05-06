@@ -47,6 +47,26 @@ const (
 	PathPriceScope = "catalog/price/scope"
 )
 
+// configReader stores the reader. Should not be used. Access it via mustConfig()
+var configReader config.ScopeReader
+
+// SetConfig sets the internal variable to the current scope config reader.
+// ScopeReader will be used across all structs in this package.
+func SetConfigReader(c config.ScopeReader) {
+	if c == nil || configReader != nil {
+		panic("config.ScopeReader cannot be nil or already set")
+	}
+	configReader = c
+}
+
+// mustReadConfig internally used
+func mustReadConfig() config.ScopeReader {
+	if configReader == nil {
+		panic("config.ScopeReader cannot be nil")
+	}
+	return configReader
+}
+
 func GetDefaultConfiguration() config.DefaultMap {
 	return config.DefaultMap{
 		PathSingleStoreModeEnabled: false,
