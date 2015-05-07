@@ -39,8 +39,6 @@ const (
 	// The cookie must be removed when the default store of the current website if equal to the current store.
 	CookieName = `store`
 
-	BaseUrlPlaceholder = "{{base_url}}"
-
 	PriceScopeGlobal  = 0
 	PriceScopeWebsite = 1
 )

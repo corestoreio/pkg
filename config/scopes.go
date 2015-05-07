@@ -38,13 +38,15 @@ const (
 )
 
 const (
-	// @see \Magento\Framework\UrlInterface
+	// UrlTypeWeb main base url
 	UrlTypeWeb UrlType = iota + 1
+	// UrlTypeStatic url to the static assets
 	UrlTypeStatic
 )
 
 type (
-	// UrlType defines the type of the URL @see \Magento\Framework\UrlInterface
+	// UrlType defines the type of the URL. Used in const declaration.
+	// @see https://github.com/magento/magento2/blob/0.74.0-beta7/lib/internal/Magento/Framework/UrlInterface.php#L13
 	UrlType int
 
 	// ScopeID used in constants where default is the lowest and store the highest

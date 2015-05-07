@@ -45,16 +45,18 @@ const (
 	// This defines the base currency scope ("Currency Setup" > "Currency Options" > "Base Currency").
 	// can be 0 = Global or 1 = Website
 	PathPriceScope = "catalog/price/scope"
+
+	BaseUrlPlaceholder = "{{base_url}}"
 )
 
 // configReader stores the reader. Should not be used. Access it via mustConfig()
 var configReader config.ScopeReader
 
 // SetConfig sets the internal variable to the current scope config reader.
-// ScopeReader will be used across all structs in this package.
+// ScopeReader will be used across all functions in this package.
 func SetConfigReader(c config.ScopeReader) {
-	if c == nil || configReader != nil {
-		panic("config.ScopeReader cannot be nil or already set")
+	if c == nil {
+		panic("config.ScopeReader cannot be nil")
 	}
 	configReader = c
 }
@@ -71,11 +73,11 @@ func GetDefaultConfiguration() config.DefaultMap {
 	return config.DefaultMap{
 		PathSingleStoreModeEnabled: false,
 		PathStoreInUrl:             false,
-		PathUnsecureBaseUrl:        "{{base_url}}",
+		PathUnsecureBaseUrl:        BaseUrlPlaceholder,
 		PathSecureBaseUrl:          "{{unsecure_base_url}}",
 		PathSecureInFrontend:       false,
 
-		PathUnsecureBaseLinkUrl: "{{unsecure_base_url}}",
+		PathUnsecureBaseLinkUrl: "{{unsecure_base_url}}", // switch to static
 		PathSecureBaseLinkUrl:   "{{secure_base_url}}",
 
 		PathPriceScope: PriceScopeGlobal,

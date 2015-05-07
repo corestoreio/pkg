@@ -718,29 +718,29 @@ func testInitByRequest(t *testing.T, testCode store.Retriever, testScope config.
 var _ config.ScopeReader = (*mockScopeReader)(nil)
 
 type mockScopeReader struct {
-	s func() string
-	b func() bool
+	s func(path string, scope config.ScopeID, r ...config.Retriever) string
+	b func(path string, scope config.ScopeID, r ...config.Retriever) bool
 }
 
-func newMockScopeReader(s func() string, b func() bool) *mockScopeReader {
+func newMockScopeReader(s func(path string, scope config.ScopeID, r ...config.Retriever) string, b func(path string, scope config.ScopeID, r ...config.Retriever) bool) *mockScopeReader {
 	return &mockScopeReader{
 		s: s,
 		b: b,
 	}
 }
 
-func (sr mockScopeReader) ReadString(_ string, _ config.ScopeID, _ ...config.Retriever) string {
+func (sr mockScopeReader) ReadString(path string, scope config.ScopeID, r ...config.Retriever) string {
 	if sr.s == nil {
 		return ""
 	}
-	return sr.s()
+	return sr.s(path, scope, r...)
 }
 
-func (sr mockScopeReader) IsSetFlag(_ string, _ config.ScopeID, _ ...config.Retriever) bool {
+func (sr mockScopeReader) IsSetFlag(path string, scope config.ScopeID, r ...config.Retriever) bool {
 	if sr.b == nil {
 		return false
 	}
-	return sr.b()
+	return sr.b(path, scope, r...)
 }
 
 type mockIDCode struct {
