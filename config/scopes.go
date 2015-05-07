@@ -35,6 +35,9 @@ const (
 
 	// PS defines the path separator for the configuration path
 	PS = "/"
+
+	LeftDelim  = "{{"
+	RightDelim = "}}"
 )
 
 const (
@@ -42,6 +45,7 @@ const (
 	UrlTypeWeb UrlType = iota + 1
 	// UrlTypeStatic url to the static assets
 	UrlTypeStatic
+	UrlTypeLink
 )
 
 type (

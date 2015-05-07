@@ -46,7 +46,9 @@ const (
 	// can be 0 = Global or 1 = Website
 	PathPriceScope = "catalog/price/scope"
 
-	BaseUrlPlaceholder = "{{base_url}}"
+	PlaceholderBaseUrl         = config.LeftDelim + "base_url" + config.RightDelim
+	PlaceholderBaseUrlSecure   = config.LeftDelim + "secure_base_url" + config.RightDelim
+	PlaceholderBaseUrlUnSecure = config.LeftDelim + "unsecure_base_url" + config.RightDelim
 )
 
 // configReader stores the reader. Should not be used. Access it via mustConfig()
@@ -73,12 +75,9 @@ func GetDefaultConfiguration() config.DefaultMap {
 	return config.DefaultMap{
 		PathSingleStoreModeEnabled: false,
 		PathStoreInUrl:             false,
-		PathUnsecureBaseUrl:        BaseUrlPlaceholder,
-		PathSecureBaseUrl:          "{{unsecure_base_url}}",
+		PathUnsecureBaseUrl:        PlaceholderBaseUrl,
+		PathSecureBaseUrl:          PlaceholderBaseUrlUnSecure,
 		PathSecureInFrontend:       false,
-
-		PathUnsecureBaseLinkUrl: "{{unsecure_base_url}}", // switch to static
-		PathSecureBaseLinkUrl:   "{{secure_base_url}}",
 
 		PathPriceScope: PriceScopeGlobal,
 	}

@@ -148,7 +148,7 @@ func (s *Store) BaseUrl(ut config.UrlType, isSecure bool) string {
 		panic("Unsupported UrlType")
 	}
 
-	if strings.Contains(url, BaseUrlPlaceholder) {
+	if strings.Contains(url, PlaceholderBaseUrl) {
 		// @todo replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
 	}
 

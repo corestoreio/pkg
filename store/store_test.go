@@ -234,19 +234,36 @@ func TestTableStoreSliceIDs(t *testing.T) {
 }
 
 func TestStoreBaseUrl(t *testing.T) {
-	store.SetConfigReader(newMockScopeReader(func(path string, scope config.ScopeID, r ...config.Retriever) string {
-		switch path {
-		case store.PathSecureBaseUrl:
-			return "https://corestore.io/"
-		case store.PathUnsecureBaseUrl:
-			return "http://corestore.io/"
-		}
-		return ""
-	}, nil))
+
 	s := store.NewStore(
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
 		&store.TableGroup{GroupID: 1, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 		&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 	)
-	t.Logf("\n%#v\n", s.BaseUrl(config.UrlTypeWeb, false))
+
+	tests := []struct {
+		haveR       config.ScopeReader
+		haveUT      config.UrlType
+		wantBaseUrl string
+		wantPath    string
+	}{
+		{
+			newMockScopeReader(func(path string, scope config.ScopeID, r ...config.Retriever) string {
+				switch path {
+				case store.PathSecureBaseUrl:
+					return "https://corestore.io/"
+				case store.PathUnsecureBaseUrl:
+					return "http://corestore.io/"
+				}
+				return ""
+			}, nil),
+			config.UrlTypeWeb, "https://corestore.io/", "/",
+		},
+	}
+
+	for _, test := range tests {
+		store.SetConfigReader(test.haveR)
+		t.Logf("\n%#v\n", s.BaseUrl(test.haveUT, false))
+	}
+
 }
