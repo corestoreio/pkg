@@ -26,15 +26,13 @@ const (
 	PathStoreStorePhone        = "general/store_information/phone"
 	PathStoreInUrl             = "web/url/use_store"
 	PathUseRewrites            = "web/seo/use_rewrites"
+	PathSecureInFrontend       = "web/secure/use_in_frontend"
 
 	PathUnsecureBaseUrl = "web/unsecure/base_url"
 	PathSecureBaseUrl   = "web/secure/base_url"
 
-	PathSecureInFrontend = "web/secure/use_in_frontend"
-	//	PathSecureInAdminhtml      = "web/secure/use_in_adminhtml"
-
-	PathSecureBaseLinkUrl   = "web/secure/base_link_url"
-	PathUnsecureBaseLinkUrl = "web/unsecure/base_link_url"
+	//	PathSecureBaseLinkUrl   = "web/secure/base_link_url"
+	//	PathUnsecureBaseLinkUrl = "web/unsecure/base_link_url"
 
 	PathSecureBaseStaticUrl   = "web/secure/base_static_url"
 	PathUnsecureBaseStaticUrl = "web/unsecure/base_static_url"
@@ -71,6 +69,8 @@ func mustReadConfig() config.ScopeReader {
 	return configReader
 }
 
+// GetDefaultConfiguration in conjunction with config.Scope.ApplyDefaults function to
+// set the default configuration value for a package.
 func GetDefaultConfiguration() config.DefaultMap {
 	return config.DefaultMap{
 		PathSingleStoreModeEnabled: false,

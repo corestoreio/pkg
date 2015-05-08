@@ -17,7 +17,6 @@ package store
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
@@ -111,52 +110,59 @@ func (s *Store) Data() *TableStore {
 	return s.s
 }
 
-// Path returns the path from the URL or config where CoreStore is installed @todo
+// Path returns the sub path from the URL where CoreStore is installed
 func (s *Store) Path() string {
-
 	url, err := url.ParseRequestURI(s.BaseUrl(config.UrlTypeWeb, false))
-
-	fmt.Printf("\n%#v\n%s\n", url, err)
-
-	return "/"
+	if err != nil {
+		return "/"
+	}
+	return url.Path
 }
 
 // BaseUrl returns the path from the URL or config where CoreStore is installed @todo
 // @see https://github.com/magento/magento2/blob/0.74.0-beta7/app/code/Magento/Store/Model/Store.php#L539
 func (s *Store) BaseUrl(ut config.UrlType, isSecure bool) string {
-	//
 	var url string
+	var p string
 	switch ut {
 	case config.UrlTypeWeb:
+		p = PathUnsecureBaseUrl
 		if isSecure {
-			url = s.getConfigString(PathSecureBaseUrl)
-		} else {
-			url = s.getConfigString(PathUnsecureBaseUrl)
+			p = PathSecureBaseUrl
 		}
 		break
 	case config.UrlTypeStatic:
+		p = PathUnsecureBaseStaticUrl
 		if isSecure {
-			url = s.getConfigString(PathSecureBaseStaticUrl)
-		} else {
-			url = s.getConfigString(PathUnsecureBaseStaticUrl)
-		}
-		if url == "" {
-			// @todo
+			p = PathSecureBaseStaticUrl
 		}
 		break
+	case config.UrlTypeMedia:
+		p = PathUnsecureBaseMediaUrl
+		if isSecure {
+			p = PathSecureBaseMediaUrl
+		}
+		break
+	// @todo rethink that here and maybe add the other paths if needed.
 	default:
 		panic("Unsupported UrlType")
 	}
 
+	url = s.getConfigString(p)
+
 	if strings.Contains(url, PlaceholderBaseUrl) {
 		// @todo replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
+		// getDistroBaseUrl will be generated from the $_SERVER variable,
+		url = strings.Replace(url, PlaceholderBaseUrl, mustReadConfig().ReadString(config.PathCSBaseUrl, config.ScopeDefault), 1)
 	}
+	url = strings.TrimRight(url, "/") + "/"
 
 	return url
 }
 
 // getConfigString tries to get a value from the scopeStore if empty
-// falls back to default global scope
+// falls back to default global scope.
+// If using etcd or consul maybe this can lead to round trip times because of network access.
 func (s *Store) getConfigString(path string) string {
 	val := mustReadConfig().ReadString(path, config.ScopeStore, s)
 	if val == "" {

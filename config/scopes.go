@@ -33,19 +33,22 @@ const (
 	//  Stored in table core_config_data.scope.
 	DataScopeStores = "stores"
 
-	// PS defines the path separator for the configuration path
-	PS = "/"
-
 	LeftDelim  = "{{"
 	RightDelim = "}}"
+
+	CSBaseUrl     = "http://localhost:9500/"
+	PathCSBaseUrl = "web/corestore/base_url"
 )
 
 const (
-	// UrlTypeWeb main base url
+	// UrlTypeWeb defines the ULR type to generate the main base URL.
 	UrlTypeWeb UrlType = iota + 1
-	// UrlTypeStatic url to the static assets
+	// UrlTypeStatic defines the url to the static assets like css, js or theme images
 	UrlTypeStatic
-	UrlTypeLink
+	// UrlTypeLink hmmm
+	// UrlTypeLink
+	// UrlTypeMedia defines the ULR type for generating URLs to product photos
+	UrlTypeMedia
 )
 
 type (
@@ -79,22 +82,28 @@ type (
 		WriteString(path, value string, scope ScopeID, r ...Retriever)
 	}
 
+	// Scope main configuration struct which includes Viper
 	Scope struct {
-		Config *viper.Viper
+		*viper.Viper
 	}
 )
 
+// NewScope creates the main new configuration for all scopes: default, website and store
 func NewScope() *Scope {
-	return &Scope{
-		Config: viper.New(),
+	s := &Scope{
+		Viper: viper.New(),
 	}
+
+	s.SetDefault(PathCSBaseUrl, CSBaseUrl)
+
+	return s
 }
 
 // ApplyDefaults reads the map and applies the keys and values to the default configuration
 func (sp *Scope) ApplyDefaults(m DefaultMap) *Scope {
 	// mutex necessary?
 	for k, v := range m {
-		sp.Config.SetDefault(DataScopeDefault+PS+k, v)
+		sp.SetDefault(DataScopeDefault+"/"+k, v)
 	}
 	return sp
 }
