@@ -23,6 +23,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/juju/errgo"
 	"github.com/stretchr/testify/assert"
 )
@@ -644,6 +645,7 @@ func getTestRequest(t *testing.T, m, u string, c *http.Cookie) *http.Request {
 }
 func TestInitByRequest(t *testing.T) {
 	testInitByRequest(t, store.ID(1), config.ScopeGroup)
+	// @todo add more config.Scope* tests
 }
 
 func testInitByRequest(t *testing.T, testCode store.Retriever, testScope config.ScopeID) {
@@ -701,6 +703,75 @@ func testInitByRequest(t *testing.T, testCode store.Retriever, testScope config.
 		}
 	}
 	storeManagerRequestStore.ClearCache(true)
+}
+
+func TestInitByToken(t *testing.T) {
+
+	getToken := func(code string) *jwt.Token {
+		t := jwt.New(jwt.SigningMethodHS256)
+		t.Claims[store.CookieName] = code
+		return t
+	}
+
+	tests := []struct {
+		haveR              store.Retriever
+		haveCodeToken      string
+		haveScopeType      config.ScopeID
+		wantStoreCode      string // this is the default store in a scope, lookup in storeManagerRequestStore
+		wantTokenStoreCode store.CodeRetriever
+		wantErr            error
+	}{
+		{store.Code("de"), "de", config.ScopeStore, "de", store.Code("de"), nil},
+		{store.Code("de"), "at", config.ScopeStore, "de", store.Code("at"), nil},
+		{store.Code("de"), "a$t", config.ScopeStore, "de", nil, nil},
+		{store.Code("at"), "ch", config.ScopeStore, "at", nil, store.ErrStoreNotActive},
+		{store.Code("at"), "", config.ScopeStore, "at", nil, nil},
+
+		{store.ID(1), "de", config.ScopeGroup, "at", store.Code("de"), nil},
+		{store.ID(1), "ch", config.ScopeGroup, "at", nil, store.ErrStoreNotActive},
+		{store.ID(1), " ch", config.ScopeGroup, "at", nil, nil},
+		{store.ID(1), "uk", config.ScopeGroup, "at", nil, store.ErrStoreChangeNotAllowed},
+
+		{store.ID(2), "uk", config.ScopeWebsite, "au", nil, store.ErrStoreChangeNotAllowed},
+		{store.ID(2), "nz", config.ScopeWebsite, "au", store.Code("nz"), nil},
+		{store.ID(2), "n z", config.ScopeWebsite, "au", nil, nil},
+		{store.ID(2), "", config.ScopeWebsite, "au", nil, nil},
+	}
+	for _, test := range tests {
+
+		haveStore, haveErr := storeManagerRequestStore.InitByToken(nil, test.haveScopeType)
+		assert.Nil(t, haveStore)
+		assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
+
+		if err := storeManagerRequestStore.Init(test.haveR, test.haveScopeType); err != nil {
+			t.Fatal(err)
+		}
+
+		if s, err := storeManagerRequestStore.Store(); err == nil {
+			assert.EqualValues(t, test.wantStoreCode, s.Data().Code.String)
+		} else {
+			assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+			t.Fail()
+		}
+
+		haveStore, haveErr = storeManagerRequestStore.InitByToken(getToken(test.haveCodeToken), test.haveScopeType)
+		if test.wantErr != nil {
+			assert.Nil(t, haveStore, "%#v", test)
+			assert.Error(t, haveErr, "%#v", test)
+			assert.EqualError(t, test.wantErr, haveErr.Error())
+		} else {
+			if test.wantTokenStoreCode != nil {
+				assert.NotNil(t, haveStore, "%#v", test)
+				assert.NoError(t, haveErr)
+				assert.Equal(t, test.wantTokenStoreCode.Code(), haveStore.Data().Code.String)
+			} else {
+				assert.Nil(t, haveStore, "%#v", test)
+				assert.NoError(t, haveErr, "%#v", test)
+			}
+
+		}
+		storeManagerRequestStore.ClearCache(true)
+	}
 }
 
 /*

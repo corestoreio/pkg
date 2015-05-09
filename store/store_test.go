@@ -23,6 +23,7 @@ import (
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/utils"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -293,5 +294,50 @@ func TestStoreBaseUrlandPath(t *testing.T) {
 		assert.EqualValues(t, test.wantBaseUrl, s.BaseUrl(test.haveUT, test.haveIsSecure))
 		assert.EqualValues(t, test.wantPath, s.Path())
 	}
+}
 
+func TestValidateStoreCode(t *testing.T) {
+	tests := []struct {
+		have    string
+		wantErr error
+	}{
+		{"@de", store.ErrStoreCodeInvalid},
+		{" de", store.ErrStoreCodeInvalid},
+		{"de", nil},
+		{"DE", nil},
+		{"deCH09_", nil},
+		{"_de", store.ErrStoreCodeInvalid},
+		{"", store.ErrStoreCodeInvalid},
+		{"\U0001f41c", store.ErrStoreCodeInvalid},
+		{"au_en", nil},
+		{"au-fr", store.ErrStoreCodeInvalid},
+		{"Hello GoLang", store.ErrStoreCodeInvalid},
+		{"Hello€GoLang", store.ErrStoreCodeInvalid},
+	}
+	for _, test := range tests {
+		haveErr := store.ValidateStoreCode(test.have)
+		if test.wantErr != nil {
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "err codes switched: %#v", test)
+		} else {
+			assert.NoError(t, haveErr, "%#v", test)
+		}
+	}
+}
+
+func TestClaim(t *testing.T) {
+	s := store.NewStore(
+		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
+		&store.TableGroup{GroupID: 1, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
+		&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+	)
+	token := jwt.New(jwt.SigningMethodHS256)
+	s.AddClaim(token)
+	sCode := store.GetCodeFromClaim(token)
+	assert.EqualValues(t, store.Code("de"), sCode)
+	assert.Nil(t, store.GetCodeFromClaim(nil))
+
+	token2 := jwt.New(jwt.SigningMethodHS256)
+	token2.Claims[store.CookieName] = "Invalid Cod€"
+	sCode2 := store.GetCodeFromClaim(token2)
+	assert.Nil(t, sCode2)
 }

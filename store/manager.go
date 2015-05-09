@@ -22,6 +22,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/juju/errgo"
 )
 
@@ -126,7 +127,7 @@ func (sm *Manager) InitByRequest(res http.ResponseWriter, req *http.Request, sco
 	}
 
 	var reqStore *Store
-	if keks := GetCookie(req); keks != nil {
+	if keks := GetCodeFromCookie(req); keks != nil {
 		reqStore, _ = sm.GetRequestStore(keks, scopeType) // ignore errors
 	}
 
@@ -150,6 +151,20 @@ func (sm *Manager) InitByRequest(res http.ResponseWriter, req *http.Request, sco
 		}
 	}
 	return reqStore, nil // can be nil,nil
+}
+
+// InitByToken returns a Store pointer from a JSON web token. If the store code is invalid,
+// this function can return nil,nil
+func (sm *Manager) InitByToken(t *jwt.Token, scopeType config.ScopeID) (*Store, error) {
+	if sm.appStore == nil {
+		// that means you must call Init() before executing this function.
+		return nil, ErrAppStoreNotSet
+	}
+
+	if tStore := GetCodeFromClaim(t); tStore != nil {
+		return sm.GetRequestStore(tStore, scopeType)
+	}
+	return nil, nil
 }
 
 // GetRequestStore is in Magento named setCurrentStore and only used by InitByRequest().

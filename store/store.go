@@ -26,6 +26,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
+	"github.com/dgrijalva/jwt-go"
 )
 
 const (
@@ -62,6 +63,7 @@ var (
 	ErrStoreNewArgNil        = errors.New("An argument cannot be nil")
 	ErrStoreIncorrectGroup   = errors.New("Incorrect group")
 	ErrStoreIncorrectWebsite = errors.New("Incorrect website")
+	ErrStoreCodeInvalid      = errors.New("The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter")
 )
 
 // NewStore returns a new pointer to a Store. Panics if one of the arguments is nil.
@@ -202,17 +204,49 @@ func (s *Store) DeleteCookie(res http.ResponseWriter) {
 	}
 }
 
+// AddClaim adds the store code to a JSON web token
+func (s *Store) AddClaim(t *jwt.Token) {
+	t.Claims[CookieName] = s.Data().Code.String
+}
+
 /*
 	Global functions
 */
+// GetClaim returns a valid store code from a JSON web token or nil
+func GetCodeFromClaim(t *jwt.Token) Retriever {
+	if t == nil {
+		return nil
+	}
+	c, ok := t.Claims[CookieName]
+	if cs, okcs := c.(string); okcs && ok && nil == ValidateStoreCode(cs) {
+		return Code(cs)
+	}
+	return nil
+}
 
 // GetCookie returns from a Request the value of the store cookie or nil.
-func GetCookie(req *http.Request) Retriever {
+func GetCodeFromCookie(req *http.Request) Retriever {
 	if req == nil {
 		return nil
 	}
-	if keks, err := req.Cookie(CookieName); err == nil && keks.Value != "" {
+	if keks, err := req.Cookie(CookieName); nil == err && nil == ValidateStoreCode(keks.Value) {
 		return Code(keks.Value)
+	}
+	return nil
+}
+
+// ValidateStoreCode checks if a store code is valid. Returns nil for no error
+// or the error. A valid code first letter is a-zA-Z followed by a-zA-Z0-9_
+func ValidateStoreCode(c string) error {
+	if c == "" {
+		return ErrStoreCodeInvalid
+	}
+	c1 := c[0]
+	if false == ((c1 >= 'a' && c1 <= 'z') || (c1 >= 'A' && c1 <= 'Z')) {
+		return ErrStoreCodeInvalid
+	}
+	if false == utils.IsAlphaNumeric(c) {
+		return ErrStoreCodeInvalid
 	}
 	return nil
 }
