@@ -40,7 +40,10 @@ func TestCamelize(t *testing.T) {
 		{"idx_eav_id", "IDXEAVID"},
 		{"idxeav_id", "IdxeavID"},
 		{"idxeav_cs", "IdxeavCS"},
-		{"idx_Tmp_cs", "IDXTMPCS"},
+		{"idx_eav_cs", "IDXEAVCS"},
+		{"idx_eav_cs_url", "IDXEAVCSURL"},
+		{"hello_eav_idx_cs", "HelloEAVIDXCS"},
+		{"hello_idx_Tmp_cs", "HelloIDXTMPCS"},
 	}
 	for _, test := range tests {
 		assert.Equal(t, test.expected, Camelize(test.actual))
@@ -318,5 +321,48 @@ func BenchmarkExtractFuncType(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		benchExtractFuncType, _ = ExtractFuncType("gopkg.in/yaml.v2.1.30.Unmarshal()")
+	}
+}
+
+func TestLintName(t *testing.T) {
+	tests := []struct {
+		name, want string
+	}{
+		{"foo_bar", "fooBar"},
+		{"foo_bar_baz", "fooBarBaz"},
+		{"Foo_bar", "FooBar"},
+		{"foo_WiFi", "fooWiFi"},
+		{"id", "id"},
+		{"Id", "ID"},
+		{"foo_id", "fooID"},
+		{"fooId", "fooID"},
+		{"fooUid", "fooUID"},
+		{"idFoo", "idFoo"},
+		{"uidFoo", "uidFoo"},
+		{"midIdDle", "midIDDle"},
+		{"APIProxy", "APIProxy"},
+		{"ApiProxy", "APIProxy"},
+		{"apiProxy", "apiProxy"},
+		{"_Leading", "_Leading"},
+		{"___Leading", "_Leading"},
+		{"trailing_", "trailing"},
+		{"trailing___", "trailing"},
+		{"a_b", "aB"},
+		{"a__b", "aB"},
+		{"a___b", "aB"},
+		{"Rpc1150", "RPC1150"},
+		{"case3_1", "case3_1"},
+		{"case3__1", "case3_1"},
+		{"IEEE802_16bit", "IEEE802_16bit"},
+		{"IEEE802_16Bit", "IEEE802_16Bit"},
+		{"TableIndexUrlRewriteProductCategory", "TableIndexURLRewriteProductCategory"},
+		{"IsHtmlAllowedOnFront", "IsHTMLAllowedOnFront"},
+		{"UrlRewriteID", "URLRewriteID"},
+	}
+	for _, test := range tests {
+		got := LintName(test.name)
+		if got != test.want {
+			t.Errorf("lintName(%q) = %q, want %q", test.name, got, test.want)
+		}
 	}
 }

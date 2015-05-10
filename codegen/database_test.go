@@ -83,42 +83,39 @@ func TestGetEavValueTables(t *testing.T) {
 	dbrConn := dbr.NewConnection(db, nil)
 
 	tests := []struct {
-		prefix          string // this is the global table name prefix
-		entityTypeCodes []string
-		expErr          bool
-		expMap          TypeCodeValueTable
+		haveETC   []string // have entity type codes
+		wantErr   bool
+		wantCVMap TypeCodeValueTable
 	}{
 		{
-			entityTypeCodes: []string{"catalog_category", "catalog_product"},
-			expErr:          false,
-			expMap:          TypeCodeValueTable{"catalog_category": map[string]string{"catalog_category_entity_datetime": "datetime", "catalog_category_entity_decimal": "decimal", "catalog_category_entity_int": "int", "catalog_category_entity_text": "text", "catalog_category_entity_varchar": "varchar"}, "catalog_product": map[string]string{"catalog_product_entity_datetime": "datetime", "catalog_product_entity_decimal": "decimal", "catalog_product_entity_int": "int", "catalog_product_entity_text": "text", "catalog_product_entity_varchar": "varchar"}},
+			haveETC:   []string{"catalog_category", "catalog_product"},
+			wantErr:   false,
+			wantCVMap: TypeCodeValueTable{"catalog_category": map[string]string{"catalog_category_entity_datetime": "datetime", "catalog_category_entity_decimal": "decimal", "catalog_category_entity_int": "int", "catalog_category_entity_text": "text", "catalog_category_entity_varchar": "varchar"}, "catalog_product": map[string]string{"catalog_product_entity_datetime": "datetime", "catalog_product_entity_decimal": "decimal", "catalog_product_entity_int": "int", "catalog_product_entity_text": "text", "catalog_product_entity_varchar": "varchar"}},
 		},
 		{
-			entityTypeCodes: []string{"customer_address", "customer"},
-			expErr:          false,
-			expMap:          TypeCodeValueTable{"customer_address": map[string]string{"customer_address_entity_text": "text", "customer_address_entity_varchar": "varchar", "customer_address_entity_datetime": "datetime", "customer_address_entity_decimal": "decimal", "customer_address_entity_int": "int"}, "customer": map[string]string{"csCustomer_value_decimal": "decimal", "csCustomer_value_int": "int", "csCustomer_value_text": "text", "csCustomer_value_varchar": "varchar", "csCustomer_value_datetime": "datetime"}},
+			haveETC:   []string{"customer_address", "customer"},
+			wantErr:   false,
+			wantCVMap: TypeCodeValueTable{"customer_address": map[string]string{"customer_address_entity_text": "text", "customer_address_entity_varchar": "varchar", "customer_address_entity_datetime": "datetime", "customer_address_entity_decimal": "decimal", "customer_address_entity_int": "int"}, "customer": map[string]string{"csCustomer_value_decimal": "decimal", "csCustomer_value_int": "int", "csCustomer_value_text": "text", "csCustomer_value_varchar": "varchar", "csCustomer_value_datetime": "datetime"}},
 		},
 		{
-			entityTypeCodes: []string{"catalog_address"},
-			expErr:          false,
-			expMap:          TypeCodeValueTable{"catalog_address": map[string]string{}},
+			haveETC:   []string{"catalog_address"},
+			wantErr:   false,
+			wantCVMap: TypeCodeValueTable{"catalog_address": map[string]string{}},
 		},
 	}
 
 	for _, test := range tests {
-		tcMap, err := GetEavValueTables(dbrConn, test.entityTypeCodes)
-		if test.expErr {
+		tcMap, err := GetEavValueTables(dbrConn, test.haveETC)
+		if test.wantErr {
 			assert.Error(t, err)
 		}
-		if !test.expErr && err != nil {
+		if !test.wantErr && err != nil {
 			t.Error(err)
 		}
 
-		assert.EqualValues(t, test.expMap, tcMap)
-		assert.Len(t, tcMap, len(test.expMap))
-
+		assert.EqualValues(t, test.wantCVMap, tcMap)
+		assert.Len(t, tcMap, len(test.wantCVMap))
 	}
-
 }
 
 func TestColumnComment(t *testing.T) {
@@ -211,7 +208,7 @@ func TestGetColumns(t *testing.T) {
 		}
 		assert.Len(t, cols, test.expCount)
 
-		col := cols.getByName(test.colName)
+		col := cols.GetByName(test.colName)
 		if test.colName != "" {
 			assert.Equal(t, col.Field.String, test.colName)
 		} else {
