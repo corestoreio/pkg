@@ -27,7 +27,6 @@ import (
 )
 
 type (
-	// Manager implements the Storager interface and on request the StorageMutator interface.
 	// Manager uses three internal maps to cache the pointers of Website, Group and Store.
 	Manager struct {
 		// storage get set of websites, groups and stores and also type assertion to StorageMutator for
@@ -49,7 +48,6 @@ type (
 		// when booting the app. This store is the main store under which the app runs.
 		// In Magento slang it is called currentStore but current Store relates to a Store set
 		// by InitByRequest()
-		// @todo you can have per request a different store which overrides the currentStore
 		appStore *Store
 
 		// defaultStore some one must be always default.

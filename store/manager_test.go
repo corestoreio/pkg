@@ -643,43 +643,120 @@ func getTestRequest(t *testing.T, m, u string, c *http.Cookie) *http.Request {
 	}
 	return req
 }
+
+// cyclomatic complexity 12 of function TestInitByRequest() is high (> 10) (gocyclo)
 func TestInitByRequest(t *testing.T) {
-	testInitByRequest(t, store.ID(1), config.ScopeGroup)
-	// @todo add more config.Scope* tests
-}
-
-func testInitByRequest(t *testing.T, testCode store.Retriever, testScope config.ScopeID) {
-
-	if _, haveErr := storeManagerRequestStore.InitByRequest(nil, nil, testScope); haveErr != nil {
-		assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
-	} else {
-		t.Fatal("InitByRequest should return an error if used without running Init() first.")
-	}
-
-	if err := storeManagerRequestStore.Init(testCode, testScope); err != nil {
-		t.Fatal(err)
-	}
-	if s, err := storeManagerRequestStore.Store(); err == nil {
-		assert.EqualValues(t, "at", s.Data().Code.String)
-	} else {
-		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
-		t.Fail()
-	}
+	store.SetConfigReader(newMockScopeReader(func(path string, scope config.ScopeID, r ...config.Retriever) string {
+		switch path {
+		case store.PathSecureBaseUrl:
+			return store.PlaceholderBaseUrl
+		case store.PathUnsecureBaseUrl:
+			return store.PlaceholderBaseUrl
+		case config.PathCSBaseUrl:
+			return "http://cs.io/"
+		}
+		return ""
+	}, nil))
 
 	tests := []struct {
-		res           *httptest.ResponseRecorder
-		req           *http.Request
-		wantStoreCode store.CodeRetriever
-		wantErr       error
+		req                  *http.Request
+		haveR                store.Retriever
+		haveScopeType        config.ScopeID
+		wantStoreCode        string // this is the default store in a scope, lookup in storeManagerRequestStore
+		wantRequestStoreCode store.CodeRetriever
+		wantErr              error
+		wantCookie           string
 	}{
-		//		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "de"}), store.Code("de"), nil},
-		//		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io", nil), nil, nil},
-		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=de", nil), store.Code("de"), nil},
-		//		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=cz", nil), nil, store.ErrStoreNotFound},
-		//		{httptest.NewRecorder(), getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil), nil, store.ErrStoreChangeNotAllowed},
+		{
+			getTestRequest(t, "GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "uk"}),
+			store.ID(1), config.ScopeStore, "de", store.Code("uk"), nil, "",
+		},
+		{
+			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
+			store.ID(1), config.ScopeStore, "de", store.Code("uk"), nil, store.CookieName + "=uk;", // generates a new 1y valid cookie
+		},
+		{
+			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=%20uk", nil),
+			store.ID(1), config.ScopeStore, "de", store.Code("uk"), store.ErrStoreNotFound, "",
+		},
+
+		{
+			getTestRequest(t, "GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "de"}),
+			store.ID(1), config.ScopeGroup, "at", store.Code("de"), nil, "",
+		},
+		{
+			getTestRequest(t, "GET", "http://cs.io", nil),
+			store.ID(1), config.ScopeGroup, "at", nil, nil, "",
+		},
+		{
+			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=de", nil),
+			store.ID(1), config.ScopeGroup, "at", store.Code("de"), nil, store.CookieName + "=de;", // generates a new 1y valid cookie
+		},
+		{
+			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=at", nil),
+			store.ID(1), config.ScopeGroup, "at", store.Code("at"), nil, store.CookieName + "=;", // generates a delete cookie
+		},
+		{
+			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=cz", nil),
+			store.ID(1), config.ScopeGroup, "at", nil, store.ErrStoreNotFound, "",
+		},
+		{
+			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
+			store.ID(1), config.ScopeGroup, "at", nil, store.ErrStoreChangeNotAllowed, "",
+		},
+
+		{
+			getTestRequest(t, "GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "nz"}),
+			store.ID(2), config.ScopeWebsite, "au", store.Code("nz"), nil, "",
+		},
+		{
+			getTestRequest(t, "GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "n'z"}),
+			store.ID(2), config.ScopeWebsite, "au", nil, nil, "",
+		},
+		{
+			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
+			store.ID(2), config.ScopeWebsite, "au", nil, store.ErrStoreChangeNotAllowed, "",
+		},
+		{
+			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=nz", nil),
+			store.ID(2), config.ScopeWebsite, "au", store.Code("nz"), nil, store.CookieName + "=nz;",
+		},
+		{
+			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=ch", nil),
+			store.ID(1), config.ScopeWebsite, "at", nil, store.ErrStoreNotActive, "",
+		},
+		{
+			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=nz", nil),
+			store.ID(1), config.ScopeDefault, "at", store.Code("nz"), nil, "",
+		},
 	}
+
 	for _, test := range tests {
-		haveStore, haveErr := storeManagerRequestStore.InitByRequest(test.res, test.req, testScope)
+		if _, haveErr := storeManagerRequestStore.InitByRequest(nil, nil, test.haveScopeType); haveErr != nil {
+			assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
+		} else {
+			t.Fatal("InitByRequest should return an error if used without running Init() first.")
+		}
+
+		if err := storeManagerRequestStore.Init(test.haveR, test.haveScopeType); err != nil {
+			assert.EqualError(t, store.ErrUnsupportedScopeID, err.Error())
+			t.Log("continuing for loop because of expected store.ErrUnsupportedScopeID")
+			storeManagerRequestStore.ClearCache(true)
+			continue
+		}
+
+		if s, err := storeManagerRequestStore.Store(); err == nil {
+			assert.EqualValues(t, test.wantStoreCode, s.Data().Code.String)
+		} else {
+			assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+			t.Log("continuing for loop because of expected store.ErrStoreNotFound")
+			storeManagerRequestStore.ClearCache(true)
+			continue
+		}
+
+		resRec := httptest.NewRecorder()
+
+		haveStore, haveErr := storeManagerRequestStore.InitByRequest(resRec, test.req, test.haveScopeType)
 		if test.wantErr != nil {
 			assert.Nil(t, haveStore)
 			assert.EqualError(t, test.wantErr, haveErr.Error())
@@ -688,21 +765,28 @@ func testInitByRequest(t *testing.T, testCode store.Retriever, testScope config.
 				t.Logf("\nLocation: %s => %s\n", haveErr, msg.Location())
 			}
 			assert.NoError(t, haveErr, "%#v", test)
-			if test.wantStoreCode != nil {
+			if test.wantRequestStoreCode != nil {
 				assert.NotNil(t, haveStore, "%#v", test.req.URL.Query())
-				assert.EqualValues(t, test.wantStoreCode.Code(), haveStore.Data().Code.String)
-				t.Logf(
-					"\nStore: %s\nHeader: %#v\nBody: %s\n",
-					test.wantStoreCode.Code(),
-					test.res.HeaderMap,
-					test.res.Body.String(),
-				)
+				assert.EqualValues(t, test.wantRequestStoreCode.Code(), haveStore.Data().Code.String)
+
+				newKeks := resRec.HeaderMap.Get("Set-Cookie")
+				if test.wantCookie != "" {
+					assert.Contains(t, newKeks, test.wantCookie, "%#v", test)
+					//					t.Logf(
+					//						"\nwantRequestStoreCode: %s\nCookie Str: %#v\n",
+					//						test.wantRequestStoreCode.Code(),
+					//						newKeks,
+					//					)
+				} else {
+					assert.Empty(t, newKeks, "%#v", test)
+				}
+
 			} else {
 				assert.Nil(t, haveStore, "%#v", haveStore)
 			}
 		}
+		storeManagerRequestStore.ClearCache(true)
 	}
-	storeManagerRequestStore.ClearCache(true)
 }
 
 func TestInitByToken(t *testing.T) {

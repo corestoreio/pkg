@@ -173,13 +173,15 @@ func (s *Store) getConfigString(path string) string {
 	return val
 }
 
-// NewCookie creates a new pre-configured cookie
+// NewCookie creates a new pre-configured cookie.
+// @todo create cookie manager to stick to the limits of http://www.ietf.org/rfc/rfc2109.txt page 15
+// @see http://browsercookielimits.squawky.net/
 func (s *Store) NewCookie() *http.Cookie {
 	return &http.Cookie{
 		Name:     CookieName,
 		Value:    "",
 		Path:     s.Path(),
-		Domain:   s.BaseUrl(config.UrlTypeWeb, false),
+		Domain:   "",
 		Secure:   false,
 		HttpOnly: true,
 	}
@@ -235,10 +237,10 @@ func GetCodeFromCookie(req *http.Request) Retriever {
 	return nil
 }
 
-// ValidateStoreCode checks if a store code is valid. Returns nil for no error
-// or the error. A valid code first letter is a-zA-Z followed by a-zA-Z0-9_
+// ValidateStoreCode checks if a store code is valid. Returns an error if the  first letter is not a-zA-Z
+// and followed by a-zA-Z0-9_ or store code length is greater than 32 characters.
 func ValidateStoreCode(c string) error {
-	if c == "" {
+	if c == "" || len(c) > 32 {
 		return ErrStoreCodeInvalid
 	}
 	c1 := c[0]
