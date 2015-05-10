@@ -114,7 +114,7 @@ func (s *Store) Data() *TableStore {
 
 // Path returns the sub path from the URL where CoreStore is installed
 func (s *Store) Path() string {
-	url, err := url.ParseRequestURI(s.BaseUrl(config.UrlTypeWeb, false))
+	url, err := url.ParseRequestURI(s.BaseURL(config.URLTypeWeb, false))
 	if err != nil {
 		return "/"
 	}
@@ -123,26 +123,26 @@ func (s *Store) Path() string {
 
 // BaseUrl returns the path from the URL or config where CoreStore is installed @todo
 // @see https://github.com/magento/magento2/blob/0.74.0-beta7/app/code/Magento/Store/Model/Store.php#L539
-func (s *Store) BaseUrl(ut config.UrlType, isSecure bool) string {
+func (s *Store) BaseURL(ut config.URLType, isSecure bool) string {
 	var url string
 	var p string
 	switch ut {
-	case config.UrlTypeWeb:
-		p = PathUnsecureBaseUrl
+	case config.URLTypeWeb:
+		p = PathUnsecureBaseURL
 		if isSecure {
-			p = PathSecureBaseUrl
+			p = PathSecureBaseURL
 		}
 		break
-	case config.UrlTypeStatic:
-		p = PathUnsecureBaseStaticUrl
+	case config.URLTypeStatic:
+		p = PathUnsecureBaseStaticURL
 		if isSecure {
-			p = PathSecureBaseStaticUrl
+			p = PathSecureBaseStaticURL
 		}
 		break
-	case config.UrlTypeMedia:
-		p = PathUnsecureBaseMediaUrl
+	case config.URLTypeMedia:
+		p = PathUnsecureBaseMediaURL
 		if isSecure {
-			p = PathSecureBaseMediaUrl
+			p = PathSecureBaseMediaURL
 		}
 		break
 	// @todo rethink that here and maybe add the other paths if needed.
@@ -152,10 +152,10 @@ func (s *Store) BaseUrl(ut config.UrlType, isSecure bool) string {
 
 	url = s.getConfigString(p)
 
-	if strings.Contains(url, PlaceholderBaseUrl) {
+	if strings.Contains(url, PlaceholderBaseURL) {
 		// @todo replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
 		// getDistroBaseUrl will be generated from the $_SERVER variable,
-		url = strings.Replace(url, PlaceholderBaseUrl, mustReadConfig().ReadString(config.PathCSBaseUrl, config.ScopeDefault), 1)
+		url = strings.Replace(url, PlaceholderBaseURL, mustReadConfig().ReadString(config.PathCSBaseURL, config.ScopeDefault), 1)
 	}
 	url = strings.TrimRight(url, "/") + "/"
 

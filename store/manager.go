@@ -93,17 +93,19 @@ func (sm *Manager) Init(scopeCode Retriever, scopeType config.ScopeID) error {
 	case config.ScopeStore:
 		sm.appStore, err = sm.Store(scopeCode)
 	case config.ScopeGroup:
-		if g, errG := sm.Group(scopeCode); errG != nil { // this is the group_id
+		g, errG := sm.Group(scopeCode) // this is the group_id
+		if errG != nil {
 			return errgo.Mask(errG)
-		} else { // else needed because of scoping of g
-			sm.appStore, err = g.DefaultStore()
 		}
+		sm.appStore, err = g.DefaultStore()
+		break
 	case config.ScopeWebsite:
-		if w, errW := sm.Website(scopeCode); errW != nil {
+		w, errW := sm.Website(scopeCode)
+		if errW != nil {
 			return errgo.Mask(errW)
-		} else { // else needed because of scoping of w
-			sm.appStore, err = w.DefaultStore()
 		}
+		sm.appStore, err = w.DefaultStore()
+		break
 	default:
 		return ErrUnsupportedScopeID
 	}

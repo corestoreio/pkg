@@ -39,7 +39,7 @@ type (
 		IsFilterable() bool
 		IsComparable() bool
 		IsVisibleOnFront() bool
-		IsHtmlAllowedOnFront() bool
+		IsHTMLAllowedOnFront() bool
 		IsUsedForPriceRules() bool
 		IsFilterableInSearch() bool
 		UsedInProductListing() bool
@@ -67,7 +67,7 @@ type (
 		isFilterable              bool
 		isComparable              bool
 		isVisibleOnFront          bool
-		isHtmlAllowedOnFront      bool
+		isHTMLAllowedOnFront      bool
 		isUsedForPriceRules       bool
 		isFilterableInSearch      bool
 		usedInProductListing      bool
@@ -115,7 +115,7 @@ func NewCatalog(
 	isFilterable bool,
 	isComparable bool,
 	isVisibleOnFront bool,
-	isHtmlAllowedOnFront bool,
+	isHTMLAllowedOnFront bool,
 	isUsedForPriceRules bool,
 	isFilterableInSearch bool,
 	usedInProductListing bool,
@@ -138,7 +138,7 @@ func NewCatalog(
 		isFilterable:              isFilterable,
 		isComparable:              isComparable,
 		isVisibleOnFront:          isVisibleOnFront,
-		isHtmlAllowedOnFront:      isHtmlAllowedOnFront,
+		isHTMLAllowedOnFront:      isHTMLAllowedOnFront,
 		isUsedForPriceRules:       isUsedForPriceRules,
 		isFilterableInSearch:      isFilterableInSearch,
 		usedInProductListing:      usedInProductListing,
@@ -174,8 +174,8 @@ func (a *Catalog) IsComparable() bool {
 func (a *Catalog) IsVisibleOnFront() bool {
 	return a.isVisibleOnFront
 }
-func (a *Catalog) IsHtmlAllowedOnFront() bool {
-	return a.isHtmlAllowedOnFront
+func (a *Catalog) IsHTMLAllowedOnFront() bool {
+	return a.isHTMLAllowedOnFront
 }
 func (a *Catalog) IsUsedForPriceRules() bool {
 	return a.isUsedForPriceRules

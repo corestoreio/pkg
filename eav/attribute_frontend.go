@@ -63,11 +63,11 @@ func AttributeFrontendIdx(i AttributeIndex) AttributeFrontendConfig {
 }
 
 // Config runs the configuration functions
-func (as *AttributeFrontend) Config(configs ...AttributeFrontendConfig) AttributeFrontendModeller {
+func (af *AttributeFrontend) Config(configs ...AttributeFrontendConfig) AttributeFrontendModeller {
 	for _, cfg := range configs {
-		cfg(as)
+		cfg(af)
 	}
-	return as
+	return af
 }
 
 func (af *AttributeFrontend) InputRenderer() FrontendInputRendererIFace { return nil }

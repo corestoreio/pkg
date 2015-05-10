@@ -58,7 +58,7 @@ func generateStructures(tStruct *codegen.TableToStruct, db *sql.DB, dbrConn *dbr
 		codegen.LogFatal(err)
 
 		for _, vTables := range tplData.TypeCodeValueTables {
-			for t, _ := range vTables {
+			for t := range vTables {
 				if false == isDuplicate(tables, t) {
 					tables = append(tables, t)
 				}

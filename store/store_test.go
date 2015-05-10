@@ -244,7 +244,7 @@ func TestStoreBaseUrlandPath(t *testing.T) {
 
 	tests := []struct {
 		haveR        config.ScopeReader
-		haveUT       config.UrlType
+		haveUT       config.URLType
 		haveIsSecure bool
 		wantBaseUrl  string
 		wantPath     string
@@ -252,46 +252,46 @@ func TestStoreBaseUrlandPath(t *testing.T) {
 		{
 			newMockScopeReader(func(path string, scope config.ScopeID, r ...config.Retriever) string {
 				switch path {
-				case store.PathSecureBaseUrl:
+				case store.PathSecureBaseURL:
 					return "https://corestore.io"
-				case store.PathUnsecureBaseUrl:
+				case store.PathUnsecureBaseURL:
 					return "http://corestore.io"
 				}
 				return ""
 			}, nil),
-			config.UrlTypeWeb, true, "https://corestore.io/", "/",
+			config.URLTypeWeb, true, "https://corestore.io/", "/",
 		},
 		{
 			newMockScopeReader(func(path string, scope config.ScopeID, r ...config.Retriever) string {
 				switch path {
-				case store.PathSecureBaseUrl:
+				case store.PathSecureBaseURL:
 					return "https://myplatform.io/customer1"
-				case store.PathUnsecureBaseUrl:
+				case store.PathUnsecureBaseURL:
 					return "http://myplatform.io/customer1"
 				}
 				return ""
 			}, nil),
-			config.UrlTypeWeb, false, "http://myplatform.io/customer1/", "/customer1/",
+			config.URLTypeWeb, false, "http://myplatform.io/customer1/", "/customer1/",
 		},
 		{
 			newMockScopeReader(func(path string, scope config.ScopeID, r ...config.Retriever) string {
 				switch path {
-				case store.PathSecureBaseUrl:
-					return store.PlaceholderBaseUrl
-				case store.PathUnsecureBaseUrl:
-					return store.PlaceholderBaseUrl
-				case config.PathCSBaseUrl:
-					return config.CSBaseUrl
+				case store.PathSecureBaseURL:
+					return store.PlaceholderBaseURL
+				case store.PathUnsecureBaseURL:
+					return store.PlaceholderBaseURL
+				case config.PathCSBaseURL:
+					return config.CSBaseURL
 				}
 				return ""
 			}, nil),
-			config.UrlTypeWeb, false, config.CSBaseUrl, "/",
+			config.URLTypeWeb, false, config.CSBaseURL, "/",
 		},
 	}
 
 	for _, test := range tests {
 		store.SetConfigReader(test.haveR)
-		assert.EqualValues(t, test.wantBaseUrl, s.BaseUrl(test.haveUT, test.haveIsSecure))
+		assert.EqualValues(t, test.wantBaseUrl, s.BaseURL(test.haveUT, test.haveIsSecure))
 		assert.EqualValues(t, test.wantPath, s.Path())
 	}
 }

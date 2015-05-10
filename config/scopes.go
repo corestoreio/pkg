@@ -36,25 +36,25 @@ const (
 	LeftDelim  = "{{"
 	RightDelim = "}}"
 
-	CSBaseUrl     = "http://localhost:9500/"
-	PathCSBaseUrl = "web/corestore/base_url"
+	CSBaseURL     = "http://localhost:9500/"
+	PathCSBaseURL = "web/corestore/base_url"
 )
 
 const (
 	// UrlTypeWeb defines the ULR type to generate the main base URL.
-	UrlTypeWeb UrlType = iota + 1
+	URLTypeWeb URLType = iota + 1
 	// UrlTypeStatic defines the url to the static assets like css, js or theme images
-	UrlTypeStatic
+	URLTypeStatic
 	// UrlTypeLink hmmm
 	// UrlTypeLink
 	// UrlTypeMedia defines the ULR type for generating URLs to product photos
-	UrlTypeMedia
+	URLTypeMedia
 )
 
 type (
 	// UrlType defines the type of the URL. Used in const declaration.
 	// @see https://github.com/magento/magento2/blob/0.74.0-beta7/lib/internal/Magento/Framework/UrlInterface.php#L13
-	UrlType int
+	URLType int
 
 	// ScopeID used in constants where default is the lowest and store the highest
 	ScopeID int
@@ -94,7 +94,7 @@ func NewScope() *Scope {
 		Viper: viper.New(),
 	}
 
-	s.SetDefault(PathCSBaseUrl, CSBaseUrl)
+	s.SetDefault(PathCSBaseURL, CSBaseURL)
 
 	return s
 }

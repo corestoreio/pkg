@@ -78,6 +78,9 @@ func (a *customerAddressAttribute) ScopeDefaultValue() string {
 func (a *customerAddressAttribute) ScopeMultilineCount() int64 {
 	return a.scopeMultilineCount
 }
+func (a *customerAddressAttribute) Validate() bool {
+	return false
+}
 
 // Check if Attributer interface has been successfully implemented
 var _ custattr.Attributer = (*customerAddressAttribute)(nil)

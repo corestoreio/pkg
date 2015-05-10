@@ -24,29 +24,29 @@ const (
 	PathSingleStoreModeEnabled = "general/single_store_mode/enabled"
 	PathStoreStoreName         = "general/store_information/name"
 	PathStoreStorePhone        = "general/store_information/phone"
-	PathStoreInUrl             = "web/url/use_store"
+	PathStoreInURL             = "web/url/use_store"
 	PathUseRewrites            = "web/seo/use_rewrites"
 	PathSecureInFrontend       = "web/secure/use_in_frontend"
 
-	PathUnsecureBaseUrl = "web/unsecure/base_url"
-	PathSecureBaseUrl   = "web/secure/base_url"
+	PathUnsecureBaseURL = "web/unsecure/base_url"
+	PathSecureBaseURL   = "web/secure/base_url"
 
 	//	PathSecureBaseLinkUrl   = "web/secure/base_link_url"
 	//	PathUnsecureBaseLinkUrl = "web/unsecure/base_link_url"
 
-	PathSecureBaseStaticUrl   = "web/secure/base_static_url"
-	PathUnsecureBaseStaticUrl = "web/unsecure/base_static_url"
+	PathSecureBaseStaticURL   = "web/secure/base_static_url"
+	PathUnsecureBaseStaticURL = "web/unsecure/base_static_url"
 
-	PathSecureBaseMediaUrl   = "web/secure/base_media_url"
-	PathUnsecureBaseMediaUrl = "web/unsecure/base_media_url"
+	PathSecureBaseMediaURL   = "web/secure/base_media_url"
+	PathUnsecureBaseMediaURL = "web/unsecure/base_media_url"
 
 	// This defines the base currency scope ("Currency Setup" > "Currency Options" > "Base Currency").
 	// can be 0 = Global or 1 = Website
 	PathPriceScope = "catalog/price/scope"
 
-	PlaceholderBaseUrl         = config.LeftDelim + "base_url" + config.RightDelim
-	PlaceholderBaseUrlSecure   = config.LeftDelim + "secure_base_url" + config.RightDelim
-	PlaceholderBaseUrlUnSecure = config.LeftDelim + "unsecure_base_url" + config.RightDelim
+	PlaceholderBaseURL         = config.LeftDelim + "base_url" + config.RightDelim
+	PlaceholderBaseURLSecure   = config.LeftDelim + "secure_base_url" + config.RightDelim
+	PlaceholderBaseURLUnSecure = config.LeftDelim + "unsecure_base_url" + config.RightDelim
 )
 
 // configReader stores the reader. Should not be used. Access it via mustConfig()
@@ -74,9 +74,9 @@ func mustReadConfig() config.ScopeReader {
 func GetDefaultConfiguration() config.DefaultMap {
 	return config.DefaultMap{
 		PathSingleStoreModeEnabled: false,
-		PathStoreInUrl:             false,
-		PathUnsecureBaseUrl:        PlaceholderBaseUrl,
-		PathSecureBaseUrl:          PlaceholderBaseUrlUnSecure,
+		PathStoreInURL:             false,
+		PathUnsecureBaseURL:        PlaceholderBaseURL,
+		PathSecureBaseURL:          PlaceholderBaseURLUnSecure,
 		PathSecureInFrontend:       false,
 
 		PathPriceScope: PriceScopeGlobal,

@@ -25,7 +25,7 @@ import (
 // Implements the scope on a SQL query basis so that attribute functions does not need to deal with it.
 // Tests see the tools package
 // @see magento2/app/code/Magento/Eav/Model/Resource/Attribute/Collection.php::_initSelect()
-func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAttributeTabler, entityTypeID, websiteId int64) (*dbr.SelectBuilder, error) {
+func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAttributeTabler, entityTypeID, websiteID int64) (*dbr.SelectBuilder, error) {
 
 	ta, err := GetTableStructure(TableIndexAttribute)
 	if err != nil {
@@ -85,7 +85,7 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 			dbr.JoinTable(tew.Name, csdb.ScopeTable),
 			append(ifnull),
 			dbr.JoinOn(dbr.Quote+csdb.ScopeTable+dbr.Quote+"."+dbr.Quote+"attribute_id"+dbr.Quote+" = "+dbr.Quote+csdb.MainTable+dbr.Quote+"."+dbr.Quote+"attribute_id"+dbr.Quote),
-			dbr.JoinOn(dbr.Quote+csdb.ScopeTable+dbr.Quote+"."+dbr.Quote+"website_id"+dbr.Quote+" = ?", websiteId),
+			dbr.JoinOn(dbr.Quote+csdb.ScopeTable+dbr.Quote+"."+dbr.Quote+"website_id"+dbr.Quote+" = ?", websiteID),
 		)
 	}
 	return selectSql, nil

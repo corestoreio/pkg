@@ -494,7 +494,7 @@ func PrepareForTemplate(cols Columns, rows []StringEntities, amm AttributeModelD
 	ip := make([]string, 0, 10) // import_path container
 	for _, row := range rows {
 		for colName, colValue := range row {
-			var c *column = cols.GetByName(colName)
+			var c = cols.GetByName(colName)
 
 			goType, hasModel := amm[colValue]
 			_, isAllowedInterfaceChange := EavAttributeColumnNameToInterface[colName]

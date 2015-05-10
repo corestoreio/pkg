@@ -158,7 +158,7 @@ func (d *AttributeModelDef) Func() string {
 func (m EntityTypeMap) Keys() []string {
 	ret := make([]string, len(m), len(m))
 	i := 0
-	for k, _ := range m {
+	for k := range m {
 		ret[i] = k
 		i++
 	}
@@ -178,7 +178,7 @@ var EavAttributeColumnNameToInterface = map[string]string{
 }
 
 // TablePrefix defines the global table name prefix. See Magento install tool. Can be overridden via func init()
-var TablePrefix string = ""
+var TablePrefix string
 
 // TableMapMagento1To2 provides mapping between table names in tableToStruct. If a table name is in
 // the map then the struct name will be rewritten to that new Magneto2 compatible table name.

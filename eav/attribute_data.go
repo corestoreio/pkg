@@ -17,10 +17,10 @@ package eav
 import "net/http"
 
 const (
-	OutputFormatJson uint8 = iota + 1
+	OutputFormatJSON uint8 = iota + 1
 	OutputFormatText
-	OutputFormatHtml
-	OutputFormatPdf
+	OutputFormatHTML
+	OutputFormatPDF
 	OutputFormatOneline
 	OutputFormatArray // not sure about that one
 )

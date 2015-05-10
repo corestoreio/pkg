@@ -648,11 +648,11 @@ func getTestRequest(t *testing.T, m, u string, c *http.Cookie) *http.Request {
 func TestInitByRequest(t *testing.T) {
 	store.SetConfigReader(newMockScopeReader(func(path string, scope config.ScopeID, r ...config.Retriever) string {
 		switch path {
-		case store.PathSecureBaseUrl:
-			return store.PlaceholderBaseUrl
-		case store.PathUnsecureBaseUrl:
-			return store.PlaceholderBaseUrl
-		case config.PathCSBaseUrl:
+		case store.PathSecureBaseURL:
+			return store.PlaceholderBaseURL
+		case store.PathUnsecureBaseURL:
+			return store.PlaceholderBaseURL
+		case config.PathCSBaseURL:
 			return "http://cs.io/"
 		}
 		return ""

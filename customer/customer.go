@@ -24,28 +24,28 @@ type (
 	DataModeller interface {
 		TBD()
 	}
-
-	CustomerModel struct {
+	// Entity is the customer model
+	Entity struct {
 		// TBD
 	}
 )
 
 var (
-	_ eav.EntityTypeModeller                  = (*CustomerModel)(nil)
-	_ eav.EntityTypeTabler                    = (*CustomerModel)(nil)
-	_ eav.EntityTypeAdditionalAttributeTabler = (*CustomerModel)(nil)
-	_ eav.EntityTypeIncrementModeller         = (*CustomerModel)(nil)
+	_ eav.EntityTypeModeller                  = (*Entity)(nil)
+	_ eav.EntityTypeTabler                    = (*Entity)(nil)
+	_ eav.EntityTypeAdditionalAttributeTabler = (*Entity)(nil)
+	_ eav.EntityTypeIncrementModeller         = (*Entity)(nil)
 )
 
-func (c *CustomerModel) TBD() {
+func (c *Entity) TBD() {
 
 }
 
-func (c *CustomerModel) TableNameBase() string {
+func (c *Entity) TableNameBase() string {
 	return GetTableName(TableIndexEntity)
 }
 
-func (c *CustomerModel) TableNameValue(i eav.ValueIndex) string {
+func (c *Entity) TableNameValue(i eav.ValueIndex) string {
 	s, err := GetCustomerValueStructure(i)
 	if err != nil {
 		return ""
@@ -54,15 +54,15 @@ func (c *CustomerModel) TableNameValue(i eav.ValueIndex) string {
 }
 
 // EntityTypeAdditionalAttributeTabler
-func (c *CustomerModel) TableAdditionalAttribute() (*csdb.TableStructure, error) {
+func (c *Entity) TableAdditionalAttribute() (*csdb.TableStructure, error) {
 	return GetTableStructure(TableIndexEAVAttribute)
 }
 
 // EntityTypeAdditionalAttributeTabler
-func (c *CustomerModel) TableEavWebsite() (*csdb.TableStructure, error) {
+func (c *Entity) TableEavWebsite() (*csdb.TableStructure, error) {
 	return GetTableStructure(TableIndexEAVAttributeWebsite)
 }
 
-func Customer() *CustomerModel {
-	return &CustomerModel{}
+func Customer() *Entity {
+	return &Entity{}
 }

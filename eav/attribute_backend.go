@@ -22,8 +22,8 @@ type (
 		GetTable() string
 		IsStatic() bool
 		GetType() string
-		// GetEntityIdField @todo
-		GetEntityIdField() string
+		// GetEntityIDField @todo
+		GetEntityIDField() string
 		//SetValueId(valueId int) @todo
 		//GetValueId()@todo
 
@@ -76,16 +76,16 @@ func AttributeBackendIdx(i AttributeIndex) AttributeBackendConfig {
 }
 
 // Config runs the configuration functions
-func (as *AttributeBackend) Config(configs ...AttributeBackendConfig) AttributeBackendModeller {
+func (ab *AttributeBackend) Config(configs ...AttributeBackendConfig) AttributeBackendModeller {
 	for _, cfg := range configs {
-		cfg(as)
+		cfg(ab)
 	}
-	return as
+	return ab
 }
 
 func (ab *AttributeBackend) IsStatic() bool           { return ab.a.IsStatic() }
 func (ab *AttributeBackend) GetTable() string         { return "" }
 func (ab *AttributeBackend) GetType() string          { return ab.a.BackendType() }
-func (ab *AttributeBackend) GetEntityIdField() string { return "" }
+func (ab *AttributeBackend) GetEntityIDField() string { return "" }
 func (ab *AttributeBackend) Validate() bool           { return true }
 func (ab *AttributeBackend) IsScalar() bool           { return true }
