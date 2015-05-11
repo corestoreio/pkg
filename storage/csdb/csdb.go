@@ -35,15 +35,26 @@ var (
 )
 
 type (
-	Index               int
+	Index int
+	// TableStructureSlice implements interface TableStructurer
 	TableStructureSlice []*TableStructure
 
 	TableStructurer interface {
 		// Structure returns the TableStructure from a read-only map m by a giving index i.
-		Structure(i Index) (*TableStructure, error)
+		Structure(Index) (*TableStructure, error)
 		// Name is a short hand to return a table name by given index i. Does not return an error
 		// when the table can't be found.
-		Name(i Index) string
+		Name(Index) string
+
+		// Next iterator function where i is the current index starting with zero.
+		// Example:
+		//	for i := Index(0); tableMap.Next(i); i++ {
+		//		table, err := tableMap.Structure(i)
+		//		...
+		//	}
+		Next(Index) bool
+		// Len returns the length of the underlaying slice
+		Len() Index
 	}
 
 	// temporary place
@@ -112,7 +123,7 @@ func (ts *TableStructure) Select(dbrSess dbr.SessionRunner) (*dbr.SelectBuilder,
 
 // Structure returns the TableStructure from a read-only map m by a giving index i.
 func (m TableStructureSlice) Structure(i Index) (*TableStructure, error) {
-	if i < Index(len(m)) {
+	if i < m.Len() {
 		return m[i], nil
 	}
 	return nil, ErrTableNotFound
@@ -121,14 +132,29 @@ func (m TableStructureSlice) Structure(i Index) (*TableStructure, error) {
 // Name is a short hand to return a table name by given index i. Does not return an error
 // when the table can't be found.
 func (m TableStructureSlice) Name(i Index) string {
-	if i < Index(len(m)) {
+	if i < m.Len() {
 		return m[i].Name
 	}
 	return ""
 }
 
-// LoadSlice loads the slice dest with the table structure from interface tsr TableStructurer and table index ti.
-// Returns the number of loaded rows and nil or 0 and an error.
+// Len returns the length of the slice data
+func (m TableStructureSlice) Len() Index {
+	return Index(len(m))
+}
+
+// Next iterator function where i is the current index starting with zero.
+// Example:
+//	for i := Index(0); tableMap.Next(i); i++ {
+//		table, err := tableMap.Structure(i)
+//		...
+//	}
+func (m TableStructureSlice) Next(i Index) bool {
+	return i < m.Len()
+}
+
+// LoadSlice loads the slice dest with the table structure from tsr TableStructurer and table index ti.
+// Returns the number of loaded rows and nil or 0 and an error. Slice must be a pointer to structs.
 func LoadSlice(dbrSess dbr.SessionRunner, tsr TableStructurer, ti Index, dest interface{}, cbs ...DbrSelectCb) (int, error) {
 	ts, err := tsr.Structure(ti)
 	if err != nil {
