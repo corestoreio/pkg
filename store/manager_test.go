@@ -862,14 +862,6 @@ func TestInitByToken(t *testing.T) {
 	MOCKS
 */
 
-//ScopeReader interface {
-//// GetString retrieves a config value by path and scope
-//ReadString(path string, scope ScopeID, r ...Retriever) string
-//
-//// IsSetFlag retrieves a config flag by path and scope
-//IsSetFlag(path string, scope ScopeID, r ...Retriever) bool
-//}
-
 var _ config.ScopeReader = (*mockScopeReader)(nil)
 
 type mockScopeReader struct {
@@ -964,4 +956,7 @@ func (ms *mockStorage) DefaultStoreView() (*store.Store, error) {
 		return nil, store.ErrStoreNotFound
 	}
 	return ms.dsv()
+}
+func (ms *mockStorage) ReInit(dbr.SessionRunner) error {
+	return nil
 }

@@ -59,12 +59,11 @@ type (
 )
 
 var (
-	ErrUnsupportedScopeID         = errors.New("Unsupported scope id")
-	ErrStoreChangeNotAllowed      = errors.New("Store change not allowed")
-	ErrAppStoreNotSet             = errors.New("AppStore is not initialized")
-	ErrAppStoreSet                = errors.New("AppStore already initialized")
-	ErrManagerMutatorNotAvailable = errors.New("Storage Mutator is not implemented")
-	ErrHashRetrieverNil           = errors.New("Hash argument is nil")
+	ErrUnsupportedScopeID    = errors.New("Unsupported scope id")
+	ErrStoreChangeNotAllowed = errors.New("Store change not allowed")
+	ErrAppStoreNotSet        = errors.New("AppStore is not initialized")
+	ErrAppStoreSet           = errors.New("AppStore already initialized")
+	ErrHashRetrieverNil      = errors.New("Hash argument is nil")
 )
 
 // NewManager creates a new store manager which handles websites, store groups and stores.
@@ -368,12 +367,10 @@ func (sm *Manager) activeStore(r Retriever) (*Store, error) {
 }
 
 // ReInit reloads the website, store group and store view data from the database @todo
+// After reloading internal cache will be cleared.
 func (sm *Manager) ReInit(dbrSess dbr.SessionRunner) error {
-	if mut, ok := sm.storage.(StorageMutator); ok {
-		defer sm.ClearCache() // hmmm .... defer ...
-		return mut.ReInit(dbrSess)
-	}
-	return ErrManagerMutatorNotAvailable
+	defer sm.ClearCache()
+	return sm.ReInit(dbrSess)
 }
 
 // ClearCache resets the internal caches which stores the pointers to a Website, Group or Store and

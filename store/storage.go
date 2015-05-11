@@ -1,9 +1,9 @@
 package store
 
 import (
-	"errors"
 	"sync"
 
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
 )
@@ -34,10 +34,6 @@ type (
 		// DefaultStoreView traverses through the websites to find the default website and gets
 		// the default group which has the default store id assigned to. Only one website can be the default one.
 		DefaultStoreView() (*Store, error)
-	}
-
-	// StorageMutator allows changes to the internal stored slices.
-	StorageMutator interface {
 		// ReInit reloads the websites, groups and stores from the database.
 		ReInit(dbr.SessionRunner) error
 	}
@@ -68,7 +64,6 @@ type (
 
 // check if interface has been implemented
 var _ Storager = (*Storage)(nil)
-var _ StorageMutator = (*Storage)(nil)
 
 // ID is convenience helper to satisfy the interface Retriever
 func (i ID) ID() int64 { return int64(i) }
@@ -221,7 +216,43 @@ func (st *Storage) DefaultStoreView() (*Store, error) {
 // ReInit reloads all websites, groups and stores from the database @todo
 func (st *Storage) ReInit(dbrSess dbr.SessionRunner) error {
 	st.mu.Lock()
-	// fetch from DB, clear slices, pointers, etc, check for mem leak ;-) ...
 	defer st.mu.Unlock()
-	return errors.New("@todo")
+	// fetch from DB, clear slices, pointers, etc, check for mem leak ;-) ...
+
+	// no idea if the three goroutines are working 8-)
+	// @todo what happens when are successfully loading but the third failed? reset the other two slices?
+	errc := make(chan error)
+	go func() {
+		for i := range st.websites {
+			st.websites[i] = nil // I'm not quite sure if that is needed to clear the pointers
+		}
+		st.websites = nil
+		_, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexWebsite, &(st.websites))
+		errc <- errgo.Mask(err)
+	}()
+
+	go func() {
+		for i := range st.groups {
+			st.groups[i] = nil // I'm not quite sure if that is needed to clear the pointers
+		}
+		st.groups = nil
+		_, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexGroup, &(st.groups))
+		errc <- errgo.Mask(err)
+	}()
+
+	go func() {
+		for i := range st.stores {
+			st.stores[i] = nil // I'm not quite sure if that is needed to clear the pointers
+		}
+		st.stores = nil
+		_, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexGroup, &(st.stores))
+		errc <- errgo.Mask(err)
+	}()
+
+	for i := 0; i < 3; i++ {
+		if err := <-errc; err != nil {
+			return err
+		}
+	}
+	return nil
 }

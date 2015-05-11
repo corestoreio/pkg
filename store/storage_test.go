@@ -18,6 +18,7 @@ import (
 	"database/sql"
 	"testing"
 
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/utils"
@@ -432,4 +433,20 @@ func BenchmarkStorageDefaultStoreView(b *testing.B) {
 		}
 
 	}
+}
+
+func TestStorageReInit(t *testing.T) {
+	// quick implement, use mock of dbr.SessionRunner and remove connection
+	db := csdb.MustConnectTest()
+	defer db.Close()
+	dbrConn := dbr.NewConnection(db, nil)
+
+	nsg := store.NewStorage(nil, nil, nil)
+	if err := nsg.ReInit(dbrConn.NewSession(nil)); err != nil {
+		t.Error(err)
+	}
+
+	ss, err := nsg.Stores()
+	assert.NoError(t, err)
+	t.Logf("\nStores: %#v\n", ss)
 }
