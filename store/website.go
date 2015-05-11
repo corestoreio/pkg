@@ -180,7 +180,7 @@ func (ws WebsiteSlice) IDs() utils.Int64Slice {
 // Additional columns or joins cannot be added. This method receiver should only be used in development.
 // @see app/code/Magento/Store/Model/Resource/Website/Collection.php::Load()
 func (s *TableWebsiteSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
-	return loadSlice(dbrSess, TableIndexWebsite, &(*s), append(cbs, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
+	return csdb.LoadSlice(dbrSess, TableCollection, TableIndexWebsite, &(*s), append(cbs, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
 		return sb.OrderBy("main_table.sort_order ASC").OrderBy("main_table.name ASC")
 	})...)
 }

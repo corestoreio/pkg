@@ -46,6 +46,8 @@ type (
 		TableNameValue(ValueIndex) string
 	}
 
+	// @todo all the returning interfaces are all crap. even that structure is rarely used in Magento
+
 	// EntityTypeAttributeModeller defines an attribute model @todo
 	EntityTypeAttributeModeller interface {
 		// Creates a new attribute to the corresponding entity. @todo options?
@@ -130,7 +132,7 @@ func SetEntityTypeCollection(sc CSEntityTypeSlice) {
 }
 
 func (et *TableEntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...csdb.DbrSelectCb) error {
-	s, err := GetTableStructure(TableIndexEntityType)
+	s, err := TableCollection.Structure(TableIndexEntityType)
 	if err != nil {
 		return errgo.Mask(err)
 	}

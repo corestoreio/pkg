@@ -70,7 +70,7 @@ func TestEntityTypeSliceGetByCode(t *testing.T) {
 	defer db.Close()
 	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
 
-	s, err := eav.GetTableStructure(eav.TableIndexEntityType)
+	s, err := eav.TableCollection.Structure(eav.TableIndexEntityType)
 	if err != nil {
 		t.Error(err)
 	}

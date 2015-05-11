@@ -18,6 +18,7 @@ import (
 	"errors"
 
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/juju/errgo"
 )
 
 const (
@@ -37,6 +38,14 @@ type (
 	Index               int
 	TableStructureSlice []*TableStructure
 
+	TableStructurer interface {
+		// Structure returns the TableStructure from a read-only map m by a giving index i.
+		Structure(i Index) (*TableStructure, error)
+		// Name is a short hand to return a table name by given index i. Does not return an error
+		// when the table can't be found.
+		Name(i Index) string
+	}
+
 	// temporary place
 	TableStructure struct {
 		// Name is the table name
@@ -49,6 +58,8 @@ type (
 
 	DbrSelectCb func(*dbr.SelectBuilder) *dbr.SelectBuilder
 )
+
+var _ TableStructurer = (*TableStructureSlice)(nil)
 
 func NewTableStructure(n string, IDs, c []string) *TableStructure {
 	return &TableStructure{
@@ -114,4 +125,23 @@ func (m TableStructureSlice) Name(i Index) string {
 		return m[i].Name
 	}
 	return ""
+}
+
+// LoadSlice loads the slice dest with the table structure from interface tsr TableStructurer and table index ti.
+// Returns the number of loaded rows and nil or 0 and an error.
+func LoadSlice(dbrSess dbr.SessionRunner, tsr TableStructurer, ti Index, dest interface{}, cbs ...DbrSelectCb) (int, error) {
+	ts, err := tsr.Structure(ti)
+	if err != nil {
+		return 0, errgo.Mask(err)
+	}
+
+	sb, err := ts.Select(dbrSess)
+	if err != nil {
+		return 0, errgo.Mask(err)
+	}
+
+	for _, cb := range cbs {
+		sb = cb(sb)
+	}
+	return sb.LoadStructs(dest)
 }

@@ -62,7 +62,7 @@ func InitEntityStoreMap(dbrSess *dbr.Session) error {
 	if initMapDone.done == 0 {
 		defer atomic.StoreUint32(&initMapDone.done, 1)
 
-		s, err := GetTableStructure(TableIndexEntityStore)
+		s, err := TableCollection.Structure(TableIndexEntityStore)
 		if err != nil {
 			return errgo.Mask(err)
 		}

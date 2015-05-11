@@ -36,8 +36,8 @@ func TestGetTable(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		ts, err := store.GetTableStructure(test.ti)
-		tn := store.GetTableName(test.ti)
+		ts, err := store.TableCollection.Structure(test.ti)
+		tn := store.TableCollection.Name(test.ti)
 		if test.isErr == false {
 			assert.NoError(t, err)
 			assert.NotNil(t, ts)

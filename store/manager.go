@@ -20,7 +20,6 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/juju/errgo"
@@ -440,22 +439,4 @@ func hash(r Retriever) (uint64, error) {
 		return hash, nil
 	}
 	return uint64(r.ID()), nil
-}
-
-// loadSlice internal global helper func to execute a SQL select. @todo refactor and remove dependency of GetTableS...
-func loadSlice(dbrSess dbr.SessionRunner, table csdb.Index, dest interface{}, cbs ...csdb.DbrSelectCb) (int, error) {
-	ts, err := GetTableStructure(table)
-	if err != nil {
-		return 0, errgo.Mask(err)
-	}
-
-	sb, err := ts.Select(dbrSess)
-	if err != nil {
-		return 0, errgo.Mask(err)
-	}
-
-	for _, cb := range cbs {
-		sb = cb(sb)
-	}
-	return sb.LoadStructs(dest)
 }

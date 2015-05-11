@@ -49,12 +49,11 @@ const (
 TableIndexZZZ
 )
 
-var (
-    // Always reference these packages, just in case the auto-generated code
-    // below doesn't.
-    _ = time.Time{}
+// Always reference these packages, just in case the auto-generated code below doesn't.
+var _ = time.Time{}
 
-    tableMap = csdb.TableStructureSlice{
+func init(){
+    TableCollection = csdb.TableStructureSlice{
 {{ range .Tables }}TableIndex{{.name | prepareVar}} : csdb.NewTableStructure(
         "{{.table}}",
         []string{
@@ -66,18 +65,6 @@ var (
     ),
     {{ end }}
     }
-)
-
-// GetTableStructure returns for a given index i the table structure or an error it not found.
-func GetTableStructure(i csdb.Index) (*csdb.TableStructure, error) {
-    if i < TableIndexZZZ { return tableMap.Structure(i) }
-	return nil, csdb.ErrTableNotFound
-}
-
-// GetTableName returns for a given index the table name. If not found an empty string.
-func GetTableName(i csdb.Index) string {
-    if i < TableIndexZZZ { return tableMap.Name(i) }
-	return ""
 }
 
 {{ if not .TypeCodeValueTables.Empty }}
@@ -87,7 +74,7 @@ func GetTableName(i csdb.Index) string {
 func Get{{ $typeCode | prepareVar }}ValueStructure(i eav.ValueIndex) (*csdb.TableStructure, error) {
 	switch i {
 	{{range $vt,$v := $valueTables }}case eav.EntityType{{ $v | prepareVar }}:
-		return GetTableStructure(TableIndex{{ $vt | prepareVar }})
+		return TableCollection.Structure(TableIndex{{ $vt | prepareVar }})
     {{end}}	}
 	return nil, eav.ErrEntityTypeValueNotFound
 }

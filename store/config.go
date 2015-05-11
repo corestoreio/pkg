@@ -14,7 +14,10 @@
 
 package store
 
-import "github.com/corestoreio/csfw/config"
+import (
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/storage/csdb"
+)
 
 const (
 	// SingleStoreModeEnabled if true then single store mode enabled
@@ -49,8 +52,12 @@ const (
 	PlaceholderBaseURLUnSecure = config.LeftDelim + "unsecure_base_url" + config.RightDelim
 )
 
-// configReader stores the reader. Should not be used. Access it via mustConfig()
-var configReader config.ScopeReader
+var (
+	// configReader stores the reader. Should not be used. Access it via mustConfig()
+	configReader config.ScopeReader
+	// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
+	TableCollection csdb.TableStructureSlice
+)
 
 // SetConfig sets the internal variable to the current scope config reader.
 // ScopeReader will be used across all functions in this package.

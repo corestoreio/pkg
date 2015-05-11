@@ -27,7 +27,7 @@ import (
 // @see magento2/app/code/Magento/Eav/Model/Resource/Attribute/Collection.php::_initSelect()
 func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAttributeTabler, entityTypeID, websiteID int64) (*dbr.SelectBuilder, error) {
 
-	ta, err := GetTableStructure(TableIndexAttribute)
+	ta, err := TableCollection.Structure(TableIndexAttribute)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}

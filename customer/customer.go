@@ -35,6 +35,8 @@ var (
 	_ eav.EntityTypeTabler                    = (*Entity)(nil)
 	_ eav.EntityTypeAdditionalAttributeTabler = (*Entity)(nil)
 	_ eav.EntityTypeIncrementModeller         = (*Entity)(nil)
+	// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
+	TableCollection csdb.TableStructurer
 )
 
 func (c *Entity) TBD() {
@@ -42,7 +44,7 @@ func (c *Entity) TBD() {
 }
 
 func (c *Entity) TableNameBase() string {
-	return GetTableName(TableIndexEntity)
+	return TableCollection.Name(TableIndexEntity)
 }
 
 func (c *Entity) TableNameValue(i eav.ValueIndex) string {
@@ -55,12 +57,12 @@ func (c *Entity) TableNameValue(i eav.ValueIndex) string {
 
 // EntityTypeAdditionalAttributeTabler
 func (c *Entity) TableAdditionalAttribute() (*csdb.TableStructure, error) {
-	return GetTableStructure(TableIndexEAVAttribute)
+	return TableCollection.Structure(TableIndexEAVAttribute)
 }
 
 // EntityTypeAdditionalAttributeTabler
 func (c *Entity) TableEavWebsite() (*csdb.TableStructure, error) {
-	return GetTableStructure(TableIndexEAVAttributeWebsite)
+	return TableCollection.Structure(TableIndexEAVAttributeWebsite)
 }
 
 func Customer() *Entity {
