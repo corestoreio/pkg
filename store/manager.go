@@ -366,11 +366,14 @@ func (sm *Manager) activeStore(r Retriever) (*Store, error) {
 	return nil, ErrStoreNotActive
 }
 
-// ReInit reloads the website, store group and store view data from the database @todo
-// After reloading internal cache will be cleared.
+// ReInit reloads the website, store group and store view data from the database.
+// After reloading internal cache will be cleared if there are no errors.
 func (sm *Manager) ReInit(dbrSess dbr.SessionRunner) error {
-	defer sm.ClearCache()
-	return sm.ReInit(dbrSess)
+	err := sm.ReInit(dbrSess)
+	if err == nil {
+		sm.ClearCache()
+	}
+	return err
 }
 
 // ClearCache resets the internal caches which stores the pointers to a Website, Group or Store and

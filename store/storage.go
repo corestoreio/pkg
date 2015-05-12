@@ -213,15 +213,16 @@ func (st *Storage) DefaultStoreView() (*Store, error) {
 	return nil, ErrStoreNotFound
 }
 
-// ReInit reloads all websites, groups and stores from the database @todo
+// ReInit reloads all websites, groups and stores concurrently from the database. If GOMAXPROCS
+// is set to > 1 then in parallel. Returns an error with location or nil. If an error occurs
+// then all internal slices will be reset.
 func (st *Storage) ReInit(dbrSess dbr.SessionRunner) error {
 	st.mu.Lock()
 	defer st.mu.Unlock()
-	// fetch from DB, clear slices, pointers, etc, check for mem leak ;-) ...
 
-	// no idea if the three goroutines are working 8-)
-	// @todo what happens when are successfully loading but the third failed? reset the other two slices?
 	errc := make(chan error)
+	defer close(errc)
+
 	go func() {
 		for i := range st.websites {
 			st.websites[i] = nil // I'm not quite sure if that is needed to clear the pointers
@@ -245,12 +246,18 @@ func (st *Storage) ReInit(dbrSess dbr.SessionRunner) error {
 			st.stores[i] = nil // I'm not quite sure if that is needed to clear the pointers
 		}
 		st.stores = nil
-		_, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexGroup, &(st.stores))
+		var stores TableStoreSlice
+		_, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexGroup, &stores)
+		st.stores = stores
 		errc <- errgo.Mask(err)
 	}()
 
 	for i := 0; i < 3; i++ {
 		if err := <-errc; err != nil {
+			// in case of error clear all
+			st.websites = nil
+			st.groups = nil
+			st.stores = nil
 			return err
 		}
 	}
