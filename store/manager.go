@@ -20,6 +20,7 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/juju/errgo"
@@ -368,8 +369,8 @@ func (sm *Manager) activeStore(r Retriever) (*Store, error) {
 
 // ReInit reloads the website, store group and store view data from the database.
 // After reloading internal cache will be cleared if there are no errors.
-func (sm *Manager) ReInit(dbrSess dbr.SessionRunner) error {
-	err := sm.ReInit(dbrSess)
+func (sm *Manager) ReInit(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) error {
+	err := sm.storage.ReInit(dbrSess, cbs...)
 	if err == nil {
 		sm.ClearCache()
 	}

@@ -18,6 +18,7 @@ import (
 	"database/sql"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
@@ -857,6 +858,54 @@ func TestInitByToken(t *testing.T) {
 		}
 		storeManagerRequestStore.ClearCache(true)
 	}
+}
+
+func TestNewManagerReInit(t *testing.T) {
+	numCPU := runtime.NumCPU()
+	prevCPU := runtime.GOMAXPROCS(numCPU)
+	t.Logf("GOMAXPROCS was: %d now: %d", prevCPU, numCPU)
+	defer runtime.GOMAXPROCS(prevCPU)
+
+	// quick implement, use mock of dbr.SessionRunner and remove connection
+	db := csdb.MustConnectTest()
+	defer db.Close()
+	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
+
+	storeManager := store.NewManager(store.NewStorage(nil, nil, nil))
+	if err := storeManager.ReInit(dbrSess); err != nil {
+		t.Fatal(err)
+	}
+
+	tests := []struct {
+		have    store.Retriever
+		wantErr error
+	}{
+		{store.Code("de"), nil},
+		{store.Code("cz"), store.ErrStoreNotFound},
+		{store.Code("de"), nil},
+		{store.ID(1), nil},
+		{store.ID(100), store.ErrStoreNotFound},
+		{mockIDCode{1, "de"}, nil},
+		{mockIDCode{2, "cz"}, store.ErrStoreNotFound},
+		{mockIDCode{2, ""}, nil},
+		{nil, store.ErrAppStoreNotSet}, // if set returns default store
+	}
+
+	for _, test := range tests {
+		s, err := storeManager.Store(test.have)
+		if test.wantErr == nil {
+			assert.NoError(t, err, "For test: %#v", test)
+			assert.NotNil(t, s)
+			//			assert.NotEmpty(t, s.Data().Code.String, "%#v", s.Data())
+		} else {
+			assert.Error(t, err, "For test: %#v", test)
+			assert.EqualError(t, test.wantErr, err.Error(), "For test: %#v", test)
+			assert.Nil(t, s)
+		}
+	}
+	assert.False(t, storeManager.IsCacheEmpty())
+	storeManager.ClearCache()
+	assert.True(t, storeManager.IsCacheEmpty())
 }
 
 /*
