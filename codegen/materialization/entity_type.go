@@ -65,7 +65,7 @@ func materializeEntityType(ctx *context) {
 // Depends on generated code from tableToStruct.
 func getEntityTypeData(dbrSess *dbr.Session) (etc eav.TableEntityTypeSlice, err error) {
 
-	s, err := eav.GetTableStructure(eav.TableIndexEntityType)
+	s, err := eav.TableCollection.Structure(eav.TableIndexEntityType)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
