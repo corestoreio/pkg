@@ -59,9 +59,6 @@ func main() {
 	defer ctx.db.Close()
 
 	ctx.wg.Add(1)
-	go materializeStore(ctx)
-
-	ctx.wg.Add(1)
 	go materializeEntityType(ctx)
 
 	ctx.wg.Add(1)

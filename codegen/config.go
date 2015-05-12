@@ -250,12 +250,6 @@ var ConfigMaterializationEntityType = &TableToStruct{
 	OutputFile: myPath + "testgen" + PS + "generated_entity_type_test.go",
 }
 
-// ConfigMaterializationStore configuration for materializeStore() to write the materialized store data into a folder.
-// For using this in your project you must modify the package name and output file path
-var ConfigMaterializationStore = &TableToStruct{
-	Package:    "store_test",
-	OutputFile: myPath + "store" + PS + "generated_store_test.go",
-}
 var (
 	// EAVAttributeCoreColumns defines the minimal required columns for table eav_attribute.
 	// Developers can extend the table eav_attribute with additional columns but these additional
