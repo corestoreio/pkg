@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/dgrijalva/jwt-go"
@@ -957,6 +958,6 @@ func (ms *mockStorage) DefaultStoreView() (*store.Store, error) {
 	}
 	return ms.dsv()
 }
-func (ms *mockStorage) ReInit(dbr.SessionRunner) error {
+func (ms *mockStorage) ReInit(dbr.SessionRunner, ...csdb.DbrSelectCb) error {
 	return nil
 }

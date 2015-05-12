@@ -454,9 +454,22 @@ func TestStorageReInit(t *testing.T) {
 
 	stores, err := nsg.Stores()
 	assert.NoError(t, err)
-	//	t.Logf("\nStores: %#v\n", ss)
+	assert.True(t, stores.Len() > 0, "Expecting at least one store loaded from DB")
 	for _, s := range stores {
-		// @todo bug Data() is empty
-		assert.True(t, s.Data().StoreID > 0, "Store: %#v", s.Data())
+		assert.NotEmpty(t, s.Data().Code.String, "Store: %#v", s.Data())
+	}
+
+	groups, err := nsg.Groups()
+	assert.True(t, groups.Len() > 0, "Expecting at least one group loaded from DB")
+	assert.NoError(t, err)
+	for _, g := range groups {
+		assert.NotEmpty(t, g.Data().Name, "Group: %#v", g.Data())
+	}
+
+	websites, err := nsg.Websites()
+	assert.True(t, websites.Len() > 0, "Expecting at least one website loaded from DB")
+	assert.NoError(t, err)
+	for _, w := range websites {
+		assert.NotEmpty(t, w.Data().Code.String, "Website: %#v", w.Data())
 	}
 }

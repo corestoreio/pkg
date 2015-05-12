@@ -35,7 +35,7 @@ type (
 		// the default group which has the default store id assigned to. Only one website can be the default one.
 		DefaultStoreView() (*Store, error)
 		// ReInit reloads the websites, groups and stores from the database.
-		ReInit(dbr.SessionRunner) error
+		ReInit(dbr.SessionRunner, ...csdb.DbrSelectCb) error
 	}
 
 	// Storage contains a mutex and the raw slices from the database.
@@ -216,19 +216,19 @@ func (st *Storage) DefaultStoreView() (*Store, error) {
 // ReInit reloads all websites, groups and stores concurrently from the database. If GOMAXPROCS
 // is set to > 1 then in parallel. Returns an error with location or nil. If an error occurs
 // then all internal slices will be reset.
-func (st *Storage) ReInit(dbrSess dbr.SessionRunner) error {
+func (st *Storage) ReInit(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) error {
 	st.mu.Lock()
 	defer st.mu.Unlock()
 
 	errc := make(chan error)
 	defer close(errc)
-
+	// not sure about those three go
 	go func() {
 		for i := range st.websites {
 			st.websites[i] = nil // I'm not quite sure if that is needed to clear the pointers
 		}
 		st.websites = nil
-		_, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexWebsite, &(st.websites))
+		_, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexWebsite, &(st.websites), cbs...)
 		errc <- errgo.Mask(err)
 	}()
 
@@ -237,7 +237,7 @@ func (st *Storage) ReInit(dbrSess dbr.SessionRunner) error {
 			st.groups[i] = nil // I'm not quite sure if that is needed to clear the pointers
 		}
 		st.groups = nil
-		_, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexGroup, &(st.groups))
+		_, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexGroup, &(st.groups), cbs...)
 		errc <- errgo.Mask(err)
 	}()
 
@@ -246,9 +246,7 @@ func (st *Storage) ReInit(dbrSess dbr.SessionRunner) error {
 			st.stores[i] = nil // I'm not quite sure if that is needed to clear the pointers
 		}
 		st.stores = nil
-		var stores TableStoreSlice
-		_, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexGroup, &stores)
-		st.stores = stores
+		_, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexStore, &(st.stores), cbs...)
 		errc <- errgo.Mask(err)
 	}()
 
