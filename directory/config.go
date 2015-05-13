@@ -22,8 +22,19 @@ import (
 const (
 	PathSystemCurrencyInstalled = "system/currency/installed"
 	PathCurrencyAllow           = "currency/options/allow"
-	PathCurrencyDefault         = "currency/options/default"
-	PathCurrencyBase            = "currency/options/base"
+	// PathCurrencyBase defines the app base currency code
+	PathCurrencyBase    = "currency/options/base"
+	PathCurrencyDefault = "currency/options/default"
+
+	// PathOptionalZipCountries lists ISO2 country codes which have optional Zip/Postal pre-configured
+	PathOptionalZipCountries = "general/country/optional_zip_countries"
+	// PathStatesRequired lists countries, for which state is required. No default values.
+	PathStatesRequired = "general/region/state_required"
+	// PathDisplayAllStates detects whether or not display the state for the country, if it is not required
+	PathDisplayAllStates = "general/region/display_all"
+	PathDefaultCountry   = "general/country/default"
+	PathDefaultLocale    = "general/locale/code"
+	PathDefaultTimezone  = "general/locale/timezone"
 )
 
 var (
@@ -56,7 +67,13 @@ func GetDefaultConfiguration() config.DefaultMap {
 	return config.DefaultMap{
 		PathSystemCurrencyInstalled: "AZN,AZM,AFN,ALL,DZD,AOA,ARS,AMD,AWG,AUD,BSD,BHD,BDT,BBD,BYR,BZD,BMD,BTN,BOB,BAM,BWP,BRL,GBP,BND,BGN,BUK,BIF,KHR,CAD,CVE,CZK,KYD,CLP,CNY,COP,KMF,CDF,CRC,HRK,CUP,DKK,DJF,DOP,XCD,EGP,SVC,GQE,ERN,EEK,ETB,EUR,FKP,FJD,GMD,GEK,GEL,GHS,GIP,GTQ,GNF,GYD,HTG,HNL,HKD,HUF,ISK,INR,IDR,IRR,IQD,ILS,JMD,JPY,JOD,KZT,KES,KWD,KGS,LAK,LVL,LBP,LSL,LRD,LYD,LTL,MOP,MKD,MGA,MWK,MYR,MVR,LSM,MRO,MUR,MXN,MDL,MNT,MAD,MZN,MMK,NAD,NPR,ANG,TRL,TRY,NZD,NIC,NGN,KPW,NOK,OMR,PKR,PAB,PGK,PYG,PEN,PHP,PLN,QAR,RHD,RON,ROL,RUB,RWF,SHP,STD,SAR,RSD,SCR,SLL,SGD,SKK,SBD,SOS,ZAR,KRW,LKR,SDG,SRD,SZL,SEK,CHF,SYP,TWD,TJS,TZS,THB,TOP,TTD,TND,TMM,USD,UGX,UAH,AED,UYU,UZS,VUV,VEB,VEF,VND,CHE,CHW,XOF,XPF,WST,YER,ZMK,ZWD",
 		PathCurrencyAllow:           "USD,EUR",
-		PathCurrencyBase:            "EUR",
-		PathCurrencyDefault:         "EUR",
+		PathCurrencyBase:            "USD",
+		PathCurrencyDefault:         "USD",
+		PathOptionalZipCountries:    "HK,IE,MO,PA,GB",
+		PathStatesRequired:          "",
+		PathDisplayAllStates:        false,
+		PathDefaultCountry:          "US",
+		PathDefaultLocale:           "en_US",
+		PathDefaultTimezone:         "America/Los_Angeles",
 	}
 }

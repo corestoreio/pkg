@@ -20,12 +20,12 @@ import (
 )
 
 type (
-	Currency struct {
-		c language.Currency
+	Country struct {
+		c language.Region
 	}
 )
 
-// BaseCurrencyCode retrieves application base currency code
-func BaseCurrencyCode() (language.Currency, error) {
-	return language.ParseCurrency(mustReadConfig().ReadString(PathCurrencyBase, config.ScopeDefault))
+// DefaultCountry returns the country code. Store argument is optional.
+func DefaultCountry(r ...config.Retriever) string {
+	return mustReadConfig().ReadString(PathDefaultCountry, config.ScopeStore, r...)
 }

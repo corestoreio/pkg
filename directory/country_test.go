@@ -12,20 +12,19 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package directory
+package directory_test
 
 import (
-	"github.com/corestoreio/csfw/config"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/text/language"
 )
 
-type (
-	Currency struct {
-		c language.Currency
-	}
-)
+func TestCountry(t *testing.T) {
 
-// BaseCurrencyCode retrieves application base currency code
-func BaseCurrencyCode() (language.Currency, error) {
-	return language.ParseCurrency(mustReadConfig().ReadString(PathCurrencyBase, config.ScopeDefault))
+	ch := language.MustParseRegion("CH")
+	tld, err := ch.Canonicalize().TLD()
+	assert.NoError(t, err)
+	t.Logf("\n%#v\n", tld.String())
 }

@@ -64,7 +64,7 @@ type (
 
 	// Retriever implements how to get the ID. If Retriever implements CodeRetriever
 	// then CodeRetriever has precedence. ID can be any of the website, group or store IDs.
-	// Duplicated to avoid import cycles. @todo refactor
+	// Duplicated to avoid import cycles.
 	Retriever interface {
 		ID() int64
 	}
