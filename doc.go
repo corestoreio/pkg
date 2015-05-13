@@ -28,7 +28,7 @@ Because performance :-)
 
 Architecture
 
-See the UML diagrams within the Go code. @todo 10km view.
+@todo 10km view.
 
 Names
 
@@ -84,16 +84,6 @@ compiled on a daily basis. The plugin works very well! Kudos to those developers
 IDEA has been configured with goimports, gofmt, golint, govet and ... with the file watcher plugin.
 
 Why am I not using vim? Because I would only generate passwords ;-|.
-
-UML
-
-Within the Go files there are UML tags from PlantUML http://en.wikipedia.org/wiki/PlantUML because you
-can have nice visualisations with the IDEA plugin of PlantUML. To run the PlantUML plugin you must
-install:
-
-    $ brew install graphviz
-
-on your OSX. For Unix/Linux ... ?
 
 Contributing
 

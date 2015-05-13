@@ -52,10 +52,6 @@ compiled on a daily basis. The plugin works very well!
 
 IDEA has been configured with goimports, gofmt, golint, govet and ... with the file watcher plugin.
 
-Within the Go files there are UML tags from [PlantUML](http://en.wikipedia.org/wiki/PlantUML) because you
-can have nice visualisations with the IDEA plugin of PlantUML. To run the PlantUML plugin you must 
-install: `$ brew install graphviz` on your OSX. For Linux ... ?
-
 Why am I not using vim? Because I would only generate passwords ;-|.
 
 ## Contributing
