@@ -74,7 +74,8 @@ func (c Code) ID() int64 { return int64(0) }
 // Code is convenience helper to satisfy the interface CodeRetriever
 func (c Code) Code() string { return string(c) }
 
-// NewStorage creates a new storage object from three slice types
+// NewStorage creates a new storage object from three slice types. All three arguments can be nil
+// but then you call ReInit()
 func NewStorage(tws TableWebsiteSlice, tgs TableGroupSlice, tss TableStoreSlice) *Storage {
 	return &Storage{
 		mu:       sync.RWMutex{},
@@ -228,7 +229,7 @@ func (st *Storage) ReInit(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) er
 			st.websites[i] = nil // I'm not quite sure if that is needed to clear the pointers
 		}
 		st.websites = nil
-		_, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexWebsite, &(st.websites), cbs...)
+		_, err := st.websites.Load(dbrSess, cbs...)
 		errc <- errgo.Mask(err)
 	}()
 
@@ -237,7 +238,7 @@ func (st *Storage) ReInit(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) er
 			st.groups[i] = nil // I'm not quite sure if that is needed to clear the pointers
 		}
 		st.groups = nil
-		_, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexGroup, &(st.groups), cbs...)
+		_, err := st.groups.Load(dbrSess, cbs...)
 		errc <- errgo.Mask(err)
 	}()
 
@@ -246,7 +247,7 @@ func (st *Storage) ReInit(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) er
 			st.stores[i] = nil // I'm not quite sure if that is needed to clear the pointers
 		}
 		st.stores = nil
-		_, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexStore, &(st.stores), cbs...)
+		_, err := st.stores.Load(dbrSess, cbs...)
 		errc <- errgo.Mask(err)
 	}()
 

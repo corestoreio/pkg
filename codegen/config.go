@@ -206,6 +206,14 @@ var TableMapMagento1To2 = map[string]string{
 
 // ConfigTableToStruct contains default configuration. Use the file config_user.go with the func init() to change/extend it.
 var ConfigTableToStruct = TableToStructMap{
+	"directory": &TableToStruct{
+		Package:    "directory",
+		OutputFile: myPath + "directory" + PS + "generated_tables.go",
+		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
+		    TABLE_SCHEMA = DATABASE() AND
+		    TABLE_NAME LIKE '{{tableprefix}}directory%' GROUP BY TABLE_NAME;`,
+		EntityTypeCodes: nil,
+	},
 	"eav": &TableToStruct{
 		Package:         "eav",
 		OutputFile:      myPath + "eav" + PS + "generated_tables.go",

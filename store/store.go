@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
@@ -209,6 +210,26 @@ func (s *Store) DeleteCookie(res http.ResponseWriter) {
 // AddClaim adds the store code to a JSON web token
 func (s *Store) AddClaim(t *jwt.Token) {
 	t.Claims[CookieName] = s.Data().Code.String
+}
+
+// RootCategoryId returns the root category ID assigned to this store view.
+func (s *Store) RootCategoryId() int64 {
+	return s.Group().Data().RootCategoryID
+}
+
+/*
+	Store Currency
+*/
+
+// AllowedCurrencies returns all installed currencies from global scope.
+func (s *Store) AllowedCurrencies() []string {
+	return strings.Split(mustReadConfig().ReadString(directory.PathSystemCurrencyInstalled, config.ScopeDefault), ",")
+}
+
+// CurrentCurrency @todo
+// @see app/code/Magento/Store/Model/Store.php::getCurrentCurrency
+func (s *Store) CurrentCurrency() *directory.Currency {
+	return nil
 }
 
 /*
