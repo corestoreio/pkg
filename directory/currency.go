@@ -14,7 +14,11 @@
 
 package directory
 
+import "golang.org/x/text/language"
+
 type (
 	Currency struct {
+		// https://godoc.org/golang.org/x/text/language
+		c language.Currency
 	}
 )
