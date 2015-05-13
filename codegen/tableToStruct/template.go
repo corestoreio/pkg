@@ -32,7 +32,7 @@ const tplCode = `//go:generate gen
 
 package {{ .Package }}
 
-// Package {{ .Package }} is auto generated via tableToStruct
+// Auto generated via tableToStruct
 
 import (
 	"time"
