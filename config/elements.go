@@ -15,12 +15,26 @@
 package config
 
 type (
-	// @see magento2/app/code/Magento/Config/etc/system_file.xsd
+	Option struct {
+		Value, Label string
+	}
+
+	// Element @see magento2/app/code/Magento/Config/etc/system_file.xsd @todo add later more fields IF necessary
 	Element struct {
 		Label string
 		// Show: eg: ScopeDefault & ScopeWebsite & ScopeDefault: showInDefault="1" showInWebsite="1" showInStore="1"
 		Show       uint
 		SortOrder  int
 		ConfigPath string
+		// SourceModel defines how to retrieve all option values
+		SourceModel interface {
+			Options() []Option
+		}
+		// BackendModel defines @todo think about AddData
+		BackendModel interface {
+			AddData(interface{})
+			Save() error
+		}
 	}
+	ElementSlice []*Element
 )
