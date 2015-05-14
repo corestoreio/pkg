@@ -40,8 +40,10 @@ const (
 	// The cookie must be removed when the default store of the current website if equal to the current store.
 	CookieName = `store`
 
-	PriceScopeGlobal  = 0
-	PriceScopeWebsite = 1
+	// PriceScopeGlobal prices are for all stores and websites the same.
+	PriceScopeGlobal = `0` // must be string
+	// PriceScopeWebsite prices are in each website different.
+	PriceScopeWebsite = `1` // must be string
 )
 
 type (
@@ -151,7 +153,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) string {
 		panic("Unsupported UrlType")
 	}
 
-	url = s.getConfigString(p)
+	url = s.ConfigString(p)
 
 	if strings.Contains(url, PlaceholderBaseURL) {
 		// @todo replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
@@ -163,10 +165,10 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) string {
 	return url
 }
 
-// getConfigString tries to get a value from the scopeStore if empty
+// ConfigString tries to get a value from the scopeStore if empty
 // falls back to default global scope.
 // If using etcd or consul maybe this can lead to round trip times because of network access.
-func (s *Store) getConfigString(path string) string {
+func (s *Store) ConfigString(path string) string {
 	val := mustReadConfig().ReadString(path, config.ScopeStore, s)
 	if val == "" {
 		val = mustReadConfig().ReadString(path, config.ScopeDefault)

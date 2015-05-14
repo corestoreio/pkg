@@ -57,7 +57,7 @@ type (
 	URLType int
 
 	// ScopeID used in constants where default is the lowest and store the highest
-	ScopeID int
+	ScopeID uint
 
 	// DefaultMap contains the default aka global configuration of a package
 	DefaultMap map[string]interface{}
@@ -79,7 +79,7 @@ type (
 
 	ScopeWriter interface {
 		// SetString sets config value in the corresponding config scope
-		WriteString(path, value string, scope ScopeID, r ...Retriever)
+		Write(path, value interface{}, scope ScopeID, r ...Retriever)
 	}
 
 	// Scope main configuration struct which includes Viper

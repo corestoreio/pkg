@@ -18,9 +18,12 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
+	"golang.org/x/text/language"
 )
 
 const (
@@ -65,13 +68,16 @@ func NewWebsite(w *TableWebsite) *Website {
 	}
 }
 
+// ID satisfies the interface Retriever and mainly used in the StoreManager for selecting Website,Group ...
+func (w *Website) ID() int64 { return w.w.WebsiteID }
+
 // Data returns the data from the database
-func (wb *Website) Data() *TableWebsite { return wb.w }
+func (w *Website) Data() *TableWebsite { return w.w }
 
 // DefaultGroup returns the default Group or an error if not found
-func (wb *Website) DefaultGroup() (*Group, error) {
-	for _, g := range wb.groups {
-		if wb.w.DefaultGroupID == g.Data().GroupID {
+func (w *Website) DefaultGroup() (*Group, error) {
+	for _, g := range w.groups {
+		if w.w.DefaultGroupID == g.Data().GroupID {
 			return g, nil
 		}
 	}
@@ -79,8 +85,8 @@ func (wb *Website) DefaultGroup() (*Group, error) {
 }
 
 // DefaultStore returns the default store which via the default group.
-func (wb *Website) DefaultStore() (*Store, error) {
-	g, err := wb.DefaultGroup()
+func (w *Website) DefaultStore() (*Store, error) {
+	g, err := w.DefaultGroup()
 	if err != nil {
 		return nil, err
 	}
@@ -89,40 +95,67 @@ func (wb *Website) DefaultStore() (*Store, error) {
 
 // Stores returns all stores associated to this website or an error when the stores
 // are not available aka not needed.
-func (wb *Website) Stores() (StoreSlice, error) {
-	if len(wb.stores) > 0 {
-		return wb.stores, nil
+func (w *Website) Stores() (StoreSlice, error) {
+	if len(w.stores) > 0 {
+		return w.stores, nil
 	}
 	return nil, ErrWebsiteStoresNotAvailable
 }
 
 // Groups returns all groups associated to this website or an error when the groups
 // are not available aka not needed.
-func (wb *Website) Groups() (GroupSlice, error) {
-	if len(wb.groups) > 0 {
-		return wb.groups, nil
+func (w *Website) Groups() (GroupSlice, error) {
+	if len(w.groups) > 0 {
+		return w.groups, nil
 	}
 	return nil, ErrWebsiteGroupsNotAvailable
 }
 
 // SetGroupsStores uses a group slice and a table slice to set the groups associated to this website
 // and the stores associated to this website. It panics if the integrity is incorrect.
-func (wb *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *Website {
-	groups := tgs.FilterByWebsiteID(wb.w.WebsiteID)
-	wb.groups = make(GroupSlice, groups.Len(), groups.Len())
+func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *Website {
+	groups := tgs.FilterByWebsiteID(w.w.WebsiteID)
+	w.groups = make(GroupSlice, groups.Len(), groups.Len())
 	for i, g := range groups {
-		wb.groups[i] = NewGroup(g, wb.w).SetStores(tss, nil)
+		w.groups[i] = NewGroup(g, w.w).SetStores(tss, nil)
 	}
-	stores := tss.FilterByWebsiteID(wb.w.WebsiteID)
-	wb.stores = make(StoreSlice, stores.Len(), stores.Len())
+	stores := tss.FilterByWebsiteID(w.w.WebsiteID)
+	w.stores = make(StoreSlice, stores.Len(), stores.Len())
 	for i, s := range stores {
 		group, err := tgs.FindByID(s.GroupID)
 		if err != nil {
 			panic(fmt.Sprintf("Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs))
 		}
-		wb.stores[i] = NewStore(wb.w, group, s)
+		w.stores[i] = NewStore(w.w, group, s)
 	}
-	return wb
+	return w
+}
+
+// ConfigString tries to get a value from the scopeStore if empty
+// falls back to default global scope.
+// If using etcd or consul maybe this can lead to round trip times because of network access.
+func (w *Website) ConfigString(path string) string {
+	val := mustReadConfig().ReadString(path, config.ScopeWebsite, w)
+	if val == "" {
+		val = mustReadConfig().ReadString(path, config.ScopeDefault)
+	}
+	return val
+}
+
+// @todo
+func (w *Website) BaseCurrencyCode() (language.Currency,error) {
+	var c string
+	if w.ConfigString(PathPriceScope) == PriceScopeGlobal {
+		c = mustReadConfig().ReadString((directory.PathCurrencyBase, config.ScopeDefault)
+	}else{
+		c = w.ConfigString(directory.PathCurrencyBase)
+	}
+	return language.ParseCurrency(c)
+}
+
+// @todo
+func (w *Website) BaseCurrency() directory.Currency {
+	return directory.Currency{}
 }
 
 /*
