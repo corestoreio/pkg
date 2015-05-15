@@ -69,11 +69,31 @@ func GetDefaultConfiguration() config.DefaultMap {
 		PathCurrencyAllow:           "USD,EUR",
 		PathCurrencyBase:            "USD",
 		PathCurrencyDefault:         "USD",
-		PathOptionalZipCountries:    "HK,IE,MO,PA,GB",
 		PathStatesRequired:          "",
 		PathDisplayAllStates:        false,
 		PathDefaultCountry:          "US",
 		PathDefaultLocale:           "en_US",
 		PathDefaultTimezone:         "America/Los_Angeles",
 	}
+}
+
+var DefaultConfig = config.SectionSlice{
+	&config.Section{
+		ID:    "general",
+		Scope: config.AllScopes,
+		Groups: config.GroupSlice{
+			&config.Group{
+				ID:    "country",
+				Scope: config.AllScopes,
+				Fields: config.FieldSlice{
+					&config.Field{
+						ID:      "optional_zip_countries",
+						Label:   "Zip/Postal Code is Optional for",
+						Scope:   config.ScopeBits(0).Set(config.ScopeDefault),
+						Default: "HK,IE,MO,PA,GB",
+					},
+				},
+			},
+		},
+	},
 }

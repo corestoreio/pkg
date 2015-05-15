@@ -14,7 +14,12 @@
 
 package config
 
-import "github.com/spf13/viper"
+import (
+	"fmt"
+
+	"github.com/corestoreio/csfw/utils"
+	"github.com/spf13/viper"
+)
 
 const (
 	ScopeDefault ScopeID = iota + 1
@@ -56,8 +61,10 @@ type (
 	// @see https://github.com/magento/magento2/blob/0.74.0-beta7/lib/internal/Magento/Framework/UrlInterface.php#L13
 	URLType int
 
-	// ScopeID used in constants where default is the lowest and store the highest
+	// ScopeID used in constants where default is the lowest and store the highest. Func String() attached
 	ScopeID uint
+	// ScopeBits mostly used for permissions, ScopeGroup is not a part of this bit set.
+	ScopeBits uint64
 
 	// DefaultMap contains the default aka global configuration of a package
 	DefaultMap map[string]interface{}
@@ -88,14 +95,15 @@ type (
 	}
 )
 
+// AllScopes convenient helper variable contains all scope permission levels
+var AllScopes = ScopeBits(0).All()
+
 // NewScope creates the main new configuration for all scopes: default, website and store
 func NewScope() *Scope {
 	s := &Scope{
 		Viper: viper.New(),
 	}
-
 	s.SetDefault(PathCSBaseURL, CSBaseURL)
-
 	return s
 }
 
@@ -106,4 +114,54 @@ func (sp *Scope) ApplyDefaults(m DefaultMap) *Scope {
 		sp.SetDefault(DataScopeDefault+"/"+k, v)
 	}
 	return sp
+}
+
+// All applies all scopes
+func (bits *ScopeBits) All() ScopeBits {
+	bits.Set(ScopeDefault, ScopeWebsite, ScopeStore)
+	return *bits
+}
+
+// Set takes a variadic amount of ScopeID to set them to ScopeBits
+func (bits *ScopeBits) Set(scopes ...ScopeID) ScopeBits {
+	for _, i := range scopes {
+		*bits = *bits | (1 << i) // (1 << power = 2^power)
+	}
+	return *bits
+}
+
+// Has checks if ScopeID is in ScopeBits
+func (bits ScopeBits) Has(s ScopeID) bool {
+	var one ScopeID = 1
+	return (bits & ScopeBits(one<<s)) != 0
+}
+
+// Human
+func (bits ScopeBits) Human() utils.StringSlice {
+	var ret utils.StringSlice
+	var i uint
+	for i = 0; i < 64; i++ {
+		bit := ((bits & (1 << i)) != 0)
+		if bit {
+			ret.Append(ScopeID(i).String())
+		}
+	}
+	return ret
+}
+
+const _ScopeID_name = "ScopeDefaultScopeWebsiteScopeGroupScopeStore"
+
+var _ScopeID_index = [...]uint8{12, 24, 34, 44}
+
+func (i ScopeID) String() string {
+	i -= 1
+	if i >= ScopeID(len(_ScopeID_index)) {
+		return fmt.Sprintf("ScopeID(%d)", i+1)
+	}
+	hi := _ScopeID_index[i]
+	lo := uint8(0)
+	if i > 0 {
+		lo = _ScopeID_index[i-1]
+	}
+	return _ScopeID_name[lo:hi]
 }

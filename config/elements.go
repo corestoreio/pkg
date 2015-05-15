@@ -14,18 +14,53 @@
 
 package config
 
+const (
+	TypeSelect FieldType = iota + 1
+	TypeMultiSelect
+	TypeText
+	TypeObscure
+)
+
 type (
 	Option struct {
 		Value, Label string
 	}
 
-	// Element @see magento2/app/code/Magento/Config/etc/system_file.xsd @todo add later more fields IF necessary
-	Element struct {
+	SectionSlice []*Section
+	Section      struct {
+		ID    string
 		Label string
-		// Show: eg: ScopeDefault & ScopeWebsite & ScopeDefault: showInDefault="1" showInWebsite="1" showInStore="1"
-		Show       uint
-		SortOrder  int
-		ConfigPath string
+		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
+		Scope     ScopeBits
+		SortOrder int
+		// Permission some kind of ACL if some is allowed for read or write access
+		Permission uint
+		Groups     GroupSlice
+	}
+
+	GroupSlice []*Group
+	Group      struct {
+		ID      string
+		Label   string
+		Comment string
+		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
+		Scope     ScopeBits
+		SortOrder int
+		Fields    FieldSlice
+	}
+
+	FieldType uint
+
+	FieldSlice []*Field
+	// Element @see magento2/app/code/Magento/Config/etc/system_file.xsd @todo add later more fields IF necessary
+	Field struct {
+		ID      string
+		Type    FieldType
+		Label   string
+		Comment string
+		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
+		Scope     ScopeBits
+		SortOrder int
 		// SourceModel defines how to retrieve all option values
 		SourceModel interface {
 			Options() []Option
@@ -35,6 +70,12 @@ type (
 			AddData(interface{})
 			Save() error
 		}
+		Default interface{}
 	}
-	ElementSlice []*Element
 )
+
+// DefaultConfiguration iterates over all slices, creates a path and uses the default value
+// to return a map
+func (s SectionSlice) DefaultConfiguration() DefaultMap {
+	return nil
+}
