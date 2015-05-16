@@ -63,11 +63,8 @@ type (
 
 	// ScopeID used in constants where default is the lowest and store the highest. Func String() attached
 	ScopeID uint
-	// ScopeBits mostly used for permissions, ScopeGroup is not a part of this bit set.
-	ScopeBits uint64
-
-	// DefaultMap contains the default aka global configuration of a package
-	DefaultMap map[string]interface{}
+	// ScopePerm is a bit set and mostly used for permissions, ScopeGroup is not a part of this bit set.
+	ScopePerm uint64
 
 	// Retriever implements how to get the ID. If Retriever implements CodeRetriever
 	// then CodeRetriever has precedence. ID can be any of the website, group or store IDs.
@@ -95,9 +92,6 @@ type (
 	}
 )
 
-// AllScopes convenient helper variable contains all scope permission levels
-var AllScopes = ScopeBits(0).All()
-
 // NewScope creates the main new configuration for all scopes: default, website and store
 func NewScope() *Scope {
 	s := &Scope{
@@ -108,22 +102,32 @@ func NewScope() *Scope {
 }
 
 // ApplyDefaults reads the map and applies the keys and values to the default configuration
-func (sp *Scope) ApplyDefaults(m DefaultMap) *Scope {
+func (sp *Scope) ApplyDefaults(ss Sectioner) *Scope {
 	// mutex necessary?
-	for k, v := range m {
+	for k, v := range ss.Defaults() {
 		sp.SetDefault(DataScopeDefault+"/"+k, v)
 	}
 	return sp
 }
 
+// ScopePermAll convenient helper variable contains all scope permission levels
+var ScopePermAll = ScopePerm(1<<ScopeDefault | 1<<ScopeWebsite | 1<<ScopeStore)
+
+// NewScopePerm returns a new permission container
+func NewScopePerm(scopes ...ScopeID) ScopePerm {
+	p := ScopePerm(0)
+	p.Set(scopes...)
+	return p
+}
+
 // All applies all scopes
-func (bits *ScopeBits) All() ScopeBits {
+func (bits *ScopePerm) All() ScopePerm {
 	bits.Set(ScopeDefault, ScopeWebsite, ScopeStore)
 	return *bits
 }
 
 // Set takes a variadic amount of ScopeID to set them to ScopeBits
-func (bits *ScopeBits) Set(scopes ...ScopeID) ScopeBits {
+func (bits *ScopePerm) Set(scopes ...ScopeID) ScopePerm {
 	for _, i := range scopes {
 		*bits = *bits | (1 << i) // (1 << power = 2^power)
 	}
@@ -131,13 +135,13 @@ func (bits *ScopeBits) Set(scopes ...ScopeID) ScopeBits {
 }
 
 // Has checks if ScopeID is in ScopeBits
-func (bits ScopeBits) Has(s ScopeID) bool {
-	var one ScopeID = 1
-	return (bits & ScopeBits(one<<s)) != 0
+func (bits ScopePerm) Has(s ScopeID) bool {
+	var one ScopeID = 1 // ^^
+	return (bits & ScopePerm(one<<s)) != 0
 }
 
-// Human
-func (bits ScopeBits) Human() utils.StringSlice {
+// Human readable representation of the permissions
+func (bits ScopePerm) Human() utils.StringSlice {
 	var ret utils.StringSlice
 	var i uint
 	for i = 0; i < 64; i++ {

@@ -42,7 +42,7 @@ func TestScopeBits(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		var b config.ScopeBits
+		var b config.ScopePerm
 		b.Set(test.have...)
 		if b.Has(test.want) == false {
 			t.Errorf("%d should contain %d", b, test.want)
