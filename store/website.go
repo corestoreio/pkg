@@ -143,11 +143,11 @@ func (w *Website) ConfigString(path string) string {
 }
 
 // @todo
-func (w *Website) BaseCurrencyCode() (language.Currency,error) {
+func (w *Website) BaseCurrencyCode() (language.Currency, error) {
 	var c string
 	if w.ConfigString(PathPriceScope) == PriceScopeGlobal {
-		c = mustReadConfig().ReadString((directory.PathCurrencyBase, config.ScopeDefault)
-	}else{
+		c = mustReadConfig().ReadString(directory.PathCurrencyBase, config.ScopeDefault)
+	} else {
 		c = w.ConfigString(directory.PathCurrencyBase)
 	}
 	return language.ParseCurrency(c)
