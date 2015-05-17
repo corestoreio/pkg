@@ -14,14 +14,10 @@
 
 package directory
 
-import (
-	"github.com/corestoreio/csfw/config"
-	"golang.org/x/text/language"
-)
+import "github.com/corestoreio/csfw/config"
 
 type (
 	Country struct {
-		c language.Region
 	}
 )
 
