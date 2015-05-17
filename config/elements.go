@@ -29,12 +29,15 @@ const (
 type (
 	// DefaultMap contains the default aka global configuration of a package
 	DefaultMap map[string]interface{}
+
 	// Option type is returned by the SourceModel interface
 	Option struct {
 		Value, Label string
 	}
 
+	// Sectioner at the moment only for testing
 	Sectioner interface {
+		// Defaults generates the default configuration from all fields. Key is the path and value the value.
 		Defaults() DefaultMap
 	}
 
@@ -112,10 +115,11 @@ func (t FieldType) ToHTML() string {
 var _ Sectioner = (*SectionSlice)(nil)
 
 // NewConfiguration creates a new validated SectionSlice with a three level configuration.
+// Panics if a path is redundant.
 func NewConfiguration(sections ...*Section) SectionSlice {
 	ss := SectionSlice(sections)
-	if err := ss.validate(); err != nil {
-		// @todo merge them
+	if err := ss.Validate(); err != nil {
+		logger.WithField("NewConfiguration", "Validate").Warn(err)
 		panic(err)
 	}
 	return ss
@@ -135,8 +139,56 @@ func (ss SectionSlice) Defaults() DefaultMap {
 	return dm
 }
 
-// validate fully validates a configuration for all three hierarchy levels.
-func (ss SectionSlice) validate() error {
+// Merge merges n SectionSlices into the current slice. Behaviour for duplicates: 1. Warning 2. Last item wins.
+func (ss *SectionSlice) Merge(sSlices ...SectionSlice) error {
+	for _, sl := range sSlices {
+		for _, s := range sl {
+			if err := (*ss).merge(s); err != nil {
+				return errgo.Mask(err)
+			}
+		}
+	}
+	return nil
+}
+
+func (ss *SectionSlice) merge(sect *Section) error {
+	currentSection := (*ss).FindByID(sect.ID)
+	if currentSection == nil {
+		(*ss).Append(sect)
+		return nil
+	}
+	//	ctxLog := logger.WithField("SectionSlice", "merge")
+	//	ctxLog.Debugf("%#v into %#v", sect, currentSection)
+	currentSection.ID = sect.ID
+	currentSection.Label = sect.Label
+	currentSection.Scope = sect.Scope
+	currentSection.SortOrder = sect.SortOrder
+	currentSection.Permission = sect.Permission
+
+	return nil
+}
+
+// FindByID returns a Section pointer or nil if not found
+func (ss SectionSlice) FindByID(id string) *Section {
+	for _, s := range ss {
+		if s != nil && s.ID == id {
+			return s
+		}
+	}
+	return nil
+}
+
+// Append adds 0..n *Section
+func (ss *SectionSlice) Append(s ...*Section) *SectionSlice {
+	*ss = append(*ss, s...)
+	return ss
+}
+
+// Validate fully validates a configuration for all three hierarchy levels.
+// 1. Checks if all slices have at least one entry
+// 2. Checks for redundant paths
+// 3. ...
+func (ss SectionSlice) Validate() error {
 	var pc = make(map[string]bool) // pc path checker
 	if len(ss) == 0 {
 		return errgo.New("SectionSlice is empty")
@@ -154,11 +206,28 @@ func (ss SectionSlice) validate() error {
 				if pc[p] {
 					return errgo.Newf("Duplicate entry for path %s", p)
 				}
+				pc[p] = true
 			}
 		}
 	}
 	pc = nil
 	return nil
+}
+
+// FindByID returns a Group pointer or nil if not found
+func (gs GroupSlice) FindByID(id string) *Group {
+	for _, g := range gs {
+		if g != nil && g.ID == id {
+			return g
+		}
+	}
+	return nil
+}
+
+// Append adds *Group (variadic) to the SectionSlice
+func (gs *GroupSlice) Append(g ...*Group) *GroupSlice {
+	*gs = append(*gs, g...)
+	return gs
 }
 
 // path creates a valid configuration path with slashes as separators.

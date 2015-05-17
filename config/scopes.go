@@ -104,7 +104,9 @@ func NewScope() *Scope {
 // ApplyDefaults reads the map and applies the keys and values to the default configuration
 func (sp *Scope) ApplyDefaults(ss Sectioner) *Scope {
 	// mutex necessary?
+	ctxLog := logger.WithField("Scope", "ApplyDefaults")
 	for k, v := range ss.Defaults() {
+		ctxLog.Debug(k, v)
 		sp.SetDefault(DataScopeDefault+"/"+k, v)
 	}
 	return sp
