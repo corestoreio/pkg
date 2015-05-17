@@ -18,6 +18,7 @@ import "github.com/juju/errgo"
 
 const (
 	TypeCustom FieldType = iota + 1
+	TypeHidden
 	TypeObscure
 	TypeMultiselect
 	TypeSelect
@@ -114,6 +115,7 @@ var _ Sectioner = (*SectionSlice)(nil)
 func NewConfiguration(sections ...*Section) SectionSlice {
 	ss := SectionSlice(sections)
 	if err := ss.validate(); err != nil {
+		// @todo merge them
 		panic(err)
 	}
 	return ss
