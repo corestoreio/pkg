@@ -173,3 +173,20 @@ func (l StringSlice) Join(sep string) string { return strings.Join(l, sep) }
 
 // Split uses string s and a separator and appends the parts to the slice.
 func (l *StringSlice) Split(s, sep string) StringSlice { return l.Append(strings.Split(s, sep)...) }
+
+// SplitStringer uses a name and position indexes to split the name and appends the parts to the slice.
+// Cracking the names and indexes which the stringer command generates.
+func (l *StringSlice) SplitStringer8(n string, ps ...uint8) StringSlice {
+	var next uint8
+	ln := uint8(len(n))
+	lu := len(ps) - 1
+	for i := 0; i < lu; i++ {
+		if i+1 < lu {
+			next = ps[i+1]
+		} else {
+			next = ln
+		}
+		(*l).Append(n[ps[i]:next])
+	}
+	return *l
+}

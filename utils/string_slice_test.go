@@ -224,3 +224,26 @@ func TestStringSliceAll(t *testing.T) {
 		return len(s) == 1
 	}))
 }
+
+func TestStringSliceSplitStringer8(t *testing.T) {
+	const _ScopeID_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
+	var _ScopeID_index = [...]uint8{0, 11, 23, 35, 45, 55}
+	var a utils.StringSlice
+	have := a.SplitStringer8(_ScopeID_name, _ScopeID_index[:]...)
+	want := utils.StringSlice{"ScopeAbsent", "ScopeDefault", "ScopeWebsite", "ScopeGroup", "ScopeStore"}
+	assert.Exactly(t, want, have)
+}
+
+var benchStringSliceSplitStringer8 utils.StringSlice
+
+// BenchmarkStringSliceSplitStringer8	 1000000	      1041 ns/op	     240 B/op	       4 allocs/op
+func BenchmarkStringSliceSplitStringer8(b *testing.B) {
+	const _ScopeID_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
+	var _ScopeID_index = [...]uint8{0, 11, 23, 35, 45, 55}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchStringSliceSplitStringer8.SplitStringer8(_ScopeID_name, _ScopeID_index[:]...)
+		benchStringSliceSplitStringer8 = nil
+	}
+}
