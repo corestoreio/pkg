@@ -38,13 +38,16 @@ type (
 		ReInit(dbr.SessionRunner, ...csdb.DbrSelectCb) error
 	}
 
-	// Storage contains a mutex and the raw slices from the database.
+	// Storage contains a mutex and the raw slices from the database. @todo maybe make private?
 	Storage struct {
 		mu       sync.RWMutex
 		websites TableWebsiteSlice
 		groups   TableGroupSlice
 		stores   TableStoreSlice
 	}
+
+	// StorageOption sets a parameter for Storage struct.
+	StorageOption func(*Storage)
 
 	// Retriever implements how to get the ID. If Retriever implements CodeRetriever
 	// then CodeRetriever has precedence. ID can be any of the website, group or store IDs.
@@ -74,15 +77,33 @@ func (c Code) ID() int64 { return int64(0) }
 // Code is convenience helper to satisfy the interface CodeRetriever
 func (c Code) Code() string { return string(c) }
 
+// StorageTableWebsites sets the TableWebsiteSlice. By default, the slice is nil.
+func StorageTableWebsites(tws ...*TableWebsite) StorageOption {
+	return func(s *Storage) { s.websites = TableWebsiteSlice(tws) }
+}
+
+// StorageTableGroups sets the TableGroupSlice. By default, the slice is nil.
+func StorageTableGroups(tgs ...*TableGroup) StorageOption {
+	return func(s *Storage) { s.groups = TableGroupSlice(tgs) }
+}
+
+// StorageTableStores sets the TableStoreSlice. By default, the slice is nil.
+func StorageTableStores(tss ...*TableStore) StorageOption {
+	return func(s *Storage) { s.stores = TableStoreSlice(tss) }
+}
+
 // NewStorage creates a new storage object from three slice types. All three arguments can be nil
 // but then you call ReInit()
-func NewStorage(tws TableWebsiteSlice, tgs TableGroupSlice, tss TableStoreSlice) *Storage {
-	return &Storage{
-		mu:       sync.RWMutex{},
-		websites: tws,
-		groups:   tgs,
-		stores:   tss,
+func NewStorage(opts ...StorageOption) *Storage {
+	s := &Storage{
+		mu: sync.RWMutex{},
 	}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(s)
+		}
+	}
+	return s
 }
 
 // website returns a TableWebsite by using either id or code to find it. If id and code are
