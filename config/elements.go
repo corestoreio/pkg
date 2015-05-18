@@ -16,9 +16,9 @@ package config
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 
-	"github.com/dustin/gojson"
 	"github.com/juju/errgo"
 )
 
@@ -100,7 +100,9 @@ type (
 		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
 		Scope     ScopePerm
 		SortOrder int
-		Visible   bool
+		// Visible used for configuration settings which are not exposed to the user.
+		// In Magento2 they do not have an entry in the system.xml
+		Visible Visible
 		// SourceModel defines how to retrieve all option values
 		SourceModel interface {
 			Options() []Option
@@ -163,28 +165,30 @@ func (ss *SectionSlice) MergeAll(sSlices ...SectionSlice) error {
 	return nil
 }
 
-func (ss *SectionSlice) Merge(sect *Section) error {
-	currentSection, err := (*ss).FindByID(sect.ID)
-	if currentSection == nil || err != nil {
-		(*ss).Append(sect)
+// Merge copies the data from a Section into this slice. Appends if ID is not found
+// in this slice otherwise overrides struct fields if not empty.
+func (ss *SectionSlice) Merge(s *Section) error {
+	cs, err := (*ss).FindByID(s.ID) // cs current section
+	if cs == nil || err != nil {
+		(*ss).Append(s)
 		return nil
 	}
 	// Maybe that logging is helpful
-	logger.WithField("SectionSlice", "merge").Debugf("Label, Scope, SortOrder, Permission of <<%#v>> merged into <<%#v>>", sect, currentSection)
-	if sect.Label != "" {
-		currentSection.Label = sect.Label
+	logger.WithField("SectionSlice", "merge").Debugf("Label, Scope, SortOrder, Permission of <<%#v>> merged into <<%#v>>", s, cs)
+	if s.Label != "" {
+		cs.Label = s.Label
 	}
-	if sect.Scope > 0 {
-		currentSection.Scope = sect.Scope
+	if s.Scope > 0 {
+		cs.Scope = s.Scope
 	}
-	if sect.SortOrder > 0 {
-		currentSection.SortOrder = sect.SortOrder
+	if s.SortOrder != 0 {
+		cs.SortOrder = s.SortOrder
 	}
-	if sect.Permission > 0 {
-		currentSection.Permission = sect.Permission
+	if s.Permission > 0 {
+		cs.Permission = s.Permission
 	}
 
-	return currentSection.Groups.Merge(sect.Groups)
+	return cs.Groups.Merge(s.Groups...)
 }
 
 // FindByID returns a Section pointer or nil if not found. Please check for nil and do not a
@@ -253,13 +257,15 @@ func (gs GroupSlice) FindByID(id string) (*Group, error) {
 	return nil, ErrGroupNotFound
 }
 
-// Append adds *Group (variadic) to the SectionSlice
+// Append adds *Group (variadic) to the GroupSlice
 func (gs *GroupSlice) Append(g ...*Group) *GroupSlice {
 	*gs = append(*gs, g...)
 	return gs
 }
 
-func (gs *GroupSlice) Merge(groups GroupSlice) error {
+// Merge copies the data from a groups into this slice. Appends if ID is not found
+// in this slice otherwise overrides struct fields if not empty.
+func (gs *GroupSlice) Merge(groups ...*Group) error {
 	for _, g := range groups {
 		if err := (*gs).merge(g); err != nil {
 			return errgo.Mask(err)
@@ -269,15 +275,28 @@ func (gs *GroupSlice) Merge(groups GroupSlice) error {
 }
 
 func (gs *GroupSlice) merge(g *Group) error {
-	currentGroup, err := (*gs).FindByID(g.ID)
-	if currentGroup == nil || err != nil {
+	cg, err := (*gs).FindByID(g.ID) // cg current group
+	if cg == nil || err != nil {
 		(*gs).Append(g)
 		return nil
 	}
+
+	// Maybe that logging is helpful
+	logger.WithField("GroupSlice", "merge").Debugf("Label, Comment, Scope, SortOrder of <<%#v>> merged into <<%#v>>", g, cg)
+
 	if g.Label != "" {
-		currentGroup.Label = g.Label
+		cg.Label = g.Label
 	}
-	// @todo more copying
+	if g.Comment != "" {
+		cg.Comment = g.Comment
+	}
+	if g.Scope > 0 {
+		cg.Scope = g.Scope
+	}
+	if g.SortOrder != 0 {
+		cg.SortOrder = g.SortOrder
+	}
+	cg.Fields.Merge(g.Fields...)
 	return nil
 }
 
@@ -289,6 +308,65 @@ func (fs FieldSlice) FindByID(id string) (*Field, error) {
 		}
 	}
 	return nil, ErrFieldNotFound
+}
+
+// Append adds *Field (variadic) to the FieldSlice
+func (fs *FieldSlice) Append(f ...*Field) *FieldSlice {
+	*fs = append(*fs, f...)
+	return fs
+}
+
+// Merge copies the data from a Section into this slice. Appends if ID is not found
+// in this slice otherwise overrides struct fields if not empty.
+func (fs *FieldSlice) Merge(fields ...*Field) error {
+	for _, f := range fields {
+		if err := (*fs).merge(f); err != nil {
+			return errgo.Mask(err)
+		}
+	}
+	return nil
+}
+
+func (fs *FieldSlice) merge(f *Field) error {
+	cf, err := (*fs).FindByID(f.ID) // cf current field
+	if cf == nil || err != nil {
+		(*fs).Append(f)
+		return nil
+	}
+
+	// Maybe that logging is helpful
+	logger.WithField("FieldSlice", "merge").Debugf("Type, Label, Comment, Scope, SortOrder of <<%#v>> merged into <<%#v>>", f, cf)
+	if f.Type != nil {
+		cf.Type = f.Type
+	}
+	if f.Label != "" {
+		cf.Label = f.Label
+	}
+	if f.Comment != "" {
+		cf.Comment = f.Comment
+	}
+	if f.Scope > ScopeAbsent {
+		cf.Scope = f.Scope
+	}
+	if f.SortOrder != 0 {
+		cf.SortOrder = f.SortOrder
+	}
+	if f.Visible > VisibleAbsent {
+		cf.Visible = f.Visible
+	}
+	// @todo
+	//// SourceModel defines how to retrieve all option values
+	//SourceModel interface {
+	//Options() []Option
+	//}
+	//// BackendModel defines @todo think about AddData
+	//BackendModel interface {
+	//AddData(interface{})
+	//Save() error
+	//}
+	//Default interface{}
+
+	return nil
 }
 
 // path creates a valid configuration path with slashes as separators.

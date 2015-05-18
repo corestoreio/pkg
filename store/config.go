@@ -54,14 +54,14 @@ const (
 
 var (
 	// configReader stores the reader. Should not be used. Access it via mustConfig()
-	configReader config.ScopeReader
+	configReader config.Reader
 	// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
 	TableCollection csdb.TableStructureSlice
 )
 
 // SetConfig sets the internal variable to the current scope config reader.
 // ScopeReader will be used across all functions in this package.
-func SetConfigReader(c config.ScopeReader) {
+func SetConfigReader(c config.Reader) {
 	if c == nil {
 		panic("config.ScopeReader cannot be nil")
 	}
@@ -69,7 +69,7 @@ func SetConfigReader(c config.ScopeReader) {
 }
 
 // mustReadConfig internally used
-func mustReadConfig() config.ScopeReader {
+func mustReadConfig() config.Reader {
 	if configReader == nil {
 		panic("config.ScopeReader cannot be nil")
 	}

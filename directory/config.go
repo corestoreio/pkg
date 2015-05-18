@@ -40,14 +40,14 @@ const (
 
 var (
 	// configReader stores the reader. Should not be used. Access it via mustConfig()
-	configReader config.ScopeReader
+	configReader config.Reader
 	// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
 	TableCollection csdb.TableStructureSlice
 )
 
 // SetConfig sets the internal variable to the current scope config reader.
 // ScopeReader will be used across all functions in this package.
-func SetConfigReader(c config.ScopeReader) {
+func SetConfigReader(c config.Reader) {
 	if c == nil {
 		panic("config.ScopeReader cannot be nil")
 	}
@@ -55,7 +55,7 @@ func SetConfigReader(c config.ScopeReader) {
 }
 
 // mustReadConfig internally used
-func mustReadConfig() config.ScopeReader {
+func mustReadConfig() config.Reader {
 	if configReader == nil {
 		panic("config.ScopeReader cannot be nil")
 	}
@@ -84,7 +84,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      `Base currency is used for all online payment transactions. If you have more than one store view, the base currency scope is defined by the catalog price scope ("Catalog" > "Price" > "Catalog Price Scope").`,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
 						Default:      `USD`,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Currency\Base
@@ -98,7 +98,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    2,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.ScopePermAll,
 						Default:      `USD`,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Currency\DefaultCurrency
@@ -112,7 +112,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeMultiselect,
 						SortOrder:    3,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.ScopePermAll,
 						Default:      `USD,EUR`,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Currency\Allow
@@ -135,7 +135,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeText,
 						SortOrder:    0,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.ScopeDefault),
 						Default:      100,
 						BackendModel: nil,
@@ -158,7 +158,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.ScopePermAll,
 						Default:      false,
 						BackendModel: nil,
@@ -172,7 +172,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeText,
 						SortOrder:    5,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.ScopePermAll,
 						Default:      nil,
 						BackendModel: nil,
@@ -186,7 +186,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    6,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
 						Default:      `general`,
 						BackendModel: nil,
@@ -200,7 +200,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    7,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
 						Default:      `currency_import_error_email_template`,
 						BackendModel: nil,
@@ -214,7 +214,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    4,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.ScopePermAll,
 						Default:      nil,
 						BackendModel: nil,
@@ -228,7 +228,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    2,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.ScopePermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Currency\Cron
@@ -242,7 +242,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeTime,
 						SortOrder:    3,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.ScopePermAll,
 						Default:      nil,
 						BackendModel: nil,
@@ -272,7 +272,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeMultiselect,
 						SortOrder:    1,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.ScopeDefault),
 						Default:      `AZN,AZM,AFN,ALL,DZD,AOA,ARS,AMD,AWG,AUD,BSD,BHD,BDT,BBD,BYR,BZD,BMD,BTN,BOB,BAM,BWP,BRL,GBP,BND,BGN,BUK,BIF,KHR,CAD,CVE,CZK,KYD,CLP,CNY,COP,KMF,CDF,CRC,HRK,CUP,DKK,DJF,DOP,XCD,EGP,SVC,GQE,ERN,EEK,ETB,EUR,FKP,FJD,GMD,GEK,GEL,GHS,GIP,GTQ,GNF,GYD,HTG,HNL,HKD,HUF,ISK,INR,IDR,IRR,IQD,ILS,JMD,JPY,JOD,KZT,KES,KWD,KGS,LAK,LVL,LBP,LSL,LRD,LYD,LTL,MOP,MKD,MGA,MWK,MYR,MVR,LSM,MRO,MUR,MXN,MDL,MNT,MAD,MZN,MMK,NAD,NPR,ANG,TRL,TRY,NZD,NIC,NGN,KPW,NOK,OMR,PKR,PAB,PGK,PYG,PEN,PHP,PLN,QAR,RHD,RON,ROL,RUB,RWF,SHP,STD,SAR,RSD,SCR,SLL,SGD,SKK,SBD,SOS,ZAR,KRW,LKR,SDG,SRD,SZL,SEK,CHF,SYP,TWD,TJS,TZS,THB,TOP,TTD,TND,TMM,USD,UGX,UAH,AED,UYU,UZS,VUV,VEB,VEF,VND,CHE,CHW,XOF,XPF,WST,YER,ZMK,ZWD`,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Locale
@@ -302,7 +302,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeMultiselect,
 						SortOrder:    3,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.ScopeDefault),
 						Default:      `HK,IE,MO,PA,GB`,
 						BackendModel: nil,
@@ -325,7 +325,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeMultiselect,
 						SortOrder:    1,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.ScopeDefault),
 						Default:      nil,
 						BackendModel: nil,
@@ -339,7 +339,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    8,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.ScopeDefault),
 						Default:      nil,
 						BackendModel: nil,
@@ -361,7 +361,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `currency/import/error_email`,
 						ID:      "error_email",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
 						Default: nil,
 					},
@@ -379,7 +379,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `general/country/allow`,
 						ID:      "allow",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
 						Default: `AF,AL,DZ,AS,AD,AO,AI,AQ,AG,AR,AM,AW,AU,AT,AX,AZ,BS,BH,BD,BB,BY,BE,BZ,BJ,BM,BL,BT,BO,BA,BW,BV,BR,IO,VG,BN,BG,BF,BI,KH,CM,CA,CD,CV,KY,CF,TD,CL,CN,CX,CC,CO,KM,CG,CK,CR,HR,CU,CY,CZ,DK,DJ,DM,DO,EC,EG,SV,GQ,ER,EE,ET,FK,FO,FJ,FI,FR,GF,PF,TF,GA,GM,GE,DE,GG,GH,GI,GR,GL,GD,GP,GU,GT,GN,GW,GY,HT,HM,HN,HK,HU,IS,IM,IN,ID,IR,IQ,IE,IL,IT,CI,JE,JM,JP,JO,KZ,KE,KI,KW,KG,LA,LV,LB,LS,LR,LY,LI,LT,LU,ME,MF,MO,MK,MG,MW,MY,MV,ML,MT,MH,MQ,MR,MU,YT,FX,MX,FM,MD,MC,MN,MS,MA,MZ,MM,NA,NR,NP,NL,AN,NC,NZ,NI,NE,NG,NU,NF,KP,MP,NO,OM,PK,PW,PA,PG,PY,PE,PH,PN,PL,PS,PT,PR,QA,RE,RO,RS,RU,RW,SH,KN,LC,PM,VC,WS,SM,ST,SA,SN,SC,SL,SG,SK,SI,SB,SO,ZA,GS,KR,ES,LK,SD,SR,SJ,SZ,SE,CH,SY,TL,TW,TJ,TZ,TH,TG,TK,TO,TT,TN,TR,TM,TC,TV,VI,UG,UA,AE,GB,US,UM,UY,UZ,VU,VA,VE,VN,WF,EH,YE,ZM,ZW`,
 					},
@@ -388,7 +388,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `general/country/default`,
 						ID:      "default",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
 						Default: `US`,
 					},
@@ -402,7 +402,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `general/locale/datetime_format_long`,
 						ID:      "datetime_format_long",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
 						Default: `%A, %B %e %Y [%I:%M %p]`,
 					},
@@ -411,7 +411,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `general/locale/datetime_format_medium`,
 						ID:      "datetime_format_medium",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
 						Default: `%a, %b %e %Y [%I:%M %p]`,
 					},
@@ -420,7 +420,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `general/locale/datetime_format_short`,
 						ID:      "datetime_format_short",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
 						Default: `%m/%d/%y [%I:%M %p]`,
 					},
@@ -429,7 +429,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `general/locale/date_format_long`,
 						ID:      "date_format_long",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
 						Default: `%A, %B %e %Y`,
 					},
@@ -438,7 +438,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `general/locale/date_format_medium`,
 						ID:      "date_format_medium",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
 						Default: `%a, %b %e %Y`,
 					},
@@ -447,7 +447,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `general/locale/date_format_short`,
 						ID:      "date_format_short",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
 						Default: `%m/%d/%y`,
 					},
@@ -456,7 +456,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `general/locale/language`,
 						ID:      "language",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
 						Default: `en`,
 					},
@@ -465,7 +465,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `general/locale/code`,
 						ID:      "code",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
 						Default: `en_US`,
 					},
@@ -474,7 +474,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `general/locale/timezone`,
 						ID:      "timezone",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
 						Default: `America/Los_Angeles`,
 					},

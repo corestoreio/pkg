@@ -912,7 +912,7 @@ func TestNewManagerReInit(t *testing.T) {
 	MOCKS
 */
 
-var _ config.ScopeReader = (*mockScopeReader)(nil)
+var _ config.Reader = (*mockScopeReader)(nil)
 
 type mockScopeReader struct {
 	s func(path string, scope config.ScopeID, r ...config.Retriever) string

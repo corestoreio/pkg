@@ -243,7 +243,7 @@ func TestStoreBaseUrlandPath(t *testing.T) {
 	)
 
 	tests := []struct {
-		haveR        config.ScopeReader
+		haveR        config.Reader
 		haveUT       config.URLType
 		haveIsSecure bool
 		wantBaseUrl  string

@@ -22,7 +22,8 @@ import (
 )
 
 const (
-	ScopeDefault ScopeID = iota + 1 // must be start from 1 because 0 is eq to not set
+	ScopeAbsent ScopeID = iota // must start from 0 because 0 means not set
+	ScopeDefault
 	ScopeWebsite
 	ScopeGroup
 	ScopeStore
@@ -46,8 +47,9 @@ const (
 )
 
 const (
+	URLTypeAbsent URLType = iota
 	// UrlTypeWeb defines the ULR type to generate the main base URL.
-	URLTypeWeb URLType = iota + 1
+	URLTypeWeb
 	// UrlTypeStatic defines the url to the static assets like css, js or theme images
 	URLTypeStatic
 	// UrlTypeLink hmmm
@@ -62,9 +64,7 @@ type (
 	URLType int
 
 	// ScopeID used in constants where default is the lowest and store the highest. Func String() attached
-	ScopeID uint
-	// ScopePerm is a bit set and used for permissions, ScopeGroup is not a part of this bit set.
-	ScopePerm uint64
+	ScopeID uint8
 
 	// Retriever implements how to get the ID. If Retriever implements CodeRetriever
 	// then CodeRetriever has precedence. ID can be any of the website, group or store IDs.
@@ -73,7 +73,7 @@ type (
 		ID() int64
 	}
 
-	ScopeReader interface {
+	Reader interface {
 		// ReadString retrieves a config value by path, ScopeID and/or ID
 		ReadString(path string, scope ScopeID, r ...Retriever) string
 
@@ -81,12 +81,12 @@ type (
 		IsSetFlag(path string, scope ScopeID, r ...Retriever) bool
 	}
 
-	ScopeWriter interface {
+	Writer interface {
 		// SetString sets config value in the corresponding config scope
 		Write(path, value interface{}, scope ScopeID, r ...Retriever)
 	}
 
-	// Scope main configuration struct which includes Viper
+	// Scope main configuration struct which includes Viper, unhappy with the name Scope
 	Scope struct {
 		*viper.Viper
 	}
@@ -112,70 +112,19 @@ func (sp *Scope) ApplyDefaults(ss Sectioner) *Scope {
 	return sp
 }
 
-// ScopePermAll convenient helper variable contains all scope permission levels
-var ScopePermAll = ScopePerm(1<<ScopeDefault | 1<<ScopeWebsite | 1<<ScopeStore)
+const _ScopeID_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
 
-// NewScopePerm returns a new permission container
-func NewScopePerm(scopes ...ScopeID) ScopePerm {
-	p := ScopePerm(0)
-	p.Set(scopes...)
-	return p
-}
+var _ScopeID_index = [...]uint8{0, 11, 23, 35, 45, 55}
 
-// All applies all scopes
-func (bits *ScopePerm) All() ScopePerm {
-	bits.Set(ScopeDefault, ScopeWebsite, ScopeStore)
-	return *bits
-}
-
-// Set takes a variadic amount of ScopeID to set them to ScopeBits
-func (bits *ScopePerm) Set(scopes ...ScopeID) ScopePerm {
-	for _, i := range scopes {
-		*bits = *bits | (1 << i) // (1 << power = 2^power)
-	}
-	return *bits
-}
-
-// Has checks if ScopeID is in ScopeBits
-func (bits ScopePerm) Has(s ScopeID) bool {
-	var one ScopeID = 1 // ^^
-	return (bits & ScopePerm(one<<s)) != 0
-}
-
-// Human readable representation of the permissions
-func (bits ScopePerm) Human() utils.StringSlice {
-	var ret utils.StringSlice
-	var i uint
-	for i = 0; i < 64; i++ {
-		bit := ((bits & (1 << i)) != 0)
-		if bit {
-			ret.Append(ScopeID(i).String())
-		}
-	}
-	return ret
-}
-
-// MarshalJSON implements marshalling into an array or null if no bits are set. @todo UnMarshal
-func (bits ScopePerm) MarshalJSON() ([]byte, error) {
-	if bits == 0 {
-		return []byte("null"), nil
-	}
-	return []byte(`["` + bits.Human().Join(`","`) + `"]`), nil
-}
-
-const _ScopeID_name = "ScopeDefaultScopeWebsiteScopeGroupScopeStore"
-
-var _ScopeID_index = [...]uint8{12, 24, 34, 44}
-
+// String human readable name of ScopeID
 func (i ScopeID) String() string {
-	i -= 1
-	if i >= ScopeID(len(_ScopeID_index)) {
-		return fmt.Sprintf("ScopeID(%d)", i+1)
+	if i+1 >= ScopeID(len(_ScopeID_index)) {
+		return fmt.Sprintf("ScopeID(%d)", i)
 	}
-	hi := _ScopeID_index[i]
-	lo := uint8(0)
-	if i > 0 {
-		lo = _ScopeID_index[i-1]
-	}
-	return _ScopeID_name[lo:hi]
+	return _ScopeID_name[_ScopeID_index[i]:_ScopeID_index[i+1]]
+}
+
+// ScopeIDNames returns a slice containing all constant names
+func ScopeIDNames() (r utils.StringSlice) {
+	return r.SplitStringer8(_Visible_name, _Visible_index[:]...)
 }
