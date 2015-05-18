@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	ScopeDefault ScopeID = iota + 1
+	ScopeDefault ScopeID = iota + 1 // must be start from 1 because 0 is eq to not set
 	ScopeWebsite
 	ScopeGroup
 	ScopeStore
@@ -63,7 +63,7 @@ type (
 
 	// ScopeID used in constants where default is the lowest and store the highest. Func String() attached
 	ScopeID uint
-	// ScopePerm is a bit set and mostly used for permissions, ScopeGroup is not a part of this bit set.
+	// ScopePerm is a bit set and used for permissions, ScopeGroup is not a part of this bit set.
 	ScopePerm uint64
 
 	// Retriever implements how to get the ID. If Retriever implements CodeRetriever
@@ -153,6 +153,14 @@ func (bits ScopePerm) Human() utils.StringSlice {
 		}
 	}
 	return ret
+}
+
+// MarshalJSON implements marshalling into an array or null if no bits are set. @todo UnMarshal
+func (bits ScopePerm) MarshalJSON() ([]byte, error) {
+	if bits == 0 {
+		return []byte("null"), nil
+	}
+	return []byte(`["` + bits.Human().Join(`","`) + `"]`), nil
 }
 
 const _ScopeID_name = "ScopeDefaultScopeWebsiteScopeGroupScopeStore"

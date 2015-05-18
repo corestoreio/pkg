@@ -17,9 +17,16 @@ package config_test
 import (
 	"testing"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/corestoreio/csfw/config"
 	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	l := logrus.New()
+	l.Level = logrus.DebugLevel
+	config.SetLogger(l)
+}
 
 func TestNewConfiguration(t *testing.T) {
 	tests := []struct {
@@ -152,45 +159,94 @@ func TestSectionSliceMerge(t *testing.T) {
 	tests := []struct {
 		have    []config.SectionSlice
 		wantErr string
-		wantLen int
+		want    string
 	}{
-		{[]config.SectionSlice{
-			config.SectionSlice{
-				&config.Section{
-					ID: "a",
-					Groups: config.GroupSlice{
-						&config.Group{
-							ID: "b",
-							Fields: config.FieldSlice{
-								&config.Field{ID: "c", Default: `c`},
+		{
+			have: []config.SectionSlice{
+				config.SectionSlice{
+					&config.Section{
+						ID: "a",
+						Groups: config.GroupSlice{
+							&config.Group{
+								ID: "b",
+								Fields: config.FieldSlice{
+									&config.Field{ID: "c", Default: `c`},
+								},
+							},
+							&config.Group{
+								ID: "b",
+								Fields: config.FieldSlice{
+									&config.Field{ID: "d", Default: `d`},
+								},
 							},
 						},
-						&config.Group{
-							ID: "b",
-							Fields: config.FieldSlice{
-								&config.Field{ID: "d", Default: `d`},
+					},
+				},
+				config.SectionSlice{
+					&config.Section{ID: "a", Label: "LabelA", Groups: nil},
+				},
+			},
+			wantErr: "",
+			want:    `[{"ID":"a","Label":"LabelA","Scope":0,"SortOrder":0,"Permission":0,"Groups":[{"ID":"b","Label":"","Comment":"","Scope":0,"SortOrder":0,"Fields":[{"ID":"c","Type":null,"Label":"","Comment":"","Scope":0,"SortOrder":0,"Visible":false,"SourceModel":null,"BackendModel":null,"Default":"c"}]},{"ID":"b","Label":"","Comment":"","Scope":0,"SortOrder":0,"Fields":[{"ID":"d","Type":null,"Label":"","Comment":"","Scope":0,"SortOrder":0,"Visible":false,"SourceModel":null,"BackendModel":null,"Default":"d"}]}]}]` + "\n",
+		},
+		{
+			have: []config.SectionSlice{
+				config.SectionSlice{
+					&config.Section{
+						ID:    "a",
+						Label: "SectionLabelA",
+						Groups: config.GroupSlice{
+							&config.Group{
+								ID:    "b",
+								Scope: config.NewScopePerm(config.ScopeDefault),
+								Fields: config.FieldSlice{
+									&config.Field{ID: "c", Default: `c`},
+								},
+							},
+							&config.Group{
+								ID: "b2",
+								Fields: config.FieldSlice{
+									&config.Field{ID: "d", Default: `d`},
+								},
+							},
+						},
+					},
+				},
+				config.SectionSlice{
+					&config.Section{
+						ID:    "a",
+						Scope: config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Groups: config.GroupSlice{
+							&config.Group{
+								ID:    "b",
+								Label: "GroupLabelB1",
+							},
+							&config.Group{
+								ID:    "b",
+								Label: "GroupLabelB2",
 							},
 						},
 					},
 				},
 			},
-			config.SectionSlice{
-				&config.Section{ID: "a", Label: "LabelA", Groups: nil},
-			},
-		}, "", 1},
+			wantErr: "",
+			want:    `todo` + "\n",
+		},
 	}
 
 	for _, test := range tests {
 		var baseSl config.SectionSlice
-		haveErr := baseSl.Merge(test.have...)
+		haveErr := baseSl.MergeAll(test.have...)
 		if test.wantErr != "" {
 			assert.Len(t, baseSl, 0)
 			assert.Error(t, haveErr)
 			assert.Contains(t, haveErr.Error(), test.wantErr)
 		} else {
-			t.Logf("\n%#v\n", baseSl)
 			assert.NoError(t, haveErr)
-			assert.Len(t, baseSl, test.wantLen)
+			j := baseSl.ToJson()
+			if j != test.want {
+				t.Errorf("\nExpected: %s\nActual: %s\n", test.want, j)
+			}
 		}
 
 	}

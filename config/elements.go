@@ -14,7 +14,13 @@
 
 package config
 
-import "github.com/juju/errgo"
+import (
+	"bytes"
+	"errors"
+
+	"github.com/dustin/gojson"
+	"github.com/juju/errgo"
+)
 
 const (
 	TypeCustom FieldType = iota + 1
@@ -24,6 +30,12 @@ const (
 	TypeSelect
 	TypeText
 	TypeTime
+)
+
+var (
+	ErrSectionNotFound = errors.New("Section not found")
+	ErrGroupNotFound   = errors.New("Group not found")
+	ErrFieldNotFound   = errors.New("Field not found")
 )
 
 type (
@@ -140,10 +152,10 @@ func (ss SectionSlice) Defaults() DefaultMap {
 }
 
 // Merge merges n SectionSlices into the current slice. Behaviour for duplicates: 1. Warning 2. Last item wins.
-func (ss *SectionSlice) Merge(sSlices ...SectionSlice) error {
+func (ss *SectionSlice) MergeAll(sSlices ...SectionSlice) error {
 	for _, sl := range sSlices {
 		for _, s := range sl {
-			if err := (*ss).merge(s); err != nil {
+			if err := (*ss).Merge(s); err != nil {
 				return errgo.Mask(err)
 			}
 		}
@@ -151,37 +163,54 @@ func (ss *SectionSlice) Merge(sSlices ...SectionSlice) error {
 	return nil
 }
 
-func (ss *SectionSlice) merge(sect *Section) error {
-	currentSection := (*ss).FindByID(sect.ID)
-	if currentSection == nil {
+func (ss *SectionSlice) Merge(sect *Section) error {
+	currentSection, err := (*ss).FindByID(sect.ID)
+	if currentSection == nil || err != nil {
 		(*ss).Append(sect)
 		return nil
 	}
-	//	ctxLog := logger.WithField("SectionSlice", "merge")
-	//	ctxLog.Debugf("%#v into %#v", sect, currentSection)
-	currentSection.ID = sect.ID
-	currentSection.Label = sect.Label
-	currentSection.Scope = sect.Scope
-	currentSection.SortOrder = sect.SortOrder
-	currentSection.Permission = sect.Permission
+	// Maybe that logging is helpful
+	logger.WithField("SectionSlice", "merge").Debugf("Label, Scope, SortOrder, Permission of <<%#v>> merged into <<%#v>>", sect, currentSection)
+	if sect.Label != "" {
+		currentSection.Label = sect.Label
+	}
+	if sect.Scope > 0 {
+		currentSection.Scope = sect.Scope
+	}
+	if sect.SortOrder > 0 {
+		currentSection.SortOrder = sect.SortOrder
+	}
+	if sect.Permission > 0 {
+		currentSection.Permission = sect.Permission
+	}
 
-	return nil
+	return currentSection.Groups.Merge(sect.Groups)
 }
 
-// FindByID returns a Section pointer or nil if not found
-func (ss SectionSlice) FindByID(id string) *Section {
+// FindByID returns a Section pointer or nil if not found. Please check for nil and do not a
+func (ss SectionSlice) FindByID(id string) (*Section, error) {
 	for _, s := range ss {
 		if s != nil && s.ID == id {
-			return s
+			return s, nil
 		}
 	}
-	return nil
+	return nil, ErrSectionNotFound
 }
 
 // Append adds 0..n *Section
 func (ss *SectionSlice) Append(s ...*Section) *SectionSlice {
 	*ss = append(*ss, s...)
 	return ss
+}
+
+// ToJson transforms the whole slice into JSON
+func (ss SectionSlice) ToJson() string {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(ss); err != nil {
+		logger.WithField("SectionSlice", "ToJson").Error(err)
+		return ""
+	}
+	return buf.String()
 }
 
 // Validate fully validates a configuration for all three hierarchy levels.
@@ -215,19 +244,51 @@ func (ss SectionSlice) Validate() error {
 }
 
 // FindByID returns a Group pointer or nil if not found
-func (gs GroupSlice) FindByID(id string) *Group {
+func (gs GroupSlice) FindByID(id string) (*Group, error) {
 	for _, g := range gs {
 		if g != nil && g.ID == id {
-			return g
+			return g, nil
 		}
 	}
-	return nil
+	return nil, ErrGroupNotFound
 }
 
 // Append adds *Group (variadic) to the SectionSlice
 func (gs *GroupSlice) Append(g ...*Group) *GroupSlice {
 	*gs = append(*gs, g...)
 	return gs
+}
+
+func (gs *GroupSlice) Merge(groups GroupSlice) error {
+	for _, g := range groups {
+		if err := (*gs).merge(g); err != nil {
+			return errgo.Mask(err)
+		}
+	}
+	return nil
+}
+
+func (gs *GroupSlice) merge(g *Group) error {
+	currentGroup, err := (*gs).FindByID(g.ID)
+	if currentGroup == nil || err != nil {
+		(*gs).Append(g)
+		return nil
+	}
+	if g.Label != "" {
+		currentGroup.Label = g.Label
+	}
+	// @todo more copying
+	return nil
+}
+
+// FindByID returns a Field pointer or nil if not found
+func (fs FieldSlice) FindByID(id string) (*Field, error) {
+	for _, f := range fs {
+		if f != nil && f.ID == id {
+			return f, nil
+		}
+	}
+	return nil, ErrFieldNotFound
 }
 
 // path creates a valid configuration path with slashes as separators.
