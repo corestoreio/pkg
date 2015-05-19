@@ -228,6 +228,11 @@ func TestStringSliceAll(t *testing.T) {
 func TestStringSliceSplitStringer8(t *testing.T) {
 	const _ScopeID_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
 	var _ScopeID_index = [...]uint8{0, 11, 23, 35, 45, 55}
+
+	// @todo
+	//	const _FieldType_name = "TypeCustomTypeHiddenTypeObscureTypeMultiselectTypeSelectTypeTextTypeTime"
+	//	var _FieldType_index = [...]uint8{10, 20, 31, 46, 56, 64, 72}
+
 	var a utils.StringSlice
 	have := a.SplitStringer8(_ScopeID_name, _ScopeID_index[:]...)
 	want := utils.StringSlice{"ScopeAbsent", "ScopeDefault", "ScopeWebsite", "ScopeGroup", "ScopeStore"}
