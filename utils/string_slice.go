@@ -16,6 +16,7 @@ package utils
 
 import (
 	"errors"
+	"math/rand"
 	"sort"
 	"strings"
 )
@@ -187,6 +188,15 @@ func (l *StringSlice) SplitStringer8(n string, ps ...uint8) StringSlice {
 			next = ln
 		}
 		(*l).Append(n[ps[i]:next])
+	}
+	return *l
+}
+
+// Shuffle destroys the order
+func (l *StringSlice) Shuffle() StringSlice {
+	for i := range *l {
+		j := rand.Intn(i + 1)
+		(*l)[i], (*l)[j] = (*l)[j], (*l)[i]
 	}
 	return *l
 }
