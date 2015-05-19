@@ -226,17 +226,27 @@ func TestStringSliceAll(t *testing.T) {
 }
 
 func TestStringSliceSplitStringer8(t *testing.T) {
-	const _ScopeID_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
-	var _ScopeID_index = [...]uint8{0, 11, 23, 35, 45, 55}
-
-	// @todo
-	//	const _FieldType_name = "TypeCustomTypeHiddenTypeObscureTypeMultiselectTypeSelectTypeTextTypeTime"
-	//	var _FieldType_index = [...]uint8{10, 20, 31, 46, 56, 64, 72}
-
-	var a utils.StringSlice
-	have := a.SplitStringer8(_ScopeID_name, _ScopeID_index[:]...)
-	want := utils.StringSlice{"ScopeAbsent", "ScopeDefault", "ScopeWebsite", "ScopeGroup", "ScopeStore"}
-	assert.Exactly(t, want, have)
+	tests := []struct {
+		haveName  string
+		haveIndex []uint8
+		want      utils.StringSlice
+	}{
+		{
+			"ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore",
+			[]uint8{0, 11, 23, 35, 45, 55},
+			utils.StringSlice{"ScopeAbsent", "ScopeDefault", "ScopeWebsite", "ScopeGroup", "ScopeStore"},
+		},
+		{
+			"TypeCustomTypeHiddenTypeObscureTypeMultiselectTypeSelectTypeTextTypeTime",
+			[]uint8{10, 20, 31, 46, 56, 64, 72},
+			utils.StringSlice{"TypeHidden", "TypeObscure", "TypeMultiselect", "TypeSelect", "TypeText", "TypeTime"},
+		},
+	}
+	for _, test := range tests {
+		var a utils.StringSlice
+		have := a.SplitStringer8(test.haveName, test.haveIndex...)
+		assert.Exactly(t, test.want, have)
+	}
 }
 
 var benchStringSliceSplitStringer8 utils.StringSlice
