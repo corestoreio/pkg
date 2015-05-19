@@ -62,11 +62,11 @@ func TestNewConfiguration(t *testing.T) {
 		},
 		{
 			have:    []*config.Section{&config.Section{ID: "a", Groups: config.GroupSlice{}}},
-			wantErr: "a does not contain groups",
+			wantErr: "",
 		},
 		{
 			have:    []*config.Section{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b", Fields: nil}}}},
-			wantErr: "a/b does not contain fields",
+			wantErr: "",
 		},
 		{
 			have: []*config.Section{
@@ -156,6 +156,10 @@ func TestSectionSliceDefaults(t *testing.T) {
 }
 
 func TestSectionSliceMerge(t *testing.T) {
+
+	// Got stuck in comparing JSON?
+	// Use a Webservice to compare the JSON output!
+
 	tests := []struct {
 		have    []config.SectionSlice
 		wantErr string
@@ -187,7 +191,7 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 			},
 			wantErr: "",
-			want:    `[{"ID":"a","Label":"LabelA","Scope":0,"SortOrder":0,"Permission":0,"Groups":[{"ID":"b","Label":"","Comment":"","Scope":0,"SortOrder":0,"Fields":[{"ID":"c","Type":null,"Label":"","Comment":"","Scope":0,"SortOrder":0,"Visible":false,"SourceModel":null,"BackendModel":null,"Default":"c"}]},{"ID":"b","Label":"","Comment":"","Scope":0,"SortOrder":0,"Fields":[{"ID":"d","Type":null,"Label":"","Comment":"","Scope":0,"SortOrder":0,"Visible":false,"SourceModel":null,"BackendModel":null,"Default":"d"}]}]}]` + "\n",
+			want:    `[{"ID":"a","Label":"LabelA","Scope":null,"SortOrder":0,"Permission":0,"Groups":[{"ID":"b","Label":"","Comment":"","Scope":null,"SortOrder":0,"Fields":[{"ID":"c","Type":null,"Label":"","Comment":"","Scope":null,"SortOrder":0,"Visible":"VisibleAbsent","SourceModel":null,"BackendModel":null,"Default":"c"}]},{"ID":"b","Label":"","Comment":"","Scope":null,"SortOrder":0,"Fields":[{"ID":"d","Type":null,"Label":"","Comment":"","Scope":null,"SortOrder":0,"Visible":"VisibleAbsent","SourceModel":null,"BackendModel":null,"Default":"d"}]}]}]` + "\n",
 		},
 		{
 			have: []config.SectionSlice{
@@ -203,6 +207,16 @@ func TestSectionSliceMerge(t *testing.T) {
 									&config.Field{ID: "c", Default: `c`},
 								},
 							},
+						},
+					},
+				},
+				config.SectionSlice{
+					&config.Section{
+						ID:    "a",
+						Scope: config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Groups: config.GroupSlice{
+							&config.Group{ID: "b", Label: "GroupLabelB1"},
+							&config.Group{ID: "b", Label: "GroupLabelB2"},
 							&config.Group{
 								ID: "b2",
 								Fields: config.FieldSlice{
@@ -212,25 +226,93 @@ func TestSectionSliceMerge(t *testing.T) {
 						},
 					},
 				},
+			},
+			wantErr: "",
+			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["ScopeDefault","ScopeWebsite"],"SortOrder":0,"Permission":0,"Groups":[{"ID":"b","Label":"GroupLabelB2","Comment":"","Scope":["ScopeDefault"],"SortOrder":0,"Fields":[{"ID":"c","Type":null,"Label":"","Comment":"","Scope":null,"SortOrder":0,"Visible":"VisibleAbsent","SourceModel":null,"BackendModel":null,"Default":"c"}]},{"ID":"b2","Label":"","Comment":"","Scope":null,"SortOrder":0,"Fields":[{"ID":"d","Type":null,"Label":"","Comment":"","Scope":null,"SortOrder":0,"Visible":"VisibleAbsent","SourceModel":null,"BackendModel":null,"Default":"d"}]}]}]` + "\n",
+		},
+		{
+			have: []config.SectionSlice{
+				config.SectionSlice{
+					&config.Section{ID: "a", Label: "SectionLabelA", SortOrder: 20, Permission: 22},
+				},
+				config.SectionSlice{
+					&config.Section{ID: "a", Scope: config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite), SortOrder: 10, Permission: 3},
+				},
+			},
+			wantErr: "",
+			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["ScopeDefault","ScopeWebsite"],"SortOrder":10,"Permission":3,"Groups":null}]` + "\n",
+		},
+		{
+			have: []config.SectionSlice{
 				config.SectionSlice{
 					&config.Section{
 						ID:    "a",
-						Scope: config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Label: "SectionLabelA",
 						Groups: config.GroupSlice{
 							&config.Group{
-								ID:    "b",
-								Label: "GroupLabelB1",
+								ID:      "b",
+								Label:   "SectionAGroupB",
+								Comment: "SectionAGroupBComment",
+								Scope:   config.NewScopePerm(config.ScopeDefault),
+							},
+						},
+					},
+				},
+				config.SectionSlice{
+					&config.Section{
+						ID:        "a",
+						SortOrder: 1000,
+						Scope:     config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Groups: config.GroupSlice{
+							&config.Group{ID: "b", Label: "GroupLabelB1", Scope: config.ScopePermAll},
+							&config.Group{ID: "b", Label: "GroupLabelB2", Comment: "Section2AGroup3BComment", SortOrder: 100},
+							&config.Group{ID: "b2"},
+						},
+					},
+				},
+			},
+			wantErr: "",
+			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["ScopeDefault","ScopeWebsite"],"SortOrder":1000,"Permission":0,"Groups":[{"ID":"b","Label":"GroupLabelB2","Comment":"Section2AGroup3BComment","Scope":["ScopeDefault","ScopeWebsite","ScopeStore"],"SortOrder":100,"Fields":null},{"ID":"b2","Label":"","Comment":"","Scope":null,"SortOrder":0,"Fields":null}]}]` + "\n",
+		},
+		{
+			have: []config.SectionSlice{
+				config.SectionSlice{
+					&config.Section{
+						ID: "a",
+						Groups: config.GroupSlice{
+							&config.Group{
+								ID: "b",
+								Fields: config.FieldSlice{
+									&config.Field{ID: "c", Default: `c`, Type: config.TypeMultiselect},
+								},
 							},
 							&config.Group{
-								ID:    "b",
-								Label: "GroupLabelB2",
+								ID: "b",
+								Fields: config.FieldSlice{
+									&config.Field{ID: "d", Default: `d`, Comment: "Ring of fire"},
+									&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect, Scope: config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite)},
+								},
+							},
+						},
+					},
+				},
+				config.SectionSlice{
+					&config.Section{
+						ID: "a",
+						Groups: config.GroupSlice{
+							&config.Group{
+								ID: "b",
+								Fields: config.FieldSlice{
+									&config.Field{ID: "d", Default: `d`, Label: "Sect2Group2Label4", Comment: "LOTR"},
+									&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect},
+								},
 							},
 						},
 					},
 				},
 			},
 			wantErr: "",
-			want:    `todo` + "\n",
+			want:    `xxx` + "\n",
 		},
 	}
 
@@ -245,7 +327,7 @@ func TestSectionSliceMerge(t *testing.T) {
 			assert.NoError(t, haveErr)
 			j := baseSl.ToJson()
 			if j != test.want {
-				t.Errorf("\nExpected: %s\nActual: %s\n", test.want, j)
+				t.Errorf("\nExpected: %s\nActual:   %s\n", test.want, j)
 			}
 		}
 

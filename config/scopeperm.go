@@ -17,6 +17,7 @@ package config
 import "github.com/corestoreio/csfw/utils"
 
 // ScopePerm is a bit set and used for permissions, ScopeGroup is not a part of this bit set.
+// Type ScopeID is a subpart of ScopePerm
 type ScopePerm uint64
 
 // ScopePermAll convenient helper variable contains all scope permission levels

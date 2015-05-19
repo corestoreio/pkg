@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 
 	"github.com/juju/errgo"
 )
@@ -63,7 +64,7 @@ type (
 		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
 		Scope     ScopePerm
 		SortOrder int
-		// Permission some kind of ACL if some is allowed for read or write access
+		// Permission some kind of ACL if some is allowed for read or write access @todo
 		Permission uint
 		Groups     GroupSlice
 	}
@@ -82,7 +83,7 @@ type (
 	}
 
 	// FieldType used in constants to define the frontend and input type
-	FieldType uint
+	FieldType uint8
 
 	// FieldSlice contains a set of Fields
 	FieldSlice []*Field
@@ -217,33 +218,25 @@ func (ss SectionSlice) ToJson() string {
 	return buf.String()
 }
 
-// Validate fully validates a configuration for all three hierarchy levels.
-// 1. Checks if all slices have at least one entry
-// 2. Checks for redundant paths
-// 3. ...
+// Validate checks for duplicated configuration paths in all three hierarchy levels.
 func (ss SectionSlice) Validate() error {
-	var pc = make(map[string]bool) // pc path checker
 	if len(ss) == 0 {
 		return errgo.New("SectionSlice is empty")
 	}
+
+	var pc = make(map[string]bool) // pc path checker
+	defer func() { pc = nil }()
 	for _, s := range ss {
-		if len(s.Groups) == 0 {
-			return errgo.Newf("%s does not contain groups", s.ID)
-		}
 		for _, g := range s.Groups {
-			if len(g.Fields) == 0 {
-				return errgo.Newf("%s/%s does not contain fields", s.ID, g.ID)
-			}
 			for _, f := range g.Fields {
 				p := path(s, g, f)
 				if pc[p] {
-					return errgo.Newf("Duplicate entry for path %s", p)
+					return errgo.Newf("Duplicate entry for path %s :: %s", p, ss.ToJson())
 				}
 				pc[p] = true
 			}
 		}
 	}
-	pc = nil
 	return nil
 }
 
@@ -345,7 +338,7 @@ func (fs *FieldSlice) merge(f *Field) error {
 	if f.Comment != "" {
 		cf.Comment = f.Comment
 	}
-	if f.Scope > ScopeAbsent {
+	if f.Scope > 0 {
 		cf.Scope = f.Scope
 	}
 	if f.SortOrder != 0 {
@@ -372,4 +365,27 @@ func (fs *FieldSlice) merge(f *Field) error {
 // path creates a valid configuration path with slashes as separators.
 func path(s *Section, g *Group, f *Field) string {
 	return s.ID + "/" + g.ID + "/" + f.ID
+}
+
+const _FieldType_name = "TypeCustomTypeHiddenTypeObscureTypeMultiselectTypeSelectTypeTextTypeTime"
+
+var _FieldType_index = [...]uint8{10, 20, 31, 46, 56, 64, 72}
+
+func (i FieldType) String() string {
+	i -= 1
+	if i >= FieldType(len(_FieldType_index)) {
+		return fmt.Sprintf("FieldType(%d)", i+1)
+	}
+	hi := _FieldType_index[i]
+	lo := uint8(0)
+	if i > 0 {
+		lo = _FieldType_index[i-1]
+	}
+	return _FieldType_name[lo:hi]
+}
+
+// MarshalJSON implements marshaling into a human readable string. @todo UnMarshal
+// @todo remove type prefix and simply only return select,text, radio, etc
+func (i FieldType) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + i.String() + `"`), nil
 }

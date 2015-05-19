@@ -63,7 +63,8 @@ type (
 	// @see https://github.com/magento/magento2/blob/0.74.0-beta7/lib/internal/Magento/Framework/UrlInterface.php#L13
 	URLType int
 
-	// ScopeID used in constants where default is the lowest and store the highest. Func String() attached
+	// ScopeID used in constants where default is the lowest and store the highest. Func String() attached.
+	// Part of ScopePerm.
 	ScopeID uint8
 
 	// Retriever implements how to get the ID. If Retriever implements CodeRetriever
@@ -116,7 +117,7 @@ const _ScopeID_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
 
 var _ScopeID_index = [...]uint8{0, 11, 23, 35, 45, 55}
 
-// String human readable name of ScopeID
+// String human readable name of ScopeID. For Marshaling see ScopePerm
 func (i ScopeID) String() string {
 	if i+1 >= ScopeID(len(_ScopeID_index)) {
 		return fmt.Sprintf("ScopeID(%d)", i)
