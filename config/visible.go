@@ -14,12 +14,6 @@
 
 package config
 
-import (
-	"fmt"
-
-	"github.com/corestoreio/csfw/utils"
-)
-
 const (
 	VisibleAbsent Visible = iota // must start from 0
 	VisibleYes
@@ -33,23 +27,13 @@ type (
 	Visible uint8
 )
 
-const _Visible_name = "VisibleAbsentVisibleYesVisibleNo"
-
-var _Visible_index = [...]uint8{0, 13, 23, 32}
-
-func (i Visible) String() string {
-	if i+1 >= Visible(len(_Visible_index)) {
-		return fmt.Sprintf("Visible(%d)", i)
-	}
-	return _Visible_name[_Visible_index[i]:_Visible_index[i+1]]
-}
-
-// VisibleNames returns a slice containing all constant names
-func VisibleNames() (r utils.StringSlice) {
-	return r.SplitStringer8(_Visible_name, _Visible_index[:]...)
-}
-
 // MarshalJSON implements marshaling into a human readable string. @todo UnMarshal
 func (v Visible) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + v.String() + `"`), nil
+	switch v {
+	case VisibleAbsent:
+		return []byte("null"), nil
+	case VisibleYes:
+		return []byte("true"), nil
+	}
+	return []byte(`false`), nil
 }

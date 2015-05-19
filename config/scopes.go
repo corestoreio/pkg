@@ -127,5 +127,5 @@ func (i ScopeID) String() string {
 
 // ScopeIDNames returns a slice containing all constant names
 func ScopeIDNames() (r utils.StringSlice) {
-	return r.SplitStringer8(_Visible_name, _Visible_index[:]...)
+	return r.SplitStringer8(_ScopeID_name, _ScopeID_index[:]...)
 }

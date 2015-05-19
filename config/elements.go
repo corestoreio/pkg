@@ -19,12 +19,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/juju/errgo"
 )
 
 const (
-	TypeCustom FieldType = iota + 1
+	TypeCustom FieldType = iota + 1 // must be + 1
 	TypeHidden
 	TypeObscure
 	TypeMultiselect
@@ -60,10 +61,10 @@ type (
 	Section struct {
 		// ID unique ID and merged with others. 1st part of the path.
 		ID    string
-		Label string
+		Label string `json:",omitempty"`
 		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
-		Scope     ScopePerm
-		SortOrder int
+		Scope     ScopePerm `json:",omitempty"`
+		SortOrder int       `json:",omitempty"`
 		// Permission some kind of ACL if some is allowed for read or write access @todo
 		Permission uint
 		Groups     GroupSlice
@@ -74,11 +75,11 @@ type (
 	Group struct {
 		// ID unique ID and merged with others. 2nd part of the path.
 		ID      string
-		Label   string
-		Comment string
+		Label   string `json:",omitempty"`
+		Comment string `json:",omitempty"`
 		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
-		Scope     ScopePerm
-		SortOrder int
+		Scope     ScopePerm `json:",omitempty"`
+		SortOrder int       `json:",omitempty"`
 		Fields    FieldSlice
 	}
 
@@ -95,24 +96,24 @@ type (
 		Type interface {
 			Type() FieldType
 			ToHTML() string // @see \Magento\Framework\Data\Form\Element\AbstractElement
-		}
-		Label   string
-		Comment string
+		} `json:",omitempty"`
+		Label   string `json:",omitempty"`
+		Comment string `json:",omitempty"`
 		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
-		Scope     ScopePerm
-		SortOrder int
+		Scope     ScopePerm `json:",omitempty"`
+		SortOrder int       `json:",omitempty"`
 		// Visible used for configuration settings which are not exposed to the user.
 		// In Magento2 they do not have an entry in the system.xml
-		Visible Visible
+		Visible Visible `json:",omitempty"`
 		// SourceModel defines how to retrieve all option values
 		SourceModel interface {
 			Options() []Option
-		}
+		} `json:",omitempty"`
 		// BackendModel defines @todo think about AddData
 		BackendModel interface {
 			AddData(interface{})
 			Save() error
-		}
+		} `json:",omitempty"`
 		Default interface{}
 	}
 )
@@ -189,7 +190,7 @@ func (ss *SectionSlice) Merge(s *Section) error {
 		cs.Permission = s.Permission
 	}
 
-	return cs.Groups.Merge(s.Groups...)
+	return cs.Groups.Merge(s.Groups...) // @todo bug see test index 4
 }
 
 // FindByID returns a Section pointer or nil if not found. Please check for nil and do not a
@@ -347,17 +348,15 @@ func (fs *FieldSlice) merge(f *Field) error {
 	if f.Visible > VisibleAbsent {
 		cf.Visible = f.Visible
 	}
-	// @todo
-	//// SourceModel defines how to retrieve all option values
-	//SourceModel interface {
-	//Options() []Option
-	//}
-	//// BackendModel defines @todo think about AddData
-	//BackendModel interface {
-	//AddData(interface{})
-	//Save() error
-	//}
-	//Default interface{}
+	if f.SourceModel != nil {
+		cf.SourceModel = f.SourceModel
+	}
+	if f.BackendModel != nil {
+		cf.BackendModel = f.BackendModel
+	}
+	if f.Default != nil {
+		cf.Default = f.Default
+	}
 
 	return nil
 }
@@ -385,7 +384,6 @@ func (i FieldType) String() string {
 }
 
 // MarshalJSON implements marshaling into a human readable string. @todo UnMarshal
-// @todo remove type prefix and simply only return select,text, radio, etc
 func (i FieldType) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + i.String() + `"`), nil
+	return []byte(`"` + strings.ToLower(i.String()[4:]) + `"`), nil
 }

@@ -165,7 +165,7 @@ func TestSectionSliceMerge(t *testing.T) {
 		wantErr string
 		want    string
 	}{
-		{
+		0: {
 			have: []config.SectionSlice{
 				config.SectionSlice{
 					&config.Section{
@@ -191,9 +191,9 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 			},
 			wantErr: "",
-			want:    `[{"ID":"a","Label":"LabelA","Scope":null,"SortOrder":0,"Permission":0,"Groups":[{"ID":"b","Label":"","Comment":"","Scope":null,"SortOrder":0,"Fields":[{"ID":"c","Type":null,"Label":"","Comment":"","Scope":null,"SortOrder":0,"Visible":"VisibleAbsent","SourceModel":null,"BackendModel":null,"Default":"c"}]},{"ID":"b","Label":"","Comment":"","Scope":null,"SortOrder":0,"Fields":[{"ID":"d","Type":null,"Label":"","Comment":"","Scope":null,"SortOrder":0,"Visible":"VisibleAbsent","SourceModel":null,"BackendModel":null,"Default":"d"}]}]}]` + "\n",
+			want:    `[{"ID":"a","Label":"LabelA","Permission":0,"Groups":[{"ID":"b","Fields":[{"ID":"c","Default":"c"}]},{"ID":"b","Fields":[{"ID":"d","Default":"d"}]}]}]` + "\n",
 		},
-		{
+		1: {
 			have: []config.SectionSlice{
 				config.SectionSlice{
 					&config.Section{
@@ -228,9 +228,9 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 			},
 			wantErr: "",
-			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["ScopeDefault","ScopeWebsite"],"SortOrder":0,"Permission":0,"Groups":[{"ID":"b","Label":"GroupLabelB2","Comment":"","Scope":["ScopeDefault"],"SortOrder":0,"Fields":[{"ID":"c","Type":null,"Label":"","Comment":"","Scope":null,"SortOrder":0,"Visible":"VisibleAbsent","SourceModel":null,"BackendModel":null,"Default":"c"}]},{"ID":"b2","Label":"","Comment":"","Scope":null,"SortOrder":0,"Fields":[{"ID":"d","Type":null,"Label":"","Comment":"","Scope":null,"SortOrder":0,"Visible":"VisibleAbsent","SourceModel":null,"BackendModel":null,"Default":"d"}]}]}]` + "\n",
+			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["ScopeDefault","ScopeWebsite"],"Permission":0,"Groups":[{"ID":"b","Label":"GroupLabelB2","Scope":["ScopeDefault"],"Fields":[{"ID":"c","Default":"c"}]},{"ID":"b2","Fields":[{"ID":"d","Default":"d"}]}]}]` + "\n",
 		},
-		{
+		2: {
 			have: []config.SectionSlice{
 				config.SectionSlice{
 					&config.Section{ID: "a", Label: "SectionLabelA", SortOrder: 20, Permission: 22},
@@ -242,7 +242,7 @@ func TestSectionSliceMerge(t *testing.T) {
 			wantErr: "",
 			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["ScopeDefault","ScopeWebsite"],"SortOrder":10,"Permission":3,"Groups":null}]` + "\n",
 		},
-		{
+		3: {
 			have: []config.SectionSlice{
 				config.SectionSlice{
 					&config.Section{
@@ -272,9 +272,9 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 			},
 			wantErr: "",
-			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["ScopeDefault","ScopeWebsite"],"SortOrder":1000,"Permission":0,"Groups":[{"ID":"b","Label":"GroupLabelB2","Comment":"Section2AGroup3BComment","Scope":["ScopeDefault","ScopeWebsite","ScopeStore"],"SortOrder":100,"Fields":null},{"ID":"b2","Label":"","Comment":"","Scope":null,"SortOrder":0,"Fields":null}]}]` + "\n",
+			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["ScopeDefault","ScopeWebsite"],"SortOrder":1000,"Permission":0,"Groups":[{"ID":"b","Label":"GroupLabelB2","Comment":"Section2AGroup3BComment","Scope":["ScopeDefault","ScopeWebsite","ScopeStore"],"SortOrder":100,"Fields":null},{"ID":"b2","Fields":null}]}]` + "\n",
 		},
-		{
+		4: {
 			have: []config.SectionSlice{
 				config.SectionSlice{
 					&config.Section{
@@ -289,7 +289,7 @@ func TestSectionSliceMerge(t *testing.T) {
 							&config.Group{
 								ID: "b",
 								Fields: config.FieldSlice{
-									&config.Field{ID: "d", Default: `d`, Comment: "Ring of fire"},
+									&config.Field{ID: "d", Default: `d`, Comment: "Ring of fire", Type: config.TypeObscure},
 									&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect, Scope: config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite)},
 								},
 							},
@@ -303,8 +303,8 @@ func TestSectionSliceMerge(t *testing.T) {
 							&config.Group{
 								ID: "b",
 								Fields: config.FieldSlice{
-									&config.Field{ID: "d", Default: `d`, Label: "Sect2Group2Label4", Comment: "LOTR"},
-									&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect},
+									&config.Field{ID: "d", Default: `overriddenD`, Label: "Sect2Group2Label4", Comment: "LOTR"},
+									&config.Field{ID: "c", Default: `overriddenHaha`, Type: config.TypeHidden},
 								},
 							},
 						},
@@ -312,11 +312,55 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 			},
 			wantErr: "",
-			want:    `xxx` + "\n",
+			want:    `[{"ID":"a","Permission":0,"Groups":[{"ID":"b","Fields":[{"ID":"c","Type":"select","Default":"overriddenHaha"},{"ID":"d","Label":"Sect2Group2Label4","Comment":"LOTR","Default":"overriddenD"}]},{"ID":"b","Fields":[{"ID":"d","Type":"obscure","Comment":"Ring of fire","Default":"d"},{"ID":"c","Type":"select","Scope":["ScopeDefault","ScopeWebsite"],"Default":"haha"}]}]}]` + "\n",
+		},
+		5: {
+			have: []config.SectionSlice{
+				config.SectionSlice{
+					&config.Section{
+						ID: "a",
+						Groups: config.GroupSlice{
+							&config.Group{
+								ID: "b",
+								Fields: config.FieldSlice{
+									&config.Field{
+										ID:      "c",
+										Default: `c`,
+										Type:    config.TypeMultiselect,
+									},
+								},
+							},
+						},
+					},
+				},
+				config.SectionSlice{
+					&config.Section{
+						ID: "a",
+						Groups: config.GroupSlice{
+							&config.Group{
+								ID: "b",
+								Fields: config.FieldSlice{
+									&config.Field{
+										ID:        "c",
+										Default:   `overridenC`,
+										Type:      config.TypeSelect,
+										Label:     "Sect2Group2Label4",
+										Comment:   "LOTR",
+										SortOrder: 100,
+										Visible:   config.VisibleYes,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			wantErr: "",
+			want:    `[{"ID":"a","Permission":0,"Groups":[{"ID":"b","Fields":[{"ID":"c","Type":"select","Label":"Sect2Group2Label4","Comment":"LOTR","SortOrder":100,"Visible":true,"Default":"overridenC"}]}]}]` + "\n",
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		var baseSl config.SectionSlice
 		haveErr := baseSl.MergeAll(test.have...)
 		if test.wantErr != "" {
@@ -327,7 +371,7 @@ func TestSectionSliceMerge(t *testing.T) {
 			assert.NoError(t, haveErr)
 			j := baseSl.ToJson()
 			if j != test.want {
-				t.Errorf("\nExpected: %s\nActual:   %s\n", test.want, j)
+				t.Errorf("\nIndex: %d\nExpected: %s\nActual:   %s\n", i, test.want, j)
 			}
 		}
 
