@@ -352,24 +352,6 @@ var PackageConfiguration = config.NewConfiguration(
 
 	// Hidden Configuration
 	&config.Section{
-		ID: "currency",
-		Groups: config.GroupSlice{
-			&config.Group{
-				ID: "import",
-				Fields: config.FieldSlice{
-					&config.Field{
-						// Path: `currency/import/error_email`,
-						ID:      "error_email",
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
-						Default: nil,
-					},
-				},
-			},
-		},
-	},
-	&config.Section{
 		ID: "general",
 		Groups: config.GroupSlice{
 			&config.Group{
