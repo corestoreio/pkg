@@ -65,8 +65,8 @@ type (
 		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
 		Scope     ScopePerm `json:",omitempty"`
 		SortOrder int       `json:",omitempty"`
-		// Permission some kind of ACL if some is allowed for read or write access @todo
-		Permission uint
+		// Permission some kind of ACL if someone is allowed for no,read or write access @todo
+		Permission uint `json:",omitempty"`
 		Groups     GroupSlice
 	}
 	// GroupSlice contains a set of Groups
@@ -108,12 +108,12 @@ type (
 		// SourceModel defines how to retrieve all option values
 		SourceModel interface {
 			Options() []Option
-		} `json:",omitempty"`
-		// BackendModel defines @todo think about AddData
+		} `json:",omitempty"` // does not work with embedded interface
+		// BackendModel defines how to save and load? the data @todo think about AddData
 		BackendModel interface {
 			AddData(interface{})
 			Save() error
-		} `json:",omitempty"`
+		} `json:",omitempty"` // does not work with embedded interface
 		Default interface{}
 	}
 )
@@ -155,11 +155,21 @@ func (ss SectionSlice) Defaults() DefaultMap {
 	return dm
 }
 
-// Merge merges n SectionSlices into the current slice. Behaviour for duplicates: 1. Warning 2. Last item wins.
-func (ss *SectionSlice) MergeAll(sSlices ...SectionSlice) error {
+// MergeMultiple merges n SectionSlices into the current slice. Behaviour for duplicates: Last item wins.
+func (ss *SectionSlice) MergeMultiple(sSlices ...SectionSlice) error {
 	for _, sl := range sSlices {
-		for _, s := range sl {
-			if err := (*ss).Merge(s); err != nil {
+		if err := (*ss).Merge(sl...); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Merge merges n Sections into the current slice. Behaviour for duplicates: Last item wins.
+func (ss *SectionSlice) Merge(sections ...*Section) error {
+	for _, s := range sections {
+		if s != nil {
+			if err := (*ss).merge(s); err != nil {
 				return errgo.Mask(err)
 			}
 		}
@@ -169,12 +179,16 @@ func (ss *SectionSlice) MergeAll(sSlices ...SectionSlice) error {
 
 // Merge copies the data from a Section into this slice. Appends if ID is not found
 // in this slice otherwise overrides struct fields if not empty.
-func (ss *SectionSlice) Merge(s *Section) error {
-	cs, err := (*ss).FindByID(s.ID) // cs current section
-	if cs == nil || err != nil {
-		(*ss).Append(s)
+func (ss *SectionSlice) merge(s *Section) error {
+	if s == nil {
 		return nil
 	}
+	cs, err := (*ss).FindByID(s.ID) // cs current section
+	if cs == nil || err != nil {
+		cs = &Section{ID: s.ID}
+		(*ss).Append(cs)
+	}
+
 	// Maybe that logging is helpful
 	logger.WithField("SectionSlice", "merge").Debugf("Label, Scope, SortOrder, Permission of <<%#v>> merged into <<%#v>>", s, cs)
 	if s.Label != "" {
@@ -189,8 +203,7 @@ func (ss *SectionSlice) Merge(s *Section) error {
 	if s.Permission > 0 {
 		cs.Permission = s.Permission
 	}
-
-	return cs.Groups.Merge(s.Groups...) // @todo bug see test index 4
+	return cs.Groups.Merge(s.Groups...)
 }
 
 // FindByID returns a Section pointer or nil if not found. Please check for nil and do not a
@@ -269,10 +282,13 @@ func (gs *GroupSlice) Merge(groups ...*Group) error {
 }
 
 func (gs *GroupSlice) merge(g *Group) error {
+	if g == nil {
+		return nil
+	}
 	cg, err := (*gs).FindByID(g.ID) // cg current group
 	if cg == nil || err != nil {
-		(*gs).Append(g)
-		return nil
+		cg = g
+		(*gs).Append(cg)
 	}
 
 	// Maybe that logging is helpful
@@ -292,6 +308,16 @@ func (gs *GroupSlice) merge(g *Group) error {
 	}
 	cg.Fields.Merge(g.Fields...)
 	return nil
+}
+
+// ToJson transforms the whole slice into JSON
+func (gs GroupSlice) ToJson() string {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(gs); err != nil {
+		logger.WithField("GroupSlice", "ToJson").Error(err)
+		return ""
+	}
+	return buf.String()
 }
 
 // FindByID returns a Field pointer or nil if not found
@@ -322,10 +348,13 @@ func (fs *FieldSlice) Merge(fields ...*Field) error {
 }
 
 func (fs *FieldSlice) merge(f *Field) error {
+	if f == nil {
+		return nil
+	}
 	cf, err := (*fs).FindByID(f.ID) // cf current field
 	if cf == nil || err != nil {
-		(*fs).Append(f)
-		return nil
+		cf = f
+		(*fs).Append(cf)
 	}
 
 	// Maybe that logging is helpful
