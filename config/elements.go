@@ -189,8 +189,6 @@ func (ss *SectionSlice) merge(s *Section) error {
 		(*ss).Append(cs)
 	}
 
-	// Maybe that logging is helpful
-	logger.WithField("SectionSlice", "merge").Debugf("Label, Scope, SortOrder, Permission of <<%#v>> merged into <<%#v>>", s, cs)
 	if s.Label != "" {
 		cs.Label = s.Label
 	}
@@ -214,6 +212,40 @@ func (ss SectionSlice) FindByID(id string) (*Section, error) {
 		}
 	}
 	return nil, ErrSectionNotFound
+}
+
+// FindGroupByPath searches for a group using the first two path segments.
+// If one arg is given then considered as the full path e.g. a/b/c
+// If two or more arguments are given then each argument will be treated as a path part.
+func (ss SectionSlice) FindGroupByPath(paths ...string) (*Group, error) {
+	if len(paths) == 1 {
+		paths = strings.Split(paths[0], "/")
+	}
+	if len(paths) < 2 {
+		return nil, errgo.Mask(ErrGroupNotFound)
+	}
+	cs, err := ss.FindByID(paths[0])
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	return cs.Groups.FindByID(paths[1])
+}
+
+// FindGroupByPath searches for a group using the first two path segments.
+// If one arg is given then considered as the full path e.g. a/b/c
+// If three arguments are given then each argument will be treated as a path part.
+func (ss SectionSlice) FindFieldByPath(paths ...string) (*Field, error) {
+	if len(paths) == 1 {
+		paths = strings.Split(paths[0], "/")
+	}
+	if len(paths) < 3 {
+		return nil, errgo.Mask(ErrFieldNotFound)
+	}
+	cg, err := ss.FindGroupByPath(paths...)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	return cg.Fields.FindByID(paths[2])
 }
 
 // Append adds 0..n *Section
@@ -291,9 +323,6 @@ func (gs *GroupSlice) merge(g *Group) error {
 		(*gs).Append(cg)
 	}
 
-	// Maybe that logging is helpful
-	logger.WithField("GroupSlice", "merge").Debugf("Label, Comment, Scope, SortOrder of <<%#v>> merged into <<%#v>>", g, cg)
-
 	if g.Label != "" {
 		cg.Label = g.Label
 	}
@@ -357,8 +386,6 @@ func (fs *FieldSlice) merge(f *Field) error {
 		(*fs).Append(cf)
 	}
 
-	// Maybe that logging is helpful
-	logger.WithField("FieldSlice", "merge").Debugf("Type, Label, Comment, Scope, SortOrder of <<%#v>> merged into <<%#v>>", f, cf)
 	if f.Type != nil {
 		cf.Type = f.Type
 	}

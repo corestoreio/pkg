@@ -447,6 +447,112 @@ func TestGroupSliceMerge(t *testing.T) {
 				t.Errorf("\nIndex: %d\nExpected: %s\nActual:   %s\n", i, test.want, j)
 			}
 		}
+	}
+}
 
+func TestSectionSliceFindGroupByPath(t *testing.T) {
+	tests := []struct {
+		haveSlice config.SectionSlice
+		havePath  []string
+		wantGID   string
+		wantErr   error
+	}{
+		0: {
+			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b"}, &config.Group{ID: "bb"}}}},
+			havePath:  []string{"a/b"},
+			wantGID:   "b",
+			wantErr:   nil,
+		},
+		1: {
+			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b"}, &config.Group{ID: "bb"}}}},
+			havePath:  []string{"a/bc"},
+			wantGID:   "b",
+			wantErr:   config.ErrGroupNotFound,
+		},
+		2: {
+			haveSlice: config.SectionSlice{},
+			havePath:  nil,
+			wantGID:   "b",
+			wantErr:   config.ErrGroupNotFound,
+		},
+		3: {
+			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b"}, &config.Group{ID: "bb"}}}},
+			havePath:  []string{"a", "bb", "cc"},
+			wantGID:   "bb",
+			wantErr:   nil,
+		},
+		4: {
+			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b"}, &config.Group{ID: "bb"}}}},
+			havePath:  []string{"xa", "bb", "cc"},
+			wantGID:   "",
+			wantErr:   config.ErrSectionNotFound,
+		},
+	}
+
+	for i, test := range tests {
+		haveGroup, haveErr := test.haveSlice.FindGroupByPath(test.havePath...)
+		if test.wantErr != nil {
+			assert.Error(t, haveErr, "Index %d", i)
+			assert.Nil(t, haveGroup)
+			assert.EqualError(t, haveErr, test.wantErr.Error())
+		} else {
+			assert.NoError(t, haveErr, "Index %d", i)
+			assert.NotNil(t, haveGroup, "Index %d", i)
+			assert.Exactly(t, test.wantGID, haveGroup.ID)
+		}
+	}
+}
+
+func TestSectionSliceFindFieldByPath(t *testing.T) {
+
+	tests := []struct {
+		haveSlice config.SectionSlice
+		havePath  []string
+		wantFID   string
+		wantErr   error
+	}{
+		0: {
+			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b"}, &config.Group{ID: "bb"}}}},
+			havePath:  []string{"a/b"},
+			wantFID:   "b",
+			wantErr:   nil,
+		},
+		1: {
+			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b"}, &config.Group{ID: "bb"}}}},
+			havePath:  []string{"a/bc"},
+			wantFID:   "b",
+			wantErr:   config.ErrGroupNotFound,
+		},
+		2: {
+			haveSlice: config.SectionSlice{},
+			havePath:  nil,
+			wantFID:   "b",
+			wantErr:   config.ErrGroupNotFound,
+		},
+		3: {
+			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b"}, &config.Group{ID: "bb"}}}},
+			havePath:  []string{"a", "bb", "cc"},
+			wantFID:   "bb",
+			wantErr:   nil,
+		},
+		4: {
+			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b"}, &config.Group{ID: "bb"}}}},
+			havePath:  []string{"xa", "bb", "cc"},
+			wantFID:   "",
+			wantErr:   config.ErrSectionNotFound,
+		},
+	}
+
+	for i, test := range tests {
+		haveGroup, haveErr := test.haveSlice.FindFieldByPath(test.havePath...)
+		if test.wantErr != nil {
+			assert.Error(t, haveErr, "Index %d", i)
+			assert.Nil(t, haveGroup)
+			assert.EqualError(t, haveErr, test.wantErr.Error())
+		} else {
+			assert.NoError(t, haveErr, "Index %d", i)
+			assert.NotNil(t, haveGroup, "Index %d", i)
+			assert.Exactly(t, test.wantFID, haveGroup.ID)
+		}
 	}
 }
