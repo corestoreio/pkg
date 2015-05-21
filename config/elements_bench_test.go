@@ -33,6 +33,38 @@ func BenchmarkSectionSliceValidate(b *testing.B) {
 	}
 }
 
+// BenchmarkSectionSliceToJson	   10000	    147366 ns/op	   28674 B/op	     529 allocs/op
+func BenchmarkSectionSliceToJson(b *testing.B) {
+	pkgCfg := make(config.SectionSlice, len(benchPackageConfiguration))
+	copy(pkgCfg, benchPackageConfiguration)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if j := pkgCfg.ToJson(); j == "" {
+			b.Error("JSON is empty!")
+		}
+	}
+}
+
+// @todo this benchmark is only useful when we have a slice of the full configuration
+// BenchmarkSectionSliceFindFieldByPath	30000000	        56.7 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkSectionSliceFindFieldByPath(b *testing.B) {
+	pkgCfg := make(config.SectionSlice, len(benchPackageConfiguration))
+	copy(pkgCfg, benchPackageConfiguration)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := pkgCfg.FindFieldByPath("system", "currency", "installed"); err != nil {
+			b.Error(err)
+		}
+		if _, err := pkgCfg.FindFieldByPath("general", "locale", "datetime_format_medium"); err != nil {
+			b.Error(err)
+		}
+	}
+}
+
 // PackageConfiguration contains the main configuration for the package directory
 var benchPackageConfiguration = []*config.Section{
 	&config.Section{

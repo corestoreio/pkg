@@ -132,6 +132,7 @@ var _ Sectioner = (*SectionSlice)(nil)
 
 // NewConfiguration creates a new validated SectionSlice with a three level configuration.
 // Panics if a path is redundant.
+// @todo fix bug in BenchmarkSectionSliceFindFieldByPath not merging properly
 func NewConfiguration(sections ...*Section) SectionSlice {
 	ss := SectionSlice(sections)
 	if err := ss.Validate(); err != nil {
