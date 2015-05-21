@@ -18,14 +18,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"strings"
 
+	"github.com/corestoreio/csfw/utils"
 	"github.com/juju/errgo"
 )
 
 const (
-	TypeCustom FieldType = iota + 1 // must be + 1
+	TypeCustom FieldType = iota + 1 // must be + 1 because 0 is not set
 	TypeHidden
 	TypeObscure
 	TypeMultiselect
@@ -155,6 +155,19 @@ func (ss SectionSlice) Defaults() DefaultMap {
 	return dm
 }
 
+// TotalFields calculates the total amount of all fields
+func (ss SectionSlice) TotalFields() int {
+	fs := 0
+	for _, s := range ss {
+		for _, g := range s.Groups {
+			for _ = range g.Fields {
+				fs++
+			}
+		}
+	}
+	return fs
+}
+
 // MergeMultiple merges n SectionSlices into the current slice. Behaviour for duplicates: Last item wins.
 func (ss *SectionSlice) MergeMultiple(sSlices ...SectionSlice) error {
 	for _, sl := range sSlices {
@@ -215,7 +228,7 @@ func (ss SectionSlice) FindByID(id string) (*Section, error) {
 }
 
 // FindGroupByPath searches for a group using the first two path segments.
-// If one arg is given then considered as the full path e.g. a/b/c
+// If one argument is given then considered as the full path e.g. a/b/c
 // If two or more arguments are given then each argument will be treated as a path part.
 func (ss SectionSlice) FindGroupByPath(paths ...string) (*Group, error) {
 	if len(paths) == 1 {
@@ -231,8 +244,8 @@ func (ss SectionSlice) FindGroupByPath(paths ...string) (*Group, error) {
 	return cs.Groups.FindByID(paths[1])
 }
 
-// FindGroupByPath searches for a group using the first two path segments.
-// If one arg is given then considered as the full path e.g. a/b/c
+// FindGroupByPath searches for a field using the all three path segments.
+// If one argument is given then considered as the full path e.g. a/b/c
 // If three arguments are given then each argument will be treated as a path part.
 func (ss SectionSlice) FindFieldByPath(paths ...string) (*Field, error) {
 	if len(paths) == 1 {
@@ -270,16 +283,18 @@ func (ss SectionSlice) Validate() error {
 		return errgo.New("SectionSlice is empty")
 	}
 
-	var pc = make(map[string]bool) // pc path checker
+	var pc = make(utils.StringSlice, ss.TotalFields()) // pc path checker
 	defer func() { pc = nil }()
+	i := 0
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
 				p := path(s, g, f)
-				if pc[p] {
+				if pc.Include(p) {
 					return errgo.Newf("Duplicate entry for path %s :: %s", p, ss.ToJson())
 				}
-				pc[p] = true
+				pc[i] = p
+				i++
 			}
 		}
 	}
@@ -429,7 +444,7 @@ var _FieldType_index = [...]uint8{10, 20, 31, 46, 56, 64, 72}
 func (i FieldType) String() string {
 	i -= 1
 	if i >= FieldType(len(_FieldType_index)) {
-		return fmt.Sprintf("FieldType(%d)", i+1)
+		return "FieldType(?)"
 	}
 	hi := _FieldType_index[i]
 	lo := uint8(0)
