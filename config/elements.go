@@ -25,12 +25,16 @@ import (
 )
 
 const (
-	TypeCustom FieldType = iota + 1 // must be + 1 because 0 is not set
+	TypeButton FieldType = iota + 1 // must be + 1 because 0 is not set
+	TypeCustom
+	TypeLabel
 	TypeHidden
+	TypeImage
 	TypeObscure
 	TypeMultiselect
 	TypeSelect
 	TypeText
+	TypeTextarea
 	TypeTime
 )
 
@@ -132,9 +136,21 @@ var _ Sectioner = (*SectionSlice)(nil)
 
 // NewConfiguration creates a new validated SectionSlice with a three level configuration.
 // Panics if a path is redundant.
-// @todo fix bug in BenchmarkSectionSliceFindFieldByPath not merging properly
 func NewConfiguration(sections ...*Section) SectionSlice {
 	ss := SectionSlice(sections)
+	if err := ss.Validate(); err != nil {
+		logger.WithField("NewConfiguration", "Validate").Warn(err)
+		panic(err)
+	}
+	return ss
+}
+
+// NewConfigurationMerge creates a new validated SectionSlice with a three level configuration.
+// Before validation, slices are all merged together. Panics if a path is redundant.
+// Only use this function if your package configuration really has duplicated entries.
+func NewConfigurationMerge(sections ...*Section) SectionSlice {
+	var ss SectionSlice
+	ss.Merge(sections...)
 	if err := ss.Validate(); err != nil {
 		logger.WithField("NewConfiguration", "Validate").Warn(err)
 		panic(err)
@@ -283,9 +299,8 @@ func (ss SectionSlice) Validate() error {
 	if len(ss) == 0 {
 		return errgo.New("SectionSlice is empty")
 	}
-
+	// @todo try to pick the right strategy between maps and slice depending on the overall size of a full SectionSlice
 	var pc = make(utils.StringSlice, ss.TotalFields()) // pc path checker
-	defer func() { pc = nil }()
 	i := 0
 	for _, s := range ss {
 		for _, g := range s.Groups {
@@ -438,9 +453,9 @@ func path(s *Section, g *Group, f *Field) string {
 	return s.ID + "/" + g.ID + "/" + f.ID
 }
 
-const _FieldType_name = "TypeCustomTypeHiddenTypeObscureTypeMultiselectTypeSelectTypeTextTypeTime"
+const _FieldType_name = "TypeButtonTypeCustomTypeLabelTypeHiddenTypeImageTypeObscureTypeMultiselectTypeSelectTypeTextTypeTextareaTypeTime"
 
-var _FieldType_index = [...]uint8{10, 20, 31, 46, 56, 64, 72}
+var _FieldType_index = [...]uint8{10, 20, 29, 39, 48, 59, 74, 84, 92, 104, 112}
 
 func (i FieldType) String() string {
 	i -= 1
