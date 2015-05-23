@@ -15,7 +15,12 @@
 /*
 Package config handles the scopes and the configuration via consul, etc or simple files.
 
-The JSON enconding of the three elements struct (Section, Group, Field) are intended to use
+	Elements
+
+The three elements Section, Group and Field represents front end configuration fields and more important
+default values.
+
+The JSON enconding of the three elements Section, Group and Field are intended to use
 on the backend REST API and for debugging and testing. Only used in non performance critical parts.
 */
 package config

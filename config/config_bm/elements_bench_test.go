@@ -26,7 +26,8 @@ func BenchmarkSectionSliceValidate(b *testing.B) {
 	}
 }
 
-// BenchmarkSectionSliceToJson	     300	   4159192 ns/op	  890615 B/op	   17251 allocs/op
+// BenchmarkSectionSliceToJson	     300	   4159192 ns/op	  890615 B/op	   17251 allocs/op <-- encoding/json
+// BenchmarkSectionSliceToJson	     300	   4573107 ns/op	 1286637 B/op	   15525 allocs/op <-- refactored to use ffjson
 func BenchmarkSectionSliceToJson(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {

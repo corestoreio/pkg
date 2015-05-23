@@ -96,13 +96,11 @@ type (
 	// @see magento2/app/code/Magento/Config/etc/system_file.xsd
 	Field struct {
 		// ID unique ID and NOT merged with others. 3rd and final part of the path.
-		ID   string
-		Type interface {
-			Type() FieldType
-			ToHTML() string // @see \Magento\Framework\Data\Form\Element\AbstractElement
-		} `json:",omitempty"`
-		Label   string `json:",omitempty"`
-		Comment string `json:",omitempty"`
+		ID string
+		// Type is used for the front end on how to display a Field
+		Type    FieldTyper `json:",omitempty"`
+		Label   string     `json:",omitempty"`
+		Comment string     `json:",omitempty"`
 		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
 		Scope     ScopePerm `json:",omitempty"`
 		SortOrder int       `json:",omitempty"`
@@ -110,29 +108,43 @@ type (
 		// In Magento2 they do not have an entry in the system.xml
 		Visible Visible `json:",omitempty"`
 		// SourceModel defines how to retrieve all option values
-		SourceModel interface {
-			Options() []Option
-		} `json:",omitempty"` // does not work with embedded interface
-		// BackendModel defines how to save and load? the data @todo think about AddData
-		BackendModel interface {
-			AddData(interface{})
-			Save() error
-		} `json:",omitempty"` // does not work with embedded interface
+		SourceModel FieldSourceModeller `json:",omitempty"`
+		// BackendModel defines how to save and load? the data
+		BackendModel FieldBackendModeller `json:",omitempty"`
+		// Default can contain any default config value: float64, int64, string, bool
 		Default interface{}
 	}
+
+	// FieldTyper defines which front end type a configuration value is and generates the HTML for it
+	FieldTyper interface {
+		Type() FieldType
+		ToHTML() []byte // @see \Magento\Framework\Data\Form\Element\AbstractElement
+	}
+
+	// FieldSourceModeller defines how to retrieve all option values
+	FieldSourceModeller interface {
+		Options() []Option
+	}
+
+	// FieldBackendModeller defines how to save and load? the data @todo think about AddData
+	FieldBackendModeller interface {
+		AddData(interface{})
+		Save() error
+	}
 )
+
+var _ Sectioner = (*SectionSlice)(nil)
+var _ FieldTyper = (*FieldType)(nil)
 
 // Type returns the current field type and satisfies the interface of Field.Type
 func (t FieldType) Type() FieldType {
 	return t
 }
 
-// toHTML noop function to satisfies the interface of Field.Type
-func (t FieldType) ToHTML() string {
-	return ""
+// ToHTML noop function to satisfies the interface of Field.Type
+func (t FieldType) ToHTML() []byte {
+	return nil
 }
-
-var _ Sectioner = (*SectionSlice)(nil)
 
 // NewConfiguration creates a new validated SectionSlice with a three level configuration.
 // Panics if a path is redundant.
