@@ -158,7 +158,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) string {
 	if strings.Contains(url, PlaceholderBaseURL) {
 		// @todo replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
 		// getDistroBaseUrl will be generated from the $_SERVER variable,
-		url = strings.Replace(url, PlaceholderBaseURL, mustReadConfig().ReadString(config.PathCSBaseURL, config.ScopeDefault), 1)
+		url = strings.Replace(url, PlaceholderBaseURL, mustReadConfig().GetString(config.PathCSBaseURL), 1)
 	}
 	url = strings.TrimRight(url, "/") + "/"
 
@@ -168,10 +168,10 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) string {
 // ConfigString tries to get a value from the scopeStore if empty
 // falls back to default global scope.
 // If using etcd or consul maybe this can lead to round trip times because of network access.
-func (s *Store) ConfigString(path string) string {
-	val := mustReadConfig().ReadString(path, config.ScopeStore, s)
+func (s *Store) ConfigString(path ...string) string {
+	val := mustReadConfig().GetString(config.ScopeStore(s), config.Path(path...))
 	if val == "" {
-		val = mustReadConfig().ReadString(path, config.ScopeDefault)
+		val = mustReadConfig().GetString(config.Path(path...))
 	}
 	return val
 }
@@ -225,7 +225,7 @@ func (s *Store) RootCategoryId() int64 {
 
 // AllowedCurrencies returns all installed currencies from global scope.
 func (s *Store) AllowedCurrencies() []string {
-	return strings.Split(mustReadConfig().ReadString(directory.PathSystemCurrencyInstalled, config.ScopeDefault), ",")
+	return strings.Split(mustReadConfig().GetString(config.Path(directory.PathSystemCurrencyInstalled)), ",")
 }
 
 // CurrentCurrency @todo

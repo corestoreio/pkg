@@ -134,10 +134,10 @@ func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *Web
 // ConfigString tries to get a value from the scopeStore if empty
 // falls back to default global scope.
 // If using etcd or consul maybe this can lead to round trip times because of network access.
-func (w *Website) ConfigString(path string) string {
-	val := mustReadConfig().ReadString(path, config.ScopeWebsite, w)
+func (w *Website) ConfigString(path ...string) string {
+	val := mustReadConfig().GetString(config.ScopeWebsite(w), config.Path(path...))
 	if val == "" {
-		val = mustReadConfig().ReadString(path, config.ScopeDefault)
+		val = mustReadConfig().GetString(config.Path(path...))
 	}
 	return val
 }
@@ -146,7 +146,7 @@ func (w *Website) ConfigString(path string) string {
 func (w *Website) BaseCurrencyCode() (language.Currency, error) {
 	var c string
 	if w.ConfigString(PathPriceScope) == PriceScopeGlobal {
-		c = mustReadConfig().ReadString(directory.PathCurrencyBase, config.ScopeDefault)
+		c = mustReadConfig().GetString(config.Path(directory.PathCurrencyBase))
 	} else {
 		c = w.ConfigString(directory.PathCurrencyBase)
 	}

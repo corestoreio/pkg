@@ -53,3 +53,51 @@ func TestScopeBits(t *testing.T) {
 		assert.EqualValues(t, test.human, b.Human())
 	}
 }
+
+func TestScopeApplyDefaults(t *testing.T) {
+	pkgCfg := config.NewConfiguration(
+		&config.Section{
+			ID: "contact",
+			Groups: config.GroupSlice{
+				&config.Group{
+					ID: "contact",
+					Fields: config.FieldSlice{
+						&config.Field{
+							// Path: `contact/contact/enabled`,
+							ID:      "enabled",
+							Default: true,
+						},
+					},
+				},
+				&config.Group{
+					ID: "email",
+					Fields: config.FieldSlice{
+						&config.Field{
+							// Path: `contact/email/recipient_email`,
+							ID:      "recipient_email",
+							Default: `hello@example.com`,
+						},
+						&config.Field{
+							// Path: `contact/email/sender_email_identity`,
+							ID:      "sender_email_identity",
+							Default: 2.7182818284590452353602874713527,
+						},
+						&config.Field{
+							// Path: `contact/email/email_template`,
+							ID:      "email_template",
+							Default: 4711,
+						},
+					},
+				},
+			},
+		},
+	)
+	s := config.NewManager()
+	s.ApplyDefaults(pkgCfg)
+	cer, err := pkgCfg.FindFieldByPath("contact", "email", "recipient_email")
+	if err != nil {
+		t.Error(err)
+		return
+	}
+	assert.Exactly(t, cer.Default.(string), s.GetString(config.Path("contact/email/recipient_email")))
+}

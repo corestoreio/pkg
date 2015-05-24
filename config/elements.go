@@ -177,7 +177,7 @@ func (ss SectionSlice) Defaults() DefaultMap {
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
-				dm[path(s, g, f)] = f.Default
+				dm[getScopePath(Path(s.ID, g.ID, f.ID))] = f.Default
 			}
 		}
 	}
@@ -317,7 +317,7 @@ func (ss SectionSlice) Validate() error {
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
-				p := path(s, g, f)
+				p := getScopePath(Path(s.ID, g.ID, f.ID))
 				if pc.Include(p) {
 					return errgo.Newf("Duplicate entry for path %s :: %s", p, ss.ToJson())
 				}
@@ -458,11 +458,6 @@ func (fs *FieldSlice) merge(f *Field) error {
 	}
 
 	return nil
-}
-
-// path creates a valid configuration path with slashes as separators.
-func path(s *Section, g *Group, f *Field) string {
-	return s.ID + "/" + g.ID + "/" + f.ID
 }
 
 const _FieldType_name = "TypeButtonTypeCustomTypeLabelTypeHiddenTypeImageTypeObscureTypeMultiselectTypeSelectTypeTextTypeTextareaTypeTime"

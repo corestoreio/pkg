@@ -89,16 +89,16 @@ func (sm *Manager) Init(scopeCode Retriever, scopeType config.ScopeID) error {
 	}
 	var err error
 	switch scopeType {
-	case config.ScopeStore:
+	case config.IDScopeStore:
 		sm.appStore, err = sm.Store(scopeCode)
-	case config.ScopeGroup:
+	case config.IDScopeGroup:
 		g, errG := sm.Group(scopeCode) // this is the group_id
 		if errG != nil {
 			return errgo.Mask(errG)
 		}
 		sm.appStore, err = g.DefaultStore()
 		break
-	case config.ScopeWebsite:
+	case config.IDScopeWebsite:
 		w, errW := sm.Website(scopeCode)
 		if errW != nil {
 			return errgo.Mask(errW)
@@ -187,13 +187,13 @@ func (sm *Manager) GetRequestStore(r Retriever, scopeType config.ScopeID) (*Stor
 
 	allowStoreChange := false
 	switch scopeType {
-	case config.ScopeStore:
+	case config.IDScopeStore:
 		allowStoreChange = true
 		break
-	case config.ScopeGroup:
+	case config.IDScopeGroup:
 		allowStoreChange = activeStore.Data().GroupID == sm.appStore.Data().GroupID
 		break
-	case config.ScopeWebsite:
+	case config.IDScopeWebsite:
 		allowStoreChange = activeStore.Data().WebsiteID == sm.appStore.Data().WebsiteID
 		break
 	}
@@ -208,7 +208,7 @@ func (sm *Manager) GetRequestStore(r Retriever, scopeType config.ScopeID) (*Stor
 // This flag only shows that admin does not want to show certain UI components at backend (like store switchers etc)
 // if Magento has only one store view but it does not check the store view collection.
 func (sm *Manager) IsSingleStoreMode() bool {
-	return sm.HasSingleStore() && mustReadConfig().IsSetFlag(PathSingleStoreModeEnabled, config.ScopeStore, sm.appStore)
+	return sm.HasSingleStore() && mustReadConfig().IsSetFlag(PathSingleStoreModeEnabled, config.IDScopeStore, sm.appStore)
 }
 
 // HasSingleStore checks if we only have one store view besides the admin store view.

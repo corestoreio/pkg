@@ -24,7 +24,7 @@ import (
 
 func init() {
 	l := logrus.New()
-	l.Level = logrus.DebugLevel
+	l.Level = logrus.InfoLevel
 	config.SetLogger(l)
 }
 
@@ -82,7 +82,7 @@ func TestNewConfiguration(t *testing.T) {
 					},
 				},
 			},
-			wantErr: "Duplicate entry for path a/b/c",
+			wantErr: "Duplicate entry for path default/0/a/b/c",
 		},
 	}
 
@@ -153,7 +153,7 @@ func TestSectionSliceDefaults(t *testing.T) {
 
 	assert.Exactly(
 		t,
-		config.DefaultMap{"contact/email/recipient_email": "hello@example.com", "contact/email/sender_email_identity": 2.718281828459045, "contact/email/email_template": 4711, "contact/contact/enabled": true},
+		config.DefaultMap{"default/0/contact/email/sender_email_identity": 2.718281828459045, "default/0/contact/email/email_template": 4711, "default/0/contact/contact/enabled": true, "default/0/contact/email/recipient_email": "hello@example.com"},
 		pkgCfg.Defaults(),
 	)
 }
@@ -210,7 +210,7 @@ func TestSectionSliceMerge(t *testing.T) {
 						Groups: config.GroupSlice{
 							&config.Group{
 								ID:    "b",
-								Scope: config.NewScopePerm(config.ScopeDefault),
+								Scope: config.NewScopePerm(config.IDScopeDefault),
 								Fields: config.FieldSlice{
 									&config.Field{ID: "c", Default: `c`},
 								},
@@ -222,7 +222,7 @@ func TestSectionSliceMerge(t *testing.T) {
 				config.SectionSlice{
 					&config.Section{
 						ID:    "a",
-						Scope: config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope: config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Groups: config.GroupSlice{
 							&config.Group{ID: "b", Label: "GroupLabelB1"},
 							nil,
@@ -247,7 +247,7 @@ func TestSectionSliceMerge(t *testing.T) {
 					&config.Section{ID: "a", Label: "SectionLabelA", SortOrder: 20, Permission: 22},
 				},
 				config.SectionSlice{
-					&config.Section{ID: "a", Scope: config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite), SortOrder: 10, Permission: 3},
+					&config.Section{ID: "a", Scope: config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite), SortOrder: 10, Permission: 3},
 				},
 			},
 			wantErr: "",
@@ -264,7 +264,7 @@ func TestSectionSliceMerge(t *testing.T) {
 								ID:      "b",
 								Label:   "SectionAGroupB",
 								Comment: "SectionAGroupBComment",
-								Scope:   config.NewScopePerm(config.ScopeDefault),
+								Scope:   config.NewScopePerm(config.IDScopeDefault),
 							},
 						},
 					},
@@ -273,7 +273,7 @@ func TestSectionSliceMerge(t *testing.T) {
 					&config.Section{
 						ID:        "a",
 						SortOrder: 1000,
-						Scope:     config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:     config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Groups: config.GroupSlice{
 							&config.Group{ID: "b", Label: "GroupLabelB1", Scope: config.ScopePermAll},
 							&config.Group{ID: "b", Label: "GroupLabelB2", Comment: "Section2AGroup3BComment", SortOrder: 100},
@@ -304,7 +304,7 @@ func TestSectionSliceMerge(t *testing.T) {
 								Fields: config.FieldSlice{
 									nil,
 									&config.Field{ID: "d", Default: `d`, Comment: "Ring of fire", Type: config.TypeObscure},
-									&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect, Scope: config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite)},
+									&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect, Scope: config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite)},
 								},
 							},
 						},
@@ -421,7 +421,7 @@ func TestGroupSliceMerge(t *testing.T) {
 					ID: "b",
 					Fields: config.FieldSlice{
 						&config.Field{ID: "d", Default: `d`, Comment: "Ring of fire", Type: config.TypeObscure},
-						&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect, Scope: config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite)},
+						&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect, Scope: config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite)},
 					},
 				},
 				&config.Group{

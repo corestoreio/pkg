@@ -25,5 +25,5 @@ type (
 
 // ShowNonRequiredState
 func ShowNonRequiredState() bool {
-	return mustReadConfig().IsSetFlag(PathDisplayAllStates, config.ScopeStore)
+	return mustReadConfig().IsSetFlag(PathDisplayAllStates, config.IDScopeStore)
 }

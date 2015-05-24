@@ -17,16 +17,19 @@ package config
 import (
 	"fmt"
 
+	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
+	"github.com/juju/errgo"
 	"github.com/spf13/viper"
 )
 
 const (
-	ScopeAbsent ScopeID = iota // must start from 0 because 0 means not set
-	ScopeDefault
-	ScopeWebsite
-	ScopeGroup
-	ScopeStore
+	IDScopeAbsent ScopeID = iota // order of the constants is used for comparison
+	IDScopeDefault
+	IDScopeWebsite
+	IDScopeGroup
+	IDScopeStore
 )
 
 const (
@@ -42,9 +45,11 @@ const (
 	LeftDelim  = "{{"
 	RightDelim = "}}"
 
-	CSBaseURL     = "http://localhost:9500/"
-	PathCSBaseURL = "web/corestore/base_url"
+	CSBaseURL = "http://localhost:9500/"
 )
+
+// PathCSBaseURL main CoreStore base URL, used if no configuration on a store level can be found.
+var PathCSBaseURL = Path("web/corestore/base_url")
 
 const (
 	URLTypeAbsent URLType = iota
@@ -58,10 +63,13 @@ const (
 	URLTypeMedia
 )
 
+// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
+var TableCollection csdb.TableStructureSlice
+
 type (
 	// UrlType defines the type of the URL. Used in const declaration.
 	// @see https://github.com/magento/magento2/blob/0.74.0-beta7/lib/internal/Magento/Framework/UrlInterface.php#L13
-	URLType int
+	URLType uint8
 
 	// ScopeID used in constants where default is the lowest and store the highest. Func String() attached.
 	// Part of ScopePerm.
@@ -75,42 +83,56 @@ type (
 	}
 
 	Reader interface {
-		// ReadString retrieves a config value by path, ScopeID and/or ID
-		ReadString(path string, scope ScopeID, r ...Retriever) string
+		// GetString retrieves a config string value
+		GetString(...OptionFunc) string
 
-		// IsSetFlag retrieves a config flag by path, ScopeID and/or ID
-		IsSetFlag(path string, scope ScopeID, r ...Retriever) bool
+		// GetBool retrieves a config flag by path, ScopeID and/or ID
+		GetBool(...OptionFunc) bool
 	}
 
 	Writer interface {
 		// SetString sets config value in the corresponding config scope
-		Write(path, value interface{}, scope ScopeID, r ...Retriever)
+		Write(...OptionFunc)
+		//Write(path, value interface{}, scope ScopeID, r ...Retriever)
 	}
 
 	// Scope main configuration struct which includes Viper, unhappy with the name Scope
-	Scope struct {
+	Manager struct {
 		*viper.Viper
 	}
 )
 
-// NewScope creates the main new configuration for all scopes: default, website and store
-func NewScope() *Scope {
-	s := &Scope{
+// NewManager creates the main new configuration for all scopes: default, website and store
+func NewManager() *Manager {
+	s := &Manager{
 		Viper: viper.New(),
 	}
-	s.SetDefault(PathCSBaseURL, CSBaseURL)
+	s.SetDefault(getScopePath(PathCSBaseURL), CSBaseURL)
 	return s
 }
 
 // ApplyDefaults reads the map and applies the keys and values to the default configuration
-func (sp *Scope) ApplyDefaults(ss Sectioner) *Scope {
-	// mutex necessary?
+func (m *Manager) ApplyDefaults(ss Sectioner) *Manager {
 	ctxLog := logger.WithField("Scope", "ApplyDefaults")
 	for k, v := range ss.Defaults() {
 		ctxLog.Debug(k, v)
-		sp.SetDefault(DataScopeDefault+"/"+k, v)
+		m.SetDefault(k, v)
 	}
-	return sp
+	return m
+}
+
+func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
+	var ccd TableCoreConfigDataSlice
+	if _, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexCoreConfigData, &ccd); err != nil {
+		return errgo.Mask(err)
+	}
+
+	return nil
+}
+
+func (m *Manager) GetString(opts ...OptionFunc) string {
+	a := getScopePath(opts...)
+	return m.Viper.GetString(a)
 }
 
 const _ScopeID_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
