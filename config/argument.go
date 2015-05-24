@@ -14,7 +14,14 @@
 
 package config
 
-import "strconv"
+import (
+	"io"
+	"io/ioutil"
+	"strconv"
+)
+
+// OptionFunc used as variadic argument in ScopeKey() and ScopeKeyValue()
+type OptionFunc func(*arg)
 
 // ScopeWebsite wrapper helper function. See Scope()
 func ScopeWebsite(r ...Retriever) OptionFunc {
@@ -64,32 +71,54 @@ func Path(paths ...string) OptionFunc {
 	}
 }
 
-type (
-	arg struct {
-		// p is the three level path e.g. a/b/c
-		p string
-		s ScopeID
-		r Retriever
+// Value sets the value for a scope key.
+func Value(v interface{}) OptionFunc {
+	return func(a *arg) {
+		a.v = v
 	}
-	OptionFunc func(*arg)
-)
+}
+
+// ValueReader sets the value for a scope key using the io.Reader interface.
+func ValueReader(r io.Reader) OptionFunc {
+	data, err := ioutil.ReadAll(r)
+	if err != nil {
+		logger.WithField("Argument", "ValueReader").Error(err)
+	}
+	return func(a *arg) {
+		a.v = data
+	}
+}
+
+// ScopeKey generates the correct scope key e.g.: stores/2/system/currency/installed => scope/scope_id/path
+// which is used by the underlaying configuration manager to fetch a value
+func ScopeKey(opts ...OptionFunc) string {
+	if len(opts) == 0 {
+		return ""
+	}
+	return newArg(opts...).scopePath()
+}
+
+// ScopeKeyValue generates from the options the scope key and the value
+func ScopeKeyValue(opts ...OptionFunc) (string, interface{}) {
+	if len(opts) == 0 {
+		return "", nil
+	}
+	a := newArg(opts...)
+	return a.scopePath(), a.v
+}
+
+type arg struct {
+	p string // p is the three level path e.g. a/b/c
+	s ScopeID
+	r Retriever
+	v interface{} // value use for saving
+}
 
 // this "cache" should covers ~80% of all store setups
 var int64Cache = []string{
 	"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
 }
 var int64CacheLen = int64(len(int64Cache))
-
-// getScopePath generates the correct scope path e.g.: stores/2/system/currency/installed => scope/scope_id/path
-func getScopePath(opts ...OptionFunc) string {
-	if len(opts) == 0 {
-		return ""
-	}
-	a := newArg(opts...)
-
-	// e.g.: stores/2/system/currency/installed => scope/scope_id/path
-	return a.scopeData() + "/" + a.scopeID() + "/" + a.p
-}
 
 func newArg(opts ...OptionFunc) *arg {
 	var a = new(arg)
@@ -99,6 +128,11 @@ func newArg(opts ...OptionFunc) *arg {
 		}
 	}
 	return a
+}
+
+func (a *arg) scopePath() string {
+	// e.g.: stores/2/system/currency/installed => scope/scope_id/path
+	return a.scopeData() + "/" + a.scopeID() + "/" + a.p
 }
 
 func (a *arg) scopeID() string {
@@ -114,9 +148,9 @@ func (a *arg) scopeID() string {
 func (a *arg) scopeData() string {
 	switch a.s {
 	case IDScopeWebsite:
-		return DataScopeWebsites
+		return StringScopeWebsites
 	case IDScopeStore:
-		return DataScopeStores
+		return StringScopeStores
 	}
-	return DataScopeDefault
+	return StringScopeDefault
 }

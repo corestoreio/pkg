@@ -33,23 +33,22 @@ const (
 )
 
 const (
-	// DataScopeDefault defines the global scope. Stored in table core_config_data.scope.
-	DataScopeDefault = "default"
-	// DataScopeWebsites defines the website scope which has default as parent and stores as child.
+	// StringScopeDefault defines the global scope. Stored in table core_config_data.scope.
+	StringScopeDefault = "default"
+	// StringScopeWebsites defines the website scope which has default as parent and stores as child.
 	//  Stored in table core_config_data.scope.
-	DataScopeWebsites = "websites"
-	// DataScopeStores defines the store scope which has default and websites as parent.
+	StringScopeWebsites = "websites"
+	// StringScopeStores defines the store scope which has default and websites as parent.
 	//  Stored in table core_config_data.scope.
-	DataScopeStores = "stores"
+	StringScopeStores = "stores"
 
 	LeftDelim  = "{{"
 	RightDelim = "}}"
 
-	CSBaseURL = "http://localhost:9500/"
+	// PathCSBaseURL main CoreStore base URL, used if no configuration on a store level can be found.
+	PathCSBaseURL = "web/corestore/base_url"
+	CSBaseURL     = "http://localhost:9500/"
 )
-
-// PathCSBaseURL main CoreStore base URL, used if no configuration on a store level can be found.
-var PathCSBaseURL = Path("web/corestore/base_url")
 
 const (
 	URLTypeAbsent URLType = iota
@@ -98,16 +97,19 @@ type (
 
 	// Scope main configuration struct which includes Viper, unhappy with the name Scope
 	Manager struct {
-		*viper.Viper
+		v *viper.Viper
 	}
 )
+
+var _ Reader = (*Manager)(nil)
+var _ Writer = (*Manager)(nil)
 
 // NewManager creates the main new configuration for all scopes: default, website and store
 func NewManager() *Manager {
 	s := &Manager{
-		Viper: viper.New(),
+		v: viper.New(),
 	}
-	s.SetDefault(getScopePath(PathCSBaseURL), CSBaseURL)
+	s.v.SetDefault(ScopeKey(Path(PathCSBaseURL)), CSBaseURL)
 	return s
 }
 
@@ -116,7 +118,7 @@ func (m *Manager) ApplyDefaults(ss Sectioner) *Manager {
 	ctxLog := logger.WithField("Scope", "ApplyDefaults")
 	for k, v := range ss.Defaults() {
 		ctxLog.Debug(k, v)
-		m.SetDefault(k, v)
+		m.v.SetDefault(k, v)
 	}
 	return m
 }
@@ -130,9 +132,17 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 	return nil
 }
 
-func (m *Manager) GetString(opts ...OptionFunc) string {
-	a := getScopePath(opts...)
-	return m.Viper.GetString(a)
+func (m *Manager) Write(o ...OptionFunc) {
+	k, v := ScopeKeyValue(o...)
+	m.v.Set(k, v)
+}
+
+func (m *Manager) GetString(o ...OptionFunc) string {
+	return m.v.GetString(ScopeKey(o...))
+}
+
+func (m *Manager) GetBool(o ...OptionFunc) bool {
+	return m.v.GetBool(ScopeKey(o...))
 }
 
 const _ScopeID_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
@@ -150,4 +160,38 @@ func (i ScopeID) String() string {
 // ScopeIDNames returns a slice containing all constant names
 func ScopeIDNames() (r utils.StringSlice) {
 	return r.SplitStringer8(_ScopeID_name, _ScopeID_index[:]...)
+}
+
+var _ Reader = (*mockScopeReader)(nil)
+
+// MockScopeReader used for testing
+type mockScopeReader struct {
+	s func(path string) string
+	b func(path string) bool
+}
+
+// NewMockScopeReader used for testing
+func NewMockScopeReader(
+	s func(path string) string,
+	b func(path string) bool,
+) *mockScopeReader {
+
+	return &mockScopeReader{
+		s: s,
+		b: b,
+	}
+}
+
+func (sr mockScopeReader) GetString(opts ...OptionFunc) string {
+	if sr.s == nil {
+		return ""
+	}
+	return sr.s(ScopeKey(opts...))
+}
+
+func (sr mockScopeReader) GetBool(opts ...OptionFunc) bool {
+	if sr.b == nil {
+		return false
+	}
+	return sr.b(ScopeKey(opts...))
 }

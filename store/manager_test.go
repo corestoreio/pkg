@@ -31,7 +31,7 @@ import (
 )
 
 func init() {
-	store.SetConfigReader(newMockScopeReader(nil, nil))
+	store.SetConfigReader(config.NewMockScopeReader(nil, nil))
 }
 
 func getTestManager(opts ...func(ms *mockStorage)) *store.Manager {
@@ -648,7 +648,7 @@ func getTestRequest(t *testing.T, m, u string, c *http.Cookie) *http.Request {
 
 // cyclomatic complexity 12 of function TestInitByRequest() is high (> 10) (gocyclo)
 func TestInitByRequest(t *testing.T) {
-	store.SetConfigReader(newMockScopeReader(func(path string, scope config.ScopeID, r ...config.Retriever) string {
+	store.SetConfigReader(config.NewMockScopeReader(func(path string) string {
 		switch path {
 		case store.PathSecureBaseURL:
 			return store.PlaceholderBaseURL
@@ -911,38 +911,6 @@ func TestNewManagerReInit(t *testing.T) {
 /*
 	MOCKS
 */
-
-var _ config.Reader = (*mockScopeReader)(nil)
-
-type mockScopeReader struct {
-	s func(...config.OptionFunc) string
-	b func(...config.OptionFunc) bool
-}
-
-func newMockScopeReader(
-	s func(...config.OptionFunc) string,
-	b func(...config.OptionFunc) bool,
-) *mockScopeReader {
-
-	return &mockScopeReader{
-		s: s,
-		b: b,
-	}
-}
-
-func (sr mockScopeReader) GetString(opts ...config.OptionFunc) string {
-	if sr.s == nil {
-		return ""
-	}
-	return sr.s(opts...)
-}
-
-func (sr mockScopeReader) GetBool(opts ...config.OptionFunc) bool {
-	if sr.b == nil {
-		return false
-	}
-	return sr.b(opts...)
-}
 
 type mockIDCode struct {
 	id   int64

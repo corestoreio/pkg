@@ -250,11 +250,11 @@ func TestStoreBaseUrlandPath(t *testing.T) {
 		wantPath     string
 	}{
 		{
-			newMockScopeReader(func(path string, scope config.ScopeID, r ...config.Retriever) string {
+			config.NewMockScopeReader(func(path string) string {
 				switch path {
-				case store.PathSecureBaseURL:
+				case config.StringScopeDefault + "/0/" + store.PathSecureBaseURL:
 					return "https://corestore.io"
-				case store.PathUnsecureBaseURL:
+				case config.StringScopeDefault + "/0/" + store.PathUnsecureBaseURL:
 					return "http://corestore.io"
 				}
 				return ""
@@ -262,11 +262,11 @@ func TestStoreBaseUrlandPath(t *testing.T) {
 			config.URLTypeWeb, true, "https://corestore.io/", "/",
 		},
 		{
-			newMockScopeReader(func(path string, scope config.ScopeID, r ...config.Retriever) string {
+			config.NewMockScopeReader(func(path string) string {
 				switch path {
-				case store.PathSecureBaseURL:
+				case config.StringScopeDefault + "/0/" + store.PathSecureBaseURL:
 					return "https://myplatform.io/customer1"
-				case store.PathUnsecureBaseURL:
+				case config.StringScopeDefault + "/0/" + store.PathUnsecureBaseURL:
 					return "http://myplatform.io/customer1"
 				}
 				return ""
@@ -274,13 +274,13 @@ func TestStoreBaseUrlandPath(t *testing.T) {
 			config.URLTypeWeb, false, "http://myplatform.io/customer1/", "/customer1/",
 		},
 		{
-			newMockScopeReader(func(path string, scope config.ScopeID, r ...config.Retriever) string {
+			config.NewMockScopeReader(func(path string) string {
 				switch path {
-				case store.PathSecureBaseURL:
+				case config.StringScopeDefault + "/0/" + store.PathSecureBaseURL:
 					return store.PlaceholderBaseURL
-				case store.PathUnsecureBaseURL:
+				case config.StringScopeDefault + "/0/" + store.PathUnsecureBaseURL:
 					return store.PlaceholderBaseURL
-				case config.PathCSBaseURL:
+				case config.StringScopeDefault + "/0/" + config.PathCSBaseURL:
 					return config.CSBaseURL
 				}
 				return ""

@@ -158,7 +158,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) string {
 	if strings.Contains(url, PlaceholderBaseURL) {
 		// @todo replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
 		// getDistroBaseUrl will be generated from the $_SERVER variable,
-		url = strings.Replace(url, PlaceholderBaseURL, mustReadConfig().GetString(config.PathCSBaseURL), 1)
+		url = strings.Replace(url, PlaceholderBaseURL, mustReadConfig().GetString(config.Path(config.PathCSBaseURL)), 1)
 	}
 	url = strings.TrimRight(url, "/") + "/"
 

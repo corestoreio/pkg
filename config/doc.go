@@ -18,9 +18,46 @@ Package config handles the scopes and the configuration via consul, etc or simpl
 	Elements
 
 The three elements Section, Group and Field represents front end configuration fields and more important
-default values.
+default values and their backend model (loading and saving).
 
 The JSON enconding of the three elements Section, Group and Field are intended to use
 on the backend REST API and for debugging and testing. Only used in non performance critical parts.
+
+	Scope Values
+
+To get a value from the configuration manager via any Get* method you have to set up the arguments.
+At least a config.Path() is needed. If you need a config value from another scope (store or website)
+you must also supply a Scope*() value. Without the scope the default value will be returned.
+
+	val := config.Manager.GetString(config.Path("path/to/setting"))
+
+Above code returns the default value for path/to/setting key.
+
+Returning a website scope based value:
+
+	w := store.Manager.Website()
+	val := config.Manager.GetString(config.Path("path/to/setting"), config.Scope(config.IDScopeWebsite, w))
+
+can be rewritten as:
+
+	w := store.Manager.Website()
+	val := config.Manager.GetString(config.Path("path/to/setting"), config.ScopeWebsite(w))
+
+The code returns the value for a specific website scope. If the value has not been found then the
+default value will be returned.
+
+Returning a store scope based value:
+
+	w := store.Manager.Website()
+	val := config.Manager.GetString(config.Path("path/to/setting"), config.Scope(config.IDScopeStore, w))
+
+can be rewritten as:
+
+	w := store.Manager.Website()
+	val := config.Manager.GetString(config.Path("path/to/setting"), config.ScopeStore(w))
+
+The code returns the value for a specific store scope. If the value has not been found then the
+default value will be returned.
+
 */
 package config

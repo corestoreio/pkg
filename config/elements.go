@@ -177,7 +177,7 @@ func (ss SectionSlice) Defaults() DefaultMap {
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
-				dm[getScopePath(Path(s.ID, g.ID, f.ID))] = f.Default
+				dm[ScopeKey(Path(s.ID, g.ID, f.ID))] = f.Default
 			}
 		}
 	}
@@ -317,7 +317,7 @@ func (ss SectionSlice) Validate() error {
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
-				p := getScopePath(Path(s.ID, g.ID, f.ID))
+				p := ScopeKey(Path(s.ID, g.ID, f.ID))
 				if pc.Include(p) {
 					return errgo.Newf("Duplicate entry for path %s :: %s", p, ss.ToJson())
 				}

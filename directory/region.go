@@ -24,6 +24,6 @@ type (
 )
 
 // ShowNonRequiredState
-func ShowNonRequiredState() bool {
-	return mustReadConfig().IsSetFlag(PathDisplayAllStates, config.IDScopeStore)
+func ShowNonRequiredState(r ...config.Retriever) bool {
+	return mustReadConfig().GetBool(config.ScopeStore(r...), config.Path(PathDisplayAllStates))
 }
