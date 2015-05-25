@@ -15,6 +15,7 @@
 package config
 
 import (
+	"errors"
 	"fmt"
 
 	"github.com/corestoreio/csfw/storage/csdb"
@@ -62,9 +63,6 @@ const (
 	URLTypeMedia
 )
 
-// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
-var TableCollection csdb.TableStructureSlice
-
 type (
 	// UrlType defines the type of the URL. Used in const declaration.
 	// @see https://github.com/magento/magento2/blob/0.74.0-beta7/lib/internal/Magento/Framework/UrlInterface.php#L13
@@ -74,35 +72,46 @@ type (
 	// Part of ScopePerm.
 	ScopeID uint8
 
-	// Retriever implements how to get the ID. If Retriever implements CodeRetriever
-	// then CodeRetriever has precedence. ID can be any of the website, group or store IDs.
-	// Duplicated to avoid import cycles.
+	// Retriever implements how to get the website or store ID.
+	// Duplicated to avoid import cycles. :-(
 	Retriever interface {
 		ID() int64
 	}
 
 	Reader interface {
-		// GetString retrieves a config string value
+		// GetString returns a string from the manager. Example usage:
+		// Default value: GetString(config.Path("general/locale/timezone"))
+		// Website value: GetString(config.Path("general/locale/timezone"), config.ScopeWebsite(w))
+		// Store   value: GetString(config.Path("general/locale/timezone"), config.ScopeStore(s))
 		GetString(...OptionFunc) string
 
-		// GetBool retrieves a config flag by path, ScopeID and/or ID
+		// GetBool returns bool from the manager. Example usage see GetString.
 		GetBool(...OptionFunc) bool
 	}
 
 	Writer interface {
-		// SetString sets config value in the corresponding config scope
-		Write(...OptionFunc)
-		//Write(path, value interface{}, scope ScopeID, r ...Retriever)
+		// Write puts a value back into the manager. Example usage:
+		// Default Scope: Write(config.Path("currency", "option", "base"), config.Value("USD"))
+		// Website Scope: Write(config.Path("currency", "option", "base"), config.Value("EUR"), config.ScopeWebsite(w))
+		// Store   Scope: Write(config.Path("currency", "option", "base"), config.ValueReader(resp.Body), config.ScopeStore(s))
+		Write(...OptionFunc) error
 	}
 
-	// Scope main configuration struct which includes Viper, unhappy with the name Scope
+	// Manager main configuration struct
 	Manager struct {
+		// why is Viper private? Because it can maybe replaced by something else ...
 		v *viper.Viper
 	}
 )
 
-var _ Reader = (*Manager)(nil)
-var _ Writer = (*Manager)(nil)
+var (
+	_ Reader = (*Manager)(nil)
+	_ Writer = (*Manager)(nil)
+
+	// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
+	TableCollection csdb.TableStructureSlice
+	ErrEmptyKey     = errors.New("Key is empty")
+)
 
 // NewManager creates the main new configuration for all scopes: default, website and store
 func NewManager() *Manager {
@@ -128,22 +137,50 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 	if _, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexCoreConfigData, &ccd); err != nil {
 		return errgo.Mask(err)
 	}
-
+	// @todo
 	return nil
 }
 
-func (m *Manager) Write(o ...OptionFunc) {
+// Write puts a value back into the manager. Example usage:
+// Default Scope: Write(config.Path("currency", "option", "base"), config.Value("USD"))
+// Website Scope: Write(config.Path("currency", "option", "base"), config.Value("EUR"), config.ScopeWebsite(w))
+// Store   Scope: Write(config.Path("currency", "option", "base"), config.ValueReader(resp.Body), config.ScopeStore(s))
+func (m *Manager) Write(o ...OptionFunc) error {
 	k, v := ScopeKeyValue(o...)
+	if k == "" {
+		return ErrEmptyKey
+	}
 	m.v.Set(k, v)
+	return nil
 }
 
+// GetString returns a string from the manager. Example usage:
+// Default value: GetString(config.Path("general/locale/timezone"))
+// Website value: GetString(config.Path("general/locale/timezone"), config.ScopeWebsite(w))
+// Store   value: GetString(config.Path("general/locale/timezone"), config.ScopeStore(s))
 func (m *Manager) GetString(o ...OptionFunc) string {
 	return m.v.GetString(ScopeKey(o...))
 }
 
+// @todo use the backend model of a config value. most/all magento string slices are comma lists.
+func (m *Manager) GetStringSlice(o ...OptionFunc) []string {
+	return m.v.GetStringSlice(ScopeKey(o...))
+}
+
+// GetBool returns bool from the manager. Example usage see GetString.
 func (m *Manager) GetBool(o ...OptionFunc) bool {
 	return m.v.GetBool(ScopeKey(o...))
 }
+
+// GetFloat64 returns a float64 from the manager. Example usage see GetString.
+func (m *Manager) GetFloat64(o ...OptionFunc) float64 {
+	return m.v.GetFloat64(ScopeKey(o...))
+}
+
+// @todo consider adding other Get* from the viper package
+
+// AllKeys return all keys regardless where they are set
+func (m *Manager) AllKeys() []string { return m.v.AllKeys() }
 
 const _ScopeID_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
 

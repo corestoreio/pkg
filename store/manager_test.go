@@ -31,7 +31,18 @@ import (
 )
 
 func init() {
-	store.SetConfigReader(config.NewMockScopeReader(nil, nil))
+	// regarding SetConfigReader: https://twitter.com/davecheney/status/602633849374429185
+	store.SetConfigReader(config.NewMockScopeReader(func(path string) string {
+		switch path {
+		case store.PathSecureBaseURL:
+			return store.PlaceholderBaseURL
+		case store.PathUnsecureBaseURL:
+			return store.PlaceholderBaseURL
+		case config.PathCSBaseURL:
+			return "http://cs.io/"
+		}
+		return ""
+	}, nil))
 }
 
 func getTestManager(opts ...func(ms *mockStorage)) *store.Manager {
@@ -648,18 +659,6 @@ func getTestRequest(t *testing.T, m, u string, c *http.Cookie) *http.Request {
 
 // cyclomatic complexity 12 of function TestInitByRequest() is high (> 10) (gocyclo)
 func TestInitByRequest(t *testing.T) {
-	store.SetConfigReader(config.NewMockScopeReader(func(path string) string {
-		switch path {
-		case store.PathSecureBaseURL:
-			return store.PlaceholderBaseURL
-		case store.PathUnsecureBaseURL:
-			return store.PlaceholderBaseURL
-		case config.PathCSBaseURL:
-			return "http://cs.io/"
-		}
-		return ""
-	}, nil))
-
 	tests := []struct {
 		req                  *http.Request
 		haveR                store.Retriever

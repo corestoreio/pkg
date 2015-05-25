@@ -59,5 +59,8 @@ can be rewritten as:
 The code returns the value for a specific store scope. If the value has not been found then the
 default value will be returned.
 
+Mixing Store and Website scope in calling of any Write/Get*() function will return that value which scope
+will be added at last to the OptionFunc slice.
+
 */
 package config

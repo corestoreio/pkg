@@ -132,6 +132,9 @@ func newArg(opts ...OptionFunc) *arg {
 
 func (a *arg) scopePath() string {
 	// e.g.: stores/2/system/currency/installed => scope/scope_id/path
+	if a.p == "" {
+		return ""
+	}
 	return a.scopeData() + "/" + a.scopeID() + "/" + a.p
 }
 

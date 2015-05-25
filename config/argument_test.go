@@ -26,23 +26,23 @@ type ID int64
 // ID is convenience helper to satisfy the interface Retriever
 func (i ID) ID() int64 { return int64(i) }
 
-func TestScopeKeyAndKeyValue(t *testing.T) {
+func TestScopeKey(t *testing.T) {
 	tests := []struct {
 		haveArg []OptionFunc
 		want    string
 	}{
 		{[]OptionFunc{Path("a/b/c")}, StringScopeDefault + "/0/a/b/c"},
-		{[]OptionFunc{Path("")}, StringScopeDefault + "/0/"},
-		{[]OptionFunc{Path()}, StringScopeDefault + "/0/"},
-		{[]OptionFunc{Scope(IDScopeDefault)}, StringScopeDefault + "/0/"},
-		{[]OptionFunc{Scope(IDScopeWebsite)}, StringScopeDefault + "/0/"},
-		{[]OptionFunc{Scope(IDScopeStore)}, StringScopeDefault + "/0/"},
+		{[]OptionFunc{Path("")}, ""},
+		{[]OptionFunc{Path()}, ""},
+		{[]OptionFunc{Scope(IDScopeDefault)}, ""},
+		{[]OptionFunc{Scope(IDScopeWebsite)}, ""},
+		{[]OptionFunc{Scope(IDScopeStore)}, ""},
 		{[]OptionFunc{Path("a/b/c"), Scope(IDScopeWebsite)}, StringScopeDefault + "/0/a/b/c"},
 		{[]OptionFunc{Path("a/b/c"), Scope(IDScopeWebsite, ID(2))}, StringScopeWebsites + "/2/a/b/c"},
 		{[]OptionFunc{Path("a", "b", "c"), Scope(IDScopeWebsite, ID(200))}, StringScopeWebsites + "/200/a/b/c"},
 		{[]OptionFunc{Path("a", "b", "c"), Scope(IDScopeStore, ID(4))}, StringScopeStores + "/4/a/b/c"},
 		{[]OptionFunc{Path("a", "b"), Scope(IDScopeStore, ID(4))}, StringScopeStores + "/4/a"},
-		{[]OptionFunc{nil, Scope(IDScopeStore, ID(4))}, StringScopeStores + "/4/"},
+		{[]OptionFunc{nil, Scope(IDScopeStore, ID(4))}, ""},
 		{[]OptionFunc{Path("a", "b", "c"), ScopeStore(ID(5))}, StringScopeStores + "/5/a/b/c"},
 		{[]OptionFunc{Path("a", "b", "c"), ScopeStore()}, StringScopeDefault + "/0/a/b/c"},
 		{[]OptionFunc{Path("a", "b", "c"), ScopeWebsite(ID(50))}, StringScopeWebsites + "/50/a/b/c"},
@@ -56,23 +56,23 @@ func TestScopeKeyAndKeyValue(t *testing.T) {
 	}
 }
 
-func TestScopeValue(t *testing.T) {
+func TestScopeKeyValue(t *testing.T) {
 	tests := []struct {
 		haveArg []OptionFunc
 		want    string
 	}{
 		{[]OptionFunc{Value(1), Path("a/b/c")}, StringScopeDefault + "/0/a/b/c"},
-		{[]OptionFunc{Value("1"), Path("")}, StringScopeDefault + "/0/"},
-		{[]OptionFunc{Value(1.1), Path()}, StringScopeDefault + "/0/"},
-		{[]OptionFunc{Value(1), Scope(IDScopeDefault)}, StringScopeDefault + "/0/"},
-		{[]OptionFunc{Value(1), Scope(IDScopeWebsite)}, StringScopeDefault + "/0/"},
-		{[]OptionFunc{Value(1), Scope(IDScopeStore)}, StringScopeDefault + "/0/"},
+		{[]OptionFunc{Value("1"), Path("")}, ""},
+		{[]OptionFunc{Value(1.1), Path()}, ""},
+		{[]OptionFunc{Value(1), Scope(IDScopeDefault)}, ""},
+		{[]OptionFunc{Value(1), Scope(IDScopeWebsite)}, ""},
+		{[]OptionFunc{Value(1), Scope(IDScopeStore)}, ""},
 		{[]OptionFunc{Value(1), Path("a/b/c"), Scope(IDScopeWebsite)}, StringScopeDefault + "/0/a/b/c"},
 		{[]OptionFunc{Value(1), Path("a/b/c"), Scope(IDScopeWebsite, ID(2))}, StringScopeWebsites + "/2/a/b/c"},
 		{[]OptionFunc{Value(1), Path("a", "b", "c"), Scope(IDScopeWebsite, ID(200))}, StringScopeWebsites + "/200/a/b/c"},
 		{[]OptionFunc{Value(1), Path("a", "b", "c"), Scope(IDScopeStore, ID(4))}, StringScopeStores + "/4/a/b/c"},
 		{[]OptionFunc{Value(1), Path("a", "b"), Scope(IDScopeStore, ID(4))}, StringScopeStores + "/4/a"},
-		{[]OptionFunc{Value(1), nil, Scope(IDScopeStore, ID(4))}, StringScopeStores + "/4/"},
+		{[]OptionFunc{Value(1), nil, Scope(IDScopeStore, ID(4))}, ""},
 		{[]OptionFunc{Value(1), Path("a", "b", "c"), ScopeStore(ID(5))}, StringScopeStores + "/5/a/b/c"},
 		{[]OptionFunc{Value(1.2), Path("a", "b", "c"), ScopeStore()}, StringScopeDefault + "/0/a/b/c"},
 		{[]OptionFunc{Value(1.3), Path("a", "b", "c"), ScopeWebsite(ID(50))}, StringScopeWebsites + "/50/a/b/c"},

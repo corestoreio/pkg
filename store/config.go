@@ -62,8 +62,8 @@ var (
 // SetConfig sets the internal variable to the current scope config reader.
 // ScopeReader will be used across all functions in this package.
 func SetConfigReader(c config.Reader) {
-	if c == nil {
-		panic("config.ScopeReader cannot be nil")
+	if c == nil || configReader != nil {
+		panic("config.ScopeReader cannot be nil or already set")
 	}
 	configReader = c
 }
