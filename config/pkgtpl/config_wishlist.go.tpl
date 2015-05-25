@@ -5,14 +5,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "wishlist",
 		Label:     "Wishlist",
 		SortOrder: 140,
-		Scope:     config.ScopePermAll,
+		Scope:     config.IDScopePermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "email",
 				Label:     `Share Options`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `wishlist/email/email_identity`,
@@ -22,7 +22,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `general`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -36,7 +36,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `wishlist_email_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -50,7 +50,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    3,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      10,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -64,7 +64,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      255,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -77,7 +77,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `General Options`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `wishlist/general/active`,
@@ -87,7 +87,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -100,7 +100,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `My Wish List Link`,
 				Comment:   ``,
 				SortOrder: 3,
-				Scope:     config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+				Scope:     config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `wishlist/wishlist_link/use_qty`,
@@ -110,7 +110,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Wishlist\Model\Config\Source\Summary
@@ -130,7 +130,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Wishlist`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `rss/wishlist/active`,
@@ -140,7 +140,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable

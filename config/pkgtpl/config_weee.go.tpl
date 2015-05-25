@@ -12,7 +12,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Fixed Product Taxes`,
 				Comment:   ``,
 				SortOrder: 100,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `tax/weee/enable`,
@@ -22,7 +22,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -36,7 +36,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Weee\Model\Config\Source\Display
@@ -50,7 +50,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Weee\Model\Config\Source\Display
@@ -64,7 +64,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Weee\Model\Config\Source\Display
@@ -78,7 +78,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Weee\Model\Config\Source\Display
@@ -92,7 +92,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    60,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -106,7 +106,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    70,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -136,7 +136,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      35,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -158,7 +158,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "weee_tax",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: 35,
 					},
 				},
@@ -176,7 +176,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "input_types",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `{"weee":"weee"}`,
 					},
 				},

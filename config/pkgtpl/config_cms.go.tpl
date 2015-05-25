@@ -22,7 +22,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `home`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Cms\Model\Config\Source\Page
@@ -36,7 +36,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `no-route`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Cms\Model\Config\Source\Page
@@ -50,7 +50,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `enable-cookies`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Cms\Model\Config\Source\Page
@@ -64,7 +64,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -77,7 +77,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Browser Capabilities Detection`,
 				Comment:   ``,
 				SortOrder: 200,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `web/browser_capabilities/cookies`,
@@ -87,7 +87,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -101,7 +101,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    200,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -115,7 +115,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    300,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -128,14 +128,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "cms",
 		Label:     "Content Management",
 		SortOrder: 1001,
-		Scope:     config.ScopePermAll,
+		Scope:     config.IDScopePermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "wysiwyg",
 				Label:     `WYSIWYG Options`,
 				Comment:   ``,
 				SortOrder: 100,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `cms/wysiwyg/enabled`,
@@ -145,7 +145,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `enabled`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Cms\Model\Config\Source\Wysiwyg\Enabled
@@ -167,7 +167,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "front",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `cms`,
 					},
 
@@ -176,7 +176,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "no_route",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `cms/noroute/index`,
 					},
 				},
@@ -194,7 +194,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "allowed_resources",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `{"wysiwyg_image_folder":"wysiwyg"}`,
 					},
 				},

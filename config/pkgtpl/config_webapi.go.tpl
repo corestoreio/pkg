@@ -5,14 +5,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "webapi",
 		Label:     "Magento Web API",
 		SortOrder: 102,
-		Scope:     config.ScopePermAll,
+		Scope:     config.IDScopePermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "soap",
 				Label:     `SOAP Settings`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `webapi/soap/charset`,
@@ -22,7 +22,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,

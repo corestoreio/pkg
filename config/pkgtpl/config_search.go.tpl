@@ -22,7 +22,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    19,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Search\Model\Adminhtml\System\Config\Source\Engine

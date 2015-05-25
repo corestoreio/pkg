@@ -5,14 +5,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "checkout",
 		Label:     "",
 		SortOrder: 305,
-		Scope:     config.ScopePermAll,
+		Scope:     config.IDScopePermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "cart",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `checkout/cart/grouped_product_image`,
@@ -22,7 +22,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `itself`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Catalog\Model\Config\Source\Product\Thumbnail

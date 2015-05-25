@@ -12,7 +12,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Downloadable Product Options`,
 				Comment:   ``,
 				SortOrder: 600,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/downloadable/order_item_status`,
@@ -22,7 +22,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      9,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Downloadable\Model\System\Config\Source\Orderitemstatus
@@ -36,7 +36,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    200,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -50,7 +50,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    300,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -64,7 +64,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    400,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `Samples`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -78,7 +78,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    500,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `Links`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -92,7 +92,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    600,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -106,7 +106,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    700,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `inline`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Downloadable\Model\System\Config\Source\Contentdisposition
@@ -120,7 +120,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    800,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno

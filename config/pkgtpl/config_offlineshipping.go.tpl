@@ -5,14 +5,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "carriers",
 		Label:     "",
 		SortOrder: 320,
-		Scope:     config.ScopePermAll,
+		Scope:     config.IDScopePermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "flatrate",
 				Label:     `Flat Rate`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `carriers/flatrate/active`,
@@ -22,7 +22,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -36,7 +36,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    3,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `Fixed`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -50,7 +50,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      5.00,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -64,7 +64,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    7,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      `F`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingType
@@ -78,7 +78,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    8,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -92,7 +92,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -106,7 +106,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `Flat Rate`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -120,7 +120,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      `I`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\OfflineShipping\Model\Config\Source\Flatrate
@@ -134,7 +134,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    90,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
@@ -148,7 +148,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeMultiselect,
 						SortOrder:    91,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -162,7 +162,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    92,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -176,7 +176,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeTextarea,
 						SortOrder:    80,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `This shipping method is not available. To use this shipping method, please contact us.`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -189,7 +189,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Table Rates`,
 				Comment:   ``,
 				SortOrder: 3,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `carriers/tablerate/handling_type`,
@@ -199,7 +199,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    7,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      `F`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingType
@@ -213,7 +213,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    8,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -227,7 +227,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -241,7 +241,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      `package_weight`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\OfflineShipping\Model\Config\Source\Tablerate
@@ -255,7 +255,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -269,7 +269,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeCustom, // @todo: Magento\OfflineShipping\Block\Adminhtml\Form\Field\Export,
 						SortOrder:    5,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -283,7 +283,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeCustom, // @todo: Magento\OfflineShipping\Block\Adminhtml\Form\Field\Import,
 						SortOrder:    6,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil, // Magento\OfflineShipping\Model\Config\Backend\Tablerate
 						SourceModel:  nil,
@@ -297,7 +297,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    3,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `Table Rate`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -311,7 +311,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -325,7 +325,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `Best Way`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -339,7 +339,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    90,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
@@ -353,7 +353,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeMultiselect,
 						SortOrder:    91,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -367,7 +367,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    92,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -381,7 +381,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeTextarea,
 						SortOrder:    80,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `This shipping method is not available. To use this shipping method, please contact us.`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -394,7 +394,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Free Shipping`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `carriers/freeshipping/active`,
@@ -404,7 +404,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -418,7 +418,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -432,7 +432,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    3,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `Free`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -446,7 +446,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -460,7 +460,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `Free Shipping`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -474,7 +474,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    90,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
@@ -488,7 +488,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeMultiselect,
 						SortOrder:    91,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -502,7 +502,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    92,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -516,7 +516,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeTextarea,
 						SortOrder:    80,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `This shipping method is not available. To use this shipping method, please contact us.`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -538,7 +538,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `Magento\OfflineShipping\Model\Carrier\Flatrate`,
 					},
 				},
@@ -552,7 +552,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `Magento\OfflineShipping\Model\Carrier\Tablerate`,
 					},
 				},
@@ -566,7 +566,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "cutoff_cost",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: 50,
 					},
 
@@ -575,7 +575,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `Magento\OfflineShipping\Model\Carrier\Freeshipping`,
 					},
 				},

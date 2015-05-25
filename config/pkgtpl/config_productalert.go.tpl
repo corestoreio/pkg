@@ -12,7 +12,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Product Alerts`,
 				Comment:   ``,
 				SortOrder: 250,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/productalert/allow_price`,
@@ -22,7 +22,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -36,7 +36,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -50,7 +50,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `catalog_productalert_email_price_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -64,7 +64,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `catalog_productalert_email_stock_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -78,7 +78,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `general`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -91,7 +91,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Product Alerts Run Settings`,
 				Comment:   ``,
 				SortOrder: 260,
-				Scope:     config.NewScopePerm(config.ScopeDefault),
+				Scope:     config.NewScopePerm(config.IDScopeDefault),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/productalert_cron/frequency`,
@@ -101,7 +101,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      nil,
 						BackendModel: nil, // Magento\Cron\Model\Config\Backend\Product\Alert
 						SourceModel:  nil, // Magento\Cron\Model\Config\Source\Frequency
@@ -115,7 +115,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeTime,
 						SortOrder:    2,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -129,7 +129,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    3,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -143,7 +143,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      `general`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -157,7 +157,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      `catalog_productalert_cron_error_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -179,7 +179,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "error_email",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: nil,
 					},
 				},

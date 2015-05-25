@@ -5,14 +5,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "tax",
 		Label:     "Tax",
 		SortOrder: 303,
-		Scope:     config.ScopePermAll,
+		Scope:     config.IDScopePermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "classes",
 				Label:     `Tax Classes`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `tax/classes/shipping_tax_class`,
@@ -22,7 +22,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Tax\Model\TaxClass\Source\Product
@@ -36,7 +36,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      2,
 						BackendModel: nil, // Magento\Tax\Model\Config\TaxClass
 						SourceModel:  nil, // Magento\Tax\Model\TaxClass\Source\Product
@@ -50,7 +50,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      3,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Tax\Model\TaxClass\Source\Customer
@@ -63,7 +63,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Calculation Settings`,
 				Comment:   ``,
 				SortOrder: 20,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `tax/calculation/algorithm`,
@@ -73,7 +73,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      `TOTAL_BASE_CALCULATION`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Algorithm
@@ -87,7 +87,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      `shipping`,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\Config\Source\Basedon
@@ -101,7 +101,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      false,
 						BackendModel: nil, // Magento\Tax\Model\Config\Price\IncludePrice
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\PriceType
@@ -115,7 +115,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      false,
 						BackendModel: nil, // Magento\Tax\Model\Config\Price\IncludePrice
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\PriceType
@@ -129,7 +129,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Apply
@@ -143,7 +143,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      `["0","0"]`,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\PriceType
@@ -157,7 +157,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    60,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Tax\Model\Config\Source\Apply\On
@@ -171,7 +171,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    70,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -184,7 +184,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Default Tax Destination Calculation`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `tax/defaults/country`,
@@ -194,7 +194,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `US`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Country
@@ -208,7 +208,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Region
@@ -222,7 +222,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      `*`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -235,7 +235,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Price Display Settings`,
 				Comment:   ``,
 				SortOrder: 40,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `tax/display/type`,
@@ -245,7 +245,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -259,7 +259,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -272,7 +272,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Shopping Cart Display Settings`,
 				Comment:   ``,
 				SortOrder: 50,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `tax/cart_display/price`,
@@ -282,7 +282,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -296,7 +296,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -310,7 +310,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -324,7 +324,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -338,7 +338,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    60,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -352,7 +352,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    120,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -365,7 +365,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Orders, Invoices, Credit Memos Display Settings`,
 				Comment:   ``,
 				SortOrder: 60,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `tax/sales_display/price`,
@@ -375,7 +375,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -389,7 +389,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -403,7 +403,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -417,7 +417,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -431,7 +431,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    60,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -445,7 +445,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    120,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -467,7 +467,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "discount",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: true,
 					},
 				},
@@ -481,7 +481,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "discount",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: true,
 					},
 				},
@@ -495,7 +495,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "url",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `http://www.magentocommerce.com/knowledge-base/entry/magento-ce-18-ee-113-tax-calc`,
 					},
 				},

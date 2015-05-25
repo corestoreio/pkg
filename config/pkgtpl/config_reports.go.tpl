@@ -12,7 +12,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Recently Viewed/Compared Products`,
 				Comment:   ``,
 				SortOrder: 350,
-				Scope:     config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+				Scope:     config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/recently_products/scope`,
@@ -22,7 +22,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault, config.ScopeWebsite),
+						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      `website`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Reports\Scope
@@ -36,7 +36,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      5,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -50,7 +50,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      5,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -63,14 +63,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "reports",
 		Label:     "Reports",
 		SortOrder: 1000,
-		Scope:     config.NewScopePerm(config.ScopeDefault),
+		Scope:     config.NewScopePerm(config.IDScopeDefault),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "dashboard",
 				Label:     `Dashboard`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.NewScopePerm(config.ScopeDefault),
+				Scope:     config.NewScopePerm(config.IDScopeDefault),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `reports/dashboard/ytd_start`,
@@ -80,7 +80,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      `1,1`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -94,7 +94,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil,

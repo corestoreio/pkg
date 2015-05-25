@@ -5,14 +5,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "customer",
 		Label:     "",
 		SortOrder: 130,
-		Scope:     config.ScopePermAll,
+		Scope:     config.IDScopePermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "online_customers",
 				Label:     `Online Customers Options`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.NewScopePerm(config.ScopeDefault),
+				Scope:     config.NewScopePerm(config.IDScopeDefault),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `customer/online_customers/online_minutes_interval`,
@@ -22,7 +22,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -42,7 +42,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Log Cleaning`,
 				Comment:   ``,
 				SortOrder: 200,
-				Scope:     config.NewScopePerm(config.ScopeDefault),
+				Scope:     config.NewScopePerm(config.IDScopeDefault),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `system/log/clean_after_day`,
@@ -52,7 +52,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      180,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -66,7 +66,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -80,7 +80,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeTime,
 						SortOrder:    3,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -94,7 +94,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      `D`,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Log\Cron
 						SourceModel:  nil, // Magento\Cron\Model\Config\Source\Frequency
@@ -108,7 +108,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -122,7 +122,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    6,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      `general`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -136,7 +136,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    7,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      `system_log_error_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -158,7 +158,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "online_update_frequency",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: 60,
 					},
 				},
@@ -176,7 +176,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "time",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: nil,
 					},
 
@@ -185,7 +185,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "error_email",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: nil,
 					},
 				},

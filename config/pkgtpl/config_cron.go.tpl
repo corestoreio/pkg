@@ -12,7 +12,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Cron (Scheduled Tasks) - all the times are in minutes`,
 				Comment:   `For correct URLs generated during cron runs please make sure that Web > Secure and Unsecure Base URLs are explicitly set.`,
 				SortOrder: 15,
-				Scope:     config.NewScopePerm(config.ScopeDefault),
+				Scope:     config.NewScopePerm(config.IDScopeDefault),
 				Fields:    config.FieldSlice{},
 			},
 		},

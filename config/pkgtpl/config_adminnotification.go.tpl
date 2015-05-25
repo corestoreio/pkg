@@ -12,7 +12,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Notifications`,
 				Comment:   ``,
 				SortOrder: 250,
-				Scope:     config.NewScopePerm(config.ScopeDefault),
+				Scope:     config.NewScopePerm(config.IDScopeDefault),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `system/adminnotification/use_https`,
@@ -22,7 +22,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -36,7 +36,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\AdminNotification\Model\Config\Source\Frequency
@@ -50,7 +50,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeLabel,
 						SortOrder:    3,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -72,7 +72,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "feed_url",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `notifications.magentocommerce.com/magento2/community/notifications.rss`,
 					},
 
@@ -81,7 +81,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "popup_url",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `widgets.magentocommerce.com/notificationPopup`,
 					},
 
@@ -90,7 +90,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "severity_icons_url",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `widgets.magentocommerce.com/%s/%s.gif`,
 					},
 				},

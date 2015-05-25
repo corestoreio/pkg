@@ -12,7 +12,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Front-end development workflow`,
 				Comment:   ``,
 				SortOrder: 8,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/front_end_development_workflow/type`,
@@ -22,7 +22,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      true,
-						Scope:        config.NewScopePerm(config.ScopeDefault),
+						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      `server_side_compilation`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Developer\Model\Config\Source\WorkflowType
@@ -35,7 +35,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Developer Client Restrictions`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.ScopePermAll,
+				Scope:     config.IDScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/restrict/allow_ips`,
@@ -45,7 +45,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      true,
-						Scope:        config.ScopePermAll,
+						Scope:        config.IDScopePermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Developer\Model\Config\Backend\AllowedIps
 						SourceModel:  nil,
@@ -67,7 +67,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "allow_ips",
 						Type:    config.TypeHidden,
 						Visible: false,
-						Scope:   config.NewScopePerm(config.ScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: nil,
 					},
 				},
