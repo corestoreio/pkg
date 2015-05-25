@@ -35,7 +35,8 @@ type (
 	// Website contains two maps for faster retrieving of the store index and the store collection
 	// Only used in generated code. Implements interface WebsiteGetter.
 	Website struct {
-		w *TableWebsite
+		cr config.Reader
+		w  *TableWebsite
 
 		// groups contains a slice to all groups associated to one website. This slice can be nil.
 		groups GroupSlice
@@ -44,6 +45,9 @@ type (
 	}
 	// WebsiteSlice contains pointer to Website struct and some nifty method receivers.
 	WebsiteSlice []*Website
+
+	// WebsiteOption option func for NewWebsite()
+	WebsiteOption func(*Website)
 )
 
 var (
@@ -57,14 +61,31 @@ var (
 	ErrWebsiteStoresNotAvailable = errors.New("Website Stores not available")
 )
 
+// SetWebsiteConfig adds a configuration Reader to the Website. Optional.
+// Default reader is config.DefaultManager
+func SetWebsiteConfig(cr config.Reader) WebsiteOption {
+	return func(w *Website) { w.cr = cr }
+}
+
 // NewWebsite returns a new pointer to a Website.
-func NewWebsite(w *TableWebsite) *Website {
-	if w == nil {
+func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) *Website {
+	if tw == nil {
 		panic(ErrStoreNewArgNil)
 	}
+	w := &Website{
+		cr: config.DefaultManager,
+		w:  tw,
+	}
+	w.ApplyOptions(opts...)
+	return w
+}
 
-	return &Website{
-		w: w,
+// ApplyOptions sets the options
+func (w *Website) ApplyOptions(opts ...WebsiteOption) {
+	for _, opt := range opts {
+		if opt != nil {
+			opt(w)
+		}
 	}
 }
 
@@ -117,7 +138,7 @@ func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *Web
 	groups := tgs.FilterByWebsiteID(w.w.WebsiteID)
 	w.groups = make(GroupSlice, groups.Len(), groups.Len())
 	for i, g := range groups {
-		w.groups[i] = NewGroup(g, w.w).SetStores(tss, nil)
+		w.groups[i] = NewGroup(g, SetGroupConfig(w.cr), SetGroupWebsite(w.w)).SetStores(tss, nil)
 	}
 	stores := tss.FilterByWebsiteID(w.w.WebsiteID)
 	w.stores = make(StoreSlice, stores.Len(), stores.Len())
@@ -126,7 +147,7 @@ func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *Web
 		if err != nil {
 			panic(fmt.Sprintf("Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs))
 		}
-		w.stores[i] = NewStore(w.w, group, s)
+		w.stores[i] = NewStore(s, SetStoreGroup(group), SetStoreWebsite(w.w), SetStoreConfig(w.cr))
 	}
 	return w
 }
@@ -135,9 +156,9 @@ func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *Web
 // falls back to default global scope.
 // If using etcd or consul maybe this can lead to round trip times because of network access.
 func (w *Website) ConfigString(path ...string) string {
-	val := mustReadConfig().GetString(config.ScopeWebsite(w), config.Path(path...))
+	val := w.cr.GetString(config.ScopeWebsite(w), config.Path(path...))
 	if val == "" {
-		val = mustReadConfig().GetString(config.Path(path...))
+		val = w.cr.GetString(config.Path(path...))
 	}
 	return val
 }
@@ -146,7 +167,7 @@ func (w *Website) ConfigString(path ...string) string {
 func (w *Website) BaseCurrencyCode() (language.Currency, error) {
 	var c string
 	if w.ConfigString(PathPriceScope) == PriceScopeGlobal {
-		c = mustReadConfig().GetString(config.Path(directory.PathCurrencyBase))
+		c = w.cr.GetString(config.Path(directory.PathCurrencyBase))
 	} else {
 		c = w.ConfigString(directory.PathCurrencyBase)
 	}

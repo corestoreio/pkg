@@ -20,23 +20,19 @@ import (
 	"strconv"
 )
 
-// OptionFunc used as variadic argument in ScopeKey() and ScopeKeyValue()
-type OptionFunc func(*arg)
+// ScopeOption function to be used as variadic argument in ScopeKey() and ScopeKeyValue()
+type ScopeOption func(*arg)
 
 // ScopeWebsite wrapper helper function. See Scope()
-func ScopeWebsite(r ...Retriever) OptionFunc {
-	return Scope(IDScopeWebsite, r...)
-}
+func ScopeWebsite(r ...Retriever) ScopeOption { return Scope(IDScopeWebsite, r...) }
 
 // ScopeStore wrapper helper function. See Scope()
-func ScopeStore(r ...Retriever) OptionFunc {
-	return Scope(IDScopeStore, r...)
-}
+func ScopeStore(r ...Retriever) ScopeOption { return Scope(IDScopeStore, r...) }
 
 // Scope sets the scope using the ScopeID and a variadic (0 or 1 arg) store.Retriever.
 // A store.Retriever can contain an ID from a website or a store. Make sure the correct ScopeID has also been set.
 // Retriever can only be left off when the ScopeID is default otherwise the scope will fallback to default scope.
-func Scope(s ScopeID, r ...Retriever) OptionFunc {
+func Scope(s ScopeID, r ...Retriever) ScopeOption {
 	var ret Retriever
 	hasR := len(r) == 1 && r[0] != nil
 	if hasR {
@@ -47,16 +43,13 @@ func Scope(s ScopeID, r ...Retriever) OptionFunc {
 		s = IDScopeDefault
 	}
 
-	return func(a *arg) {
-		a.s = s
-		a.r = ret
-	}
+	return func(a *arg) { a.s = s; a.r = ret }
 }
 
 // Path option function to specify the configuration path. If one argument has been
 // provided then it must be a full valid path. If more than one argument has been provided
 // then the arguments will be joined together. Panics if nil arguments will be provided.
-func Path(paths ...string) OptionFunc {
+func Path(paths ...string) ScopeOption {
 	var p string
 	lp := len(paths)
 	if lp > 0 {
@@ -66,20 +59,14 @@ func Path(paths ...string) OptionFunc {
 	if lp == 3 {
 		p = p + "/" + paths[1] + "/" + paths[2]
 	}
-	return func(a *arg) {
-		a.p = p
-	}
+	return func(a *arg) { a.p = p }
 }
 
 // Value sets the value for a scope key.
-func Value(v interface{}) OptionFunc {
-	return func(a *arg) {
-		a.v = v
-	}
-}
+func Value(v interface{}) ScopeOption { return func(a *arg) { a.v = v } }
 
 // ValueReader sets the value for a scope key using the io.Reader interface.
-func ValueReader(r io.Reader) OptionFunc {
+func ValueReader(r io.Reader) ScopeOption {
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		logger.WithField("Argument", "ValueReader").Error(err)
@@ -91,7 +78,7 @@ func ValueReader(r io.Reader) OptionFunc {
 
 // ScopeKey generates the correct scope key e.g.: stores/2/system/currency/installed => scope/scope_id/path
 // which is used by the underlaying configuration manager to fetch a value
-func ScopeKey(opts ...OptionFunc) string {
+func ScopeKey(opts ...ScopeOption) string {
 	if len(opts) == 0 {
 		return ""
 	}
@@ -99,7 +86,7 @@ func ScopeKey(opts ...OptionFunc) string {
 }
 
 // ScopeKeyValue generates from the options the scope key and the value
-func ScopeKeyValue(opts ...OptionFunc) (string, interface{}) {
+func ScopeKeyValue(opts ...ScopeOption) (string, interface{}) {
 	if len(opts) == 0 {
 		return "", nil
 	}
@@ -120,7 +107,7 @@ var int64Cache = []string{
 }
 var int64CacheLen = int64(len(int64Cache))
 
-func newArg(opts ...OptionFunc) *arg {
+func newArg(opts ...ScopeOption) *arg {
 	var a = new(arg)
 	for _, opt := range opts {
 		if opt != nil {

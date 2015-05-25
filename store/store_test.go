@@ -46,7 +46,7 @@ func TestNewStore(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		s := store.NewStore(test.w, test.g, test.s)
+		s := store.NewStore(test.s, store.SetStoreWebsite(test.w), store.SetStoreGroup(test.g))
 		assert.NotNil(t, s)
 		assert.EqualValues(t, test.w.WebsiteID, s.Website().Data().WebsiteID)
 		assert.EqualValues(t, test.g.GroupID, s.Group().Data().GroupID)
@@ -87,9 +87,9 @@ func TestNewStorePanicIncorrectGroup(t *testing.T) {
 		}
 	}()
 	_ = store.NewStore(
-		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
-		&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 		&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+		store.SetStoreWebsite(&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}}),
+		store.SetStoreGroup(&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4}),
 	)
 }
 
@@ -106,9 +106,9 @@ func TestNewStorePanicIncorrectWebsite(t *testing.T) {
 		}
 	}()
 	_ = store.NewStore(
-		&store.TableWebsite{WebsiteID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
-		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 		&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+		store.SetStoreWebsite(&store.TableWebsite{WebsiteID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}}),
+		store.SetStoreGroup(&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4}),
 	)
 }
 
@@ -116,15 +116,15 @@ func TestStoreSlice(t *testing.T) {
 
 	storeSlice := store.StoreSlice{
 		store.NewStore(
-			&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
-			&store.TableGroup{GroupID: 1, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 			&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+			store.SetStoreWebsite(&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}}),
+			store.SetStoreGroup(&store.TableGroup{GroupID: 1, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0}),
 		),
 		nil,
 		store.NewStore(
-			&store.TableWebsite{WebsiteID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "oz", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "OZ", Valid: true}}, SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
-			&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
 			&store.TableStore{StoreID: 5, Code: dbr.NullString{NullString: sql.NullString{String: "au", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
+			store.SetStoreWebsite(&store.TableWebsite{WebsiteID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "oz", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "OZ", Valid: true}}, SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}}),
+			store.SetStoreGroup(&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5}),
 		),
 	}
 	assert.True(t, storeSlice.Len() == 3)
@@ -237,9 +237,9 @@ func TestTableStoreSliceIDs(t *testing.T) {
 func TestStoreBaseUrlandPath(t *testing.T) {
 
 	s := store.NewStore(
-		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
-		&store.TableGroup{GroupID: 1, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 		&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+		store.SetStoreWebsite(&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}}),
+		store.SetStoreGroup(&store.TableGroup{GroupID: 1, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0}),
 	)
 
 	tests := []struct {
@@ -250,7 +250,7 @@ func TestStoreBaseUrlandPath(t *testing.T) {
 		wantPath     string
 	}{
 		{
-			config.NewMockScopeReader(func(path string) string {
+			config.NewMockReader(func(path string) string {
 				switch path {
 				case config.StringScopeDefault + "/0/" + store.PathSecureBaseURL:
 					return "https://corestore.io"
@@ -262,7 +262,7 @@ func TestStoreBaseUrlandPath(t *testing.T) {
 			config.URLTypeWeb, true, "https://corestore.io/", "/",
 		},
 		{
-			config.NewMockScopeReader(func(path string) string {
+			config.NewMockReader(func(path string) string {
 				switch path {
 				case config.StringScopeDefault + "/0/" + store.PathSecureBaseURL:
 					return "https://myplatform.io/customer1"
@@ -274,7 +274,7 @@ func TestStoreBaseUrlandPath(t *testing.T) {
 			config.URLTypeWeb, false, "http://myplatform.io/customer1/", "/customer1/",
 		},
 		{
-			config.NewMockScopeReader(func(path string) string {
+			config.NewMockReader(func(path string) string {
 				switch path {
 				case config.StringScopeDefault + "/0/" + store.PathSecureBaseURL:
 					return store.PlaceholderBaseURL
@@ -290,7 +290,7 @@ func TestStoreBaseUrlandPath(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		store.SetConfigReader(test.haveR)
+		s.ApplyOptions(store.SetStoreConfig(test.haveR))
 		assert.EqualValues(t, test.wantBaseUrl, s.BaseURL(test.haveUT, test.haveIsSecure))
 		assert.EqualValues(t, test.wantPath, s.Path())
 	}
@@ -326,9 +326,9 @@ func TestValidateStoreCode(t *testing.T) {
 
 func TestClaim(t *testing.T) {
 	s := store.NewStore(
-		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
-		&store.TableGroup{GroupID: 1, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 		&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+		store.SetStoreWebsite(&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}}),
+		store.SetStoreGroup(&store.TableGroup{GroupID: 1, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0}),
 	)
 	token := jwt.New(jwt.SigningMethodHS256)
 	s.AddClaim(token)

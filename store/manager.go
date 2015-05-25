@@ -29,6 +29,8 @@ import (
 type (
 	// Manager uses three internal maps to cache the pointers of Website, Group and Store.
 	Manager struct {
+		cr config.Reader
+
 		// storage get set of websites, groups and stores and also type assertion to StorageMutator for
 		// ReInit and Persisting
 		storage Storager
@@ -57,6 +59,9 @@ type (
 		// and can be overridden after creating a new Manager. @todo
 		// HealthJob health.EventReceiver
 	}
+
+	// ManagerOption option func for NewManager()
+	ManagerOption func(*Manager)
 )
 
 var (
@@ -68,15 +73,32 @@ var (
 )
 
 // NewManager creates a new store manager which handles websites, store groups and stores.
-func NewManager(s Storager) *Manager {
-	return &Manager{
-		storage:    s,
+func NewManager(opts ...ManagerOption) *Manager {
+	m := &Manager{
+		cr:         config.DefaultManager,
 		mu:         sync.RWMutex{},
 		websiteMap: make(map[uint64]*Website),
 		groupMap:   make(map[uint64]*Group),
 		storeMap:   make(map[uint64]*Store),
 		// HealthJob:  utils.HealthJobNoop, @todo
 	}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(m)
+		}
+	}
+	return m
+}
+
+// SetStorage sets the underlaying storage system to the Manager. Required option.
+func SetManagerStorage(s Storager) ManagerOption {
+	return func(m *Manager) { m.storage = s }
+}
+
+// SetManagerConfig sets the configuration Reader. Optional.
+// Default reader is config.DefaultManager
+func SetManagerConfig(cr config.Reader) ManagerOption {
+	return func(m *Manager) { m.cr = cr }
 }
 
 // Init initializes the appStore from a scope code and a scope type.
@@ -208,7 +230,7 @@ func (sm *Manager) GetRequestStore(r Retriever, scopeType config.ScopeID) (*Stor
 // This flag only shows that admin does not want to show certain UI components at backend (like store switchers etc)
 // if Magento has only one store view but it does not check the store view collection.
 func (sm *Manager) IsSingleStoreMode() bool {
-	return sm.HasSingleStore() && mustReadConfig().GetBool(config.Path(PathSingleStoreModeEnabled), config.ScopeStore(sm.appStore))
+	return sm.HasSingleStore() && sm.cr.GetBool(config.Path(PathSingleStoreModeEnabled), config.ScopeStore(sm.appStore))
 }
 
 // HasSingleStore checks if we only have one store view besides the admin store view.

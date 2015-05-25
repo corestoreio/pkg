@@ -16,33 +16,14 @@ package config
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/utils"
 	"github.com/juju/errgo"
 	"github.com/spf13/viper"
 )
 
 const (
-	IDScopeAbsent ScopeID = iota // order of the constants is used for comparison
-	IDScopeDefault
-	IDScopeWebsite
-	IDScopeGroup
-	IDScopeStore
-)
-
-const (
-	// StringScopeDefault defines the global scope. Stored in table core_config_data.scope.
-	StringScopeDefault = "default"
-	// StringScopeWebsites defines the website scope which has default as parent and stores as child.
-	//  Stored in table core_config_data.scope.
-	StringScopeWebsites = "websites"
-	// StringScopeStores defines the store scope which has default and websites as parent.
-	//  Stored in table core_config_data.scope.
-	StringScopeStores = "stores"
-
 	LeftDelim  = "{{"
 	RightDelim = "}}"
 
@@ -68,25 +49,15 @@ type (
 	// @see https://github.com/magento/magento2/blob/0.74.0-beta7/lib/internal/Magento/Framework/UrlInterface.php#L13
 	URLType uint8
 
-	// ScopeID used in constants where default is the lowest and store the highest. Func String() attached.
-	// Part of ScopePerm.
-	ScopeID uint8
-
-	// Retriever implements how to get the website or store ID.
-	// Duplicated to avoid import cycles. :-(
-	Retriever interface {
-		ID() int64
-	}
-
 	Reader interface {
 		// GetString returns a string from the manager. Example usage:
 		// Default value: GetString(config.Path("general/locale/timezone"))
 		// Website value: GetString(config.Path("general/locale/timezone"), config.ScopeWebsite(w))
 		// Store   value: GetString(config.Path("general/locale/timezone"), config.ScopeStore(s))
-		GetString(...OptionFunc) string
+		GetString(...ScopeOption) string
 
 		// GetBool returns bool from the manager. Example usage see GetString.
-		GetBool(...OptionFunc) bool
+		GetBool(...ScopeOption) bool
 	}
 
 	Writer interface {
@@ -94,7 +65,7 @@ type (
 		// Default Scope: Write(config.Path("currency", "option", "base"), config.Value("USD"))
 		// Website Scope: Write(config.Path("currency", "option", "base"), config.Value("EUR"), config.ScopeWebsite(w))
 		// Store   Scope: Write(config.Path("currency", "option", "base"), config.ValueReader(resp.Body), config.ScopeStore(s))
-		Write(...OptionFunc) error
+		Write(...ScopeOption) error
 	}
 
 	// Manager main configuration struct
@@ -111,7 +82,12 @@ var (
 	// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
 	TableCollection csdb.TableStructureSlice
 	ErrEmptyKey     = errors.New("Key is empty")
+	DefaultManager  *Manager
 )
+
+func init() {
+	DefaultManager = NewManager()
+}
 
 // NewManager creates the main new configuration for all scopes: default, website and store
 func NewManager() *Manager {
@@ -145,7 +121,7 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 // Default Scope: Write(config.Path("currency", "option", "base"), config.Value("USD"))
 // Website Scope: Write(config.Path("currency", "option", "base"), config.Value("EUR"), config.ScopeWebsite(w))
 // Store   Scope: Write(config.Path("currency", "option", "base"), config.ValueReader(resp.Body), config.ScopeStore(s))
-func (m *Manager) Write(o ...OptionFunc) error {
+func (m *Manager) Write(o ...ScopeOption) error {
 	k, v := ScopeKeyValue(o...)
 	if k == "" {
 		return ErrEmptyKey
@@ -158,22 +134,22 @@ func (m *Manager) Write(o ...OptionFunc) error {
 // Default value: GetString(config.Path("general/locale/timezone"))
 // Website value: GetString(config.Path("general/locale/timezone"), config.ScopeWebsite(w))
 // Store   value: GetString(config.Path("general/locale/timezone"), config.ScopeStore(s))
-func (m *Manager) GetString(o ...OptionFunc) string {
+func (m *Manager) GetString(o ...ScopeOption) string {
 	return m.v.GetString(ScopeKey(o...))
 }
 
 // @todo use the backend model of a config value. most/all magento string slices are comma lists.
-func (m *Manager) GetStringSlice(o ...OptionFunc) []string {
+func (m *Manager) GetStringSlice(o ...ScopeOption) []string {
 	return m.v.GetStringSlice(ScopeKey(o...))
 }
 
 // GetBool returns bool from the manager. Example usage see GetString.
-func (m *Manager) GetBool(o ...OptionFunc) bool {
+func (m *Manager) GetBool(o ...ScopeOption) bool {
 	return m.v.GetBool(ScopeKey(o...))
 }
 
 // GetFloat64 returns a float64 from the manager. Example usage see GetString.
-func (m *Manager) GetFloat64(o ...OptionFunc) float64 {
+func (m *Manager) GetFloat64(o ...ScopeOption) float64 {
 	return m.v.GetFloat64(ScopeKey(o...))
 }
 
@@ -182,51 +158,34 @@ func (m *Manager) GetFloat64(o ...OptionFunc) float64 {
 // AllKeys return all keys regardless where they are set
 func (m *Manager) AllKeys() []string { return m.v.AllKeys() }
 
-const _ScopeID_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
-
-var _ScopeID_index = [...]uint8{0, 11, 23, 35, 45, 55}
-
-// String human readable name of ScopeID. For Marshaling see ScopePerm
-func (i ScopeID) String() string {
-	if i+1 >= ScopeID(len(_ScopeID_index)) {
-		return fmt.Sprintf("ScopeID(%d)", i)
-	}
-	return _ScopeID_name[_ScopeID_index[i]:_ScopeID_index[i+1]]
-}
-
-// ScopeIDNames returns a slice containing all constant names
-func ScopeIDNames() (r utils.StringSlice) {
-	return r.SplitStringer8(_ScopeID_name, _ScopeID_index[:]...)
-}
-
-var _ Reader = (*mockScopeReader)(nil)
+var _ Reader = (*mockReader)(nil)
 
 // MockScopeReader used for testing
-type mockScopeReader struct {
+type mockReader struct {
 	s func(path string) string
 	b func(path string) bool
 }
 
-// NewMockScopeReader used for testing
-func NewMockScopeReader(
+// NewMockReader used for testing
+func NewMockReader(
 	s func(path string) string,
 	b func(path string) bool,
-) *mockScopeReader {
+) *mockReader {
 
-	return &mockScopeReader{
+	return &mockReader{
 		s: s,
 		b: b,
 	}
 }
 
-func (sr mockScopeReader) GetString(opts ...OptionFunc) string {
+func (sr mockReader) GetString(opts ...ScopeOption) string {
 	if sr.s == nil {
 		return ""
 	}
 	return sr.s(ScopeKey(opts...))
 }
 
-func (sr mockScopeReader) GetBool(opts ...OptionFunc) bool {
+func (sr mockReader) GetBool(opts ...ScopeOption) bool {
 	if sr.b == nil {
 		return false
 	}

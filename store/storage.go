@@ -3,6 +3,7 @@ package store
 import (
 	"sync"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
@@ -40,13 +41,14 @@ type (
 
 	// Storage contains a mutex and the raw slices from the database. @todo maybe make private?
 	Storage struct {
+		cr       config.Reader
 		mu       sync.RWMutex
 		websites TableWebsiteSlice
 		groups   TableGroupSlice
 		stores   TableStoreSlice
 	}
 
-	// StorageOption sets a parameter for Storage struct.
+	// StorageOption option func for NewStorage()
 	StorageOption func(*Storage)
 
 	// Retriever implements how to get the ID. If Retriever implements CodeRetriever
@@ -77,25 +79,32 @@ func (c Code) ID() int64 { return int64(0) }
 // Code is convenience helper to satisfy the interface CodeRetriever
 func (c Code) Code() string { return string(c) }
 
-// StorageTableWebsites sets the TableWebsiteSlice. By default, the slice is nil.
-func StorageTableWebsites(tws ...*TableWebsite) StorageOption {
+// SetStorageWebsites adds the TableWebsiteSlice to the Storage. By default, the slice is nil.
+func SetStorageWebsites(tws ...*TableWebsite) StorageOption {
 	return func(s *Storage) { s.websites = TableWebsiteSlice(tws) }
 }
 
-// StorageTableGroups sets the TableGroupSlice. By default, the slice is nil.
-func StorageTableGroups(tgs ...*TableGroup) StorageOption {
+// SetStorageGroups adds the TableGroupSlice to the Storage. By default, the slice is nil.
+func SetStorageGroups(tgs ...*TableGroup) StorageOption {
 	return func(s *Storage) { s.groups = TableGroupSlice(tgs) }
 }
 
-// StorageTableStores sets the TableStoreSlice. By default, the slice is nil.
-func StorageTableStores(tss ...*TableStore) StorageOption {
+// SetStorageStores adds the TableStoreSlice to the Storage. By default, the slice is nil.
+func SetStorageStores(tss ...*TableStore) StorageOption {
 	return func(s *Storage) { s.stores = TableStoreSlice(tss) }
+}
+
+// SetStorageConfig sets the configuration Reader. Optional.
+// Default reader is config.DefaultManager
+func SetStorageConfig(cr config.Reader) StorageOption {
+	return func(s *Storage) { s.cr = cr }
 }
 
 // NewStorage creates a new storage object from three slice types. All three arguments can be nil
 // but then you call ReInit()
 func NewStorage(opts ...StorageOption) *Storage {
 	s := &Storage{
+		cr: config.DefaultManager,
 		mu: sync.RWMutex{},
 	}
 	for _, opt := range opts {
@@ -104,6 +113,11 @@ func NewStorage(opts ...StorageOption) *Storage {
 		}
 	}
 	return s
+}
+
+// NewStorageOption sames as NewStorage() but returns a function to be used in NewManager()
+func NewStorageOption(opts ...StorageOption) ManagerOption {
+	return func(m *Manager) { m.storage = NewStorage(opts...) }
 }
 
 // website returns a TableWebsite by using either id or code to find it. If id and code are
@@ -157,7 +171,7 @@ func (st *Storage) Group(id Retriever) (*Group, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewGroup(g, w).SetStores(st.stores, nil), nil
+	return NewGroup(g, SetGroupWebsite(w), SetGroupConfig(st.cr)).SetStores(st.stores, nil), nil
 }
 
 // Groups creates a new group slice containing its website all related stores.
@@ -169,7 +183,7 @@ func (st *Storage) Groups() (GroupSlice, error) {
 		if err != nil {
 			return nil, errgo.Mask(err)
 		}
-		groups[i] = NewGroup(g, w).SetStores(st.stores, nil)
+		groups[i] = NewGroup(g, SetGroupConfig(st.cr), SetGroupWebsite(w)).SetStores(st.stores, nil)
 	}
 	return groups, nil
 }
@@ -201,7 +215,7 @@ func (st *Storage) Store(r Retriever) (*Store, error) {
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	ns := NewStore(w, g, s)
+	ns := NewStore(s, SetStoreGroup(g), SetStoreWebsite(w), SetStoreConfig(st.cr))
 	ns.Website().SetGroupsStores(st.groups, st.stores)
 	ns.Group().SetStores(st.stores, w)
 	return ns, nil

@@ -50,6 +50,7 @@ type (
 	// Store contains two maps for faster retrieving of the store index and the store collection
 	// Only used in generated code. Implements interface StoreGetter.
 	Store struct {
+		cr config.Reader
 		// Contains the current website for this store. No integrity checks
 		w *Website
 		g *Group
@@ -58,6 +59,9 @@ type (
 	}
 	// StoreSlice a collection of pointers to the Store structs. StoreSlice has some nifty method receviers.
 	StoreSlice []*Store
+
+	// StoreOption option func for NewStore()
+	StoreOption func(s *Store)
 )
 
 var (
@@ -69,25 +73,60 @@ var (
 	ErrStoreCodeInvalid      = errors.New("The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter")
 )
 
-// NewStore returns a new pointer to a Store. Panics if one of the arguments is nil.
+// SetStoreWebsite sets the raw website data to a Store. Required.
+func SetStoreWebsite(w *TableWebsite) StoreOption {
+	return func(s *Store) {
+		if s.Data() == nil {
+			panic(ErrStoreNotFound)
+		}
+		if s.Data().WebsiteID != w.WebsiteID {
+			panic(ErrStoreIncorrectWebsite)
+		}
+		s.w = NewWebsite(w)
+	}
+}
+
+// SetStoreGroup sets the raw group data to a Store. Required.
+func SetStoreGroup(g *TableGroup) StoreOption {
+	return func(s *Store) {
+		if s.Data() == nil {
+			panic(ErrStoreNotFound)
+		}
+		if s.Data().GroupID != g.GroupID {
+			panic(ErrStoreIncorrectGroup)
+		}
+		s.g = NewGroup(g)
+	}
+}
+
+// SetStoreConfig adds a configuration Reader to the Store. Optional.
+// Default reader is config.DefaultManager
+func SetStoreConfig(cr config.Reader) StoreOption {
+	return func(s *Store) { s.cr = cr }
+}
+
+// NewStore returns a new pointer to a Store. Panics if TableGroup and TableWebsite have not been provided
 // The integrity checks are done by the database.
-func NewStore(w *TableWebsite, g *TableGroup, s *TableStore) *Store {
-	if w == nil || g == nil || s == nil {
+func NewStore(ts *TableStore, opts ...StoreOption) *Store {
+	if ts == nil || len(opts) < 3 { // group and website required so at least 2 args
 		panic(ErrStoreNewArgNil)
 	}
 
-	if s.GroupID != g.GroupID {
-		panic(ErrStoreIncorrectGroup)
-	}
+	s := &Store{cr: config.DefaultManager, s: ts}
+	s.ApplyOptions(opts...)
 
-	if s.WebsiteID != w.WebsiteID {
-		panic(ErrStoreIncorrectWebsite)
+	if s.w == nil || s.g == nil { // force check
+		panic(ErrStoreNewArgNil)
 	}
+	return s
+}
 
-	return &Store{
-		w: NewWebsite(w),
-		g: NewGroup(g, nil),
-		s: s,
+// ApplyOptions sets the options
+func (s *Store) ApplyOptions(opts ...StoreOption) {
+	for _, opt := range opts {
+		if opt != nil {
+			opt(s)
+		}
 	}
 }
 
@@ -158,7 +197,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) string {
 	if strings.Contains(url, PlaceholderBaseURL) {
 		// @todo replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
 		// getDistroBaseUrl will be generated from the $_SERVER variable,
-		url = strings.Replace(url, PlaceholderBaseURL, mustReadConfig().GetString(config.Path(config.PathCSBaseURL)), 1)
+		url = strings.Replace(url, PlaceholderBaseURL, s.cr.GetString(config.Path(config.PathCSBaseURL)), 1)
 	}
 	url = strings.TrimRight(url, "/") + "/"
 
@@ -169,9 +208,9 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) string {
 // falls back to default global scope.
 // If using etcd or consul maybe this can lead to round trip times because of network access.
 func (s *Store) ConfigString(path ...string) string {
-	val := mustReadConfig().GetString(config.ScopeStore(s), config.Path(path...))
+	val := s.cr.GetString(config.ScopeStore(s), config.Path(path...))
 	if val == "" {
-		val = mustReadConfig().GetString(config.Path(path...))
+		val = s.cr.GetString(config.Path(path...))
 	}
 	return val
 }
@@ -225,7 +264,7 @@ func (s *Store) RootCategoryId() int64 {
 
 // AllowedCurrencies returns all installed currencies from global scope.
 func (s *Store) AllowedCurrencies() []string {
-	return strings.Split(mustReadConfig().GetString(config.Path(directory.PathSystemCurrencyInstalled)), ",")
+	return strings.Split(s.cr.GetString(config.Path(directory.PathSystemCurrencyInstalled)), ",")
 }
 
 // CurrentCurrency @todo

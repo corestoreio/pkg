@@ -18,6 +18,7 @@ package store
 import (
 	"errors"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
@@ -33,6 +34,7 @@ type (
 	// Group contains two maps for faster retrieving of the store index and the store collection
 	// Only used in generated code. Implements interface GroupGetter.
 	Group struct {
+		cr config.Reader
 		// g group data
 		g *TableGroup
 		// stores contains a slice to all stores associated to this group.
@@ -43,6 +45,8 @@ type (
 	}
 	// GroupSlice collection of Group. GroupSlice has some nice method receivers.
 	GroupSlice []*Group
+
+	GroupOption func(*Group)
 )
 
 var (
@@ -57,23 +61,45 @@ var (
 	ErrGroupWebsiteNotFound = errors.New("Group Website not found or nil or ID do not match")
 )
 
+// SetGroupConfig adds a configuration Reader to the Group. Optional.
+// Default reader is config.DefaultManager
+func SetGroupConfig(cr config.Reader) GroupOption {
+	return func(g *Group) { g.cr = cr }
+}
+
+func SetGroupWebsite(tw *TableWebsite) GroupOption {
+	return func(g *Group) {
+		if g.Data() == nil {
+			panic(ErrGroupNotFound)
+		}
+		if g.Data().WebsiteID != tw.WebsiteID {
+			panic(ErrGroupWebsiteNotFound)
+		}
+		g.w = NewWebsite(tw)
+	}
+}
+
 // NewGroup returns a new pointer to a Group. Second argument can be nil.
-func NewGroup(tg *TableGroup, tw *TableWebsite) *Group {
+func NewGroup(tg *TableGroup, opts ...GroupOption) *Group {
 	if tg == nil {
 		panic(ErrStoreNewArgNil)
 	}
 
-	if tw != nil && tg.WebsiteID != tw.WebsiteID {
-		panic(ErrGroupWebsiteNotFound)
-	}
-
 	g := &Group{
-		g: tg,
+		cr: config.DefaultManager,
+		g:  tg,
 	}
-	if tw != nil {
-		g.w = NewWebsite(tw)
-	}
+	g.ApplyOptions(opts...)
 	return g
+}
+
+// ApplyOptions sets the options
+func (g *Group) ApplyOptions(opts ...GroupOption) {
+	for _, opt := range opts {
+		if opt != nil {
+			opt(g)
+		}
+	}
 }
 
 // Data returns the TableGroup data which is raw database data.
@@ -123,7 +149,7 @@ func (g *Group) SetStores(tss TableStoreSlice, w *TableWebsite) *Group {
 		panic(ErrGroupWebsiteNotFound)
 	}
 	for _, s := range tss.FilterByGroupID(g.g.GroupID) {
-		g.stores = append(g.stores, NewStore(w, g.g, s))
+		g.stores = append(g.stores, NewStore(s, SetStoreGroup(g.g), SetStoreWebsite(w), SetStoreConfig(g.cr)))
 	}
 	return g
 }

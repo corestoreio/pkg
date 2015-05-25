@@ -27,18 +27,18 @@ import (
 )
 
 var testStorage = store.NewStorage(
-	store.StorageTableWebsites(
+	store.SetStorageWebsites(
 		&store.TableWebsite{WebsiteID: 0, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
 		&store.TableWebsite{WebsiteID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "oz", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "OZ", Valid: true}}, SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
 	),
-	store.StorageTableGroups(
+	store.SetStorageGroups(
 		&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		&store.TableGroup{GroupID: 0, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 		&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 	),
-	store.StorageTableStores(
+	store.SetStorageStores(
 		&store.TableStore{StoreID: 0, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
 		&store.TableStore{StoreID: 5, Code: dbr.NullString{NullString: sql.NullString{String: "au", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
 		&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
@@ -239,13 +239,13 @@ func TestGroupSliceFilter(t *testing.T) {
 
 func TestStorageGroupNoWebsite(t *testing.T) {
 	var tst = store.NewStorage(
-		store.StorageTableWebsites(
+		store.SetStorageWebsites(
 			&store.TableWebsite{WebsiteID: 21, Code: dbr.NullString{NullString: sql.NullString{String: "oz", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "OZ", Valid: true}}, SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
 		),
-		store.StorageTableGroups(
+		store.SetStorageGroups(
 			&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
 		),
-		store.StorageTableStores(
+		store.SetStorageStores(
 			&store.TableStore{StoreID: 5, Code: dbr.NullString{NullString: sql.NullString{String: "au", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
 			&store.TableStore{StoreID: 6, Code: dbr.NullString{NullString: sql.NullString{String: "nz", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),
@@ -353,13 +353,13 @@ func TestDefaultStoreView(t *testing.T) {
 	assert.EqualValues(t, "at", st.Data().Code.String)
 
 	var tst = store.NewStorage(
-		store.StorageTableWebsites(
+		store.SetStorageWebsites(
 			&store.TableWebsite{WebsiteID: 21, Code: dbr.NullString{NullString: sql.NullString{String: "oz", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "OZ", Valid: true}}, SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
 		),
-		store.StorageTableGroups(
+		store.SetStorageGroups(
 			&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
 		),
-		store.StorageTableStores(
+		store.SetStorageStores(
 			&store.TableStore{StoreID: 4, Code: dbr.NullString{NullString: sql.NullString{String: "au", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
 			&store.TableStore{StoreID: 6, Code: dbr.NullString{NullString: sql.NullString{String: "nz", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),
@@ -369,13 +369,13 @@ func TestDefaultStoreView(t *testing.T) {
 	assert.EqualError(t, store.ErrStoreNotFound, err.Error())
 
 	var tst2 = store.NewStorage(
-		store.StorageTableWebsites(
+		store.SetStorageWebsites(
 			&store.TableWebsite{WebsiteID: 21, Code: dbr.NullString{NullString: sql.NullString{String: "oz", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "OZ", Valid: true}}, SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
 		),
-		store.StorageTableGroups(
+		store.SetStorageGroups(
 			&store.TableGroup{GroupID: 33, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
 		),
-		store.StorageTableStores(),
+		store.SetStorageStores(),
 	)
 	dSt2, err := tst2.DefaultStoreView()
 	assert.Nil(t, dSt2)
@@ -385,9 +385,9 @@ func TestDefaultStoreView(t *testing.T) {
 func TestStorageStoreErrors(t *testing.T) {
 
 	var nsw = store.NewStorage(
-		store.StorageTableWebsites(),
-		store.StorageTableGroups(),
-		store.StorageTableStores(
+		store.SetStorageWebsites(),
+		store.SetStorageGroups(),
+		store.SetStorageStores(
 			&store.TableStore{StoreID: 4, Code: dbr.NullString{NullString: sql.NullString{String: "au", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
 			&store.TableStore{StoreID: 6, Code: dbr.NullString{NullString: sql.NullString{String: "nz", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),
@@ -401,13 +401,13 @@ func TestStorageStoreErrors(t *testing.T) {
 	assert.EqualError(t, store.ErrWebsiteNotFound, err.Error())
 
 	var nsg = store.NewStorage(
-		store.StorageTableWebsites(
+		store.SetStorageWebsites(
 			&store.TableWebsite{WebsiteID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "oz", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "OZ", Valid: true}}, SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
 		),
-		store.StorageTableGroups(
+		store.SetStorageGroups(
 			&store.TableGroup{GroupID: 13, WebsiteID: 12, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 4},
 		),
-		store.StorageTableStores(
+		store.SetStorageStores(
 			&store.TableStore{StoreID: 4, Code: dbr.NullString{NullString: sql.NullString{String: "au", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
 			&store.TableStore{StoreID: 6, Code: dbr.NullString{NullString: sql.NullString{String: "nz", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),
