@@ -215,7 +215,7 @@ func (st *Storage) Store(r Retriever) (*Store, error) {
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	ns := NewStore(s, SetStoreGroup(g), SetStoreWebsite(w), SetStoreConfig(st.cr))
+	ns := NewStore(s, w, g, SetStoreConfig(st.cr))
 	ns.Website().SetGroupsStores(st.groups, st.stores)
 	ns.Group().SetStores(st.stores, w)
 	return ns, nil

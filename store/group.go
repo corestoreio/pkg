@@ -61,25 +61,29 @@ var (
 	ErrGroupWebsiteNotFound = errors.New("Group Website not found or nil or ID do not match")
 )
 
-// SetGroupConfig adds a configuration Reader to the Group. Optional.
+// SetGroupConfig sets the configuration Reader to the Group.
 // Default reader is config.DefaultManager
 func SetGroupConfig(cr config.Reader) GroupOption {
 	return func(g *Group) { g.cr = cr }
 }
 
+// SetGroupWebsite sets the website to a group.
 func SetGroupWebsite(tw *TableWebsite) GroupOption {
 	return func(g *Group) {
 		if g.Data() == nil {
 			panic(ErrGroupNotFound)
 		}
-		if g.Data().WebsiteID != tw.WebsiteID {
+		if tw != nil && g.Data().WebsiteID != tw.WebsiteID {
 			panic(ErrGroupWebsiteNotFound)
 		}
-		g.w = NewWebsite(tw)
+		if tw != nil {
+			g.w = NewWebsite(tw)
+		}
 	}
 }
 
-// NewGroup returns a new pointer to a Group. Second argument can be nil.
+// NewGroup returns a new pointer to a Group. If a Website has been provided
+// the config.Reader will be set to the Website.
 func NewGroup(tg *TableGroup, opts ...GroupOption) *Group {
 	if tg == nil {
 		panic(ErrStoreNewArgNil)
@@ -90,16 +94,20 @@ func NewGroup(tg *TableGroup, opts ...GroupOption) *Group {
 		g:  tg,
 	}
 	g.ApplyOptions(opts...)
+	if g.w != nil {
+		g.w.ApplyOptions(SetWebsiteConfig(g.cr))
+	}
 	return g
 }
 
-// ApplyOptions sets the options
-func (g *Group) ApplyOptions(opts ...GroupOption) {
+// ApplyOptions sets the options to a Group.
+func (g *Group) ApplyOptions(opts ...GroupOption) *Group {
 	for _, opt := range opts {
 		if opt != nil {
 			opt(g)
 		}
 	}
+	return g
 }
 
 // Data returns the TableGroup data which is raw database data.
@@ -149,7 +157,7 @@ func (g *Group) SetStores(tss TableStoreSlice, w *TableWebsite) *Group {
 		panic(ErrGroupWebsiteNotFound)
 	}
 	for _, s := range tss.FilterByGroupID(g.g.GroupID) {
-		g.stores = append(g.stores, NewStore(s, SetStoreGroup(g.g), SetStoreWebsite(w), SetStoreConfig(g.cr)))
+		g.stores = append(g.stores, NewStore(s, w, g.g, SetStoreConfig(g.cr)))
 	}
 	return g
 }

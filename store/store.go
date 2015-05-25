@@ -73,61 +73,44 @@ var (
 	ErrStoreCodeInvalid      = errors.New("The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter")
 )
 
-// SetStoreWebsite sets the raw website data to a Store. Required.
-func SetStoreWebsite(w *TableWebsite) StoreOption {
-	return func(s *Store) {
-		if s.Data() == nil {
-			panic(ErrStoreNotFound)
-		}
-		if s.Data().WebsiteID != w.WebsiteID {
-			panic(ErrStoreIncorrectWebsite)
-		}
-		s.w = NewWebsite(w)
-	}
-}
-
-// SetStoreGroup sets the raw group data to a Store. Required.
-func SetStoreGroup(g *TableGroup) StoreOption {
-	return func(s *Store) {
-		if s.Data() == nil {
-			panic(ErrStoreNotFound)
-		}
-		if s.Data().GroupID != g.GroupID {
-			panic(ErrStoreIncorrectGroup)
-		}
-		s.g = NewGroup(g)
-	}
-}
-
-// SetStoreConfig adds a configuration Reader to the Store. Optional.
+// SetStoreConfig sets the config.Reader to the Store.
 // Default reader is config.DefaultManager
 func SetStoreConfig(cr config.Reader) StoreOption {
 	return func(s *Store) { s.cr = cr }
 }
 
 // NewStore returns a new pointer to a Store. Panics if TableGroup and TableWebsite have not been provided
-// The integrity checks are done by the database.
-func NewStore(ts *TableStore, opts ...StoreOption) *Store {
-	if ts == nil || len(opts) < 3 { // group and website required so at least 2 args
+// Panics if integrity checks fail. config.Reader will be set to Group and Website.
+func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) *Store {
+	if ts == nil || tw == nil || tg == nil { // group and website required so at least 2 args
 		panic(ErrStoreNewArgNil)
 	}
-
-	s := &Store{cr: config.DefaultManager, s: ts}
+	if ts.WebsiteID != tw.WebsiteID {
+		panic(ErrStoreIncorrectWebsite)
+	}
+	if ts.GroupID != tg.GroupID {
+		panic(ErrStoreIncorrectGroup)
+	}
+	s := &Store{
+		cr: config.DefaultManager,
+		s:  ts,
+		w:  NewWebsite(tw),
+		g:  NewGroup(tg),
+	}
 	s.ApplyOptions(opts...)
-
-	if s.w == nil || s.g == nil { // force check
-		panic(ErrStoreNewArgNil)
-	}
+	s.w.ApplyOptions(SetWebsiteConfig(s.cr))
+	s.g.ApplyOptions(SetGroupConfig(s.cr))
 	return s
 }
 
-// ApplyOptions sets the options
-func (s *Store) ApplyOptions(opts ...StoreOption) {
+// ApplyOptions sets the options to the Store struct.
+func (s *Store) ApplyOptions(opts ...StoreOption) *Store {
 	for _, opt := range opts {
 		if opt != nil {
 			opt(s)
 		}
 	}
+	return s
 }
 
 /*

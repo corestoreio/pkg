@@ -61,7 +61,7 @@ var (
 	ErrWebsiteStoresNotAvailable = errors.New("Website Stores not available")
 )
 
-// SetWebsiteConfig adds a configuration Reader to the Website. Optional.
+// SetWebsiteConfig sets the config.Reader to the Website.
 // Default reader is config.DefaultManager
 func SetWebsiteConfig(cr config.Reader) WebsiteOption {
 	return func(w *Website) { w.cr = cr }
@@ -80,7 +80,7 @@ func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) *Website {
 	return w
 }
 
-// ApplyOptions sets the options
+// ApplyOptions sets the options on a Website
 func (w *Website) ApplyOptions(opts ...WebsiteOption) {
 	for _, opt := range opts {
 		if opt != nil {
@@ -138,7 +138,7 @@ func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *Web
 	groups := tgs.FilterByWebsiteID(w.w.WebsiteID)
 	w.groups = make(GroupSlice, groups.Len(), groups.Len())
 	for i, g := range groups {
-		w.groups[i] = NewGroup(g, SetGroupConfig(w.cr), SetGroupWebsite(w.w)).SetStores(tss, nil)
+		w.groups[i] = NewGroup(g, SetGroupWebsite(w.w), SetGroupConfig(w.cr)).SetStores(tss, nil)
 	}
 	stores := tss.FilterByWebsiteID(w.w.WebsiteID)
 	w.stores = make(StoreSlice, stores.Len(), stores.Len())
@@ -147,7 +147,7 @@ func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *Web
 		if err != nil {
 			panic(fmt.Sprintf("Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs))
 		}
-		w.stores[i] = NewStore(s, SetStoreGroup(group), SetStoreWebsite(w.w), SetStoreConfig(w.cr))
+		w.stores[i] = NewStore(s, w.w, group, SetStoreConfig(w.cr))
 	}
 	return w
 }

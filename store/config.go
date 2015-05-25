@@ -59,23 +59,6 @@ var (
 	TableCollection csdb.TableStructureSlice
 )
 
-// SetConfig sets the internal variable to the current scope config reader.
-// ScopeReader will be used across all functions in this package.
-//func SetConfigReader(c config.Reader) {
-//	if c == nil || configReader != nil {
-//		panic("config.ScopeReader cannot be nil or already set")
-//	}
-//	configReader = c
-//}
-
-// mustReadConfig internally used
-//func mustReadConfig() config.Reader {
-//	if configReader == nil {
-//		panic("config.ScopeReader cannot be nil")
-//	}
-//	return configReader
-//}
-
 // GetDefaultConfiguration in conjunction with config.Scope.ApplyDefaults function to
 // set the default configuration value for a package.
 func GetDefaultConfiguration() config.DefaultMap {
