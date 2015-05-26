@@ -90,7 +90,7 @@ func NewManager(opts ...ManagerOption) *Manager {
 	return m
 }
 
-// SetStorage sets the underlaying storage system to the Manager. Required option.
+// SetStorage sets the underlying storage system to the Manager. Required option.
 func SetManagerStorage(s Storager) ManagerOption {
 	return func(m *Manager) { m.storage = s }
 }

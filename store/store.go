@@ -19,6 +19,7 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"sort"
 	"strings"
 	"time"
 
@@ -54,7 +55,7 @@ type (
 		// Contains the current website for this store. No integrity checks
 		w *Website
 		g *Group
-		// underlaying raw data
+		// underlying raw data
 		s *TableStore
 	}
 	// StoreSlice a collection of pointers to the Store structs. StoreSlice has some nifty method receviers.
@@ -302,8 +303,19 @@ func ValidateStoreCode(c string) error {
 	StoreSlice method receivers
 */
 
-// Len returns the length
-func (s StoreSlice) Len() int { return len(s) }
+// Sort convenience helper
+func (ss *StoreSlice) Sort() *StoreSlice {
+	sort.Sort(ss)
+	return ss
+}
+
+func (ss StoreSlice) Len() int { return len(ss) }
+
+func (ss *StoreSlice) Swap(i, j int) { (*ss)[i], (*ss)[j] = (*ss)[j], (*ss)[i] }
+
+func (ss *StoreSlice) Less(i, j int) bool {
+	return (*ss)[i].Data().SortOrder < (*ss)[j].Data().SortOrder
+}
 
 // Filter returns a new slice filtered by predicate f
 func (s StoreSlice) Filter(f func(*Store) bool) StoreSlice {

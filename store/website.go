@@ -17,6 +17,7 @@ package store
 import (
 	"errors"
 	"fmt"
+	"sort"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/directory"
@@ -183,8 +184,19 @@ func (w *Website) BaseCurrency() directory.Currency {
 	WebsiteSlice method receivers
 */
 
-// Len returns the length
+// Sort convenience helper
+func (ws *WebsiteSlice) Sort() *WebsiteSlice {
+	sort.Sort(ws)
+	return ws
+}
+
 func (ws WebsiteSlice) Len() int { return len(ws) }
+
+func (ws *WebsiteSlice) Swap(i, j int) { (*ws)[i], (*ws)[j] = (*ws)[j], (*ws)[i] }
+
+func (ws *WebsiteSlice) Less(i, j int) bool {
+	return (*ws)[i].Data().SortOrder < (*ws)[j].Data().SortOrder
+}
 
 // Filter returns a new slice filtered by predicate f
 func (ws WebsiteSlice) Filter(f func(*Website) bool) WebsiteSlice {
