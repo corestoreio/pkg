@@ -55,306 +55,310 @@ const (
 // TableCollection handles all tables and its columns. init() in generated Go file will set the value.
 var TableCollection csdb.TableStructureSlice
 
-// PackageConfiguration contains the main configuration for the package directory
-var PackageConfiguration = config.NewConfiguration(
-	&config.Section{
-		ID:        "general",
-		Label:     "General",
-		SortOrder: 10,
-		Scope:     config.ScopePermAll,
+// PackageConfiguration contains the main configuration
+var PackageConfiguration config.SectionSlice
 
-		Groups: config.GroupSlice{
-			&config.Group{
-				ID:        "single_store_mode",
-				Label:     `Single-Store Mode`,
-				Comment:   ``,
-				SortOrder: 150,
-				Scope:     config.NewScopePerm(config.IDScopeDefault),
-				Fields: config.FieldSlice{
-					&config.Field{
-						// Path: `general/single_store_mode/enabled`,
-						ID:           "enabled",
-						Label:        `Enable Single-Store Mode`,
-						Comment:      `This setting will not be taken into account if system has more than one store view.`,
-						Type:         config.TypeSelect,
-						SortOrder:    10,
-						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
-						Default:      nil,
-						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+func init() {
+	PackageConfiguration = config.NewConfiguration(
+		&config.Section{
+			ID:        "general",
+			Label:     "General",
+			SortOrder: 10,
+			Scope:     config.ScopePermAll,
+
+			Groups: config.GroupSlice{
+				&config.Group{
+					ID:        "single_store_mode",
+					Label:     `Single-Store Mode`,
+					Comment:   ``,
+					SortOrder: 150,
+					Scope:     config.NewScopePerm(config.IDScopeDefault),
+					Fields: config.FieldSlice{
+						&config.Field{
+							// Path: `general/single_store_mode/enabled`,
+							ID:           "enabled",
+							Label:        `Enable Single-Store Mode`,
+							Comment:      `This setting will not be taken into account if system has more than one store view.`,
+							Type:         config.TypeSelect,
+							SortOrder:    10,
+							Visible:      config.VisibleYes,
+							Scope:        config.NewScopePerm(config.IDScopeDefault),
+							Default:      nil,
+							BackendModel: nil,
+							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						},
 					},
 				},
-			},
 
-			&config.Group{
-				ID:        "store_information",
-				Label:     `Store Information`,
-				Comment:   ``,
-				SortOrder: 100,
-				Scope:     config.ScopePermAll,
-				Fields: config.FieldSlice{
-					&config.Field{
-						// Path: `general/store_information/name`,
-						ID:           "name",
-						Label:        `Store Name`,
-						Comment:      ``,
-						Type:         config.TypeText,
-						SortOrder:    10,
-						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
-						Default:      nil,
-						BackendModel: nil,
-						SourceModel:  nil,
-					},
+				&config.Group{
+					ID:        "store_information",
+					Label:     `Store Information`,
+					Comment:   ``,
+					SortOrder: 100,
+					Scope:     config.ScopePermAll,
+					Fields: config.FieldSlice{
+						&config.Field{
+							// Path: `general/store_information/name`,
+							ID:           "name",
+							Label:        `Store Name`,
+							Comment:      ``,
+							Type:         config.TypeText,
+							SortOrder:    10,
+							Visible:      config.VisibleYes,
+							Scope:        config.ScopePermAll,
+							Default:      nil,
+							BackendModel: nil,
+							SourceModel:  nil,
+						},
 
-					&config.Field{
-						// Path: `general/store_information/phone`,
-						ID:           "phone",
-						Label:        `Store Phone Number`,
-						Comment:      ``,
-						Type:         config.TypeText,
-						SortOrder:    20,
-						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
-						Default:      nil,
-						BackendModel: nil,
-						SourceModel:  nil,
-					},
-				},
-			},
-		},
-	},
-
-	&config.Section{
-		ID:        "web",
-		Label:     "Web",
-		SortOrder: 20,
-		Scope:     config.ScopePermAll,
-		Groups: config.GroupSlice{
-			&config.Group{
-				ID:        "url",
-				Label:     `Url Options`,
-				Comment:   ``,
-				SortOrder: 3,
-				Scope:     config.NewScopePerm(config.IDScopeDefault),
-				Fields: config.FieldSlice{
-					&config.Field{
-						// Path: `web/url/use_store`,
-						ID:           "use_store",
-						Label:        `Add Store Code to Urls`,
-						Comment:      `<strong style="color:red">Warning!</strong> When using Store Code in URLs, in some cases system may not work properly if URLs without Store Codes are specified in the third party services (e.g. PayPal etc.).`,
-						Type:         config.TypeSelect,
-						SortOrder:    10,
-						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
-						Default:      nil,
-						BackendModel: nil, // Magento\Config\Model\Config\Backend\Store
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
-					},
-
-					&config.Field{
-						// Path: `web/url/redirect_to_base`,
-						ID:           "redirect_to_base",
-						Label:        `Auto-redirect to Base URL`,
-						Comment:      `I.e. redirect from http://example.com/store/ to http://www.example.com/store/`,
-						Type:         config.TypeSelect,
-						SortOrder:    20,
-						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
-						Default:      nil,
-						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Web\Redirect
-					},
-				},
-			},
-
-			&config.Group{
-				ID:        "unsecure",
-				Label:     `Base URLs`,
-				Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`,
-				SortOrder: 10,
-				Scope:     config.ScopePermAll,
-				Fields: config.FieldSlice{
-					&config.Field{
-						// Path: `web/unsecure/base_url`,
-						ID:           "base_url",
-						Label:        `Base URL`,
-						Comment:      `Specify URL or {{base_url}} placeholder.`,
-						Type:         config.TypeText,
-						SortOrder:    10,
-						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
-						Default:      nil,
-						BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-						SourceModel:  nil,
-					},
-
-					&config.Field{
-						// Path: `web/unsecure/base_link_url`,
-						ID:           "base_link_url",
-						Label:        `Base Link URL`,
-						Comment:      `May start with {{unsecure_base_url}} placeholder.`,
-						Type:         config.TypeText,
-						SortOrder:    20,
-						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
-						Default:      nil,
-						BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-						SourceModel:  nil,
-					},
-
-					&config.Field{
-						// Path: `web/unsecure/base_static_url`,
-						ID:           "base_static_url",
-						Label:        `Base URL for Static View Files`,
-						Comment:      `May be empty or start with {{unsecure_base_url}} placeholder.`,
-						Type:         config.TypeText,
-						SortOrder:    25,
-						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
-						Default:      nil,
-						BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-						SourceModel:  nil,
-					},
-
-					&config.Field{
-						// Path: `web/unsecure/base_media_url`,
-						ID:           "base_media_url",
-						Label:        `Base URL for User Media Files`,
-						Comment:      `May be empty or start with {{unsecure_base_url}} placeholder.`,
-						Type:         config.TypeText,
-						SortOrder:    40,
-						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
-						Default:      nil,
-						BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-						SourceModel:  nil,
-					},
-				},
-			},
-
-			&config.Group{
-				ID:        "secure",
-				Label:     `Base URLs (Secure)`,
-				Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`,
-				SortOrder: 20,
-				Scope:     config.ScopePermAll,
-				Fields: config.FieldSlice{
-					&config.Field{
-						// Path: `web/secure/base_url`,
-						ID:           "base_url",
-						Label:        `Secure Base URL`,
-						Comment:      `Specify URL or {{base_url}}, or {{unsecure_base_url}} placeholder.`,
-						Type:         config.TypeText,
-						SortOrder:    10,
-						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
-						Default:      nil,
-						BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-						SourceModel:  nil,
-					},
-
-					&config.Field{
-						// Path: `web/secure/base_link_url`,
-						ID:           "base_link_url",
-						Label:        `Secure Base Link URL`,
-						Comment:      `May start with {{secure_base_url}} or {{unsecure_base_url}} placeholder.`,
-						Type:         config.TypeText,
-						SortOrder:    20,
-						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
-						Default:      nil,
-						BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-						SourceModel:  nil,
-					},
-
-					&config.Field{
-						// Path: `web/secure/base_static_url`,
-						ID:           "base_static_url",
-						Label:        `Secure Base URL for Static View Files`,
-						Comment:      `May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`,
-						Type:         config.TypeText,
-						SortOrder:    25,
-						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
-						Default:      nil,
-						BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-						SourceModel:  nil,
-					},
-
-					&config.Field{
-						// Path: `web/secure/base_media_url`,
-						ID:           "base_media_url",
-						Label:        `Secure Base URL for User Media Files`,
-						Comment:      `May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`,
-						Type:         config.TypeText,
-						SortOrder:    40,
-						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
-						Default:      nil,
-						BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-						SourceModel:  nil,
-					},
-
-					&config.Field{
-						// Path: `web/secure/use_in_frontend`,
-						ID:           "use_in_frontend",
-						Label:        `Use Secure URLs in Frontend`,
-						Comment:      `Enter https protocol to use Secure URLs in Frontend.`,
-						Type:         config.TypeSelect,
-						SortOrder:    50,
-						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
-						Default:      nil,
-						BackendModel: nil, // Magento\Config\Model\Config\Backend\Secure
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
-					},
-
-					&config.Field{
-						// Path: `web/secure/use_in_adminhtml`,
-						ID:           "use_in_adminhtml",
-						Label:        `Use Secure URLs in Admin`,
-						Comment:      `Enter https protocol to use Secure URLs in Admin.`,
-						Type:         config.TypeSelect,
-						SortOrder:    60,
-						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
-						Default:      nil,
-						BackendModel: nil, // Magento\Config\Model\Config\Backend\Secure
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
-					},
-
-					&config.Field{
-						// Path: `web/secure/offloader_header`,
-						ID:           "offloader_header",
-						Label:        `Offloader header`,
-						Comment:      ``,
-						Type:         config.TypeText,
-						SortOrder:    70,
-						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
-						Default:      nil,
-						BackendModel: nil,
-						SourceModel:  nil,
+						&config.Field{
+							// Path: `general/store_information/phone`,
+							ID:           "phone",
+							Label:        `Store Phone Number`,
+							Comment:      ``,
+							Type:         config.TypeText,
+							SortOrder:    20,
+							Visible:      config.VisibleYes,
+							Scope:        config.ScopePermAll,
+							Default:      nil,
+							BackendModel: nil,
+							SourceModel:  nil,
+						},
 					},
 				},
 			},
 		},
-	},
-	&config.Section{
-		ID: "catalog",
-		Groups: config.GroupSlice{
-			&config.Group{
-				ID: "price",
-				Fields: config.FieldSlice{
-					&config.Field{
-						// Path: `catalog/price/scope`,
-						ID:      "scope",
-						Default: PriceScopeGlobal,
+
+		&config.Section{
+			ID:        "web",
+			Label:     "Web",
+			SortOrder: 20,
+			Scope:     config.ScopePermAll,
+			Groups: config.GroupSlice{
+				&config.Group{
+					ID:        "url",
+					Label:     `Url Options`,
+					Comment:   ``,
+					SortOrder: 3,
+					Scope:     config.NewScopePerm(config.IDScopeDefault),
+					Fields: config.FieldSlice{
+						&config.Field{
+							// Path: `web/url/use_store`,
+							ID:           "use_store",
+							Label:        `Add Store Code to Urls`,
+							Comment:      `<strong style="color:red">Warning!</strong> When using Store Code in URLs, in some cases system may not work properly if URLs without Store Codes are specified in the third party services (e.g. PayPal etc.).`,
+							Type:         config.TypeSelect,
+							SortOrder:    10,
+							Visible:      config.VisibleYes,
+							Scope:        config.NewScopePerm(config.IDScopeDefault),
+							Default:      nil,
+							BackendModel: nil, // Magento\Config\Model\Config\Backend\Store
+							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						},
+
+						&config.Field{
+							// Path: `web/url/redirect_to_base`,
+							ID:           "redirect_to_base",
+							Label:        `Auto-redirect to Base URL`,
+							Comment:      `I.e. redirect from http://example.com/store/ to http://www.example.com/store/`,
+							Type:         config.TypeSelect,
+							SortOrder:    20,
+							Visible:      config.VisibleYes,
+							Scope:        config.NewScopePerm(config.IDScopeDefault),
+							Default:      nil,
+							BackendModel: nil,
+							SourceModel:  nil, // Magento\Config\Model\Config\Source\Web\Redirect
+						},
+					},
+				},
+
+				&config.Group{
+					ID:        "unsecure",
+					Label:     `Base URLs`,
+					Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`,
+					SortOrder: 10,
+					Scope:     config.ScopePermAll,
+					Fields: config.FieldSlice{
+						&config.Field{
+							// Path: `web/unsecure/base_url`,
+							ID:           "base_url",
+							Label:        `Base URL`,
+							Comment:      `Specify URL or {{base_url}} placeholder.`,
+							Type:         config.TypeText,
+							SortOrder:    10,
+							Visible:      config.VisibleYes,
+							Scope:        config.ScopePermAll,
+							Default:      nil,
+							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
+							SourceModel:  nil,
+						},
+
+						&config.Field{
+							// Path: `web/unsecure/base_link_url`,
+							ID:           "base_link_url",
+							Label:        `Base Link URL`,
+							Comment:      `May start with {{unsecure_base_url}} placeholder.`,
+							Type:         config.TypeText,
+							SortOrder:    20,
+							Visible:      config.VisibleYes,
+							Scope:        config.ScopePermAll,
+							Default:      nil,
+							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
+							SourceModel:  nil,
+						},
+
+						&config.Field{
+							// Path: `web/unsecure/base_static_url`,
+							ID:           "base_static_url",
+							Label:        `Base URL for Static View Files`,
+							Comment:      `May be empty or start with {{unsecure_base_url}} placeholder.`,
+							Type:         config.TypeText,
+							SortOrder:    25,
+							Visible:      config.VisibleYes,
+							Scope:        config.ScopePermAll,
+							Default:      nil,
+							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
+							SourceModel:  nil,
+						},
+
+						&config.Field{
+							// Path: `web/unsecure/base_media_url`,
+							ID:           "base_media_url",
+							Label:        `Base URL for User Media Files`,
+							Comment:      `May be empty or start with {{unsecure_base_url}} placeholder.`,
+							Type:         config.TypeText,
+							SortOrder:    40,
+							Visible:      config.VisibleYes,
+							Scope:        config.ScopePermAll,
+							Default:      nil,
+							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
+							SourceModel:  nil,
+						},
+					},
+				},
+
+				&config.Group{
+					ID:        "secure",
+					Label:     `Base URLs (Secure)`,
+					Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`,
+					SortOrder: 20,
+					Scope:     config.ScopePermAll,
+					Fields: config.FieldSlice{
+						&config.Field{
+							// Path: `web/secure/base_url`,
+							ID:           "base_url",
+							Label:        `Secure Base URL`,
+							Comment:      `Specify URL or {{base_url}}, or {{unsecure_base_url}} placeholder.`,
+							Type:         config.TypeText,
+							SortOrder:    10,
+							Visible:      config.VisibleYes,
+							Scope:        config.ScopePermAll,
+							Default:      nil,
+							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
+							SourceModel:  nil,
+						},
+
+						&config.Field{
+							// Path: `web/secure/base_link_url`,
+							ID:           "base_link_url",
+							Label:        `Secure Base Link URL`,
+							Comment:      `May start with {{secure_base_url}} or {{unsecure_base_url}} placeholder.`,
+							Type:         config.TypeText,
+							SortOrder:    20,
+							Visible:      config.VisibleYes,
+							Scope:        config.ScopePermAll,
+							Default:      nil,
+							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
+							SourceModel:  nil,
+						},
+
+						&config.Field{
+							// Path: `web/secure/base_static_url`,
+							ID:           "base_static_url",
+							Label:        `Secure Base URL for Static View Files`,
+							Comment:      `May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`,
+							Type:         config.TypeText,
+							SortOrder:    25,
+							Visible:      config.VisibleYes,
+							Scope:        config.ScopePermAll,
+							Default:      nil,
+							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
+							SourceModel:  nil,
+						},
+
+						&config.Field{
+							// Path: `web/secure/base_media_url`,
+							ID:           "base_media_url",
+							Label:        `Secure Base URL for User Media Files`,
+							Comment:      `May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`,
+							Type:         config.TypeText,
+							SortOrder:    40,
+							Visible:      config.VisibleYes,
+							Scope:        config.ScopePermAll,
+							Default:      nil,
+							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
+							SourceModel:  nil,
+						},
+
+						&config.Field{
+							// Path: `web/secure/use_in_frontend`,
+							ID:           "use_in_frontend",
+							Label:        `Use Secure URLs in Frontend`,
+							Comment:      `Enter https protocol to use Secure URLs in Frontend.`,
+							Type:         config.TypeSelect,
+							SortOrder:    50,
+							Visible:      config.VisibleYes,
+							Scope:        config.ScopePermAll,
+							Default:      nil,
+							BackendModel: nil, // Magento\Config\Model\Config\Backend\Secure
+							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						},
+
+						&config.Field{
+							// Path: `web/secure/use_in_adminhtml`,
+							ID:           "use_in_adminhtml",
+							Label:        `Use Secure URLs in Admin`,
+							Comment:      `Enter https protocol to use Secure URLs in Admin.`,
+							Type:         config.TypeSelect,
+							SortOrder:    60,
+							Visible:      config.VisibleYes,
+							Scope:        config.NewScopePerm(config.IDScopeDefault),
+							Default:      nil,
+							BackendModel: nil, // Magento\Config\Model\Config\Backend\Secure
+							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						},
+
+						&config.Field{
+							// Path: `web/secure/offloader_header`,
+							ID:           "offloader_header",
+							Label:        `Offloader header`,
+							Comment:      ``,
+							Type:         config.TypeText,
+							SortOrder:    70,
+							Visible:      config.VisibleYes,
+							Scope:        config.NewScopePerm(config.IDScopeDefault),
+							Default:      nil,
+							BackendModel: nil,
+							SourceModel:  nil,
+						},
 					},
 				},
 			},
 		},
-	},
-)
+		&config.Section{
+			ID: "catalog",
+			Groups: config.GroupSlice{
+				&config.Group{
+					ID: "price",
+					Fields: config.FieldSlice{
+						&config.Field{
+							// Path: `catalog/price/scope`,
+							ID:      "scope",
+							Default: PriceScopeGlobal,
+						},
+					},
+				},
+			},
+		},
+	)
+}

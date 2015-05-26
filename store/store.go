@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package store implements the handling of websites, groups and stores
 package store
 
 import (
@@ -283,8 +282,8 @@ func GetCodeFromCookie(req *http.Request) Retriever {
 	return nil
 }
 
-// ValidateStoreCode checks if a store code is valid. Returns an error if the  first letter is not a-zA-Z
-// and followed by a-zA-Z0-9_ or store code length is greater than 32 characters.
+// ValidateStoreCode checks if a store code is valid. Returns an ErrStoreCodeInvalid if the
+// first letter is not a-zA-Z and followed by a-zA-Z0-9_ or store code length is greater than 32 characters.
 func ValidateStoreCode(c string) error {
 	if c == "" || len(c) > 32 {
 		return ErrStoreCodeInvalid

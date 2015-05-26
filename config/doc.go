@@ -15,15 +15,23 @@
 /*
 Package config handles the scopes and the configuration via consul, etc or simple files.
 
-	Elements
+Elements
 
 The three elements Section, Group and Field represents front end configuration fields and more important
-default values and their backend model (loading and saving).
+default values and their backend/source models (loading and saving).
+
+Those three elements represents the PackageConfiguration variable which can be found in any package.
+
+Your app which includes the csfw must merge all "PackageConfiguration"s into a single slice.
+You should submit all default values (interface config.Sectioner) to the config.Manager.ApplyDefaults()
+function. @todo merge core_config_data values in config.Manager
+The models included in PackageConfiguration will be later used when handling the values
+for each configuration field.
 
 The JSON enconding of the three elements Section, Group and Field are intended to use
 on the backend REST API and for debugging and testing. Only used in non performance critical parts.
 
-	Scope Values
+Scope Values
 
 To get a value from the configuration manager via any Get* method you have to set up the arguments.
 At least a config.Path() is needed. If you need a config value from another scope (store or website)

@@ -77,7 +77,7 @@ func ValueReader(r io.Reader) ScopeOption {
 }
 
 // ScopeKey generates the correct scope key e.g.: stores/2/system/currency/installed => scope/scope_id/path
-// which is used by the underlaying configuration manager to fetch a value
+// which is used by the underlying configuration manager to fetch a value
 func ScopeKey(opts ...ScopeOption) string {
 	if len(opts) == 0 {
 		return ""

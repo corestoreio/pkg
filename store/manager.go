@@ -73,6 +73,7 @@ var (
 )
 
 // NewManager creates a new store manager which handles websites, store groups and stores.
+// @todo Default Storager should be a hardcoded Table* struct ...
 func NewManager(opts ...ManagerOption) *Manager {
 	m := &Manager{
 		cr:         config.DefaultManager,

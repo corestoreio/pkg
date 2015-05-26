@@ -53,7 +53,7 @@ type (
 		//		...
 		//	}
 		Next(Index) bool
-		// Len returns the length of the underlaying slice
+		// Len returns the length of the underlying slice
 		Len() Index
 	}
 

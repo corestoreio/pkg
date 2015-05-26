@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package store implements the handling of websites, groups and stores
 package store
 
 import (
