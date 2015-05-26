@@ -26,6 +26,6 @@ type (
 )
 
 // BaseCurrencyCode retrieves application base currency code
-func BaseCurrencyCode() (language.Currency, error) {
-	return language.ParseCurrency(mustReadConfig().GetString(config.Path(PathCurrencyBase)))
+func BaseCurrencyCode(cr config.Reader) (language.Currency, error) {
+	return language.ParseCurrency(cr.GetString(config.Path(PathCurrencyBase)))
 }

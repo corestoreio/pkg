@@ -22,6 +22,6 @@ type (
 )
 
 // DefaultCountry returns the country code. Store argument is optional.
-func DefaultCountry(r ...config.Retriever) string {
-	return mustReadConfig().GetString(config.Path(PathDefaultCountry), config.ScopeStore(r...))
+func DefaultCountry(cr config.Reader, r ...config.Retriever) string {
+	return cr.GetString(config.Path(PathDefaultCountry), config.ScopeStore(r...))
 }

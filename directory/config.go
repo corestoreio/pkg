@@ -38,29 +38,8 @@ const (
 	PathDefaultTimezone  = "general/locale/timezone"
 )
 
-var (
-	// configReader stores the reader. Should not be used. Access it via mustConfig()
-	configReader config.Reader
-	// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
-	TableCollection csdb.TableStructureSlice
-)
-
-// SetConfig sets the internal variable to the current scope config reader.
-// ScopeReader will be used across all functions in this package.
-func SetConfigReader(c config.Reader) {
-	if c == nil {
-		panic("config.ScopeReader cannot be nil")
-	}
-	configReader = c
-}
-
-// mustReadConfig internally used
-func mustReadConfig() config.Reader {
-	if configReader == nil {
-		panic("config.ScopeReader cannot be nil")
-	}
-	return configReader
-}
+// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
+var TableCollection csdb.TableStructureSlice
 
 // PackageConfiguration contains the main configuration for the package directory
 var PackageConfiguration = config.NewConfiguration(
