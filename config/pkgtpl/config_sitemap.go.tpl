@@ -5,14 +5,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "sitemap",
 		Label:     "XML Sitemap",
 		SortOrder: 70,
-		Scope:     config.IDScopePermAll,
+		Scope:     config.ScopePermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "category",
 				Label:     `Categories Options`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.IDScopePermAll,
+				Scope:     config.ScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sitemap/category/changefreq`,
@@ -21,8 +21,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      `daily`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sitemap\Model\Config\Source\Frequency
@@ -35,8 +35,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      `Valid values range from 0.0 to 1.0.`,
 						Type:         config.TypeText,
 						SortOrder:    2,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      0.5,
 						BackendModel: nil, // Magento\Sitemap\Model\Config\Backend\Priority
 						SourceModel:  nil,
@@ -49,7 +49,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Products Options`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.IDScopePermAll,
+				Scope:     config.ScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sitemap/product/changefreq`,
@@ -58,8 +58,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      `daily`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sitemap\Model\Config\Source\Frequency
@@ -72,8 +72,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      `Valid values range from 0.0 to 1.0.`,
 						Type:         config.TypeText,
 						SortOrder:    2,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      1,
 						BackendModel: nil, // Magento\Sitemap\Model\Config\Backend\Priority
 						SourceModel:  nil,
@@ -86,8 +86,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    3,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      `all`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sitemap\Model\Source\Product\Image\IncludeImage
@@ -100,7 +100,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `CMS Pages Options`,
 				Comment:   ``,
 				SortOrder: 3,
-				Scope:     config.IDScopePermAll,
+				Scope:     config.ScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sitemap/page/changefreq`,
@@ -109,8 +109,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      `daily`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sitemap\Model\Config\Source\Frequency
@@ -123,8 +123,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      `Valid values range from 0.0 to 1.0.`,
 						Type:         config.TypeText,
 						SortOrder:    2,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      0.25,
 						BackendModel: nil, // Magento\Sitemap\Model\Config\Backend\Priority
 						SourceModel:  nil,
@@ -146,8 +146,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -160,8 +160,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeText,
 						SortOrder:    5,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -174,7 +174,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    6,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      `general`,
 						BackendModel: nil,
@@ -188,7 +188,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    7,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      `sitemap_generate_error_email_template`,
 						BackendModel: nil,
@@ -202,8 +202,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    4,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Cron\Model\Config\Backend\Sitemap
 						SourceModel:  nil, // Magento\Cron\Model\Config\Source\Frequency
@@ -216,8 +216,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeTime,
 						SortOrder:    3,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -230,7 +230,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Sitemap File Limits`,
 				Comment:   ``,
 				SortOrder: 5,
-				Scope:     config.IDScopePermAll,
+				Scope:     config.ScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sitemap/limit/max_lines`,
@@ -239,8 +239,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeText,
 						SortOrder:    1,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      50000,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -253,8 +253,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      `File size in bytes.`,
 						Type:         config.TypeText,
 						SortOrder:    2,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      10485760,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -267,7 +267,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Search Engine Submission Settings`,
 				Comment:   ``,
 				SortOrder: 6,
-				Scope:     config.IDScopePermAll,
+				Scope:     config.ScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sitemap/search_engines/submission_robots`,
@@ -276,8 +276,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -298,7 +298,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `sitemap/generate/error_email`,
 						ID:      "error_email",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: nil,
 					},
@@ -312,7 +312,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `sitemap/file/valid_paths`,
 						ID:      "valid_paths",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `{"available":{"any_path":"\/*\/*.xml"}}`,
 					},

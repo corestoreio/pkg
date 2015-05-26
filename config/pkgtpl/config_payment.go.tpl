@@ -5,7 +5,7 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "payment",
 		Label:     "Payment Methods",
 		SortOrder: 400,
-		Scope:     config.IDScopePermAll,
+		Scope:     config.ScopePermAll,
 		Groups:    config.GroupSlice{},
 	},
 
@@ -20,7 +20,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `payment/free/active`,
 						ID:      "active",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: true,
 					},
@@ -29,7 +29,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `payment/free/model`,
 						ID:      "model",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `Magento\Payment\Model\Method\Free`,
 					},
@@ -38,7 +38,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `payment/free/order_status`,
 						ID:      "order_status",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `pending`,
 					},
@@ -47,7 +47,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `payment/free/title`,
 						ID:      "title",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `No Payment Information Required`,
 					},
@@ -56,7 +56,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `payment/free/allowspecific`,
 						ID:      "allowspecific",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: false,
 					},
@@ -65,7 +65,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `payment/free/sort_order`,
 						ID:      "sort_order",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: true,
 					},
@@ -79,7 +79,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `payment/substitution/active`,
 						ID:      "active",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: false,
 					},
@@ -88,7 +88,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `payment/substitution/model`,
 						ID:      "model",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `Magento\Payment\Model\Method\Substitution`,
 					},
@@ -97,7 +97,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `payment/substitution/allowspecific`,
 						ID:      "allowspecific",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: false,
 					},

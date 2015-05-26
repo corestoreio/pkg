@@ -21,7 +21,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      `Please put your store into maintenance mode and redeploy static files after changing strategy`,
 						Type:         config.TypeSelect,
 						SortOrder:    30,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      `none`,
 						BackendModel: nil,
@@ -43,7 +43,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `dev/translate_inline/active`,
 						ID:      "active",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: false,
 					},
@@ -52,7 +52,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `dev/translate_inline/active_admin`,
 						ID:      "active_admin",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: false,
 					},
@@ -61,7 +61,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `dev/translate_inline/invalid_caches`,
 						ID:      "invalid_caches",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `{"block_html":null}`,
 					},

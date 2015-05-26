@@ -5,14 +5,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "system",
 		Label:     "",
 		SortOrder: 900,
-		Scope:     config.IDScopePermAll,
+		Scope:     config.ScopePermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "media_storage_configuration",
 				Label:     `Storage Configuration for Media`,
 				Comment:   ``,
 				SortOrder: 900,
-				Scope:     config.IDScopePermAll,
+				Scope:     config.ScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `system/media_storage_configuration/media_storage`,
@@ -21,7 +21,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    100,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      nil,
 						BackendModel: nil,
@@ -35,7 +35,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    200,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      nil,
 						BackendModel: nil, // Magento\MediaStorage\Model\Config\Backend\Storage\Media\Database
@@ -49,7 +49,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      `After selecting a new media storage location, press the Synchronize button to transfer all media to that location. Media will not be available in the new location until the synchronization process is complete.`,
 						Type:         config.TypeButton,
 						SortOrder:    300,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      nil,
 						BackendModel: nil,
@@ -63,7 +63,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeText,
 						SortOrder:    400,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      nil,
 						BackendModel: nil,

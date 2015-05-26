@@ -21,8 +21,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      `You need to refresh the cache.`,
 						Type:         config.TypeText,
 						SortOrder:    3,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
 						SourceModel:  nil,
@@ -35,8 +35,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      `You need to refresh the cache.`,
 						Type:         config.TypeText,
 						SortOrder:    2,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
 						SourceModel:  nil,
@@ -49,8 +49,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    4,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -63,8 +63,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    5,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno

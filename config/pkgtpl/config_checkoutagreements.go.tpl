@@ -21,8 +21,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    20,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno

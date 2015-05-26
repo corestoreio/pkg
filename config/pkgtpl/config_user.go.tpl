@@ -21,7 +21,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    40,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      `admin_emails_reset_password_template`,
 						BackendModel: nil,
@@ -43,7 +43,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `admin/emails/forgot_email_template`,
 						ID:      "forgot_email_template",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `admin_emails_forgot_email_template`,
 					},
@@ -52,7 +52,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `admin/emails/forgot_email_identity`,
 						ID:      "forgot_email_identity",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `general`,
 					},
@@ -61,7 +61,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `admin/emails/password_reset_link_expiration_period`,
 						ID:      "password_reset_link_expiration_period",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: true,
 					},

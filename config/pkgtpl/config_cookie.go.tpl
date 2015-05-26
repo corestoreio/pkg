@@ -12,7 +12,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Default Cookie Settings`,
 				Comment:   ``,
 				SortOrder: 50,
-				Scope:     config.IDScopePermAll,
+				Scope:     config.ScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `web/cookie/cookie_lifetime`,
@@ -21,8 +21,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeText,
 						SortOrder:    10,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      3600,
 						BackendModel: nil, // Magento\Cookie\Model\Config\Backend\Lifetime
 						SourceModel:  nil,
@@ -35,8 +35,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeText,
 						SortOrder:    20,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Cookie\Model\Config\Backend\Path
 						SourceModel:  nil,
@@ -49,8 +49,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeText,
 						SortOrder:    30,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Cookie\Model\Config\Backend\Domain
 						SourceModel:  nil,
@@ -63,8 +63,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      `<strong style="color:red">Warning</strong>:  Do not set to "No". User security could be compromised.`,
 						Type:         config.TypeSelect,
 						SortOrder:    40,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -77,7 +77,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    50,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      false,
 						BackendModel: nil, // Magento\Cookie\Model\Config\Backend\Cookie
@@ -99,7 +99,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `web/cookie/cookie_restriction_lifetime`,
 						ID:      "cookie_restriction_lifetime",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: 31536000,
 					},

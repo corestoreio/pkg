@@ -5,14 +5,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "wishlist",
 		Label:     "Wishlist",
 		SortOrder: 140,
-		Scope:     config.IDScopePermAll,
+		Scope:     config.ScopePermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "email",
 				Label:     `Share Options`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.IDScopePermAll,
+				Scope:     config.ScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `wishlist/email/email_identity`,
@@ -21,8 +21,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      `general`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -35,8 +35,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      `wishlist_email_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -49,8 +49,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      `10 by default. Max - 10000`,
 						Type:         config.TypeText,
 						SortOrder:    3,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      10,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -63,8 +63,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      `255 by default`,
 						Type:         config.TypeText,
 						SortOrder:    4,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      255,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -77,7 +77,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `General Options`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.IDScopePermAll,
+				Scope:     config.ScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `wishlist/general/active`,
@@ -86,8 +86,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -109,7 +109,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
 						Default:      nil,
 						BackendModel: nil,
@@ -130,7 +130,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Wishlist`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.IDScopePermAll,
+				Scope:     config.ScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `rss/wishlist/active`,
@@ -139,8 +139,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    10,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable

@@ -21,7 +21,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    0,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      true,
 						BackendModel: nil,
@@ -35,7 +35,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      `Public content cache lifetime in seconds. If field is empty default value 120 will be saved.`,
 						Type:         config.TypeText,
 						SortOrder:    5,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      120,
 						BackendModel: nil, // Magento\PageCache\Model\System\Config\Backend\Ttl
@@ -57,7 +57,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `system/full_page_cache/varnish3`,
 						ID:      "varnish3",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `{"path":"Magento\/PageCache\/etc\/varnish3.vcl"}`,
 					},
@@ -66,7 +66,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `system/full_page_cache/varnish4`,
 						ID:      "varnish4",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `{"path":"Magento\/PageCache\/etc\/varnish4.vcl"}`,
 					},
@@ -75,7 +75,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `system/full_page_cache/default`,
 						ID:      "default",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: `{"access_list":"localhost","backend_host":"localhost","backend_port":"8080","ttl":"120"}`,
 					},

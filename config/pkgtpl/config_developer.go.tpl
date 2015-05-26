@@ -12,7 +12,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Front-end development workflow`,
 				Comment:   ``,
 				SortOrder: 8,
-				Scope:     config.IDScopePermAll,
+				Scope:     config.ScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/front_end_development_workflow/type`,
@@ -21,7 +21,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      `Not available in production mode`,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
-						Visible:      true,
+						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.IDScopeDefault),
 						Default:      `server_side_compilation`,
 						BackendModel: nil,
@@ -35,7 +35,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Developer Client Restrictions`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.IDScopePermAll,
+				Scope:     config.ScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/restrict/allow_ips`,
@@ -44,8 +44,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Comment:      `Leave empty for access from any location.`,
 						Type:         config.TypeText,
 						SortOrder:    20,
-						Visible:      true,
-						Scope:        config.IDScopePermAll,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Developer\Model\Config\Backend\AllowedIps
 						SourceModel:  nil,
@@ -66,7 +66,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `dev/restrict/allow_ips`,
 						ID:      "allow_ips",
 						Type:    config.TypeHidden,
-						Visible: false,
+						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
 						Default: nil,
 					},
