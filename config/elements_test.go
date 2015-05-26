@@ -573,3 +573,66 @@ func TestSectionSliceFindFieldByPath(t *testing.T) {
 		}
 	}
 }
+
+func TestFieldSliceSort(t *testing.T) {
+	want := []int{-10, 1, 10, 11, 20}
+	fs := config.FieldSlice{
+		&config.Field{ID: "a", SortOrder: 20},
+		&config.Field{ID: "b", SortOrder: -10},
+		&config.Field{ID: "c", SortOrder: 10},
+		&config.Field{ID: "d", SortOrder: 11},
+		&config.Field{ID: "e", SortOrder: 1},
+	}
+
+	for i, f := range *(fs.Sort()) {
+		assert.EqualValues(t, want[i], f.SortOrder)
+	}
+}
+
+func TestGroupSliceSort(t *testing.T) {
+	want := []int{-10, 1, 10, 11, 20}
+	gs := config.GroupSlice{
+		&config.Group{ID: "a", SortOrder: 20},
+		&config.Group{ID: "b", SortOrder: -10},
+		&config.Group{ID: "c", SortOrder: 10},
+		&config.Group{ID: "d", SortOrder: 11},
+		&config.Group{ID: "e", SortOrder: 1},
+	}
+	for i, f := range *(gs.Sort()) {
+		assert.EqualValues(t, want[i], f.SortOrder)
+	}
+}
+func TestSectionSliceSort(t *testing.T) {
+	want := []int{-10, 1, 10, 11, 20}
+	ss := config.SectionSlice{
+		&config.Section{ID: "a", SortOrder: 20},
+		&config.Section{ID: "b", SortOrder: -10},
+		&config.Section{ID: "c", SortOrder: 10},
+		&config.Section{ID: "d", SortOrder: 11},
+		&config.Section{ID: "e", SortOrder: 1},
+	}
+	for i, f := range *(ss.Sort()) {
+		assert.EqualValues(t, want[i], f.SortOrder)
+	}
+
+}
+
+func TestSectionSliceSortAll(t *testing.T) {
+	want := `[{"ID":"b","SortOrder":-10,"Groups":null},{"ID":"e","SortOrder":1,"Groups":null},{"ID":"c","SortOrder":10,"Groups":null},{"ID":"a","SortOrder":20,"Groups":[{"ID":"b","SortOrder":-10,"Fields":[{"ID":"b","SortOrder":-10},{"ID":"e","SortOrder":1},{"ID":"c","SortOrder":10},{"ID":"d","SortOrder":11},{"ID":"a","SortOrder":20}]},{"ID":"e","SortOrder":1,"Fields":null},{"ID":"d","SortOrder":11,"Fields":[{"ID":"b","SortOrder":-10},{"ID":"e","SortOrder":1},{"ID":"c","SortOrder":10},{"ID":"d","SortOrder":11},{"ID":"a","SortOrder":20}]},{"ID":"a","SortOrder":20,"Fields":[{"ID":"b","SortOrder":-10},{"ID":"e","SortOrder":1},{"ID":"c","SortOrder":10},{"ID":"d","SortOrder":11},{"ID":"a","SortOrder":20}]}]}]` + "\n"
+	ss := config.SectionSlice{
+		&config.Section{ID: "a", SortOrder: 20, Groups: config.GroupSlice{
+			&config.Group{ID: "a", SortOrder: 20, Fields: config.FieldSlice{&config.Field{ID: "a", SortOrder: 20}, &config.Field{ID: "b", SortOrder: -10}, &config.Field{ID: "c", SortOrder: 10}, &config.Field{ID: "d", SortOrder: 11}, &config.Field{ID: "e", SortOrder: 1}}},
+			&config.Group{ID: "b", SortOrder: -10, Fields: config.FieldSlice{&config.Field{ID: "a", SortOrder: 20}, &config.Field{ID: "b", SortOrder: -10}, &config.Field{ID: "c", SortOrder: 10}, &config.Field{ID: "d", SortOrder: 11}, &config.Field{ID: "e", SortOrder: 1}}},
+			&config.Group{ID: "d", SortOrder: 11, Fields: config.FieldSlice{&config.Field{ID: "a", SortOrder: 20}, &config.Field{ID: "b", SortOrder: -10}, &config.Field{ID: "c", SortOrder: 10}, &config.Field{ID: "d", SortOrder: 11}, &config.Field{ID: "e", SortOrder: 1}}},
+			&config.Group{ID: "e", SortOrder: 1},
+		}},
+		&config.Section{ID: "b", SortOrder: -10},
+		&config.Section{ID: "c", SortOrder: 10},
+		&config.Section{ID: "e", SortOrder: 1},
+	}
+	ss.SortAll()
+	have := ss.ToJson()
+	if want != have {
+		t.Errorf("\nWant: %s\nHave: %s\n", want, have)
+	}
+}

@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"sort"
 	"strings"
 
 	"github.com/corestoreio/csfw/utils"
@@ -112,7 +113,7 @@ type (
 		// BackendModel defines how to save and load? the data
 		BackendModel FieldBackendModeller `json:",omitempty"`
 		// Default can contain any default config value: float64, int64, string, bool
-		Default interface{}
+		Default interface{} `json:",omitempty"`
 	}
 
 	// FieldTyper defines which front end type a configuration value is and generates the HTML for it
@@ -329,6 +330,35 @@ func (ss SectionSlice) Validate() error {
 	return nil
 }
 
+// SortAll recursively sorts all slices
+func (ss *SectionSlice) SortAll() *SectionSlice {
+	for _, s := range *ss {
+		for _, g := range s.Groups {
+			g.Fields.Sort()
+		}
+		s.Groups.Sort()
+	}
+	return ss.Sort()
+}
+
+// Sort convenience helper
+func (ss *SectionSlice) Sort() *SectionSlice {
+	sort.Sort(ss)
+	return ss
+}
+
+func (ss *SectionSlice) Len() int {
+	return len(*ss)
+}
+
+func (ss *SectionSlice) Swap(i, j int) {
+	(*ss)[i], (*ss)[j] = (*ss)[j], (*ss)[i]
+}
+
+func (ss *SectionSlice) Less(i, j int) bool {
+	return (*ss)[i].SortOrder < (*ss)[j].SortOrder
+}
+
 // FindByID returns a Group pointer or nil if not found
 func (gs GroupSlice) FindByID(id string) (*Group, error) {
 	for _, g := range gs {
@@ -390,6 +420,24 @@ func (gs GroupSlice) ToJson() string {
 		return ""
 	}
 	return buf.String()
+}
+
+// Sort convenience helper
+func (gs *GroupSlice) Sort() *GroupSlice {
+	sort.Sort(gs)
+	return gs
+}
+
+func (gs *GroupSlice) Len() int {
+	return len(*gs)
+}
+
+func (gs *GroupSlice) Swap(i, j int) {
+	(*gs)[i], (*gs)[j] = (*gs)[j], (*gs)[i]
+}
+
+func (gs *GroupSlice) Less(i, j int) bool {
+	return (*gs)[i].SortOrder < (*gs)[j].SortOrder
 }
 
 // FindByID returns a Field pointer or nil if not found
@@ -458,6 +506,24 @@ func (fs *FieldSlice) merge(f *Field) error {
 	}
 
 	return nil
+}
+
+// Sort convenience helper
+func (fs *FieldSlice) Sort() *FieldSlice {
+	sort.Sort(fs)
+	return fs
+}
+
+func (fs *FieldSlice) Len() int {
+	return len(*fs)
+}
+
+func (fs *FieldSlice) Swap(i, j int) {
+	(*fs)[i], (*fs)[j] = (*fs)[j], (*fs)[i]
+}
+
+func (fs *FieldSlice) Less(i, j int) bool {
+	return (*fs)[i].SortOrder < (*fs)[j].SortOrder
 }
 
 const _FieldType_name = "TypeButtonTypeCustomTypeLabelTypeHiddenTypeImageTypeObscureTypeMultiselectTypeSelectTypeTextTypeTextareaTypeTime"
