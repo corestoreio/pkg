@@ -30,8 +30,9 @@ const (
 
 type (
 
-	// Group contains two maps for faster retrieving of the store index and the store collection
-	// Only used in generated code. Implements interface GroupGetter.
+	// Group defines the root category id and default store id for a set of stores.
+	// A group is assigned to one website and a group can have multiple stores.
+	// A group does not have any kind of configuration setting.
 	Group struct {
 		cr config.Reader
 		// g group data
@@ -49,12 +50,10 @@ type (
 )
 
 var (
-	// ErrGroupNotFound when the group has not been found.
 	ErrGroupNotFound = errors.New("Group not found")
 	// ErrGroupStoresNotAvailable not really an error but more an info when the stores has not been set
 	// this usually occurs when the group has been set on a website or a store.
-	ErrGroupStoresNotAvailable = errors.New("Group stores not available")
-	// ErrGroupDefaultStoreNotFound default store cannot be found.
+	ErrGroupStoresNotAvailable   = errors.New("Group stores not available")
 	ErrGroupDefaultStoreNotFound = errors.New("Group default store not found")
 	// ErrGroupWebsiteNotFound the Website struct is nil so we cannot assign the stores to a group.
 	ErrGroupWebsiteNotFound = errors.New("Group Website not found or nil or ID do not match")
@@ -66,7 +65,8 @@ func SetGroupConfig(cr config.Reader) GroupOption {
 	return func(g *Group) { g.cr = cr }
 }
 
-// SetGroupWebsite sets the website to a group.
+// SetGroupWebsite assigns a website to a group. If website ID does not match
+// the group website ID then this function panics.
 func SetGroupWebsite(tw *TableWebsite) GroupOption {
 	return func(g *Group) {
 		if g.Data() == nil {
@@ -81,8 +81,7 @@ func SetGroupWebsite(tw *TableWebsite) GroupOption {
 	}
 }
 
-// NewGroup returns a new pointer to a Group. If a Website has been provided
-// the config.Reader will be set to the Website.
+// NewGroup initializes a new Group with the config.DefaultManager
 func NewGroup(tg *TableGroup, opts ...GroupOption) *Group {
 	if tg == nil {
 		panic(ErrStoreNewArgNil)

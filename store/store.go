@@ -47,8 +47,9 @@ const (
 )
 
 type (
-	// Store contains two maps for faster retrieving of the store index and the store collection
-	// Only used in generated code. Implements interface StoreGetter.
+	// Store represents the scope in which a shop runs. Everything is bound to a Store. A store
+	// knows its website ID, group ID and if its active. A store can have its own configuration settings
+	// which overrides the default scope and website scope.
 	Store struct {
 		cr config.Reader
 		// Contains the current website for this store. No integrity checks
@@ -79,7 +80,7 @@ func SetStoreConfig(cr config.Reader) StoreOption {
 	return func(s *Store) { s.cr = cr }
 }
 
-// NewStore returns a new pointer to a Store. Panics if TableGroup and TableWebsite have not been provided
+// NewStore creates a new Store. Panics if TableGroup and TableWebsite have not been provided
 // Panics if integrity checks fail. config.Reader will be set to Group and Website.
 func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) *Store {
 	if ts == nil || tw == nil || tg == nil { // group and website required so at least 2 args

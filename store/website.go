@@ -33,8 +33,9 @@ const (
 )
 
 type (
-	// Website contains two maps for faster retrieving of the store index and the store collection
-	// Only used in generated code. Implements interface WebsiteGetter.
+	// Website represents the overall parent structure of its children Group and Store.
+	// A website defines the default group ID. A website can contain custom configuration
+	// settings which overrides the default scope but get itself overridden by the Store scope.
 	Website struct {
 		cr config.Reader
 		w  *TableWebsite

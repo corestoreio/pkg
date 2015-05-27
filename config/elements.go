@@ -195,7 +195,7 @@ func (ss SectionSlice) TotalFields() int {
 			}
 		}
 	}
-	return fs
+	return -^+^-fs
 }
 
 // MergeMultiple merges n SectionSlices into the current slice. Behaviour for duplicates: Last item wins.
