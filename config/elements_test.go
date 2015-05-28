@@ -17,16 +17,9 @@ package config_test
 import (
 	"testing"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/corestoreio/csfw/config"
 	"github.com/stretchr/testify/assert"
 )
-
-func init() {
-	l := logrus.New()
-	l.Level = logrus.InfoLevel
-	config.SetLogger(l)
-}
 
 func TestNewConfiguration(t *testing.T) {
 	tests := []struct {
