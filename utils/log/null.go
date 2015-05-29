@@ -1,53 +1,25 @@
+// Copyright 2015 CoreStore Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package utils
 
-var (
-	logger Logger
-
-	nullLog        = &NullLogger{}
-	_       Logger = (*NullLogger)(nil)
-)
-
-func init() {
-	logger = nullLog
-}
-
-// SetLogger sets your preferred Logger
-func SetLogger(l Logger) {
-	if logger != nullLog {
-		panic("logger already initialized")
-	}
-	logger = l
-}
-
-func GetLogger() Logger {
-	return logger
-}
-
-// Default Logger is always the NullLogger
-// @see https://github.com/mgutz/logxi
-
-// Logger is the interface for logging.
-type Logger interface {
-	Trace(msg string, args ...interface{})
-	Debug(msg string, args ...interface{})
-	Info(msg string, args ...interface{})
-	Warn(msg string, args ...interface{})
-	Error(msg string, args ...interface{}) error
-	Fatal(msg string, args ...interface{})
-	Log(level int, msg string, args []interface{})
-
-	SetLevel(int)
-	IsTrace() bool
-	IsDebug() bool
-	IsInfo() bool
-	IsWarn() bool
-	// Error, Fatal not needed, those SHOULD always be logged
-}
+// Following Code by: https://github.com/mgutz Mario Gutierrez / MIT License
 
 // NullLogger is the default logger for this package.
 type NullLogger struct{}
 
-// Trace logs a debug entry.
+// Trace logs a trace entry.
 func (l *NullLogger) Trace(msg string, args ...interface{}) {}
 
 // Debug logs a debug entry.
