@@ -12,10 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package log
+
+import "errors"
 
 var (
-	logger Logger
+	ErrLoggerSet = errors.New("Logger already initialized")
+	logger       Logger
 
 	nullLog        = &NullLogger{}
 	_       Logger = (*NullLogger)(nil)
@@ -55,7 +58,7 @@ func SetNull() {
 // Set sets your preferred Logger. Default Logger is a null-logger. Panics if called twice.
 func Set(l Logger) {
 	if logger != nullLog {
-		panic("logger already initialized")
+		panic(ErrLoggerSet)
 	}
 	logger = l
 }

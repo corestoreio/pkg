@@ -53,4 +53,4 @@ Please consider the key-value pairs when implementing your own logger.
 Recommended Loggers are https://github.com/mgutz/logxi and https://github.com/Sirupsen/logrus
 
 */
-package utils
+package log
