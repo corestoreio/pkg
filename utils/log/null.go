@@ -14,6 +14,8 @@
 
 package log
 
+import "errors"
+
 // Following Code by: https://github.com/mgutz Mario Gutierrez / MIT License
 
 // NullLogger is the default logger for this package.
@@ -34,8 +36,17 @@ func (l *NullLogger) Info(msg string, args ...interface{}) {}
 // Warn logs a warn entry.
 func (l *NullLogger) Warn(msg string, args ...interface{}) {}
 
-// Error logs an error entry.
-func (l *NullLogger) Error(msg string, args ...interface{}) error { return nil }
+// Error logs an error entry. Returns the first argument as an error OR
+// if the 2nd index of args (that is args[1] ;-) ) contains the error
+// then that error will be returned.
+func (l *NullLogger) Error(msg string, args ...interface{}) error {
+	if len(args) == 2 {
+		if err, ok := args[1].(error); ok {
+			return err
+		}
+	}
+	return errors.New(msg)
+}
 
 // Fatal logs a fatal entry then panics.
 func (l *NullLogger) Fatal(msg string, args ...interface{}) { panic("exit due to fatal error") }

@@ -37,6 +37,10 @@ type Logger interface {
 	Debug(msg string, args ...interface{})
 	Info(msg string, args ...interface{})
 	Warn(msg string, args ...interface{})
+
+	// Error logs an error entry. Returns the first argument as an error OR
+	// if the 2nd index of args (that is args[1] ;-) ) contains the error
+	// then that error will be returned.
 	Error(msg string, args ...interface{}) error
 	Fatal(msg string, args ...interface{})
 	Log(level int, msg string, args []interface{})
