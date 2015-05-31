@@ -19,6 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 	"github.com/spf13/viper"
 )
@@ -100,9 +101,10 @@ func NewManager() *Manager {
 
 // ApplyDefaults reads the map and applies the keys and values to the default configuration
 func (m *Manager) ApplyDefaults(ss Sectioner) *Manager {
-	ctxLog := logger.WithField("Scope", "ApplyDefaults")
 	for k, v := range ss.Defaults() {
-		ctxLog.Debug(k, v)
+		if log.IsDebug() {
+			log.Debug("Scope=ApplyDefaults", k, v)
+		}
 		m.v.SetDefault(k, v)
 	}
 	return m

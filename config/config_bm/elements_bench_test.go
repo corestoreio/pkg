@@ -14,7 +14,16 @@
 
 package config_test
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/corestoreio/csfw/utils/log"
+)
+
+func init() {
+	log.Set(log.NewStdLogger())
+	log.SetLevel(log.StdLevelDebug)
+}
 
 // BenchmarkSectionSliceValidate	    1000	   1457760 ns/op	   43520 B/op	     804 allocs/op
 func BenchmarkSectionSliceValidate(b *testing.B) {
@@ -26,12 +35,15 @@ func BenchmarkSectionSliceValidate(b *testing.B) {
 	}
 }
 
-// BenchmarkSectionSliceToJson	     300	   4159192 ns/op	  890615 B/op	   17251 allocs/op <-- encoding/json
-// BenchmarkSectionSliceToJson	     300	   4573107 ns/op	 1286637 B/op	   15525 allocs/op <-- refactored to use ffjson
+var bsstj string
+
+// BenchmarkSectionSliceToJson	     300	   5826655 ns/op	 1378568 B/op	   17275 allocs/op <-- encoding/json NewEncoder io.Pipe with ReadAll
+// BenchmarkSectionSliceToJson	     300	   5582783 ns/op	  992781 B/op	   17255 allocs/op <-- encoding/json NewEncoder with buffer
+// BenchmarkSectionSliceToJson	     300	   5613962 ns/op	 1134998 B/op	   17258 allocs/op <-- encondig/json.Marshal
 func BenchmarkSectionSliceToJson(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		if j := packageAllConfiguration.ToJson(); j == "" {
+		if bsstj = packageAllConfiguration.ToJson(); bsstj == "" {
 			b.Error("JSON is empty!")
 		}
 	}

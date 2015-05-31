@@ -19,7 +19,7 @@ import (
 	"io/ioutil"
 	"strconv"
 
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/utils/log"
 )
 
 // ScopeOption function to be used as variadic argument in ScopeKey() and ScopeKeyValue()
@@ -71,7 +71,7 @@ func Value(v interface{}) ScopeOption { return func(a *arg) { a.v = v } }
 func ValueReader(r io.Reader) ScopeOption {
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
-		utils.GetLogger().Error("Argument=ValueReader", "err", err)
+		log.Error("Argument=ValueReader::ReadAll", "err", err)
 	}
 	return func(a *arg) {
 		a.v = data

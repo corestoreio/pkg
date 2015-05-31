@@ -41,6 +41,10 @@ you must also supply a Scope*() value. Without the scope the default value will 
 
 Above code returns the default value for path/to/setting key.
 
+Can also be rewritten without using slashes:
+
+	val := config.Manager.GetString(config.Path("path", "to", "setting"))
+
 Returning a website scope based value:
 
 	w := store.Manager.Website()

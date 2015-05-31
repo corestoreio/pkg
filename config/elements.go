@@ -22,6 +22,7 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 )
 
@@ -152,7 +153,9 @@ func (t FieldType) ToHTML() []byte {
 func NewConfiguration(sections ...*Section) SectionSlice {
 	ss := SectionSlice(sections)
 	if err := ss.Validate(); err != nil {
-		logger.WithField("NewConfiguration", "Validate").Warn(err)
+		if log.IsWarn() {
+			log.Warn("NewConfiguration=Validate", "err", err)
+		}
 		panic(err)
 	}
 	return ss
@@ -165,7 +168,9 @@ func NewConfigurationMerge(sections ...*Section) SectionSlice {
 	var ss SectionSlice
 	ss.Merge(sections...)
 	if err := ss.Validate(); err != nil {
-		logger.WithField("NewConfiguration", "Validate").Warn(err)
+		if log.IsWarn() {
+			log.Warn("NewConfigurationMerge=Validate", "err", err)
+		}
 		panic(err)
 	}
 	return ss
@@ -301,7 +306,7 @@ func (ss *SectionSlice) Append(s ...*Section) *SectionSlice {
 func (ss SectionSlice) ToJson() string {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(ss); err != nil {
-		logger.WithField("SectionSlice", "ToJson").Error(err)
+		log.Error("SectionSlice=ToJson", "err", err)
 		return ""
 	}
 	return buf.String()
@@ -416,7 +421,7 @@ func (gs *GroupSlice) merge(g *Group) error {
 func (gs GroupSlice) ToJson() string {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(gs); err != nil {
-		logger.WithField("GroupSlice", "ToJson").Error(err)
+		log.Error("GroupSlice=ToJson", "err", err)
 		return ""
 	}
 	return buf.String()

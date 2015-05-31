@@ -18,8 +18,14 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/corestoreio/csfw/utils/log"
 	"github.com/stretchr/testify/assert"
 )
+
+func init() {
+	log.Set(log.NewStdLogger())
+	log.SetLevel(log.StdLevelError)
+}
 
 type ID int64
 
