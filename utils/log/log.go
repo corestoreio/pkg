@@ -22,11 +22,17 @@ var (
 
 	nullLog        = &NullLogger{}
 	_       Logger = (*NullLogger)(nil)
+	_       Logger = (*StdLogger)(nil)
 )
+
+// Interface idea by: https://github.com/mgutz Mario Gutierrez / MIT License
 
 // Logger defines the minimum requirements for logging. See doc.go for more details.
 // Interface may be extended ...
 type Logger interface {
+	// New returns a new Logger that has this logger's context plus the given context
+	New(ctx ...interface{}) Logger
+
 	Trace(msg string, args ...interface{})
 	Debug(msg string, args ...interface{})
 	Info(msg string, args ...interface{})
@@ -55,7 +61,8 @@ func SetNull() {
 	logger = nullLog
 }
 
-// Set sets your preferred Logger. Default Logger is a null-logger. Panics if called twice.
+// Set sets your preferred Logger to be used in CoreStore. Default Logger is
+// a null-logger. Panics if called twice.
 func Set(l Logger) {
 	if logger != nullLog {
 		panic(ErrLoggerSet)

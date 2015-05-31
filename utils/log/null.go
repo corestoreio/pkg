@@ -19,6 +19,9 @@ package log
 // NullLogger is the default logger for this package.
 type NullLogger struct{}
 
+// New returns a new Logger that has this logger's context plus the given context
+func (l *NullLogger) New(ctx ...interface{}) Logger { return &NullLogger{} }
+
 // Trace logs a trace entry.
 func (l *NullLogger) Trace(msg string, args ...interface{}) {}
 
