@@ -112,16 +112,16 @@ func (sm *Manager) Init(scopeCode config.ScopeIDer, scopeType config.ScopeGroup)
 	}
 	var err error
 	switch scopeType {
-	case config.IDScopeStore:
+	case config.ScopeStoreID:
 		sm.appStore, err = sm.Store(scopeCode)
-	case config.IDScopeGroup:
+	case config.ScopeGroupID:
 		g, errG := sm.Group(scopeCode) // this is the group_id
 		if errG != nil {
 			return errgo.Mask(errG)
 		}
 		sm.appStore, err = g.DefaultStore()
 		break
-	case config.IDScopeWebsite:
+	case config.ScopeWebsiteID:
 		w, errW := sm.Website(scopeCode)
 		if errW != nil {
 			return errgo.Mask(errW)
@@ -210,13 +210,13 @@ func (sm *Manager) GetRequestStore(r config.ScopeIDer, scopeType config.ScopeGro
 
 	allowStoreChange := false
 	switch scopeType {
-	case config.IDScopeStore:
+	case config.ScopeStoreID:
 		allowStoreChange = true
 		break
-	case config.IDScopeGroup:
+	case config.ScopeGroupID:
 		allowStoreChange = activeStore.Data().GroupID == sm.appStore.Data().GroupID
 		break
-	case config.IDScopeWebsite:
+	case config.ScopeWebsiteID:
 		allowStoreChange = activeStore.Data().WebsiteID == sm.appStore.Data().WebsiteID
 		break
 	}

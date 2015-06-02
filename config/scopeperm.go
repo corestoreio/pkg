@@ -21,7 +21,7 @@ import "github.com/corestoreio/csfw/utils"
 type ScopePerm uint64
 
 // ScopePermAll convenient helper variable contains all scope permission levels
-var ScopePermAll = ScopePerm(1<<IDScopeDefault | 1<<IDScopeWebsite | 1<<IDScopeStore)
+var ScopePermAll = ScopePerm(1<<ScopeDefaultID | 1<<ScopeWebsiteID | 1<<ScopeStoreID)
 
 // NewScopePerm returns a new permission container
 func NewScopePerm(scopes ...ScopeGroup) ScopePerm {
@@ -32,7 +32,7 @@ func NewScopePerm(scopes ...ScopeGroup) ScopePerm {
 
 // All applies all scopes
 func (bits *ScopePerm) All() ScopePerm {
-	bits.Set(IDScopeDefault, IDScopeWebsite, IDScopeStore)
+	bits.Set(ScopeDefaultID, ScopeWebsiteID, ScopeStoreID)
 	return *bits
 }
 

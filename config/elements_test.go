@@ -203,7 +203,7 @@ func TestSectionSliceMerge(t *testing.T) {
 						Groups: config.GroupSlice{
 							&config.Group{
 								ID:    "b",
-								Scope: config.NewScopePerm(config.IDScopeDefault),
+								Scope: config.NewScopePerm(config.ScopeDefaultID),
 								Fields: config.FieldSlice{
 									&config.Field{ID: "c", Default: `c`},
 								},
@@ -215,7 +215,7 @@ func TestSectionSliceMerge(t *testing.T) {
 				config.SectionSlice{
 					&config.Section{
 						ID:    "a",
-						Scope: config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope: config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Groups: config.GroupSlice{
 							&config.Group{ID: "b", Label: "GroupLabelB1"},
 							nil,
@@ -240,7 +240,7 @@ func TestSectionSliceMerge(t *testing.T) {
 					&config.Section{ID: "a", Label: "SectionLabelA", SortOrder: 20, Permission: 22},
 				},
 				config.SectionSlice{
-					&config.Section{ID: "a", Scope: config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite), SortOrder: 10, Permission: 3},
+					&config.Section{ID: "a", Scope: config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID), SortOrder: 10, Permission: 3},
 				},
 			},
 			wantErr: "",
@@ -257,7 +257,7 @@ func TestSectionSliceMerge(t *testing.T) {
 								ID:      "b",
 								Label:   "SectionAGroupB",
 								Comment: "SectionAGroupBComment",
-								Scope:   config.NewScopePerm(config.IDScopeDefault),
+								Scope:   config.NewScopePerm(config.ScopeDefaultID),
 							},
 						},
 					},
@@ -266,7 +266,7 @@ func TestSectionSliceMerge(t *testing.T) {
 					&config.Section{
 						ID:        "a",
 						SortOrder: 1000,
-						Scope:     config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Groups: config.GroupSlice{
 							&config.Group{ID: "b", Label: "GroupLabelB1", Scope: config.ScopePermAll},
 							&config.Group{ID: "b", Label: "GroupLabelB2", Comment: "Section2AGroup3BComment", SortOrder: 100},
@@ -297,7 +297,7 @@ func TestSectionSliceMerge(t *testing.T) {
 								Fields: config.FieldSlice{
 									nil,
 									&config.Field{ID: "d", Default: `d`, Comment: "Ring of fire", Type: config.TypeObscure},
-									&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect, Scope: config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite)},
+									&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect, Scope: config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID)},
 								},
 							},
 						},
@@ -414,7 +414,7 @@ func TestGroupSliceMerge(t *testing.T) {
 					ID: "b",
 					Fields: config.FieldSlice{
 						&config.Field{ID: "d", Default: `d`, Comment: "Ring of fire", Type: config.TypeObscure},
-						&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect, Scope: config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite)},
+						&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect, Scope: config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID)},
 					},
 				},
 				&config.Group{

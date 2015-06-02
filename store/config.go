@@ -72,7 +72,7 @@ func init() {
 					Label:     `Single-Store Mode`,
 					Comment:   ``,
 					SortOrder: 150,
-					Scope:     config.NewScopePerm(config.IDScopeDefault),
+					Scope:     config.NewScopePerm(config.ScopeDefaultID),
 					Fields: config.FieldSlice{
 						&config.Field{
 							// Path: `general/single_store_mode/enabled`,
@@ -82,7 +82,7 @@ func init() {
 							Type:         config.TypeSelect,
 							SortOrder:    10,
 							Visible:      config.VisibleYes,
-							Scope:        config.NewScopePerm(config.IDScopeDefault),
+							Scope:        config.NewScopePerm(config.ScopeDefaultID),
 							Default:      nil,
 							BackendModel: nil,
 							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -140,7 +140,7 @@ func init() {
 					Label:     `Url Options`,
 					Comment:   ``,
 					SortOrder: 3,
-					Scope:     config.NewScopePerm(config.IDScopeDefault),
+					Scope:     config.NewScopePerm(config.ScopeDefaultID),
 					Fields: config.FieldSlice{
 						&config.Field{
 							// Path: `web/url/use_store`,
@@ -150,7 +150,7 @@ func init() {
 							Type:         config.TypeSelect,
 							SortOrder:    10,
 							Visible:      config.VisibleYes,
-							Scope:        config.NewScopePerm(config.IDScopeDefault),
+							Scope:        config.NewScopePerm(config.ScopeDefaultID),
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Store
 							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -164,7 +164,7 @@ func init() {
 							Type:         config.TypeSelect,
 							SortOrder:    20,
 							Visible:      config.VisibleYes,
-							Scope:        config.NewScopePerm(config.IDScopeDefault),
+							Scope:        config.NewScopePerm(config.ScopeDefaultID),
 							Default:      nil,
 							BackendModel: nil,
 							SourceModel:  nil, // Magento\Config\Model\Config\Source\Web\Redirect
@@ -322,7 +322,7 @@ func init() {
 							Type:         config.TypeSelect,
 							SortOrder:    60,
 							Visible:      config.VisibleYes,
-							Scope:        config.NewScopePerm(config.IDScopeDefault),
+							Scope:        config.NewScopePerm(config.ScopeDefaultID),
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Secure
 							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -336,7 +336,7 @@ func init() {
 							Type:         config.TypeText,
 							SortOrder:    70,
 							Visible:      config.VisibleYes,
-							Scope:        config.NewScopePerm(config.IDScopeDefault),
+							Scope:        config.NewScopePerm(config.ScopeDefaultID),
 							Default:      nil,
 							BackendModel: nil,
 							SourceModel:  nil,

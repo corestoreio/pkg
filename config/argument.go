@@ -26,18 +26,18 @@ import (
 type ScopeOption func(*arg)
 
 // ScopeWebsite wrapper helper function. See Scope()
-func ScopeWebsite(r ScopeIDer) ScopeOption { return Scope(IDScopeWebsite, r) }
+func ScopeWebsite(r ScopeIDer) ScopeOption { return Scope(ScopeWebsiteID, r) }
 
 // ScopeStore wrapper helper function. See Scope()
-func ScopeStore(r ScopeIDer) ScopeOption { return Scope(IDScopeStore, r) }
+func ScopeStore(r ScopeIDer) ScopeOption { return Scope(ScopeStoreID, r) }
 
 // Scope sets the scope using the ScopeGroup and a config.ScopeIDer.
 // A config.ScopeIDer can contain an ID from a website or a store. Make sure
 // the correct ScopeGroup has also been set. If config.ScopeIDer is nil
 // the scope will fallback to default scope.
 func Scope(s ScopeGroup, r ScopeIDer) ScopeOption {
-	if s != IDScopeDefault && r == nil {
-		s = IDScopeDefault
+	if s != ScopeDefaultID && r == nil {
+		s = ScopeDefaultID
 	}
 	return func(a *arg) { a.s = s; a.r = r }
 }
@@ -114,7 +114,7 @@ func newArg(opts ...ScopeOption) *arg {
 	return a
 }
 
-func (a *arg) isDefault() bool { return a.s == IDScopeDefault || a.s == IDScopeAbsent }
+func (a *arg) isDefault() bool { return a.s == ScopeDefaultID || a.s == ScopeAbsentID }
 
 func (a *arg) isBubbling() bool { return !a.nb }
 
@@ -124,7 +124,7 @@ func (a *arg) scopePath() string {
 	if a.p == "" {
 		return ""
 	}
-	return a.scopeGroup() + "/" + a.scopeID() + "/" + a.p
+	return a.scopeRange() + "/" + a.scopeID() + "/" + a.p
 }
 
 func (a *arg) scopePathDefault() string {
@@ -132,7 +132,7 @@ func (a *arg) scopePathDefault() string {
 	if a.p == "" {
 		return ""
 	}
-	return StringScopeDefault + "/0/" + a.p
+	return ScopeRangeDefault + "/0/" + a.p
 }
 
 func (a *arg) scopeID() string {
@@ -145,12 +145,12 @@ func (a *arg) scopeID() string {
 	return "0"
 }
 
-func (a *arg) scopeGroup() string {
+func (a *arg) scopeRange() string {
 	switch a.s {
-	case IDScopeWebsite:
-		return StringScopeWebsites
-	case IDScopeStore:
-		return StringScopeStores
+	case ScopeWebsiteID:
+		return ScopeRangeWebsites
+	case ScopeStoreID:
+		return ScopeRangeStores
 	}
-	return StringScopeDefault
+	return ScopeRangeDefault
 }

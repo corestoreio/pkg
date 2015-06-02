@@ -21,22 +21,24 @@ import (
 )
 
 const (
-	IDScopeAbsent ScopeGroup = iota // order of the constants is used for comparison
-	IDScopeDefault
-	IDScopeWebsite
-	IDScopeGroup
-	IDScopeStore
+	// Scope*ID defines the overall scopes in a configuration. If a Section/Group/Field
+	// can be shown in the current selected scope.
+	ScopeAbsentID ScopeGroup = iota // order of the constants is used for comparison
+	ScopeDefaultID
+	ScopeWebsiteID
+	ScopeGroupID
+	ScopeStoreID
 )
 
 const (
 	// StringScopeDefault defines the global scope. Stored in table core_config_data.scope.
-	StringScopeDefault = "default"
+	ScopeRangeDefault = "default"
 	// StringScopeWebsites defines the website scope which has default as parent and stores as child.
 	//  Stored in table core_config_data.scope.
-	StringScopeWebsites = "websites"
+	ScopeRangeWebsites = "websites"
 	// StringScopeStores defines the store scope which has default and websites as parent.
 	//  Stored in table core_config_data.scope.
-	StringScopeStores = "stores"
+	ScopeRangeStores = "stores"
 )
 
 type (
@@ -92,10 +94,10 @@ func ScopeGroupNames() (r utils.StringSlice) {
 
 func GetScopeGroup(s string) ScopeGroup {
 	switch s {
-	case StringScopeWebsites:
-		return IDScopeWebsite
-	case StringScopeStores:
-		return IDScopeStore
+	case ScopeRangeWebsites:
+		return ScopeWebsiteID
+	case ScopeRangeStores:
+		return ScopeStoreID
 	}
-	return IDScopeDefault
+	return ScopeDefaultID
 }
