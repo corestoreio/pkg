@@ -24,7 +24,8 @@ Those three elements represents the PackageConfiguration variable which can be f
 
 Your app which includes the csfw must merge all "PackageConfiguration"s into a single slice.
 You should submit all default values (interface config.Sectioner) to the config.Manager.ApplyDefaults()
-function. @todo merge core_config_data values in config.Manager
+function.
+
 The models included in PackageConfiguration will be later used when handling the values
 for each configuration field.
 

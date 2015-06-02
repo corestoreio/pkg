@@ -17,14 +17,14 @@ package config
 import "github.com/corestoreio/csfw/utils"
 
 // ScopePerm is a bit set and used for permissions, ScopeGroup is not a part of this bit set.
-// Type ScopeID is a subpart of ScopePerm
+// Type ScopeGroup is a subpart of ScopePerm
 type ScopePerm uint64
 
 // ScopePermAll convenient helper variable contains all scope permission levels
 var ScopePermAll = ScopePerm(1<<IDScopeDefault | 1<<IDScopeWebsite | 1<<IDScopeStore)
 
 // NewScopePerm returns a new permission container
-func NewScopePerm(scopes ...ScopeID) ScopePerm {
+func NewScopePerm(scopes ...ScopeGroup) ScopePerm {
 	p := ScopePerm(0)
 	p.Set(scopes...)
 	return p
@@ -36,17 +36,17 @@ func (bits *ScopePerm) All() ScopePerm {
 	return *bits
 }
 
-// Set takes a variadic amount of ScopeID to set them to ScopeBits
-func (bits *ScopePerm) Set(scopes ...ScopeID) ScopePerm {
+// Set takes a variadic amount of ScopeGroup to set them to ScopeBits
+func (bits *ScopePerm) Set(scopes ...ScopeGroup) ScopePerm {
 	for _, i := range scopes {
 		*bits = *bits | (1 << i) // (1 << power = 2^power)
 	}
 	return *bits
 }
 
-// Has checks if ScopeID is in ScopeBits
-func (bits ScopePerm) Has(s ScopeID) bool {
-	var one ScopeID = 1 // ^^
+// Has checks if ScopeGroup is in ScopeBits
+func (bits ScopePerm) Has(s ScopeGroup) bool {
+	var one ScopeGroup = 1 // ^^
 	return (bits & ScopePerm(one<<s)) != 0
 }
 
@@ -57,7 +57,7 @@ func (bits ScopePerm) Human() utils.StringSlice {
 	for i = 0; i < 64; i++ {
 		bit := ((bits & (1 << i)) != 0)
 		if bit {
-			ret.Append(ScopeID(i).String())
+			ret.Append(ScopeGroup(i).String())
 		}
 	}
 	return ret

@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	IDScopeAbsent ScopeID = iota // order of the constants is used for comparison
+	IDScopeAbsent ScopeGroup = iota // order of the constants is used for comparison
 	IDScopeDefault
 	IDScopeWebsite
 	IDScopeGroup
@@ -41,30 +41,48 @@ const (
 
 type (
 
-	// ScopeID used in constants where default is the lowest and store the highest. Func String() attached.
+	// ScopeGroup used in constants where default is the lowest and store the highest. Func String() attached.
 	// Part of ScopePerm.
-	ScopeID uint8
+	ScopeGroup uint8
 
 	// Retriever implements how to get the website or store ID.
 	// Duplicated to avoid import cycles. :-(
 	Retriever interface {
-		ID() int64
+		ScopeID() int64
 	}
+
+	// internal type to be used with TableCoreConfigData because ScopeID is ambiguous
+	scopeID int64
 )
 
-const _ScopeID_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
-
-var _ScopeID_index = [...]uint8{0, 11, 23, 35, 45, 55}
-
-// String human readable name of ScopeID. For Marshaling see ScopePerm
-func (i ScopeID) String() string {
-	if i+1 >= ScopeID(len(_ScopeID_index)) {
-		return fmt.Sprintf("ScopeID(%d)", i)
-	}
-	return _ScopeID_name[_ScopeID_index[i]:_ScopeID_index[i+1]]
+// ScopeID satisfy interface Retriever
+func (s scopeID) ScopeID() int64 {
+	return int64(s)
 }
 
-// ScopeIDNames returns a slice containing all constant names
-func ScopeIDNames() (r utils.StringSlice) {
-	return r.SplitStringer8(_ScopeID_name, _ScopeID_index[:]...)
+const _ScopeGroup_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
+
+var _ScopeGroup_index = [...]uint8{0, 11, 23, 35, 45, 55}
+
+// String human readable name of ScopeGroup. For Marshaling see ScopePerm
+func (i ScopeGroup) String() string {
+	if i+1 >= ScopeGroup(len(_ScopeGroup_index)) {
+		return fmt.Sprintf("ScopeGroup(%d)", i)
+	}
+	return _ScopeGroup_name[_ScopeGroup_index[i]:_ScopeGroup_index[i+1]]
+}
+
+// ScopeGroupNames returns a slice containing all constant names
+func ScopeGroupNames() (r utils.StringSlice) {
+	return r.SplitStringer8(_ScopeGroup_name, _ScopeGroup_index[:]...)
+}
+
+func GetScopeGroup(s string) ScopeGroup {
+	switch s {
+	case StringScopeWebsites:
+		return IDScopeWebsite
+	case StringScopeStores:
+		return IDScopeStore
+	}
+	return IDScopeDefault
 }

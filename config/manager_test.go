@@ -18,41 +18,10 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/stretchr/testify/assert"
 )
-
-func TestScopeBits(t *testing.T) {
-	const (
-		scope1 config.ScopeID = iota + 1
-		scope2
-		scope3
-		scope4
-		scope5
-	)
-
-	tests := []struct {
-		have    []config.ScopeID
-		want    config.ScopeID
-		notWant config.ScopeID
-		human   []string
-	}{
-		{[]config.ScopeID{scope1, scope2}, scope2, scope3, []string{"ScopeDefault", "ScopeWebsite"}},
-		{[]config.ScopeID{scope3, scope4}, scope3, scope2, []string{"ScopeGroup", "ScopeStore"}},
-		{[]config.ScopeID{scope4, scope5}, scope4, scope2, []string{"ScopeStore", "ScopeID(5)"}},
-	}
-
-	for _, test := range tests {
-		var b config.ScopePerm
-		b.Set(test.have...)
-		if b.Has(test.want) == false {
-			t.Errorf("%d should contain %d", b, test.want)
-		}
-		if b.Has(test.notWant) {
-			t.Errorf("%d should not contain %d", b, test.notWant)
-		}
-		assert.EqualValues(t, test.human, b.Human())
-	}
-}
 
 func TestScopeApplyDefaults(t *testing.T) {
 	pkgCfg := config.NewConfiguration(
@@ -100,4 +69,15 @@ func TestScopeApplyDefaults(t *testing.T) {
 		return
 	}
 	assert.Exactly(t, cer.Default.(string), s.GetString(config.Path("contact/email/recipient_email")))
+}
+
+func TestApplyCoreConfigData(t *testing.T) {
+	db := csdb.MustConnectTest()
+	defer db.Close()
+	sess := dbr.NewConnection(db, nil).NewSession(nil)
+
+	m := config.NewManager()
+	if err := m.ApplyCoreConfigData(sess); err != nil {
+		t.Error(err)
+	}
 }

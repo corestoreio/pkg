@@ -16,11 +16,12 @@ package config
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils/log"
-	"github.com/juju/errgo"
+	"github.com/spf13/cast"
 	"github.com/spf13/viper"
 )
 
@@ -82,7 +83,7 @@ var (
 
 	// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
 	TableCollection csdb.TableStructureSlice
-	ErrEmptyKey     = errors.New("Key is empty")
+	ErrNoArguments  = errors.New("No arguments provided")
 	DefaultManager  *Manager
 )
 
@@ -95,7 +96,7 @@ func NewManager() *Manager {
 	s := &Manager{
 		v: viper.New(),
 	}
-	s.v.SetDefault(ScopeKey(Path(PathCSBaseURL)), CSBaseURL)
+	s.v.SetDefault(scopeKey(Path(PathCSBaseURL)).scopePath(), CSBaseURL)
 	return s
 }
 
@@ -110,12 +111,24 @@ func (m *Manager) ApplyDefaults(ss Sectioner) *Manager {
 	return m
 }
 
+// ApplyCoreConfigData reads the table core_config_data into the Manager and overrides
+// existing values.
 func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 	var ccd TableCoreConfigDataSlice
-	if _, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexCoreConfigData, &ccd); err != nil {
-		return errgo.Mask(err)
+	rows, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexCoreConfigData, &ccd)
+	if log.IsDebug() {
+		log.Debug("Manager=ApplyCoreConfigData", "rows", rows)
 	}
-	// @todo
+	if err != nil {
+		return log.Error("Manager=ApplyCoreConfigData", "err", err)
+	}
+
+	for _, cd := range ccd {
+		if cd.Value.Valid {
+			m.Write(Path(cd.Path), Scope(GetScopeGroup(cd.Scope), scopeID(cd.ScopeID)))
+		}
+		fmt.Printf("\n%#v\n", cd)
+	}
 	return nil
 }
 
@@ -124,12 +137,32 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 // Website Scope: Write(config.Path("currency", "option", "base"), config.Value("EUR"), config.ScopeWebsite(w))
 // Store   Scope: Write(config.Path("currency", "option", "base"), config.ValueReader(resp.Body), config.ScopeStore(s))
 func (m *Manager) Write(o ...ScopeOption) error {
-	k, v := ScopeKeyValue(o...)
-	if k == "" {
-		return ErrEmptyKey
+	arg := scopeKeyValue(o...)
+	if arg == nil {
+		return ErrNoArguments
 	}
-	m.v.Set(k, v)
+	if arg.isDefault() || arg.isBubbling() {
+		if log.IsDebug() {
+			log.Debug("Manager=Write", "path", arg.scopePathDefault(), "bubble", arg.isBubbling(), "val", arg.v)
+		}
+		m.v.SetDefault(arg.scopePathDefault(), arg.v)
+	}
+	if false == arg.isDefault() {
+		if log.IsDebug() {
+			log.Debug("Manager=Write", "path", arg.scopePath(), "val", arg.v)
+		}
+		m.v.Set(arg.scopePath(), arg.v)
+	}
 	return nil
+}
+
+func (m *Manager) get(o ...ScopeOption) interface{} {
+	arg := scopeKey(o...)
+	vs := m.v.Get(arg.scopePath()) // vs = value scope
+	if vs == nil && arg.isBubbling() {
+		vs = m.v.Get(arg.scopePathDefault())
+	}
+	return vs
 }
 
 // GetString returns a string from the manager. Example usage:
@@ -137,22 +170,35 @@ func (m *Manager) Write(o ...ScopeOption) error {
 // Website value: GetString(config.Path("general/locale/timezone"), config.ScopeWebsite(w))
 // Store   value: GetString(config.Path("general/locale/timezone"), config.ScopeStore(s))
 func (m *Manager) GetString(o ...ScopeOption) string {
-	return m.v.GetString(ScopeKey(o...))
+	vs := m.get(o...)
+	if vs == nil {
+		return ""
+	}
+	return cast.ToString(vs)
 }
 
 // @todo use the backend model of a config value. most/all magento string slices are comma lists.
 func (m *Manager) GetStringSlice(o ...ScopeOption) []string {
-	return m.v.GetStringSlice(ScopeKey(o...))
+	return nil
+	//	return m.v.GetStringSlice(scopeKey(o...))
 }
 
 // GetBool returns bool from the manager. Example usage see GetString.
 func (m *Manager) GetBool(o ...ScopeOption) bool {
-	return m.v.GetBool(ScopeKey(o...))
+	vs := m.get(o...)
+	if vs == nil {
+		return false
+	}
+	return cast.ToBool(vs)
 }
 
 // GetFloat64 returns a float64 from the manager. Example usage see GetString.
 func (m *Manager) GetFloat64(o ...ScopeOption) float64 {
-	return m.v.GetFloat64(ScopeKey(o...))
+	vs := m.get(o...)
+	if vs == nil {
+		return 0.0
+	}
+	return cast.ToFloat64(vs)
 }
 
 // @todo consider adding other Get* from the viper package
@@ -184,12 +230,12 @@ func (sr mockReader) GetString(opts ...ScopeOption) string {
 	if sr.s == nil {
 		return ""
 	}
-	return sr.s(ScopeKey(opts...))
+	return sr.s(scopeKey(opts...).scopePath())
 }
 
 func (sr mockReader) GetBool(opts ...ScopeOption) bool {
 	if sr.b == nil {
 		return false
 	}
-	return sr.b(ScopeKey(opts...))
+	return sr.b(scopeKey(opts...).scopePath())
 }

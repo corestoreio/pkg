@@ -26,26 +26,20 @@ import (
 type ScopeOption func(*arg)
 
 // ScopeWebsite wrapper helper function. See Scope()
-func ScopeWebsite(r ...Retriever) ScopeOption { return Scope(IDScopeWebsite, r...) }
+func ScopeWebsite(r Retriever) ScopeOption { return Scope(IDScopeWebsite, r) }
 
 // ScopeStore wrapper helper function. See Scope()
-func ScopeStore(r ...Retriever) ScopeOption { return Scope(IDScopeStore, r...) }
+func ScopeStore(r Retriever) ScopeOption { return Scope(IDScopeStore, r) }
 
-// Scope sets the scope using the ScopeID and a variadic (0 or 1 arg) store.Retriever.
-// A store.Retriever can contain an ID from a website or a store. Make sure the correct ScopeID has also been set.
-// Retriever can only be left off when the ScopeID is default otherwise the scope will fallback to default scope.
-func Scope(s ScopeID, r ...Retriever) ScopeOption {
-	var ret Retriever
-	hasR := len(r) == 1 && r[0] != nil
-	if hasR {
-		ret = r[0]
-	}
-
-	if s != IDScopeDefault && !hasR {
+// Scope sets the scope using the ScopeGroup and a store.Retriever.
+// A store.Retriever can contain an ID from a website or a store. Make sure
+// the correct ScopeGroup has also been set. If store.Retriever is nil
+// the scope will fallback to default scope.
+func Scope(s ScopeGroup, r Retriever) ScopeOption {
+	if s != IDScopeDefault && r == nil {
 		s = IDScopeDefault
 	}
-
-	return func(a *arg) { a.s = s; a.r = ret }
+	return func(a *arg) { a.s = s; a.r = r }
 }
 
 // Path option function to specify the configuration path. If one argument has been
@@ -64,11 +58,18 @@ func Path(paths ...string) ScopeOption {
 	return func(a *arg) { a.p = p }
 }
 
+// NoBubble disables the check of the default scope if a value exists there.
+func NoBubble() ScopeOption { return func(a *arg) { a.nb = true } }
+
 // Value sets the value for a scope key.
 func Value(v interface{}) ScopeOption { return func(a *arg) { a.v = v } }
 
 // ValueReader sets the value for a scope key using the io.Reader interface.
+// If asserting to a io.Closer is successful then Close() will be called.
 func ValueReader(r io.Reader) ScopeOption {
+	if c, ok := r.(io.Closer); ok {
+		defer c.Close()
+	}
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		log.Error("Argument=ValueReader::ReadAll", "err", err)
@@ -78,29 +79,23 @@ func ValueReader(r io.Reader) ScopeOption {
 	}
 }
 
-// ScopeKey generates the correct scope key e.g.: stores/2/system/currency/installed => scope/scope_id/path
+// scopeKey generates the correct scope key e.g.: stores/2/system/currency/installed => scope/scope_id/path
 // which is used by the underlying configuration manager to fetch a value
-func ScopeKey(opts ...ScopeOption) string {
-	if len(opts) == 0 {
-		return ""
-	}
-	return newArg(opts...).scopePath()
+func scopeKey(opts ...ScopeOption) *arg {
+	return newArg(opts...)
 }
 
-// ScopeKeyValue generates from the options the scope key and the value
-func ScopeKeyValue(opts ...ScopeOption) (string, interface{}) {
-	if len(opts) == 0 {
-		return "", nil
-	}
-	a := newArg(opts...)
-	return a.scopePath(), a.v
+// scopeKeyValue generates from the options the scope key and the value
+func scopeKeyValue(opts ...ScopeOption) *arg {
+	return newArg(opts...)
 }
 
 type arg struct {
-	p string // p is the three level path e.g. a/b/c
-	s ScopeID
-	r Retriever
-	v interface{} // value use for saving
+	p  string // p is the three level path e.g. a/b/c
+	s  ScopeGroup
+	r  Retriever
+	nb bool        // noBubble, if false value search: (store|website) -> default
+	v  interface{} // value use for saving
 }
 
 // this "cache" should covers ~80% of all store setups
@@ -119,25 +114,38 @@ func newArg(opts ...ScopeOption) *arg {
 	return a
 }
 
+func (a *arg) isDefault() bool { return a.s == IDScopeDefault || a.s == IDScopeAbsent }
+
+func (a *arg) isBubbling() bool { return !a.nb }
+
 func (a *arg) scopePath() string {
 	// e.g.: stores/2/system/currency/installed => scope/scope_id/path
+	// e.g.: websites/1/system/currency/installed => scope/scope_id/path
 	if a.p == "" {
 		return ""
 	}
-	return a.scopeData() + "/" + a.scopeID() + "/" + a.p
+	return a.scopeGroup() + "/" + a.scopeID() + "/" + a.p
+}
+
+func (a *arg) scopePathDefault() string {
+	// e.g.: default/0/system/currency/installed => scope/scope_id/path
+	if a.p == "" {
+		return ""
+	}
+	return StringScopeDefault + "/0/" + a.p
 }
 
 func (a *arg) scopeID() string {
 	if a.r != nil {
-		if a.r.ID() <= int64CacheLen {
-			return int64Cache[a.r.ID()]
+		if a.r.ScopeID() <= int64CacheLen {
+			return int64Cache[a.r.ScopeID()]
 		}
-		return strconv.FormatInt(a.r.ID(), 10)
+		return strconv.FormatInt(a.r.ScopeID(), 10)
 	}
 	return "0"
 }
 
-func (a *arg) scopeData() string {
+func (a *arg) scopeGroup() string {
 	switch a.s {
 	case IDScopeWebsite:
 		return StringScopeWebsites
