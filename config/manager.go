@@ -16,13 +16,12 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/utils/cast"
 	"github.com/corestoreio/csfw/utils/log"
-	"github.com/spf13/cast"
 	"github.com/spf13/viper"
 )
 
@@ -97,7 +96,7 @@ func NewManager() *Manager {
 	s := &Manager{
 		v: viper.New(),
 	}
-	s.v.SetDefault(newArg(Path(PathCSBaseURL)).scopePath(), CSBaseURL)
+	s.v.Set(newArg(Path(PathCSBaseURL)).scopePath(), CSBaseURL)
 	return s
 }
 
@@ -107,7 +106,7 @@ func (m *Manager) ApplyDefaults(ss Sectioner) *Manager {
 		if log.IsDebug() {
 			log.Debug("Scope=ApplyDefaults", k, v)
 		}
-		m.v.SetDefault(k, v)
+		m.v.Set(k, v)
 	}
 	return m
 }
@@ -129,7 +128,6 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 			// ScopeID(cd.ScopeID) because cd.ScopeID is a struct field and cannot satisfy interface ScopeIDer
 			m.Write(Path(cd.Path), Scope(GetScopeGroup(cd.Scope), ScopeID(cd.ScopeID)))
 		}
-		fmt.Printf("\n%#v\n", cd)
 	}
 	return nil
 }
@@ -143,18 +141,18 @@ func (m *Manager) Write(o ...ScopeOption) error {
 	if a == nil {
 		return ErrNoArguments
 	}
-	if a.isDefault() || a.isBubbling() {
+	if a.isBubbling() {
 		if log.IsDebug() {
 			log.Debug("Manager=Write", "path", a.scopePathDefault(), "bubble", a.isBubbling(), "val", a.v)
 		}
-		m.v.SetDefault(a.scopePathDefault(), a.v)
+		m.v.Set(a.scopePathDefault(), a.v)
 	}
-	if false == a.isDefault() {
-		if log.IsDebug() {
-			log.Debug("Manager=Write", "path", a.scopePath(), "val", a.v)
-		}
-		m.v.Set(a.scopePath(), a.v)
+
+	if log.IsDebug() {
+		log.Debug("Manager=Write", "path", a.scopePath(), "val", a.v)
 	}
+	m.v.Set(a.scopePath(), a.v)
+
 	return nil
 }
 
