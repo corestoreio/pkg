@@ -30,19 +30,19 @@ type (
 		// Website creates a new Website pointer from an ID or code including all of its
 		// groups and all related stores. It panics when the integrity is incorrect.
 		// If ID and code are available then the non-empty code has precedence.
-		Website(config.Retriever) (*Website, error)
+		Website(config.ScopeIDer) (*Website, error)
 		// Websites creates a slice containing all pointers to Websites with its associated
 		// groups and stores. It panics when the integrity is incorrect.
 		Websites() (WebsiteSlice, error)
 		// Group creates a new Group which contains all related stores and its website.
 		// Only the argument ID can be used to get a specific Group.
-		Group(config.Retriever) (*Group, error)
+		Group(config.ScopeIDer) (*Group, error)
 		// Groups creates a slice containing all pointers to Groups with its associated
 		// stores and websites. It panics when the integrity is incorrect.
 		Groups() (GroupSlice, error)
 		// Store creates a new Store containing its group and its website.
 		// If ID and code are available then the non-empty code has precedence.
-		Store(config.Retriever) (*Store, error)
+		Store(config.ScopeIDer) (*Store, error)
 		// Stores creates a new store slice. Can return an error when the website or
 		// the group cannot be found.
 		Stores() (StoreSlice, error)
@@ -112,18 +112,18 @@ func NewStorageOption(opts ...StorageOption) ManagerOption {
 
 // website returns a TableWebsite by using either id or code to find it. If id and code are
 // available then the non-empty code has precedence.
-func (st *Storage) website(r config.Retriever) (*TableWebsite, error) {
+func (st *Storage) website(r config.ScopeIDer) (*TableWebsite, error) {
 	if r == nil {
 		return nil, ErrWebsiteNotFound
 	}
-	if c, ok := r.(config.CodeRetriever); ok && c.ScopeCode() != "" {
+	if c, ok := r.(config.ScopeCoder); ok && c.ScopeCode() != "" {
 		return st.websites.FindByCode(c.ScopeCode())
 	}
 	return st.websites.FindByID(r.ScopeID())
 }
 
 // Website creates a new Website according to the interface definition.
-func (st *Storage) Website(r config.Retriever) (*Website, error) {
+func (st *Storage) Website(r config.ScopeIDer) (*Website, error) {
 	w, err := st.website(r)
 	if err != nil {
 		return nil, err
@@ -142,7 +142,7 @@ func (st *Storage) Websites() (WebsiteSlice, error) {
 
 // group returns a TableGroup by using a group id as argument. If no argument or more than
 // one has been supplied it returns an error.
-func (st *Storage) group(r config.Retriever) (*TableGroup, error) {
+func (st *Storage) group(r config.ScopeIDer) (*TableGroup, error) {
 	if r == nil {
 		return nil, ErrGroupNotFound
 	}
@@ -151,7 +151,7 @@ func (st *Storage) group(r config.Retriever) (*TableGroup, error) {
 
 // Group creates a new Group which contains all related stores and its website according to the
 // interface definition.
-func (st *Storage) Group(id config.Retriever) (*Group, error) {
+func (st *Storage) Group(id config.ScopeIDer) (*Group, error) {
 	g, err := st.group(id)
 	if err != nil {
 		return nil, err
@@ -180,11 +180,11 @@ func (st *Storage) Groups() (GroupSlice, error) {
 
 // store returns a TableStore by an id or code.
 // The non-empty code has precedence if available.
-func (st *Storage) store(r config.Retriever) (*TableStore, error) {
+func (st *Storage) store(r config.ScopeIDer) (*TableStore, error) {
 	if r == nil {
 		return nil, ErrStoreNotFound
 	}
-	if c, ok := r.(config.CodeRetriever); ok && c.ScopeCode() != "" {
+	if c, ok := r.(config.ScopeCoder); ok && c.ScopeCode() != "" {
 		return st.stores.FindByCode(c.ScopeCode())
 	}
 	return st.stores.FindByID(r.ScopeID())
@@ -192,7 +192,7 @@ func (st *Storage) store(r config.Retriever) (*TableStore, error) {
 
 // Store creates a new Store which contains the the store, its group and website
 // according to the interface definition.
-func (st *Storage) Store(r config.Retriever) (*Store, error) {
+func (st *Storage) Store(r config.ScopeIDer) (*Store, error) {
 	s, err := st.store(r)
 	if err != nil {
 		return nil, errgo.Mask(err)

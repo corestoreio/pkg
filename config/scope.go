@@ -45,32 +45,32 @@ type (
 	// Part of ScopePerm.
 	ScopeGroup uint8
 
-	// Retriever implements how to get the ID. If Retriever implements CodeRetriever
-	// then CodeRetriever has precedence. ID can be any of the website, group or store IDs.
-	Retriever interface {
+	// ScopeIDer implements how to get the ID. If ScopeIDer implements ScopeCoder
+	// then ScopeCoder has precedence. ID can be any of the website, group or store IDs.
+	ScopeIDer interface {
 		ScopeID() int64
 	}
-	// CodeRetriever implements how to get an object by Code which can be website or store code.
+	// ScopeCoder implements how to get an object by Code which can be website or store code.
 	// Groups doesn't have codes.
-	CodeRetriever interface {
+	ScopeCoder interface {
 		ScopeCode() string
 	}
-	// ID is convenience helper to satisfy the interface Retriever.
+	// ID is convenience helper to satisfy the interface ScopeIDer.
 	ScopeID int64
-	// Code is convenience helper to satisfy the interface CodeRetriever and Retriever.
+	// Code is convenience helper to satisfy the interface ScopeCoder and ScopeIDer.
 	ScopeCode string
 )
 
-var _ Retriever = ScopeID(0)
-var _ CodeRetriever = ScopeCode("")
+var _ ScopeIDer = ScopeID(0)
+var _ ScopeCoder = ScopeCode("")
 
-// ScopeID is convenience helper to satisfy the interface Retriever
+// ScopeID is convenience helper to satisfy the interface ScopeIDer
 func (i ScopeID) ScopeID() int64 { return int64(i) }
 
-// ScopeID is a noop method receiver to satisfy the interface Retriever
+// ScopeID is a noop method receiver to satisfy the interface ScopeIDer
 func (c ScopeCode) ScopeID() int64 { return int64(0) }
 
-// ScopeCode is convenience helper to satisfy the interface CodeRetriever
+// ScopeCode is convenience helper to satisfy the interface ScopeCoder
 func (c ScopeCode) ScopeCode() string { return string(c) }
 
 const _ScopeGroup_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"

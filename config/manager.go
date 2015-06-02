@@ -125,7 +125,7 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 
 	for _, cd := range ccd {
 		if cd.Value.Valid {
-			// ScopeID(cd.ScopeID) because cd.ScopeID is a struct field and cannot satisfy interface Retriever
+			// ScopeID(cd.ScopeID) because cd.ScopeID is a struct field and cannot satisfy interface ScopeIDer
 			m.Write(Path(cd.Path), Scope(GetScopeGroup(cd.Scope), ScopeID(cd.ScopeID)))
 		}
 		fmt.Printf("\n%#v\n", cd)

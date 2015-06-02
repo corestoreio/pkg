@@ -26,16 +26,16 @@ import (
 type ScopeOption func(*arg)
 
 // ScopeWebsite wrapper helper function. See Scope()
-func ScopeWebsite(r Retriever) ScopeOption { return Scope(IDScopeWebsite, r) }
+func ScopeWebsite(r ScopeIDer) ScopeOption { return Scope(IDScopeWebsite, r) }
 
 // ScopeStore wrapper helper function. See Scope()
-func ScopeStore(r Retriever) ScopeOption { return Scope(IDScopeStore, r) }
+func ScopeStore(r ScopeIDer) ScopeOption { return Scope(IDScopeStore, r) }
 
-// Scope sets the scope using the ScopeGroup and a store.Retriever.
-// A store.Retriever can contain an ID from a website or a store. Make sure
-// the correct ScopeGroup has also been set. If store.Retriever is nil
+// Scope sets the scope using the ScopeGroup and a config.ScopeIDer.
+// A config.ScopeIDer can contain an ID from a website or a store. Make sure
+// the correct ScopeGroup has also been set. If config.ScopeIDer is nil
 // the scope will fallback to default scope.
-func Scope(s ScopeGroup, r Retriever) ScopeOption {
+func Scope(s ScopeGroup, r ScopeIDer) ScopeOption {
 	if s != IDScopeDefault && r == nil {
 		s = IDScopeDefault
 	}
@@ -93,7 +93,7 @@ func scopeKeyValue(opts ...ScopeOption) *arg {
 type arg struct {
 	p  string // p is the three level path e.g. a/b/c
 	s  ScopeGroup
-	r  Retriever
+	r  ScopeIDer
 	nb bool        // noBubble, if false value search: (store|website) -> default
 	v  interface{} // value use for saving
 }

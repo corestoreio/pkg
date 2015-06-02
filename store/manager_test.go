@@ -76,7 +76,7 @@ func TestNewManagerStore(t *testing.T) {
 	assert.True(t, managerStoreSimpleTest.IsCacheEmpty())
 
 	tests := []struct {
-		have    config.Retriever
+		have    config.ScopeIDer
 		wantErr error
 	}{
 		{config.ScopeCode("nilSlices"), store.ErrStoreNotFound},
@@ -132,7 +132,7 @@ func TestNewManagerStoreInit(t *testing.T) {
 	})
 	tests := []struct {
 		haveManager *store.Manager
-		haveID      config.Retriever
+		haveID      config.ScopeIDer
 		wantErr     error
 	}{
 		{tms, config.ScopeID(1), nil},
@@ -237,7 +237,7 @@ func TestNewManagerGroup(t *testing.T) {
 
 	tests := []struct {
 		m               *store.Manager
-		have            config.Retriever
+		have            config.ScopeIDer
 		wantErr         error
 		wantGroupName   string
 		wantWebsiteCode string
@@ -333,7 +333,7 @@ func TestNewManagerWebsite(t *testing.T) {
 
 	tests := []struct {
 		m               *store.Manager
-		have            config.Retriever
+		have            config.ScopeIDer
 		wantErr         error
 		wantWebsiteCode string
 	}{
@@ -478,7 +478,7 @@ var storeManagerRequestStore = store.NewManager(
 )
 
 type testNewManagerGetRequestStore struct {
-	haveR         config.Retriever
+	haveR         config.ScopeIDer
 	wantStoreCode string
 	wantErr       error
 }
@@ -661,10 +661,10 @@ func getTestRequest(t *testing.T, m, u string, c *http.Cookie) *http.Request {
 func TestInitByRequest(t *testing.T) {
 	tests := []struct {
 		req                  *http.Request
-		haveR                config.Retriever
+		haveR                config.ScopeIDer
 		haveScopeType        config.ScopeGroup
 		wantStoreCode        string // this is the default store in a scope, lookup in storeManagerRequestStore
-		wantRequestStoreCode config.CodeRetriever
+		wantRequestStoreCode config.ScopeCoder
 		wantErr              error
 		wantCookie           string
 	}{
@@ -799,11 +799,11 @@ func TestInitByToken(t *testing.T) {
 	}
 
 	tests := []struct {
-		haveR              config.Retriever
+		haveR              config.ScopeIDer
 		haveCodeToken      string
 		haveScopeType      config.ScopeGroup
 		wantStoreCode      string // this is the default store in a scope, lookup in storeManagerRequestStore
-		wantTokenStoreCode config.CodeRetriever
+		wantTokenStoreCode config.ScopeCoder
 		wantErr            error
 	}{
 		{config.ScopeCode("de"), "de", config.IDScopeStore, "de", config.ScopeCode("de"), nil},
@@ -876,7 +876,7 @@ func TestNewManagerReInit(t *testing.T) {
 	}
 
 	tests := []struct {
-		have    config.Retriever
+		have    config.ScopeIDer
 		wantErr error
 	}{
 		{config.ScopeCode("de"), nil},
@@ -935,7 +935,7 @@ type mockStorage struct {
 
 var _ store.Storager = (*mockStorage)(nil)
 
-func (ms *mockStorage) Website(_ config.Retriever) (*store.Website, error) {
+func (ms *mockStorage) Website(_ config.ScopeIDer) (*store.Website, error) {
 	if ms.w == nil {
 		return nil, store.ErrWebsiteNotFound
 	}
@@ -947,7 +947,7 @@ func (ms *mockStorage) Websites() (store.WebsiteSlice, error) {
 	}
 	return ms.ws()
 }
-func (ms *mockStorage) Group(_ config.Retriever) (*store.Group, error) {
+func (ms *mockStorage) Group(_ config.ScopeIDer) (*store.Group, error) {
 	if ms.g == nil {
 		return nil, store.ErrGroupNotFound
 	}
@@ -959,7 +959,7 @@ func (ms *mockStorage) Groups() (store.GroupSlice, error) {
 	}
 	return ms.gs()
 }
-func (ms *mockStorage) Store(_ config.Retriever) (*store.Store, error) {
+func (ms *mockStorage) Store(_ config.ScopeIDer) (*store.Store, error) {
 	if ms.s == nil {
 		return nil, store.ErrStoreNotFound
 	}

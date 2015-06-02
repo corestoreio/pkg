@@ -53,7 +53,7 @@ var testStorage = store.NewStorage(
 func TestStorageWebsite(t *testing.T) {
 
 	tests := []struct {
-		have      config.Retriever
+		have      config.ScopeIDer
 		err       error
 		wantWCode string
 	}{
@@ -154,7 +154,7 @@ func TestWebsiteSliceFilter(t *testing.T) {
 func TestStorageGroup(t *testing.T) {
 
 	tests := []struct {
-		id       config.Retriever
+		id       config.ScopeIDer
 		err      error
 		wantName string
 	}{
@@ -263,7 +263,7 @@ func TestStorageGroupNoWebsite(t *testing.T) {
 func TestStorageStore(t *testing.T) {
 
 	tests := []struct {
-		have     config.Retriever
+		have     config.ScopeIDer
 		err      error
 		wantCode string
 	}{

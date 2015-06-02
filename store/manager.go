@@ -106,7 +106,7 @@ func SetManagerConfig(cr config.Reader) ManagerOption {
 // This function is mainly used when booting the app to set the environment configuration
 // Also all other calls to any method receiver with nil arguments depends on the appStore.
 // @see \Magento\Store\Model\StorageFactory::_reinitStores
-func (sm *Manager) Init(scopeCode config.Retriever, scopeType config.ScopeGroup) error {
+func (sm *Manager) Init(scopeCode config.ScopeIDer, scopeType config.ScopeGroup) error {
 	if sm.appStore != nil {
 		return ErrAppStoreSet
 	}
@@ -196,7 +196,7 @@ func (sm *Manager) InitByToken(t *jwt.Token, scopeType config.ScopeGroup) (*Stor
 // It returns either an error or the new Store. The returning errors can get ignored because if
 // a Store Code is invalid the parent calling function must fall back to the appStore.
 // This function must be used within an RPC handler.
-func (sm *Manager) GetRequestStore(r config.Retriever, scopeType config.ScopeGroup) (*Store, error) {
+func (sm *Manager) GetRequestStore(r config.ScopeIDer, scopeType config.ScopeGroup) (*Store, error) {
 	if sm.appStore == nil {
 		// that means you must call Init() before executing this function.
 		return nil, ErrAppStoreNotSet
@@ -250,7 +250,7 @@ func (sm *Manager) HasSingleStore() bool {
 // If ID and code are available then the non-empty code has precedence.
 // If no argument has been supplied then the Website of the internal appStore
 // will be returned. If more than one argument has been provided it returns an error.
-func (sm *Manager) Website(r ...config.Retriever) (*Website, error) {
+func (sm *Manager) Website(r ...config.ScopeIDer) (*Website, error) {
 	notR := notRetriever(r...)
 	switch {
 	case notR && sm.appStore == nil:
@@ -290,7 +290,7 @@ func (sm *Manager) Websites() (WebsiteSlice, error) {
 // Only the argument ID is supported.
 // If no argument has been supplied then the Group of the internal appStore
 // will be returned. If more than one argument has been provided it returns an error.
-func (sm *Manager) Group(r ...config.Retriever) (*Group, error) {
+func (sm *Manager) Group(r ...config.ScopeIDer) (*Group, error) {
 	notR := notRetriever(r...)
 	switch {
 	case notR && sm.appStore == nil:
@@ -330,7 +330,7 @@ func (sm *Manager) Groups() (GroupSlice, error) {
 // If ID and code are available then the non-empty code has precedence.
 // If no argument has been supplied then the appStore
 // will be returned. If more than one argument has been provided it returns an error.
-func (sm *Manager) Store(r ...config.Retriever) (*Store, error) {
+func (sm *Manager) Store(r ...config.ScopeIDer) (*Store, error) {
 	notR := notRetriever(r...)
 	switch {
 	case notR && sm.appStore == nil:
@@ -379,7 +379,7 @@ func (sm *Manager) DefaultStoreView() (*Store, error) {
 // activeStore returns a new non-cached Store with all its Websites and Groups but only if the Store
 // is marked as active. Argument can be an ID or a Code. Returns nil if Store not found or inactive.
 // No need here to return an error.
-func (sm *Manager) activeStore(r config.Retriever) (*Store, error) {
+func (sm *Manager) activeStore(r config.ScopeIDer) (*Store, error) {
 	s, err := sm.storage.Store(r)
 	if err != nil {
 		return nil, err
@@ -437,9 +437,9 @@ func (sm *Manager) IsCacheEmpty() bool {
 		sm.websites == nil && sm.groups == nil && sm.stores == nil && sm.defaultStore == nil
 }
 
-// notRetriever checks if variadic Retriever is nil or has more than two entries
+// notRetriever checks if variadic ScopeIDer is nil or has more than two entries
 // or the first index is nil.
-func notRetriever(r ...config.Retriever) bool {
+func notRetriever(r ...config.ScopeIDer) bool {
 	lr := len(r)
 	return r == nil || (lr == 1 && r[0] == nil) || lr > 1
 }
@@ -447,13 +447,13 @@ func notRetriever(r ...config.Retriever) bool {
 // hash generates the key for the map from either an id int64 or a code string.
 // If both interfaces are nil it returns 0 which is default for website, group or store.
 // fnv64a used to calculate the uint64 value of a string, especially website code and store code.
-func hash(r config.Retriever) (uint64, error) {
+func hash(r config.ScopeIDer) (uint64, error) {
 	uz := uint64(0)
 	if r == nil {
 		return uz, ErrHashRetrieverNil
 	}
 
-	if c, ok := r.(config.CodeRetriever); ok && c.ScopeCode() != "" {
+	if c, ok := r.(config.ScopeCoder); ok && c.ScopeCode() != "" {
 		data := []byte(c.ScopeCode())
 		var hash uint64 = 14695981039346656037
 		for _, c := range data {

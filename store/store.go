@@ -74,8 +74,8 @@ var (
 	ErrStoreCodeInvalid      = errors.New("The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter")
 )
 
-var _ config.Retriever = (*Store)(nil)
-var _ config.CodeRetriever = (*Store)(nil)
+var _ config.ScopeIDer = (*Store)(nil)
+var _ config.ScopeCoder = (*Store)(nil)
 
 // SetStoreConfig sets the config.Reader to the Store.
 // Default reader is config.DefaultManager
@@ -121,12 +121,12 @@ func (s *Store) ApplyOptions(opts ...StoreOption) *Store {
 	@todo implement Magento\Store\Model\Store
 */
 
-// ScopeID satisfies the interface Retriever and mainly used in the StoreManager for selecting Website,Group ...
+// ScopeID satisfies the interface ScopeIDer and mainly used in the StoreManager for selecting Website,Group ...
 func (s *Store) ScopeID() int64 {
 	return s.s.StoreID
 }
 
-// ScopeCode satisfies the interface CodeRetriever
+// ScopeCode satisfies the interface ScopeCoder
 func (s *Store) ScopeCode() string {
 	return s.s.Code.String
 }
@@ -269,7 +269,7 @@ func (s *Store) CurrentCurrency() *directory.Currency {
 	Global functions
 */
 // GetClaim returns a valid store code from a JSON web token or nil
-func GetCodeFromClaim(t *jwt.Token) config.Retriever {
+func GetCodeFromClaim(t *jwt.Token) config.ScopeIDer {
 	if t == nil {
 		return nil
 	}
@@ -281,7 +281,7 @@ func GetCodeFromClaim(t *jwt.Token) config.Retriever {
 }
 
 // GetCookie returns from a Request the value of the store cookie or nil.
-func GetCodeFromCookie(req *http.Request) config.Retriever {
+func GetCodeFromCookie(req *http.Request) config.ScopeIDer {
 	if req == nil {
 		return nil
 	}

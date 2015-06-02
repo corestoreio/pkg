@@ -58,6 +58,7 @@ var (
 	// ErrGroupWebsiteNotFound the Website struct is nil so we cannot assign the stores to a group.
 	ErrGroupWebsiteNotFound = errors.New("Group Website not found or nil or ID do not match")
 )
+var _ config.ScopeIDer = (*Group)(nil)
 
 // SetGroupConfig sets the configuration Reader to the Group.
 // Default reader is config.DefaultManager
@@ -96,6 +97,11 @@ func NewGroup(tg *TableGroup, opts ...GroupOption) *Group {
 		g.w.ApplyOptions(SetWebsiteConfig(g.cr))
 	}
 	return g
+}
+
+// ScopeID satisfies interface config.ScopeIDer
+func (g *Group) ScopeID() int64 {
+	return g.g.GroupID
 }
 
 // ApplyOptions sets the options to a Group.
