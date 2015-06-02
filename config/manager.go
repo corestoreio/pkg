@@ -156,6 +156,7 @@ func (m *Manager) Write(o ...ScopeOption) error {
 	return nil
 }
 
+// get generic getter ... not sure if this should be public ...
 func (m *Manager) get(o ...ScopeOption) interface{} {
 	a := newArg(o...)
 	vs := m.v.Get(a.scopePath()) // vs = value scope
@@ -224,6 +225,11 @@ func (m *Manager) GetDateTime(o ...ScopeOption) time.Time {
 
 // AllKeys return all keys regardless where they are set
 func (m *Manager) AllKeys() []string { return m.v.AllKeys() }
+
+// IsSet checks if a key is in the config. Does not bubble.
+func (m *Manager) IsSet(o ...ScopeOption) bool {
+	return m.v.IsSet(newArg(o...).scopePath())
+}
 
 var _ Reader = (*mockReader)(nil)
 
