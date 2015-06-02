@@ -17,6 +17,7 @@ package config
 import (
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -112,7 +113,7 @@ func (m *Manager) ApplyDefaults(ss Sectioner) *Manager {
 }
 
 // ApplyCoreConfigData reads the table core_config_data into the Manager and overrides
-// existing values.
+// existing values. If the column value is NULL entry will be ignored.
 func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 	var ccd TableCoreConfigDataSlice
 	rows, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexCoreConfigData, &ccd)
@@ -200,6 +201,25 @@ func (m *Manager) GetFloat64(o ...ScopeOption) float64 {
 		return 0.0
 	}
 	return cast.ToFloat64(vs)
+}
+
+// GetInt returns an int from the manager. Example usage see GetString.
+func (m *Manager) GetInt(o ...ScopeOption) int {
+	vs := m.get(o...)
+	if vs == nil {
+		return 0
+	}
+	return cast.ToInt(vs)
+}
+
+// GetDateTime returns a date and time object from the manager. Example usage see GetString.
+func (m *Manager) GetDateTime(o ...ScopeOption) time.Time {
+	vs := m.get(o...)
+	t, err := cast.ToTimeE(vs)
+	if err != nil {
+		log.Error("Manager=GetDateTime", "err", err, "val", vs)
+	}
+	return t
 }
 
 // @todo consider adding other Get* from the viper package
