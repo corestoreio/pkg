@@ -22,6 +22,9 @@ import (
 	"github.com/corestoreio/csfw/utils/log"
 )
 
+// PS path separator used in the database table core_config_data and in config.Manager
+const PS = "/"
+
 // ScopeOption function to be used as variadic argument in ScopeKey() and ScopeKeyValue()
 type ScopeOption func(*arg)
 
@@ -53,12 +56,13 @@ func Path(paths ...string) ScopeOption {
 	}
 
 	if lp == 3 {
-		p = p + "/" + paths[1] + "/" + paths[2]
+		p = p + PS + paths[1] + PS + paths[2]
 	}
 	return func(a *arg) { a.p = p }
 }
 
-// NoBubble disables the check of the default scope if a value exists there.
+// NoBubble disables the fallback to the default scope when a value in the current
+// scope not exists.
 func NoBubble() ScopeOption { return func(a *arg) { a.nb = true } }
 
 // Value sets the value for a scope key.
@@ -79,17 +83,8 @@ func ValueReader(r io.Reader) ScopeOption {
 	}
 }
 
-// scopeKey generates the correct scope key e.g.: stores/2/system/currency/installed => scope/scope_id/path
-// which is used by the underlying configuration manager to fetch a value
-func scopeKey(opts ...ScopeOption) *arg {
-	return newArg(opts...)
-}
-
-// scopeKeyValue generates from the options the scope key and the value
-func scopeKeyValue(opts ...ScopeOption) *arg {
-	return newArg(opts...)
-}
-
+// arg responsible for the correct scope key e.g.: stores/2/system/currency/installed => scope/scope_id/path
+// which is used by the underlying configuration manager to fetch or store a value
 type arg struct {
 	p  string // p is the three level path e.g. a/b/c
 	s  ScopeGroup
@@ -104,6 +99,7 @@ var int64Cache = []string{
 }
 var int64CacheLen = int64(len(int64Cache))
 
+// newArg creates an argument container which requires different options depending on the use case.
 func newArg(opts ...ScopeOption) *arg {
 	var a = new(arg)
 	for _, opt := range opts {
@@ -119,12 +115,13 @@ func (a *arg) isDefault() bool { return a.s == ScopeDefaultID || a.s == ScopeAbs
 func (a *arg) isBubbling() bool { return !a.nb }
 
 func (a *arg) scopePath() string {
+	// first part of the path is called scope in Magento and in CoreStore ScopeRange
 	// e.g.: stores/2/system/currency/installed => scope/scope_id/path
 	// e.g.: websites/1/system/currency/installed => scope/scope_id/path
 	if a.p == "" {
 		return ""
 	}
-	return a.scopeRange() + "/" + a.scopeID() + "/" + a.p
+	return a.scopeRange() + PS + a.scopeID() + PS + a.p
 }
 
 func (a *arg) scopePathDefault() string {
@@ -132,7 +129,7 @@ func (a *arg) scopePathDefault() string {
 	if a.p == "" {
 		return ""
 	}
-	return ScopeRangeDefault + "/0/" + a.p
+	return ScopeRangeDefault + PS + "0" + PS + a.p
 }
 
 func (a *arg) scopeID() string {

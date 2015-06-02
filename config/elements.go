@@ -183,7 +183,7 @@ func (ss SectionSlice) Defaults() DefaultMap {
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
-				arg := scopeKey(Path(s.ID, g.ID, f.ID))
+				arg := newArg(Path(s.ID, g.ID, f.ID))
 				dm[arg.scopePath()] = f.Default
 			}
 		}
@@ -268,7 +268,7 @@ func (ss SectionSlice) FindByID(id string) (*Section, error) {
 // If two or more arguments are given then each argument will be treated as a path part.
 func (ss SectionSlice) FindGroupByPath(paths ...string) (*Group, error) {
 	if len(paths) == 1 {
-		paths = strings.Split(paths[0], "/")
+		paths = strings.Split(paths[0], PS)
 	}
 	if len(paths) < 2 {
 		return nil, errgo.Mask(ErrGroupNotFound)
@@ -285,7 +285,7 @@ func (ss SectionSlice) FindGroupByPath(paths ...string) (*Group, error) {
 // If three arguments are given then each argument will be treated as a path part.
 func (ss SectionSlice) FindFieldByPath(paths ...string) (*Field, error) {
 	if len(paths) == 1 {
-		paths = strings.Split(paths[0], "/")
+		paths = strings.Split(paths[0], PS)
 	}
 	if len(paths) < 3 {
 		return nil, errgo.Mask(ErrFieldNotFound)
@@ -324,7 +324,7 @@ func (ss SectionSlice) Validate() error {
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
-				arg := scopeKey(Path(s.ID, g.ID, f.ID))
+				arg := newArg(Path(s.ID, g.ID, f.ID))
 				p := arg.scopePath()
 				if pc.Include(p) {
 					return errgo.Newf("Duplicate entry for path %s :: %s", p, ss.ToJson())

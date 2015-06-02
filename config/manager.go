@@ -96,7 +96,7 @@ func NewManager() *Manager {
 	s := &Manager{
 		v: viper.New(),
 	}
-	s.v.SetDefault(scopeKey(Path(PathCSBaseURL)).scopePath(), CSBaseURL)
+	s.v.SetDefault(newArg(Path(PathCSBaseURL)).scopePath(), CSBaseURL)
 	return s
 }
 
@@ -138,30 +138,30 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 // Website Scope: Write(config.Path("currency", "option", "base"), config.Value("EUR"), config.ScopeWebsite(w))
 // Store   Scope: Write(config.Path("currency", "option", "base"), config.ValueReader(resp.Body), config.ScopeStore(s))
 func (m *Manager) Write(o ...ScopeOption) error {
-	arg := scopeKeyValue(o...)
-	if arg == nil {
+	a := newArg(o...)
+	if a == nil {
 		return ErrNoArguments
 	}
-	if arg.isDefault() || arg.isBubbling() {
+	if a.isDefault() || a.isBubbling() {
 		if log.IsDebug() {
-			log.Debug("Manager=Write", "path", arg.scopePathDefault(), "bubble", arg.isBubbling(), "val", arg.v)
+			log.Debug("Manager=Write", "path", a.scopePathDefault(), "bubble", a.isBubbling(), "val", a.v)
 		}
-		m.v.SetDefault(arg.scopePathDefault(), arg.v)
+		m.v.SetDefault(a.scopePathDefault(), a.v)
 	}
-	if false == arg.isDefault() {
+	if false == a.isDefault() {
 		if log.IsDebug() {
-			log.Debug("Manager=Write", "path", arg.scopePath(), "val", arg.v)
+			log.Debug("Manager=Write", "path", a.scopePath(), "val", a.v)
 		}
-		m.v.Set(arg.scopePath(), arg.v)
+		m.v.Set(a.scopePath(), a.v)
 	}
 	return nil
 }
 
 func (m *Manager) get(o ...ScopeOption) interface{} {
-	arg := scopeKey(o...)
-	vs := m.v.Get(arg.scopePath()) // vs = value scope
-	if vs == nil && arg.isBubbling() {
-		vs = m.v.Get(arg.scopePathDefault())
+	a := newArg(o...)
+	vs := m.v.Get(a.scopePath()) // vs = value scope
+	if vs == nil && a.isBubbling() {
+		vs = m.v.Get(a.scopePathDefault())
 	}
 	return vs
 }
@@ -181,7 +181,7 @@ func (m *Manager) GetString(o ...ScopeOption) string {
 // @todo use the backend model of a config value. most/all magento string slices are comma lists.
 func (m *Manager) GetStringSlice(o ...ScopeOption) []string {
 	return nil
-	//	return m.v.GetStringSlice(scopeKey(o...))
+	//	return m.v.GetStringSlice(newArg(o...))
 }
 
 // GetBool returns bool from the manager. Example usage see GetString.
@@ -231,12 +231,12 @@ func (sr mockReader) GetString(opts ...ScopeOption) string {
 	if sr.s == nil {
 		return ""
 	}
-	return sr.s(scopeKey(opts...).scopePath())
+	return sr.s(newArg(opts...).scopePath())
 }
 
 func (sr mockReader) GetBool(opts ...ScopeOption) bool {
 	if sr.b == nil {
 		return false
 	}
-	return sr.b(scopeKey(opts...).scopePath())
+	return sr.b(newArg(opts...).scopePath())
 }

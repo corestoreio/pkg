@@ -52,7 +52,7 @@ func TestScopeKey(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		arg := scopeKey(test.haveArg...)
+		arg := newArg(test.haveArg...)
 
 		if arg == nil {
 			t.Errorf("\narg is nil at index %d => %#v\n", i, test)
@@ -89,8 +89,8 @@ func TestScopeKeyValue(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		arg := scopeKeyValue(test.haveArg...)
-		actualPath, actualVal := arg.scopePath(), arg.v
+		a := newArg(test.haveArg...)
+		actualPath, actualVal := a.scopePath(), a.v
 		assert.EqualValues(t, test.want, actualPath, "Test: %#v", test)
 		if test.haveArg != nil {
 			assert.NotEmpty(t, actualVal, "Test: %#v", test)
@@ -108,7 +108,7 @@ var benchmarkScopeKey string
 func BenchmarkScopeKey____InMap(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		arg := scopeKey(Path("a", "b", "c"), Scope(ScopeWebsiteID, ScopeID(4)))
+		arg := newArg(Path("a", "b", "c"), Scope(ScopeWebsiteID, ScopeID(4)))
 		benchmarkScopeKey = arg.scopePath()
 	}
 }
@@ -117,7 +117,7 @@ func BenchmarkScopeKey____InMap(b *testing.B) {
 func BenchmarkScopeKey_NotInMap(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		arg := scopeKey(Path("a", "b", "c"), Scope(ScopeWebsiteID, ScopeID(40)))
+		arg := newArg(Path("a", "b", "c"), Scope(ScopeWebsiteID, ScopeID(40)))
 		benchmarkScopeKey = arg.scopePath()
 	}
 }
@@ -126,7 +126,7 @@ func BenchmarkScopeKey_NotInMap(b *testing.B) {
 func BenchmarkScopeKey____InMapNoJoin(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		arg := scopeKey(Path("a/b/c"), Scope(ScopeWebsiteID, ScopeID(3)))
+		arg := newArg(Path("a/b/c"), Scope(ScopeWebsiteID, ScopeID(3)))
 		benchmarkScopeKey = arg.scopePath()
 	}
 }
