@@ -63,6 +63,9 @@ var (
 	ErrWebsiteStoresNotAvailable = errors.New("Website Stores not available")
 )
 
+var _ config.Retriever = (*Website)(nil)
+var _ config.CodeRetriever = (*Website)(nil)
+
 // SetWebsiteConfig sets the config.Reader to the Website.
 // Default reader is config.DefaultManager
 func SetWebsiteConfig(cr config.Reader) WebsiteOption {
@@ -91,8 +94,11 @@ func (w *Website) ApplyOptions(opts ...WebsiteOption) {
 	}
 }
 
-// ID satisfies the interface Retriever and mainly used in the StoreManager for selecting Website,Group ...
-func (w *Website) ID() int64 { return w.w.WebsiteID }
+// ScopeID satisfies the interface Retriever and mainly used in the StoreManager for selecting Website,Group ...
+func (w *Website) ScopeID() int64 { return w.w.WebsiteID }
+
+// ScopeCode satisfies the interface CodeRetriever
+func (w *Website) ScopeCode() string { return w.w.Code.String }
 
 // Data returns the data from the database
 func (w *Website) Data() *TableWebsite { return w.w }

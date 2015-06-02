@@ -45,20 +45,33 @@ type (
 	// Part of ScopePerm.
 	ScopeGroup uint8
 
-	// Retriever implements how to get the website or store ID.
-	// Duplicated to avoid import cycles. :-(
+	// Retriever implements how to get the ID. If Retriever implements CodeRetriever
+	// then CodeRetriever has precedence. ID can be any of the website, group or store IDs.
 	Retriever interface {
 		ScopeID() int64
 	}
-
-	// internal type to be used with TableCoreConfigData because ScopeID is ambiguous
-	scopeID int64
+	// CodeRetriever implements how to get an object by Code which can be website or store code.
+	// Groups doesn't have codes.
+	CodeRetriever interface {
+		ScopeCode() string
+	}
+	// ID is convenience helper to satisfy the interface Retriever.
+	ScopeID int64
+	// Code is convenience helper to satisfy the interface CodeRetriever and Retriever.
+	ScopeCode string
 )
 
-// ScopeID satisfy interface Retriever
-func (s scopeID) ScopeID() int64 {
-	return int64(s)
-}
+var _ Retriever = ScopeID(0)
+var _ CodeRetriever = ScopeCode("")
+
+// ScopeID is convenience helper to satisfy the interface Retriever
+func (i ScopeID) ScopeID() int64 { return int64(i) }
+
+// ScopeID is a noop method receiver to satisfy the interface Retriever
+func (c ScopeCode) ScopeID() int64 { return int64(0) }
+
+// ScopeCode is convenience helper to satisfy the interface CodeRetriever
+func (c ScopeCode) ScopeCode() string { return string(c) }
 
 const _ScopeGroup_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
 

@@ -24,6 +24,6 @@ type (
 )
 
 // ShowNonRequiredState
-func ShowNonRequiredState(cr config.Reader, r ...config.Retriever) bool {
-	return cr.GetBool(config.ScopeStore(r...), config.Path(PathDisplayAllStates))
+func ShowNonRequiredState(cr config.Reader, r config.Retriever) bool {
+	return cr.GetBool(config.ScopeStore(r), config.Path(PathDisplayAllStates))
 }

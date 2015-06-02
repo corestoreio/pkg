@@ -39,14 +39,14 @@ func TestScopeKey(t *testing.T) {
 		{[]ScopeOption{Scope(IDScopeWebsite, nil)}, ""},
 		{[]ScopeOption{Scope(IDScopeStore, nil)}, ""},
 		{[]ScopeOption{Path("a/b/c"), Scope(IDScopeWebsite, nil)}, StringScopeDefault + "/0/a/b/c"},
-		{[]ScopeOption{Path("a/b/c"), Scope(IDScopeWebsite, scopeID(2))}, StringScopeWebsites + "/2/a/b/c"},
-		{[]ScopeOption{Path("a", "b", "c"), Scope(IDScopeWebsite, scopeID(200))}, StringScopeWebsites + "/200/a/b/c"},
-		{[]ScopeOption{Path("a", "b", "c"), Scope(IDScopeStore, scopeID(4))}, StringScopeStores + "/4/a/b/c"},
-		{[]ScopeOption{Path("a", "b"), Scope(IDScopeStore, scopeID(4))}, StringScopeStores + "/4/a"},
-		{[]ScopeOption{nil, Scope(IDScopeStore, scopeID(4))}, ""},
-		{[]ScopeOption{Path("a", "b", "c"), ScopeStore(scopeID(5))}, StringScopeStores + "/5/a/b/c"},
+		{[]ScopeOption{Path("a/b/c"), Scope(IDScopeWebsite, ScopeID(2))}, StringScopeWebsites + "/2/a/b/c"},
+		{[]ScopeOption{Path("a", "b", "c"), Scope(IDScopeWebsite, ScopeID(200))}, StringScopeWebsites + "/200/a/b/c"},
+		{[]ScopeOption{Path("a", "b", "c"), Scope(IDScopeStore, ScopeID(4))}, StringScopeStores + "/4/a/b/c"},
+		{[]ScopeOption{Path("a", "b"), Scope(IDScopeStore, ScopeID(4))}, StringScopeStores + "/4/a"},
+		{[]ScopeOption{nil, Scope(IDScopeStore, ScopeID(4))}, ""},
+		{[]ScopeOption{Path("a", "b", "c"), ScopeStore(ScopeID(5))}, StringScopeStores + "/5/a/b/c"},
 		{[]ScopeOption{Path("a", "b", "c"), ScopeStore(nil)}, StringScopeDefault + "/0/a/b/c"},
-		{[]ScopeOption{Path("a", "b", "c"), ScopeWebsite(scopeID(50))}, StringScopeWebsites + "/50/a/b/c"},
+		{[]ScopeOption{Path("a", "b", "c"), ScopeWebsite(ScopeID(50))}, StringScopeWebsites + "/50/a/b/c"},
 		{[]ScopeOption{Path("a", "b", "c"), ScopeWebsite(nil)}, StringScopeDefault + "/0/a/b/c"},
 		{nil, ""},
 	}
@@ -76,14 +76,14 @@ func TestScopeKeyValue(t *testing.T) {
 		{[]ScopeOption{Value(1), Scope(IDScopeWebsite, nil)}, ""},
 		{[]ScopeOption{Value(1), Scope(IDScopeStore, nil)}, ""},
 		{[]ScopeOption{Value(1), Path("a/b/c"), Scope(IDScopeWebsite, nil)}, StringScopeDefault + "/0/a/b/c"},
-		{[]ScopeOption{Value(1), Path("a/b/c"), Scope(IDScopeWebsite, scopeID(2))}, StringScopeWebsites + "/2/a/b/c"},
-		{[]ScopeOption{Value(1), Path("a", "b", "c"), Scope(IDScopeWebsite, scopeID(200))}, StringScopeWebsites + "/200/a/b/c"},
-		{[]ScopeOption{Value(1), Path("a", "b", "c"), Scope(IDScopeStore, scopeID(4))}, StringScopeStores + "/4/a/b/c"},
-		{[]ScopeOption{Value(1), Path("a", "b"), Scope(IDScopeStore, scopeID(4))}, StringScopeStores + "/4/a"},
-		{[]ScopeOption{Value(1), nil, Scope(IDScopeStore, scopeID(4))}, ""},
-		{[]ScopeOption{Value(1), Path("a", "b", "c"), ScopeStore(scopeID(5))}, StringScopeStores + "/5/a/b/c"},
+		{[]ScopeOption{Value(1), Path("a/b/c"), Scope(IDScopeWebsite, ScopeID(2))}, StringScopeWebsites + "/2/a/b/c"},
+		{[]ScopeOption{Value(1), Path("a", "b", "c"), Scope(IDScopeWebsite, ScopeID(200))}, StringScopeWebsites + "/200/a/b/c"},
+		{[]ScopeOption{Value(1), Path("a", "b", "c"), Scope(IDScopeStore, ScopeID(4))}, StringScopeStores + "/4/a/b/c"},
+		{[]ScopeOption{Value(1), Path("a", "b"), Scope(IDScopeStore, ScopeID(4))}, StringScopeStores + "/4/a"},
+		{[]ScopeOption{Value(1), nil, Scope(IDScopeStore, ScopeID(4))}, ""},
+		{[]ScopeOption{Value(1), Path("a", "b", "c"), ScopeStore(ScopeID(5))}, StringScopeStores + "/5/a/b/c"},
 		{[]ScopeOption{Value(1.2), Path("a", "b", "c"), ScopeStore(nil)}, StringScopeDefault + "/0/a/b/c"},
-		{[]ScopeOption{Value(1.3), Path("a", "b", "c"), ScopeWebsite(scopeID(50))}, StringScopeWebsites + "/50/a/b/c"},
+		{[]ScopeOption{Value(1.3), Path("a", "b", "c"), ScopeWebsite(ScopeID(50))}, StringScopeWebsites + "/50/a/b/c"},
 		{[]ScopeOption{ValueReader(strings.NewReader("a config value")), Path("a", "b", "c"), ScopeWebsite(nil)}, StringScopeDefault + "/0/a/b/c"},
 		{nil, ""},
 	}
@@ -108,7 +108,7 @@ var benchmarkScopeKey string
 func BenchmarkScopeKey____InMap(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		arg := scopeKey(Path("a", "b", "c"), Scope(IDScopeWebsite, scopeID(4)))
+		arg := scopeKey(Path("a", "b", "c"), Scope(IDScopeWebsite, ScopeID(4)))
 		benchmarkScopeKey = arg.scopePath()
 	}
 }
@@ -117,7 +117,7 @@ func BenchmarkScopeKey____InMap(b *testing.B) {
 func BenchmarkScopeKey_NotInMap(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		arg := scopeKey(Path("a", "b", "c"), Scope(IDScopeWebsite, scopeID(40)))
+		arg := scopeKey(Path("a", "b", "c"), Scope(IDScopeWebsite, ScopeID(40)))
 		benchmarkScopeKey = arg.scopePath()
 	}
 }
@@ -126,7 +126,7 @@ func BenchmarkScopeKey_NotInMap(b *testing.B) {
 func BenchmarkScopeKey____InMapNoJoin(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		arg := scopeKey(Path("a/b/c"), Scope(IDScopeWebsite, scopeID(3)))
+		arg := scopeKey(Path("a/b/c"), Scope(IDScopeWebsite, ScopeID(3)))
 		benchmarkScopeKey = arg.scopePath()
 	}
 }

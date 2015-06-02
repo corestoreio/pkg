@@ -55,7 +55,7 @@ func TestNewStore(t *testing.T) {
 		gStores, gErr := s.Group().Stores()
 		assert.Nil(t, gStores)
 		assert.EqualError(t, store.ErrGroupStoresNotAvailable, gErr.Error())
-		assert.EqualValues(t, test.s.StoreID, s.ID())
+		assert.EqualValues(t, test.s.StoreID, s.ScopeID())
 	}
 }
 
@@ -333,7 +333,7 @@ func TestClaim(t *testing.T) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	s.AddClaim(token)
 	sCode := store.GetCodeFromClaim(token)
-	assert.EqualValues(t, store.Code("de"), sCode)
+	assert.EqualValues(t, config.ScopeCode("de"), sCode)
 	assert.Nil(t, store.GetCodeFromClaim(nil))
 
 	token2 := jwt.New(jwt.SigningMethodHS256)

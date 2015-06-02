@@ -19,6 +19,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
@@ -52,15 +53,15 @@ var testStorage = store.NewStorage(
 func TestStorageWebsite(t *testing.T) {
 
 	tests := []struct {
-		have      store.Retriever
+		have      config.Retriever
 		err       error
 		wantWCode string
 	}{
 		{nil, store.ErrWebsiteNotFound, ""},
-		{store.ID(2015), store.ErrWebsiteNotFound, ""},
-		{store.ID(1), nil, "euro"},
-		{store.Code("asia"), store.ErrWebsiteNotFound, ""},
-		{store.Code("oz"), nil, "oz"},
+		{config.ScopeID(2015), store.ErrWebsiteNotFound, ""},
+		{config.ScopeID(1), nil, "euro"},
+		{config.ScopeCode("asia"), store.ErrWebsiteNotFound, ""},
+		{config.ScopeCode("oz"), nil, "oz"},
 		{mockIDCode{1, "oz"}, nil, "oz"},
 		{mockIDCode{1, "ozzz"}, store.ErrWebsiteNotFound, ""},
 	}
@@ -76,7 +77,7 @@ func TestStorageWebsite(t *testing.T) {
 		}
 	}
 
-	w, err := testStorage.Website(store.Code("euro"))
+	w, err := testStorage.Website(config.ScopeCode("euro"))
 	assert.NoError(t, err)
 	assert.NotNil(t, w)
 
@@ -101,7 +102,7 @@ var benchmarkStorageWebsiteDefaultGroup *store.Group
 func BenchmarkStorageWebsiteGetDefaultGroup(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStorageWebsite, err = testStorage.Website(store.Code("euro"))
+		benchmarkStorageWebsite, err = testStorage.Website(config.ScopeCode("euro"))
 		if err != nil {
 			b.Error(err)
 		}
@@ -153,13 +154,13 @@ func TestWebsiteSliceFilter(t *testing.T) {
 func TestStorageGroup(t *testing.T) {
 
 	tests := []struct {
-		id       store.Retriever
+		id       config.Retriever
 		err      error
 		wantName string
 	}{
 		{nil, store.ErrGroupNotFound, ""},
-		{store.ID(2015), store.ErrGroupNotFound, ""},
-		{store.ID(1), nil, "DACH Group"},
+		{config.ScopeID(2015), store.ErrGroupNotFound, ""},
+		{config.ScopeID(1), nil, "DACH Group"},
 	}
 	for _, test := range tests {
 		g, err := testStorage.Group(test.id)
@@ -173,7 +174,7 @@ func TestStorageGroup(t *testing.T) {
 		}
 	}
 
-	g, err := testStorage.Group(store.ID(3))
+	g, err := testStorage.Group(config.ScopeID(3))
 	assert.NoError(t, err)
 	assert.NotNil(t, g)
 
@@ -196,7 +197,7 @@ var benchmarkStorageGroupDefaultStore *store.Store
 func BenchmarkStorageGroupGetDefaultStore(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStorageGroup, err = testStorage.Group(store.ID(3))
+		benchmarkStorageGroup, err = testStorage.Group(config.ScopeID(3))
 		if err != nil {
 			b.Error(err)
 		}
@@ -250,7 +251,7 @@ func TestStorageGroupNoWebsite(t *testing.T) {
 			&store.TableStore{StoreID: 6, Code: dbr.NullString{NullString: sql.NullString{String: "nz", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),
 	)
-	g, err := tst.Group(store.ID(3))
+	g, err := tst.Group(config.ScopeID(3))
 	assert.Nil(t, g)
 	assert.EqualError(t, store.ErrWebsiteNotFound, err.Error())
 
@@ -262,15 +263,15 @@ func TestStorageGroupNoWebsite(t *testing.T) {
 func TestStorageStore(t *testing.T) {
 
 	tests := []struct {
-		have     store.Retriever
+		have     config.Retriever
 		err      error
 		wantCode string
 	}{
 		{nil, store.ErrStoreNotFound, ""},
-		{store.ID(2015), store.ErrStoreNotFound, ""},
-		{store.ID(1), nil, "de"},
-		{store.Code("asia"), store.ErrStoreNotFound, ""},
-		{store.Code("nz"), nil, "nz"},
+		{config.ScopeID(2015), store.ErrStoreNotFound, ""},
+		{config.ScopeID(1), nil, "de"},
+		{config.ScopeCode("asia"), store.ErrStoreNotFound, ""},
+		{config.ScopeCode("nz"), nil, "nz"},
 		{mockIDCode{4, "nz"}, nil, "nz"},
 		{mockIDCode{4, "auuuuu"}, store.ErrStoreNotFound, ""},
 	}
@@ -286,7 +287,7 @@ func TestStorageStore(t *testing.T) {
 		}
 	}
 
-	s, err := testStorage.Store(store.Code("at"))
+	s, err := testStorage.Store(config.ScopeCode("at"))
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 
@@ -310,7 +311,7 @@ var benchmarkStorageStoreWebsite *store.Website
 func BenchmarkStorageStoreGetWebsite(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStorageStore, err = testStorage.Store(store.Code("de"))
+		benchmarkStorageStore, err = testStorage.Store(config.ScopeCode("de"))
 		if err != nil {
 			b.Error(err)
 		}
@@ -392,7 +393,7 @@ func TestStorageStoreErrors(t *testing.T) {
 			&store.TableStore{StoreID: 6, Code: dbr.NullString{NullString: sql.NullString{String: "nz", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),
 	)
-	stw, err := nsw.Store(store.Code("nz"))
+	stw, err := nsw.Store(config.ScopeCode("nz"))
 	assert.Nil(t, stw)
 	assert.EqualError(t, store.ErrWebsiteNotFound, err.Error())
 
@@ -413,7 +414,7 @@ func TestStorageStoreErrors(t *testing.T) {
 		),
 	)
 
-	stg, err := nsg.Store(store.Code("nz"))
+	stg, err := nsg.Store(config.ScopeCode("nz"))
 	assert.Nil(t, stg)
 	assert.EqualError(t, store.ErrGroupNotFound, err.Error())
 

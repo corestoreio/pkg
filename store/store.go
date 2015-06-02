@@ -74,6 +74,9 @@ var (
 	ErrStoreCodeInvalid      = errors.New("The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter")
 )
 
+var _ config.Retriever = (*Store)(nil)
+var _ config.CodeRetriever = (*Store)(nil)
+
 // SetStoreConfig sets the config.Reader to the Store.
 // Default reader is config.DefaultManager
 func SetStoreConfig(cr config.Reader) StoreOption {
@@ -118,9 +121,14 @@ func (s *Store) ApplyOptions(opts ...StoreOption) *Store {
 	@todo implement Magento\Store\Model\Store
 */
 
-// ID satisfies the interface Retriever and mainly used in the StoreManager for selecting Website,Group ...
-func (s *Store) ID() int64 {
+// ScopeID satisfies the interface Retriever and mainly used in the StoreManager for selecting Website,Group ...
+func (s *Store) ScopeID() int64 {
 	return s.s.StoreID
+}
+
+// ScopeCode satisfies the interface CodeRetriever
+func (s *Store) ScopeCode() string {
+	return s.s.Code.String
 }
 
 // Website returns the website associated to this store
@@ -261,24 +269,24 @@ func (s *Store) CurrentCurrency() *directory.Currency {
 	Global functions
 */
 // GetClaim returns a valid store code from a JSON web token or nil
-func GetCodeFromClaim(t *jwt.Token) Retriever {
+func GetCodeFromClaim(t *jwt.Token) config.Retriever {
 	if t == nil {
 		return nil
 	}
 	c, ok := t.Claims[CookieName]
 	if cs, okcs := c.(string); okcs && ok && nil == ValidateStoreCode(cs) {
-		return Code(cs)
+		return config.ScopeCode(cs)
 	}
 	return nil
 }
 
 // GetCookie returns from a Request the value of the store cookie or nil.
-func GetCodeFromCookie(req *http.Request) Retriever {
+func GetCodeFromCookie(req *http.Request) config.Retriever {
 	if req == nil {
 		return nil
 	}
 	if keks, err := req.Cookie(CookieName); nil == err && nil == ValidateStoreCode(keks.Value) {
-		return Code(keks.Value)
+		return config.ScopeCode(keks.Value)
 	}
 	return nil
 }
