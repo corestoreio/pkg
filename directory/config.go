@@ -235,10 +235,8 @@ func init() {
 			},
 		},
 		&config.Section{
-			ID:        "system",
-			Label:     "",
-			SortOrder: 0,
-			Scope:     config.NewScopePerm(),
+			ID:    "system",
+			Scope: config.NewScopePerm(),
 			Groups: config.GroupSlice{
 				&config.Group{
 					ID:        "currency",
@@ -265,17 +263,12 @@ func init() {
 			},
 		},
 		&config.Section{
-			ID:        "general",
-			Label:     "",
-			SortOrder: 0,
-			Scope:     config.NewScopePerm(),
+			ID:    "general",
+			Scope: config.NewScopePerm(),
 			Groups: config.GroupSlice{
 				&config.Group{
-					ID:        "country",
-					Label:     ``,
-					Comment:   ``,
-					SortOrder: 0,
-					Scope:     config.NewScopePerm(),
+					ID:    "country",
+					Scope: config.NewScopePerm(),
 					Fields: config.FieldSlice{
 						&config.Field{
 							// Path: `general/country/optional_zip_countries`,
@@ -296,7 +289,6 @@ func init() {
 				&config.Group{
 					ID:        "region",
 					Label:     `State Options`,
-					Comment:   ``,
 					SortOrder: 4,
 					Scope:     config.NewScopePerm(config.ScopeDefaultID),
 					Fields: config.FieldSlice{

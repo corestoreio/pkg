@@ -50,11 +50,6 @@ type (
 	// DefaultMap contains the default aka global configuration of a package
 	DefaultMap map[string]interface{}
 
-	// Option type is returned by the SourceModel interface
-	Option struct {
-		Value, Label string
-	}
-
 	// Sectioner at the moment only for testing
 	Sectioner interface {
 		// Defaults generates the default configuration from all fields. Key is the path and value the value.
@@ -123,13 +118,31 @@ type (
 		ToHTML() []byte // @see \Magento\Framework\Data\Form\Element\AbstractElement
 	}
 
-	// FieldSourceModeller defines how to retrieve all option values
-	FieldSourceModeller interface {
-		Options() []Option
+	OptionSlice []Option
+
+	// Option type is returned by the SourceModel interface
+	Option struct {
+		Value, Label string
 	}
 
-	// FieldBackendModeller defines how to save and load? the data @todo think about AddData
+	constructor can be called this?
+	ModelArgument struct {
+		ScopeID      ScopeIDer
+		ConfigReader Reader
+		// more fields ...
+	}
+	ModelArgumentFunc func(*ModelArgument)
+
+	// FieldSourceModeller defines how to retrieve all option values. Mostly used for frontend output.
+	FieldSourceModeller interface {
+		SetArgs(...ModelArgumentFunc)
+		Options() OptionSlice
+	}
+
+	// FieldBackendModeller defines how to save and load the data @todo think about AddData
+	// In Magento slang: beforeSave() and afterLoad()
 	FieldBackendModeller interface {
+		SetArgs(...ModelArgumentFunc)
 		AddData(interface{})
 		Save() error
 	}
