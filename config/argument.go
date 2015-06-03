@@ -25,20 +25,20 @@ import (
 // PS path separator used in the database table core_config_data and in config.Manager
 const PS = "/"
 
-// ScopeOption function to be used as variadic argument in ScopeKey() and ScopeKeyValue()
-type ScopeOption func(*arg)
+// ArgFunc Argument function to be used as variadic argument in ScopeKey() and ScopeKeyValue()
+type ArgFunc func(*arg)
 
 // ScopeWebsite wrapper helper function. See Scope()
-func ScopeWebsite(r ScopeIDer) ScopeOption { return Scope(ScopeWebsiteID, r) }
+func ScopeWebsite(r ScopeIDer) ArgFunc { return Scope(ScopeWebsiteID, r) }
 
 // ScopeStore wrapper helper function. See Scope()
-func ScopeStore(r ScopeIDer) ScopeOption { return Scope(ScopeStoreID, r) }
+func ScopeStore(r ScopeIDer) ArgFunc { return Scope(ScopeStoreID, r) }
 
 // Scope sets the scope using the ScopeGroup and a config.ScopeIDer.
 // A config.ScopeIDer can contain an ID from a website or a store. Make sure
 // the correct ScopeGroup has also been set. If config.ScopeIDer is nil
 // the scope will fallback to default scope.
-func Scope(s ScopeGroup, r ScopeIDer) ScopeOption {
+func Scope(s ScopeGroup, r ScopeIDer) ArgFunc {
 	if s != ScopeDefaultID && r == nil {
 		s = ScopeDefaultID
 	}
@@ -48,7 +48,7 @@ func Scope(s ScopeGroup, r ScopeIDer) ScopeOption {
 // Path option function to specify the configuration path. If one argument has been
 // provided then it must be a full valid path. If more than one argument has been provided
 // then the arguments will be joined together. Panics if nil arguments will be provided.
-func Path(paths ...string) ScopeOption {
+func Path(paths ...string) ArgFunc {
 	var p string
 	lp := len(paths)
 	if lp > 0 {
@@ -63,14 +63,14 @@ func Path(paths ...string) ScopeOption {
 
 // NoBubble disables the fallback to the default scope when a value in the current
 // scope not exists.
-func NoBubble() ScopeOption { return func(a *arg) { a.nb = true } }
+func NoBubble() ArgFunc { return func(a *arg) { a.nb = true } }
 
 // Value sets the value for a scope key.
-func Value(v interface{}) ScopeOption { return func(a *arg) { a.v = v } }
+func Value(v interface{}) ArgFunc { return func(a *arg) { a.v = v } }
 
 // ValueReader sets the value for a scope key using the io.Reader interface.
 // If asserting to a io.Closer is successful then Close() will be called.
-func ValueReader(r io.Reader) ScopeOption {
+func ValueReader(r io.Reader) ArgFunc {
 	if c, ok := r.(io.Closer); ok {
 		defer c.Close()
 	}
@@ -100,7 +100,7 @@ var int64Cache = []string{
 var int64CacheLen = int64(len(int64Cache))
 
 // newArg creates an argument container which requires different options depending on the use case.
-func newArg(opts ...ScopeOption) *arg {
+func newArg(opts ...ArgFunc) *arg {
 	var a = new(arg)
 	for _, opt := range opts {
 		if opt != nil {

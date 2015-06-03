@@ -29,25 +29,25 @@ func init() {
 
 func TestScopeKey(t *testing.T) {
 	tests := []struct {
-		haveArg []ScopeOption
+		haveArg []ArgFunc
 		want    string
 	}{
-		{[]ScopeOption{Path("a/b/c")}, ScopeRangeDefault + "/0/a/b/c"},
-		{[]ScopeOption{Path("")}, ""},
-		{[]ScopeOption{Path()}, ""},
-		{[]ScopeOption{Scope(ScopeDefaultID, nil)}, ""},
-		{[]ScopeOption{Scope(ScopeWebsiteID, nil)}, ""},
-		{[]ScopeOption{Scope(ScopeStoreID, nil)}, ""},
-		{[]ScopeOption{Path("a/b/c"), Scope(ScopeWebsiteID, nil)}, ScopeRangeDefault + "/0/a/b/c"},
-		{[]ScopeOption{Path("a/b/c"), Scope(ScopeWebsiteID, ScopeID(2))}, ScopeRangeWebsites + "/2/a/b/c"},
-		{[]ScopeOption{Path("a", "b", "c"), Scope(ScopeWebsiteID, ScopeID(200))}, ScopeRangeWebsites + "/200/a/b/c"},
-		{[]ScopeOption{Path("a", "b", "c"), Scope(ScopeStoreID, ScopeID(4))}, ScopeRangeStores + "/4/a/b/c"},
-		{[]ScopeOption{Path("a", "b"), Scope(ScopeStoreID, ScopeID(4))}, ScopeRangeStores + "/4/a"},
-		{[]ScopeOption{nil, Scope(ScopeStoreID, ScopeID(4))}, ""},
-		{[]ScopeOption{Path("a", "b", "c"), ScopeStore(ScopeID(5))}, ScopeRangeStores + "/5/a/b/c"},
-		{[]ScopeOption{Path("a", "b", "c"), ScopeStore(nil)}, ScopeRangeDefault + "/0/a/b/c"},
-		{[]ScopeOption{Path("a", "b", "c"), ScopeWebsite(ScopeID(50))}, ScopeRangeWebsites + "/50/a/b/c"},
-		{[]ScopeOption{Path("a", "b", "c"), ScopeWebsite(nil)}, ScopeRangeDefault + "/0/a/b/c"},
+		{[]ArgFunc{Path("a/b/c")}, ScopeRangeDefault + "/0/a/b/c"},
+		{[]ArgFunc{Path("")}, ""},
+		{[]ArgFunc{Path()}, ""},
+		{[]ArgFunc{Scope(ScopeDefaultID, nil)}, ""},
+		{[]ArgFunc{Scope(ScopeWebsiteID, nil)}, ""},
+		{[]ArgFunc{Scope(ScopeStoreID, nil)}, ""},
+		{[]ArgFunc{Path("a/b/c"), Scope(ScopeWebsiteID, nil)}, ScopeRangeDefault + "/0/a/b/c"},
+		{[]ArgFunc{Path("a/b/c"), Scope(ScopeWebsiteID, ScopeID(2))}, ScopeRangeWebsites + "/2/a/b/c"},
+		{[]ArgFunc{Path("a", "b", "c"), Scope(ScopeWebsiteID, ScopeID(200))}, ScopeRangeWebsites + "/200/a/b/c"},
+		{[]ArgFunc{Path("a", "b", "c"), Scope(ScopeStoreID, ScopeID(4))}, ScopeRangeStores + "/4/a/b/c"},
+		{[]ArgFunc{Path("a", "b"), Scope(ScopeStoreID, ScopeID(4))}, ScopeRangeStores + "/4/a"},
+		{[]ArgFunc{nil, Scope(ScopeStoreID, ScopeID(4))}, ""},
+		{[]ArgFunc{Path("a", "b", "c"), ScopeStore(ScopeID(5))}, ScopeRangeStores + "/5/a/b/c"},
+		{[]ArgFunc{Path("a", "b", "c"), ScopeStore(nil)}, ScopeRangeDefault + "/0/a/b/c"},
+		{[]ArgFunc{Path("a", "b", "c"), ScopeWebsite(ScopeID(50))}, ScopeRangeWebsites + "/50/a/b/c"},
+		{[]ArgFunc{Path("a", "b", "c"), ScopeWebsite(nil)}, ScopeRangeDefault + "/0/a/b/c"},
 		{nil, ""},
 	}
 
@@ -66,25 +66,25 @@ func TestScopeKey(t *testing.T) {
 
 func TestScopeKeyValue(t *testing.T) {
 	tests := []struct {
-		haveArg []ScopeOption
+		haveArg []ArgFunc
 		want    string
 	}{
-		{[]ScopeOption{Value(1), Path("a/b/c")}, ScopeRangeDefault + "/0/a/b/c"},
-		{[]ScopeOption{Value("1"), Path("")}, ""},
-		{[]ScopeOption{Value(1.1), Path()}, ""},
-		{[]ScopeOption{Value(1), Scope(ScopeDefaultID, nil)}, ""},
-		{[]ScopeOption{Value(1), Scope(ScopeWebsiteID, nil)}, ""},
-		{[]ScopeOption{Value(1), Scope(ScopeStoreID, nil)}, ""},
-		{[]ScopeOption{Value(1), Path("a/b/c"), Scope(ScopeWebsiteID, nil)}, ScopeRangeDefault + "/0/a/b/c"},
-		{[]ScopeOption{Value(1), Path("a/b/c"), Scope(ScopeWebsiteID, ScopeID(2))}, ScopeRangeWebsites + "/2/a/b/c"},
-		{[]ScopeOption{Value(1), Path("a", "b", "c"), Scope(ScopeWebsiteID, ScopeID(200))}, ScopeRangeWebsites + "/200/a/b/c"},
-		{[]ScopeOption{Value(1), Path("a", "b", "c"), Scope(ScopeStoreID, ScopeID(4))}, ScopeRangeStores + "/4/a/b/c"},
-		{[]ScopeOption{Value(1), Path("a", "b"), Scope(ScopeStoreID, ScopeID(4))}, ScopeRangeStores + "/4/a"},
-		{[]ScopeOption{Value(1), nil, Scope(ScopeStoreID, ScopeID(4))}, ""},
-		{[]ScopeOption{Value(1), Path("a", "b", "c"), ScopeStore(ScopeID(5))}, ScopeRangeStores + "/5/a/b/c"},
-		{[]ScopeOption{Value(1.2), Path("a", "b", "c"), ScopeStore(nil)}, ScopeRangeDefault + "/0/a/b/c"},
-		{[]ScopeOption{Value(1.3), Path("a", "b", "c"), ScopeWebsite(ScopeID(50))}, ScopeRangeWebsites + "/50/a/b/c"},
-		{[]ScopeOption{ValueReader(strings.NewReader("a config value")), Path("a", "b", "c"), ScopeWebsite(nil)}, ScopeRangeDefault + "/0/a/b/c"},
+		{[]ArgFunc{Value(1), Path("a/b/c")}, ScopeRangeDefault + "/0/a/b/c"},
+		{[]ArgFunc{Value("1"), Path("")}, ""},
+		{[]ArgFunc{Value(1.1), Path()}, ""},
+		{[]ArgFunc{Value(1), Scope(ScopeDefaultID, nil)}, ""},
+		{[]ArgFunc{Value(1), Scope(ScopeWebsiteID, nil)}, ""},
+		{[]ArgFunc{Value(1), Scope(ScopeStoreID, nil)}, ""},
+		{[]ArgFunc{Value(1), Path("a/b/c"), Scope(ScopeWebsiteID, nil)}, ScopeRangeDefault + "/0/a/b/c"},
+		{[]ArgFunc{Value(1), Path("a/b/c"), Scope(ScopeWebsiteID, ScopeID(2))}, ScopeRangeWebsites + "/2/a/b/c"},
+		{[]ArgFunc{Value(1), Path("a", "b", "c"), Scope(ScopeWebsiteID, ScopeID(200))}, ScopeRangeWebsites + "/200/a/b/c"},
+		{[]ArgFunc{Value(1), Path("a", "b", "c"), Scope(ScopeStoreID, ScopeID(4))}, ScopeRangeStores + "/4/a/b/c"},
+		{[]ArgFunc{Value(1), Path("a", "b"), Scope(ScopeStoreID, ScopeID(4))}, ScopeRangeStores + "/4/a"},
+		{[]ArgFunc{Value(1), nil, Scope(ScopeStoreID, ScopeID(4))}, ""},
+		{[]ArgFunc{Value(1), Path("a", "b", "c"), ScopeStore(ScopeID(5))}, ScopeRangeStores + "/5/a/b/c"},
+		{[]ArgFunc{Value(1.2), Path("a", "b", "c"), ScopeStore(nil)}, ScopeRangeDefault + "/0/a/b/c"},
+		{[]ArgFunc{Value(1.3), Path("a", "b", "c"), ScopeWebsite(ScopeID(50))}, ScopeRangeWebsites + "/50/a/b/c"},
+		{[]ArgFunc{ValueReader(strings.NewReader("a config value")), Path("a", "b", "c"), ScopeWebsite(nil)}, ScopeRangeDefault + "/0/a/b/c"},
 		{nil, ""},
 	}
 

@@ -23,7 +23,7 @@ type (
 
 var _ config.FieldSourceModeller = (*SourceCurrencyAll)(nil)
 
-func (c SourceCurrencyAll) Options() config.OptionSlice {
+func (c SourceCurrencyAll) Options() config.ValueLabelSlice {
 	// Magento\Framework\Locale\Resolver
 	// grep locale from general/locale/code scope::store for the current store ID
 	// the store locale greps the currencies from http://php.net/manual/en/class.resourcebundle.php
