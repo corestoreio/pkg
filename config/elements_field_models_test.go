@@ -12,7 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package config_test
 
-// DefaultMap contains the default aka global configuration of a package
-type DefaultMap map[string]interface{}
+import (
+	"testing"
+
+	"github.com/corestoreio/csfw/config"
+)
+
+type testSourceModel struct{}
+
+func (sm *testSourceModel) Construct(c config.ModelConstructor) {
+
+}
+func (sm *testSourceModel) Options() config.ValueLabelSlice {
+	return nil
+}
+
+func TestModelConstructor(t *testing.T) {
+
+}

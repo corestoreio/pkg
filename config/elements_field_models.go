@@ -21,6 +21,7 @@ import (
 )
 
 type (
+	// ValueLabelSlice type is returned by the SourceModel.Options() interface
 	ValueLabelSlice []ValueLabel
 	vlSortByLabel   struct {
 		ValueLabelSlice
@@ -29,49 +30,36 @@ type (
 		ValueLabelSlice
 	}
 
-	// Option type is returned by the SourceModel interface
+	// ValueLabel contains a stringyfied value and a label for print in a browser/ JS api.
 	ValueLabel struct {
 		Value, Label string
 	}
 
-	// ModelConstructor implements different fields which can be differently used
+	// ModelConstructor implements different fields/functions which can be differently used
 	// by the FieldSourceModeller or FieldBackendModeller types.
-	// Each implementation is on its own responsible to check for the required fields.
-	modelConstructor struct {
-		ScopeID      ScopeIDer
+	// Nearly all functions will return not nil. The Construct() function takes what it needs.
+	ModelConstructor struct {
+		// Scope contains a website/store ID or nil (=default scope)
+		Scope ScopeIDer
+		// ConfigReader returns the configuration reader and never nil
 		ConfigReader Reader
-		// more fields to be added ...
+		// @todo more fields to be added, depends on the overall requirements of all Magento models.
 	}
-
-	// ModelArgFunc function to set the fields in ModelConstructor
-	ModelArgFunc func(*modelConstructor)
 
 	// FieldSourceModeller defines how to retrieve all option values. Mostly used for frontend output.
 	FieldSourceModeller interface {
-		Construct(...ModelArgFunc)
+		Construct(ModelConstructor)
 		Options() ValueLabelSlice
 	}
 
-	// FieldBackendModeller defines how to save and load the data @todo think about AddData
+	// FieldBackendModeller defines how to save and load the data @todo rethink AddData
 	// In Magento slang: beforeSave() and afterLoad()
 	FieldBackendModeller interface {
-		Construct(...ModelArgFunc)
+		Construct(ModelConstructor)
 		AddData(interface{})
 		Save() error
 	}
 )
-
-func ModelScope(s ScopeIDer) ModelArgFunc {
-	return func(c *modelConstructor) {
-		c.ScopeID = s
-	}
-}
-
-func ModelConfig(s ScopeIDer) ModelArgFunc { @todo
-	return func(c *modelConstructor) {
-		c.ScopeID = s
-	}
-}
 
 // SortByLabel sorts by label in asc or desc direction
 func (s ValueLabelSlice) SortByLabel(d utils.SortDirection) ValueLabelSlice {
