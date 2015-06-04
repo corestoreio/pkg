@@ -36,6 +36,7 @@ const (
 	TypeTime
 )
 
+// ErrFieldNotFound error when a field cannot be found.
 var ErrFieldNotFound = errors.New("Field not found")
 
 type (
@@ -78,12 +79,12 @@ type (
 var _ FieldTyper = (*FieldType)(nil)
 
 // Type returns the current field type and satisfies the interface of Field.Type
-func (t FieldType) Type() FieldType {
-	return t
+func (i FieldType) Type() FieldType {
+	return i
 }
 
 // ToHTML noop function to satisfies the interface of Field.Type
-func (t FieldType) ToHTML() []byte {
+func (i FieldType) ToHTML() []byte {
 	return nil
 }
 
@@ -173,21 +174,21 @@ func (fs *FieldSlice) Less(i, j int) bool {
 	return (*fs)[i].SortOrder < (*fs)[j].SortOrder
 }
 
-const _FieldType_name = "TypeButtonTypeCustomTypeLabelTypeHiddenTypeImageTypeObscureTypeMultiselectTypeSelectTypeTextTypeTextareaTypeTime"
+const fieldTypeName = "TypeButtonTypeCustomTypeLabelTypeHiddenTypeImageTypeObscureTypeMultiselectTypeSelectTypeTextTypeTextareaTypeTime"
 
-var _FieldType_index = [...]uint8{10, 20, 29, 39, 48, 59, 74, 84, 92, 104, 112}
+var fieldTypeIndex = [...]uint8{10, 20, 29, 39, 48, 59, 74, 84, 92, 104, 112}
 
 func (i FieldType) String() string {
-	i -= 1
-	if i >= FieldType(len(_FieldType_index)) {
+	i--
+	if i >= FieldType(len(fieldTypeIndex)) {
 		return "FieldType(?)"
 	}
-	hi := _FieldType_index[i]
+	hi := fieldTypeIndex[i]
 	lo := uint8(0)
 	if i > 0 {
-		lo = _FieldType_index[i-1]
+		lo = fieldTypeIndex[i-1]
 	}
-	return _FieldType_name[lo:hi]
+	return fieldTypeName[lo:hi]
 }
 
 // MarshalJSON implements marshaling into a human readable string. @todo UnMarshal

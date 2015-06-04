@@ -26,6 +26,7 @@ import (
 	"github.com/juju/errgo"
 )
 
+// ErrSectionNotFound error when a section cannot be found.
 var ErrSectionNotFound = errors.New("Section not found")
 
 type (
@@ -208,11 +209,11 @@ func (ss *SectionSlice) Append(s ...*Section) *SectionSlice {
 	return ss
 }
 
-// ToJson transforms the whole slice into JSON
-func (ss SectionSlice) ToJson() string {
+// ToJSON transforms the whole slice into JSON
+func (ss SectionSlice) ToJSON() string {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(ss); err != nil {
-		log.Error("SectionSlice=ToJson", "err", err)
+		log.Error("SectionSlice=ToJSON", "err", err)
 		return ""
 	}
 	return buf.String()
@@ -232,7 +233,7 @@ func (ss SectionSlice) Validate() error {
 				arg := newArg(Path(s.ID, g.ID, f.ID))
 				p := arg.scopePath()
 				if pc.Include(p) {
-					return errgo.Newf("Duplicate entry for path %s :: %s", p, ss.ToJson())
+					return errgo.Newf("Duplicate entry for path %s :: %s", p, ss.ToJSON())
 				}
 				pc[i] = p
 				i++

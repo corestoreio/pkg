@@ -37,6 +37,7 @@ Scope Values
 To get a value from the configuration manager via any Get* method you have to set up the arguments.
 At least a config.Path() is needed. If you need a config value from another scope (store or website)
 you must also supply a Scope*() value. Without the scope the default value will be returned.
+The order of the arguments doesn't matter.
 
 	val := config.Manager.GetString(config.Path("path/to/setting"))
 
@@ -49,7 +50,7 @@ Can also be rewritten without using slashes:
 Returning a website scope based value:
 
 	w := store.Manager.Website()
-	val := config.Manager.GetString(config.Path("path/to/setting"), config.Scope(config.IDScopeWebsite, w))
+	val := config.Manager.GetString(config.Path("path/to/setting"), config.Scope(config.ScopeWebsiteID, w))
 
 can be rewritten as:
 
@@ -62,7 +63,7 @@ default value will be returned.
 Returning a store scope based value:
 
 	w := store.Manager.Website()
-	val := config.Manager.GetString(config.Path("path/to/setting"), config.Scope(config.IDScopeStore, w))
+	val := config.Manager.GetString(config.Path("path/to/setting"), config.Scope(config.ScopeStoreID, w))
 
 can be rewritten as:
 
@@ -74,6 +75,24 @@ default value will be returned.
 
 Mixing Store and Website scope in calling of any Write/Get*() function will return that value which scope
 will be added at last to the OptionFunc slice.
+
+Scope Writes
+
+Storing config values happens via the Write() function. The order of the arguments doesn't matter.
+
+Default Scope:
+
+	Write(config.Path("currency", "option", "base"), config.Value("USD"))
+
+Website Scope:
+
+	Write(config.Path("currency", "option", "base"), config.Value("EUR"), config.ScopeWebsite(w))
+
+Store Scope:
+
+	Write(config.Path("currency", "option", "base"), config.ValueReader(resp.Body), config.ScopeStore(s))
+
+An io.Reader is provided with automatic Close() calling.
 
 */
 package config

@@ -75,21 +75,21 @@ func (c ScopeCode) ScopeID() int64 { return int64(0) }
 // ScopeCode is convenience helper to satisfy the interface ScopeCoder
 func (c ScopeCode) ScopeCode() string { return string(c) }
 
-const _ScopeGroup_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
+const scopeGroupName = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
 
-var _ScopeGroup_index = [...]uint8{0, 11, 23, 35, 45, 55}
+var scopeGroupIndex = [...]uint8{0, 11, 23, 35, 45, 55}
 
 // String human readable name of ScopeGroup. For Marshaling see ScopePerm
 func (i ScopeGroup) String() string {
-	if i+1 >= ScopeGroup(len(_ScopeGroup_index)) {
+	if i+1 >= ScopeGroup(len(scopeGroupIndex)) {
 		return fmt.Sprintf("ScopeGroup(%d)", i)
 	}
-	return _ScopeGroup_name[_ScopeGroup_index[i]:_ScopeGroup_index[i+1]]
+	return scopeGroupName[scopeGroupIndex[i]:scopeGroupIndex[i+1]]
 }
 
 // ScopeGroupNames returns a slice containing all constant names
 func ScopeGroupNames() (r utils.StringSlice) {
-	return r.SplitStringer8(_ScopeGroup_name, _ScopeGroup_index[:]...)
+	return r.SplitStringer8(scopeGroupName, scopeGroupIndex[:]...)
 }
 
 func GetScopeGroup(s string) ScopeGroup {

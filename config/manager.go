@@ -15,7 +15,6 @@
 package config
 
 import (
-	"errors"
 	"time"
 
 	"github.com/corestoreio/csfw/storage/csdb"
@@ -25,11 +24,15 @@ import (
 	"github.com/spf13/viper"
 )
 
+// LeftDelim and RightDelim are used withing the core_config_data.value field to allow the replacement
+// of the placeholder in exchange with the current value.
 const (
 	LeftDelim  = "{{"
 	RightDelim = "}}"
+)
 
-	// PathCSBaseURL main CoreStore base URL, used if no configuration on a store level can be found.
+// PathCSBaseURL main CoreStore base URL, used if no configuration on a store level can be found.
+const (
 	PathCSBaseURL = "web/corestore/base_url"
 	CSBaseURL     = "http://localhost:9500/"
 )
@@ -51,22 +54,17 @@ type (
 	// @see https://github.com/magento/magento2/blob/0.74.0-beta7/lib/internal/Magento/Framework/UrlInterface.php#L13
 	URLType uint8
 
+	// Reader implements how to receive thread safe a configuration value from a path and or scope.
 	Reader interface {
-		// GetString returns a string from the manager. Example usage:
-		// Default value: GetString(config.Path("general/locale/timezone"))
-		// Website value: GetString(config.Path("general/locale/timezone"), config.ScopeWebsite(w))
-		// Store   value: GetString(config.Path("general/locale/timezone"), config.ScopeStore(s))
 		GetString(...ArgFunc) string
-
-		// GetBool returns bool from the manager. Example usage see GetString.
 		GetBool(...ArgFunc) bool
+		GetFloat64(o ...ArgFunc) float64
+		GetInt(o ...ArgFunc) int
+		GetDateTime(o ...ArgFunc) time.Time
 	}
 
+	// Writer thread safe storing of configuration values under different paths and scopes.
 	Writer interface {
-		// Write puts a value back into the manager. Example usage:
-		// Default Scope: Write(config.Path("currency", "option", "base"), config.Value("USD"))
-		// Website Scope: Write(config.Path("currency", "option", "base"), config.Value("EUR"), config.ScopeWebsite(w))
-		// Store   Scope: Write(config.Path("currency", "option", "base"), config.ValueReader(resp.Body), config.ScopeStore(s))
 		Write(...ArgFunc) error
 	}
 
@@ -83,8 +81,9 @@ var (
 
 	// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
 	TableCollection csdb.TableStructureSlice
-	ErrNoArguments  = errors.New("No arguments provided")
-	DefaultManager  *Manager
+
+	// DefaultManager provides a default manager
+	DefaultManager *Manager
 )
 
 func init() {
@@ -138,9 +137,6 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 // Store   Scope: Write(config.Path("currency", "option", "base"), config.ValueReader(resp.Body), config.ScopeStore(s))
 func (m *Manager) Write(o ...ArgFunc) error {
 	a := newArg(o...)
-	if a == nil {
-		return ErrNoArguments
-	}
 	if a.isBubbling() {
 		if log.IsDebug() {
 			log.Debug("Manager=Write", "path", a.scopePathDefault(), "bubble", a.isBubbling(), "val", a.v)

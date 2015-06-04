@@ -24,6 +24,7 @@ import (
 	"github.com/juju/errgo"
 )
 
+// ErrGroupNotFound error when a group cannot be found
 var ErrGroupNotFound = errors.New("Group not found")
 
 type (
@@ -96,11 +97,11 @@ func (gs *GroupSlice) merge(g *Group) error {
 	return nil
 }
 
-// ToJson transforms the whole slice into JSON
-func (gs GroupSlice) ToJson() string {
+// ToJSON transforms the whole slice into JSON
+func (gs GroupSlice) ToJSON() string {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(gs); err != nil {
-		log.Error("GroupSlice=ToJson", "err", err)
+		log.Error("GroupSlice=ToJSON", "err", err)
 		return ""
 	}
 	return buf.String()

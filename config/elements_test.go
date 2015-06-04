@@ -386,7 +386,7 @@ func TestSectionSliceMerge(t *testing.T) {
 			assert.Contains(t, haveErr.Error(), test.wantErr)
 		} else {
 			assert.NoError(t, haveErr)
-			j := baseSl.ToJson()
+			j := baseSl.ToJSON()
 			if j != test.want {
 				t.Errorf("\nIndex: %d\nExpected: %s\nActual:   %s\n", i, test.want, j)
 			}
@@ -444,7 +444,7 @@ func TestGroupSliceMerge(t *testing.T) {
 			assert.Contains(t, haveErr.Error(), test.wantErr)
 		} else {
 			assert.NoError(t, haveErr)
-			j := baseGsl.ToJson()
+			j := baseGsl.ToJSON()
 			if j != test.want {
 				t.Errorf("\nIndex: %d\nExpected: %s\nActual:   %s\n", i, test.want, j)
 			}
@@ -624,7 +624,7 @@ func TestSectionSliceSortAll(t *testing.T) {
 		&config.Section{ID: "e", SortOrder: 1},
 	}
 	ss.SortAll()
-	have := ss.ToJson()
+	have := ss.ToJSON()
 	if want != have {
 		t.Errorf("\nWant: %s\nHave: %s\n", want, have)
 	}
