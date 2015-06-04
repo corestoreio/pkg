@@ -15,9 +15,12 @@
 package config
 
 import (
+	"bytes"
+	"encoding/json"
 	"sort"
 
 	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/utils/log"
 )
 
 type (
@@ -30,7 +33,7 @@ type (
 		ValueLabelSlice
 	}
 
-	// ValueLabel contains a stringyfied value and a label for print in a browser/ JS api.
+	// ValueLabel contains a stringyfied value and a label for printing in a browser / JS api.
 	ValueLabel struct {
 		Value, Label string
 	}
@@ -63,21 +66,23 @@ type (
 
 // SortByLabel sorts by label in asc or desc direction
 func (s ValueLabelSlice) SortByLabel(d utils.SortDirection) ValueLabelSlice {
-	fsv := vlSortByLabel{s}
+	var si sort.Interface
+	si = vlSortByLabel{s}
 	if d == utils.SortDesc {
-		fsv = sort.Reverse(fsv)
+		si = sort.Reverse(si)
 	}
-	sort.Sort(fsv)
+	sort.Sort(si)
 	return s
 }
 
 // SortByValue sorts by label in asc or desc direction
 func (s ValueLabelSlice) SortByValue(d utils.SortDirection) ValueLabelSlice {
-	fsv := vlSortByValue{s}
+	var si sort.Interface
+	si = vlSortByValue{s}
 	if d == utils.SortDesc {
-		fsv = sort.Reverse(fsv)
+		si = sort.Reverse(si)
 	}
-	sort.Sort(fsv)
+	sort.Sort(si)
 	return s
 }
 
@@ -95,4 +100,14 @@ func (l vlSortByLabel) Less(i, j int) bool {
 
 func (v vlSortByValue) Less(i, j int) bool {
 	return v.ValueLabelSlice[i].Value < v.ValueLabelSlice[j].Value
+}
+
+// ToJSON returns a JSON string
+func (s ValueLabelSlice) ToJSON() string {
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(s); err != nil {
+		log.Error("ValueLabelSlice=ToJSON", "err", err)
+		return ""
+	}
+	return buf.String()
 }
