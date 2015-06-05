@@ -226,37 +226,3 @@ func (m *Manager) AllKeys() []string { return m.v.AllKeys() }
 func (m *Manager) IsSet(o ...ArgFunc) bool {
 	return m.v.IsSet(newArg(o...).scopePath())
 }
-
-var _ Reader = (*mockReader)(nil)
-
-// MockScopeReader used for testing
-type mockReader struct {
-	s func(path string) string
-	b func(path string) bool
-}
-
-// NewMockReader used for testing
-func NewMockReader(
-	s func(path string) string,
-	b func(path string) bool,
-) *mockReader {
-
-	return &mockReader{
-		s: s,
-		b: b,
-	}
-}
-
-func (sr mockReader) GetString(opts ...ArgFunc) string {
-	if sr.s == nil {
-		return ""
-	}
-	return sr.s(newArg(opts...).scopePath())
-}
-
-func (sr mockReader) GetBool(opts ...ArgFunc) bool {
-	if sr.b == nil {
-		return false
-	}
-	return sr.b(newArg(opts...).scopePath())
-}

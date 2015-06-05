@@ -50,15 +50,19 @@ type (
 	}
 
 	// FieldSourceModeller defines how to retrieve all option values. Mostly used for frontend output.
+	// The Construct() must be used because NOT all fields of ModelConstructor are available during
+	// init process and can of course change during the running app. Also to prevent circular dependencies.
 	FieldSourceModeller interface {
-		Construct(ModelConstructor)
+		Construct(ModelConstructor) error
 		Options() ValueLabelSlice
 	}
 
 	// FieldBackendModeller defines how to save and load the data @todo rethink AddData
-	// In Magento slang: beforeSave() and afterLoad()
+	// In Magento slang: beforeSave() and afterLoad().
+	// The Construct() must be used because NOT all fields of ModelConstructor are available during
+	// init process and can of course change during the running app. Also to prevent circular dependencies.
 	FieldBackendModeller interface {
-		Construct(ModelConstructor)
+		Construct(ModelConstructor) error
 		AddData(interface{})
 		Save() error
 	}
