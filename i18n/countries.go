@@ -12,6 +12,25 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package i18n supports string translations with variable substitution, CLDR pluralization,
-// currency, formats, language, regions and timezones.
 package i18n
+
+import (
+	"golang.org/x/text/display"
+	"golang.org/x/text/language"
+)
+
+type (
+	CountrySlice []language.Region
+)
+
+// Countries contains all supported countries
+var Countries CountrySlice
+
+// init countries
+func init() {
+	for _, r := range display.Values.Regions() {
+		if r.IsCountry() {
+			Countries = append(Countries, r)
+		}
+	}
+}

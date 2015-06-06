@@ -14,55 +14,49 @@
 
 package i18n
 
-import (
-	"errors"
-
-	"golang.org/x/text/language"
-)
-
-type (
-	Locale struct {
-		language.Tag
-	}
-
-	I18n struct {
-		DefaultLocale string
-		defaultLocale Locale
-	}
-
-	Option func(*I18n)
-)
-
-var ErrLocaleIncorrect = errors.New("Incorrect locale")
-var defaultI18n = NewI18n()
-
-func NewI18n() *I18n {
-	return &I18n{}
-}
-
-func Init(opts ...Option) error {
-	return defaultI18n.Init(opts...)
-}
-
-func (i *I18n) Init(opts ...Option) error {
-	for _, opt := range opts {
-		opt(i)
-	}
-
-	if i.DefaultLocale == "" {
-		return ErrLocaleIncorrect
-	}
-
-	i.defaultLocale = Locale{
-		Tag: language.Make(i.DefaultLocale),
-	}
-	return nil
-}
-
-func (i *I18n) __(translationID string, args ...interface{}) string {
-	return translationID
-}
-
-func __(translationID string, args ...interface{}) string {
-	return defaultI18n.__(translationID, args...)
-}
+//type (
+//	Locale struct {
+//		language.Tag
+//	}
+//
+//	I18n struct {
+//		DefaultLocale string
+//		defaultLocale Locale
+//	}
+//
+//	Option func(*I18n)
+//)
+//
+//var ErrLocaleIncorrect = errors.New("Incorrect locale")
+//var defaultI18n = NewI18n()
+//
+//func NewI18n() *I18n {
+//	return &I18n{}
+//}
+//
+//func Init(opts ...Option) error {
+//	return defaultI18n.Init(opts...)
+//}
+//
+//func (i *I18n) Init(opts ...Option) error {
+//	for _, opt := range opts {
+//		opt(i)
+//	}
+//
+//	if i.DefaultLocale == "" {
+//		return ErrLocaleIncorrect
+//	}
+//
+//	i.defaultLocale = Locale{
+//		Tag: language.Make(i.DefaultLocale),
+//	}
+//	return nil
+//}
+//
+//func (i *I18n) __(translationID string, args ...interface{}) string {
+//	return translationID
+//}
+//
+//func __(translationID string, args ...interface{}) string {
+//	return defaultI18n.__(translationID, args...)
+//}

@@ -12,6 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package i18n supports string translations with variable substitution, CLDR pluralization,
-// currency, formats, language, regions and timezones.
 package i18n
+
+import (
+	"github.com/juju/errgo"
+	"golang.org/x/text/cldr"
+)
+
+const (
+	// Default is the overall default locale when no website/store setting is available.
+	Default = "en_US"
+	// CLDRVersionRequired required version to run this package
+	CLDRVersionRequired = "27.0.1"
+)
+
+func init() {
+	if cldr.Version != CLDRVersionRequired {
+		panic(errgo.Newf("Incorrect CLDR Version! Expecting %s but got %s. Please check golang.org/x/text/cldr", CLDRVersionRequired, cldr.Version))
+	}
+}
