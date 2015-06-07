@@ -12,22 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package i18n
+package i18n_test
 
 import (
-	"github.com/juju/errgo"
-	"golang.org/x/text/cldr"
+	"testing"
+
+	"github.com/corestoreio/csfw/i18n"
+	"github.com/stretchr/testify/assert"
 )
 
-const (
-	// LocaleDefault is the overall default locale when no website/store setting is available.
-	LocaleDefault = "en_US"
-	// CLDRVersionRequired required version to run this package
-	CLDRVersionRequired = "27.0.1"
-)
-
-func init() {
-	if cldr.Version != CLDRVersionRequired {
-		panic(errgo.Newf("Incorrect CLDR Version! Expecting %s but got %s. Please check golang.org/x/text/cldr", CLDRVersionRequired, cldr.Version))
-	}
+func TestCountries(t *testing.T) {
+	assert.Len(t, i18n.Countries, 257)
 }
