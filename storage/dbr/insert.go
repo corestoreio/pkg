@@ -17,6 +17,7 @@ type InsertBuilder struct {
 	Cols []string
 	Vals [][]interface{}
 	Recs []interface{}
+	Maps map[string]interface{}
 }
 
 // InsertInto instantiates a InsertBuilder for the given table
@@ -55,6 +56,12 @@ func (b *InsertBuilder) Record(record interface{}) *InsertBuilder {
 	return b
 }
 
+// Record pulls in values to match Columns from the record
+func (b *InsertBuilder) Map(m map[string]interface{}) *InsertBuilder {
+	b.Maps = m
+	return b
+}
+
 // Pair adds a key/value pair to the statement
 func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
 	b.Cols = append(b.Cols, column)
@@ -76,21 +83,29 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 	if len(b.Into) == 0 {
 		panic("no table specified")
 	}
-	if len(b.Cols) == 0 {
-		panic("no columns specified")
-	}
-	if len(b.Vals) == 0 && len(b.Recs) == 0 {
-		panic("no values or records specified")
+	if len(b.Cols) == 0 && len(b.Maps) == 0 {
+		panic("no columns or map specified")
+	} else if len(b.Maps) == 0 {
+		if len(b.Vals) == 0 && len(b.Recs) == 0 {
+			panic("no values or records specified")
+		}
+		if len(b.Cols) == 0 && (len(b.Vals) > 0 || len(b.Recs) > 0) {
+			panic("no columns specified")
+		}
 	}
 
 	var sql bytes.Buffer
-	var placeholder bytes.Buffer // Build the placeholder like "(?,?,?)"
-	var args []interface{}
 
 	sql.WriteString("INSERT INTO ")
 	sql.WriteString(b.Into)
 	sql.WriteString(" (")
 
+	if len(b.Maps) != 0 {
+		return b.MapToSql(sql)
+	}
+
+	var args []interface{}
+	var placeholder bytes.Buffer // Build the placeholder like "(?,?,?)"
 	// Simulataneously write the cols to the sql buffer, and build a placeholder
 	placeholder.WriteRune('(')
 	for i, c := range b.Cols {
@@ -133,6 +148,41 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 		for _, v := range vals {
 			args = append(args, v)
 		}
+	}
+
+	return sql.String(), args
+}
+
+// MapToSql serialized the InsertBuilder to a SQL string
+// It goes through the Maps param and combined its keys/values into the SQL query string
+// It returns the string with placeholders and a slice of query arguments
+func (b *InsertBuilder) MapToSql(sql bytes.Buffer) (string, []interface{}) {
+	keys := make([]string, len(b.Maps))
+	vals := make([]interface{}, len(b.Maps))
+	i := 0
+	for k, v := range b.Maps {
+		keys[i] = k
+		vals[i] = v
+		i++
+	}
+	var args []interface{}
+	var placeholder bytes.Buffer // Build the placeholder like "(?,?,?)"
+
+	placeholder.WriteRune('(')
+	for i, c := range keys {
+		if i > 0 {
+			sql.WriteRune(',')
+			placeholder.WriteRune(',')
+		}
+		Quoter.writeQuotedColumn(c, &sql)
+		placeholder.WriteRune('?')
+	}
+	sql.WriteString(") VALUES ")
+	placeholder.WriteRune(')')
+	sql.WriteString(placeholder.String())
+
+	for _, row := range vals {
+		args = append(args, row)
 	}
 
 	return sql.String(), args

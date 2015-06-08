@@ -179,6 +179,10 @@ suggestion := &Suggestion{Title: "My Cool Suggestion", State: "open"}
 response, err := dbrSess.InsertInto("suggestions").
 	Columns("title", "state").Record(suggestion).Exec()
 
+// Insert; inserting a map automatically sets an int64 Id field if present
+m := &map[string]interface{}{"title": "My Cool Suggestion", "state": "open"}
+response, err := dbrSess.InsertInto("suggestions").Map(&m).Exec()
+
 // Update
 response, err = dbrSess.Update("suggestions").
 	Set("title", "My New Title").Where("id = ?", suggestion.Id).Exec()
