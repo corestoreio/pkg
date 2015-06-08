@@ -13,9 +13,9 @@
 // limitations under the License.
 
 /*
-Package money usese a fixed-length guard for precision arithmetic: the
-int64 variable Guard (and its float64 and int-related variables Guardf
-and Guardi.
+Package money usese a fixed-length guard for precision arithmetic.
+Implements Un/Marshaller and Scan() method for database
+columns including null. Optimized for usage: decimal(12,4) NULL
 
 Rounding is done on float64 to int64 by	the Rnd() function truncating
 at values less than (.5 + (1 / Guardf))	or greater than -(.5 + (1 / Guardf))
@@ -23,6 +23,8 @@ in the case of negative numbers. The Guard adds four decimal places
 of protection to rounding.
 DP is the decimal precision, which can be changed in the DecimalPrecision()
 function.  DP hold the places after the decimalplace in teh active money struct field M.
+
+http://en.wikipedia.org/wiki/Floating_point#Accuracy_problems
 
 Initial copyright: Copyright (c) 2011 Jad Dittmar
 https://github.com/Confunctionist/finance
@@ -49,90 +51,178 @@ THE SOFTWARE.
 package money
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"math"
+	"strconv"
 
-	"database/sql/driver"
+	"database/sql"
 
-	"encoding/json"
+	"bytes"
 
 	"github.com/corestoreio/csfw/utils/log"
 )
 
 var (
-	ErrOverflow         = errors.New("Integer Overflow")
-	Guardi      int     = 100
-	Guard       int64   = int64(Guardi)
-	Guardf      float64 = float64(Guardi)
-	DP          int64   = 100         // for default of 2 decimal places => 10^2 (can be reset)
-	DPf         float64 = float64(DP) // for default of 2 decimal places => 10^2 (can be reset)
-	Round               = .5
+	ErrOverflow = errors.New("Integer Overflow")
+
+	guard  int64   = 100
+	guardf float64 = float64(guard)
+	dp     int64   = 10000 //  decimal(12,4)
+	dpf    float64 = float64(dp)
+
+	Round = .5
 	//	Round  = .5 + (1 / Guardf)
 	Roundn = Round * -1
 )
 
-// Currency represents a money aka currency type to avoid rounding errors with floats
+// Interval* constants http://en.wikipedia.org/wiki/Swedish_rounding
+const (
+	// Interval000 no swedish rounding (default)
+	Interval000 interval = iota
+	// Interval005 rounding with 0.05 intervals
+	Interval005
+	// Interval010 rounding with 0.10 intervals
+	Interval010
+	// Interval050 rounding with 0.50 intervals
+	Interval050
+	// Interval100 rounding with 1.00 intervals
+	Interval100
+)
+
+// interval defines the internal type for the Swedish rounding.
+type interval uint8
+
+// Currency represents a money aka currency type to avoid rounding errors with floats.
+// Takes also care of http://en.wikipedia.org/wiki/Swedish_rounding
 type Currency struct {
-	// M money
-	M int64
-	// L locale to allow language specific output formats
-	L string
+	// m money in Guard/DP
+	m int64
+	// Locale to allow language specific output formats @todo
+	Locale string
+	// Valid if false the internal value is NULL
+	Valid bool
+	// Swedish is the interval for the swedish rounding.
+	Swedish interval
+
+	guard  int64
+	guardf float64
+	dp     int64
+	dpf    float64
+}
+
+// SetGuard sets the global and default for New() fixed-length guard for precision arithmetic
+func SetGuard(g int64) {
+	guard = g
+	guardf = float64(g)
+}
+
+// SetDecimalPrecision sets the global and default for New() decimal precision ... of 2 decimal places => 10^2 (can be reset)
+// Package default value
+func SetDecimalPrecision(p int64) {
+	p64 := int64(p)
+	l := int64(math.Log(float64(p64)))
+	if p64 == 0 || (p64 != 0 && (l%2) != 0) {
+		p64 = dp
+	}
+	dp = p64
+	dpf = float64(p64)
+}
+
+// New creates a new empty Currency struct with package default values of Guard and DP.
+func New() Currency {
+	return Currency{
+		guard:  guard,
+		guardf: guardf,
+		dp:     dp,
+		dpf:    dpf,
+	}
+}
+
+// SetGuard sets the guard for the current struct.
+func (c Currency) SetGuard(g int) Currency {
+	if g < 1 {
+		g = 1
+	}
+	c.guard = int64(g)
+	c.guardf = float64(g)
+	return c
+}
+
+// SetPrecision sets the precison for the current struct. 0, 10, 100, 1000 ...
+// If not a decimal power then falls back to the default value
+func (c Currency) SetPrecision(p int) Currency {
+	p64 := int64(p)
+	l := int64(math.Log(float64(p64)))
+	if p64 != 0 && (l%2) != 0 {
+		p64 = dp
+	}
+	if p64 == 0 {
+		p64 = 1
+	}
+	c.dp = p64
+	c.dpf = float64(p64)
+	return c
 }
 
 // Abs Returns the absolute value of Currency
-func (m *Currency) Abs() *Currency {
-	if m.M < 0 {
-		m.Neg()
+func (c Currency) Abs() Currency {
+	if c.m < 0 {
+		return c.Neg()
 	}
-	return m
+	return c
 }
 
-// Add Adds two Currency types. Returns nil on integer overflow
-func (m *Currency) Add(n *Currency) *Currency {
-	r := m.M + n.M
-	if (r^m.M)&(r^n.M) < 0 {
+// Add Adds two Currency types. Returns empty Currency on integer overflow
+func (c Currency) Add(d Currency) Currency {
+	r := c.m + d.m
+	if (r^c.m)&(r^d.m) < 0 {
 		if log.IsTrace() {
-			log.Trace("Currency=Add", "err", ErrOverflow, "m", m, "n", n)
+			log.Trace("Currency=Add", "err", ErrOverflow, "m", c, "n", d)
 		}
-		log.Error("Currency=Add", "err", ErrOverflow, "m", m, "n", n)
-		return nil
+		log.Error("Currency=Add", "err", ErrOverflow, "m", c, "n", d)
+		return New()
 	}
-	m.M = r
-	return m
+	c.m = r
+	c.Valid = true
+	return c
 }
 
-// Get gets the float64 value of money (see Raw() for int64)
-func (m *Currency) Get() float64 {
-	return float64(m.M) / DPf
+// Getf gets the float64 value of money (see Raw() for int64)
+func (c Currency) Getf() float64 {
+	return float64(c.m) / c.dpf
 }
 
-// Gett gets value of money truncating after DP (see Raw() for no truncation)
-func (m *Currency) Gett() int64 {
-	return m.M / DP
+// Geti gets value of money truncating after decimal precision (see Raw() for no truncation).
+// Rounds always down
+func (c Currency) Geti() int64 {
+	return c.m / c.dp
 }
 
 // Raw returns in int64 the value of Currency (also see Gett(), See Get() for float64)
-func (m *Currency) Raw() int64 {
-	return m.M
+func (c Currency) Raw() int64 {
+	return c.m
 }
 
 // Set sets the Currency field M
-func (m *Currency) Set(x int64) *Currency {
-	m.M = x
-	return m
+func (c Currency) Set(i int64) Currency {
+	c.m = i
+	c.Valid = true
+	return c
 }
 
 // Setf sets a float64 into a Currency type for precision calculations
-func (m *Currency) Setf(f float64) *Currency {
-	fDPf := f * DPf
-	r := int64(f * DPf)
-	return m.Set(Rnd(r, fDPf-float64(r)))
+func (c Currency) Setf(f float64) Currency {
+	fDPf := f * c.dpf
+	r := int64(f * c.dpf)
+	c.Valid = true
+	return c.Set(Rnd(r, fDPf-float64(r)))
 }
 
 // Sign returns the Sign of Currency 1 if positive, -1 if negative
-func (m *Currency) Sign() int {
-	if m.M < 0 {
+func (c Currency) Sign() int {
+	if c.m < 0 {
 		return -1
 	}
 	return 1
@@ -140,50 +230,57 @@ func (m *Currency) Sign() int {
 
 // String for money type representation in basic monetary unit (DOLLARS CENTS)
 // @todo consider locale
-func (m *Currency) String() string {
-	return fmt.Sprintf("%d.%02d", m.Value()/DP, m.Abs().Value()%DP)
+func (c Currency) String() string {
+	return fmt.Sprintf("%d.%02d", c.Raw()/c.dp, c.Abs().Raw()%c.dp)
 }
 
-// Sub subtracts one Currency type from another. Returns nil on integer overflow
-func (m *Currency) Sub(n *Currency) *Currency {
-	r := m.M - n.M
-	if (r^m.M)&^(r^n.M) < 0 {
+// Sub subtracts one Currency type from another. Returns empty Currency on integer overflow
+func (c Currency) Sub(d Currency) Currency {
+	r := c.m - d.m
+	if (r^c.m)&^(r^d.m) < 0 {
 		if log.IsTrace() {
-			log.Trace("Currency=Sub", "err", ErrOverflow, "m", m, "n", n)
+			log.Trace("Currency=Sub", "err", ErrOverflow, "m", c, "n", d)
 		}
-		log.Error("Currency=Sub", "err", ErrOverflow, "m", m, "n", n)
-		return nil
+		log.Error("Currency=Sub", "err", ErrOverflow, "m", c, "n", d)
+		return New()
 	}
-	m.M = r
-	return m
+	c.m = r
+	return c
 }
 
 // Mul Multiplies two Currency types
-func (m *Currency) Mul(n *Currency) *Currency {
-	return m.Set(m.M * n.M / DP)
+func (c Currency) Mul(d Currency) Currency {
+	return c.Set(c.m * d.m / c.dp)
+}
+
+// Div Divides one Currency type from another
+func (c Currency) Div(d Currency) Currency {
+	f := c.guardf * c.dpf * float64(c.m) / float64(d.m) / c.guardf
+	i := int64(f)
+	return c.Set(Rnd(i, f-float64(i)))
 }
 
 // Mulf Multiplies a Currency with a float to return a money-stored type
-func (m *Currency) Mulf(f float64) *Currency {
-	i := m.M * int64(f*Guardf*DPf)
-	r := i / Guard / DP
-	return m.Set(Rnd(r, float64(i)/Guardf/DPf-float64(r)))
+func (c Currency) Mulf(f float64) Currency {
+	i := c.m * int64(f*c.guardf*c.dpf)
+	r := i / c.guard / c.dp
+	return c.Set(Rnd(r, float64(i)/c.guardf/c.dpf-float64(r)))
 }
 
 // Neg Returns the negative value of Currency
-func (m *Currency) Neg() *Currency {
-	if m.M != 0 {
-		m.M *= -1
+func (c Currency) Neg() Currency {
+	if c.m != 0 {
+		c.m *= -1
 	}
-	return m
+	return c
 }
 
 // Pow is the power of Currency
-func (m *Currency) Pow(r float64) *Currency {
-	return m.Setf(math.Pow(m.Get(), r))
+func (c Currency) Pow(f float64) Currency {
+	return c.Setf(math.Pow(c.Getf(), f))
 }
 
-// RND rounds int64 remainder rounded half towards plus infinity
+// Rnd rounds int64 remainder rounded half towards plus infinity
 // trunc = the remainder of the float64 calc
 // r     = the result of the int64 cal
 func Rnd(r int64, trunc float64) int64 {
@@ -203,23 +300,56 @@ func Rnd(r int64, trunc float64) int64 {
 }
 
 var (
-	_ json.Unmarshaler      = (*Currency)(nil)
-	_ json.Marshaler        = (*Currency)(nil)
-	_ driver.ValueConverter = (*Currency)(nil)
-	_ driver.Valuer         = (*Currency)(nil)
+	_          json.Unmarshaler = (*Currency)(nil)
+	_          json.Marshaler   = (*Currency)(nil)
+	_          sql.Scanner      = (*Currency)(nil)
+	nullString                  = []byte("null")
+
+//	_ driver.ValueConverter = (Currency)(nil)
+//	_ driver.Valuer         = (Currency)(nil)
 )
 
-func (m *Currency) MarshalJSON() ([]byte, error) {
-
+func (c Currency) MarshalJSON() ([]byte, error) {
+	if false == c.Valid {
+		return nullString, nil
+	}
+	return []byte(c.String()), nil
 }
 
-func (m *Currency) UnmarshalJSON(b []byte) error {
-
+func (c *Currency) UnmarshalJSON(b []byte) error {
+	var s interface{}
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	return c.Scan(s)
 }
 
-func (m *Currency) ConvertValue(v interface{}) (driver.Value, error) {
-
+func (c *Currency) Scan(value interface{}) error {
+	if value == nil {
+		c.m, c.Valid = 0, false
+		return nil
+	}
+	c.Valid = true
+	// @todo
+	return nil //convertAssign(&n.Int64, value)
 }
-func (m *Currency) Value() (driver.Value, error) {
 
+var colon = []byte(",")
+
+func atof64(bVal []byte) (f float64, err error) {
+	bVal = bytes.Replace(bVal, colon, nil, -1)
+	//	s := string(bVal)
+	//	s1 := strings.Replace(s, ",", "", -1)
+	f, err = strconv.ParseFloat(string(bVal), 64)
+	return f, err
 }
+
+//// ConvertValue @todo
+//func (c Currency) ConvertValue(v interface{}) (driver.Value, error) {
+//	return nil, nil
+//}
+//
+//// Value @todo
+//func (c Currency) Value() (driver.Value, error) {
+//	return nil, nil
+//}
