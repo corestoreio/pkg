@@ -31,6 +31,7 @@ import (
 
 var (
 	logFatalln = log.Fatalln
+	logFatalf  = log.Fatalf
 	letters    = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	Copyright  = []byte(`// Copyright 2015 CoreStore Authors
 //
@@ -123,13 +124,19 @@ func Camelize(s string) string {
 }
 
 // LogFatal logs an error as fatal with printed location and exists the program.
-func LogFatal(err error) {
+func LogFatal(err error, args ...interface{}) {
 	if err == nil {
 		return
 	}
 	s := "Error: " + err.Error()
 	if err, ok := err.(errgo.Locationer); ok {
 		s += " " + err.Location().String()
+	}
+	if len(args) > 0 {
+		msg := args[0].(string)
+		args = args[1:]
+		logFatalf(s+"\n"+msg, args...)
+		return
 	}
 	logFatalln(s)
 }

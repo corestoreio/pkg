@@ -259,9 +259,20 @@ var ConfigTableToStruct = TableToStructMap{
 // ConfigMaterializationEntityType configuration for materializeEntityType() to write the materialized entity types
 // into a folder. Other fields of the struct TableToStruct are ignored. Use the file config_user.go with the
 // func init() to change/extend it.
-var ConfigMaterializationEntityType = &TableToStruct{
+var ConfigMaterializationEntityType = TableToStruct{
 	Package:    "testgen",
 	OutputFile: myPath + "testgen" + PS + "generated_entity_type_test.go",
+}
+
+// ConfigLocalization temporary integration because missing feature in https://github.com/golang/text
+var ConfigLocalization = struct {
+	Package       string
+	OutputFile    string
+	EnabledLocale utils.StringSlice
+}{
+	Package:       "i18n_test",
+	OutputFile:    myPath + "i18n" + PS + "generated_translation_test.go",
+	EnabledLocale: utils.StringSlice{"en", "fr", "de", "de_CH", "nl", "ca_FR"},
 }
 
 var (
