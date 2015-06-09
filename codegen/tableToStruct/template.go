@@ -1,4 +1,4 @@
-// Copyright 2015 CoreStore Authors
+// Copyright 2015, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@ package main
 
 const tplCode = `//go:generate gen
 
-// Copyright 2015 CoreStore Authors
+// Copyright 2015, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.

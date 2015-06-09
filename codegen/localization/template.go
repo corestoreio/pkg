@@ -1,4 +1,4 @@
-// Copyright 2015 CoreStore Authors
+// Copyright 2015, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ const tplCodeUnit = `i18n.NewCurrencyDict(
 ),
 `
 
-const tplCode = `// Copyright 2015 CoreStore Authors
+const tplCode = `// Copyright 2015, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
