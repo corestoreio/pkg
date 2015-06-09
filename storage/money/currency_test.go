@@ -63,7 +63,7 @@ func TestAdd(t *testing.T) {
 	}
 }
 
-func TestGet(t *testing.T) {
+func TestPrecisionAndGet(t *testing.T) {
 	tests := []struct {
 		prec  int
 		have  int64
@@ -100,4 +100,38 @@ func TestGet(t *testing.T) {
 			t.Errorf("\nWantF: %f\nHaveF: %.20f\nIndex: %d\n", test.wantf, haveCF, i)
 		}
 	}
+}
+
+func TestSetf(t *testing.T) {
+	tests := []struct {
+		prec  int
+		want  int64
+		havef float64
+	}{
+		{0, 13, 13.0000},
+		{10, 13, 1.30000},
+		{100, 13, 0.130000},
+		{1000, 13, 0.013000},
+		{100, -13, -0.130000},
+		{0, -45628734653, -45628734653.000000},
+		{10, -45628734653, -4562873465.300000},
+		{100, -45628734653, -456287346.530000},
+		{1000, -45628734653, -45628734.653000},
+		{100, 256, 2.56},
+		10: {1234, -45628734653, -4562873.46530000}, // fallback to prec 10000
+		{100, -45628734655, -456287346.550000},
+		{100, -45628734611, -456287346.110000},
+		{100, -45628734699, -456287346.990000},
+		14: {10000000, 45628734699, 4562.87346989999969082419},
+		15: {10000000, 45628734655, 4562.87346549999983835733},
+	}
+
+	for i, test := range tests {
+		c := money.New(money.Precision(test.prec)).Setf(test.havef)
+		haveR := c.Raw()
+		if haveR != test.want {
+			t.Errorf("\nWantI: %d\nHaveI: %d\nIndex: %d\n", test.want, haveR, i)
+		}
+	}
+
 }

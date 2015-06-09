@@ -151,14 +151,14 @@ func DefaultSwedish(i Interval) {
 	}
 }
 
-// DefaultGuard sets the global and default for New() fixed-length guard for precision arithmetic
+// DefaultGuard sets the global default guard. A fixed-length guard for precision arithmetic.
 func DefaultGuard(g int64) {
 	guard = g
 	guardf = float64(g)
 }
 
-// DefaultPrecision sets the global and default for New() decimal precision ... of 2 decimal places => 10^2 (can be reset)
-// Package default value
+// DefaultPrecision sets the global default decimal precision.
+// 2 decimal places => 10^2; 3 decimal places => 10^3; x decimal places => 10^x
 func DefaultPrecision(p int64) {
 	p64 := int64(p)
 	l := int64(math.Log(float64(p64)))
@@ -169,7 +169,7 @@ func DefaultPrecision(p int64) {
 	dpf = float64(p64)
 }
 
-// Swedish sets the swedish rounding
+// Swedish sets the Swedish rounding
 // http://en.wikipedia.org/wiki/Swedish_rounding
 func Swedish(i Interval) OptionFunc {
 	if i >= interval999 {
@@ -196,7 +196,8 @@ func Guard(g int) OptionFunc {
 	}
 }
 
-// Precision sets the precison. 0, 10, 100, 1000 ...
+// Precision sets the precision.
+// 2 decimal places => 10^2; 3 decimal places => 10^3; x decimal places => 10^x
 // If not a decimal power then falls back to the default value.
 func Precision(p int) OptionFunc {
 	p64 := int64(p)
