@@ -41,28 +41,6 @@ func TestAbs(t *testing.T) {
 	}
 }
 
-func TestAdd(t *testing.T) {
-	tests := []struct {
-		have1 int64
-		have2 int64
-		want  int64
-	}{
-		{13, 13, 26},
-		{-13, -13, -26},
-		{-45628734653, -45628734653, -91257469306},
-		{math.MaxInt64, 2, 0},
-	}
-
-	for i, test := range tests {
-		c := money.New().Set(test.have1)
-		c = c.Add(money.New().Set(test.have2))
-		have := c.Raw()
-		if have != test.want {
-			t.Errorf("\nWant: %d\nHave: %d\nIndex: %d\n", test.want, have, i)
-		}
-	}
-}
-
 func TestPrecisionAndGet(t *testing.T) {
 	tests := []struct {
 		prec  int
@@ -156,18 +134,176 @@ func TestSwedish(t *testing.T) {
 		have int64
 		want string
 	}{
-		0: {0, money.Interval005, 25689, "25689.00"},
-		1: {10, money.Interval005, 25689, "2568.90"},
-		2: {100, money.Interval005, 25689, "256.90"},
-		3: {1000, money.Interval005, 25689, "25.70"},
-		4: {100, money.Interval005, 25642, "256.40"},
-		5: {100, money.Interval005, 25644, "256.45"},
+		{0, money.Interval005, 25689, "25689.00"},
+		{10, money.Interval005, 25689, "2568.09"},
+		{100, money.Interval005, 25689, "256.90"},
+		{1000, money.Interval005, 25689, "25.700"},
+		{100, money.Interval005, 25642, "256.40"},
+		{100, money.Interval005, 25644, "256.45"},
+
+		{0, money.Interval010, 25689, "25689.00"},
+		{10, money.Interval010, 25689, "2568.09"},
+		{100, money.Interval010, 25689, "256.90"},
+		{1000, money.Interval010, 25689, "25.700"},
+		{100, money.Interval010, 25642, "256.40"},
+		{100, money.Interval010, 25644, "256.40"},
+		{100, money.Interval010, 25639, "256.40"},
+		{100, money.Interval010, 25635, "256.40"},
+		{100, money.Interval010, 25634, "256.30"},
+		{100, money.Interval010, 256345, "2563.50"},
+
+		{0, money.Interval015, 25689, "25689.00"},
+		{10, money.Interval015, 25689, "2568.09"},
+		{10, money.Interval015, 25685, "2568.04"},
+		{100, money.Interval015, 25689, "256.90"},
+		{1000, money.Interval015, 25689, "25.700"},
+		{100, money.Interval015, 25642, "256.40"},
+		{100, money.Interval015, 25644, "256.40"},
+		{100, money.Interval015, 25639, "256.40"},
+		{100, money.Interval015, 25635, "256.30"},
+		{100, money.Interval015, 25636, "256.40"},
+		{100, money.Interval015, 25634, "256.30"},
+		{100, money.Interval015, 256345, "2563.40"},
+
+		{0, money.Interval025, 25689, "25689.00"},
+		{10, money.Interval025, 25689, "2569.00"},
+		{10, money.Interval025, 25685, "2568.05"},
+		{100, money.Interval025, 25689, "257.00"},
+		{1000, money.Interval025, 25689, "25.750"},
+		{100, money.Interval025, 25642, "256.50"},
+		{100, money.Interval025, 25644, "256.50"},
+		{100, money.Interval025, 25639, "256.50"},
+		{100, money.Interval025, 25624, "256.25"},
+		{100, money.Interval025, 25625, "256.25"},
+		{100, money.Interval025, 25634, "256.25"},
+		{100, money.Interval025, 256345, "2563.50"},
+
+		{0, money.Interval050, 25689, "25689.00"},
+		{10, money.Interval050, 25689, "2569.00"},
+		{10, money.Interval050, 25685, "2568.05"},
+		{100, money.Interval050, 25689, "257.00"},
+		{1000, money.Interval050, 25689, "25.500"},
+		{100, money.Interval050, 25642, "256.50"},
+		{100, money.Interval050, 25644, "256.50"},
+		{100, money.Interval050, 25639, "256.50"},
+		{100, money.Interval050, 25624, "256.00"},
+		{100, money.Interval050, 25625, "256.50"},
+		{100, money.Interval050, 25634, "256.50"},
+		{100, money.Interval050, 256345, "2563.50"},
+
+		{0, money.Interval100, 25689, "25689.00"},
+		{10, money.Interval100, 25689, "2569.00"},
+		{10, money.Interval100, 25685, "2569.00"},
+		{10, money.Interval100, 25684, "2568.00"},
+		{100, money.Interval100, 25689, "257.00"},
+		{1000, money.Interval100, 25689, "26.00"},
+		{100, money.Interval100, 25642, "256.00"},
+		{100, money.Interval100, 25644, "256.00"},
+		{100, money.Interval100, 25639, "256.00"},
+		{100, money.Interval100, 25624, "256.00"},
+		{100, money.Interval100, 25625, "256.00"},
+		{100, money.Interval100, 25634, "256.00"},
+		{100, money.Interval100, 256345, "2563.00"},
 	}
-	for i, test := range tests {
+	for _, test := range tests {
 		c := money.New(money.Precision(test.prec)).Set(test.have)
 		have := c.Swedish(money.Swedish(test.iv)).Unformatted()
 		if have != test.want {
-			t.Errorf("\nWant: %s\nHave: %s\nIndex: %d\n", test.want, have, i)
+			t.Errorf("\nWant: %s\nHave: %s\nIndex: %v\n", test.want, have, test)
+		}
+	}
+}
+
+func TestAdd(t *testing.T) {
+	tests := []struct {
+		have1 int64
+		have2 int64
+		want  int64
+	}{
+		{13, 13, 26},
+		{-13, -13, -26},
+		{-45628734653, -45628734653, -91257469306},
+		{math.MaxInt64, 2, 0},
+	}
+
+	for _, test := range tests {
+		c := money.New().Set(test.have1)
+		c = c.Add(money.New().Set(test.have2))
+		have := c.Raw()
+		if have != test.want {
+			t.Errorf("\nWant: %d\nHave: %d\nIndex: %v\n", test.want, have, test)
+		}
+	}
+}
+
+func TestSub(t *testing.T) {
+	tests := []struct {
+		have1 int64
+		have2 int64
+		want  int64
+	}{
+		{13, 13, 0},
+		{-13, -13, 0},
+		{-13, 13, -26},
+		{-45628734653, -45628734653, 0},
+		{-math.MaxInt64, 2, 0},
+	}
+
+	for _, test := range tests {
+		c := money.New().Set(test.have1)
+		c = c.Sub(money.New().Set(test.have2))
+		have := c.Raw()
+		if have != test.want {
+			t.Errorf("\nWant: %d\nHave: %d\nIndex: %v\n", test.want, have, test)
+		}
+	}
+}
+
+func TestMul(t *testing.T) {
+	tests := []struct {
+		have1 int64
+		have2 int64
+		want  int64
+	}{
+		{1300, 1300, 169},
+		{13, -13, 0},
+		{1300, -1300, -169},
+		{13, 13, 0},
+		{45628734653, -45628734653, 250065429529630},
+		{math.MaxInt64, 2, 0},
+	}
+
+	for _, test := range tests {
+		c := money.New().Set(test.have1)
+		c = c.Mul(money.New().Set(test.have2))
+		have := c.Raw()
+		if have != test.want {
+			t.Errorf("\nWant: %d\nHave: %d\nIndex: %v\n", test.want, have, test)
+		}
+	}
+}
+
+func TestDiv(t *testing.T) {
+	tests := []struct {
+		have1 int64
+		have2 int64
+		want  int64
+	}{
+		{1300, 1300, 10000},
+		{13, -13, -10000},
+		{9000, -3000, -30000},
+		{13, 13, 10000},
+		{471100, 81500, 57804},
+		{45628734653, -45628734653, -10000},
+		{math.MaxInt64, 2, -9223372036854775807},
+	}
+
+	for _, test := range tests {
+		c := money.New().Set(test.have1)
+		c = c.Div(money.New().Set(test.have2))
+		have := c.Raw()
+		if have != test.want {
+			t.Errorf("\nWant: %d\nHave: %d / %s\nIndex: %v\n", test.want, have, c.Unformatted(), test)
 		}
 	}
 }

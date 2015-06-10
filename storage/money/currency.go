@@ -12,62 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
-Package money uses a fixed-length guard for precision arithmetic.
-Implements Un/Marshaller and Scan() method for database
-columns including null, optimized for decimal(12, 4) fields.
-
-Rounding is done on float64 to int64 by	the Rnd() function truncating
-at values less than (.5 + (1 / Guardf))	or greater than -(.5 + (1 / Guardf))
-in the case of negative numbers. The Guard adds four decimal places
-of protection to rounding.
-Decimal precision can be changed in the Precision() option
-function. Precision() hold the places after the decimal place in teh active money struct field m.
-
-http://en.wikipedia.org/wiki/Floating_point#Accuracy_problems
-
-Options
-
-The following options can be set while calling New():
-
-	m := New(Swedish(Interval005), Guard(100), Precision(100))
-
-Those values are really optional and even the order they appear ;-).
-Default settings are:
-
-	Precision 10000 which reflects decimal(12,4) database field
-	Guard 	  10000 which reflects decimal(12,4) database field
-	Swedish   No rounding
-
-If you need to temporarily set a different option value you can stick to this pattern:
-http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
-
-	prev := m.Option(Swedish(Interval005))
-	defer m.Option(prev)
-	// do something with the different Swedish rounding
-
-Initial Idea: Copyright (c) 2011 Jad Dittmar
-https://github.com/Confunctionist/finance
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-
-*/
 package money
 
 import (
@@ -124,18 +68,9 @@ const (
 	interval999
 )
 
-const (
-	Places01 Places = math.Pow(10, iota)
-	Places02
-	Places03
-)
-
 type (
 	// Interval defines the type for the Swedish rounding.
 	Interval uint8
-
-	// Places @todo iota power
-	Places uint64
 
 	// Currency represents a money aka currency type to avoid rounding errors with floats.
 	// Takes also care of http://en.wikipedia.org/wiki/Swedish_rounding
@@ -170,21 +105,27 @@ func DefaultSwedish(i Interval) {
 }
 
 // DefaultGuard sets the global default guard. A fixed-length guard for precision arithmetic.
-func DefaultGuard(g int64) {
+// Returns the successful applied value.
+func DefaultGuard(g int64) int64 {
+	if g == 0 {
+		g = 1
+	}
 	guard = g
 	guardf = float64(g)
+	return guard
 }
 
 // DefaultPrecision sets the global default decimal precision.
 // 2 decimal places => 10^2; 3 decimal places => 10^3; x decimal places => 10^x
-func DefaultPrecision(p int64) {
-	p64 := int64(p)
-	l := int64(math.Log(float64(p64)))
-	if p64 == 0 || (p64 != 0 && (l%2) != 0) {
-		p64 = dp
+// Returns the successful applied value.
+func DefaultPrecision(p int64) int64 {
+	l := int64(math.Log(float64(p)))
+	if p == 0 || (p != 0 && (l%2) != 0) {
+		p = dp
 	}
-	dp = p64
-	dpf = float64(p64)
+	dp = p
+	dpf = float64(p)
+	return dp
 }
 
 // Swedish sets the Swedish rounding
@@ -203,7 +144,7 @@ func Swedish(i Interval) OptionFunc {
 
 // SetGuard sets the guard
 func Guard(g int) OptionFunc {
-	if g == 0 { // check for division by zero
+	if g == 0 {
 		g = 1
 	}
 	return func(c *Currency) OptionFunc {
@@ -267,21 +208,6 @@ func (c Currency) Abs() Currency {
 	return c
 }
 
-// Add Adds two Currency types. Returns empty Currency on integer overflow
-func (c Currency) Add(d Currency) Currency {
-	r := c.m + d.m
-	if (r^c.m)&(r^d.m) < 0 {
-		if log.IsTrace() {
-			log.Trace("Currency=Add", "err", ErrOverflow, "m", c, "n", d)
-		}
-		log.Error("Currency=Add", "err", ErrOverflow, "m", c, "n", d)
-		return New()
-	}
-	c.m = r
-	c.Valid = true
-	return c
-}
-
 // Getf gets the float64 value of money (see Raw() for int64)
 func (c Currency) Getf() float64 {
 	return float64(c.m) / c.dpf
@@ -291,6 +217,11 @@ func (c Currency) Getf() float64 {
 // Rounds always down
 func (c Currency) Geti() int64 {
 	return c.m / c.dp
+}
+
+// Dec returns the decimals
+func (c Currency) Dec() int64 {
+	return c.Abs().Raw() % c.dp
 }
 
 // Raw returns in int64 the value of Currency (also see Gett(), See Get() for float64)
@@ -324,12 +255,27 @@ func (c Currency) Sign() int {
 // String for money type representation in basic monetary unit (DOLLARS CENTS)
 // @todo consider locale
 func (c Currency) String() string {
-	return fmt.Sprintf("%d.%02d", c.Raw()/c.dp, c.Abs().Raw()%c.dp)
+	return fmt.Sprintf("%d.%02d", c.Geti(), c.Dec())
 }
 
 // Unformatted prints the currency without any locale specific formatting
 func (c Currency) Unformatted() string {
-	return fmt.Sprintf("%d.%02d", c.Raw()/c.dp, c.Abs().Raw()%c.dp)
+	return fmt.Sprintf("%d.%02d", c.Geti(), c.Dec())
+}
+
+// Add Adds two Currency types. Returns empty Currency on integer overflow
+func (c Currency) Add(d Currency) Currency {
+	r := c.m + d.m
+	if (r^c.m)&(r^d.m) < 0 {
+		if log.IsTrace() {
+			log.Trace("Currency=Add", "err", ErrOverflow, "m", c, "n", d)
+		}
+		log.Error("Currency=Add", "err", ErrOverflow, "m", c, "n", d)
+		return New()
+	}
+	c.m = r
+	c.Valid = true
+	return c
 }
 
 // Sub subtracts one Currency type from another. Returns empty Currency on integer overflow
@@ -353,7 +299,7 @@ func (c Currency) Mul(d Currency) Currency {
 
 // Div Divides one Currency type from another
 func (c Currency) Div(d Currency) Currency {
-	f := c.guardf * c.dpf * float64(c.m) / float64(d.m) / c.guardf
+	f := (c.guardf * c.dpf * float64(c.m)) / float64(d.m) / c.guardf
 	i := int64(f)
 	return c.Set(rnd(i, f-float64(i)))
 }
@@ -415,7 +361,7 @@ func (c Currency) Swedish(opts ...OptionFunc) Currency {
 		// ending in 5 öre.
 		return c.Setf(Round(c.Getf()*10) / 10)
 	case Interval015:
-		// In NZ, it is up to the business to decide if they
+		// Special case: In NZ, it is up to the business to decide if they
 		// will round 5¢ intervals up or down. The majority of retailers follow
 		// government advice and round it down.
 		if c.m%5 == 0 {
