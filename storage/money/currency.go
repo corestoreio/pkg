@@ -95,9 +95,9 @@ var (
 	dpf     float64 = float64(dp)
 	swedish         = Interval000
 
-	Round = .5
-	//	Round  = .5 + (1 / Guardf)
-	Roundn = Round * -1
+	RoundTo = .5
+	//	RoundTo  = .5 + (1 / Guardf)
+	RoundToN = RoundTo * -1
 )
 
 // Interval* constants http://en.wikipedia.org/wiki/Swedish_rounding
@@ -108,17 +108,34 @@ const (
 	Interval005
 	// Interval010 rounding with 0.10 intervals
 	Interval010
+	// Interval015 same as Interval010 except that 5 will be rounded down.
+	// 0.45 => 0.40 or 0.46 => 0.50
+	// Special case for New Zealand (a must visit!), it is up to the business
+	// to decide if they will round 5¢ intervals up or down. The majority of
+	// retailers follow government advice and round it down. Use then Interval015.
+	// otherwise use Interval010.
+	Interval015
+	// Interval025 rounding with 0.25 intervals
+	Interval025
 	// Interval050 rounding with 0.50 intervals
 	Interval050
 	// Interval100 rounding with 1.00 intervals
 	Interval100
-	// interval999 max, not available
 	interval999
+)
+
+const (
+	Places01 Places = math.Pow(10, iota)
+	Places02
+	Places03
 )
 
 type (
 	// Interval defines the type for the Swedish rounding.
 	Interval uint8
+
+	// Places @todo iota power
+	Places uint64
 
 	// Currency represents a money aka currency type to avoid rounding errors with floats.
 	// Takes also care of http://en.wikipedia.org/wiki/Swedish_rounding
@@ -138,6 +155,7 @@ type (
 		dpf    float64
 	}
 
+	// OptionFunc used to apply options to the Currency struct
 	OptionFunc func(*Currency) OptionFunc
 )
 
@@ -292,7 +310,7 @@ func (c Currency) Setf(f float64) Currency {
 	fDPf := f * c.dpf
 	r := int64(f * c.dpf)
 	c.Valid = true
-	return c.Set(Rnd(r, fDPf-float64(r)))
+	return c.Set(rnd(r, fDPf-float64(r)))
 }
 
 // Sign returns the Sign of Currency 1 if positive, -1 if negative
@@ -306,6 +324,11 @@ func (c Currency) Sign() int {
 // String for money type representation in basic monetary unit (DOLLARS CENTS)
 // @todo consider locale
 func (c Currency) String() string {
+	return fmt.Sprintf("%d.%02d", c.Raw()/c.dp, c.Abs().Raw()%c.dp)
+}
+
+// Unformatted prints the currency without any locale specific formatting
+func (c Currency) Unformatted() string {
 	return fmt.Sprintf("%d.%02d", c.Raw()/c.dp, c.Abs().Raw()%c.dp)
 }
 
@@ -332,14 +355,14 @@ func (c Currency) Mul(d Currency) Currency {
 func (c Currency) Div(d Currency) Currency {
 	f := c.guardf * c.dpf * float64(c.m) / float64(d.m) / c.guardf
 	i := int64(f)
-	return c.Set(Rnd(i, f-float64(i)))
+	return c.Set(rnd(i, f-float64(i)))
 }
 
 // Mulf Multiplies a Currency with a float to return a money-stored type
 func (c Currency) Mulf(f float64) Currency {
 	i := c.m * int64(f*c.guardf*c.dpf)
 	r := i / c.guard / c.dp
-	return c.Set(Rnd(r, float64(i)/c.guardf/c.dpf-float64(r)))
+	return c.Set(rnd(r, float64(i)/c.guardf/c.dpf-float64(r)))
 }
 
 // Neg Returns the negative value of Currency
@@ -355,23 +378,67 @@ func (c Currency) Pow(f float64) Currency {
 	return c.Setf(math.Pow(c.Getf(), f))
 }
 
-// Rnd rounds int64 remainder rounded half towards plus infinity
+// rnd rounds int64 remainder rounded half towards plus infinity
 // trunc = the remainder of the float64 calc
 // r     = the result of the int64 cal
-func Rnd(r int64, trunc float64) int64 {
+func rnd(r int64, trunc float64) int64 {
 
-	//fmt.Printf("RND 1 r = % v, trunc = %v Round = %v\n", r, trunc, Round)
+	//fmt.Printf("RND 1 r = % v, trunc = %v RoundTo = %v\n", r, trunc, RoundTo)
 	if trunc > 0 {
-		if trunc >= Round {
+		if trunc >= RoundTo {
 			r++
 		}
 	} else {
-		if trunc < Roundn {
+		if trunc < RoundToN {
 			r--
 		}
 	}
-	//fmt.Printf("RND 2 r = % v, trunc = %v Round = %v\n", r, trunc, Round)
+	//fmt.Printf("RND 2 r = % v, trunc = %v RoundTo = %v\n", r, trunc, RoundTo)
 	return r
+}
+
+// Roundx rounds a value. @todo check out to round negative numbers
+func Round(f float64) float64 {
+	return math.Floor(f + .5)
+}
+
+// Swedish applies the Swedish rounding. You may set the usual options.
+func (c Currency) Swedish(opts ...OptionFunc) Currency {
+	c.Option(opts...)
+	switch c.swedish {
+	case Interval005:
+		// NL, SG, SA, CH, TR, CL, IE
+		return c.Setf(Round(c.Getf()*20) / 20) // base 5
+	case Interval010:
+		// New Zealand & Hong Kong
+		// In Sweden between 1985 and 1992, prices were rounded up for sales
+		// ending in 5 öre.
+		return c.Setf(Round(c.Getf()*10) / 10)
+	case Interval015:
+		// In NZ, it is up to the business to decide if they
+		// will round 5¢ intervals up or down. The majority of retailers follow
+		// government advice and round it down.
+		if c.m%5 == 0 {
+			c.m = c.m - 1
+		}
+		return c.Setf(Round(c.Getf()*10) / 10)
+	case Interval025:
+		return c.Setf(Round(c.Getf()*4) / 4)
+	case Interval050:
+		// The system used in Sweden from 1992 to 2010, in Norway from 1993 to 2012,
+		// and in Denmark since 1 October 2008 is the following:
+		// Sales ending in 1–24 öre round down to 0 öre.
+		// Sales ending in 25–49 öre round up to 50 öre.
+		// Sales ending in 51–74 öre round down to 50 öre.
+		// Sales ending in 75–99 öre round up to the next whole Krone/krona.
+		return c.Setf(Round(c.Getf()*2) / 2)
+	case Interval100:
+		// The system used in Sweden since 30 September 2010 and used in Norway since 1 May 2012.
+		// Sales ending in 1–49 öre/øre round down to 0 öre/øre.
+		// Sales ending in 50–99 öre/øre round up to the next whole krona/krone.
+		return c.Setf(Round(c.Getf()*1) / 1) // ;-)
+	}
+	return c
 }
 
 var (

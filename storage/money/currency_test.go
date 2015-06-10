@@ -133,5 +133,41 @@ func TestSetf(t *testing.T) {
 			t.Errorf("\nWantI: %d\nHaveI: %d\nIndex: %d\n", test.want, haveR, i)
 		}
 	}
+}
 
+func TestSign(t *testing.T) {
+	tests := []struct {
+		have int64
+		want int
+	}{{13, 1}, {-13, -1}, {-45628734653, -1}, {45628734699, 1}}
+	for i, test := range tests {
+		c := money.New().Set(test.have)
+		have := c.Sign()
+		if have != test.want {
+			t.Errorf("\nWant: %d\nHave: %d\nIndex: %d\n", test.want, have, i)
+		}
+	}
+}
+
+func TestSwedish(t *testing.T) {
+	tests := []struct {
+		prec int
+		iv   money.Interval
+		have int64
+		want string
+	}{
+		0: {0, money.Interval005, 25689, "25689.00"},
+		1: {10, money.Interval005, 25689, "2568.90"},
+		2: {100, money.Interval005, 25689, "256.90"},
+		3: {1000, money.Interval005, 25689, "25.70"},
+		4: {100, money.Interval005, 25642, "256.40"},
+		5: {100, money.Interval005, 25644, "256.45"},
+	}
+	for i, test := range tests {
+		c := money.New(money.Precision(test.prec)).Set(test.have)
+		have := c.Swedish(money.Swedish(test.iv)).Unformatted()
+		if have != test.want {
+			t.Errorf("\nWant: %s\nHave: %s\nIndex: %d\n", test.want, have, i)
+		}
+	}
 }
