@@ -19,7 +19,9 @@ import (
 
 	"math"
 
+	"github.com/corestoreio/csfw/i18n"
 	"github.com/corestoreio/csfw/storage/money"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestAbs(t *testing.T) {
@@ -261,24 +263,59 @@ func TestSub(t *testing.T) {
 
 func TestMul(t *testing.T) {
 	tests := []struct {
+		prec  int
 		have1 int64
 		have2 int64
-		want  int64
+		want  string
 	}{
-		{1300, 1300, 169},
-		{13, -13, 0},
-		{1300, -1300, -169},
-		{13, 13, 0},
-		{45628734653, -45628734653, 250065429529630},
-		{math.MaxInt64, 2, 0},
+		{100, 1300, 1300, "169.00"},
+		{1000, 18100, 18100, "327.610"},
+		{100, 1319, 1488, "196.26"},
+		{1000, 1319, 1488, "1.962"},
+		{100, 13, -13, "-0.01"},
+		{100, 1300, -1300, "-169.00"},
+		{1000, 1300, -1300, "-1.690"},
+		{100, 13, 13, "0.01"},
+		{100, 45628734653, -45628734653, "250065429529630.21"}, // overflow ?
+		{100, 45628734653, -456287346, "-237307016244604.93"},
+		{100, math.MaxInt64, 2, "0.00"},
 	}
 
 	for _, test := range tests {
-		c := money.New().Set(test.have1)
-		c = c.Mul(money.New().Set(test.have2))
-		have := c.Raw()
+		c := money.New(money.Precision(test.prec)).Set(test.have1)
+		c = c.Mul(money.New(money.Precision(test.prec)).Set(test.have2))
+		have := c.Unformatted()
 		if have != test.want {
-			t.Errorf("\nWant: %d\nHave: %d\nIndex: %v\n", test.want, have, test)
+			t.Errorf("\nWant: %s\nHave: %s\nSign %d\nIndex: %v\n", test.want, have, c.Sign(), test)
+		}
+	}
+}
+
+func TestMulf(t *testing.T) {
+	tests := []struct {
+		prec  int
+		have1 int64
+		have2 float64
+		want  string
+	}{
+		{100, 1300, 1300.13, "16901.69"},
+		{1000, 18100, 18100.18, "327613.258"},
+		{100, 1319, 1488.88, "19638.33"},
+		{1000, 1319, 1488.88, "1963.833"},
+		{100, 13, -13.13, "-1.71"},
+		{100, 1300, -1300.01, "-16900.13"},
+		{1000, 1300, -1300.01, "-1690.13"},
+		{100, 13, 13.0, "1.69"},
+		{100, 45628734653, -45628734653.0, "-47780798383.28"},
+		{100, math.MaxInt64, 2.01, "92233720368.53"},
+	}
+
+	for _, test := range tests {
+		c := money.New(money.Precision(test.prec)).Set(test.have1)
+		c = c.Mulf(test.have2)
+		have := c.Unformatted()
+		if have != test.want {
+			t.Errorf("\nWant: %s\nHave: %s\nSign %d\nIndex: %v\n", test.want, have, c.Sign(), test)
 		}
 	}
 }
@@ -304,6 +341,40 @@ func TestDiv(t *testing.T) {
 		have := c.Raw()
 		if have != test.want {
 			t.Errorf("\nWant: %d\nHave: %d / %s\nIndex: %v\n", test.want, have, c.Unformatted(), test)
+		}
+	}
+}
+
+func TestJSON(t *testing.T) {
+
+	tests := []struct {
+		prec    int
+		haveI   int64
+		haveF   i18n.CurrencyFormatter
+		haveV   bool
+		want    string
+		wantErr error
+	}{
+		{100, 123456, i18n.DefaultCurrency, true, `[1234.56, "$ 1.234,56", "$"]`, nil},
+		{100, 123456, i18n.DefaultCurrency, false, `null`, nil},
+	}
+
+	for _, test := range tests {
+		c := money.New(
+			money.Precision(test.prec),
+			money.Formatter(test.haveF),
+		).Set(test.haveI)
+		c.Valid = test.haveV
+
+		have, err := c.MarshalJSON()
+		if test.wantErr != nil {
+			assert.Error(t, err, "%v", test)
+			assert.Nil(t, have)
+		} else {
+			haveS := string(have)
+			assert.NoError(t, err, "%v", test)
+			assert.EqualValues(t, test.want, haveS)
+			// @todo test unmarshal ...
 		}
 	}
 }

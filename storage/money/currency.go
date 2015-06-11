@@ -25,19 +25,21 @@ import (
 
 	"bytes"
 
+	"github.com/corestoreio/csfw/i18n"
 	"github.com/corestoreio/csfw/utils/log"
 )
 
 var (
 	ErrOverflow = errors.New("Integer Overflow")
 
-	guard   int64   = 10000
-	guardi          = int(guard)
-	guardf  float64 = float64(guard)
-	dp      int64   = 10000
-	dpi             = int(dp)
-	dpf     float64 = float64(dp)
-	swedish         = Interval000
+	guard     int64   = 10000
+	guardi            = int(guard)
+	guardf    float64 = float64(guard)
+	dp        int64   = 10000
+	dpi               = int(dp)
+	dpf       float64 = float64(dp)
+	swedish           = Interval000
+	formatter i18n.CurrencyFormatter
 
 	RoundTo = .5
 	//	RoundTo  = .5 + (1 / Guardf)
@@ -68,6 +70,19 @@ const (
 	interval999
 )
 
+// FormatJSON to define the output format. Can be combined in a binary style.
+// Adding more than option generates a JSON array and not a number
+const (
+	// JSONFormatNumber generates only the raw number, e.g. for use in JS
+	JSONFormatNumber = 1 << iota
+	// JSONFormatSign generates only the currency sign (short)
+	JSONFormatSign
+	// JSONFormatLocale generates the locale specific formatted currency string
+	JSONFormatLocale
+	JSONFormatDefault = JSONFormatNumber // think about default formatting
+	jsonFormatMax
+)
+
 type (
 	// Interval defines the type for the Swedish rounding.
 	Interval uint8
@@ -77,25 +92,43 @@ type (
 	Currency struct {
 		// m money in Guard/DP
 		m int64
-		// Locale to allow language specific output formats @todo
-		Locale string
+		// Formatter to allow language specific output formats @todo
+		Formatter i18n.CurrencyFormatter
+
 		// Valid if false the internal value is NULL
 		Valid bool
-		// swedish is the interval for the swedish rounding.
-		swedish Interval
+		// Interval defines how the swedish rounding can be applied.
+		Interval Interval
+
+		// JSONFormat output format when marshaling
+		JSONFormat int
 
 		guard  int64
 		guardf float64
 		dp     int64
 		dpf    float64
+		// bufC print buffer for number generation incl. locale settings ... or a sync.Pool ?
+		bufC []byte
+		// bufJ buffer when creating JSON
+		bufJ []byte
 	}
 
 	// OptionFunc used to apply options to the Currency struct
 	OptionFunc func(*Currency) OptionFunc
 )
 
+func init() {
+	formatter = i18n.DefaultCurrency
+}
+
+// DefaultFormatter sets the package wide default locale specific currency formatter
+func DefaultFormatter(cf i18n.CurrencyFormatter) {
+	formatter = cf
+}
+
 // DefaultSwedish sets the global and New() defaults swedish rounding
 // http://en.wikipedia.org/wiki/Swedish_rounding
+// Errors will be logged.
 func DefaultSwedish(i Interval) {
 	if i < interval999 {
 		swedish = i
@@ -130,14 +163,15 @@ func DefaultPrecision(p int64) int64 {
 
 // Swedish sets the Swedish rounding
 // http://en.wikipedia.org/wiki/Swedish_rounding
+// Errors will be logged
 func Swedish(i Interval) OptionFunc {
 	if i >= interval999 {
 		log.Error("Currency=SetSwedishRounding", "err", errors.New("Interval out of scope. Resetting."), "interval", i)
 		i = Interval000
 	}
 	return func(c *Currency) OptionFunc {
-		previous := c.swedish
-		c.swedish = i
+		previous := c.Interval
+		c.Interval = i
 		return Swedish(previous)
 	}
 }
@@ -175,14 +209,35 @@ func Precision(p int) OptionFunc {
 	}
 }
 
+// Formatter sets the locale specific formatter. Allows to switch quickly
+// between different locales.
+func Formatter(f i18n.CurrencyFormatter) OptionFunc {
+	return func(c *Currency) OptionFunc {
+		previous := c.Formatter
+		c.Formatter = f
+		return Formatter(previous)
+	}
+}
+
+// JSONFormat optional option helper.
+func JSONFormat(f int) OptionFunc {
+	return func(c *Currency) OptionFunc {
+		previous := c.JSONFormat
+		c.JSONFormat = f
+		return JSONFormat(previous)
+	}
+}
+
 // New creates a new empty Currency struct with package default values of
 // Guard and decimal precision.
 func New(opts ...OptionFunc) Currency {
 	c := Currency{
-		guard:  guard,
-		guardf: guardf,
-		dp:     dp,
-		dpf:    dpf,
+		guard:      guard,
+		guardf:     guardf,
+		dp:         dp,
+		dpf:        dpf,
+		Formatter:  formatter,
+		JSONFormat: JSONFormatDefault,
 	}
 	c.Option(opts...)
 	return c
@@ -252,18 +307,42 @@ func (c Currency) Sign() int {
 	return 1
 }
 
-// String for money type representation in basic monetary unit (DOLLARS CENTS)
-// @todo consider locale
+// Localize for money type representation in a specific locale. Owns the return value.
+func (c Currency) Localize() []byte {
+	c.bufC = c.bufC[:0]
+	c.formatPrice(&c.bufC)
+	c.Formatter.Localize(&c.bufC)
+	return c.bufC
+}
+
+// String for money type representation i a specific locale.
 func (c Currency) String() string {
-	return fmt.Sprintf("%d.%02d", c.Geti(), c.Dec())
+	return string(c.Localize())
+
 }
 
-// Unformatted prints the currency without any locale specific formatting
+// Unformatted prints the currency without any locale specific formatting. E.g. useful in JavaScript.
 func (c Currency) Unformatted() string {
-	return fmt.Sprintf("%d.%02d", c.Geti(), c.Dec())
+	return string(c.UnformattedByte())
 }
 
-// Add Adds two Currency types. Returns empty Currency on integer overflow
+// UnformattedByte prints the currency without any locale specific formatting. Owns the result.
+func (c Currency) UnformattedByte() []byte {
+	c.bufC = c.bufC[:0]
+	c.formatPrice(&c.bufC)
+	return c.bufC
+}
+
+func (c *Currency) formatPrice(buf *[]byte) {
+	i, d := c.Geti(), c.Dec()
+	if c.Sign() < 0 && i == 0 && d > 0 {
+		*buf = append(*buf, '-') // because Dec is always positive ...
+	}
+	*buf = append(*buf, fmt.Sprintf("%d.%02d", i, d)...) // @todo remove Sprintf
+}
+
+// Add Adds two Currency types. Returns empty Currency on integer overflow.
+// Errors will be logged and a trace is available when the level for tracing has been set.
 func (c Currency) Add(d Currency) Currency {
 	r := c.m + d.m
 	if (r^c.m)&(r^d.m) < 0 {
@@ -278,7 +357,8 @@ func (c Currency) Add(d Currency) Currency {
 	return c
 }
 
-// Sub subtracts one Currency type from another. Returns empty Currency on integer overflow
+// Sub subtracts one Currency type from another. Returns empty Currency on integer overflow.
+// Errors will be logged and a trace is available when the level for tracing has been set.
 func (c Currency) Sub(d Currency) Currency {
 	r := c.m - d.m
 	if (r^c.m)&^(r^d.m) < 0 {
@@ -292,7 +372,7 @@ func (c Currency) Sub(d Currency) Currency {
 	return c
 }
 
-// Mul Multiplies two Currency types
+// Mul Multiplies two Currency types. Both types must have the same precision.
 func (c Currency) Mul(d Currency) Currency {
 	return c.Set(c.m * d.m / c.dp)
 }
@@ -328,7 +408,6 @@ func (c Currency) Pow(f float64) Currency {
 // trunc = the remainder of the float64 calc
 // r     = the result of the int64 cal
 func rnd(r int64, trunc float64) int64 {
-
 	//fmt.Printf("RND 1 r = % v, trunc = %v RoundTo = %v\n", r, trunc, RoundTo)
 	if trunc > 0 {
 		if trunc >= RoundTo {
@@ -343,7 +422,7 @@ func rnd(r int64, trunc float64) int64 {
 	return r
 }
 
-// Roundx rounds a value. @todo check out to round negative numbers
+// Roundx rounds a value. @todo check out to round negative numbers https://gist.github.com/pelegm/c48cff315cd223f7cf7b
 func Round(f float64) float64 {
 	return math.Floor(f + .5)
 }
@@ -351,16 +430,19 @@ func Round(f float64) float64 {
 // Swedish applies the Swedish rounding. You may set the usual options.
 func (c Currency) Swedish(opts ...OptionFunc) Currency {
 	c.Option(opts...)
-	switch c.swedish {
+	switch c.Interval {
 	case Interval005:
 		// NL, SG, SA, CH, TR, CL, IE
+		// 5 cent rounding
 		return c.Setf(Round(c.Getf()*20) / 20) // base 5
 	case Interval010:
 		// New Zealand & Hong Kong
+		// 10 cent rounding
 		// In Sweden between 1985 and 1992, prices were rounded up for sales
 		// ending in 5 öre.
 		return c.Setf(Round(c.Getf()*10) / 10)
 	case Interval015:
+		// 10 cent rounding, special case
 		// Special case: In NZ, it is up to the business to decide if they
 		// will round 5¢ intervals up or down. The majority of retailers follow
 		// government advice and round it down.
@@ -369,8 +451,10 @@ func (c Currency) Swedish(opts ...OptionFunc) Currency {
 		}
 		return c.Setf(Round(c.Getf()*10) / 10)
 	case Interval025:
+		// round to quarter
 		return c.Setf(Round(c.Getf()*4) / 4)
 	case Interval050:
+		// 50 cent rounding
 		// The system used in Sweden from 1992 to 2010, in Norway from 1993 to 2012,
 		// and in Denmark since 1 October 2008 is the following:
 		// Sales ending in 1–24 öre round down to 0 öre.
@@ -397,14 +481,54 @@ var (
 //	_ driver.Valuer         = (Currency)(nil)
 )
 
+// jsonStrOrArray return true if we need an array output
+func jsonStrOrArray(f int) bool {
+	count := 0
+	if f&JSONFormatNumber != 0 {
+		count++
+	}
+	if f&JSONFormatSign != 0 {
+		count++
+	}
+	if f&JSONFormatLocale != 0 {
+		count++
+	}
+	return count > 1
+}
+
+// MarshalJSON generates a JSON string. @todo compatibility to ffjson ?
 func (c Currency) MarshalJSON() ([]byte, error) {
+	// @todo use interface JSONer in this package
+
 	// @todo should be possible to output the value without the currency sign
 	// or output it as an array e.g.: [1234.56, "1.234,56€", "€"]
 	// hmmmm
 	if false == c.Valid {
 		return nullString, nil
 	}
-	return []byte(`"` + c.String() + `"`), nil
+
+	isArray := jsonStrOrArray(c.JSONFormat)
+	if false == isArray {
+		if c.JSONFormat&JSONFormatNumber != 0 {
+			return c.UnformattedByte(), nil
+		}
+		if c.JSONFormat&JSONFormatSign != 0 {
+			return c.Formatter.Sign(), nil
+		}
+		if c.JSONFormat&JSONFormatLocale != 0 {
+			// necessary to return a copy?
+			// l := c.Localize()
+			// ll := len(l)
+			// b := make([]byte, ll, ll)
+			// copy(b, l)
+			// return b, nil
+			return c.Localize(), nil
+		}
+	}
+
+	// c.bufJ = c.bufJ[:0]
+
+	return nil, nil
 }
 
 func (c *Currency) UnmarshalJSON(b []byte) error {
@@ -417,6 +541,7 @@ func (c *Currency) UnmarshalJSON(b []byte) error {
 }
 
 // @todo quick write down without tests so add tests 8-)
+// Errors will be logged.
 func (c *Currency) Scan(value interface{}) error {
 	if value == nil {
 		c.m, c.Valid = 0, false
