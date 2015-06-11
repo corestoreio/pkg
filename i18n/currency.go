@@ -14,11 +14,33 @@
 
 package i18n
 
-import "sort"
+import (
+	"sort"
 
-var currencyDict CurrencyDictSlice
+	"golang.org/x/text/language"
+)
+
+var currencyDictStorage CurrencyDictSlice
+
+// DefaultSymbol is ¤ http://en.wikipedia.org/wiki/Currency_sign_(typography)
+var DefaultSymbol = []byte(`¤`)
+
+// DefaultCurrency represents the package wide default currency locale
+// specific formatter.
+var DefaultCurrency CurrencyFormatter
 
 type (
+	CurrencyFormatter interface {
+		Localize(buf *[]byte)
+		Sign() []byte
+	}
+
+	Currency struct {
+		// @todo
+		language.Currency
+		Symbol string // € or USD or ...
+	}
+
 	CurrencyDictSlice []currencyDict
 	currencyDict      struct {
 		l  string   // locale
@@ -28,8 +50,21 @@ type (
 	}
 )
 
+func init() {
+	DefaultCurrency = NewCurrency()
+}
+
+func NewCurrency() *Currency {
+	// @todo
+	// default "en_US"
+	return nil
+}
+
+func (c *Currency) Localize(buf *[]byte) {}
+func (c *Currency) Sign() []byte         { return DefaultSymbol }
+
 func SetCurrencyDict(cds ...currencyDict) {
-	currencyDict = CurrencyDictSlice(cds)
+	currencyDictStorage = CurrencyDictSlice(cds)
 }
 
 func NewCurrencyDict(locale string, ti tagIndex, currencyNames, currencySymbols header) currencyDict {
