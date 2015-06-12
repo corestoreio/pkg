@@ -35,11 +35,11 @@ var (
 // DefaultFormat sets the package wide default locale specific currency formatter
 var DefaultFormat i18n.CurrencyFormatter = i18n.DefaultCurrency
 
-// DefaultJSONEncode is struct JSONLocale
-var DefaultJSONEncode JSONMarshaller = JSONLocale{}
+// DefaultJSONEncode is JSONLocale
+var DefaultJSONEncode JSONMarshaller = NewJSONEncoder()
 
-// DefaultJSONDecode is struct JSONLocale
-var DefaultJSONDecode JSONUnmarshaller = JSONLocale{}
+// DefaultJSONDecode is JSONLocale
+var DefaultJSONDecode JSONUnmarshaller = NewJSONDecoder()
 
 // DefaultSwedish sets the global and New() defaults swedish rounding. Errors will be logged.
 // http://en.wikipedia.org/wiki/Swedish_rounding

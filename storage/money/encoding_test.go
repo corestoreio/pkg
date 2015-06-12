@@ -17,31 +17,30 @@ package money_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/i18n"
 	"github.com/corestoreio/csfw/storage/money"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestJSON(t *testing.T) {
+func TestJSONMarshal(t *testing.T) {
 
 	tests := []struct {
-		prec    int
-		haveI   int64
-		haveF   i18n.CurrencyFormatter
-		haveV   bool
-		want    string
-		wantErr error
+		prec      int
+		haveI     int64
+		haveEnc   money.JSONMarshaller
+		haveValid bool
+		want      string
+		wantErr   error
 	}{
-		{100, 123456, i18n.DefaultCurrency, true, `[1234.56, "$ 1.234,56", "$"]`, nil},
-		{100, 123456, i18n.DefaultCurrency, false, `null`, nil},
+		{100, 123456, money.JSONNumber, true, `[1234.56, "$ 1.234,56", "$"]`, nil},
+		{100, 123456, money.JSONNumber, false, `null`, nil},
 	}
 
 	for _, test := range tests {
 		c := money.New(
 			money.Precision(test.prec),
-			money.Format(test.haveF),
+			money.JSONMarshal(test.haveEnc),
 		).Set(test.haveI)
-		c.Valid = test.haveV
+		c.Valid = test.haveValid
 
 		have, err := c.MarshalJSON()
 		if test.wantErr != nil {
@@ -51,7 +50,6 @@ func TestJSON(t *testing.T) {
 			haveS := string(have)
 			assert.NoError(t, err, "%v", test)
 			assert.EqualValues(t, test.want, haveS)
-			// @todo test unmarshal ...
 		}
 	}
 }

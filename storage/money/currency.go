@@ -134,10 +134,13 @@ func Precision(p int) OptionFunc {
 	}
 }
 
-// Format sets the locale specific formatter.
+// Format sets the locale specific formatter. Panics if f is nil.
 func Format(f i18n.CurrencyFormatter) OptionFunc {
 	// @todo not sure if this function is needed an we simply can export field
 	// fmt as Formatter ... but what if we need mutexes?
+	if f == nil {
+		log.Fatal("money=Format", "err", errors.New("Argument f cannot be nil"))
+	}
 	return func(c *Currency) OptionFunc {
 		previous := c.fmt
 		c.fmt = f
@@ -145,10 +148,13 @@ func Format(f i18n.CurrencyFormatter) OptionFunc {
 	}
 }
 
-// JSONMarshal sets a different json Marshaller
+// JSONMarshal sets a custom JSON Marshaller
 func JSONMarshal(m JSONMarshaller) OptionFunc {
 	// @todo not sure if this function is needed an we simply can export field
 	// jm as JSONMarshaller ... but what if we need mutexes?
+	if m == nil {
+		m = NewJSONEncoder()
+	}
 	return func(c *Currency) OptionFunc {
 		previous := c.jm
 		c.jm = m
@@ -156,10 +162,13 @@ func JSONMarshal(m JSONMarshaller) OptionFunc {
 	}
 }
 
-// JSONUnmarshal sets a different json Unmmarshaller
+// JSONUnmarshal sets a custom JSON Unmmarshaller
 func JSONUnmarshal(um JSONUnmarshaller) OptionFunc {
 	// @todo not sure if this function is needed an we simply can export field
 	// jum as JSONUnmarshaller ... but what if we need mutexes?
+	if um == nil {
+		um = NewJSONDecoder()
+	}
 	return func(c *Currency) OptionFunc {
 		previous := c.jum
 		c.jum = um
@@ -355,8 +364,9 @@ func rnd(r int64, trunc float64) int64 {
 	return r
 }
 
-// Roundx rounds a value. @todo check out to round negative numbers https://gist.github.com/pelegm/c48cff315cd223f7cf7b
+// Round rounds a value.
 func Round(f float64) float64 {
+	// @todo check out to round negative numbers https://gist.github.com/pelegm/c48cff315cd223f7cf7b
 	return math.Floor(f + .5)
 }
 

@@ -33,11 +33,29 @@ var (
 	colon                       = []byte(`,`)
 )
 
+const (
+	// JSONNumber encodes/decodes a currency as a number string to directly use in e.g. JavaScript
+	JSONNumber JSONType = 1 << iota
+	// JSONLocale encodes/decodes a currency according to its locale format.
+	// Decoding: Considers the locale if the currency symbol is valid.
+	JSONLocale
+	// JSONExtended encodes/decodes a currency into a JSON array: [1234.56, "€", "1.234,56 €"].
+	// Decoding: Considers the locale if the currency symbol is valid.
+	JSONExtended
+)
+
+// JSONType defines the type of the marshaller/unmarshaller
+type JSONType uint8
+
 type (
+	// JSONMarshaller interface for JSON encoding
 	JSONMarshaller interface {
+		// MarshalJSON encodes the currency
 		MarshalJSON(*Currency) ([]byte, error)
 	}
+	// JSONUnmarshaller interface for JSON decoding
 	JSONUnmarshaller interface {
+		// UnmarshalJSON reads the bytes and decodes them into the currency
 		UnmarshalJSON(*Currency, []byte) error
 	}
 )
@@ -86,26 +104,55 @@ func atof64(bVal []byte) (f float64, err error) {
 	return f, err
 }
 
-// JSONNumber encodes/decodes a currency as a number string to directly use in e.g. JavaScript
-type JSONNumber struct{}
+// NewJSONEncoder creates a new encoder depending on the type.
+// Accepts either zero or one argument.
+// Default encoder is JSONLocale
+func NewJSONEncoder(jts ...JSONType) JSONMarshaller {
+	if len(jts) != 1 {
+		return JSONLocale
+	}
+	return jts[0]
+}
 
-// JSONLocale encodes/decodes a currency according to its locale format.
-// Considers the locale if a the currency symbol is valid.
-type JSONLocale struct{}
+// NewJSONDecoder creates a new decoder depending on the type.
+// Accepts either zero or one argument.
+// Default encoder is JSONLocale
+func NewJSONDecoder(jts ...JSONType) JSONUnmarshaller {
+	if len(jts) != 1 {
+		return JSONLocale
+	}
+	return jts[0]
+}
 
-// JSONExtended encodes/decodes a currency into a JSON array: [1234.56, "€", "1.234,56 €"].
-// Considers the locale if a the currency symbol is valid.
-type JSONExtended struct{}
+var _ JSONMarshaller = new(JSONType)
+var _ JSONUnmarshaller = new(JSONType)
 
-var _ JSONMarshaller = new(JSONNumber)
-var _ JSONUnmarshaller = new(JSONNumber)
-var _ JSONMarshaller = new(JSONLocale)
-var _ JSONUnmarshaller = new(JSONLocale)
-var _ JSONMarshaller = new(JSONExtended)
-var _ JSONUnmarshaller = new(JSONExtended)
+// MarshalJSON encodes a currency to JSON bytes according to the defined JSONType
+func (t JSONType) MarshalJSON(c *Currency) ([]byte, error) {
+	switch t {
+	case JSONNumber:
+		return jsonNumberMarshal(c)
+	case JSONExtended:
+		return jsonExtendedMarshal(c)
+	default:
+		return jsonLocaleMarshal(c)
+	}
+}
 
-// MarshalJSON generates a number formatted currency string
-func (je JSONNumber) MarshalJSON(c *Currency) ([]byte, error) {
+// UnmarshalJSON decodes JSON bytes into a currency according to the defined JSONType
+func (t JSONType) UnmarshalJSON(c *Currency, b []byte) error {
+	switch t {
+	case JSONNumber:
+		return jsonNumberUnmarshal(c, b)
+	case JSONExtended:
+		return jsonExtendedUnmarshal(c, b)
+	default:
+		return jsonLocaleUnmarshal(c, b)
+	}
+}
+
+// jsonNumberMarshal generates a number formatted currency string
+func jsonNumberMarshal(c *Currency) ([]byte, error) {
 	if c == nil {
 		return nullString, nil
 	}
@@ -115,8 +162,8 @@ func (je JSONNumber) MarshalJSON(c *Currency) ([]byte, error) {
 	return c.NumberByte(), nil
 }
 
-// UnmarshalJSON decodes a string number into the Currency.
-func (je JSONNumber) UnmarshalJSON(c *Currency, b []byte) error {
+// jsonNumberUnmarshal decodes a string number into the Currency.
+func jsonNumberUnmarshal(c *Currency, b []byte) error {
 	f, err := atof64(b)
 	if err != nil {
 		return log.Error("JSONNumber=UnmarshalJSON", "err", err, "currency", c, "bytes", b)
@@ -125,8 +172,8 @@ func (je JSONNumber) UnmarshalJSON(c *Currency, b []byte) error {
 	return nil
 }
 
-// MarshalJSON encodes into a locale specific quoted string
-func (jl JSONLocale) MarshalJSON(c *Currency) ([]byte, error) {
+// jsonLocaleMarshal encodes into a locale specific quoted string
+func jsonLocaleMarshal(c *Currency) ([]byte, error) {
 	if c == nil {
 		return nullString, nil
 	}
@@ -140,15 +187,15 @@ func (jl JSONLocale) MarshalJSON(c *Currency) ([]byte, error) {
 	return b, nil
 }
 
-// UnmarshalJSON decodes a fully localized string into a currency struct @todo
+// jsonLocaleUnmarshal decodes a fully localized string into a currency struct @todo
 // Considers the locale if a the currency symbol is valid.
-func (jl JSONLocale) UnmarshalJSON(c *Currency, b []byte) error {
+func jsonLocaleUnmarshal(c *Currency, b []byte) error {
 	// @todo trim currency symbol, replace thousands separator, etc ...
 	return errors.New("@todo unmarshal of localized bytes")
 }
 
-// MarshalJSON encodes a currency into a JSON array: [1234.56, "€", "1.234,56 €"]
-func (je JSONExtended) MarshalJSON(c *Currency) ([]byte, error) {
+// jsonExtendedMarshal encodes a currency into a JSON array: [1234.56, "€", "1.234,56 €"]
+func jsonExtendedMarshal(c *Currency) ([]byte, error) {
 	if c == nil {
 		return nullString, nil
 	}
@@ -159,9 +206,9 @@ func (je JSONExtended) MarshalJSON(c *Currency) ([]byte, error) {
 	return nil, errors.New(`@todo encodes a currency into a JSON array: [1234.56, "€", "1.234,56 €"]`)
 }
 
-// UnmarshalJSON decodes a JSON array: [1234.56, "€", "1.234,56 €"] int a currency struct.
+// jsonExtendedUnmarshal decodes a JSON array: [1234.56, "€", "1.234,56 €"] int a currency struct.
 // Considers the locale if a the currency symbol is valid.
-func (je JSONExtended) UnmarshalJSON(c *Currency, b []byte) error {
+func jsonExtendedUnmarshal(c *Currency, b []byte) error {
 	// @todo trim currency symbol, replace thousands separator, etc ...
 	return errors.New("@todo unmarshal of [3]array")
 }
