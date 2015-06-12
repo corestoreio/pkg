@@ -12,20 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package money_test
+package money
 
-import (
-	"testing"
+type buf []byte
 
-	"github.com/corestoreio/csfw/storage/money"
-)
-
-var benchBenchmarkUnformatted string // -123456.79
-// BenchmarkUnformatted	 1000000	      2406 ns/op	     161 B/op	       9 allocs/op <= fmt.Sprintf
-func BenchmarkUnformatted(b *testing.B) {
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		c := money.New(money.Precision(100)).Setf(-123456.789)
-		benchBenchmarkUnformatted = c.Number()
-	}
+// Write writes len(p) bytes from p to the Buffer.
+func (b *buf) Write(p []byte) (int, error) {
+	*b = append(*b, p...)
+	return len(p), nil
 }

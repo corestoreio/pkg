@@ -15,31 +15,16 @@
 package money
 
 import (
-	"encoding/json"
 	"errors"
-	"fmt"
 	"math"
-	"strconv"
-
-	"database/sql"
-
-	"bytes"
 
 	"github.com/corestoreio/csfw/i18n"
 	"github.com/corestoreio/csfw/utils/log"
 )
 
 var (
+	// ErrOverflow occurs on integer overflow
 	ErrOverflow = errors.New("Integer Overflow")
-
-	guard     int64   = 10000
-	guardi            = int(guard)
-	guardf    float64 = float64(guard)
-	dp        int64   = 10000
-	dpi               = int(dp)
-	dpf       float64 = float64(dp)
-	swedish           = Interval000
-	formatter i18n.CurrencyFormatter
 
 	RoundTo = .5
 	//	RoundTo  = .5 + (1 / Guardf)
@@ -70,19 +55,6 @@ const (
 	interval999
 )
 
-// FormatJSON to define the output format. Can be combined in a binary style.
-// Adding more than option generates a JSON array and not a number
-const (
-	// JSONFormatNumber generates only the raw number, e.g. for use in JS
-	JSONFormatNumber = 1 << iota
-	// JSONFormatSign generates only the currency sign (short)
-	JSONFormatSign
-	// JSONFormatLocale generates the locale specific formatted currency string
-	JSONFormatLocale
-	JSONFormatDefault = JSONFormatNumber // think about default formatting
-	jsonFormatMax
-)
-
 type (
 	// Interval defines the type for the Swedish rounding.
 	Interval uint8
@@ -92,74 +64,27 @@ type (
 	Currency struct {
 		// m money in Guard/DP
 		m int64
-		// Formatter to allow language specific output formats @todo
-		Formatter i18n.CurrencyFormatter
-
+		// fmt to allow language specific output formats
+		fmt i18n.CurrencyFormatter
 		// Valid if false the internal value is NULL
 		Valid bool
 		// Interval defines how the swedish rounding can be applied.
 		Interval Interval
 
-		// JSONFormat output format when marshaling
-		JSONFormat int
+		jm  JSONMarshaller
+		jum JSONUnmarshaller
 
 		guard  int64
 		guardf float64
 		dp     int64
 		dpf    float64
 		// bufC print buffer for number generation incl. locale settings ... or a sync.Pool ?
-		bufC []byte
-		// bufJ buffer when creating JSON
-		bufJ []byte
+		bufC buf
 	}
 
 	// OptionFunc used to apply options to the Currency struct
 	OptionFunc func(*Currency) OptionFunc
 )
-
-func init() {
-	formatter = i18n.DefaultCurrency
-}
-
-// DefaultFormatter sets the package wide default locale specific currency formatter
-func DefaultFormatter(cf i18n.CurrencyFormatter) {
-	formatter = cf
-}
-
-// DefaultSwedish sets the global and New() defaults swedish rounding
-// http://en.wikipedia.org/wiki/Swedish_rounding
-// Errors will be logged.
-func DefaultSwedish(i Interval) {
-	if i < interval999 {
-		swedish = i
-	} else {
-		log.Error("money=SetSwedishRounding", "err", errors.New("Interval out of scope"), "interval", i)
-	}
-}
-
-// DefaultGuard sets the global default guard. A fixed-length guard for precision arithmetic.
-// Returns the successful applied value.
-func DefaultGuard(g int64) int64 {
-	if g == 0 {
-		g = 1
-	}
-	guard = g
-	guardf = float64(g)
-	return guard
-}
-
-// DefaultPrecision sets the global default decimal precision.
-// 2 decimal places => 10^2; 3 decimal places => 10^3; x decimal places => 10^x
-// Returns the successful applied value.
-func DefaultPrecision(p int64) int64 {
-	l := int64(math.Log(float64(p)))
-	if p == 0 || (p != 0 && (l%2) != 0) {
-		p = dp
-	}
-	dp = p
-	dpf = float64(p)
-	return dp
-}
 
 // Swedish sets the Swedish rounding
 // http://en.wikipedia.org/wiki/Swedish_rounding
@@ -209,22 +134,36 @@ func Precision(p int) OptionFunc {
 	}
 }
 
-// Formatter sets the locale specific formatter. Allows to switch quickly
-// between different locales.
-func Formatter(f i18n.CurrencyFormatter) OptionFunc {
+// Format sets the locale specific formatter.
+func Format(f i18n.CurrencyFormatter) OptionFunc {
+	// @todo not sure if this function is needed an we simply can export field
+	// fmt as Formatter ... but what if we need mutexes?
 	return func(c *Currency) OptionFunc {
-		previous := c.Formatter
-		c.Formatter = f
-		return Formatter(previous)
+		previous := c.fmt
+		c.fmt = f
+		return Format(previous)
 	}
 }
 
-// JSONFormat optional option helper.
-func JSONFormat(f int) OptionFunc {
+// JSONMarshal sets a different json Marshaller
+func JSONMarshal(m JSONMarshaller) OptionFunc {
+	// @todo not sure if this function is needed an we simply can export field
+	// jm as JSONMarshaller ... but what if we need mutexes?
 	return func(c *Currency) OptionFunc {
-		previous := c.JSONFormat
-		c.JSONFormat = f
-		return JSONFormat(previous)
+		previous := c.jm
+		c.jm = m
+		return JSONMarshal(previous)
+	}
+}
+
+// JSONUnmarshal sets a different json Unmmarshaller
+func JSONUnmarshal(um JSONUnmarshaller) OptionFunc {
+	// @todo not sure if this function is needed an we simply can export field
+	// jum as JSONUnmarshaller ... but what if we need mutexes?
+	return func(c *Currency) OptionFunc {
+		previous := c.jum
+		c.jum = um
+		return JSONUnmarshal(previous)
 	}
 }
 
@@ -232,12 +171,13 @@ func JSONFormat(f int) OptionFunc {
 // Guard and decimal precision.
 func New(opts ...OptionFunc) Currency {
 	c := Currency{
-		guard:      guard,
-		guardf:     guardf,
-		dp:         dp,
-		dpf:        dpf,
-		Formatter:  formatter,
-		JSONFormat: JSONFormatDefault,
+		guard:  guard,
+		guardf: guardf,
+		dp:     dp,
+		dpf:    dpf,
+		fmt:    DefaultFormat,
+		jm:     DefaultJSONEncode,
+		jum:    DefaultJSONDecode,
 	}
 	c.Option(opts...)
 	return c
@@ -309,9 +249,9 @@ func (c Currency) Sign() int {
 
 // Localize for money type representation in a specific locale. Owns the return value.
 func (c Currency) Localize() []byte {
+	// thread safe?
 	c.bufC = c.bufC[:0]
-	c.formatPrice(&c.bufC)
-	c.Formatter.Localize(&c.bufC)
+	c.fmt.FmtCurrency(&c.bufC, c.Sign(), c.Geti(), c.Dec())
 	return c.bufC
 }
 
@@ -321,24 +261,17 @@ func (c Currency) String() string {
 
 }
 
-// Unformatted prints the currency without any locale specific formatting. E.g. useful in JavaScript.
-func (c Currency) Unformatted() string {
-	return string(c.UnformattedByte())
+// Number prints the currency without any locale specific formatting. E.g. useful in JavaScript.
+func (c Currency) Number() string {
+	return string(c.NumberByte())
 }
 
-// UnformattedByte prints the currency without any locale specific formatting. Owns the result.
-func (c Currency) UnformattedByte() []byte {
+// NumberByte prints the currency without any locale specific formatting. Owns the result.
+func (c Currency) NumberByte() []byte {
+	// thread safe?
 	c.bufC = c.bufC[:0]
-	c.formatPrice(&c.bufC)
+	c.fmt.FmtNumber(&c.bufC, c.Sign(), c.Geti(), c.Dec())
 	return c.bufC
-}
-
-func (c *Currency) formatPrice(buf *[]byte) {
-	i, d := c.Geti(), c.Dec()
-	if c.Sign() < 0 && i == 0 && d > 0 {
-		*buf = append(*buf, '-') // because Dec is always positive ...
-	}
-	*buf = append(*buf, fmt.Sprintf("%d.%02d", i, d)...) // @todo remove Sprintf
 }
 
 // Add Adds two Currency types. Returns empty Currency on integer overflow.
@@ -470,117 +403,3 @@ func (c Currency) Swedish(opts ...OptionFunc) Currency {
 	}
 	return c
 }
-
-var (
-	_          json.Unmarshaler = (*Currency)(nil)
-	_          json.Marshaler   = (*Currency)(nil)
-	_          sql.Scanner      = (*Currency)(nil)
-	nullString                  = []byte("null")
-
-//	_ driver.ValueConverter = (Currency)(nil)
-//	_ driver.Valuer         = (Currency)(nil)
-)
-
-// jsonStrOrArray return true if we need an array output
-func jsonStrOrArray(f int) bool {
-	count := 0
-	if f&JSONFormatNumber != 0 {
-		count++
-	}
-	if f&JSONFormatSign != 0 {
-		count++
-	}
-	if f&JSONFormatLocale != 0 {
-		count++
-	}
-	return count > 1
-}
-
-// MarshalJSON generates a JSON string. @todo compatibility to ffjson ?
-func (c Currency) MarshalJSON() ([]byte, error) {
-	// @todo use interface JSONer in this package
-
-	// @todo should be possible to output the value without the currency sign
-	// or output it as an array e.g.: [1234.56, "1.234,56€", "€"]
-	// hmmmm
-	if false == c.Valid {
-		return nullString, nil
-	}
-
-	isArray := jsonStrOrArray(c.JSONFormat)
-	if false == isArray {
-		if c.JSONFormat&JSONFormatNumber != 0 {
-			return c.UnformattedByte(), nil
-		}
-		if c.JSONFormat&JSONFormatSign != 0 {
-			return c.Formatter.Sign(), nil
-		}
-		if c.JSONFormat&JSONFormatLocale != 0 {
-			// necessary to return a copy?
-			// l := c.Localize()
-			// ll := len(l)
-			// b := make([]byte, ll, ll)
-			// copy(b, l)
-			// return b, nil
-			return c.Localize(), nil
-		}
-	}
-
-	// c.bufJ = c.bufJ[:0]
-
-	return nil, nil
-}
-
-func (c *Currency) UnmarshalJSON(b []byte) error {
-	// @todo rewrite and optimize unmarshalling but for now json.Unmarshal is fine
-	var s interface{}
-	if err := json.Unmarshal(b, &s); err != nil {
-		return err
-	}
-	return c.Scan(s)
-}
-
-// @todo quick write down without tests so add tests 8-)
-// Errors will be logged.
-func (c *Currency) Scan(value interface{}) error {
-	if value == nil {
-		c.m, c.Valid = 0, false
-		return nil
-	}
-	if c.guard == 0 {
-		c.Option(Guard(guardi))
-	}
-	if c.dp == 0 {
-		c.Option(Precision(dpi))
-	}
-
-	if rb, ok := value.(*sql.RawBytes); ok {
-		f, err := atof64([]byte(*rb))
-		if err != nil {
-			return log.Error("Currency=Scan", "err", err)
-		}
-		c.Valid = true
-		c.Setf(f)
-	}
-	return nil
-}
-
-var colon = []byte(",")
-
-func atof64(bVal []byte) (f float64, err error) {
-	bVal = bytes.Replace(bVal, colon, nil, -1)
-	//	s := string(bVal)
-	//	s1 := strings.Replace(s, ",", "", -1)
-	f, err = strconv.ParseFloat(string(bVal), 64)
-	return f, err
-}
-
-//// ConvertValue @todo ?
-//func (c Currency) ConvertValue(v interface{}) (driver.Value, error) {
-//	return nil, nil
-//}
-//
-//// Value @todo ?
-//func (c Currency) Value() (driver.Value, error) {
-//	return nil, nil
-//}

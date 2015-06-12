@@ -19,9 +19,7 @@ import (
 
 	"math"
 
-	"github.com/corestoreio/csfw/i18n"
 	"github.com/corestoreio/csfw/storage/money"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestAbs(t *testing.T) {
@@ -209,7 +207,7 @@ func TestSwedish(t *testing.T) {
 	}
 	for _, test := range tests {
 		c := money.New(money.Precision(test.prec)).Set(test.have)
-		have := c.Swedish(money.Swedish(test.iv)).Unformatted()
+		have := c.Swedish(money.Swedish(test.iv)).Number()
 		if have != test.want {
 			t.Errorf("\nWant: %s\nHave: %s\nIndex: %v\n", test.want, have, test)
 		}
@@ -284,7 +282,7 @@ func TestMul(t *testing.T) {
 	for _, test := range tests {
 		c := money.New(money.Precision(test.prec)).Set(test.have1)
 		c = c.Mul(money.New(money.Precision(test.prec)).Set(test.have2))
-		have := c.Unformatted()
+		have := c.Number()
 		if have != test.want {
 			t.Errorf("\nWant: %s\nHave: %s\nSign %d\nIndex: %v\n", test.want, have, c.Sign(), test)
 		}
@@ -313,7 +311,7 @@ func TestMulf(t *testing.T) {
 	for _, test := range tests {
 		c := money.New(money.Precision(test.prec)).Set(test.have1)
 		c = c.Mulf(test.have2)
-		have := c.Unformatted()
+		have := c.Number()
 		if have != test.want {
 			t.Errorf("\nWant: %s\nHave: %s\nSign %d\nIndex: %v\n", test.want, have, c.Sign(), test)
 		}
@@ -340,41 +338,7 @@ func TestDiv(t *testing.T) {
 		c = c.Div(money.New().Set(test.have2))
 		have := c.Raw()
 		if have != test.want {
-			t.Errorf("\nWant: %d\nHave: %d / %s\nIndex: %v\n", test.want, have, c.Unformatted(), test)
-		}
-	}
-}
-
-func TestJSON(t *testing.T) {
-
-	tests := []struct {
-		prec    int
-		haveI   int64
-		haveF   i18n.CurrencyFormatter
-		haveV   bool
-		want    string
-		wantErr error
-	}{
-		{100, 123456, i18n.DefaultCurrency, true, `[1234.56, "$ 1.234,56", "$"]`, nil},
-		{100, 123456, i18n.DefaultCurrency, false, `null`, nil},
-	}
-
-	for _, test := range tests {
-		c := money.New(
-			money.Precision(test.prec),
-			money.Formatter(test.haveF),
-		).Set(test.haveI)
-		c.Valid = test.haveV
-
-		have, err := c.MarshalJSON()
-		if test.wantErr != nil {
-			assert.Error(t, err, "%v", test)
-			assert.Nil(t, have)
-		} else {
-			haveS := string(have)
-			assert.NoError(t, err, "%v", test)
-			assert.EqualValues(t, test.want, haveS)
-			// @todo test unmarshal ...
+			t.Errorf("\nWant: %d\nHave: %d / %s\nIndex: %v\n", test.want, have, c.Number(), test)
 		}
 	}
 }
