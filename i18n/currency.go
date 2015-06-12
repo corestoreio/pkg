@@ -17,28 +17,41 @@ package i18n
 import (
 	"sort"
 
+	"io"
+
+	"github.com/corestoreio/csfw/utils/log"
 	"golang.org/x/text/language"
 )
 
-var currencyDictStorage CurrencyDictSlice
+// DefaultCurrencyName 3-letter ISO 4217 code
+const DefaultCurrencyName = "USD"
 
-// DefaultSymbol is ¤ http://en.wikipedia.org/wiki/Currency_sign_(typography)
-var DefaultSymbol = []byte(`¤`)
+var currencyDictStorage CurrencyDictSlice
 
 // DefaultCurrency represents the package wide default currency locale
 // specific formatter.
 var DefaultCurrency CurrencyFormatter
 
+var _ CurrencyFormatter = (*Currency)(nil)
+
 type (
+	// CurrencyFormatter knows locale specific properties about a currency/number
 	CurrencyFormatter interface {
-		Localize(buf *[]byte)
-		Sign() []byte
+		NumberFormatter
+		// FmtCurrency formats a currency according to the currency format of the
+		// locale. i and dec represents a floating point number. Only i can be
+		// negative. Sign must be either -1 or +1. IF sign is 0 the prefix
+		// will be guessed from i. If sign and i are 0 function must
+		// return ErrCannotDetectMinusSign.
+		FmtCurrency(w io.Writer, sign int, i int64, dec int64) error
+		Symbol() []byte
 	}
 
 	Currency struct {
 		// @todo
-		language.Currency
-		Symbol string // € or USD or ...
+		*Number
+		language.Currency        // maybe one day that will get extended ...
+		symbol            []byte // € or USD or ...
 	}
 
 	CurrencyDictSlice []currencyDict
@@ -48,20 +61,53 @@ type (
 		cn header   // currency names
 		cs header   // currency symbol
 	}
+
+	CurrencyOptFunc func(*Currency)
 )
 
 func init() {
 	DefaultCurrency = NewCurrency()
 }
 
-func NewCurrency() *Currency {
-	// @todo
-	// default "en_US"
+// CurrencyISO parses a 3-letter ISO 4217 code and sets it to the Currency
+// struct. If parsing fails errors will be logged and falls back to DefaultCurrencyName.
+func CurrencyISO(cur string) CurrencyOptFunc {
+	return func(c *Currency) {
+		lc, err := language.ParseCurrency(cur)
+		if err != nil {
+			if log.IsTrace() {
+				log.Trace("i18n=CurrencyISO", "err", err, "cur", cur)
+			}
+			log.Error("i18n=CurrencyISO", "err", err, "cur", cur)
+			lc = language.MustParseCurrency(DefaultCurrencyName)
+		}
+		c.Currency = lc
+		c.symbol = []byte(lc.String())
+	}
+}
+
+func NewCurrency(opts ...CurrencyOptFunc) *Currency {
+	c := new(Currency)
+	CurrencyISO(DefaultCurrencyName)(c)
+	c.Number = NewNumber() // default also US ...
+	for _, o := range opts {
+		if o != nil {
+			o(c)
+		}
+	}
+	return c
+}
+
+// FmtCurrency formats a currency according to the underlying locale
+func (c *Currency) FmtCurrency(w io.Writer, sign int, i int64, dec int64) error {
+	if sign == 0 && i == 0 {
+		return ErrCannotDetectMinusSign
+	}
 	return nil
 }
 
-func (c *Currency) Localize(buf *[]byte) {}
-func (c *Currency) Sign() []byte         { return DefaultSymbol }
+// Symbol returns the currency symbol
+func (c *Currency) Symbol() []byte { return c.symbol }
 
 func SetCurrencyDict(cds ...currencyDict) {
 	currencyDictStorage = CurrencyDictSlice(cds)
