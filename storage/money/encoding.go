@@ -34,12 +34,14 @@ var (
 )
 
 const (
-	// JSONNumber encodes/decodes a currency as a number string to directly use in e.g. JavaScript
+	// JSONNumber encodes/decodes a currency as a number string to directly use
+	// in e.g. JavaScript
 	JSONNumber JSONType = 1 << iota
 	// JSONLocale encodes/decodes a currency according to its locale format.
 	// Decoding: Considers the locale if the currency symbol is valid.
 	JSONLocale
-	// JSONExtended encodes/decodes a currency into a JSON array: [1234.56, "€", "1.234,56 €"].
+	// JSONExtended encodes/decodes a currency into a JSON array:
+	// [1234.56, "€", "1.234,56 €"].
 	// Decoding: Considers the locale if the currency symbol is valid.
 	JSONExtended
 )

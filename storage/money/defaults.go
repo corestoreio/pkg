@@ -32,8 +32,8 @@ var (
 	swedish         = Interval000
 )
 
-// DefaultFormat sets the package wide default locale specific currency formatter
-var DefaultFormat i18n.CurrencyFormatter = i18n.DefaultCurrency
+// DefaultPrinter sets the package wide default locale specific currency formatter
+var DefaultPrinter i18n.CurrencyFormatter = i18n.DefaultCurrency
 
 // DefaultJSONEncode is JSONLocale
 var DefaultJSONEncode JSONMarshaller = NewJSONEncoder()

@@ -59,13 +59,14 @@ type (
 	// Interval defines the type for the Swedish rounding.
 	Interval uint8
 
-	// Currency represents a money aka currency type to avoid rounding errors with floats.
-	// Takes also care of http://en.wikipedia.org/wiki/Swedish_rounding
+	// Currency represents a money aka currency type to avoid rounding errors
+	// with floats. Includes options for printing, Swedish rounding,
+	// database scanning and JSON en/decoding.
 	Currency struct {
 		// m money in Guard/DP
 		m int64
-		// fmt to allow language specific output formats
-		fmt i18n.CurrencyFormatter
+		// Printer to allow language and format specific outputs
+		Printer i18n.CurrencyFormatter
 		// Valid if false the internal value is NULL
 		Valid bool
 		// Interval defines how the swedish rounding can be applied.
@@ -76,6 +77,7 @@ type (
 
 		guard  int64
 		guardf float64
+		prec   int // precision only calculated when changing dp
 		dp     int64
 		dpf    float64
 		// bufC print buffer for number generation incl. locale settings ... or a sync.Pool ?
@@ -123,6 +125,7 @@ func Precision(p int) OptionFunc {
 	if p64 != 0 && (l%2) != 0 {
 		p64 = dp
 	}
+	prec := decimals(p64)
 	if p64 == 0 { // check for division by zero
 		p64 = 1
 	}
@@ -130,28 +133,14 @@ func Precision(p int) OptionFunc {
 		previous := int(c.dp)
 		c.dp = p64
 		c.dpf = float64(p64)
+		c.prec = prec // amount of decimal digits
 		return Precision(previous)
-	}
-}
-
-// Format sets the locale specific formatter. Panics if f is nil.
-func Format(f i18n.CurrencyFormatter) OptionFunc {
-	// @todo not sure if this function is needed an we simply can export field
-	// fmt as Formatter ... but what if we need mutexes?
-	if f == nil {
-		log.Fatal("money=Format", "err", errors.New("Argument f cannot be nil"))
-	}
-	return func(c *Currency) OptionFunc {
-		previous := c.fmt
-		c.fmt = f
-		return Format(previous)
 	}
 }
 
 // JSONMarshal sets a custom JSON Marshaller
 func JSONMarshal(m JSONMarshaller) OptionFunc {
-	// @todo not sure if this function is needed an we simply can export field
-	// jm as JSONMarshaller ... but what if we need mutexes?
+	// @todo not sure if this whole function is needed. jm as JSONMarshaller ... but what if we need mutexes?
 	if m == nil {
 		m = NewJSONEncoder()
 	}
@@ -164,8 +153,7 @@ func JSONMarshal(m JSONMarshaller) OptionFunc {
 
 // JSONUnmarshal sets a custom JSON Unmmarshaller
 func JSONUnmarshal(um JSONUnmarshaller) OptionFunc {
-	// @todo not sure if this function is needed an we simply can export field
-	// jum as JSONUnmarshaller ... but what if we need mutexes?
+	// @todo not sure if this whole function is needed. jum as JSONUnmarshaller ... but what if we need mutexes?
 	if um == nil {
 		um = NewJSONDecoder()
 	}
@@ -180,13 +168,14 @@ func JSONUnmarshal(um JSONUnmarshaller) OptionFunc {
 // Guard and decimal precision.
 func New(opts ...OptionFunc) Currency {
 	c := Currency{
-		guard:  guard,
-		guardf: guardf,
-		dp:     dp,
-		dpf:    dpf,
-		fmt:    DefaultFormat,
-		jm:     DefaultJSONEncode,
-		jum:    DefaultJSONDecode,
+		guard:   guard,
+		guardf:  guardf,
+		dp:      dp,
+		dpf:     dpf,
+		prec:    decimals(dp),
+		Printer: DefaultPrinter,
+		jm:      DefaultJSONEncode,
+		jum:     DefaultJSONDecode,
 	}
 	c.Option(opts...)
 	return c
@@ -204,7 +193,7 @@ func (c *Currency) Option(opts ...OptionFunc) (previous OptionFunc) {
 	return previous
 }
 
-// Abs Returns the absolute value of Currency
+// Abs returns the absolute value of Currency
 func (c Currency) Abs() Currency {
 	if c.m < 0 {
 		return c.Neg()
@@ -256,11 +245,16 @@ func (c Currency) Sign() int {
 	return 1
 }
 
+// Precision returns the amount of decimal digits
+func (c Currency) Precision() int {
+	return c.prec
+}
+
 // Localize for money type representation in a specific locale. Owns the return value.
 func (c Currency) Localize() []byte {
 	// thread safe?
 	c.bufC = c.bufC[:0]
-	c.fmt.FmtCurrency(&c.bufC, c.Sign(), c.Geti(), c.Dec())
+	c.Printer.FmtCurrency(&c.bufC, c.Sign(), c.Precision(), c.Geti(), c.Dec())
 	return c.bufC
 }
 
@@ -279,11 +273,11 @@ func (c Currency) Number() string {
 func (c Currency) NumberByte() []byte {
 	// thread safe?
 	c.bufC = c.bufC[:0]
-	c.fmt.FmtNumber(&c.bufC, c.Sign(), c.Geti(), c.Dec())
+	c.Printer.FmtNumber(&c.bufC, c.Sign(), c.Precision(), c.Geti(), c.Dec())
 	return c.bufC
 }
 
-// Add Adds two Currency types. Returns empty Currency on integer overflow.
+// Add adds two Currency types. Returns empty Currency on integer overflow.
 // Errors will be logged and a trace is available when the level for tracing has been set.
 func (c Currency) Add(d Currency) Currency {
 	r := c.m + d.m
@@ -314,26 +308,26 @@ func (c Currency) Sub(d Currency) Currency {
 	return c
 }
 
-// Mul Multiplies two Currency types. Both types must have the same precision.
+// Mul multiplies two Currency types. Both types must have the same precision.
 func (c Currency) Mul(d Currency) Currency {
 	return c.Set(c.m * d.m / c.dp)
 }
 
-// Div Divides one Currency type from another
+// Div divides one Currency type from another
 func (c Currency) Div(d Currency) Currency {
 	f := (c.guardf * c.dpf * float64(c.m)) / float64(d.m) / c.guardf
 	i := int64(f)
 	return c.Set(rnd(i, f-float64(i)))
 }
 
-// Mulf Multiplies a Currency with a float to return a money-stored type
+// Mulf multiplies a Currency with a float to return a money-stored type
 func (c Currency) Mulf(f float64) Currency {
 	i := c.m * int64(f*c.guardf*c.dpf)
 	r := i / c.guard / c.dp
 	return c.Set(rnd(r, float64(i)/c.guardf/c.dpf-float64(r)))
 }
 
-// Neg Returns the negative value of Currency
+// Neg returns the negative value of Currency
 func (c Currency) Neg() Currency {
 	if c.m != 0 {
 		c.m *= -1
@@ -344,30 +338,6 @@ func (c Currency) Neg() Currency {
 // Pow is the power of Currency
 func (c Currency) Pow(f float64) Currency {
 	return c.Setf(math.Pow(c.Getf(), f))
-}
-
-// rnd rounds int64 remainder rounded half towards plus infinity
-// trunc = the remainder of the float64 calc
-// r     = the result of the int64 cal
-func rnd(r int64, trunc float64) int64 {
-	//fmt.Printf("RND 1 r = % v, trunc = %v RoundTo = %v\n", r, trunc, RoundTo)
-	if trunc > 0 {
-		if trunc >= RoundTo {
-			r++
-		}
-	} else {
-		if trunc < RoundToN {
-			r--
-		}
-	}
-	//fmt.Printf("RND 2 r = % v, trunc = %v RoundTo = %v\n", r, trunc, RoundTo)
-	return r
-}
-
-// Round rounds a value.
-func Round(f float64) float64 {
-	// @todo check out to round negative numbers https://gist.github.com/pelegm/c48cff315cd223f7cf7b
-	return math.Floor(f + .5)
 }
 
 // Swedish applies the Swedish rounding. You may set the usual options.
@@ -412,4 +382,37 @@ func (c Currency) Swedish(opts ...OptionFunc) Currency {
 		return c.Setf(Round(c.Getf()*1) / 1) // ;-)
 	}
 	return c
+}
+
+// rnd rounds int64 remainder rounded half towards plus infinity
+// trunc = the remainder of the float64 calc
+// r     = the result of the int64 cal
+func rnd(r int64, trunc float64) int64 {
+	//fmt.Printf("RND 1 r = % v, trunc = %v RoundTo = %v\n", r, trunc, RoundTo)
+	if trunc > 0 {
+		if trunc >= RoundTo {
+			r++
+		}
+	} else {
+		if trunc < RoundToN {
+			r--
+		}
+	}
+	//fmt.Printf("RND 2 r = % v, trunc = %v RoundTo = %v\n", r, trunc, RoundTo)
+	return r
+}
+
+// Round rounds a value.
+func Round(f float64) float64 {
+	// @todo check out to round negative numbers https://gist.github.com/pelegm/c48cff315cd223f7cf7b
+	return math.Floor(f + .5)
+}
+
+// decimals returns the length of the 10^n calculation, ignoring the leading 1.
+// For other int64 you must add + 1.
+func decimals(dec int64) int {
+	if dec < 1 {
+		return 0
+	}
+	return int(math.Floor(math.Log10(float64(dec))))
 }

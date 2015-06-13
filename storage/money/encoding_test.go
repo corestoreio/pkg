@@ -31,7 +31,10 @@ func TestJSONMarshal(t *testing.T) {
 		want      string
 		wantErr   error
 	}{
-		{100, 123456, money.JSONNumber, true, `[1234.56, "$ 1.234,56", "$"]`, nil},
+		{100, 123456, money.JSONNumber, true, `1234.56`, nil},
+		{1000, 123456, money.JSONNumber, true, `123.456`, nil},
+		{10000, 123456, money.JSONNumber, true, `12.3456`, nil},
+		{10, 123456, money.JSONNumber, true, `12345.6`, nil},
 		{100, 123456, money.JSONNumber, false, `null`, nil},
 	}
 
@@ -45,11 +48,11 @@ func TestJSONMarshal(t *testing.T) {
 		have, err := c.MarshalJSON()
 		if test.wantErr != nil {
 			assert.Error(t, err, "%v", test)
-			assert.Nil(t, have)
+			assert.Nil(t, have, "%v", test)
 		} else {
 			haveS := string(have)
 			assert.NoError(t, err, "%v", test)
-			assert.EqualValues(t, test.want, haveS)
+			assert.EqualValues(t, test.want, haveS, "%v", test)
 		}
 	}
 }

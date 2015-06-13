@@ -26,11 +26,18 @@ function. Precision() hold the places after the decimal place in teh active mone
 
 http://en.wikipedia.org/wiki/Floating_point#Accuracy_problems
 
-Options
+New()
+
+Creating a new Currency struct:
+
+	c := New()
+
+Default values are 10000 for decimals, JSONLocale for Marshal/Unmarshal, Swedish
+rounding is disabled and i18n.DefaultCurrency (en-US) for number and currency format.
 
 The following options can be set while calling New():
 
-	m := New(Swedish(Interval005), Guard(100), Precision(100))
+	c := New(Swedish(Interval005), Guard(100), Precision(100))
 
 Those values are really optional and even the order they appear ;-).
 Default settings are:
