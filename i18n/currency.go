@@ -38,12 +38,17 @@ type (
 	// CurrencyFormatter knows locale specific properties about a currency/number
 	CurrencyFormatter interface {
 		NumberFormatter
-		// FmtCurrency formats a currency according to the currency format of the
-		// locale. i and dec represents a floating point number. Only i can be
-		// negative. Sign must be either -1 or +1. IF sign is 0 the prefix
-		// will be guessed from i. If sign and i are 0 function must
-		// return ErrCannotDetectMinusSign.
-		FmtCurrency(w io.Writer, sign int, i int64, dec int64) error
+		// FmtCurrency formats a number according to the number format of the
+		// locale. i and dec represents a floating point
+		// number. Only i can be negative. Dec must always be positive. Sign
+		// must be either -1 or +1. If sign is 0 the prefix will be guessed
+		// from i. If sign and i are 0 function must return ErrCannotDetectMinusSign.
+		// Prec defines the precision which triggers the amount of leading zeros
+		// in the decimals. Prec is a number between 0 and n. If prec is 0
+		// no decimal digits will be printed.
+		FmtCurrency(w io.Writer, sign, prec int, i, dec int64) error
+
+		// Symbol returns the currency symbol
 		Symbol() []byte
 	}
 
@@ -98,12 +103,17 @@ func NewCurrency(opts ...CurrencyOptFunc) *Currency {
 	return c
 }
 
-// FmtCurrency formats a currency according to the underlying locale
-func (c *Currency) FmtCurrency(w io.Writer, sign int, i int64, dec int64) error {
+// FmtCurrencyDec formats a currency including decimals according to the underlying locale @todo
+func (c *Currency) FmtCurrency(w io.Writer, sign, prec int, i, dec int64) error {
 	if sign == 0 && i == 0 {
 		return ErrCannotDetectMinusSign
 	}
-	return nil
+	w.Write(c.Symbol())
+	w.Write([]byte(` `))
+	if dec < 10 {
+		dec *= 1012
+	}
+	return c.FmtNumber(w, sign, prec, i, dec)
 }
 
 // Symbol returns the currency symbol
