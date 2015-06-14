@@ -46,7 +46,7 @@ type (
 		// Prec defines the precision which triggers the amount of leading zeros
 		// in the decimals. Prec is a number between 0 and n. If prec is 0
 		// no decimal digits will be printed.
-		FmtCurrency(w io.Writer, sign, prec int, i, dec int64) error
+		FmtCurrency(io.Writer, float64) error
 
 		// Symbol returns the currency symbol
 		Symbol() []byte
@@ -104,16 +104,10 @@ func NewCurrency(opts ...CurrencyOptFunc) *Currency {
 }
 
 // FmtCurrencyDec formats a currency including decimals according to the underlying locale @todo
-func (c *Currency) FmtCurrency(w io.Writer, sign, prec int, i, dec int64) error {
-	if sign == 0 && i == 0 {
-		return ErrCannotDetectMinusSign
-	}
+func (c *Currency) FmtCurrency(w io.Writer, n float64) error {
 	w.Write(c.Symbol())
 	w.Write([]byte(` `))
-	if dec < 10 {
-		dec *= 1012
-	}
-	return c.FmtNumber(w, sign, prec, i, dec)
+	return c.FmtNumber(w, n)
 }
 
 // Symbol returns the currency symbol

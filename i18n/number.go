@@ -15,17 +15,22 @@
 package i18n
 
 import (
-	"errors"
-	"fmt"
 	"io"
+	"math"
+	"strconv"
 
-	"golang.org/x/text/language"
+	"unicode/utf8"
+
+	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 )
 
 // DefaultNumber default formatter for default locale en-US
 var DefaultNumber NumberFormatter
 
-var ErrCannotDetectMinusSign = errors.New("Cannot detect minus sign")
+// numberBufferSize bytes buffer size. a number including currency sign can
+// be up to 64 bytes. Some runes might need more bytes ...
+const numberBufferSize = 64
 
 // this is quick implementation and needs some refactorings
 
@@ -40,30 +45,33 @@ type (
 		// Prec defines the precision which triggers the amount of leading zeros
 		// in the decimals. Prec is a number between 0 and n. If prec is 0
 		// no decimal digits will be printed.
-		FmtNumber(w io.Writer, sign, prec int, i, dec int64) error
+		FmtNumber(w io.Writer, n float64) error
 	}
 
 	Number struct {
-		language.Tag
+		//		Tag language.Tag
 		// @todo
 		Symbols Symbols
+		f       format
+		buf     []byte // size numberBufferSize
 	}
 
 	Symbols struct {
-		Decimal                []byte
-		Group                  []byte
-		List                   []byte
-		PercentSign            []byte
-		CurrencySign           []byte
-		PlusSign               []byte
-		MinusSign              []byte
-		Exponential            []byte
-		SuperscriptingExponent []byte
-		PerMille               []byte
-		Infinity               []byte
+		Decimal                rune
+		Group                  rune
+		List                   rune
+		PercentSign            rune
+		CurrencySign           rune
+		PlusSign               rune
+		MinusSign              rune
+		Exponential            rune
+		SuperscriptingExponent rune
+		PerMille               rune
+		Infinity               rune
 		Nan                    []byte
 	}
 
+	// NumberOptFunc applies options to the Number struct
 	NumberOptFunc func(*Number)
 )
 
@@ -73,37 +81,49 @@ func init() {
 
 var _ NumberFormatter = (*Number)(nil)
 
-func NumberTag(locale string) NumberOptFunc {
-	return func(n *Number) {
-		n.Tag = language.MustParse(locale)
-	}
-}
+//func NumberTag(locale string) NumberOptFunc {
+//	return func(n *Number) {
+//		n.Tag = language.MustParse(locale)
+//	}
+//}
 
-func NumberSymbols(s Symbols) NumberOptFunc {
+// NumberFormat applies a format to a Number. Must be applied after you have
+// set the Symbol struct.
+func NumberFormat(f string) NumberOptFunc {
 	return func(n *Number) {
-		n.Symbols = s
+		n.f = format{
+			parsed:    false,
+			pattern:   []rune(f),
+			precision: 9,
+			plusSign:  n.Symbols.PlusSign, // apply default values
+			minusSign: n.Symbols.MinusSign,
+			decimal:   n.Symbols.Decimal,
+			group:     0,
+		}
 	}
 }
 
 func NewNumber(opts ...NumberOptFunc) *Number {
-	n := new(Number)
-	NumberTag("en-US")(n)
-	NumberSymbols(
-		Symbols{
-			Decimal:                []byte(`.`),
-			Group:                  []byte(`,`),
-			List:                   []byte(`;`),
-			PercentSign:            []byte(`%`),
-			CurrencySign:           []byte(`¤`), // ¤ http://en.wikipedia.org/wiki/Currency_sign_(typography)
-			PlusSign:               []byte(`+`),
-			MinusSign:              []byte(`-`),
-			Exponential:            []byte(`E`),
-			SuperscriptingExponent: []byte(`×`),
-			PerMille:               []byte(`‰`),
-			Infinity:               []byte(`∞`),
+	n := &Number{
+		Symbols: Symbols{
+			// normally that all should come from golang.org/x/text package
+			Decimal:                '.',
+			Group:                  ',',
+			List:                   ';',
+			PercentSign:            '%',
+			CurrencySign:           '¤',
+			PlusSign:               '+',
+			MinusSign:              '-',
+			Exponential:            'E',
+			SuperscriptingExponent: '×',
+			PerMille:               '‰',
+			Infinity:               '∞',
 			Nan:                    []byte(`NaN`),
 		},
-	)(n)
+		buf: make([]byte, numberBufferSize),
+	}
+	NumberFormat(`#,###.##`)(n) // normally that should come from golang.org/x/text package
+	//	NumberTag("en-US")(n)
 	for _, o := range opts {
 		if o != nil {
 			o(n)
@@ -112,27 +132,193 @@ func NewNumber(opts ...NumberOptFunc) *Number {
 	return n
 }
 
-// numberFormatMap quick and dirty implementation
-var numberFormatMap = []string{"%d", "%d%s%01d", "%d%s%02d", "%d%s%03d", "%d%s%04d", "%d%s%05d", "%d%s%06d", "%d%s%07d", "%d%s%08d", "%d%s%09d", "%d%s%010d", "%d%s%011d", "%d%s%012d", "%d%s%013d", "%d%s%014d"}
+/*
+A function to render a number to a string based on
+the following user-specified criteria:
 
-// FmtNumber formats a number according to the underlying locale @todo
-// and the interface contract.
-func (c *Number) FmtNumber(w io.Writer, sign, prec int, i, dec int64) error {
-	if sign == 0 && i == 0 {
-		return ErrCannotDetectMinusSign
-	}
-	if dec < 0 {
-		dec *= -1
-	}
-	if sign < 0 && i == 0 && dec > 0 {
-		w.Write(c.Symbols.MinusSign) // because Dec is always positive ...
+* thousands separator
+* decimal separator
+* decimal precision
+
+The format parameter tells how to render the number n.
+
+Examples of format strings, given n = 12345.6789:
+
+"#,###.##" => "12,345.67"
+"#,###." => "12,345"
+"#,###" => "12345,678"
+"#\u202F###,##" => "12â€¯345,67"
+"#.###,###### => 12.345,678900
+"" (aka default format) => 12,345.67
+
+The highest precision allowed is 9 digits after the decimal symbol.
+There is also a version for integer number, RenderInteger(),
+which is convenient for calls within template.
+*/
+
+// format some kind of cache
+type format struct {
+	parsed    bool
+	pattern   []rune
+	precision int
+	plusSign  rune
+	minusSign rune
+	decimal   rune
+	group     rune
+}
+
+func (f *format) parse() error {
+
+	// collect indices of meaningful formatting directives
+	formatDirectiveIndices := make([]int, 0)
+	for i, char := range f.pattern {
+		if char != '#' && char != '0' {
+			formatDirectiveIndices = append(formatDirectiveIndices, i)
+		}
 	}
 
-	var err error
-	if prec > 0 && prec <= len(numberFormatMap) {
-		_, err = fmt.Fprintf(w, numberFormatMap[prec], i, c.Symbols.Decimal, dec) // @todo remove Sprintf
-	} else {
-		_, err = fmt.Fprintf(w, numberFormatMap[0], i) // @todo remove Sprintf
+	if len(formatDirectiveIndices) > 0 {
+		// Directive at index 0:
+		//   Must be a '+'
+		//   Raise an error if not the case
+		// index: 0123456789
+		//        +0.000,000
+		//        +000,000.0
+		//        +0000.00
+		//        +0000
+		if formatDirectiveIndices[0] == 0 {
+			if f.pattern[formatDirectiveIndices[0]] != '+' {
+				errF := errgo.Newf("invalid positive sign directive in format: %s", string(f.pattern))
+				if log.IsTrace() {
+					log.Trace("Number=FmtNumber", "err", errF)
+				}
+				return log.Error("Number=FmtNumber", "err", errF)
+			}
+			// positiveStr = no.Symbols.PlusSign
+			formatDirectiveIndices = formatDirectiveIndices[1:]
+		} else {
+			f.plusSign = 0
+		}
+
+		// Two directives:
+		//   First is thousands separator
+		//   Raise an error if not followed by 3-digit
+		// 0123456789
+		// 0.000,000
+		// 000,000.00
+		if len(formatDirectiveIndices) == 2 {
+			if (formatDirectiveIndices[1] - formatDirectiveIndices[0]) != 4 {
+				errF := errgo.Newf("thousands separator directive must be followed by 3 digit-specifiers in format: %s", string(f.pattern))
+				if log.IsTrace() {
+					log.Trace("Number=FmtNumber", "err", errF)
+				}
+				return log.Error("Number=FmtNumber", "err", errF)
+			}
+			f.group = f.pattern[formatDirectiveIndices[0]]
+			formatDirectiveIndices = formatDirectiveIndices[1:]
+		}
+
+		// One directive:
+		//   Directive is decimal separator
+		//   The number of digit-specifier following the separator indicates wanted prec
+		// 0123456789
+		// 0.00
+		// 000,0000
+		if len(formatDirectiveIndices) == 1 {
+			f.decimal = f.pattern[formatDirectiveIndices[0]]
+			f.precision = len(f.pattern) - formatDirectiveIndices[0] - 1
+		}
 	}
-	return err
+	return nil
+}
+
+func (f *format) valid() bool {
+	return f.parsed && len(f.pattern) > 0
+}
+
+func (no *Number) FmtNumber(w io.Writer, nFloat float64) error {
+	for i := range no.buf {
+		no.buf[i] = 0 // clear buffer
+	}
+
+	// Special cases:
+	//   NaN = "NaN"
+	//   +Inf = "+Infinity"
+	//   -Inf = "-Infinity"
+
+	if math.IsNaN(nFloat) {
+		w.Write(no.Symbols.Nan)
+		return nil
+	}
+
+	if nFloat > math.MaxFloat64 {
+		utf8.EncodeRune(no.buf, no.Symbols.Infinity)
+		w.Write(no.buf)
+		return nil
+	}
+	if nFloat < -math.MaxFloat64 {
+		utf8.EncodeRune(no.buf, no.Symbols.MinusSign)
+		utf8.EncodeRune(no.buf, no.Symbols.Infinity)
+		w.Write(no.buf)
+		return nil
+	}
+
+	// default format, all runes
+
+	if false == no.f.valid() {
+		if err := no.f.parse(); err != nil {
+			return err
+		}
+	}
+
+	var wrote int
+	if nFloat > 0.000000001 && no.f.plusSign > 0 {
+		wrote += utf8.EncodeRune(no.buf, no.f.plusSign)
+	}
+	if nFloat < -0.000000001 {
+		wrote += utf8.EncodeRune(no.buf, no.f.minusSign)
+		nFloat = -nFloat
+	}
+
+	precPow10 := math.Pow10(no.f.precision)
+
+	intf, fracf := math.Modf(nFloat + (5 / (precPow10 * 10)))
+
+	// generate integer part string
+	intStr := strconv.FormatInt(int64(intf), 10) // maybe convert to byte ...
+
+	// add thousand separator if required
+	if no.f.group > 0 {
+		for i := len(intStr); i > 3; {
+			i -= 3
+			intStr = intStr[:i] + string(no.f.group) + intStr[i:]
+		}
+	}
+
+	// no fractional part, we can leave now
+	if no.f.precision == 0 {
+		w.Write(append(no.buf[:wrote], intStr...))
+		return nil
+	}
+
+	// generate fractional part
+	fracStr := strconv.FormatInt(int64(fracf*precPow10), 10)
+
+	// may need padding
+	if len(fracStr) < no.f.precision {
+		fracStr = "000000000000000"[:no.f.precision-len(fracStr)] + fracStr
+	}
+
+	no.buf = append(no.buf[:wrote], intStr...)
+	no.buf = no.buf[:numberBufferSize] // revert back to old size
+
+	wPos := wrote + len(intStr)
+
+	wPos += 0
+	wPos += utf8.EncodeRune(no.buf[wPos:], no.f.decimal)
+	no.buf = append(no.buf[:wPos], fracStr...)
+
+	w.Write(no.buf)
+
+	return nil
 }
