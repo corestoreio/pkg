@@ -161,7 +161,7 @@ func jsonNumberMarshal(c *Currency) ([]byte, error) {
 	if c.Valid == false {
 		return nullString, nil
 	}
-	return c.NumberByte(), nil
+	return c.NumberWriter(), nil
 }
 
 // jsonNumberUnmarshal decodes a string number into the Currency.
@@ -184,7 +184,7 @@ func jsonLocaleMarshal(c *Currency) ([]byte, error) {
 	}
 	var b buf
 	b.Write(quotes)
-	b.Write(c.Localize())
+	b.Write(c.LocalizeWriter())
 	b.Write(quotes)
 	return b, nil
 }

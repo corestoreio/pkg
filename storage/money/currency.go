@@ -18,6 +18,8 @@ import (
 	"errors"
 	"math"
 
+	"io"
+
 	"github.com/corestoreio/csfw/i18n"
 	"github.com/corestoreio/csfw/utils/log"
 )
@@ -251,30 +253,39 @@ func (c Currency) Precision() int {
 }
 
 // Localize for money type representation in a specific locale. Owns the return value.
-func (c Currency) Localize() []byte {
-	// thread safe?
-	c.bufC = c.bufC[:0]
-	c.Printer.FmtCurrency(&c.bufC, c.Sign(), c.Precision(), c.Geti(), c.Dec())
-	return c.bufC
+func (c Currency) LocalizeWriter(w io.Writer) error {
+	return c.Printer.FmtCurrency(w, c.Getf())
 }
 
-// String for money type representation i a specific locale.
+// String for money type representation in a specific locale.
 func (c Currency) String() string {
-	return string(c.Localize())
-
+	// thread safe?
+	c.bufC = c.bufC[:0]
+	if err := c.LocalizeWriter(&c.bufC); err != nil {
+		if log.IsTrace() {
+			log.Trace("Currency=String", "err", err, "c", c)
+		}
+		log.Error("Currency=String", "err", err, "c", c)
+	}
+	return string(c.bufC)
 }
 
 // Number prints the currency without any locale specific formatting. E.g. useful in JavaScript.
 func (c Currency) Number() string {
-	return string(c.NumberByte())
-}
-
-// NumberByte prints the currency without any locale specific formatting. Owns the result.
-func (c Currency) NumberByte() []byte {
 	// thread safe?
 	c.bufC = c.bufC[:0]
-	c.Printer.FmtNumber(&c.bufC, c.Sign(), c.Precision(), c.Geti(), c.Dec())
-	return c.bufC
+	if err := c.NumberWriter(&c.bufC); err != nil {
+		if log.IsTrace() {
+			log.Trace("Currency=Number", "err", err, "c", c)
+		}
+		log.Error("Currency=Number", "err", err, "c", c)
+	}
+	return string(c.bufC)
+}
+
+// NumberWriter prints the currency without any locale specific formatting. Owns the result.
+func (c Currency) NumberWriter(w io.Writer) error {
+	return c.Printer.FmtNumber(w, c.Getf())
 }
 
 // Add adds two Currency types. Returns empty Currency on integer overflow.

@@ -23,6 +23,8 @@ import (
 
 func TestJSONMarshal(t *testing.T) {
 
+	// @todo these tests will fail once i18n has been fully implemented. so fix this.
+
 	tests := []struct {
 		prec      int
 		haveI     int64
@@ -36,6 +38,14 @@ func TestJSONMarshal(t *testing.T) {
 		{10000, 123456, money.JSONNumber, true, `12.3456`, nil},
 		{10, 123456, money.JSONNumber, true, `12345.6`, nil},
 		{100, 123456, money.JSONNumber, false, `null`, nil},
+		{0, 123456, money.JSONNumber, true, `123456`, nil},
+
+		{100, 123456, money.JSONLocale, true, `"USD 1234.56"`, nil},
+		{1000, 123456, money.JSONLocale, true, `"USD 123.456"`, nil},
+		{10000, 123456, money.JSONLocale, true, `"USD 12.3456"`, nil},
+		{10, 123456, money.JSONLocale, true, `"USD 12345.6"`, nil},
+		{100, 123456, money.JSONLocale, false, `null`, nil},
+		{0, 123456, money.JSONLocale, true, `"USD 123456"`, nil},
 	}
 
 	for _, test := range tests {
