@@ -14,6 +14,12 @@
 
 package money
 
+/*
+	@todo
+	http://unicode.org/reports/tr35/tr35-numbers.html#Supplemental_Currency_Data to automatically
+	set the Swedish rounding
+*/
+
 import (
 	"errors"
 	"math"

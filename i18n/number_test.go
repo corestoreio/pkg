@@ -17,9 +17,8 @@ package i18n_test
 import (
 	"bytes"
 	"errors"
-	"testing"
-
 	"math"
+	"testing"
 
 	"github.com/corestoreio/csfw/i18n"
 	"github.com/stretchr/testify/assert"
@@ -43,6 +42,13 @@ func TestFmtNumber(t *testing.T) {
 		{"", -1234.06, "-1234.060000000", nil},
 		{"", -1234.076, "-1234.076000000", nil},
 		{"", -1234.0006, "-1234.000600000", nil},
+		//
+		{"#,##0.00;(#,##0.00)", 1234.56, "1,234.56", nil},
+		{"#,##0.00;(#,##0.00)", -1234.56, "(1,234.56)", nil},
+		{"#,###.;(#,###.)", 1234.56, "1,235", nil},
+		{"#,###.;(#,###.)", -1234.56, "(1,235)", nil},
+		{"#.;(#.)", 1234.56, "1235", nil},
+		{"#.;(#.)", -1234.56, "(1235)", nil},
 
 		{"#,###.##", 1234.56, "1,234.56", nil},
 		{"#,###.##", -1234.56, "-1,234.56", nil},
@@ -92,9 +98,12 @@ func TestFmtNumber(t *testing.T) {
 		{"+#.###,###", 1234.567891, "+1.234,568", nil},
 
 		{"#.###,###", math.NaN(), "NaN", nil},
-
-		{"$#,##0.###", -1234.0006, "-1,234.001", errors.New("Invalid positive sign directive in format: $#,##0.###")},
 		{"#,###0.###", -1234.0006, "-1,234.001", errors.New("Group separator directive must be followed by 3 digit-specifiers in format: #,###0.###")},
+
+		//		{"$#,##0.###", -1234.0006, "-1,234.001", errors.New("Invalid positive sign directive in format: $#,##0.###")},
+		//		{"$#,##0.###", -1234.0006, "-1,234.001", nil},
+		{"¤ #0.00", -1234.0006, "-¤ 1234.00", nil},
+		{"#,##0.00 ¤", 1234.0006, "1,234.00 ¤", nil},
 	}
 
 	for _, test := range tests {
@@ -105,11 +114,10 @@ func TestFmtNumber(t *testing.T) {
 		_, err := haveNumber.FmtNumber(&buf, test.n)
 		have := buf.String()
 		if test.wantErr != nil {
-			assert.Error(t, err)
-			assert.EqualError(t, err, test.wantErr.Error())
+			assert.Error(t, err, "%v", test)
+			assert.EqualError(t, err, test.wantErr.Error(), "%v", test)
 		} else {
-			assert.NoError(t, err)
-
+			assert.NoError(t, err, "%v", test)
 			assert.EqualValues(t, test.want, have, "%v", test)
 		}
 	}
