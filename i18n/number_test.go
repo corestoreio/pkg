@@ -16,13 +16,21 @@ package i18n_test
 
 import (
 	"bytes"
+	"errors"
 	"testing"
+
+	"math"
 
 	"github.com/corestoreio/csfw/i18n"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFmtNumber(t *testing.T) {
+
+	// all unique number formats and the last seen language
+	// data from unicode CLDR
+	// unicodeNumberFormats := map[string]string{"#0.###":"hy_AM", "#,##0.###":"zu_ZA", "#,##,##0.###":"te_IN", "#0.######":"en_US_POSIX"}
+	// te_IN not tested as too rare
 
 	tests := []struct {
 		format  string
@@ -41,6 +49,21 @@ func TestFmtNumber(t *testing.T) {
 		{"#,###.##", -1234.06, "-1,234.06", nil},
 		{"#,###.##", -1234.076, "-1,234.08", nil},
 		{"#,###.##", -1234.0006, "-1,234.00", nil},
+		{"#,###.##", -987651234.456, "-987,651,234.46", nil},
+
+		{"#,##0.###", 1234.56, "1,234.560", nil},
+		{"#,##0.###", -1234.56, "-1,234.560", nil},
+		{"#,##0.###", -1234.06, "-1,234.060", nil},
+		{"#,##0.###", -1234.076, "-1,234.076", nil},
+		{"#,##0.###", -1234.0006, "-1,234.001", nil},
+		{"#,##0.###", -987651234.456, "-987,651,234.456", nil},
+
+		{"#0.###", 1234.56, "1234.560", nil},
+		{"#0.###", -1234.56, "-1234.560", nil},
+		{"#0.###", -1234.06, "-1234.060", nil},
+		{"#0.###", -1234.076, "-1234.076", nil},
+		{"#0.###", -1234.0006, "-1234.001", nil},
+		{"#0.###", -987651234.456, "-987651234.456", nil},
 
 		{"#,###.", 1234.56, "1,235", nil},
 		{"#,###.", -1234.56, "-1,235", nil},
@@ -66,7 +89,12 @@ func TestFmtNumber(t *testing.T) {
 		{"#\U0001f4b0###,##", 1234.56, "1\U0001f4b0234,56", nil},
 		{"#\U0001f4b0###,##", -1234.56, "-1\U0001f4b0234,56", nil},
 
-		// @todo more tests
+		{"+#.###,###", 1234.567891, "+1.234,568", nil},
+
+		{"#.###,###", math.NaN(), "NaN", nil},
+
+		{"$#,##0.###", -1234.0006, "-1,234.001", errors.New("Invalid positive sign directive in format: $#,##0.###")},
+		{"#,###0.###", -1234.0006, "-1,234.001", errors.New("Group separator directive must be followed by 3 digit-specifiers in format: #,###0.###")},
 	}
 
 	for _, test := range tests {
@@ -74,7 +102,7 @@ func TestFmtNumber(t *testing.T) {
 			i18n.NumberFormat(test.format),
 		)
 		var buf bytes.Buffer
-		err := haveNumber.FmtNumber(&buf, test.n)
+		_, err := haveNumber.FmtNumber(&buf, test.n)
 		have := buf.String()
 		if test.wantErr != nil {
 			assert.Error(t, err)
@@ -98,7 +126,7 @@ func BenchmarkFmtNumber_UnCached(b *testing.B) {
 			i18n.NumberFormat("#,###.##"),
 		)
 		var buf bytes.Buffer
-		if err := haveNumber.FmtNumber(&buf, 1234.567); err != nil {
+		if _, err := haveNumber.FmtNumber(&buf, 1234.567); err != nil {
 			b.Error(err)
 		}
 		have := buf.String()
@@ -118,7 +146,7 @@ func BenchmarkFmtNumber___Cached(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var buf bytes.Buffer
-		if err := haveNumber.FmtNumber(&buf, 1234.567); err != nil {
+		if _, err := haveNumber.FmtNumber(&buf, 1234.567); err != nil {
 			b.Error(err)
 		}
 		have := buf.String()

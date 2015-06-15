@@ -37,15 +37,10 @@ const numberBufferSize = 64
 type (
 	// NumberFormatter knows locale specific format properties about a currency/number
 	NumberFormatter interface {
-		// FmtNumberDec formats a number according to the number format of the
-		// locale. i and dec represents a floating point
-		// number. Only i can be negative. Dec must always be positive. Sign
-		// must be either -1 or +1. If sign is 0 the prefix will be guessed
-		// from i. If sign and i are 0 function must return ErrCannotDetectMinusSign.
-		// Prec defines the precision which triggers the amount of leading zeros
-		// in the decimals. Prec is a number between 0 and n. If prec is 0
-		// no decimal digits will be printed.
-		FmtNumber(w io.Writer, n float64) error
+		// FmtNumber formats a number according to the number format.
+		// Internal rounding will be applied.
+		// Returns the number bytes written or an error.
+		FmtNumber(w io.Writer, n float64) (int, error)
 	}
 
 	Number struct {
@@ -122,7 +117,7 @@ func NewNumber(opts ...NumberOptFunc) *Number {
 		},
 		buf: make([]byte, numberBufferSize),
 	}
-	NumberFormat(`#,###.##`)(n) // normally that should come from golang.org/x/text package
+	NumberFormat(`#0.######`)(n) // normally that should come from golang.org/x/text package
 	//	NumberTag("en-US")(n)
 	for _, o := range opts {
 		if o != nil {
@@ -130,6 +125,89 @@ func NewNumber(opts ...NumberOptFunc) *Number {
 		}
 	}
 	return n
+}
+
+// FmtNumber formats a number according to the number format.
+// Internal rounding will be applied.
+// Returns the number bytes written or an error.
+func (no *Number) FmtNumber(w io.Writer, nFloat float64) (int, error) {
+	for i := range no.buf {
+		no.buf[i] = 0 // clear buffer
+	}
+
+	// Special cases:
+	//   NaN = "NaN"
+	//   +Inf = "+Infinity"
+	//   -Inf = "-Infinity"
+
+	if math.IsNaN(nFloat) {
+		return w.Write(no.Symbols.Nan)
+	}
+
+	if nFloat > math.MaxFloat64 { // that won't happen
+		utf8.EncodeRune(no.buf, no.Symbols.Infinity)
+		return w.Write(no.buf)
+	}
+	if nFloat < -math.MaxFloat64 { // that won't happen
+		utf8.EncodeRune(no.buf, no.Symbols.MinusSign)
+		utf8.EncodeRune(no.buf, no.Symbols.Infinity)
+		return w.Write(no.buf)
+	}
+
+	if false == no.f.valid() {
+		if err := no.f.parse(); err != nil {
+			return 0, err
+		}
+	}
+
+	var wrote int
+	if nFloat > 0.000000001 && no.f.plusSign > 0 {
+		wrote += utf8.EncodeRune(no.buf, no.f.plusSign)
+	}
+	if nFloat < -0.000000001 {
+		wrote += utf8.EncodeRune(no.buf, no.f.minusSign)
+		nFloat = -nFloat
+	}
+
+	precPow10 := math.Pow10(no.f.precision)
+
+	// rounds on 0.5, 0.05, 0.005, 0.0005 ... depending on the amount of fractals in the format
+	intf, fracf := math.Modf(nFloat + (5 / (precPow10 * 10)))
+
+	// generate integer part string
+	intStr := strconv.FormatInt(int64(intf), 10) // maybe convert to byte ...
+
+	// add thousand separator if required
+	if no.f.group > 0 {
+		for i := len(intStr); i > 3; {
+			i -= 3
+			intStr = intStr[:i] + string(no.f.group) + intStr[i:]
+		}
+	}
+
+	// no fractional part, we can leave now
+	if no.f.precision == 0 {
+		return w.Write(append(no.buf[:wrote], intStr...))
+	}
+
+	// generate fractional part
+	fracStr := strconv.FormatInt(int64(fracf*precPow10), 10)
+
+	// may need padding
+	if len(fracStr) < no.f.precision {
+		fracStr = "000000000000000"[:no.f.precision-len(fracStr)] + fracStr
+	}
+
+	no.buf = append(no.buf[:wrote], intStr...)
+	no.buf = no.buf[:numberBufferSize] // revert back to old size
+
+	wPos := wrote + len(intStr)
+
+	wPos += 0
+	wPos += utf8.EncodeRune(no.buf[wPos:], no.f.decimal)
+	no.buf = append(no.buf[:wPos], fracStr...)
+
+	return w.Write(no.buf)
 }
 
 /*
@@ -188,7 +266,7 @@ func (f *format) parse() error {
 		//        +0000
 		if formatDirectiveIndices[0] == 0 {
 			if f.pattern[formatDirectiveIndices[0]] != '+' {
-				errF := errgo.Newf("invalid positive sign directive in format: %s", string(f.pattern))
+				errF := errgo.Newf("Invalid positive sign directive in format: %s", string(f.pattern))
 				if log.IsTrace() {
 					log.Trace("Number=FmtNumber", "err", errF)
 				}
@@ -206,9 +284,11 @@ func (f *format) parse() error {
 		// 0123456789
 		// 0.000,000
 		// 000,000.00
+		// @todo in some rare cases the group separator will be set after 4 digits, not 3.
+		// http://unicode.org/reports/tr35/tr35-numbers.html#Number_Symbols
 		if len(formatDirectiveIndices) == 2 {
 			if (formatDirectiveIndices[1] - formatDirectiveIndices[0]) != 4 {
-				errF := errgo.Newf("thousands separator directive must be followed by 3 digit-specifiers in format: %s", string(f.pattern))
+				errF := errgo.Newf("Group separator directive must be followed by 3 digit-specifiers in format: %s", string(f.pattern))
 				if log.IsTrace() {
 					log.Trace("Number=FmtNumber", "err", errF)
 				}
@@ -234,91 +314,4 @@ func (f *format) parse() error {
 
 func (f *format) valid() bool {
 	return f.parsed && len(f.pattern) > 0
-}
-
-func (no *Number) FmtNumber(w io.Writer, nFloat float64) error {
-	for i := range no.buf {
-		no.buf[i] = 0 // clear buffer
-	}
-
-	// Special cases:
-	//   NaN = "NaN"
-	//   +Inf = "+Infinity"
-	//   -Inf = "-Infinity"
-
-	if math.IsNaN(nFloat) {
-		w.Write(no.Symbols.Nan)
-		return nil
-	}
-
-	if nFloat > math.MaxFloat64 {
-		utf8.EncodeRune(no.buf, no.Symbols.Infinity)
-		w.Write(no.buf)
-		return nil
-	}
-	if nFloat < -math.MaxFloat64 {
-		utf8.EncodeRune(no.buf, no.Symbols.MinusSign)
-		utf8.EncodeRune(no.buf, no.Symbols.Infinity)
-		w.Write(no.buf)
-		return nil
-	}
-
-	// default format, all runes
-
-	if false == no.f.valid() {
-		if err := no.f.parse(); err != nil {
-			return err
-		}
-	}
-
-	var wrote int
-	if nFloat > 0.000000001 && no.f.plusSign > 0 {
-		wrote += utf8.EncodeRune(no.buf, no.f.plusSign)
-	}
-	if nFloat < -0.000000001 {
-		wrote += utf8.EncodeRune(no.buf, no.f.minusSign)
-		nFloat = -nFloat
-	}
-
-	precPow10 := math.Pow10(no.f.precision)
-
-	intf, fracf := math.Modf(nFloat + (5 / (precPow10 * 10)))
-
-	// generate integer part string
-	intStr := strconv.FormatInt(int64(intf), 10) // maybe convert to byte ...
-
-	// add thousand separator if required
-	if no.f.group > 0 {
-		for i := len(intStr); i > 3; {
-			i -= 3
-			intStr = intStr[:i] + string(no.f.group) + intStr[i:]
-		}
-	}
-
-	// no fractional part, we can leave now
-	if no.f.precision == 0 {
-		w.Write(append(no.buf[:wrote], intStr...))
-		return nil
-	}
-
-	// generate fractional part
-	fracStr := strconv.FormatInt(int64(fracf*precPow10), 10)
-
-	// may need padding
-	if len(fracStr) < no.f.precision {
-		fracStr = "000000000000000"[:no.f.precision-len(fracStr)] + fracStr
-	}
-
-	no.buf = append(no.buf[:wrote], intStr...)
-	no.buf = no.buf[:numberBufferSize] // revert back to old size
-
-	wPos := wrote + len(intStr)
-
-	wPos += 0
-	wPos += utf8.EncodeRune(no.buf[wPos:], no.f.decimal)
-	no.buf = append(no.buf[:wPos], fracStr...)
-
-	w.Write(no.buf)
-
-	return nil
 }
