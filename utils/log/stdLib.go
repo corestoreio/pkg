@@ -192,7 +192,7 @@ func (l *StdLogger) Warn(msg string, args ...interface{}) {
 // then that error will be returned.
 func (l *StdLogger) Error(msg string, args ...interface{}) error {
 	defer l.Log(StdLevelError, msg, args)
-	if len(args) == 2 {
+	if len(args)%2 == 0 {
 		if err, ok := args[1].(error); ok {
 			return err
 		}
