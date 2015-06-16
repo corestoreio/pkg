@@ -15,6 +15,8 @@
 package i18n
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -32,16 +34,21 @@ var DefaultNumber NumberFormatter
 // numberBufferSize bytes buffer size. a number including currency sign can
 // be up to 64 bytes. Some runes might need more bytes ...
 const numberBufferSize = 64
+const formatBufferSize = 16
 
-// this is quick implementation and needs some refactorings
+var ErrCannotDetectMinusSign = errors.New("Cannot detect minus sign")
+
+// this is quick ( 2days 8-) ) implementation and needs some refactorings
 
 type (
 	// NumberFormatter knows locale specific format properties about a currency/number
 	NumberFormatter interface {
-		// FmtNumber formats a number according to the number format.
-		// Internal rounding will be applied.
-		// Returns the number bytes written or an error.
-		FmtNumber(w io.Writer, n float64) (int, error)
+		// FmtNumber formats a number according to the number format of the
+		// locale. i and dec represents a floating point
+		// number. Only i can be negative. Dec must always be positive. Sign
+		// must be either -1 or +1. If sign is 0 the prefix will be guessed
+		// from i. If sign and i are 0 function must return ErrCannotDetectMinusSign.
+		FmtNumber(w io.Writer, sign int, i, dec int64) (int, error)
 	}
 
 	Number struct {
@@ -110,7 +117,9 @@ func NumberFormat(f string) NumberOptFunc {
 			plusSign:  n.Symbols.PlusSign, // apply default values
 			minusSign: n.Symbols.MinusSign,
 			decimal:   n.Symbols.Decimal,
-			group:     0,
+			group:     n.Symbols.Group,
+			prefix:    make([]byte, formatBufferSize),
+			suffix:    make([]byte, formatBufferSize),
 		}
 		n.fneg = n.fo // copy default format
 		n.fneg.pattern = negativeFormat
@@ -127,7 +136,7 @@ func NewNumber(opts ...NumberOptFunc) *Number {
 			PercentSign:            '%',
 			CurrencySign:           '¤',
 			PlusSign:               '+',
-			MinusSign:              '-',
+			MinusSign:              '—', // em dash \u2014
 			Exponential:            'E',
 			SuperscriptingExponent: '×',
 			PerMille:               '‰',
@@ -136,7 +145,7 @@ func NewNumber(opts ...NumberOptFunc) *Number {
 		},
 		buf: make([]byte, numberBufferSize),
 	}
-	NumberFormat(`#0.######`)(n) // normally that should come from golang.org/x/text package
+	NumberFormat(`#,##0.###`)(n) // normally that should come from golang.org/x/text package
 	//	NumberTag("en-US")(n)
 	return n.Options(opts...)
 }
@@ -160,7 +169,6 @@ func (no *Number) getFormat(isNegative bool) (format, error) {
 			}
 		}
 		if true == no.fneg.parsed { // fneg can still be invalid because not available
-			no.fneg.minusSign = 0
 			return no.fneg, nil
 		}
 	}
@@ -176,55 +184,52 @@ func (no *Number) getFormat(isNegative bool) (format, error) {
 // FmtNumber formats a number according to the number format.
 // Internal rounding will be applied.
 // Returns the number bytes written or an error.
-func (no *Number) FmtNumber(w io.Writer, nFloat float64) (int, error) {
+func (no *Number) FmtNumber(w io.Writer, sign int, intgr, dec int64) (int, error) {
+
+	switch {
+	case sign == 0 && intgr == 0:
+		return 0, ErrCannotDetectMinusSign
+	case sign == 0 && intgr < 0:
+		sign = -1
+	}
+
 	for i := range no.buf {
 		no.buf[i] = 0 // clear buffer
 	}
+
+	usedFmt, err := no.getFormat(sign < 0)
+
+	if err != nil {
+		return 0, log.Error("Number=FmtNumber", "err", err, "format", usedFmt.String())
+	}
+	precPow10 := math.Pow10(usedFmt.precision)
 
 	// Special cases:
 	//   NaN = "NaN"
 	//   +Inf = "+Infinity"
 	//   -Inf = "-Infinity"
-
-	if math.IsNaN(nFloat) {
+	checkNaN := float64(intgr) + (float64(dec) / precPow10)
+	if math.IsNaN(checkNaN) {
 		return w.Write(no.Symbols.Nan)
 	}
-
-	if nFloat > math.MaxFloat64 { // that won't happen
+	if checkNaN > math.MaxFloat64 {
 		utf8.EncodeRune(no.buf, no.Symbols.Infinity)
 		return w.Write(no.buf)
 	}
-	if nFloat < -math.MaxFloat64 { // that won't happen
+	if checkNaN < -math.MaxFloat64 {
 		utf8.EncodeRune(no.buf, no.Symbols.MinusSign)
 		utf8.EncodeRune(no.buf, no.Symbols.Infinity)
 		return w.Write(no.buf)
 	}
 
-	usedFmt, err := no.getFormat(nFloat < -0.000000001)
-	//	fmt.Println(usedFmt.String())
-	if err != nil {
-		return 0, log.Error("Number=FmtNumber", "err", err, "format", usedFmt.String())
-	}
-
 	var wrote int
-	if nFloat > 0.000000001 && usedFmt.plusSign > 0 {
+	if sign > 0 && usedFmt.plusSign > 0 {
 		wrote += utf8.EncodeRune(no.buf, usedFmt.plusSign)
 	}
-	if nFloat < -0.000000001 && usedFmt.minusSign > 0 {
-		wrote += utf8.EncodeRune(no.buf, usedFmt.minusSign)
-	}
-	if nFloat < -0.000000001 {
-		nFloat = -nFloat // convert to positive value because of the minusSign
-	}
-
-	precPow10 := math.Pow10(usedFmt.precision)
-
-	// rounds on 0.5, 0.05, 0.005, 0.0005 ... depending on the amount of fractals in the format
-	intf, fracf := math.Modf(nFloat + (5 / (precPow10 * 10)))
 
 	// generate integer part string
-	intStr := strconv.FormatInt(int64(intf), 10) // maybe convert to byte ...
-	if usedFmt.group > 0 {                       // add thousand separator if required
+	intStr := strconv.FormatInt(intgr, 10) // maybe convert to byte ...
+	if usedFmt.group > 0 {                 // add thousand separator if required
 		for i := len(intStr); i > 3; {
 			i -= 3
 			intStr = intStr[:i] + string(usedFmt.group) + intStr[i:]
@@ -234,8 +239,9 @@ func (no *Number) FmtNumber(w io.Writer, nFloat float64) (int, error) {
 	// no fractional part, we can leave now
 	if usedFmt.precision == 0 {
 
-		if usedFmt.prefix > 0 {
-			wrote += utf8.EncodeRune(no.buf[wrote:], usedFmt.prefix)
+		if lp := len(usedFmt.prefix); lp > 0 {
+			no.buf = append(no.buf[:wrote], usedFmt.prefix...)
+			wrote += lp
 			no.buf = no.buf[:numberBufferSize] // revert back to old size
 		}
 
@@ -243,24 +249,26 @@ func (no *Number) FmtNumber(w io.Writer, nFloat float64) (int, error) {
 		no.buf = no.buf[:numberBufferSize] // revert back to old size
 		wrote += len(intStr)
 
-		if usedFmt.suffix > 0 {
-			wrote += utf8.EncodeRune(no.buf[wrote:], usedFmt.suffix)
+		if ls := len(usedFmt.suffix); ls > 0 {
+			no.buf = append(no.buf[:wrote], usedFmt.suffix...)
+			wrote += ls
 			no.buf = no.buf[:numberBufferSize] // revert back to old size
 		}
+
 		return w.Write(no.buf[:wrote])
 	}
 
-	// generate fractional part
-	fracStr := strconv.FormatInt(int64(fracf*precPow10), 10)
+	// generate fractional part, round dec it to large to fit into prec
+	fracStr := strconv.FormatInt(usedFmt.decToPrec(dec), 10)
 
 	// may need padding
 	if len(fracStr) < usedFmt.precision {
 		fracStr = "000000000000000"[:usedFmt.precision-len(fracStr)] + fracStr
 	}
 
-	if usedFmt.prefix > 0 {
-
-		wrote += utf8.EncodeRune(no.buf[wrote:], usedFmt.prefix)
+	if lp := len(usedFmt.prefix); lp > 0 {
+		no.buf = append(no.buf[:wrote], usedFmt.prefix...)
+		wrote += lp
 		no.buf = no.buf[:numberBufferSize] // revert back to old size
 	}
 
@@ -268,13 +276,25 @@ func (no *Number) FmtNumber(w io.Writer, nFloat float64) (int, error) {
 	wrote += len(intStr)
 	no.buf = no.buf[:numberBufferSize] // revert back to old size
 
+	// write decimal separator
 	wrote += utf8.EncodeRune(no.buf[wrote:], usedFmt.decimal)
 	no.buf = append(no.buf[:wrote], fracStr...)
 	wrote += len(fracStr)
 	no.buf = no.buf[:numberBufferSize] // revert back to old size
 
-	if usedFmt.suffix > 0 {
-		wrote += utf8.EncodeRune(no.buf[wrote:], usedFmt.suffix)
+	// write suffix
+	if ls := len(usedFmt.suffix); ls > 0 {
+		no.buf = append(no.buf[:wrote], usedFmt.suffix...)
+		wrote += ls
+		no.buf = no.buf[:numberBufferSize] // revert back to old size
+	}
+
+	// if we have a minus sign replace the minus with the format sign
+	if usedFmt.minusSign > 0 {
+		var mBuf [4]byte
+		mWritten := utf8.EncodeRune(mBuf[:], usedFmt.minusSign)
+		wrote += mWritten - 1 // check why we need here a -1 and trim does not work
+		no.buf = bytes.Replace(no.buf[:wrote], []byte(`-`), mBuf[:mWritten], 1)
 	}
 
 	return w.Write(no.buf[:wrote])
@@ -313,8 +333,8 @@ type format struct {
 	minusSign rune
 	decimal   rune
 	group     rune
-	prefix    rune
-	suffix    rune
+	prefix    []byte
+	suffix    []byte
 }
 
 func (f *format) String() string {
@@ -330,6 +350,21 @@ func (f *format) String() string {
 		string(f.prefix),
 		string(f.suffix),
 	)
+}
+
+// decToPrec adapts the fractal value of a float64 number to the precision
+// Rounds the value
+func (f *format) decToPrec(dec int64) int64 {
+	if il := intLen(dec); il > 0 && il > f.precision {
+		il10 := math.Pow10(il)
+		ilf := float64(dec) / il10
+		prec10 := math.Pow10(f.precision)
+		decf := float64(int((ilf*prec10)+0.5)) / prec10
+		decf *= prec10
+		decf += 0.000000000001 // I'm lovin it 8-)
+		return int64(decf)
+	}
+	return dec
 }
 
 // Number patterns affect how numbers are interpreted in a localized context.
@@ -357,76 +392,63 @@ func (f *format) parse() error {
 	}
 	f.parsed = true // only IF there is a format
 
-	// collect indices of meaningful formatting directives
-	formatDirectiveIndices := make([]int, 0)
-	for i, c := range f.pattern {
-		if c != '#' && c != '0' { //&& c != '\u00A4' /* ¤ */ {
-			formatDirectiveIndices = append(formatDirectiveIndices, i)
-		}
-	}
-
-	if len(formatDirectiveIndices) > 0 {
-		// Directive at index 0:
-		//   Must be a '+'
-		//   Raise an error if not the case
-		// index: 0123456789
-		//        +0.000,000
-		//        +000,000.0
-		//        +0000.00
-		//        +0000
-		if formatDirectiveIndices[0] == 0 { // first character is neither # nor 0
-
-			if f.pattern[formatDirectiveIndices[0]] != '+' {
-				f.plusSign = 0 // not needed
+	pw, sw := 0, 0 // prefixWritten, suffixWritten
+	suffixStart, precStart := false, false
+	frmt := make([]rune, 0)
+	hasGroup, hasPlus, hasMinus := false, false, false
+	precCount := 0
+	for _, c := range f.pattern {
+		switch c {
+		case '+':
+			hasPlus = true
+		case '-':
+			hasMinus = true
+		case '#', '0', '.', ',':
+			frmt = append(frmt, c)
+			if false == hasGroup && c == ',' {
+				hasGroup = true
 			}
-
-			f.prefix = f.pattern[formatDirectiveIndices[0]]
-			if f.prefix != '\u00A4' { // ¤
-				lastIndex := len(formatDirectiveIndices) - 1
-				f.suffix = f.pattern[formatDirectiveIndices[lastIndex]]
-				formatDirectiveIndices = formatDirectiveIndices[:lastIndex]
+			if precStart {
+				precCount++
 			}
-			formatDirectiveIndices = formatDirectiveIndices[1:]
-		} else {
-			f.plusSign = 0
-		}
-
-		// Two directives:
-		//   First is thousands separator
-		//   Raise an error if not followed by 3-digit
-		// 0123456789
-		// 0.000,000
-		// 000,000.00
-		// @todo in some rare cases the group separator will be set after 4 digits, not 3.
-		// http://unicode.org/reports/tr35/tr35-numbers.html#Number_Symbols
-		//		fmt.Printf("\n%#v => %d - %d\n", formatDirectiveIndices,formatDirectiveIndices[1] , formatDirectiveIndices[0])
-		if len(formatDirectiveIndices) == 2 {
-			diff := (formatDirectiveIndices[1] - formatDirectiveIndices[0])
-			if diff != 4 && diff != 3 {
-				errF := errgo.Newf("Group separator directive must be followed by 3 digit-specifiers in format: %s", string(f.pattern))
-				if log.IsTrace() {
-					log.Trace("Number=FmtNumber", "err", errF)
+			if false == precStart && c == '.' {
+				precStart = true
+			}
+			suffixStart = true
+		default:
+			if false == suffixStart { // prefix
+				if c > 0 {
+					pw += utf8.EncodeRune(f.prefix[pw:], c)
+					f.prefix = f.prefix[:formatBufferSize]
 				}
-				return log.Error("Number=FmtNumber", "err", errF)
+			} else if c > 0 { // suffix
+				sw += utf8.EncodeRune(f.suffix[sw:], c)
+				f.suffix = f.suffix[:formatBufferSize]
 			}
-			f.group = f.pattern[formatDirectiveIndices[0]]
-			formatDirectiveIndices = formatDirectiveIndices[1:]
-		}
-
-		// One directive:
-		//   Directive is decimal separator
-		//   The number of digit-specifier following the separator indicates wanted prec
-		// 0123456789
-		// 0.00
-		// 000,0000
-		if len(formatDirectiveIndices) == 1 {
-			f.decimal = f.pattern[formatDirectiveIndices[0]]
-			lp := len(f.pattern)
-			if f.suffix > 0 {
-				lp -= 1
-			}
-			f.precision = lp - formatDirectiveIndices[0] - 1
 		}
 	}
+	f.prefix = f.prefix[:pw]
+	f.suffix = f.suffix[:sw]
+
+	if false == hasGroup {
+		f.group = 0
+	}
+	if false == hasPlus {
+		f.plusSign = 0
+	}
+	if false == hasMinus {
+		f.minusSign = 0
+	}
+	f.precision = precCount
+
 	return nil
+}
+
+// intLen returns the length of a positive integer.
+// 1 = 1; 10 = 2; 12345 = 5; 0 = 0; -12345 = 0
+func intLen(n int64) int {
+	if n < 1 {
+		return 0
+	}
+	return int(math.Floor(math.Log10(float64(n)))) + 1
 }

@@ -35,10 +35,12 @@ type (
 	// CurrencyFormatter knows locale specific properties about a currency/number
 	CurrencyFormatter interface {
 		NumberFormatter
-		// FmtCurrency formats a number according to the currency format.
-		// Internal rounding will be applied.
-		// Returns the number bytes written or an error.
-		FmtCurrency(w io.Writer, n float64) (int, error)
+		// FmtCurrency formats a number according to the number format of the
+		// locale. i and dec represents a floating point
+		// number. Only i can be negative. Dec must always be positive. Sign
+		// must be either -1 or +1. If sign is 0 the prefix will be guessed
+		// from i. If sign and i are 0 function must return ErrCannotDetectMinusSign.
+		FmtCurrency(w io.Writer, sign int, i, dec int64) (int, error)
 
 		// Symbol returns the currency symbol
 		Symbol() []byte
@@ -107,21 +109,17 @@ func NewCurrency(opts ...CurrencyOptFunc) *Currency {
 // FmtCurrency formats a number according to the currency format.
 // Internal rounding will be applied.
 // Returns the number bytes written or an error.
-func (c *Currency) FmtCurrency(w io.Writer, n float64) (int, error) {
-	i1, i2, i3 := 0, 0, 0
+func (c *Currency) FmtCurrency(w io.Writer, sign int, i, dec int64) (int, error) {
+	i3 := 0
 	var err error
-	if i1, err = w.Write(c.Symbol()); err != nil {
+
+	if i3, err = c.FmtNumber(w, sign, i, dec); err != nil {
 		return 0, errgo.Mask(err)
 	}
 
-	if i2, err = w.Write([]byte(` `)); err != nil {
-		return 0, errgo.Mask(err)
-	}
+	// now replace ¤ with the real symbol or 3letter ISO code
 
-	if i3, err = c.FmtNumber(w, n); err != nil {
-		return 0, errgo.Mask(err)
-	}
-	return i1 + i2 + i3, err
+	return i3, err
 }
 
 // Symbol returns the currency symbol

@@ -16,13 +16,94 @@ package i18n_test
 
 import (
 	"bytes"
-	"errors"
-	"math"
 	"testing"
 
 	"github.com/corestoreio/csfw/i18n"
 	"github.com/stretchr/testify/assert"
 )
+
+var numberFormatTests = []struct {
+	format  string
+	sign    int
+	i       int64
+	dec     int64
+	want    string
+	wantErr error
+}{
+	{"¤ #0.00", -1, -1234, 6, "¤ -1234.06", nil},
+	{"#,##0.00 ¤", 1, 1234, 0, "1,234.00 ¤", nil},
+	{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", -1, -1234, 615, "¤\u00a0—1,234.62", nil},
+	{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", 1, 1234, 454, "¤\u00a01,234.45", nil},
+
+	//		{"", 1234.56, "+1234.560000000", nil},
+	//		{"", -1234.56, "-1234.560000000", nil},
+	//		{"", -1234.06, "-1234.060000000", nil},
+	//		{"", -1234.076, "-1234.076000000", nil},
+	//		{"", -1234.0006, "-1234.000600000", nil},
+	//		//
+	//		{"#,##0.00;(#,##0.00)", 1234.56, "1,234.56", nil},
+	//		{"#,##0.00;(#,##0.00)", -1234.56, "(1,234.56)", nil},
+	//		{"#,###.;(#,###.)", 1234.56, "1,235", nil},
+	//		{"#,###.;(#,###.)", -1234.56, "(1,235)", nil},
+	//		{"#.;(#.)", 1234.56, "1235", nil},
+	//		{"#.;(#.)", -1234.56, "(1235)", nil},
+	//
+	//		{"#,###.##", 1234.56, "1,234.56", nil},
+	//		{"#,###.##", -1234.56, "-1,234.56", nil},
+	//		{"#,###.##", -1234.06, "-1,234.06", nil},
+	//		{"#,###.##", -1234.076, "-1,234.08", nil},
+	//		{"#,###.##", -1234.0006, "-1,234.00", nil},
+	//		{"#,###.##", -987651234.456, "-987,651,234.46", nil},
+	//
+	//		{"#,##0.###", 1234.56, "1,234.560", nil},
+	//		{"#,##0.###", -1234.56, "-1,234.560", nil},
+	//		{"#,##0.###", -1234.06, "-1,234.060", nil},
+	//		{"#,##0.###", -1234.076, "-1,234.076", nil},
+	//		{"#,##0.###", -1234.0006, "-1,234.001", nil},
+	//		{"#,##0.###", -987651234.456, "-987,651,234.456", nil},
+	//
+	//		{"#0.###", 1234.56, "1234.560", nil},
+	//		{"#0.###", -1234.56, "-1234.560", nil},
+	//		{"#0.###", -1234.06, "-1234.060", nil},
+	//		{"#0.###", -1234.076, "-1234.076", nil},
+	//		{"#0.###", -1234.0006, "-1234.001", nil},
+	//		{"#0.###", -987651234.456, "-987651234.456", nil},
+	//
+	//		{"#,###.", 1234.56, "1,235", nil},
+	//		{"#,###.", -1234.56, "-1,235", nil},
+	//		{"#,###.", -1234.495, "-1,234", nil},
+	//		{"#,###.", 1234.495, "1,234", nil},
+	//		{"#,###.", -1234.076, "-1,234", nil},
+	//		{"#,###.", -1234.0006, "-1,234", nil},
+
+	// invalid, because . is missing
+	//		{"#,###", 1234.56, "1234,560", nil},
+	//		{"#,###", -1234.56, "-1234,560", nil},
+	//		{"#,###", -1234.495, "-1234,495", nil},
+	//		{"#,###", 1234.495, "1234,495", nil},
+	//		{"#,###", -1234.076, "-1234,076", nil},
+	//		{"#,###", -1234.0006, "-1234,001", nil},
+
+	// invalid because . and , switched
+	//		{"#.###,######", 1234.567891, "1.234,567891", nil},
+	//		{"#.###,######", -1234.56, "-1.234,560000", nil},
+	//		{"#.###,######", -1234.495, "-1.234,495000", nil},
+	//		{"#.###,######", 1234.495, "1.234,495000", nil},
+	//		{"#.###,######", -1234.076, "-1.234,076000", nil},
+	//		{"#.###,######", -1234.0006, "-1.234,000600", nil},
+
+	//		{"#\U0001f4b0###.##", 1234.56, "1\U0001f4b0234,56", nil},
+	//		{"#\U0001f4b0###.##", -1234.56, "-1\U0001f4b0234,56", nil},
+
+	//		{"+#,###.###", 1234.567891, "+1.234,568", nil},
+
+	//		{"#,###.###", math.NaN(), "NaN", nil},
+	//		{"#,###0.###", -1234.0006, "-1,234.001", errors.New("Group separator directive must be followed by 3 digit-specifiers in format: #,###0.###")},
+
+	//		{"$#,##0.###", -1234.0006, "-1,234.001", errors.New("Invalid positive sign directive in format: $#,##0.###")},
+	//		{"$#,##0.###", -1234.0006, "-1,234.001", nil},
+
+}
 
 func TestFmtNumber(t *testing.T) {
 
@@ -31,87 +112,12 @@ func TestFmtNumber(t *testing.T) {
 	// unicodeNumberFormats := map[string]string{"#0.###":"hy_AM", "#,##0.###":"zu_ZA", "#,##,##0.###":"te_IN", "#0.######":"en_US_POSIX"}
 	// te_IN not tested as too rare
 
-	tests := []struct {
-		format  string
-		n       float64
-		want    string
-		wantErr error
-	}{
-		{"", 1234.56, "+1234.560000000", nil},
-		{"", -1234.56, "-1234.560000000", nil},
-		{"", -1234.06, "-1234.060000000", nil},
-		{"", -1234.076, "-1234.076000000", nil},
-		{"", -1234.0006, "-1234.000600000", nil},
-		//
-		{"#,##0.00;(#,##0.00)", 1234.56, "1,234.56", nil},
-		{"#,##0.00;(#,##0.00)", -1234.56, "(1,234.56)", nil},
-		{"#,###.;(#,###.)", 1234.56, "1,235", nil},
-		{"#,###.;(#,###.)", -1234.56, "(1,235)", nil},
-		{"#.;(#.)", 1234.56, "1235", nil},
-		{"#.;(#.)", -1234.56, "(1235)", nil},
-
-		{"#,###.##", 1234.56, "1,234.56", nil},
-		{"#,###.##", -1234.56, "-1,234.56", nil},
-		{"#,###.##", -1234.06, "-1,234.06", nil},
-		{"#,###.##", -1234.076, "-1,234.08", nil},
-		{"#,###.##", -1234.0006, "-1,234.00", nil},
-		{"#,###.##", -987651234.456, "-987,651,234.46", nil},
-
-		{"#,##0.###", 1234.56, "1,234.560", nil},
-		{"#,##0.###", -1234.56, "-1,234.560", nil},
-		{"#,##0.###", -1234.06, "-1,234.060", nil},
-		{"#,##0.###", -1234.076, "-1,234.076", nil},
-		{"#,##0.###", -1234.0006, "-1,234.001", nil},
-		{"#,##0.###", -987651234.456, "-987,651,234.456", nil},
-
-		{"#0.###", 1234.56, "1234.560", nil},
-		{"#0.###", -1234.56, "-1234.560", nil},
-		{"#0.###", -1234.06, "-1234.060", nil},
-		{"#0.###", -1234.076, "-1234.076", nil},
-		{"#0.###", -1234.0006, "-1234.001", nil},
-		{"#0.###", -987651234.456, "-987651234.456", nil},
-
-		{"#,###.", 1234.56, "1,235", nil},
-		{"#,###.", -1234.56, "-1,235", nil},
-		{"#,###.", -1234.495, "-1,234", nil},
-		{"#,###.", 1234.495, "1,234", nil},
-		{"#,###.", -1234.076, "-1,234", nil},
-		{"#,###.", -1234.0006, "-1,234", nil},
-
-		{"#,###", 1234.56, "1234,560", nil},
-		{"#,###", -1234.56, "-1234,560", nil},
-		{"#,###", -1234.495, "-1234,495", nil},
-		{"#,###", 1234.495, "1234,495", nil},
-		{"#,###", -1234.076, "-1234,076", nil},
-		{"#,###", -1234.0006, "-1234,001", nil},
-
-		{"#.###,######", 1234.567891, "1.234,567891", nil},
-		{"#.###,######", -1234.56, "-1.234,560000", nil},
-		{"#.###,######", -1234.495, "-1.234,495000", nil},
-		{"#.###,######", 1234.495, "1.234,495000", nil},
-		{"#.###,######", -1234.076, "-1.234,076000", nil},
-		{"#.###,######", -1234.0006, "-1.234,000600", nil},
-
-		{"#\U0001f4b0###,##", 1234.56, "1\U0001f4b0234,56", nil},
-		{"#\U0001f4b0###,##", -1234.56, "-1\U0001f4b0234,56", nil},
-
-		{"+#.###,###", 1234.567891, "+1.234,568", nil},
-
-		{"#.###,###", math.NaN(), "NaN", nil},
-		{"#,###0.###", -1234.0006, "-1,234.001", errors.New("Group separator directive must be followed by 3 digit-specifiers in format: #,###0.###")},
-
-		//		{"$#,##0.###", -1234.0006, "-1,234.001", errors.New("Invalid positive sign directive in format: $#,##0.###")},
-		//		{"$#,##0.###", -1234.0006, "-1,234.001", nil},
-		{"¤ #0.00", -1234.0006, "-¤ 1234.00", nil},
-		{"#,##0.00 ¤", 1234.0006, "1,234.00 ¤", nil},
-	}
-
-	for _, test := range tests {
+	for _, test := range numberFormatTests {
 		haveNumber := i18n.NewNumber(
 			i18n.NumberFormat(test.format),
 		)
 		var buf bytes.Buffer
-		_, err := haveNumber.FmtNumber(&buf, test.n)
+		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.dec)
 		have := buf.String()
 		if test.wantErr != nil {
 			assert.Error(t, err, "%v", test)
@@ -123,44 +129,44 @@ func TestFmtNumber(t *testing.T) {
 	}
 }
 
-var benchmarkFmtNumber string
-
-// BenchmarkFmtNumber_UnCached	 1000000	      1875 ns/op	     520 B/op	      17 allocs/op
-func BenchmarkFmtNumber_UnCached(b *testing.B) {
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-
-		haveNumber := i18n.NewNumber(
-			i18n.NumberFormat("#,###.##"),
-		)
-		var buf bytes.Buffer
-		if _, err := haveNumber.FmtNumber(&buf, 1234.567); err != nil {
-			b.Error(err)
-		}
-		have := buf.String()
-		if have != "1,234.57" {
-			b.Errorf("Missmatch %s vs 1,234.56", have)
-		}
-		benchmarkFmtNumber = have
-	}
-}
-
-// BenchmarkFmtNumber___Cached	 2000000	       814 ns/op	     160 B/op	       8 allocs/op
-func BenchmarkFmtNumber___Cached(b *testing.B) {
-	b.ReportAllocs()
-	haveNumber := i18n.NewNumber(
-		i18n.NumberFormat("#,###.##"),
-	)
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		var buf bytes.Buffer
-		if _, err := haveNumber.FmtNumber(&buf, 1234.567); err != nil {
-			b.Error(err)
-		}
-		have := buf.String()
-		if have != "1,234.57" {
-			b.Errorf("Missmatch %s vs 1,234.56", have)
-		}
-		benchmarkFmtNumber = have
-	}
-}
+//var benchmarkFmtNumber string
+//
+//// BenchmarkFmtNumber_UnCached	 1000000	      1875 ns/op	     520 B/op	      17 allocs/op
+//func BenchmarkFmtNumber_UnCached(b *testing.B) {
+//	b.ReportAllocs()
+//	for i := 0; i < b.N; i++ {
+//
+//		haveNumber := i18n.NewNumber(
+//			i18n.NumberFormat("#,###.##"),
+//		)
+//		var buf bytes.Buffer
+//		if _, err := haveNumber.FmtNumber(&buf, 1234.567); err != nil {
+//			b.Error(err)
+//		}
+//		have := buf.String()
+//		if have != "1,234.57" {
+//			b.Errorf("Missmatch %s vs 1,234.56", have)
+//		}
+//		benchmarkFmtNumber = have
+//	}
+//}
+//
+//// BenchmarkFmtNumber___Cached	 2000000	       814 ns/op	     160 B/op	       8 allocs/op
+//func BenchmarkFmtNumber___Cached(b *testing.B) {
+//	b.ReportAllocs()
+//	haveNumber := i18n.NewNumber(
+//		i18n.NumberFormat("#,###.##"),
+//	)
+//	b.ResetTimer()
+//	for i := 0; i < b.N; i++ {
+//		var buf bytes.Buffer
+//		if _, err := haveNumber.FmtNumber(&buf, 1234.567); err != nil {
+//			b.Error(err)
+//		}
+//		have := buf.String()
+//		if have != "1,234.57" {
+//			b.Errorf("Missmatch %s vs 1,234.56", have)
+//		}
+//		benchmarkFmtNumber = have
+//	}
+//}
