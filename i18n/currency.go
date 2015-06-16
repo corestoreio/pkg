@@ -56,7 +56,7 @@ type (
 	}
 
 	// CurrencyFractions element contains any number of info elements.
-	// No negative values allowed.
+	// No negative values allowed ⚠. &#9888; and &#x26a0;
 	CurrencyFractions struct {
 		// Digits the minimum and maximum number of decimal digits normally
 		// formatted. The default is 2. For example, in the en_US locale with
