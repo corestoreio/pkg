@@ -17,17 +17,23 @@ package i18n
 import (
 	"io"
 
+	"bytes"
+
 	"github.com/corestoreio/csfw/utils/log"
-	"github.com/juju/errgo"
 	"golang.org/x/text/language"
 )
 
 // DefaultCurrencyName 3-letter ISO 4217 code
 const DefaultCurrencyName = "XXX"
 
+// DefaultCurrencyFormat Symbol no-breaking-space 1,000.00
+const DefaultCurrencyFormat = "¤\u00a0#,##0.00"
+
 // DefaultCurrency represents the package wide default currency locale
 // specific formatter.
 var DefaultCurrency CurrencyFormatter
+
+const currencyBufferSize = numberBufferSize + (2 * formatBufferSize)
 
 var _ CurrencyFormatter = (*Currency)(nil)
 
@@ -51,12 +57,11 @@ type (
 		*Number
 		language.Currency        // maybe one day that will get extended ...
 		symbol            []byte // € or USD or ...
-		// fraction see description of CurrencyFraction struct
-		frac CurrencyFractions
+		buf               buf    // @todo check for a possible race condition
 	}
 
 	// CurrencyFractions element contains any number of info elements.
-	// No negative values allowed ⚠. &#9888; and &#x26a0;
+	// No negative values allowed ⚠.
 	CurrencyFractions struct {
 		// Digits the minimum and maximum number of decimal digits normally
 		// formatted. The default is 2. For example, in the en_US locale with
@@ -66,7 +71,7 @@ type (
 		// 1 234,57 € and 1 235 ¥JP. Means for Euro we have 2 digits and
 		// for the Yen 0 digits. Default value is 2.
 		// ⚠ Warning: Digits will override the decimal/fraction part in the
-		// format string ⚠.
+		// format string, if valid ⚠.
 		Digits int
 		// Rounding increment, in units of 10-digits. The default is 0, which
 		// means no rounding is to be done. Therefore, rounding=0 and rounding=1
@@ -119,10 +124,10 @@ func CurrencyISO(cur string) CurrencyOptFunc {
 
 // CurrencySymbol sets the currency symbol
 func CurrencySymbol(s []byte) CurrencyOptFunc {
+	if string(s) == DefaultCurrencyName || len(s) == 0 {
+		s = []byte("\U0001f4b0") // money bag emoji
+	}
 	return func(c *Currency) {
-		if string(c.symbol) == DefaultCurrencyName {
-			s = []byte("\U0001f4b0") // money bag emoji
-		}
 		c.symbol = s
 	}
 }
@@ -136,21 +141,27 @@ func CurrencyFormat(f string) CurrencyOptFunc {
 
 // CurrencyFraction sets the currency fractions. For details please
 // see CurrencyFractions.
-func CurrencyFraction(fr CurrencyFractions) CurrencyOptFunc {
-	if fr.Digits < 0 {
-		fr.Digits = 0
+func CurrencyFraction(digits, rounding, cashDigits, cashRounding int) CurrencyOptFunc {
+	if digits < 0 {
+		digits = 0
 	}
-	if fr.Rounding < 0 {
-		fr.Rounding = 0
+	if rounding < 0 {
+		rounding = 0
 	}
-	if fr.CashDigits < 0 {
-		fr.CashDigits = 0
+	if cashDigits < 0 {
+		cashDigits = 0
 	}
-	if fr.CashRounding < 0 {
-		fr.CashRounding = 0
+	if cashRounding < 0 {
+		cashRounding = 0
 	}
 	return func(c *Currency) {
-		c.frac = fr
+		c.Number.frac = CurrencyFractions{
+			Digits:       digits,
+			Rounding:     rounding,
+			CashDigits:   cashDigits,
+			CashRounding: cashRounding,
+		}
+		c.Number.fracValid = true
 	}
 }
 
@@ -158,18 +169,11 @@ func CurrencyFraction(fr CurrencyFractions) CurrencyOptFunc {
 func NewCurrency(opts ...CurrencyOptFunc) *Currency {
 	c := &Currency{
 		Number: NewNumber(),
-		frac: CurrencyFractions{
-			Digits:     2,
-			CashDigits: 2,
-		},
+		buf:    make(buf, currencyBufferSize),
 	}
 	CurrencyISO(DefaultCurrencyName)(c)
-
-	for _, o := range opts {
-		if o != nil {
-			o(c)
-		}
-	}
+	CurrencyFormat(DefaultCurrencyFormat)(c)
+	CurrencyFraction(2, 0, 2, 0)(c)
 	return c.COptions(opts...)
 }
 
@@ -187,16 +191,19 @@ func (c *Currency) COptions(opts ...CurrencyOptFunc) *Currency {
 // Internal rounding will be applied.
 // Returns the number bytes written or an error.
 func (c *Currency) FmtCurrency(w io.Writer, sign int, i, dec int64) (int, error) {
-	i3 := 0
-	var err error
+	for i := range c.buf[:currencyBufferSize] {
+		c.buf[i] = 0 // clear buffer
+	}
+	c.buf = c.buf[:0]
 
-	if i3, err = c.FmtNumber(w, sign, i, dec); err != nil {
-		return 0, errgo.Mask(err)
+	if _, err := c.FmtNumber(&c.buf, sign, i, dec); err != nil {
+		return 0, log.Error("Currency=FmtCurrency", "err", err, "buffer", string(c.buf), "sign", sign, "i", i, "dec", dec)
 	}
 
-	// now replace ¤ with the real symbol or 3letter ISO code
+	// now replace ¤ with the real symbol or what ever
+	c.buf = bytes.Replace(c.buf, symbolSign, c.symbol, 1)
 
-	return i3, err
+	return w.Write(c.buf)
 }
 
 // Symbol returns the currency symbol

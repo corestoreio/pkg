@@ -31,10 +31,36 @@ import (
 // DefaultNumber default formatter for default locale en-US
 var DefaultNumber NumberFormatter
 
+// DefaultNumberFormat 1,000.000
+const DefaultNumberFormat = `#,##0.###`
+
+// DefaultNumberSymbols contains all important default characters for
+// formatting a number and or a currency.
+var DefaultNumberSymbols = Symbols{
+	// normally that all should come from golang.org/x/text package
+	Decimal:                '.',
+	Group:                  ',',
+	List:                   ';',
+	PercentSign:            '%',
+	CurrencySign:           '¤',
+	PlusSign:               '+',
+	MinusSign:              '—', // em dash \u2014 ;-)
+	Exponential:            'E',
+	SuperscriptingExponent: '×',
+	PerMille:               '‰',
+	Infinity:               '∞',
+	Nan:                    []byte(`NaN`),
+}
+
 // numberBufferSize bytes buffer size. a number including currency sign can
 // be up to 64 bytes. Some runes might need more bytes ...
 const numberBufferSize = 64
+
+// formatBufferSize used for the buffer for prefix and suffix
 const formatBufferSize = 16
+
+var minusSign = []byte(`-`)
+var symbolSign = []byte(`¤`)
 
 var ErrCannotDetectMinusSign = errors.New("Cannot detect minus sign")
 
@@ -57,14 +83,16 @@ type (
 		Symbols Symbols
 		fo      format
 		fneg    format // format for negative numbers
-		buf     []byte // size numberBufferSize
+		buf     []byte // size numberBufferSize @todo check for a possible race condition
 		// frac will only be set when we're parsing a currency format.
-		// If we detect the ¤ in the format string. The Digits in CurrencyFraction
-		// will override the precision in the format if different.
+		// So frac will be set by the parent CurrencyFormatter.
+		// The Digits in CurrencyFraction will override the precision in the
+		// format if different and fracValid is true
 		frac      CurrencyFractions
 		fracValid bool
 	}
 
+	// Symbols general symbols used when formatting. Some are unused because @todo
 	Symbols struct {
 		Decimal                rune
 		Group                  rune
@@ -97,8 +125,11 @@ var _ NumberFormatter = (*Number)(nil)
 //}
 
 // NumberFormat applies a format to a Number. Must be applied after you have
-// set the Symbol struct.
+// set the Symbol struct. If format is empty, fallback to the default format.
 func NumberFormat(f string) NumberOptFunc {
+	if f == "" {
+		f = DefaultNumberFormat
+	}
 	var generalFormat []rune
 	var negativeFormat []rune
 	found := false
@@ -133,24 +164,10 @@ func NumberFormat(f string) NumberOptFunc {
 
 func NewNumber(opts ...NumberOptFunc) *Number {
 	n := &Number{
-		Symbols: Symbols{
-			// normally that all should come from golang.org/x/text package
-			Decimal:                '.',
-			Group:                  ',',
-			List:                   ';',
-			PercentSign:            '%',
-			CurrencySign:           '¤',
-			PlusSign:               '+',
-			MinusSign:              '—', // em dash \u2014
-			Exponential:            'E',
-			SuperscriptingExponent: '×',
-			PerMille:               '‰',
-			Infinity:               '∞',
-			Nan:                    []byte(`NaN`),
-		},
-		buf: make([]byte, numberBufferSize),
+		Symbols: DefaultNumberSymbols,
+		buf:     make([]byte, numberBufferSize),
 	}
-	NumberFormat(`#,##0.###`)(n) // normally that should come from golang.org/x/text package
+	NumberFormat(DefaultNumberFormat)(n) // normally that should come from golang.org/x/text package
 	//	NumberTag("en-US")(n)
 	return n.NOptions(opts...)
 }
@@ -218,18 +235,27 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr, dec int64) (int, error
 		return w.Write(no.Symbols.Nan)
 	}
 	if checkNaN > math.MaxFloat64 {
-		utf8.EncodeRune(no.buf, no.Symbols.Infinity)
-		return w.Write(no.buf)
+		wr := utf8.EncodeRune(no.buf, no.Symbols.Infinity)
+		return w.Write(no.buf[:wr])
 	}
 	if checkNaN < -math.MaxFloat64 {
-		utf8.EncodeRune(no.buf, no.Symbols.MinusSign)
-		utf8.EncodeRune(no.buf, no.Symbols.Infinity)
-		return w.Write(no.buf)
+		wr := utf8.EncodeRune(no.buf, no.Symbols.MinusSign)
+		wr += utf8.EncodeRune(no.buf, no.Symbols.Infinity)
+		return w.Write(no.buf[:wr])
 	}
 
 	var wrote int
 	if sign > 0 && usedFmt.plusSign > 0 {
 		wrote += utf8.EncodeRune(no.buf, usedFmt.plusSign)
+	}
+
+	if no.fracValid {
+		// currency has different precision than in the format. e.g.: japanese Yen.
+		usedFmt.precision = no.frac.Digits
+	}
+	dec = usedFmt.decToPrec(dec)
+	if no.fracValid && usedFmt.precision == 0 {
+		intgr += dec
 	}
 
 	// generate integer part string
@@ -264,7 +290,7 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr, dec int64) (int, error
 	}
 
 	// generate fractional part, round dec it to large to fit into prec
-	fracStr := strconv.FormatInt(usedFmt.decToPrec(dec), 10)
+	fracStr := strconv.FormatInt(dec, 10)
 
 	// may need padding
 	if len(fracStr) < usedFmt.precision {
@@ -299,7 +325,7 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr, dec int64) (int, error
 		var mBuf [4]byte
 		mWritten := utf8.EncodeRune(mBuf[:], usedFmt.minusSign)
 		wrote += mWritten - 1 // check why we need here a -1 and trim does not work
-		no.buf = bytes.Replace(no.buf[:wrote], []byte(`-`), mBuf[:mWritten], 1)
+		no.buf = bytes.Replace(no.buf[:wrote], minusSign, mBuf[:mWritten], 1)
 	}
 
 	return w.Write(no.buf[:wrote])
@@ -364,9 +390,13 @@ func (f *format) decToPrec(dec int64) int64 {
 		il10 := math.Pow10(il)
 		ilf := float64(dec) / il10
 		prec10 := math.Pow10(f.precision)
-		decf := float64(int((ilf*prec10)+0.5)) / prec10
+		//		fmt.Printf("\nilf %f prec10 %f\n", ilf, prec10)
+		decf := float64((ilf*prec10)+0.55) / prec10
+		//		fmt.Printf("decf %f\n", decf)
 		decf *= prec10
+		//		fmt.Printf("decf %f\n", decf)
 		decf += 0.000000000001 // I'm lovin it 8-)
+		//		fmt.Printf("decf %f\n", decf)
 		return int64(decf)
 	}
 	return dec
@@ -399,7 +429,6 @@ func (f *format) parse() error {
 
 	pw, sw := 0, 0 // prefixWritten, suffixWritten
 	suffixStart, precStart := false, false
-	frmt := make([]rune, 0)
 	hasGroup, hasPlus, hasMinus := false, false, false
 	precCount := 0
 	for _, c := range f.pattern {
@@ -409,7 +438,6 @@ func (f *format) parse() error {
 		case '-':
 			hasMinus = true
 		case '#', '0', '.', ',':
-			frmt = append(frmt, c)
 			if false == hasGroup && c == ',' {
 				hasGroup = true
 			}
