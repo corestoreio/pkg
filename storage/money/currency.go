@@ -111,6 +111,38 @@ func Swedish(i Interval) OptionFunc {
 	}
 }
 
+// CashRounding same as Swedish() option function, but:
+// Rounding increment, in units of 10-digits. The default is 0, which
+// means no rounding is to be done. Therefore, rounding=0 and rounding=1
+// have identical behavior. Thus with fraction digits of 2 and rounding
+// increment of 5, numeric values are rounded to the nearest 0.05 units
+// in formatting. With fraction digits of 0 and rounding increment of
+// 50, numeric values are rounded to the nearest 50.
+// Possible values: 5, 10, 15, 25, 50, 100
+func CashRounding(rounding int) OptionFunc {
+	i := Interval000
+	switch rounding {
+	case 5:
+		i = Interval005
+	case 10:
+		i = Interval010
+	case 15:
+		i = Interval015
+	case 25:
+		i = Interval025
+	case 50:
+		i = Interval050
+	case 100:
+		i = Interval100
+	}
+
+	return func(c *Currency) OptionFunc {
+		previous := c.Interval
+		c.Interval = i
+		return CashRounding(previous)
+	}
+}
+
 // SetGuard sets the guard
 func Guard(g int) OptionFunc {
 	if g == 0 {
