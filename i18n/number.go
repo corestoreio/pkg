@@ -58,6 +58,11 @@ type (
 		fo      format
 		fneg    format // format for negative numbers
 		buf     []byte // size numberBufferSize
+		// frac will only be set when we're parsing a currency format.
+		// If we detect the ¤ in the format string. The Digits in CurrencyFraction
+		// will override the precision in the format if different.
+		frac      CurrencyFractions
+		fracValid bool
 	}
 
 	Symbols struct {
@@ -147,11 +152,11 @@ func NewNumber(opts ...NumberOptFunc) *Number {
 	}
 	NumberFormat(`#,##0.###`)(n) // normally that should come from golang.org/x/text package
 	//	NumberTag("en-US")(n)
-	return n.Options(opts...)
+	return n.NOptions(opts...)
 }
 
-// Options applies options and returns a number pointer
-func (no *Number) Options(opts ...NumberOptFunc) *Number {
+// NOptions applies Number options and returns a Number pointer
+func (no *Number) NOptions(opts ...NumberOptFunc) *Number {
 	for _, o := range opts {
 		if o != nil {
 			o(no)

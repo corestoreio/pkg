@@ -51,8 +51,48 @@ type (
 		*Number
 		language.Currency        // maybe one day that will get extended ...
 		symbol            []byte // € or USD or ...
+		// fraction see description of CurrencyFraction struct
+		frac CurrencyFractions
 	}
 
+	// CurrencyFractions element contains any number of info elements.
+	// No negative values allowed.
+	CurrencyFractions struct {
+		// Digits the minimum and maximum number of decimal digits normally
+		// formatted. The default is 2. For example, in the en_US locale with
+		// the default value of 2 digits, the value 1 USD would format as
+		// "$1.00", and the value 1.123 USD would format as → "$1.12".
+		// Having a format like #,##0.00 ¤ would result in a French locale
+		// 1 234,57 € and 1 235 ¥JP. Means for Euro we have 2 digits and
+		// for the Yen 0 digits. Default value is 2.
+		// ⚠ Warning: Digits will override the decimal/fraction part in the
+		// format string ⚠.
+		Digits int
+		// Rounding increment, in units of 10-digits. The default is 0, which
+		// means no rounding is to be done. Therefore, rounding=0 and rounding=1
+		// have identical behavior. Thus with fraction digits of 2 and rounding
+		// increment of 5, numeric values are rounded to the nearest 0.05 units
+		// in formatting. With fraction digits of 0 and rounding increment of
+		// 50, numeric values are rounded to the nearest 50.
+		// ⚠ Warning: Rounding must be applied in the package money ⚠
+		Rounding int
+		// CashDigits the number of decimal digits to be used when formatting
+		// quantities used in cash transactions (as opposed to a quantity that
+		// would appear in a more formal setting, such as on a bank statement).
+		// If absent, the value of "digits" should be used as a default.
+		// Default value is 2. @todo
+		CashDigits int
+		// CashRounding increment, in units of 10-cashDigits. The default is 0,
+		// which means no rounding is to be done; and as with rounding, this
+		// has the same effect as cashRounding="1". This is the rounding increment
+		// to be used when formatting quantities used in cash transactions (as
+		// opposed to a quantity that would appear in a more formal setting,
+		// such as on a bank statement). If absent, the value of "rounding"
+		// should be used as a default. @todo
+		CashRounding int
+	}
+
+	// CurrencyOptFunc options function for Currency struct
 	CurrencyOptFunc func(*Currency)
 )
 
@@ -90,14 +130,51 @@ func CurrencySymbol(s []byte) CurrencyOptFunc {
 // CurrencyFormat sets the currency format
 func CurrencyFormat(f string) CurrencyOptFunc {
 	return func(c *Currency) {
-		c.Number.Options(NumberFormat(f))
+		c.Number.NOptions(NumberFormat(f))
 	}
 }
 
+// CurrencyFraction sets the currency fractions. For details please
+// see CurrencyFractions.
+func CurrencyFraction(fr CurrencyFractions) CurrencyOptFunc {
+	if fr.Digits < 0 {
+		fr.Digits = 0
+	}
+	if fr.Rounding < 0 {
+		fr.Rounding = 0
+	}
+	if fr.CashDigits < 0 {
+		fr.CashDigits = 0
+	}
+	if fr.CashRounding < 0 {
+		fr.CashRounding = 0
+	}
+	return func(c *Currency) {
+		c.frac = fr
+	}
+}
+
+// NewCurrency creates a new Currency pointer with default settings.
 func NewCurrency(opts ...CurrencyOptFunc) *Currency {
-	c := new(Currency)
+	c := &Currency{
+		Number: NewNumber(),
+		frac: CurrencyFractions{
+			Digits:     2,
+			CashDigits: 2,
+		},
+	}
 	CurrencyISO(DefaultCurrencyName)(c)
-	c.Number = NewNumber()
+
+	for _, o := range opts {
+		if o != nil {
+			o(c)
+		}
+	}
+	return c.COptions(opts...)
+}
+
+// COptions applies currency options and returns a Currency pointer
+func (c *Currency) COptions(opts ...CurrencyOptFunc) *Currency {
 	for _, o := range opts {
 		if o != nil {
 			o(c)
