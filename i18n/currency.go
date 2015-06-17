@@ -48,16 +48,19 @@ type (
 		// from i. If sign and i are 0 function must return ErrCannotDetectMinusSign.
 		FmtCurrency(w io.Writer, sign int, i, dec int64) (int, error)
 
-		// Symbol returns the currency symbol
-		Symbol() []byte
+		// Sign returns the currency sign. Can be one character or a 3-letter ISO 4217 code.
+		Sign() []byte
 	}
 
+	// Currency represents a locale specific formatter for a currency.
+	// You must use NewCurrency() to create a new type.
 	Currency struct {
-		// @todo
 		*Number
-		language.Currency        // maybe one day that will get extended ...
-		symbol            []byte // € or USD or ...
-		buf               buf    // @todo check for a possible race condition
+		// ISO contains the 3-letter ISO 4217 currency code.
+		// Maybe one day that will get extended in text/language package ...
+		ISO language.Currency
+		sgn []byte // € or USD or ...
+		buf buf    // @todo check for a possible race condition
 	}
 
 	// CurrencyFractions element contains any number of info elements.
@@ -107,6 +110,9 @@ func init() {
 
 // CurrencyISO parses a 3-letter ISO 4217 code and sets it to the Currency
 // struct. If parsing fails errors will be logged and falls back to DefaultCurrencyName.
+// Calling this function sets also the CurrencySign() to the at the moment
+// 3-letter ISO code. (Missing feature in text/language package)
+// This function is called in NewCurrency().
 func CurrencyISO(cur string) CurrencyOptFunc {
 	return func(c *Currency) {
 		lc, err := language.ParseCurrency(cur)
@@ -117,30 +123,34 @@ func CurrencyISO(cur string) CurrencyOptFunc {
 			log.Error("i18n=CurrencyISO", "err", err, "cur", cur)
 			lc = language.MustParseCurrency(DefaultCurrencyName)
 		}
-		c.Currency = lc
-		CurrencySymbol([]byte(lc.String()))(c)
+		c.ISO = lc
+		CurrencySign([]byte(lc.String()))(c)
 	}
 }
 
-// CurrencySymbol sets the currency symbol
-func CurrencySymbol(s []byte) CurrencyOptFunc {
+// CurrencySign sets the currency sign.
+func CurrencySign(s []byte) CurrencyOptFunc {
 	if string(s) == DefaultCurrencyName || len(s) == 0 {
 		s = []byte("\U0001f4b0") // money bag emoji
 	}
 	return func(c *Currency) {
-		c.symbol = s
+		c.sgn = s
 	}
 }
 
-// CurrencyFormat sets the currency format
-func CurrencyFormat(f string) CurrencyOptFunc {
+// CurrencyFormat applies a format (e.g.: #,##0.00 ¤) to a Number.
+// If you do not have set the second argument Symbols (will be merge into) then the
+// default Symbols will be used. Only one second argument is supported. If format is
+// empty, fallback to the default format.
+// A "¤" shows where the currency sign will go.
+func CurrencyFormat(f string, s ...Symbols) CurrencyOptFunc {
 	return func(c *Currency) {
-		c.Number.NOptions(NumberFormat(f))
+		c.NOptions(NumberFormat(f, s...))
 	}
 }
 
 // CurrencyFraction sets the currency fractions. For details please
-// see CurrencyFractions.
+// see CurrencyFractions. Values below 0 will be reset to zero.
 func CurrencyFraction(digits, rounding, cashDigits, cashRounding int) CurrencyOptFunc {
 	if digits < 0 {
 		digits = 0
@@ -166,6 +176,7 @@ func CurrencyFraction(digits, rounding, cashDigits, cashRounding int) CurrencyOp
 }
 
 // NewCurrency creates a new Currency pointer with default settings.
+// To change the symbols depending on the locale: see documentation.
 func NewCurrency(opts ...CurrencyOptFunc) *Currency {
 	c := &Currency{
 		Number: NewNumber(),
@@ -201,10 +212,10 @@ func (c *Currency) FmtCurrency(w io.Writer, sign int, i, dec int64) (int, error)
 	}
 
 	// now replace ¤ with the real symbol or what ever
-	c.buf = bytes.Replace(c.buf, symbolSign, c.symbol, 1)
+	c.buf = bytes.Replace(c.buf, symbolSign, c.sgn, 1)
 
 	return w.Write(c.buf)
 }
 
-// Symbol returns the currency symbol
-func (c *Currency) Symbol() []byte { return c.symbol }
+// Sign returns the currency sign. Can be one character or a 3-letter ISO 4217 code.
+func (c *Currency) Sign() []byte { return c.sgn }

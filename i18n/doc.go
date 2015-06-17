@@ -12,6 +12,59 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package i18n supports string translations with variable substitution, CLDR pluralization,
-// currency, formats, language, regions and timezones.
+/*
+Package i18n supports string translations with variable substitution, CLDR pluralization,
+currency, formats, language, regions and timezones.
+
+Format
+
+A format like #,##0.00;(#,##0.00) consists of two parts. The first required
+part will be used for negative and positive numbers and if there is a second
+part after the semi-colon then this format will be solely used for formatting
+of negative numbers. More pattern details can be found:
+http://unicode.org/reports/tr35/tr35-numbers.html#Number_Format_Patterns
+Formatting with a format like #,##,##0.00 is currently not implemented as
+too rarely used.
+
+Number formatting
+
+To instantiate your custom number formatter:
+
+	nf := i18n.NewNumber(
+		i18n.NumberFormat("#,##0.00;(#,##0.00)" [, Symbols{Decimal: ',' ... } ] ),
+	)
+	nf.FmtNumber(w io.Writer, sign int, intgr, dec int64) (int, error)
+
+Sign can be 1 for positive number and -1 for negative.
+intgr is the integer part and dec the decimal aka fractal part of your float.
+Roundings will be applied if dec does not fit within the decimals specified in the
+format.
+
+There are also short hand methods for FmtInt(w io.Writer, i int) (int, error) and
+FmtFloat64(w io.Writer, f float64) (int, error).
+
+For more information read the details in the documentation of the functions and types.
+
+Currency formatting
+
+To instantiate your custom currency formatter:
+
+	cf := i18n.NewCurrency(
+		CurrencyISO("3-letter ISO 4217 code"),
+		CurrencySign(s []byte),
+		CurrencyFormat("#,##0.00 ¤" [, Symbols{Decimal: ',' ... } ] ),
+		CurrencyFraction(digits, rounding, cashDigits, cashRounding int)
+	)
+	cf.FmtCurrency(w io.Writer, sign int, i, dec int64) (int, error)
+
+CurrencyFraction: Digits are important when your currency has a different amount
+of decimal places than 2. E.g. Japanese Yen has Digits 0.
+@todo: Rounding refers to the Swedish rounding and are a todo in this i18n package. Use the money.Currency type for Swedish rounding.
+@todo: CashDigits and CashRounding are currently not implemented.
+
+Format
+
+The currency symbol ¤ specifies where the currency sign will be placed.
+
+*/
 package i18n

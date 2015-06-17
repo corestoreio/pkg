@@ -34,24 +34,6 @@ var DefaultNumber NumberFormatter
 // DefaultNumberFormat 1,000.000
 const DefaultNumberFormat = `#,##0.###`
 
-// DefaultNumberSymbols contains all important default characters for
-// formatting a number and or a currency.
-var DefaultNumberSymbols = Symbols{
-	// normally that all should come from golang.org/x/text package
-	Decimal:                '.',
-	Group:                  ',',
-	List:                   ';',
-	PercentSign:            '%',
-	CurrencySign:           '¤',
-	PlusSign:               '+',
-	MinusSign:              '—', // em dash \u2014 ;-)
-	Exponential:            'E',
-	SuperscriptingExponent: '×',
-	PerMille:               '‰',
-	Infinity:               '∞',
-	Nan:                    []byte(`NaN`),
-}
-
 // numberBufferSize bytes buffer size. a number including currency sign can
 // be up to 64 bytes. Some runes might need more bytes ...
 const numberBufferSize = 64
@@ -59,8 +41,10 @@ const numberBufferSize = 64
 // formatBufferSize used for the buffer for prefix and suffix
 const formatBufferSize = 16
 
-var minusSign = []byte(`-`)
-var symbolSign = []byte(`¤`)
+const (
+	floatRoundingCorrection = 0.000000000001
+	floatMax64              = math.MaxFloat64 * 0.9999999999
+)
 
 var ErrCannotDetectMinusSign = errors.New("Cannot detect minus sign")
 
@@ -74,12 +58,19 @@ type (
 		// number. Only i can be negative. Dec must always be positive. Sign
 		// must be either -1 or +1. If sign is 0 the prefix will be guessed
 		// from i. If sign and i are 0 function must return ErrCannotDetectMinusSign.
+		// If sign is incorrect from i, sign will be adjusted to the prefix of i.
 		FmtNumber(w io.Writer, sign int, i, dec int64) (int, error)
+		// FmtInt formats an integer according to the format pattern.
+		FmtInt(w io.Writer, i int) (int, error)
+		// FmtFloat64 formats a float value, does internal maybe incorrect rounding.
+		FmtFloat64(w io.Writer, f float64) (int, error)
 	}
 
 	Number struct {
-		//		Tag language.Tag
-		// @todo
+		//		Tag language.Tag 		@todo
+
+		// Symbols contains all available symbols for formatting any number.
+		// Struct not embedded because friendlier in IDE auto completion.
 		Symbols Symbols
 		fo      format
 		fneg    format // format for negative numbers
@@ -90,22 +81,6 @@ type (
 		// format if different and fracValid is true
 		frac      CurrencyFractions
 		fracValid bool
-	}
-
-	// Symbols general symbols used when formatting. Some are unused because @todo
-	Symbols struct {
-		Decimal                rune
-		Group                  rune
-		List                   rune
-		PercentSign            rune
-		CurrencySign           rune
-		PlusSign               rune
-		MinusSign              rune
-		Exponential            rune
-		SuperscriptingExponent rune
-		PerMille               rune
-		Infinity               rune
-		Nan                    []byte
 	}
 
 	// NumberOptFunc applies options to the Number struct
@@ -124,9 +99,11 @@ var _ NumberFormatter = (*Number)(nil)
 //	}
 //}
 
-// NumberFormat applies a format to a Number. Must be applied after you have
-// set the Symbol struct. If format is empty, fallback to the default format.
-func NumberFormat(f string) NumberOptFunc {
+// NumberFormat applies a format to a Number. If you do not have set the second
+// argument Symbols (will be merge into) then the default Symbols will be used.
+// Only one second argument is supported. If format is empty, fallback to the
+// default format.
+func NumberFormat(f string, s ...Symbols) NumberOptFunc {
 	if f == "" {
 		f = DefaultNumberFormat
 	}
@@ -146,6 +123,9 @@ func NumberFormat(f string) NumberOptFunc {
 	}
 
 	return func(n *Number) {
+		if len(s) == 1 {
+			n.Symbols.Merge(s[0])
+		}
 		n.fo = format{
 			parsed:    false,
 			pattern:   generalFormat,
@@ -159,9 +139,12 @@ func NumberFormat(f string) NumberOptFunc {
 		}
 		n.fneg = n.fo // copy default format
 		n.fneg.pattern = negativeFormat
+		n.fneg.isNegative = true
 	}
 }
 
+// NewNumber creates a new number type including the default Symbols table
+// and default
 func NewNumber(opts ...NumberOptFunc) *Number {
 	n := &Number{
 		Symbols: DefaultNumberSymbols,
@@ -182,7 +165,8 @@ func (no *Number) NOptions(opts ...NumberOptFunc) *Number {
 	return no
 }
 
-func (no *Number) getFormat(isNegative bool) (format, error) {
+// GetFormat parses the pattern depended if we have a negative value or not.
+func (no *Number) GetFormat(isNegative bool) (format, error) {
 
 	if isNegative {
 		if false == no.fneg.parsed {
@@ -204,44 +188,27 @@ func (no *Number) getFormat(isNegative bool) (format, error) {
 }
 
 // FmtNumber formats a number according to the number format.
-// Internal rounding will be applied.
+// Internal rounding will be applied if dec does not fit within the fractals.
 // Returns the number bytes written or an error.
 func (no *Number) FmtNumber(w io.Writer, sign int, intgr, dec int64) (int, error) {
 
+	// first check the sign
 	switch {
 	case sign == 0 && intgr == 0:
 		return 0, ErrCannotDetectMinusSign
-	case sign == 0 && intgr < 0:
+	case intgr < 0:
 		sign = -1
+	case intgr > 0:
+		sign = 1
 	}
 
 	for i := range no.buf {
 		no.buf[i] = 0 // clear buffer
 	}
 
-	usedFmt, err := no.getFormat(sign < 0)
-
+	usedFmt, err := no.GetFormat(sign < 0)
 	if err != nil {
 		return 0, log.Error("Number=FmtNumber", "err", err, "format", usedFmt.String())
-	}
-	precPow10 := math.Pow10(usedFmt.precision)
-
-	// Special cases:
-	//   NaN = "NaN"
-	//   +Inf = "+Infinity"
-	//   -Inf = "-Infinity"
-	checkNaN := float64(intgr) + (float64(dec) / precPow10)
-	if math.IsNaN(checkNaN) {
-		return w.Write(no.Symbols.Nan)
-	}
-	if checkNaN > math.MaxFloat64 {
-		wr := utf8.EncodeRune(no.buf, no.Symbols.Infinity)
-		return w.Write(no.buf[:wr])
-	}
-	if checkNaN < -math.MaxFloat64 {
-		wr := utf8.EncodeRune(no.buf, no.Symbols.MinusSign)
-		wr += utf8.EncodeRune(no.buf, no.Symbols.Infinity)
-		return w.Write(no.buf[:wr])
 	}
 
 	var wrote int
@@ -253,23 +220,40 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr, dec int64) (int, error
 		// currency has different precision than in the format. e.g.: japanese Yen.
 		usedFmt.precision = no.frac.Digits
 	}
+
 	dec = usedFmt.decToPrec(dec)
-	if no.fracValid && usedFmt.precision == 0 {
-		intgr += dec
+	if usedFmt.precision == 0 {
+		if sign < 0 {
+			intgr -= dec // round down
+		} else {
+			intgr += dec // round up
+		}
+	}
+
+	// remove minus prefix from intgr if format is neg and minus sign is 0
+	if usedFmt.isNegative && usedFmt.minusSign == 0 && intgr < 0 {
+		intgr = -intgr
 	}
 
 	// generate integer part string
 	intStr := strconv.FormatInt(intgr, 10) // maybe convert to byte ...
 	if usedFmt.group > 0 {                 // add thousand separator if required
+		if intgr < 0 {
+			intStr = intStr[1:] // skip the minus sign
+		}
+		gc := string(usedFmt.group)
 		for i := len(intStr); i > 3; {
 			i -= 3
-			intStr = intStr[:i] + string(usedFmt.group) + intStr[i:]
+			intStr = intStr[:i] + gc + intStr[i:]
+		}
+		if intgr < 0 {
+			intStr = "-" + intStr // add minus sign back
 		}
 	}
 
 	// no fractional part, we can leave now
 	if usedFmt.precision == 0 {
-
+		// this can be further optimized by directly writing to w instead of involving the buffer
 		if lp := len(usedFmt.prefix); lp > 0 {
 			no.buf = append(no.buf[:wrote], usedFmt.prefix...)
 			wrote += lp
@@ -331,6 +315,62 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr, dec int64) (int, error
 	return w.Write(no.buf[:wrote])
 }
 
+// FmtInt formats an integer according to the format pattern.
+func (no *Number) FmtInt(w io.Writer, i int) (int, error) {
+	sign := 1
+	if i < 0 {
+		sign = -sign
+	}
+	return no.FmtNumber(w, sign, int64(i), 0)
+}
+
+// FmtFloat64 formats a float value, does internal maybe incorrect rounding.
+func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
+	sign := 1
+	if f < 0 {
+		sign = -sign
+	}
+
+	// Special cases:
+	//   NaN = "NaN"
+	//   +Inf = "+Infinity"
+	//   -Inf = "-Infinity"
+
+	if math.IsNaN(f) {
+		return w.Write(no.Symbols.Nan)
+	}
+
+	if f > floatMax64 {
+		wr := utf8.EncodeRune(no.buf, no.Symbols.Infinity)
+		return w.Write(no.buf[:wr])
+	}
+	if f < -floatMax64 {
+		wr := utf8.EncodeRune(no.buf, no.Symbols.MinusSign)
+		wr += utf8.EncodeRune(no.buf[wr:], no.Symbols.Infinity)
+		no.buf = no.buf[:numberBufferSize]
+		return w.Write(no.buf[:wr])
+	}
+
+	usedFmt, err := no.GetFormat(sign < 0)
+	if err != nil {
+		return 0, log.Error("Number=FmtFloat64", "err", err, "format", usedFmt.String())
+	}
+
+	precPow10 := math.Pow10(usedFmt.precision)
+
+	// rounds on 0.5, 0.05, 0.005, 0.0005 ... depending on the amount of fractals in the format
+	// intgr, frac := math.Modf(f + (5 / (precPow10 * 10)))
+	intgr, fracf := math.Modf(f)
+
+	fracI := int64((fracf * precPow10) + floatRoundingCorrection)
+
+	if fracI < 0 {
+		fracI = -fracI
+	}
+
+	return no.FmtNumber(w, sign, int64(intgr), fracI)
+}
+
 /*
 A function to render a number to a string based on
 the following user-specified criteria:
@@ -355,19 +395,21 @@ There is also a version for integer number, RenderInteger(),
 which is convenient for calls within template.
 */
 
-// format some kind of cache
+// format contains the pattern and acts as a cache
 type format struct {
-	parsed    bool
-	pattern   []rune
-	precision int
-	plusSign  rune
-	minusSign rune
-	decimal   rune
-	group     rune
-	prefix    []byte
-	suffix    []byte
+	isNegative bool
+	parsed     bool
+	pattern    []rune
+	precision  int
+	plusSign   rune
+	minusSign  rune
+	decimal    rune
+	group      rune
+	prefix     []byte
+	suffix     []byte
 }
 
+// String human friendly printed format for debugging purposes.
 func (f *format) String() string {
 	return fmt.Sprintf(
 		"Parsed \t%t\nPattern\t%s\nPrec.  \t%d\nPlus\t_%s_\nMinus  \t_%s_\nDecimal\t_%s_\nGroup \t_%s_\nPrefix \t_%s_\nSuffix \t_%s_\n",
@@ -390,13 +432,9 @@ func (f *format) decToPrec(dec int64) int64 {
 		il10 := math.Pow10(il)
 		ilf := float64(dec) / il10
 		prec10 := math.Pow10(f.precision)
-		//		fmt.Printf("\nilf %f prec10 %f\n", ilf, prec10)
-		decf := float64((ilf*prec10)+0.55) / prec10
-		//		fmt.Printf("decf %f\n", decf)
+		decf := float64((ilf*prec10)+0.55) / prec10 // hmmm that .55 needs to be monitored. everywhere else we have just .5
 		decf *= prec10
-		//		fmt.Printf("decf %f\n", decf)
-		decf += 0.000000000001 // I'm lovin it 8-)
-		//		fmt.Printf("decf %f\n", decf)
+		decf += floatRoundingCorrection // I'm lovin it 8-)
 		return int64(decf)
 	}
 	return dec

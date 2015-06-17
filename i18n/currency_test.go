@@ -62,7 +62,7 @@ func TestFmtCurrency(t *testing.T) {
 			[]i18n.CurrencyOptFunc{
 				i18n.CurrencyFormat("#,##0.00 ¤"),
 				i18n.CurrencyFraction(2, 0, 2, 0), // euro, 2 digits, no rounding
-				i18n.CurrencySymbol([]byte("€")),
+				i18n.CurrencySign([]byte("€")),
 			},
 			-1, -1234, 6, "-1,234.06 €", nil, // euros with default Symbols
 		},
@@ -70,7 +70,7 @@ func TestFmtCurrency(t *testing.T) {
 			[]i18n.CurrencyOptFunc{
 				i18n.CurrencyFormat("#,##0.00 ¤"),
 				i18n.CurrencyFraction(0, 0, 0, 0), // japanese yen, no digits no rounding
-				i18n.CurrencySymbol([]byte("¥JP")),
+				i18n.CurrencySign([]byte("¥JP")),
 			},
 			1, 1234, 456, "1,235 ¥JP", nil, // yen with default symbols
 		},
