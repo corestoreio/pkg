@@ -85,7 +85,7 @@ type (
 		// increment of 5, numeric values are rounded to the nearest 0.05 units
 		// in formatting. With fraction digits of 0 and rounding increment of
 		// 50, numeric values are rounded to the nearest 50.
-		// ⚠ Warning: Rounding must be applied in the package money ⚠
+		// ⚠ Warning: Rounding must be applied in the package money ⚠ @todo
 		Rounding int
 		// CashDigits the number of decimal digits to be used when formatting
 		// quantities used in cash transactions (as opposed to a quantity that
@@ -103,8 +103,10 @@ type (
 		CashRounding int
 	}
 
-	// CurrencyOptFunc options function for Currency struct
-	CurrencyOptFunc func(*Currency)
+	// CurrencyOptFunc applies options to the Currency struct. To read more
+	// about the recursion pattern:
+	// http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
+	CurrencyOptFunc func(*Currency) CurrencyOptFunc
 )
 
 func init() {
@@ -117,7 +119,8 @@ func init() {
 // 3-letter ISO code. (Missing feature in text/language package)
 // This function is called in NewCurrency().
 func CurrencyISO(cur string) CurrencyOptFunc {
-	return func(c *Currency) {
+	return func(c *Currency) CurrencyOptFunc {
+		previous := c.ISO.String()
 		lc, err := language.ParseCurrency(cur)
 		if err != nil {
 			if log.IsTrace() {
@@ -128,6 +131,7 @@ func CurrencyISO(cur string) CurrencyOptFunc {
 		}
 		c.ISO = lc
 		CurrencySign([]byte(lc.String()))(c)
+		return CurrencyISO(previous)
 	}
 }
 
@@ -136,16 +140,20 @@ func CurrencySign(s []byte) CurrencyOptFunc {
 	if string(s) == DefaultCurrencyName || len(s) == 0 {
 		s = []byte("\U0001f4b0") // money bag emoji
 	}
-	return func(c *Currency) {
+	return func(c *Currency) CurrencyOptFunc {
+		previous := c.sgn
 		c.sgn = s
+		return CurrencySign(previous)
 	}
 }
 
 // CurrencySymbols sets the Symbols tables. The argument will be merged into the
 // default Symbols table
 func CurrencySymbols(s Symbols) CurrencyOptFunc {
-	return func(c *Currency) {
+	return func(c *Currency) CurrencyOptFunc {
+		previous := c.sym
 		c.sym = NewSymbols(s)
+		return CurrencySymbols(previous)
 	}
 }
 
@@ -158,8 +166,18 @@ func CurrencyFormat(f string, s ...Symbols) CurrencyOptFunc {
 	if f == "" {
 		f = DefaultCurrencyFormat
 	}
-	return func(c *Currency) {
+	return func(c *Currency) CurrencyOptFunc {
+		previousF := string(c.fo.pattern)
+		if len(c.fneg.pattern) > 0 {
+			previousF = previousF + string(formatSeparator) + string(c.fneg.pattern)
+		}
+		previousS := c.sym
+
 		c.NOptions(NumberFormat(f, s...))
+		if len(s) == 1 {
+			return CurrencyFormat(previousF, previousS)
+		}
+		return CurrencyFormat(previousF)
 	}
 }
 
@@ -178,14 +196,19 @@ func CurrencyFraction(digits, rounding, cashDigits, cashRounding int) CurrencyOp
 	if cashRounding < 0 {
 		cashRounding = 0
 	}
-	return func(c *Currency) {
-		c.Number.frac = CurrencyFractions{
+	return func(c *Currency) CurrencyOptFunc {
+		prevD := c.frac.Digits
+		prevR := c.frac.Rounding
+		prevCD := c.frac.CashDigits
+		prevCR := c.frac.CashRounding
+		c.frac = CurrencyFractions{
 			Digits:       digits,
 			Rounding:     rounding,
 			CashDigits:   cashDigits,
 			CashRounding: cashRounding,
 		}
-		c.Number.fracValid = true
+		c.fracValid = true
+		return CurrencyFraction(prevD, prevR, prevCD, prevCR)
 	}
 }
 
@@ -199,20 +222,21 @@ func NewCurrency(opts ...CurrencyOptFunc) *Currency {
 	CurrencyISO(DefaultCurrencyName)(c)
 	CurrencyFormat(DefaultCurrencyFormat)(c)
 	CurrencyFraction(2, 0, 2, 0)(c)
-	return c.COptions(opts...)
+	c.COptions(opts...)
+	return c
 }
 
 // COptions applies currency options and returns a Currency pointer
 // Thread safe.
-func (c *Currency) COptions(opts ...CurrencyOptFunc) *Currency {
+func (c *Currency) COptions(opts ...CurrencyOptFunc) (previous CurrencyOptFunc) {
 	c.mu.Lock()
 	for _, o := range opts {
 		if o != nil {
-			o(c)
+			previous = o(c)
 		}
 	}
 	c.mu.Unlock()
-	return c
+	return
 }
 
 // FmtCurrency formats a number according to the currency format.

@@ -36,14 +36,18 @@ var DefaultNumber NumberFormatter
 // DefaultNumberFormat 1,000.000
 const DefaultNumberFormat = `#,##0.###`
 
-// numberBufferSize bytes buffer size. a number including currency sign can
-// be up to 64 bytes. Some runes might need more bytes ...
-const numberBufferSize = 64
-
-// formatBufferSize used for the buffer for prefix and suffix
-const formatBufferSize = 16
-
 const (
+
+	// numberBufferSize bytes buffer size. a number including currency sign can
+	// be up to 64 bytes. Some runes might need more bytes ...
+	numberBufferSize = 64
+
+	// formatBufferSize used for the buffer for prefix and suffix
+	formatBufferSize = 16
+	// formatSeparator differentiates between the positive and negative format.
+	// Negative format is always on the second position.
+	formatSeparator = ';'
+
 	floatRoundingCorrection = 0.000000000001
 	floatMax64              = math.MaxFloat64 * 0.9999999999
 )
@@ -86,8 +90,10 @@ type (
 		fracValid bool
 	}
 
-	// NumberOptFunc applies options to the Number struct
-	NumberOptFunc func(*Number)
+	// NumberOptFunc applies options to the Number struct. To read more
+	// about the recursion pattern:
+	// http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
+	NumberOptFunc func(*Number) NumberOptFunc
 )
 
 func init() {
@@ -105,8 +111,10 @@ var _ NumberFormatter = (*Number)(nil)
 // NumberSymbols sets the Symbols tables. The argument will be merged into the
 // default Symbols table
 func NumberSymbols(s Symbols) NumberOptFunc {
-	return func(n *Number) {
+	return func(n *Number) NumberOptFunc {
+		previous := n.sym
 		n.sym = NewSymbols(s)
+		return NumberSymbols(previous)
 	}
 }
 
@@ -118,28 +126,33 @@ func NumberFormat(f string, s ...Symbols) NumberOptFunc {
 	if f == "" {
 		f = DefaultNumberFormat
 	}
-	var generalFormat []rune
-	var negativeFormat []rune
+	var posFmt, negFmt []rune // positive format, negative format
 	found := false
 	for _, r := range f {
-		if r == ';' && !found {
+		if r == formatSeparator && !found { // avoid strings.Split
 			found = true
 			continue // skip semi colon :-)
 		}
 		if !found {
-			generalFormat = append(generalFormat, r)
+			posFmt = append(posFmt, r)
 		} else {
-			negativeFormat = append(negativeFormat, r)
+			negFmt = append(negFmt, r)
 		}
 	}
 
-	return func(n *Number) {
+	return func(n *Number) NumberOptFunc {
+		previousF := string(n.fo.pattern)
+		if len(n.fneg.pattern) > 0 {
+			previousF = previousF + string(formatSeparator) + string(n.fneg.pattern)
+		}
+		previousS := n.sym
+
 		if len(s) == 1 {
 			n.sym.Merge(s[0])
 		}
 		n.fo = format{
 			parsed:    false,
-			pattern:   generalFormat,
+			pattern:   posFmt,
 			precision: 9,
 			plusSign:  n.sym.PlusSign, // apply default values
 			minusSign: n.sym.MinusSign,
@@ -149,8 +162,12 @@ func NumberFormat(f string, s ...Symbols) NumberOptFunc {
 			suffix:    make([]byte, formatBufferSize),
 		}
 		n.fneg = n.fo // copy default format
-		n.fneg.pattern = negativeFormat
+		n.fneg.pattern = negFmt
 		n.fneg.isNegative = true
+		if len(s) == 1 {
+			return NumberFormat(previousF, previousS)
+		}
+		return NumberFormat(previousF)
 	}
 }
 
@@ -164,20 +181,21 @@ func NewNumber(opts ...NumberOptFunc) *Number {
 	}
 	NumberFormat(DefaultNumberFormat)(n) // normally that should come from golang.org/x/text package
 	//	NumberTag("en-US")(n)
-	return n.NOptions(opts...)
+	n.NOptions(opts...)
+	return n
 }
 
 // NOptions applies Number options and returns a Number pointer
 // Thread safe.
-func (no *Number) NOptions(opts ...NumberOptFunc) *Number {
+func (no *Number) NOptions(opts ...NumberOptFunc) (previous NumberOptFunc) {
 	no.mu.Lock()
 	for _, o := range opts {
 		if o != nil {
-			o(no)
+			previous = o(no)
 		}
 	}
 	no.mu.Unlock()
-	return no
+	return
 }
 
 // GetFormat parses the pattern depended if we have a negative value or not.
