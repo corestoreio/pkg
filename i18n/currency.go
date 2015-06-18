@@ -42,14 +42,14 @@ var _ CurrencyFormatter = (*Currency)(nil)
 type (
 	// CurrencyFormatter knows locale specific properties about a currency/number
 	CurrencyFormatter interface {
-		NumberFormatter
 		// FmtCurrency formats a number according to the number format of the
 		// locale. i and dec represents a floating point
 		// number. Only i can be negative. Dec must always be positive. Sign
 		// must be either -1 or +1. If sign is 0 the prefix will be guessed
 		// from i. If sign and i are 0 function must return ErrCannotDetectMinusSign.
 		FmtCurrency(w io.Writer, sign int, i, dec int64) (int, error)
-
+		// FmtCurrencyFloat64 formats a float value, does internal maybe incorrect rounding.
+		FmtCurrencyFloat64(w io.Writer, f float64) (int, error)
 		// Sign returns the currency sign. Can be one character or a 3-letter ISO 4217 code.
 		Sign() []byte
 	}
@@ -246,6 +246,7 @@ func (c *Currency) COptions(opts ...CurrencyOptFunc) (previous CurrencyOptFunc) 
 // Returns the number bytes written or an error.
 // Thread safe.
 func (c *Currency) FmtCurrency(w io.Writer, sign int, i, dec int64) (int, error) {
+	// @todo some minor optimizations in FmtCurrency and FmtCurrencyFloat64
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -262,6 +263,29 @@ func (c *Currency) FmtCurrency(w io.Writer, sign int, i, dec int64) (int, error)
 	c.buf = bytes.Replace(c.buf, symbolSign, c.sgn, 1)
 
 	return w.Write(c.buf)
+}
+
+// FmtCurrencyFloat64 formats a float value, does internal maybe incorrect rounding.
+// Returns the number bytes written or an error.
+// Thread safe.
+func (c *Currency) FmtCurrencyFloat64(w io.Writer, f float64) (int, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for i := range c.buf {
+		c.buf[i] = 0 // clear buffer
+	}
+	c.buf = c.buf[:0]
+
+	if _, err := c.FmtFloat64(&c.buf, f); err != nil {
+		return 0, log.Error("Currency=FmtCurrencyFloat64", "err", err, "buffer", string(c.buf), "float64", f)
+	}
+
+	// now replace ¤ with the real symbol or what ever
+	c.buf = bytes.Replace(c.buf, symbolSign, c.sgn, 1)
+
+	return w.Write(c.buf)
+
 }
 
 // Sign returns the currency sign. Can be one character or a 3-letter ISO 4217 code.

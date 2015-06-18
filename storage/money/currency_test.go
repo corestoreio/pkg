@@ -19,6 +19,7 @@ import (
 
 	"math"
 
+	"github.com/SchumacherFM/OnixParser/Godeps/_workspace/src/github.com/stretchr/testify/assert"
 	"github.com/corestoreio/csfw/storage/money"
 )
 
@@ -208,7 +209,9 @@ func TestSwedishNumber(t *testing.T) {
 	}
 	for _, test := range tests {
 		c := money.New(money.Precision(test.prec)).Set(test.have)
-		have := c.Swedish(money.Swedish(test.iv)).Number()
+		haveB, err := c.Swedish(money.Swedish(test.iv)).Number()
+		assert.NoError(t, err, "%v", test)
+		have := string(haveB)
 		if have != test.want {
 			t.Errorf("\nWant: %s\nHave: %s\nIndex: %v\n", test.want, have, test)
 		}
@@ -284,7 +287,9 @@ func TestMulNumber(t *testing.T) {
 	for _, test := range tests {
 		c := money.New(money.Precision(test.prec)).Set(test.have1)
 		c = c.Mul(money.New(money.Precision(test.prec)).Set(test.have2))
-		have := c.Number()
+		haveB, err := c.Number()
+		assert.NoError(t, err)
+		have := string(haveB)
 		if have != test.want {
 			t.Errorf("\nWant: %s\nHave: %s\nSign %d\nIndex: %v\n", test.want, have, c.Sign(), test)
 		}
@@ -315,7 +320,9 @@ func TestMulf(t *testing.T) {
 	for _, test := range tests {
 		c := money.New(money.Precision(test.prec)).Set(test.have1)
 		c = c.Mulf(test.have2)
-		have := c.Number()
+		haveB, err := c.Number()
+		assert.NoError(t, err)
+		have := string(haveB)
 		if have != test.want {
 			t.Errorf("\nWant: %s\nHave: %s\nSign %d\nIndex: %v\n", test.want, have, c.Sign(), test)
 		}
@@ -341,8 +348,11 @@ func TestDiv(t *testing.T) {
 		c := money.New().Set(test.have1)
 		c = c.Div(money.New().Set(test.have2))
 		have := c.Raw()
+		nob, err := c.Number()
+		assert.NoError(t, err)
+
 		if have != test.want {
-			t.Errorf("\nWant: %d\nHave: %d / %s\nIndex: %v\n", test.want, have, c.Number(), test)
+			t.Errorf("\nWant: %d\nHave: %d / %s\nIndex: %v\n", test.want, have, string(nob), test)
 		}
 	}
 }

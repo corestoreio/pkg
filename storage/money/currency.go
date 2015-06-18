@@ -73,8 +73,10 @@ type (
 	Currency struct {
 		// m money in Guard/DP
 		m int64
-		// Printer to allow language and format specific outputs
-		Printer i18n.CurrencyFormatter
+		// FmtCur to allow language and format specific outputs in a currency format
+		FmtCur i18n.CurrencyFormatter
+		// FmtNum to allow language and format specific outputs in a number format
+		FmtNum i18n.NumberFormatter
 		// Valid if false the internal value is NULL
 		Valid bool
 		// Interval defines how the swedish rounding can be applied.
@@ -88,8 +90,6 @@ type (
 		prec   int // precision only calculated when changing dp
 		dp     int64
 		dpf    float64
-		// bufC print buffer for number generation incl. locale settings ... or a sync.Pool ?
-		bufC buf
 	}
 
 	// OptionFunc used to apply options to the Currency struct
@@ -137,9 +137,23 @@ func CashRounding(rounding int) OptionFunc {
 	}
 
 	return func(c *Currency) OptionFunc {
-		previous := c.Interval
+		var p int
+		switch c.Interval {
+		case Interval005:
+			p = 5
+		case Interval010:
+			p = 10
+		case Interval015:
+			p = 15
+		case Interval025:
+			p = 25
+		case Interval050:
+			p = 50
+		case Interval100:
+			p = 100
+		}
 		c.Interval = i
-		return CashRounding(previous)
+		return CashRounding(p)
 	}
 }
 
@@ -204,18 +218,19 @@ func JSONUnmarshal(um JSONUnmarshaller) OptionFunc {
 	}
 }
 
-// New creates a new empty Currency struct with package default values of
-// Guard and decimal precision.
+// New creates a new empty Currency struct with package default values.
+// Formatter can be overridden after you have created the new type.
 func New(opts ...OptionFunc) Currency {
 	c := Currency{
-		guard:   guard,
-		guardf:  guardf,
-		dp:      dp,
-		dpf:     dpf,
-		prec:    decimals(dp),
-		Printer: DefaultPrinter,
-		jm:      DefaultJSONEncode,
-		jum:     DefaultJSONDecode,
+		guard:  guard,
+		guardf: guardf,
+		dp:     dp,
+		dpf:    dpf,
+		prec:   decimals(dp),
+		FmtCur: DefaultFormatterCurrency,
+		FmtNum: DefaultFormatterNumber,
+		jm:     DefaultJSONEncode,
+		jum:    DefaultJSONDecode,
 	}
 	c.Option(opts...)
 	return c
@@ -290,40 +305,43 @@ func (c Currency) Precision() int {
 	return c.prec
 }
 
-// Localize for money type representation in a specific locale. Owns the return value.
-func (c Currency) LocalizeWriter(w io.Writer) error {
-	return c.Printer.FmtCurrency(w, c.Getf())
+// Localize for money type representation in a specific locale.
+func (c Currency) Localize() ([]byte, error) {
+	var bufC buf
+	_, err := c.LocalizeWriter(&bufC)
+	return bufC, err
+}
+
+// LocalizeWriter for money type representation in a specific locale.
+// Returns the number bytes written or an error.
+func (c Currency) LocalizeWriter(w io.Writer) (int, error) {
+	return c.FmtCur.FmtCurrency(w, c.Sign(), c.Geti(), c.Dec())
 }
 
 // String for money type representation in a specific locale.
 func (c Currency) String() string {
-	// thread safe?
-	c.bufC = c.bufC[:0]
-	if err := c.LocalizeWriter(&c.bufC); err != nil {
+	var bufC buf
+	if _, err := c.LocalizeWriter(&bufC); err != nil {
 		if log.IsTrace() {
 			log.Trace("Currency=String", "err", err, "c", c)
 		}
 		log.Error("Currency=String", "err", err, "c", c)
 	}
-	return string(c.bufC)
+	return string(bufC)
 }
 
-// Number prints the currency without any locale specific formatting. E.g. useful in JavaScript.
-func (c Currency) Number() string {
-	// thread safe?
-	c.bufC = c.bufC[:0]
-	if err := c.NumberWriter(&c.bufC); err != nil {
-		if log.IsTrace() {
-			log.Trace("Currency=Number", "err", err, "c", c)
-		}
-		log.Error("Currency=Number", "err", err, "c", c)
-	}
-	return string(c.bufC)
+// Number prints the currency without any locale specific formatting.
+// E.g. useful in JavaScript.
+func (c Currency) Number() ([]byte, error) {
+	var bufC buf
+	_, err := c.NumberWriter(&bufC)
+	return bufC, err
 }
 
-// NumberWriter prints the currency without any locale specific formatting. Owns the result.
-func (c Currency) NumberWriter(w io.Writer) error {
-	return c.Printer.FmtNumber(w, c.Getf())
+// NumberWriter prints the currency as a locale specific formatted number.
+// Returns the number bytes written or an error.
+func (c Currency) NumberWriter(w io.Writer) (int, error) {
+	return c.FmtNum.FmtNumber(w, c.Sign(), c.Geti(), c.Dec())
 }
 
 // Add adds two Currency types. Returns empty Currency on integer overflow.

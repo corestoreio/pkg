@@ -20,12 +20,40 @@ import (
 	"github.com/corestoreio/csfw/storage/money"
 )
 
-var benchBenchmarkUnformatted string // -123456.79
-// BenchmarkUnformatted	 1000000	      2406 ns/op	     161 B/op	       9 allocs/op <= fmt.Sprintf
-func BenchmarkUnformatted(b *testing.B) {
+type buf []byte
+
+// Write writes len(p) bytes from p to the Buffer.
+func (b *buf) Write(p []byte) (int, error) {
+	*b = append(*b, p...)
+	return len(p), nil
+}
+
+var benchBenchmarkNumberWriter string
+var bufferNumberWriter buf
+
+// Benchmark_NumberWriter	 1000000	      1692 ns/op	     264 B/op	      13 allocs/op
+func Benchmark_NumberWriter(b *testing.B) {
+	var err error
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		c := money.New(money.Precision(100)).Setf(-123456.789)
+		_, err = c.NumberWriter(&bufferNumberWriter)
+		if err != nil {
+			b.Error(err)
+		}
+		benchBenchmarkNumberWriter = string(bufferNumberWriter)
+		bufferNumberWriter = bufferNumberWriter[:0]
+	}
+}
+
+var benchmarkMoneyNewGetf float64
+
+// Benchmark_MoneyNewGetf	 2000000	       771 ns/op	     208 B/op	       7 allocs/op
+func Benchmark_MoneyNewGetf(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		c := money.New(money.Precision(100)).Setf(-123456.789)
-		benchBenchmarkUnformatted = c.Number()
+		benchmarkMoneyNewGetf = c.Getf()
 	}
 }
