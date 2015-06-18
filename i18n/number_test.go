@@ -51,7 +51,7 @@ type fmtNumberData struct {
 	wantErr error
 }
 
-func TestFmtNumber(t *testing.T) {
+func TestFmtNumber1(t *testing.T) {
 
 	tests := []fmtNumberData{
 		{"¤ #0.00", -1, -1234, 6, "¤ -1234.06", nil},
@@ -138,6 +138,43 @@ func TestFmtNumber(t *testing.T) {
 			assert.NoError(t, err, "%v", test)
 			assert.EqualValues(t, test.want, have, "%v", test)
 		}
+	}
+}
+
+func TestFmtNumber11(t *testing.T) {
+	// only to test the default format
+	tests := []struct {
+		opts    []i18n.NumberOptFunc
+		sign    int
+		i       int64
+		dec     int64
+		want    string
+		wantErr error
+	}{
+		{
+			[]i18n.NumberOptFunc{
+				i18n.NumberFormat(""),
+				i18n.NumberSymbols(testDefCurSym),
+			},
+			-1, -1234, 6, "-1,234.006", nil, // euros with default Symbols
+		},
+	}
+
+	var buf bytes.Buffer
+	for _, test := range tests {
+		haveNumber := i18n.NewNumber(test.opts...)
+
+		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.dec)
+		have := buf.String()
+		if test.wantErr != nil {
+			assert.Error(t, err)
+			assert.EqualError(t, err, test.wantErr.Error())
+		} else {
+			assert.NoError(t, err)
+
+			assert.EqualValues(t, test.want, have, "%v", test)
+		}
+		buf.Reset()
 	}
 }
 

@@ -73,11 +73,11 @@ type (
 
 		// Symbols contains all available symbols for formatting any number.
 		// Struct not embedded because friendlier in IDE auto completion.
-		Symbols Symbols
-		fo      format
-		fneg    format // format for negative numbers
-		buf     []byte // size numberBufferSize @todo check for a possible race condition
-		mu      sync.RWMutex
+		sym  Symbols
+		fo   format
+		fneg format // format for negative numbers
+		buf  []byte // size numberBufferSize @todo check for a possible race condition
+		mu   sync.RWMutex
 		// frac will only be set when we're parsing a currency format.
 		// So frac will be set by the parent CurrencyFormatter.
 		// The Digits in CurrencyFraction will override the precision in the
@@ -101,6 +101,14 @@ var _ NumberFormatter = (*Number)(nil)
 //		n.Tag = language.MustParse(locale)
 //	}
 //}
+
+// NumberSymbols sets the Symbols tables. The argument will be merged into the
+// default Symbols table
+func NumberSymbols(s Symbols) NumberOptFunc {
+	return func(n *Number) {
+		n.sym = NewSymbols(s)
+	}
+}
 
 // NumberFormat applies a format to a Number. If you do not have set the second
 // argument Symbols (will be merge into) then the default Symbols will be used.
@@ -127,16 +135,16 @@ func NumberFormat(f string, s ...Symbols) NumberOptFunc {
 
 	return func(n *Number) {
 		if len(s) == 1 {
-			n.Symbols.Merge(s[0])
+			n.sym.Merge(s[0])
 		}
 		n.fo = format{
 			parsed:    false,
 			pattern:   generalFormat,
 			precision: 9,
-			plusSign:  n.Symbols.PlusSign, // apply default values
-			minusSign: n.Symbols.MinusSign,
-			decimal:   n.Symbols.Decimal,
-			group:     n.Symbols.Group,
+			plusSign:  n.sym.PlusSign, // apply default values
+			minusSign: n.sym.MinusSign,
+			decimal:   n.sym.Decimal,
+			group:     n.sym.Group,
 			prefix:    make([]byte, formatBufferSize),
 			suffix:    make([]byte, formatBufferSize),
 		}
@@ -151,8 +159,8 @@ func NumberFormat(f string, s ...Symbols) NumberOptFunc {
 // formatter anywhere else.
 func NewNumber(opts ...NumberOptFunc) *Number {
 	n := &Number{
-		Symbols: DefaultNumberSymbols,
-		buf:     make([]byte, numberBufferSize),
+		sym: NewSymbols(),
+		buf: make([]byte, numberBufferSize),
 	}
 	NumberFormat(DefaultNumberFormat)(n) // normally that should come from golang.org/x/text package
 	//	NumberTag("en-US")(n)
@@ -350,22 +358,22 @@ func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
 	//   -Inf = "-Infinity"
 
 	if math.IsNaN(f) {
-		return w.Write(no.Symbols.Nan)
+		return w.Write(no.sym.Nan)
 	}
 
 	if f > floatMax64 {
 		no.mu.Lock()
 		defer no.mu.Unlock()
 
-		wr := utf8.EncodeRune(no.buf, no.Symbols.Infinity)
+		wr := utf8.EncodeRune(no.buf, no.sym.Infinity)
 		return w.Write(no.buf[:wr])
 	}
 	if f < -floatMax64 {
 		no.mu.Lock()
 		defer no.mu.Unlock()
 
-		wr := utf8.EncodeRune(no.buf, no.Symbols.MinusSign)
-		wr += utf8.EncodeRune(no.buf[wr:], no.Symbols.Infinity)
+		wr := utf8.EncodeRune(no.buf, no.sym.MinusSign)
+		wr += utf8.EncodeRune(no.buf[wr:], no.sym.Infinity)
 		no.buf = no.buf[:numberBufferSize]
 		return w.Write(no.buf[:wr])
 	}

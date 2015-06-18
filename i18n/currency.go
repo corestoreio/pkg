@@ -141,12 +141,23 @@ func CurrencySign(s []byte) CurrencyOptFunc {
 	}
 }
 
+// CurrencySymbols sets the Symbols tables. The argument will be merged into the
+// default Symbols table
+func CurrencySymbols(s Symbols) CurrencyOptFunc {
+	return func(c *Currency) {
+		c.sym = NewSymbols(s)
+	}
+}
+
 // CurrencyFormat applies a format (e.g.: #,##0.00 ¤) to a Number.
 // If you do not have set the second argument Symbols (will be merge into) then the
 // default Symbols will be used. Only one second argument is supported. If format is
 // empty, fallback to the default format.
 // A "¤" shows where the currency sign will go.
 func CurrencyFormat(f string, s ...Symbols) CurrencyOptFunc {
+	if f == "" {
+		f = DefaultCurrencyFormat
+	}
 	return func(c *Currency) {
 		c.NOptions(NumberFormat(f, s...))
 	}

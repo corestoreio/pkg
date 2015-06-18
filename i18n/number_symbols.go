@@ -14,47 +14,57 @@
 
 package i18n
 
-// DefaultNumberSymbols contains all important default characters for
-// formatting a number and or a currency.
-var DefaultNumberSymbols = Symbols{
-	// normally that all should come from golang.org/x/text package
-	Decimal:                '.',
-	Group:                  ',',
-	List:                   ';',
-	PercentSign:            '%',
-	CurrencySign:           '¤',
-	PlusSign:               '+',
-	MinusSign:              '—', // em dash \u2014 ;-)
-	Exponential:            'E',
-	SuperscriptingExponent: '×',
-	PerMille:               '‰',
-	Infinity:               '∞',
-	Nan:                    []byte(`NaN`),
-}
-
-var minusSign = []byte(`-`)
-var symbolSign = []byte(`¤`)
-
-type (
-
-	// Symbols general symbols used when formatting. Some are unused because @todo
-	Symbols struct {
-		Decimal                rune // used
-		Group                  rune // used
-		List                   rune
-		PercentSign            rune
-		CurrencySign           rune
-		PlusSign               rune // used
-		MinusSign              rune // used
-		Exponential            rune
-		SuperscriptingExponent rune
-		PerMille               rune
-		Infinity               rune
-		Nan                    []byte // used
+var (
+	// defaultSymbols contains all important default characters for
+	// formatting a number and or a currency.
+	defaultSymbols = Symbols{
+		// normally that all should come from golang.org/x/text package
+		Decimal:                '.',
+		Group:                  ',',
+		List:                   ';',
+		PercentSign:            '%',
+		CurrencySign:           '¤',
+		PlusSign:               '+',
+		MinusSign:              '—', // em dash \u2014 ;-)
+		Exponential:            'E',
+		SuperscriptingExponent: '×',
+		PerMille:               '‰',
+		Infinity:               '∞',
+		Nan:                    []byte(`NaN`),
 	}
+
+	minusSign  = []byte(`-`)
+	symbolSign = []byte(`¤`)
 )
 
-// String human friendly printing
+// Symbols general symbols used when formatting. Some are unused because @todo
+type Symbols struct {
+	Decimal                rune // used
+	Group                  rune // used
+	List                   rune
+	PercentSign            rune
+	CurrencySign           rune
+	PlusSign               rune // used
+	MinusSign              rune // used
+	Exponential            rune
+	SuperscriptingExponent rune
+	PerMille               rune
+	Infinity               rune
+	Nan                    []byte // used
+}
+
+// NewSymbols creates a new non-pointer Symbols type with the
+// pre-filled default symbol table. Use arguments to override the default
+// symbols.
+func NewSymbols(syms ...Symbols) Symbols {
+	s := defaultSymbols
+	for _, sym := range syms {
+		s.Merge(sym)
+	}
+	return s
+}
+
+// String human friendly printing. Shows also the default symbol table ;-)
 func (s Symbols) String() string {
 	return `Decimal					` + string(s.Decimal) + `
 Group					` + string(s.Group) + `

@@ -12,23 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package i18n
+package i18n_test
 
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/i18n"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSymbolsString(t *testing.T) {
 	assert.Equal(t,
 		"Decimal\t\t\t\t\t.\nGroup\t\t\t\t\t,\nList\t\t\t\t\t;\nPercentSign\t\t\t\t%\nCurrencySign\t\t\t¤\nPlusSign\t\t\t\t+\nMinusSign\t\t\t\t—\nExponential\t\t\t\tE\nSuperscriptingExponent\t×\nPerMille\t\t\t\t‰\nInfinity\t\t\t\t∞\nNaN\t\t\t\t\t\tNaN\n",
-		DefaultNumberSymbols.String())
+		i18n.NewSymbols().String())
 }
 
 func TestSymbolsMerge(t *testing.T) {
-	to := DefaultNumberSymbols
-	from := Symbols{
+	to := i18n.NewSymbols()
+	from := i18n.Symbols{
 		Decimal:                '',
 		Group:                  '',
 		List:                   '',
@@ -44,6 +45,6 @@ func TestSymbolsMerge(t *testing.T) {
 	}
 	to.Merge(from)
 	assert.EqualValues(t, from, to)
-	to.Merge(Symbols{})
+	to.Merge(i18n.Symbols{})
 	assert.EqualValues(t, from, to)
 }
