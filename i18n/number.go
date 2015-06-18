@@ -185,8 +185,10 @@ func NewNumber(opts ...NumberOptFunc) *Number {
 	return n
 }
 
-// NOptions applies Number options and returns a Number pointer
-// Thread safe.
+// NOptions applies number options and returns the last applied previous
+// option function. For more details please read here
+// http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
+// This function is thread safe.
 func (no *Number) NOptions(opts ...NumberOptFunc) (previous NumberOptFunc) {
 	no.mu.Lock()
 	for _, o := range opts {

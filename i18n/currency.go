@@ -226,8 +226,10 @@ func NewCurrency(opts ...CurrencyOptFunc) *Currency {
 	return c
 }
 
-// COptions applies currency options and returns a Currency pointer
-// Thread safe.
+// COptions applies currency options and returns the last applied previous
+// option function. For more details please read here
+// http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
+// This function is thread safe.
 func (c *Currency) COptions(opts ...CurrencyOptFunc) (previous CurrencyOptFunc) {
 	c.mu.Lock()
 	for _, o := range opts {
