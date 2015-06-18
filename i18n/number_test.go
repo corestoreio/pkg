@@ -17,7 +17,10 @@ package i18n_test
 import (
 	"bytes"
 	"math"
+	"sync"
 	"testing"
+
+	"runtime"
 
 	"github.com/corestoreio/csfw/i18n"
 	"github.com/stretchr/testify/assert"
@@ -39,21 +42,18 @@ var testDefaultNumberSymbols = i18n.Symbols{
 	Nan: []byte(`NaN`),
 }
 
+type fmtNumberData struct {
+	format  string
+	sign    int
+	i       int64
+	dec     int64
+	want    string
+	wantErr error
+}
+
 func TestFmtNumber(t *testing.T) {
 
-	// all unique number formats and the last seen language
-	// data from unicode CLDR
-	// unicodeNumberFormats := map[string]string{"#0.###":"hy_AM", "#,##0.###":"zu_ZA", "#,##,##0.###":"te_IN", "#0.######":"en_US_POSIX"}
-	// te_IN not tested as too rare
-
-	tests := []struct {
-		format  string
-		sign    int
-		i       int64
-		dec     int64
-		want    string
-		wantErr error
-	}{
+	tests := []fmtNumberData{
 		{"¤ #0.00", -1, -1234, 6, "¤ -1234.06", nil},
 		{"#,##0.00 ¤", 1, 1234, 0, "1,234.00 ¤", nil},
 		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", -1, -1234, 615, "¤\u00a0—1,234.62", nil},
@@ -119,6 +119,11 @@ func TestFmtNumber(t *testing.T) {
 		{"$%^", 1, 1, 6, "$%^2", nil},
 	}
 
+	// all unique number formats and the last seen language
+	// data from unicode CLDR
+	// unicodeNumberFormats := map[string]string{"#0.###":"hy_AM", "#,##0.###":"zu_ZA", "#,##,##0.###":"te_IN", "#0.######":"en_US_POSIX"}
+	// te_IN not tested as too rare
+
 	for _, test := range tests {
 		haveNumber := i18n.NewNumber(
 			i18n.NumberFormat(test.format, testDefaultNumberSymbols),
@@ -133,6 +138,71 @@ func TestFmtNumber(t *testing.T) {
 			assert.NoError(t, err, "%v", test)
 			assert.EqualValues(t, test.want, have, "%v", test)
 		}
+	}
+}
+
+func genParallelTests(suffix string) []fmtNumberData {
+	tests := []fmtNumberData{}
+
+	for i := 0; i < 500; i++ {
+		// format is: "#,##0.###"
+		tests = append(tests, fmtNumberData{"", 1, 1234, 56, "1,234.056" + suffix, nil})
+		tests = append(tests, fmtNumberData{"", -1, -1234, 56, "-1,234.056" + suffix, nil})
+		tests = append(tests, fmtNumberData{"", -1, -1234, 6, "-1,234.006" + suffix, nil})
+		tests = append(tests, fmtNumberData{"", -1, -1234, 7678, "-1,234.768" + suffix, nil})
+		tests = append(tests, fmtNumberData{"", -1, -1234, 6, "-1,234.006" + suffix, nil})
+		tests = append(tests, fmtNumberData{"", -1, -987651234, 456, "-987,651,234.456" + suffix, nil})
+		tests = append(tests, fmtNumberData{"", 0, 0, 6, "", i18n.ErrCannotDetectMinusSign})
+	}
+
+	return tests
+}
+
+func TestFmtNumberParallel(t *testing.T) {
+	queue := make(chan fmtNumberData)
+	ncpu := runtime.NumCPU()
+	prevCPU := runtime.GOMAXPROCS(ncpu)
+	defer runtime.GOMAXPROCS(prevCPU)
+	wg := new(sync.WaitGroup)
+
+	haveNumber := i18n.NewNumber(
+		i18n.NumberFormat("#,##0.###", testDefaultNumberSymbols),
+	)
+
+	// spawn workers
+	for i := 0; i < ncpu; i++ {
+		wg.Add(1)
+		go testNumberWorker(t, haveNumber, i, queue, wg)
+	}
+
+	// master: give work
+	for _, test := range genParallelTests("") {
+		queue <- test
+	}
+	close(queue)
+	wg.Wait()
+}
+
+func testNumberWorker(t *testing.T, nf i18n.NumberFormatter, id int, queue chan fmtNumberData, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for {
+		test, ok := <-queue
+		if !ok {
+			//t.Logf("Worker ID %d stopped", id)
+			return
+		}
+
+		var buf bytes.Buffer
+		_, err := nf.FmtNumber(&buf, test.sign, test.i, test.dec)
+		have := buf.String()
+		if test.wantErr != nil {
+			assert.Error(t, err, "Worker %d => %v", id, test)
+			assert.EqualError(t, err, test.wantErr.Error(), "Worker %d => %v", id, test)
+		} else {
+			assert.NoError(t, err, "Worker %d => %v", id, test)
+			assert.EqualValues(t, test.want, have, "Worker %d => %v", id, test)
+		}
+		//t.Logf("Worker %d run test: %v\n", id, test)
 	}
 }
 

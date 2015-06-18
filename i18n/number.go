@@ -24,6 +24,8 @@ import (
 
 	"unicode/utf8"
 
+	"sync"
+
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 )
@@ -75,6 +77,7 @@ type (
 		fo      format
 		fneg    format // format for negative numbers
 		buf     []byte // size numberBufferSize @todo check for a possible race condition
+		mu      sync.RWMutex
 		// frac will only be set when we're parsing a currency format.
 		// So frac will be set by the parent CurrencyFormatter.
 		// The Digits in CurrencyFraction will override the precision in the
@@ -144,7 +147,8 @@ func NumberFormat(f string, s ...Symbols) NumberOptFunc {
 }
 
 // NewNumber creates a new number type including the default Symbols table
-// and default
+// and default number format. You should only create one type and reuse the
+// formatter anywhere else.
 func NewNumber(opts ...NumberOptFunc) *Number {
 	n := &Number{
 		Symbols: DefaultNumberSymbols,
@@ -156,18 +160,22 @@ func NewNumber(opts ...NumberOptFunc) *Number {
 }
 
 // NOptions applies Number options and returns a Number pointer
+// Thread safe.
 func (no *Number) NOptions(opts ...NumberOptFunc) *Number {
+	no.mu.Lock()
 	for _, o := range opts {
 		if o != nil {
 			o(no)
 		}
 	}
+	no.mu.Unlock()
 	return no
 }
 
 // GetFormat parses the pattern depended if we have a negative value or not.
+// Use this function only for debugging purposes.
+// NOT Thread safe.
 func (no *Number) GetFormat(isNegative bool) (format, error) {
-
 	if isNegative {
 		if false == no.fneg.parsed {
 			if err := no.fneg.parse(); err != nil {
@@ -190,7 +198,10 @@ func (no *Number) GetFormat(isNegative bool) (format, error) {
 // FmtNumber formats a number according to the number format.
 // Internal rounding will be applied if dec does not fit within the fractals.
 // Returns the number bytes written or an error.
+// Thread safe.
 func (no *Number) FmtNumber(w io.Writer, sign int, intgr, dec int64) (int, error) {
+	no.mu.Lock()
+	defer no.mu.Unlock()
 
 	// first check the sign
 	switch {
@@ -316,6 +327,7 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr, dec int64) (int, error
 }
 
 // FmtInt formats an integer according to the format pattern.
+// Thread safe
 func (no *Number) FmtInt(w io.Writer, i int) (int, error) {
 	sign := 1
 	if i < 0 {
@@ -325,6 +337,7 @@ func (no *Number) FmtInt(w io.Writer, i int) (int, error) {
 }
 
 // FmtFloat64 formats a float value, does internal maybe incorrect rounding.
+// Thread safe
 func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
 	sign := 1
 	if f < 0 {
@@ -341,10 +354,16 @@ func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
 	}
 
 	if f > floatMax64 {
+		no.mu.Lock()
+		defer no.mu.Unlock()
+
 		wr := utf8.EncodeRune(no.buf, no.Symbols.Infinity)
 		return w.Write(no.buf[:wr])
 	}
 	if f < -floatMax64 {
+		no.mu.Lock()
+		defer no.mu.Unlock()
+
 		wr := utf8.EncodeRune(no.buf, no.Symbols.MinusSign)
 		wr += utf8.EncodeRune(no.buf[wr:], no.Symbols.Infinity)
 		no.buf = no.buf[:numberBufferSize]

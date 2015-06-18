@@ -18,6 +18,9 @@ import (
 	"bytes"
 	"testing"
 
+	"runtime"
+	"sync"
+
 	"github.com/corestoreio/csfw/i18n"
 	"github.com/stretchr/testify/assert"
 )
@@ -91,5 +94,55 @@ func TestFmtCurrency(t *testing.T) {
 
 			assert.EqualValues(t, test.want, have, "%v", test)
 		}
+	}
+}
+
+func TestFmtCurrencyParallel(t *testing.T) {
+	queue := make(chan fmtNumberData)
+	ncpu := runtime.NumCPU()
+	prevCPU := runtime.GOMAXPROCS(ncpu)
+	defer runtime.GOMAXPROCS(prevCPU)
+	wg := new(sync.WaitGroup)
+
+	haveNumber := i18n.NewCurrency(
+		i18n.CurrencyFormat("#,##0.000 ¤", testDefaultNumberSymbols),
+		i18n.CurrencyFraction(3, 0, 0, 0),
+	)
+
+	// spawn workers
+	for i := 0; i < ncpu; i++ {
+		wg.Add(1)
+		go testCurrencyWorker(t, haveNumber, i, queue, wg)
+	}
+
+	// master: give work
+	for _, test := range genParallelTests(" \U0001f4b0") {
+		queue <- test
+	}
+	close(queue)
+	wg.Wait()
+}
+
+func testCurrencyWorker(t *testing.T, cf i18n.CurrencyFormatter, id int, queue chan fmtNumberData, wg *sync.WaitGroup) {
+	defer wg.Done()
+	var buf bytes.Buffer
+	for {
+		test, ok := <-queue
+		if !ok {
+			//t.Logf("Worker ID %d stopped", id)
+			return
+		}
+
+		_, err := cf.FmtCurrency(&buf, test.sign, test.i, test.dec)
+		have := buf.String()
+		if test.wantErr != nil {
+			assert.Error(t, err, "Worker %d => %v", id, test)
+			assert.EqualError(t, err, test.wantErr.Error(), "Worker %d => %v", id, test)
+		} else {
+			assert.NoError(t, err, "Worker %d => %v", id, test)
+			assert.EqualValues(t, test.want, have, "Worker %d => %v", id, test)
+		}
+		buf.Reset()
+		//t.Logf("Worker %d run test: %v\n", id, test)
 	}
 }

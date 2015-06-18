@@ -19,6 +19,8 @@ import (
 
 	"bytes"
 
+	"sync"
+
 	"github.com/corestoreio/csfw/utils/log"
 	"golang.org/x/text/language"
 )
@@ -60,7 +62,8 @@ type (
 		// Maybe one day that will get extended in text/language package ...
 		ISO language.Currency
 		sgn []byte // € or USD or ...
-		buf buf    // @todo check for a possible race condition
+		buf buf
+		mu  sync.RWMutex
 	}
 
 	// CurrencyFractions element contains any number of info elements.
@@ -189,20 +192,27 @@ func NewCurrency(opts ...CurrencyOptFunc) *Currency {
 }
 
 // COptions applies currency options and returns a Currency pointer
+// Thread safe.
 func (c *Currency) COptions(opts ...CurrencyOptFunc) *Currency {
+	c.mu.Lock()
 	for _, o := range opts {
 		if o != nil {
 			o(c)
 		}
 	}
+	c.mu.Unlock()
 	return c
 }
 
 // FmtCurrency formats a number according to the currency format.
 // Internal rounding will be applied.
 // Returns the number bytes written or an error.
+// Thread safe.
 func (c *Currency) FmtCurrency(w io.Writer, sign int, i, dec int64) (int, error) {
-	for i := range c.buf[:currencyBufferSize] {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	for i := range c.buf {
 		c.buf[i] = 0 // clear buffer
 	}
 	c.buf = c.buf[:0]
