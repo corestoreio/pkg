@@ -252,44 +252,67 @@ func TestNumberGetFormat(t *testing.T) {
 	assert.EqualValues(t, "Parsed \ttrue\nPattern\t· (#,##0.00) °\nPrec.  \t2\nPlus\t_\x00_\nMinus  \t_\x00_\nDecimal\t_._\nGroup \t_,_\nPrefix \t_· (_\nSuffix \t_) °_\n", nf.String())
 }
 
-//var benchmarkFmtNumber string
-//
-//// BenchmarkFmtNumber_UnCached	 1000000	      1875 ns/op	     520 B/op	      17 allocs/op
-//func BenchmarkFmtNumber_UnCached(b *testing.B) {
-//	b.ReportAllocs()
-//	for i := 0; i < b.N; i++ {
-//
-//		haveNumber := i18n.NewNumber(
-//			i18n.NumberFormat("#,###.##"),
-//		)
-//		var buf bytes.Buffer
-//		if _, err := haveNumber.FmtNumber(&buf, 1234.567); err != nil {
-//			b.Error(err)
-//		}
-//		have := buf.String()
-//		if have != "1,234.57" {
-//			b.Errorf("Missmatch %s vs 1,234.56", have)
-//		}
-//		benchmarkFmtNumber = have
-//	}
-//}
-//
-//// BenchmarkFmtNumber___Cached	 2000000	       814 ns/op	     160 B/op	       8 allocs/op
-//func BenchmarkFmtNumber___Cached(b *testing.B) {
-//	b.ReportAllocs()
-//	haveNumber := i18n.NewNumber(
-//		i18n.NumberFormat("#,###.##"),
-//	)
-//	b.ResetTimer()
-//	for i := 0; i < b.N; i++ {
-//		var buf bytes.Buffer
-//		if _, err := haveNumber.FmtNumber(&buf, 1234.567); err != nil {
-//			b.Error(err)
-//		}
-//		have := buf.String()
-//		if have != "1,234.57" {
-//			b.Errorf("Missmatch %s vs 1,234.56", have)
-//		}
-//		benchmarkFmtNumber = have
-//	}
-//}
+var benchmarkFmtNumber string
+
+// BenchmarkFmtNumber_UnCached_Pos	  500000	      3393 ns/op	    1128 B/op	      28 allocs/op
+func BenchmarkFmtNumber_UnCached_Pos(b *testing.B) {
+	bmFmtNumber_UnCached(b, "#,###.##", "1,234.57", 1, 1234, 567)
+}
+
+// BenchmarkFmtNumber_UnCached_Neg	  500000	      4031 ns/op	    1256 B/op	      32 allocs/op
+func BenchmarkFmtNumber_UnCached_Neg(b *testing.B) {
+	bmFmtNumber_UnCached(b, "#,##0.00;(#,##0.00)", "(1,234.57)", -1, -1234, 567)
+}
+
+func bmFmtNumber_UnCached(b *testing.B, format, want string, sign int, intgr, dec int64) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		haveNumber := i18n.NewNumber(
+			i18n.NumberFormat(format, testDefaultNumberSymbols),
+		)
+		var buf bytes.Buffer
+		if _, err := haveNumber.FmtNumber(&buf, sign, intgr, dec); err != nil {
+			b.Error(err)
+		}
+		have := buf.String()
+		if have != want {
+			b.Errorf("Missmatch %s vs %s", have, want)
+		}
+		benchmarkFmtNumber = have
+	}
+}
+
+// BenchmarkFmtNumber___Cached_Pos	 3000000	       559 ns/op	      24 B/op	       5 allocs/op
+func BenchmarkFmtNumber___Cached_Pos(b *testing.B) {
+	bmFmtNumber_Cached(b, "#,###.##", "1,234.57", 1, 1234, 567)
+}
+
+// BenchmarkFmtNumber___Cached_Int	 3000000	       407 ns/op	      21 B/op	       4 allocs/op
+func BenchmarkFmtNumber___Cached_Int(b *testing.B) {
+	bmFmtNumber_Cached(b, "#,###.", "1,234", 1, 1234, 0)
+}
+
+// BenchmarkFmtNumber___Cached_Neg	 3000000	       595 ns/op	      32 B/op	       5 allocs/op
+func BenchmarkFmtNumber___Cached_Neg(b *testing.B) {
+	bmFmtNumber_Cached(b, "#,##0.00;(#,##0.00)", "(1,234.57)", -1, -1234, 567)
+}
+
+func bmFmtNumber_Cached(b *testing.B, format, want string, sign int, intgr, dec int64) {
+	b.ReportAllocs()
+	haveNumber := i18n.NewNumber(
+		i18n.NumberFormat(format, testDefaultNumberSymbols),
+	)
+	var buf bytes.Buffer
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if _, err := haveNumber.FmtNumber(&buf, sign, intgr, dec); err != nil {
+			b.Error(err)
+		}
+		have := buf.String()
+		if have != want {
+			b.Errorf("Missmatch %s vs %s", have, want)
+		}
+		benchmarkFmtNumber = have
+		buf.Reset()
+	}
+}

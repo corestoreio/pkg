@@ -253,7 +253,7 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr, dec int64) (int, error
 
 	// no fractional part, we can leave now
 	if usedFmt.precision == 0 {
-		// this can be further optimized by directly writing to w instead of involving the buffer
+
 		if lp := len(usedFmt.prefix); lp > 0 {
 			no.buf = append(no.buf[:wrote], usedFmt.prefix...)
 			wrote += lp

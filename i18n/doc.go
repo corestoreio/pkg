@@ -58,7 +58,9 @@ To instantiate your custom currency formatter:
 	cf.FmtCurrency(w io.Writer, sign int, i, dec int64) (int, error)
 
 CurrencyFraction: Digits are important when your currency has a different amount
-of decimal places than 2. E.g. Japanese Yen has Digits 0.
+of decimal places as specified in the format. E.g. Japanese Yen has Digits 0
+despite the format is #,##0.00 ¤.
+
 @todo: Rounding refers to the Swedish rounding and are a todo in this i18n package. Use the money.Currency type for Swedish rounding.
 @todo: CashDigits and CashRounding are currently not implemented.
 
