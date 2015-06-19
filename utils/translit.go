@@ -389,6 +389,7 @@ func TranslitURL(str []rune) []rune {
 		}
 	}
 	i := 0
+	// remove multiple dashes
 	for i < len(str) {
 		j := i + 1
 		if str[i] == '-' && j < len(str) && str[j] == '-' { // look ahead
@@ -398,6 +399,7 @@ func TranslitURL(str []rune) []rune {
 		}
 		i++
 	}
+	// trim
 	if len(str) > 0 {
 		if str[0] == '-' {
 			str = str[1:]

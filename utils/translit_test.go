@@ -57,3 +57,18 @@ func TestTranslitURL(t *testing.T) {
 		assert.Equal(t, test.want, string(utils.TranslitURL([]rune(test.have))), "%#v", test)
 	}
 }
+
+var benchmarkTranslitURL string
+
+// Benchmark_TranslitURL	  300000	      3905 ns/op	     688 B/op	       3 allocs/op
+func Benchmark_TranslitURL(b *testing.B) {
+	b.ReportAllocs()
+	want := "weiss-goldmann-gobel-weiss-gothe-goethe-und-gotz"
+	have := []rune("Weiß$ Goldmann: Göbel; Weiss, Göthe, Goethe und Götz")
+	for i := 0; i < b.N; i++ {
+		benchmarkTranslitURL = string(utils.TranslitURL(have))
+		if benchmarkTranslitURL != want {
+			b.Errorf("\nWant: %s\nHave: %s\n", want, benchmarkTranslitURL)
+		}
+	}
+}
