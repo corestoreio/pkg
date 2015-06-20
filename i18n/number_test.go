@@ -376,12 +376,12 @@ func TestNumberGetFormat(t *testing.T) {
 
 var benchmarkFmtNumber string
 
-// BenchmarkFmtNumber_UnCached_Pos	  500000	      3393 ns/op	    1128 B/op	      28 allocs/op
+// BenchmarkFmtNumber_UnCached_Pos	  300000	      5413 ns/op	    1760 B/op	      47 allocs/op
 func BenchmarkFmtNumber_UnCached_Pos(b *testing.B) {
 	bmFmtNumber_UnCached(b, "#,###.##", "1,234.57", 1, 1234, 3, 567)
 }
 
-// BenchmarkFmtNumber_UnCached_Neg	  500000	      4031 ns/op	    1256 B/op	      32 allocs/op
+// BenchmarkFmtNumber_UnCached_Neg	  200000	      7320 ns/op	    1888 B/op	      51 allocs/op
 func BenchmarkFmtNumber_UnCached_Neg(b *testing.B) {
 	bmFmtNumber_UnCached(b, "#,##0.00;(#,##0.00)", "(1,234.57)", -1, -1234, 3, 567)
 }
@@ -404,17 +404,17 @@ func bmFmtNumber_UnCached(b *testing.B, format, want string, sign int, intgr int
 	}
 }
 
-// BenchmarkFmtNumber___Cached_Pos	 3000000	       559 ns/op	      24 B/op	       5 allocs/op
+// BenchmarkFmtNumber___Cached_Pos	 2000000	       722 ns/op	      24 B/op	       5 allocs/op
 func BenchmarkFmtNumber___Cached_Pos(b *testing.B) {
 	bmFmtNumber_Cached(b, "#,###.##", "1,234.57", 1, 1234, 3, 567)
 }
 
-// BenchmarkFmtNumber___Cached_Int	 3000000	       407 ns/op	      21 B/op	       4 allocs/op
+// BenchmarkFmtNumber___Cached_Int	 3000000	       593 ns/op	      21 B/op	       4 allocs/op
 func BenchmarkFmtNumber___Cached_Int(b *testing.B) {
 	bmFmtNumber_Cached(b, "#,###.", "1,234", 1, 1234, 2, 0)
 }
 
-// BenchmarkFmtNumber___Cached_Neg	 3000000	       595 ns/op	      32 B/op	       5 allocs/op
+// BenchmarkFmtNumber___Cached_Neg	 2000000	       722 ns/op	      32 B/op	       5 allocs/op
 func BenchmarkFmtNumber___Cached_Neg(b *testing.B) {
 	bmFmtNumber_Cached(b, "#,##0.00;(#,##0.00)", "(1,234.57)", -1, -1234, 3, 567)
 }
