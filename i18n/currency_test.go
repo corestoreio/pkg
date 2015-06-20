@@ -67,12 +67,13 @@ var testDefCurSym = i18n.Symbols{
 	Nan: []byte(`NaN`),
 }
 
-func TestFmtCurrency1(t *testing.T) {
+func TestFmtCurrency2(t *testing.T) {
 
 	tests := []struct {
 		opts    []i18n.CurrencyOptFunc
 		sign    int
 		i       int64
+		prec    int
 		dec     int64
 		want    string
 		wantErr error
@@ -83,51 +84,67 @@ func TestFmtCurrency1(t *testing.T) {
 				i18n.CurrencyFraction(2, 0, 2, 0), // euro, 2 digits, no rounding
 				i18n.CurrencySign([]byte("€")),
 			},
-			-1, -1234, 6, "-1.234,06 €", nil, // euros with default Symbols
+			-1, -1234, 2, 6, "-1.234,06 €", nil, // euros with default Symbols
 		},
 		{
 			[]i18n.CurrencyOptFunc{i18n.CurrencyFormat("+#,##0.00 ¤"), i18n.CurrencyFraction(2, 0, 2, 0), i18n.CurrencySign([]byte("€"))},
-			0, 1234, 6, "+1.234,06 €", nil,
+			0, 1234, 2, 6, "+1.234,06 €", nil, // number is 1234.06
 		},
 		{
 			[]i18n.CurrencyOptFunc{i18n.CurrencyFormat("#,##0. ¤"), i18n.CurrencyFraction(2, 0, 2, 0), i18n.CurrencySign([]byte("€"))},
-			1, 1234, 6, "1.234,06 €", nil,
+			1, 1234, 2, 6, "1.234,06 €", nil, // number is 1234.06
+		},
+		{
+			[]i18n.CurrencyOptFunc{i18n.CurrencyFormat("#,##0. ¤"), i18n.CurrencyFraction(2, 0, 2, 0), i18n.CurrencySign([]byte("€"))},
+			1, 1234, 3, 6, "1.234,01 €", nil, // number is 1234.006
+		},
+		{
+			[]i18n.CurrencyOptFunc{i18n.CurrencyFormat("#,##0. ¤"), i18n.CurrencyFraction(2, 0, 2, 0), i18n.CurrencySign([]byte("€"))},
+			1, 1234, 3, 345, "1.234,35 €", nil, // number is 1234.345
+		},
+		{
+			[]i18n.CurrencyOptFunc{i18n.CurrencyFormat("#,##0. ¤"), i18n.CurrencyFraction(2, 0, 2, 0), i18n.CurrencySign([]byte("€"))},
+			1, 1234, 3, 45, "1.234,05 €", nil, // number is 1234.045
 		},
 		{
 			[]i18n.CurrencyOptFunc{i18n.CurrencyFormat("#,##0. ¤"), i18n.CurrencyFraction(0, 0, 2, 0), i18n.CurrencySign([]byte("€"))},
-			1, 123456789, 6, "123.456.790 €", nil,
+			1, 123456789, 1, 6, "123.456.790 €", nil, // 123456789.6
+		},
+		{
+			[]i18n.CurrencyOptFunc{i18n.CurrencyFormat("#,##0. ¤"), i18n.CurrencyFraction(0, 0, 2, 0), i18n.CurrencySign([]byte("€"))},
+			1, 123456789, 2, 6, "123.456.789 €", nil, // 123456789.06
 		},
 		{
 			[]i18n.CurrencyOptFunc{i18n.CurrencyFormat("+0.00 ¤"), i18n.CurrencyFraction(2, 0, 2, 0), i18n.CurrencySign([]byte("€"))},
-			-1, 4, 245, "+4,25 €", nil,
+			-1, 4, 3, 245, "+4,25 €", nil, // 4.245
 		},
 		{
 			[]i18n.CurrencyOptFunc{i18n.CurrencyFormat("¤\u00a0#0.00;¤\u00a0-#0.00"), i18n.CurrencyFraction(2, 0, 2, 0), i18n.CurrencySign([]byte("€"))},
-			-1, 4, 245, "€\u00a04,25", nil,
+			-1, 4, 2, 245, "€\u00a04,25", i18n.ErrPrecIsTooShort, // 4.245
 		},
 		{
 			[]i18n.CurrencyOptFunc{i18n.CurrencyFormat("¤\u00a0#0.00;¤\u00a0-#0.00"), i18n.CurrencyFraction(2, 0, 2, 0), i18n.CurrencySign([]byte("€"))},
-			-1, -12345678, 245, "€\u00a0—12345678,25", nil,
+			-1, -12345678, 3, 245, "€\u00a0—12345678,25", nil, // 12345678.245
 		},
 		{
 			[]i18n.CurrencyOptFunc{i18n.CurrencyFormat("¤\u00a0#0.00;¤\u00a0-#0.00"), i18n.CurrencyFraction(-1, -1, -1, -1), i18n.CurrencySign([]byte(""))},
-			-1, -12345678, 245, "\uf8ff\u00a0-12345678", nil,
+			-1, -12345678, 3, 245, "\uf8ff\u00a0-12345678", nil, // 12345678.245
 		},
 		{
 			[]i18n.CurrencyOptFunc{i18n.CurrencyFormat("¤\u00a0#0.00;¤\u00a0-#0.00"), i18n.CurrencyFraction(0, 0, 2, 0), i18n.CurrencySign([]byte(""))},
-			-1, -12345678, 495, "\uf8ff\u00a0-12345679", nil,
+			-1, -12345678, 3, 495, "\uf8ff\u00a0-12345679", nil, // 12345678.495
 		},
 		{
 			[]i18n.CurrencyOptFunc{i18n.CurrencyFormat("#,##0.00¤;(#,##0.00¤)"), i18n.CurrencyFraction(2, 0, 2, 0), i18n.CurrencySign([]byte("C"))},
-			-1, -12345678, 495, "(12.345.678,50C)", nil,
+			-1, -12345678, 3, 495, "(12.345.678,50C)", nil, // 12345678.495
 		},
 		{
 			[]i18n.CurrencyOptFunc{i18n.CurrencyFormat("#,##0.00¤;(#,##0.00¤)"), i18n.CurrencyFraction(2, 0, 2, 0), i18n.CurrencySign([]byte("C"))},
-			0, 0, 495, "", i18n.ErrCannotDetectMinusSign,
+			0, 0, 3, 495, "", i18n.ErrCannotDetectMinusSign, // 0.495
 		},
 		{
 			[]i18n.CurrencyOptFunc{i18n.CurrencyFormat("#,##0.00¤;(#,##0.00¤)"), i18n.CurrencyFraction(2, 0, 2, 0), i18n.CurrencySign([]byte("C"))},
-			-1, 0, 495, "(0,50C)", nil,
+			-1, 0, 3, 495, "(0,50C)", nil, // 0.495
 		},
 		{
 			[]i18n.CurrencyOptFunc{
@@ -135,7 +152,7 @@ func TestFmtCurrency1(t *testing.T) {
 				i18n.CurrencyFraction(0, 0, 0, 0), // japanese yen, no digits no rounding
 				i18n.CurrencySign([]byte("¥JP")),
 			},
-			1, 1234, 456, "1.235 ¥JP", nil, // yen with default symbols
+			1, 1234, 3, 456, "1.235 ¥JP", nil, // yen with default symbols
 		},
 	}
 	var buf bytes.Buffer
@@ -143,7 +160,7 @@ func TestFmtCurrency1(t *testing.T) {
 		haveNumber := i18n.NewCurrency(i18n.CurrencySymbols(testDefCurSym))
 		haveNumber.COptions(test.opts...)
 
-		_, err := haveNumber.FmtCurrency(&buf, test.sign, test.i, test.dec)
+		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.prec, test.dec)
 		have := buf.String()
 		if test.wantErr != nil {
 			assert.Error(t, err)
@@ -157,12 +174,13 @@ func TestFmtCurrency1(t *testing.T) {
 	}
 }
 
-func TestFmtCurrency11(t *testing.T) {
+func TestFmtCurrency3(t *testing.T) {
 	// only to test the default format
 	tests := []struct {
 		opts    []i18n.CurrencyOptFunc
 		sign    int
 		i       int64
+		prec    int
 		dec     int64
 		want    string
 		wantErr error
@@ -173,7 +191,31 @@ func TestFmtCurrency11(t *testing.T) {
 				i18n.CurrencyFraction(2, 0, 2, 0), // euro, 2 digits, no rounding
 				i18n.CurrencySign([]byte("€")),
 			},
-			-1, -1234, 6, "€\u00a0-1.234,06", nil, // euros with default Symbols
+			-1, -1234, 2, 6, "€\u00a0-1.234,06", nil, // euros with default Symbols, -1234.06
+		},
+		{
+			[]i18n.CurrencyOptFunc{
+				i18n.CurrencyFormat("", testDefCurSym),
+				i18n.CurrencyFraction(2, 0, 2, 0), // euro, 2 digits, no rounding
+				i18n.CurrencySign([]byte("€")),
+			},
+			-1, -1234, 3, 6, "€\u00a0-1.234,01", nil, // euros with default Symbols, -1234.006
+		},
+		{
+			[]i18n.CurrencyOptFunc{
+				i18n.CurrencyFormat("", testDefCurSym),
+				i18n.CurrencyFraction(0, 0, 0, 0), // euro, 2 digits, no rounding
+				i18n.CurrencySign([]byte("€")),
+			},
+			1, 1234, 2, 495, "€\u00a0-1.235", i18n.ErrPrecIsTooShort, // euros with default Symbols, -1234.495
+		},
+		{
+			[]i18n.CurrencyOptFunc{
+				i18n.CurrencyFormat("", testDefCurSym),
+				i18n.CurrencyFraction(0, 0, 0, 0), // euro, 2 digits, no rounding
+				i18n.CurrencySign([]byte("€")),
+			},
+			1, 1234, 2, 44, "€\u00a01.234", nil, // euros with default Symbols, -1234.495
 		},
 	}
 
@@ -181,7 +223,7 @@ func TestFmtCurrency11(t *testing.T) {
 	for _, test := range tests {
 		haveNumber := i18n.NewCurrency(test.opts...)
 
-		_, err := haveNumber.FmtCurrency(&buf, test.sign, test.i, test.dec)
+		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.prec, test.dec)
 		have := buf.String()
 		if test.wantErr != nil {
 			assert.Error(t, err)
@@ -231,7 +273,7 @@ func testCurrencyWorker(t *testing.T, cf i18n.CurrencyFormatter, id int, queue c
 			return
 		}
 
-		_, err := cf.FmtCurrency(&buf, test.sign, test.i, test.dec)
+		_, err := cf.FmtNumber(&buf, test.sign, test.i, test.prec, test.dec)
 		have := buf.String()
 		if test.wantErr != nil {
 			assert.Error(t, err, "Worker %d => %v", id, test)

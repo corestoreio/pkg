@@ -26,6 +26,7 @@ import (
 
 	"sync"
 
+	"github.com/corestoreio/csfw/utils"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 )
@@ -52,22 +53,27 @@ const (
 	floatMax64              = math.MaxFloat64 * 0.9999999999
 )
 
-var ErrCannotDetectMinusSign = errors.New("Cannot detect minus sign")
-
-// this is quick ( 2days 8-) ) implementation and needs some refactorings
+var (
+	ErrCannotDetectMinusSign = errors.New("Cannot detect minus sign")
+	ErrPrecIsTooShort        = errors.New("Argument precision does not match with the amount of digits in dec. Prec is too short.")
+)
 
 type (
-	// NumberFormatter knows locale specific format properties about a currency/number
+	// NumberFormatter knows locale specific format properties about a currency/number.
 	NumberFormatter interface {
 		// FmtNumber formats a number according to the number format of the
-		// locale. i and dec represents a floating point
-		// number. Only i can be negative. Dec must always be positive. Sign
+		// locale. i and dec represents a floating point number splitted in their
+		// integer parts. Only i can be negative. Dec must always be positive. Sign
 		// must be either -1 or +1. If sign is 0 the prefix will be guessed
 		// from i. If sign and i are 0 function must return ErrCannotDetectMinusSign.
 		// If sign is incorrect from i, sign will be adjusted to the prefix of i.
-		FmtNumber(w io.Writer, sign int, i, dec int64) (int, error)
+		// Prec specifies the overall precision of dec. E.g. your number is 0.0169
+		// and prec is 4 then dec would be 169. Due to the precision the formatter
+		// does know to add a leading zero. If prec is shorter than the length of
+		// dec then prec will be adjusted to the dec length.
+		FmtNumber(w io.Writer, sign int, i int64, prec int, dec int64) (int, error)
 		// FmtInt formats an integer according to the format pattern.
-		FmtInt(w io.Writer, i int) (int, error)
+		FmtInt64(w io.Writer, i int64) (int, error)
 		// FmtFloat64 formats a float value, does internal maybe incorrect rounding.
 		FmtFloat64(w io.Writer, f float64) (int, error)
 	}
@@ -223,26 +229,26 @@ func (no *Number) GetFormat(isNegative bool) (format, error) {
 	return no.fo, nil
 }
 
-// FmtNumber formats a number according to the number format.
-// Internal rounding will be applied if dec does not fit within the fractals.
-// Returns the number bytes written or an error.
-// Thread safe.
-func (no *Number) FmtNumber(w io.Writer, sign int, intgr, dec int64) (int, error) {
+// FmtNumber formats a number according to the number format. Internal rounding
+// will be applied. Returns the number bytes written or an error. Thread safe.
+// For more details please see the interface documentation.
+func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, dec int64) (int, error) {
 	no.mu.Lock()
 	defer no.mu.Unlock()
+	no.clearBuf()
 
 	// first check the sign
 	switch {
 	case sign == 0 && intgr == 0:
 		return 0, ErrCannotDetectMinusSign
+	case prec < intLen(dec):
+		// check for the correct value for prec. prec cannot be shorter than dec. E.g.:
+		// dec = 324 and prec = 2 triggers the error because length of dec is 3.
+		return 0, ErrPrecIsTooShort
 	case intgr < 0:
 		sign = -1
 	case intgr > 0:
 		sign = 1
-	}
-
-	for i := range no.buf {
-		no.buf[i] = 0 // clear buffer
 	}
 
 	usedFmt, err := no.GetFormat(sign < 0)
@@ -260,7 +266,8 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr, dec int64) (int, error
 		usedFmt.precision = no.frac.Digits
 	}
 
-	dec = usedFmt.decToPrec(dec)
+	dec = usedFmt.adjustDecToPrec(dec, prec)
+
 	if usedFmt.precision == 0 {
 		if sign < 0 {
 			intgr -= dec // round down
@@ -354,14 +361,14 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr, dec int64) (int, error
 	return w.Write(no.buf[:wrote])
 }
 
-// FmtInt formats an integer according to the format pattern.
+// FmtInt64 formats an integer according to the format pattern.
 // Thread safe
-func (no *Number) FmtInt(w io.Writer, i int) (int, error) {
+func (no *Number) FmtInt64(w io.Writer, i int64) (int, error) {
 	sign := 1
 	if i < 0 {
 		sign = -sign
 	}
-	return no.FmtNumber(w, sign, int64(i), 0)
+	return no.FmtNumber(w, sign, int64(i), 0, 0)
 }
 
 // FmtFloat64 formats a float value, does internal maybe incorrect rounding.
@@ -384,6 +391,7 @@ func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
 	if f > floatMax64 {
 		no.mu.Lock()
 		defer no.mu.Unlock()
+		no.clearBuf()
 
 		wr := utf8.EncodeRune(no.buf, no.sym.Infinity)
 		return w.Write(no.buf[:wr])
@@ -391,6 +399,7 @@ func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
 	if f < -floatMax64 {
 		no.mu.Lock()
 		defer no.mu.Unlock()
+		no.clearBuf()
 
 		wr := utf8.EncodeRune(no.buf, no.sym.MinusSign)
 		wr += utf8.EncodeRune(no.buf[wr:], no.sym.Infinity)
@@ -398,24 +407,40 @@ func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
 		return w.Write(no.buf[:wr])
 	}
 
+	if isInt(f) { // check if float is integer value
+		return no.FmtInt64(w, int64(f))
+	}
+
 	usedFmt, err := no.GetFormat(sign < 0)
 	if err != nil {
 		return 0, log.Error("Number=FmtFloat64", "err", err, "format", usedFmt.String())
 	}
 
+	// to test the next lines: http://play.golang.org/p/L0ykFv3G4B
 	precPow10 := math.Pow10(usedFmt.precision)
 
-	// rounds on 0.5, 0.05, 0.005, 0.0005 ... depending on the amount of fractals in the format
-	// intgr, frac := math.Modf(f + (5 / (precPow10 * 10)))
-	intgr, fracf := math.Modf(f)
+	var modf float64
+	if f > 0 {
+		modf = f + (5 / (precPow10 * 10))
+	} else {
+		modf = f - (5 / (precPow10 * 10))
+	}
+	intgr, fracf := math.Modf(modf)
 
-	fracI := int64((fracf * precPow10) + floatRoundingCorrection)
-
-	if fracI < 0 {
-		fracI = -fracI
+	if fracf < 0 {
+		fracf = -fracf
 	}
 
-	return no.FmtNumber(w, sign, int64(intgr), fracI)
+	fracI := int64(utils.Round(fracf*precPow10, 0, usedFmt.precision))
+
+	return no.FmtNumber(w, sign, int64(intgr), intLen(fracI), fracI)
+}
+
+func (no *Number) clearBuf() {
+	no.buf = no.buf[:numberBufferSize]
+	for i := range no.buf {
+		no.buf[i] = 0x0 // clear buffer
+	}
 }
 
 /*
@@ -440,6 +465,10 @@ Examples of format strings, given n = 12345.6789:
 The highest precision allowed is 9 digits after the decimal symbol.
 There is also a version for integer number, RenderInteger(),
 which is convenient for calls within template.
+
+@todo rounding increment in a pattern http://unicode.org/reports/tr35/tr35-numbers.html#Rounding
+@todo support more special chars: http://unicode.org/reports/tr35/tr35-numbers.html#Special_Pattern_Characters
+
 */
 
 // format contains the pattern and acts as a cache
@@ -472,11 +501,22 @@ func (f *format) String() string {
 	)
 }
 
-// decToPrec adapts the fractal value of a float64 number to the precision
+// decToPrec adapts the fractal value of a float64 number to the format precision
 // Rounds the value
-func (f *format) decToPrec(dec int64) int64 {
-	if il := intLen(dec); il > 0 && il > f.precision {
-		il10 := math.Pow10(il)
+func (f *format) adjustDecToPrec(dec int64, prec int) int64 {
+
+	if f.precision > prec && intLen(dec) != prec {
+		// edge case when format has a higher precision than the decimals.
+		// E.G.: format is #,##0.000 and prec=2 and dec=8
+		// the re-calculated dec is then 8*(10^2) = 80 to move
+		// 8 to the second place.
+		dec *= int64(math.Pow10(f.precision - prec))
+	}
+
+	// if the prec is higher than the formatted precision then we have to round
+	// the dec value to fit into the precision of the format.
+	if prec > 0 && prec > f.precision {
+		il10 := math.Pow10(prec)
 		ilf := float64(dec) / il10
 		prec10 := math.Pow10(f.precision)
 		decf := float64((ilf*prec10)+0.55) / prec10 // hmmm that .55 needs to be monitored. everywhere else we have just .5
@@ -569,4 +609,9 @@ func intLen(n int64) int {
 		return 0
 	}
 	return int(math.Floor(math.Log10(float64(n)))) + 1
+}
+
+// isInt checks if float value has no decimals
+func isInt(f float64) bool {
+	return int64(math.Floor(f)) == int64(math.Ceil(f))
 }

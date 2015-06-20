@@ -42,14 +42,9 @@ var _ CurrencyFormatter = (*Currency)(nil)
 type (
 	// CurrencyFormatter knows locale specific properties about a currency/number
 	CurrencyFormatter interface {
-		// FmtCurrency formats a number according to the number format of the
-		// locale. i and dec represents a floating point
-		// number. Only i can be negative. Dec must always be positive. Sign
-		// must be either -1 or +1. If sign is 0 the prefix will be guessed
-		// from i. If sign and i are 0 function must return ErrCannotDetectMinusSign.
-		FmtCurrency(w io.Writer, sign int, i, dec int64) (int, error)
-		// FmtCurrencyFloat64 formats a float value, does internal maybe incorrect rounding.
-		FmtCurrencyFloat64(w io.Writer, f float64) (int, error)
+		// NumberFormatter functions for formatting. Please see interface description
+		// about the contract.
+		NumberFormatter
 		// Sign returns the currency sign. Can be one character or a 3-letter ISO 4217 code.
 		Sign() []byte
 	}
@@ -77,7 +72,7 @@ type (
 		// 1 234,57 € and 1 235 ¥JP. Means for Euro we have 2 digits and
 		// for the Yen 0 digits. Default value is 2.
 		// ⚠ Warning: Digits will override the decimal/fraction part in the
-		// format string, if valid ⚠.
+		// format string, if Digits is > 0 ⚠.
 		Digits int
 		// Rounding increment, in units of 10-digits. The default is 0, which
 		// means no rounding is to be done. Therefore, rounding=0 and rounding=1
@@ -241,52 +236,62 @@ func (c *Currency) COptions(opts ...CurrencyOptFunc) (previous CurrencyOptFunc) 
 	return
 }
 
-// FmtCurrency formats a number according to the currency format.
-// Internal rounding will be applied.
-// Returns the number bytes written or an error.
-// Thread safe.
-func (c *Currency) FmtCurrency(w io.Writer, sign int, i, dec int64) (int, error) {
+// FmtNumber formats a number according to the currency format. Internal rounding
+// will be applied. Returns the number bytes written or an error. Thread safe.
+// For more details please see the interface documentation.
+func (c *Currency) FmtNumber(w io.Writer, sign int, intgr int64, prec int, dec int64) (int, error) {
 	// @todo some minor optimizations in FmtCurrency and FmtCurrencyFloat64
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.clearBuf()
 
-	for i := range c.buf {
-		c.buf[i] = 0 // clear buffer
+	if _, err := c.Number.FmtNumber(&c.buf, sign, intgr, prec, dec); err != nil {
+		return 0, log.Error("Currency=FmtCurrency", "err", err, "buffer", string(c.buf), "sign", sign, "i", intgr, "prec", prec, "dec", dec)
 	}
-	c.buf = c.buf[:0]
+	return c.flushBuf(w)
+}
 
-	if _, err := c.FmtNumber(&c.buf, sign, i, dec); err != nil {
-		return 0, log.Error("Currency=FmtCurrency", "err", err, "buffer", string(c.buf), "sign", sign, "i", i, "dec", dec)
+// FmtInt64 formats an integer according to the currency format pattern.
+// Thread safe
+func (c *Currency) FmtInt64(w io.Writer, i int64) (int, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.clearBuf()
+
+	if _, err := c.Number.FmtInt64(&c.buf, i); err != nil {
+		return 0, log.Error("Currency=FmtInt", "err", err, "buffer", string(c.buf), "int", i)
 	}
-
-	// now replace ¤ with the real symbol or what ever
-	c.buf = bytes.Replace(c.buf, symbolSign, c.sgn, 1)
-
-	return w.Write(c.buf)
+	return c.flushBuf(w)
 }
 
 // FmtCurrencyFloat64 formats a float value, does internal maybe incorrect rounding.
-// Returns the number bytes written or an error.
-// Thread safe.
-func (c *Currency) FmtCurrencyFloat64(w io.Writer, f float64) (int, error) {
+// Returns the number bytes written or an error. Thread safe.
+func (c *Currency) FmtFloat64(w io.Writer, f float64) (int, error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
+	c.clearBuf()
 
-	for i := range c.buf {
-		c.buf[i] = 0 // clear buffer
-	}
-	c.buf = c.buf[:0]
-
-	if _, err := c.FmtFloat64(&c.buf, f); err != nil {
+	if _, err := c.Number.FmtFloat64(&c.buf, f); err != nil {
 		return 0, log.Error("Currency=FmtCurrencyFloat64", "err", err, "buffer", string(c.buf), "float64", f)
 	}
+	return c.flushBuf(w)
+}
 
+// flushBuf replaces the typographical symbol sign with the real sign.
+func (c *Currency) flushBuf(w io.Writer) (int, error) {
 	// now replace ¤ with the real symbol or what ever
 	c.buf = bytes.Replace(c.buf, symbolSign, c.sgn, 1)
-
 	return w.Write(c.buf)
-
 }
 
 // Sign returns the currency sign. Can be one character or a 3-letter ISO 4217 code.
 func (c *Currency) Sign() []byte { return c.sgn }
+
+// clearBuf iterates over the buffer and sets each element to 0 and resizes
+// the buffer to length 0. Must be protected by a mutex.
+func (c *Currency) clearBuf() {
+	for i := range c.buf {
+		c.buf[i] = 0 // clear buffer
+	}
+	c.buf = c.buf[:0]
+}

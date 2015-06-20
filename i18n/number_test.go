@@ -46,77 +46,84 @@ type fmtNumberData struct {
 	format  string
 	sign    int
 	i       int64
+	prec    int
 	dec     int64
 	want    string
 	wantErr error
 }
 
-func TestFmtNumber1(t *testing.T) {
+func TestNumberFmtNumber1(t *testing.T) {
 
 	tests := []fmtNumberData{
-		{"¤ #0.00", -1, -1234, 6, "¤ -1234.06", nil},
-		{"#,##0.00 ¤", 1, 1234, 0, "1,234.00 ¤", nil},
-		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", -1, -1234, 615, "¤\u00a0—1,234.62", nil},
-		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", 1, 1234, 454, "¤\u00a01,234.45", nil},
-		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", -1, -1234, 1234567, "¤\u00a0—1,234.12", nil},
+		{"¤ #0.00", -1, -1234, 2, 6, "¤ -1234.06", nil},
+		{"#,##0.00 ¤", 1, 1234, 0, 0, "1,234.00 ¤", nil},
+		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", -1, -1234, 3, 615, "¤\u00a0—1,234.62", nil},
+		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", 1, 1234, 3, 454, "¤\u00a01,234.45", nil},
+		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", -1, -1234, 7, 1234567, "¤\u00a0—1,234.12", nil},
 
-		{"+#,##0.###", 1, 1234, 560, "+1,234.560", nil},
-		{"", -1, -1234, 56, "-1,234.056", nil},
-		{"", -1, -1234, 6, "-1,234.006", nil},
-		{"", -1, -1234, 76, "-1,234.076", nil},
-		{"", 0, -1234, 6, "-1,234.006", nil},
+		{"+#,##0.###", 1, 1234, 3, 560, "+1,234.560", nil},
+		{"", -1, -1234, 3, 56, "-1,234.056", nil},
+		{"", -1, -1234, 3, 6, "-1,234.006", nil},
+		{"", -1, -1234, 3, 76, "-1,234.076", nil},
+		{"", 0, -1234, 3, 6, "-1,234.006", nil},
+		{"", 0, -1234, 2, 6, "-1,234.060", nil},
+		{"", 0, -1234, 1, 6, "-1,234.006", nil},
 
-		{"#,##0.00;(#,##0.00)", 1, 1234, 56, "1,234.56", nil},
-		{"#,##0.00;(#,##0.00)", -1, -1234, 56, "(1,234.56)", nil},
-		{"#,###.;(#,###.)", 1, 1234, 56, "1,235", nil},
-		{"#,###.;(#,###.)", -1, -1234, 56, "(1,235)", nil},
-		{"#.;(#.)", 1, 1234, 56, "1235", nil},
-		{"#.;(#.)", -1, -1234, 56, "(1235)", nil},
+		{"#,##0.00;(#,##0.00)", 1, 1234, 2, 56, "1,234.56", nil},
+		{"#,##0.00;(#,##0.00)", -1, -1234, 2, 56, "(1,234.56)", nil},
+		{"#,###.;(#,###.)", 1, 1234, 2, 56, "1,235", nil},
+		{"#,###.;(#,###.)", -1, -1234, 2, 56, "(1,235)", nil},
+		{"#.;(#.)", 1, 1234, 2, 56, "1235", nil},
+		{"#.;(#.)", -1, -1234, 2, 56, "(1235)", nil},
 
-		{"#,###.##", 1, 1234, 56, "1,234.56", nil},
-		{"#,###.##", -1, -1234, 56, "-1,234.56", nil},
-		{"#,###.##", -1, -1234, 6, "-1,234.06", nil},
-		{"#,###.##", -1, -987651234, 456, "-987,651,234.46", nil},
-		{"#,###.##", -1, -9876512341, 454, "-9,876,512,341.45", nil},
+		{"#,###.##", 1, 1234, 2, 56, "1,234.56", nil},
+		{"#,###.##", -1, -1234, 2, 56, "-1,234.56", nil},
+		{"#,###.##", -1, -1234, 2, 6, "-1,234.06", nil},
+		{"#,###.##", -1, -987651234, 3, 456, "-987,651,234.46", nil},
+		{"#,###.##", -1, -9876512341, 3, 454, "-9,876,512,341.45", nil},
 
-		{"#,##0.###", 1, 1234, 56, "1,234.056", nil},
-		{"#,##0.###", -1, -1234, 56, "-1,234.056", nil},
-		{"#,##0.###", -1, -1234, 6, "-1,234.006", nil},
-		{"#,##0.###", -1, -1234, 7678, "-1,234.768", nil},
-		{"#,##0.###", -1, -1234, 6, "-1,234.006", nil},
-		{"#,##0.###", -1, -987651234, 456, "-987,651,234.456", nil},
+		{"#,##0.###", 1, 1234, 3, 56, "1,234.056", nil},
+		{"#,##0.###", -1, -1234, 3, 56, "-1,234.056", nil},
+		{"#,##0.###", -1, -1234, 3, 6, "-1,234.006", nil},
+		{"#,##0.###", -1, -1234, 4, 7678, "-1,234.768", nil},
+		{"#,##0.###", -1, -1234, 3, 6, "-1,234.006", nil},
+		{"#,##0.###", -1, -987651234, 3, 456, "-987,651,234.456", nil},
 
-		{"#0.###", 1, 1234, 560, "1234.560", nil},
-		{"#0.###", -1, -1234, 560, "-1234.560", nil},
-		{"#0.###", -1, -1234, 60, "-1234.060", nil},
-		{"#0.###", -1, -1234, 76, "-1234.076", nil},
-		{"#0.###", -1, -1234, 6, "-1234.006", nil},
-		{"#0.###", -1, -987651234, 456, "-987651234.456", nil},
+		{"#0.###", 1, 1234, 3, 560, "1234.560", nil},
+		{"#0.###", -1, -1234, 3, 560, "-1234.560", nil},
+		{"#0.###", -1, -1234, 3, 60, "-1234.060", nil},
+		{"#0.###", -1, -1234, 4, 60, "-1234.006", nil},
+		{"#0.###", -1, -1234, 3, 76, "-1234.076", nil},
+		{"#0.###", -1, -1234, 3, 6, "-1234.006", nil},
+		{"#0.###", -1, -987651234, 3, 456, "-987651234.456", nil},
 
-		{"#,###.", 1, 1234, 56, "1,235", nil},
-		{"#,###.", -1, -1234, 56, "-1,235", nil},
-		{"#,###.", -1, -1234, 495, "-1,235", nil},
-		{"#,###.", -1, 1234, 495, "1,235", nil},
-		{"#,###.", -1, -1234, 76, "-1,235", nil},
-		{"#,###.", -1, -1234, 6, "-1,235", nil}, // hmmmm
+		{"#,###.", 1, 1234, 2, 56, "1,235", nil},
+		{"#,###.", -1, -1234, 2, 56, "-1,235", nil},
+		{"#,###.", -1, -1234, 3, 495, "-1,235", nil},
+		{"#,###.", -1, 1234, 3, 495, "1,235", nil},
+		{"#,###.", -1, -1234, 2, 76, "-1,235", nil},
+		{"#,###.", -1, -1234, 2, 6, "-1,234", nil},
+		{"#,###.", -1, -1234, 2, 45, "-1,235", nil},  // should we round down here?
+		{"#,###.", -1, -1234, 3, 445, "-1,234", nil}, // should we round up here?
+		{"#,###.", -1, -1234, 2, 44, "-1,234", nil},
 
 		// invalid, because . is missing
-		{"#,###", 1, 2234, 56, "2,235", nil},
-		{"#,###", 1, 22, 56, "23", nil},
-		{"+#,###", 1, 22, 0, "+22", nil},
+		{"#,###", 1, 2234, 2, 56, "2,235", nil},
+		{"#,###", 1, 22, 2, 56, "23", nil},
+		{"+#,###", 1, 22, 2, 0, "+22", nil},
 
 		// invalid because . and , switched
-		{"#.###,######", 1, 1234, 567891, "1,234.0000567891", nil},
+		{"#.###,######", 1, 1234, 6, 567891, "1,234.0000567891", nil},
 
 		// invalid
-		{"#\U0001f4b0###.##", 1, 1234, 56, "1234.56\U0001f4b0", nil},
-		{"#\U0001f4b0###.##", -1, -1234, 56, "-1234.56\U0001f4b0", nil},
+		{"#\U0001f4b0###.##", 1, 1234, 2, 56, "1234.56\U0001f4b0", nil},
+		{"#\U0001f4b0###.##", -1, -1234, 2, 56, "-1234.56\U0001f4b0", nil},
 
-		{"+#,###.###", 1, 1234, 567891, "+1,234.568", nil},
+		{"+#,###.###", 1, 1234, 6, 567891, "+1,234.568", nil},
 
 		//		{"#,###.###", math.NaN(), "NaN", nil},
-		{"#,###0.###", 0, 0, 6, "", i18n.ErrCannotDetectMinusSign},
-		{"$%^", 1, 1, 6, "$%^2", nil},
+		{"#,###0.###", 0, 0, 2, 6, "", i18n.ErrCannotDetectMinusSign},
+		{"$%^", 1, 1, 2, 6, "$%^1", nil},
 	}
 
 	// all unique number formats and the last seen language
@@ -129,7 +136,7 @@ func TestFmtNumber1(t *testing.T) {
 			i18n.NumberFormat(test.format, testDefaultNumberSymbols),
 		)
 		var buf bytes.Buffer
-		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.dec)
+		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.prec, test.dec)
 		have := buf.String()
 		if test.wantErr != nil {
 			assert.Error(t, err, "%v", test)
@@ -141,12 +148,13 @@ func TestFmtNumber1(t *testing.T) {
 	}
 }
 
-func TestFmtNumber11(t *testing.T) {
+func TestNumberFmtNumber11(t *testing.T) {
 	// only to test the default format
 	tests := []struct {
 		opts    []i18n.NumberOptFunc
 		sign    int
 		i       int64
+		prec    int
 		dec     int64
 		want    string
 		wantErr error
@@ -156,7 +164,14 @@ func TestFmtNumber11(t *testing.T) {
 				i18n.NumberFormat(""),
 				i18n.NumberSymbols(testDefCurSym),
 			},
-			-1, -1234, 6, "-1,234.006", nil, // euros with default Symbols
+			-1, -1234, 3, 6, "-1,234.006", nil, // euros with default Symbols
+		},
+		{
+			[]i18n.NumberOptFunc{
+				i18n.NumberFormat(""),
+				i18n.NumberSymbols(testDefCurSym),
+			},
+			-1, -1234, 4, 6, "-1,234.001", nil, // euros with default Symbols
 		},
 	}
 
@@ -164,7 +179,7 @@ func TestFmtNumber11(t *testing.T) {
 	for _, test := range tests {
 		haveNumber := i18n.NewNumber(test.opts...)
 
-		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.dec)
+		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.prec, test.dec)
 		have := buf.String()
 		if test.wantErr != nil {
 			assert.Error(t, err)
@@ -183,19 +198,19 @@ func genParallelTests(suffix string) []fmtNumberData {
 
 	for i := 0; i < 500; i++ {
 		// format is: "#,##0.###"
-		tests = append(tests, fmtNumberData{"", 1, 1234, 56, "1,234.056" + suffix, nil})
-		tests = append(tests, fmtNumberData{"", -1, -1234, 56, "-1,234.056" + suffix, nil})
-		tests = append(tests, fmtNumberData{"", -1, -1234, 6, "-1,234.006" + suffix, nil})
-		tests = append(tests, fmtNumberData{"", -1, -1234, 7678, "-1,234.768" + suffix, nil})
-		tests = append(tests, fmtNumberData{"", -1, -1234, 6, "-1,234.006" + suffix, nil})
-		tests = append(tests, fmtNumberData{"", -1, -987651234, 456, "-987,651,234.456" + suffix, nil})
-		tests = append(tests, fmtNumberData{"", 0, 0, 6, "", i18n.ErrCannotDetectMinusSign})
+		tests = append(tests, fmtNumberData{"", 1, 1234, 2, 56, "1,234.056" + suffix, nil})
+		tests = append(tests, fmtNumberData{"", -1, -1234, 2, 56, "-1,234.056" + suffix, nil})
+		tests = append(tests, fmtNumberData{"", -1, -1234, 2, 6, "-1,234.060" + suffix, nil})
+		tests = append(tests, fmtNumberData{"", -1, -1234, 4, 7678, "-1,234.768" + suffix, nil})
+		tests = append(tests, fmtNumberData{"", -1, -1234, 3, 6, "-1,234.006" + suffix, nil})
+		tests = append(tests, fmtNumberData{"", -1, -987651234, 3, 456, "-987,651,234.456" + suffix, nil})
+		tests = append(tests, fmtNumberData{"", 0, 0, 2, 6, "", i18n.ErrCannotDetectMinusSign})
+		tests = append(tests, fmtNumberData{"", -1, 0, 1, 61, "", i18n.ErrPrecIsTooShort})
 	}
-
 	return tests
 }
 
-func TestFmtNumberParallel(t *testing.T) {
+func TestNumberFmtNumberParallel(t *testing.T) {
 	queue := make(chan fmtNumberData)
 	ncpu := runtime.NumCPU()
 	prevCPU := runtime.GOMAXPROCS(ncpu)
@@ -230,7 +245,7 @@ func testNumberWorker(t *testing.T, nf i18n.NumberFormatter, id int, queue chan 
 		}
 
 		var buf bytes.Buffer
-		_, err := nf.FmtNumber(&buf, test.sign, test.i, test.dec)
+		_, err := nf.FmtNumber(&buf, test.sign, test.i, test.prec, test.dec)
 		have := buf.String()
 		if test.wantErr != nil {
 			assert.Error(t, err, "Worker %d => %v", id, test)
@@ -243,11 +258,11 @@ func testNumberWorker(t *testing.T, nf i18n.NumberFormatter, id int, queue chan 
 	}
 }
 
-func TestFmtInt(t *testing.T) {
+func TestNumberFmtInt(t *testing.T) {
 
 	tests := []struct {
 		format  string
-		i       int
+		i       int64
 		want    string
 		wantErr error
 	}{
@@ -280,7 +295,7 @@ func TestFmtInt(t *testing.T) {
 			i18n.NumberFormat(test.format, testDefaultNumberSymbols),
 		)
 		var buf bytes.Buffer
-		_, err := haveNumber.FmtInt(&buf, test.i)
+		_, err := haveNumber.FmtInt64(&buf, test.i)
 		have := buf.String()
 		if test.wantErr != nil {
 			assert.Error(t, err, "%v", test)
@@ -292,7 +307,7 @@ func TestFmtInt(t *testing.T) {
 	}
 }
 
-func TestFmtFloat64(t *testing.T) {
+func TestNumberFmtFloat64(t *testing.T) {
 
 	tests := []struct {
 		format  string
@@ -300,13 +315,13 @@ func TestFmtFloat64(t *testing.T) {
 		want    string
 		wantErr error
 	}{
-		{"¤ #0.00", -1234.456, "¤ -1234.45", nil},
-		{"#,##0.00 ¤", 1234.4456, "1,234.44 ¤", nil},
+		{"¤ #0.00", -1234.456, "¤ -1234.46", nil},
+		{"#,##0.00 ¤", 1234.4456, "1,234.45 ¤", nil},
 		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", -1234.1234567, "¤\u00a0—1,234.12", nil},
 		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", 1234.1234567, "¤\u00a01,234.12", nil},
 
-		{"+#,##0.###", 1234.1 * 23.4, "+28,877.939", nil},
-		{"", -12.34 * 11.22, "-138.454", nil},
+		{"+#,##0.###", 1234.1 * 23.4, "+28,877.940", nil},
+		{"", -12.34 * 11.22, "-138.455", nil},
 
 		{"#,##0.00;(#,##0.00)", 1234, "1,234.00", nil},
 		{"#,##0.00;(#,##0.00)", -1234, "(1,234.00)", nil},
@@ -316,8 +331,8 @@ func TestFmtFloat64(t *testing.T) {
 		{"#.;(#.)", -1234 * 10, "(12340)", nil},
 
 		{"#,##0.###", 12345.6 * 10, "123,456.000", nil},
-
-		// invalid
+		//
+		//		// invalid
 		{"#\U0001f4b0###.##", 1234, "1234.00\U0001f4b0", nil},
 		{"#\U0001f4b0###.##", -1234, "-1234.00\U0001f4b0", nil},
 
@@ -363,22 +378,22 @@ var benchmarkFmtNumber string
 
 // BenchmarkFmtNumber_UnCached_Pos	  500000	      3393 ns/op	    1128 B/op	      28 allocs/op
 func BenchmarkFmtNumber_UnCached_Pos(b *testing.B) {
-	bmFmtNumber_UnCached(b, "#,###.##", "1,234.57", 1, 1234, 567)
+	bmFmtNumber_UnCached(b, "#,###.##", "1,234.57", 1, 1234, 3, 567)
 }
 
 // BenchmarkFmtNumber_UnCached_Neg	  500000	      4031 ns/op	    1256 B/op	      32 allocs/op
 func BenchmarkFmtNumber_UnCached_Neg(b *testing.B) {
-	bmFmtNumber_UnCached(b, "#,##0.00;(#,##0.00)", "(1,234.57)", -1, -1234, 567)
+	bmFmtNumber_UnCached(b, "#,##0.00;(#,##0.00)", "(1,234.57)", -1, -1234, 3, 567)
 }
 
-func bmFmtNumber_UnCached(b *testing.B, format, want string, sign int, intgr, dec int64) {
+func bmFmtNumber_UnCached(b *testing.B, format, want string, sign int, intgr int64, prec int, dec int64) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		haveNumber := i18n.NewNumber(
 			i18n.NumberFormat(format, testDefaultNumberSymbols),
 		)
 		var buf bytes.Buffer
-		if _, err := haveNumber.FmtNumber(&buf, sign, intgr, dec); err != nil {
+		if _, err := haveNumber.FmtNumber(&buf, sign, intgr, prec, dec); err != nil {
 			b.Error(err)
 		}
 		have := buf.String()
@@ -391,20 +406,20 @@ func bmFmtNumber_UnCached(b *testing.B, format, want string, sign int, intgr, de
 
 // BenchmarkFmtNumber___Cached_Pos	 3000000	       559 ns/op	      24 B/op	       5 allocs/op
 func BenchmarkFmtNumber___Cached_Pos(b *testing.B) {
-	bmFmtNumber_Cached(b, "#,###.##", "1,234.57", 1, 1234, 567)
+	bmFmtNumber_Cached(b, "#,###.##", "1,234.57", 1, 1234, 3, 567)
 }
 
 // BenchmarkFmtNumber___Cached_Int	 3000000	       407 ns/op	      21 B/op	       4 allocs/op
 func BenchmarkFmtNumber___Cached_Int(b *testing.B) {
-	bmFmtNumber_Cached(b, "#,###.", "1,234", 1, 1234, 0)
+	bmFmtNumber_Cached(b, "#,###.", "1,234", 1, 1234, 2, 0)
 }
 
 // BenchmarkFmtNumber___Cached_Neg	 3000000	       595 ns/op	      32 B/op	       5 allocs/op
 func BenchmarkFmtNumber___Cached_Neg(b *testing.B) {
-	bmFmtNumber_Cached(b, "#,##0.00;(#,##0.00)", "(1,234.57)", -1, -1234, 567)
+	bmFmtNumber_Cached(b, "#,##0.00;(#,##0.00)", "(1,234.57)", -1, -1234, 3, 567)
 }
 
-func bmFmtNumber_Cached(b *testing.B, format, want string, sign int, intgr, dec int64) {
+func bmFmtNumber_Cached(b *testing.B, format, want string, sign int, intgr int64, prec int, dec int64) {
 	b.ReportAllocs()
 	haveNumber := i18n.NewNumber(
 		i18n.NumberFormat(format, testDefaultNumberSymbols),
@@ -412,7 +427,7 @@ func bmFmtNumber_Cached(b *testing.B, format, want string, sign int, intgr, dec 
 	var buf bytes.Buffer
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if _, err := haveNumber.FmtNumber(&buf, sign, intgr, dec); err != nil {
+		if _, err := haveNumber.FmtNumber(&buf, sign, intgr, prec, dec); err != nil {
 			b.Error(err)
 		}
 		have := buf.String()
