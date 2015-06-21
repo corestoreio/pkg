@@ -1,0 +1,20 @@
+PASS
+BenchmarkFmtCurrency_Non_Singleton_Pos	  100000	     11726 ns/op	    3473 B/op	     113 allocs/op
+BenchmarkFmtCurrency_Non_Singleton_Neg	  100000	     12623 ns/op	    3601 B/op	     117 allocs/op
+BenchmarkFmtCurrency____Singleton_Pos	 1000000	      1082 ns/op	      48 B/op	       6 allocs/op
+BenchmarkFmtCurrency____Singleton_Int	 1000000	      1064 ns/op	      48 B/op	       7 allocs/op
+BenchmarkFmtCurrency____Singleton_Neg	 1000000	      1105 ns/op	      48 B/op	       6 allocs/op
+BenchmarkFmtCurrencyFloat64_Non_Singleton_Pos	  100000	     12480 ns/op	    3601 B/op	     117 allocs/op
+BenchmarkFmtCurrencyFloat64_Non_Singleton_Neg	  100000	     12828 ns/op	    3601 B/op	     117 allocs/op
+BenchmarkFmtCurrencyFloat64_____Singleton_Pos	 1000000	      1205 ns/op	      48 B/op	       6 allocs/op
+BenchmarkFmtCurrencyFloat64_____Singleton_Neg	 1000000	      1325 ns/op	      48 B/op	       6 allocs/op
+BenchmarkFmtNumber_Non_Singleton_Pos	  300000	      5491 ns/op	    1760 B/op	      47 allocs/op
+BenchmarkFmtNumber_Non_Singleton_Neg	  200000	      6160 ns/op	    1888 B/op	      51 allocs/op
+BenchmarkFmtNumber____Singleton_Pos	 2000000	       678 ns/op	      24 B/op	       5 allocs/op
+BenchmarkFmtNumber____Singleton_Int	 3000000	       571 ns/op	      21 B/op	       4 allocs/op
+BenchmarkFmtNumber____Singleton_Neg	 2000000	       700 ns/op	      32 B/op	       5 allocs/op
+BenchmarkFmtFloat64_Non_Singleton_Pos	  200000	      6308 ns/op	    1880 B/op	      51 allocs/op
+BenchmarkFmtFloat64_Non_Singleton_Neg	  200000	      6359 ns/op	    1888 B/op	      51 allocs/op
+BenchmarkFmtFloat64_____Singleton_Pos	 2000000	       861 ns/op	      24 B/op	       5 allocs/op
+BenchmarkFmtFloat64_____Singleton_Neg	 2000000	      1043 ns/op	      32 B/op	       5 allocs/op
+ok  	github.com/corestoreio/csfw/i18n	29.020s
