@@ -27,6 +27,7 @@ import (
 	"io"
 
 	"github.com/corestoreio/csfw/i18n"
+	"github.com/corestoreio/csfw/utils"
 	"github.com/corestoreio/csfw/utils/log"
 )
 
@@ -73,10 +74,10 @@ type (
 	Currency struct {
 		// m money in Guard/DP
 		m int64
-		// FmtCur to allow language and format specific outputs in a currency format
-		FmtCur i18n.CurrencyFormatter
-		// FmtNum to allow language and format specific outputs in a number format
-		FmtNum i18n.NumberFormatter
+		// fmtCur to allow language and format specific outputs in a currency format
+		fmtCur i18n.CurrencyFormatter
+		// fmtNum to allow language and format specific outputs in a number format
+		fmtNum i18n.NumberFormatter
 		// Valid if false the internal value is NULL
 		Valid bool
 		// Interval defines how the swedish rounding can be applied.
@@ -95,6 +96,38 @@ type (
 	// OptionFunc used to apply options to the Currency struct
 	OptionFunc func(*Currency) OptionFunc
 )
+
+// FormatCurrency to allow language and format specific outputs in a currency format
+func FormatCurrency(cf i18n.CurrencyFormatter) OptionFunc {
+	// @todo later idea for those two Format* functions
+	// maintain an internal cache of formatters and let the user only pass
+	// the option functions from the i18n package. rethink that.
+	// Another idea: maintain an internal cache depending on the store ID.
+	// Another idea: opts ...i18n.CurrencyOptFunc as 2nd parameter, if first is
+	//				 nil and 2nd has been provided, copy DefaultFormatterCurrency
+	//				 to a new instance and apply those options.
+	//				 create a Clone function for i18n formatter ...
+	if cf == nil {
+		cf = DefaultFormatterCurrency
+	}
+	return func(c *Currency) OptionFunc {
+		previous := c.fmtCur
+		c.fmtCur = cf
+		return FormatCurrency(previous)
+	}
+}
+
+// FormatNumber to allow language and format specific outputs in a number format
+func FormatNumber(nf i18n.NumberFormatter) OptionFunc {
+	if nf == nil {
+		nf = DefaultFormatterNumber
+	}
+	return func(c *Currency) OptionFunc {
+		previous := c.fmtNum
+		c.fmtNum = nf
+		return FormatNumber(previous)
+	}
+}
 
 // Swedish sets the Swedish rounding
 // http://en.wikipedia.org/wiki/Swedish_rounding
@@ -120,6 +153,7 @@ func Swedish(i Interval) OptionFunc {
 // 50, numeric values are rounded to the nearest 50.
 // Possible values: 5, 10, 15, 25, 50, 100
 func CashRounding(rounding int) OptionFunc {
+	// somehow that feels like ... not very nice
 	i := Interval000
 	switch rounding {
 	case 5:
@@ -227,8 +261,8 @@ func New(opts ...OptionFunc) Currency {
 		dp:     dp,
 		dpf:    dpf,
 		prec:   decimals(dp),
-		FmtCur: DefaultFormatterCurrency,
-		FmtNum: DefaultFormatterNumber,
+		fmtCur: DefaultFormatterCurrency,
+		fmtNum: DefaultFormatterNumber,
 		jm:     DefaultJSONEncode,
 		jum:    DefaultJSONDecode,
 	}
@@ -272,7 +306,7 @@ func (c Currency) Dec() int64 {
 	return c.Abs().Raw() % c.dp
 }
 
-// Raw returns in int64 the value of Currency (also see Gett(), See Get() for float64)
+// Raw returns in int64 the value of Currency (also see Geti(), See Getf() for float64)
 func (c Currency) Raw() int64 {
 	return c.m
 }
@@ -292,7 +326,11 @@ func (c Currency) Setf(f float64) Currency {
 	return c.Set(rnd(r, fDPf-float64(r)))
 }
 
-// Sign returns the Sign of Currency 1 if positive, -1 if negative
+// Sign returns:
+//
+//	-1 if x <  0
+//	+1 if x >=  0
+//
 func (c Currency) Sign() int {
 	if c.m < 0 {
 		return -1
@@ -315,7 +353,7 @@ func (c Currency) Localize() ([]byte, error) {
 // LocalizeWriter for money type representation in a specific locale.
 // Returns the number bytes written or an error.
 func (c Currency) LocalizeWriter(w io.Writer) (int, error) {
-	return c.FmtCur.FmtCurrency(w, c.Sign(), c.Geti(), c.Dec())
+	return c.fmtCur.FmtNumber(w, c.Sign(), c.Geti(), c.Precision(), c.Dec())
 }
 
 // String for money type representation in a specific locale.
@@ -341,7 +379,7 @@ func (c Currency) Number() ([]byte, error) {
 // NumberWriter prints the currency as a locale specific formatted number.
 // Returns the number bytes written or an error.
 func (c Currency) NumberWriter(w io.Writer) (int, error) {
-	return c.FmtNum.FmtNumber(w, c.Sign(), c.Geti(), c.Dec())
+	return c.fmtNum.FmtNumber(w, c.Sign(), c.Geti(), c.Precision(), c.Dec())
 }
 
 // Add adds two Currency types. Returns empty Currency on integer overflow.
@@ -377,7 +415,9 @@ func (c Currency) Sub(d Currency) Currency {
 
 // Mul multiplies two Currency types. Both types must have the same precision.
 func (c Currency) Mul(d Currency) Currency {
-	return c.Set(c.m * d.m / c.dp)
+	// @todo c.m*d.m will overflow int64
+	r := utils.Round(float64(c.m*d.m)/c.dpf, .5, 0)
+	return c.Set(int64(r))
 }
 
 // Div divides one Currency type from another
@@ -410,17 +450,21 @@ func (c Currency) Pow(f float64) Currency {
 // Swedish applies the Swedish rounding. You may set the usual options.
 func (c Currency) Swedish(opts ...OptionFunc) Currency {
 	c.Option(opts...)
+	const (
+		roundOn float64 = .5
+		places  int     = 0
+	)
 	switch c.Interval {
 	case Interval005:
 		// NL, SG, SA, CH, TR, CL, IE
 		// 5 cent rounding
-		return c.Setf(Round(c.Getf()*20) / 20) // base 5
+		return c.Setf(utils.Round(c.Getf()*20, roundOn, places) / 20) // base 5
 	case Interval010:
 		// New Zealand & Hong Kong
 		// 10 cent rounding
 		// In Sweden between 1985 and 1992, prices were rounded up for sales
 		// ending in 5 öre.
-		return c.Setf(Round(c.Getf()*10) / 10)
+		return c.Setf(utils.Round(c.Getf()*10, roundOn, places) / 10)
 	case Interval015:
 		// 10 cent rounding, special case
 		// Special case: In NZ, it is up to the business to decide if they
@@ -429,10 +473,10 @@ func (c Currency) Swedish(opts ...OptionFunc) Currency {
 		if c.m%5 == 0 {
 			c.m = c.m - 1
 		}
-		return c.Setf(Round(c.Getf()*10) / 10)
+		return c.Setf(utils.Round(c.Getf()*10, roundOn, places) / 10)
 	case Interval025:
 		// round to quarter
-		return c.Setf(Round(c.Getf()*4) / 4)
+		return c.Setf(utils.Round(c.Getf()*4, roundOn, places) / 4)
 	case Interval050:
 		// 50 cent rounding
 		// The system used in Sweden from 1992 to 2010, in Norway from 1993 to 2012,
@@ -441,12 +485,12 @@ func (c Currency) Swedish(opts ...OptionFunc) Currency {
 		// Sales ending in 25–49 öre round up to 50 öre.
 		// Sales ending in 51–74 öre round down to 50 öre.
 		// Sales ending in 75–99 öre round up to the next whole Krone/krona.
-		return c.Setf(Round(c.Getf()*2) / 2)
+		return c.Setf(utils.Round(c.Getf()*2, roundOn, places) / 2)
 	case Interval100:
 		// The system used in Sweden since 30 September 2010 and used in Norway since 1 May 2012.
 		// Sales ending in 1–49 öre/øre round down to 0 öre/øre.
 		// Sales ending in 50–99 öre/øre round up to the next whole krona/krone.
-		return c.Setf(Round(c.Getf()*1) / 1) // ;-)
+		return c.Setf(utils.Round(c.Getf()*1, roundOn, places) / 1) // ;-)
 	}
 	return c
 }
@@ -467,12 +511,6 @@ func rnd(r int64, trunc float64) int64 {
 	}
 	//fmt.Printf("RND 2 r = % v, trunc = %v RoundTo = %v\n", r, trunc, RoundTo)
 	return r
-}
-
-// Round rounds a value.
-func Round(f float64) float64 {
-	// @todo check out to round negative numbers https://gist.github.com/pelegm/c48cff315cd223f7cf7b
-	return math.Floor(f + .5)
 }
 
 // decimals returns the length of the 10^n calculation, ignoring the leading 1.

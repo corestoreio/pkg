@@ -20,7 +20,32 @@ import (
 	"math"
 
 	"github.com/SchumacherFM/OnixParser/Godeps/_workspace/src/github.com/stretchr/testify/assert"
+	"github.com/corestoreio/csfw/i18n"
 	"github.com/corestoreio/csfw/storage/money"
+)
+
+var testDefaultSymbols = i18n.Symbols{
+	Decimal:                '.',
+	Group:                  0,
+	List:                   ';',
+	PercentSign:            '%',
+	CurrencySign:           '¤',
+	PlusSign:               '+',
+	MinusSign:              '-',
+	Exponential:            'E',
+	SuperscriptingExponent: '×',
+	PerMille:               '‰',
+	Infinity:               '∞',
+	Nan:                    []byte(`NaN`),
+}
+
+var testFmtCur = i18n.NewCurrency(
+	i18n.CurrencyFormat("¤ #,##0.00"),
+	i18n.CurrencySymbols(testDefaultSymbols),
+)
+var testFmtNum = i18n.NewNumber(
+	i18n.NumberFormat("###0.###"),
+	i18n.NumberSymbols(testDefaultSymbols),
 )
 
 func TestAbs(t *testing.T) {
@@ -129,86 +154,92 @@ func TestSign(t *testing.T) {
 }
 
 func TestSwedishNumber(t *testing.T) {
+
 	tests := []struct {
 		prec int
 		iv   money.Interval
 		have int64
 		want string
 	}{
-		{0, money.Interval005, 25689, "25689"},
-		{100, money.Interval005, 25600, "256.00"},
-		{10, money.Interval005, 25689, "2568.9"},
-		{100, money.Interval005, 25689, "256.90"},
+		{0, money.Interval005, 25689, "25689.000"},
+		{100, money.Interval005, 25600, "256.000"},
+		{10, money.Interval005, 25689, "2568.900"},
+		{100, money.Interval005, 25689, "256.900"},
 		{1000, money.Interval005, 25689, "25.700"},
-		{100, money.Interval005, 25642, "256.40"},
-		{100, money.Interval005, 25644, "256.45"},
+		{100, money.Interval005, 25642, "256.400"},
+		{100, money.Interval005, 25644, "256.450"},
 
-		{0, money.Interval010, 25689, "25689"},
-		{10, money.Interval010, 25689, "2568.9"},
-		{100, money.Interval010, 25689, "256.90"},
+		{0, money.Interval010, 25689, "25689.000"},
+		{10, money.Interval010, 25689, "2568.900"},
+		{100, money.Interval010, 25689, "256.900"},
 		{1000, money.Interval010, 25689, "25.700"},
-		{100, money.Interval010, 25642, "256.40"},
-		{100, money.Interval010, 25644, "256.40"},
-		{100, money.Interval010, 25639, "256.40"},
-		{100, money.Interval010, 25635, "256.40"},
-		{100, money.Interval010, 25634, "256.30"},
-		{100, money.Interval010, 256345, "2563.50"},
+		{100, money.Interval010, 25642, "256.400"},
+		{100, money.Interval010, 25644, "256.400"},
+		{100, money.Interval010, 25639, "256.400"},
+		{100, money.Interval010, 25635, "256.400"},
+		{100, money.Interval010, 25634, "256.300"},
+		{100, money.Interval010, 256345, "2563.500"},
 
-		{0, money.Interval015, 25689, "25689"},
-		{10, money.Interval015, 25689, "2568.9"},
-		{10, money.Interval015, 25685, "2568.4"},
-		{100, money.Interval015, 25689, "256.90"},
+		{0, money.Interval015, 25689, "25689.000"},
+		{10, money.Interval015, 25689, "2568.900"},
+		{10, money.Interval015, 25685, "2568.400"},
+		{100, money.Interval015, 25689, "256.900"},
 		{1000, money.Interval015, 25689, "25.700"},
-		{100, money.Interval015, 25642, "256.40"},
-		{100, money.Interval015, 25644, "256.40"},
-		{100, money.Interval015, 25639, "256.40"},
-		{100, money.Interval015, 25635, "256.30"},
-		{100, money.Interval015, 25636, "256.40"},
-		{100, money.Interval015, 25634, "256.30"},
-		{100, money.Interval015, 256345, "2563.40"},
+		{100, money.Interval015, 25642, "256.400"},
+		{100, money.Interval015, 25644, "256.400"},
+		{100, money.Interval015, 25639, "256.400"},
+		{100, money.Interval015, 25635, "256.300"},
+		{100, money.Interval015, 25636, "256.400"},
+		{100, money.Interval015, 25634, "256.300"},
+		{100, money.Interval015, 256345, "2563.400"},
 
-		{0, money.Interval025, 25689, "25689"},
-		{10, money.Interval025, 25689, "2569.0"},
-		{10, money.Interval025, 25685, "2568.5"},
-		{100, money.Interval025, 25689, "257.00"},
+		{0, money.Interval025, 25689, "25689.000"},
+		{10, money.Interval025, 25689, "2569.000"},
+		{10, money.Interval025, 25685, "2568.500"},
+		{100, money.Interval025, 25689, "257.000"},
 		{1000, money.Interval025, 25689, "25.750"},
-		{100, money.Interval025, 25642, "256.50"},
-		{100, money.Interval025, 25644, "256.50"},
-		{100, money.Interval025, 25639, "256.50"},
-		{100, money.Interval025, 25624, "256.25"},
-		{100, money.Interval025, 25625, "256.25"},
-		{100, money.Interval025, 25634, "256.25"},
-		{100, money.Interval025, 256345, "2563.50"},
+		{100, money.Interval025, 25642, "256.500"},
+		{100, money.Interval025, 25644, "256.500"},
+		{100, money.Interval025, 25639, "256.500"},
+		{100, money.Interval025, 25624, "256.250"},
+		{100, money.Interval025, 25625, "256.250"},
+		{100, money.Interval025, 25634, "256.250"},
+		{100, money.Interval025, 256345, "2563.500"},
 
-		{0, money.Interval050, 25689, "25689"},
-		{10, money.Interval050, 25689, "2569.0"},
-		{10, money.Interval050, 25685, "2568.5"},
-		{100, money.Interval050, 25689, "257.00"},
+		{0, money.Interval050, 25689, "25689.000"},
+		{10, money.Interval050, 25689, "2569.000"},
+		{10, money.Interval050, 25685, "2568.500"},
+		{100, money.Interval050, 25689, "257.000"},
 		{1000, money.Interval050, 25689, "25.500"},
-		{100, money.Interval050, 25642, "256.50"},
-		{100, money.Interval050, 25644, "256.50"},
-		{100, money.Interval050, 25639, "256.50"},
-		{100, money.Interval050, 25624, "256.00"},
-		{100, money.Interval050, 25625, "256.50"},
-		{100, money.Interval050, 25634, "256.50"},
-		{100, money.Interval050, 256345, "2563.50"},
+		{100, money.Interval050, 25642, "256.500"},
+		{100, money.Interval050, 25644, "256.500"},
+		{100, money.Interval050, 25639, "256.500"},
+		{100, money.Interval050, 25624, "256.000"},
+		{100, money.Interval050, 25625, "256.500"},
+		{100, money.Interval050, 25634, "256.500"},
+		{100, money.Interval050, 256345, "2563.500"},
 
-		{0, money.Interval100, 25689, "25689"},
-		{10, money.Interval100, 25689, "2569.0"},
-		{10, money.Interval100, 25685, "2569.0"},
-		{10, money.Interval100, 25684, "2568.0"},
-		{100, money.Interval100, 25689, "257.00"},
+		{0, money.Interval100, 25689, "25689.000"},
+		{10, money.Interval100, 25689, "2569.000"},
+		{10, money.Interval100, 25685, "2569.000"},
+		{10, money.Interval100, 25684, "2568.000"},
+		{100, money.Interval100, 25689, "257.000"},
 		{1000, money.Interval100, 25689, "26.000"},
-		{100, money.Interval100, 25642, "256.00"},
-		{100, money.Interval100, 25644, "256.00"},
-		{100, money.Interval100, 25639, "256.00"},
-		{100, money.Interval100, 25624, "256.00"},
-		{100, money.Interval100, 25625, "256.00"},
-		{100, money.Interval100, 25634, "256.00"},
-		{100, money.Interval100, 256345, "2563.00"},
+		{100, money.Interval100, 25642, "256.000"},
+		{100, money.Interval100, 25644, "256.000"},
+		{100, money.Interval100, 25639, "256.000"},
+		{100, money.Interval100, 25624, "256.000"},
+		{100, money.Interval100, 25625, "256.000"},
+		{100, money.Interval100, 25634, "256.000"},
+		{100, money.Interval100, 256345, "2563.000"},
 	}
 	for _, test := range tests {
-		c := money.New(money.Precision(test.prec)).Set(test.have)
+		c := money.New(
+			money.Precision(test.prec),
+			money.FormatCurrency(testFmtCur),
+			money.FormatNumber(testFmtNum),
+		).Set(test.have)
+
 		haveB, err := c.Swedish(money.Swedish(test.iv)).Number()
 		assert.NoError(t, err, "%v", test)
 		have := string(haveB)
@@ -270,23 +301,29 @@ func TestMulNumber(t *testing.T) {
 		have2 int64
 		want  string
 	}{
-		{0, 1300, 1300, "1690000"},
-		{100, 1300, 1300, "169.00"},
+		{0, 1300, 1300, "1690000.000"},
+		{100, 1300, 1300, "169.000"},
 		{1000, 18100, 18100, "327.610"},
-		{100, 1319, 1488, "196.26"},
-		{1000, 1319, 1488, "1.962"},
-		{100, 13, -13, "-0.01"},
-		{100, 1300, -1300, "-169.00"},
+		{100, 1319, 1488, "196.270"},
+		{1000, 1319, 1488, "1.963"},
+		{100, 13, -13, "-0.020"},
+		{100, 1300, -1300, "-169.000"},
 		{1000, 1300, -1300, "-1.690"},
-		{100, 13, 13, "0.01"},
-		{100, 45628734653, -45628734653, "250065429529630.21"}, // overflow ?
-		{100, 45628734653, -456287346, "-237307016244604.93"},
-		{100, math.MaxInt64, 2, "0.00"},
+		{100, 13, 13, "0.020"},
+		{100, 45628734653, -45628734653, "250065429529630.200"}, // overflow of int64 ?
+		{100, 45628734653, -456287346, "-237307016244604.920"},
+		{100, math.MaxInt64, 2, "0.000"},
 	}
 
 	for _, test := range tests {
-		c := money.New(money.Precision(test.prec)).Set(test.have1)
+		c := money.New(
+			money.Precision(test.prec),
+			money.FormatCurrency(testFmtCur),
+			money.FormatNumber(testFmtNum),
+		).Set(test.have1)
+
 		c = c.Mul(money.New(money.Precision(test.prec)).Set(test.have2))
+
 		haveB, err := c.Number()
 		assert.NoError(t, err)
 		have := string(haveB)
@@ -303,18 +340,18 @@ func TestMulf(t *testing.T) {
 		have2 float64
 		want  string
 	}{
-		{100, 1300, 1300.13, "16901.69"},
-		{1000, 18100, 18100.18, "327613.258"},
-		{0, 18100, 18100.18, "327613258"},
-		{0, 18103, 18.307, "331412"}, // rounds up
-		{100, 1319, 1488.88, "19638.33"},
-		{1000, 1319, 1488.88, "1963.833"},
-		{100, 13, -13.13, "-1.71"},
-		{100, 1300, -1300.01, "-16900.13"},
-		{1000, 1300, -1300.01, "-1690.013"},
-		{100, 13, 13.0, "1.69"},
-		{100, 45628734653, -45628734653.0, "-47780798383.28"},
-		{100, math.MaxInt64, 2.01, "92233720368.53"},
+		{100, 1300, 1300.13, "16,901.690"},
+		{1000, 18100, 18100.18, "327,613.258"},
+		{0, 18100, 18100.18, "327,613,258.000"},
+		{0, 18103, 18.307, "331,412.000"}, // rounds up
+		{100, 1319, 1488.88, "19,638.330"},
+		{1000, 1319, 1488.88, "1,963.833"},
+		{100, 13, -13.13, "-1.710"},
+		{100, 1300, -1300.01, "-16,900.130"},
+		{1000, 1300, -1300.01, "-1,690.013"},
+		{100, 13, 13.0, "1.690"},
+		{100, 45628734653, -45628734653.0, "-47,780,798,383.280"},
+		{100, math.MaxInt64, 2.01, "92,233,720,368.530"},
 	}
 
 	for _, test := range tests {
