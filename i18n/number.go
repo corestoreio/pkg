@@ -505,11 +505,13 @@ func (f *format) String() string {
 // Rounds the value
 func (f *format) adjustDecToPrec(dec int64, prec int) int64 {
 
-	if f.precision > prec && intLen(dec) != prec {
-		// edge case when format has a higher precision than the decimals.
-		// E.G.: format is #,##0.000 and prec=2 and dec=8
+	if f.precision > prec {
+		// Moving dec values to the correct precision.
+		// Edge case when format has a higher precision than prec.
+		// E.G.: Format is #,##0.000 and prec=2 and dec=8 (1234.08)
 		// the re-calculated dec is then 8*(10^2) = 80 to move
-		// 8 to the second place.
+		// 8 to the second place. The new number would be then 1234.080 because
+		// the format requires to have 3 decimal digits
 		dec *= int64(math.Pow10(f.precision - prec))
 	}
 
@@ -611,7 +613,8 @@ func intLen(n int64) int {
 	return int(math.Floor(math.Log10(float64(n)))) + 1
 }
 
-// isInt checks if float value has no decimals
+// isInt checks if float value has no decimals. This function should run
+// after checking NaN, minFloat64 and maxFloat64 OR fix it here ;-)
 func isInt(f float64) bool {
 	return int64(math.Floor(f)) == int64(math.Ceil(f))
 }

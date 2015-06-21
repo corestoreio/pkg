@@ -54,7 +54,12 @@ type fmtNumberData struct {
 
 func TestNumberFmtNumber1(t *testing.T) {
 
+	// if Format empty default format displays at the moment: #,##0.### DefaultNumberFormat
+
 	tests := []fmtNumberData{
+		{"¤ #0.00", 1, 1234, 1, 9, "¤ 1234.90", nil},
+		{"###0.###", 1, 1234, 1, 9, "1234.900", nil},
+
 		{"¤ #0.00", -1, -1234, 2, 6, "¤ -1234.06", nil},
 		{"#,##0.00 ¤", 1, 1234, 0, 0, "1,234.00 ¤", nil},
 		{"¤\u00a0#,##0.00;¤\u00a0-#,##0.00", -1, -1234, 3, 615, "¤\u00a0—1,234.62", nil},
@@ -67,7 +72,7 @@ func TestNumberFmtNumber1(t *testing.T) {
 		{"", -1, -1234, 3, 76, "-1,234.076", nil},
 		{"", 0, -1234, 3, 6, "-1,234.006", nil},
 		{"", 0, -1234, 2, 6, "-1,234.060", nil},
-		{"", 0, -1234, 1, 6, "-1,234.006", nil},
+		{"", 0, -1234, 1, 6, "-1,234.600", nil},
 
 		{"#,##0.00;(#,##0.00)", 1, 1234, 2, 56, "1,234.56", nil},
 		{"#,##0.00;(#,##0.00)", -1, -1234, 2, 56, "(1,234.56)", nil},
@@ -113,7 +118,7 @@ func TestNumberFmtNumber1(t *testing.T) {
 		{"+#,###", 1, 22, 2, 0, "+22", nil},
 
 		// invalid because . and , switched
-		{"#.###,######", 1, 1234, 6, 567891, "1,234.0000567891", nil},
+		{"#.###,######", 1, 1234, 6, 567891, "1,234.5678910000", nil},
 
 		// invalid
 		{"#\U0001f4b0###.##", 1, 1234, 2, 56, "1234.56\U0001f4b0", nil},
@@ -148,7 +153,7 @@ func TestNumberFmtNumber1(t *testing.T) {
 	}
 }
 
-func TestNumberFmtNumber11(t *testing.T) {
+func TestNumberFmtNumber2(t *testing.T) {
 	// only to test the default format
 	tests := []struct {
 		opts    []i18n.NumberOptFunc
@@ -198,11 +203,12 @@ func genParallelTests(suffix string) []fmtNumberData {
 
 	for i := 0; i < 500; i++ {
 		// format is: "#,##0.###"
-		tests = append(tests, fmtNumberData{"", 1, 1234, 2, 56, "1,234.056" + suffix, nil})
-		tests = append(tests, fmtNumberData{"", -1, -1234, 2, 56, "-1,234.056" + suffix, nil})
+		tests = append(tests, fmtNumberData{"", 1, 1234, 2, 56, "1,234.560" + suffix, nil})
+		tests = append(tests, fmtNumberData{"", -1, -1234, 2, 56, "-1,234.560" + suffix, nil})
 		tests = append(tests, fmtNumberData{"", -1, -1234, 2, 6, "-1,234.060" + suffix, nil})
 		tests = append(tests, fmtNumberData{"", -1, -1234, 4, 7678, "-1,234.768" + suffix, nil})
-		tests = append(tests, fmtNumberData{"", -1, -1234, 3, 6, "-1,234.006" + suffix, nil})
+		tests = append(tests, fmtNumberData{"", -1, -1234, 3, 9, "-1,234.009" + suffix, nil})
+		tests = append(tests, fmtNumberData{"", -1, -1234, 1, 7, "-1,234.700" + suffix, nil})
 		tests = append(tests, fmtNumberData{"", -1, -987651234, 3, 456, "-987,651,234.456" + suffix, nil})
 		tests = append(tests, fmtNumberData{"", 0, 0, 2, 6, "", i18n.ErrCannotDetectMinusSign})
 		tests = append(tests, fmtNumberData{"", -1, 0, 1, 61, "", i18n.ErrPrecIsTooShort})
