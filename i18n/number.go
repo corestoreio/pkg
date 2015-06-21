@@ -282,19 +282,25 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac i
 	}
 
 	// generate integer part string
-	intStr := strconv.FormatInt(intgr, 10) // maybe convert to byte ...
-	if usedFmt.group > 0 {                 // add thousand separator if required
-		if intgr < 0 {
-			intStr = intStr[1:] // skip the minus sign
+	var intStr string = "0"
+	if intgr != 0 {
+		intStr = strconv.FormatInt(intgr, 10) // maybe convert to byte ...
+		if usedFmt.group > 0 {                // add thousand separator if required
+			if intgr < 0 {
+				intStr = intStr[1:] // skip the minus sign
+			}
+			gc := string(usedFmt.group)
+			for i := len(intStr); i > 3; {
+				i -= 3
+				intStr = intStr[:i] + gc + intStr[i:]
+			}
+			if intgr < 0 {
+				intStr = string(minusSign) + intStr // add minus sign back
+			}
 		}
-		gc := string(usedFmt.group)
-		for i := len(intStr); i > 3; {
-			i -= 3
-			intStr = intStr[:i] + gc + intStr[i:]
-		}
-		if intgr < 0 {
-			intStr = "-" + intStr // add minus sign back
-		}
+	} else if false == usedFmt.isNegative && intgr == 0 && frac != 0 && sign < 0 {
+		// no negative format available, number can be -0.000345 but negative
+		intStr = string(minusSign) + "0" // this minusSign will be replace at the end
 	}
 
 	// no fractional part, we can leave now
