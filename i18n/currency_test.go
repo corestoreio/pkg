@@ -87,6 +87,14 @@ func TestFmtCurrency2(t *testing.T) {
 			-1, -1234, 2, 6, "-1.234,06 €", nil, // euros with default Symbols
 		},
 		{
+			[]i18n.CurrencyOptFunc{
+				i18n.CurrencyFormat("#,##0.00 ¤"),
+				i18n.CurrencyFraction(2, 0, 2, 0), // euro, 2 digits, no rounding
+				i18n.CurrencySign([]byte("€")),
+			},
+			-1, -1234, 1, 6, "-1.234,60 €", nil, // euros with default Symbols
+		},
+		{
 			[]i18n.CurrencyOptFunc{i18n.CurrencyFormat("+#,##0.00 ¤"), i18n.CurrencyFraction(2, 0, 2, 0), i18n.CurrencySign([]byte("€"))},
 			0, 1234, 2, 6, "+1.234,06 €", nil, // number is 1234.06
 		},
@@ -273,7 +281,7 @@ func testCurrencyWorker(t *testing.T, cf i18n.CurrencyFormatter, id int, queue c
 			return
 		}
 
-		_, err := cf.FmtNumber(&buf, test.sign, test.i, test.prec, test.dec)
+		_, err := cf.FmtNumber(&buf, test.sign, test.i, test.prec, test.frac)
 		have := buf.String()
 		if test.wantErr != nil {
 			assert.Error(t, err, "Worker %d => %v", id, test)

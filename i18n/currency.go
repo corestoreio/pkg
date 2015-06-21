@@ -71,7 +71,7 @@ type (
 		// Having a format like #,##0.00 ¤ would result in a French locale
 		// 1 234,57 € and 1 235 ¥JP. Means for Euro we have 2 digits and
 		// for the Yen 0 digits. Default value is 2.
-		// ⚠ Warning: Digits will override the decimal/fraction part in the
+		// ⚠ Warning: Digits will override the fraction part in the
 		// format string, if Digits is > 0 ⚠.
 		Digits int
 		// Rounding increment, in units of 10-digits. The default is 0, which
@@ -239,14 +239,14 @@ func (c *Currency) COptions(opts ...CurrencyOptFunc) (previous CurrencyOptFunc) 
 // FmtNumber formats a number according to the currency format. Internal rounding
 // will be applied. Returns the number bytes written or an error. Thread safe.
 // For more details please see the interface documentation.
-func (c *Currency) FmtNumber(w io.Writer, sign int, intgr int64, prec int, dec int64) (int, error) {
+func (c *Currency) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac int64) (int, error) {
 	// @todo some minor optimizations in FmtCurrency and FmtCurrencyFloat64
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.clearBuf()
 
-	if _, err := c.Number.FmtNumber(&c.buf, sign, intgr, prec, dec); err != nil {
-		return 0, log.Error("Currency=FmtCurrency", "err", err, "buffer", string(c.buf), "sign", sign, "i", intgr, "prec", prec, "dec", dec)
+	if _, err := c.Number.FmtNumber(&c.buf, sign, intgr, prec, frac); err != nil {
+		return 0, log.Error("Currency=FmtCurrency", "err", err, "buffer", string(c.buf), "sign", sign, "i", intgr, "prec", prec, "frac", frac)
 	}
 	return c.flushBuf(w)
 }

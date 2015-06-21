@@ -16,7 +16,15 @@
 Package i18n supports string translations with variable substitution, CLDR pluralization,
 currency, formats, language, regions and timezones.
 
-Format
+Decimals
+
+A decimal number, or just decimal, refers to any number written in decimal
+notation, although it is more commonly used to refer to numbers that have
+a fractional part separated from the integer part with a decimal separator
+(e.g. 11.25) 11 is the integer part, dot the decimal separator and 25 the
+fractional part.
+
+Number Format
 
 A format like #,##0.00;(#,##0.00) consists of two parts. The first required
 part will be used for negative and positive numbers and if there is a second
@@ -64,7 +72,7 @@ despite the format is #,##0.00 ¤.
 @todo: Rounding refers to the Swedish rounding and are a todo in this i18n package. Use the money.Currency type for Swedish rounding.
 @todo: CashDigits and CashRounding are currently not implemented.
 
-Format
+Currency Format
 
 The currency symbol ¤ specifies where the currency sign will be placed.
 

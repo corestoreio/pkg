@@ -47,7 +47,7 @@ type fmtNumberData struct {
 	sign    int
 	i       int64
 	prec    int
-	dec     int64
+	frac    int64
 	want    string
 	wantErr error
 }
@@ -141,7 +141,7 @@ func TestNumberFmtNumber1(t *testing.T) {
 			i18n.NumberFormat(test.format, testDefaultNumberSymbols),
 		)
 		var buf bytes.Buffer
-		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.prec, test.dec)
+		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.prec, test.frac)
 		have := buf.String()
 		if test.wantErr != nil {
 			assert.Error(t, err, "%v", test)
@@ -160,7 +160,7 @@ func TestNumberFmtNumber2(t *testing.T) {
 		sign    int
 		i       int64
 		prec    int
-		dec     int64
+		frac    int64
 		want    string
 		wantErr error
 	}{
@@ -184,7 +184,7 @@ func TestNumberFmtNumber2(t *testing.T) {
 	for _, test := range tests {
 		haveNumber := i18n.NewNumber(test.opts...)
 
-		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.prec, test.dec)
+		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.prec, test.frac)
 		have := buf.String()
 		if test.wantErr != nil {
 			assert.Error(t, err)
@@ -251,7 +251,7 @@ func testNumberWorker(t *testing.T, nf i18n.NumberFormatter, id int, queue chan 
 		}
 
 		var buf bytes.Buffer
-		_, err := nf.FmtNumber(&buf, test.sign, test.i, test.prec, test.dec)
+		_, err := nf.FmtNumber(&buf, test.sign, test.i, test.prec, test.frac)
 		have := buf.String()
 		if test.wantErr != nil {
 			assert.Error(t, err, "Worker %d => %v", id, test)
@@ -392,14 +392,14 @@ func BenchmarkFmtNumber_UnCached_Neg(b *testing.B) {
 	bmFmtNumber_UnCached(b, "#,##0.00;(#,##0.00)", "(1,234.57)", -1, -1234, 3, 567)
 }
 
-func bmFmtNumber_UnCached(b *testing.B, format, want string, sign int, intgr int64, prec int, dec int64) {
+func bmFmtNumber_UnCached(b *testing.B, format, want string, sign int, intgr int64, prec int, frac int64) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		haveNumber := i18n.NewNumber(
 			i18n.NumberFormat(format, testDefaultNumberSymbols),
 		)
 		var buf bytes.Buffer
-		if _, err := haveNumber.FmtNumber(&buf, sign, intgr, prec, dec); err != nil {
+		if _, err := haveNumber.FmtNumber(&buf, sign, intgr, prec, frac); err != nil {
 			b.Error(err)
 		}
 		have := buf.String()
@@ -425,7 +425,7 @@ func BenchmarkFmtNumber___Cached_Neg(b *testing.B) {
 	bmFmtNumber_Cached(b, "#,##0.00;(#,##0.00)", "(1,234.57)", -1, -1234, 3, 567)
 }
 
-func bmFmtNumber_Cached(b *testing.B, format, want string, sign int, intgr int64, prec int, dec int64) {
+func bmFmtNumber_Cached(b *testing.B, format, want string, sign int, intgr int64, prec int, frac int64) {
 	b.ReportAllocs()
 	haveNumber := i18n.NewNumber(
 		i18n.NumberFormat(format, testDefaultNumberSymbols),
@@ -433,7 +433,7 @@ func bmFmtNumber_Cached(b *testing.B, format, want string, sign int, intgr int64
 	var buf bytes.Buffer
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		if _, err := haveNumber.FmtNumber(&buf, sign, intgr, prec, dec); err != nil {
+		if _, err := haveNumber.FmtNumber(&buf, sign, intgr, prec, frac); err != nil {
 			b.Error(err)
 		}
 		have := buf.String()

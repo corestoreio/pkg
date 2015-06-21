@@ -55,23 +55,23 @@ const (
 
 var (
 	ErrCannotDetectMinusSign = errors.New("Cannot detect minus sign")
-	ErrPrecIsTooShort        = errors.New("Argument precision does not match with the amount of digits in dec. Prec is too short.")
+	ErrPrecIsTooShort        = errors.New("Argument precision does not match with the amount of digits in frac. Prec is too short.")
 )
 
 type (
 	// NumberFormatter knows locale specific format properties about a currency/number.
 	NumberFormatter interface {
 		// FmtNumber formats a number according to the number format of the
-		// locale. i and dec represents a floating point number splitted in their
-		// integer parts. Only i can be negative. Dec must always be positive. Sign
+		// locale. i and frac represents a floating point number splitted in their
+		// integer parts. Only i can be negative. Frac must always be positive. Sign
 		// must be either -1 or +1. If sign is 0 the prefix will be guessed
 		// from i. If sign and i are 0 function must return ErrCannotDetectMinusSign.
 		// If sign is incorrect from i, sign will be adjusted to the prefix of i.
-		// Prec specifies the overall precision of dec. E.g. your number is 0.0169
-		// and prec is 4 then dec would be 169. Due to the precision the formatter
+		// Prec specifies the overall precision of frac. E.g. your number is 0.0169
+		// and prec is 4 then frac would be 169. Due to the precision the formatter
 		// does know to add a leading zero. If prec is shorter than the length of
-		// dec then prec will be adjusted to the dec length.
-		FmtNumber(w io.Writer, sign int, i int64, prec int, dec int64) (int, error)
+		// frac then prec will be adjusted to the frac length.
+		FmtNumber(w io.Writer, sign int, i int64, prec int, frac int64) (int, error)
 		// FmtInt formats an integer according to the format pattern.
 		FmtInt64(w io.Writer, i int64) (int, error)
 		// FmtFloat64 formats a float value, does internal maybe incorrect rounding.
@@ -232,7 +232,7 @@ func (no *Number) GetFormat(isNegative bool) (format, error) {
 // FmtNumber formats a number according to the number format. Internal rounding
 // will be applied. Returns the number bytes written or an error. Thread safe.
 // For more details please see the interface documentation.
-func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, dec int64) (int, error) {
+func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac int64) (int, error) {
 	no.mu.Lock()
 	defer no.mu.Unlock()
 	no.clearBuf()
@@ -241,9 +241,9 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, dec in
 	switch {
 	case sign == 0 && intgr == 0:
 		return 0, ErrCannotDetectMinusSign
-	case prec < intLen(dec):
-		// check for the correct value for prec. prec cannot be shorter than dec. E.g.:
-		// dec = 324 and prec = 2 triggers the error because length of dec is 3.
+	case prec < intLen(frac):
+		// check for the correct value for prec. prec cannot be shorter than frac. E.g.:
+		// frac = 324 and prec = 2 triggers the error because length of frac is 3.
 		return 0, ErrPrecIsTooShort
 	case intgr < 0:
 		sign = -1
@@ -266,13 +266,13 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, dec in
 		usedFmt.precision = no.frac.Digits
 	}
 
-	dec = usedFmt.adjustDecToPrec(dec, prec)
+	frac = usedFmt.adjustFracToPrec(frac, prec)
 
 	if usedFmt.precision == 0 {
 		if sign < 0 {
-			intgr -= dec // round down
+			intgr -= frac // round down
 		} else {
-			intgr += dec // round up
+			intgr += frac // round up
 		}
 	}
 
@@ -319,8 +319,8 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, dec in
 		return w.Write(no.buf[:wrote])
 	}
 
-	// generate fractional part, round dec it to large to fit into prec
-	fracStr := strconv.FormatInt(dec, 10)
+	// generate fractional part, round frac it to large to fit into prec
+	fracStr := strconv.FormatInt(frac, 10)
 
 	// may need padding
 	if len(fracStr) < usedFmt.precision {
@@ -501,32 +501,32 @@ func (f *format) String() string {
 	)
 }
 
-// decToPrec adapts the fractal value of a float64 number to the format precision
-// Rounds the value
-func (f *format) adjustDecToPrec(dec int64, prec int) int64 {
+// adjustFracToPrec adapts the fractal value of a float64 number to the format
+// precision. Rounds the value.
+func (f *format) adjustFracToPrec(frac int64, prec int) int64 {
 
 	if f.precision > prec {
-		// Moving dec values to the correct precision.
+		// Moving frac values to the correct precision.
 		// Edge case when format has a higher precision than prec.
-		// E.G.: Format is #,##0.000 and prec=2 and dec=8 (1234.08)
-		// the re-calculated dec is then 8*(10^2) = 80 to move
+		// E.G.: Format is #,##0.000 and prec=2 and frac=8 (1234.08)
+		// the re-calculated frac is then 8*(10^2) = 80 to move
 		// 8 to the second place. The new number would be then 1234.080 because
-		// the format requires to have 3 decimal digits
-		dec *= int64(math.Pow10(f.precision - prec))
+		// the format requires to have 3 fractal digits
+		frac *= int64(math.Pow10(f.precision - prec))
 	}
 
 	// if the prec is higher than the formatted precision then we have to round
-	// the dec value to fit into the precision of the format.
+	// the frac value to fit into the precision of the format.
 	if prec > 0 && prec > f.precision {
 		il10 := math.Pow10(prec)
-		ilf := float64(dec) / il10
+		ilf := float64(frac) / il10
 		prec10 := math.Pow10(f.precision)
-		decf := float64((ilf*prec10)+0.55) / prec10 // hmmm that .55 needs to be monitored. everywhere else we have just .5
-		decf *= prec10
-		decf += floatRoundingCorrection // I'm lovin it 8-)
-		return int64(decf)
+		fracf := float64((ilf*prec10)+0.55) / prec10 // hmmm that .55 needs to be monitored. everywhere else we have just .5
+		fracf *= prec10
+		fracf += floatRoundingCorrection // I'm lovin it 8-)
+		return int64(fracf)
 	}
-	return dec
+	return frac
 }
 
 // Number patterns affect how numbers are interpreted in a localized context.
@@ -613,8 +613,8 @@ func intLen(n int64) int {
 	return int(math.Floor(math.Log10(float64(n)))) + 1
 }
 
-// isInt checks if float value has no decimals. This function should run
-// after checking NaN, minFloat64 and maxFloat64 OR fix it here ;-)
+// isInt checks if float value has not a fractional part. This function should
+// run after checking NaN, minFloat64 and maxFloat64 OR fix it here ;-)
 func isInt(f float64) bool {
 	return int64(math.Floor(f)) == int64(math.Ceil(f))
 }
