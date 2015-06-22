@@ -23,16 +23,15 @@ import (
 
 var benchmarkMoneyScan float64
 
-// Benchmark_MoneyScan	 2000000	       934 ns/op	     280 B/op	      12 allocs/op <-- money.Currency within for loop
-// Benchmark_MoneyScan	10000000	       190 ns/op	       8 B/op	       1 allocs/op <-- money.Currency out of for loop
+// Benchmark_MoneyScan	 3000000	       504 ns/op	     136 B/op	       2 allocs/op
 func Benchmark_MoneyScan(b *testing.B) {
 	var d interface{}
 	d = []byte{0x37, 0x30, 0x35, 0x2e, 0x39, 0x39, 0x33, 0x33}
 	var want float64 = 705.993300
-	var c money.Currency
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
+		var c money.Currency
 		c.Scan(d)
 		benchmarkMoneyScan = c.Getf()
 		if benchmarkMoneyScan != want {

@@ -81,10 +81,10 @@ func (c *Currency) Scan(src interface{}) error {
 		return nil
 	}
 	if c.guard == 0 {
-		c.Option(Guard(guardi))
+		c.guard, c.guardf = guard(gGuardi)
 	}
 	if c.dp == 0 {
-		c.Option(Precision(dpi))
+		c.dp, c.dpf, c.prec = precision(gDPi)
 	}
 
 	if rb, ok := src.([]byte); ok {

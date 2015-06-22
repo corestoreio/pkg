@@ -193,37 +193,43 @@ func CashRounding(rounding int) OptionFunc {
 
 // SetGuard sets the guard
 func Guard(g int) OptionFunc {
+	return func(c *Currency) OptionFunc {
+		previous := int(c.guard)
+		c.guard, c.guardf = guard(g)
+		return Guard(previous)
+	}
+}
+
+// guard generates the guard value. Optimized to reduce allocs
+func guard(g int) (int64, float64) {
 	if g == 0 {
 		g = 1
 	}
-	return func(c *Currency) OptionFunc {
-		previous := int(c.guard)
-		c.guard = int64(g)
-		c.guardf = float64(g)
-		return Guard(previous)
-	}
+	return int64(g), float64(g)
 }
 
 // Precision sets the precision.
 // 2 decimal places => 10^2; 3 decimal places => 10^3; x decimal places => 10^x
 // If not a decimal power then falls back to the default value.
 func Precision(p int) OptionFunc {
+	return func(c *Currency) OptionFunc {
+		previous := int(c.dp)
+		c.dp, c.dpf, c.prec = precision(p)
+		return Precision(previous)
+	}
+}
+
+// precision internal prec generator. Optimized to reduce allocs
+func precision(p int) (int64, float64, int) {
 	p64 := int64(p)
 	l := int64(math.Log(float64(p64)))
 	if p64 != 0 && (l%2) != 0 {
-		p64 = dp
+		p64 = gDP
 	}
-	prec := decimals(p64)
 	if p64 == 0 { // check for division by zero
 		p64 = 1
 	}
-	return func(c *Currency) OptionFunc {
-		previous := int(c.dp)
-		c.dp = p64
-		c.dpf = float64(p64)
-		c.prec = prec // amount of decimal digits
-		return Precision(previous)
-	}
+	return p64, float64(p64), decimals(p64)
 }
 
 // JSONMarshal sets a custom JSON Marshaller. Default is JSONLocale.
@@ -256,11 +262,11 @@ func JSONUnmarshal(um JSONUnmarshaller) OptionFunc {
 // Formatter can be overridden after you have created the new type.
 func New(opts ...OptionFunc) Currency {
 	c := Currency{
-		guard:  guard,
-		guardf: guardf,
-		dp:     dp,
-		dpf:    dpf,
-		prec:   decimals(dp),
+		guard:  gGuard,
+		guardf: gGuardf,
+		dp:     gDP,
+		dpf:    gDPf,
+		prec:   decimals(gDP),
 		fmtCur: DefaultFormatterCurrency,
 		fmtNum: DefaultFormatterNumber,
 		jm:     DefaultJSONEncode,

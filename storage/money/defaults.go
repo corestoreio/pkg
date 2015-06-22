@@ -23,13 +23,14 @@ import (
 )
 
 var (
-	guard   int64   = 10000
-	guardi          = int(guard)
-	guardf  float64 = float64(guard)
-	dp      int64   = 10000
-	dpi             = int(dp)
-	dpf     float64 = float64(dp)
-	swedish         = Interval000
+	// g = global
+	gGuard   int64   = 10000
+	gGuardi          = int(gGuard)
+	gGuardf  float64 = float64(gGuard)
+	gDP      int64   = 10000
+	gDPi             = int(gDP)
+	gDPf             = float64(gDP)
+	gSwedish         = Interval000
 )
 
 // DefaultFormatterCurrency sets the package wide default locale specific currency formatter.
@@ -50,7 +51,7 @@ var DefaultJSONDecode JSONUnmarshaller = NewJSONDecoder()
 // http://en.wikipedia.org/wiki/Swedish_rounding
 func DefaultSwedish(i Interval) {
 	if i < interval999 {
-		swedish = i
+		gSwedish = i
 	} else {
 		log.Error("money=SetSwedishRounding", "err", errors.New("Interval out of scope"), "interval", i)
 	}
@@ -62,9 +63,9 @@ func DefaultGuard(g int64) int64 {
 	if g == 0 {
 		g = 1
 	}
-	guard = g
-	guardf = float64(g)
-	return guard
+	gGuard = g
+	gGuardf = float64(g)
+	return gGuard
 }
 
 // DefaultPrecision sets the global default decimal precision.
@@ -73,9 +74,9 @@ func DefaultGuard(g int64) int64 {
 func DefaultPrecision(p int64) int64 {
 	l := int64(math.Log(float64(p)))
 	if p == 0 || (p != 0 && (l%2) != 0) {
-		p = dp
+		p = gDP
 	}
-	dp = p
-	dpf = float64(p)
-	return dp
+	gDP = p
+	gDPf = float64(p)
+	return gDP
 }

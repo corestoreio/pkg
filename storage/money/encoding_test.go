@@ -109,7 +109,7 @@ func TestScan(t *testing.T) {
 			assert.Contains(t, err.Error(), test.wantErr.Error())
 		} else {
 			assert.NoError(t, err, "%v", test)
-			assert.EqualValues(t, test.want, c.Ftoa(), "%v", test)
+			assert.EqualValues(t, test.want, string(c.Ftoa()), "%v", test)
 		}
 	}
 
