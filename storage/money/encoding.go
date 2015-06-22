@@ -23,6 +23,7 @@ import (
 	"text/template"
 
 	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 )
 
 var (
@@ -73,10 +74,9 @@ func (c *Currency) UnmarshalJSON(b []byte) error {
 }
 
 // Scan scans a value into the Currency struct. Returns an error on data loss.
-// Errors will be logged.
-func (c *Currency) Scan(value interface{}) error {
-	// @todo quick write down without tests so add tests 8-)
-	if value == nil {
+// Errors will be logged. Initial default settings are the guard and precision value.
+func (c *Currency) Scan(src interface{}) error {
+	if src == nil {
 		c.m, c.Valid = 0, false
 		return nil
 	}
@@ -87,23 +87,16 @@ func (c *Currency) Scan(value interface{}) error {
 		c.Option(Precision(dpi))
 	}
 
-	if rb, ok := value.(*sql.RawBytes); ok {
-		f, err := atof64([]byte(*rb))
+	if rb, ok := src.([]byte); ok {
+		f, err := strconv.ParseFloat(string(rb), 64)
 		if err != nil {
-			return log.Error("Currency=Scan", "err", err)
+			return log.Error("Currency=Scan", "err", err, "val", string(rb))
 		}
 		c.Valid = true
-		c.Setf(f)
+		*c = c.Setf(f)
+		return nil
 	}
-	return nil
-}
-
-func atof64(bVal []byte) (f float64, err error) {
-	bVal = bytes.Replace(bVal, colon, nil, -1)
-	//	s := string(bVal)
-	//	s1 := strings.Replace(s, ",", "", -1)
-	f, err = strconv.ParseFloat(string(bVal), 64)
-	return f, err
+	return errgo.Newf("Unsupported Type for value: %#v\nSupported: []byte", src)
 }
 
 // NewJSONEncoder creates a new encoder depending on the type.
@@ -163,11 +156,11 @@ func jsonNumberMarshal(c *Currency) ([]byte, error) {
 
 // jsonNumberUnmarshal decodes a string number into the Currency.
 func jsonNumberUnmarshal(c *Currency, b []byte) error {
-	f, err := atof64(b)
-	if err != nil {
-		return log.Error("JSONNumber=UnmarshalJSON", "err", err, "currency", c, "bytes", b)
-	}
-	c.Setf(f)
+	//	f, err := 1.2, nil //atof64(b)
+	//	if err != nil {
+	//		return log.Error("JSONNumber=UnmarshalJSON", "err", err, "currency", c, "bytes", b)
+	//	}
+	//	c.Setf(f)
 	return nil
 }
 
