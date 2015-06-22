@@ -24,13 +24,9 @@ import (
 
 var (
 	// g = global
-	gGuard   int64   = 10000
-	gGuardi          = int(gGuard)
-	gGuardf  float64 = float64(gGuard)
-	gDP      int64   = 10000
-	gDPi             = int(gDP)
-	gDPf             = float64(gDP)
-	gSwedish         = Interval000
+	gGuardi  int = 10000
+	gDPi     int = 10000
+	gSwedish     = Interval000
 )
 
 // DefaultFormatterCurrency sets the package wide default locale specific currency formatter.
@@ -59,24 +55,22 @@ func DefaultSwedish(i Interval) {
 
 // DefaultGuard sets the global default guard. A fixed-length guard for precision
 // arithmetic. Returns the successful applied value.
-func DefaultGuard(g int64) int64 {
+func DefaultGuard(g int) int {
 	if g == 0 {
 		g = 1
 	}
-	gGuard = g
-	gGuardf = float64(g)
-	return gGuard
+	gGuardi = g
+	return gGuardi
 }
 
 // DefaultPrecision sets the global default decimal precision.
 // 2 decimal places => 10^2; 3 decimal places => 10^3; x decimal places => 10^x
 // Returns the successful applied value.
-func DefaultPrecision(p int64) int64 {
+func DefaultPrecision(p int) int {
 	l := int64(math.Log(float64(p)))
 	if p == 0 || (p != 0 && (l%2) != 0) {
-		p = gDP
+		p = gDPi
 	}
-	gDP = p
-	gDPf = float64(p)
-	return gDP
+	gDPi = p
+	return gDPi
 }

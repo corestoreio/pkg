@@ -76,15 +76,11 @@ func (c *Currency) UnmarshalJSON(b []byte) error {
 // Scan scans a value into the Currency struct. Returns an error on data loss.
 // Errors will be logged. Initial default settings are the guard and precision value.
 func (c *Currency) Scan(src interface{}) error {
+	c.applyDefaults()
+
 	if src == nil {
 		c.m, c.Valid = 0, false
 		return nil
-	}
-	if c.guard == 0 {
-		c.guard, c.guardf = guard(gGuardi)
-	}
-	if c.dp == 0 {
-		c.dp, c.dpf, c.prec = precision(gDPi)
 	}
 
 	if rb, ok := src.([]byte); ok {

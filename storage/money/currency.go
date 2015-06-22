@@ -191,7 +191,7 @@ func CashRounding(rounding int) OptionFunc {
 	}
 }
 
-// SetGuard sets the guard
+// Guard sets the guard
 func Guard(g int) OptionFunc {
 	return func(c *Currency) OptionFunc {
 		previous := int(c.guard)
@@ -224,7 +224,7 @@ func precision(p int) (int64, float64, int) {
 	p64 := int64(p)
 	l := int64(math.Log(float64(p64)))
 	if p64 != 0 && (l%2) != 0 {
-		p64 = gDP
+		p64 = int64(gDPi)
 	}
 	if p64 == 0 { // check for division by zero
 		p64 = 1
@@ -234,7 +234,6 @@ func precision(p int) (int64, float64, int) {
 
 // JSONMarshal sets a custom JSON Marshaller. Default is JSONLocale.
 func JSONMarshal(m JSONMarshaller) OptionFunc {
-	// @todo not sure if this whole function is needed. jm as JSONMarshaller ... but what if we need mutexes?
 	if m == nil {
 		m = NewJSONEncoder()
 	}
@@ -247,7 +246,6 @@ func JSONMarshal(m JSONMarshaller) OptionFunc {
 
 // JSONUnmarshal sets a custom JSON Unmmarshaller. Default is JSONLocale.
 func JSONUnmarshal(um JSONUnmarshaller) OptionFunc {
-	// @todo not sure if this whole function is needed. jum as JSONUnmarshaller ... but what if we need mutexes?
 	if um == nil {
 		um = NewJSONDecoder()
 	}
@@ -261,19 +259,32 @@ func JSONUnmarshal(um JSONUnmarshaller) OptionFunc {
 // New creates a new empty Currency struct with package default values.
 // Formatter can be overridden after you have created the new type.
 func New(opts ...OptionFunc) Currency {
-	c := Currency{
-		guard:  gGuard,
-		guardf: gGuardf,
-		dp:     gDP,
-		dpf:    gDPf,
-		prec:   decimals(gDP),
-		fmtCur: DefaultFormatterCurrency,
-		fmtNum: DefaultFormatterNumber,
-		jm:     DefaultJSONEncode,
-		jum:    DefaultJSONDecode,
-	}
+	c := Currency{}
+	c.applyDefaults()
 	c.Option(opts...)
 	return c
+}
+
+// applyDefaults used in New() and Scan()
+func (c *Currency) applyDefaults() {
+	if c.guard == 0 {
+		c.guard, c.guardf = guard(gGuardi)
+	}
+	if c.dp == 0 {
+		c.dp, c.dpf, c.prec = precision(gDPi)
+	}
+	if c.jm == nil {
+		c.jm = DefaultJSONEncode
+	}
+	if c.jum == nil {
+		c.jum = DefaultJSONDecode
+	}
+	if c.fmtCur == nil {
+		c.fmtCur = DefaultFormatterCurrency
+	}
+	if c.fmtNum == nil {
+		c.fmtNum = DefaultFormatterNumber
+	}
 }
 
 // Options besides New() also Option() can apply options to the current
