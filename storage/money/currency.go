@@ -22,9 +22,9 @@ package money
 
 import (
 	"errors"
-	"math"
-
 	"io"
+	"math"
+	"strconv"
 
 	"github.com/corestoreio/csfw/i18n"
 	"github.com/corestoreio/csfw/utils"
@@ -226,7 +226,7 @@ func Precision(p int) OptionFunc {
 	}
 }
 
-// JSONMarshal sets a custom JSON Marshaller
+// JSONMarshal sets a custom JSON Marshaller. Default is JSONLocale.
 func JSONMarshal(m JSONMarshaller) OptionFunc {
 	// @todo not sure if this whole function is needed. jm as JSONMarshaller ... but what if we need mutexes?
 	if m == nil {
@@ -239,7 +239,7 @@ func JSONMarshal(m JSONMarshaller) OptionFunc {
 	}
 }
 
-// JSONUnmarshal sets a custom JSON Unmmarshaller
+// JSONUnmarshal sets a custom JSON Unmmarshaller. Default is JSONLocale.
 func JSONUnmarshal(um JSONUnmarshaller) OptionFunc {
 	// @todo not sure if this whole function is needed. jum as JSONUnmarshaller ... but what if we need mutexes?
 	if um == nil {
@@ -382,6 +382,23 @@ func (c Currency) NumberWriter(w io.Writer) (int, error) {
 	return c.fmtNum.FmtNumber(w, c.Sign(), c.Geti(), c.Precision(), c.Dec())
 }
 
+// Symbol returns the currency symbol: €, $, AU$, CHF
+func (c Currency) Symbol() []byte {
+	return c.fmtCur.Sign()
+}
+
+// Ftoa converts the internal floating-point number to a byte slice without
+// any applied formatting.
+func (c Currency) Ftoa() []byte {
+	return strconv.AppendFloat(make([]byte, 0, max(c.Precision()+4, 24)), c.Getf(), 'f', c.Precision(), 64)
+}
+
+// FtoaAppend converts the internal floating-point number to a byte slice without
+// any applied formatting and appends it to dst and returns the extended buffer.
+func (c Currency) FtoaAppend(dst []byte) []byte {
+	return strconv.AppendFloat(dst, c.Getf(), 'f', c.Precision(), 64)
+}
+
 // Add adds two Currency types. Returns empty Currency on integer overflow.
 // Errors will be logged and a trace is available when the level for tracing has been set.
 func (c Currency) Add(d Currency) Currency {
@@ -520,4 +537,12 @@ func decimals(dec int64) int {
 		return 0
 	}
 	return int(math.Floor(math.Log10(float64(dec))))
+}
+
+// max returns the max number from two numbers
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }

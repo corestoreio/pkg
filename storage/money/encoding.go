@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"strconv"
+	"text/template"
 
 	"github.com/corestoreio/csfw/utils/log"
 )
@@ -29,7 +30,6 @@ var (
 	_          json.Marshaler   = (*Currency)(nil)
 	_          sql.Scanner      = (*Currency)(nil)
 	nullString                  = []byte(`null`)
-	quotes                      = []byte(`"`)
 	colon                       = []byte(`,`)
 )
 
@@ -118,7 +118,7 @@ func NewJSONEncoder(jts ...JSONType) JSONMarshaller {
 
 // NewJSONDecoder creates a new decoder depending on the type.
 // Accepts either zero or one argument.
-// Default encoder is JSONLocale
+// Default decoder is JSONLocale
 func NewJSONDecoder(jts ...JSONType) JSONUnmarshaller {
 	if len(jts) != 1 {
 		return JSONLocale
@@ -155,13 +155,10 @@ func (t JSONType) UnmarshalJSON(c *Currency, b []byte) error {
 
 // jsonNumberMarshal generates a number formatted currency string
 func jsonNumberMarshal(c *Currency) ([]byte, error) {
-	if c == nil {
+	if c == nil || c.Valid == false {
 		return nullString, nil
 	}
-	if c.Valid == false {
-		return nullString, nil
-	}
-	return c.Number()
+	return c.Ftoa(), nil
 }
 
 // jsonNumberUnmarshal decodes a string number into the Currency.
@@ -176,17 +173,18 @@ func jsonNumberUnmarshal(c *Currency, b []byte) error {
 
 // jsonLocaleMarshal encodes into a locale specific quoted string
 func jsonLocaleMarshal(c *Currency) ([]byte, error) {
-	if c == nil {
+	if c == nil || c.Valid == false {
 		return nullString, nil
 	}
-	if c.Valid == false {
-		return nullString, nil
+	var b bytes.Buffer
+	b.WriteString(`"`)
+	lb, err := c.Localize()
+	if err != nil {
+		return nil, log.Error("JSONLocale=MarshalJSON", "err", err, "currency", c, "bytes", lb)
 	}
-	var b buf
-	b.Write(quotes)
-	_, err := c.LocalizeWriter(&b)
-	b.Write(quotes)
-	return b, err
+	template.JSEscape(&b, lb)
+	b.WriteString(`"`)
+	return b.Bytes(), err
 }
 
 // jsonLocaleUnmarshal decodes a fully localized string into a currency struct @todo
@@ -198,14 +196,24 @@ func jsonLocaleUnmarshal(c *Currency, b []byte) error {
 
 // jsonExtendedMarshal encodes a currency into a JSON array: [1234.56, "€", "1.234,56 €"]
 func jsonExtendedMarshal(c *Currency) ([]byte, error) {
-	if c == nil {
+	if c == nil || c.Valid == false {
 		return nullString, nil
 	}
-	if c.Valid == false {
-		return nullString, nil
+	var b bytes.Buffer
+	b.WriteRune('[')
+	b.Write(c.Ftoa())
+	b.WriteString(`, "`)
+	b.WriteString(template.JSEscapeString(string(c.Symbol())))
+	b.WriteString(`", "`)
+	lb, err := c.Localize()
+	if err != nil {
+		return nil, log.Error("JSONLocale=MarshalJSON", "err", err, "currency", c, "bytes", lb)
 	}
+	template.JSEscape(&b, lb)
 
-	return nil, errors.New(`@todo encodes a currency into a JSON array: [1234.56, "€", "1.234,56 €"]`)
+	b.WriteRune('"')
+	b.WriteRune(']')
+	return b.Bytes(), err
 }
 
 // jsonExtendedUnmarshal decodes a JSON array: [1234.56, "€", "1.234,56 €"] int a currency struct.

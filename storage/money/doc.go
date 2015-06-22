@@ -22,7 +22,8 @@ at values less than (.5 + (1 / Guardf))	or greater than -(.5 + (1 / Guardf))
 in the case of negative numbers. The Guard adds four decimal places
 of protection to rounding.
 Decimal precision can be changed in the Precision() option
-function. Precision() hold the places after the decimal place in teh active money struct field m.
+function. Precision() hold the places after the decimal place in the active
+money struct field m.
 
 http://en.wikipedia.org/wiki/Floating_point#Accuracy_problems
 
