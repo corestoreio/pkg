@@ -15,10 +15,8 @@
 package i18n
 
 import (
-	"io"
-
 	"bytes"
-
+	"io"
 	"sync"
 
 	"github.com/corestoreio/csfw/utils/log"
@@ -30,6 +28,9 @@ const DefaultCurrencyName = "XXX"
 
 // DefaultCurrencyFormat Symbol no-breaking-space 1,000.00
 const DefaultCurrencyFormat = "¤\u00a0#,##0.00"
+
+// DefaultCurrencySign is the classical Dollar $
+var DefaultCurrencySign = []byte("$")
 
 // DefaultCurrency represents the package wide default currency locale
 // specific formatter.
@@ -133,7 +134,7 @@ func CurrencyISO(cur string) CurrencyOptFunc {
 // CurrencySign sets the currency sign.
 func CurrencySign(s []byte) CurrencyOptFunc {
 	if string(s) == DefaultCurrencyName || len(s) == 0 {
-		s = []byte("\U0001f4b0") // money bag emoji
+		s = DefaultCurrencySign
 	}
 	return func(c *Currency) CurrencyOptFunc {
 		previous := c.sgn
