@@ -48,6 +48,44 @@ var testFmtNum = i18n.NewNumber(
 	i18n.NumberSymbols(testDefaultSymbols),
 )
 
+func TestString(t *testing.T) {
+	tests := []struct {
+		prec int
+		have int64
+		want string
+	}{
+		{0, 13, "$ 13.00"},
+		{10, 13, "$ 1.30"},
+		{100, 13, "$ 0.13"},
+		{1000, 13, "$ 0.01"},
+		{100, -13, "$ -0.13"},
+		{0, -45628734653, "$ -45,628,734,653.00"},
+		{10, -45628734653, "$ -4,562,873,465.30"},
+		{100, -45628734653, "$ -456,287,346.53"},
+		{1000, -45628734653, "$ -45,628,734.65"},
+		{100, 256, "$ 2.56"},
+		10: {1234, -45628734653, "$ -4,562,873.47"},
+		{100, -45628734655, "$ -456,287,346.55"},
+		{100, -45628734611, "$ -456,287,346.11"},
+		{100, -45628734699, "$ -456,287,346.99"},
+		14: {10000000, 45628734699, "$ 4,562.87"},
+		15: {10000000, 45628734655, "$ 4,562.87"},
+	}
+
+	for i, test := range tests {
+		c := money.New(
+			money.Precision(test.prec),
+			money.FormatCurrency(testFmtCur),
+			money.FormatNumber(testFmtNum),
+		).Set(test.have)
+		have := c.String()
+		if have != test.want {
+			t.Errorf("\nWant: %s\nHave: %s\nIndex: %d\n", test.want, have, i)
+		}
+	}
+
+}
+
 func TestAbs(t *testing.T) {
 	tests := []struct {
 		have int64

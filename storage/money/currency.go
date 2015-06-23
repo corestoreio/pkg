@@ -343,6 +343,21 @@ func (c Currency) Setf(f float64) Currency {
 	return c.Set(rnd(r, fDPf-float64(r)))
 }
 
+// ParseFloat transforms a string float value into a real float64 value and
+// sets it. Current value will be overridden. Returns a logged error.
+func (c *Currency) ParseFloat(s string) error {
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		if log.IsTrace() {
+			log.Trace("Currency=ParseFloat", "err", err, "arg", s, "currency", c)
+		}
+		return log.Error("Currency=ParseFloat", "err", err, "arg", s)
+	}
+	c.Valid = true
+	*c = c.Setf(f)
+	return nil
+}
+
 // Sign returns:
 //
 //	-1 if x <  0
@@ -370,6 +385,9 @@ func (c Currency) Localize() ([]byte, error) {
 // LocalizeWriter for money type representation in a specific locale.
 // Returns the number bytes written or an error.
 func (c Currency) LocalizeWriter(w io.Writer) (int, error) {
+	if false == c.Valid {
+		return w.Write(gNaN)
+	}
 	return c.fmtCur.FmtNumber(w, c.Sign(), c.Geti(), c.Precision(), c.Dec())
 }
 
@@ -396,6 +414,9 @@ func (c Currency) Number() ([]byte, error) {
 // NumberWriter prints the currency as a locale specific formatted number.
 // Returns the number bytes written or an error.
 func (c Currency) NumberWriter(w io.Writer) (int, error) {
+	if false == c.Valid {
+		return w.Write(gNaN)
+	}
 	return c.fmtNum.FmtNumber(w, c.Sign(), c.Geti(), c.Precision(), c.Dec())
 }
 
@@ -407,12 +428,18 @@ func (c Currency) Symbol() []byte {
 // Ftoa converts the internal floating-point number to a byte slice without
 // any applied formatting.
 func (c Currency) Ftoa() []byte {
-	return strconv.AppendFloat(make([]byte, 0, max(c.Precision()+4, 24)), c.Getf(), 'f', c.Precision(), 64)
+	return c.FtoaAppend(nil)
 }
 
 // FtoaAppend converts the internal floating-point number to a byte slice without
 // any applied formatting and appends it to dst and returns the extended buffer.
 func (c Currency) FtoaAppend(dst []byte) []byte {
+	if false == c.Valid {
+		return append(dst, gNaN...)
+	}
+	if dst == nil {
+		dst = make([]byte, 0, max(c.Precision()+4, 24))
+	}
 	return strconv.AppendFloat(dst, c.Getf(), 'f', c.Precision(), 64)
 }
 

@@ -27,6 +27,8 @@ var (
 	gGuardi  int = 10000
 	gDPi     int = 10000
 	gSwedish     = Interval000
+	// gNaN will be returned if Valid is false in the Currency struct
+	gNaN = []byte(`NaN`)
 )
 
 // DefaultFormatterCurrency sets the package wide default locale specific currency formatter.
