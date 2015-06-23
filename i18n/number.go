@@ -325,7 +325,7 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac i
 		return w.Write(no.buf[:wrote])
 	}
 
-	// generate fractional part, round frac it to large to fit into prec
+	// generate fractional part, round frac if it's to large to fit into prec
 	fracStr := strconv.FormatInt(frac, 10)
 
 	// may need padding
@@ -450,31 +450,8 @@ func (no *Number) clearBuf() {
 }
 
 /*
-A function to render a number to a string based on
-the following user-specified criteria:
-
-* thousands separator
-* decimal separator
-* decimal precision
-
-The format parameter tells how to render the number n.
-
-Examples of format strings, given n = 12345.6789:
-
-"#,###.##" => "12,345.67"
-"#,###." => "12,345"
-"#,###" => "12345,678"
-"#\u202F###,##" => "12â€¯345,67"
-"#.###,###### => 12.345,678900
-"" (aka default format) => 12,345.67
-
-The highest precision allowed is 9 digits after the decimal symbol.
-There is also a version for integer number, RenderInteger(),
-which is convenient for calls within template.
-
 @todo rounding increment in a pattern http://unicode.org/reports/tr35/tr35-numbers.html#Rounding
 @todo support more special chars: http://unicode.org/reports/tr35/tr35-numbers.html#Special_Pattern_Characters
-
 */
 
 // format contains the pattern and acts as a cache
@@ -551,7 +528,7 @@ func (f *format) adjustFracToPrec(frac int64, prec int) int64 {
 // ###0.0000#	n/a			1234,5670
 // 00000.0000	n/a			01234,5670
 // #,##0.00 ¤	EUR			1 234,57 €
-//				JPY			1 235 ¥JP
+//           	JPY			1 235 ¥JP
 
 func (f *format) parse() error {
 
