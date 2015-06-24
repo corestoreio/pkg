@@ -19,9 +19,9 @@ import (
 
 	"math"
 
-	"github.com/SchumacherFM/OnixParser/Godeps/_workspace/src/github.com/stretchr/testify/assert"
 	"github.com/corestoreio/csfw/i18n"
 	"github.com/corestoreio/csfw/storage/money"
+	"github.com/stretchr/testify/assert"
 )
 
 var testDefaultSymbols = i18n.Symbols{

@@ -85,13 +85,16 @@ func (c *Currency) Scan(src interface{}) error {
 
 	if src == nil {
 		c.m, c.Valid = 0, false
+		if log.IsDebug() {
+			log.Debug("Currency=Scan", "case", 89, "c", c, "src", src)
+		}
 		return nil
 	}
 
 	if rb, ok := src.([]byte); ok {
 		return c.ParseFloat(string(rb))
 	}
-	return errgo.Newf("Unsupported Type for value: %#v\nSupported: []byte", src)
+	return log.Error("Currency=Scan", "err", errgo.Newf("Unsupported Type for value. Supported: []byte"), "src", src)
 }
 
 // NewJSONEncoder creates a new encoder depending on the type.
@@ -133,6 +136,9 @@ func (t JSONType) MarshalJSON(c *Currency) ([]byte, error) {
 // struct.
 func (t JSONType) UnmarshalJSON(c *Currency, b []byte) error {
 	if len(b) < 1 || false == utf8.Valid(b) { // we must have a valid string
+		if log.IsDebug() {
+			log.Debug("JSONType=UnmarshalJSON", "case", 137, "c", c, "bytes", string(b))
+		}
 		c.m, c.Valid = 0, false
 		return nil
 	}
@@ -142,10 +148,20 @@ func (t JSONType) UnmarshalJSON(c *Currency, b []byte) error {
 	var realNumber, isNull, lRunes, posSepComma, posSepDot int
 	var isArray bool
 	number := make([]rune, 0, lenRunes)
+	symbol := make([]rune, 0, lenRunes)
 
 	// strip quotes
 	if lenRunes > 1 && runes[0] == '"' && runes[lenRunes-1] == '"' {
 		runes = runes[1 : lenRunes-1]
+	}
+	lenRunes = len(runes)
+
+	if 0 == lenRunes {
+		if log.IsDebug() {
+			log.Debug("JSONType=UnmarshalJSON", "case", 157, "c", c, "bytes", string(b), "lenRunes", lenRunes)
+		}
+		c.m, c.Valid = 0, false
+		return nil
 	}
 
 OuterLoop:
@@ -169,6 +185,8 @@ OuterLoop:
 				break OuterLoop
 			}
 			number = append(number, r)
+		case unicode.IsLetter(r), unicode.IsSymbol(r):
+			symbol = append(symbol, r)
 		}
 
 		if posSepComma == 0 && r == ',' { // check for first occurrence of the comma
@@ -184,6 +202,9 @@ OuterLoop:
 		}
 
 		if isNull == 4 {
+			if log.IsDebug() {
+				log.Debug("JSONType=UnmarshalJSON", "case", 200, "c", c, "bytes", string(b), "runes", string(runes))
+			}
 			c.m, c.Valid = 0, false
 			return nil
 		}

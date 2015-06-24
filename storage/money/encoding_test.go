@@ -86,6 +86,57 @@ func TestJSONMarshal(t *testing.T) {
 		}
 	}
 }
+func TestJSONUnMarshalSingle(t *testing.T) {
+	tests := []struct {
+		haveEnc  money.JSONMarshaller
+		jsonData []byte
+		want     string
+		wantErr  error
+	}{
+		{money.JSONNumber, []byte(`1999.0000`), `1999.0000;$`, nil},
+		{money.JSONNumber, []byte(`-0.01`), `-0.0100;$`, nil},
+		{money.JSONNumber, []byte(`null`), `NaN;$`, nil},
+		{money.JSONNumber, []byte(`1234.56789`), `1234.5679;$`, nil},
+		{money.JSONNumber, []byte(`2999x.0156`), `2999.0156;$`, nil},
+		{money.JSONNumber, []byte(`""`), `NaN;$`, nil},
+
+		{money.JSONLocale, []byte(`$ 999.00 `), `999.0000;$`, nil},
+		{money.JSONLocale, []byte(`EUR 999.00`), `999.0000;EUR`, nil},
+		//		{money.JSONLocale, []byte(`2 345 678,45 €`), `xxx`, nil},
+		//		{money.JSONLocale, []byte(`null`), `xxx`, nil},
+		//		{money.JSONLocale, []byte(`1.705,99 €`), `xxx`, nil},
+		//		{money.JSONLocale, []byte(`$ 5,123,705.94`), `xxx`, nil},
+		//		{money.JSONLocale, []byte(`$ -6,705.99`), `xxx`, nil},
+		//		{money.JSONLocale, []byte(`$ 705.99`), `xxx`, nil},
+		//		{money.JSONLocale, []byte(`$ 70789`), `xxx`, nil},
+		//
+		//		{money.JSONExtended, []byte(`[999.0000,"$","$ 999.00"]`), `xxx`, nil},
+		//		{money.JSONExtended, []byte(`[999.0000,null,null]`), `xxx`, nil},
+		//		{money.JSONExtended, []byte(`null`), `xxx`, nil},
+		//		{money.JSONExtended, []byte(`[null,"$",null]`), `999.000 `, nil},
+		//		{money.JSONExtended, []byte(`[null,null,null]`), `999.000 `, nil},
+	}
+	for _, test := range tests {
+		var c money.Currency
+		err := c.UnmarshalJSON(test.jsonData)
+
+		if test.wantErr != nil {
+			assert.Error(t, err)
+			assert.EqualError(t, err, test.wantErr.Error())
+		} else {
+			var buf []byte
+			assert.NoError(t, err)
+			buf = c.FtoaAppend(buf)
+			buf = append(buf, ";"...)
+			buf = append(buf, c.Symbol()...)
+			have := string(buf)
+			if test.want != have {
+				t.Errorf("\nHave: %s\n\nWant: %s\n", have, test.want)
+			}
+
+		}
+	}
+}
 
 func TestJSONUnMarshalSlice(t *testing.T) {
 
@@ -146,7 +197,6 @@ func TestJSONUnMarshalSlice(t *testing.T) {
 			`999.000; NaN; NaN; NaN; 705.993; 705.993; 705.993; 705.993; `,
 			nil,
 		},
-		// @todo add more tests
 	}
 
 	for _, test := range tests {
@@ -154,17 +204,6 @@ func TestJSONUnMarshalSlice(t *testing.T) {
 		if err := json.Unmarshal(test.jsonData, &peds); err != nil {
 			t.Error(err)
 		}
-
-		//		c := money.New(
-		//			money.Precision(test.prec),
-		//			money.JSONMarshal(test.haveEnc),
-		//		).Set(test.haveI)
-		//		c.Valid = test.haveValid
-		//
-		//		have, err := c.MarshalJSON()
-		//		if test.wantErr != nil {
-		//			assert.Error(t, err, "%v", test)
-		//			assert.Nil(t, have, "%v", test)
 
 		var buf bytes.Buffer
 		for _, ped := range peds {
@@ -184,13 +223,6 @@ func TestJSONUnMarshalSlice(t *testing.T) {
 		if test.want != have {
 			t.Errorf("\nHave: %s\n\nWant: %s\n", have, test.want)
 		}
-		//			haveS := string(have)
-		//			assert.NoError(t, err, "%v", test)
-		//			if haveS != test.want {
-		//				// assert.Equal... is not useful in this case
-		//				t.Errorf("\nHave: %s\nWant: %s\n", haveS, test.want)
-		//			}
-
 	}
 }
 
