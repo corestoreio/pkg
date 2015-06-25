@@ -93,28 +93,37 @@ func TestJSONUnMarshalSingle(t *testing.T) {
 		want     string
 		wantErr  error
 	}{
-		{money.JSONNumber, []byte(`1999.0000`), `1999.0000;$`, nil},
-		{money.JSONNumber, []byte(`-0.01`), `-0.0100;$`, nil},
-		{money.JSONNumber, []byte(`null`), `NaN;$`, nil},
-		{money.JSONNumber, []byte(`1234.56789`), `1234.5679;$`, nil},
-		{money.JSONNumber, []byte(`2999x.0156`), `2999.0156;$`, nil},
-		{money.JSONNumber, []byte(`""`), `NaN;$`, nil},
+		{money.JSONNumber, []byte{0xf1, 0x32, 0xd8, 0x8a, 0x12, 0x8a, 0x74, 0x2a, 0x5, 0x5d, 0x18, 0x39, 0xf9, 0xd7, 0x99, 0x8b}, `NaN`, nil},
 
-		{money.JSONLocale, []byte(`$ 999.00 `), `999.0000;$`, nil},
-		{money.JSONLocale, []byte(`EUR 999.00`), `999.0000;EUR`, nil},
-		//		{money.JSONLocale, []byte(`2 345 678,45 €`), `xxx`, nil},
-		//		{money.JSONLocale, []byte(`null`), `xxx`, nil},
-		//		{money.JSONLocale, []byte(`1.705,99 €`), `xxx`, nil},
-		//		{money.JSONLocale, []byte(`$ 5,123,705.94`), `xxx`, nil},
-		//		{money.JSONLocale, []byte(`$ -6,705.99`), `xxx`, nil},
-		//		{money.JSONLocale, []byte(`$ 705.99`), `xxx`, nil},
-		//		{money.JSONLocale, []byte(`$ 70789`), `xxx`, nil},
-		//
-		//		{money.JSONExtended, []byte(`[999.0000,"$","$ 999.00"]`), `xxx`, nil},
-		//		{money.JSONExtended, []byte(`[999.0000,null,null]`), `xxx`, nil},
-		//		{money.JSONExtended, []byte(`null`), `xxx`, nil},
-		//		{money.JSONExtended, []byte(`[null,"$",null]`), `999.000 `, nil},
-		//		{money.JSONExtended, []byte(`[null,null,null]`), `999.000 `, nil},
+		{money.JSONNumber, []byte(`1999.0000`), `1999.0000`, nil},
+		{money.JSONNumber, []byte(`-0.01`), `-0.0100`, nil},
+		{money.JSONNumber, []byte(`null`), `NaN`, nil},
+		{money.JSONNumber, []byte(`1234.56789`), `1234.5679`, nil},
+		{money.JSONNumber, []byte(`2999x.0156`), `2999.0156`, nil},
+		{money.JSONNumber, []byte(`""`), `NaN`, nil},
+
+		{money.JSONLocale, []byte(`$ 999.00 `), `999.0000`, nil},
+		{money.JSONLocale, []byte(`EUR 999.00`), `999.0000`, nil},
+		{money.JSONLocale, []byte(`EUR 99x9.0'0`), `999.0000`, nil},
+		{money.JSONLocale, []byte("EUR \x00 99x9.0'0"), `999.0000`, nil},
+		{money.JSONLocale, []byte(`2 345 678,45 €`), `2345678.4500`, nil},
+		{money.JSONLocale, []byte(`2 345 367,834456 €`), `2345367.8345`, nil},
+		{money.JSONLocale, []byte(`null`), `NaN`, nil},
+		{money.JSONLocale, []byte(`1.705,99 €`), `1705.9900`, nil},
+		{money.JSONLocale, []byte(`705,99 €`), `705.9900`, nil},
+		{money.JSONLocale, []byte(`$ 5,123,705.94`), `5123705.9400`, nil},
+		{money.JSONLocale, []byte(`$ -6,705.99`), `-6705.9900`, nil},
+		{money.JSONLocale, []byte(`$ 705.99`), `705.9900`, nil},
+		{money.JSONLocale, []byte(`$ 70789`), `70789.0000`, nil},
+
+		{money.JSONExtended, []byte(`[999.0000,"$","$ 999.00"]`), `999.0000`, nil},
+		{money.JSONExtended, []byte(`[999.0000,null,null]`), `999.0000`, nil},
+		{money.JSONExtended, []byte(`[1,999.00236,null,null]`), `1.0000`, nil},
+		{money.JSONExtended, []byte(`[1999.00236,null,null]`), `1999.0024`, nil},
+		{money.JSONExtended, []byte(`null`), `NaN`, nil},
+		{money.JSONExtended, []byte(`[null,"$",null]`), `NaN`, nil},
+		{money.JSONExtended, []byte(`[null,null,null]`), `NaN`, nil},
+		{money.JSONExtended, []byte(`[ ]`), `NaN`, money.ErrDecodeMissingColon},
 	}
 	for _, test := range tests {
 		var c money.Currency
@@ -127,8 +136,6 @@ func TestJSONUnMarshalSingle(t *testing.T) {
 			var buf []byte
 			assert.NoError(t, err)
 			buf = c.FtoaAppend(buf)
-			buf = append(buf, ";"...)
-			buf = append(buf, c.Symbol()...)
 			have := string(buf)
 			if test.want != have {
 				t.Errorf("\nHave: %s\n\nWant: %s\n", have, test.want)

@@ -34,6 +34,9 @@ var (
 	nullString                  = []byte(`null`)
 )
 
+// ErrDecodeMissingColon can be returned on malformed JSON value when decoding a currency.
+var ErrDecodeMissingColon = errors.New("No colon found in JSON array")
+
 const (
 	// JSONNumber encodes/decodes a currency as a number string to directly use
 	// in e.g. JavaScript
@@ -91,8 +94,8 @@ func (c *Currency) Scan(src interface{}) error {
 		return nil
 	}
 
-	if rb, ok := src.([]byte); ok {
-		return c.ParseFloat(string(rb))
+	if b, ok := src.([]byte); ok {
+		return c.ParseFloat(string(b))
 	}
 	return log.Error("Currency=Scan", "err", errgo.Newf("Unsupported Type for value. Supported: []byte"), "src", src)
 }
@@ -137,7 +140,7 @@ func (t JSONType) MarshalJSON(c *Currency) ([]byte, error) {
 func (t JSONType) UnmarshalJSON(c *Currency, b []byte) error {
 	if len(b) < 1 || false == utf8.Valid(b) { // we must have a valid string
 		if log.IsDebug() {
-			log.Debug("JSONType=UnmarshalJSON", "case", 137, "c", c, "bytes", string(b))
+			log.Debug("JSONType=UnmarshalJSON", "case", "invalid_bytes", "c", c, "bytes", string(b))
 		}
 		c.m, c.Valid = 0, false
 		return nil
@@ -148,7 +151,8 @@ func (t JSONType) UnmarshalJSON(c *Currency, b []byte) error {
 	var realNumber, isNull, lRunes, posSepComma, posSepDot int
 	var isArray bool
 	number := make([]rune, 0, lenRunes)
-	symbol := make([]rune, 0, lenRunes)
+	// atm not needed because currency symbol depends on the formatter
+	//symbol := make([]rune, 0, lenRunes)
 
 	// strip quotes
 	if lenRunes > 1 && runes[0] == '"' && runes[lenRunes-1] == '"' {
@@ -158,7 +162,7 @@ func (t JSONType) UnmarshalJSON(c *Currency, b []byte) error {
 
 	if 0 == lenRunes {
 		if log.IsDebug() {
-			log.Debug("JSONType=UnmarshalJSON", "case", 157, "c", c, "bytes", string(b), "lenRunes", lenRunes)
+			log.Debug("JSONType=UnmarshalJSON", "case", "lenRunes=0", "c", c, "bytes", string(b))
 		}
 		c.m, c.Valid = 0, false
 		return nil
@@ -166,13 +170,12 @@ func (t JSONType) UnmarshalJSON(c *Currency, b []byte) error {
 
 OuterLoop:
 	for i, r := range runes {
-		r = unicode.ToLower(r)
 
 		switch {
 		case unicode.IsSpace(r):
 			continue
 		case r == '[':
-			isArray = true // [999.0000,"$","$ 999.00"] @todo grab also the currency sign ....
+			isArray = true // [999.0000,"$","$ 999.00"] only until the first comma will be considered.
 		case unicode.IsNumber(r): // 1234.56
 			number = append(number, r)
 			realNumber++
@@ -185,8 +188,8 @@ OuterLoop:
 				break OuterLoop
 			}
 			number = append(number, r)
-		case unicode.IsLetter(r), unicode.IsSymbol(r):
-			symbol = append(symbol, r)
+			//case unicode.IsLetter(r), unicode.IsSymbol(r):
+			//	symbol = append(symbol, r)
 		}
 
 		if posSepComma == 0 && r == ',' { // check for first occurrence of the comma
@@ -196,14 +199,14 @@ OuterLoop:
 			posSepDot = i
 		}
 
-		switch r {
+		switch unicode.ToLower(r) {
 		case 'n', 'u', 'l':
 			isNull++
 		}
 
 		if isNull == 4 {
 			if log.IsDebug() {
-				log.Debug("JSONType=UnmarshalJSON", "case", 200, "c", c, "bytes", string(b), "runes", string(runes))
+				log.Debug("JSONType=UnmarshalJSON", "case", "isNull", "c", c, "bytes", string(b), "runes", string(runes))
 			}
 			c.m, c.Valid = 0, false
 			return nil
@@ -213,13 +216,14 @@ OuterLoop:
 	}
 
 	if isArray { // now it's an error because no colon found
-		return log.Error("JSONType=UnmarshalJSON", "err", errors.New("No colon found in JSON array"), "bytes", string(b), "number", string(number))
+		c.m, c.Valid = 0, false
+		return log.Error("JSONType=UnmarshalJSON", "err", ErrDecodeMissingColon, "bytes", string(b), "number", string(number))
 	}
 
 	// I'll keep this redundant IF cases because if the unit tests and coverage checks.
 	// Once it's working we can merge them.
 
-	if realNumber == lRunes { // real number -1234.56 without any other stuff
+	if realNumber == lRunes { // real number e.g. -1234.56 without any other stuff
 		return c.ParseFloat(string(runes))
 	}
 	if posSepComma == 0 && posSepDot == 0 { // no decimals but included any other stripped of character
@@ -237,21 +241,22 @@ OuterLoop:
 		return c.ParseFloat(string(number))
 	}
 	if posSepComma > 0 && posSepDot > 0 {
+
 		replaceChar := ','           // number is 12,211,232.45 or 1,234.56
 		if posSepDot < posSepComma { // number is 12.211.232,45 or 1.234,56
 			replaceChar = '.'
 		}
+
 		var i int
 		for i < len(number) {
-			if replaceChar == '.' && number[i] == ',' {
-				number[i] = '.' // replace decimal comma with a dot
-			}
-			if number[i] == replaceChar {
+			switch {
+			case replaceChar == '.' && number[i] == ',':
+				number[i] = '.' // replace decimal comma with a dot to create fractals
+			case number[i] == replaceChar:
 				number = append(number[:i], number[i+1:]...) // cut comma
 				i = 0                                        // restart loop
-			} else {
-				i++
 			}
+			i++
 		}
 		return c.ParseFloat(string(number))
 	}

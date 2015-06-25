@@ -420,7 +420,7 @@ func (c Currency) NumberWriter(w io.Writer) (int, error) {
 	return c.fmtNum.FmtNumber(w, c.Sign(), c.Geti(), c.Precision(), c.Dec())
 }
 
-// Symbol returns the currency symbol: €, $, AU$, CHF
+// Symbol returns the currency symbol: €, $, AU$, CHF depending on the formatter.
 func (c Currency) Symbol() []byte {
 	return c.fmtCur.Sign()
 }
