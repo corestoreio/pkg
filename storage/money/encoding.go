@@ -220,28 +220,23 @@ OuterLoop:
 		return log.Error("JSONType=UnmarshalJSON", "err", ErrDecodeMissingColon, "bytes", string(b), "number", string(number))
 	}
 
-	// I'll keep this redundant IF cases because if the unit tests and coverage checks.
-	// Once it's working we can merge them.
-
-	if realNumber == lRunes { // real number e.g. -1234.56 without any other stuff
+	switch {
+	case realNumber == lRunes: // real number e.g. -1234.56 without any other stuff
 		return c.ParseFloat(string(runes))
-	}
-	if posSepComma == 0 && posSepDot == 0 { // no decimals but included any other stripped of character
+
+	case posSepComma == 0 && posSepDot == 0, // no decimals but included any other stripped of character
+		posSepComma == 0 && posSepDot > 0: // currency contains only a dot
 		return c.ParseFloat(string(number))
-	}
-	if posSepComma == 0 && posSepDot > 0 { // currency contains only a dot
-		return c.ParseFloat(string(number))
-	}
-	if posSepComma > 0 && posSepDot == 0 { // currency contains only a comma
+
+	case posSepComma > 0 && posSepDot == 0: // currency contains only a comma
 		for i, r := range number {
 			if r == ',' {
 				number[i] = '.'
 			}
 		}
 		return c.ParseFloat(string(number))
-	}
-	if posSepComma > 0 && posSepDot > 0 {
 
+	case posSepComma > 0 && posSepDot > 0:
 		replaceChar := ','           // number is 12,211,232.45 or 1,234.56
 		if posSepDot < posSepComma { // number is 12.211.232,45 or 1.234,56
 			replaceChar = '.'
