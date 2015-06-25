@@ -99,6 +99,7 @@ func TestJSONUnMarshalSingle(t *testing.T) {
 		{money.JSONNumber, []byte(`-0.01`), `-0.0100`, nil},
 		{money.JSONNumber, []byte(`null`), `NaN`, nil},
 		{money.JSONNumber, []byte(`1234.56789`), `1234.5679`, nil},
+		{money.JSONNumber, []byte(`-1234.56789`), `-1234.5679`, nil},
 		{money.JSONNumber, []byte(`2999x.0156`), `2999.0156`, nil},
 		{money.JSONNumber, []byte(`""`), `NaN`, nil},
 

@@ -57,3 +57,35 @@ func Benchmark_ParseFloat(b *testing.B) {
 		}
 	}
 }
+
+// Benchmark_JSONUnMarshalSingle__Number	 1000000	      1256 ns/op	     240 B/op	       4 allocs/op
+func Benchmark_JSONUnMarshalSingle__Number(b *testing.B) {
+	benchmark_JSONUnMarshalSingle(b, []byte(`-1234.56789`), -12345679)
+}
+
+// Benchmark_JSONUnMarshalSingle__Locale	 1000000	      1531 ns/op	     272 B/op	       4 allocs/op
+func Benchmark_JSONUnMarshalSingle__Locale(b *testing.B) {
+	benchmark_JSONUnMarshalSingle(b, []byte(`-2 345 678,45 €`), -23456784500)
+}
+
+// Benchmark_JSONUnMarshalSingle_Extended	 1000000	      1586 ns/op	     368 B/op	       4 allocs/op
+func Benchmark_JSONUnMarshalSingle_Extended(b *testing.B) {
+	benchmark_JSONUnMarshalSingle(b, []byte(`[-1999.00236, null, null]`), -19990024)
+}
+
+var benchmark_JSONUnMarshalSingleValue int64
+
+func benchmark_JSONUnMarshalSingle(b *testing.B, data []byte, want int64) {
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var c money.Currency
+		if err := c.UnmarshalJSON(data); err != nil {
+			b.Error(err)
+		}
+		benchmark_JSONUnMarshalSingleValue = c.Raw()
+		if benchmark_JSONUnMarshalSingleValue != want {
+			b.Errorf("Have: %d\nWant: %d", benchmark_JSONUnMarshalSingleValue, want)
+		}
+	}
+}
