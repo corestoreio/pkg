@@ -17,6 +17,7 @@ package money
 import (
 	"bytes"
 	"database/sql"
+	"database/sql/driver"
 	"encoding/json"
 	"errors"
 	"text/template"
@@ -79,6 +80,14 @@ func (c *Currency) UnmarshalJSON(src []byte) error {
 		return nil
 	}
 	return c.jum.UnmarshalJSON(c, src)
+}
+
+// Value implements the SQL driver Valuer interface.
+func (c *Currency) Value() (driver.Value, error) {
+	if !c.Valid {
+		return nil, nil
+	}
+	return c.Getf(), nil
 }
 
 // Scan scans a value into the Currency struct. Returns an error on data loss.

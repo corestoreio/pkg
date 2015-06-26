@@ -264,6 +264,32 @@ func off_TestLoadFromDb(t *testing.T) {
 	}
 }
 
+func TestSaveToDb(t *testing.T) {
+	//for hacking testing added :-)
+	db := csdb.MustConnectTest()
+	defer db.Close()
+	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
+
+	//	var peds = TableProductEntityDecimalSlice{
+	//		&TableProductEntityDecimal{ValueID: 1, AttributeID: 73, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4)).Set(9990000)},
+	//		&TableProductEntityDecimal{ValueID: 2, AttributeID: 78, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4))}, // null values
+	//		&TableProductEntityDecimal{ValueID: 3, AttributeID: 74, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4))}, // null values
+	//		&TableProductEntityDecimal{ValueID: 4, AttributeID: 77, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4))}, // null values
+	//		&TableProductEntityDecimal{ValueID: 5, AttributeID: 73, StoreID: 1, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
+	//		&TableProductEntityDecimal{ValueID: 6, AttributeID: 73, StoreID: 4, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
+	//		&TableProductEntityDecimal{ValueID: 7, AttributeID: 73, StoreID: 2, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
+	//		&TableProductEntityDecimal{ValueID: 8, AttributeID: 73, StoreID: 3, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
+	//	}
+
+	tuple := &TableProductEntityDecimal{ValueID: 0, AttributeID: 73, StoreID: 3, EntityID: 1, Value: money.New(money.Precision(4)).Set(7779933)}
+	ib := dbrSess.InsertInto("catalog_product_entity_decimal")
+	ib.Columns("attribute_id", "store_id", "entity_id", "value")
+	ib.Record(tuple)
+
+	t.Log(ib.ToSql())
+
+}
+
 func TestScan(t *testing.T) {
 
 	tests := []struct {
