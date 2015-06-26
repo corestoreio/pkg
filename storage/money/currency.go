@@ -258,6 +258,8 @@ func JSONUnmarshal(um JSONUnmarshaller) OptionFunc {
 
 // New creates a new empty Currency struct with package default values.
 // Formatter can be overridden after you have created the new type.
+// Implements the interfaces: database.Scanner, driver.Valuer,
+// json.Marshaller, json.Unmarshaller
 func New(opts ...OptionFunc) Currency {
 	c := Currency{}
 	c.applyDefaults()
