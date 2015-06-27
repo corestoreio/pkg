@@ -284,9 +284,10 @@ func TestSaveToDb(t *testing.T) {
 	tuple := &TableProductEntityDecimal{ValueID: 0, AttributeID: 73, StoreID: 3, EntityID: 1, Value: money.New(money.Precision(4)).Set(7779933)}
 	ib := dbrSess.InsertInto("catalog_product_entity_decimal")
 	ib.Columns("attribute_id", "store_id", "entity_id", "value")
-	ib.Record(tuple)
 
-	t.Log(ib.ToSql())
+	ib.Record(tuple)
+	// this is a bug in the dbr package ToSql because it ignores the Value() driver.Value interface
+	t.Error(ib.ToSql())
 
 }
 
