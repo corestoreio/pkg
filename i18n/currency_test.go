@@ -264,7 +264,7 @@ func TestFmtCurrencyParallel(t *testing.T) {
 	}
 
 	// master: give work
-	for _, test := range genParallelTests(" \U0001f4b0") {
+	for _, test := range genParallelTests(" $") {
 		queue <- test
 	}
 	close(queue)
