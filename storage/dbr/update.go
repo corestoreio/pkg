@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"time"
+	"database/sql/driver"
 )
 
 // UpdateBuilder contains the clauses for an UPDATE statement
@@ -41,6 +42,7 @@ func (sess *Session) Update(table string) *UpdateBuilder {
 
 // UpdateBySql creates a new UpdateBuilder for the given SQL string and arguments
 func (sess *Session) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
+	argsValuer(&args)
 	return &UpdateBuilder{
 		Session:      sess,
 		runner:       sess.cxn.Db,
@@ -60,6 +62,7 @@ func (tx *Tx) Update(table string) *UpdateBuilder {
 
 // UpdateBySql creates a new UpdateBuilder for the given SQL string and arguments bound to a transaction
 func (tx *Tx) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
+	argsValuer(&args)
 	return &UpdateBuilder{
 		Session:      tx.Session,
 		runner:       tx.Tx,
@@ -70,6 +73,13 @@ func (tx *Tx) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
 
 // Set appends a column/value pair for the statement
 func (b *UpdateBuilder) Set(column string, value interface{}) *UpdateBuilder {
+	if dbVal, ok := value.(driver.Valuer); ok {
+		if val, err := dbVal.Value(); err == nil {
+			value = val
+		} else {
+			panic(err)
+		}
+	}
 	b.SetClauses = append(b.SetClauses, &setClause{column: column, value: value})
 	return b
 }
@@ -84,6 +94,7 @@ func (b *UpdateBuilder) SetMap(clauses map[string]interface{}) *UpdateBuilder {
 
 // Where appends a WHERE clause to the statement
 func (b *UpdateBuilder) Where(whereSqlOrMap interface{}, args ...interface{}) *UpdateBuilder {
+	argsValuer(&args)
 	b.WhereFragments = append(b.WhereFragments, newWhereFragment(whereSqlOrMap, args))
 	return b
 }

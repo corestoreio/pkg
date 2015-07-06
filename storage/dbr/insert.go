@@ -50,15 +50,7 @@ func (b *InsertBuilder) Columns(columns ...string) *InsertBuilder {
 // Only this function will consider the driver.Valuer interface when you pass
 // a pointer to the value.
 func (b *InsertBuilder) Values(vals ...interface{}) *InsertBuilder {
-	for i, v := range vals {
-		if dbVal, ok := v.(driver.Valuer); ok {
-			if val, err := dbVal.Value(); err == nil {
-				vals[i] = val // overrides the current value ...
-			} else {
-				panic(err)
-			}
-		}
-	}
+	argsValuer(&vals)
 	b.Vals = append(b.Vals, vals)
 	return b
 }
@@ -241,6 +233,7 @@ func (b *InsertBuilder) Exec() (sql.Result, error) {
 		rec := b.Recs[0]
 		val := reflect.Indirect(reflect.ValueOf(rec))
 		if val.Kind() == reflect.Struct && val.CanSet() {
+			// @todo important: make Id configurable to match all magento internal ID columns
 			if idField := val.FieldByName("Id"); idField.IsValid() && idField.Kind() == reflect.Int64 {
 				if lastID, err := result.LastInsertId(); err == nil {
 					idField.Set(reflect.ValueOf(lastID))
