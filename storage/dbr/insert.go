@@ -3,6 +3,7 @@ package dbr
 import (
 	"bytes"
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"reflect"
 	"time"
@@ -44,13 +45,25 @@ func (b *InsertBuilder) Columns(columns ...string) *InsertBuilder {
 	return b
 }
 
-// Values appends a set of values to the statement
+// Values appends a set of values to the statement.
+// Pro Tip: Use Values() and not Record() to avoid reflection.
+// Only this function will consider the driver.Valuer interface when you pass
+// a pointer to the value.
 func (b *InsertBuilder) Values(vals ...interface{}) *InsertBuilder {
+	for i, v := range vals {
+		if dbVal, ok := v.(driver.Valuer); ok {
+			if val, err := dbVal.Value(); err == nil {
+				vals[i] = val // overrides the current value ...
+			} else {
+				panic(err)
+			}
+		}
+	}
 	b.Vals = append(b.Vals, vals)
 	return b
 }
 
-// Record pulls in values to match Columns from the record
+// Record pulls in values to match Columns from the record. Uses reflection.
 func (b *InsertBuilder) Record(record interface{}) *InsertBuilder {
 	b.Recs = append(b.Recs, record)
 	return b
@@ -62,8 +75,16 @@ func (b *InsertBuilder) Map(m map[string]interface{}) *InsertBuilder {
 	return b
 }
 
-// Pair adds a key/value pair to the statement
+// Pair adds a key/value pair to the statement. Uses not reflection.
 func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
+	if dbVal, ok := value.(driver.Valuer); ok {
+		if val, err := dbVal.Value(); err == nil {
+			value = val // overrides the current value ...
+		} else {
+			panic(err)
+		}
+	}
+
 	b.Cols = append(b.Cols, column)
 	lenVals := len(b.Vals)
 	if lenVals == 0 {
@@ -162,7 +183,15 @@ func (b *InsertBuilder) MapToSql(sql bytes.Buffer) (string, []interface{}) {
 	i := 0
 	for k, v := range b.Maps {
 		keys[i] = k
-		vals[i] = v
+		if dbVal, ok := v.(driver.Valuer); ok {
+			if val, err := dbVal.Value(); err == nil {
+				vals[i] = val
+			} else {
+				panic(err)
+			}
+		} else {
+			vals[i] = v
+		}
 		i++
 	}
 	var args []interface{}
