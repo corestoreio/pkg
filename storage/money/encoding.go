@@ -32,6 +32,7 @@ var (
 	_          json.Unmarshaler = (*Currency)(nil)
 	_          json.Marshaler   = (*Currency)(nil)
 	_          sql.Scanner      = (*Currency)(nil)
+	_          driver.Valuer    = (*Currency)(nil)
 	nullString                  = []byte(`null`)
 )
 

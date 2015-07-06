@@ -270,24 +270,30 @@ func TestSaveToDb(t *testing.T) {
 	defer db.Close()
 	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
 
-	//	var peds = TableProductEntityDecimalSlice{
-	//		&TableProductEntityDecimal{ValueID: 1, AttributeID: 73, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4)).Set(9990000)},
-	//		&TableProductEntityDecimal{ValueID: 2, AttributeID: 78, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4))}, // null values
-	//		&TableProductEntityDecimal{ValueID: 3, AttributeID: 74, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4))}, // null values
-	//		&TableProductEntityDecimal{ValueID: 4, AttributeID: 77, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4))}, // null values
-	//		&TableProductEntityDecimal{ValueID: 5, AttributeID: 73, StoreID: 1, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
-	//		&TableProductEntityDecimal{ValueID: 6, AttributeID: 73, StoreID: 4, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
-	//		&TableProductEntityDecimal{ValueID: 7, AttributeID: 73, StoreID: 2, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
-	//		&TableProductEntityDecimal{ValueID: 8, AttributeID: 73, StoreID: 3, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
-	//	}
+	//		var peds = TableProductEntityDecimalSlice{
+	//			&TableProductEntityDecimal{ValueID: 1, AttributeID: 73, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4)).Set(9990000)},
+	//			&TableProductEntityDecimal{ValueID: 2, AttributeID: 78, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4))}, // null values
+	//			&TableProductEntityDecimal{ValueID: 3, AttributeID: 74, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4))}, // null values
+	//			&TableProductEntityDecimal{ValueID: 4, AttributeID: 77, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4))}, // null values
+	//			&TableProductEntityDecimal{ValueID: 5, AttributeID: 73, StoreID: 1, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
+	//			&TableProductEntityDecimal{ValueID: 6, AttributeID: 73, StoreID: 4, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
+	//			&TableProductEntityDecimal{ValueID: 7, AttributeID: 73, StoreID: 2, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
+	//			&TableProductEntityDecimal{ValueID: 8, AttributeID: 73, StoreID: 3, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
+	//		}
 
-	tuple := &TableProductEntityDecimal{ValueID: 0, AttributeID: 73, StoreID: 3, EntityID: 1, Value: money.New(money.Precision(4)).Set(7779933)}
+	tuple := &TableProductEntityDecimal{ValueID: 0, AttributeID: 73, StoreID: 3, EntityID: 231, Value: money.New(money.Precision(4)).Set(7779933)}
+	tuple2 := &TableProductEntityDecimal{ValueID: 0, AttributeID: 74, StoreID: 2, EntityID: 231, Value: money.New(money.Precision(4)).Set(8889933)}
 	ib := dbrSess.InsertInto("catalog_product_entity_decimal")
 	ib.Columns("attribute_id", "store_id", "entity_id", "value")
 
-	ib.Record(tuple)
-	// this is a bug in the dbr package ToSql because it ignores the Value() driver.Value interface
-	t.Error(ib.ToSql())
+	ib.Values(tuple.AttributeID, tuple.StoreID, tuple.EntityID, &tuple.Value)
+	ib.Values(tuple2.AttributeID, tuple2.StoreID, tuple2.EntityID, &tuple2.Value)
+//	t.Error(ib.ToSql())
+	res,err := ib.Exec()
+	t.Log(err)
+	t.Logf("%#v",res)
+	t.Log(res.LastInsertId())
+	t.Log(res.RowsAffected())
 
 }
 
