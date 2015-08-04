@@ -84,7 +84,7 @@ func (c *Currency) UnmarshalJSON(src []byte) error {
 }
 
 // Value implements the SQL driver Valuer interface.
-func (c *Currency) Value() (driver.Value, error) {
+func (c Currency) Value() (driver.Value, error) {
 	if !c.Valid {
 		return nil, nil
 	}
@@ -107,7 +107,7 @@ func (c *Currency) Scan(src interface{}) error {
 	if b, ok := src.([]byte); ok {
 		return c.ParseFloat(string(b))
 	}
-	return log.Error("Currency=Scan", "err", errgo.Newf("Unsupported Type for value. Supported: []byte"), "src", src)
+	return log.Error("Currency=Scan", "err", errgo.Newf("Unsupported Type %T for value. Supported: []byte", src), "src", src)
 }
 
 // NewJSONEncoder creates a new encoder depending on the type.
