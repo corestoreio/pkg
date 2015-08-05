@@ -50,7 +50,9 @@ func (b *InsertBuilder) Columns(columns ...string) *InsertBuilder {
 // Only this function will consider the driver.Valuer interface when you pass
 // a pointer to the value.
 func (b *InsertBuilder) Values(vals ...interface{}) *InsertBuilder {
-	argsValuer(&vals)
+	if err := argsValuer(&vals); err != nil {
+		b.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(vals)})
+	}
 	b.Vals = append(b.Vals, vals)
 	return b
 }

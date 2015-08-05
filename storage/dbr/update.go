@@ -42,7 +42,9 @@ func (sess *Session) Update(table string) *UpdateBuilder {
 
 // UpdateBySql creates a new UpdateBuilder for the given SQL string and arguments
 func (sess *Session) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
-	argsValuer(&args)
+	if err := argsValuer(&args); err != nil {
+		sess.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(args)})
+	}
 	return &UpdateBuilder{
 		Session:      sess,
 		runner:       sess.cxn.Db,
@@ -62,7 +64,9 @@ func (tx *Tx) Update(table string) *UpdateBuilder {
 
 // UpdateBySql creates a new UpdateBuilder for the given SQL string and arguments bound to a transaction
 func (tx *Tx) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder {
-	argsValuer(&args)
+	if err := argsValuer(&args); err != nil {
+		tx.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(args)})
+	}
 	return &UpdateBuilder{
 		Session:      tx.Session,
 		runner:       tx.Tx,
@@ -94,7 +98,9 @@ func (b *UpdateBuilder) SetMap(clauses map[string]interface{}) *UpdateBuilder {
 
 // Where appends a WHERE clause to the statement
 func (b *UpdateBuilder) Where(whereSqlOrMap interface{}, args ...interface{}) *UpdateBuilder {
-	argsValuer(&args)
+	if err := argsValuer(&args); err != nil {
+		b.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(args)})
+	}
 	b.WhereFragments = append(b.WhereFragments, newWhereFragment(whereSqlOrMap, args))
 	return b
 }

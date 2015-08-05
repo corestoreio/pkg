@@ -1,6 +1,10 @@
 package dbr
 
-import "database/sql/driver"
+import (
+	"database/sql/driver"
+
+	"github.com/juju/errgo"
+)
 
 // NameMapping is the routine to use when mapping column names to struct properties
 var NameMapping = camelCaseToSnakeCase
@@ -26,14 +30,15 @@ func camelCaseToSnakeCase(name string) string {
 
 // argsValuer checks if an argument implements driver.Valuer interface. If so
 // uses the Value() function to get the correct value.
-func argsValuer(args *[]interface{}) {
+func argsValuer(args *[]interface{}) error {
 	for i, v := range *args {
 		if dbVal, ok := v.(driver.Valuer); ok {
 			if val, err := dbVal.Value(); err == nil {
 				(*args)[i] = val
 			} else {
-				panic(err) // @todo return error
+				return errgo.Mask(err)
 			}
 		}
 	}
+	return nil
 }
