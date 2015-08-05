@@ -210,7 +210,11 @@ func (b *InsertBuilder) MapToSql(sql bytes.Buffer) (string, []interface{}) {
 }
 
 // Exec executes the statement represented by the InsertBuilder
-// It returns the raw database/sql Result and an error if there was one
+// It returns the raw database/sql Result and an error if there was one.
+// Regarding LastInsertID(): If you insert multiple rows using a single
+// INSERT statement, LAST_INSERT_ID() returns the value generated for
+// the first inserted row only. The reason for this is to make it possible to
+// reproduce easily the same INSERT statement against some other server.
 func (b *InsertBuilder) Exec() (sql.Result, error) {
 	sql, args := b.ToSql()
 

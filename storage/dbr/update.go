@@ -3,9 +3,9 @@ package dbr
 import (
 	"bytes"
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"time"
-	"database/sql/driver"
 )
 
 // UpdateBuilder contains the clauses for an UPDATE statement
