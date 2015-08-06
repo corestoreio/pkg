@@ -287,6 +287,7 @@ func (c *Currency) applyDefaults() {
 	if c.fmtNum == nil {
 		c.fmtNum = DefaultFormatterNumber
 	}
+	c.Interval = gSwedish
 }
 
 // Options besides New() also Option() can apply options to the current
