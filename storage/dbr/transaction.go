@@ -12,7 +12,7 @@ type Tx struct {
 
 // Begin creates a transaction for the given session
 func (sess *Session) Begin() (*Tx, error) {
-	tx, err := sess.cxn.Db.Begin()
+	tx, err := sess.cxn.DB.Begin()
 	if err != nil {
 		return nil, sess.EventErr("dbr.begin.error", err)
 	} else {

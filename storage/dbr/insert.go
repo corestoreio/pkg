@@ -25,7 +25,7 @@ type InsertBuilder struct {
 func (sess *Session) InsertInto(into string) *InsertBuilder {
 	return &InsertBuilder{
 		Session: sess,
-		runner:  sess.cxn.Db,
+		runner:  sess.cxn.DB,
 		Into:    into,
 	}
 }

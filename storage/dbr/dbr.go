@@ -2,13 +2,22 @@ package dbr
 
 import (
 	"database/sql"
+
+	"github.com/juju/errgo"
 )
+
+// DefaultDriverName is MySQL
+const DefaultDriverName = "mysql"
 
 // Connection is a connection to the database with an EventReceiver
 // to send events, errors, and timings to
 type Connection struct {
-	Db *sql.DB
+	DB *sql.DB
 	EventReceiver
+	// dn internal driver name
+	dn string
+	// dsn Data Source Name
+	dsn string
 }
 
 // Session represents a business unit of execution for some connection
@@ -17,22 +26,124 @@ type Session struct {
 	EventReceiver
 }
 
-// NewConnection instantiates a Connection for a given database/sql connection
-// and event receiver
-func NewConnection(db *sql.DB, log EventReceiver) *Connection {
+// ConnOpts type for setting options on a connection.
+type ConnOpts func(c *Connection)
+
+// ConnDB sets the DB value to a connection. If set ignores the DSN values.
+func ConnDB(db *sql.DB) ConnOpts {
+	if db == nil {
+		panic("DB argument cannot be nil")
+	}
+	return func(c *Connection) {
+		c.DB = db
+	}
+}
+
+// ConnEvent sets the event receiver for a connection.
+func ConnEvent(log EventReceiver) ConnOpts {
 	if log == nil {
 		log = nullReceiver
 	}
+	return func(c *Connection) {
+		c.EventReceiver = log
+	}
+}
 
-	return &Connection{Db: db, EventReceiver: log}
+// ConnDriver sets the driver name for a connection. At the moment only MySQL
+// is supported.
+func ConnDriver(driverName string) ConnOpts {
+	return func(c *Connection) {
+		c.dn = driverName
+	}
+}
+
+// ConnDSN sets the data source name for a connection.
+func ConnDSN(dsn string) ConnOpts {
+	if dsn == "" {
+		panic("DSN argument cannot be empty")
+	}
+	return func(c *Connection) {
+		c.dsn = dsn
+	}
+}
+
+// NewConnection instantiates a Connection for a given database/sql connection
+// and event receiver
+func NewConnection(opts ...ConnOpts) (*Connection, error) {
+	c := &Connection{
+		dn:            DefaultDriverName,
+		EventReceiver: nullReceiver,
+	}
+	for _, opt := range opts {
+		opt(c)
+	}
+
+	switch c.dn {
+	case "mysql":
+	default:
+		return nil, errgo.Newf("unsupported driver: %s", c.dn)
+	}
+
+	if c.DB != nil {
+		return c, nil
+	}
+
+	if c.dsn != "" {
+		var err error
+		if c.DB, err = sql.Open(c.dn, c.dsn); err != nil {
+			return nil, err
+		}
+	}
+	return c, nil
+}
+
+// SessionOpts function type to apply options to a session
+type SessionOpts func(cxn *Connection, s *Session)
+
+// SessionEvent sets an event receiver securely to a session. Falls back to the
+// parent event receiver if argument is nil.
+func SessionEvent(log EventReceiver) SessionOpts {
+	return func(cxn *Connection, s *Session) {
+		if log == nil {
+			log = cxn.EventReceiver // Use parent instrumentation
+		}
+		s.EventReceiver = log
+	}
 }
 
 // NewSession instantiates a Session for the Connection
-func (cxn *Connection) NewSession(log EventReceiver) *Session {
-	if log == nil {
-		log = cxn.EventReceiver // Use parent instrumentation
+func (cxn *Connection) NewSession(opts ...SessionOpts) *Session {
+	s := &Session{
+		cxn:           cxn,
+		EventReceiver: cxn.EventReceiver, // Use parent instrumentation
 	}
-	return &Session{cxn: cxn, EventReceiver: log}
+	for _, opt := range opts {
+		opt(cxn, s)
+	}
+	return s
+}
+
+// MustConnectAndVerify is like NewConnection but it verifies the connection
+// and panics on errors.
+func MustConnectAndVerify(opts ...ConnOpts) *Connection {
+	conn, err := NewConnection(opts...)
+	if err != nil {
+		panic(err)
+	}
+	if err := conn.Ping(); err != nil {
+		panic(err)
+	}
+	return conn
+}
+
+// Close closes the database, releasing any open resources.
+func (c *Connection) Close() error {
+	return c.DB.Close()
+}
+
+// Ping verifies a connection to the database is still alive, establishing a connection if necessary.
+func (c *Connection) Ping() error {
+	return c.DB.Ping()
 }
 
 // SessionRunner can do anything that a Session can except start a transaction.

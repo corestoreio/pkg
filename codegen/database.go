@@ -122,7 +122,7 @@ func GetEavValueTables(dbrConn *dbr.Connection, entityTypeCodes []string) (TypeC
 			vtp = vtp + TableNameSeparator
 		}
 
-		tableNames, err := GetTables(dbrConn.Db, `SHOW TABLES LIKE "`+vtp+`%"`)
+		tableNames, err := GetTables(dbrConn.DB, `SHOW TABLES LIKE "`+vtp+`%"`)
 		if err != nil {
 			return nil, errgo.Mask(err)
 		}

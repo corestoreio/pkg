@@ -25,7 +25,7 @@ type DeleteBuilder struct {
 func (sess *Session) DeleteFrom(from string) *DeleteBuilder {
 	return &DeleteBuilder{
 		Session: sess,
-		runner:  sess.cxn.Db,
+		runner:  sess.cxn.DB,
 		From:    from,
 	}
 }

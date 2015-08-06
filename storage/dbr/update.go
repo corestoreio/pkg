@@ -35,7 +35,7 @@ type setClause struct {
 func (sess *Session) Update(table string) *UpdateBuilder {
 	return &UpdateBuilder{
 		Session: sess,
-		runner:  sess.cxn.Db,
+		runner:  sess.cxn.DB,
 		Table:   table,
 	}
 }
@@ -47,7 +47,7 @@ func (sess *Session) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder
 	}
 	return &UpdateBuilder{
 		Session:      sess,
-		runner:       sess.cxn.Db,
+		runner:       sess.cxn.DB,
 		RawFullSql:   sql,
 		RawArguments: args,
 	}

@@ -31,7 +31,7 @@ type SelectBuilder struct {
 func (sess *Session) Select(cols ...string) *SelectBuilder {
 	return &SelectBuilder{
 		Session: sess,
-		runner:  sess.cxn.Db,
+		runner:  sess.cxn.DB,
 		Columns: cols,
 	}
 }
@@ -40,7 +40,7 @@ func (sess *Session) Select(cols ...string) *SelectBuilder {
 func (sess *Session) SelectBySql(sql string, args ...interface{}) *SelectBuilder {
 	return &SelectBuilder{
 		Session:      sess,
-		runner:       sess.cxn.Db,
+		runner:       sess.cxn.DB,
 		RawFullSql:   sql,
 		RawArguments: args,
 	}

@@ -54,29 +54,26 @@ func GetDSNTest() (string, error) {
 	return getDSN(EnvDSNTest, ErrDSNTestNotFound)
 }
 
-func Connect() (*sql.DB, *dbr.Connection, error) {
+// Connect creates a new database connection from a DSN stored in an
+// environment variable.
+func Connect() (*dbr.Connection, error) {
 	dsn, err := GetDSN()
 	if err != nil {
 		return nil, nil, errgo.Mask(err)
 	}
-	db, err := sql.Open("mysql", dsn)
-	if err != nil {
-		return nil, nil, errgo.Mask(err)
-	}
-	dbrConn := dbr.NewConnection(db, nil)
-	return db, dbrConn, nil
+	return dbr.NewConnection(dbr.ConnDSN(dsn))
 }
 
-// mustConnectTest is a helper function that creates a
+// MustConnectTest is a helper function that creates a
 // new database connection using environment variables.
 func MustConnectTest() *sql.DB {
 	dsn, err := GetDSNTest()
 	if err != nil {
 		panic(err)
 	}
-	db, err := sql.Open("mysql", dsn)
+	dbConn, err := dbr.MustConnectAndVerify(dbr.ConnDSN(dsn))
 	if err != nil {
 		panic(err)
 	}
-	return db
+	return dbConn.DB
 }

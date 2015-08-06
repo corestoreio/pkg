@@ -13,38 +13,42 @@ import (
 
 // Returns a session that's not backed by a database
 func createFakeSession() *Session {
-	cxn := NewConnection(nil, nil)
-	return cxn.NewSession(nil)
+	cxn, err := NewConnection()
+	if err != nil {
+		panic(err)
+	}
+	return cxn.NewSession()
 }
 
 func createRealSession() *Session {
-	cxn := NewConnection(realDb(), nil)
-	return cxn.NewSession(nil)
+	dn, dsn := realDb()
+	cxn, err := NewConnection(
+		ConnDSN(dsn),
+		ConnDriver(dn),
+	)
+	if err != nil {
+		panic(err)
+	}
+	return cxn.NewSession()
 }
 
 func createRealSessionWithFixtures() *Session {
 	sess := createRealSession()
-	installFixtures(sess.cxn.Db)
+	installFixtures(sess.cxn.DB)
 	return sess
 }
 
-func realDb() *sql.DB {
-	driver := os.Getenv("DBR_TEST_DRIVER")
+func realDb() (driver string, dsn string) {
+	driver = os.Getenv("DBR_TEST_DRIVER")
 	if driver == "" {
-		driver = "mysql"
+		driver = DefaultDriverName
 	}
 
-	dsn := os.Getenv("DBR_TEST_DSN")
+	dsn = os.Getenv("DBR_TEST_DSN")
 	if dsn == "" {
 		dsn = "root:unprotected@unix(/tmp/mysql.sock)/uservoice_development?charset=utf8&parseTime=true"
 	}
-
-	db, err := sql.Open(driver, dsn)
-	if err != nil {
-		log.Fatalln("Mysql error ", err)
-	}
-
-	return db
+	return
 }
 
 type dbrPerson struct {
