@@ -9,3 +9,5 @@ TODO:
    - selectBuilder.Query() *sql.Rows, err		// We might want to provide native sql.Rows support? Q: how does that impact metrics
    - selectBuilder.Count() -- ignores Columns, Limit, Offset, Order and calculates COUNT(*) -- but: having could reference cols?
      - i know rails/AR does some non-trivial stuff when you have joins. Things sometimes end up with DISTINCT in them.
+
+- Adapt some parts of refactoring from https://github.com/mibk/ql but only if performance gets better
