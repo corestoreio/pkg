@@ -19,6 +19,11 @@ import (
 	"golang.org/x/text/language"
 )
 
+type Currency struct {
+	// https://godoc.org/golang.org/x/text/language
+	c language.Currency
+}
+
 // BaseCurrencyCode retrieves application base currency code
 func BaseCurrencyCode(cr config.Reader) (language.Currency, error) {
 	return language.ParseCurrency(cr.GetString(config.Path(PathCurrencyBase)))
