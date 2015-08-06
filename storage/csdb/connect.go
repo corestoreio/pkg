@@ -15,7 +15,6 @@
 package csdb
 
 import (
-	"database/sql"
 	"errors"
 	"os"
 
@@ -44,36 +43,33 @@ func getDSN(env string, err error) (string, error) {
 	return dsn, nil
 }
 
-// GetDSN returns the DSN from env or an error
+// GetDSN returns the data source name from an environment variable or an error
 func GetDSN() (string, error) {
 	return getDSN(EnvDSN, ErrDSNNotFound)
 }
 
-// GetDSNTest returns the DSN from env or an error
+// GetDSNTest returns the test data source name from an environment variable or an error
 func GetDSNTest() (string, error) {
 	return getDSN(EnvDSNTest, ErrDSNTestNotFound)
 }
 
 // Connect creates a new database connection from a DSN stored in an
 // environment variable.
-func Connect() (*dbr.Connection, error) {
+func Connect(opts ...dbr.ConnOpts) (*dbr.Connection, error) {
 	dsn, err := GetDSN()
 	if err != nil {
-		return nil, nil, errgo.Mask(err)
+		return nil, errgo.Mask(err)
 	}
-	return dbr.NewConnection(dbr.ConnDSN(dsn))
+	c, err := dbr.NewConnection(dbr.ConnDSN(dsn))
+	return c.ApplyOpts(opts...), err
 }
 
 // MustConnectTest is a helper function that creates a
 // new database connection using environment variables.
-func MustConnectTest() *sql.DB {
+func MustConnectTest(opts ...dbr.ConnOpts) *dbr.Connection {
 	dsn, err := GetDSNTest()
 	if err != nil {
 		panic(err)
 	}
-	dbConn, err := dbr.MustConnectAndVerify(dbr.ConnDSN(dsn))
-	if err != nil {
-		panic(err)
-	}
-	return dbConn.DB
+	return dbr.MustConnectAndVerify(dbr.ConnDSN(dsn)).ApplyOpts(opts...)
 }
