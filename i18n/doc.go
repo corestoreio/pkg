@@ -71,6 +71,7 @@ despite the format is #,##0.00 ¤.
 
 @todo: Rounding refers to the Swedish rounding and are a todo in this i18n package. Use the money.Currency type for Swedish rounding.
 @todo: CashDigits and CashRounding are currently not implemented.
+@todo: something like https://github.com/maximilien/i18n4go
 
 Currency Format
 

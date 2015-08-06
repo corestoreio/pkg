@@ -241,7 +241,6 @@ func (c *Currency) COptions(opts ...CurrencyOptFunc) (previous CurrencyOptFunc) 
 // will be applied. Returns the number bytes written or an error. Thread safe.
 // For more details please see the interface documentation.
 func (c *Currency) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac int64) (int, error) {
-	// @todo some minor optimizations in FmtCurrency and FmtCurrencyFloat64
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	c.clearBuf()
