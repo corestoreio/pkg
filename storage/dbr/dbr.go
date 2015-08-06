@@ -74,9 +74,7 @@ func NewConnection(opts ...ConnOpts) (*Connection, error) {
 		dn:            DefaultDriverName,
 		EventReceiver: nullReceiver,
 	}
-	for _, opt := range opts {
-		opt(c)
-	}
+	c.ApplyOpts(opts...)
 
 	switch c.dn {
 	case "mysql":
@@ -111,14 +109,22 @@ func SessionEvent(log EventReceiver) SessionOpts {
 	}
 }
 
+// ApplyOpts applies options to a connection
+func (c *Connection) ApplyOpts(opts ...ConnOpts) *Connection {
+	for _, opt := range opts {
+		opt(c)
+	}
+	return c
+}
+
 // NewSession instantiates a Session for the Connection
-func (cxn *Connection) NewSession(opts ...SessionOpts) *Session {
+func (c *Connection) NewSession(opts ...SessionOpts) *Session {
 	s := &Session{
-		cxn:           cxn,
-		EventReceiver: cxn.EventReceiver, // Use parent instrumentation
+		cxn:           c,
+		EventReceiver: c.EventReceiver, // Use parent instrumentation
 	}
 	for _, opt := range opts {
-		opt(cxn, s)
+		opt(c, s)
 	}
 	return s
 }
@@ -126,24 +132,24 @@ func (cxn *Connection) NewSession(opts ...SessionOpts) *Session {
 // MustConnectAndVerify is like NewConnection but it verifies the connection
 // and panics on errors.
 func MustConnectAndVerify(opts ...ConnOpts) *Connection {
-	conn, err := NewConnection(opts...)
+	c, err := NewConnection(opts...)
 	if err != nil {
 		panic(err)
 	}
-	if err := conn.Ping(); err != nil {
+	if err := c.Ping(); err != nil {
 		panic(err)
 	}
-	return conn
+	return c
 }
 
 // Close closes the database, releasing any open resources.
 func (c *Connection) Close() error {
-	return c.DB.Close()
+	return c.EventErr("dbr.connection.close", c.DB.Close())
 }
 
 // Ping verifies a connection to the database is still alive, establishing a connection if necessary.
 func (c *Connection) Ping() error {
-	return c.DB.Ping()
+	return c.EventErr("dbr.connection.ping", c.DB.Ping())
 }
 
 // SessionRunner can do anything that a Session can except start a transaction.
