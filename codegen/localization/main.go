@@ -24,8 +24,8 @@ import (
 	"text/template"
 
 	"github.com/corestoreio/csfw/codegen"
+	"github.com/corestoreio/csfw/codegen/localization/internal/gen"
 	"golang.org/x/text/cldr"
-	"golang.org/x/text/internal/gen"
 )
 
 func main() {
