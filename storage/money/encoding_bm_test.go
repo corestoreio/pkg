@@ -23,7 +23,8 @@ import (
 
 var benchmarkMoneyScan float64
 
-// Benchmark_MoneyScan	 3000000	       504 ns/op	     136 B/op	       2 allocs/op
+// Benchmark_MoneyScan	 3000000	       504 ns/op	     136 B/op	       2 allocs/op => Go 1.4.2
+// Benchmark_MoneyScan 	 5000000	       386 ns/op	     144 B/op	       2 allocs/op => Go 1.5.0
 func Benchmark_MoneyScan(b *testing.B) {
 	var d interface{}
 	d = []byte{0x37, 0x30, 0x35, 0x2e, 0x39, 0x39, 0x33, 0x33}
@@ -40,7 +41,8 @@ func Benchmark_MoneyScan(b *testing.B) {
 	}
 }
 
-// Benchmark_ParseFloat	30000000	        50.8 ns/op	       0 B/op	       0 allocs/op
+// Benchmark_ParseFloat	30000000	        50.8 ns/op	       0 B/op	       0 allocs/op => Go 1.4.2
+// Benchmark_ParseFloat	30000000	        53.1 ns/op	       0 B/op	       0 allocs/op => Go 1.5.0
 func Benchmark_ParseFloat(b *testing.B) {
 	d := "705.993300"
 	var want float64 = 705.993300
@@ -58,17 +60,20 @@ func Benchmark_ParseFloat(b *testing.B) {
 	}
 }
 
-// Benchmark_JSONUnMarshalSingle__Number	 1000000	      1256 ns/op	     240 B/op	       4 allocs/op
+// Benchmark_JSONUnMarshalSingle__Number	 1000000	      1256 ns/op	     240 B/op	       4 allocs/op => Go 1.4.2
+// Benchmark_JSONUnMarshalSingle__Number 	 1000000	      1183 ns/op	     240 B/op	       4 allocs/op => Go 1.5.0
 func Benchmark_JSONUnMarshalSingle__Number(b *testing.B) {
 	benchmark_JSONUnMarshalSingle(b, []byte(`-1234.56789`), -12345679)
 }
 
-// Benchmark_JSONUnMarshalSingle__Locale	 1000000	      1531 ns/op	     272 B/op	       4 allocs/op
+// Benchmark_JSONUnMarshalSingle__Locale	 1000000	      1531 ns/op	     272 B/op	       4 allocs/op => Go 1.4.2
+// Benchmark_JSONUnMarshalSingle__Locale 	 1000000	      1258 ns/op	     272 B/op	       4 allocs/op => Go 1.5.0
 func Benchmark_JSONUnMarshalSingle__Locale(b *testing.B) {
 	benchmark_JSONUnMarshalSingle(b, []byte(`-2 345 678,45 €`), -23456784500)
 }
 
-// Benchmark_JSONUnMarshalSingle_Extended	 1000000	      1586 ns/op	     368 B/op	       4 allocs/op
+// Benchmark_JSONUnMarshalSingle_Extended	 1000000	      1586 ns/op	     368 B/op	       4 allocs/op => Go 1.4.2
+// Benchmark_JSONUnMarshalSingle_Extended	 1000000	      1251 ns/op	     368 B/op	       4 allocs/op => Go 1.5.0
 func Benchmark_JSONUnMarshalSingle_Extended(b *testing.B) {
 	benchmark_JSONUnMarshalSingle(b, []byte(`[-1999.00236, null, null]`), -19990024)
 }
