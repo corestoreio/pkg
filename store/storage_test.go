@@ -444,12 +444,11 @@ func TestStorageReInit(t *testing.T) {
 	defer runtime.GOMAXPROCS(prevCPU)
 
 	// quick implement, use mock of dbr.SessionRunner and remove connection
-	db := csdb.MustConnectTest()
-	defer db.Close()
-	dbrConn := dbr.NewConnection(db, nil)
+	dbr := csdb.MustConnectTest()
+	defer dbr.Close()
 
 	nsg := store.NewStorage(nil, nil, nil)
-	if err := nsg.ReInit(dbrConn.NewSession(nil)); err != nil {
+	if err := nsg.ReInit(dbr.NewSession()); err != nil {
 		t.Error(err)
 	}
 

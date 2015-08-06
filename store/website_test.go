@@ -165,9 +165,10 @@ func TestTableWebsiteSlice(t *testing.T) {
 }
 
 func TestTableWebsiteSliceLoad(t *testing.T) {
-	db := csdb.MustConnectTest()
-	defer db.Close()
-	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
+	dbr := csdb.MustConnectTest()
+	defer dbr.Close()
+	dbrSess := dbr.NewSession()
+
 	var websites store.TableWebsiteSlice
 	websites.Load(dbrSess)
 	assert.True(t, websites.Len() > 2)

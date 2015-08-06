@@ -158,9 +158,10 @@ var testStores = store.TableStoreSlice{
 }
 
 func TestTableStoreSliceLoad(t *testing.T) {
-	db := csdb.MustConnectTest()
-	defer db.Close()
-	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
+	dbr := csdb.MustConnectTest()
+	defer dbr.Close()
+	dbrSess := dbr.NewSession()
+
 	var stores store.TableStoreSlice
 	stores.Load(dbrSess)
 	assert.True(t, stores.Len() > 2)
@@ -250,41 +251,47 @@ func TestStoreBaseUrlandPath(t *testing.T) {
 		wantPath     string
 	}{
 		{
-			config.NewMockReader(func(path string) string {
-				switch path {
-				case config.ScopeRangeDefault + "/0/" + store.PathSecureBaseURL:
-					return "https://corestore.io"
-				case config.ScopeRangeDefault + "/0/" + store.PathUnsecureBaseURL:
-					return "http://corestore.io"
-				}
-				return ""
-			}, nil),
+			config.NewMockReader(config.MockString(
+				func(path string) string {
+					switch path {
+					case config.ScopeRangeDefault + "/0/" + store.PathSecureBaseURL:
+						return "https://corestore.io"
+					case config.ScopeRangeDefault + "/0/" + store.PathUnsecureBaseURL:
+						return "http://corestore.io"
+					}
+					return ""
+				},
+			)),
 			config.URLTypeWeb, true, "https://corestore.io/", "/",
 		},
 		{
-			config.NewMockReader(func(path string) string {
-				switch path {
-				case config.ScopeRangeDefault + "/0/" + store.PathSecureBaseURL:
-					return "https://myplatform.io/customer1"
-				case config.ScopeRangeDefault + "/0/" + store.PathUnsecureBaseURL:
-					return "http://myplatform.io/customer1"
-				}
-				return ""
-			}, nil),
+			config.NewMockReader(config.MockString(
+				func(path string) string {
+					switch path {
+					case config.ScopeRangeDefault + "/0/" + store.PathSecureBaseURL:
+						return "https://myplatform.io/customer1"
+					case config.ScopeRangeDefault + "/0/" + store.PathUnsecureBaseURL:
+						return "http://myplatform.io/customer1"
+					}
+					return ""
+				},
+			)),
 			config.URLTypeWeb, false, "http://myplatform.io/customer1/", "/customer1/",
 		},
 		{
-			config.NewMockReader(func(path string) string {
-				switch path {
-				case config.ScopeRangeDefault + "/0/" + store.PathSecureBaseURL:
-					return store.PlaceholderBaseURL
-				case config.ScopeRangeDefault + "/0/" + store.PathUnsecureBaseURL:
-					return store.PlaceholderBaseURL
-				case config.ScopeRangeDefault + "/0/" + config.PathCSBaseURL:
-					return config.CSBaseURL
-				}
-				return ""
-			}, nil),
+			config.NewMockReader(config.MockString(
+				func(path string) string {
+					switch path {
+					case config.ScopeRangeDefault + "/0/" + store.PathSecureBaseURL:
+						return store.PlaceholderBaseURL
+					case config.ScopeRangeDefault + "/0/" + store.PathUnsecureBaseURL:
+						return store.PlaceholderBaseURL
+					case config.ScopeRangeDefault + "/0/" + config.PathCSBaseURL:
+						return config.CSBaseURL
+					}
+					return ""
+				},
+			)),
 			config.URLTypeWeb, false, config.CSBaseURL, "/",
 		},
 	}

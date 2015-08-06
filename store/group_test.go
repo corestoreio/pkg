@@ -164,9 +164,10 @@ var testGroups = store.TableGroupSlice{
 }
 
 func TestTableGroupSliceLoad(t *testing.T) {
-	db := csdb.MustConnectTest()
-	defer db.Close()
-	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
+	dbr := csdb.MustConnectTest()
+	defer dbr.Close()
+	dbrSess := dbr.NewSession()
+
 	var groups store.TableGroupSlice
 	groups.Load(dbrSess)
 	assert.True(t, groups.Len() > 2)
