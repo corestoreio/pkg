@@ -2,6 +2,7 @@ package dbr
 
 import (
 	"database/sql"
+	"fmt"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -59,7 +60,8 @@ func TestInsertRecordsToSql(t *testing.T) {
 	sql, args := s.InsertInto("a").Columns("something_id", "user_id", "other").Record(objs[0]).Record(objs[1]).ToSql()
 
 	assert.Equal(t, sql, "INSERT INTO a (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?)")
-	assert.Equal(t, args, []interface{}{1, 88, false, 2, 99, true})
+	// without fmt.Sprint we have an error despite objects are equal ...
+	assert.Equal(t, fmt.Sprint(args), fmt.Sprint([]interface{}{1, 88, false, 2, 99, true}))
 }
 
 func TestInsertKeywordColumnName(t *testing.T) {
@@ -70,7 +72,7 @@ func TestInsertKeywordColumnName(t *testing.T) {
 
 	rowsAff, err := res.RowsAffected()
 	assert.NoError(t, err)
-	assert.Equal(t, rowsAff, 1)
+	assert.Equal(t, rowsAff, int64(1))
 }
 
 func TestInsertReal(t *testing.T) {
@@ -101,7 +103,7 @@ func validateInsertingBarack(t *testing.T, s *Session, res sql.Result, err error
 	assert.NoError(t, err)
 
 	assert.True(t, id > 0)
-	assert.Equal(t, rowsAff, 1)
+	assert.Equal(t, rowsAff, int64(1))
 
 	var person dbrPerson
 	err = s.Select("*").From("dbr_people").Where("id = ?", id).LoadStruct(&person)

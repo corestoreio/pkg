@@ -50,19 +50,19 @@ func TestDeleteReal(t *testing.T) {
 
 	// Get Barack's ID
 	id, err := res.LastInsertId()
-	assert.NoError(t, err)
+	assert.NoError(t, err, "LastInsertId")
 
 	// Delete Barack
 	res, err = s.DeleteFrom("dbr_people").Where("id = ?", id).Exec()
-	assert.NoError(t, err)
+	assert.NoError(t, err, "DeleteFrom")
 
 	// Ensure we only reflected one row and that the id no longer exists
 	rowsAff, err := res.RowsAffected()
 	assert.NoError(t, err)
-	assert.Equal(t, rowsAff, 1)
+	assert.Equal(t, rowsAff, int64(1), "RowsAffected")
 
 	var count int64
 	err = s.Select("count(*)").From("dbr_people").Where("id = ?", id).LoadValue(&count)
 	assert.NoError(t, err)
-	assert.Equal(t, count, 0)
+	assert.Equal(t, count, int64(0), "count")
 }
