@@ -189,7 +189,7 @@ func TestJSONUnMarshalSlice(t *testing.T) {
 			{"ValueID":8,"AttributeID":73,"StoreID":3,"EntityID":1,"Value":"$ 705.99"},
 			{"ValueID":8,"AttributeID":73,"StoreID":3,"EntityID":1,"Value":"$ 70789"}
 			]`),
-			`999.000; 2345678.450; NaN; 170599.000; 5123705.940; -6705.990; 705.990; 70789.000; `,
+			`999.000; 2345678.450; NaN; 1705.990; 5123705.940; -6705.990; 705.990; 70789.000; `,
 			nil,
 		},
 		{
@@ -246,9 +246,9 @@ type TableProductEntityDecimalSlice []*TableProductEntityDecimal
 
 func off_TestLoadFromDb(t *testing.T) {
 	//for hacking testing added :-)
-	db := csdb.MustConnectTest()
-	defer db.Close()
-	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
+	conn := csdb.MustConnectTest()
+	defer conn.Close()
+	dbrSess := conn.NewSession()
 
 	sel := dbrSess.SelectBySql("SELECT * FROM `catalog_product_entity_decimal`")
 	var peds TableProductEntityDecimalSlice
@@ -298,7 +298,7 @@ func off_TestLoadFromDb(t *testing.T) {
 //}
 
 func TestValue(t *testing.T) {
-	dbrSess := dbr.NewConnection(nil, nil).NewSession(nil)
+	dbrSess := csdb.MustConnectTest().NewSession()
 
 	tuple := &TableProductEntityDecimal{ValueID: 0, AttributeID: 73, StoreID: 3, EntityID: 231, Value: money.New(money.Precision(4)).Set(7779933)}
 	tuple2 := &TableProductEntityDecimal{ValueID: 0, AttributeID: 74, StoreID: 2, EntityID: 231, Value: money.New(money.Precision(4)).Set(8889933)}
@@ -333,7 +333,7 @@ func TestScan(t *testing.T) {
 		{[]byte{0x37, 0x34}, `74.0000`, nil},
 		{[]byte{0x37, 0x37}, `77.0000`, nil},
 		{[]byte{0xa7, 0x3e}, `0.0000`, strconv.ErrSyntax},
-		{int(33), `0.0000`, errors.New("Unsupported Type for value")},
+		{int(33), `0.0000`, errors.New("Unsupported Type int for value. Supported: []byte")},
 	}
 
 	var buf bytes.Buffer
