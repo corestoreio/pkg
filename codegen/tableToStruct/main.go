@@ -15,7 +15,6 @@
 package main
 
 import (
-	"database/sql"
 	"io/ioutil"
 	"strings"
 
@@ -35,22 +34,22 @@ type (
 )
 
 func main() {
-	db, dbrConn, err := csdb.Connect()
+	dbc, err := csdb.Connect()
 	codegen.LogFatal(err)
-	defer db.Close()
+	defer dbc.Close()
 	for _, tStruct := range codegen.ConfigTableToStruct {
-		generateStructures(tStruct, db, dbrConn)
+		generateStructures(tStruct, dbc)
 	}
 }
 
-func generateStructures(tStruct *codegen.TableToStruct, db *sql.DB, dbrConn *dbr.Connection) {
+func generateStructures(tStruct *codegen.TableToStruct, dbrConn *dbr.Connection) {
 	tplData := &dataContainer{
 		Tables:  make([]map[string]interface{}, 0, 200),
 		Package: tStruct.Package,
 		Tick:    "`",
 	}
 
-	tables, err := codegen.GetTables(db, codegen.ReplaceTablePrefix(tStruct.SQLQuery))
+	tables, err := codegen.GetTables(dbrConn.DB, codegen.ReplaceTablePrefix(tStruct.SQLQuery))
 	codegen.LogFatal(err)
 
 	if len(tStruct.EntityTypeCodes) > 0 && tStruct.EntityTypeCodes[0] != "" {
@@ -68,7 +67,7 @@ func generateStructures(tStruct *codegen.TableToStruct, db *sql.DB, dbrConn *dbr
 
 	for _, table := range tables {
 
-		columns, err := codegen.GetColumns(db, table)
+		columns, err := codegen.GetColumns(dbrConn.DB, table)
 		codegen.LogFatal(err)
 		codegen.LogFatal(columns.MapSQLToGoDBRType())
 		var name = table
