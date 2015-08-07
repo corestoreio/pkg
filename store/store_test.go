@@ -181,7 +181,7 @@ func TestTableStoreSliceFindByID(t *testing.T) {
 	s2, err := testStores.FindByID(6)
 	assert.NotNil(t, s2)
 	assert.NoError(t, err)
-	assert.Equal(t, 6, s2.StoreID)
+	assert.Equal(t, int64(6), s2.StoreID)
 }
 
 func TestTableStoreSliceFindByCode(t *testing.T) {

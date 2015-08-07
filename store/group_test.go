@@ -169,7 +169,10 @@ func TestTableGroupSliceLoad(t *testing.T) {
 	dbrSess := dbr.NewSession()
 
 	var groups store.TableGroupSlice
-	groups.Load(dbrSess)
+	rows, err := groups.Load(dbrSess)
+	assert.NoError(t, err)
+	assert.True(t, rows > 0)
+
 	assert.True(t, groups.Len() > 2)
 	for _, s := range groups {
 		assert.True(t, len(s.Name) > 1)

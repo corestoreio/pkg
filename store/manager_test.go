@@ -295,7 +295,7 @@ func TestNewManagerGroupInit(t *testing.T) {
 	g, err := tm3.Group()
 	assert.NoError(t, err)
 	assert.NotNil(t, g)
-	assert.Equal(t, 2, g.Data().DefaultStoreID)
+	assert.Equal(t, int64(2), g.Data().DefaultStoreID)
 }
 
 func TestNewManagerGroups(t *testing.T) {
@@ -893,12 +893,12 @@ func TestNewManagerReInit(t *testing.T) {
 	for _, test := range tests {
 		s, err := storeManager.Store(test.have)
 		if test.wantErr == nil {
-			assert.NoError(t, err, "For test: %#v", test)
+			assert.NoError(t, err, "No Err; for test: %#v", test)
 			assert.NotNil(t, s)
 			//			assert.NotEmpty(t, s.Data().Code.String, "%#v", s.Data())
 		} else {
-			assert.Error(t, err, "For test: %#v", test)
-			assert.EqualError(t, test.wantErr, err.Error(), "For test: %#v", test)
+			assert.Error(t, err, "Err for test: %#v", test)
+			assert.EqualError(t, test.wantErr, err.Error(), "EqualErr for test: %#v", test)
 			assert.Nil(t, s)
 		}
 	}

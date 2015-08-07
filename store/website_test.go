@@ -147,7 +147,7 @@ func TestTableWebsiteSlice(t *testing.T) {
 	w2, err := websites.FindByID(2)
 	assert.NotNil(t, w2)
 	assert.NoError(t, err)
-	assert.Equal(t, 2, w2.WebsiteID)
+	assert.Equal(t, int64(2), w2.WebsiteID)
 
 	w3, err := websites.FindByCode("euro")
 	assert.NotNil(t, w3)
