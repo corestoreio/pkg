@@ -11,4 +11,5 @@ var (
 	ErrInvalidSliceValue  = errors.New("trying to interpolate invalid slice value into query")
 	ErrInvalidValue       = errors.New("trying to interpolate invalid value into query")
 	ErrArgumentMismatch   = errors.New("mismatch between ? (placeholders) and arguments")
+	ErrInvalidSyntax      = errors.New("SQL syntax error")
 )

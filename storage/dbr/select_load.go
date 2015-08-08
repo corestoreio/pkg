@@ -50,7 +50,7 @@ func (b *SelectBuilder) LoadStructs(dest interface{}) (int, error) {
 	//
 	// Get full SQL
 	//
-	fullSql, err := Interpolate(b.ToSql())
+	fullSql, err := Preprocess(b.ToSql())
 	if err != nil {
 		return 0, b.EventErr("dbr.select.load_all.interpolate", err)
 	}
@@ -137,7 +137,7 @@ func (b *SelectBuilder) LoadStruct(dest interface{}) error {
 	//
 	// Get full SQL
 	//
-	fullSql, err := Interpolate(b.ToSql())
+	fullSql, err := Preprocess(b.ToSql())
 	if err != nil {
 		return err
 	}
@@ -221,7 +221,7 @@ func (b *SelectBuilder) LoadValues(dest interface{}) (int, error) {
 	//
 	// Get full SQL
 	//
-	fullSql, err := Interpolate(b.ToSql())
+	fullSql, err := Preprocess(b.ToSql())
 	if err != nil {
 		return 0, err
 	}
@@ -278,7 +278,7 @@ func (b *SelectBuilder) LoadValue(dest interface{}) error {
 	//
 	// Get full SQL
 	//
-	fullSql, err := Interpolate(b.ToSql())
+	fullSql, err := Preprocess(b.ToSql())
 	if err != nil {
 		return err
 	}

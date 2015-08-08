@@ -125,7 +125,7 @@ func (b *DeleteBuilder) ToSql() (string, []interface{}) {
 func (b *DeleteBuilder) Exec() (sql.Result, error) {
 	sql, args := b.ToSql()
 
-	fullSql, err := Interpolate(sql, args)
+	fullSql, err := Preprocess(sql, args)
 	if err != nil {
 		return nil, b.EventErrKv("dbr.delete.exec.interpolate", err, kvs{"sql": fullSql})
 	}

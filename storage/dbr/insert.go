@@ -220,7 +220,7 @@ func (b *InsertBuilder) MapToSql(sql bytes.Buffer) (string, []interface{}) {
 func (b *InsertBuilder) Exec() (sql.Result, error) {
 	sql, args := b.ToSql()
 
-	fullSql, err := Interpolate(sql, args)
+	fullSql, err := Preprocess(sql, args)
 	if err != nil {
 		return nil, b.EventErrKv("dbr.insert.exec.interpolate", err, kvs{"sql": sql, "args": fmt.Sprint(args)})
 	}
