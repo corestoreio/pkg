@@ -879,13 +879,12 @@ func TestNewManagerReInit(t *testing.T) {
 		have    config.ScopeIDer
 		wantErr error
 	}{
-		{config.ScopeCode("de"), nil},
-		{config.ScopeCode("cz"), store.ErrStoreNotFound},
-		{config.ScopeCode("de"), nil},
+		{config.ScopeCode("dede"), nil},
+		{config.ScopeCode("czcz"), store.ErrStoreNotFound},
 		{config.ScopeID(1), nil},
 		{config.ScopeID(100), store.ErrStoreNotFound},
-		{mockIDCode{1, "de"}, nil},
-		{mockIDCode{2, "cz"}, store.ErrStoreNotFound},
+		{mockIDCode{1, "dede"}, nil},
+		{mockIDCode{2, "czfr"}, store.ErrStoreNotFound},
 		{mockIDCode{2, ""}, nil},
 		{nil, store.ErrAppStoreNotSet}, // if set returns default store
 	}
