@@ -36,7 +36,7 @@ func (c *ProductModel) TBD() {
 }
 
 func (c *ProductModel) TableNameBase() string {
-	return GetTableName(TableIndexProductEntity)
+	return TableCollection.Name(TableIndexProductEntity)
 }
 
 func (c *ProductModel) TableNameValue(i eav.ValueIndex) string {
@@ -49,7 +49,7 @@ func (c *ProductModel) TableNameValue(i eav.ValueIndex) string {
 
 // TableAdditionalAttribute needed for EntityTypeAdditionalAttributeTabler
 func (c *ProductModel) TableAdditionalAttribute() (*csdb.TableStructure, error) {
-	return GetTableStructure(TableIndexEAVAttribute)
+	return TableCollection.Structure(TableIndexEAVAttribute)
 }
 
 // TableEavWebsite needed for EntityTypeAdditionalAttributeTabler

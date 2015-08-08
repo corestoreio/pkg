@@ -86,14 +86,16 @@ func TestGetEavValueTables(t *testing.T) {
 		wantCVMap TypeCodeValueTable
 	}{
 		{
-			haveETC:   []string{"catalog_category", "catalog_product"},
-			wantErr:   false,
-			wantCVMap: TypeCodeValueTable{"catalog_category": map[string]string{"catalog_category_entity_datetime": "datetime", "catalog_category_entity_decimal": "decimal", "catalog_category_entity_int": "int", "catalog_category_entity_text": "text", "catalog_category_entity_varchar": "varchar"}, "catalog_product": map[string]string{"catalog_product_entity_datetime": "datetime", "catalog_product_entity_decimal": "decimal", "catalog_product_entity_int": "int", "catalog_product_entity_text": "text", "catalog_product_entity_varchar": "varchar"}},
+			haveETC: []string{"catalog_category", "catalog_product"},
+			wantErr: false,
+			wantCVMap: TypeCodeValueTable{"catalog_category": map[string]string{"catalog_category_entity_datetime": "datetime", "catalog_category_entity_decimal": "decimal", "catalog_category_entity_int": "int", "catalog_category_entity_text": "text", "catalog_category_entity_varchar": "varchar"},
+				"catalog_product": map[string]string{"catalog_product_entity_datetime": "datetime", "catalog_product_entity_decimal": "decimal", "catalog_product_entity_int": "int", "catalog_product_entity_text": "text", "catalog_product_entity_varchar": "varchar"}},
 		},
 		{
-			haveETC:   []string{"customer_address", "customer"},
-			wantErr:   false,
-			wantCVMap: TypeCodeValueTable{"customer_address": map[string]string{"customer_address_entity_text": "text", "customer_address_entity_varchar": "varchar", "customer_address_entity_datetime": "datetime", "customer_address_entity_decimal": "decimal", "customer_address_entity_int": "int"}, "customer": map[string]string{"csCustomer_value_decimal": "decimal", "csCustomer_value_int": "int", "csCustomer_value_text": "text", "csCustomer_value_varchar": "varchar", "csCustomer_value_datetime": "datetime"}},
+			haveETC: []string{"customer_address", "customer"},
+			wantErr: false,
+			wantCVMap: TypeCodeValueTable{"customer_address": map[string]string{"customer_address_entity_text": "text", "customer_address_entity_varchar": "varchar", "customer_address_entity_datetime": "datetime", "customer_address_entity_decimal": "decimal", "customer_address_entity_int": "int"},
+				"customer": map[string]string{"csCustomer_value_decimal": "decimal", "csCustomer_value_int": "int", "csCustomer_value_text": "text", "csCustomer_value_varchar": "varchar", "csCustomer_value_datetime": "datetime"}},
 		},
 		{
 			haveETC:   []string{"catalog_address"},
@@ -169,7 +171,7 @@ func TestGetColumns(t *testing.T) {
 			colName:  "value_id",
 		},
 		{
-			table:    "customer_entity",
+			table:    "customer_entity", // Magento2 has more columns because to get rid of EAV tables regarding performance.
 			expErr:   false,
 			expCount: 11,
 			colName:  "entity_id",
@@ -204,7 +206,7 @@ func TestGetColumns(t *testing.T) {
 		if !test.expErr && err != nil {
 			t.Error(err)
 		}
-		assert.Len(t, cols, test.expCount)
+		assert.True(t, len(cols) >= test.expCount, "For table %s", test.table)
 
 		col := cols.GetByName(test.colName)
 		if test.colName != "" {
@@ -280,7 +282,7 @@ func TestSQLQueryToColumnsToStruct(t *testing.T) {
 		t.Error(err)
 	}
 
-	assert.Len(t, colSliceDbr, 35)
+	assert.True(t, len(colSliceDbr) >= 35, "len(colSliceDbr) == %d, should have min 35", len(colSliceDbr))
 
 	for _, col := range colSliceDbr {
 		assert.True(t, col.Field.Valid, fmt.Sprintf("%#v", col))
@@ -340,7 +342,7 @@ func TestGetSQLPrepareForTemplate(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	assert.Len(t, attributeResultSlice, 110) // 110 rows
+	assert.Len(t, attributeResultSlice, 59) // 59 rows
 	for _, row := range attributeResultSlice {
 		assert.True(t, len(row["attribute_id"]) > 0, "Incorrect length of attribute_id", fmt.Sprintf("%#v", row))
 	}
@@ -387,5 +389,5 @@ func TestGetAttributeSelectSql(t *testing.T) {
 		t.Error(err)
 	}
 	sql, _ := dbrSelect.ToSql()
-	assert.Equal(t, "SELECT `main_table`.`attribute_id`, `main_table`.`entity_type_id`, `main_table`.`attribute_code`, `main_table`.`backend_model`, `main_table`.`backend_type`, `main_table`.`backend_table`, `main_table`.`frontend_model`, `main_table`.`frontend_input`, `main_table`.`frontend_label`, `main_table`.`frontend_class`, `main_table`.`source_model`, `main_table`.`is_user_defined`, `main_table`.`is_unique`, `main_table`.`note`, `additional_table`.`input_filter`, `additional_table`.`validate_rules`, `additional_table`.`is_system`, `additional_table`.`sort_order`, `additional_table`.`data_model`, `additional_table`.`is_used_for_customer_segment`, IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`, IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`) AS `is_required`, IFNULL(`scope_table`.`default_value`, `main_table`.`default_value`) AS `default_value`, IFNULL(`scope_table`.`multiline_count`, `additional_table`.`multiline_count`) AS `multiline_count` FROM `eav_attribute` AS `main_table` INNER JOIN `customer_eav_attribute` AS `additional_table` ON (`additional_table`.`attribute_id` = `main_table`.`attribute_id`) AND (`main_table`.`entity_type_id` = ?) LEFT JOIN `customer_eav_attribute_website` AS `scope_table` ON (`scope_table`.`attribute_id` = `main_table`.`attribute_id`) AND (`scope_table`.`website_id` = ?)", sql)
+	assert.Equal(t, "SELECT `main_table`.`attribute_id`, `main_table`.`entity_type_id`, `main_table`.`attribute_code`, `main_table`.`backend_model`, `main_table`.`backend_type`, `main_table`.`backend_table`, `main_table`.`frontend_model`, `main_table`.`frontend_input`, `main_table`.`frontend_label`, `main_table`.`frontend_class`, `main_table`.`source_model`, `main_table`.`is_user_defined`, `main_table`.`is_unique`, `main_table`.`note`, `additional_table`.`input_filter`, `additional_table`.`validate_rules`, `additional_table`.`is_system`, `additional_table`.`sort_order`, `additional_table`.`data_model`, IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`, IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`) AS `is_required`, IFNULL(`scope_table`.`default_value`, `main_table`.`default_value`) AS `default_value`, IFNULL(`scope_table`.`multiline_count`, `additional_table`.`multiline_count`) AS `multiline_count` FROM `eav_attribute` AS `main_table` INNER JOIN `customer_eav_attribute` AS `additional_table` ON (`additional_table`.`attribute_id` = `main_table`.`attribute_id`) AND (`main_table`.`entity_type_id` = ?) LEFT JOIN `customer_eav_attribute_website` AS `scope_table` ON (`scope_table`.`attribute_id` = `main_table`.`attribute_id`) AND (`scope_table`.`website_id` = ?)", sql)
 }
