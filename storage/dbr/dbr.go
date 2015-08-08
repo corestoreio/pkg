@@ -95,20 +95,6 @@ func NewConnection(opts ...ConnOpts) (*Connection, error) {
 	return c, nil
 }
 
-// SessionOpts function type to apply options to a session
-type SessionOpts func(cxn *Connection, s *Session)
-
-// SessionEvent sets an event receiver securely to a session. Falls back to the
-// parent event receiver if argument is nil.
-func SessionEvent(log EventReceiver) SessionOpts {
-	return func(cxn *Connection, s *Session) {
-		if log == nil {
-			log = cxn.EventReceiver // Use parent instrumentation
-		}
-		s.EventReceiver = log
-	}
-}
-
 // ApplyOpts applies options to a connection
 func (c *Connection) ApplyOpts(opts ...ConnOpts) *Connection {
 	for _, opt := range opts {
@@ -119,18 +105,41 @@ func (c *Connection) ApplyOpts(opts ...ConnOpts) *Connection {
 	return c
 }
 
+// SessionOpts function type to apply options to a session
+type SessionOpts func(cxn *Connection, s *Session) SessionOpts
+
+// SessionEvent sets an event receiver securely to a session. Falls back to the
+// parent event receiver if argument is nil.
+// This function adheres http://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis
+func SessionEvent(log EventReceiver) SessionOpts {
+	return func(cxn *Connection, s *Session) SessionOpts {
+		previous := s.EventReceiver
+		if log == nil {
+			log = cxn.EventReceiver // Use parent instrumentation
+		}
+		s.EventReceiver = log
+		return SessionEvent(previous)
+	}
+}
+
 // NewSession instantiates a Session for the Connection
 func (c *Connection) NewSession(opts ...SessionOpts) *Session {
 	s := &Session{
 		cxn:           c,
 		EventReceiver: c.EventReceiver, // Use parent instrumentation
 	}
+	s.ApplyOpts(opts...)
+	return s
+}
+
+// NewSession instantiates a Session for the Connection
+func (s *Session) ApplyOpts(opts ...SessionOpts) (previous SessionOpts) {
 	for _, opt := range opts {
 		if opt != nil {
-			opt(c, s)
+			previous = opt(s.cxn, s)
 		}
 	}
-	return s
+	return previous
 }
 
 // MustConnectAndVerify is like NewConnection but it verifies the connection

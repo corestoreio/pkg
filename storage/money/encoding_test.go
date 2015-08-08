@@ -309,7 +309,7 @@ func TestValue(t *testing.T) {
 	ib.Values(tuple2.AttributeID, tuple2.StoreID, tuple2.EntityID, &tuple2.Value)
 
 	sql, args := ib.ToSql()
-	fullSql, err := dbr.Interpolate(sql, args)
+	fullSql, err := dbr.Preprocess(sql, args)
 	assert.NoError(t, err)
 	assert.Contains(t, fullSql, `(73,3,231,777.9933),(74,2,231,888.9933)`)
 }
