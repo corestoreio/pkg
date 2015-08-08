@@ -74,7 +74,7 @@ CREATE TABLE `admin_user` (
 
 LOCK TABLES `admin_user` WRITE;
 /*!40000 ALTER TABLE `admin_user` DISABLE KEYS */;
-INSERT INTO `admin_user` VALUES (1,'admin','admin','admin@mage2admin.com','admin','1ce66c940a3719cdb8581ed532588a88:2RtqUGIf2xUZ1AsEpX8a5ClR5zpEIUvN','2015-08-07 12:29:41',NULL,'2015-08-07 12:31:27',1,0,1,'N;',NULL,NULL,'en_US');
+INSERT INTO `admin_user` VALUES (1,'admin','admin','admin@mage2admin.com','admin','1ce66c940a3719cdb8581ed532588a88:2RtqUGIf2xUZ1AsEpX8a5ClR5zpEIUvN','2015-08-07 12:29:41',NULL,'2015-08-08 09:09:55',3,0,1,'N;',NULL,NULL,'en_US');
 /*!40000 ALTER TABLE `admin_user` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -3131,13 +3131,12 @@ CREATE TABLE `core_config_data` (
   `value` text COMMENT 'Config Value',
   PRIMARY KEY (`config_id`),
   UNIQUE KEY `CORE_CONFIG_DATA_SCOPE_SCOPE_ID_PATH` (`scope`,`scope_id`,`path`)
-) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8 COMMENT='Config Data';
+) ENGINE=InnoDB AUTO_INCREMENT=153 DEFAULT CHARSET=utf8 COMMENT='Config Data';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
 -- Dumping data for table `core_config_data`
 --
-
 
 LOCK TABLES `core_config_data` WRITE;
 /*!40000 ALTER TABLE `core_config_data` DISABLE KEYS */;
@@ -3174,6 +3173,155 @@ CREATE TABLE `cron_schedule` (
 LOCK TABLES `cron_schedule` WRITE;
 /*!40000 ALTER TABLE `cron_schedule` DISABLE KEYS */;
 /*!40000 ALTER TABLE `cron_schedule` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `csCustomer_value_datetime`
+--
+
+DROP TABLE IF EXISTS `csCustomer_value_datetime`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `csCustomer_value_datetime` (
+  `value_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Value Id',
+  `attribute_id` smallint(5) unsigned NOT NULL DEFAULT '0' COMMENT 'Attribute Id',
+  `entity_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Entity Id',
+  `value` datetime DEFAULT NULL COMMENT 'Value',
+  PRIMARY KEY (`value_id`),
+  UNIQUE KEY `CUSTOMER_ENTITY_DATETIME_ENTITY_ID_ATTRIBUTE_ID` (`entity_id`,`attribute_id`),
+  KEY `CUSTOMER_ENTITY_DATETIME_ATTRIBUTE_ID` (`attribute_id`),
+  KEY `CUSTOMER_ENTITY_DATETIME_ENTITY_ID_ATTRIBUTE_ID_VALUE` (`entity_id`,`attribute_id`,`value`),
+  CONSTRAINT `CUSTOMER_ENTITY_DATETIME_ATTRIBUTE_ID_EAV_ATTRIBUTE_ATTRIBUTE_ID` FOREIGN KEY (`attribute_id`) REFERENCES `eav_attribute` (`attribute_id`) ON DELETE CASCADE,
+  CONSTRAINT `CUSTOMER_ENTITY_DATETIME_ENTITY_ID_CUSTOMER_ENTITY_ENTITY_ID` FOREIGN KEY (`entity_id`) REFERENCES `customer_entity` (`entity_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Customer Entity Datetime';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `csCustomer_value_datetime`
+--
+
+LOCK TABLES `csCustomer_value_datetime` WRITE;
+/*!40000 ALTER TABLE `csCustomer_value_datetime` DISABLE KEYS */;
+/*!40000 ALTER TABLE `csCustomer_value_datetime` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `csCustomer_value_decimal`
+--
+
+DROP TABLE IF EXISTS `csCustomer_value_decimal`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `csCustomer_value_decimal` (
+  `value_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Value Id',
+  `attribute_id` smallint(5) unsigned NOT NULL DEFAULT '0' COMMENT 'Attribute Id',
+  `entity_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Entity Id',
+  `value` decimal(12,4) NOT NULL DEFAULT '0.0000' COMMENT 'Value',
+  PRIMARY KEY (`value_id`),
+  UNIQUE KEY `CUSTOMER_ENTITY_DECIMAL_ENTITY_ID_ATTRIBUTE_ID` (`entity_id`,`attribute_id`),
+  KEY `CUSTOMER_ENTITY_DECIMAL_ATTRIBUTE_ID` (`attribute_id`),
+  KEY `CUSTOMER_ENTITY_DECIMAL_ENTITY_ID_ATTRIBUTE_ID_VALUE` (`entity_id`,`attribute_id`,`value`),
+  CONSTRAINT `CUSTOMER_ENTITY_DECIMAL_ATTRIBUTE_ID_EAV_ATTRIBUTE_ATTRIBUTE_ID` FOREIGN KEY (`attribute_id`) REFERENCES `eav_attribute` (`attribute_id`) ON DELETE CASCADE,
+  CONSTRAINT `CUSTOMER_ENTITY_DECIMAL_ENTITY_ID_CUSTOMER_ENTITY_ENTITY_ID` FOREIGN KEY (`entity_id`) REFERENCES `customer_entity` (`entity_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Customer Entity Decimal';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `csCustomer_value_decimal`
+--
+
+LOCK TABLES `csCustomer_value_decimal` WRITE;
+/*!40000 ALTER TABLE `csCustomer_value_decimal` DISABLE KEYS */;
+/*!40000 ALTER TABLE `csCustomer_value_decimal` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `csCustomer_value_int`
+--
+
+DROP TABLE IF EXISTS `csCustomer_value_int`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `csCustomer_value_int` (
+  `value_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Value Id',
+  `attribute_id` smallint(5) unsigned NOT NULL DEFAULT '0' COMMENT 'Attribute Id',
+  `entity_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Entity Id',
+  `value` int(11) NOT NULL DEFAULT '0' COMMENT 'Value',
+  PRIMARY KEY (`value_id`),
+  UNIQUE KEY `CUSTOMER_ENTITY_INT_ENTITY_ID_ATTRIBUTE_ID` (`entity_id`,`attribute_id`),
+  KEY `CUSTOMER_ENTITY_INT_ATTRIBUTE_ID` (`attribute_id`),
+  KEY `CUSTOMER_ENTITY_INT_ENTITY_ID_ATTRIBUTE_ID_VALUE` (`entity_id`,`attribute_id`,`value`),
+  CONSTRAINT `CUSTOMER_ENTITY_INT_ATTRIBUTE_ID_EAV_ATTRIBUTE_ATTRIBUTE_ID` FOREIGN KEY (`attribute_id`) REFERENCES `eav_attribute` (`attribute_id`) ON DELETE CASCADE,
+  CONSTRAINT `CUSTOMER_ENTITY_INT_ENTITY_ID_CUSTOMER_ENTITY_ENTITY_ID` FOREIGN KEY (`entity_id`) REFERENCES `customer_entity` (`entity_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Customer Entity Int';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `csCustomer_value_int`
+--
+
+LOCK TABLES `csCustomer_value_int` WRITE;
+/*!40000 ALTER TABLE `csCustomer_value_int` DISABLE KEYS */;
+/*!40000 ALTER TABLE `csCustomer_value_int` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `csCustomer_value_text`
+--
+
+DROP TABLE IF EXISTS `csCustomer_value_text`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `csCustomer_value_text` (
+  `value_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Value Id',
+  `attribute_id` smallint(5) unsigned NOT NULL DEFAULT '0' COMMENT 'Attribute Id',
+  `entity_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Entity Id',
+  `value` text NOT NULL COMMENT 'Value',
+  PRIMARY KEY (`value_id`),
+  UNIQUE KEY `CUSTOMER_ENTITY_TEXT_ENTITY_ID_ATTRIBUTE_ID` (`entity_id`,`attribute_id`),
+  KEY `CUSTOMER_ENTITY_TEXT_ATTRIBUTE_ID` (`attribute_id`),
+  CONSTRAINT `CUSTOMER_ENTITY_TEXT_ATTRIBUTE_ID_EAV_ATTRIBUTE_ATTRIBUTE_ID` FOREIGN KEY (`attribute_id`) REFERENCES `eav_attribute` (`attribute_id`) ON DELETE CASCADE,
+  CONSTRAINT `CUSTOMER_ENTITY_TEXT_ENTITY_ID_CUSTOMER_ENTITY_ENTITY_ID` FOREIGN KEY (`entity_id`) REFERENCES `customer_entity` (`entity_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Customer Entity Text';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `csCustomer_value_text`
+--
+
+LOCK TABLES `csCustomer_value_text` WRITE;
+/*!40000 ALTER TABLE `csCustomer_value_text` DISABLE KEYS */;
+/*!40000 ALTER TABLE `csCustomer_value_text` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `csCustomer_value_varchar`
+--
+
+DROP TABLE IF EXISTS `csCustomer_value_varchar`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `csCustomer_value_varchar` (
+  `value_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Value Id',
+  `attribute_id` smallint(5) unsigned NOT NULL DEFAULT '0' COMMENT 'Attribute Id',
+  `entity_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Entity Id',
+  `value` varchar(255) DEFAULT NULL COMMENT 'Value',
+  PRIMARY KEY (`value_id`),
+  UNIQUE KEY `CUSTOMER_ENTITY_VARCHAR_ENTITY_ID_ATTRIBUTE_ID` (`entity_id`,`attribute_id`),
+  KEY `CUSTOMER_ENTITY_VARCHAR_ATTRIBUTE_ID` (`attribute_id`),
+  KEY `CUSTOMER_ENTITY_VARCHAR_ENTITY_ID_ATTRIBUTE_ID_VALUE` (`entity_id`,`attribute_id`,`value`),
+  CONSTRAINT `CUSTOMER_ENTITY_VARCHAR_ATTRIBUTE_ID_EAV_ATTRIBUTE_ATTRIBUTE_ID` FOREIGN KEY (`attribute_id`) REFERENCES `eav_attribute` (`attribute_id`) ON DELETE CASCADE,
+  CONSTRAINT `CUSTOMER_ENTITY_VARCHAR_ENTITY_ID_CUSTOMER_ENTITY_ENTITY_ID` FOREIGN KEY (`entity_id`) REFERENCES `customer_entity` (`entity_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Customer Entity Varchar';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `csCustomer_value_varchar`
+--
+
+LOCK TABLES `csCustomer_value_varchar` WRITE;
+/*!40000 ALTER TABLE `csCustomer_value_varchar` DISABLE KEYS */;
+/*!40000 ALTER TABLE `csCustomer_value_varchar` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -3476,7 +3624,7 @@ CREATE TABLE `customer_entity` (
   KEY `CUSTOMER_ENTITY_LASTNAME` (`lastname`),
   CONSTRAINT `CUSTOMER_ENTITY_STORE_ID_STORE_STORE_ID` FOREIGN KEY (`store_id`) REFERENCES `store` (`store_id`) ON DELETE SET NULL,
   CONSTRAINT `CUSTOMER_ENTITY_WEBSITE_ID_STORE_WEBSITE_WEBSITE_ID` FOREIGN KEY (`website_id`) REFERENCES `store_website` (`website_id`) ON DELETE SET NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Customer Entity';
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 COMMENT='Customer Entity';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -3485,156 +3633,8 @@ CREATE TABLE `customer_entity` (
 
 LOCK TABLES `customer_entity` WRITE;
 /*!40000 ALTER TABLE `customer_entity` DISABLE KEYS */;
+INSERT INTO `customer_entity` VALUES (1,1,'johndie@doe234234234.com',1,NULL,1,'2015-08-08 09:11:04','2015-08-08 09:11:05',1,0,'Welsh',NULL,'John',NULL,'Doe',NULL,NULL,'bc419bdbdcbb51d7d323522790fff614497962fca350411b77dd444d8d8e21e4:gjrGESB2bNkhz5yCfnyyyqz2nFgegnm1','a02a5e875abd99aded64d0aac40fe817','2015-08-08 11:11:05',0,0,NULL,NULL,1);
 /*!40000 ALTER TABLE `customer_entity` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `customer_entity_datetime`
---
-
-DROP TABLE IF EXISTS `customer_entity_datetime`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `customer_entity_datetime` (
-  `value_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Value Id',
-  `attribute_id` smallint(5) unsigned NOT NULL DEFAULT '0' COMMENT 'Attribute Id',
-  `entity_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Entity Id',
-  `value` datetime DEFAULT NULL COMMENT 'Value',
-  PRIMARY KEY (`value_id`),
-  UNIQUE KEY `CUSTOMER_ENTITY_DATETIME_ENTITY_ID_ATTRIBUTE_ID` (`entity_id`,`attribute_id`),
-  KEY `CUSTOMER_ENTITY_DATETIME_ATTRIBUTE_ID` (`attribute_id`),
-  KEY `CUSTOMER_ENTITY_DATETIME_ENTITY_ID_ATTRIBUTE_ID_VALUE` (`entity_id`,`attribute_id`,`value`),
-  CONSTRAINT `CUSTOMER_ENTITY_DATETIME_ATTRIBUTE_ID_EAV_ATTRIBUTE_ATTRIBUTE_ID` FOREIGN KEY (`attribute_id`) REFERENCES `eav_attribute` (`attribute_id`) ON DELETE CASCADE,
-  CONSTRAINT `CUSTOMER_ENTITY_DATETIME_ENTITY_ID_CUSTOMER_ENTITY_ENTITY_ID` FOREIGN KEY (`entity_id`) REFERENCES `customer_entity` (`entity_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Customer Entity Datetime';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `customer_entity_datetime`
---
-
-LOCK TABLES `customer_entity_datetime` WRITE;
-/*!40000 ALTER TABLE `customer_entity_datetime` DISABLE KEYS */;
-/*!40000 ALTER TABLE `customer_entity_datetime` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `customer_entity_decimal`
---
-
-DROP TABLE IF EXISTS `customer_entity_decimal`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `customer_entity_decimal` (
-  `value_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Value Id',
-  `attribute_id` smallint(5) unsigned NOT NULL DEFAULT '0' COMMENT 'Attribute Id',
-  `entity_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Entity Id',
-  `value` decimal(12,4) NOT NULL DEFAULT '0.0000' COMMENT 'Value',
-  PRIMARY KEY (`value_id`),
-  UNIQUE KEY `CUSTOMER_ENTITY_DECIMAL_ENTITY_ID_ATTRIBUTE_ID` (`entity_id`,`attribute_id`),
-  KEY `CUSTOMER_ENTITY_DECIMAL_ATTRIBUTE_ID` (`attribute_id`),
-  KEY `CUSTOMER_ENTITY_DECIMAL_ENTITY_ID_ATTRIBUTE_ID_VALUE` (`entity_id`,`attribute_id`,`value`),
-  CONSTRAINT `CUSTOMER_ENTITY_DECIMAL_ATTRIBUTE_ID_EAV_ATTRIBUTE_ATTRIBUTE_ID` FOREIGN KEY (`attribute_id`) REFERENCES `eav_attribute` (`attribute_id`) ON DELETE CASCADE,
-  CONSTRAINT `CUSTOMER_ENTITY_DECIMAL_ENTITY_ID_CUSTOMER_ENTITY_ENTITY_ID` FOREIGN KEY (`entity_id`) REFERENCES `customer_entity` (`entity_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Customer Entity Decimal';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `customer_entity_decimal`
---
-
-LOCK TABLES `customer_entity_decimal` WRITE;
-/*!40000 ALTER TABLE `customer_entity_decimal` DISABLE KEYS */;
-/*!40000 ALTER TABLE `customer_entity_decimal` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `customer_entity_int`
---
-
-DROP TABLE IF EXISTS `customer_entity_int`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `customer_entity_int` (
-  `value_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Value Id',
-  `attribute_id` smallint(5) unsigned NOT NULL DEFAULT '0' COMMENT 'Attribute Id',
-  `entity_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Entity Id',
-  `value` int(11) NOT NULL DEFAULT '0' COMMENT 'Value',
-  PRIMARY KEY (`value_id`),
-  UNIQUE KEY `CUSTOMER_ENTITY_INT_ENTITY_ID_ATTRIBUTE_ID` (`entity_id`,`attribute_id`),
-  KEY `CUSTOMER_ENTITY_INT_ATTRIBUTE_ID` (`attribute_id`),
-  KEY `CUSTOMER_ENTITY_INT_ENTITY_ID_ATTRIBUTE_ID_VALUE` (`entity_id`,`attribute_id`,`value`),
-  CONSTRAINT `CUSTOMER_ENTITY_INT_ATTRIBUTE_ID_EAV_ATTRIBUTE_ATTRIBUTE_ID` FOREIGN KEY (`attribute_id`) REFERENCES `eav_attribute` (`attribute_id`) ON DELETE CASCADE,
-  CONSTRAINT `CUSTOMER_ENTITY_INT_ENTITY_ID_CUSTOMER_ENTITY_ENTITY_ID` FOREIGN KEY (`entity_id`) REFERENCES `customer_entity` (`entity_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Customer Entity Int';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `customer_entity_int`
---
-
-LOCK TABLES `customer_entity_int` WRITE;
-/*!40000 ALTER TABLE `customer_entity_int` DISABLE KEYS */;
-/*!40000 ALTER TABLE `customer_entity_int` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `customer_entity_text`
---
-
-DROP TABLE IF EXISTS `customer_entity_text`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `customer_entity_text` (
-  `value_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Value Id',
-  `attribute_id` smallint(5) unsigned NOT NULL DEFAULT '0' COMMENT 'Attribute Id',
-  `entity_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Entity Id',
-  `value` text NOT NULL COMMENT 'Value',
-  PRIMARY KEY (`value_id`),
-  UNIQUE KEY `CUSTOMER_ENTITY_TEXT_ENTITY_ID_ATTRIBUTE_ID` (`entity_id`,`attribute_id`),
-  KEY `CUSTOMER_ENTITY_TEXT_ATTRIBUTE_ID` (`attribute_id`),
-  CONSTRAINT `CUSTOMER_ENTITY_TEXT_ATTRIBUTE_ID_EAV_ATTRIBUTE_ATTRIBUTE_ID` FOREIGN KEY (`attribute_id`) REFERENCES `eav_attribute` (`attribute_id`) ON DELETE CASCADE,
-  CONSTRAINT `CUSTOMER_ENTITY_TEXT_ENTITY_ID_CUSTOMER_ENTITY_ENTITY_ID` FOREIGN KEY (`entity_id`) REFERENCES `customer_entity` (`entity_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Customer Entity Text';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `customer_entity_text`
---
-
-LOCK TABLES `customer_entity_text` WRITE;
-/*!40000 ALTER TABLE `customer_entity_text` DISABLE KEYS */;
-/*!40000 ALTER TABLE `customer_entity_text` ENABLE KEYS */;
-UNLOCK TABLES;
-
---
--- Table structure for table `customer_entity_varchar`
---
-
-DROP TABLE IF EXISTS `customer_entity_varchar`;
-/*!40101 SET @saved_cs_client     = @@character_set_client */;
-/*!40101 SET character_set_client = utf8 */;
-CREATE TABLE `customer_entity_varchar` (
-  `value_id` int(11) NOT NULL AUTO_INCREMENT COMMENT 'Value Id',
-  `attribute_id` smallint(5) unsigned NOT NULL DEFAULT '0' COMMENT 'Attribute Id',
-  `entity_id` int(10) unsigned NOT NULL DEFAULT '0' COMMENT 'Entity Id',
-  `value` varchar(255) DEFAULT NULL COMMENT 'Value',
-  PRIMARY KEY (`value_id`),
-  UNIQUE KEY `CUSTOMER_ENTITY_VARCHAR_ENTITY_ID_ATTRIBUTE_ID` (`entity_id`,`attribute_id`),
-  KEY `CUSTOMER_ENTITY_VARCHAR_ATTRIBUTE_ID` (`attribute_id`),
-  KEY `CUSTOMER_ENTITY_VARCHAR_ENTITY_ID_ATTRIBUTE_ID_VALUE` (`entity_id`,`attribute_id`,`value`),
-  CONSTRAINT `CUSTOMER_ENTITY_VARCHAR_ATTRIBUTE_ID_EAV_ATTRIBUTE_ATTRIBUTE_ID` FOREIGN KEY (`attribute_id`) REFERENCES `eav_attribute` (`attribute_id`) ON DELETE CASCADE,
-  CONSTRAINT `CUSTOMER_ENTITY_VARCHAR_ENTITY_ID_CUSTOMER_ENTITY_ENTITY_ID` FOREIGN KEY (`entity_id`) REFERENCES `customer_entity` (`entity_id`) ON DELETE CASCADE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='Customer Entity Varchar';
-/*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `customer_entity_varchar`
---
-
-LOCK TABLES `customer_entity_varchar` WRITE;
-/*!40000 ALTER TABLE `customer_entity_varchar` DISABLE KEYS */;
-/*!40000 ALTER TABLE `customer_entity_varchar` ENABLE KEYS */;
 UNLOCK TABLES;
 
 --
@@ -4584,7 +4584,7 @@ CREATE TABLE `eav_entity_type` (
 
 LOCK TABLES `eav_entity_type` WRITE;
 /*!40000 ALTER TABLE `eav_entity_type` DISABLE KEYS */;
-INSERT INTO `eav_entity_type` VALUES (1,'customer','Magento\\Customer\\Model\\Resource\\Customer','Magento\\Customer\\Model\\Attribute','customer_entity',NULL,NULL,1,'default',1,'Magento\\Eav\\Model\\Entity\\Increment\\Numeric',0,8,'0','customer_eav_attribute','Magento\\Customer\\Model\\Resource\\Attribute\\Collection'),(2,'customer_address','Magento\\Customer\\Model\\Resource\\Address','Magento\\Customer\\Model\\Attribute','customer_address_entity',NULL,NULL,1,'default',2,NULL,0,8,'0','customer_eav_attribute','Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Collection'),(3,'catalog_category','Magento\\Catalog\\Model\\Resource\\Category','Magento\\Catalog\\Model\\Resource\\Eav\\Attribute','catalog_category_entity',NULL,NULL,1,'default',3,NULL,0,8,'0','catalog_eav_attribute','Magento\\Catalog\\Model\\Resource\\Category\\Attribute\\Collection'),(4,'catalog_product','Magento\\Catalog\\Model\\Resource\\Product','Magento\\Catalog\\Model\\Resource\\Eav\\Attribute','catalog_product_entity',NULL,NULL,1,'default',4,NULL,0,8,'0','catalog_eav_attribute','Magento\\Catalog\\Model\\Resource\\Product\\Attribute\\Collection'),(5,'order','Magento\\Sales\\Model\\Resource\\Order',NULL,'sales_order',NULL,NULL,1,'default',5,'Magento\\Eav\\Model\\Entity\\Increment\\Numeric',1,8,'0',NULL,NULL),(6,'invoice','Magento\\Sales\\Model\\Resource\\Order\\Invoice',NULL,'sales_invoice',NULL,NULL,1,'default',6,'Magento\\Eav\\Model\\Entity\\Increment\\Numeric',1,8,'0',NULL,NULL),(7,'creditmemo','Magento\\Sales\\Model\\Resource\\Order\\Creditmemo',NULL,'sales_creditmemo',NULL,NULL,1,'default',7,'Magento\\Eav\\Model\\Entity\\Increment\\Numeric',1,8,'0',NULL,NULL),(8,'shipment','Magento\\Sales\\Model\\Resource\\Order\\Shipment',NULL,'sales_shipment',NULL,NULL,1,'default',8,'Magento\\Eav\\Model\\Entity\\Increment\\Numeric',1,8,'0',NULL,NULL);
+INSERT INTO `eav_entity_type` VALUES (1,'customer','Magento\\Customer\\Model\\Resource\\Customer','Magento\\Customer\\Model\\Attribute','customer_entity','csCustomer_value',NULL,1,'default',1,'Magento\\Eav\\Model\\Entity\\Increment\\Numeric',0,8,'0','customer_eav_attribute','Magento\\Customer\\Model\\Resource\\Attribute\\Collection'),(2,'customer_address','Magento\\Customer\\Model\\Resource\\Address','Magento\\Customer\\Model\\Attribute','customer_address_entity',NULL,NULL,1,'default',2,NULL,0,8,'0','customer_eav_attribute','Magento\\Customer\\Model\\Resource\\Address\\Attribute\\Collection'),(3,'catalog_category','Magento\\Catalog\\Model\\Resource\\Category','Magento\\Catalog\\Model\\Resource\\Eav\\Attribute','catalog_category_entity',NULL,NULL,1,'default',3,NULL,0,8,'0','catalog_eav_attribute','Magento\\Catalog\\Model\\Resource\\Category\\Attribute\\Collection'),(4,'catalog_product','Magento\\Catalog\\Model\\Resource\\Product','Magento\\Catalog\\Model\\Resource\\Eav\\Attribute','catalog_product_entity',NULL,NULL,1,'default',4,NULL,0,8,'0','catalog_eav_attribute','Magento\\Catalog\\Model\\Resource\\Product\\Attribute\\Collection'),(5,'order','Magento\\Sales\\Model\\Resource\\Order',NULL,'sales_order',NULL,NULL,1,'default',5,'Magento\\Eav\\Model\\Entity\\Increment\\Numeric',1,8,'0',NULL,NULL),(6,'invoice','Magento\\Sales\\Model\\Resource\\Order\\Invoice',NULL,'sales_invoice',NULL,NULL,1,'default',6,'Magento\\Eav\\Model\\Entity\\Increment\\Numeric',1,8,'0',NULL,NULL),(7,'creditmemo','Magento\\Sales\\Model\\Resource\\Order\\Creditmemo',NULL,'sales_creditmemo',NULL,NULL,1,'default',7,'Magento\\Eav\\Model\\Entity\\Increment\\Numeric',1,8,'0',NULL,NULL),(8,'shipment','Magento\\Sales\\Model\\Resource\\Order\\Shipment',NULL,'sales_shipment',NULL,NULL,1,'default',8,'Magento\\Eav\\Model\\Entity\\Increment\\Numeric',1,8,'0',NULL,NULL);
 /*!40000 ALTER TABLE `eav_entity_type` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -9433,6 +9433,9 @@ LOCK TABLES `sitemap` WRITE;
 /*!40000 ALTER TABLE `sitemap` ENABLE KEYS */;
 UNLOCK TABLES;
 
+--
+-- Table structure for table `store`
+--
 
 DROP TABLE IF EXISTS `store`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
@@ -10226,4 +10229,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2015-08-07 19:15:41
+-- Dump completed on 2015-08-08 11:13:39
