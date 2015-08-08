@@ -44,11 +44,11 @@ func materializeAttributes(ctx *context) {
 		attrCollection,
 	}
 
-	etc, err := getEntityTypeData(ctx.dbrConn.NewSession(nil))
+	etc, err := getEntityTypeData(ctx.dbc.NewSession(nil))
 	codegen.LogFatal(err)
 	for _, et := range etc {
 		ctx.et = et
-		ctx.aat = codegen.NewAddAttrTables(ctx.db, ctx.et.EntityTypeCode)
+		ctx.aat = codegen.NewAddAttrTables(ctx.dbc.DB, ctx.et.EntityTypeCode)
 		data := attrGenerateData(ctx)
 		var cb bytes.Buffer // code buffer
 		for _, g := range gs {
@@ -66,7 +66,7 @@ func materializeAttributes(ctx *context) {
 func attrGenerateData(ctx *context) map[string]interface{} {
 	websiteID := int64(0) // always 0 because we're building the base struct
 	columns := getAttrColumns(ctx, websiteID)
-	attributeCollection, err := codegen.LoadStringEntities(ctx.db, getAttrSelect(ctx, websiteID))
+	attributeCollection, err := codegen.LoadStringEntities(ctx.dbc.DB, getAttrSelect(ctx, websiteID))
 	codegen.LogFatal(err)
 
 	pkg := getPackage(ctx.et)
@@ -108,7 +108,7 @@ func attrGetter(ctx *context, data map[string]interface{}) ([]byte, error) {
 func getAttributeValuesForWebsites(ctx *context) map[string][]codegen.StringEntities {
 
 	var tws store.TableWebsiteSlice
-	tws.Load(ctx.dbrConn.NewSession(nil), func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
+	tws.Load(ctx.dbc.NewSession(nil), func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
 		return sb.Where("website_id > 0")
 	})
 
@@ -118,7 +118,7 @@ func getAttributeValuesForWebsites(ctx *context) map[string][]codegen.StringEnti
 	codegen.LogFatal(err)
 	if tew != nil { // only for those who have a wbesite specific table
 		for _, w := range tws {
-			aCollection, err := codegen.LoadStringEntities(ctx.db, getAttrSelect(ctx, w.WebsiteID))
+			aCollection, err := codegen.LoadStringEntities(ctx.dbc.DB, getAttrSelect(ctx, w.WebsiteID))
 			codegen.LogFatal(err)
 			for _, row := range aCollection {
 				if aid, ok := row["attribute_id"]; ok {
@@ -182,7 +182,7 @@ func attrCollection(ctx *context, data map[string]interface{}) ([]byte, error) {
 func getAttrSelect(ctx *context, websiteID int64) *dbr.SelectBuilder {
 
 	dbrSelect, err := eav.GetAttributeSelectSql(
-		ctx.dbrConn.NewSession(nil),
+		ctx.dbc.NewSession(nil),
 		ctx.aat,
 		ctx.et.EntityTypeID,
 		websiteID,
@@ -202,7 +202,7 @@ func getAttrSelect(ctx *context, websiteID int64) *dbr.SelectBuilder {
 }
 
 func getAttrColumns(ctx *context, websiteID int64) codegen.Columns {
-	columns, err := codegen.SQLQueryToColumns(ctx.db, getAttrSelect(ctx, websiteID))
+	columns, err := codegen.SQLQueryToColumns(ctx.dbc.DB, getAttrSelect(ctx, websiteID))
 	codegen.LogFatal(err)
 	codegen.LogFatal(columns.MapSQLToGoType(codegen.EavAttributeColumnNameToInterface))
 	return columns

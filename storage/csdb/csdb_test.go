@@ -18,7 +18,6 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -63,8 +62,8 @@ func init() {
 }
 
 func TestTableStructure(t *testing.T) {
-	db := csdb.MustConnectTest()
-	defer db.Close()
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
 
 	sValid, err := tableMap.Structure(table1)
 	assert.NotNil(t, sValid)
@@ -77,7 +76,7 @@ func TestTableStructure(t *testing.T) {
 	assert.Nil(t, sInvalid)
 	assert.Error(t, err)
 
-	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
+	dbrSess := dbc.NewSession()
 	selectBuilder, err := sValid.Select(dbrSess)
 	assert.NoError(t, err)
 	selectString, _ := selectBuilder.ToSql()

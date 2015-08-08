@@ -866,9 +866,9 @@ func TestNewManagerReInit(t *testing.T) {
 	defer runtime.GOMAXPROCS(prevCPU)
 
 	// quick implement, use mock of dbr.SessionRunner and remove connection
-	dbr := csdb.MustConnectTest()
-	defer dbr.Close()
-	dbrSess := dbr.NewSession()
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
+	dbrSess := dbc.NewSession()
 
 	storeManager := store.NewManager(store.NewStorageOption(nil /* trick it*/))
 	if err := storeManager.ReInit(dbrSess); err != nil {

@@ -19,7 +19,6 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,9 +71,9 @@ func TestScopeApplyDefaults(t *testing.T) {
 }
 
 func TestApplyCoreConfigData(t *testing.T) {
-	db := csdb.MustConnectTest()
-	defer db.Close()
-	sess := dbr.NewConnection(db, nil).NewSession(nil)
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
+	sess := dbc.NewSession(nil)
 
 	m := config.NewManager()
 	if err := m.ApplyCoreConfigData(sess); err != nil {

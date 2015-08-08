@@ -43,8 +43,8 @@ func TestTypeCodeValueTable(t *testing.T) {
 }
 
 func TestGetTables(t *testing.T) {
-	dbr := csdb.MustConnectTest()
-	defer dbr.Close()
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
 
 	tests := []struct {
 		query    string
@@ -64,7 +64,7 @@ func TestGetTables(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		tables, err := GetTables(dbr.DB, test.query)
+		tables, err := GetTables(dbc.DB, test.query)
 		if test.expErr {
 			assert.Error(t, err)
 		}
@@ -77,8 +77,8 @@ func TestGetTables(t *testing.T) {
 }
 
 func TestGetEavValueTables(t *testing.T) {
-	dbr := csdb.MustConnectTest()
-	defer dbr.Close()
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
 
 	tests := []struct {
 		haveETC   []string // have entity type codes
@@ -103,7 +103,7 @@ func TestGetEavValueTables(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		tcMap, err := GetEavValueTables(dbr, test.haveETC)
+		tcMap, err := GetEavValueTables(dbc, test.haveETC)
 		if test.wantErr {
 			assert.Error(t, err)
 		}
@@ -147,8 +147,8 @@ func TestColumnComment(t *testing.T) {
 }
 
 func TestGetColumns(t *testing.T) {
-	dbr := csdb.MustConnectTest()
-	defer dbr.Close()
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
 
 	tests := []struct {
 		table    string
@@ -194,7 +194,7 @@ func TestGetColumns(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		cols, err := GetColumns(dbr.DB, test.table)
+		cols, err := GetColumns(dbc.DB, test.table)
 		if test.expErr {
 			assert.Error(t, err)
 		}
@@ -234,8 +234,8 @@ func TestGetColumns(t *testing.T) {
 }
 
 func TestGetFieldNames(t *testing.T) {
-	dbr := csdb.MustConnectTest()
-	defer dbr.Close()
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
 
 	tests := []struct {
 		table  string
@@ -255,7 +255,7 @@ func TestGetFieldNames(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		cols, err := GetColumns(dbr.DB, test.table)
+		cols, err := GetColumns(dbc.DB, test.table)
 		if err != nil {
 			t.Error(err)
 		}
@@ -266,16 +266,16 @@ func TestGetFieldNames(t *testing.T) {
 
 // depends on generated code
 func TestSQLQueryToColumnsToStruct(t *testing.T) {
-	dbr := csdb.MustConnectTest()
-	defer dbr.Close()
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
 
-	dbrSess := dbr.NewSession()
-	dbrSelect, err := eav.GetAttributeSelectSql(dbrSess, NewAddAttrTables(dbr.DB, "catalog_product"), 4, 0)
+	dbrSess := dbc.NewSession()
+	dbrSelect, err := eav.GetAttributeSelectSql(dbrSess, NewAddAttrTables(dbc.DB, "catalog_product"), 4, 0)
 	if err != nil {
 		t.Error(err)
 	}
 
-	colSliceDbr, err := SQLQueryToColumns(dbr.DB, dbrSelect)
+	colSliceDbr, err := SQLQueryToColumns(dbc.DB, dbrSelect)
 	if err != nil {
 		t.Error(err)
 	}
@@ -287,7 +287,7 @@ func TestSQLQueryToColumnsToStruct(t *testing.T) {
 		assert.True(t, col.Type.Valid, fmt.Sprintf("%#v", col))
 	}
 
-	columns2, err2 := SQLQueryToColumns(dbr.DB, nil, "SELECT * FROM `catalog_product_option`", " ORDER BY option_id DESC")
+	columns2, err2 := SQLQueryToColumns(dbc.DB, nil, "SELECT * FROM `catalog_product_option`", " ORDER BY option_id DESC")
 	if err2 != nil {
 		t.Error(err2)
 	}
@@ -316,10 +316,10 @@ func TestSQLQueryToColumnsToStruct(t *testing.T) {
 }
 
 func TestGetSQLPrepareForTemplate(t *testing.T) {
-	dbr := csdb.MustConnectTest()
-	defer dbr.Close()
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
 
-	resultSlice2, err := LoadStringEntities(dbr.DB, nil, "SELECT * FROM `cataloginventory_stock` ", "ORDER BY stock_id")
+	resultSlice2, err := LoadStringEntities(dbc.DB, nil, "SELECT * FROM `cataloginventory_stock` ", "ORDER BY stock_id")
 	if err != nil {
 		t.Error(err)
 	}
@@ -330,13 +330,13 @@ func TestGetSQLPrepareForTemplate(t *testing.T) {
 
 	// advanced test
 
-	dbrSess := dbr.NewSession()
-	dbrSelect, err := eav.GetAttributeSelectSql(dbrSess, NewAddAttrTables(dbr.DB, "catalog_product"), 4, 0)
+	dbrSess := dbc.NewSession()
+	dbrSelect, err := eav.GetAttributeSelectSql(dbrSess, NewAddAttrTables(dbc.DB, "catalog_product"), 4, 0)
 	if err != nil {
 		t.Error(err)
 	}
 
-	attributeResultSlice, err := LoadStringEntities(dbr.DB, dbrSelect)
+	attributeResultSlice, err := LoadStringEntities(dbc.DB, dbrSelect)
 	if err != nil {
 		t.Error(err)
 	}
@@ -345,7 +345,7 @@ func TestGetSQLPrepareForTemplate(t *testing.T) {
 		assert.True(t, len(row["attribute_id"]) > 0, "Incorrect length of attribute_id", fmt.Sprintf("%#v", row))
 	}
 
-	colSliceDbr, err := SQLQueryToColumns(dbr.DB, dbrSelect)
+	colSliceDbr, err := SQLQueryToColumns(dbc.DB, dbrSelect)
 	if err != nil {
 		t.Error(err)
 	}
@@ -378,11 +378,11 @@ func TestGetSQLPrepareForTemplate(t *testing.T) {
 }
 
 func TestGetAttributeSelectSql(t *testing.T) {
-	dbr := csdb.MustConnectTest()
-	defer dbr.Close()
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
 
-	dbrSess := dbr.NewSession()
-	dbrSelect, err := eav.GetAttributeSelectSql(dbrSess, NewAddAttrTables(dbr.DB, "customer"), 1, 4)
+	dbrSess := dbc.NewSession()
+	dbrSelect, err := eav.GetAttributeSelectSql(dbrSess, NewAddAttrTables(dbc.DB, "customer"), 1, 4)
 	if err != nil {
 		t.Error(err)
 	}

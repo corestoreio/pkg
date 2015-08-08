@@ -15,7 +15,6 @@
 package main
 
 import (
-	"database/sql"
 	"go/build"
 	"runtime"
 	"sync"
@@ -28,9 +27,8 @@ import (
 
 // depends on generated code from tableToStruct
 type context struct {
-	wg      sync.WaitGroup
-	db      *sql.DB
-	dbrConn *dbr.Connection
+	wg  sync.WaitGroup
+	dbc *dbr.Connection
 	// will be updated each iteration in materializeAttributes
 	et *eav.TableEntityType
 	// goSrcPath will be used in conjunction with ImportPath to write a file into that directory
@@ -40,13 +38,12 @@ type context struct {
 }
 
 func newContext() *context {
-	db, dbrConn, err := csdb.Connect()
+	dbc, err := csdb.Connect()
 	codegen.LogFatal(err)
 
 	return &context{
 		wg:        sync.WaitGroup{},
-		db:        db,
-		dbrConn:   dbrConn,
+		dbc:       dbc,
 		goSrcPath: build.Default.GOPATH + "/src/",
 	}
 }
@@ -56,7 +53,7 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	ctx := newContext()
-	defer ctx.db.Close()
+	defer ctx.dbc.Close()
 
 	ctx.wg.Add(1)
 	go materializeEntityType(ctx)

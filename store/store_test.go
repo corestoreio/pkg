@@ -158,9 +158,9 @@ var testStores = store.TableStoreSlice{
 }
 
 func TestTableStoreSliceLoad(t *testing.T) {
-	dbr := csdb.MustConnectTest()
-	defer dbr.Close()
-	dbrSess := dbr.NewSession()
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
+	dbrSess := dbc.NewSession()
 
 	var stores store.TableStoreSlice
 	stores.Load(dbrSess)

@@ -112,7 +112,9 @@ func SessionEvent(log EventReceiver) SessionOpts {
 // ApplyOpts applies options to a connection
 func (c *Connection) ApplyOpts(opts ...ConnOpts) *Connection {
 	for _, opt := range opts {
-		opt(c)
+		if opt != nil {
+			opt(c)
+		}
 	}
 	return c
 }
@@ -124,7 +126,9 @@ func (c *Connection) NewSession(opts ...SessionOpts) *Session {
 		EventReceiver: c.EventReceiver, // Use parent instrumentation
 	}
 	for _, opt := range opts {
-		opt(c, s)
+		if opt != nil {
+			opt(c, s)
+		}
 	}
 	return s
 }

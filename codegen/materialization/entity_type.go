@@ -37,7 +37,7 @@ func materializeEntityType(ctx *context) {
 		Package, Tick string
 	}
 
-	etData, err := getEntityTypeData(ctx.dbrConn.NewSession(nil))
+	etData, err := getEntityTypeData(ctx.dbc.NewSession())
 	codegen.LogFatal(err)
 
 	tplData := &dataContainer{

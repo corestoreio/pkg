@@ -46,9 +46,10 @@ var (
 )
 
 func TestEntityType(t *testing.T) {
-	db := csdb.MustConnectTest()
-	defer db.Close()
-	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
+	dbrSess := dbc.NewSession()
+
 	var et eav.TableEntityType
 	et.LoadByCode(
 		dbrSess,
@@ -66,9 +67,9 @@ func TestEntityType(t *testing.T) {
 }
 
 func TestEntityTypeSliceGetByCode(t *testing.T) {
-	db := csdb.MustConnectTest()
-	defer db.Close()
-	dbrSess := dbr.NewConnection(db, nil).NewSession(nil)
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
+	dbrSess := dbc.NewSession()
 
 	s, err := eav.TableCollection.Structure(eav.TableIndexEntityType)
 	if err != nil {
