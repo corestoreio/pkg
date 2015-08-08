@@ -7,7 +7,7 @@ import (
 )
 
 // DefaultDriverName is MySQL
-const DefaultDriverName = "mysql"
+const DefaultDriverName = DriverNameMySQL
 
 // Connection is a connection to the database with an EventReceiver
 // to send events, errors, and timings to
@@ -71,13 +71,13 @@ func ConnDSN(dsn string) ConnOpts {
 // and event receiver
 func NewConnection(opts ...ConnOpts) (*Connection, error) {
 	c := &Connection{
-		dn:            DefaultDriverName,
+		dn:            DriverNameMySQL,
 		EventReceiver: nullReceiver,
 	}
 	c.ApplyOpts(opts...)
 
 	switch c.dn {
-	case "mysql":
+	case DriverNameMySQL:
 	default:
 		return nil, errgo.Newf("unsupported driver: %s", c.dn)
 	}

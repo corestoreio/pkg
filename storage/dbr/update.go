@@ -207,7 +207,7 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}) {
 func (b *UpdateBuilder) Exec() (sql.Result, error) {
 	sql, args := b.ToSql()
 
-	fullSql, err := Interpolate(sql, args)
+	fullSql, err := Preprocess(sql, args)
 	if err != nil {
 		return nil, b.EventErrKv("dbr.update.exec.interpolate", err, kvs{"sql": fullSql})
 	}
