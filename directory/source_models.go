@@ -56,6 +56,8 @@ func (sca *SourceCurrencyAll) Construct(mc config.ModelConstructor) error {
 }
 func (sca *SourceCurrencyAll) Options() config.ValueLabelSlice {
 	// Magento\Framework\Locale\Resolver
+	// 1. get all allowed currencies from the config
+	// 2. get slice of currency code and currency name and filter out all not-allowed currencies
 	// grep locale from general/locale/code scope::store for the current store ID
 	// the store locale greps the currencies from http://php.net/manual/en/class.resourcebundle.php
 	// in the correct language
