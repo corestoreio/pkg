@@ -98,4 +98,11 @@ OuterLoop:
 
 // FormatPrice returns price formatting information for a given locale.
 // @todo implement
-func FormatPrice( /*localCode, currencyCodee */ )/*some kind of struct*/ {}
+func FormatPrice( /*localCode, currencyCode */ ) /*some kind of struct*/ {
+	// if currency code has been provided: load currency from directory package
+	// otherwise determine it from the current loaded store
+
+	// if localeCode is empty, the locale code will be determined from the current store
+
+	// move i18n.Symbols including formatting string into this package
+}
