@@ -14,6 +14,8 @@
 
 package i18n
 
+// @TODO move symbols and formatting string into locale package
+
 var (
 	// defaultSymbols contains all important default characters for
 	// formatting a number and or a currency.
