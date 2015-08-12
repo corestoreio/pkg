@@ -185,6 +185,8 @@ var TablePrefix string
 // Do not change entries in this map except you can always append.
 // @see Magento2 dev/tools/Magento/Tools/Migration/factory_table_names/replace_ce.php
 var TableMapMagento1To2 = map[string]string{
+	"admin_role":             "authorization_role",
+	"admin_rule":             "authorization_rule",
 	"core_cache":             "cache",     // not needed but added in case
 	"core_cache_tag":         "cache_tag", // not needed but added in case
 	"core_config_data":       "core_config_data",
@@ -206,6 +208,23 @@ var TableMapMagento1To2 = map[string]string{
 
 // ConfigTableToStruct contains default configuration. Use the file config_user.go with the func init() to change/extend it.
 var ConfigTableToStruct = TableToStructMap{
+	"authorization": &TableToStruct{
+		Package:    "authorization",
+		OutputFile: myPath + "authorization" + PS + "generated_tables.go",
+		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
+		    TABLE_SCHEMA = DATABASE() AND
+		    TABLE_NAME IN (
+		    	'{{tableprefix}}authorization_role','{{tableprefix}}admin_role',
+		    	'{{tableprefix}}authorization_rule','{{tableprefix}}admin_rule',
+		    ) GROUP BY TABLE_NAME;`,
+		EntityTypeCodes: nil,
+	},
+	"user": &TableToStruct{
+		Package:         "user",
+		OutputFile:      myPath + "user" + PS + "generated_tables.go",
+		SQLQuery:        `SHOW TABLES LIKE "{{tableprefix}}admin_user"`,
+		EntityTypeCodes: nil,
+	},
 	"config": &TableToStruct{
 		Package:         "config",
 		OutputFile:      myPath + "config" + PS + "generated_tables.go",
