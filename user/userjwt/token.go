@@ -15,15 +15,15 @@
 package userjwt
 
 import (
-	"crypto/rsa"
-	"fmt"
+	"errors"
 	"net/http"
 	"time"
 
 	"code.google.com/p/go-uuid/uuid"
 
-	"github.com/brainattica/golang-jwt-authentication-api-sample/core/redis"
+	"github.com/corestoreio/csfw/utils/log"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/labstack/echo"
 )
 
 // JWTVerify is a middleware for echo to verify a JWT.
@@ -63,6 +63,8 @@ import (
 //	}
 //}
 
+var ErrUnexpectedSigningMethod = errors.New("JWT: Unexpected signing method")
+
 type blacklist struct{}
 
 func (b blacklist) Set(_ string, _ time.Duration) error { return nil }
@@ -70,20 +72,20 @@ func (b blacklist) Has(_ string) bool                   { return false }
 
 // AuthManager main object for handling JWT authentication, generation, blacklists and log outs.
 type AuthManager struct {
-	privateKey *rsa.PrivateKey
-	publicKey  *rsa.PublicKey
-	lastError  error
+	key       interface{} // *rsa.PrivateKey or *ecdsa.PrivateKey or []byte
+	hasKey    bool
+	lastError error
 	// Expire defines the duration when the token is about to expire
 	Expire time.Duration
-	// SigningMethod sets the signing method pointer
-	SigningMethod *jwt.SigningMethodRSA
+	// SigningMethod and default is SigningMethodRS512
+	SigningMethod jwt.SigningMethod
 	// EnableJTI activates the (JWT ID) Claim, a unique identifier. UUID.
 	EnableJTI bool
-	// Blacklist some kind of backend storage to handle blocked tokens.
-	// Default black hole storage.
+	// Blacklist a backend storage to handle blocked tokens.
+	// Default black hole storage. Must be thread safe.
 	Blacklist interface {
-		Set(key string, expires time.Duration) error
-		Has(key string) bool
+		Set(token string, expires time.Duration) error
+		Has(token string) bool
 	}
 }
 
@@ -98,16 +100,15 @@ func NewAuthManager(opts ...OptionFunc) (*AuthManager, error) {
 	if a.lastError != nil {
 		return nil, a.lastError
 	}
-	if a.privateKey == nil || a.publicKey == nil {
-		generatePrivateKey(a)
+	if !a.hasKey {
+		generateRSAPrivateKey(a)
 	}
 	if a.lastError != nil {
 		return nil, a.lastError
 	}
 	a.Expire = time.Hour
-	a.SigningMethod = jwt.SigningMethodRS512
 	a.Blacklist = blacklist{}
-	return a
+	return a, nil
 }
 
 // GenerateToken creates a new JSON web token. The claims argument will be
@@ -127,51 +128,45 @@ func (a *AuthManager) GenerateToken(claims map[string]interface{}) (token, jti s
 		jti = uuid.New()
 		t.Claims["jti"] = jti
 	}
-	token, err = t.SignedString(a.privateKey)
+	token, err = t.SignedString(a.key)
 	return
 }
 
 func tokenExpiresIn(timestamp interface{}) time.Duration {
 	if validity, ok := timestamp.(float64); ok {
 		tm := time.Unix(int64(validity), 0)
-		remainer := tm.Sub(time.Now())
-		if remainer > 0 {
-			return int(remainer.Seconds())
+		if remainer := tm.Sub(time.Now()); remainer > 0 {
+			return remainer
 		}
 	}
 	return 0
 }
 
-func (a *AuthManager) Logout(tokenString string, token *jwt.Token) error {
-
-	return a.Blacklist.Set(tokenString, tokenExpiresIn(token.Claims["exp"]))
-}
-
-func (backend *AuthManager) IsInBlacklist(token string) bool {
-	redisConn := redis.Connect()
-	redisToken, _ := redisConn.GetValue(token)
-
-	if redisToken == nil {
-		return false
+// Logout adds a token securely to a blacklist
+func (a *AuthManager) Logout(token *jwt.Token) error {
+	if token == nil || token.Raw == "" || token.Valid == false {
+		return nil
 	}
-
-	return true
+	return a.Blacklist.Set(token.Raw, tokenExpiresIn(token.Claims["exp"]))
 }
 
-func RequireTokenAuthentication(rw http.ResponseWriter, req *http.Request, next http.HandlerFunc) {
-	authBackend := InitJWTAuthenticationBackend()
+func (a *AuthManager) Authenticate() echo.HandlerFunc {
+	// @todo change this whole function to http.Handler to be independent from echo
 
-	token, err := jwt.ParseFromRequest(req, func(token *jwt.Token) (interface{}, error) {
-		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
-			return nil, fmt.Errorf("Unexpected signing method: %v", token.Header["alg"])
+	return func(c *echo.Context) error {
+
+		token, err := jwt.ParseFromRequest(r, func(t *jwt.Token) (interface{}, error) {
+			if t.Method.Alg() != a.SigningMethod.Alg() {
+				return nil, log.Error("userjwt.AuthManager.Authenticate", "err", ErrUnexpectedSigningMethod, "token", t, "method", a.SigningMethod.Alg())
+			} else {
+				return authBackend.PublicKey, nil
+			}
+		})
+
+		if err == nil && token.Valid && !a.Blacklist.Has(r.Header.Get("Authorization")) {
+			next(rw, req)
 		} else {
-			return authBackend.PublicKey, nil
+			w.WriteHeader(http.StatusUnauthorized)
 		}
-	})
-
-	if err == nil && token.Valid && !authBackend.IsInBlacklist(req.Header.Get("Authorization")) {
-		next(rw, req)
-	} else {
-		rw.WriteHeader(http.StatusUnauthorized)
 	}
 }

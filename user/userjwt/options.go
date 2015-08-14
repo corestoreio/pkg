@@ -26,6 +26,7 @@ import (
 	"io/ioutil"
 
 	"github.com/corestoreio/csfw/utils/log"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/juju/errgo"
 )
 
@@ -37,29 +38,72 @@ const PrivateKeyBits = 4096
 // OptionFunc applies options to the AuthManager
 type OptionFunc func(a *AuthManager)
 
-// KeyFromFile reads an RSA private key from a file and applies it as an option
-// to the AuthManager. Password as second argument is only required when the
-// private key is encrypted. Public key will be derived from the private key.
-func KeyFromFile(privateKey string, password ...[]byte) OptionFunc {
+// HmacKey sets the HMAC 256 bit signing method
+func HmacKey(key []byte) OptionFunc {
+	return func(a *AuthManager) {
+		a.lastError = nil
+		a.hasKey = true
+		a.SigningMethod = jwt.SigningMethodHS256
+		a.key = key
+	}
+}
+
+// ECDSAKeyFromFile @todo
+func ECDSAKeyFromFile(privateKey string, password ...[]byte) OptionFunc {
 	fpk, err := os.Open(privateKey)
 	if err != nil {
 		return func(a *AuthManager) {
 			a.lastError = errgo.Mask(err)
 		}
 	}
-	return Key(fpk, password...)
+	return ECDSAKey(fpk, password...)
+
 }
 
-// Key reads PEM byte data and decodes it and parses the private key.
-// Applies the private and the public key to the AuthManager. Password as second
-// argument is only required when the private key is encrypted.
-// Checks for io.Close and closes the resource. Public key will be derived from
-// the private key.
-func Key(privateKey io.Reader, password ...[]byte) OptionFunc {
+// ECDSAKey @todo
+// Default Signing bits 256.
+func ECDSAKey(privateKey io.Reader, password ...[]byte) OptionFunc {
 	if cl, ok := privateKey.(io.Closer); ok {
 		defer func() {
 			if err := cl.Close(); err != nil { // close file
-				log.Error("userjwt.Key.ioCloser", "err", err)
+				log.Error("userjwt.ECDSAKey.ioCloser", "err", err)
+			}
+		}()
+	}
+
+	// @todo implement
+
+	return func(a *AuthManager) {
+		a.hasKey = false // set to true if fully implemented
+		a.lastError = errgo.New("@todo implement")
+		a.SigningMethod = jwt.SigningMethodES256
+		a.key = nil
+	}
+}
+
+// RSAKeyFromFile reads an RSA private key from a file and applies it as an option
+// to the AuthManager. Password as second argument is only required when the
+// private key is encrypted. Public key will be derived from the private key.
+func RSAKeyFromFile(privateKey string, password ...[]byte) OptionFunc {
+	fpk, err := os.Open(privateKey)
+	if err != nil {
+		return func(a *AuthManager) {
+			a.lastError = errgo.Mask(err)
+		}
+	}
+	return RSAKey(fpk, password...)
+}
+
+// RSAKey reads PEM byte data and decodes it and parses the private key.
+// Applies the private and the public key to the AuthManager. Password as second
+// argument is only required when the private key is encrypted.
+// Checks for io.Close and closes the resource. Public key will be derived from
+// the private key. Default Signing bits 256.
+func RSAKey(privateKey io.Reader, password ...[]byte) OptionFunc {
+	if cl, ok := privateKey.(io.Closer); ok {
+		defer func() {
+			if err := cl.Close(); err != nil { // close file
+				log.Error("userjwt.RSAKey.ioCloser", "err", err)
 			}
 		}()
 	}
@@ -69,9 +113,8 @@ func Key(privateKey io.Reader, password ...[]byte) OptionFunc {
 			a.lastError = errgo.Mask(errRA)
 		}
 	}
-
-	prKeyPEM, _ := pem.Decode(prKeyData)
-	if prKeyPEM == nil {
+	var prKeyPEM *pem.Block
+	if prKeyPEM, _ := pem.Decode(prKeyData); prKeyPEM == nil {
 		return func(a *AuthManager) {
 			a.lastError = errgo.New("Private Key from io.Reader no found")
 		}
@@ -97,44 +140,20 @@ func Key(privateKey io.Reader, password ...[]byte) OptionFunc {
 	}
 
 	return func(a *AuthManager) {
-		a.privateKey = rsaPrivateKey
-		if rsaPrivateKey != nil {
-			a.publicKey = &(rsaPrivateKey.PublicKey)
-		}
+		a.SigningMethod = jwt.SigningMethodRS256
+		a.key = rsaPrivateKey
+		a.hasKey = true
 		a.lastError = errgo.Mask(err)
 	}
 }
 
-func generatePrivateKey(a *AuthManager) {
+func generateRSAPrivateKey(a *AuthManager) {
 	pk, err := rsa.GenerateKey(rand.Reader, PrivateKeyBits)
 
 	if pk != nil {
-		a.privateKey = pk
-		a.publicKey = &(pk.PublicKey)
+		a.key = pk
+		a.hasKey = true
+		a.SigningMethod = jwt.SigningMethodRS256
 	}
 	a.lastError = errgo.Mask(err)
-
-	//	privateKeyDer := x509.MarshalPKCS1PrivateKey(privateKey)
-	//	privateKeyBlock := pem.Block{
-	//		Type:    "RSA PRIVATE KEY",
-	//		Headers: nil,
-	//		Bytes:   privateKeyDer,
-	//	}
-	//	privateKeyPem := string(pem.EncodeToMemory(&privateKeyBlock))
-	//
-	//	publicKey := privateKey.PublicKey
-	//	publicKeyDer, err := x509.MarshalPKIXPublicKey(&publicKey)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//
-	//	publicKeyBlock := pem.Block{
-	//		Type:    "PUBLIC KEY",
-	//		Headers: nil,
-	//		Bytes:   publicKeyDer,
-	//	}
-	//	publicKeyPem := string(pem.EncodeToMemory(&publicKeyBlock))
-	//
-	//	fmt.Println(privateKeyPem)
-	//	fmt.Println(publicKeyPem)
 }
