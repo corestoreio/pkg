@@ -215,7 +215,7 @@ var ConfigTableToStruct = TableToStructMap{
 		    TABLE_SCHEMA = DATABASE() AND
 		    TABLE_NAME IN (
 		    	'{{tableprefix}}authorization_role','{{tableprefix}}admin_role',
-		    	'{{tableprefix}}authorization_rule','{{tableprefix}}admin_rule',
+		    	'{{tableprefix}}authorization_rule','{{tableprefix}}admin_rule'
 		    ) GROUP BY TABLE_NAME;`,
 		EntityTypeCodes: nil,
 	},
