@@ -22,8 +22,7 @@ import (
 	"net/url"
 	"time"
 
-	"code.google.com/p/go-uuid/uuid"
-
+	"github.com/corestoreio/csfw/utils/cast"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/juju/errgo"
@@ -31,11 +30,6 @@ import (
 
 // ErrUnexpectedSigningMethod will be returned if some outside dude tries to trick us
 var ErrUnexpectedSigningMethod = errors.New("JWT: Unexpected signing method")
-
-type blacklist struct{}
-
-func (b blacklist) Set(_ string, _ time.Duration) error { return nil }
-func (b blacklist) Has(_ string) bool                   { return false }
 
 // AuthManager main object for handling JWT authentication, generation, blacklists and log outs.
 type AuthManager struct {
@@ -52,6 +46,11 @@ type AuthManager struct {
 	SigningMethod jwt.SigningMethod
 	// EnableJTI activates the (JWT ID) Claim, a unique identifier. UUID.
 	EnableJTI bool
+	// JTI represents the interface to generate a new UUID
+	JTI interface {
+		Get() string
+	}
+
 	// Blacklist a backend storage to handle blocked tokens.
 	// Default black hole storage. Must be thread safe.
 	Blacklist interface {
@@ -67,9 +66,10 @@ type AuthManager struct {
 	PostFormVarPrefix string
 }
 
-// New create a new manager. If private key option will not be
-// passed then a key pair will be generated if both keys, or one of the two, are/is nil.
-// Default expire is one hour. Default signing method is RS512.
+// New create a new manager. If key option will not be
+// passed then a HMAC password will be generated.
+// Default expire is one hour. Default signing method is HMAC512. The auto
+// generated password will not be output.
 func New(opts ...OptionFunc) (*AuthManager, error) {
 	a := new(AuthManager)
 	for _, opt := range opts {
@@ -79,14 +79,15 @@ func New(opts ...OptionFunc) (*AuthManager, error) {
 		return nil, a.lastError
 	}
 	if !a.hasKey {
-		generateRSAPrivateKey(a)
+		setAuthManagerDefaults(a)
 	}
 	if a.lastError != nil {
 		return nil, a.lastError
 	}
 	a.Expire = time.Hour
-	a.Blacklist = blacklist{}
+	a.Blacklist = nullBL{}
 	a.PostFormVarPrefix = "jwt__"
+	a.JTI = jti{}
 	return a, nil
 }
 
@@ -103,8 +104,8 @@ func (a *AuthManager) GenerateToken(claims map[string]interface{}) (token, jti s
 	for k, v := range claims {
 		t.Claims[k] = v
 	}
-	if a.EnableJTI {
-		jti = uuid.New()
+	if a.EnableJTI && a.JTI != nil {
+		jti = a.JTI.Get()
 		t.Claims["jti"] = jti
 	}
 
@@ -201,10 +202,11 @@ func appendTokenToForm(r *http.Request, t *jwt.Token, prefix string) error {
 	}
 
 	for k, v := range t.Claims {
-		if s, ok := v.(string); ok {
-			r.Form.Add(prefix+k, s)
+		vs, err := cast.ToStringE(v)
+		if err == nil {
+			r.Form.Add(prefix+k, vs)
 		} else {
-			return errgo.Newf("appendTokenToForm: failed to assert to type string: key %s => value %v", k, v)
+			return errgo.Newf("appendTokenToForm: failed to assert to type string: key %s => value %v : %s", k, v, err.Error())
 		}
 	}
 

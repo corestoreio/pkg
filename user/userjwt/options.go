@@ -25,21 +25,29 @@ import (
 
 	"io/ioutil"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/juju/errgo"
 )
 
-// @todo add more KeyFrom...()
+// PathJWTPassword defines the path where the password has been stored.
+const PathJWTPassword = "corestore/userjwt/password"
 
-// PrivateKeyBits used when auto generating a private key
-const PrivateKeyBits = 4096
+// @todo add more KeyFrom...()
 
 // OptionFunc applies options to the AuthManager
 type OptionFunc func(a *AuthManager)
 
-// Hmac sets the HMAC 256 bit signing method
-func Hmac(key []byte) OptionFunc {
+// PasswordFromConfig retrieves the password from the configuration with path
+// as defined in constant PathJWTPassword
+func PasswordFromConfig(cr config.Reader) OptionFunc {
+	pw := cr.GetString(config.Path(PathJWTPassword))
+	return Password([]byte(pw))
+}
+
+// Password sets the HMAC 256 bit signing method with a password. Useful to use Magento encryption key.
+func Password(key []byte) OptionFunc {
 	return func(a *AuthManager) {
 		a.lastError = nil
 		a.hasKey = true
@@ -148,13 +156,15 @@ func RSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 	}
 }
 
-func generateRSAPrivateKey(a *AuthManager) {
+// RSAGenerate creates an in-memory RSA key without persisting it.
+func RSAGenerate() OptionFunc {
 	pk, err := rsa.GenerateKey(rand.Reader, PrivateKeyBits)
-
-	if pk != nil {
-		a.rsapk = pk
-		a.hasKey = true
-		a.SigningMethod = jwt.SigningMethodRS256
+	return func(a *AuthManager) {
+		if pk != nil {
+			a.rsapk = pk
+			a.hasKey = true
+			a.SigningMethod = jwt.SigningMethodRS256
+		}
+		a.lastError = errgo.Mask(err)
 	}
-	a.lastError = errgo.Mask(err)
 }
