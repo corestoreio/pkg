@@ -122,7 +122,7 @@ func RSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 		}
 	}
 	var prKeyPEM *pem.Block
-	if prKeyPEM, _ := pem.Decode(prKeyData); prKeyPEM == nil {
+	if prKeyPEM, _ = pem.Decode(prKeyData); prKeyPEM == nil {
 		return func(a *AuthManager) {
 			a.lastError = errgo.New("Private Key from io.Reader no found")
 		}
@@ -157,6 +157,7 @@ func RSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 }
 
 // RSAGenerate creates an in-memory RSA key without persisting it.
+// This function may run around ~3secs.
 func RSAGenerate() OptionFunc {
 	pk, err := rsa.GenerateKey(rand.Reader, PrivateKeyBits)
 	return func(a *AuthManager) {

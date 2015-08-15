@@ -31,6 +31,10 @@ import (
 // ErrUnexpectedSigningMethod will be returned if some outside dude tries to trick us
 var ErrUnexpectedSigningMethod = errors.New("JWT: Unexpected signing method")
 
+// PostFormVarPrefix defines the prefix of the imported token claims into the
+// request.Form map.
+const PostFormVarPrefix = "jwt__"
+
 // AuthManager main object for handling JWT authentication, generation, blacklists and log outs.
 type AuthManager struct {
 	rsapk    *rsa.PrivateKey
@@ -62,7 +66,7 @@ type AuthManager struct {
 	HTTPErrorHandler http.Handler
 
 	// PostFormVarPrefix defines the prefix for the form values when the toke parts will
-	// be appended to the *http.Request.Form map. Default jwt__
+	// be appended to the *http.Request.Form map. Default in constant PostFormVarPrefix
 	PostFormVarPrefix string
 }
 
@@ -86,7 +90,7 @@ func New(opts ...OptionFunc) (*AuthManager, error) {
 	}
 	a.Expire = time.Hour
 	a.Blacklist = nullBL{}
-	a.PostFormVarPrefix = "jwt__"
+	a.PostFormVarPrefix = PostFormVarPrefix
 	a.JTI = jti{}
 	return a, nil
 }
@@ -131,8 +135,8 @@ func (a *AuthManager) Logout(token *jwt.Token) error {
 
 	var exp time.Duration
 	if cexp, ok := token.Claims["exp"]; ok {
-		if fexp, ok := cexp.(int64); ok {
-			tm := time.Unix(fexp, 0)
+		if fexp, ok := cexp.(float64); ok {
+			tm := time.Unix(int64(fexp), 0)
 			if remainer := tm.Sub(time.Now()); remainer > 0 {
 				exp = remainer
 			}
@@ -140,6 +144,33 @@ func (a *AuthManager) Logout(token *jwt.Token) error {
 	}
 
 	return a.Blacklist.Set(token.Raw, exp)
+}
+
+// keyFunc runs parallel and concurrent
+func (a *AuthManager) keyFunc(t *jwt.Token) (interface{}, error) {
+	if t.Method.Alg() != a.SigningMethod.Alg() {
+		return nil, log.Error("userjwt.AuthManager.Authenticate.SigningMethod", "err", ErrUnexpectedSigningMethod, "token", t, "method", a.SigningMethod.Alg())
+	} else {
+		switch t.Method.Alg() {
+		case jwt.SigningMethodRS256.Alg(), jwt.SigningMethodRS384.Alg(), jwt.SigningMethodRS512.Alg():
+			return &a.rsapk.PublicKey, nil
+		case jwt.SigningMethodES256.Alg(), jwt.SigningMethodES384.Alg(), jwt.SigningMethodES512.Alg():
+			return &a.ecdsapk.PublicKey, nil
+		case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
+			return a.password, nil
+		default:
+			return nil, errgo.Newf("Authenticate: Unknown algorithm %s", t.Method.Alg())
+		}
+	}
+}
+
+// Parse parses a token string and returns the valid token or an error
+func (a *AuthManager) Parse(rawToken string) (*jwt.Token, error) {
+	token, err := jwt.Parse(rawToken, a.keyFunc)
+	if token != nil && err == nil && token.Valid && !a.Blacklist.Has(token.Raw) {
+		return token, nil
+	}
+	return nil, errgo.Mask(err)
 }
 
 // Authenticate represent a middleware handler for a http router.
@@ -150,22 +181,7 @@ func (a *AuthManager) Authenticate(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
-		token, err := jwt.ParseFromRequest(r, func(t *jwt.Token) (interface{}, error) {
-			if t.Method.Alg() != a.SigningMethod.Alg() {
-				return nil, log.Error("userjwt.AuthManager.Authenticate.SigningMethod", "err", ErrUnexpectedSigningMethod, "token", t, "method", a.SigningMethod.Alg())
-			} else {
-				switch t.Method.Alg() {
-				case jwt.SigningMethodRS256.Alg(), jwt.SigningMethodRS384.Alg(), jwt.SigningMethodRS512.Alg():
-					return a.rsapk.PublicKey, nil
-				case jwt.SigningMethodES256.Alg(), jwt.SigningMethodES384.Alg(), jwt.SigningMethodES512.Alg():
-					return a.ecdsapk.PublicKey, nil
-				case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
-					return a.password, nil
-				default:
-					return nil, errgo.Newf("Authenticate: Unknown algorithm %s", t.Method.Alg())
-				}
-			}
-		})
+		token, err := jwt.ParseFromRequest(r, a.keyFunc)
 
 		var inBL bool
 		if token != nil {
