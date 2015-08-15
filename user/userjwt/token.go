@@ -15,54 +15,21 @@
 package userjwt
 
 import (
+	"crypto/ecdsa"
+	"crypto/rsa"
 	"errors"
 	"net/http"
+	"net/url"
 	"time"
 
 	"code.google.com/p/go-uuid/uuid"
 
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/labstack/echo"
+	"github.com/juju/errgo"
 )
 
-// JWTVerify is a middleware for echo to verify a JWT.
-//func JWTVerify(dbrSess dbr.SessionRunner) func(http.Handler) http.Handler {
-//
-//	/*
-//		@todo
-//		1. load backend users from DB
-//		2. use them to check the valid token, etc
-//		3. create a polling service to update the cached backend user instead
-//		   of querying for each request the database.
-//		4. more stuff
-//	*/
-//
-//	return func(c *echo.Context) error {
-//		// Skip WebSocket
-//		if (c.Request().Header.Get(echo.Upgrade)) == echo.WebSocket {
-//			return nil
-//		}
-//		token, err := jwt.ParseFromRequest(c.Request(), func(token *jwt.Token) (interface{}, error) {
-//			return []byte(`publicKey @todo`), nil
-//		})
-//		he := echo.NewHTTPError(http.StatusUnauthorized)
-//
-//		if err != nil {
-//			log.Error("backend.JWTVerify.ParseFromRequest", "err", err, "req", c.Request())
-//			he.SetCode(http.StatusBadRequest)
-//			return he
-//		}
-//
-//		if token.Valid {
-//			return nil
-//		}
-//		// log.Info() ?
-//
-//		return he
-//	}
-//}
-
+// ErrUnexpectedSigningMethod will be returned if some outside dude tries to trick us
 var ErrUnexpectedSigningMethod = errors.New("JWT: Unexpected signing method")
 
 type blacklist struct{}
@@ -72,12 +39,16 @@ func (b blacklist) Has(_ string) bool                   { return false }
 
 // AuthManager main object for handling JWT authentication, generation, blacklists and log outs.
 type AuthManager struct {
-	key       interface{} // *rsa.PrivateKey or *ecdsa.PrivateKey or []byte
-	hasKey    bool
-	lastError error
+	rsapk    *rsa.PrivateKey
+	ecdsapk  *ecdsa.PrivateKey
+	password []byte // password for hmac
+	hasKey   bool   // must be set to true if one of the three above keys has been set
+
+	lastError error // last error assigned via an OptionFunc
+
 	// Expire defines the duration when the token is about to expire
 	Expire time.Duration
-	// SigningMethod and default is SigningMethodRS512
+	// SigningMethod how to sign the JWT. For default value see the OptionFuncs
 	SigningMethod jwt.SigningMethod
 	// EnableJTI activates the (JWT ID) Claim, a unique identifier. UUID.
 	EnableJTI bool
@@ -87,6 +58,13 @@ type AuthManager struct {
 		Set(token string, expires time.Duration) error
 		Has(token string) bool
 	}
+	// HTTPErrorHandler defines your specific handler when the token is invalid.
+	// Default handler nil and a status StatusUnauthorized will be provided
+	HTTPErrorHandler http.Handler
+
+	// PostFormVarPrefix defines the prefix for the form values when the toke parts will
+	// be appended to the *http.Request.Form map. Default jwt__
+	PostFormVarPrefix string
 }
 
 // NewAuthManager create a new manager. If private key option will not be
@@ -108,6 +86,7 @@ func NewAuthManager(opts ...OptionFunc) (*AuthManager, error) {
 	}
 	a.Expire = time.Hour
 	a.Blacklist = blacklist{}
+	a.PostFormVarPrefix = "jwt__"
 	return a, nil
 }
 
@@ -128,45 +107,100 @@ func (a *AuthManager) GenerateToken(claims map[string]interface{}) (token, jti s
 		jti = uuid.New()
 		t.Claims["jti"] = jti
 	}
-	token, err = t.SignedString(a.key)
+
+	switch t.Method.Alg() {
+	case jwt.SigningMethodRS256.Alg(), jwt.SigningMethodRS384.Alg(), jwt.SigningMethodRS512.Alg():
+		token, err = t.SignedString(a.rsapk)
+	case jwt.SigningMethodES256.Alg(), jwt.SigningMethodES384.Alg(), jwt.SigningMethodES512.Alg():
+		token, err = t.SignedString(a.ecdsapk)
+	case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
+		token, err = t.SignedString(a.password)
+	default:
+		return "", "", errgo.Newf("GenerateToken: Unknown algorithm %s", t.Method.Alg())
+	}
+
 	return
 }
 
-func tokenExpiresIn(timestamp interface{}) time.Duration {
-	if validity, ok := timestamp.(float64); ok {
-		tm := time.Unix(int64(validity), 0)
-		if remainer := tm.Sub(time.Now()); remainer > 0 {
-			return remainer
-		}
-	}
-	return 0
-}
-
-// Logout adds a token securely to a blacklist
+// Logout adds a token securely to a blacklist with the expiration duration
 func (a *AuthManager) Logout(token *jwt.Token) error {
 	if token == nil || token.Raw == "" || token.Valid == false {
 		return nil
 	}
-	return a.Blacklist.Set(token.Raw, tokenExpiresIn(token.Claims["exp"]))
+
+	var exp time.Duration
+	if cexp, ok := token.Claims["exp"]; ok {
+		if fexp, ok := cexp.(int64); ok {
+			tm := time.Unix(fexp, 0)
+			if remainer := tm.Sub(time.Now()); remainer > 0 {
+				exp = remainer
+			}
+		}
+	}
+
+	return a.Blacklist.Set(token.Raw, exp)
 }
 
-func (a *AuthManager) Authenticate() echo.HandlerFunc {
-	// @todo change this whole function to http.Handler to be independent from echo
+// Authenticate represent a middleware handler for a http router.
+// For POST or PUT requests, it also parses the request body as a form and
+// put the results into both r.PostForm and r.Form. The claims of a token will
+// be appended to the requests Form map.
+func (a *AuthManager) Authenticate(next http.Handler) http.Handler {
 
-	return func(c *echo.Context) error {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		token, err := jwt.ParseFromRequest(r, func(t *jwt.Token) (interface{}, error) {
 			if t.Method.Alg() != a.SigningMethod.Alg() {
-				return nil, log.Error("userjwt.AuthManager.Authenticate", "err", ErrUnexpectedSigningMethod, "token", t, "method", a.SigningMethod.Alg())
+				return nil, log.Error("userjwt.AuthManager.Authenticate.SigningMethod", "err", ErrUnexpectedSigningMethod, "token", t, "method", a.SigningMethod.Alg())
 			} else {
-				return authBackend.PublicKey, nil
+				switch t.Method.Alg() {
+				case jwt.SigningMethodRS256.Alg(), jwt.SigningMethodRS384.Alg(), jwt.SigningMethodRS512.Alg():
+					return a.rsapk.PublicKey, nil
+				case jwt.SigningMethodES256.Alg(), jwt.SigningMethodES384.Alg(), jwt.SigningMethodES512.Alg():
+					return a.ecdsapk.PublicKey, nil
+				case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
+					return a.password, nil
+				default:
+					return nil, errgo.Newf("Authenticate: Unknown algorithm %s", t.Method.Alg())
+				}
 			}
 		})
 
-		if err == nil && token.Valid && !a.Blacklist.Has(r.Header.Get("Authorization")) {
-			next(rw, req)
+		if inBlacklist := a.Blacklist.Has(token.Raw); err == nil && token.Valid && !inBlacklist {
+			if err := appendTokenToForm(r, token, a.PostFormVarPrefix); err != nil {
+				log.Error("userjwt.AuthManager.Authenticate.appendTokenToForm", "err", err, "r", r, "token", token)
+			}
+			next.ServeHTTP(w, r)
 		} else {
-			w.WriteHeader(http.StatusUnauthorized)
+			log.Error("userjwt.AuthManager.Authenticate", "err", err, "token", token, "blacklist", inBlacklist)
+			if a.HTTPErrorHandler == nil {
+				w.WriteHeader(http.StatusUnauthorized)
+			} else {
+				a.HTTPErrorHandler.ServeHTTP(w, r) // is that really thread safe or other bug?
+			}
+		}
+	})
+}
+
+func appendTokenToForm(r *http.Request, t *jwt.Token, prefix string) error {
+
+	if r.Method == "POST" || r.Method == "PUT" || r.Method == "PATCH" {
+		if err := r.ParseForm(); err != nil {
+			return err
 		}
 	}
+
+	if r.Form == nil {
+		r.Form = make(url.Values)
+	}
+
+	for k, v := range t.Claims {
+		if s, ok := v.(string); ok {
+			r.Form.Add(prefix+k, s)
+		} else {
+			return errgo.Newf("appendTokenToForm: failed to assert to type string: key %s => value %v", k, v)
+		}
+	}
+
+	return nil
 }

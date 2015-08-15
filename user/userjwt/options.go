@@ -44,7 +44,7 @@ func HmacKey(key []byte) OptionFunc {
 		a.lastError = nil
 		a.hasKey = true
 		a.SigningMethod = jwt.SigningMethodHS256
-		a.key = key
+		a.password = key
 	}
 }
 
@@ -77,7 +77,7 @@ func ECDSAKey(privateKey io.Reader, password ...[]byte) OptionFunc {
 		a.hasKey = false // set to true if fully implemented
 		a.lastError = errgo.New("@todo implement")
 		a.SigningMethod = jwt.SigningMethodES256
-		a.key = nil
+		a.ecdsapk = nil
 	}
 }
 
@@ -129,9 +129,10 @@ func RSAKey(privateKey io.Reader, password ...[]byte) OptionFunc {
 			}
 		}
 		var dd []byte
-		if dd, err := x509.DecryptPEMBlock(prKeyPEM, password[0]); err != nil {
+		var errPEM error
+		if dd, errPEM = x509.DecryptPEMBlock(prKeyPEM, password[0]); errPEM != nil {
 			return func(a *AuthManager) {
-				a.lastError = errgo.Newf("Private Key decryption failed: %s", err.Error())
+				a.lastError = errgo.Newf("Private Key decryption failed: %s", errPEM.Error())
 			}
 		}
 		rsaPrivateKey, err = x509.ParsePKCS1PrivateKey(dd)
@@ -141,7 +142,7 @@ func RSAKey(privateKey io.Reader, password ...[]byte) OptionFunc {
 
 	return func(a *AuthManager) {
 		a.SigningMethod = jwt.SigningMethodRS256
-		a.key = rsaPrivateKey
+		a.rsapk = rsaPrivateKey
 		a.hasKey = true
 		a.lastError = errgo.Mask(err)
 	}
@@ -151,7 +152,7 @@ func generateRSAPrivateKey(a *AuthManager) {
 	pk, err := rsa.GenerateKey(rand.Reader, PrivateKeyBits)
 
 	if pk != nil {
-		a.key = pk
+		a.rsapk = pk
 		a.hasKey = true
 		a.SigningMethod = jwt.SigningMethodRS256
 	}
