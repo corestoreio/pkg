@@ -38,8 +38,8 @@ const PrivateKeyBits = 4096
 // OptionFunc applies options to the AuthManager
 type OptionFunc func(a *AuthManager)
 
-// HmacKey sets the HMAC 256 bit signing method
-func HmacKey(key []byte) OptionFunc {
+// Hmac sets the HMAC 256 bit signing method
+func Hmac(key []byte) OptionFunc {
 	return func(a *AuthManager) {
 		a.lastError = nil
 		a.hasKey = true
@@ -48,21 +48,21 @@ func HmacKey(key []byte) OptionFunc {
 	}
 }
 
-// ECDSAKeyFromFile @todo
-func ECDSAKeyFromFile(privateKey string, password ...[]byte) OptionFunc {
+// ECDSAFromFile @todo
+func ECDSAFromFile(privateKey string, password ...[]byte) OptionFunc {
 	fpk, err := os.Open(privateKey)
 	if err != nil {
 		return func(a *AuthManager) {
 			a.lastError = errgo.Mask(err)
 		}
 	}
-	return ECDSAKey(fpk, password...)
+	return ECDSA(fpk, password...)
 
 }
 
-// ECDSAKey @todo
+// ECDSA @todo
 // Default Signing bits 256.
-func ECDSAKey(privateKey io.Reader, password ...[]byte) OptionFunc {
+func ECDSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 	if cl, ok := privateKey.(io.Closer); ok {
 		defer func() {
 			if err := cl.Close(); err != nil { // close file
@@ -81,25 +81,25 @@ func ECDSAKey(privateKey io.Reader, password ...[]byte) OptionFunc {
 	}
 }
 
-// RSAKeyFromFile reads an RSA private key from a file and applies it as an option
+// RSAFromFile reads an RSA private key from a file and applies it as an option
 // to the AuthManager. Password as second argument is only required when the
 // private key is encrypted. Public key will be derived from the private key.
-func RSAKeyFromFile(privateKey string, password ...[]byte) OptionFunc {
+func RSAFromFile(privateKey string, password ...[]byte) OptionFunc {
 	fpk, err := os.Open(privateKey)
 	if err != nil {
 		return func(a *AuthManager) {
 			a.lastError = errgo.Mask(err)
 		}
 	}
-	return RSAKey(fpk, password...)
+	return RSA(fpk, password...)
 }
 
-// RSAKey reads PEM byte data and decodes it and parses the private key.
+// RSA reads PEM byte data and decodes it and parses the private key.
 // Applies the private and the public key to the AuthManager. Password as second
 // argument is only required when the private key is encrypted.
 // Checks for io.Close and closes the resource. Public key will be derived from
 // the private key. Default Signing bits 256.
-func RSAKey(privateKey io.Reader, password ...[]byte) OptionFunc {
+func RSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 	if cl, ok := privateKey.(io.Closer); ok {
 		defer func() {
 			if err := cl.Close(); err != nil { // close file

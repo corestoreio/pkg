@@ -67,10 +67,10 @@ type AuthManager struct {
 	PostFormVarPrefix string
 }
 
-// NewAuthManager create a new manager. If private key option will not be
+// New create a new manager. If private key option will not be
 // passed then a key pair will be generated if both keys, or one of the two, are/is nil.
 // Default expire is one hour. Default signing method is RS512.
-func NewAuthManager(opts ...OptionFunc) (*AuthManager, error) {
+func New(opts ...OptionFunc) (*AuthManager, error) {
 	a := new(AuthManager)
 	for _, opt := range opts {
 		opt(a)
@@ -166,13 +166,19 @@ func (a *AuthManager) Authenticate(next http.Handler) http.Handler {
 			}
 		})
 
-		if inBlacklist := a.Blacklist.Has(token.Raw); err == nil && token.Valid && !inBlacklist {
+		var inBL bool
+		if token != nil {
+			inBL = a.Blacklist.Has(token.Raw)
+		}
+		if token != nil && err == nil && token.Valid && !inBL {
 			if err := appendTokenToForm(r, token, a.PostFormVarPrefix); err != nil {
 				log.Error("userjwt.AuthManager.Authenticate.appendTokenToForm", "err", err, "r", r, "token", token)
 			}
 			next.ServeHTTP(w, r)
 		} else {
-			log.Error("userjwt.AuthManager.Authenticate", "err", err, "token", token, "blacklist", inBlacklist)
+			if log.IsInfo() {
+				log.Info("userjwt.AuthManager.Authenticate", "err", err, "token", token, "blacklist", inBL)
+			}
 			if a.HTTPErrorHandler == nil {
 				w.WriteHeader(http.StatusUnauthorized)
 			} else {
