@@ -189,11 +189,11 @@ func (a *AuthManager) Parse(rawToken string) (*jwt.Token, error) {
 	return nil, errgo.Mask(err)
 }
 
-// Authenticate represent a middleware handler for a http router.
-// For POST or PUT requests, it also parses the request body as a form and
-// put the results into r.Form. The claims of a token will
-// be appended to the requests Form map.
-func (a *AuthManager) Authenticate(next http.Handler) http.Handler {
+// Authorization represent a middleware handler for a http router.
+// For POST or PUT requests, it also parses the request body as a form. The
+// claims of a token will be appended to the requests Form map. So you
+// can access the token in any http/routing library.
+func (a *AuthManager) Authorization(next http.Handler) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 

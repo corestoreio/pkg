@@ -209,11 +209,11 @@ func testAuth(t *testing.T, opts ...userjwt.OptionFunc) (http.Handler, string) {
 		// t.Logf("Check Form for map: %v\n", r.Form)
 		fmt.Fprint(w, r.Form.Encode())
 	})
-	authHandler := jm.Authenticate(final)
+	authHandler := jm.Authorization(final)
 	return authHandler, token
 }
 
-func TestAuthenticateNoToken(t *testing.T) {
+func TestAuthorizationNoToken(t *testing.T) {
 
 	authHandler, _ := testAuth(t)
 
@@ -225,7 +225,7 @@ func TestAuthenticateNoToken(t *testing.T) {
 	assert.Contains(t, w.Body.String(), `no token present in request`)
 }
 
-func TestAuthenticateHTTPErrorHandler(t *testing.T) {
+func TestAuthorizationHTTPErrorHandler(t *testing.T) {
 
 	authHandler, _ := testAuth(t, func(a *userjwt.AuthManager) {
 
@@ -245,7 +245,7 @@ func TestAuthenticateHTTPErrorHandler(t *testing.T) {
 	assert.Equal(t, "no token present in request", w.Body.String())
 }
 
-func TestAuthenticateValidTokenPOST(t *testing.T) {
+func TestAuthorizationValidTokenPOST(t *testing.T) {
 
 	authHandler, token := testAuth(t)
 
@@ -264,7 +264,7 @@ func TestAuthenticateValidTokenPOST(t *testing.T) {
 
 }
 
-func TestAuthenticateValidTokenPOSTNoBody(t *testing.T) {
+func TestAuthorizationValidTokenPOSTNoBody(t *testing.T) {
 
 	authHandler, token := testAuth(t)
 
