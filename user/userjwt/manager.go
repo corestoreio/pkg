@@ -63,7 +63,7 @@ type AuthManager struct {
 	}
 	// HTTPErrorHandler defines your specific handler when the token is invalid.
 	// Default handler nil and a status StatusUnauthorized will be provided
-	HTTPErrorHandler http.Handler
+	HTTPErrorHandler func(error) http.Handler
 
 	// PostFormVarPrefix defines the prefix for the form values when the toke parts will
 	// be appended to the *http.Request.Form map. Default in constant PostFormVarPrefix
@@ -88,10 +88,26 @@ func New(opts ...OptionFunc) (*AuthManager, error) {
 	if a.lastError != nil {
 		return nil, a.lastError
 	}
-	a.Expire = time.Hour
-	a.Blacklist = nullBL{}
-	a.PostFormVarPrefix = PostFormVarPrefix
-	a.JTI = jti{}
+	if a.Expire.Seconds() < 1 {
+		a.Expire = time.Hour
+	}
+	if a.Blacklist == nil {
+		a.Blacklist = nullBL{}
+	}
+	if a.PostFormVarPrefix == "" {
+		a.PostFormVarPrefix = PostFormVarPrefix
+	}
+	if a.JTI == nil {
+		a.JTI = jti{}
+	}
+	if a.HTTPErrorHandler == nil {
+		a.HTTPErrorHandler = func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusUnauthorized)
+				w.Write([]byte(err.Error()))
+			})
+		}
+	}
 	return a, nil
 }
 
@@ -175,7 +191,7 @@ func (a *AuthManager) Parse(rawToken string) (*jwt.Token, error) {
 
 // Authenticate represent a middleware handler for a http router.
 // For POST or PUT requests, it also parses the request body as a form and
-// put the results into both r.PostForm and r.Form. The claims of a token will
+// put the results into r.Form. The claims of a token will
 // be appended to the requests Form map.
 func (a *AuthManager) Authenticate(next http.Handler) http.Handler {
 
@@ -189,18 +205,17 @@ func (a *AuthManager) Authenticate(next http.Handler) http.Handler {
 		}
 		if token != nil && err == nil && token.Valid && !inBL {
 			if err := appendTokenToForm(r, token, a.PostFormVarPrefix); err != nil {
-				log.Error("userjwt.AuthManager.Authenticate.appendTokenToForm", "err", err, "r", r, "token", token)
+				a.HTTPErrorHandler(
+					log.Error("userjwt.AuthManager.Authenticate.appendTokenToForm", "err", err, "r", r, "token", token),
+				).ServeHTTP(w, r)
+			} else {
+				next.ServeHTTP(w, r)
 			}
-			next.ServeHTTP(w, r)
 		} else {
 			if log.IsInfo() {
 				log.Info("userjwt.AuthManager.Authenticate", "err", err, "token", token, "blacklist", inBL)
 			}
-			if a.HTTPErrorHandler == nil {
-				w.WriteHeader(http.StatusUnauthorized)
-			} else {
-				a.HTTPErrorHandler.ServeHTTP(w, r) // is that really thread safe or other bug?
-			}
+			a.HTTPErrorHandler(err).ServeHTTP(w, r) // is that really thread safe or other bug?
 		}
 	})
 }

@@ -15,13 +15,20 @@
 package userjwt_test
 
 import (
+	"fmt"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 
 	"go/build"
 
+	"net/http/httptest"
+
+	"strings"
+
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/user/userjwt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
@@ -78,6 +85,28 @@ func TestInvalidSigningMethod(t *testing.T) {
 	mt, err := jm.Parse(malformedToken)
 	assert.EqualError(t, err, userjwt.ErrUnexpectedSigningMethod.Error())
 	assert.Nil(t, mt)
+}
+
+func TestPasswordFromConfig(t *testing.T) {
+
+	cfg := config.NewMockReader(
+		config.MockString(func(path string) string {
+			if path == userjwt.PathJWTPassword {
+				return `Rump3lst!lzch3n`
+			}
+			return ""
+		}),
+	)
+
+	jm, err := userjwt.New(
+		userjwt.PasswordFromConfig(cfg),
+	)
+	assert.NoError(t, err)
+
+	token, _, err := jm.GenerateToken(nil)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, token)
+
 }
 
 func TestJTI(t *testing.T) {
@@ -166,14 +195,87 @@ func TestRSAGenerate(t *testing.T) {
 	testRsaOption(t, userjwt.RSAGenerate())
 }
 
-func TestAuthenticate(t *testing.T) {
-	jm, err := userjwt.New()
+func testAuth(t *testing.T, opts ...userjwt.OptionFunc) (http.Handler, string) {
+	jm, err := userjwt.New(opts...)
+	assert.NoError(t, err)
+	token, _, err := jm.GenerateToken(map[string]interface{}{
+		"xfoo": "bar",
+		"zfoo": 4711,
+	})
 	assert.NoError(t, err)
 
-	token, _, err := jm.GenerateToken(nil)
+	final := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+		// t.Logf("Check Form for map: %v\n", r.Form)
+		fmt.Fprint(w, r.Form.Encode())
+	})
+	authHandler := jm.Authenticate(final)
+	return authHandler, token
+}
+
+func TestAuthenticateNoToken(t *testing.T) {
+
+	authHandler, _ := testAuth(t)
+
+	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
+	assert.NoError(t, err)
+	w := httptest.NewRecorder()
+	authHandler.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), `no token present in request`)
+}
+
+func TestAuthenticateHTTPErrorHandler(t *testing.T) {
+
+	authHandler, _ := testAuth(t, func(a *userjwt.AuthManager) {
+
+		a.HTTPErrorHandler = func(err error) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusTeapot)
+				w.Write([]byte(err.Error()))
+			})
+		}
+	})
+
+	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
+	assert.NoError(t, err)
+	w := httptest.NewRecorder()
+	authHandler.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusTeapot, w.Code)
+	assert.Equal(t, "no token present in request", w.Body.String())
+}
+
+func TestAuthenticateValidTokenPOST(t *testing.T) {
+
+	authHandler, token := testAuth(t)
+
+	req, err := http.NewRequest("POST", "http://auth.xyz", strings.NewReader("a=b&c=d"))
+	assert.NoError(t, err)
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("Content-Length", strconv.Itoa(7))
+
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	authHandler.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Contains(t, w.Body.String(), `a=b&c=d&jwt__exp=`)
+	assert.Contains(t, w.Body.String(), `&jwt__xfoo=bar&jwt__zfoo=4711`)
+
+}
+
+func TestAuthenticateValidTokenPOSTNoBody(t *testing.T) {
+
+	authHandler, token := testAuth(t)
+
+	req, err := http.NewRequest("POST", "http://auth.xyz", nil)
 	assert.NoError(t, err)
 
-	http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {})
+	req.Header.Set("Authorization", "Bearer "+token)
+	w := httptest.NewRecorder()
+	authHandler.ServeHTTP(w, req)
 
-	hndlr := jm.Authenticate()
+	assert.Equal(t, http.StatusUnauthorized, w.Code)
+	assert.Contains(t, w.Body.String(), `missing form body`)
+
 }
