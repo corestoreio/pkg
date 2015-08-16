@@ -37,13 +37,12 @@ type (
 	// A group does not have any kind of configuration setting.
 	Group struct {
 		cr config.Reader
-		// g group data
-		g *TableGroup
-		// stores contains a slice to all stores associated to this group.
-		// This slice can be nil
-		stores StoreSlice
-		// w contains the Website which belongs to this group. Can be nil.
-		w *Website
+		// Data contains the raw group data.
+		Data *TableGroup
+		// Stores contains a slice to all stores associated to this group. Can be nil.
+		Stores StoreSlice
+		// Website contains the Website which belongs to this group. Can be nil.
+		Website *Website
 	}
 	// GroupSlice collection of Group. GroupSlice has some nice method receivers.
 	GroupSlice []*Group
@@ -52,10 +51,7 @@ type (
 )
 
 var (
-	ErrGroupNotFound = errors.New("Group not found")
-	// ErrGroupStoresNotAvailable not really an error but more an info when the stores has not been set
-	// this usually occurs when the group has been set on a website or a store.
-	ErrGroupStoresNotAvailable   = errors.New("Group stores not available")
+	ErrGroupNotFound             = errors.New("Group not found")
 	ErrGroupDefaultStoreNotFound = errors.New("Group default store not found")
 	// ErrGroupWebsiteNotFound the Website struct is nil so we cannot assign the stores to a group.
 	ErrGroupWebsiteNotFound = errors.New("Group Website not found or nil or ID do not match")
@@ -72,14 +68,14 @@ func SetGroupConfig(cr config.Reader) GroupOption {
 // the group website ID then this function panics.
 func SetGroupWebsite(tw *TableWebsite) GroupOption {
 	return func(g *Group) {
-		if g.Data() == nil {
+		if g.Data == nil {
 			panic(ErrGroupNotFound)
 		}
-		if tw != nil && g.Data().WebsiteID != tw.WebsiteID {
+		if tw != nil && g.Data.WebsiteID != tw.WebsiteID {
 			panic(ErrGroupWebsiteNotFound)
 		}
 		if tw != nil {
-			g.w = NewWebsite(tw)
+			g.Website = NewWebsite(tw)
 		}
 	}
 }
@@ -91,19 +87,19 @@ func NewGroup(tg *TableGroup, opts ...GroupOption) *Group {
 	}
 
 	g := &Group{
-		cr: config.DefaultManager,
-		g:  tg,
+		cr:   config.DefaultManager,
+		Data: tg,
 	}
 	g.ApplyOptions(opts...)
-	if g.w != nil {
-		g.w.ApplyOptions(SetWebsiteConfig(g.cr))
+	if g.Website != nil {
+		g.Website.ApplyOptions(SetWebsiteConfig(g.cr))
 	}
 	return g
 }
 
 // ScopeID satisfies interface config.ScopeIDer
 func (g *Group) ScopeID() int64 {
-	return g.g.GroupID
+	return g.Data.GroupID
 }
 
 // ApplyOptions sets the options to a Group.
@@ -116,39 +112,21 @@ func (g *Group) ApplyOptions(opts ...GroupOption) *Group {
 	return g
 }
 
-// Website returns the website associated to this group or nil.
-func (g *Group) Website() *Website {
-	return g.w
-}
-
-// Data returns the TableGroup data which is raw database data.
-func (g *Group) Data() *TableGroup {
-	return g.g
-}
-
 // MarshalJSON satisfies interface for JSON marshalling. The TableWebsite
 // struct will be encoded to JSON.
 func (g *Group) MarshalJSON() ([]byte, error) {
 	// @todo while generating the TableStore structs we can generate the ffjson code ...
-	return json.Marshal(g.g)
+	return json.Marshal(g.Data)
 }
 
 // DefaultStore returns the default Store or an error.
 func (g *Group) DefaultStore() (*Store, error) {
-	for _, sb := range g.stores {
-		if sb.Data().StoreID == g.g.DefaultStoreID {
+	for _, sb := range g.Stores {
+		if sb.Data.StoreID == g.Data.DefaultStoreID {
 			return sb, nil
 		}
 	}
 	return nil, ErrGroupDefaultStoreNotFound
-}
-
-// Stores returns all stores associated to a group or an error if stores are not available.
-func (g *Group) Stores() (StoreSlice, error) {
-	if len(g.stores) > 0 {
-		return g.stores, nil
-	}
-	return nil, ErrGroupStoresNotAvailable
 }
 
 // SetStores uses the full store collection to extract the stores which are
@@ -157,20 +135,20 @@ func (g *Group) Stores() (StoreSlice, error) {
 // values are nil. If both are set, the 2nd argument will be considered.
 func (g *Group) SetStores(tss TableStoreSlice, w *TableWebsite) *Group {
 	if tss == nil {
-		g.stores = nil
+		g.Stores = nil
 		return g
 	}
-	if g.Website() == nil && w == nil {
+	if g.Website == nil && w == nil {
 		panic(ErrGroupWebsiteNotFound)
 	}
 	if w == nil {
-		w = g.Website().Data()
+		w = g.Website.Data
 	}
-	if w.WebsiteID != g.Data().WebsiteID {
+	if w.WebsiteID != g.Data.WebsiteID {
 		panic(ErrGroupWebsiteNotFound)
 	}
-	for _, s := range tss.FilterByGroupID(g.g.GroupID) {
-		g.stores = append(g.stores, NewStore(s, w, g.g, SetStoreConfig(g.cr)))
+	for _, s := range tss.FilterByGroupID(g.Data.GroupID) {
+		g.Stores = append(g.Stores, NewStore(s, w, g.Data, SetStoreConfig(g.cr)))
 	}
 	return g
 }
@@ -205,7 +183,7 @@ func (s GroupSlice) IDs() utils.Int64Slice {
 	var ids utils.Int64Slice
 	for _, g := range s {
 		if g != nil {
-			ids.Append(g.Data().GroupID)
+			ids.Append(g.Data.GroupID)
 		}
 	}
 	return ids

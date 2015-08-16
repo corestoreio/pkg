@@ -30,11 +30,8 @@ func TestNewGroup(t *testing.T) {
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		nil,
 	)
-	assert.EqualValues(t, "DACH Group", g.Data().Name)
-
-	gStores1, err := g.Stores()
-	assert.Nil(t, gStores1)
-	assert.EqualError(t, store.ErrGroupStoresNotAvailable, err.Error())
+	assert.EqualValues(t, "DACH Group", g.Data.Name)
+	assert.Nil(t, g.Stores)
 
 	gStores2, err := g.DefaultStore()
 	assert.Nil(t, gStores2)
@@ -145,15 +142,15 @@ func TestNewGroupSetStores(t *testing.T) {
 		},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
 	)
-	gStores, err := g.Stores()
-	assert.NoError(t, err)
-	assert.EqualValues(t, utils.StringSlice{"de", "at", "ch"}, gStores.Codes())
+
+	assert.NotNil(t, g.Stores)
+	assert.EqualValues(t, utils.StringSlice{"de", "at", "ch"}, g.Stores.Codes())
 
 	gDefaultStore, err := g.DefaultStore()
 	assert.NoError(t, err)
-	assert.EqualValues(t, "euro", gDefaultStore.Website().Data().Code.String)
-	assert.EqualValues(t, "DACH Group", gDefaultStore.Group().Data().Name)
-	assert.EqualValues(t, "at", gDefaultStore.Data().Code.String)
+	assert.EqualValues(t, "euro", gDefaultStore.Website.Data.Code.String)
+	assert.EqualValues(t, "DACH Group", gDefaultStore.Group.Data.Name)
+	assert.EqualValues(t, "at", gDefaultStore.Data.Code.String)
 }
 
 var testGroups = store.TableGroupSlice{

@@ -29,7 +29,7 @@ func TestNewWebsite(t *testing.T) {
 	w := store.NewWebsite(
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
 	)
-	assert.Equal(t, "euro", w.Data().Code.String)
+	assert.Equal(t, "euro", w.Data.Code.String)
 
 	dg, err := w.DefaultGroup()
 	assert.Nil(t, dg)
@@ -38,14 +38,9 @@ func TestNewWebsite(t *testing.T) {
 	ds, err := w.DefaultStore()
 	assert.Nil(t, ds)
 	assert.EqualError(t, store.ErrWebsiteDefaultGroupNotFound, err.Error())
+	assert.Nil(t, w.Stores)
+	assert.Nil(t, w.Groups)
 
-	stores, err := w.Stores()
-	assert.Nil(t, stores)
-	assert.EqualError(t, store.ErrWebsiteStoresNotAvailable, err.Error())
-
-	groups, err := w.Groups()
-	assert.Nil(t, groups)
-	assert.EqualError(t, store.ErrWebsiteGroupsNotAvailable, err.Error())
 }
 
 func TestNewWebsiteSetGroupsStores(t *testing.T) {
@@ -72,32 +67,27 @@ func TestNewWebsiteSetGroupsStores(t *testing.T) {
 
 	dg, err := w.DefaultGroup()
 	assert.NotNil(t, dg)
-	assert.EqualValues(t, "DACH Group", dg.Data().Name, "get default group: %#v", dg)
+	assert.EqualValues(t, "DACH Group", dg.Data.Name, "get default group: %#v", dg)
 	assert.NoError(t, err)
 
 	ds, err := w.DefaultStore()
 	assert.NotNil(t, ds)
-	assert.EqualValues(t, "at", ds.Data().Code.String, "get default store: %#v", ds)
+	assert.EqualValues(t, "at", ds.Data.Code.String, "get default store: %#v", ds)
 	assert.NoError(t, err)
 
-	dgStores, err := dg.Stores()
-	assert.NoError(t, err)
-	assert.EqualValues(t, utils.StringSlice{"de", "at", "ch"}, dgStores.Codes())
+	assert.NotNil(t, dg.Stores)
+	assert.EqualValues(t, utils.StringSlice{"de", "at", "ch"}, dg.Stores.Codes())
 
-	for _, st := range dgStores {
-		assert.EqualValues(t, "DACH Group", st.Group().Data().Name)
-		assert.EqualValues(t, "Europe", st.Website().Data().Name.String)
+	for _, st := range dg.Stores {
+		assert.EqualValues(t, "DACH Group", st.Group.Data.Name)
+		assert.EqualValues(t, "Europe", st.Website.Data.Name.String)
 	}
 
-	stores, err := w.Stores()
-	assert.NoError(t, err)
-	assert.NotNil(t, stores)
-	assert.EqualValues(t, utils.StringSlice{"de", "uk", "at", "ch"}, stores.Codes())
+	assert.NotNil(t, w.Stores)
+	assert.EqualValues(t, utils.StringSlice{"de", "uk", "at", "ch"}, w.Stores.Codes())
 
-	groups, err := w.Groups()
-	assert.NoError(t, err)
-	assert.NotNil(t, groups)
-	assert.EqualValues(t, utils.Int64Slice{1, 2}, groups.IDs())
+	assert.NotNil(t, w.Groups)
+	assert.EqualValues(t, utils.Int64Slice{1, 2}, w.Groups.IDs())
 
 }
 

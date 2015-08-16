@@ -48,13 +48,11 @@ func TestNewStore(t *testing.T) {
 	for _, test := range tests {
 		s := store.NewStore(test.s, test.w, test.g)
 		assert.NotNil(t, s)
-		assert.EqualValues(t, test.w.WebsiteID, s.Website().Data().WebsiteID)
-		assert.EqualValues(t, test.g.GroupID, s.Group().Data().GroupID)
-		assert.EqualValues(t, test.s.Code, s.Data().Code)
-		assert.Nil(t, s.Group().Website())
-		gStores, gErr := s.Group().Stores()
-		assert.Nil(t, gStores)
-		assert.EqualError(t, store.ErrGroupStoresNotAvailable, gErr.Error())
+		assert.EqualValues(t, test.w.WebsiteID, s.Website.Data.WebsiteID)
+		assert.EqualValues(t, test.g.GroupID, s.Group.Data.GroupID)
+		assert.EqualValues(t, test.s.Code, s.Data.Code)
+		assert.Nil(t, s.Group.Website)
+		assert.Nil(t, s.Group.Stores)
 		assert.EqualValues(t, test.s.StoreID, s.ScopeID())
 	}
 }
@@ -130,14 +128,14 @@ func TestStoreSlice(t *testing.T) {
 	assert.True(t, storeSlice.Len() == 3)
 	assert.EqualValues(t, utils.Int64Slice{1, 5}, storeSlice.IDs())
 	assert.EqualValues(t, utils.StringSlice{"de", "au"}, storeSlice.Codes())
-	assert.EqualValues(t, 5, storeSlice.LastItem().Data().StoreID)
+	assert.EqualValues(t, 5, storeSlice.LastItem().Data.StoreID)
 	assert.Nil(t, (store.StoreSlice{}).LastItem())
 
 	storeSlice2 := storeSlice.Filter(func(s *store.Store) bool {
-		return s.Website().Data().WebsiteID == 2
+		return s.Website.Data.WebsiteID == 2
 	})
 	assert.True(t, storeSlice2.Len() == 1)
-	assert.Equal(t, "au", storeSlice2[0].Data().Code.String)
+	assert.Equal(t, "au", storeSlice2[0].Data.Code.String)
 	assert.EqualValues(t, utils.Int64Slice{5}, storeSlice2.IDs())
 	assert.EqualValues(t, utils.StringSlice{"au"}, storeSlice2.Codes())
 
