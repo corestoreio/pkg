@@ -16,10 +16,22 @@
 package net
 
 import (
+	"encoding/json"
 	"net/http"
 
 	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 	"github.com/labstack/echo"
+)
+
+const (
+	CharsetUTF8 = "charset=utf-8"
+
+	ContentLength = "Content-Length"
+	ContentType   = "Content-Type"
+
+	ApplicationJSON            = "application/json"
+	ApplicationJSONCharsetUTF8 = ApplicationJSON + "; " + CharsetUTF8
 )
 
 // APIRoute defines the current API version
@@ -38,6 +50,14 @@ func (a apiVersion) Versionize(r string) string {
 // String returns the current version and not the full route
 func (a apiVersion) String() string {
 	return string(a)
+}
+
+// WriteJSON encodes v into JSON and sets the appropriate header except Length header
+func WriteJSON(w http.ResponseWriter, v interface{}) error {
+	w.Header().Set(ContentType, ApplicationJSONCharsetUTF8)
+	// w.Header().Set(ContentLength, strconv.Itoa(len( ??? ))) @todo ...
+	w.WriteHeader(http.StatusOK)
+	return errgo.Mask(json.NewEncoder(w).Encode(v))
 }
 
 // RESTErrorHandler default REST error handler ... @todo remove echo dependency
