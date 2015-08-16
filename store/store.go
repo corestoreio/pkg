@@ -15,6 +15,7 @@
 package store
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"net/url"
@@ -144,6 +145,13 @@ func (s *Store) Group() *Group {
 // Data returns the real store data from the database
 func (s *Store) Data() *TableStore {
 	return s.s
+}
+
+// MarshalJSON satisfies interface for JSON marshalling. The TableStore
+// struct will be encoded to JSON.
+func (s Store) MarshalJSON() ([]byte, error) {
+	// @todo while generating the TableStore structs we can generate the ffjson code ...
+	return json.Marshal(s.Data())
 }
 
 // Path returns the sub path from the URL where CoreStore is installed

@@ -14,5 +14,70 @@
 
 package store
 
-//@todo routes to implement GH Issue#1
+import (
+	"net/http"
+
+	"github.com/corestoreio/csfw/net"
+	"github.com/corestoreio/csfw/utils/log"
+)
+
+/*
+@todo:
+	- routes to implement GH Issue#1
+	- authentication
+*/
+
+var (
+	// RoutePrefix global prefix for this package
+	RoutePrefix = "store/"
+	// RouteStores defines the REST API endpoints for GET and POST requests.
+	RouteStores = RoutePrefix + "stores"
+	// RouteStore defines the REST API endpoints for GET, PUT and DELETE a single store.
+	RouteStore = RoutePrefix + "stores/:id"
+)
+
+// RESTStores creates a list of all stores
+func RESTStores(sm *Manager) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		stores, err := sm.Stores()
+		if err != nil {
+			log.Error("store.RESTStores.Stores", "err", err, "req", r)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
+		err = net.WriteJSON(w, stores)
+		if err != nil {
+			log.Error("store.RESTStores.WriteJSON", "err", err, "req", r)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	}
+}
+
+// RESTStoreCreate creates a new store
+//func RESTStoreCreate(m *Manager) httprouter.Handle {
+//	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+//		fmt.Printf("\n%#v\n", r)
+//		w.Write([]byte("RESTStoreCreate\n"))
+//	}
+//}
 //
+//// RESTStore lists a single store
+//func RESTStore(m *Manager) httprouter.Handle {
+//	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+//		w.Write([]byte("RESTStore\n"))
+//	}
+//}
+//
+//// RESTStoreSave saves a given store
+//func RESTStoreSave(m *Manager) httprouter.Handle {
+//	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+//		w.Write([]byte("RESTStoreSave\n"))
+//	}
+//}
+//
+//// RESTStoreDelete saves a given store
+//func RESTStoreDelete(m *Manager) httprouter.Handle {
+//	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+//		w.Write([]byte("RESTStoreDelete\n"))
+//	}
+//}
