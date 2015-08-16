@@ -149,9 +149,9 @@ func (s *Store) Data() *TableStore {
 
 // MarshalJSON satisfies interface for JSON marshalling. The TableStore
 // struct will be encoded to JSON.
-func (s Store) MarshalJSON() ([]byte, error) {
+func (s *Store) MarshalJSON() ([]byte, error) {
 	// @todo while generating the TableStore structs we can generate the ffjson code ...
-	return json.Marshal(s.Data())
+	return json.Marshal(s.s)
 }
 
 // Path returns the sub path from the URL where CoreStore is installed

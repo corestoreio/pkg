@@ -17,6 +17,8 @@ package store
 import (
 	"errors"
 
+	"encoding/json"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -114,14 +116,21 @@ func (g *Group) ApplyOptions(opts ...GroupOption) *Group {
 	return g
 }
 
+// Website returns the website associated to this group or nil.
+func (g *Group) Website() *Website {
+	return g.w
+}
+
 // Data returns the TableGroup data which is raw database data.
 func (g *Group) Data() *TableGroup {
 	return g.g
 }
 
-// Website returns the website associated to this group or nil.
-func (g *Group) Website() *Website {
-	return g.w
+// MarshalJSON satisfies interface for JSON marshalling. The TableWebsite
+// struct will be encoded to JSON.
+func (g *Group) MarshalJSON() ([]byte, error) {
+	// @todo while generating the TableStore structs we can generate the ffjson code ...
+	return json.Marshal(g.g)
 }
 
 // DefaultStore returns the default Store or an error.

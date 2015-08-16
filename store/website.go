@@ -15,6 +15,7 @@
 package store
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sort"
@@ -102,6 +103,13 @@ func (w *Website) ScopeCode() string { return w.w.Code.String }
 
 // Data returns the data from the database
 func (w *Website) Data() *TableWebsite { return w.w }
+
+// MarshalJSON satisfies interface for JSON marshalling. The TableWebsite
+// struct will be encoded to JSON.
+func (w *Website) MarshalJSON() ([]byte, error) {
+	// @todo while generating the TableStore structs we can generate the ffjson code ...
+	return json.Marshal(w.w)
+}
 
 // DefaultGroup returns the default Group or an error if not found
 func (w *Website) DefaultGroup() (*Group, error) {
