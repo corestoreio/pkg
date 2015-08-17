@@ -12,25 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package user
-
-import (
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/utils/crypto"
-)
-
-// @todo app/code/Magento/User/Model/User.php
-
-type User struct {
-	Data *TableAdminUser
-}
-
-func (u *User) Authenticate(cr config.Reader, h crypto.Hasher, password string) error {
-	isCaseSensitive := cr.GetBool("admin/security/use_case_sensitive_login")
-
-	if !isCaseSensitive {
-		// ... hmm
-	}
-
-	return nil
-}
+/*
+Package crypto provides functionalities such as hashing passwords,
+encrypting/decrypting data, URLs encoding?, using cryptographic algorithms.
+*/
+package crypto
