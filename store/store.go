@@ -134,9 +134,8 @@ func (s *Store) ScopeCode() string {
 }
 
 // MarshalJSON satisfies interface for JSON marshalling. The TableStore
-// struct will be encoded to JSON.
+// struct will be encoded to JSON using Go's standard library.
 func (s *Store) MarshalJSON() ([]byte, error) {
-	// @todo while generating the TableStore structs we can generate the ffjson code ...
 	return json.Marshal(s.Data)
 }
 

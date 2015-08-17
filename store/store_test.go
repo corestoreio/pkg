@@ -16,6 +16,7 @@ package store_test
 
 import (
 	"database/sql"
+	"encoding/json"
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
@@ -353,7 +354,8 @@ func TestMarshalJSON(t *testing.T) {
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
 		&store.TableGroup{GroupID: 1, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 	)
-	jdata, err := s.MarshalJSON()
+
+	jdata, err := json.Marshal(s)
 	assert.NoError(t, err)
 	assert.Equal(t, []byte(`{"StoreID":1,"Code":"de","WebsiteID":1,"GroupID":1,"Name":"Germany","SortOrder":10,"IsActive":true}`), jdata)
 }

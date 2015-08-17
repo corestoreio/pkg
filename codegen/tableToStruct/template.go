@@ -14,6 +14,8 @@
 
 package main
 
+// @todo hide password and other sensitive fields in JSON struct tags
+
 const tplCode = `//go:generate gen
 
 // Copyright 2015, Cyrill @ Schumacher.fm and the CoreStore contributors
@@ -88,7 +90,7 @@ type (
     Table{{.name | prepareVar}}Slice []*Table{{.name | prepareVar}}
     // Table{{.name | prepareVar}} a type for the MySQL table {{ .table }}
     Table{{.name | prepareVar}} struct {
-        {{ range .columns }}{{.GoName}} {{.GoType}} {{ $.Tick }}db:"{{.Field.String}}"{{ $.Tick }} {{.Comment}}
+        {{ range .columns }}{{.GoName}} {{.GoType}} {{ $.Tick }}db:"{{.Field.String}}" json:",omitempty"{{ $.Tick }} {{.Comment}}
         {{ end }} }
 {{ end }}
 )

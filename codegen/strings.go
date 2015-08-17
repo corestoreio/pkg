@@ -26,6 +26,8 @@ import (
 
 	"go/format"
 
+	"path/filepath"
+
 	"github.com/juju/errgo"
 )
 
@@ -48,6 +50,33 @@ var (
 // limitations under the License.
 `)
 )
+
+// OFile is a OutputFile
+type OFile string
+
+func (of OFile) String() string {
+	return string(of) + ".go"
+}
+
+func (of OFile) AppendDir(s ...string) OFile {
+	sof := string(of)
+	parts := strings.Split(sof, string(filepath.Separator))
+	parts = append(parts, s...)
+	nf := NewOFile(parts...)
+	if filepath.IsAbs(sof) {
+		nf = OFile(string(filepath.Separator)) + nf
+	}
+	return nf
+}
+
+func (of OFile) AppendName(s ...string) OFile {
+	return NewOFile(string(of) + strings.Join(s, ""))
+}
+
+// NewOFile creates a new path from parts
+func NewOFile(paths ...string) OFile {
+	return OFile(filepath.Join(paths...))
+}
 
 // GenerateCode uses text/template for create Go code. package name pkg will also be used
 // to remove stutter in variable names.
