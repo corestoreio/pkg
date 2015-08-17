@@ -39,12 +39,13 @@ type (
 	// settings which overrides the default scope but get itself overridden by the Store scope.
 	Website struct {
 		cr config.Reader
-		w  *TableWebsite
+		// Data raw website data
+		Data *TableWebsite
 
-		// groups contains a slice to all groups associated to one website. This slice can be nil.
-		groups GroupSlice
-		// stores contains a slice to all stores associated to one website. This slice can be nil.
-		stores StoreSlice
+		// Groups contains a slice to all groups associated to one website. This slice can be nil.
+		Groups GroupSlice
+		// Stores contains a slice to all stores associated to one website. This slice can be nil.
+		Stores StoreSlice
 	}
 	// WebsiteSlice contains pointer to Website struct and some nifty method receivers.
 	WebsiteSlice []*Website
@@ -58,10 +59,6 @@ var (
 	ErrWebsiteNotFound = errors.New("Website not found")
 	// ErrWebsiteDefaultGroupNotFound the default group cannot be found
 	ErrWebsiteDefaultGroupNotFound = errors.New("Website Default Group not found")
-	// ErrWebsiteGroupsNotAvailable Groups are in the current context not available and nil
-	ErrWebsiteGroupsNotAvailable = errors.New("Website Groups not available")
-	// ErrWebsiteStoresNotAvailable Stores are in the current context not available and nil
-	ErrWebsiteStoresNotAvailable = errors.New("Website Stores not available")
 )
 
 var _ config.ScopeIDer = (*Website)(nil)
@@ -79,8 +76,8 @@ func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) *Website {
 		panic(ErrStoreNewArgNil)
 	}
 	w := &Website{
-		cr: config.DefaultManager,
-		w:  tw,
+		cr:   config.DefaultManager,
+		Data: tw,
 	}
 	w.ApplyOptions(opts...)
 	return w
@@ -96,25 +93,22 @@ func (w *Website) ApplyOptions(opts ...WebsiteOption) {
 }
 
 // ScopeID satisfies the interface ScopeIDer and mainly used in the StoreManager for selecting Website,Group ...
-func (w *Website) ScopeID() int64 { return w.w.WebsiteID }
+func (w *Website) ScopeID() int64 { return w.Data.WebsiteID }
 
 // ScopeCode satisfies the interface ScopeCoder
-func (w *Website) ScopeCode() string { return w.w.Code.String }
-
-// Data returns the data from the database
-func (w *Website) Data() *TableWebsite { return w.w }
+func (w *Website) ScopeCode() string { return w.Data.Code.String }
 
 // MarshalJSON satisfies interface for JSON marshalling. The TableWebsite
 // struct will be encoded to JSON.
 func (w *Website) MarshalJSON() ([]byte, error) {
 	// @todo while generating the TableStore structs we can generate the ffjson code ...
-	return json.Marshal(w.w)
+	return json.Marshal(w.Data)
 }
 
 // DefaultGroup returns the default Group or an error if not found
 func (w *Website) DefaultGroup() (*Group, error) {
-	for _, g := range w.groups {
-		if w.w.DefaultGroupID == g.Data().GroupID {
+	for _, g := range w.Groups {
+		if w.Data.DefaultGroupID == g.Data.GroupID {
 			return g, nil
 		}
 	}
@@ -130,40 +124,22 @@ func (w *Website) DefaultStore() (*Store, error) {
 	return g.DefaultStore()
 }
 
-// Stores returns all stores associated to this website or an error when the stores
-// are not available aka not needed.
-func (w *Website) Stores() (StoreSlice, error) {
-	if len(w.stores) > 0 {
-		return w.stores, nil
-	}
-	return nil, ErrWebsiteStoresNotAvailable
-}
-
-// Groups returns all groups associated to this website or an error when the groups
-// are not available aka not needed.
-func (w *Website) Groups() (GroupSlice, error) {
-	if len(w.groups) > 0 {
-		return w.groups, nil
-	}
-	return nil, ErrWebsiteGroupsNotAvailable
-}
-
 // SetGroupsStores uses a group slice and a table slice to set the groups associated to this website
 // and the stores associated to this website. It panics if the integrity is incorrect.
 func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *Website {
-	groups := tgs.FilterByWebsiteID(w.w.WebsiteID)
-	w.groups = make(GroupSlice, groups.Len(), groups.Len())
+	groups := tgs.FilterByWebsiteID(w.Data.WebsiteID)
+	w.Groups = make(GroupSlice, groups.Len(), groups.Len())
 	for i, g := range groups {
-		w.groups[i] = NewGroup(g, SetGroupWebsite(w.w), SetGroupConfig(w.cr)).SetStores(tss, nil)
+		w.Groups[i] = NewGroup(g, SetGroupWebsite(w.Data), SetGroupConfig(w.cr)).SetStores(tss, nil)
 	}
-	stores := tss.FilterByWebsiteID(w.w.WebsiteID)
-	w.stores = make(StoreSlice, stores.Len(), stores.Len())
+	stores := tss.FilterByWebsiteID(w.Data.WebsiteID)
+	w.Stores = make(StoreSlice, stores.Len(), stores.Len())
 	for i, s := range stores {
 		group, err := tgs.FindByID(s.GroupID)
 		if err != nil {
 			panic(fmt.Sprintf("Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs))
 		}
-		w.stores[i] = NewStore(s, w.w, group, SetStoreConfig(w.cr))
+		w.Stores[i] = NewStore(s, w.Data, group, SetStoreConfig(w.cr))
 	}
 	return w
 }
@@ -210,7 +186,7 @@ func (ws WebsiteSlice) Len() int { return len(ws) }
 func (ws *WebsiteSlice) Swap(i, j int) { (*ws)[i], (*ws)[j] = (*ws)[j], (*ws)[i] }
 
 func (ws *WebsiteSlice) Less(i, j int) bool {
-	return (*ws)[i].Data().SortOrder < (*ws)[j].Data().SortOrder
+	return (*ws)[i].Data.SortOrder < (*ws)[j].Data.SortOrder
 }
 
 // Filter returns a new slice filtered by predicate f
@@ -232,7 +208,7 @@ func (ws WebsiteSlice) Codes() utils.StringSlice {
 	var c utils.StringSlice
 	for _, w := range ws {
 		if w != nil {
-			c.Append(w.Data().Code.String)
+			c.Append(w.Data.Code.String)
 		}
 	}
 	return c
@@ -246,7 +222,7 @@ func (ws WebsiteSlice) IDs() utils.Int64Slice {
 	var ids utils.Int64Slice
 	for _, w := range ws {
 		if w != nil {
-			ids.Append(w.Data().WebsiteID)
+			ids.Append(w.Data.WebsiteID)
 		}
 	}
 	return ids

@@ -23,9 +23,27 @@ import (
 
 	"text/template"
 
+	"os"
+
 	"github.com/juju/errgo"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestOFile(t *testing.T) {
+	s := string(os.PathSeparator)
+	tests := []struct {
+		base, dir, file, want string
+	}{
+		{"", "", "hello", "hello.go"},
+		{s + "usr", "local", "hello", s + "usr" + s + "localhello.go"},
+		{s + "usr", "local" + s, "hello", s + "usr" + s + "localhello.go"},
+		{s + "usr", "local" + s + "world_", "hello", s + "usr" + s + "local" + s + "world_hello.go"},
+	}
+	for _, test := range tests {
+		have := NewOFile(test.base).AppendDir(test.dir).AppendName(test.file).String()
+		assert.Equal(t, test.want, have)
+	}
+}
 
 func TestCamelize(t *testing.T) {
 	tests := []struct {

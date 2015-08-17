@@ -206,8 +206,8 @@ func (st *Storage) Store(r config.ScopeIDer) (*Store, error) {
 		return nil, errgo.Mask(err)
 	}
 	ns := NewStore(s, w, g, SetStoreConfig(st.cr))
-	ns.Website().SetGroupsStores(st.groups, st.stores)
-	ns.Group().SetStores(st.stores, w)
+	ns.Website.SetGroupsStores(st.groups, st.stores)
+	ns.Group.SetStores(st.stores, w)
 	return ns, nil
 }
 

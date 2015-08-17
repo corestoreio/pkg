@@ -53,11 +53,12 @@ type (
 	// which overrides the default scope and website scope.
 	Store struct {
 		cr config.Reader
-		// Contains the current website for this store. No integrity checks
-		w *Website
-		g *Group
-		// underlying raw data
-		s *TableStore
+		// Website points to the current website for this store. No integrity checks. Can be nil.
+		Website *Website
+		// Group points to the current store group for this store. No integrity checks. Can be nil.
+		Group *Group
+		// Data underlying raw data
+		Data *TableStore
 	}
 	// StoreSlice a collection of pointers to the Store structs. StoreSlice has some nifty method receviers.
 	StoreSlice []*Store
@@ -97,14 +98,14 @@ func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOpt
 		panic(ErrStoreIncorrectGroup)
 	}
 	s := &Store{
-		cr: config.DefaultManager,
-		s:  ts,
-		w:  NewWebsite(tw),
-		g:  NewGroup(tg),
+		cr:      config.DefaultManager,
+		Data:    ts,
+		Website: NewWebsite(tw),
+		Group:   NewGroup(tg),
 	}
 	s.ApplyOptions(opts...)
-	s.w.ApplyOptions(SetWebsiteConfig(s.cr))
-	s.g.ApplyOptions(SetGroupConfig(s.cr))
+	s.Website.ApplyOptions(SetWebsiteConfig(s.cr))
+	s.Group.ApplyOptions(SetGroupConfig(s.cr))
 	return s
 }
 
@@ -124,34 +125,18 @@ func (s *Store) ApplyOptions(opts ...StoreOption) *Store {
 
 // ScopeID satisfies the interface ScopeIDer and mainly used in the StoreManager for selecting Website,Group ...
 func (s *Store) ScopeID() int64 {
-	return s.s.StoreID
+	return s.Data.StoreID
 }
 
 // ScopeCode satisfies the interface ScopeCoder
 func (s *Store) ScopeCode() string {
-	return s.s.Code.String
-}
-
-// Website returns the website associated to this store
-func (s *Store) Website() *Website {
-	return s.w
-}
-
-// Group returns the group associated to this store
-func (s *Store) Group() *Group {
-	return s.g
-}
-
-// Data returns the real store data from the database
-func (s *Store) Data() *TableStore {
-	return s.s
+	return s.Data.Code.String
 }
 
 // MarshalJSON satisfies interface for JSON marshalling. The TableStore
-// struct will be encoded to JSON.
+// struct will be encoded to JSON using Go's standard library.
 func (s *Store) MarshalJSON() ([]byte, error) {
-	// @todo while generating the TableStore structs we can generate the ffjson code ...
-	return json.Marshal(s.s)
+	return json.Marshal(s.Data)
 }
 
 // Path returns the sub path from the URL where CoreStore is installed
@@ -233,7 +218,7 @@ func (s *Store) NewCookie() *http.Cookie {
 func (s *Store) SetCookie(res http.ResponseWriter) {
 	if res != nil {
 		keks := s.NewCookie()
-		keks.Value = s.Data().Code.String
+		keks.Value = s.Data.Code.String
 		keks.Expires = time.Now().AddDate(1, 0, 0) // one year valid
 		http.SetCookie(res, keks)
 	}
@@ -250,12 +235,12 @@ func (s *Store) DeleteCookie(res http.ResponseWriter) {
 
 // AddClaim adds the store code to a JSON web token
 func (s *Store) AddClaim(t *jwt.Token) {
-	t.Claims[CookieName] = s.Data().Code.String
+	t.Claims[CookieName] = s.Data.Code.String
 }
 
 // RootCategoryId returns the root category ID assigned to this store view.
 func (s *Store) RootCategoryId() int64 {
-	return s.Group().Data().RootCategoryID
+	return s.Group.Data.RootCategoryID
 }
 
 /*
@@ -330,7 +315,7 @@ func (ss StoreSlice) Len() int { return len(ss) }
 func (ss *StoreSlice) Swap(i, j int) { (*ss)[i], (*ss)[j] = (*ss)[j], (*ss)[i] }
 
 func (ss *StoreSlice) Less(i, j int) bool {
-	return (*ss)[i].Data().SortOrder < (*ss)[j].Data().SortOrder
+	return (*ss)[i].Data.SortOrder < (*ss)[j].Data.SortOrder
 }
 
 // Filter returns a new slice filtered by predicate f
@@ -352,7 +337,7 @@ func (s StoreSlice) Codes() utils.StringSlice {
 	var c utils.StringSlice
 	for _, st := range s {
 		if st != nil {
-			c.Append(st.Data().Code.String)
+			c.Append(st.Data.Code.String)
 		}
 	}
 	return c
@@ -366,7 +351,7 @@ func (s StoreSlice) IDs() utils.Int64Slice {
 	var ids utils.Int64Slice
 	for _, st := range s {
 		if st != nil {
-			ids.Append(st.Data().StoreID)
+			ids.Append(st.Data.StoreID)
 		}
 	}
 	return ids

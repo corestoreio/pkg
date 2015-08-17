@@ -160,12 +160,12 @@ func (sm *Manager) InitByRequest(res http.ResponseWriter, req *http.Request, sco
 			return nil, errgo.Mask(err)
 		}
 		// also delete and re-set a new cookie
-		if reqStore != nil && reqStore.Data().Code.String == reqStoreCode {
-			wds, err := reqStore.Website().DefaultStore()
+		if reqStore != nil && reqStore.Data.Code.String == reqStoreCode {
+			wds, err := reqStore.Website.DefaultStore()
 			if err != nil {
 				return nil, errgo.Mask(err)
 			}
-			if wds.Data().Code.String == reqStoreCode {
+			if wds.Data.Code.String == reqStoreCode {
 				reqStore.DeleteCookie(res) // cookie not needed anymore
 			} else {
 				reqStore.SetCookie(res) // make sure we force set the new store
@@ -214,10 +214,10 @@ func (sm *Manager) GetRequestStore(r config.ScopeIDer, scopeType config.ScopeGro
 		allowStoreChange = true
 		break
 	case config.ScopeGroupID:
-		allowStoreChange = activeStore.Data().GroupID == sm.appStore.Data().GroupID
+		allowStoreChange = activeStore.Data.GroupID == sm.appStore.Data.GroupID
 		break
 	case config.ScopeWebsiteID:
-		allowStoreChange = activeStore.Data().WebsiteID == sm.appStore.Data().WebsiteID
+		allowStoreChange = activeStore.Data.WebsiteID == sm.appStore.Data.WebsiteID
 		break
 	}
 
@@ -256,7 +256,7 @@ func (sm *Manager) Website(r ...config.ScopeIDer) (*Website, error) {
 	case notR && sm.appStore == nil:
 		return nil, ErrAppStoreNotSet
 	case notR && sm.appStore != nil:
-		return sm.appStore.Website(), nil
+		return sm.appStore.Website, nil
 	}
 
 	key, err := hash(r[0])
@@ -296,7 +296,7 @@ func (sm *Manager) Group(r ...config.ScopeIDer) (*Group, error) {
 	case notR && sm.appStore == nil:
 		return nil, ErrAppStoreNotSet
 	case notR && sm.appStore != nil:
-		return sm.appStore.Group(), nil
+		return sm.appStore.Group, nil
 	}
 
 	key, err := hash(r[0])
@@ -384,7 +384,7 @@ func (sm *Manager) activeStore(r config.ScopeIDer) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
-	if s.Data().IsActive {
+	if s.Data.IsActive {
 		return s, nil
 	}
 	return nil, ErrStoreNotActive

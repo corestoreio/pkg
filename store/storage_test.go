@@ -73,7 +73,7 @@ func TestStorageWebsite(t *testing.T) {
 		} else {
 			assert.NotNil(t, w, "Test: %#v", test)
 			assert.NoError(t, err, "Test: %#v", test)
-			assert.Equal(t, test.wantWCode, w.Data().Code.String, "Test: %#v", test)
+			assert.Equal(t, test.wantWCode, w.Data.Code.String, "Test: %#v", test)
 		}
 	}
 
@@ -83,15 +83,13 @@ func TestStorageWebsite(t *testing.T) {
 
 	dGroup, err := w.DefaultGroup()
 	assert.NoError(t, err)
-	assert.EqualValues(t, "DACH Group", dGroup.Data().Name)
+	assert.EqualValues(t, "DACH Group", dGroup.Data.Name)
 
-	groups, err := w.Groups()
-	assert.NoError(t, err)
-	assert.EqualValues(t, utils.Int64Slice{1, 2}, groups.IDs())
+	assert.NotNil(t, w.Groups)
+	assert.EqualValues(t, utils.Int64Slice{1, 2}, w.Groups.IDs())
 
-	stores, err := w.Stores()
-	assert.NoError(t, err)
-	assert.EqualValues(t, utils.StringSlice{"de", "uk", "at", "ch"}, stores.Codes())
+	assert.NotNil(t, w.Stores)
+	assert.EqualValues(t, utils.StringSlice{"de", "uk", "at", "ch"}, w.Stores.Codes())
 }
 
 var benchmarkStorageWebsite *store.Website
@@ -130,13 +128,11 @@ func TestStorageWebsites(t *testing.T) {
 	}
 
 	for i, w := range websites {
-		groups, err := w.Groups()
-		assert.NoError(t, err)
-		assert.EqualValues(t, ids[i].g, groups.IDs())
+		assert.NotNil(t, w.Groups)
+		assert.EqualValues(t, ids[i].g, w.Groups.IDs())
 
-		stores, err := w.Stores()
-		assert.NoError(t, err)
-		assert.EqualValues(t, ids[i].s, stores.IDs())
+		assert.NotNil(t, w.Stores)
+		assert.EqualValues(t, ids[i].s, w.Stores.IDs())
 	}
 }
 
@@ -146,7 +142,7 @@ func TestWebsiteSliceFilter(t *testing.T) {
 	assert.True(t, websites.Len() == 3)
 
 	gs := websites.Filter(func(w *store.Website) bool {
-		return w.Data().WebsiteID > 0
+		return w.Data.WebsiteID > 0
 	})
 	assert.EqualValues(t, utils.Int64Slice{1, 2}, gs.IDs())
 }
@@ -170,7 +166,7 @@ func TestStorageGroup(t *testing.T) {
 		} else {
 			assert.NotNil(t, g)
 			assert.NoError(t, err)
-			assert.Equal(t, test.wantName, g.Data().Name)
+			assert.Equal(t, test.wantName, g.Data.Name)
 		}
 	}
 
@@ -180,13 +176,12 @@ func TestStorageGroup(t *testing.T) {
 
 	dStore, err := g.DefaultStore()
 	assert.NoError(t, err)
-	assert.EqualValues(t, "au", dStore.Data().Code.String)
+	assert.EqualValues(t, "au", dStore.Data.Code.String)
 
-	assert.EqualValues(t, "oz", g.Website().Data().Code.String)
+	assert.EqualValues(t, "oz", g.Website.Data.Code.String)
 
-	stores, err := g.Stores()
-	assert.NoError(t, err)
-	assert.EqualValues(t, utils.StringSlice{"au", "nz"}, stores.Codes())
+	assert.NotNil(t, g.Stores)
+	assert.EqualValues(t, utils.StringSlice{"au", "nz"}, g.Stores.Codes())
 }
 
 var benchmarkStorageGroup *store.Group
@@ -223,9 +218,8 @@ func TestStorageGroups(t *testing.T) {
 	}
 
 	for i, g := range groups {
-		stores, err := g.Stores()
-		assert.NoError(t, err)
-		assert.EqualValues(t, ids[i], stores.IDs(), "Group %s ID %d", g.Data().Name, g.Data().GroupID)
+		assert.NotNil(t, g.Stores)
+		assert.EqualValues(t, ids[i], g.Stores.IDs(), "Group %s ID %d", g.Data.Name, g.Data.GroupID)
 	}
 }
 
@@ -233,7 +227,7 @@ func TestGroupSliceFilter(t *testing.T) {
 	groups, err := testStorage.Groups()
 	assert.NoError(t, err)
 	gs := groups.Filter(func(g *store.Group) bool {
-		return g.Data().GroupID > 0
+		return g.Data.GroupID > 0
 	})
 	assert.EqualValues(t, utils.Int64Slice{3, 1, 2}, gs.IDs())
 }
@@ -283,7 +277,7 @@ func TestStorageStore(t *testing.T) {
 		} else {
 			assert.NotNil(t, s, "%#v", test)
 			assert.NoError(t, err, "%#v", test)
-			assert.Equal(t, test.wantCode, s.Data().Code.String)
+			assert.Equal(t, test.wantCode, s.Data.Code.String)
 		}
 	}
 
@@ -291,16 +285,15 @@ func TestStorageStore(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 
-	assert.EqualValues(t, "DACH Group", s.Group().Data().Name)
+	assert.EqualValues(t, "DACH Group", s.Group.Data.Name)
 
-	website := s.Website()
-	assert.EqualValues(t, "euro", website.Data().Code.String)
-	wg, err := website.DefaultGroup()
+	assert.EqualValues(t, "euro", s.Website.Data.Code.String)
+	wg, err := s.Website.DefaultGroup()
 	assert.NotNil(t, wg)
-	assert.EqualValues(t, "DACH Group", wg.Data().Name)
+	assert.EqualValues(t, "DACH Group", wg.Data.Name)
 	wgs, err := wg.DefaultStore()
 	assert.NoError(t, err)
-	assert.EqualValues(t, "at", wgs.Data().Code.String)
+	assert.EqualValues(t, "at", wgs.Data.Code.String)
 }
 
 var benchmarkStorageStore *store.Store
@@ -316,7 +309,7 @@ func BenchmarkStorageStoreGetWebsite(b *testing.B) {
 			b.Error(err)
 		}
 
-		benchmarkStorageStoreWebsite = benchmarkStorageStore.Website()
+		benchmarkStorageStoreWebsite = benchmarkStorageStore.Website
 		if benchmarkStorageStoreWebsite == nil {
 			b.Error("benchmarkStorageStoreWebsite is nil")
 		}
@@ -343,15 +336,15 @@ func TestStorageStores(t *testing.T) {
 	}
 
 	for i, s := range stores {
-		assert.EqualValues(t, ids[i].g, s.Group().Data().Name)
-		assert.EqualValues(t, ids[i].w, s.Website().Data().Code.String)
+		assert.EqualValues(t, ids[i].g, s.Group.Data.Name)
+		assert.EqualValues(t, ids[i].w, s.Website.Data.Code.String)
 	}
 }
 
 func TestDefaultStoreView(t *testing.T) {
 	st, err := testStorage.DefaultStoreView()
 	assert.NoError(t, err)
-	assert.EqualValues(t, "at", st.Data().Code.String)
+	assert.EqualValues(t, "at", st.Data.Code.String)
 
 	var tst = store.NewStorage(
 		store.SetStorageWebsites(
@@ -456,20 +449,20 @@ func TestStorageReInit(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, stores.Len() > 0, "Expecting at least one store loaded from DB")
 	for _, s := range stores {
-		assert.NotEmpty(t, s.Data().Code.String, "Store: %#v", s.Data())
+		assert.NotEmpty(t, s.Data.Code.String, "Store: %#v", s.Data)
 	}
 
 	groups, err := nsg.Groups()
 	assert.True(t, groups.Len() > 0, "Expecting at least one group loaded from DB")
 	assert.NoError(t, err)
 	for _, g := range groups {
-		assert.NotEmpty(t, g.Data().Name, "Group: %#v", g.Data())
+		assert.NotEmpty(t, g.Data.Name, "Group: %#v", g.Data)
 	}
 
 	websites, err := nsg.Websites()
 	assert.True(t, websites.Len() > 0, "Expecting at least one website loaded from DB")
 	assert.NoError(t, err)
 	for _, w := range websites {
-		assert.NotEmpty(t, w.Data().Code.String, "Website: %#v", w.Data())
+		assert.NotEmpty(t, w.Data.Code.String, "Website: %#v", w.Data)
 	}
 }

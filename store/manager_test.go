@@ -69,7 +69,7 @@ func TestNewManagerStore(t *testing.T) {
 		s, err := managerStoreSimpleTest.Store(config.ScopeCode("notNil"))
 		assert.NoError(t, err)
 		assert.NotNil(t, s)
-		assert.EqualValues(t, "de", s.Data().Code.String)
+		assert.EqualValues(t, "de", s.Data.Code.String)
 	}
 	assert.False(t, managerStoreSimpleTest.IsCacheEmpty())
 	managerStoreSimpleTest.ClearCache()
@@ -108,12 +108,12 @@ func TestNewManagerDefaultStoreView(t *testing.T) {
 	s, err := managerDefaultStore.DefaultStoreView()
 	assert.NotNil(t, s)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, s.Data().Code.String)
+	assert.NotEmpty(t, s.Data.Code.String)
 
 	s, err = managerDefaultStore.DefaultStoreView()
 	assert.NotNil(t, s)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, s.Data().Code.String)
+	assert.NotEmpty(t, s.Data.Code.String)
 	assert.False(t, managerDefaultStore.IsCacheEmpty())
 	managerDefaultStore.ClearCache()
 	assert.True(t, managerDefaultStore.IsCacheEmpty())
@@ -198,12 +198,12 @@ func TestNewManagerStores(t *testing.T) {
 	ss, err := managerStores.Stores()
 	assert.NotNil(t, ss)
 	assert.NoError(t, err)
-	assert.Equal(t, "at", ss[1].Data().Code.String)
+	assert.Equal(t, "at", ss[1].Data.Code.String)
 
 	ss, err = managerStores.Stores()
 	assert.NotNil(t, ss)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, ss[2].Data().Code.String)
+	assert.NotEmpty(t, ss[2].Data.Code.String)
 
 	assert.False(t, managerStores.IsCacheEmpty())
 	managerStores.ClearCache()
@@ -256,8 +256,8 @@ func TestNewManagerGroup(t *testing.T) {
 		} else {
 			assert.NotNil(t, g, "test %#v", test)
 			assert.NoError(t, err, "test %#v", test)
-			assert.Equal(t, test.wantGroupName, g.Data().Name)
-			assert.Equal(t, test.wantWebsiteCode, g.Website().Data().Code.String)
+			assert.Equal(t, test.wantGroupName, g.Data.Name)
+			assert.Equal(t, test.wantWebsiteCode, g.Website.Data.Code.String)
 		}
 	}
 	assert.False(t, managerGroupSimpleTest.IsCacheEmpty())
@@ -295,7 +295,7 @@ func TestNewManagerGroupInit(t *testing.T) {
 	g, err := tm3.Group()
 	assert.NoError(t, err)
 	assert.NotNil(t, g)
-	assert.Equal(t, int64(2), g.Data().DefaultStoreID)
+	assert.Equal(t, int64(2), g.Data.DefaultStoreID)
 }
 
 func TestNewManagerGroups(t *testing.T) {
@@ -353,7 +353,7 @@ func TestNewManagerWebsite(t *testing.T) {
 		} else {
 			assert.NoError(t, haveErr, "%#v", test)
 			assert.NotNil(t, haveW, "%#v", test)
-			assert.Equal(t, test.wantWebsiteCode, haveW.Data().Code.String)
+			assert.Equal(t, test.wantWebsiteCode, haveW.Data.Code.String)
 		}
 	}
 	assert.False(t, managerWebsite.IsCacheEmpty())
@@ -440,7 +440,7 @@ func TestNewManagerWebsiteInit(t *testing.T) {
 
 	w2, err := managerWebsite.Website()
 	assert.NoError(t, err)
-	assert.EqualValues(t, "euro", w2.Data().Code.String)
+	assert.EqualValues(t, "euro", w2.Data.Code.String)
 
 	err3 := getTestManager(func(ms *mockStorage) {}).Init(config.ScopeCode("euronen"), config.ScopeWebsiteID)
 	assert.Error(t, err3, "config.ScopeCode(euro), config.ScopeWebsite: %#v => %s", err3, err3)
@@ -492,7 +492,7 @@ func runNewManagerGetRequestStore(t *testing.T, testScope config.ScopeGroup, tes
 		} else {
 			assert.NotNil(t, haveStore)
 			assert.NoError(t, haveErr, "%#v", test)
-			assert.EqualValues(t, test.wantStoreCode, haveStore.Data().Code.String)
+			assert.EqualValues(t, test.wantStoreCode, haveStore.Data.Code.String)
 		}
 	}
 	storeManagerRequestStore.ClearCache(true)
@@ -518,7 +518,7 @@ func TestNewManagerGetRequestStore_ScopeStore(t *testing.T) {
 	assert.EqualError(t, store.ErrAppStoreSet, storeManagerRequestStore.Init(testCode, testScope).Error())
 
 	if s, err := storeManagerRequestStore.Store(); err == nil {
-		assert.EqualValues(t, "de", s.Data().Code.String)
+		assert.EqualValues(t, "de", s.Data.Code.String)
 	} else {
 		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
 		t.Fail()
@@ -563,14 +563,14 @@ func TestNewManagerGetRequestStore_ScopeGroup(t *testing.T) {
 	assert.EqualError(t, store.ErrAppStoreSet, storeManagerRequestStore.Init(testCode, testScope).Error())
 
 	if s, err := storeManagerRequestStore.Store(); err == nil {
-		assert.EqualValues(t, "at", s.Data().Code.String)
+		assert.EqualValues(t, "at", s.Data.Code.String)
 	} else {
 		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
 		t.Fail()
 	}
 
 	if g, err := storeManagerRequestStore.Group(); err == nil {
-		assert.EqualValues(t, 1, g.Data().GroupID)
+		assert.EqualValues(t, 1, g.Data.GroupID)
 	} else {
 		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
 		t.Fail()
@@ -615,14 +615,14 @@ func TestNewManagerGetRequestStore_ScopeWebsite(t *testing.T) {
 	assert.EqualError(t, store.ErrAppStoreSet, storeManagerRequestStore.Init(testCode, testScope).Error())
 
 	if s, err := storeManagerRequestStore.Store(); err == nil {
-		assert.EqualValues(t, "at", s.Data().Code.String)
+		assert.EqualValues(t, "at", s.Data.Code.String)
 	} else {
 		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
 		t.Fail()
 	}
 
 	if w, err := storeManagerRequestStore.Website(); err == nil {
-		assert.EqualValues(t, "euro", w.Data().Code.String)
+		assert.EqualValues(t, "euro", w.Data.Code.String)
 	} else {
 		assert.EqualError(t, err, store.ErrStoreNotFound.Error())
 		t.Fail()
@@ -747,7 +747,7 @@ func TestInitByRequest(t *testing.T) {
 		}
 
 		if s, err := storeManagerRequestStore.Store(); err == nil {
-			assert.EqualValues(t, test.wantStoreCode, s.Data().Code.String)
+			assert.EqualValues(t, test.wantStoreCode, s.Data.Code.String)
 		} else {
 			assert.EqualError(t, err, store.ErrStoreNotFound.Error())
 			t.Log("continuing for loop because of expected store.ErrStoreNotFound")
@@ -768,7 +768,7 @@ func TestInitByRequest(t *testing.T) {
 			assert.NoError(t, haveErr, "%#v", test)
 			if test.wantRequestStoreCode != nil {
 				assert.NotNil(t, haveStore, "%#v", test.req.URL.Query())
-				assert.EqualValues(t, test.wantRequestStoreCode.ScopeCode(), haveStore.Data().Code.String)
+				assert.EqualValues(t, test.wantRequestStoreCode.ScopeCode(), haveStore.Data.Code.String)
 
 				newKeks := resRec.HeaderMap.Get("Set-Cookie")
 				if test.wantCookie != "" {
@@ -833,7 +833,7 @@ func TestInitByToken(t *testing.T) {
 		}
 
 		if s, err := storeManagerRequestStore.Store(); err == nil {
-			assert.EqualValues(t, test.wantStoreCode, s.Data().Code.String)
+			assert.EqualValues(t, test.wantStoreCode, s.Data.Code.String)
 		} else {
 			assert.EqualError(t, err, store.ErrStoreNotFound.Error())
 			t.Fail()
@@ -848,7 +848,7 @@ func TestInitByToken(t *testing.T) {
 			if test.wantTokenStoreCode != nil {
 				assert.NotNil(t, haveStore, "%#v", test)
 				assert.NoError(t, haveErr)
-				assert.Equal(t, test.wantTokenStoreCode.ScopeCode(), haveStore.Data().Code.String)
+				assert.Equal(t, test.wantTokenStoreCode.ScopeCode(), haveStore.Data.Code.String)
 			} else {
 				assert.Nil(t, haveStore, "%#v", test)
 				assert.NoError(t, haveErr, "%#v", test)
@@ -894,7 +894,7 @@ func TestNewManagerReInit(t *testing.T) {
 		if test.wantErr == nil {
 			assert.NoError(t, err, "No Err; for test: %#v", test)
 			assert.NotNil(t, s)
-			//			assert.NotEmpty(t, s.Data().Code.String, "%#v", s.Data())
+			//			assert.NotEmpty(t, s.Data.Code.String, "%#v", s.Data)
 		} else {
 			assert.Error(t, err, "Err for test: %#v", test)
 			assert.EqualError(t, test.wantErr, err.Error(), "EqualErr for test: %#v", test)

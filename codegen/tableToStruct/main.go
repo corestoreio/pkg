@@ -15,12 +15,13 @@
 package main
 
 import (
+	"fmt"
 	"io/ioutil"
+	"regexp"
 	"strings"
 
-	"fmt"
-
 	"github.com/corestoreio/csfw/codegen"
+	"github.com/corestoreio/csfw/codegen/codecgen"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 )
@@ -87,7 +88,21 @@ func generateStructures(tStruct *codegen.TableToStruct, dbrConn *dbr.Connection)
 		codegen.LogFatal(err)
 	}
 
-	codegen.LogFatal(ioutil.WriteFile(tStruct.OutputFile, formatted, 0600))
+	codegen.LogFatal(ioutil.WriteFile(tStruct.OutputFile.String(), formatted, 0600))
+
+	if err := codecgen.Generate(
+		tStruct.OutputFile.AppendName("_codec").String(), // outfile
+		"",
+		codecgen.GenCodecPath,
+		false, // use unsafe
+		"",
+		regexp.MustCompile("Table.*"), // Prefix of generated structs and slices
+		true, // delete temp files
+		tStruct.OutputFile.String(), // read from file
+	); err != nil {
+		fmt.Println("codecgen.Generate Error:")
+		codegen.LogFatal(err)
+	}
 }
 
 // isDuplicate slow duplicate checker ...
