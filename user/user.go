@@ -20,17 +20,45 @@ import (
 )
 
 // @todo app/code/Magento/User/Model/User.php
+// this whole API will change just some brain storming
+// instead of returning bool in some functions we return nil (success) or an error
 
 type User struct {
 	Data *TableAdminUser
 }
 
-func (u *User) Authenticate(cr config.Reader, h crypto.Hasher, password string) error {
+func (u *User) Authenticate(cr config.Reader, h crypto.Hasher, username, password string) error {
 	isCaseSensitive := cr.GetBool("admin/security/use_case_sensitive_login")
 
 	if !isCaseSensitive {
 		// ... hmm
 	}
+
+	return nil
+}
+
+func (u *User) VerifyIdentity() error {
+	// validateHash()
+	// getIsActive() ?
+	// hasAssigned2Role()
+	return nil
+}
+
+func (u *User) Login(username, password string) error {
+	// u.Authenticate()
+	// recordLogin()
+	return nil
+}
+
+// HasAssigned2Role check if user is assigned to any role
+func (u *User) HasAssigned2Role() error {
+	// check entries in table authorization_role
+
+	return nil
+}
+
+func (u *User) Reload() error {
+	// reload Data
 
 	return nil
 }
