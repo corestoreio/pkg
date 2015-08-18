@@ -266,6 +266,7 @@ var ConfigTableToStruct = TableToStructMap{
 		EntityTypeCodes: nil,
 	},
 	"catalog": &TableToStruct{
+		// @todo figure out tables which are in both Magneto version present
 		Package:    "catalog",
 		OutputFile: myPath.AppendDir("catalog", "generated_tables"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE

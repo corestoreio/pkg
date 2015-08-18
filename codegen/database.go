@@ -21,6 +21,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
 )
@@ -159,6 +160,36 @@ type (
 	}
 )
 
+// CopyToCSDB copies the data to a csdb column type
+func (c *column) CopyToCSDB() csdb.Column {
+	return csdb.Column{
+		Field: sql.NullString{
+			String: c.Field.String,
+			Valid:  c.Field.Valid,
+		},
+		Type: sql.NullString{
+			String: c.Type.String,
+			Valid:  c.Type.Valid,
+		},
+		Null: sql.NullString{
+			String: c.Null.String,
+			Valid:  c.Null.Valid,
+		},
+		Key: sql.NullString{
+			String: c.Key.String,
+			Valid:  c.Key.Valid,
+		},
+		Default: sql.NullString{
+			String: c.Default.String,
+			Valid:  c.Default.Valid,
+		},
+		Extra: sql.NullString{
+			String: c.Extra.String,
+			Valid:  c.Extra.Valid,
+		},
+	}
+}
+
 // Comment creates a comment from a database column to be used in Go code
 func (c *column) Comment() string {
 	sqlNull := "NOT NULL"
@@ -233,6 +264,15 @@ func (c *column) updateGoPrimitive(useSQL bool) {
 	default:
 		c.GoType = "undefined"
 	}
+}
+
+// CopyToCSDB copies the underlying slice to a csdb columns type
+func (cc Columns) CopyToCSDB() csdb.Columns {
+	ret := make(csdb.Columns, len(cc))
+	for i, c := range cc {
+		ret[i] = c.CopyToCSDB()
+	}
+	return ret
 }
 
 // GetByName returns a column from Columns slice by a give name

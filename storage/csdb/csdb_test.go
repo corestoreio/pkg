@@ -17,6 +17,8 @@ package csdb_test
 import (
 	"testing"
 
+	"database/sql"
+
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/stretchr/testify/assert"
 )
@@ -34,31 +36,78 @@ func init() {
 	tableMap = csdb.TableStructureSlice{
 		table1: csdb.NewTableStructure(
 			"catalog_category_anc_categs_index_idx",
-			[]string{},
-			[]string{
-				"category_id",
-				"path",
+			csdb.Column{
+				Field:   sql.NullString{String: "category_id", Valid: true},
+				Type:    sql.NullString{String: "int(10) unsigned", Valid: true},
+				Null:    sql.NullString{String: "NO", Valid: true},
+				Key:     sql.NullString{String: "MUL", Valid: true},
+				Default: sql.NullString{String: "0", Valid: true},
+				Extra:   sql.NullString{String: "", Valid: true},
+			},
+			csdb.Column{
+				Field:   sql.NullString{String: "path", Valid: true},
+				Type:    sql.NullString{String: "varchar(255)", Valid: true},
+				Null:    sql.NullString{String: "YES", Valid: true},
+				Key:     sql.NullString{String: "MUL", Valid: true},
+				Default: sql.NullString{},
+				Extra:   sql.NullString{String: "", Valid: true},
 			},
 		),
 		table2: csdb.NewTableStructure(
 			"catalog_category_anc_categs_index_tmp",
-			[]string{
-				"category_id",
+			csdb.Column{
+				Field:   sql.NullString{String: "category_id", Valid: true},
+				Type:    sql.NullString{String: "int(10) unsigned", Valid: true},
+				Null:    sql.NullString{String: "NO", Valid: true},
+				Key:     sql.NullString{String: "PRI", Valid: true},
+				Default: sql.NullString{String: "0", Valid: true},
+				Extra:   sql.NullString{String: "", Valid: true},
 			},
-			[]string{
-				"path",
+			csdb.Column{
+				Field:   sql.NullString{String: "path", Valid: true},
+				Type:    sql.NullString{String: "varchar(255)", Valid: true},
+				Null:    sql.NullString{String: "YES", Valid: true},
+				Key:     sql.NullString{String: "", Valid: false},
+				Default: sql.NullString{},
+				Extra:   sql.NullString{String: "", Valid: true},
 			},
 		),
 		table3: csdb.NewTableStructure(
 			"catalog_category_anc_products_index_idx",
-			[]string{},
-			[]string{
-				"category_id",
-				"product_id",
-				"position",
+			csdb.Column{
+				Field:   sql.NullString{String: "category_id", Valid: true},
+				Type:    sql.NullString{String: "int(10) unsigned", Valid: true},
+				Null:    sql.NullString{String: "NO", Valid: true},
+				Key:     sql.NullString{String: "", Valid: false},
+				Default: sql.NullString{String: "0", Valid: true},
+				Extra:   sql.NullString{String: "", Valid: true},
+			},
+			csdb.Column{
+				Field:   sql.NullString{String: "product_id", Valid: true},
+				Type:    sql.NullString{String: "int(10) unsigned", Valid: true},
+				Null:    sql.NullString{String: "NO", Valid: true},
+				Key:     sql.NullString{String: "", Valid: true},
+				Default: sql.NullString{String: "0", Valid: true},
+				Extra:   sql.NullString{String: "", Valid: true},
+			},
+			csdb.Column{
+				Field:   sql.NullString{String: "position", Valid: true},
+				Type:    sql.NullString{String: "int(10) unsigned", Valid: true},
+				Null:    sql.NullString{String: "YES", Valid: true},
+				Key:     sql.NullString{String: "", Valid: true},
+				Default: sql.NullString{},
+				Extra:   sql.NullString{String: "", Valid: true},
 			},
 		),
 	}
+}
+
+func TestColumn(t *testing.T) {
+	t.Error("@todo")
+}
+
+func TestColumns(t *testing.T) {
+	t.Error("@todo")
 }
 
 func TestTableStructure(t *testing.T) {

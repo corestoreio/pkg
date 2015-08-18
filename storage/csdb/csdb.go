@@ -15,10 +15,15 @@
 package csdb
 
 import (
+	"database/sql"
 	"errors"
+	"fmt"
+
+	"strings"
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
+	"github.com/kr/pretty"
 )
 
 const (
@@ -28,6 +33,12 @@ const (
 	AdditionalTable = "additional_table"
 	// ScopeTable used in SQl to refer to a website scope table as an alias
 	ScopeTable = "scope_table"
+
+	ColumnPrimary       = "PRI"
+	ColumnUnique        = "UNI"
+	ColumnNull          = "YES"
+	ColumnNotNull       = "NO"
+	ColumnAutoIncrement = "auto_increment"
 )
 
 var (
@@ -61,23 +72,126 @@ type (
 	TableStructure struct {
 		// Name is the table name
 		Name string
-		// IDFieldNames contains only primary keys
-		IDFieldNames []string
-		// Columns all other columns which are not primary keys
-		Columns []string
+		// Columns all table columns
+		Columns Columns
+		// CountPK number of primary keys
+		CountPK int
+		// CountUni number of unique keys
+		CountUni int
+
+		// internal caches
+		fieldsPK  []string // all PK column field
+		fieldsUNI []string // all unique key column field
+		fields    []string // all other non-pk column field
 	}
 
 	DbrSelectCb func(*dbr.SelectBuilder) *dbr.SelectBuilder
+
+	// Columns contains a slice of column types
+	Columns []Column
+	// Column contains info about one database column retrieved from `SHOW COLUMNS FROM table`
+	Column struct {
+		Field, Type, Null, Key, Default, Extra sql.NullString
+	}
 )
+
+// Load reads the column information from the DB. @todo
+func (cs Columns) Load(dbrSess dbr.Session, tableName string) (cols Columns) {
+	// @todo
+	return
+}
+
+// Filter returns a new slice filtered by predicate f
+func (cs Columns) Filter(f func(Column) bool) (cols Columns) {
+	for _, c := range cs {
+		if f(c) {
+			cols = append(cols, c)
+		}
+	}
+	return
+}
+
+// FieldNames returns all column names
+func (cs Columns) FieldNames() (fieldNames []string) {
+	for _, c := range cs {
+		if c.Field.Valid {
+			fieldNames = append(fieldNames, c.Field.String)
+		}
+	}
+	return
+}
+
+// PrimaryKeys returns all primary key columns
+func (cs Columns) PrimaryKeys() Columns {
+	return cs.Filter(func(c Column) bool {
+		return c.IsPK()
+	})
+}
+
+// UniqueKeys returns all unique key columns
+func (cs Columns) UniqueKeys() Columns {
+	return cs.Filter(func(c Column) bool {
+		return c.IsUnique()
+	})
+}
+
+// Columns returns all non primary key columns
+func (cs Columns) Columns() Columns {
+	return cs.Filter(func(c Column) bool {
+		return !c.IsPK()
+	})
+}
+
+// Len returns the length
+func (cs Columns) Len() int {
+	return len(cs)
+}
+
+// String pretty print, some kind of because pretty.Formatter from kr does
+// not work properly :-(
+func (cs Columns) String() string {
+	var ret = make([]string, len(cs))
+	for i, c := range cs {
+		ret[i] = fmt.Sprintf("%# v", pretty.Formatter(c))
+	}
+	return strings.Join(ret, ",\n")
+}
+
+// IsPK checks if column is a primary key
+func (c Column) IsPK() bool {
+	return c.Field.Valid && c.Key.Valid && c.Key.String == ColumnPrimary
+}
+
+// IsPK checks if column is a unique key
+func (c Column) IsUnique() bool {
+	return c.Field.Valid && c.Key.Valid && c.Key.String == ColumnUnique
+}
+
+// IsAutoIncrement checks if column has an auto increment property
+func (c Column) IsAutoIncrement() bool {
+	return c.Field.Valid && c.Extra.Valid && c.Extra.String == ColumnAutoIncrement
+}
+
+// IsNull checks if column can have null values
+func (c Column) IsNull() bool {
+	return c.Field.Valid && c.Null.Valid && c.Null.String == ColumnNull
+}
 
 var _ TableStructurer = (*TableStructureSlice)(nil)
 
-func NewTableStructure(n string, IDs, c []string) *TableStructure {
-	return &TableStructure{
-		Name:         n,
-		IDFieldNames: IDs,
-		Columns:      c,
+// NewTableStructure initializes a new table structure
+func NewTableStructure(n string, cs ...Column) *TableStructure {
+	ts := &TableStructure{
+		Name:    n,
+		Columns: Columns(cs),
 	}
+	ts.fieldsPK = ts.Columns.PrimaryKeys().FieldNames()
+	ts.fieldsUNI = ts.Columns.UniqueKeys().FieldNames()
+	ts.fields = ts.Columns.Columns().FieldNames()
+	ts.CountPK = ts.Columns.PrimaryKeys().Len()
+	ts.CountUni = ts.Columns.UniqueKeys().Len()
+
+	return ts
 }
 
 // remove this once the ALIAS via []string is implemented in DBR
@@ -87,23 +201,23 @@ func (ts *TableStructure) TableAliasQuote(alias string) string {
 
 // ColumnAliasQuote prefixes non-id columns with an alias and puts quotes around them. Returns a copy.
 func (ts *TableStructure) ColumnAliasQuote(alias string) []string {
-	return dbr.TableColumnQuote(alias, append([]string(nil), ts.Columns...)...)
+	return dbr.TableColumnQuote(alias, append([]string(nil), ts.fields...)...)
 }
 
 // AllColumnAliasQuote prefixes all columns with an alias and puts quotes around them. Returns a copy.
 func (ts *TableStructure) AllColumnAliasQuote(alias string) []string {
-	c := append([]string(nil), ts.IDFieldNames...)
-	return dbr.TableColumnQuote(alias, append(c, ts.Columns...)...)
+	c := append([]string(nil), ts.fieldsPK...)
+	return dbr.TableColumnQuote(alias, append(c, ts.fields...)...)
 }
 
 // In checks if column name n is a column of this table
 func (ts *TableStructure) In(n string) bool {
-	for _, c := range ts.IDFieldNames {
+	for _, c := range ts.fieldsPK {
 		if c == n {
 			return true
 		}
 	}
-	for _, c := range ts.Columns {
+	for _, c := range ts.fields {
 		if c == n {
 			return true
 		}

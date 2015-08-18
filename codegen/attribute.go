@@ -63,5 +63,5 @@ func (aa *AddAttrTables) newTableStructure(tableName string) (*csdb.TableStructu
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	return csdb.NewTableStructure(tableName, cols.GetFieldNames(true), cols.GetFieldNames(false)), nil
+	return csdb.NewTableStructure(tableName, cols.CopyToCSDB()...), nil
 }
