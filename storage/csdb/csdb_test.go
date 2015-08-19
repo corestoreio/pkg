@@ -169,6 +169,18 @@ func TestColumns(t *testing.T) {
 		assert.Equal(t, test.haveS, test.wantS)
 	}
 
+	tsN := mustStructure(table4).Columns.ByName("user_id_not_found")
+	assert.NotNil(t, tsN)
+	assert.False(t, tsN.Field.Valid)
+
+	ts4 := mustStructure(table4).Columns.ByName("user_id")
+	assert.True(t, ts4.Field.Valid)
+	assert.True(t, ts4.IsAutoIncrement())
+
+	ts4b := mustStructure(table4).Columns.ByName("email")
+	assert.True(t, ts4b.Field.Valid)
+	assert.True(t, ts4b.IsNull())
+
 }
 
 func TestTableStructure(t *testing.T) {

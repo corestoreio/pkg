@@ -135,8 +135,8 @@ func (cs Columns) UniqueKeys() Columns {
 	})
 }
 
-// Columns returns all non primary key columns
-func (cs Columns) Columns() Columns {
+// ColumnsNoPK returns all non primary key columns
+func (cs Columns) ColumnsNoPK() Columns {
 	return cs.Filter(func(c Column) bool {
 		return !c.IsPK()
 	})
@@ -146,6 +146,18 @@ func (cs Columns) Columns() Columns {
 func (cs Columns) Len() int {
 	return len(cs)
 }
+
+// ByName finds a column by its name
+func (cs Columns) ByName(fieldName string) Column {
+	for _, c := range cs {
+		if c.Field.Valid && c.Field.String == fieldName {
+			return c
+		}
+	}
+	return Column{}
+}
+
+// @todo add maybe more ByNull(), ByType(), ByKey(), ByDefault(), ByExtra()
 
 // String pretty print
 func (cs Columns) String() string {
@@ -187,7 +199,7 @@ func NewTableStructure(n string, cs ...Column) *TableStructure {
 	}
 	ts.fieldsPK = ts.Columns.PrimaryKeys().FieldNames()
 	ts.fieldsUNI = ts.Columns.UniqueKeys().FieldNames()
-	ts.fields = ts.Columns.Columns().FieldNames()
+	ts.fields = ts.Columns.ColumnsNoPK().FieldNames()
 	ts.CountPK = ts.Columns.PrimaryKeys().Len()
 	ts.CountUni = ts.Columns.UniqueKeys().Len()
 
