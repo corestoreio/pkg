@@ -28,6 +28,7 @@ const (
 	table2
 	table3
 	table4
+	table5
 )
 
 var tableMap csdb.TableStructurer
@@ -99,15 +100,75 @@ func init() {
 				Extra:   sql.NullString{String: "", Valid: true},
 			},
 		),
+		table4: csdb.NewTableStructure(
+			"admin_user",
+			csdb.Column{
+				Field:   sql.NullString{String: "user_id", Valid: true},
+				Type:    sql.NullString{String: "int(10) unsigned", Valid: true},
+				Null:    sql.NullString{String: "NO", Valid: true},
+				Key:     sql.NullString{String: "PRI", Valid: true},
+				Default: sql.NullString{},
+				Extra:   sql.NullString{String: "auto_increment", Valid: true},
+			},
+			csdb.Column{
+				Field:   sql.NullString{String: "email", Valid: true},
+				Type:    sql.NullString{String: "varchar(128)", Valid: true},
+				Null:    sql.NullString{String: "YES", Valid: true},
+				Key:     sql.NullString{String: "", Valid: true},
+				Default: sql.NullString{},
+				Extra:   sql.NullString{String: "", Valid: true},
+			},
+			csdb.Column{
+				Field:   sql.NullString{String: "username", Valid: true},
+				Type:    sql.NullString{String: "varchar(40)", Valid: true},
+				Null:    sql.NullString{String: "YES", Valid: true},
+				Key:     sql.NullString{String: "UNI", Valid: true},
+				Default: sql.NullString{},
+				Extra:   sql.NullString{String: "", Valid: true},
+			},
+		),
 	}
 }
 
-func TestColumn(t *testing.T) {
-	t.Error("@todo")
+func mustStructure(i csdb.Index) *csdb.TableStructure {
+	st1, err := tableMap.Structure(i)
+	if err != nil {
+		panic(err)
+	}
+	return st1
 }
 
 func TestColumns(t *testing.T) {
-	t.Error("@todo")
+
+	tests := []struct {
+		have  int
+		want  int
+		haveS string
+		wantS string
+	}{
+		{
+			mustStructure(table1).Columns.PrimaryKeys().Len(), 0,
+			mustStructure(table1).Columns.String(),
+			"csdb.Column{\n    Field:   sql.NullString{String:\"category_id\", Valid:true},\n    Type:    sql.NullString{String:\"int(10) unsigned\", Valid:true},\n    Null:    sql.NullString{String:\"NO\", Valid:true},\n    Key:     sql.NullString{String:\"MUL\", Valid:true},\n    Default: sql.NullString{String:\"0\", Valid:true},\n    Extra:   sql.NullString{String:\"\", Valid:true},\n},\ncsdb.Column{\n    Field:   sql.NullString{String:\"path\", Valid:true},\n    Type:    sql.NullString{String:\"varchar(255)\", Valid:true},\n    Null:    sql.NullString{String:\"YES\", Valid:true},\n    Key:     sql.NullString{String:\"MUL\", Valid:true},\n    Default: sql.NullString{},\n    Extra:   sql.NullString{String:\"\", Valid:true},\n}",
+		},
+		{
+			mustStructure(table2).Columns.PrimaryKeys().Len(), 1,
+			mustStructure(table2).Columns.String(),
+			"csdb.Column{\n    Field:   sql.NullString{String:\"category_id\", Valid:true},\n    Type:    sql.NullString{String:\"int(10) unsigned\", Valid:true},\n    Null:    sql.NullString{String:\"NO\", Valid:true},\n    Key:     sql.NullString{String:\"PRI\", Valid:true},\n    Default: sql.NullString{String:\"0\", Valid:true},\n    Extra:   sql.NullString{String:\"\", Valid:true},\n},\ncsdb.Column{\n    Field:   sql.NullString{String:\"path\", Valid:true},\n    Type:    sql.NullString{String:\"varchar(255)\", Valid:true},\n    Null:    sql.NullString{String:\"YES\", Valid:true},\n    Key:     sql.NullString{},\n    Default: sql.NullString{},\n    Extra:   sql.NullString{String:\"\", Valid:true},\n}",
+		},
+		{
+			mustStructure(table4).Columns.UniqueKeys().Len(), 1,
+			mustStructure(table4).Columns.String(),
+			"csdb.Column{\n    Field:   sql.NullString{String:\"user_id\", Valid:true},\n    Type:    sql.NullString{String:\"int(10) unsigned\", Valid:true},\n    Null:    sql.NullString{String:\"NO\", Valid:true},\n    Key:     sql.NullString{String:\"PRI\", Valid:true},\n    Default: sql.NullString{},\n    Extra:   sql.NullString{String:\"auto_increment\", Valid:true},\n},\ncsdb.Column{\n    Field:   sql.NullString{String:\"email\", Valid:true},\n    Type:    sql.NullString{String:\"varchar(128)\", Valid:true},\n    Null:    sql.NullString{String:\"YES\", Valid:true},\n    Key:     sql.NullString{String:\"\", Valid:true},\n    Default: sql.NullString{},\n    Extra:   sql.NullString{String:\"\", Valid:true},\n},\ncsdb.Column{\n    Field:   sql.NullString{String:\"username\", Valid:true},\n    Type:    sql.NullString{String:\"varchar(40)\", Valid:true},\n    Null:    sql.NullString{String:\"YES\", Valid:true},\n    Key:     sql.NullString{String:\"UNI\", Valid:true},\n    Default: sql.NullString{},\n    Extra:   sql.NullString{String:\"\", Valid:true},\n}",
+		},
+		{mustStructure(table4).Columns.PrimaryKeys().Len(), 1, "", ""},
+	}
+
+	for i, test := range tests {
+		assert.Equal(t, test.have, test.want, "Incorrect length at index %d", i)
+		assert.Equal(t, test.haveS, test.wantS)
+	}
+
 }
 
 func TestTableStructure(t *testing.T) {
@@ -119,9 +180,9 @@ func TestTableStructure(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Equal(t, "catalog_category_anc_categs_index_tmp", tableMap.Name(table2))
-	assert.Equal(t, "", tableMap.Name(table4))
+	assert.Equal(t, "", tableMap.Name(table5))
 
-	sInvalid, err := tableMap.Structure(table4)
+	sInvalid, err := tableMap.Structure(table5)
 	assert.Nil(t, sInvalid)
 	assert.Error(t, err)
 
@@ -141,6 +202,7 @@ func TestTableStructureTableAliasQuote(t *testing.T) {
 		"catalog_category_anc_categs_index_idx":   "`catalog_category_anc_categs_index_idx` AS `alias`",
 		"catalog_category_anc_categs_index_tmp":   "`catalog_category_anc_categs_index_tmp` AS `alias`",
 		"catalog_category_anc_products_index_idx": "`catalog_category_anc_products_index_idx` AS `alias`",
+		"admin_user":                              "`admin_user` AS `alias`",
 	}
 	for i := csdb.Index(0); tableMap.Next(i); i++ {
 		table, err := tableMap.Structure(i)
@@ -157,6 +219,7 @@ func TestTableStructureColumnAliasQuote(t *testing.T) {
 		"catalog_category_anc_categs_index_idx":   []string{"`alias`.`category_id`", "`alias`.`path`"},
 		"catalog_category_anc_categs_index_tmp":   []string{"`alias`.`path`"},
 		"catalog_category_anc_products_index_idx": []string{"`alias`.`category_id`", "`alias`.`product_id`", "`alias`.`position`"},
+		"admin_user":                              []string{"`alias`.`email`", "`alias`.`username`"},
 	}
 	for i := csdb.Index(0); tableMap.Next(i); i++ {
 		table, err := tableMap.Structure(i)
@@ -173,6 +236,7 @@ func TestTableStructureAllColumnAliasQuote(t *testing.T) {
 		"catalog_category_anc_categs_index_idx":   []string{"`alias`.`category_id`", "`alias`.`path`"},
 		"catalog_category_anc_categs_index_tmp":   []string{"`alias`.`category_id`", "`alias`.`path`"},
 		"catalog_category_anc_products_index_idx": []string{"`alias`.`category_id`", "`alias`.`product_id`", "`alias`.`position`"},
+		"admin_user":                              []string{"`alias`.`user_id`", "`alias`.`email`", "`alias`.`username`"},
 	}
 	for i := csdb.Index(0); tableMap.Next(i); i++ {
 		table, err := tableMap.Structure(i)

@@ -147,9 +147,9 @@ func (cs Columns) Len() int {
 	return len(cs)
 }
 
-// String pretty print, some kind of because pretty.Formatter from kr does
-// not work properly :-(
+// String pretty print
 func (cs Columns) String() string {
+	// fix tests if you change this layout of the returned string
 	var ret = make([]string, len(cs))
 	for i, c := range cs {
 		ret[i] = fmt.Sprintf("%# v", pretty.Formatter(c))
