@@ -169,6 +169,14 @@ func (cs Columns) String() string {
 	return strings.Join(ret, ",\n")
 }
 
+// First returns the first column from the Columns slice
+func (cs Columns) First() Column {
+	if len(cs) > 0 {
+		return cs[0]
+	}
+	return Column{}
+}
+
 // IsPK checks if column is a primary key
 func (c Column) IsPK() bool {
 	return c.Field.Valid && c.Key.Valid && c.Key.String == ColumnPrimary

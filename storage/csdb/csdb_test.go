@@ -181,6 +181,10 @@ func TestColumns(t *testing.T) {
 	assert.True(t, ts4b.Field.Valid)
 	assert.True(t, ts4b.IsNull())
 
+	assert.True(t, mustStructure(table4).Columns.First().IsPK())
+	emptyTS := &csdb.TableStructure{}
+	assert.False(t, emptyTS.Columns.First().IsPK())
+
 }
 
 func TestTableStructure(t *testing.T) {
