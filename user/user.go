@@ -16,6 +16,8 @@ package user
 
 import (
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils/crypto"
 )
 
@@ -23,8 +25,32 @@ import (
 // this whole API will change just some brain storming
 // instead of returning bool in some functions we return nil (success) or an error
 
+type UserSlice []*User
+
+type UserOptions func(*User)
+
 type User struct {
 	Data *TableAdminUser
+}
+
+func LoadOne(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) UserOptions {
+	return func(u *User) {
+		// todo
+	}
+}
+
+func NewUser(opts ...UserOptions) *User {
+	u := new(User)
+	u.ApplyOptions(opts...)
+	return u
+}
+
+func (u *User) ApplyOptions(opts ...UserOptions) {
+	for _, o := range opts {
+		if o != nil {
+			o(u)
+		}
+	}
 }
 
 func (u *User) Authenticate(cr config.Reader, h crypto.Hasher, username, password string) error {
