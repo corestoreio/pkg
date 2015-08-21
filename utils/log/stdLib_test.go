@@ -50,7 +50,7 @@ func TestStdLogger(t *testing.T) {
 	sl.Info("InfoTEST")
 	sl.Warn("WarnTEST")
 	haveErr := sl.Error("ErrorTEST", "err1a", 1, "err2", 32.4232)
-
+	assert.Contains(t, "ErrorTEST53", sl.Error("ErrorTEST53"))
 	logs := buf.String()
 
 	assert.EqualError(t, haveErr, "ErrorTEST")

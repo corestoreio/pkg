@@ -40,7 +40,8 @@ func (l *NullLogger) Warn(msg string, args ...interface{}) {}
 // if the 2nd index of args (that is args[1] ;-) ) contains the error
 // then that error will be returned.
 func (l *NullLogger) Error(msg string, args ...interface{}) error {
-	if len(args)%2 == 0 {
+	lArgs := len(args)
+	if lArgs > 0 && lArgs%2 == 0 {
 		if err, ok := args[1].(error); ok {
 			return err
 		}
