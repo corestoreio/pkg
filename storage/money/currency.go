@@ -134,7 +134,7 @@ func FormatNumber(nf i18n.NumberFormatter) OptionFunc {
 // Errors will be logged
 func Swedish(i Interval) OptionFunc {
 	if i >= interval999 {
-		log.Error("Currency=SetSwedishRounding", "err", errors.New("Interval out of scope. Resetting."), "interval", i)
+		log.Error("money.Swedish", "err", errors.New("Interval out of scope. Resetting."), "interval", i)
 		i = Interval000
 	}
 	return func(c *Currency) OptionFunc {
@@ -352,9 +352,9 @@ func (c *Currency) ParseFloat(s string) error {
 	f, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		if log.IsTrace() {
-			log.Trace("Currency=ParseFloat", "err", err, "arg", s, "currency", c)
+			log.Trace("money.Currency.ParseFloat", "err", err, "arg", s, "currency", c)
 		}
-		return log.Error("Currency=ParseFloat", "err", err, "arg", s)
+		return log.Error("money.Currency.ParseFloat.ParseFloat", "err", err, "arg", s)
 	}
 	c.Valid = true
 	*c = c.Setf(f)
@@ -399,9 +399,9 @@ func (c Currency) String() string {
 	var bufC buf
 	if _, err := c.LocalizeWriter(&bufC); err != nil {
 		if log.IsTrace() {
-			log.Trace("Currency=String", "err", err, "c", c)
+			log.Trace("money.Currency.String", "err", err, "c", c)
 		}
-		log.Error("Currency=String", "err", err, "c", c)
+		log.Error("money.Currency.String.LocalizeWriter", "err", err, "c", c)
 	}
 	return string(bufC)
 }
@@ -452,9 +452,9 @@ func (c Currency) Add(d Currency) Currency {
 	r := c.m + d.m
 	if (r^c.m)&(r^d.m) < 0 {
 		if log.IsTrace() {
-			log.Trace("Currency=Add", "err", ErrOverflow, "m", c, "n", d)
+			log.Trace("money.Currency.Add", "err", ErrOverflow, "m", c, "n", d)
 		}
-		log.Error("Currency=Add", "err", ErrOverflow, "m", c, "n", d)
+		log.Error("money.Currency.Add.Overflow", "err", ErrOverflow, "m", c, "n", d)
 		return New()
 	}
 	c.m = r
@@ -468,9 +468,9 @@ func (c Currency) Sub(d Currency) Currency {
 	r := c.m - d.m
 	if (r^c.m)&^(r^d.m) < 0 {
 		if log.IsTrace() {
-			log.Trace("Currency=Sub", "err", ErrOverflow, "m", c, "n", d)
+			log.Trace("money.Currency.Sub", "err", ErrOverflow, "m", c, "n", d)
 		}
-		log.Error("Currency=Sub", "err", ErrOverflow, "m", c, "n", d)
+		log.Error("money.Currency.Sub.Overflow", "err", ErrOverflow, "m", c, "n", d)
 		return New()
 	}
 	c.m = r

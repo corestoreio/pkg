@@ -99,7 +99,7 @@ func (c *Currency) Scan(src interface{}) error {
 	if src == nil {
 		c.m, c.Valid = 0, false
 		if log.IsDebug() {
-			log.Debug("Currency=Scan", "case", 89, "c", c, "src", src)
+			log.Debug("money.Currency.Scan", "case", 89, "c", c, "src", src)
 		}
 		return nil
 	}
@@ -107,7 +107,7 @@ func (c *Currency) Scan(src interface{}) error {
 	if b, ok := src.([]byte); ok {
 		return c.ParseFloat(string(b))
 	}
-	return log.Error("Currency=Scan", "err", errgo.Newf("Unsupported Type %T for value. Supported: []byte", src), "src", src)
+	return log.Error("money.Currency.Scan.Assertion", "err", errgo.Newf("Unsupported Type %T for value. Supported: []byte", src), "src", src)
 }
 
 // NewJSONEncoder creates a new encoder depending on the type.
@@ -150,7 +150,7 @@ func (t JSONType) MarshalJSON(c *Currency) ([]byte, error) {
 func (t JSONType) UnmarshalJSON(c *Currency, b []byte) error {
 	if len(b) < 1 || false == utf8.Valid(b) { // we must have a valid string
 		if log.IsDebug() {
-			log.Debug("JSONType=UnmarshalJSON", "case", "invalid_bytes", "c", c, "bytes", string(b))
+			log.Debug("money.JSONType.UnmarshalJSON.1", "case", "invalid_bytes", "c", c, "bytes", string(b))
 		}
 		c.m, c.Valid = 0, false
 		return nil
@@ -172,7 +172,7 @@ func (t JSONType) UnmarshalJSON(c *Currency, b []byte) error {
 
 	if 0 == lenRunes {
 		if log.IsDebug() {
-			log.Debug("JSONType=UnmarshalJSON", "case", "lenRunes=0", "c", c, "bytes", string(b))
+			log.Debug("money.JSONType.UnmarshalJSON.2", "case", "lenRunes=0", "c", c, "bytes", string(b))
 		}
 		c.m, c.Valid = 0, false
 		return nil
@@ -216,7 +216,7 @@ OuterLoop:
 
 		if isNull == 4 {
 			if log.IsDebug() {
-				log.Debug("JSONType=UnmarshalJSON", "case", "isNull", "c", c, "bytes", string(b), "runes", string(runes))
+				log.Debug("money.JSONType.UnmarshalJSON.3", "case", "isNull", "c", c, "bytes", string(b), "runes", string(runes))
 			}
 			c.m, c.Valid = 0, false
 			return nil
@@ -227,7 +227,7 @@ OuterLoop:
 
 	if isArray { // now it's an error because no colon found
 		c.m, c.Valid = 0, false
-		return log.Error("JSONType=UnmarshalJSON", "err", ErrDecodeMissingColon, "bytes", string(b), "number", string(number))
+		return log.Error("money.JSONType.UnmarshalJSON.MissingColon", "err", ErrDecodeMissingColon, "bytes", string(b), "number", string(number))
 	}
 
 	switch {
@@ -267,7 +267,7 @@ OuterLoop:
 	}
 
 	c.m, c.Valid = 0, false
-	return log.Error("JSONType=UnmarshalJSON", "err", errors.New("Invalid bytes"), "bytes", string(b), "number", string(number))
+	return log.Error("money.JSONType.UnmarshalJSON.Invalid", "err", errors.New("Invalid bytes"), "bytes", string(b), "number", string(number))
 }
 
 // jsonNumberMarshal generates a number formatted currency string
@@ -287,7 +287,7 @@ func jsonLocaleMarshal(c *Currency) ([]byte, error) {
 	b.WriteString(`"`)
 	lb, err := c.Localize()
 	if err != nil {
-		return nil, log.Error("JSONLocale=MarshalJSON", "err", err, "currency", c, "bytes", lb)
+		return nil, log.Error("money.jsonLocaleMarshal.Localize", "err", err, "currency", c, "bytes", lb)
 	}
 	template.JSEscape(&b, lb)
 	b.WriteString(`"`)
@@ -307,7 +307,7 @@ func jsonExtendedMarshal(c *Currency) ([]byte, error) {
 	b.WriteString(`", "`)
 	lb, err := c.Localize()
 	if err != nil {
-		return nil, log.Error("JSONLocale=MarshalJSON", "err", err, "currency", c, "bytes", lb)
+		return nil, log.Error("money.jsonExtendedMarshal.Localize", "err", err, "currency", c, "bytes", lb)
 	}
 	template.JSEscape(&b, lb)
 

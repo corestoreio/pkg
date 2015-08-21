@@ -253,7 +253,7 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac i
 
 	usedFmt, err := no.GetFormat(sign < 0)
 	if err != nil {
-		return 0, log.Error("Number=FmtNumber", "err", err, "format", usedFmt.String())
+		return 0, log.Error("i18n.Number.FmtNumber.GetFormat", "err", err, "format", usedFmt.String())
 	}
 
 	var wrote int
@@ -419,7 +419,7 @@ func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
 
 	usedFmt, err := no.GetFormat(sign < 0)
 	if err != nil {
-		return 0, log.Error("Number=FmtFloat64", "err", err, "format", usedFmt.String())
+		return 0, log.Error("i18n.Number.FmtFloat64.GetFormat", "err", err, "format", usedFmt.String())
 	}
 
 	// to test the next lines: http://play.golang.org/p/L0ykFv3G4B

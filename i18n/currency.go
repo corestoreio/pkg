@@ -120,9 +120,9 @@ func CurrencyISO(cur string) CurrencyOptFunc {
 		lc, err := language.ParseCurrency(cur)
 		if err != nil {
 			if log.IsTrace() {
-				log.Trace("i18n=CurrencyISO", "err", err, "cur", cur)
+				log.Trace("i18n.CurrencyISO.ParseCurrency.error", "err", err, "cur", cur)
 			}
-			log.Error("i18n=CurrencyISO", "err", err, "cur", cur)
+			log.Error("i18n.CurrencyISO.ParseCurrency", "err", err, "cur", cur)
 			lc = language.MustParseCurrency(DefaultCurrencyName)
 		}
 		c.ISO = lc
@@ -246,7 +246,7 @@ func (c *Currency) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac 
 	c.clearBuf()
 
 	if _, err := c.Number.FmtNumber(&c.buf, sign, intgr, prec, frac); err != nil {
-		return 0, log.Error("Currency=FmtCurrency", "err", err, "buffer", string(c.buf), "sign", sign, "i", intgr, "prec", prec, "frac", frac)
+		return 0, log.Error("i18n.Currency.FmtNumber.FmtNumber", "err", err, "buffer", string(c.buf), "sign", sign, "i", intgr, "prec", prec, "frac", frac)
 	}
 	return c.flushBuf(w)
 }
@@ -259,7 +259,7 @@ func (c *Currency) FmtInt64(w io.Writer, i int64) (int, error) {
 	c.clearBuf()
 
 	if _, err := c.Number.FmtInt64(&c.buf, i); err != nil {
-		return 0, log.Error("Currency=FmtInt", "err", err, "buffer", string(c.buf), "int", i)
+		return 0, log.Error("i18n.Currency.FmtInt64.FmtInt64", "err", err, "buffer", string(c.buf), "int", i)
 	}
 	return c.flushBuf(w)
 }
@@ -272,7 +272,7 @@ func (c *Currency) FmtFloat64(w io.Writer, f float64) (int, error) {
 	c.clearBuf()
 
 	if _, err := c.Number.FmtFloat64(&c.buf, f); err != nil {
-		return 0, log.Error("Currency=FmtCurrencyFloat64", "err", err, "buffer", string(c.buf), "float64", f)
+		return 0, log.Error("i18n.Currency.FmtFloat64.FmtFloat64", "err", err, "buffer", string(c.buf), "float64", f)
 	}
 	return c.flushBuf(w)
 }

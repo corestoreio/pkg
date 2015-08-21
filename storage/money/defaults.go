@@ -51,7 +51,7 @@ func DefaultSwedish(i Interval) {
 	if i < interval999 {
 		gSwedish = i
 	} else {
-		log.Error("money=SetSwedishRounding", "err", errors.New("Interval out of scope"), "interval", i)
+		log.Error("money.DefaultSwedish", "err", errors.New("Interval out of scope"), "interval", i)
 	}
 }
 

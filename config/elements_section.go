@@ -60,7 +60,7 @@ func NewConfiguration(sections ...*Section) SectionSlice {
 	ss := SectionSlice(sections)
 	if err := ss.Validate(); err != nil {
 		if log.IsWarn() {
-			log.Warn("NewConfiguration=Validate", "err", err)
+			log.Warn("config.NewConfiguration.Validate", "err", err)
 		}
 		panic(err)
 	}
@@ -75,7 +75,7 @@ func NewConfigurationMerge(sections ...*Section) SectionSlice {
 	ss.Merge(sections...)
 	if err := ss.Validate(); err != nil {
 		if log.IsWarn() {
-			log.Warn("NewConfigurationMerge=Validate", "err", err)
+			log.Warn("config.NewConfigurationMerge.Validate", "err", err)
 		}
 		panic(err)
 	}
@@ -213,7 +213,7 @@ func (ss *SectionSlice) Append(s ...*Section) *SectionSlice {
 func (ss SectionSlice) ToJSON() string {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(ss); err != nil {
-		log.Error("SectionSlice=ToJSON", "err", err)
+		log.Error("config.SectionSlice.ToJSON.Encode", "err", err)
 		return ""
 	}
 	return buf.String()

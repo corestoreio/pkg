@@ -76,7 +76,7 @@ func ValueReader(r io.Reader) ArgFunc {
 	}
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
-		log.Error("Argument=ValueReader::ReadAll", "err", err)
+		log.Error("config.ValueReader.ReadAll", "err", err)
 	}
 	return func(a *arg) {
 		a.v = data
@@ -91,6 +91,7 @@ type arg struct {
 	r  ScopeIDer
 	nb bool        // noBubble, if false value search: (store|website) -> default
 	v  interface{} // value use for saving
+	// lastError error @todo see userjwt package
 }
 
 // this "cache" should covers ~80% of all store setups

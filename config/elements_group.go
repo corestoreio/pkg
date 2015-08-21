@@ -101,7 +101,7 @@ func (gs *GroupSlice) merge(g *Group) error {
 func (gs GroupSlice) ToJSON() string {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(gs); err != nil {
-		log.Error("GroupSlice=ToJSON", "err", err)
+		log.Error("config.GroupSlice.ToJSON.Encode", "err", err)
 		return ""
 	}
 	return buf.String()

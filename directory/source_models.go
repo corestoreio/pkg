@@ -37,7 +37,7 @@ func NewSourceCurrencyAll(mc ...config.ModelConstructor) *SourceCurrencyAll {
 	sca := &SourceCurrencyAll{}
 	if len(mc) == 1 {
 		if err := sca.Construct(mc[0]); err != nil {
-			log.Error("SourceCurrencyAll=NewSourceCurrencyAll", "err", err)
+			log.Error("directory.NewSourceCurrencyAll.Construct", "err", err)
 		}
 	}
 	return sca

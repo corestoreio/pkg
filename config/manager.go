@@ -103,7 +103,7 @@ func NewManager() *Manager {
 func (m *Manager) ApplyDefaults(ss Sectioner) *Manager {
 	for k, v := range ss.Defaults() {
 		if log.IsDebug() {
-			log.Debug("Scope=ApplyDefaults", k, v)
+			log.Debug("config.Manager.ApplyDefaults", k, v)
 		}
 		m.v.Set(k, v)
 	}
@@ -116,10 +116,10 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 	var ccd TableCoreConfigDataSlice
 	rows, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexCoreConfigData, &ccd)
 	if log.IsDebug() {
-		log.Debug("Manager=ApplyCoreConfigData", "rows", rows)
+		log.Debug("config.Manager.ApplyCoreConfigData", "rows", rows)
 	}
 	if err != nil {
-		return log.Error("Manager=ApplyCoreConfigData", "err", err)
+		return log.Error("config.Manager.ApplyCoreConfigData.LoadSlice", "err", err)
 	}
 
 	for _, cd := range ccd {
@@ -139,13 +139,13 @@ func (m *Manager) Write(o ...ArgFunc) error {
 	a := newArg(o...)
 	if a.isBubbling() {
 		if log.IsDebug() {
-			log.Debug("Manager=Write", "path", a.scopePathDefault(), "bubble", a.isBubbling(), "val", a.v)
+			log.Debug("config.Manager.Write.isBubbling", "path", a.scopePathDefault(), "bubble", a.isBubbling(), "val", a.v)
 		}
 		m.v.Set(a.scopePathDefault(), a.v)
 	}
 
 	if log.IsDebug() {
-		log.Debug("Manager=Write", "path", a.scopePath(), "val", a.v)
+		log.Debug("config.Manager.Write", "path", a.scopePath(), "val", a.v)
 	}
 	m.v.Set(a.scopePath(), a.v)
 
@@ -212,7 +212,7 @@ func (m *Manager) GetDateTime(o ...ArgFunc) time.Time {
 	vs := m.get(o...)
 	t, err := cast.ToTimeE(vs)
 	if err != nil {
-		log.Error("Manager=GetDateTime", "err", err, "val", vs)
+		log.Error("config.Manager.GetDateTime.ToTimeE", "err", err, "val", vs)
 	}
 	return t
 }

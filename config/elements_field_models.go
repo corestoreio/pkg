@@ -110,7 +110,7 @@ func (v vlSortByValue) Less(i, j int) bool {
 func (s ValueLabelSlice) ToJSON() string {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(s); err != nil {
-		log.Error("ValueLabelSlice=ToJSON", "err", err)
+		log.Error("config.ValueLabelSlice.ToJSON.Encode", "err", err)
 		return ""
 	}
 	return buf.String()
