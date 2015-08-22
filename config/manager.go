@@ -80,7 +80,7 @@ var (
 	_ Writer = (*Manager)(nil)
 
 	// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
-	TableCollection csdb.TableStructureSlice
+	TableCollection csdb.TableStructurer
 
 	// DefaultManager provides a default manager
 	DefaultManager *Manager

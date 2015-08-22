@@ -17,7 +17,7 @@ package authorization
 import "github.com/corestoreio/csfw/storage/csdb"
 
 // TableCollection handles all tables and its columns. init() in generated Go file will set the value.
-var TableCollection csdb.TableStructureSlice
+var TableCollection csdb.TableStructurer
 
 type UserType uint8
 
