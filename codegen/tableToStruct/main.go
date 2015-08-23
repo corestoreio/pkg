@@ -16,41 +16,64 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
+	"regexp"
+	"runtime"
 	"strings"
 	"sync"
+
+	"go/ast"
+	"go/parser"
+	"go/token"
+	"path/filepath"
 
 	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/codegen/codecgen"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"regexp"
-	"runtime"
+	"github.com/corestoreio/csfw/utils"
 )
 
 var mapm1m2Mu sync.Mutex // protects map TableMapMagento1To2
+const MethodRecvPrefix = "parent"
+
+// TypePrefix of the generated types e.g. TableStoreSlice, TableStore ...
+// If you change this you must change all "Table" in the template.
+const TypePrefix = "Table"
+
+// generatedFunctions within the template if a package has already such a function
+// then prefix MethodRecvPrefix to the generating the function so that in our code we
+// can refer to the "parent" function. No composition possible.
+var generatedFunctions = []string{"Load", "Len"}
 
 func main() {
 	dbc, err := csdb.Connect()
 	codegen.LogFatal(err)
 	defer dbc.Close()
 	var wg sync.WaitGroup
-	fmt.Printf("Goroutines: %d\n", runtime.NumGoroutine())
+	fmt.Printf("CPUs: %d\tGoroutines: %d\n", runtime.NumCPU(), runtime.NumGoroutine())
 	for _, tStruct := range codegen.ConfigTableToStruct {
 		go newGenerator(tStruct, dbc, &wg).run()
 	}
-	fmt.Printf("CPUs: %d\tGoroutines: %d\tGo Version %s\n", runtime.NumCPU(), runtime.NumGoroutine(), runtime.Version())
+	fmt.Printf("Goroutines: %d\tGo Version %s\n", runtime.NumGoroutine(), runtime.Version())
 	wg.Wait()
+
+	for _, tStruct := range codegen.ConfigTableToStruct {
+		runCodec(tStruct.OutputFile.AppendName("_codec").String(), tStruct.OutputFile.String())
+	}
+
 }
 
 type generator struct {
 	tStruct        *codegen.TableToStruct
 	dbrConn        *dbr.Connection
-	w              io.WriteCloser
+	outfile        *os.File
 	tables         []string
 	eavValueTables codegen.TypeCodeValueTable
 	wg             *sync.WaitGroup
+	existingFnc    utils.StringSlice // "receiver name"."function name" if in this slice then the generated
+	// function will be private and you can refer from your function to the generated one
+	// because sometimes e.g. Load() needs more SQL
 }
 
 func newGenerator(tStruct *codegen.TableToStruct, dbrConn *dbr.Connection, wg *sync.WaitGroup) *generator {
@@ -60,9 +83,12 @@ func newGenerator(tStruct *codegen.TableToStruct, dbrConn *dbr.Connection, wg *s
 		dbrConn: dbrConn,
 		wg:      wg,
 	}
+	g.analyzePackage()
+
 	var err error
-	g.w, err = os.OpenFile(g.tStruct.OutputFile.String(), os.O_APPEND|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	g.outfile, err = os.OpenFile(g.tStruct.OutputFile.String(), os.O_APPEND|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	codegen.LogFatal(err)
+	g.appendToFile(tplCopyPkg, struct{ Package string }{Package: g.tStruct.Package})
 
 	g.tables, g.eavValueTables = g.initTables()
 	return g
@@ -73,8 +99,47 @@ func (g *generator) run() {
 	g.runHeader()
 	g.runTable()
 	g.runEAValueTables()
-	g.runCodec()
-	codegen.LogFatal(g.w.Close())
+	codegen.LogFatal(g.outfile.Close())
+}
+
+// analyzePackage extracts from all types the method receivers and type names
+func (g *generator) analyzePackage() {
+	fset := token.NewFileSet()
+
+	path := filepath.Dir(g.tStruct.OutputFile.String())
+	pkgs, err := parser.ParseDir(fset, path, nil, parser.AllErrors)
+	codegen.LogFatal(err)
+
+	var astPkg *ast.Package
+	var ok bool
+	if astPkg, ok = pkgs[g.tStruct.Package]; !ok {
+		fmt.Printf("Package %s not found in path %s. Skipping.", g.tStruct.Package, path)
+		return
+	}
+
+	for _, astFile := range astPkg.Files {
+		ast.Inspect(astFile, func(n ast.Node) bool {
+			switch stmt := n.(type) {
+			case *ast.FuncDecl:
+				if stmt.Recv != nil { // we have a method receiver and not a normal function
+					switch t := stmt.Recv.List[0].Type.(type) {
+					case *ast.Ident: // non-pointer-type
+						if strings.Index(t.Name, TypePrefix) == 0 {
+							g.existingFnc.Append(t.Name + "." + stmt.Name.Name) // e.g.: TableWebsiteSliceLoad where Load is the function name
+						}
+					case *ast.StarExpr: // pointer-type
+						switch t2 := t.X.(type) {
+						case *ast.Ident:
+							if strings.Index(t2.Name, TypePrefix) == 0 {
+								g.existingFnc.Append(t2.Name + "." + stmt.Name.Name) // e.g.: *TableWebsiteSliceLoad where Load is the function name
+							}
+						}
+					}
+				}
+			}
+			return true
+		})
+	}
 }
 
 func (g *generator) appendToFile(tpl string, data interface{}) {
@@ -85,9 +150,10 @@ func (g *generator) appendToFile(tpl string, data interface{}) {
 		codegen.LogFatal(err)
 	}
 
-	if _, err := g.w.Write(formatted); err != nil {
+	if _, err := g.outfile.Write(formatted); err != nil {
 		codegen.LogFatal(err)
 	}
+	codegen.LogFatal(g.outfile.Sync()) // flush immediately to disk to prevent a race condition
 }
 
 func (g *generator) initTables() ([]string, codegen.TypeCodeValueTable) {
@@ -137,12 +203,13 @@ func (g *generator) runHeader() {
 func (g *generator) runTable() {
 
 	type OneTable struct {
-		Package string
-		Tick    string
-		NameRaw string
-		Name    string
-		Table   string
-		Columns codegen.Columns
+		Package          string
+		Tick             string
+		NameRaw          string
+		Name             string
+		Table            string
+		Columns          codegen.Columns
+		MethodRecvPrefix string
 	}
 
 	for _, table := range g.tables {
@@ -159,6 +226,21 @@ func (g *generator) runTable() {
 			Name:    codegen.PrepareVar(g.tStruct.Package, name),
 			Table:   table,
 			Columns: columns,
+		}
+
+		if g.existingFnc.Len() > 0 {
+			has := false
+			for _, fnn := range generatedFunctions {
+				tsl := TypePrefix + data.Name + "Slice." + fnn
+				tn := TypePrefix + data.Name + "." + fnn
+				if g.existingFnc.Include(tsl) || g.existingFnc.Include(tn) {
+					has = true
+					break
+				}
+			}
+			if has {
+				data.MethodRecvPrefix = MethodRecvPrefix
+			}
 		}
 		g.appendToFile(tplTable, data)
 	}
@@ -178,17 +260,18 @@ func (g *generator) runEAValueTables() {
 	g.appendToFile(tplEAValues, data)
 }
 
-func (g *generator) runCodec() {
+// runCodec generates the codecs to be used later in JSON or msgpack or etc
+func runCodec(outfile, readfile string) {
 
 	if err := codecgen.Generate(
-		g.tStruct.OutputFile.AppendName("_codec").String(), // outfile
-		"", // buildTag
+		outfile, // outfile
+		"",      // buildTag
 		codecgen.GenCodecPath,
 		false, // use unsafe
 		"",
-		regexp.MustCompile("Table.*"), // Prefix of generated structs and slices
-		true, // delete temp files
-		g.tStruct.OutputFile.String(), // read from file
+		regexp.MustCompile(TypePrefix+".*"), // Prefix of generated structs and slices
+		true,     // delete temp files
+		readfile, // read from file
 	); err != nil {
 		fmt.Println("codecgen.Generate Error:")
 		codegen.LogFatal(err)

@@ -16,9 +16,7 @@ package main
 
 // @todo hide password and other sensitive fields in JSON struct tags
 
-const tplHeader = `//go:generate gen
-
-// Copyright 2015, Cyrill @ Schumacher.fm and the CoreStore contributors
+const tplCopyPkg = `// Copyright 2015, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -33,7 +31,9 @@ const tplHeader = `//go:generate gen
 // limitations under the License.
 
 package {{ .Package }}
+`
 
+const tplHeader = `
 // Auto generated via tableToStruct
 
 import (
@@ -70,8 +70,8 @@ type (
         {{ end }} }
 )
 
-// Load fills this slice with data from the database
-func (s *Table{{.Name}}Slice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
+// {{.MethodRecvPrefix}}Load fills this slice with data from the database
+func (s *Table{{.Name}}Slice) {{.MethodRecvPrefix}}Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
 	return csdb.LoadSlice(dbrSess, TableCollection, TableIndex{{.Name}}, &(*s), cbs...)
 }
 

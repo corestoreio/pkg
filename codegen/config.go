@@ -173,7 +173,7 @@ func (m EntityTypeMap) Keys() []string {
 	return ret
 }
 
-var myPath = NewOFile(build.Default.GOPATH, "src", CSImportPath)
+var BasePath = NewOFile(build.Default.GOPATH, "src", CSImportPath)
 
 // EavAttributeColumnNameToInterface mapping column name to Go interface name. Do not add attribute_model
 // as this column is unused in Magento 1+2. If you have custom column then add it here.
@@ -218,44 +218,44 @@ var TableMapMagento1To2 = map[string]string{
 var ConfigTableToStruct = TableToStructMap{
 	"authorization": &TableToStruct{
 		Package:    "authorization",
-		OutputFile: myPath.AppendDir("authorization", "generated_tables"),
+		OutputFile: BasePath.AppendDir("authorization", "generated_tables"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
-		    TABLE_SCHEMA = DATABASE() AND
-		    TABLE_NAME IN (
-		    	'{{tableprefix}}authorization_role','{{tableprefix}}admin_role',
-		    	'{{tableprefix}}authorization_rule','{{tableprefix}}admin_rule'
-		    ) GROUP BY TABLE_NAME;`,
+				    TABLE_SCHEMA = DATABASE() AND
+				    TABLE_NAME IN (
+				    	'{{tableprefix}}authorization_role','{{tableprefix}}admin_role',
+				    	'{{tableprefix}}authorization_rule','{{tableprefix}}admin_rule'
+				    ) GROUP BY TABLE_NAME;`,
 		EntityTypeCodes: nil,
 	},
 	"user": &TableToStruct{
 		Package:         "user",
-		OutputFile:      myPath.AppendDir("user", "generated_tables"),
+		OutputFile:      BasePath.AppendDir("user", "generated_tables"),
 		SQLQuery:        `SHOW TABLES LIKE "{{tableprefix}}admin_user"`,
 		EntityTypeCodes: nil,
 	},
 	"config": &TableToStruct{
 		Package:         "config",
-		OutputFile:      myPath.AppendDir("config", "generated_tables"),
+		OutputFile:      BasePath.AppendDir("config", "generated_tables"),
 		SQLQuery:        `SHOW TABLES LIKE "{{tableprefix}}core_config_data"`,
 		EntityTypeCodes: nil,
 	},
 	"directory": &TableToStruct{
 		Package:    "directory",
-		OutputFile: myPath.AppendDir("directory", "generated_tables"),
+		OutputFile: BasePath.AppendDir("directory", "generated_tables"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
-		    TABLE_SCHEMA = DATABASE() AND
-		    TABLE_NAME LIKE '{{tableprefix}}directory%' GROUP BY TABLE_NAME;`,
+				    TABLE_SCHEMA = DATABASE() AND
+				    TABLE_NAME LIKE '{{tableprefix}}directory%' GROUP BY TABLE_NAME;`,
 		EntityTypeCodes: nil,
 	},
 	"eav": &TableToStruct{
 		Package:         "eav",
-		OutputFile:      myPath.AppendDir("eav", "generated_tables"),
+		OutputFile:      BasePath.AppendDir("eav", "generated_tables"),
 		SQLQuery:        `SHOW TABLES LIKE "{{tableprefix}}eav%"`,
 		EntityTypeCodes: nil,
 	},
 	"store": &TableToStruct{
 		Package:    "store",
-		OutputFile: myPath.AppendDir("store", "generated_tables"),
+		OutputFile: BasePath.AppendDir("store", "generated_tables"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
 		    TABLE_SCHEMA = DATABASE() AND
 		    TABLE_NAME IN (
@@ -268,17 +268,17 @@ var ConfigTableToStruct = TableToStructMap{
 	"catalog": &TableToStruct{
 		// @todo figure out tables which are in both Magneto version present
 		Package:    "catalog",
-		OutputFile: myPath.AppendDir("catalog", "generated_tables"),
+		OutputFile: BasePath.AppendDir("catalog", "generated_tables"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
-		    TABLE_SCHEMA = DATABASE() AND
-		    (TABLE_NAME LIKE '{{tableprefix}}catalog\_%' OR TABLE_NAME LIKE '{{tableprefix}}catalogindex%' ) AND
-		    TABLE_NAME NOT LIKE '{{tableprefix}}%bundle%' AND
-		    TABLE_NAME NOT LIKE '{{tableprefix}}%\_flat\_%' GROUP BY TABLE_NAME;`,
+				    TABLE_SCHEMA = DATABASE() AND
+				    (TABLE_NAME LIKE '{{tableprefix}}catalog\_%' OR TABLE_NAME LIKE '{{tableprefix}}catalogindex%' ) AND
+				    TABLE_NAME NOT LIKE '{{tableprefix}}%bundle%' AND
+				    TABLE_NAME NOT LIKE '{{tableprefix}}%\_flat\_%' GROUP BY TABLE_NAME;`,
 		EntityTypeCodes: []string{"catalog_category", "catalog_product"},
 	},
 	"customer": &TableToStruct{
 		Package:         "customer",
-		OutputFile:      myPath.AppendDir("customer", "generated_tables"),
+		OutputFile:      BasePath.AppendDir("customer", "generated_tables"),
 		SQLQuery:        `SHOW TABLES LIKE "{{tableprefix}}customer%"`,
 		EntityTypeCodes: []string{"customer", "customer_address"},
 	},
@@ -289,7 +289,7 @@ var ConfigTableToStruct = TableToStructMap{
 // func init() to change/extend it.
 var ConfigMaterializationEntityType = TableToStruct{
 	Package:    "testgen",
-	OutputFile: myPath.AppendDir("testgen", "generated_entity_type_test"),
+	OutputFile: BasePath.AppendDir("testgen", "generated_entity_type_test"),
 }
 
 // ConfigLocalization temporary integration because missing feature in https://github.com/golang/text
@@ -299,7 +299,7 @@ var ConfigLocalization = struct {
 	EnabledLocale utils.StringSlice
 }{
 	Package:       "i18n_test",
-	OutputFile:    myPath.AppendDir("i18n", "generated_translation_test").String(),
+	OutputFile:    BasePath.AppendDir("i18n", "generated_translation_test").String(),
 	EnabledLocale: utils.StringSlice{"en", "fr", "de", "de_CH", "nl", "ca_FR"},
 }
 
@@ -425,7 +425,7 @@ var ConfigMaterializationAttributes = AttributeToStructMap{
 		AttrStruct:     "Customer",
 		MyStruct:       "",
 		Package:        "testgen", // external package name
-		OutputFile:     myPath.AppendDir("testgen", "generated_customer_attribute_test").String(),
+		OutputFile:     BasePath.AppendDir("testgen", "generated_customer_attribute_test").String(),
 	},
 	"customer_address": &AttributeToStruct{
 		AttrPkgImp:     "github.com/corestoreio/csfw/customer/custattr",
@@ -434,7 +434,7 @@ var ConfigMaterializationAttributes = AttributeToStructMap{
 		AttrStruct:     "Customer",
 		MyStruct:       "",
 		Package:        "testgen",
-		OutputFile:     myPath.AppendDir("testgen", "generated_address_attribute_test").String(),
+		OutputFile:     BasePath.AppendDir("testgen", "generated_address_attribute_test").String(),
 	},
 	"catalog_product": &AttributeToStruct{
 		AttrPkgImp:     "github.com/corestoreio/csfw/catalog/catattr",
@@ -443,7 +443,7 @@ var ConfigMaterializationAttributes = AttributeToStructMap{
 		AttrStruct:     "Catalog",
 		MyStruct:       "",
 		Package:        "testgen",
-		OutputFile:     myPath.AppendDir("testgen", "generated_product_attribute_test.go").String(),
+		OutputFile:     BasePath.AppendDir("testgen", "generated_product_attribute_test.go").String(),
 	},
 	"catalog_category": &AttributeToStruct{
 		AttrPkgImp:     "github.com/corestoreio/csfw/catalog/catattr",
@@ -452,7 +452,7 @@ var ConfigMaterializationAttributes = AttributeToStructMap{
 		AttrStruct:     "Catalog",
 		MyStruct:       "",
 		Package:        "testgen",
-		OutputFile:     myPath.AppendDir("testgen", "generated_category_attribute_test.go").String(),
+		OutputFile:     BasePath.AppendDir("testgen", "generated_category_attribute_test.go").String(),
 	},
 	// extend here for other EAV attributes (not sales* types)
 }
