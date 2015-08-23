@@ -78,7 +78,7 @@ func TestEntityTypeSliceGetByCode(t *testing.T) {
 
 	var entityTypeCollection eav.TableEntityTypeSlice
 	_, err = dbrSess.
-		Select(s.Columns...).
+		Select(s.Columns.FieldNames()...).
 		From(s.Name).
 		LoadStructs(&entityTypeCollection)
 	if err != nil {

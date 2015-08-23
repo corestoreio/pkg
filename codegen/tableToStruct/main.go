@@ -16,48 +16,91 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
-	"regexp"
+	"io"
+	"os"
 	"strings"
+	"sync"
 
 	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/codegen/codecgen"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"regexp"
+	"runtime"
 )
 
-type (
-	dataContainer struct {
-		Tables              []map[string]interface{}
-		Package, Tick       string
-		TypeCodeValueTables codegen.TypeCodeValueTable
-	}
-)
+var mapm1m2Mu sync.Mutex // protects map TableMapMagento1To2
 
 func main() {
 	dbc, err := csdb.Connect()
 	codegen.LogFatal(err)
 	defer dbc.Close()
+	var wg sync.WaitGroup
+	fmt.Printf("Goroutines: %d\n", runtime.NumGoroutine())
 	for _, tStruct := range codegen.ConfigTableToStruct {
-		generateStructures(tStruct, dbc)
+		go newGenerator(tStruct, dbc, &wg).run()
+	}
+	fmt.Printf("CPUs: %d\tGoroutines: %d\tGo Version %s\n", runtime.NumCPU(), runtime.NumGoroutine(), runtime.Version())
+	wg.Wait()
+}
+
+type generator struct {
+	tStruct        *codegen.TableToStruct
+	dbrConn        *dbr.Connection
+	w              io.WriteCloser
+	tables         []string
+	eavValueTables codegen.TypeCodeValueTable
+	wg             *sync.WaitGroup
+}
+
+func newGenerator(tStruct *codegen.TableToStruct, dbrConn *dbr.Connection, wg *sync.WaitGroup) *generator {
+	wg.Add(1)
+	g := &generator{
+		tStruct: tStruct,
+		dbrConn: dbrConn,
+		wg:      wg,
+	}
+	var err error
+	g.w, err = os.OpenFile(g.tStruct.OutputFile.String(), os.O_APPEND|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	codegen.LogFatal(err)
+
+	g.tables, g.eavValueTables = g.initTables()
+	return g
+}
+
+func (g *generator) run() {
+	defer g.wg.Done()
+	g.runHeader()
+	g.runTable()
+	g.runEAValueTables()
+	g.runCodec()
+	codegen.LogFatal(g.w.Close())
+}
+
+func (g *generator) appendToFile(tpl string, data interface{}) {
+
+	formatted, err := codegen.GenerateCode(g.tStruct.Package, tpl, data, nil)
+	if err != nil {
+		fmt.Printf("\n%s\n", formatted)
+		codegen.LogFatal(err)
+	}
+
+	if _, err := g.w.Write(formatted); err != nil {
+		codegen.LogFatal(err)
 	}
 }
 
-func generateStructures(tStruct *codegen.TableToStruct, dbrConn *dbr.Connection) {
-	tplData := &dataContainer{
-		Tables:  make([]map[string]interface{}, 0, 200),
-		Package: tStruct.Package,
-		Tick:    "`",
-	}
-
-	tables, err := codegen.GetTables(dbrConn.DB, codegen.ReplaceTablePrefix(tStruct.SQLQuery))
+func (g *generator) initTables() ([]string, codegen.TypeCodeValueTable) {
+	tables, err := codegen.GetTables(g.dbrConn.DB, codegen.ReplaceTablePrefix(g.tStruct.SQLQuery))
 	codegen.LogFatal(err)
 
-	if len(tStruct.EntityTypeCodes) > 0 && tStruct.EntityTypeCodes[0] != "" {
-		tplData.TypeCodeValueTables, err = codegen.GetEavValueTables(dbrConn, tStruct.EntityTypeCodes)
+	var eavValueTables codegen.TypeCodeValueTable
+	if len(g.tStruct.EntityTypeCodes) > 0 && g.tStruct.EntityTypeCodes[0] != "" {
+		var err error
+		eavValueTables, err = codegen.GetEavValueTables(g.dbrConn, g.tStruct.EntityTypeCodes)
 		codegen.LogFatal(err)
 
-		for _, vTables := range tplData.TypeCodeValueTables {
+		for _, vTables := range eavValueTables {
 			for t := range vTables {
 				if false == isDuplicate(tables, t) {
 					tables = append(tables, t)
@@ -65,40 +108,87 @@ func generateStructures(tStruct *codegen.TableToStruct, dbrConn *dbr.Connection)
 			}
 		}
 	}
+	return tables, eavValueTables
+}
 
-	for _, table := range tables {
+func (g *generator) runHeader() {
+	type Table struct {
+		NameRaw string
+		Name    string
+	}
 
-		columns, err := codegen.GetColumns(dbrConn.DB, table)
+	data := struct {
+		Package, Tick          string
+		HasTypeCodeValueTables bool
+		Tables                 []Table
+	}{
+		Package: g.tStruct.Package,
+		Tick:    "`",
+		HasTypeCodeValueTables: len(g.eavValueTables) > 0,
+	}
+
+	for _, table := range g.tables {
+		var name = getTableName(table)
+		data.Tables = append(data.Tables, Table{name, codegen.PrepareVar(g.tStruct.Package, name)})
+	}
+	g.appendToFile(tplHeader, data)
+}
+
+func (g *generator) runTable() {
+
+	type OneTable struct {
+		Package string
+		Tick    string
+		NameRaw string
+		Name    string
+		Table   string
+		Columns codegen.Columns
+	}
+
+	for _, table := range g.tables {
+
+		columns, err := codegen.GetColumns(g.dbrConn.DB, table)
 		codegen.LogFatal(err)
 		codegen.LogFatal(columns.MapSQLToGoDBRType())
-		var name = table
-		if mappedName, ok := codegen.TableMapMagento1To2[strings.Replace(table, codegen.TablePrefix, "", 1)]; ok {
-			name = mappedName
+
+		var name = getTableName(table)
+		data := OneTable{
+			Package: g.tStruct.Package,
+			Tick:    "`",
+			NameRaw: name,
+			Name:    codegen.PrepareVar(g.tStruct.Package, name),
+			Table:   table,
+			Columns: columns,
 		}
-		tplData.Tables = append(tplData.Tables, map[string]interface{}{
-			"name":    name,
-			"table":   table,
-			"columns": columns,
-		})
+		g.appendToFile(tplTable, data)
+	}
+}
+
+func (g *generator) runEAValueTables() {
+	if len(g.eavValueTables) == 0 {
+		return
 	}
 
-	formatted, err := codegen.GenerateCode(tStruct.Package, tplCode, tplData, nil)
-	if err != nil {
-		fmt.Printf("\n%s\n", formatted)
-		codegen.LogFatal(err)
+	data := struct {
+		TypeCodeValueTables codegen.TypeCodeValueTable
+	}{
+		TypeCodeValueTables: g.eavValueTables,
 	}
 
-	codegen.LogFatal(ioutil.WriteFile(tStruct.OutputFile.String(), formatted, 0600))
+	g.appendToFile(tplEAValues, data)
+}
+
+func (g *generator) runCodec() {
 
 	if err := codecgen.Generate(
-		tStruct.OutputFile.AppendName("_codec").String(), // outfile
-		"",
+		g.tStruct.OutputFile.AppendName("_codec").String(), // outfile
+		"", // buildTag
 		codecgen.GenCodecPath,
 		false, // use unsafe
 		"",
 		regexp.MustCompile("Table.*"), // Prefix of generated structs and slices
 		true, // delete temp files
-		tStruct.OutputFile.String(), // read from file
+		g.tStruct.OutputFile.String(), // read from file
 	); err != nil {
 		fmt.Println("codecgen.Generate Error:")
 		codegen.LogFatal(err)
@@ -113,4 +203,14 @@ func isDuplicate(sl []string, st string) bool {
 		}
 	}
 	return false
+}
+
+func getTableName(table string) (name string) {
+	mapm1m2Mu.Lock()
+	name = table
+	if mappedName, ok := codegen.TableMapMagento1To2[strings.Replace(table, codegen.TablePrefix, "", 1)]; ok {
+		name = mappedName
+	}
+	mapm1m2Mu.Unlock()
+	return
 }

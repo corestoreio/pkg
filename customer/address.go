@@ -49,12 +49,12 @@ func (c *AddressModel) TableNameValue(i eav.ValueIndex) string {
 }
 
 // EntityTypeAdditionalAttributeTabler
-func (c *AddressModel) TableAdditionalAttribute() (*csdb.TableStructure, error) {
+func (c *AddressModel) TableAdditionalAttribute() (*csdb.Table, error) {
 	return TableCollection.Structure(TableIndexEAVAttribute)
 }
 
 // EntityTypeAdditionalAttributeTabler
-func (c *AddressModel) TableEavWebsite() (*csdb.TableStructure, error) {
+func (c *AddressModel) TableEavWebsite() (*csdb.Table, error) {
 	return TableCollection.Structure(TableIndexEAVAttributeWebsite)
 }
 

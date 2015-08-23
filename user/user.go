@@ -30,6 +30,7 @@ type UserSlice []*User
 type UserOptions func(*User)
 
 type User struct {
+	mc   config.ModelConstructor // @todo see directory pkg
 	Data *TableAdminUser
 }
 
@@ -54,7 +55,7 @@ func (u *User) ApplyOptions(opts ...UserOptions) {
 }
 
 func (u *User) Authenticate(cr config.Reader, h crypto.Hasher, username, password string) error {
-	isCaseSensitive := cr.GetBool("admin/security/use_case_sensitive_login")
+	isCaseSensitive := cr.GetBool(config.Path("admin/security/use_case_sensitive_login"))
 
 	if !isCaseSensitive {
 		// ... hmm

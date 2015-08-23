@@ -203,9 +203,6 @@ func (s *TableGroupSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectC
 	})...)
 }
 
-// Len returns the length
-func (s TableGroupSlice) Len() int { return len(s) }
-
 // FindByID returns a TableGroup if found by id or an error
 func (s TableGroupSlice) FindByID(id int64) (*TableGroup, error) {
 	for _, g := range s {

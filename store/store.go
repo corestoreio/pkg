@@ -387,9 +387,6 @@ func (s *TableStoreSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectC
 	})...)
 }
 
-// Len returns the length
-func (s TableStoreSlice) Len() int { return len(s) }
-
 // FindByID returns a TableStore if found by id or an error
 func (s TableStoreSlice) FindByID(id int64) (*TableStore, error) {
 	for _, st := range s {

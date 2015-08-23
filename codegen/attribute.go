@@ -36,7 +36,7 @@ func NewAddAttrTables(db *sql.DB, code string) *AddAttrTables {
 }
 
 // Implements interface eav.EntityTypeAdditionalAttributeTabler
-func (aa *AddAttrTables) TableAdditionalAttribute() (*csdb.TableStructure, error) {
+func (aa *AddAttrTables) TableAdditionalAttribute() (*csdb.Table, error) {
 	if t, ok := ConfigEntityType[aa.EntityTypeCode]; ok {
 		if t.TempAdditionalAttributeTable != "" {
 			return aa.newTableStructure(t.TempAdditionalAttributeTable)
@@ -47,7 +47,7 @@ func (aa *AddAttrTables) TableAdditionalAttribute() (*csdb.TableStructure, error
 }
 
 // Implements interface eav.EntityTypeAdditionalAttributeTabler
-func (aa *AddAttrTables) TableEavWebsite() (*csdb.TableStructure, error) {
+func (aa *AddAttrTables) TableEavWebsite() (*csdb.Table, error) {
 	if t, ok := ConfigEntityType[aa.EntityTypeCode]; ok {
 		if t.TempAdditionalAttributeTableWebsite != "" {
 			return aa.newTableStructure(t.TempAdditionalAttributeTableWebsite)
@@ -57,11 +57,11 @@ func (aa *AddAttrTables) TableEavWebsite() (*csdb.TableStructure, error) {
 	return nil, errgo.Newf("Table for %s not found", aa.EntityTypeCode)
 }
 
-func (aa *AddAttrTables) newTableStructure(tableName string) (*csdb.TableStructure, error) {
+func (aa *AddAttrTables) newTableStructure(tableName string) (*csdb.Table, error) {
 	tableName = ReplaceTablePrefix(tableName)
 	cols, err := GetColumns(aa.db, tableName)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	return csdb.NewTableStructure(tableName, cols.CopyToCSDB()...), nil
+	return csdb.NewTable(tableName, cols.CopyToCSDB()...), nil
 }

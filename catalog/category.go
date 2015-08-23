@@ -48,12 +48,12 @@ func (c *CategoryModel) TableNameValue(i eav.ValueIndex) string {
 }
 
 // TableAdditionalAttribute needed for eav.EntityTypeAdditionalAttributeTabler
-func (c *CategoryModel) TableAdditionalAttribute() (*csdb.TableStructure, error) {
+func (c *CategoryModel) TableAdditionalAttribute() (*csdb.Table, error) {
 	return TableCollection.Structure(TableIndexEAVAttribute)
 }
 
 // TableEavWebsite needed for eav.EntityTypeAdditionalAttributeTabler
-func (c *CategoryModel) TableEavWebsite() (*csdb.TableStructure, error) {
+func (c *CategoryModel) TableEavWebsite() (*csdb.Table, error) {
 	return nil, nil
 }
 

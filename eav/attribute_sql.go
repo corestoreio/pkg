@@ -50,7 +50,7 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 
 	if tew != nil {
 		ifnull = make([]string, len(tew.Columns))
-		for i, tewC := range tew.Columns {
+		for i, tewC := range tew.Columns.FieldNames() {
 			t := ""
 			switch {
 			case ta.In(tewC):

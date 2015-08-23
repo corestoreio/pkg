@@ -242,9 +242,6 @@ func (s *TableWebsiteSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelec
 	})...)
 }
 
-// Len returns the length
-func (s TableWebsiteSlice) Len() int { return len(s) }
-
 // FindByID returns a TableWebsite if found by id or an error
 func (s TableWebsiteSlice) FindByID(id int64) (*TableWebsite, error) {
 	for _, w := range s {

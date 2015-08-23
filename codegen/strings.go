@@ -95,7 +95,7 @@ func GenerateCode(pkg, tplCode string, data interface{}, addFM template.FuncMap)
 
 	codeTpl := template.Must(template.New("tpl_code").Funcs(funcMap).Parse(tplCode))
 
-	var buf = &bytes.Buffer{}
+	var buf = new(bytes.Buffer)
 	err := codeTpl.Execute(buf, data)
 	if err != nil {
 		return nil, errgo.Mask(err)
@@ -136,6 +136,12 @@ func prepareVar(pkg string) func(s string) string {
 
 		return Camelize(str)
 	}
+}
+
+// PrepareVar converts a string into a Go code variable. Removes the package name if this string
+// starts with the package name. Replaces all illegal characters with an underscore.
+func PrepareVar(pkg, s string) string {
+	return prepareVar(pkg)(s)
 }
 
 // Camelize transforms from snake case to camelCase e.g. catalog_product_id to CatalogProductID. Also removes quotes.

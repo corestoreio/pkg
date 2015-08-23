@@ -18,28 +18,14 @@ import (
 	"errors"
 
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
 )
 
 var (
 	// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
-	TableCollection csdb.TableStructurer
+	TableCollection csdb.Manager
 
 	ErrUserNotFound = errors.New("Admin user not found")
 )
-
-// Load uses a dbr session to load all data from the core_website table into the current slice.
-// The variadic 2nd argument can be a call back function to manipulate the select.
-// Additional columns or joins cannot be added. This method receiver should only be used in development.
-// @see app/code/Magento/Store/Model/Resource/Website/Collection.php::Load()
-func (s *TableAdminUserSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
-	return csdb.LoadSlice(dbrSess, TableCollection, TableIndexAdminUser, &(*s), append(cbs, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
-		return sb.OrderBy("main_table.sort_order ASC").OrderBy("main_table.name ASC")
-	})...)
-}
-
-// Len returns the length
-func (s TableAdminUserSlice) Len() int { return len(s) }
 
 // FindByID returns a TableAdminUser if found by id or an error
 func (s TableAdminUserSlice) FindByID(id int64) (*TableAdminUser, error) {

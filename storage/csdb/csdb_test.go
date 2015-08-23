@@ -31,11 +31,13 @@ const (
 	table5
 )
 
-var tableMap csdb.TableStructurer
+var tableMap csdb.Manager
 
 func init() {
-	tableMap = csdb.TableStructureSlice{
-		table1: csdb.NewTableStructure(
+	tableMap = csdb.NewTableManager()
+	tableMap.Append(
+		table1,
+		csdb.NewTable(
 			"catalog_category_anc_categs_index_idx",
 			csdb.Column{
 				Field:   sql.NullString{String: "category_id", Valid: true},
@@ -54,7 +56,10 @@ func init() {
 				Extra:   sql.NullString{String: "", Valid: true},
 			},
 		),
-		table2: csdb.NewTableStructure(
+	)
+	tableMap.Append(
+		table2,
+		csdb.NewTable(
 			"catalog_category_anc_categs_index_tmp",
 			csdb.Column{
 				Field:   sql.NullString{String: "category_id", Valid: true},
@@ -73,64 +78,66 @@ func init() {
 				Extra:   sql.NullString{String: "", Valid: true},
 			},
 		),
-		table3: csdb.NewTableStructure(
-			"catalog_category_anc_products_index_idx",
-			csdb.Column{
-				Field:   sql.NullString{String: "category_id", Valid: true},
-				Type:    sql.NullString{String: "int(10) unsigned", Valid: true},
-				Null:    sql.NullString{String: "NO", Valid: true},
-				Key:     sql.NullString{String: "", Valid: false},
-				Default: sql.NullString{String: "0", Valid: true},
-				Extra:   sql.NullString{String: "", Valid: true},
-			},
-			csdb.Column{
-				Field:   sql.NullString{String: "product_id", Valid: true},
-				Type:    sql.NullString{String: "int(10) unsigned", Valid: true},
-				Null:    sql.NullString{String: "NO", Valid: true},
-				Key:     sql.NullString{String: "", Valid: true},
-				Default: sql.NullString{String: "0", Valid: true},
-				Extra:   sql.NullString{String: "", Valid: true},
-			},
-			csdb.Column{
-				Field:   sql.NullString{String: "position", Valid: true},
-				Type:    sql.NullString{String: "int(10) unsigned", Valid: true},
-				Null:    sql.NullString{String: "YES", Valid: true},
-				Key:     sql.NullString{String: "", Valid: true},
-				Default: sql.NullString{},
-				Extra:   sql.NullString{String: "", Valid: true},
-			},
-		),
-		table4: csdb.NewTableStructure(
-			"admin_user",
-			csdb.Column{
-				Field:   sql.NullString{String: "user_id", Valid: true},
-				Type:    sql.NullString{String: "int(10) unsigned", Valid: true},
-				Null:    sql.NullString{String: "NO", Valid: true},
-				Key:     sql.NullString{String: "PRI", Valid: true},
-				Default: sql.NullString{},
-				Extra:   sql.NullString{String: "auto_increment", Valid: true},
-			},
-			csdb.Column{
-				Field:   sql.NullString{String: "email", Valid: true},
-				Type:    sql.NullString{String: "varchar(128)", Valid: true},
-				Null:    sql.NullString{String: "YES", Valid: true},
-				Key:     sql.NullString{String: "", Valid: true},
-				Default: sql.NullString{},
-				Extra:   sql.NullString{String: "", Valid: true},
-			},
-			csdb.Column{
-				Field:   sql.NullString{String: "username", Valid: true},
-				Type:    sql.NullString{String: "varchar(40)", Valid: true},
-				Null:    sql.NullString{String: "YES", Valid: true},
-				Key:     sql.NullString{String: "UNI", Valid: true},
-				Default: sql.NullString{},
-				Extra:   sql.NullString{String: "", Valid: true},
-			},
-		),
-	}
+	)
+	tableMap.Append(table3, csdb.NewTable(
+		"catalog_category_anc_products_index_idx",
+		csdb.Column{
+			Field:   sql.NullString{String: "category_id", Valid: true},
+			Type:    sql.NullString{String: "int(10) unsigned", Valid: true},
+			Null:    sql.NullString{String: "NO", Valid: true},
+			Key:     sql.NullString{String: "", Valid: false},
+			Default: sql.NullString{String: "0", Valid: true},
+			Extra:   sql.NullString{String: "", Valid: true},
+		},
+		csdb.Column{
+			Field:   sql.NullString{String: "product_id", Valid: true},
+			Type:    sql.NullString{String: "int(10) unsigned", Valid: true},
+			Null:    sql.NullString{String: "NO", Valid: true},
+			Key:     sql.NullString{String: "", Valid: true},
+			Default: sql.NullString{String: "0", Valid: true},
+			Extra:   sql.NullString{String: "", Valid: true},
+		},
+		csdb.Column{
+			Field:   sql.NullString{String: "position", Valid: true},
+			Type:    sql.NullString{String: "int(10) unsigned", Valid: true},
+			Null:    sql.NullString{String: "YES", Valid: true},
+			Key:     sql.NullString{String: "", Valid: true},
+			Default: sql.NullString{},
+			Extra:   sql.NullString{String: "", Valid: true},
+		},
+	),
+	)
+	tableMap.Append(table4, csdb.NewTable(
+		"admin_user",
+		csdb.Column{
+			Field:   sql.NullString{String: "user_id", Valid: true},
+			Type:    sql.NullString{String: "int(10) unsigned", Valid: true},
+			Null:    sql.NullString{String: "NO", Valid: true},
+			Key:     sql.NullString{String: "PRI", Valid: true},
+			Default: sql.NullString{},
+			Extra:   sql.NullString{String: "auto_increment", Valid: true},
+		},
+		csdb.Column{
+			Field:   sql.NullString{String: "email", Valid: true},
+			Type:    sql.NullString{String: "varchar(128)", Valid: true},
+			Null:    sql.NullString{String: "YES", Valid: true},
+			Key:     sql.NullString{String: "", Valid: true},
+			Default: sql.NullString{},
+			Extra:   sql.NullString{String: "", Valid: true},
+		},
+		csdb.Column{
+			Field:   sql.NullString{String: "username", Valid: true},
+			Type:    sql.NullString{String: "varchar(40)", Valid: true},
+			Null:    sql.NullString{String: "YES", Valid: true},
+			Key:     sql.NullString{String: "UNI", Valid: true},
+			Default: sql.NullString{},
+			Extra:   sql.NullString{String: "", Valid: true},
+		},
+	),
+	)
 }
 
-func mustStructure(i csdb.Index) *csdb.TableStructure {
+func mustStructure(i csdb.Index) *csdb.Table {
 	st1, err := tableMap.Structure(i)
 	if err != nil {
 		panic(err)
@@ -182,7 +189,7 @@ func TestColumns(t *testing.T) {
 	assert.True(t, ts4b.IsNull())
 
 	assert.True(t, mustStructure(table4).Columns.First().IsPK())
-	emptyTS := &csdb.TableStructure{}
+	emptyTS := &csdb.Table{}
 	assert.False(t, emptyTS.Columns.First().IsPK())
 
 }

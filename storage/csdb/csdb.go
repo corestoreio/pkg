@@ -18,12 +18,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-
 	"strings"
+	"sync"
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
 	"github.com/kr/pretty"
+	"github.com/mgutz/logxi/v1"
 )
 
 const (
@@ -47,12 +48,10 @@ var (
 
 type (
 	Index int
-	// TableStructureSlice implements interface TableStructurer
-	TableStructureSlice []*TableStructure
 
-	TableStructurer interface {
+	Manager interface {
 		// Structure returns the TableStructure from a read-only map m by a giving index i.
-		Structure(Index) (*TableStructure, error)
+		Structure(Index) (*Table, error)
 		// Name is a short hand to return a table name by given index i. Does not return an error
 		// when the table can't be found.
 		Name(Index) string
@@ -64,12 +63,16 @@ type (
 		//		...
 		//	}
 		Next(Index) bool
-		// Len returns the length of the underlying slice
+		// Len returns the length of the underlying map
 		Len() Index
+		// Append adds a table. Overrides silently existing entries.
+		Append(Index, *Table) error
+
+		ReInit(dbr.Session) error // should refresh the underlying data ... @todo
 	}
 
 	// temporary place
-	TableStructure struct {
+	Table struct {
 		// Name is the table name
 		Name string
 		// Columns all table columns
@@ -85,6 +88,16 @@ type (
 		fields    []string // all other non-pk column field
 	}
 
+	// ManagerOption applies options to the TableManager
+	ManagerOption func(*TableManager)
+
+	// TableManager implements interface Manager
+	TableManager struct {
+		lastErr error
+		mu      sync.RWMutex
+		ts      map[Index]*Table
+	}
+
 	DbrSelectCb func(*dbr.SelectBuilder) *dbr.SelectBuilder
 
 	// Columns contains a slice of column types
@@ -94,12 +107,6 @@ type (
 		Field, Type, Null, Key, Default, Extra sql.NullString
 	}
 )
-
-// Load reads the column information from the DB. @todo
-func (cs Columns) Load(dbrSess dbr.Session, tableName string) (cols Columns) {
-	// @todo
-	return
-}
 
 // Filter returns a new slice filtered by predicate f
 func (cs Columns) Filter(f func(Column) bool) (cols Columns) {
@@ -197,41 +204,50 @@ func (c Column) IsNull() bool {
 	return c.Field.Valid && c.Null.Valid && c.Null.String == ColumnNull
 }
 
-var _ TableStructurer = (*TableStructureSlice)(nil)
-
-// NewTableStructure initializes a new table structure
-func NewTableStructure(n string, cs ...Column) *TableStructure {
-	ts := &TableStructure{
+// NewTable initializes a new table structure
+func NewTable(n string, cs ...Column) *Table {
+	ts := &Table{
 		Name:    n,
 		Columns: Columns(cs),
 	}
+	return ts.update()
+}
+
+// update recalculates the internal cached fields
+func (ts *Table) update() *Table {
 	ts.fieldsPK = ts.Columns.PrimaryKeys().FieldNames()
 	ts.fieldsUNI = ts.Columns.UniqueKeys().FieldNames()
 	ts.fields = ts.Columns.ColumnsNoPK().FieldNames()
 	ts.CountPK = ts.Columns.PrimaryKeys().Len()
 	ts.CountUni = ts.Columns.UniqueKeys().Len()
-
 	return ts
 }
 
+// Load reads the column information from the DB. @todo
+func (ts *Table) Load(dbrSess dbr.Session, tableName string) error {
+	// @todo
+	// ts.update()
+	return nil
+}
+
 // remove this once the ALIAS via []string is implemented in DBR
-func (ts *TableStructure) TableAliasQuote(alias string) string {
+func (ts *Table) TableAliasQuote(alias string) string {
 	return "`" + ts.Name + "` AS `" + alias + "`"
 }
 
 // ColumnAliasQuote prefixes non-id columns with an alias and puts quotes around them. Returns a copy.
-func (ts *TableStructure) ColumnAliasQuote(alias string) []string {
+func (ts *Table) ColumnAliasQuote(alias string) []string {
 	return dbr.TableColumnQuote(alias, append([]string(nil), ts.fields...)...)
 }
 
 // AllColumnAliasQuote prefixes all columns with an alias and puts quotes around them. Returns a copy.
-func (ts *TableStructure) AllColumnAliasQuote(alias string) []string {
+func (ts *Table) AllColumnAliasQuote(alias string) []string {
 	c := append([]string(nil), ts.fieldsPK...)
 	return dbr.TableColumnQuote(alias, append(c, ts.fields...)...)
 }
 
 // In checks if column name n is a column of this table
-func (ts *TableStructure) In(n string) bool {
+func (ts *Table) In(n string) bool {
 	for _, c := range ts.fieldsPK {
 		if c == n {
 			return true
@@ -246,7 +262,7 @@ func (ts *TableStructure) In(n string) bool {
 }
 
 // Select generates a SELECT * FROM tableName statement
-func (ts *TableStructure) Select(dbrSess dbr.SessionRunner) (*dbr.SelectBuilder, error) {
+func (ts *Table) Select(dbrSess dbr.SessionRunner) (*dbr.SelectBuilder, error) {
 	if ts == nil {
 		return nil, ErrTableNotFound
 	}
@@ -255,26 +271,64 @@ func (ts *TableStructure) Select(dbrSess dbr.SessionRunner) (*dbr.SelectBuilder,
 		From(ts.Name, "main_table"), nil
 }
 
+var _ Manager = (*TableManager)(nil)
+
+// AddTableByName adds a database table to the TableManager by the table name
+// and index.
+func AddTableByName(idx Index, name string) ManagerOption {
+	return func(tm *TableManager) {
+		if idx < Index(0) || name == "" {
+			tm.lastErr = errgo.New("NewTableManager: Incorrect value for idx or name")
+			return
+		}
+		if err := tm.Append(idx, NewTable(name)); err != nil {
+			tm.lastErr = err
+		}
+	}
+}
+
+// NewTableManager creates a new TableManager satisfying interface TableStructurer.
+// Panics if both arguments do not have the same length.
+// This function is only used in generated codes.
+func NewTableManager(opts ...ManagerOption) *TableManager {
+	tm := &TableManager{
+		mu: sync.RWMutex{},
+		ts: make(map[Index]*Table),
+	}
+	for _, o := range opts {
+		o(tm)
+	}
+	if tm.lastErr != nil {
+		log.Error("csdb.NewTableManager.lastErr", "err", tm.lastErr)
+		panic(tm.lastErr.Error())
+	}
+	return tm
+}
+
 // Structure returns the TableStructure from a read-only map m by a giving index i.
-func (m TableStructureSlice) Structure(i Index) (*TableStructure, error) {
-	if i < m.Len() {
-		return m[i], nil
+func (tm *TableManager) Structure(i Index) (*Table, error) {
+	tm.mu.RLock()
+	defer tm.mu.RUnlock()
+	if ts, ok := tm.ts[i]; ok && ts != nil {
+		return ts, nil
 	}
 	return nil, ErrTableNotFound
 }
 
 // Name is a short hand to return a table name by given index i. Does not return an error
-// when the table can't be found.
-func (m TableStructureSlice) Name(i Index) string {
-	if i < m.Len() {
-		return m[i].Name
+// when the table can't be found. Returns an empty string
+func (tm *TableManager) Name(i Index) string {
+	tm.mu.RLock()
+	defer tm.mu.RUnlock()
+	if ts, ok := tm.ts[i]; ok && ts != nil {
+		return ts.Name
 	}
 	return ""
 }
 
 // Len returns the length of the slice data
-func (m TableStructureSlice) Len() Index {
-	return Index(len(m))
+func (tm *TableManager) Len() Index {
+	return Index(len(tm.ts))
 }
 
 // Next iterator function where i is the current index starting with zero.
@@ -283,13 +337,29 @@ func (m TableStructureSlice) Len() Index {
 //		table, err := tableMap.Structure(i)
 //		...
 //	}
-func (m TableStructureSlice) Next(i Index) bool {
-	return i < m.Len()
+func (tm *TableManager) Next(i Index) bool {
+	return i < tm.Len()
+}
+
+// Append adds a table. Overrides silently existing entries.
+func (tm *TableManager) Append(i Index, ts *Table) error {
+	if ts == nil {
+		return errgo.Newf("Table pointer cannot be nil for Index %d", i)
+	}
+	tm.mu.Lock()
+	tm.ts[i] = ts
+	tm.mu.Unlock() // use defer once there are multiple returns
+	return nil
+}
+
+func (tm *TableManager) ReInit(dbrSess dbr.Session) error {
+
+	return nil
 }
 
 // LoadSlice loads the slice dest with the table structure from tsr TableStructurer and table index ti.
 // Returns the number of loaded rows and nil or 0 and an error. Slice must be a pointer to structs.
-func LoadSlice(dbrSess dbr.SessionRunner, tsr TableStructurer, ti Index, dest interface{}, cbs ...DbrSelectCb) (int, error) {
+func LoadSlice(dbrSess dbr.SessionRunner, tsr Manager, ti Index, dest interface{}, cbs ...DbrSelectCb) (int, error) {
 	ts, err := tsr.Structure(ti)
 	if err != nil {
 		return 0, errgo.Mask(err)

@@ -12,45 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
-package main generates Go structs and slices from SQL tables.
-
-Example
-
-    type (
-        // TableStoreSlice contains pointers to TableStore types
-        TableStoreSlice []*TableStore
-        // TableStore a type for the MySQL table core_store
-        TableStore struct {
-            StoreID   int64          `db:"store_id"`   // store_id smallint(5) unsigned NOT NULL PRI  auto_increment
-            Code      dbr.NullString `db:"code"`       // code varchar(32) NULL UNI
-            WebsiteID int64          `db:"website_id"` // website_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
-            GroupID   int64          `db:"group_id"`   // group_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
-            Name      string         `db:"name"`       // name varchar(255) NOT NULL
-            SortOrder int64          `db:"sort_order"` // sort_order smallint(5) unsigned NOT NULL  DEFAULT '0'
-            IsActive  bool           `db:"is_active"`  // is_active smallint(5) unsigned NOT NULL MUL DEFAULT '0'
-        }
-    )
-
-and table structure collections:
-
-	tableMap = csdb.TableStructureSlice{
-		TableIndexStore: csdb.NewTableStructure(
-			"core_store",
-			[]string{
-				"store_id",
-			},
-			[]string{
-
-				"code",
-				"website_id",
-				"group_id",
-				"name",
-				"sort_order",
-				"is_active",
-			},
-		),
-    ...
-
-*/
+// package main generates Go structs, slices and function receivers from SQL tables.
 package main

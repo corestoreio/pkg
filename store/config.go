@@ -53,7 +53,7 @@ const (
 )
 
 // TableCollection handles all tables and its columns. init() in generated Go file will set the value.
-var TableCollection csdb.TableStructurer
+var TableCollection csdb.Manager
 
 // PackageConfiguration contains the main configuration
 var PackageConfiguration config.SectionSlice

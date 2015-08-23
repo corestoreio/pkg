@@ -68,7 +68,7 @@ func InitEntityStoreMap(dbrSess *dbr.Session) error {
 		}
 		var ess TableEntityStoreSlice
 		_, err = dbrSess.
-			Select(s.Columns...).
+			Select(s.Columns.FieldNames()...).
 			From(s.Name).
 			LoadStructs(&ess)
 		if err != nil {
