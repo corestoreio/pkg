@@ -22,6 +22,21 @@ func (q MysqlQuoter) writeQuotedColumn(column string, sql *bytes.Buffer) {
 	sql.WriteString(Quote + column + Quote)
 }
 
+// Table quotes a table with back ticks. First argument table name, second argument
+// can be an alias.
+func (q MysqlQuoter) Table(tableName ...string) string {
+	//	tn := ""
+	//	for _, n := range tableName {
+	//		if n != '`' { // @todo
+	//			tn = tn + n
+	//		}
+	//	}
+	if len(tableName) == 1 {
+		return Quote + tableName[0] + Quote
+	}
+	return quoteAs(tableName...)
+}
+
 func quoteAs(parts ...string) string {
 	if len(parts) == 1 {
 		return parts[0]
