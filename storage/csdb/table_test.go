@@ -20,6 +20,7 @@ import (
 	"database/sql"
 
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,6 +33,15 @@ const (
 )
 
 var tableMap csdb.Manager
+
+// Returns a session that's not backed by a database
+func createFakeSession() *dbr.Session {
+	cxn, err := dbr.NewConnection()
+	if err != nil {
+		panic(err)
+	}
+	return cxn.NewSession()
+}
 
 func init() {
 	tableMap = csdb.NewTableManager()
@@ -145,59 +155,7 @@ func mustStructure(i csdb.Index) *csdb.Table {
 	return st1
 }
 
-func TestColumns(t *testing.T) {
-
-	tests := []struct {
-		have  int
-		want  int
-		haveS string
-		wantS string
-	}{
-		{
-			mustStructure(table1).Columns.PrimaryKeys().Len(), 0,
-			mustStructure(table1).Columns.String(),
-			"csdb.Column{\n    Field:   sql.NullString{String:\"category_id\", Valid:true},\n    Type:    sql.NullString{String:\"int(10) unsigned\", Valid:true},\n    Null:    sql.NullString{String:\"NO\", Valid:true},\n    Key:     sql.NullString{String:\"MUL\", Valid:true},\n    Default: sql.NullString{String:\"0\", Valid:true},\n    Extra:   sql.NullString{String:\"\", Valid:true},\n},\ncsdb.Column{\n    Field:   sql.NullString{String:\"path\", Valid:true},\n    Type:    sql.NullString{String:\"varchar(255)\", Valid:true},\n    Null:    sql.NullString{String:\"YES\", Valid:true},\n    Key:     sql.NullString{String:\"MUL\", Valid:true},\n    Default: sql.NullString{},\n    Extra:   sql.NullString{String:\"\", Valid:true},\n}",
-		},
-		{
-			mustStructure(table2).Columns.PrimaryKeys().Len(), 1,
-			mustStructure(table2).Columns.String(),
-			"csdb.Column{\n    Field:   sql.NullString{String:\"category_id\", Valid:true},\n    Type:    sql.NullString{String:\"int(10) unsigned\", Valid:true},\n    Null:    sql.NullString{String:\"NO\", Valid:true},\n    Key:     sql.NullString{String:\"PRI\", Valid:true},\n    Default: sql.NullString{String:\"0\", Valid:true},\n    Extra:   sql.NullString{String:\"\", Valid:true},\n},\ncsdb.Column{\n    Field:   sql.NullString{String:\"path\", Valid:true},\n    Type:    sql.NullString{String:\"varchar(255)\", Valid:true},\n    Null:    sql.NullString{String:\"YES\", Valid:true},\n    Key:     sql.NullString{},\n    Default: sql.NullString{},\n    Extra:   sql.NullString{String:\"\", Valid:true},\n}",
-		},
-		{
-			mustStructure(table4).Columns.UniqueKeys().Len(), 1,
-			mustStructure(table4).Columns.String(),
-			"csdb.Column{\n    Field:   sql.NullString{String:\"user_id\", Valid:true},\n    Type:    sql.NullString{String:\"int(10) unsigned\", Valid:true},\n    Null:    sql.NullString{String:\"NO\", Valid:true},\n    Key:     sql.NullString{String:\"PRI\", Valid:true},\n    Default: sql.NullString{},\n    Extra:   sql.NullString{String:\"auto_increment\", Valid:true},\n},\ncsdb.Column{\n    Field:   sql.NullString{String:\"email\", Valid:true},\n    Type:    sql.NullString{String:\"varchar(128)\", Valid:true},\n    Null:    sql.NullString{String:\"YES\", Valid:true},\n    Key:     sql.NullString{String:\"\", Valid:true},\n    Default: sql.NullString{},\n    Extra:   sql.NullString{String:\"\", Valid:true},\n},\ncsdb.Column{\n    Field:   sql.NullString{String:\"username\", Valid:true},\n    Type:    sql.NullString{String:\"varchar(40)\", Valid:true},\n    Null:    sql.NullString{String:\"YES\", Valid:true},\n    Key:     sql.NullString{String:\"UNI\", Valid:true},\n    Default: sql.NullString{},\n    Extra:   sql.NullString{String:\"\", Valid:true},\n}",
-		},
-		{mustStructure(table4).Columns.PrimaryKeys().Len(), 1, "", ""},
-	}
-
-	for i, test := range tests {
-		assert.Equal(t, test.have, test.want, "Incorrect length at index %d", i)
-		assert.Equal(t, test.haveS, test.wantS)
-	}
-
-	tsN := mustStructure(table4).Columns.ByName("user_id_not_found")
-	assert.NotNil(t, tsN)
-	assert.False(t, tsN.Field.Valid)
-
-	ts4 := mustStructure(table4).Columns.ByName("user_id")
-	assert.True(t, ts4.Field.Valid)
-	assert.True(t, ts4.IsAutoIncrement())
-
-	ts4b := mustStructure(table4).Columns.ByName("email")
-	assert.True(t, ts4b.Field.Valid)
-	assert.True(t, ts4b.IsNull())
-
-	assert.True(t, mustStructure(table4).Columns.First().IsPK())
-	emptyTS := &csdb.Table{}
-	assert.False(t, emptyTS.Columns.First().IsPK())
-
-}
-
 func TestTableStructure(t *testing.T) {
-	dbc := csdb.MustConnectTest()
-	defer dbc.Close()
-
 	sValid, err := tableMap.Structure(table1)
 	assert.NotNil(t, sValid)
 	assert.NoError(t, err)
@@ -209,7 +167,7 @@ func TestTableStructure(t *testing.T) {
 	assert.Nil(t, sInvalid)
 	assert.Error(t, err)
 
-	dbrSess := dbc.NewSession()
+	dbrSess := createFakeSession()
 	selectBuilder, err := sValid.Select(dbrSess)
 	assert.NoError(t, err)
 	selectString, _ := selectBuilder.ToSql()
