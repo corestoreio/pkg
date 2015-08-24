@@ -198,9 +198,9 @@ func (s GroupSlice) IDs() utils.Int64Slice {
 // Additional columns or joins cannot be added. This method receiver should only be used in development.
 // @see app/code/Magento/Store/Model/Resource/Group/Collection.php::_beforeLoad()
 func (s *TableGroupSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
-	return s.parentLoad(dbrSess, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
+	return s.parentLoad(dbrSess, append(append([]csdb.DbrSelectCb{nil}, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
 		return sb.OrderBy("main_table.name ASC")
-	})
+	}), cbs...)...)
 }
 
 // FindByID returns a TableGroup if found by id or an error

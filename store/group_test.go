@@ -25,6 +25,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	dbc := csdb.MustConnectTest()
+	store.TableCollection.Init(dbc.NewSession())
+	dbc.Close()
+}
+
 func TestNewGroup(t *testing.T) {
 	g := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},

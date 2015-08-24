@@ -380,11 +380,11 @@ func (s TableStore) IsDefault() bool {
 // @see https://github.com/magento/magento2/blob/0.74.0-beta7/app%2Fcode%2FMagento%2FStore%2FModel%2FResource%2FStore%2FCollection.php#L147
 // regarding the sort order.
 func (s *TableStoreSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
-	return s.parentLoad(dbrSess, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
+	return s.parentLoad(dbrSess, append(append([]csdb.DbrSelectCb{nil}, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
 		sb.OrderBy("CASE WHEN main_table.store_id = 0 THEN 0 ELSE 1 END ASC")
 		sb.OrderBy("main_table.sort_order ASC")
 		return sb.OrderBy("main_table.name ASC")
-	})
+	}), cbs...)...)
 }
 
 // FindByID returns a TableStore if found by id or an error
