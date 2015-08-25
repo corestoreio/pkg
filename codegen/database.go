@@ -206,45 +206,7 @@ func (c *column) Comment() string {
 func (c *column) updateGoPrimitive(useSQL bool) {
 	c.GoName = Camelize(c.Field.String)
 	col := c.CopyToCSDB()
-
-	isNull := col.IsNull() && useSQL
-	switch true {
-	case col.IsBool() && isNull:
-		c.GoType = "dbr.NullBool"
-		break
-	case col.IsBool():
-		c.GoType = "bool"
-		break
-	case col.IsInt() && isNull:
-		c.GoType = "dbr.NullInt64"
-		break
-	case col.IsInt():
-		c.GoType = "int64" // rethink if it is worth to introduce uint64 because of some unsigned columns
-		break
-	case col.IsString() && isNull:
-		c.GoType = "dbr.NullString"
-		break
-	case col.IsString():
-		c.GoType = "string"
-		break
-	case col.IsMoney():
-		c.GoType = "money.Currency"
-		break
-	case col.IsFloat() && isNull:
-		c.GoType = "dbr.NullFloat64"
-		break
-	case col.IsFloat():
-		c.GoType = "float64"
-		break
-	case col.IsDate() && isNull:
-		c.GoType = "dbr.NullTime"
-		break
-	case col.IsDate():
-		c.GoType = "time.Time"
-		break
-	default:
-		c.GoType = "undefined"
-	}
+	c.GoType = col.GetGoPrimitive(useSQL)
 }
 
 // CopyToCSDB copies the underlying slice to a csdb columns type

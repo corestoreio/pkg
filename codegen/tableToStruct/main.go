@@ -58,14 +58,15 @@ func main() {
 	fmt.Printf("Goroutines: %d\tGo Version %s\n", runtime.NumGoroutine(), runtime.Version())
 	wg.Wait()
 
-	for _, tStruct := range codegen.ConfigTableToStruct {
-		runCodec(tStruct.OutputFile.AppendName("_codec").String(), tStruct.OutputFile.String())
-	}
+	//	for _, ts := range codegen.ConfigTableToStruct {
+	//		// due to a race condition the codec generator must run after the newGenerator() calls
+	//		runCodec(ts.OutputFile.AppendName("_codec").String(), ts.OutputFile.String())
+	//	}
 
 }
 
 type generator struct {
-	tStruct        *codegen.TableToStruct
+	tts            *codegen.TableToStruct
 	dbrConn        *dbr.Connection
 	outfile        *os.File
 	tables         []string
@@ -76,19 +77,19 @@ type generator struct {
 	// because sometimes e.g. Load() needs more SQL
 }
 
-func newGenerator(tStruct *codegen.TableToStruct, dbrConn *dbr.Connection, wg *sync.WaitGroup) *generator {
+func newGenerator(tts *codegen.TableToStruct, dbrConn *dbr.Connection, wg *sync.WaitGroup) *generator {
 	wg.Add(1)
 	g := &generator{
-		tStruct: tStruct,
+		tts:     tts,
 		dbrConn: dbrConn,
 		wg:      wg,
 	}
 	g.analyzePackage()
 
 	var err error
-	g.outfile, err = os.OpenFile(g.tStruct.OutputFile.String(), os.O_APPEND|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	g.outfile, err = os.OpenFile(g.tts.OutputFile.String(), os.O_APPEND|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	codegen.LogFatal(err)
-	g.appendToFile(tplCopyPkg, struct{ Package string }{Package: g.tStruct.Package})
+	g.appendToFile(tplCopyPkg, struct{ Package string }{Package: g.tts.Package})
 
 	g.tables, g.eavValueTables = g.initTables()
 	return g
@@ -106,18 +107,22 @@ func (g *generator) run() {
 func (g *generator) analyzePackage() {
 	fset := token.NewFileSet()
 
-	path := filepath.Dir(g.tStruct.OutputFile.String())
+	path := filepath.Dir(g.tts.OutputFile.String())
 	pkgs, err := parser.ParseDir(fset, path, nil, parser.AllErrors)
 	codegen.LogFatal(err)
 
 	var astPkg *ast.Package
 	var ok bool
-	if astPkg, ok = pkgs[g.tStruct.Package]; !ok {
-		fmt.Printf("Package %s not found in path %s. Skipping.", g.tStruct.Package, path)
+	if astPkg, ok = pkgs[g.tts.Package]; !ok {
+		fmt.Printf("Package %s not found in path %s. Skipping.", g.tts.Package, path)
 		return
 	}
 
-	for _, astFile := range astPkg.Files {
+	for fName, astFile := range astPkg.Files {
+		if fName == g.tts.OutputFile.String() {
+			// skip the generated file
+			continue
+		}
 		ast.Inspect(astFile, func(n ast.Node) bool {
 			switch stmt := n.(type) {
 			case *ast.FuncDecl:
@@ -144,7 +149,7 @@ func (g *generator) analyzePackage() {
 
 func (g *generator) appendToFile(tpl string, data interface{}) {
 
-	formatted, err := codegen.GenerateCode(g.tStruct.Package, tpl, data, nil)
+	formatted, err := codegen.GenerateCode(g.tts.Package, tpl, data, nil)
 	if err != nil {
 		fmt.Printf("\n%s\n", formatted)
 		codegen.LogFatal(err)
@@ -157,13 +162,13 @@ func (g *generator) appendToFile(tpl string, data interface{}) {
 }
 
 func (g *generator) initTables() ([]string, codegen.TypeCodeValueTable) {
-	tables, err := codegen.GetTables(g.dbrConn.DB, codegen.ReplaceTablePrefix(g.tStruct.SQLQuery))
+	tables, err := codegen.GetTables(g.dbrConn.DB, codegen.ReplaceTablePrefix(g.tts.SQLQuery))
 	codegen.LogFatal(err)
 
 	var eavValueTables codegen.TypeCodeValueTable
-	if len(g.tStruct.EntityTypeCodes) > 0 && g.tStruct.EntityTypeCodes[0] != "" {
+	if len(g.tts.EntityTypeCodes) > 0 && g.tts.EntityTypeCodes[0] != "" {
 		var err error
-		eavValueTables, err = codegen.GetEavValueTables(g.dbrConn, g.tStruct.EntityTypeCodes)
+		eavValueTables, err = codegen.GetEavValueTables(g.dbrConn, g.tts.EntityTypeCodes)
 		codegen.LogFatal(err)
 
 		for _, vTables := range eavValueTables {
@@ -188,14 +193,14 @@ func (g *generator) runHeader() {
 		HasTypeCodeValueTables bool
 		Tables                 []Table
 	}{
-		Package: g.tStruct.Package,
+		Package: g.tts.Package,
 		Tick:    "`",
 		HasTypeCodeValueTables: len(g.eavValueTables) > 0,
 	}
 
 	for _, table := range g.tables {
 		var name = getTableName(table)
-		data.Tables = append(data.Tables, Table{name, codegen.PrepareVar(g.tStruct.Package, name)})
+		data.Tables = append(data.Tables, Table{name, codegen.PrepareVar(g.tts.Package, name)})
 	}
 	g.appendToFile(tplHeader, data)
 }
@@ -208,7 +213,8 @@ func (g *generator) runTable() {
 		NameRaw          string
 		Name             string
 		Table            string
-		Columns          codegen.Columns
+		GoColumns        codegen.Columns
+		Columns          csdb.Columns
 		MethodRecvPrefix string
 	}
 
@@ -220,12 +226,13 @@ func (g *generator) runTable() {
 
 		var name = getTableName(table)
 		data := OneTable{
-			Package: g.tStruct.Package,
-			Tick:    "`",
-			NameRaw: name,
-			Name:    codegen.PrepareVar(g.tStruct.Package, name),
-			Table:   table,
-			Columns: columns,
+			Package:   g.tts.Package,
+			Tick:      "`",
+			NameRaw:   name,
+			Name:      codegen.PrepareVar(g.tts.Package, name),
+			Table:     table,
+			GoColumns: columns,
+			Columns:   columns.CopyToCSDB(),
 		}
 
 		if g.existingFnc.Len() > 0 {

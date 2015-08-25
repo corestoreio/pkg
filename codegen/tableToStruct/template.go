@@ -42,9 +42,11 @@ import (
 	"github.com/corestoreio/csfw/eav"{{end}}
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/storage/money"
 )
 
 var _ = (*time.Time)(nil)
+var _ = (*money.Currency)(nil)
 
 // TableIndex... is the index to a table. These constants are guaranteed
 // to stay the same for all Magento versions. Please access a table via this
@@ -66,7 +68,7 @@ const tplTable = `
 type (
     Table{{.Name}}Slice []*Table{{.Name}}
     Table{{.Name}} struct {
-        {{ range .Columns }}{{.GoName}} {{.GoType}} {{ $.Tick }}db:"{{.Field.String}}" json:",omitempty"{{ $.Tick }} {{.Comment}}
+        {{ range .GoColumns }}{{.GoName}} {{.GoType}} {{ $.Tick }}db:"{{.Field.String}}" json:",omitempty"{{ $.Tick }} {{.Comment}}
         {{ end }} }
 )
 
@@ -77,6 +79,43 @@ func (s *Table{{.Name}}Slice) {{.MethodRecvPrefix}}Load(dbrSess dbr.SessionRunne
 
 // Len returns the length
 func (s Table{{.Name}}Slice) Len() int { return len(s) }
+
+// {{.MethodRecvPrefix}}FindBy{{ (.Columns.PrimaryKeys.JoinFields "_") | camelize }} returns a Table{{.Name}} if found by id or an error
+func (s Table{{.Name}}Slice) {{.MethodRecvPrefix}}FindBy{{ (.Columns.PrimaryKeys.JoinFields "_") | camelize }}(
+{{range $k,$v := .Columns.PrimaryKeys}} {{ $v.Field.String }} {{$v.GetGoPrimitive false}},
+{{end}}	) (*Table{{.Name}}, error) {
+	for _, u := range s {
+		if u != nil {{ range $c := .Columns.PrimaryKeys }} && u.{{ $c.Field.String | camelize }} == {{$c.Field.String}} {{ end }} {
+			return u, nil
+		}
+	}
+	return nil, csdb.NewError("ID not found in Table{{.Name}}Slice")
+}
+
+// Filter returns a new slice filtered by predicate f
+func (s Table{{.Name}}Slice) Filter(f func(*Table{{.Name}}) bool) Table{{.Name}}Slice {
+	var tws Table{{.Name}}Slice
+	for _, w := range s {
+		if w != nil && f(w) {
+			tws = append(tws, w)
+		}
+	}
+	return tws
+}
+
+{{ if (.Columns.UniqueKeys.Len) gt 0 }}
+// {{.MethodRecvPrefix}}FindBy{{ (.Columns.UniqueKeys.JoinFields "_") | camelize }} returns a Table{{.Name}} if found by id or an error
+func (s Table{{.Name}}Slice) {{.MethodRecvPrefix}}FindBy{{ (.Columns.UniqueKeys.JoinFields "_") | camelize }}(
+{{range $k,$v := .Columns.UniqueKeys}} {{ $v.Field.String }} {{$v.GetGoPrimitive false}},
+{{end}}	) (*Table{{.Name}}, error) {
+	for _, u := range s {
+		if u != nil {{ range $c := .Columns.UniqueKeys }} && u.{{ $c.Field.String | camelize }} == {{$c.Field.String}} {{ end }} {
+			return u, nil
+		}
+	}
+	return nil, csdb.NewError("ID not found in Table{{.Name}}Slice")
+}
+{{ end }}
 `
 
 const tplEAValues = `
@@ -92,21 +131,6 @@ func Get{{ $typeCode | prepareVar }}ValueStructure(i eav.ValueIndex) (*csdb.Tabl
 }
 {{end}}
 `
-
-//// find by primary key
-//{{ if .columns.PrimaryKeys.Length eq 1 }}
-//{{ $pkColumn := .columns.PrimaryKeys.First }}
-//// FindByID returns a Table{{.Name}} if found by id or an error
-//func (s Table{{.Name}}Slice) FindBy{{ $pkColumn | prepareVar }}(id int64) (*Table{{.Name}}, error) {
-//for _, u := range s {
-//{{/* @todo check if column PK is really an int64 column */}}
-//if u != nil && u.{{ $pkColumn | prepareVar }} == id {
-//return u, nil
-//}
-//}
-//return nil, errgo.Newf("ID %d in slice Table{{.Name}}Slice not found", id)
-//}
-//{{ end }}
 
 //// FindByUsername returns a Table{{.Name}} if found by code or an error
 //func (s Table{{.Name}}Slice) FindByUsername(username string) (*Table{{.Name}}, error) {
