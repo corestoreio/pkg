@@ -21,8 +21,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// IsAlphaNumeric returns true if a string consists of characters a-zA-Z0-9_
-func TestIsAlphaNumeric(t *testing.T) {
+// StrIsAlNum returns true if a string consists of characters a-zA-Z0-9_
+func TestStrIsAlNum(t *testing.T) {
 	tests := []struct {
 		have string
 		want bool
@@ -36,16 +36,51 @@ func TestIsAlphaNumeric(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		assert.True(t, utils.IsAlphaNumeric(test.have) == test.want, "%#v", test)
+		assert.True(t, utils.StrIsAlNum(test.have) == test.want, "%#v", test)
 	}
 }
 
-var benchIsAlphaNumeric bool
+var benchStrIsAlNum bool
 
-// BenchmarkIsAlphaNumeric	10000000	       132 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkIsAlphaNumeric(b *testing.B) {
+// BenchmarkStrIsAlNum	10000000	       132 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkStrIsAlNum(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		benchIsAlphaNumeric = utils.IsAlphaNumeric("Hello1WorldOfGophers")
+		benchStrIsAlNum = utils.StrIsAlNum("Hello1WorldOfGophers")
+	}
+}
+
+func TestStrContains(t *testing.T) {
+	tests := []struct {
+		have string
+		in   []string
+		want bool
+	}{
+		{"I live in the black forest", []string{"black"}, true},
+		{"I live in the black forest", []string{"blagg", "forest"}, true},
+		{"I live in the black forest", []string{"blagg", "wald"}, false},
+		{"We don't have any Internet connection", nil, false},
+	}
+
+	for _, test := range tests {
+		assert.Equal(t, test.want, utils.StrContains(test.have, test.in...), "Test: %#v", test)
+	}
+}
+
+func TestStrStartsWith(t *testing.T) {
+	tests := []struct {
+		have string
+		in   []string
+		want bool
+	}{
+		{"grand_total", []string{"grand_"}, true},
+		{"base_discount_amount", []string{"amount"}, false},
+		{"base_grand_total", []string{"grand_", "base_"}, true},
+		{"base_grand_total", []string{"xgrand_", "zbase_"}, false},
+		{"base_grand_total", nil, false},
+	}
+
+	for _, test := range tests {
+		assert.Equal(t, test.want, utils.StrStartsWith(test.have, test.in...), "Test: %#v", test)
 	}
 }

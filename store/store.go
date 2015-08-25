@@ -294,7 +294,7 @@ func ValidateStoreCode(c string) error {
 	if false == ((c1 >= 'a' && c1 <= 'z') || (c1 >= 'A' && c1 <= 'Z')) {
 		return ErrStoreCodeInvalid
 	}
-	if false == utils.IsAlphaNumeric(c) {
+	if false == utils.StrIsAlNum(c) {
 		return ErrStoreCodeInvalid
 	}
 	return nil
