@@ -17,18 +17,15 @@ package codegen
 import (
 	"bytes"
 	"fmt"
+	"github.com/juju/errgo"
+	"go/format"
 	"log"
 	"math/rand"
+	"path/filepath"
 	"strings"
 	"text/template"
 	"time"
 	"unicode"
-
-	"go/format"
-
-	"path/filepath"
-
-	"github.com/juju/errgo"
 )
 
 var (
@@ -85,6 +82,7 @@ func GenerateCode(pkg, tplCode string, data interface{}, addFM template.FuncMap)
 	funcMap := template.FuncMap{
 		"quote":           func(s string) string { return "`" + s + "`" },
 		"prepareVar":      prepareVar(pkg),
+		"camelize":        Camelize,
 		"toLowerFirst":    toLowerFirst,
 		"prepareVarIndex": func(i int, s string) string { return fmt.Sprintf("%03d%s", i, prepareVar(pkg)(s)) },
 		"sprintf":         fmt.Sprintf,
@@ -126,14 +124,6 @@ func prepareVar(pkg string) func(s string) string {
 			str = str[l:]
 		}
 
-		str = strings.Map(func(r rune) rune {
-			switch {
-			case r >= 'A' && r <= 'Z', r >= 'a' && r <= 'z', r >= '0' && r <= '9':
-				return r
-			}
-			return '_'
-		}, str)
-
 		return Camelize(str)
 	}
 }
@@ -146,7 +136,16 @@ func PrepareVar(pkg, s string) string {
 
 // Camelize transforms from snake case to camelCase e.g. catalog_product_id to CatalogProductID. Also removes quotes.
 func Camelize(s string) string {
-	s = strings.ToLower(strings.Replace(s, `"`, "", -1))
+	s = strings.Map(func(r rune) rune {
+		switch {
+		case r >= 'A' && r <= 'Z', r >= 'a' && r <= 'z', r >= '0' && r <= '9':
+			return r
+		}
+		return '_'
+	}, s)
+
+	//	s = strings.ToLower(strings.Replace(s, `"`, "", -1))
+	s = strings.ToLower(s)
 	parts := strings.Split(s, "_")
 	ret := ""
 	for _, p := range parts {

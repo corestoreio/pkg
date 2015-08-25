@@ -23,7 +23,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/juju/errgo"
+	"github.com/corestoreio/csfw/utils/log"
 )
 
 const (
@@ -79,7 +79,7 @@ func GetTables(db *sql.DB, query string) ([]string, error) {
 
 	rows, err := db.Query(query)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, log.Error("codegen.GetTables.Query", "err", err)
 	}
 	defer rows.Close()
 
@@ -87,13 +87,13 @@ func GetTables(db *sql.DB, query string) ([]string, error) {
 		var tableName string
 		err := rows.Scan(&tableName)
 		if err != nil {
-			return nil, errgo.Mask(err)
+			return nil, log.Error("codegen.GetTables.Scan", "err", err)
 		}
 		tableNames = append(tableNames, tableName)
 	}
 	err = rows.Err()
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, log.Error("codegen.GetTables.rows", "err", err)
 	}
 	return tableNames, nil
 }
@@ -115,7 +115,7 @@ func GetEavValueTables(dbrConn *dbr.Connection, entityTypeCodes []string) (TypeC
 			ReturnString()
 
 		if err != nil && err != dbr.ErrNotFound {
-			return nil, errgo.Mask(err)
+			return nil, log.Error("codegen.GetEavValueTables.select", "err", err)
 		}
 		if vtp == "" {
 			vtp = typeCode + TableNameSeparator + TableEntityTypeSuffix + TableNameSeparator // e.g. catalog_product_entity_
@@ -125,7 +125,7 @@ func GetEavValueTables(dbrConn *dbr.Connection, entityTypeCodes []string) (TypeC
 
 		tableNames, err := GetTables(dbrConn.DB, `SHOW TABLES LIKE "`+vtp+`%"`)
 		if err != nil {
-			return nil, errgo.Mask(err)
+			return nil, log.Error("codegen.GetEavValueTables.GetTables", "err", err)
 		}
 
 		if _, ok := typeCodeTables[typeCode]; !ok {
@@ -203,62 +203,43 @@ func (c *column) Comment() string {
 	return "// " + c.Field.String + " " + c.Type.String + " " + sqlNull + " " + c.Key.String + " " + sqlDefault + " " + c.Extra.String
 }
 
-// isBool checks the name of a column if it contains bool values. Magento uses often smallint field types
-// to store bool values and also to store other integer numbers.
-func (c *column) isBool() bool {
-	if len(c.Field.String) < 3 {
-		return false
-	}
-	return strings.Index(c.Field.String, "used_") > -1 ||
-		strings.Index(c.Field.String, "is_") > -1 ||
-		strings.Index(c.Field.String, "has_") > -1 ||
-		c.Field.String == "increment_per_store"
-}
-
-func (c *column) isInt() bool {
-	return strings.Contains(c.Type.String, "int")
-}
-func (c *column) isString() bool {
-	return strings.Contains(c.Type.String, "varchar") || strings.Contains(c.Type.String, "text")
-}
-func (c *column) isFloat() bool {
-	return strings.Contains(c.Type.String, "decimal") || strings.Contains(c.Type.String, "float")
-}
-func (c *column) isDate() bool {
-	return strings.Contains(c.Type.String, "timestamp") || strings.Contains(c.Type.String, "date")
-}
 func (c *column) updateGoPrimitive(useSQL bool) {
 	c.GoName = Camelize(c.Field.String)
-	isNull := c.Null.String == "YES" && useSQL
+	col := c.CopyToCSDB()
+
+	isNull := col.IsNull() && useSQL
 	switch true {
-	case c.isBool() && isNull:
+	case col.IsBool() && isNull:
 		c.GoType = "dbr.NullBool"
 		break
-	case c.isBool():
+	case col.IsBool():
 		c.GoType = "bool"
 		break
-	case c.isInt() && isNull:
+	case col.IsInt() && isNull:
 		c.GoType = "dbr.NullInt64"
 		break
-	case c.isInt():
+	case col.IsInt():
 		c.GoType = "int64" // rethink if it is worth to introduce uint64 because of some unsigned columns
 		break
-	case c.isString() && isNull:
+	case col.IsString() && isNull:
 		c.GoType = "dbr.NullString"
 		break
-	case c.isString():
+	case col.IsString():
 		c.GoType = "string"
 		break
-	case c.isFloat() && isNull:
+	case col.IsMoney():
+		c.GoType = "money.Currency"
+		break
+	case col.IsFloat() && isNull:
 		c.GoType = "dbr.NullFloat64"
 		break
-	case c.isFloat():
+	case col.IsFloat():
 		c.GoType = "float64"
 		break
-	case c.isDate() && isNull:
+	case col.IsDate() && isNull:
 		c.GoType = "dbr.NullTime"
 		break
-	case c.isDate():
+	case col.IsDate():
 		c.GoType = "time.Time"
 		break
 	default:
@@ -344,7 +325,7 @@ func GetColumns(db *sql.DB, table string) (Columns, error) {
 	var cols = make(Columns, 0, 200)
 	rows, err := db.Query("SHOW COLUMNS FROM `" + table + "`")
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, log.Error("codegen.GetColumns.Query", "err", err)
 	}
 	defer rows.Close()
 
@@ -352,7 +333,7 @@ func GetColumns(db *sql.DB, table string) (Columns, error) {
 		col := &column{}
 		err := rows.Scan(&col.Field, &col.Type, &col.Null, &col.Key, &col.Default, &col.Extra)
 		if err != nil {
-			return nil, errgo.Mask(err)
+			return nil, log.Error("codegen.GetColumns.Scan", "err", err)
 		}
 		if isIgnoredColumn(table, col.Field.String) {
 			continue
@@ -361,7 +342,7 @@ func GetColumns(db *sql.DB, table string) (Columns, error) {
 	}
 	err = rows.Err()
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, log.Error("codegen.GetColumns.rows", "err", err)
 	}
 	return cols, nil
 }
@@ -398,7 +379,7 @@ func SQLQueryToColumns(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string)
 	}
 	_, err := db.Exec("CREATE TABLE `"+tableName+"` AS "+qry, args...)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, log.Error("codegen.SQLQueryToColumns.Exec382", "err", err)
 	}
 
 	return GetColumns(db, tableName)
@@ -436,13 +417,13 @@ func LoadStringEntities(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string
 
 	rows, err := db.Query(qry, args...)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, log.Error("codegen.LoadStringEntities.Query420", "err", err)
 	}
 	defer rows.Close()
 
 	columnNames, err := rows.Columns()
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, log.Error("codegen.LoadStringEntities.Columns", "err", err)
 	}
 
 	ret := make([]StringEntities, 0, 2000)
@@ -450,11 +431,11 @@ func LoadStringEntities(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string
 	for rows.Next() {
 
 		if err := rows.Scan(rss.cp...); err != nil {
-			return nil, errgo.Mask(err)
+			return nil, log.Error("codegen.LoadStringEntities.Scan", "err", err)
 		}
 		err := rss.toString()
 		if err != nil {
-			return nil, errgo.Mask(err)
+			return nil, log.Error("codegen.LoadStringEntities.ToString", "err", err)
 		}
 		rss.append(&ret)
 	}
@@ -534,7 +515,7 @@ func PrepareForTemplate(cols Columns, rows []StringEntities, amm AttributeModelD
 	ip := make([]string, 0, 10) // import_path container
 	for _, row := range rows {
 		for colName, colValue := range row {
-			var c = cols.GetByName(colName)
+			var c = cols.GetByName(colName).CopyToCSDB()
 
 			goType, hasModel := amm[colValue]
 			_, isAllowedInterfaceChange := EavAttributeColumnNameToInterface[colName]
@@ -552,26 +533,26 @@ func PrepareForTemplate(cols Columns, rows []StringEntities, amm AttributeModelD
 				// if there is no defined model but column is (backend|frontend|data|source)_model then nil it
 				row[colName] = "nil"
 				break
-			case c.isBool():
+			case c.IsBool():
 				row[colName] = "false"
 				if colValue == "1" {
 					row[colName] = "true"
 				}
 				break
-			case c.isInt():
+			case c.IsInt():
 				if colValue == "" {
 					row[colName] = "0"
 				}
 				break
-			case c.isString():
+			case c.IsString():
 				row[colName] = strconv.Quote(colValue)
 				break
-			case c.isFloat():
+			case c.IsFloat():
 				if colValue == "" {
 					row[colName] = "0.0"
 				}
 				break
-			case c.isDate():
+			case c.IsDate():
 				if colValue == "" {
 					row[colName] = "nil"
 				} else {
