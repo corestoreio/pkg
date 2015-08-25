@@ -31,21 +31,25 @@ func TestGetColumns(t *testing.T) {
 	sess := dbc.NewSession()
 
 	tests := []struct {
-		table   string
-		want    string
-		wantErr error
+		table          string
+		want           string
+		wantErr        error
+		wantJoinFields string
 	}{
 		{"core_config_data",
 			`csdb.Columns{csdb.Column{Field:sql.NullString{String:"config_id", Valid:true}, Type:sql.NullString{String:"int(10) unsigned", Valid:true}, Null:sql.NullString{String:"NO", Valid:true}, Key:sql.NullString{String:"PRI", Valid:true}, Default:sql.NullString{String:"", Valid:false}, Extra:sql.NullString{String:"auto_increment", Valid:true}}, csdb.Column{Field:sql.NullString{String:"scope", Valid:true}, Type:sql.NullString{String:"varchar(8)", Valid:true}, Null:sql.NullString{String:"NO", Valid:true}, Key:sql.NullString{String:"MUL", Valid:true}, Default:sql.NullString{String:"default", Valid:true}, Extra:sql.NullString{String:"", Valid:true}}, csdb.Column{Field:sql.NullString{String:"scope_id", Valid:true}, Type:sql.NullString{String:"int(11)", Valid:true}, Null:sql.NullString{String:"NO", Valid:true}, Key:sql.NullString{String:"", Valid:true}, Default:sql.NullString{String:"0", Valid:true}, Extra:sql.NullString{String:"", Valid:true}}, csdb.Column{Field:sql.NullString{String:"path", Valid:true}, Type:sql.NullString{String:"varchar(255)", Valid:true}, Null:sql.NullString{String:"NO", Valid:true}, Key:sql.NullString{String:"", Valid:true}, Default:sql.NullString{String:"general", Valid:true}, Extra:sql.NullString{String:"", Valid:true}}, csdb.Column{Field:sql.NullString{String:"value", Valid:true}, Type:sql.NullString{String:"text", Valid:true}, Null:sql.NullString{String:"YES", Valid:true}, Key:sql.NullString{String:"", Valid:true}, Default:sql.NullString{String:"", Valid:false}, Extra:sql.NullString{String:"", Valid:true}}}` + "\n",
 			nil,
+			"config_id_scope_scope_id_path_value",
 		},
 		{"catalog_category_product",
 			`csdb.Columns{csdb.Column{Field:sql.NullString{String:"category_id", Valid:true}, Type:sql.NullString{String:"int(10) unsigned", Valid:true}, Null:sql.NullString{String:"NO", Valid:true}, Key:sql.NullString{String:"PRI", Valid:true}, Default:sql.NullString{String:"0", Valid:true}, Extra:sql.NullString{String:"", Valid:true}}, csdb.Column{Field:sql.NullString{String:"product_id", Valid:true}, Type:sql.NullString{String:"int(10) unsigned", Valid:true}, Null:sql.NullString{String:"NO", Valid:true}, Key:sql.NullString{String:"PRI", Valid:true}, Default:sql.NullString{String:"0", Valid:true}, Extra:sql.NullString{String:"", Valid:true}}, csdb.Column{Field:sql.NullString{String:"position", Valid:true}, Type:sql.NullString{String:"int(11)", Valid:true}, Null:sql.NullString{String:"NO", Valid:true}, Key:sql.NullString{String:"", Valid:true}, Default:sql.NullString{String:"0", Valid:true}, Extra:sql.NullString{String:"", Valid:true}}}` + "\n",
 			nil,
+			"category_id_product_id_position",
 		},
 		{"non_existent",
 			"",
 			errors.New("non_existent"),
+			"",
 		},
 	}
 
@@ -58,6 +62,7 @@ func TestGetColumns(t *testing.T) {
 		} else {
 			assert.NoError(t, err1)
 			assert.Equal(t, test.want, fmt.Sprintf("%#v\n", cols1))
+			assert.Equal(t, test.wantJoinFields, cols1.JoinFields("_"))
 		}
 	}
 }
@@ -109,4 +114,8 @@ func TestColumns(t *testing.T) {
 	emptyTS := &csdb.Table{}
 	assert.False(t, emptyTS.Columns.First().IsPK())
 
+}
+
+func TestGetGoPrimitive(t *testing.T) {
+	t.Log("@todo GetGoPrimitive")
 }

@@ -154,6 +154,16 @@ func (cs Columns) First() Column {
 	return Column{}
 }
 
+// JoinFields joins the field names into a string, separated by the optional
+// first argument.
+func (cs Columns) JoinFields(sep ...string) string {
+	aSep := ""
+	if len(sep) > 0 {
+		aSep = sep[0]
+	}
+	return strings.Join(cs.FieldNames(), aSep)
+}
+
 // IsPK checks if column is a primary key
 func (c Column) IsPK() bool {
 	return c.Field.Valid && c.Key.Valid && c.Key.String == ColumnPrimary
@@ -227,4 +237,36 @@ func (c Column) IsMoney() bool {
 		ret = true
 	}
 	return ret
+}
+
+// GetGoPrimitive detects the Go type of a SQL table column.
+func (c Column) GetGoPrimitive(useSQL bool) string {
+
+	var goType = "undefined"
+	isNull := c.IsNull() && useSQL
+	switch {
+	case c.IsBool() && isNull:
+		goType = "dbr.NullBool"
+	case c.IsBool():
+		goType = "bool"
+	case c.IsInt() && isNull:
+		goType = "dbr.NullInt64"
+	case c.IsInt():
+		goType = "int64" // rethink if it is worth to introduce uint64 because of some unsigned columns
+	case c.IsString() && isNull:
+		goType = "dbr.NullString"
+	case c.IsString():
+		goType = "string"
+	case c.IsMoney():
+		goType = "money.Currency"
+	case c.IsFloat() && isNull:
+		goType = "dbr.NullFloat64"
+	case c.IsFloat():
+		goType = "float64"
+	case c.IsDate() && isNull:
+		goType = "dbr.NullTime"
+	case c.IsDate():
+		goType = "time.Time"
+	}
+	return goType
 }
