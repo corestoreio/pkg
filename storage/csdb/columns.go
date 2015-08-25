@@ -20,6 +20,7 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/utils"
 	"github.com/juju/errgo"
 	"github.com/kr/pretty"
 )
@@ -41,6 +42,12 @@ type (
 		Field, Type, Null, Key, Default, Extra sql.NullString
 	}
 )
+
+// MoneyTypeColumnNames part of the function IsMoney() to detect if a column
+// type is a Go money.Currency type.
+var MoneyTypeColumnNames = utils.StringSlice{
+	"value", "price", "cost", "msrp",
+}
 
 // GetColumns returns all columns from a table. It discards the column entity_type_id from some
 // entity tables.
@@ -165,4 +172,59 @@ func (c Column) IsAutoIncrement() bool {
 // IsNull checks if column can have null values
 func (c Column) IsNull() bool {
 	return c.Field.Valid && c.Null.Valid && c.Null.String == ColumnNull
+}
+
+// IsBool checks the name of a column if it contains bool values. Magento uses
+// often smallint field types to store bool values.
+func (c Column) IsBool() bool {
+	if len(c.Field.String) < 3 {
+		return false
+	}
+	// @todo pack those three Contains() into one.
+	return strings.Contains(c.Field.String, "used_") ||
+		strings.Contains(c.Field.String, "is_") ||
+		strings.Contains(c.Field.String, "has_") ||
+		c.Field.String == "increment_per_store"
+}
+
+// IsInt checks if a column contains a MySQL int type, independent from its length.
+func (c Column) IsInt() bool {
+	return strings.Contains(c.Type.String, "int")
+}
+
+// IsString checks if a column contains a MySQL varchar or text type.
+func (c Column) IsString() bool {
+	return strings.Contains(c.Type.String, "varchar") || strings.Contains(c.Type.String, "text")
+}
+
+// IsDate checks if a column contains a MySQL timestamp or date type.
+func (c Column) IsDate() bool {
+	return strings.Contains(c.Type.String, "timestamp") || strings.Contains(c.Type.String, "date")
+}
+
+// IsFloat checks if a column contains a MySQL decimal or float type.
+func (c Column) IsFloat() bool {
+	return strings.Contains(c.Type.String, "decimal") || strings.Contains(c.Type.String, "float")
+}
+
+// IsMoney checks if a column contains a MySQL decimal or float type and the
+// column name.
+// This function needs a lot of care ...
+func (c Column) IsMoney() bool {
+	// needs more love
+	if false == c.IsFloat() {
+		return false
+	}
+	var ret bool
+	switch {
+	case MoneyTypeColumnNames.Include(c.Field.String):
+		ret = true
+	case utils.StrContains(c.Field.String, "price", "_tax", "tax_", "_amount", "amount_", "total", "adjustment", "discount"):
+		ret = true
+	case utils.StrStartsWith(c.Field.String, "base_", "grand_"):
+		ret = true
+	case false == c.IsNull() && c.Default.String == "0.0000":
+		ret = true
+	}
+	return ret
 }
