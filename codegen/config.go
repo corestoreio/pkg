@@ -220,11 +220,11 @@ var ConfigTableToStruct = TableToStructMap{
 		Package:    "authorization",
 		OutputFile: BasePath.AppendDir("authorization", "generated_tables"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
-				    TABLE_SCHEMA = DATABASE() AND
-				    TABLE_NAME IN (
-				    	'{{tableprefix}}authorization_role','{{tableprefix}}admin_role',
-				    	'{{tableprefix}}authorization_rule','{{tableprefix}}admin_rule'
-				    ) GROUP BY TABLE_NAME;`,
+					    TABLE_SCHEMA = DATABASE() AND
+					    TABLE_NAME IN (
+					    	'{{tableprefix}}authorization_role','{{tableprefix}}admin_role',
+					    	'{{tableprefix}}authorization_rule','{{tableprefix}}admin_rule'
+					    ) GROUP BY TABLE_NAME;`,
 		EntityTypeCodes: nil,
 	},
 	"user": &TableToStruct{
@@ -243,8 +243,8 @@ var ConfigTableToStruct = TableToStructMap{
 		Package:    "directory",
 		OutputFile: BasePath.AppendDir("directory", "generated_tables"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
-				    TABLE_SCHEMA = DATABASE() AND
-				    TABLE_NAME LIKE '{{tableprefix}}directory%' GROUP BY TABLE_NAME;`,
+					    TABLE_SCHEMA = DATABASE() AND
+					    TABLE_NAME LIKE '{{tableprefix}}directory%' GROUP BY TABLE_NAME;`,
 		EntityTypeCodes: nil,
 	},
 	"eav": &TableToStruct{
@@ -257,12 +257,12 @@ var ConfigTableToStruct = TableToStructMap{
 		Package:    "store",
 		OutputFile: BasePath.AppendDir("store", "generated_tables"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
-		    TABLE_SCHEMA = DATABASE() AND
-		    TABLE_NAME IN (
-		    	'{{tableprefix}}core_store','{{tableprefix}}store',
-		    	'{{tableprefix}}core_store_group','{{tableprefix}}store_group',
-		    	'{{tableprefix}}core_website','{{tableprefix}}store_website'
-		    ) GROUP BY TABLE_NAME;`,
+			    TABLE_SCHEMA = DATABASE() AND
+			    TABLE_NAME IN (
+			    	'{{tableprefix}}core_store','{{tableprefix}}store',
+			    	'{{tableprefix}}core_store_group','{{tableprefix}}store_group',
+			    	'{{tableprefix}}core_website','{{tableprefix}}store_website'
+			    ) GROUP BY TABLE_NAME;`,
 		EntityTypeCodes: nil,
 	},
 	"catalog": &TableToStruct{
@@ -270,10 +270,10 @@ var ConfigTableToStruct = TableToStructMap{
 		Package:    "catalog",
 		OutputFile: BasePath.AppendDir("catalog", "generated_tables"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
-				    TABLE_SCHEMA = DATABASE() AND
-				    (TABLE_NAME LIKE '{{tableprefix}}catalog\_%' OR TABLE_NAME LIKE '{{tableprefix}}catalogindex%' ) AND
-				    TABLE_NAME NOT LIKE '{{tableprefix}}%bundle%' AND
-				    TABLE_NAME NOT LIKE '{{tableprefix}}%\_flat\_%' GROUP BY TABLE_NAME;`,
+					    TABLE_SCHEMA = DATABASE() AND
+					    (TABLE_NAME LIKE '{{tableprefix}}catalog\_%' OR TABLE_NAME LIKE '{{tableprefix}}catalogindex%' ) AND
+					    TABLE_NAME NOT LIKE '{{tableprefix}}%bundle%' AND
+					    TABLE_NAME NOT LIKE '{{tableprefix}}%\_flat\_%' GROUP BY TABLE_NAME;`,
 		EntityTypeCodes: []string{"catalog_category", "catalog_product"},
 	},
 	"customer": &TableToStruct{

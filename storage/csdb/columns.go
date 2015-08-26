@@ -88,6 +88,15 @@ func (cs Columns) Filter(f func(Column) bool) (cols Columns) {
 	return
 }
 
+// Map will run function f on all items in Columns and returns a copy of the slice.
+func (cs Columns) Map(f func(Column) Column) Columns {
+	cols := make(Columns, cs.Len())
+	for i, c := range cs {
+		cols[i] = f(c)
+	}
+	return cols
+}
+
 // FieldNames returns all column names
 func (cs Columns) FieldNames() (fieldNames []string) {
 	for _, c := range cs {
@@ -162,6 +171,11 @@ func (cs Columns) JoinFields(sep ...string) string {
 		aSep = sep[0]
 	}
 	return strings.Join(cs.FieldNames(), aSep)
+}
+
+// Name returns the name of the column, a helper function.
+func (c Column) Name() string {
+	return c.Field.String
 }
 
 // IsPK checks if column is a primary key
@@ -240,10 +254,10 @@ func (c Column) IsMoney() bool {
 }
 
 // GetGoPrimitive detects the Go type of a SQL table column.
-func (c Column) GetGoPrimitive(useSQL bool) string {
+func (c Column) GetGoPrimitive(useNullType bool) string {
 
 	var goType = "undefined"
-	isNull := c.IsNull() && useSQL
+	isNull := c.IsNull() && useNullType
 	switch {
 	case c.IsBool() && isNull:
 		goType = "dbr.NullBool"

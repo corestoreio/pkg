@@ -14,46 +14,9 @@
 
 package user
 
-import (
-	"errors"
-
-	"github.com/corestoreio/csfw/storage/csdb"
-)
+import "github.com/corestoreio/csfw/storage/csdb"
 
 var (
 	// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
 	TableCollection csdb.Manager
-
-	ErrUserNotFound = errors.New("Admin user not found")
 )
-
-// FindByID returns a TableAdminUser if found by id or an error
-func (s TableAdminUserSlice) FindByID(id int64) (*TableAdminUser, error) {
-	for _, u := range s {
-		if u != nil && u.UserID == id {
-			return u, nil
-		}
-	}
-	return nil, ErrUserNotFound
-}
-
-// FindByUsername returns a TableAdminUser if found by code or an error
-func (s TableAdminUserSlice) FindByUsername(username string) (*TableAdminUser, error) {
-	for _, u := range s {
-		if u != nil && u.Username.Valid && u.Username.String == username {
-			return u, nil
-		}
-	}
-	return nil, ErrUserNotFound
-}
-
-// Filter returns a new slice filtered by predicate f
-func (s TableAdminUserSlice) Filter(f func(*TableAdminUser) bool) TableAdminUserSlice {
-	var tws TableAdminUserSlice
-	for _, w := range s {
-		if w != nil && f(w) {
-			tws = append(tws, w)
-		}
-	}
-	return tws
-}
