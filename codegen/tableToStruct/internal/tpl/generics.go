@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ttstpl
+package tpl
 
 // @todo hide password and other sensitive fields in JSON struct tags
 
@@ -193,6 +193,7 @@ func (s *{{.Slice}}) {{ typePrefix "Prepend" }}(n *{{.Struct}}) {
 `
 
 const ExtractFromSlice = `
+// Extract{{.NameRaw | camelize}} functions for extracting fields
 type Extract{{.NameRaw | camelize}} struct {
 {{ range $k,$c := .Columns }} {{$c.Name | camelize }} func() []{{$c.GetGoPrimitive false}}
 {{end}} }

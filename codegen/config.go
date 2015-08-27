@@ -18,7 +18,7 @@ import (
 	"go/build"
 	"os"
 
-	"github.com/corestoreio/csfw/codegen/tableToStruct/ttstpl"
+	"github.com/corestoreio/csfw/codegen/tableToStruct/internal/tpl"
 	"github.com/corestoreio/csfw/utils"
 )
 
@@ -50,7 +50,7 @@ type (
 		// copied from SQLQuery field and all tables receive the generated functions.
 		GenericsWhiteList string
 		// GenericsFunctions specify which functions you need in the whole package
-		GenericsFunctions ttstpl.Generics
+		GenericsFunctions tpl.Generics
 	}
 
 	// AttributeToStructMap is a map which points to the AttributeToStruct
@@ -235,7 +235,7 @@ var ConfigTableToStruct = TableToStructMap{
 					    ) GROUP BY TABLE_NAME;`,
 		EntityTypeCodes:   nil,
 		GenericsWhiteList: "SQLQuery",
-		GenericsFunctions: ttstpl.OptSQL | ttstpl.OptFindBy,
+		GenericsFunctions: tpl.OptSQL | tpl.OptFindBy,
 	},
 	"user": TableToStruct{
 		Package:           "user",
@@ -243,7 +243,7 @@ var ConfigTableToStruct = TableToStructMap{
 		SQLQuery:          `SHOW TABLES LIKE "{{tableprefix}}admin_user"`,
 		EntityTypeCodes:   nil,
 		GenericsWhiteList: "SQLQuery",
-		GenericsFunctions: ttstpl.OptAll,
+		GenericsFunctions: tpl.OptAll,
 	},
 	"config": TableToStruct{
 		Package:           "config",
@@ -251,7 +251,7 @@ var ConfigTableToStruct = TableToStructMap{
 		SQLQuery:          `SHOW TABLES LIKE "{{tableprefix}}core_config_data"`,
 		EntityTypeCodes:   nil,
 		GenericsWhiteList: "",
-		// GenericsFunctions: ttstpl.OptAll, not needed ... or @todo
+		// GenericsFunctions: tpl.OptAll, not needed ... or @todo
 	},
 	"directory": TableToStruct{
 		Package:    "directory",
@@ -261,7 +261,7 @@ var ConfigTableToStruct = TableToStructMap{
 					    TABLE_NAME LIKE '{{tableprefix}}directory%' GROUP BY TABLE_NAME;`,
 		EntityTypeCodes:   nil,
 		GenericsWhiteList: "SQLQuery",
-		GenericsFunctions: ttstpl.OptAll,
+		GenericsFunctions: tpl.OptAll,
 	},
 	"eav": TableToStruct{
 		Package:         "eav",
@@ -269,7 +269,7 @@ var ConfigTableToStruct = TableToStructMap{
 		SQLQuery:        `SHOW TABLES LIKE "{{tableprefix}}eav%"`,
 		EntityTypeCodes: nil,
 		//GenericsWhiteList: "SQLQuery", @todo
-		//GenericsFunctions: ttstpl.OptAll,
+		//GenericsFunctions: tpl.OptAll,
 	},
 	"store": TableToStruct{
 		Package:    "store",
@@ -281,9 +281,9 @@ var ConfigTableToStruct = TableToStructMap{
 			    	'{{tableprefix}}core_store_group','{{tableprefix}}store_group',
 			    	'{{tableprefix}}core_website','{{tableprefix}}store_website'
 			    ) GROUP BY TABLE_NAME;`,
-		EntityTypeCodes: nil,
-		//GenericsWhiteList: "SQLQuery", @todo not yet needed
-		//GenericsFunctions: ttstpl.OptAll,
+		EntityTypeCodes:   nil,
+		GenericsWhiteList: "SQLQuery",
+		GenericsFunctions: tpl.OptAll,
 	},
 	"catalog": TableToStruct{
 		// @todo figure out tables which are in both Magneto version present
@@ -302,7 +302,7 @@ var ConfigTableToStruct = TableToStructMap{
 					    TABLE_NAME NOT LIKE '{{tableprefix}}%idx%' AND
 					    TABLE_NAME NOT LIKE '{{tableprefix}}%tmp%' AND
 					    TABLE_NAME NOT LIKE '{{tableprefix}}%\_flat\_%' GROUP BY TABLE_NAME;`,
-		GenericsFunctions: ttstpl.OptAll,
+		GenericsFunctions: tpl.OptAll,
 	},
 	"customer": TableToStruct{
 		Package:           "customer",
@@ -310,7 +310,7 @@ var ConfigTableToStruct = TableToStructMap{
 		SQLQuery:          `SHOW TABLES LIKE "{{tableprefix}}customer%"`,
 		EntityTypeCodes:   []string{"customer", "customer_address"},
 		GenericsWhiteList: "SQLQuery",
-		GenericsFunctions: ttstpl.OptAll,
+		GenericsFunctions: tpl.OptAll,
 	},
 }
 

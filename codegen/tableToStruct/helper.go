@@ -21,7 +21,7 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/codegen"
-	"github.com/corestoreio/csfw/codegen/codecgen"
+	"github.com/corestoreio/csfw/codegen/tableToStruct/internal/codecgen"
 )
 
 var mapm1m2Mu sync.Mutex // protects map TableMapMagento1To2

@@ -35,9 +35,8 @@ func main() {
 	fmt.Printf("Goroutines: %d\tGo Version %s\n", runtime.NumGoroutine(), runtime.Version())
 	wg.Wait()
 
-	//	for _, ts := range codegen.ConfigTableToStruct {
-	//		// due to a race condition the codec generator must run after the newGenerator() calls
-	//		runCodec(ts.OutputFile.AppendName("_codec").String(), ts.OutputFile.String())
-	//	}
-
+	for _, ts := range codegen.ConfigTableToStruct {
+		// due to a race condition the codec generator must run after the newGenerator() calls
+		runCodec(ts.OutputFile.AppendName("_codec").String(), ts.OutputFile.String())
+	}
 }

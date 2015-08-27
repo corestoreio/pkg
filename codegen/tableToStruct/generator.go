@@ -15,21 +15,19 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
-	"os"
-	"strings"
-	"sync"
-
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
 	"path/filepath"
-
+	"strings"
+	"sync"
 	"text/template"
 
-	"bytes"
 	"github.com/corestoreio/csfw/codegen"
-	"github.com/corestoreio/csfw/codegen/tableToStruct/ttstpl"
+	"github.com/corestoreio/csfw/codegen/tableToStruct/internal/tpl"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
@@ -60,7 +58,7 @@ func newGenerator(tts codegen.TableToStruct, dbrConn *dbr.Connection, wg *sync.W
 	var err error
 	g.outfile, err = os.OpenFile(g.tts.OutputFile.String(), os.O_APPEND|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	codegen.LogFatal(err)
-	g.appendToFile(ttstpl.Copy, struct{ Package string }{Package: g.tts.Package}, nil)
+	g.appendToFile(tpl.Copy, struct{ Package string }{Package: g.tts.Package}, nil)
 
 	g.initTables()
 	return g
@@ -185,7 +183,7 @@ func (g *generator) runHeader() {
 		var name = getTableName(table)
 		data.Tables = append(data.Tables, Table{name, codegen.PrepareVar(g.tts.Package, name)})
 	}
-	g.appendToFile(ttstpl.Header, data, nil)
+	g.appendToFile(tpl.Header, data, nil)
 }
 
 func (g *generator) runTable() {
@@ -240,8 +238,11 @@ func (g *generator) runTable() {
 			},
 			"dbrType": func(c csdb.Column) string {
 				switch {
+				// order of the c.Is* functions matters ... :-|
 				case false == c.IsNull():
 					return ""
+				case c.IsBool():
+					return ".Bool" // dbr.NullBool
 				case c.IsString():
 					return ".String" // dbr.NullString
 				case c.IsMoney():
@@ -250,6 +251,8 @@ func (g *generator) runTable() {
 					return ".Float64" // dbr.NullFloat64
 				case c.IsInt():
 					return ".Int64" // dbr.NullInt64
+				case c.IsDate():
+					return ".Time" // dbr.NullTime
 				}
 				return ""
 			},
@@ -262,27 +265,27 @@ func (g *generator) runTable() {
 func (g *generator) getGenericTemplate(tableName string) string {
 	var finalTpl bytes.Buffer
 
-	finalTpl.WriteString(ttstpl.Type) // at least we need a type definition
+	finalTpl.WriteString(tpl.Type) // at least we need a type definition
 
 	if false == g.whiteListTables.Include(tableName) {
 		return finalTpl.String()
 	}
-	isAll := (g.tts.GenericsFunctions & ttstpl.OptAll) == ttstpl.OptAll
+	isAll := (g.tts.GenericsFunctions & tpl.OptAll) == tpl.OptAll
 
-	if isAll || (g.tts.GenericsFunctions&ttstpl.OptSQL) == ttstpl.OptSQL {
-		finalTpl.WriteString(ttstpl.SQL)
+	if isAll || (g.tts.GenericsFunctions&tpl.OptSQL) == tpl.OptSQL {
+		finalTpl.WriteString(tpl.SQL)
 	}
-	if isAll || (g.tts.GenericsFunctions&ttstpl.OptFindBy) == ttstpl.OptFindBy {
-		finalTpl.WriteString(ttstpl.FindBy)
+	if isAll || (g.tts.GenericsFunctions&tpl.OptFindBy) == tpl.OptFindBy {
+		finalTpl.WriteString(tpl.FindBy)
 	}
-	if isAll || (g.tts.GenericsFunctions&ttstpl.OptSort) == ttstpl.OptSort {
-		finalTpl.WriteString(ttstpl.Sort)
+	if isAll || (g.tts.GenericsFunctions&tpl.OptSort) == tpl.OptSort {
+		finalTpl.WriteString(tpl.Sort)
 	}
-	if isAll || (g.tts.GenericsFunctions&ttstpl.OptSliceFunctions) == ttstpl.OptSliceFunctions {
-		finalTpl.WriteString(ttstpl.SliceFunctions)
+	if isAll || (g.tts.GenericsFunctions&tpl.OptSliceFunctions) == tpl.OptSliceFunctions {
+		finalTpl.WriteString(tpl.SliceFunctions)
 	}
-	if isAll || (g.tts.GenericsFunctions&ttstpl.OptExtractFromSlice) == ttstpl.OptExtractFromSlice {
-		finalTpl.WriteString(ttstpl.ExtractFromSlice)
+	if isAll || (g.tts.GenericsFunctions&tpl.OptExtractFromSlice) == tpl.OptExtractFromSlice {
+		finalTpl.WriteString(tpl.ExtractFromSlice)
 	}
 	return finalTpl.String()
 }
@@ -298,5 +301,5 @@ func (g *generator) runEAValueTables() {
 		TypeCodeValueTables: g.eavValueTables,
 	}
 
-	g.appendToFile(ttstpl.EAValueStructure, data, nil)
+	g.appendToFile(tpl.EAValueStructure, data, nil)
 }
