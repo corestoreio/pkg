@@ -45,6 +45,14 @@ func (e *Error) Error() string {
 	return e.msg
 }
 
+// Dbr*Cb are four callbacks to allow changes to the underlying SQL queries
+type (
+	DbrSelectCb func(*dbr.SelectBuilder) *dbr.SelectBuilder
+	DbrInsertCb func(*dbr.InsertBuilder) *dbr.InsertBuilder
+	DbrUpdateCb func(*dbr.UpdateBuilder) *dbr.UpdateBuilder
+	DbrDeleteCb func(*dbr.DeleteBuilder) *dbr.DeleteBuilder
+)
+
 // LoadSlice loads the slice dest with the table structure from tsr TableStructurer and table index ti.
 // Returns the number of loaded rows and nil or 0 and an error. Slice must be a pointer to structs.
 func LoadSlice(dbrSess dbr.SessionRunner, tsr Manager, ti Index, dest interface{}, cbs ...DbrSelectCb) (int, error) {

@@ -76,8 +76,6 @@ type (
 		mu       sync.RWMutex
 		ts       map[Index]*Table
 	}
-
-	DbrSelectCb func(*dbr.SelectBuilder) *dbr.SelectBuilder
 )
 
 var _ Manager = (*TableManager)(nil)
