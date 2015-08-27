@@ -33,7 +33,7 @@ import (
 )
 
 type generator struct {
-	tts            *codegen.TableToStruct
+	tts            codegen.TableToStruct
 	dbrConn        *dbr.Connection
 	outfile        *os.File
 	tables         []string
@@ -43,7 +43,7 @@ type generator struct {
 	existingMethodSets *duplicateChecker
 }
 
-func newGenerator(tts *codegen.TableToStruct, dbrConn *dbr.Connection, wg *sync.WaitGroup) *generator {
+func newGenerator(tts codegen.TableToStruct, dbrConn *dbr.Connection, wg *sync.WaitGroup) *generator {
 	wg.Add(1)
 	g := &generator{
 		tts:                tts,
