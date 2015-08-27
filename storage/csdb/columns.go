@@ -204,11 +204,7 @@ func (c Column) IsBool() bool {
 	if len(c.Field.String) < 3 {
 		return false
 	}
-	// @todo pack those three Contains() into one.
-	return strings.Contains(c.Field.String, "used_") ||
-		strings.Contains(c.Field.String, "is_") ||
-		strings.Contains(c.Field.String, "has_") ||
-		c.Field.String == "increment_per_store"
+	return utils.StrContains(c.Field.String, "used_", "is_", "has_", "increment_per_store")
 }
 
 // IsInt checks if a column contains a MySQL int type, independent from its length.
@@ -218,17 +214,17 @@ func (c Column) IsInt() bool {
 
 // IsString checks if a column contains a MySQL varchar or text type.
 func (c Column) IsString() bool {
-	return strings.Contains(c.Type.String, "varchar") || strings.Contains(c.Type.String, "text")
+	return utils.StrContains(c.Type.String, "char", "text")
 }
 
 // IsDate checks if a column contains a MySQL timestamp or date type.
 func (c Column) IsDate() bool {
-	return strings.Contains(c.Type.String, "timestamp") || strings.Contains(c.Type.String, "date")
+	return utils.StrStartsWith(c.Type.String, "time", "date")
 }
 
 // IsFloat checks if a column contains a MySQL decimal or float type.
 func (c Column) IsFloat() bool {
-	return strings.Contains(c.Type.String, "decimal") || strings.Contains(c.Type.String, "float")
+	return utils.StrStartsWith(c.Type.String, "decimal", "float", "double")
 }
 
 // IsMoney checks if a column contains a MySQL decimal or float type and the
