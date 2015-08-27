@@ -12,59 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package ttstpl
 
 // @todo hide password and other sensitive fields in JSON struct tags
 
-const tplCopyPkg = `// Copyright 2015, Cyrill @ Schumacher.fm and the CoreStore contributors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-package {{ .Package }}
-`
-
-const tplHeader = `
-// Auto generated via tableToStruct
-
-import (
-	"sort"
-	"time"
-    {{ if .HasTypeCodeValueTables }}
-	"github.com/corestoreio/csfw/eav"{{end}}
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/storage/money"
-)
-
-var _ = (*time.Time)(nil)
-var _ = (*money.Currency)(nil)
-
-// TableIndex... is the index to a table. These constants are guaranteed
-// to stay the same for all Magento versions. Please access a table via this
-// constant instead of the raw table name. TableIndex iotas must start with 0.
-const (
-    {{ range $k,$v := .Tables }}TableIndex{{$v.Name}} {{ if eq $k 0 }}csdb.Index = iota{{ end }} // Table: {{$v.NameRaw}}
-{{ end }}	TableIndexZZZ  // the maximum index, which is not available.
-)
-
-func init(){
-    TableCollection = csdb.NewTableManager(
-    {{ range $k,$v := .Tables }} csdb.AddTableByName(TableIndex{{.Name}}, "{{.NameRaw}}"),
-    {{ end }} )
-    // Don't forget to call TableCollection.ReInit(...) in your code to load the column definitions.
-}`
-
-const tplTable = `
+const Type = `
 // {{.Struct}} and {{.Slice}}, a type for DB table {{ .NameRaw }}
 type (
     {{.Slice}} []*{{.Struct}}
@@ -72,9 +24,22 @@ type (
         {{ range .GoColumns }}{{.GoName}} {{.GoType}} {{ $.Tick }}db:"{{.Field.String}}" json:",omitempty"{{ $.Tick }} {{.Comment}}
         {{ end }} }
 )
+`
 
-var _ sort.Interface = (*{{.Slice}})(nil)
+// Generics defines the available templates
+type Generics int
 
+// Options to be used to define which generic functions you need in a package.
+const (
+	OptSQL Generics = 1 << iota
+	OptFindBy
+	OptSort
+	OptSliceFunctions
+	OptExtractFromSlice
+	OptAll = OptSQL | OptFindBy | OptSort | OptSliceFunctions | OptExtractFromSlice
+)
+
+const SQL = `
 // {{ typePrefix "SQLSelect" }} fills this slice with data from the database
 func (s *{{.Slice}}) {{ typePrefix "SQLSelect" }}(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
 	return csdb.LoadSlice(dbrSess, TableCollection, TableIndex{{.NameRaw | prepareVar}}, &(*s), cbs...)
@@ -94,7 +59,9 @@ func (s *{{.Slice}}) {{ typePrefix "SQLUpdate" }}(dbrSess dbr.SessionRunner, cbs
 func (s *{{.Slice}}) {{ typePrefix "SQLDelete" }}(dbrSess dbr.SessionRunner, cbs ...csdb.DbrDeleteCb) (int, error) {
 	return 0, nil
 }
+`
 
+const FindBy = `
 {{if (.FindByPk) ne ""}}
 // {{ typePrefix .FindByPk }} searches the primary keys and returns a *{{.Struct}} if found or an error
 func (s {{.Slice}}) {{ typePrefix .FindByPk }}(
@@ -121,6 +88,9 @@ func (s {{$.Slice}}) {{ findBy $c.Name | typePrefix }} ( {{ $c.Name }} {{$c.GetG
 	return nil, csdb.NewError("ID not found in {{$.Slice}}")
 }
 {{ end }}
+`
+
+const Sort = `var _ sort.Interface = (*{{.Slice}})(nil)
 
 // {{ typePrefix "Len" }} returns the length and  will satisfy the sort.Interface
 func (s {{.Slice}}) {{ typePrefix "Len" }}() int { return len(s) }
@@ -136,8 +106,9 @@ func (s {{.Slice}}) {{ typePrefix "Swap" }}(i, j int) { s[i], s[j] = s[j], s[i] 
 
 // {{ typePrefix "Sort" }} will sort {{.Slice}}
 func (s {{.Slice}}) {{ typePrefix "Sort" }}() { sort.Sort(s) }
+`
 
-// {{ typePrefix "FilterThis" }} filters the current slice by predicate f without memory allocation
+const SliceFunctions = `// {{ typePrefix "FilterThis" }} filters the current slice by predicate f without memory allocation
 func (s {{.Slice}}) {{ typePrefix "FilterThis" }} (f func(*{{.Struct}}) bool) {{.Slice}} {
 	b := s[:0]
 	for _, x := range s {
@@ -219,7 +190,9 @@ func (s *{{.Slice}}) {{ typePrefix "Append" }}(n ...*{{.Struct}}) {
 func (s *{{.Slice}}) {{ typePrefix "Prepend" }}(n *{{.Struct}}) {
 	s.Insert(n, 0)
 }
+`
 
+const ExtractFromSlice = `
 type Extract{{.NameRaw | camelize}} struct {
 {{ range $k,$c := .Columns }} {{$c.Name | camelize }} func() []{{$c.GetGoPrimitive false}}
 {{end}} }
@@ -236,28 +209,4 @@ func (s {{$.Slice}}) {{ typePrefix "Extract" }}() Extract{{.NameRaw | camelize}}
 		},
 		{{end}} }
 }
-
 `
-
-const tplEAValues = `
-{{range $typeCode,$valueTables := .TypeCodeValueTables}}
-// Get{{ $typeCode | prepareVar }}ValueStructure returns for an EAV index the table structure.
-// Important also if you have custom value tables
-func Get{{ $typeCode | prepareVar }}ValueStructure(i eav.ValueIndex) (*csdb.Table, error) {
-	switch i {
-	{{range $vt,$v := $valueTables }}case eav.EntityType{{ $v | prepareVar }}:
-		return TableCollection.Structure(TableIndex{{ $vt | prepareVar }})
-    {{end}}	}
-	return nil, eav.ErrEntityTypeValueNotFound
-}
-{{end}}
-`
-
-//// IDs returns an Int64Slice with all primary key ids
-//func (s {{.Slice}}) IDs() utils.Int64Slice {
-//id := make(utils.Int64Slice, len(s))
-//for i, r := range s {
-//id[i] = r.{{ .primary key }}
-//}
-//return id
-//}

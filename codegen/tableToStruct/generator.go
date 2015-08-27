@@ -27,19 +27,23 @@ import (
 
 	"text/template"
 
+	"bytes"
 	"github.com/corestoreio/csfw/codegen"
+	"github.com/corestoreio/csfw/codegen/tableToStruct/ttstpl"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/utils"
 )
 
 type generator struct {
-	tts            codegen.TableToStruct
-	dbrConn        *dbr.Connection
-	outfile        *os.File
-	tables         []string
-	eavValueTables codegen.TypeCodeValueTable
-	wg             *sync.WaitGroup
-	// existingMethodSets contains all existing method sets for the Table* types
+	tts             codegen.TableToStruct
+	dbrConn         *dbr.Connection
+	outfile         *os.File
+	tables          []string          // all available tables for which we should at least generate a type definition
+	whiteListTables utils.StringSlice // table name in this slice is allowed for generic functions
+	eavValueTables  codegen.TypeCodeValueTable
+	wg              *sync.WaitGroup
+	// existingMethodSets contains all existing method sets from a package for the Table* types
 	existingMethodSets *duplicateChecker
 }
 
@@ -56,9 +60,9 @@ func newGenerator(tts codegen.TableToStruct, dbrConn *dbr.Connection, wg *sync.W
 	var err error
 	g.outfile, err = os.OpenFile(g.tts.OutputFile.String(), os.O_APPEND|os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
 	codegen.LogFatal(err)
-	g.appendToFile(tplCopyPkg, struct{ Package string }{Package: g.tts.Package}, nil)
+	g.appendToFile(ttstpl.Copy, struct{ Package string }{Package: g.tts.Package}, nil)
 
-	g.tables, g.eavValueTables = g.initTables()
+	g.initTables()
 	return g
 }
 
@@ -129,25 +133,36 @@ func (g *generator) appendToFile(tpl string, data interface{}, addFM template.Fu
 	codegen.LogFatal(g.outfile.Sync()) // flush immediately to disk to prevent a race condition
 }
 
-func (g *generator) initTables() ([]string, codegen.TypeCodeValueTable) {
-	tables, err := codegen.GetTables(g.dbrConn.DB, codegen.ReplaceTablePrefix(g.tts.SQLQuery))
+func (g *generator) initTables() {
+	var err error
+	g.tables, err = codegen.GetTables(g.dbrConn.DB, codegen.ReplaceTablePrefix(g.tts.SQLQuery))
 	codegen.LogFatal(err)
 
-	var eavValueTables codegen.TypeCodeValueTable
 	if len(g.tts.EntityTypeCodes) > 0 && g.tts.EntityTypeCodes[0] != "" {
-		var err error
-		eavValueTables, err = codegen.GetEavValueTables(g.dbrConn, g.tts.EntityTypeCodes)
+		g.eavValueTables, err = codegen.GetEavValueTables(g.dbrConn, g.tts.EntityTypeCodes)
 		codegen.LogFatal(err)
 
-		for _, vTables := range eavValueTables {
+		for _, vTables := range g.eavValueTables {
 			for t := range vTables {
-				if false == isDuplicate(tables, t) {
-					tables = append(tables, t)
+				if false == isDuplicate(g.tables, t) {
+					g.tables = append(g.tables, t)
 				}
 			}
 		}
 	}
-	return tables, eavValueTables
+
+	if g.tts.GenericsWhiteList == "" {
+		return // do nothing because nothing defined, neither custom SQL nor to copy from SQLQuery field
+	}
+	if false == strings.Contains(strings.ToLower(g.tts.GenericsWhiteList), "select") {
+		// copy result from tables because select key word not found
+		g.whiteListTables = g.tables
+		return
+	}
+
+	g.whiteListTables, err = codegen.GetTables(g.dbrConn.DB, codegen.ReplaceTablePrefix(g.tts.GenericsWhiteList))
+	codegen.LogFatal(err)
+
 }
 
 func (g *generator) runHeader() {
@@ -170,7 +185,7 @@ func (g *generator) runHeader() {
 		var name = getTableName(table)
 		data.Tables = append(data.Tables, Table{name, codegen.PrepareVar(g.tts.Package, name)})
 	}
-	g.appendToFile(tplHeader, data, nil)
+	g.appendToFile(ttstpl.Header, data, nil)
 }
 
 func (g *generator) runTable() {
@@ -240,8 +255,36 @@ func (g *generator) runTable() {
 			},
 		}
 
-		g.appendToFile(tplTable, data, tplFuncs)
+		g.appendToFile(g.getGenericTemplate(table), data, tplFuncs)
 	}
+}
+
+func (g *generator) getGenericTemplate(tableName string) string {
+	var finalTpl bytes.Buffer
+
+	finalTpl.WriteString(ttstpl.Type) // at least we need a type definition
+
+	if false == g.whiteListTables.Include(tableName) {
+		return finalTpl.String()
+	}
+	isAll := (g.tts.GenericsFunctions & ttstpl.OptAll) == ttstpl.OptAll
+
+	if isAll || (g.tts.GenericsFunctions&ttstpl.OptSQL) == ttstpl.OptSQL {
+		finalTpl.WriteString(ttstpl.SQL)
+	}
+	if isAll || (g.tts.GenericsFunctions&ttstpl.OptFindBy) == ttstpl.OptFindBy {
+		finalTpl.WriteString(ttstpl.FindBy)
+	}
+	if isAll || (g.tts.GenericsFunctions&ttstpl.OptSort) == ttstpl.OptSort {
+		finalTpl.WriteString(ttstpl.Sort)
+	}
+	if isAll || (g.tts.GenericsFunctions&ttstpl.OptSliceFunctions) == ttstpl.OptSliceFunctions {
+		finalTpl.WriteString(ttstpl.SliceFunctions)
+	}
+	if isAll || (g.tts.GenericsFunctions&ttstpl.OptExtractFromSlice) == ttstpl.OptExtractFromSlice {
+		finalTpl.WriteString(ttstpl.ExtractFromSlice)
+	}
+	return finalTpl.String()
 }
 
 func (g *generator) runEAValueTables() {
@@ -255,5 +298,5 @@ func (g *generator) runEAValueTables() {
 		TypeCodeValueTables: g.eavValueTables,
 	}
 
-	g.appendToFile(tplEAValues, data, nil)
+	g.appendToFile(ttstpl.EAValueStructure, data, nil)
 }
