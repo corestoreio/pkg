@@ -212,6 +212,8 @@ func (g *generator) runTable() {
 
 		tplFuncs := template.FuncMap{
 			"typePrefix": func(name string) string {
+				// if the method already exists in package then add the prefix parent
+				// to avoid duplicate function names.
 				search := data.Slice + name
 				if g.existingMethodSets.has(search) {
 					return MethodRecvPrefix + name
@@ -227,6 +229,8 @@ func (g *generator) runTable() {
 					return ""
 				case c.IsString():
 					return ".String" // dbr.NullString
+				case c.IsMoney():
+					return "" // money.Currency
 				case c.IsFloat():
 					return ".Float64" // dbr.NullFloat64
 				case c.IsInt():
