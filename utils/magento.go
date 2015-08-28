@@ -14,40 +14,32 @@
 
 package utils
 
-import "strings"
-
-// MagentoX constants are returned by function IsMagento()
-const (
-	Magento1 int = 1 << iota
-	Magento2
-)
-
-// IsMagento detects by reading the list of tables which Magento version you
+// MagentoVersion detects by reading the list of tables which Magento version you
 // are running. It searches for the tables core_store, core_website,
 // core_store_group and api_user for Magento v1.
 // It searches for the tables integration, store_website, store_group
-// and authorization_role for Magento v2. Returns 0 if nothing found.
-func IsMagento(tableList []string) int {
+// and authorization_role for Magento v2. Prefix is the prefix for each table.
+func MagentoVersion(prefix string, tableList []string) (One, Two bool) {
 	var v1 = [4]string{"core_store", "core_website", "core_store_group", "api_user"}
 	var v2 = [4]string{"integration", "store_website", "store_group", "authorization_role"}
 	lv1 := len(v1)
 	f1, f2 := 0, 0
 	for _, table := range tableList {
 		for i := 0; i < lv1; i++ {
-			if strings.Contains(table, v1[i]) {
+			if table == prefix+v1[i] {
 				f1++
 			}
-			if strings.Contains(table, v2[i]) {
+			if table == prefix+v2[i] {
 				f2++
 			}
 		}
 
 		if f1 == lv1 {
-			return Magento1
+			One = true
 		}
 		if f2 == lv1 {
-			return Magento2
+			Two = true
 		}
 	}
-	return 0
+	return
 }
