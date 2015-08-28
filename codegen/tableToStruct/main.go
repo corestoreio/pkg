@@ -15,28 +15,37 @@
 package main
 
 import (
-	"fmt"
 	"runtime"
 	"sync"
 
 	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/utils/log"
 )
+
+func init() {
+	log.Set(
+		log.NewStdLogger(),
+	)
+}
 
 func main() {
 	dbc, err := csdb.Connect()
 	codegen.LogFatal(err)
 	defer dbc.Close()
 	var wg sync.WaitGroup
-	fmt.Printf("CPUs: %d\tGoroutines: %d\n", runtime.NumCPU(), runtime.NumGoroutine())
+	log.Info("Stats", "Goroutines", runtime.NumGoroutine(), "CPUs", runtime.NumCPU())
+
 	for _, tStruct := range codegen.ConfigTableToStruct {
 		go newGenerator(tStruct, dbc, &wg).run()
 	}
-	fmt.Printf("Goroutines: %d\tGo Version %s\n", runtime.NumGoroutine(), runtime.Version())
+	numRoutines := runtime.NumGoroutine()
 	wg.Wait()
+	log.Info("Stats", "Goroutines", numRoutines, "Go Version", runtime.Version())
 
-	for _, ts := range codegen.ConfigTableToStruct {
-		// due to a race condition the codec generator must run after the newGenerator() calls
-		runCodec(ts.OutputFile.AppendName("_codec").String(), ts.OutputFile.String())
-	}
+	// @todo
+	//	for _, ts := range codegen.ConfigTableToStruct {
+	//		// due to a race condition the codec generator must run after the newGenerator() calls
+	//		runCodec(ts.OutputFile.AppendName("_codec").String(), ts.OutputFile.String())
+	//	}
 }

@@ -26,14 +26,18 @@ import (
 	"sync"
 	"text/template"
 
+	"errors"
 	"github.com/corestoreio/csfw/codegen"
-	"github.com/corestoreio/csfw/codegen/tableToStruct/internal/tpl"
+	"github.com/corestoreio/csfw/codegen/tableToStruct/tpl"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/utils/log"
+	"time"
 )
 
 type generator struct {
+	start           time.Time
 	tts             codegen.TableToStruct
 	dbrConn         *dbr.Connection
 	outfile         *os.File
@@ -43,11 +47,14 @@ type generator struct {
 	wg              *sync.WaitGroup
 	// existingMethodSets contains all existing method sets from a package for the Table* types
 	existingMethodSets *duplicateChecker
+	isMagento1         bool
+	isMagento2         bool
 }
 
 func newGenerator(tts codegen.TableToStruct, dbrConn *dbr.Connection, wg *sync.WaitGroup) *generator {
 	wg.Add(1)
 	g := &generator{
+		start:              time.Now(),
 		tts:                tts,
 		dbrConn:            dbrConn,
 		wg:                 wg,
@@ -60,11 +67,13 @@ func newGenerator(tts codegen.TableToStruct, dbrConn *dbr.Connection, wg *sync.W
 	codegen.LogFatal(err)
 	g.appendToFile(tpl.Copy, struct{ Package string }{Package: g.tts.Package}, nil)
 
+	g.initVersion()
 	g.initTables()
 	return g
 }
 
 func (g *generator) run() {
+	defer log.Info("Stats", "Package", g.tts.Package, "Duration", time.Since(g.start).String())
 	defer g.wg.Done()
 	g.runHeader()
 	g.runTable()
@@ -131,9 +140,19 @@ func (g *generator) appendToFile(tpl string, data interface{}, addFM template.Fu
 	codegen.LogFatal(g.outfile.Sync()) // flush immediately to disk to prevent a race condition
 }
 
+func (g *generator) initVersion() {
+	mageTables, err := codegen.GetTables(g.dbrConn.NewSession())
+	codegen.LogFatal(err)
+	g.isMagento1, g.isMagento2 = utils.MagentoVersion(codegen.TablePrefix, mageTables)
+
+	if g.isMagento1 == g.isMagento2 {
+		codegen.LogFatal(errors.New("Cannot detect your Magento version"))
+	}
+}
+
 func (g *generator) initTables() {
 	var err error
-	g.tables, err = codegen.GetTables(g.dbrConn.DB, codegen.ReplaceTablePrefix(g.tts.SQLQuery))
+	g.tables, err = codegen.GetTables(g.dbrConn.NewSession(), codegen.ReplaceTablePrefix(g.tts.SQLQuery))
 	codegen.LogFatal(err)
 
 	if len(g.tts.EntityTypeCodes) > 0 && g.tts.EntityTypeCodes[0] != "" {
@@ -152,15 +171,14 @@ func (g *generator) initTables() {
 	if g.tts.GenericsWhiteList == "" {
 		return // do nothing because nothing defined, neither custom SQL nor to copy from SQLQuery field
 	}
-	if false == strings.Contains(strings.ToLower(g.tts.GenericsWhiteList), "select") {
+	if false == dbr.Stmt.IsSelect(g.tts.GenericsWhiteList) {
 		// copy result from tables because select key word not found
 		g.whiteListTables = g.tables
 		return
 	}
 
-	g.whiteListTables, err = codegen.GetTables(g.dbrConn.DB, codegen.ReplaceTablePrefix(g.tts.GenericsWhiteList))
+	g.whiteListTables, err = codegen.GetTables(g.dbrConn.NewSession(), codegen.ReplaceTablePrefix(g.tts.GenericsWhiteList))
 	codegen.LogFatal(err)
-
 }
 
 func (g *generator) runHeader() {
@@ -180,7 +198,7 @@ func (g *generator) runHeader() {
 	}
 
 	for _, table := range g.tables {
-		var name = getTableName(table)
+		var name = g.getMagento2TableName(table)
 		data.Tables = append(data.Tables, Table{name, codegen.PrepareVar(g.tts.Package, name)})
 	}
 	g.appendToFile(tpl.Header, data, nil)
@@ -207,7 +225,8 @@ func (g *generator) runTable() {
 		codegen.LogFatal(err)
 		codegen.LogFatal(columns.MapSQLToGoDBRType())
 
-		var name = getTableName(table)
+		var name = g.getMagento2TableName(table)
+
 		data := OneTable{
 			Package:   g.tts.Package,
 			Tick:      "`",
@@ -302,4 +321,20 @@ func (g *generator) runEAValueTables() {
 	}
 
 	g.appendToFile(tpl.EAValueStructure, data, nil)
+}
+
+var mapm1m2Mu sync.Mutex // protects map TableMapMagento1To2 ... code smell global variable ...
+
+func (g *generator) getMagento2TableName(table string) (name string) {
+	mapm1m2Mu.Lock()
+	defer mapm1m2Mu.Unlock()
+	name = table
+	if g.isMagento1 && !g.isMagento2 {
+		return
+	}
+	if mappedName, ok := codegen.TableMapMagento1To2[strings.Replace(table, codegen.TablePrefix, "", 1)]; ok {
+		name = mappedName
+	}
+
+	return
 }

@@ -17,14 +17,12 @@ package main
 import (
 	"fmt"
 	"regexp"
-	"strings"
 	"sync"
 
 	"github.com/corestoreio/csfw/codegen"
-	"github.com/corestoreio/csfw/codegen/tableToStruct/internal/codecgen"
+	"github.com/corestoreio/csfw/codegen/tableToStruct/codecgen"
 )
 
-var mapm1m2Mu sync.Mutex // protects map TableMapMagento1To2
 const MethodRecvPrefix = "parent"
 
 // TypePrefix of the generated types e.g. TableStoreSlice, TableStore ...
@@ -100,14 +98,4 @@ func isDuplicate(sl []string, st string) bool {
 		}
 	}
 	return false
-}
-
-func getTableName(table string) (name string) {
-	mapm1m2Mu.Lock()
-	name = table
-	if mappedName, ok := codegen.TableMapMagento1To2[strings.Replace(table, codegen.TablePrefix, "", 1)]; ok {
-		name = mappedName
-	}
-	mapm1m2Mu.Unlock()
-	return
 }
