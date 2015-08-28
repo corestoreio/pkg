@@ -67,7 +67,9 @@ func LoadSlice(dbrSess dbr.SessionRunner, tsr Manager, ti Index, dest interface{
 	}
 
 	for _, cb := range cbs {
-		sb = cb(sb)
+		if cb != nil {
+			sb = cb(sb)
+		}
 	}
 	return sb.LoadStructs(dest)
 }
