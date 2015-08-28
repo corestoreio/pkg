@@ -52,19 +52,26 @@ func TestGetTables(t *testing.T) {
 		expCount int
 	}{
 		{
-			query:    "SHOW TABLES LIKE 'catalog_product_entity%'",
+			query:    "catalog_product_entity%",
 			expErr:   false,
 			expCount: 11,
 		},
 		{
-			query:    "SHOW TABLES LIK ' catalog_product_entity",
+			query: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
+						    TABLE_SCHEMA = DATABASE() AND
+						    TABLE_NAME LIKE '%directory%' GROUP BY TABLE_NAME;`,
+			expErr:   false,
+			expCount: 11,
+		},
+		{
+			query:    "' catalog_product_entity",
 			expErr:   true,
 			expCount: 0,
 		},
 	}
 
 	for _, test := range tests {
-		tables, err := GetTables(dbc.DB, test.query)
+		tables, err := GetTables(dbc.NewSession(), test.query)
 		if test.expErr {
 			assert.Error(t, err)
 		}

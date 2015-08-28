@@ -18,7 +18,7 @@ import (
 	"go/build"
 	"os"
 
-	"github.com/corestoreio/csfw/codegen/tableToStruct/internal/tpl"
+	"github.com/corestoreio/csfw/codegen/tableToStruct/tpl"
 	"github.com/corestoreio/csfw/utils"
 )
 
@@ -38,7 +38,7 @@ type (
 		// The file extension .go will be added automatically.
 		OutputFile OFile
 		// QueryString SQL query to filter all the tables which you desire, e.g.
-		// SHOW TABLES LIKE 'catalog\_%'
+		// catalog\_% OR select table from information_schema ...
 		// This query must specify all tables you need for a package.
 		SQLQuery string
 		// EntityTypeCodes If provided then eav_entity_type.value_table_prefix
@@ -228,11 +228,11 @@ var ConfigTableToStruct = TableToStructMap{
 		Package:    "authorization",
 		OutputFile: BasePath.AppendDir("authorization", "generated_tables"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
-					    TABLE_SCHEMA = DATABASE() AND
-					    TABLE_NAME IN (
-					    	'{{tableprefix}}authorization_role','{{tableprefix}}admin_role',
-					    	'{{tableprefix}}authorization_rule','{{tableprefix}}admin_rule'
-					    ) GROUP BY TABLE_NAME;`,
+						TABLE_SCHEMA = DATABASE() AND
+						TABLE_NAME IN (
+							'{{tableprefix}}authorization_role','{{tableprefix}}admin_role',
+							'{{tableprefix}}authorization_rule','{{tableprefix}}admin_rule'
+						) GROUP BY TABLE_NAME;`,
 		EntityTypeCodes:   nil,
 		GenericsWhiteList: "SQLQuery",
 		GenericsFunctions: tpl.OptSQL | tpl.OptFindBy,
@@ -240,7 +240,7 @@ var ConfigTableToStruct = TableToStructMap{
 	"user": TableToStruct{
 		Package:           "user",
 		OutputFile:        BasePath.AppendDir("user", "generated_tables"),
-		SQLQuery:          `SHOW TABLES LIKE "{{tableprefix}}admin_user"`,
+		SQLQuery:          `{{tableprefix}}admin_user`,
 		EntityTypeCodes:   nil,
 		GenericsWhiteList: "SQLQuery",
 		GenericsFunctions: tpl.OptAll,
@@ -248,7 +248,7 @@ var ConfigTableToStruct = TableToStructMap{
 	"config": TableToStruct{
 		Package:           "config",
 		OutputFile:        BasePath.AppendDir("config", "generated_tables"),
-		SQLQuery:          `SHOW TABLES LIKE "{{tableprefix}}core_config_data"`,
+		SQLQuery:          `{{tableprefix}}core_config_data`,
 		EntityTypeCodes:   nil,
 		GenericsWhiteList: "",
 		// GenericsFunctions: tpl.OptAll, not needed ... or @todo
@@ -257,8 +257,8 @@ var ConfigTableToStruct = TableToStructMap{
 		Package:    "directory",
 		OutputFile: BasePath.AppendDir("directory", "generated_tables"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
-					    TABLE_SCHEMA = DATABASE() AND
-					    TABLE_NAME LIKE '{{tableprefix}}directory%' GROUP BY TABLE_NAME;`,
+						TABLE_SCHEMA = DATABASE() AND
+						TABLE_NAME LIKE '{{tableprefix}}directory%' GROUP BY TABLE_NAME;`,
 		EntityTypeCodes:   nil,
 		GenericsWhiteList: "SQLQuery",
 		GenericsFunctions: tpl.OptAll,
@@ -266,7 +266,7 @@ var ConfigTableToStruct = TableToStructMap{
 	"eav": TableToStruct{
 		Package:         "eav",
 		OutputFile:      BasePath.AppendDir("eav", "generated_tables"),
-		SQLQuery:        `SHOW TABLES LIKE "{{tableprefix}}eav%"`,
+		SQLQuery:        `{{tableprefix}}eav%`,
 		EntityTypeCodes: nil,
 		//GenericsWhiteList: "SQLQuery", @todo
 		//GenericsFunctions: tpl.OptAll,
@@ -275,12 +275,12 @@ var ConfigTableToStruct = TableToStructMap{
 		Package:    "store",
 		OutputFile: BasePath.AppendDir("store", "generated_tables"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
-			    TABLE_SCHEMA = DATABASE() AND
-			    TABLE_NAME IN (
-			    	'{{tableprefix}}core_store','{{tableprefix}}store',
-			    	'{{tableprefix}}core_store_group','{{tableprefix}}store_group',
-			    	'{{tableprefix}}core_website','{{tableprefix}}store_website'
-			    ) GROUP BY TABLE_NAME;`,
+					TABLE_SCHEMA = DATABASE() AND
+					TABLE_NAME IN (
+						'{{tableprefix}}core_store','{{tableprefix}}store',
+						'{{tableprefix}}core_store_group','{{tableprefix}}store_group',
+						'{{tableprefix}}core_website','{{tableprefix}}store_website'
+					) GROUP BY TABLE_NAME;`,
 		EntityTypeCodes:   nil,
 		GenericsWhiteList: "SQLQuery",
 		GenericsFunctions: tpl.OptAll,
@@ -290,24 +290,24 @@ var ConfigTableToStruct = TableToStructMap{
 		Package:    "catalog",
 		OutputFile: BasePath.AppendDir("catalog", "generated_tables"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
-					    TABLE_SCHEMA = DATABASE() AND
-					    (TABLE_NAME LIKE '{{tableprefix}}catalog\_%' OR TABLE_NAME LIKE '{{tableprefix}}catalogindex%' ) AND
-					    TABLE_NAME NOT LIKE '{{tableprefix}}%bundle%' AND
-					    TABLE_NAME NOT LIKE '{{tableprefix}}%\_flat\_%' GROUP BY TABLE_NAME;`,
+						TABLE_SCHEMA = DATABASE() AND
+						(TABLE_NAME LIKE '{{tableprefix}}catalog\_%' OR TABLE_NAME LIKE '{{tableprefix}}catalogindex%' ) AND
+						TABLE_NAME NOT LIKE '{{tableprefix}}%bundle%' AND
+						TABLE_NAME NOT LIKE '{{tableprefix}}%\_flat\_%' GROUP BY TABLE_NAME;`,
 		EntityTypeCodes: []string{"catalog_category", "catalog_product"},
 		GenericsWhiteList: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
-					    TABLE_SCHEMA = DATABASE() AND
-					    (TABLE_NAME LIKE '{{tableprefix}}catalog\_%' OR TABLE_NAME LIKE '{{tableprefix}}catalogindex%' ) AND
-					    TABLE_NAME NOT LIKE '{{tableprefix}}%bundle%' AND
-					    TABLE_NAME NOT LIKE '{{tableprefix}}%idx%' AND
-					    TABLE_NAME NOT LIKE '{{tableprefix}}%tmp%' AND
-					    TABLE_NAME NOT LIKE '{{tableprefix}}%\_flat\_%' GROUP BY TABLE_NAME;`,
+								TABLE_SCHEMA = DATABASE() AND
+								(TABLE_NAME LIKE '{{tableprefix}}catalog\_%' OR TABLE_NAME LIKE '{{tableprefix}}catalogindex%' ) AND
+								TABLE_NAME NOT LIKE '{{tableprefix}}%bundle%' AND
+								TABLE_NAME NOT LIKE '{{tableprefix}}%idx%' AND
+								TABLE_NAME NOT LIKE '{{tableprefix}}%tmp%' AND
+								TABLE_NAME NOT LIKE '{{tableprefix}}%\_flat\_%' GROUP BY TABLE_NAME;`,
 		GenericsFunctions: tpl.OptAll,
 	},
 	"customer": TableToStruct{
 		Package:           "customer",
 		OutputFile:        BasePath.AppendDir("customer", "generated_tables"),
-		SQLQuery:          `SHOW TABLES LIKE "{{tableprefix}}customer%"`,
+		SQLQuery:          `{{tableprefix}}customer%`,
 		EntityTypeCodes:   []string{"customer", "customer_address"},
 		GenericsWhiteList: "SQLQuery",
 		GenericsFunctions: tpl.OptAll,

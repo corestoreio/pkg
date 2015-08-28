@@ -72,12 +72,23 @@ func (m TypeCodeValueTable) Empty() bool {
 	return len(m) < 1 || ok
 }
 
-// GetTables returns all tables from a database which starts with a prefix. % wild card will be added
-// automatically.
-func GetTables(db *sql.DB, query string) ([]string, error) {
+// GetTables returns all tables from a database. AndWhere can be optionally applied.
+// Only first index (0) will be added.
+func GetTables(dbrSess dbr.SessionRunner, sql ...string) ([]string, error) {
 	var tableNames = make([]string, 0, 200)
 
-	rows, err := db.Query(query)
+	qry := "SHOW TABLES"
+	if len(sql) > 0 && sql[0] != "" {
+		if false == dbr.Stmt.IsSelect(sql[0]) {
+			qry = qry + " LIKE '" + sql[0] + "'"
+		} else {
+			qry = sql[0]
+		}
+	}
+
+	sb := dbrSess.SelectBySql(qry)
+	query, args := sb.ToSql()
+	rows, err := sb.Query(query, args...)
 	if err != nil {
 		return nil, log.Error("codegen.GetTables.Query", "err", err)
 	}
@@ -123,7 +134,7 @@ func GetEavValueTables(dbrConn *dbr.Connection, entityTypeCodes []string) (TypeC
 			vtp = vtp + TableNameSeparator
 		}
 
-		tableNames, err := GetTables(dbrConn.DB, `SHOW TABLES LIKE "`+vtp+`%"`)
+		tableNames, err := GetTables(dbrConn.NewSession(), vtp+`%`)
 		if err != nil {
 			return nil, log.Error("codegen.GetEavValueTables.GetTables", "err", err)
 		}

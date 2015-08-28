@@ -17,7 +17,6 @@ package codegen
 import (
 	"bytes"
 	"fmt"
-	"github.com/juju/errgo"
 	"go/format"
 	"log"
 	"math/rand"
@@ -26,13 +25,13 @@ import (
 	"text/template"
 	"time"
 	"unicode"
+
+	"github.com/juju/errgo"
 )
 
 var (
-	logFatalln = log.Fatalln
-	logFatalf  = log.Fatalf
-	letters    = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-	Copyright  = []byte(`// Copyright 2015, Cyrill @ Schumacher.fm and the CoreStore contributors
+	letters   = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	Copyright = []byte(`// Copyright 2015, Cyrill @ Schumacher.fm and the CoreStore contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -169,10 +168,10 @@ func LogFatal(err error, args ...interface{}) {
 	if len(args) > 0 {
 		msg := args[0].(string)
 		args = args[1:]
-		logFatalf(s+"\n"+msg, args...)
+		log.Fatalf(s+"\n"+msg, args...)
 		return
 	}
-	logFatalln(s)
+	log.Fatalln(s)
 }
 
 // randSeq returns a random string with a defined length n.
