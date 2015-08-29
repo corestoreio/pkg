@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// net provides functions and configuration values for the network.
 package net
 
 import (

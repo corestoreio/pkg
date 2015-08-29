@@ -12,26 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package net_test
+package net
 
-import (
-	"testing"
+import "net/http"
 
-	"github.com/corestoreio/csfw/net"
-	"github.com/stretchr/testify/assert"
-)
+// @see https://medium.com/@matryer/writing-middleware-in-golang-and-how-go-makes-it-so-much-fun-4375c1246e81
 
-func TestVersionize(t *testing.T) {
-	tests := []struct {
-		have, want string
-	}{
-		{"login", "/V1/login"},
-		{"/login", "/V1/login"},
-		{"", "/V1/"},
+// Adapter is a wrapper for the http.Handler
+type Adapter func(http.Handler) http.Handler
+
+// Adapt function will iterate over all adapters, calling them one by one
+// in a chained manner, returning the result of the final adapter.
+func Adapt(h http.Handler, adapters ...Adapter) http.Handler {
+	for _, a := range adapters {
+		h = a(h)
 	}
-	for _, test := range tests {
-		h := net.APIRoute.Versionize(test.have)
-		assert.Equal(t, test.want, h)
-	}
-	assert.Equal(t, "/V1/", net.APIRoute.String())
+	return h
 }
