@@ -15,7 +15,6 @@
 package main
 
 import (
-	"runtime"
 	"sync"
 
 	"github.com/corestoreio/csfw/codegen"
@@ -30,22 +29,23 @@ func init() {
 }
 
 func main() {
+	defer logWhenDone().Info("Stats")
 	dbc, err := csdb.Connect()
 	codegen.LogFatal(err)
 	defer dbc.Close()
 	var wg sync.WaitGroup
-	log.Info("Stats", "Goroutines", runtime.NumGoroutine(), "CPUs", runtime.NumCPU())
+
+	mageV1, mageV2 := detectMagentoVersion(dbc.NewSession())
 
 	for _, tStruct := range codegen.ConfigTableToStruct {
-		go newGenerator(tStruct, dbc, &wg).run()
+		go newGenerator(tStruct, dbc, &wg).setMagentoVersion(mageV1, mageV2).run()
 	}
-	numRoutines := runtime.NumGoroutine()
+
 	wg.Wait()
-	log.Info("Stats", "Goroutines", numRoutines, "Go Version", runtime.Version())
 
 	// @todo
-	//	for _, ts := range codegen.ConfigTableToStruct {
-	//		// due to a race condition the codec generator must run after the newGenerator() calls
-	//		runCodec(ts.OutputFile.AppendName("_codec").String(), ts.OutputFile.String())
-	//	}
+	for _, ts := range codegen.ConfigTableToStruct {
+		// due to a race condition the codec generator must run after the newGenerator() calls
+		runCodec(ts.Package, ts.OutputFile.AppendName("_codec").String(), ts.OutputFile.String())
+	}
 }

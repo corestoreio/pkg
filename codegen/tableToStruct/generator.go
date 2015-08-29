@@ -26,18 +26,14 @@ import (
 	"sync"
 	"text/template"
 
-	"errors"
 	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/codegen/tableToStruct/tpl"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
-	"github.com/corestoreio/csfw/utils/log"
-	"time"
 )
 
 type generator struct {
-	start           time.Time
 	tts             codegen.TableToStruct
 	dbrConn         *dbr.Connection
 	outfile         *os.File
@@ -53,13 +49,17 @@ type generator struct {
 
 func newGenerator(tts codegen.TableToStruct, dbrConn *dbr.Connection, wg *sync.WaitGroup) *generator {
 	wg.Add(1)
-	g := &generator{
-		start:              time.Now(),
+	return &generator{
 		tts:                tts,
 		dbrConn:            dbrConn,
 		wg:                 wg,
 		existingMethodSets: newDuplicateChecker(),
 	}
+}
+
+func (g *generator) run() {
+	defer logWhenDone().Info("Stats", "Package", g.tts.Package)
+	defer g.wg.Done()
 	g.analyzePackage()
 
 	var err error
@@ -67,23 +67,23 @@ func newGenerator(tts codegen.TableToStruct, dbrConn *dbr.Connection, wg *sync.W
 	codegen.LogFatal(err)
 	g.appendToFile(tpl.Copy, struct{ Package string }{Package: g.tts.Package}, nil)
 
-	g.initVersion()
 	g.initTables()
-	return g
-}
-
-func (g *generator) run() {
-	defer log.Info("Stats", "Package", g.tts.Package, "Duration", time.Since(g.start).String())
-	defer g.wg.Done()
 	g.runHeader()
 	g.runTable()
 	g.runEAValueTables()
 	codegen.LogFatal(g.outfile.Close())
 }
 
+func (g *generator) setMagentoVersion(magento1, magento2 bool) *generator {
+	g.isMagento1 = magento1
+	g.isMagento2 = magento2
+	return g
+}
+
 // analyzePackage extracts from all types the method receivers and type names. If we found existing
 // functions we will add a MethodRecvPrefix to the generated functions to avoid conflicts.
 func (g *generator) analyzePackage() {
+	defer logWhenDone().Info("Stats", "Package", g.tts.Package, "Step", "AnalyzePackage")
 	fset := token.NewFileSet()
 
 	path := filepath.Dir(g.tts.OutputFile.String())
@@ -127,7 +127,6 @@ func (g *generator) analyzePackage() {
 }
 
 func (g *generator) appendToFile(tpl string, data interface{}, addFM template.FuncMap) {
-
 	formatted, err := codegen.GenerateCode(g.tts.Package, tpl, data, addFM)
 	if err != nil {
 		fmt.Printf("\n%s\n", formatted)
@@ -140,17 +139,8 @@ func (g *generator) appendToFile(tpl string, data interface{}, addFM template.Fu
 	codegen.LogFatal(g.outfile.Sync()) // flush immediately to disk to prevent a race condition
 }
 
-func (g *generator) initVersion() {
-	mageTables, err := codegen.GetTables(g.dbrConn.NewSession())
-	codegen.LogFatal(err)
-	g.isMagento1, g.isMagento2 = utils.MagentoVersion(codegen.TablePrefix, mageTables)
-
-	if g.isMagento1 == g.isMagento2 {
-		codegen.LogFatal(errors.New("Cannot detect your Magento version"))
-	}
-}
-
 func (g *generator) initTables() {
+	defer logWhenDone().Info("Stats", "Package", g.tts.Package, "Step", "InitTables")
 	var err error
 	g.tables, err = codegen.GetTables(g.dbrConn.NewSession(), codegen.ReplaceTablePrefix(g.tts.SQLQuery))
 	codegen.LogFatal(err)
@@ -182,9 +172,10 @@ func (g *generator) initTables() {
 }
 
 func (g *generator) runHeader() {
+	defer logWhenDone().Info("Stats", "Package", g.tts.Package, "Step", "RunHeader")
 	type Table struct {
-		NameRaw string
 		Name    string
+		NameRaw string
 	}
 
 	data := struct {
@@ -198,17 +189,20 @@ func (g *generator) runHeader() {
 	}
 
 	for _, table := range g.tables {
-		var name = g.getMagento2TableName(table)
-		data.Tables = append(data.Tables, Table{name, codegen.PrepareVar(g.tts.Package, name)})
+		data.Tables = append(data.Tables, Table{
+			Name:    g.getTableConstantName(table),
+			NameRaw: g.getMagento2TableName(table),
+		})
 	}
 	g.appendToFile(tpl.Header, data, nil)
 }
 
 func (g *generator) runTable() {
-
+	defer logWhenDone().Info("Stats", "Package", g.tts.Package, "Step", "RunTable")
 	type OneTable struct {
 		Package          string
 		Tick             string
+		Name             string
 		NameRaw          string
 		Struct           string
 		Slice            string
@@ -230,6 +224,7 @@ func (g *generator) runTable() {
 		data := OneTable{
 			Package:   g.tts.Package,
 			Tick:      "`",
+			Name:      g.getTableConstantName(table),
 			NameRaw:   name,
 			Struct:    TypePrefix + codegen.PrepareVar(g.tts.Package, name),
 			Slice:     TypePrefix + codegen.PrepareVar(g.tts.Package, name) + "Slice",
@@ -313,6 +308,7 @@ func (g *generator) runEAValueTables() {
 	if len(g.eavValueTables) == 0 {
 		return
 	}
+	defer logWhenDone().Info("Stats", "Package", g.tts.Package, "Step", "RunEAValueTables")
 
 	data := struct {
 		TypeCodeValueTables codegen.TypeCodeValueTable
@@ -323,18 +319,32 @@ func (g *generator) runEAValueTables() {
 	g.appendToFile(tpl.EAValueStructure, data, nil)
 }
 
-var mapm1m2Mu sync.Mutex // protects map TableMapMagento1To2 ... code smell global variable ...
+// protects map TableMapMagento1To2. Code smell global variable to protect a global var.
+var mapm1m2Mu sync.Mutex
 
-func (g *generator) getMagento2TableName(table string) (name string) {
+// getMagento2TableName takes care of the correct table name as some tables
+// have different names in Magento2 than in Magento1.
+func (g *generator) getMagento2TableName(table string) string {
 	mapm1m2Mu.Lock()
 	defer mapm1m2Mu.Unlock()
-	name = table
+
 	if g.isMagento1 && !g.isMagento2 {
-		return
+		return table
 	}
 	if mappedName, ok := codegen.TableMapMagento1To2[strings.Replace(table, codegen.TablePrefix, "", 1)]; ok {
-		name = mappedName
+		return mappedName
 	}
 
-	return
+	return table
+}
+
+// getTableConstantName all TableIndex constants are the same wether we run
+// Magento 1 or 2.
+func (g *generator) getTableConstantName(table string) string {
+	mapm1m2Mu.Lock()
+	defer mapm1m2Mu.Unlock()
+	if mappedName, ok := codegen.TableMapMagento1To2[strings.Replace(table, codegen.TablePrefix, "", 1)]; ok {
+		table = mappedName
+	}
+	return codegen.PrepareVar(g.tts.Package, table)
 }

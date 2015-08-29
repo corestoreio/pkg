@@ -42,7 +42,7 @@ const (
 const SQL = `
 // {{ typePrefix "SQLSelect" }} fills this slice with data from the database
 func (s *{{.Slice}}) {{ typePrefix "SQLSelect" }}(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
-	return csdb.LoadSlice(dbrSess, TableCollection, TableIndex{{.NameRaw | prepareVar}}, &(*s), cbs...)
+	return csdb.LoadSlice(dbrSess, TableCollection, TableIndex{{.Name}}, &(*s), cbs...)
 }
 
 // {{ typePrefix "SQLInsert" }} inserts all records into the database @todo
