@@ -17,7 +17,7 @@ package tpl
 // @todo hide password and other sensitive fields in JSON struct tags
 
 const Type = `
-// {{.Struct}} and {{.Slice}}, a type for DB table {{ .NameRaw }}
+// {{.Struct}} and {{.Slice}}, a type for DB table {{ .TableName }}
 type (
     {{.Slice}} []*{{.Struct}}
     {{.Struct}} struct {
@@ -193,14 +193,14 @@ func (s *{{.Slice}}) {{ typePrefix "Prepend" }}(n *{{.Struct}}) {
 `
 
 const ExtractFromSlice = `
-// Extract{{.NameRaw | camelize}} functions for extracting fields
-type Extract{{.NameRaw | camelize}} struct {
+// Extract{{.Name | camelize}} functions for extracting fields
+type Extract{{.Name | camelize}} struct {
 {{ range $k,$c := .Columns }} {{$c.Name | camelize }} func() []{{$c.GetGoPrimitive false}}
 {{end}} }
 
 // {{ typePrefix "Extract" }} generates slices from all fields
-func (s {{$.Slice}}) {{ typePrefix "Extract" }}() Extract{{.NameRaw | camelize}} {
-	return Extract{{.NameRaw | camelize}} {
+func (s {{$.Slice}}) {{ typePrefix "Extract" }}() Extract{{.Name | camelize}} {
+	return Extract{{.Name | camelize}} {
 		{{ range $k,$c := .Columns }} {{$c.Name | camelize }} : func() []{{$c.GetGoPrimitive false}} {
 			ext := make([]{{$c.GetGoPrimitive false}}, 0, len(s))
 			for _, v := range s {

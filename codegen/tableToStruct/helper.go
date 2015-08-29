@@ -19,7 +19,6 @@ import (
 	"fmt"
 	"regexp"
 	"sync"
-	"time"
 
 	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/codegen/tableToStruct/codecgen"
@@ -79,7 +78,7 @@ func (dc *duplicateChecker) debug() string {
 
 // runCodec generates the codecs to be used later in JSON or msgpack or etc
 func runCodec(pkg, outfile, readfile string) {
-	defer logWhenDone().Info("Stats", "Package", pkg, "Step", "runCodec")
+	defer log.WhenDone().Info("Stats", "Package", pkg, "Step", "runCodec")
 	if err := codecgen.Generate(
 		outfile, // outfile
 		"",      // buildTag
@@ -106,7 +105,7 @@ func isDuplicate(sl []string, st string) bool {
 }
 
 func detectMagentoVersion(dbrSess dbr.SessionRunner) (MageOne, MageTwo bool) {
-	defer logWhenDone().Info("Stats", "Package", "DetectMagentoVersion")
+	defer log.WhenDone().Info("Stats", "Package", "DetectMagentoVersion")
 	allTables, err := codegen.GetTables(dbrSess)
 	codegen.LogFatal(err)
 	MageOne, MageTwo = utils.MagentoVersion(codegen.TablePrefix, allTables)
@@ -115,18 +114,4 @@ func detectMagentoVersion(dbrSess dbr.SessionRunner) (MageOne, MageTwo bool) {
 		codegen.LogFatal(errors.New("Cannot detect your Magento version"))
 	}
 	return
-}
-
-type logger struct {
-	Info func(msg string, args ...interface{})
-}
-
-func logWhenDone() logger {
-	// @see http://play.golang.org/p/K53LV16F9e from @francesc
-	start := time.Now()
-	return logger{
-		Info: func(msg string, args ...interface{}) {
-			log.Info(msg, append(args, "Duration", time.Since(start).String())...)
-		},
-	}
 }

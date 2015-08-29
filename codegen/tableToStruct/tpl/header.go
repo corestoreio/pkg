@@ -37,13 +37,13 @@ var (
 // to stay the same for all Magento versions. Please access a table via this
 // constant instead of the raw table name. TableIndex iotas must start with 0.
 const (
-    {{ range $k,$v := .Tables }}TableIndex{{$v.Name}} {{ if eq $k 0 }}csdb.Index = iota{{ end }} // Table: {{$v.NameRaw}}
+    {{ range $k,$v := .Tables }}TableIndex{{$v.Name}} {{ if eq $k 0 }}csdb.Index = iota{{ end }} // Table: {{$v.TableName}}
 {{ end }}	TableIndexZZZ  // the maximum index, which is not available.
 )
 
 func init(){
     TableCollection = csdb.NewTableManager(
-    {{ range $k,$v := .Tables }} csdb.AddTableByName(TableIndex{{.Name}}, "{{.NameRaw}}"),
+    {{ range $k,$v := .Tables }} csdb.AddTableByName(TableIndex{{.Name}}, "{{.TableName}}"),
     {{ end }} )
     // Don't forget to call TableCollection.ReInit(...) in your code to load the column definitions.
 }`

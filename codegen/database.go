@@ -75,6 +75,7 @@ func (m TypeCodeValueTable) Empty() bool {
 // GetTables returns all tables from a database. AndWhere can be optionally applied.
 // Only first index (0) will be added.
 func GetTables(dbrSess dbr.SessionRunner, sql ...string) ([]string, error) {
+
 	var tableNames = make([]string, 0, 200)
 
 	qry := "SHOW TABLES"
@@ -85,6 +86,7 @@ func GetTables(dbrSess dbr.SessionRunner, sql ...string) ([]string, error) {
 			qry = sql[0]
 		}
 	}
+	defer log.WhenDone().Debug("Stats", "Package", "codegen", "Step", "GetTables", "query", qry)
 
 	sb := dbrSess.SelectBySql(qry)
 	query, args := sb.ToSql()

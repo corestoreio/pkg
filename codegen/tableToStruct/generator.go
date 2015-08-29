@@ -31,6 +31,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/utils/log"
 )
 
 type generator struct {
@@ -58,7 +59,7 @@ func newGenerator(tts codegen.TableToStruct, dbrConn *dbr.Connection, wg *sync.W
 }
 
 func (g *generator) run() {
-	defer logWhenDone().Info("Stats", "Package", g.tts.Package)
+	defer log.WhenDone().Info("Stats", "Package", g.tts.Package)
 	defer g.wg.Done()
 	g.analyzePackage()
 
@@ -83,7 +84,7 @@ func (g *generator) setMagentoVersion(magento1, magento2 bool) *generator {
 // analyzePackage extracts from all types the method receivers and type names. If we found existing
 // functions we will add a MethodRecvPrefix to the generated functions to avoid conflicts.
 func (g *generator) analyzePackage() {
-	defer logWhenDone().Info("Stats", "Package", g.tts.Package, "Step", "AnalyzePackage")
+	defer log.WhenDone().Info("Stats", "Package", g.tts.Package, "Step", "AnalyzePackage")
 	fset := token.NewFileSet()
 
 	path := filepath.Dir(g.tts.OutputFile.String())
@@ -140,7 +141,7 @@ func (g *generator) appendToFile(tpl string, data interface{}, addFM template.Fu
 }
 
 func (g *generator) initTables() {
-	defer logWhenDone().Info("Stats", "Package", g.tts.Package, "Step", "InitTables")
+	defer log.WhenDone().Info("Stats", "Package", g.tts.Package, "Step", "InitTables")
 	var err error
 	g.tables, err = codegen.GetTables(g.dbrConn.NewSession(), codegen.ReplaceTablePrefix(g.tts.SQLQuery))
 	codegen.LogFatal(err)
@@ -172,10 +173,10 @@ func (g *generator) initTables() {
 }
 
 func (g *generator) runHeader() {
-	defer logWhenDone().Info("Stats", "Package", g.tts.Package, "Step", "RunHeader")
+	defer log.WhenDone().Info("Stats", "Package", g.tts.Package, "Step", "RunHeader")
 	type Table struct {
-		Name    string
-		NameRaw string
+		Name      string
+		TableName string
 	}
 
 	data := struct {
@@ -190,20 +191,20 @@ func (g *generator) runHeader() {
 
 	for _, table := range g.tables {
 		data.Tables = append(data.Tables, Table{
-			Name:    g.getTableConstantName(table),
-			NameRaw: g.getMagento2TableName(table),
+			Name:      g.getConsistentName(table),
+			TableName: g.getMagento2TableName(table),
 		})
 	}
 	g.appendToFile(tpl.Header, data, nil)
 }
 
 func (g *generator) runTable() {
-	defer logWhenDone().Info("Stats", "Package", g.tts.Package, "Step", "RunTable")
+	defer log.WhenDone().Info("Stats", "Package", g.tts.Package, "Step", "RunTable")
 	type OneTable struct {
 		Package          string
 		Tick             string
 		Name             string
-		NameRaw          string
+		TableName        string
 		Struct           string
 		Slice            string
 		Table            string
@@ -219,15 +220,14 @@ func (g *generator) runTable() {
 		codegen.LogFatal(err)
 		codegen.LogFatal(columns.MapSQLToGoDBRType())
 
-		var name = g.getMagento2TableName(table)
-
+		name := g.getConsistentName(table)
 		data := OneTable{
 			Package:   g.tts.Package,
 			Tick:      "`",
-			Name:      g.getTableConstantName(table),
-			NameRaw:   name,
-			Struct:    TypePrefix + codegen.PrepareVar(g.tts.Package, name),
-			Slice:     TypePrefix + codegen.PrepareVar(g.tts.Package, name) + "Slice",
+			Name:      name,
+			TableName: g.getMagento2TableName(table),                                  // original table name!
+			Struct:    TypePrefix + codegen.PrepareVar(g.tts.Package, name),           // getTableConstantName
+			Slice:     TypePrefix + codegen.PrepareVar(g.tts.Package, name) + "Slice", // getTableConstantName
 			Table:     table,
 			GoColumns: columns,
 			Columns:   columns.CopyToCSDB(),
@@ -308,7 +308,7 @@ func (g *generator) runEAValueTables() {
 	if len(g.eavValueTables) == 0 {
 		return
 	}
-	defer logWhenDone().Info("Stats", "Package", g.tts.Package, "Step", "RunEAValueTables")
+	defer log.WhenDone().Info("Stats", "Package", g.tts.Package, "Step", "RunEAValueTables")
 
 	data := struct {
 		TypeCodeValueTables codegen.TypeCodeValueTable
@@ -338,13 +338,16 @@ func (g *generator) getMagento2TableName(table string) string {
 	return table
 }
 
-// getTableConstantName all TableIndex constants are the same wether we run
+// getConsistentName generates a consistent name for all TableIndex*, Table*Slice
+// and Table* types. This names is guaranteed to be the same whether we run
 // Magento 1 or 2.
-func (g *generator) getTableConstantName(table string) string {
+func (g *generator) getConsistentName(table string) string {
 	mapm1m2Mu.Lock()
 	defer mapm1m2Mu.Unlock()
+	// 1. retrieve the mapped name used in Magento2
 	if mappedName, ok := codegen.TableMapMagento1To2[strings.Replace(table, codegen.TablePrefix, "", 1)]; ok {
 		table = mappedName
 	}
+	// 2. Remove the package name from the table name
 	return codegen.PrepareVar(g.tts.Package, table)
 }

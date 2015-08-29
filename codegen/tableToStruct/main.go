@@ -29,7 +29,7 @@ func init() {
 }
 
 func main() {
-	defer logWhenDone().Info("Stats")
+	defer log.WhenDone().Info("Stats")
 	dbc, err := csdb.Connect()
 	codegen.LogFatal(err)
 	defer dbc.Close()
