@@ -14,7 +14,10 @@
 
 package log
 
-import "errors"
+import (
+	"errors"
+	"time"
+)
 
 var (
 	ErrLoggerSet = errors.New("Logger already initialized")
@@ -87,3 +90,31 @@ func IsTrace() bool  { return logger.IsTrace() }
 func IsDebug() bool  { return logger.IsDebug() }
 func IsInfo() bool   { return logger.IsInfo() }
 func IsWarn() bool   { return logger.IsWarn() }
+
+// Deferred defines a logger type which can be used to trace the duration.
+// Usage:
+//		function main(){
+// 			defer log.WhenDone().Info("Stats", "Package", "main")
+//			...
+// 		}
+// Outputs the duration for the main action.
+type Deferred struct {
+	Info  func(msg string, args ...interface{})
+	Debug func(msg string, args ...interface{})
+}
+
+// WhenDone returns a Logger which tracks the duration
+func WhenDone() Deferred {
+	// @see http://play.golang.org/p/K53LV16F9e from @francesc
+	start := time.Now()
+	return Deferred{
+		Info: func(msg string, args ...interface{}) {
+			Info(msg, append(args, "Duration", time.Since(start).String())...)
+		},
+		Debug: func(msg string, args ...interface{}) {
+			if IsDebug() {
+				Debug(msg, append(args, "Duration", time.Since(start).String())...)
+			}
+		},
+	}
+}
