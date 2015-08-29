@@ -43,7 +43,6 @@ func main() {
 
 	wg.Wait()
 
-	// @todo
 	for _, ts := range codegen.ConfigTableToStruct {
 		// due to a race condition the codec generator must run after the newGenerator() calls
 		runCodec(ts.Package, ts.OutputFile.AppendName("_codec").String(), ts.OutputFile.String())

@@ -22,6 +22,7 @@ import (
 
 	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/codegen/tableToStruct/codecgen"
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
 	"github.com/corestoreio/csfw/utils/log"
@@ -114,4 +115,31 @@ func detectMagentoVersion(dbrSess dbr.SessionRunner) (MageOne, MageTwo bool) {
 		codegen.LogFatal(errors.New("Cannot detect your Magento version"))
 	}
 	return
+}
+
+// findBy is a template function used in runTable()
+func findBy(s string) string {
+	return "FindBy" + codegen.Camelize(s)
+}
+
+// dbrType is a template function used in runTable()
+func dbrType(c csdb.Column) string {
+	switch {
+	// order of the c.Is* functions matters ... :-|
+	case false == c.IsNull():
+		return ""
+	case c.IsBool():
+		return ".Bool" // dbr.NullBool
+	case c.IsString():
+		return ".String" // dbr.NullString
+	case c.IsMoney():
+		return "" // money.Currency
+	case c.IsFloat():
+		return ".Float64" // dbr.NullFloat64
+	case c.IsInt():
+		return ".Int64" // dbr.NullInt64
+	case c.IsDate():
+		return ".Time" // dbr.NullTime
+	}
+	return ""
 }

@@ -225,9 +225,9 @@ func (g *generator) runTable() {
 			Package:   g.tts.Package,
 			Tick:      "`",
 			Name:      name,
-			TableName: g.getMagento2TableName(table),                                  // original table name!
-			Struct:    TypePrefix + codegen.PrepareVar(g.tts.Package, name),           // getTableConstantName
-			Slice:     TypePrefix + codegen.PrepareVar(g.tts.Package, name) + "Slice", // getTableConstantName
+			TableName: g.getMagento2TableName(table), // original table name!
+			Struct:    TypePrefix + name,             // getTableConstantName
+			Slice:     TypePrefix + name + "Slice",   // getTableConstantName
 			Table:     table,
 			GoColumns: columns,
 			Columns:   columns.CopyToCSDB(),
@@ -247,29 +247,8 @@ func (g *generator) runTable() {
 				}
 				return name
 			},
-			"findBy": func(s string) string {
-				return "FindBy" + codegen.Camelize(s)
-			},
-			"dbrType": func(c csdb.Column) string {
-				switch {
-				// order of the c.Is* functions matters ... :-|
-				case false == c.IsNull():
-					return ""
-				case c.IsBool():
-					return ".Bool" // dbr.NullBool
-				case c.IsString():
-					return ".String" // dbr.NullString
-				case c.IsMoney():
-					return "" // money.Currency
-				case c.IsFloat():
-					return ".Float64" // dbr.NullFloat64
-				case c.IsInt():
-					return ".Int64" // dbr.NullInt64
-				case c.IsDate():
-					return ".Time" // dbr.NullTime
-				}
-				return ""
-			},
+			"findBy":  findBy,
+			"dbrType": dbrType,
 		}
 
 		g.appendToFile(g.getGenericTemplate(table), data, tplFuncs)
