@@ -68,8 +68,8 @@ type (
 	// EntityTypeAdditionalAttributeTabler implements methods for EAV table structures to retrieve attributes
 	EntityTypeAdditionalAttributeTabler interface {
 		TableAdditionalAttribute() (*csdb.Table, error)
-		// TableNameEavWebsite gets the table, where website-dependent attribute parameters are stored in.
-		// If an EAV model doesn't demand this functionality, let this function just return an empty string
+		// TableEavWebsite gets the table, where website-dependent attribute parameters are stored in.
+		// If an EAV model doesn't demand this functionality, let this function just return nil,nil
 		TableEavWebsite() (*csdb.Table, error)
 	}
 

@@ -15,10 +15,12 @@
 package eav
 
 import (
+	"fmt"
+
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
-	"github.com/juju/errgo"
+	"github.com/corestoreio/csfw/utils/log"
 )
 
 // GetAttributeSelectSql generates the select query to retrieve full attribute configuration
@@ -29,15 +31,15 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 
 	ta, err := TableCollection.Structure(TableIndexAttribute)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, log.Error("eav.GetAttributeSelectSql.TableCollection.Structure", "err", err, "entityTypeID", entityTypeID, "websiteID", websiteID)
 	}
 	taa, err := aat.TableAdditionalAttribute()
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, log.Error("eav.GetAttributeSelectSql.TableAdditionalAttribute", "err", err, "ta", ta, "entityTypeID", entityTypeID, "websiteID", websiteID)
 	}
 	tew, err := aat.TableEavWebsite()
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, log.Error("eav.GetAttributeSelectSql.TableEavWebsite", "err", err, "ta", ta, "taa", taa, "entityTypeID", entityTypeID, "websiteID", websiteID)
 	}
 	// tew table can now contains columns names which can occur in table eav_attribute and
 	// or [catalog|customer|entity]_eav_attribute
@@ -50,7 +52,7 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 
 	if tew != nil {
 		ifnull = make([]string, len(tew.Columns))
-		for i, tewC := range tew.Columns.FieldNames() {
+		for i, tewC := range tew.Columns.ColumnsNoPK().FieldNames() {
 			t := ""
 			switch {
 			case ta.In(tewC):
@@ -60,7 +62,10 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 				t = csdb.AdditionalTable
 				break
 			default:
-				return nil, errgo.Newf("Cannot find column name %s.%s neither in table %s nor in %s.", tew.Name, tewC, ta.Name, taa.Name)
+				return nil, log.Error("eav.GetAttributeSelectSql.Columns.FieldNames.default", "err",
+					fmt.Errorf("Cannot find column name %s.%s neither in table %s nor in %s.", tew.Name, tewC, ta.Name, taa.Name),
+					"ta", ta, "taa", taa,
+					"entityTypeID", entityTypeID, "websiteID", websiteID)
 			}
 			ifnull[i] = dbr.IfNullAs(csdb.ScopeTable, tewC, t, tewC, tewC)
 			tewAddedCols = append(tewAddedCols, tewC)

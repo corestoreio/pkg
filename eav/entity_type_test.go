@@ -45,6 +45,14 @@ var (
 	}
 )
 
+func init() {
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
+	if err := eav.TableCollection.Init(dbc.NewSession()); err != nil {
+		panic(err)
+	}
+}
+
 func TestEntityType(t *testing.T) {
 	dbc := csdb.MustConnectTest()
 	defer dbc.Close()
