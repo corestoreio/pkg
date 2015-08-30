@@ -396,6 +396,7 @@ func TestGetSQLPrepareForTemplate(t *testing.T) {
 
 var benchmarkGetTables []string
 
+// BenchmarkGetTables-4	    2000	    865974 ns/op	   31042 B/op	     683 allocs/op
 func BenchmarkGetTables(b *testing.B) {
 	dbc := csdb.MustConnectTest()
 	defer dbc.Close()

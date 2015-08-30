@@ -76,8 +76,6 @@ func (m TypeCodeValueTable) Empty() bool {
 // Only first index (0) will be added.
 func GetTables(dbrSess dbr.SessionRunner, sql ...string) ([]string, error) {
 
-	var tableNames = make([]string, 0, 200)
-
 	qry := "SHOW TABLES"
 	if len(sql) > 0 && sql[0] != "" {
 		if false == dbr.Stmt.IsSelect(sql[0]) {
@@ -86,7 +84,9 @@ func GetTables(dbrSess dbr.SessionRunner, sql ...string) ([]string, error) {
 			qry = sql[0]
 		}
 	}
-	defer log.WhenDone().Debug("Stats", "Package", "codegen", "Step", "GetTables", "query", qry)
+	if log.IsDebug() { // this if reduces 9 allocs ...
+		defer log.WhenDone().Debug("Stats", "Package", "codegen", "Step", "GetTables", "query", qry)
+	}
 
 	sb := dbrSess.SelectBySql(qry)
 	query, args := sb.ToSql()
@@ -96,16 +96,16 @@ func GetTables(dbrSess dbr.SessionRunner, sql ...string) ([]string, error) {
 	}
 	defer rows.Close()
 
+	var tableName string
+	var tableNames = make([]string, 0, 200)
 	for rows.Next() {
-		var tableName string
-		err := rows.Scan(&tableName)
-		if err != nil {
+		if err := rows.Scan(&tableName); err != nil {
 			return nil, log.Error("codegen.GetTables.Scan", "err", err)
 		}
 		tableNames = append(tableNames, tableName)
 	}
-	err = rows.Err()
-	if err != nil {
+
+	if err = rows.Err(); err != nil {
 		return nil, log.Error("codegen.GetTables.rows", "err", err)
 	}
 	return tableNames, nil
