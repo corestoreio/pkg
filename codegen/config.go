@@ -268,8 +268,10 @@ var ConfigTableToStruct = TableToStructMap{
 		OutputFile:      BasePath.AppendDir("eav", "generated_tables"),
 		SQLQuery:        `{{tableprefix}}eav%`,
 		EntityTypeCodes: nil,
-		//GenericsWhiteList: "SQLQuery", @todo
-		//GenericsFunctions: tpl.OptAll,
+		GenericsWhiteList: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
+						TABLE_SCHEMA = DATABASE() AND
+						TABLE_NAME LIKE '{{tableprefix}}eav_entity_type' GROUP BY TABLE_NAME;`,
+		GenericsFunctions: tpl.OptSQL | tpl.OptFindBy,
 	},
 	"store": TableToStruct{
 		Package:    "store",

@@ -28,6 +28,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
+	eav.TableCollection.Init(dbc.NewSession())
+}
+
 func TestValueSuffixes(t *testing.T) {
 	vs := ValueSuffixes{"One", "two", "Baum"}
 	assert.True(t, vs.contains("One"))
@@ -61,7 +67,7 @@ func TestGetTables(t *testing.T) {
 						    TABLE_SCHEMA = DATABASE() AND
 						    TABLE_NAME LIKE '%directory%' GROUP BY TABLE_NAME;`,
 			expErr:   false,
-			expCount: 11,
+			expCount: 5,
 		},
 		{
 			query:    "' catalog_product_entity",
@@ -289,7 +295,7 @@ func TestSQLQueryToColumnsToStruct(t *testing.T) {
 		t.Error(err)
 	}
 
-	assert.True(t, len(colSliceDbr) >= 35, "len(colSliceDbr) == %d, should have min 35", len(colSliceDbr))
+	assert.True(t, len(colSliceDbr) >= 18, "len(colSliceDbr) == %d, should have min 18", len(colSliceDbr))
 
 	for _, col := range colSliceDbr {
 		assert.True(t, col.Field.Valid, fmt.Sprintf("%#v", col))
@@ -349,10 +355,12 @@ func TestGetSQLPrepareForTemplate(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	assert.Len(t, attributeResultSlice, 59) // 59 rows
+	assert.True(t, len(attributeResultSlice) >= 59, "attributeResultSlice should have at least 59 entries, but has %d", len(attributeResultSlice))
+
 	for _, row := range attributeResultSlice {
-		assert.True(t, len(row["attribute_id"]) > 0, "Incorrect length of attribute_id", fmt.Sprintf("%#v", row))
+		assert.True(t, len(row["attribute_id"]) > 0, "Incorrect length of attribute_id: %#v", row)
 	}
+	t.FailNow()
 
 	colSliceDbr, err := SQLQueryToColumns(dbc.DB, dbrSelect)
 	if err != nil {
@@ -386,15 +394,21 @@ func TestGetSQLPrepareForTemplate(t *testing.T) {
 	}
 }
 
-func TestGetAttributeSelectSql(t *testing.T) {
+var benchmarkGetTables []string
+
+func BenchmarkGetTables(b *testing.B) {
 	dbc := csdb.MustConnectTest()
 	defer dbc.Close()
-
-	dbrSess := dbc.NewSession()
-	dbrSelect, err := eav.GetAttributeSelectSql(dbrSess, NewAddAttrTables(dbc.DB, "customer"), 1, 4)
-	if err != nil {
-		t.Error(err)
+	b.ReportAllocs()
+	var err error
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchmarkGetTables, err = GetTables(dbc.NewSession())
+		if err != nil {
+			b.Error(err)
+		}
+		if len(benchmarkGetTables) < 200 {
+			b.Errorf("There should be at least 200 tables in the database. Got: %d", len(benchmarkGetTables))
+		}
 	}
-	sql, _ := dbrSelect.ToSql()
-	assert.Equal(t, "SELECT `main_table`.`attribute_id`, `main_table`.`entity_type_id`, `main_table`.`attribute_code`, `main_table`.`backend_model`, `main_table`.`backend_type`, `main_table`.`backend_table`, `main_table`.`frontend_model`, `main_table`.`frontend_input`, `main_table`.`frontend_label`, `main_table`.`frontend_class`, `main_table`.`source_model`, `main_table`.`is_user_defined`, `main_table`.`is_unique`, `main_table`.`note`, `additional_table`.`input_filter`, `additional_table`.`validate_rules`, `additional_table`.`is_system`, `additional_table`.`sort_order`, `additional_table`.`data_model`, IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`, IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`) AS `is_required`, IFNULL(`scope_table`.`default_value`, `main_table`.`default_value`) AS `default_value`, IFNULL(`scope_table`.`multiline_count`, `additional_table`.`multiline_count`) AS `multiline_count` FROM `eav_attribute` AS `main_table` INNER JOIN `customer_eav_attribute` AS `additional_table` ON (`additional_table`.`attribute_id` = `main_table`.`attribute_id`) AND (`main_table`.`entity_type_id` = ?) LEFT JOIN `customer_eav_attribute_website` AS `scope_table` ON (`scope_table`.`attribute_id` = `main_table`.`attribute_id`) AND (`scope_table`.`website_id` = ?)", sql)
 }

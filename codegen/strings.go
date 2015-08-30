@@ -29,6 +29,12 @@ import (
 	"github.com/juju/errgo"
 )
 
+// used for testing
+var (
+	logFatalln = log.Fatalln
+	logFatalf  = log.Fatalf
+)
+
 var (
 	letters   = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
 	Copyright = []byte(`// Copyright 2015, Cyrill @ Schumacher.fm and the CoreStore contributors
@@ -168,10 +174,10 @@ func LogFatal(err error, args ...interface{}) {
 	if len(args) > 0 {
 		msg := args[0].(string)
 		args = args[1:]
-		log.Fatalf(s+"\n"+msg, args...)
+		logFatalf(s+"\n"+msg, args...)
 		return
 	}
-	log.Fatalln(s)
+	logFatalln(s)
 }
 
 // randSeq returns a random string with a defined length n.
