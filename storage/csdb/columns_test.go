@@ -15,6 +15,7 @@
 package csdb_test
 
 import (
+	"bytes"
 	"testing"
 
 	"errors"
@@ -68,48 +69,6 @@ func TestGetColumns(t *testing.T) {
 	}
 }
 
-var benchmarkColumnsJoinFields string
-var benchmarkColumnsJoinFieldsWant = "category_id|product_id|position"
-var benchmarkColumnsJoinFieldsData = csdb.Columns{
-	csdb.Column{
-		Field:   dbr.InitNullString("category_id"),
-		Type:    dbr.InitNullString("int(10) unsigned"),
-		Null:    dbr.InitNullString("NO"),
-		Key:     dbr.InitNullString("", false),
-		Default: dbr.InitNullString("0"),
-		Extra:   dbr.InitNullString(""),
-	},
-	csdb.Column{
-		Field:   dbr.InitNullString("product_id"),
-		Type:    dbr.InitNullString("int(10) unsigned"),
-		Null:    dbr.InitNullString("NO"),
-		Key:     dbr.InitNullString(""),
-		Default: dbr.InitNullString("0"),
-		Extra:   dbr.InitNullString(""),
-	},
-	csdb.Column{
-		Field:   dbr.InitNullString("position"),
-		Type:    dbr.InitNullString("int(10) unsigned"),
-		Null:    dbr.InitNullString("YES"),
-		Key:     dbr.InitNullString(""),
-		Default: dbr.NullString{},
-		Extra:   dbr.InitNullString(""),
-	},
-}
-
-// BenchmarkColumnsJoinFields-4	 2000000	       625 ns/op	     176 B/op	       5 allocs/op <- Go 1.5
-func BenchmarkColumnsJoinFields(b *testing.B) {
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		benchmarkColumnsJoinFields = benchmarkColumnsJoinFieldsData.JoinFields("|")
-	}
-	if benchmarkColumnsJoinFields != benchmarkColumnsJoinFieldsWant {
-		b.Errorf("\nWant: %s\nHave: %s\n", benchmarkColumnsJoinFieldsWant, benchmarkColumnsJoinFields)
-	}
-}
-
 func TestColumns(t *testing.T) {
 
 	tests := []struct {
@@ -158,6 +117,10 @@ func TestColumns(t *testing.T) {
 	assert.True(t, mustStructure(table4).Columns.First().IsPK())
 	emptyTS := &csdb.Table{}
 	assert.False(t, emptyTS.Columns.First().IsPK())
+
+	hash, err := mustStructure(table3).Columns.Hash()
+	assert.NoError(t, err)
+	assert.Equal(t, []byte{0xd4, 0x12, 0x62, 0x5a, 0x9b, 0x3a, 0x68, 0xfe}, hash)
 
 }
 
@@ -338,4 +301,74 @@ func TestGetGoPrimitive(t *testing.T) {
 		assert.Equal(t, test.want, have, "Test: %#v", test)
 	}
 
+}
+
+var benchmarkGetColumns csdb.Columns
+var benchmarkGetColumnsHashWant = []byte{0x3b, 0x2d, 0xdd, 0xf4, 0x4e, 0x2b, 0x3a, 0xd0}
+
+// BenchmarkGetColumns-4	    1000	   3376128 ns/op	   24198 B/op	     196 allocs/op
+// BenchmarkGetColumns-4	    1000	   1185381 ns/op	   21861 B/op	     179 allocs/op
+func BenchmarkGetColumns(b *testing.B) {
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
+	sess := dbc.NewSession()
+	var err error
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchmarkGetColumns, err = csdb.GetColumns(sess, "eav_attribute")
+		if err != nil {
+			b.Error(err)
+		}
+	}
+	hashHave, err := benchmarkGetColumns.Hash()
+	if err != nil {
+		b.Error(err)
+	}
+	if 0 != bytes.Compare(hashHave, benchmarkGetColumnsHashWant) {
+		b.Errorf("\nHave %#v\nWant %#v\n", hashHave, benchmarkGetColumnsHashWant)
+	}
+	//	b.Log(benchmarkGetColumns.GoString())
+}
+
+var benchmarkColumnsJoinFields string
+var benchmarkColumnsJoinFieldsWant = "category_id|product_id|position"
+var benchmarkColumnsJoinFieldsData = csdb.Columns{
+	csdb.Column{
+		Field:   dbr.InitNullString("category_id"),
+		Type:    dbr.InitNullString("int(10) unsigned"),
+		Null:    dbr.InitNullString("NO"),
+		Key:     dbr.InitNullString("", false),
+		Default: dbr.InitNullString("0"),
+		Extra:   dbr.InitNullString(""),
+	},
+	csdb.Column{
+		Field:   dbr.InitNullString("product_id"),
+		Type:    dbr.InitNullString("int(10) unsigned"),
+		Null:    dbr.InitNullString("NO"),
+		Key:     dbr.InitNullString(""),
+		Default: dbr.InitNullString("0"),
+		Extra:   dbr.InitNullString(""),
+	},
+	csdb.Column{
+		Field:   dbr.InitNullString("position"),
+		Type:    dbr.InitNullString("int(10) unsigned"),
+		Null:    dbr.InitNullString("YES"),
+		Key:     dbr.InitNullString(""),
+		Default: dbr.NullString{},
+		Extra:   dbr.InitNullString(""),
+	},
+}
+
+// BenchmarkColumnsJoinFields-4	 2000000	       625 ns/op	     176 B/op	       5 allocs/op <- Go 1.5
+func BenchmarkColumnsJoinFields(b *testing.B) {
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchmarkColumnsJoinFields = benchmarkColumnsJoinFieldsData.JoinFields("|")
+	}
+	if benchmarkColumnsJoinFields != benchmarkColumnsJoinFieldsWant {
+		b.Errorf("\nWant: %s\nHave: %s\n", benchmarkColumnsJoinFieldsWant, benchmarkColumnsJoinFields)
+	}
 }

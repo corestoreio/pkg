@@ -19,9 +19,11 @@ import (
 	"strings"
 
 	"bytes"
+	"hash/fnv"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
-	"github.com/juju/errgo"
+	"github.com/corestoreio/csfw/utils/log"
 )
 
 const (
@@ -52,23 +54,63 @@ func GetColumns(dbrSess dbr.SessionRunner, table string) (Columns, error) {
 	rows, err := sel.Query(selSql, selArg...)
 
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, log.Error("csdb.GetColumns.Query", "err", err, "query", selSql, "args", selArg)
 	}
 	defer rows.Close()
 
+	col := Column{}
 	for rows.Next() {
-		col := Column{}
 		err := rows.Scan(&col.Field, &col.Type, &col.Null, &col.Key, &col.Default, &col.Extra)
 		if err != nil {
-			return nil, errgo.Mask(err)
+			return nil, log.Error("csdb.GetColumns.Rows.Scan", "err", err, "query", selSql, "args", selArg)
 		}
 		cols = append(cols, col)
 	}
 	err = rows.Err()
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, log.Error("csdb.GetColumns.Rows.Err", "err", err, "query", selSql, "args", selArg)
 	}
 	return cols, nil
+}
+
+// Hash calculates a non-cryptographic, fast and efficient hash value from all columns.
+// Current hash algorithm is fnv64.
+func (cs Columns) Hash() ([]byte, error) {
+	var tr byte = 0x74 // letter t for true
+	var buf bytes.Buffer
+	for _, c := range cs {
+		buf.WriteString(c.Field.String)
+		if c.Field.Valid {
+			buf.WriteByte(tr)
+		}
+		buf.WriteString(c.Type.String)
+		if c.Type.Valid {
+			buf.WriteByte(tr)
+		}
+		buf.WriteString(c.Null.String)
+		if c.Null.Valid {
+			buf.WriteByte(tr)
+		}
+		buf.WriteString(c.Key.String)
+		if c.Key.Valid {
+			buf.WriteByte(tr)
+		}
+		buf.WriteString(c.Default.String)
+		if c.Default.Valid {
+			buf.WriteByte(tr)
+		}
+		buf.WriteString(c.Extra.String)
+		if c.Extra.Valid {
+			buf.WriteByte(tr)
+		}
+	}
+	f64 := fnv.New64()
+	if _, err := f64.Write(buf.Bytes()); err != nil {
+		return nil, err
+	}
+	buf.Reset()
+	ret := buf.Bytes()
+	return f64.Sum(ret), nil
 }
 
 // Filter returns a new slice filtered by predicate f
