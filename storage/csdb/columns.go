@@ -198,15 +198,13 @@ func (c Column) IsNull() bool {
 	return c.Field.Valid && c.Null.Valid && c.Null.String == ColumnNull
 }
 
-var columnsBool = utils.StringSlice{"used_", "is_", "has_", "increment_per_store"}
-
 // IsBool checks the name of a column if it contains bool values. Magento uses
 // often smallint field types to store bool values.
 func (c Column) IsBool() bool {
 	if len(c.Field.String) < 3 {
 		return false
 	}
-	return columnsBool.ContainsReverse(c.Field.String)
+	return columnTypes.byName.bool.ContainsReverse(c.Field.String)
 }
 
 // IsInt checks if a column contains a MySQL int type, independent from its length.
@@ -214,30 +212,20 @@ func (c Column) IsInt() bool {
 	return strings.Contains(c.Type.String, "int")
 }
 
-var columnsString = utils.StringSlice{"char", "text"}
-
 // IsString checks if a column contains a MySQL varchar or text type.
 func (c Column) IsString() bool {
-	return columnsString.ContainsReverse(c.Type.String)
+	return columnTypes.byType.string.ContainsReverse(c.Type.String)
 }
-
-var columnDate = utils.StringSlice{"time", "date"}
 
 // IsDate checks if a column contains a MySQL timestamp or date type.
 func (c Column) IsDate() bool {
-	return columnDate.StartsWithReverse(c.Type.String)
+	return columnTypes.byType.dateSW.StartsWithReverse(c.Type.String)
 }
-
-var columnFloat = utils.StringSlice{"decimal", "float", "double"}
 
 // IsFloat checks if a column contains a MySQL decimal or float type.
 func (c Column) IsFloat() bool {
-	return columnFloat.StartsWithReverse(c.Type.String)
+	return columnTypes.byType.floatSW.StartsWithReverse(c.Type.String)
 }
-
-var columnMoney = utils.StringSlice{"price", "_tax", "tax_", "_amount", "amount_", "total", "adjustment", "discount"}
-
-var columnMoneySW = utils.StringSlice{"base_", "grand_"}
 
 // IsMoney checks if a column contains a MySQL decimal or float type and the
 // column name.
@@ -251,9 +239,9 @@ func (c Column) IsMoney() bool {
 	switch {
 	case MoneyTypeColumnNames.Include(c.Field.String):
 		ret = true
-	case columnMoney.ContainsReverse(c.Field.String):
+	case columnTypes.byName.money.ContainsReverse(c.Field.String):
 		ret = true
-	case columnMoneySW.StartsWithReverse(c.Field.String):
+	case columnTypes.byName.moneySW.StartsWithReverse(c.Field.String):
 		ret = true
 	case false == c.IsNull() && c.Default.String == "0.0000":
 		ret = true
@@ -291,4 +279,40 @@ func (c Column) GetGoPrimitive(useNullType bool) string {
 		goType = "time.Time"
 	}
 	return goType
+}
+
+// columnTypes looks ugly but ... refactor later
+var columnTypes = struct { // the slices in this struct are only for reading. no mutex protection required
+	byName struct {
+		bool    utils.StringSlice
+		money   utils.StringSlice
+		moneySW utils.StringSlice
+	}
+	byType struct {
+		int     utils.StringSlice
+		string  utils.StringSlice
+		dateSW  utils.StringSlice
+		floatSW utils.StringSlice
+	}
+}{
+	struct {
+		bool    utils.StringSlice // contains
+		money   utils.StringSlice // contains
+		moneySW utils.StringSlice // sw == starts with
+	}{
+		utils.StringSlice{"used_", "is_", "has_", "increment_per_store"},
+		utils.StringSlice{"price", "_tax", "tax_", "_amount", "amount_", "total", "adjustment", "discount"},
+		utils.StringSlice{"base_", "grand_"},
+	},
+	struct {
+		int     utils.StringSlice // contains
+		string  utils.StringSlice // contains
+		dateSW  utils.StringSlice // SW starts with
+		floatSW utils.StringSlice // SW starts with
+	}{
+		utils.StringSlice{"int"},
+		utils.StringSlice{"char", "text"},
+		utils.StringSlice{"time", "date"},
+		utils.StringSlice{"decimal", "float", "double"},
+	},
 }
