@@ -168,40 +168,27 @@ type (
 	Columns []column
 	// column contains info about one database column retrieve from SHOW COLUMNS FROM tbl`
 	column struct {
-		Field, Type, Null, Key, Default, Extra sql.NullString
-		GoType, GoName                         string
+		csdb.Column
+		GoType, GoName string
 	}
 )
-
-// CopyToCSDB copies the data to a csdb column type
-func (c column) CopyToCSDB() csdb.Column {
-	return csdb.Column{
-		Field:   dbr.InitNullString(c.Field.String, c.Field.Valid),
-		Type:    dbr.InitNullString(c.Type.String, c.Type.Valid),
-		Null:    dbr.InitNullString(c.Null.String, c.Null.Valid),
-		Key:     dbr.InitNullString(c.Key.String, c.Key.Valid),
-		Default: dbr.InitNullString(c.Default.String, c.Default.Valid),
-		Extra:   dbr.InitNullString(c.Extra.String, c.Extra.Valid),
-	}
-}
 
 // Comment creates a comment from a database column to be used in Go code
 func (c column) Comment() string {
 	sqlNull := "NOT NULL"
-	if c.Null.String == "YES" {
+	if c.IsNull() {
 		sqlNull = "NULL"
 	}
 	sqlDefault := ""
 	if c.Default.String != "" {
 		sqlDefault = "DEFAULT '" + c.Default.String + "'"
 	}
-	return "// " + c.Field.String + " " + c.Type.String + " " + sqlNull + " " + c.Key.String + " " + sqlDefault + " " + c.Extra.String
+	return "// " + c.Name() + " " + c.Type.String + " " + sqlNull + " " + c.Key.String + " " + sqlDefault + " " + c.Extra.String
 }
 
 func (c column) updateGoPrimitive(useSQL bool) column {
 	c.GoName = Camelize(c.Field.String)
-	col := c.CopyToCSDB()
-	c.GoType = col.GetGoPrimitive(useSQL)
+	c.GoType = c.GetGoPrimitive(useSQL)
 	return c
 }
 
@@ -209,7 +196,7 @@ func (c column) updateGoPrimitive(useSQL bool) column {
 func (cc Columns) CopyToCSDB() csdb.Columns {
 	ret := make(csdb.Columns, len(cc))
 	for i, c := range cc {
-		ret[i] = c.CopyToCSDB()
+		ret[i] = c.Column
 	}
 	return ret
 }
@@ -264,14 +251,14 @@ func (cc Columns) GetFieldNames(pkOnly bool) []string {
 }
 
 // isIgnoredColumn Drop unused column entity_type_id in customer__* and catalog_* tables
-func isIgnoredColumn(t, c string) bool {
+func isIgnoredColumn(table, column string) bool {
 	const etid = "entity_type_id"
 	switch {
-	case strings.Index(t, "catalog_") >= 0 && c == etid:
+	case strings.Index(table, "catalog_") >= 0 && column == etid:
 		return true
-	case strings.Index(t, "customer_") >= 0 && c == etid:
+	case strings.Index(table, "customer_") >= 0 && column == etid:
 		return true
-	case strings.Index(t, "eav_attribute") >= 0 && c == "attribute_model":
+	case strings.Index(table, "eav_attribute") >= 0 && column == "attribute_model":
 		return true
 	}
 	return false
@@ -475,7 +462,7 @@ func PrepareForTemplate(cols Columns, rows []StringEntities, amm AttributeModelD
 	ip := make([]string, 0, 10) // import_path container
 	for _, row := range rows {
 		for colName, colValue := range row {
-			var c = cols.GetByName(colName).CopyToCSDB()
+			var c = cols.GetByName(colName)
 
 			if false == c.Field.Valid {
 				continue
