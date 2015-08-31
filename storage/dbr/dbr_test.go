@@ -44,7 +44,7 @@ func realDb() (driver string, dsn string) {
 		driver = DefaultDriverName
 	}
 
-	dsn = os.Getenv("DBR_TEST_DSN")
+	dsn = os.Getenv("CS_DSN_TEST")
 	if dsn == "" {
 		dsn = "root:unprotected@unix(/tmp/mysql.sock)/uservoice_development?charset=utf8&parseTime=true"
 	}

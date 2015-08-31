@@ -10,6 +10,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestInitNullString(t *testing.T) {
+	assert.Equal(t, "product", InitNullString("product").String)
+	assert.True(t, InitNullString("product", false).Valid)
+	assert.False(t, InitNullString("", false).Valid)
+	v, err := InitNullString("product", false).Value()
+	assert.NoError(t, err)
+	assert.Equal(t, "product", v)
+}
+
 func TestNullTypeScanning(t *testing.T) {
 	s := createRealSessionWithFixtures()
 

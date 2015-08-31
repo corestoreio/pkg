@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"fmt"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/go-sql-driver/mysql"
 	"github.com/ugorji/go/codec"
@@ -20,6 +21,30 @@ var _ codec.Selfer = (*NullString)(nil)
 // NullString is a type that can be null or a string
 type NullString struct {
 	sql.NullString
+}
+
+// InitNullString generates a new non-pointer type. Valid argument is optional
+// and will be detected automatically if left off. If value is empty, valid is
+// false which means database value is NULL.
+func InitNullString(value string, valid ...bool) NullString {
+	ok := value != ""
+	if len(valid) > 0 && value == "" {
+		ok = valid[0]
+	}
+	return NullString{
+		sql.NullString{
+			String: value,
+			Valid:  ok,
+		},
+	}
+}
+
+// GoString satisfies the interface fmt.GoStringer when using %#v in Printf methods.
+// Returns
+// 		dbr.InitNullString(`...`,bool)
+func (ns NullString) GoString() string {
+	// @todo fix bug to escape back ticks properly
+	return fmt.Sprintf("dbr.InitNullString(`%s`, %t)", ns.String, ns.Valid)
 }
 
 // NullFloat64 is a type that can be null or a float64

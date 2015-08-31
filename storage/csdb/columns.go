@@ -15,14 +15,13 @@
 package csdb
 
 import (
-	"database/sql"
 	"fmt"
 	"strings"
 
+	"bytes"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
 	"github.com/juju/errgo"
-	"github.com/kr/pretty"
 )
 
 const (
@@ -39,15 +38,9 @@ type (
 	Columns []Column
 	// Column contains info about one database column retrieved from `SHOW COLUMNS FROM table`
 	Column struct {
-		Field, Type, Null, Key, Default, Extra sql.NullString
+		Field, Type, Null, Key, Default, Extra dbr.NullString
 	}
 )
-
-// MoneyTypeColumnNames part of the function IsMoney() to detect if a column
-// type is a Go money.Currency type.
-var MoneyTypeColumnNames = utils.StringSlice{
-	"value", "price", "cost", "msrp",
-}
 
 // GetColumns returns all columns from a table. It discards the column entity_type_id from some
 // entity tables.
@@ -145,14 +138,18 @@ func (cs Columns) ByName(fieldName string) Column {
 
 // @todo add maybe more ByNull(), ByType(), ByKey(), ByDefault(), ByExtra()
 
-// String pretty print
-func (cs Columns) String() string {
+// GoString returns the Go types representation. See interface fmt.GoStringer
+func (cs Columns) GoString() string {
 	// fix tests if you change this layout of the returned string
-	var ret = make([]string, len(cs))
+	var buf bytes.Buffer
+	lcs := len(cs)
 	for i, c := range cs {
-		ret[i] = fmt.Sprintf("%# v", pretty.Formatter(c))
+		fmt.Fprintf(&buf, "%#v", c)
+		if i+1 < lcs {
+			buf.WriteString(",\n")
+		}
 	}
-	return strings.Join(ret, ",\n")
+	return buf.String()
 }
 
 // First returns the first column from the Columns slice
@@ -237,7 +234,8 @@ func (c Column) IsMoney() bool {
 	}
 	var ret bool
 	switch {
-	case MoneyTypeColumnNames.Include(c.Field.String):
+	// could us a long list of || statements but switch looks nicer :-)
+	case columnTypes.byName.moneyEqual.Include(c.Field.String):
 		ret = true
 	case columnTypes.byName.money.ContainsReverse(c.Field.String):
 		ret = true
@@ -284,9 +282,10 @@ func (c Column) GetGoPrimitive(useNullType bool) string {
 // columnTypes looks ugly but ... refactor later
 var columnTypes = struct { // the slices in this struct are only for reading. no mutex protection required
 	byName struct {
-		bool    utils.StringSlice
-		money   utils.StringSlice
-		moneySW utils.StringSlice
+		bool       utils.StringSlice
+		money      utils.StringSlice
+		moneySW    utils.StringSlice
+		moneyEqual utils.StringSlice
 	}
 	byType struct {
 		int     utils.StringSlice
@@ -296,13 +295,15 @@ var columnTypes = struct { // the slices in this struct are only for reading. no
 	}
 }{
 	struct {
-		bool    utils.StringSlice // contains
-		money   utils.StringSlice // contains
-		moneySW utils.StringSlice // sw == starts with
+		bool       utils.StringSlice // contains
+		money      utils.StringSlice // contains
+		moneySW    utils.StringSlice // sw == starts with
+		moneyEqual utils.StringSlice
 	}{
 		utils.StringSlice{"used_", "is_", "has_", "increment_per_store"},
 		utils.StringSlice{"price", "_tax", "tax_", "_amount", "amount_", "total", "adjustment", "discount"},
 		utils.StringSlice{"base_", "grand_"},
+		utils.StringSlice{"value", "price", "cost", "msrp"},
 	},
 	struct {
 		int     utils.StringSlice // contains
