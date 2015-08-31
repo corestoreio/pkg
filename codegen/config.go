@@ -23,6 +23,8 @@ import (
 )
 
 const PS = string(os.PathSeparator)
+
+// CSImportPath @todo this must reflect the vendor directory ...
 const CSImportPath string = "github.com" + PS + "corestoreio" + PS + "csfw"
 
 type (

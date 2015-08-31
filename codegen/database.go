@@ -165,7 +165,7 @@ func GetEavValueTables(dbrConn *dbr.Connection, entityTypeCodes []string) (TypeC
 type (
 	// Columns contains a slice to pointer column types. A column has the fields: Field, Type, Null, Key, Default and
 	// Extra of type sql.NullString and GoType, GoName of type string.
-	Columns []*column
+	Columns []column
 	// column contains info about one database column retrieve from SHOW COLUMNS FROM tbl`
 	column struct {
 		Field, Type, Null, Key, Default, Extra sql.NullString
@@ -174,37 +174,19 @@ type (
 )
 
 // CopyToCSDB copies the data to a csdb column type
-func (c *column) CopyToCSDB() csdb.Column {
+func (c column) CopyToCSDB() csdb.Column {
 	return csdb.Column{
-		Field: sql.NullString{
-			String: c.Field.String,
-			Valid:  c.Field.Valid,
-		},
-		Type: sql.NullString{
-			String: c.Type.String,
-			Valid:  c.Type.Valid,
-		},
-		Null: sql.NullString{
-			String: c.Null.String,
-			Valid:  c.Null.Valid,
-		},
-		Key: sql.NullString{
-			String: c.Key.String,
-			Valid:  c.Key.Valid,
-		},
-		Default: sql.NullString{
-			String: c.Default.String,
-			Valid:  c.Default.Valid,
-		},
-		Extra: sql.NullString{
-			String: c.Extra.String,
-			Valid:  c.Extra.Valid,
-		},
+		Field:   dbr.InitNullString(c.Field.String, c.Field.Valid),
+		Type:    dbr.InitNullString(c.Type.String, c.Type.Valid),
+		Null:    dbr.InitNullString(c.Null.String, c.Null.Valid),
+		Key:     dbr.InitNullString(c.Key.String, c.Key.Valid),
+		Default: dbr.InitNullString(c.Default.String, c.Default.Valid),
+		Extra:   dbr.InitNullString(c.Extra.String, c.Extra.Valid),
 	}
 }
 
 // Comment creates a comment from a database column to be used in Go code
-func (c *column) Comment() string {
+func (c column) Comment() string {
 	sqlNull := "NOT NULL"
 	if c.Null.String == "YES" {
 		sqlNull = "NULL"
@@ -216,10 +198,11 @@ func (c *column) Comment() string {
 	return "// " + c.Field.String + " " + c.Type.String + " " + sqlNull + " " + c.Key.String + " " + sqlDefault + " " + c.Extra.String
 }
 
-func (c *column) updateGoPrimitive(useSQL bool) {
+func (c column) updateGoPrimitive(useSQL bool) column {
 	c.GoName = Camelize(c.Field.String)
 	col := c.CopyToCSDB()
 	c.GoType = col.GetGoPrimitive(useSQL)
+	return c
 }
 
 // CopyToCSDB copies the underlying slice to a csdb columns type
@@ -232,21 +215,21 @@ func (cc Columns) CopyToCSDB() csdb.Columns {
 }
 
 // GetByName returns a column from Columns slice by a give name
-func (cc Columns) GetByName(name string) *column {
+func (cc Columns) GetByName(name string) column {
 	for _, c := range cc {
 		if c.Field.String == name {
 			return c
 		}
 	}
-	return nil
+	return column{}
 }
 
 // MapSQLToGoDBRType takes a slice of Columns and sets the fields GoType and GoName to the correct value
 // to create a Go struct. These generated structs are mainly used in a result from a SQL query. The field GoType
 // will contain dbr.Null* types.
 func (cc Columns) MapSQLToGoDBRType() error {
-	for _, col := range cc {
-		col.updateGoPrimitive(true)
+	for i, col := range cc {
+		cc[i] = col.updateGoPrimitive(true)
 	}
 	return nil
 }
@@ -255,10 +238,10 @@ func (cc Columns) MapSQLToGoDBRType() error {
 // the fields GoType and GoName of column struct. The 2nd argument ifm interface map replaces the primitive type
 // with an interface type, the column name must be found as a key in the map.
 func (cc Columns) MapSQLToGoType(ifm map[string]string) error {
-	for _, col := range cc {
-		col.updateGoPrimitive(false)
-		if val, ok := ifm[col.Field.String]; ok {
-			col.GoType = val // Type is now an interface name
+	for i, col := range cc {
+		cc[i] = col.updateGoPrimitive(false)
+		if val, ok := ifm[col.Field.String]; col.Field.Valid && ok {
+			cc[i].GoType = val // Type is now an interface name
 		}
 	}
 	return nil
@@ -294,8 +277,9 @@ func isIgnoredColumn(t, c string) bool {
 	return false
 }
 
-// GetColumns returns all columns from a table. It discards the column entity_type_id from some
-// entity tables.
+// GetColumns returns all columns from a table. It discards the column
+// entity_type_id from some entity tables. The column attribute_model will also
+// be dropped from table eav_attribute
 func GetColumns(db *sql.DB, table string) (Columns, error) {
 	var cols = make(Columns, 0, 200)
 	rows, err := db.Query("SHOW COLUMNS FROM `" + table + "`")
@@ -304,8 +288,9 @@ func GetColumns(db *sql.DB, table string) (Columns, error) {
 	}
 	defer rows.Close()
 
+	col := column{}
 	for rows.Next() {
-		col := &column{}
+
 		err := rows.Scan(&col.Field, &col.Type, &col.Null, &col.Key, &col.Default, &col.Extra)
 		if err != nil {
 			return nil, log.Error("codegen.GetColumns.Scan", "err", err)
@@ -492,9 +477,13 @@ func PrepareForTemplate(cols Columns, rows []StringEntities, amm AttributeModelD
 		for colName, colValue := range row {
 			var c = cols.GetByName(colName).CopyToCSDB()
 
+			if false == c.Field.Valid {
+				continue
+			}
+
 			goType, hasModel := amm[colValue]
 			_, isAllowedInterfaceChange := EavAttributeColumnNameToInterface[colName]
-			switch true {
+			switch {
 			case hasModel:
 				row[colName] = "nil"
 				if goType.GoFunc != "" {
