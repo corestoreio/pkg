@@ -49,38 +49,3 @@ func BenchmarkStrIsAlNum(b *testing.B) {
 		benchStrIsAlNum = utils.StrIsAlNum("Hello1WorldOfGophers")
 	}
 }
-
-func TestStrContains(t *testing.T) {
-	tests := []struct {
-		have string
-		in   []string
-		want bool
-	}{
-		{"I live in the black forest", []string{"black"}, true},
-		{"I live in the black forest", []string{"blagg", "forest"}, true},
-		{"I live in the black forest", []string{"blagg", "wald"}, false},
-		{"We don't have any Internet connection", nil, false},
-	}
-
-	for _, test := range tests {
-		assert.Equal(t, test.want, utils.StrContains(test.have, test.in...), "Test: %#v", test)
-	}
-}
-
-func TestStrStartsWith(t *testing.T) {
-	tests := []struct {
-		have string
-		in   []string
-		want bool
-	}{
-		{"grand_total", []string{"grand_"}, true},
-		{"base_discount_amount", []string{"amount"}, false},
-		{"base_grand_total", []string{"grand_", "base_"}, true},
-		{"base_grand_total", []string{"xgrand_", "zbase_"}, false},
-		{"base_grand_total", nil, false},
-	}
-
-	for _, test := range tests {
-		assert.Equal(t, test.want, utils.StrStartsWith(test.have, test.in...), "Test: %#v", test)
-	}
-}

@@ -57,7 +57,8 @@ func TestStringSliceReduceContains(t *testing.T) {
 var benchStringSliceReduceContains utils.StringSlice
 var benchStringSliceReduceContainsData = []string{"is_required", "default_value"}
 
-// BenchmarkReduceContains	 1000000	      1841 ns/op	      96 B/op	       2 allocs/op
+// BenchmarkStringSliceReduceContains	 1000000	      1841 ns/op	      96 B/op	       2 allocs/op <- Go 1.4.2
+// BenchmarkStringSliceReduceContains-4	 1000000	      1250 ns/op	      64 B/op	       1 allocs/op <- Go 1.5
 func BenchmarkStringSliceReduceContains(b *testing.B) {
 
 	b.ReportAllocs()
@@ -178,7 +179,8 @@ func TestStringSliceUnique(t *testing.T) {
 
 var benchStringSliceUnique utils.StringSlice
 
-// BenchmarkUnique	 2000000	       612 ns/op	     160 B/op	       2 allocs/op
+// BenchmarkStringSliceUnique	 2000000	       612 ns/op	     160 B/op	       2 allocs/op <- Go 1.4.2
+// BenchmarkStringSliceUnique  	10000000	       179 ns/op	     128 B/op	       1 allocs/op <- Go 1.5
 func BenchmarkStringSliceUnique(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -251,7 +253,8 @@ func TestStringSliceSplitStringer8(t *testing.T) {
 
 var benchStringSliceSplitStringer8 utils.StringSlice
 
-// BenchmarkStringSliceSplitStringer8	 1000000	      1041 ns/op	     240 B/op	       4 allocs/op
+// BenchmarkStringSliceSplitStringer8	 1000000	      1041 ns/op	     240 B/op	       4 allocs/op <- Go 1.4.2
+// BenchmarkStringSliceSplitStringer8-4	 2000000	       673 ns/op	     240 B/op	       4 allocs/op <- Go 1.5
 func BenchmarkStringSliceSplitStringer8(b *testing.B) {
 	const _ScopeGroup_name = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
 	var _ScopeGroup_index = [...]uint8{0, 11, 23, 35, 45, 55}
@@ -260,5 +263,40 @@ func BenchmarkStringSliceSplitStringer8(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		benchStringSliceSplitStringer8.SplitStringer8(_ScopeGroup_name, _ScopeGroup_index[:]...)
 		benchStringSliceSplitStringer8 = nil
+	}
+}
+
+func TestStringSliceContainsReverse(t *testing.T) {
+	tests := []struct {
+		have string
+		in   utils.StringSlice
+		want bool
+	}{
+		{"I live in the black forest", utils.StringSlice{"black"}, true},
+		{"I live in the black forest", utils.StringSlice{"blagg", "forest"}, true},
+		{"I live in the black forest", utils.StringSlice{"blagg", "wald"}, false},
+		{"We don't have any Internet connection", nil, false},
+	}
+
+	for _, test := range tests {
+		assert.Equal(t, test.want, test.in.ContainsReverse(test.have), "Test: %#v", test)
+	}
+}
+
+func TestStringSliceStartsWithReverse(t *testing.T) {
+	tests := []struct {
+		have string
+		in   utils.StringSlice
+		want bool
+	}{
+		{"grand_total", utils.StringSlice{"grand_"}, true},
+		{"base_discount_amount", utils.StringSlice{"amount"}, false},
+		{"base_grand_total", utils.StringSlice{"grand_", "base_"}, true},
+		{"base_grand_total", utils.StringSlice{"xgrand_", "zbase_"}, false},
+		{"base_grand_total", nil, false},
+	}
+
+	for _, test := range tests {
+		assert.Equal(t, test.want, test.in.StartsWithReverse(test.have), "Test: %#v", test)
 	}
 }

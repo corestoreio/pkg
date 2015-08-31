@@ -14,8 +14,6 @@
 
 package utils
 
-import "strings"
-
 // StrIsAlNum returns true if an alpha numeric string consists of characters a-zA-Z0-9_
 func StrIsAlNum(s string) bool {
 	c := 0
@@ -36,26 +34,4 @@ func StrIsAlNum(s string) bool {
 		}
 	}
 	return len(s) == c
-}
-
-// StrContains checks if a string contains one of the multiple provided
-// substrings.
-func StrContains(s string, substrs ...string) bool {
-	for _, subs := range substrs {
-		if strings.Contains(s, subs) {
-			return true
-		}
-	}
-	return false
-}
-
-// StrStartsWith checks if a string starts with one of the multiple provided
-// substrings.
-func StrStartsWith(s string, substrs ...string) bool {
-	for _, subs := range substrs {
-		if strings.Index(s, subs) == 0 {
-			return true
-		}
-	}
-	return false
 }

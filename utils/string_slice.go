@@ -142,6 +142,28 @@ func (l *StringSlice) ReduceContains(in ...string) StringSlice {
 	return *l
 }
 
+// ContainsReverse checks if the StringSlice has at least one occurrence in the
+// string s.
+func (l StringSlice) ContainsReverse(s string) bool {
+	for _, substr := range l {
+		if strings.Contains(s, substr) {
+			return true
+		}
+	}
+	return false
+}
+
+// StartsWithReverse checks if the StringSlice can be found at least once in
+// the provided string s.
+func (l StringSlice) StartsWithReverse(s string) bool {
+	for _, substr := range l {
+		if strings.Index(s, substr) == 0 {
+			return true
+		}
+	}
+	return false
+}
+
 // Map changes itself containing the results of applying the function f to each string in itself.
 func (l *StringSlice) Map(f func(string) string) StringSlice {
 	for i, v := range *l {

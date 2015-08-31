@@ -198,13 +198,15 @@ func (c Column) IsNull() bool {
 	return c.Field.Valid && c.Null.Valid && c.Null.String == ColumnNull
 }
 
+var columnsBool = utils.StringSlice{"used_", "is_", "has_", "increment_per_store"}
+
 // IsBool checks the name of a column if it contains bool values. Magento uses
 // often smallint field types to store bool values.
 func (c Column) IsBool() bool {
 	if len(c.Field.String) < 3 {
 		return false
 	}
-	return utils.StrContains(c.Field.String, "used_", "is_", "has_", "increment_per_store")
+	return columnsBool.ContainsReverse(c.Field.String)
 }
 
 // IsInt checks if a column contains a MySQL int type, independent from its length.
@@ -212,20 +214,30 @@ func (c Column) IsInt() bool {
 	return strings.Contains(c.Type.String, "int")
 }
 
+var columnsString = utils.StringSlice{"char", "text"}
+
 // IsString checks if a column contains a MySQL varchar or text type.
 func (c Column) IsString() bool {
-	return utils.StrContains(c.Type.String, "char", "text")
+	return columnsString.ContainsReverse(c.Type.String)
 }
+
+var columnDate = utils.StringSlice{"time", "date"}
 
 // IsDate checks if a column contains a MySQL timestamp or date type.
 func (c Column) IsDate() bool {
-	return utils.StrStartsWith(c.Type.String, "time", "date")
+	return columnDate.StartsWithReverse(c.Type.String)
 }
+
+var columnFloat = utils.StringSlice{"decimal", "float", "double"}
 
 // IsFloat checks if a column contains a MySQL decimal or float type.
 func (c Column) IsFloat() bool {
-	return utils.StrStartsWith(c.Type.String, "decimal", "float", "double")
+	return columnFloat.StartsWithReverse(c.Type.String)
 }
+
+var columnMoney = utils.StringSlice{"price", "_tax", "tax_", "_amount", "amount_", "total", "adjustment", "discount"}
+
+var columnMoneySW = utils.StringSlice{"base_", "grand_"}
 
 // IsMoney checks if a column contains a MySQL decimal or float type and the
 // column name.
@@ -239,9 +251,9 @@ func (c Column) IsMoney() bool {
 	switch {
 	case MoneyTypeColumnNames.Include(c.Field.String):
 		ret = true
-	case utils.StrContains(c.Field.String, "price", "_tax", "tax_", "_amount", "amount_", "total", "adjustment", "discount"):
+	case columnMoney.ContainsReverse(c.Field.String):
 		ret = true
-	case utils.StrStartsWith(c.Field.String, "base_", "grand_"):
+	case columnMoneySW.StartsWithReverse(c.Field.String):
 		ret = true
 	case false == c.IsNull() && c.Default.String == "0.0000":
 		ret = true
