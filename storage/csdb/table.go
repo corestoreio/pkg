@@ -102,3 +102,10 @@ func (ts *Table) Select(dbrSess dbr.SessionRunner) (*dbr.SelectBuilder, error) {
 		Select(ts.AllColumnAliasQuote("main_table")...).
 		From(ts.Name, "main_table"), nil
 }
+
+func (ts *Table) Update() {}
+func (ts *Table) Delete() {}
+func (ts *Table) Insert() {}
+func (ts *Table) Alter()  {}
+func (ts *Table) Drop()   {}
+func (ts *Table) Create() {}
