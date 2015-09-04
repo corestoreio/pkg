@@ -18,8 +18,14 @@ import (
 	"errors"
 	"time"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/go-gomail/gomail"
+)
+
+const (
+	PathSmtpHost = "system/smtp/host"
+	PathSmtpPort = "system/smtp/port"
 )
 
 var ErrMailChannelClosed = errors.New("The mail channel has been closed.")
@@ -30,6 +36,7 @@ type Daemon struct {
 	dialer   *gomail.Dialer
 	sendFunc gomail.SendFunc
 	closed   bool
+	cr       config.Reader
 	// SMTPTimeout closes the connection to the SMTP server if no email was
 	// sent in the last default 30 seconds.
 	SMTPTimeout time.Duration
@@ -207,11 +214,22 @@ func SetSendFunc(sf gomail.SendFunc) DaemonOption {
 	}
 }
 
+// SetStoreConfig sets the config.Reader to the Store.
+// Default reader is config.DefaultManager
+func SetConfig(cr config.Reader) DaemonOption {
+	return func(da *Daemon) DaemonOption {
+		previous := da.cr
+		da.cr = cr
+		return SetConfig(previous)
+	}
+}
+
 // NewDaemon creates a new daemon to send default to localhost:25 and creates
 // a default unbuffered channel which can be used via the Send*() function.
 func NewDaemon(opts ...DaemonOption) *Daemon {
 	d := &Daemon{
 		dialer:      DefaultDialer,
+		cr:          config.DefaultManager,
 		SMTPTimeout: time.Second * 30,
 	}
 	d.Option(opts...)
