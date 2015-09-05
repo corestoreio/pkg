@@ -257,10 +257,10 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:           "ua_regexp",
 						Label:        `User-Agent Exceptions`,
 						Comment:      `Search strings are either normal strings or regular exceptions (PCRE). They are matched in the same order as entered. Examples:<br /><span style="font-family:monospace">Firefox<br />/^mozilla/i</span>`,
-						Type:         config.Type,
+						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Theme\Model\Design\Backend\Exceptions
 						SourceModel:  nil,
@@ -382,7 +382,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Debug`,
 				Comment:   ``,
 				SortOrder: 20,
-				Scope:     config.NewScopePerm(config.IDScopeWebsite, config.IDScopeStore),
+				Scope:     config.NewScopePerm(config.ScopeWebsiteID, config.ScopeStoreID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/debug/template_hints`,
@@ -392,7 +392,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeWebsite, config.IDScopeStore),
+						Scope:        config.NewScopePerm(config.ScopeWebsiteID, config.ScopeStoreID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -406,7 +406,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    21,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeWebsite, config.IDScopeStore),
+						Scope:        config.NewScopePerm(config.ScopeWebsiteID, config.ScopeStoreID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -480,7 +480,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Translate
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -581,7 +581,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Image Processing Settings`,
 				Comment:   ``,
 				SortOrder: 120,
-				Scope:     config.NewScopePerm(config.IDScopeDefault),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/image/default_adapter`,
@@ -591,7 +591,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Image\Adapter
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Image\Adapter
@@ -604,7 +604,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Static Files Settings`,
 				Comment:   ``,
 				SortOrder: 130,
-				Scope:     config.NewScopePerm(config.IDScopeDefault),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/static/sign`,
@@ -614,7 +614,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -672,7 +672,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeMultiselect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -695,7 +695,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Locale\Timezone
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Timezone
@@ -761,7 +761,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    25,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -775,7 +775,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    27,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -789,7 +789,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -803,7 +803,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    45,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -817,7 +817,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    55,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -831,7 +831,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -845,7 +845,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    61,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -870,7 +870,7 @@ var PackageConfiguration = config.NewConfiguration(
 					&config.Field{
 						// Path: `system/smtp/disable`,
 						ID:           "disable",
-						Label:        `Disable Email Communications`,
+						Label:        `Disable Email Communications. Output will be logged if disabled.`,
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    10,
@@ -885,7 +885,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `system/smtp/host`,
 						ID:           "host",
 						Label:        `Host`,
-						Comment:      `For Windows server only.`,
+						Comment:      `SMTP Host`,
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
@@ -899,7 +899,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `system/smtp/port`,
 						ID:           "port",
 						Label:        `Port (25)`,
-						Comment:      `For Windows server only.`,
+						Comment:      `SMTP Port`,
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
@@ -917,7 +917,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesnocustom
@@ -931,7 +931,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Address
 						SourceModel:  nil,
@@ -944,14 +944,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "admin",
 		Label:     "Admin",
 		SortOrder: 20,
-		Scope:     config.NewScopePerm(config.IDScopeDefault),
+		Scope:     config.NewScopePerm(config.ScopeDefaultID),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "emails",
 				Label:     `Admin User Emails`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.NewScopePerm(config.IDScopeDefault),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `admin/emails/forgot_email_template`,
@@ -961,7 +961,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -975,7 +975,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -989,7 +989,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Admin\Password\Link\Expirationperiod
 						SourceModel:  nil,
@@ -1002,7 +1002,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Startup Page`,
 				Comment:   ``,
 				SortOrder: 20,
-				Scope:     config.NewScopePerm(config.IDScopeDefault),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `admin/startup/menu_item_id`,
@@ -1012,7 +1012,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Admin\Page
@@ -1025,7 +1025,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Admin Base URL`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.NewScopePerm(config.IDScopeDefault),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `admin/url/use_custom`,
@@ -1035,7 +1035,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Admin\Usecustom
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1049,7 +1049,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Admin\Custom
 						SourceModel:  nil,
@@ -1063,7 +1063,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Admin\Custompath
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1077,7 +1077,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Admin\Custompath
 						SourceModel:  nil,
@@ -1090,7 +1090,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Security`,
 				Comment:   ``,
 				SortOrder: 35,
-				Scope:     config.NewScopePerm(config.IDScopeDefault),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `admin/security/use_form_key`,
@@ -1100,7 +1100,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Admin\Usesecretkey
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1114,7 +1114,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1128,7 +1128,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.Type,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -1141,7 +1141,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Dashboard`,
 				Comment:   ``,
 				SortOrder: 40,
-				Scope:     config.NewScopePerm(config.IDScopeDefault),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `admin/dashboard/enable_charts`,
@@ -1151,7 +1151,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1217,7 +1217,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Session Validation Settings`,
 				Comment:   ``,
 				SortOrder: 60,
-				Scope:     config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `web/session/use_remote_addr`,
@@ -1227,7 +1227,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1241,7 +1241,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1255,7 +1255,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1269,7 +1269,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1283,7 +1283,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1305,7 +1305,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "allowed_resources",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"email_folder":"email"}`,
 					},
 				},
@@ -1319,7 +1319,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "forgot_email_template",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `system_emails_forgot_email_template`,
 					},
 
@@ -1328,7 +1328,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "forgot_email_identity",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `general`,
 					},
 				},
@@ -1342,7 +1342,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "enable_charts",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: true,
 					},
 				},
@@ -1360,7 +1360,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "input_types",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"price":"price","media_image":"media_image","gallery":"gallery"}`,
 					},
 				},
