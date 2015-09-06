@@ -909,6 +909,34 @@ var PackageConfiguration = config.NewConfiguration(
 						SourceModel:  nil,
 					},
 
+					&config.Field{ // CS feature, not available in Magento
+						// Path: `system/smtp/username`,
+						ID:           "username",
+						Label:        `Username`,
+						Comment:      `SMTP Username`,
+						Type:         config.TypeText,
+						SortOrder:    40,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
+						Default:      nil,
+						BackendModel: nil,
+						SourceModel:  nil,
+					},
+
+					&config.Field{ // CS feature, not available in Magento
+						// Path: `system/smtp/password`,
+						ID:           "password",
+						Label:        `Password`,
+						Comment:      `SMTP Passowrd`,
+						Type:         config.TypeText,
+						SortOrder:    40,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
+						Default:      nil,
+						BackendModel: nil, // @todo encryption
+						SourceModel:  nil, // @todo encryption
+					},
+
 					&config.Field{
 						// Path: `system/smtp/set_return_path`,
 						ID:           "set_return_path",
