@@ -15,48 +15,160 @@
 package mail_test
 
 import (
+	"bytes"
 	"io"
+	std "log"
 	"testing"
 
-	"github.com/go-gomail/gomail"
+	"errors"
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/utils/log"
+	"github.com/corestoreio/csfw/utils/mail"
+	"github.com/stretchr/testify/assert"
+	"time"
 )
 
-type mockSender gomail.SendFunc
+var errLogBuf bytes.Buffer
 
-func (s mockSender) Send(from string, to []string, msg io.WriterTo) error {
-	return s(from, to, msg)
+func init() {
+	log.Set(log.NewStdLogger(
+		log.StdErrorOption(&errLogBuf, "testErr", std.LstdFlags),
+	))
 }
 
-type mockSendCloser struct {
-	mockSender
-	close func() error
+func TestDaemonOffline(t *testing.T) {
+	offSend := mail.OfflineSend
+	defer func() {
+		mail.OfflineSend = offSend
+	}()
+
+	mail.OfflineSend = func(from string, to []string, msg io.WriterTo) error {
+		var buf bytes.Buffer
+		_, err := msg.WriteTo(&buf)
+		assert.NoError(t, err)
+		assert.Equal(t, "gopher@world", from)
+		assert.Equal(t, []string{"apple@cupertino"}, to)
+		assert.Contains(t, buf.String(), "phoning home")
+		assert.Contains(t, buf.String(), "Subject: Phoning home")
+		return nil
+	}
+
+	dm, err := mail.NewDaemon(
+		mail.SetConfig(configMock),
+		mail.SetScope(config.ScopeID(3001)),
+	)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, dm)
+	assert.True(t, dm.IsOffline())
+
+	go func() { assert.NoError(t, dm.Worker()) }()
+	assert.NoError(t, dm.SendPlain("gopher@world", "apple@cupertino", "Phoning home", "Hey Apple stop phoning home or you become apple puree"))
+	assert.NoError(t, dm.Stop())
+
+	assert.EqualError(t, dm.Worker(), mail.ErrMailChannelClosed.Error())
+	assert.EqualError(t, dm.Stop(), mail.ErrMailChannelClosed.Error())
+	assert.EqualError(t, dm.Send(nil), mail.ErrMailChannelClosed.Error())
+	assert.EqualError(t, dm.SendPlain("", "", "", ""), mail.ErrMailChannelClosed.Error())
+	assert.EqualError(t, dm.SendHtml("", "", "", ""), mail.ErrMailChannelClosed.Error())
 }
 
-func (s *mockSendCloser) Close() error {
-	return s.close()
+func TestDaemonOfflineLogger(t *testing.T) {
+	offLog := mail.OfflineLogger
+	defer func() {
+		mail.OfflineLogger = offLog
+	}()
+
+	var logBufI bytes.Buffer
+	var logBufE bytes.Buffer
+	mail.OfflineLogger = log.NewStdLogger(
+		log.StdLevelOption(log.StdLevelInfo),
+		log.StdInfoOption(&logBufI, "test", std.LstdFlags),
+		log.StdErrorOption(&logBufE, "test", std.LstdFlags),
+	)
+
+	dm, err := mail.NewDaemon(
+		mail.SetConfig(configMock),
+		mail.SetScope(config.ScopeID(3001)),
+	)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, dm)
+	assert.True(t, dm.IsOffline())
+
+	go func() { assert.NoError(t, dm.Worker()) }()
+	assert.NoError(t, dm.SendPlain("gopher@earth", "apple@mothership", "Phoning home", "Hey Apple stop phoning home or you become apple puree"))
+	assert.NoError(t, dm.Stop())
+	assert.True(t, mail.OfflineLogger.IsInfo())
+
+	time.Sleep(time.Millisecond) // waiting for channel to drain
+
+	assert.Contains(t, logBufI.String(), `Send from: "gopher@earth" to: []string{"apple@mothership"} msg: "Mime-Version: 1.0`)
+	assert.Empty(t, logBufE.String())
+
 }
 
-func TestDaemon(t *testing.T) {
+func TestDaemonDaemonOptionErrors(t *testing.T) {
+	dm, err := mail.NewDaemon(
+		mail.SetConfig(nil),
+		mail.SetDialer(nil),
+		mail.SetSendFunc(nil),
+		mail.SetSMTPTimeout(0),
+		mail.SetTLSConfig(nil),
+		mail.SetScope(nil),
+	)
+	assert.EqualError(t, err, "config.Reader cannot be nil\ngomail.Dialer cannot be nil\ngomail.SendFunc cannot be nil\nTime.Duration cannot be 0\n*tls.Config cannot be nil\nconfig.ScopeIDer cannot be nil\n")
+	assert.Nil(t, dm)
+}
+
+func TestDaemonWorkerDialSend(t *testing.T) {
+
+	dm, err := mail.NewDaemon(
+		mail.SetConfig(configMock),
+		mail.SetScope(config.ScopeID(4010)),
+		mail.SetDialer(
+			mockDial{t: t},
+		),
+	)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, dm)
+	assert.False(t, dm.IsOffline())
+
+	go func() { assert.NoError(t, dm.Worker()) }()
+	assert.NoError(t, dm.SendPlain("rust@lang", "apple@cupertino", "Spagetti", "Pastafari meets Rustafari"))
+	assert.NoError(t, dm.Stop())
 
 }
 
-//type mockTransport struct {
-//	rt func(req *http.Request) (resp *http.Response, err error)
-//}
-//
-//func (t *mockTransport) RoundTrip(req *http.Request) (resp *http.Response, err error) {
-//	return t.rt(req)
-//}
-//
-//func main() {
-//	fmt.Println("Hello, playground")
-//	tr := &mockTransport{
-//		rt: func(r *http.Request) (w *http.Response, err error) {
-//			return nil, errors.New("no response")
-//		},
-//	}
-//	c := &http.Client{Transport: tr}
-//	resp, err := c.Get("http://github.com/")
-//
-//	fmt.Println(resp, err)
-//}
+func TestDaemonWorkerDialTimeOut(t *testing.T) {
+	defer errLogBuf.Reset()
+	dm, err := mail.NewDaemon(
+		mail.SetConfig(configMock),
+		mail.SetSMTPTimeout(time.Millisecond),
+		mail.SetScope(config.ScopeID(4010)),
+		mail.SetDialer(
+			mockDial{
+				t: t,
+				dial: func() {
+					time.Sleep(time.Second * 1)
+				},
+				closeErr: errors.New("Test Close Error"),
+			},
+		),
+	)
+
+	assert.NoError(t, err)
+	assert.NotNil(t, dm)
+	assert.False(t, dm.IsOffline())
+
+	go func() { assert.NoError(t, dm.Worker()) }()
+	assert.NoError(t, dm.SendPlain("rust@lang", "apple@cupertino", "Spagetti", "Pastafari meets Rustafari"))
+	assert.NoError(t, dm.SendPlain("rust2@lang", "apple2@cupertino", "Spagetti2", "Pastafari meets Rustafari2"))
+	time.Sleep(time.Millisecond)
+	assert.NoError(t, dm.Stop())
+
+	t.Error("time.after does not work. how to test?")
+	t.Log(errLogBuf.String())
+
+}

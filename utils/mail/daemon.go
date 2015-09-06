@@ -116,6 +116,9 @@ func (dm *Daemon) Error() string {
 //		d.Send(*gomail.Message)
 //		d.Stop()
 func (dm *Daemon) Worker() error {
+	if dm.closed {
+		return ErrMailChannelClosed
+	}
 	if dm.sendFunc != nil {
 		return dm.workerSendFunc()
 	}
@@ -123,10 +126,6 @@ func (dm *Daemon) Worker() error {
 }
 
 func (dm *Daemon) workerSendFunc() error {
-	if dm.closed {
-		return ErrMailChannelClosed
-	}
-
 	for {
 		select {
 		case m, ok := <-dm.msgChan:
@@ -143,10 +142,6 @@ func (dm *Daemon) workerSendFunc() error {
 }
 
 func (dm *Daemon) workerDial() error {
-	if dm.closed {
-		return ErrMailChannelClosed
-	}
-
 	var s gomail.SendCloser
 	var err error
 	open := false
@@ -240,6 +235,9 @@ func (dm *Daemon) Option(opts ...DaemonOption) (previous DaemonOption) {
 // IsOffline checks if SMTP sending for the current scope ID has been deactivated.
 // If disabled the output will be logged.
 func (dm *Daemon) IsOffline() bool {
+	if nil == dm.config {
+		return true
+	}
 	return dm.config.GetBool(config.Path(PathSmtpDisable), config.ScopeStore(dm.scopeID))
 }
 
