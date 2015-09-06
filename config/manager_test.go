@@ -22,6 +22,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	dbc := csdb.MustConnectTest()
+	defer dbc.Close()
+	config.TableCollection.Init(dbc.NewSession())
+}
+
 func TestScopeApplyDefaults(t *testing.T) {
 	pkgCfg := config.NewConfiguration(
 		&config.Section{
