@@ -209,6 +209,8 @@ func (l *StdLogger) Fatal(msg string, args ...interface{}) {
 // Log logs a leveled entry.
 func (l *StdLogger) Log(level int, msg string, args []interface{}) {
 	if l.level >= level {
+		// @todo think about the switch because for now we log exactly to
+		// the level. but if we set level debug we also want info, warn, error, fatal ...
 		switch level {
 		case StdLevelTrace:
 			l.trace.Print(stdFormat(msg, append(args, "in", getStackTrace())))
