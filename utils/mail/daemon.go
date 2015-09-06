@@ -15,7 +15,9 @@
 package mail
 
 import (
+	"bytes"
 	"errors"
+	"io"
 	"time"
 
 	"github.com/corestoreio/csfw/config"
@@ -23,23 +25,69 @@ import (
 	"github.com/go-gomail/gomail"
 )
 
+// PathSmtp* defines the configuration settings for the SMTP daemon.
 const (
-	PathSmtpHost = "system/smtp/host"
-	PathSmtpPort = "system/smtp/port"
+	PathSmtpDisable         = "system/smtp/disable"           // Scope: Default, Website, Store
+	PathSmtpHost            = "system/smtp/host"              // Scope: Default, Website, Store
+	PathSmtpPort            = "system/smtp/port"              // Scope: Default, Website, Store
+	PathSmtpUsername        = "system/smtp/username"          // Scope: Default, Website, Store     // not available in Magento @todo implement in config package
+	PathSmtpPassword        = "system/smtp/password"          // Scope: Default, Website, Store     // not available in Magento @todo implement in config package and encrypt
+	PathSmtpSetReturnPath   = "system/smtp/set_return_path"   // Scope: Default; 0 = no, 1 = yes, 2 = specified in PathSmtpReturnPathEmail
+	PathSmtpReturnPathEmail = "system/smtp/return_path_email" // Scope: Default; email address
 )
+
+const (
+	defaultHost = "localhost"
+	defaultPort = 25
+)
+
+// OfflineLogger represents a special email logger if mail sending has
+// been deactivated for a scope ID. The underlying logger is a NullLogger.
+var OfflineLogger log.Logger = new(log.NullLogger)
+
+// OfflineSend defines a function which uses the OfflineLogger.Info function to
+// log emails when SMTP has been disabled.
+var OfflineSend gomail.SendFunc = func(from string, to []string, msg io.WriterTo) error {
+	if OfflineLogger.IsInfo() {
+		var buf bytes.Buffer
+		if _, err := msg.WriteTo(&buf); err != nil {
+			return log.Error("mail.daemon.OfflineSend", "err", err, "buf", buf.String(), "message", msg)
+		}
+		OfflineLogger.Info("mail.Send", "from", from, "to", to, "msg", buf.String())
+	}
+	return nil
+}
 
 var ErrMailChannelClosed = errors.New("The mail channel has been closed.")
 
 // Daemon represents a daemon which must be created via NewDaemon() function
 type Daemon struct {
-	msgChan  chan *gomail.Message
-	dialer   *gomail.Dialer
-	sendFunc gomail.SendFunc
-	closed   bool
-	cr       config.Reader
-	// SMTPTimeout closes the connection to the SMTP server if no email was
-	// sent in the last default 30 seconds.
-	SMTPTimeout time.Duration
+	// lastErrs a collector. While setting options, errors may occur and will
+	// be accumulated here for later output in the NewDaemon() function.
+	lastErrs    []error
+	msgChan     chan *gomail.Message
+	dialer      *gomail.Dialer
+	sendFunc    gomail.SendFunc
+	closed      bool
+	config      config.Reader
+	scopeID     config.ScopeIDer
+	smtpTimeout time.Duration
+	// tlsConfig caches the call to SetTLSConfig because TLS setting can only
+	// be applied when the dialer has already been set.
+	tlsConfig DaemonOption
+}
+
+var _ error = (*Daemon)(nil)
+
+// Error implements the error interface. Returns a string where each error has
+// been separated by a line break.
+func (dm *Daemon) Error() string {
+	var buf bytes.Buffer
+	for _, e := range dm.lastErrs {
+		buf.WriteString(e.Error())
+		buf.WriteString("\n")
+	}
+	return buf.String()
 }
 
 // Start listens to a channel and sends all incoming messages. Errors will be logged.
@@ -105,7 +153,7 @@ func (dm *Daemon) workerDial() error {
 			}
 		// Close the connection to the SMTP server if no email was sent in
 		// the last n seconds.
-		case <-time.After(dm.SMTPTimeout):
+		case <-time.After(dm.smtpTimeout):
 			if open {
 				if err := s.Close(); err != nil {
 					return log.Error("mail.daemon.Start.Close", "err", err)
@@ -167,6 +215,12 @@ func (dm *Daemon) sendMsg(from, to, subject, body string, isHtml bool) error {
 // http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
 func (dm *Daemon) Option(opts ...DaemonOption) (previous DaemonOption) {
 	for _, o := range opts {
+
+		if o == SetTLSConfig { // wow test if this works ....
+			dm.tlsConfig = o
+			continue
+		}
+
 		if o != nil {
 			previous = o(dm)
 		}
@@ -174,67 +228,75 @@ func (dm *Daemon) Option(opts ...DaemonOption) (previous DaemonOption) {
 	return previous
 }
 
-// DaemonOption can be used as an argument in NewDaemon to configure a daemon.
-type DaemonOption func(*Daemon) DaemonOption
-
-// DefaultDialer connects to localhost on port 25.
-var DefaultDialer = gomail.NewPlainDialer("localhost", 25, "", "")
-
-// SetMessageChannel sets your custom channel to listen to.
-func SetMessageChannel(mailChan chan *gomail.Message) DaemonOption {
-	return func(da *Daemon) DaemonOption {
-		previous := da.msgChan
-		da.msgChan = mailChan
-		da.closed = false
-		return SetMessageChannel(previous)
-	}
+// IsOffline checks if SMTP sending for the current scope ID has been deactivated.
+// If disabled the output will be logged.
+func (dm *Daemon) IsOffline() bool {
+	return dm.config.GetBool(config.Path(PathSmtpDisable), config.ScopeStore(dm.scopeID))
 }
 
-// SetDialer sets a channel to listen to.
-func SetDialer(di *gomail.Dialer) DaemonOption {
-	if di == nil {
-		di = DefaultDialer
+func (dm *Daemon) getHost() string {
+	h := dm.config.GetString(config.Path(PathSmtpHost), config.ScopeStore(dm.scopeID))
+	if h == "" {
+		h = defaultHost
 	}
-	return func(da *Daemon) DaemonOption {
-		previous := da.dialer
-		da.dialer = di
-		return SetDialer(previous)
-	}
+	return h
 }
 
-// SetSendFunc lets you implements your email-sending function for e.g.
-// to use any other third party API provider. Setting this option
-// will remove the dialer. Your implementation must handle timeouts, etc.
-func SetSendFunc(sf gomail.SendFunc) DaemonOption {
-	return func(da *Daemon) DaemonOption {
-		previous := da.sendFunc
-		da.sendFunc = sf
-		da.dialer = nil
-		return SetSendFunc(previous)
+func (dm *Daemon) getPort() int {
+	p := dm.config.GetString(config.Path(PathSmtpPort), config.ScopeStore(dm.scopeID))
+	if p < 1 {
+		p = defaultPort
 	}
+	return p
 }
 
-// SetStoreConfig sets the config.Reader to the Store.
-// Default reader is config.DefaultManager
-func SetConfig(cr config.Reader) DaemonOption {
-	return func(da *Daemon) DaemonOption {
-		previous := da.cr
-		da.cr = cr
-		return SetConfig(previous)
+func (dm *Daemon) getUsername() string {
+	return dm.config.GetString(config.Path(PathSmtpUsername), config.ScopeStore(dm.scopeID))
+}
+
+func (dm *Daemon) getPassword() string {
+	// @todo decryption of the encrpted stored password? or extend config.Reader API?
+	return dm.config.GetString(config.Path(PathSmtpPassword), config.ScopeStore(dm.scopeID))
+}
+
+func (dm *Daemon) setupDialer() error {
+
+	if dm.dialer == nil && dm.sendFunc == nil {
+		dm.dialer = gomail.NewPlainDialer(dm.getHost(), dm.getPort(), dm.getUsername(), dm.getPassword())
 	}
+
+	// @todo
+
+	return nil
 }
 
 // NewDaemon creates a new daemon to send default to localhost:25 and creates
 // a default unbuffered channel which can be used via the Send*() function.
-func NewDaemon(opts ...DaemonOption) *Daemon {
+func NewDaemon(opts ...DaemonOption) (*Daemon, error) {
 	d := &Daemon{
-		dialer:      DefaultDialer,
-		cr:          config.DefaultManager,
-		SMTPTimeout: time.Second * 30,
+		config:      config.DefaultManager,
+		scopeID:     config.ScopeID(0), // Default Scope
+		smtpTimeout: time.Second * 30,
 	}
 	d.Option(opts...)
+
+	if d.IsOffline() {
+		SetSendFunc(OfflineSend)(d)
+	}
+
+	// <@todo>
+	if d.dialer == nil || d.dialer != DefaultDialer {
+		d.dialer = DefaultDialer
+		uniqueDialerCheck.register(d.getHost(), d.getPort(), d.getUsername(), d.dialer)
+	}
+	// </@todo>
+
 	if d.msgChan == nil {
 		d.msgChan = make(chan *gomail.Message)
 	}
-	return d
+
+	if d.lastErrs != nil {
+		return nil, d // because Daemon implements error interface
+	}
+	return d, nil
 }
