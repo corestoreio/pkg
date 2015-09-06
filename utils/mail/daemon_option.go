@@ -19,6 +19,7 @@ import (
 
 	"crypto/tls"
 	"errors"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/go-gomail/gomail"
 )
@@ -36,8 +37,10 @@ func SetMessageChannel(mailChan chan *gomail.Message) DaemonOption {
 	}
 }
 
-// SetDialer sets a custom dialer, e.g. for TLS use.
-func SetDialer(di *gomail.Dialer) DaemonOption {
+// SetDialer sets a custom dialer, e.g. for a different smtp.Auth use.
+// Usually a *gomail.Dialer. If not provided falls back the plain auth dialer
+// of gomail. Applying the SetDialer with set the sendFunc to nil.
+func SetDialer(di Dialer) DaemonOption {
 	return func(da *Daemon) DaemonOption {
 		previous := da.dialer
 		if di == nil {
@@ -90,27 +93,15 @@ func SetSMTPTimeout(t time.Duration) DaemonOption {
 	}
 }
 
-// SetTLSConfig represents the TLS configuration used for the TLS (when the
-// STARTTLS extension is used) or SSL connection.
-var SetTLSConfig = func(c *tls.Config) DaemonOption {
+// SetTLSConfig sets the TLS configuration for a default plain dialer used for TLS
+// (when the STARTTLS extension is used) or SSL connections.
+func SetTLSConfig(c *tls.Config) DaemonOption {
 	return func(da *Daemon) DaemonOption {
-
-		if nil == da.dialer {
-			da.lastErrs = append(da.lastErrs, errors.New("Dialer is nil."))
-			return SetTLSConfig(nil)
-		}
-
-		if false == da.dialer.SSL {
-			da.lastErrs = append(da.lastErrs, errors.New("SSL not active."))
-			return SetTLSConfig(nil)
-		}
-
-		previous := da.dialer.TLSConfig
-
+		previous := da.tlsConfig
 		if nil == c {
 			da.lastErrs = append(da.lastErrs, errors.New("*tls.Config cannot be nil"))
 		}
-		da.dialer.TLSConfig = c
+		da.tlsConfig = c
 		return SetTLSConfig(previous)
 	}
 }
@@ -118,10 +109,6 @@ var SetTLSConfig = func(c *tls.Config) DaemonOption {
 // SetScope sets the config scope which can be default, website or store.
 // Default scope is 0 = admin.
 func SetScope(s config.ScopeIDer) DaemonOption {
-	// if we have 50 stores ... each with a different mail setting then you
-	// have 50 daemons. Or if we have 50 stores we must figure out which
-	// stores uses the same smtp settings to avoid spinning up 50 daemons
-	// and each for the same SMTP setting.
 	return func(da *Daemon) DaemonOption {
 		previous := da.scopeID
 		if s == nil {

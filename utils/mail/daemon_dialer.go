@@ -22,28 +22,43 @@ import (
 	"github.com/go-gomail/gomail"
 )
 
-// DefaultDialer connects to localhost on port 25.
-var DefaultDialer = gomail.NewPlainDialer("localhost", 25, "", "")
+// dialerPool avoids using duplicated instances for one and the same connection setting.
+// If we have e.g. 50 stores views and each with a different mail setting then you
+// have 50 different dailers. This dialerPool uses a hash of host, port and username
+// to return an already created dialer for the same settings.
+var dialerPool = newPlainDialerPool()
 
-var uniqueDialerCheck = newUniqueDialer()
+// newPlainDialer stubbed out for tests
+var newPlainDialer func(host string, port int, username, password string) *gomail.Dialer = gomail.NewPlainDialer
 
-type uniqueDialer struct {
+type dialerContainer struct {
 	mu     sync.RWMutex
-	dialer map[uint64]*gomail.Dialer
+	dialer map[uint64]Dialer
 	hash   hash.Hash64
 }
 
-func newUniqueDialer() *uniqueDialer {
-	return &uniqueDialer{
-		dialer: make(map[uint64]*gomail.Dialer),
+func newPlainDialerPool() *dialerContainer {
+	return &dialerContainer{
+		dialer: make(map[uint64]Dialer),
 		hash:   fnv.New64(),
 	}
 }
 
-func (ud *uniqueDialer) register(host, port, username string, d *gomail.Dialer) {
-	h := fnv.New64()
-	h.Write([]byte(host + port + username))
-	ud.mu.Lock()
-	ud.dialer[h.Sum64()] = d
-	ud.mu.Unlock()
+func (dc *dialerContainer) allocatePlain(dm *Daemon) Dialer {
+	dc.mu.Lock()
+	defer dc.mu.Unlock()
+
+	dc.hash.Write(dm.internalID())
+	id := dc.hash.Sum64()
+	dc.hash.Reset()
+
+	if _, ok := dc.dialer[id]; !ok {
+		gmd := newPlainDialer(dm.getHost(), dm.getPort(), dm.getUsername(), dm.getPassword())
+
+		if nil != dm.tlsConfig {
+			gmd.TLSConfig = dm.tlsConfig
+		}
+		dc.dialer[id] = gmd
+	}
+	return dc.dialer[id]
 }

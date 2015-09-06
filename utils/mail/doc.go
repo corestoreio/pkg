@@ -12,15 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package mail provides functions for sending html/text emails for encrypted and
-// unencrypted connections.
-//
-// Features:
-// - Attachments
-// - Embedded images
-// - HTML and text templates
-// - Automatic encoding of special characters
-// - SSL and TLS
-// - Sending multiple emails with the same SMTP connection
+/*
+Package mail provides functions and services for sending html or text
+emails via encrypted or unencrypted connections.
 
+Features: Attachments, Embedded images, HTML and text templates, Automatic
+encoding of special characters, SSL and TLS, Sending multiple emails with
+the same SMTP connection.
+*/
 package mail
