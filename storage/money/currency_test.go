@@ -40,12 +40,12 @@ var testDefaultSymbols = i18n.Symbols{
 }
 
 var testFmtCur = i18n.NewCurrency(
-	i18n.CurrencyFormat("¤ #,##0.00"),
-	i18n.CurrencySymbols(testDefaultSymbols),
+	i18n.SetCurrencyFormat("¤ #,##0.00"),
+	i18n.SetCurrencySymbols(testDefaultSymbols),
 )
 var testFmtNum = i18n.NewNumber(
-	i18n.NumberFormat("###0.###"),
-	i18n.NumberSymbols(testDefaultSymbols),
+	i18n.SetNumberFormat("###0.###"),
+	i18n.SetNumberSymbols(testDefaultSymbols),
 )
 
 func TestString(t *testing.T) {

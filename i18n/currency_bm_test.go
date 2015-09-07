@@ -38,8 +38,8 @@ func bmFmtCurrency_Non_Singleton(b *testing.B, format, want string, sign int, in
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		haveC := i18n.NewCurrency(
-			i18n.CurrencyFormat(format, testDefaultNumberSymbols),
-			i18n.CurrencySign(bmCurrencySign),
+			i18n.SetCurrencyFormat(format, testDefaultNumberSymbols),
+			i18n.SetCurrencySign(bmCurrencySign),
 		)
 		var buf bytes.Buffer
 		if _, err := haveC.FmtNumber(&buf, sign, intgr, prec, frac); err != nil {
@@ -71,8 +71,8 @@ func BenchmarkFmtCurrency____Singleton_Neg(b *testing.B) {
 func bmFmtCurrency_Singleton(b *testing.B, format, want string, sign int, intgr int64, prec int, frac int64) {
 	b.ReportAllocs()
 	haveC := i18n.NewCurrency(
-		i18n.CurrencyFormat(format, testDefaultNumberSymbols),
-		i18n.CurrencySign(bmCurrencySign),
+		i18n.SetCurrencyFormat(format, testDefaultNumberSymbols),
+		i18n.SetCurrencySign(bmCurrencySign),
 	)
 	var buf bytes.Buffer
 	b.ResetTimer()
@@ -103,8 +103,8 @@ func benchmarkFmtCurrencyFloat64_Non_Singleton(b *testing.B, fl float64, want st
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		haveC := i18n.NewCurrency(
-			i18n.CurrencyFormat("¤#,##0.00;(¤#,##0.00)", testDefaultNumberSymbols),
-			i18n.CurrencySign(bmCurrencySign),
+			i18n.SetCurrencyFormat("¤#,##0.00;(¤#,##0.00)", testDefaultNumberSymbols),
+			i18n.SetCurrencySign(bmCurrencySign),
 		)
 		var buf bytes.Buffer
 		if _, err := haveC.FmtFloat64(&buf, fl); err != nil {
@@ -131,8 +131,8 @@ func BenchmarkFmtCurrencyFloat64_____Singleton_Neg(b *testing.B) {
 func benchmarkFmtCurrencyFloat64_Singleton(b *testing.B, fl float64, format, want string) {
 	b.ReportAllocs()
 	haveC := i18n.NewCurrency(
-		i18n.CurrencyFormat(format, testDefaultNumberSymbols),
-		i18n.CurrencySign(bmCurrencySign),
+		i18n.SetCurrencyFormat(format, testDefaultNumberSymbols),
+		i18n.SetCurrencySign(bmCurrencySign),
 	)
 	var buf bytes.Buffer
 	b.ResetTimer()

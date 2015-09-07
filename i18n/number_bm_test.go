@@ -37,7 +37,7 @@ func bmFmtNumber_Non_Singleton(b *testing.B, format, want string, sign int, intg
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		haveNumber := i18n.NewNumber(
-			i18n.NumberFormat(format, testDefaultNumberSymbols),
+			i18n.SetNumberFormat(format, testDefaultNumberSymbols),
 		)
 		var buf bytes.Buffer
 		if _, err := haveNumber.FmtNumber(&buf, sign, intgr, prec, frac); err != nil {
@@ -69,7 +69,7 @@ func BenchmarkFmtNumber____Singleton_Neg(b *testing.B) {
 func bmFmtNumber_Cached(b *testing.B, format, want string, sign int, intgr int64, prec int, frac int64) {
 	b.ReportAllocs()
 	haveNumber := i18n.NewNumber(
-		i18n.NumberFormat(format, testDefaultNumberSymbols),
+		i18n.SetNumberFormat(format, testDefaultNumberSymbols),
 	)
 	var buf bytes.Buffer
 	b.ResetTimer()
@@ -100,7 +100,7 @@ func benchmarkFmtFloat64_Non_Singleton(b *testing.B, fl float64, want string) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		haveNumber := i18n.NewNumber(
-			i18n.NumberFormat("#,##0.00;(#,##0.00)", testDefaultNumberSymbols),
+			i18n.SetNumberFormat("#,##0.00;(#,##0.00)", testDefaultNumberSymbols),
 		)
 		var buf bytes.Buffer
 		if _, err := haveNumber.FmtFloat64(&buf, fl); err != nil {
@@ -127,7 +127,7 @@ func BenchmarkFmtFloat64_____Singleton_Neg(b *testing.B) {
 func benchmarkFmtFloat64_____Singleton(b *testing.B, fl float64, format, want string) {
 	b.ReportAllocs()
 	haveNumber := i18n.NewNumber(
-		i18n.NumberFormat(format, testDefaultNumberSymbols),
+		i18n.SetNumberFormat(format, testDefaultNumberSymbols),
 	)
 	var buf bytes.Buffer
 	b.ResetTimer()

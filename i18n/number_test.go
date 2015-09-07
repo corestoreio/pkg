@@ -138,7 +138,7 @@ func TestNumberFmtNumber1(t *testing.T) {
 
 	for _, test := range tests {
 		haveNumber := i18n.NewNumber(
-			i18n.NumberFormat(test.format, testDefaultNumberSymbols),
+			i18n.SetNumberFormat(test.format, testDefaultNumberSymbols),
 		)
 		var buf bytes.Buffer
 		_, err := haveNumber.FmtNumber(&buf, test.sign, test.i, test.prec, test.frac)
@@ -156,7 +156,7 @@ func TestNumberFmtNumber1(t *testing.T) {
 func TestNumberFmtNumber2(t *testing.T) {
 	// only to test the default format
 	tests := []struct {
-		opts    []i18n.NumberOptFunc
+		opts    []i18n.NumberOptions
 		sign    int
 		i       int64
 		prec    int
@@ -165,16 +165,16 @@ func TestNumberFmtNumber2(t *testing.T) {
 		wantErr error
 	}{
 		{
-			[]i18n.NumberOptFunc{
-				i18n.NumberFormat(""),
-				i18n.NumberSymbols(testDefCurSym),
+			[]i18n.NumberOptions{
+				i18n.SetNumberFormat(""),
+				i18n.SetNumberSymbols(testDefCurSym),
 			},
 			-1, -1234, 3, 6, "-1,234.006", nil, // euros with default Symbols
 		},
 		{
-			[]i18n.NumberOptFunc{
-				i18n.NumberFormat(""),
-				i18n.NumberSymbols(testDefCurSym),
+			[]i18n.NumberOptions{
+				i18n.SetNumberFormat(""),
+				i18n.SetNumberSymbols(testDefCurSym),
 			},
 			-1, -1234, 4, 6, "-1,234.001", nil, // euros with default Symbols
 		},
@@ -224,7 +224,7 @@ func TestNumberFmtNumberParallel(t *testing.T) {
 	wg := new(sync.WaitGroup)
 
 	haveNumber := i18n.NewNumber(
-		i18n.NumberFormat("#,##0.###", testDefaultNumberSymbols),
+		i18n.SetNumberFormat("#,##0.###", testDefaultNumberSymbols),
 	)
 
 	// spawn workers
@@ -298,7 +298,7 @@ func TestNumberFmtInt(t *testing.T) {
 
 	for _, test := range tests {
 		haveNumber := i18n.NewNumber(
-			i18n.NumberFormat(test.format, testDefaultNumberSymbols),
+			i18n.SetNumberFormat(test.format, testDefaultNumberSymbols),
 		)
 		var buf bytes.Buffer
 		_, err := haveNumber.FmtInt64(&buf, test.i)
@@ -351,7 +351,7 @@ func TestNumberFmtFloat64(t *testing.T) {
 
 	for _, test := range tests {
 		haveNumber := i18n.NewNumber(
-			i18n.NumberFormat(test.format, testDefaultNumberSymbols),
+			i18n.SetNumberFormat(test.format, testDefaultNumberSymbols),
 		)
 		var buf bytes.Buffer
 		_, err := haveNumber.FmtFloat64(&buf, test.f)
@@ -368,7 +368,7 @@ func TestNumberFmtFloat64(t *testing.T) {
 
 func TestNumberGetFormat(t *testing.T) {
 	haveNumber := i18n.NewNumber(
-		i18n.NumberFormat(`€ #,##0.00 ;· (#,##0.00) °`, testDefaultNumberSymbols),
+		i18n.SetNumberFormat(`€ #,##0.00 ;· (#,##0.00) °`, testDefaultNumberSymbols),
 	)
 
 	pf, err := haveNumber.GetFormat(false)

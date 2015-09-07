@@ -96,10 +96,10 @@ type (
 		fracValid bool
 	}
 
-	// NumberOptFunc applies options to the Number struct. To read more
+	// NumberOptions applies options to the Number struct. To read more
 	// about the recursion pattern:
 	// http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
-	NumberOptFunc func(*Number) NumberOptFunc
+	NumberOptions func(*Number) NumberOptions
 )
 
 func init() {
@@ -108,27 +108,27 @@ func init() {
 
 var _ NumberFormatter = (*Number)(nil)
 
-//func NumberTag(locale string) NumberOptFunc {
+//func NumberTag(locale string) NumberOptions {
 //	return func(n *Number) {
 //		n.Tag = language.MustParse(locale)
 //	}
 //}
 
-// NumberSymbols sets the Symbols tables. The argument will be merged into the
+// SetNumberSymbols sets the Symbols tables. The argument will be merged into the
 // default Symbols table
-func NumberSymbols(s Symbols) NumberOptFunc {
-	return func(n *Number) NumberOptFunc {
+func SetNumberSymbols(s Symbols) NumberOptions {
+	return func(n *Number) NumberOptions {
 		previous := n.sym
 		n.sym = NewSymbols(s)
-		return NumberSymbols(previous)
+		return SetNumberSymbols(previous)
 	}
 }
 
-// NumberFormat applies a format to a Number. If you do not have set the second
+// SetNumberFormat applies a format to a Number. If you do not have set the second
 // argument Symbols (will be merge into) then the default Symbols will be used.
 // Only one second argument is supported. If format is empty, fallback to the
 // default format.
-func NumberFormat(f string, s ...Symbols) NumberOptFunc {
+func SetNumberFormat(f string, s ...Symbols) NumberOptions {
 	if f == "" {
 		f = DefaultNumberFormat
 	}
@@ -146,7 +146,7 @@ func NumberFormat(f string, s ...Symbols) NumberOptFunc {
 		}
 	}
 
-	return func(n *Number) NumberOptFunc {
+	return func(n *Number) NumberOptions {
 		previousF := string(n.fo.pattern)
 		if len(n.fneg.pattern) > 0 {
 			previousF = previousF + string(formatSeparator) + string(n.fneg.pattern)
@@ -171,31 +171,31 @@ func NumberFormat(f string, s ...Symbols) NumberOptFunc {
 		n.fneg.pattern = negFmt
 		n.fneg.isNegative = true
 		if len(s) == 1 {
-			return NumberFormat(previousF, previousS)
+			return SetNumberFormat(previousF, previousS)
 		}
-		return NumberFormat(previousF)
+		return SetNumberFormat(previousF)
 	}
 }
 
 // NewNumber creates a new number type including the default Symbols table
 // and default number format. You should only create one type and reuse the
 // formatter anywhere else.
-func NewNumber(opts ...NumberOptFunc) *Number {
+func NewNumber(opts ...NumberOptions) *Number {
 	n := &Number{
 		sym: NewSymbols(),
 		buf: make([]byte, numberBufferSize),
 	}
-	NumberFormat(DefaultNumberFormat)(n) // normally that should come from golang.org/x/text package
+	SetNumberFormat(DefaultNumberFormat)(n) // normally that should come from golang.org/x/text package
 	//	NumberTag("en-US")(n)
-	n.NOptions(opts...)
+	n.NSetOptions(opts...)
 	return n
 }
 
-// NOptions applies number options and returns the last applied previous
+// NSetOptions applies number options and returns the last applied previous
 // option function. For more details please read here
 // http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
 // This function is thread safe.
-func (no *Number) NOptions(opts ...NumberOptFunc) (previous NumberOptFunc) {
+func (no *Number) NSetOptions(opts ...NumberOptions) (previous NumberOptions) {
 	no.mu.Lock()
 	for _, o := range opts {
 		if o != nil {
