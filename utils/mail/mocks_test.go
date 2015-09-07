@@ -16,12 +16,13 @@ package mail_test
 
 import (
 	"bytes"
+	"io"
+	"testing"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/utils/mail"
 	"github.com/go-gomail/gomail"
 	"github.com/stretchr/testify/assert"
-	"io"
-	"testing"
 )
 
 var configMock = config.NewMockReader(
@@ -48,18 +49,12 @@ var configMock = config.NewMockReader(
 
 type mockDial struct {
 	t        *testing.T
-	dial     func()
 	dialErr  error
 	sendErr  error
 	closeErr error
 }
 
 func (md mockDial) Dial() (gomail.SendCloser, error) {
-
-	if md.dial != nil {
-		md.dial()
-	}
-
 	return mockSendCloser{
 		t:        md.t,
 		sendErr:  md.sendErr,

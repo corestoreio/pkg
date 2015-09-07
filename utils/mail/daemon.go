@@ -272,8 +272,10 @@ func (dm *Daemon) internalID() []byte {
 	return []byte(dm.getHost() + strconv.Itoa(dm.getPort()) + dm.getUsername())
 }
 
-// NewDaemon creates a new daemon to send default to localhost:25 and creates
-// a default unbuffered channel which can be used via the Send*() function.
+// NewDaemon creates a new mail sending daemon to send to a SMTP server.
+// Per default it uses localhost:25, creates an unbuffered channel, uses the
+// config.DefaultManager, applies the admin scope (0) and sets the SMTP
+// timeout to 30s.
 func NewDaemon(opts ...DaemonOption) (*Daemon, error) {
 	d := &Daemon{
 		config:      config.DefaultManager,

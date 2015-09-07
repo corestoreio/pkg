@@ -21,11 +21,12 @@ import (
 	"testing"
 
 	"errors"
+	"time"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/corestoreio/csfw/utils/mail"
 	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 var errLogBuf bytes.Buffer
@@ -116,8 +117,9 @@ func TestDaemonDaemonOptionErrors(t *testing.T) {
 		mail.SetSMTPTimeout(0),
 		mail.SetTLSConfig(nil),
 		mail.SetScope(nil),
+		mail.SetMessageChannel(nil),
 	)
-	assert.EqualError(t, err, "config.Reader cannot be nil\ngomail.Dialer cannot be nil\ngomail.SendFunc cannot be nil\nTime.Duration cannot be 0\n*tls.Config cannot be nil\nconfig.ScopeIDer cannot be nil\n")
+	assert.EqualError(t, err, "config.Reader cannot be nil\ngomail.Dialer cannot be nil\ngomail.SendFunc cannot be nil\nTime.Duration cannot be 0\n*tls.Config cannot be nil\nconfig.ScopeIDer cannot be nil\n*gomail.Message channel cannot be nil\n")
 	assert.Nil(t, dm)
 }
 
@@ -141,18 +143,15 @@ func TestDaemonWorkerDialSend(t *testing.T) {
 
 }
 
-func TestDaemonWorkerDialTimeOut(t *testing.T) {
+func TestDaemonWorkerDialCloseError(t *testing.T) {
 	defer errLogBuf.Reset()
 	dm, err := mail.NewDaemon(
 		mail.SetConfig(configMock),
-		mail.SetSMTPTimeout(time.Millisecond),
+		mail.SetSMTPTimeout(time.Millisecond*10),
 		mail.SetScope(config.ScopeID(4010)),
 		mail.SetDialer(
 			mockDial{
-				t: t,
-				dial: func() {
-					time.Sleep(time.Second * 1)
-				},
+				t:        t,
 				closeErr: errors.New("Test Close Error"),
 			},
 		),
@@ -162,13 +161,12 @@ func TestDaemonWorkerDialTimeOut(t *testing.T) {
 	assert.NotNil(t, dm)
 	assert.False(t, dm.IsOffline())
 
-	go func() { assert.NoError(t, dm.Worker()) }()
+	go func() {
+		assert.EqualError(t, dm.Worker(), "Test Close Error", "See goroutine")
+	}()
 	assert.NoError(t, dm.SendPlain("rust@lang", "apple@cupertino", "Spagetti", "Pastafari meets Rustafari"))
-	assert.NoError(t, dm.SendPlain("rust2@lang", "apple2@cupertino", "Spagetti2", "Pastafari meets Rustafari2"))
-	time.Sleep(time.Millisecond)
+	time.Sleep(time.Millisecond * 100)
 	assert.NoError(t, dm.Stop())
-
-	t.Error("time.after does not work. how to test?")
-	t.Log(errLogBuf.String())
+	assert.Contains(t, errLogBuf.String(), "mail.daemon.Start.Close err: Test Close Error")
 
 }

@@ -30,6 +30,9 @@ type DaemonOption func(*Daemon) DaemonOption
 // SetMessageChannel sets your custom channel to listen to.
 func SetMessageChannel(mailChan chan *gomail.Message) DaemonOption {
 	return func(da *Daemon) DaemonOption {
+		if mailChan == nil {
+			da.lastErrs = append(da.lastErrs, errors.New("*gomail.Message channel cannot be nil"))
+		}
 		previous := da.msgChan
 		da.msgChan = mailChan
 		da.closed = false
