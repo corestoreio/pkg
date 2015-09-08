@@ -31,7 +31,7 @@ func BenchmarkAuthorizationHMAC(b *testing.B) {
 	*/
 
 	password := []byte(`Rump3lst!lzch3n`)
-	jm, err := userjwt.New(userjwt.Password(password))
+	jm, err := userjwt.New(userjwt.SetPassword(password))
 	if err != nil {
 		b.Error(err)
 	}

@@ -63,7 +63,7 @@ func TestNewDefault(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, failedToken)
 
-	jmRSA, err := userjwt.New(userjwt.RSAFromFile("invalid.key"))
+	jmRSA, err := userjwt.New(userjwt.SetRSAFromFile("invalid.key"))
 	assert.Nil(t, jmRSA)
 	assert.Contains(t, err.Error(), "open invalid.key: no such file or directory")
 }
@@ -71,7 +71,7 @@ func TestNewDefault(t *testing.T) {
 func TestInvalidSigningMethod(t *testing.T) {
 	password := []byte(`Rump3lst!lzch3n`)
 	jm, err := userjwt.New(
-		userjwt.Password(password),
+		userjwt.SetPassword(password),
 	)
 	assert.NoError(t, err)
 
@@ -99,7 +99,7 @@ func TestPasswordFromConfig(t *testing.T) {
 	)
 
 	jm, err := userjwt.New(
-		userjwt.PasswordFromConfig(cfg),
+		userjwt.SetPasswordFromConfig(cfg),
 	)
 	assert.NoError(t, err)
 
@@ -157,11 +157,11 @@ func TestLogout(t *testing.T) {
 var pkFile = filepath.Join(build.Default.GOPATH, "src", "github.com", "corestoreio", "csfw", "user", "userjwt", "test_rsa")
 
 func TestRSAEncryptedNoOrFailedPassword(t *testing.T) {
-	jm, err := userjwt.New(userjwt.RSAFromFile(pkFile))
+	jm, err := userjwt.New(userjwt.SetRSAFromFile(pkFile))
 	assert.Contains(t, err.Error(), "Private Key is encrypted but password was not set")
 	assert.Nil(t, jm)
 
-	jm2, err2 := userjwt.New(userjwt.RSAFromFile(pkFile, []byte(`adfasdf`)))
+	jm2, err2 := userjwt.New(userjwt.SetRSAFromFile(pkFile, []byte(`adfasdf`)))
 	assert.Contains(t, err2.Error(), "Private Key decryption failed: x509: decryption password incorrect")
 	assert.Nil(t, jm2)
 }
@@ -183,16 +183,16 @@ func testRsaOption(t *testing.T, opt userjwt.OptionFunc) {
 
 func TestRSAEncryptedPassword(t *testing.T) {
 	pw := []byte("cccamp")
-	testRsaOption(t, userjwt.RSAFromFile(pkFile, pw))
+	testRsaOption(t, userjwt.SetRSAFromFile(pkFile, pw))
 }
 
 func TestRSAWithoutPassword(t *testing.T) {
 	pkFileNP := filepath.Join(build.Default.GOPATH, "src", "github.com", "corestoreio", "csfw", "user", "userjwt", "test_rsa_np")
-	testRsaOption(t, userjwt.RSAFromFile(pkFileNP))
+	testRsaOption(t, userjwt.SetRSAFromFile(pkFileNP))
 }
 
 func TestRSAGenerate(t *testing.T) {
-	testRsaOption(t, userjwt.RSAGenerate())
+	testRsaOption(t, userjwt.SetRSAGenerator())
 }
 
 func testAuth(t *testing.T, opts ...userjwt.OptionFunc) (http.Handler, string) {

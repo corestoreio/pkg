@@ -27,31 +27,33 @@ import (
 
 type UserSlice []*User
 
-type UserOptions func(*User)
+// UserOption can be used as an argument in NewUser to configure a user.
+type UserOption func(*User)
 
 type User struct {
 	mc   config.ModelConstructor // @todo see directory pkg
 	Data *TableAdminUser
 }
 
-func LoadOne(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) UserOptions {
+func LoadOne(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) UserOption {
 	return func(u *User) {
 		// todo
 	}
 }
 
-func NewUser(opts ...UserOptions) *User {
+func NewUser(opts ...UserOption) *User {
 	u := new(User)
 	u.ApplyOptions(opts...)
 	return u
 }
 
-func (u *User) ApplyOptions(opts ...UserOptions) {
+func (u *User) ApplyOptions(opts ...UserOption) *User {
 	for _, o := range opts {
 		if o != nil {
 			o(u)
 		}
 	}
+	return u
 }
 
 func (u *User) Authenticate(cr config.Reader, h crypto.Hasher, username, password string) error {

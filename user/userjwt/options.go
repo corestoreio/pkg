@@ -36,18 +36,18 @@ const PathJWTPassword = "corestore/userjwt/password"
 
 // @todo add more KeyFrom...()
 
-// OptionFunc applies options to the AuthManager
+// OptionFunc can be used as an argument in NewUser to configure a user.
 type OptionFunc func(a *AuthManager)
 
-// PasswordFromConfig retrieves the password from the configuration with path
+// SetPasswordFromConfig retrieves the password from the configuration with path
 // as defined in constant PathJWTPassword
-func PasswordFromConfig(cr config.Reader) OptionFunc {
+func SetPasswordFromConfig(cr config.Reader) OptionFunc {
 	pw := cr.GetString(config.Path(PathJWTPassword))
-	return Password([]byte(pw))
+	return SetPassword([]byte(pw))
 }
 
-// Password sets the HMAC 256 bit signing method with a password. Useful to use Magento encryption key.
-func Password(key []byte) OptionFunc {
+// SetPassword sets the HMAC 256 bit signing method with a password. Useful to use Magento encryption key.
+func SetPassword(key []byte) OptionFunc {
 	return func(a *AuthManager) {
 		a.lastError = nil
 		a.hasKey = true
@@ -56,21 +56,21 @@ func Password(key []byte) OptionFunc {
 	}
 }
 
-// ECDSAFromFile @todo
-func ECDSAFromFile(privateKey string, password ...[]byte) OptionFunc {
+// SetECDSAFromFile @todo
+func SetECDSAFromFile(privateKey string, password ...[]byte) OptionFunc {
 	fpk, err := os.Open(privateKey)
 	if err != nil {
 		return func(a *AuthManager) {
 			a.lastError = errgo.Mask(err)
 		}
 	}
-	return ECDSA(fpk, password...)
+	return SetECDSA(fpk, password...)
 
 }
 
-// ECDSA @todo
+// SetECDSA @todo
 // Default Signing bits 256.
-func ECDSA(privateKey io.Reader, password ...[]byte) OptionFunc {
+func SetECDSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 	if cl, ok := privateKey.(io.Closer); ok {
 		defer func() {
 			if err := cl.Close(); err != nil { // close file
@@ -89,25 +89,25 @@ func ECDSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 	}
 }
 
-// RSAFromFile reads an RSA private key from a file and applies it as an option
+// SetRSAFromFile reads an RSA private key from a file and applies it as an option
 // to the AuthManager. Password as second argument is only required when the
 // private key is encrypted. Public key will be derived from the private key.
-func RSAFromFile(privateKey string, password ...[]byte) OptionFunc {
+func SetRSAFromFile(privateKey string, password ...[]byte) OptionFunc {
 	fpk, err := os.Open(privateKey)
 	if err != nil {
 		return func(a *AuthManager) {
 			a.lastError = errgo.Mask(err)
 		}
 	}
-	return RSA(fpk, password...)
+	return SetRSA(fpk, password...)
 }
 
-// RSA reads PEM byte data and decodes it and parses the private key.
+// SetRSA reads PEM byte data and decodes it and parses the private key.
 // Applies the private and the public key to the AuthManager. Password as second
 // argument is only required when the private key is encrypted.
 // Checks for io.Close and closes the resource. Public key will be derived from
 // the private key. Default Signing bits 256.
-func RSA(privateKey io.Reader, password ...[]byte) OptionFunc {
+func SetRSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 	if cl, ok := privateKey.(io.Closer); ok {
 		defer func() {
 			if err := cl.Close(); err != nil { // close file
@@ -156,9 +156,9 @@ func RSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 	}
 }
 
-// RSAGenerate creates an in-memory RSA key without persisting it.
+// SetRSAGenerator creates an in-memory RSA key without persisting it.
 // This function may run around ~3secs.
-func RSAGenerate() OptionFunc {
+func SetRSAGenerator() OptionFunc {
 	pk, err := rsa.GenerateKey(rand.Reader, PrivateKeyBits)
 	return func(a *AuthManager) {
 		if pk != nil {
