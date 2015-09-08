@@ -23,8 +23,8 @@ func createFakeSession() *Session {
 func createRealSession() *Session {
 	dn, dsn := realDb()
 	cxn, err := NewConnection(
-		ConnDSN(dsn),
-		ConnDriver(dn),
+		SetDSN(dsn),
+		SetDriver(dn),
 	)
 	if err != nil {
 		panic(err)

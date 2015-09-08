@@ -26,11 +26,11 @@ type Session struct {
 	EventReceiver
 }
 
-// ConnOpts type for setting options on a connection.
-type ConnOpts func(c *Connection)
+// ConnectionOption can be used as an argument in NewConnection to configure a connection.
+type ConnectionOption func(c *Connection)
 
-// ConnDB sets the DB value to a connection. If set ignores the DSN values.
-func ConnDB(db *sql.DB) ConnOpts {
+// SetDB sets the DB value to a connection. If set ignores the DSN values.
+func SetDB(db *sql.DB) ConnectionOption {
 	if db == nil {
 		panic("DB argument cannot be nil")
 	}
@@ -39,8 +39,8 @@ func ConnDB(db *sql.DB) ConnOpts {
 	}
 }
 
-// ConnEvent sets the event receiver for a connection.
-func ConnEvent(log EventReceiver) ConnOpts {
+// SetEventReceiver sets the event receiver for a connection.
+func SetEventReceiver(log EventReceiver) ConnectionOption {
 	if log == nil {
 		log = nullReceiver
 	}
@@ -49,16 +49,16 @@ func ConnEvent(log EventReceiver) ConnOpts {
 	}
 }
 
-// ConnDriver sets the driver name for a connection. At the moment only MySQL
+// SetDriver sets the driver name for a connection. At the moment only MySQL
 // is supported.
-func ConnDriver(driverName string) ConnOpts {
+func SetDriver(driverName string) ConnectionOption {
 	return func(c *Connection) {
 		c.dn = driverName
 	}
 }
 
-// ConnDSN sets the data source name for a connection.
-func ConnDSN(dsn string) ConnOpts {
+// SetDSN sets the data source name for a connection.
+func SetDSN(dsn string) ConnectionOption {
 	if dsn == "" {
 		panic("DSN argument cannot be empty")
 	}
@@ -69,7 +69,7 @@ func ConnDSN(dsn string) ConnOpts {
 
 // NewConnection instantiates a Connection for a given database/sql connection
 // and event receiver
-func NewConnection(opts ...ConnOpts) (*Connection, error) {
+func NewConnection(opts ...ConnectionOption) (*Connection, error) {
 	c := &Connection{
 		dn:            DriverNameMySQL,
 		EventReceiver: nullReceiver,
@@ -96,7 +96,7 @@ func NewConnection(opts ...ConnOpts) (*Connection, error) {
 }
 
 // ApplyOpts applies options to a connection
-func (c *Connection) ApplyOpts(opts ...ConnOpts) *Connection {
+func (c *Connection) ApplyOpts(opts ...ConnectionOption) *Connection {
 	for _, opt := range opts {
 		if opt != nil {
 			opt(c)
@@ -105,25 +105,25 @@ func (c *Connection) ApplyOpts(opts ...ConnOpts) *Connection {
 	return c
 }
 
-// SessionOpts function type to apply options to a session
-type SessionOpts func(cxn *Connection, s *Session) SessionOpts
+// SessionOption can be used as an argument in NewSession to configure a session.
+type SessionOption func(cxn *Connection, s *Session) SessionOption
 
-// SessionEvent sets an event receiver securely to a session. Falls back to the
-// parent event receiver if argument is nil.
+// SetSessionEventReceiver sets an event receiver securely to a session. Falls
+// back to the parent event receiver if argument is nil.
 // This function adheres http://dave.cheney.net/2014/10/17/functional-options-for-friendly-apis
-func SessionEvent(log EventReceiver) SessionOpts {
-	return func(cxn *Connection, s *Session) SessionOpts {
+func SetSessionEventReceiver(log EventReceiver) SessionOption {
+	return func(cxn *Connection, s *Session) SessionOption {
 		previous := s.EventReceiver
 		if log == nil {
 			log = cxn.EventReceiver // Use parent instrumentation
 		}
 		s.EventReceiver = log
-		return SessionEvent(previous)
+		return SetSessionEventReceiver(previous)
 	}
 }
 
 // NewSession instantiates a Session for the Connection
-func (c *Connection) NewSession(opts ...SessionOpts) *Session {
+func (c *Connection) NewSession(opts ...SessionOption) *Session {
 	s := &Session{
 		cxn:           c,
 		EventReceiver: c.EventReceiver, // Use parent instrumentation
@@ -133,7 +133,7 @@ func (c *Connection) NewSession(opts ...SessionOpts) *Session {
 }
 
 // NewSession instantiates a Session for the Connection
-func (s *Session) ApplyOpts(opts ...SessionOpts) (previous SessionOpts) {
+func (s *Session) ApplyOpts(opts ...SessionOption) (previous SessionOption) {
 	for _, opt := range opts {
 		if opt != nil {
 			previous = opt(s.cxn, s)
@@ -144,7 +144,7 @@ func (s *Session) ApplyOpts(opts ...SessionOpts) (previous SessionOpts) {
 
 // MustConnectAndVerify is like NewConnection but it verifies the connection
 // and panics on errors.
-func MustConnectAndVerify(opts ...ConnOpts) *Connection {
+func MustConnectAndVerify(opts ...ConnectionOption) *Connection {
 	c, err := NewConnection(opts...)
 	if err != nil {
 		panic(err)
