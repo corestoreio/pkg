@@ -29,13 +29,13 @@ func TestStdLogger(t *testing.T) {
 	var buf bytes.Buffer
 
 	sl := log.NewStdLogger(
-		log.StdLevelOption(log.StdLevelTrace),
-		log.StdTraceOption(&buf, "TEST-TRACE ", std.LstdFlags),
-		log.StdDebugOption(&buf, "TEST-DEBUG ", std.LstdFlags),
-		log.StdInfoOption(&buf, "TEST-INFO ", std.LstdFlags),
-		log.StdWarnOption(&buf, "TEST-WARN ", std.LstdFlags),
-		log.StdErrorOption(&buf, "TEST-ERROR ", std.LstdFlags),
-		log.StdFatalOption(&buf, "TEST-FATAL ", std.LstdFlags),
+		log.SetStdLevel(log.StdLevelTrace),
+		log.SetStdTrace(&buf, "TEST-TRACE ", std.LstdFlags),
+		log.SetStdDebug(&buf, "TEST-DEBUG ", std.LstdFlags),
+		log.SetStdInfo(&buf, "TEST-INFO ", std.LstdFlags),
+		log.SetStdWarn(&buf, "TEST-WARN ", std.LstdFlags),
+		log.SetStdError(&buf, "TEST-ERROR ", std.LstdFlags),
+		log.SetStdFatal(&buf, "TEST-FATAL ", std.LstdFlags),
 	)
 	sl.SetLevel(log.StdLevelInfo)
 	assert.False(t, sl.IsTrace())
@@ -84,9 +84,9 @@ func TestStdLoggerGlobals(t *testing.T) {
 
 	var buf bytes.Buffer
 	sl := log.NewStdLogger(
-		log.StdLevelOption(log.StdLevelDebug),
-		log.StdGlobalWriterOption(&buf),
-		log.StdGlobalFlagOption(std.Ldate),
+		log.SetStdLevel(log.StdLevelDebug),
+		log.SetStdWriter(&buf),
+		log.SetStdFlag(std.Ldate),
 	)
 	sl.Trace("my trace1")
 	sl.Trace("my trace2", "int", 29)
@@ -107,9 +107,9 @@ func TestStdLoggerFormat(t *testing.T) {
 	var buf bytes.Buffer
 	var bufInfo bytes.Buffer
 	sl := log.NewStdLogger(
-		log.StdLevelOption(log.StdLevelDebug),
-		log.StdGlobalWriterOption(&buf),
-		log.StdInfoOption(&bufInfo, "TEST-INFO ", std.LstdFlags),
+		log.SetStdLevel(log.StdLevelDebug),
+		log.SetStdWriter(&buf),
+		log.SetStdInfo(&bufInfo, "TEST-INFO ", std.LstdFlags),
 	)
 
 	sl.Debug("my Debug", 3.14152)
@@ -151,7 +151,7 @@ func TestStdLoggerNewPanic(t *testing.T) {
 
 	var buf bytes.Buffer
 	sl := log.NewStdLogger(
-		log.StdGlobalWriterOption(&buf),
+		log.SetStdWriter(&buf),
 	)
-	sl.New(log.StdLevelOption(log.StdLevelDebug), 1)
+	sl.New(log.SetStdLevel(log.StdLevelDebug), 1)
 }

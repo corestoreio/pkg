@@ -63,7 +63,7 @@ func init() {
 // SetNullLogger resets the logger to the null logger aka. black hole.
 func SetNull() {
 	if logger != nil {
-		Warn("SetNullLogger called to reset the logger")
+		Warn("SetNull logger called to reset the logger")
 	}
 	logger = nullLog
 }
@@ -109,7 +109,9 @@ func WhenDone() Deferred {
 	start := time.Now()
 	return Deferred{
 		Info: func(msg string, args ...interface{}) {
-			Info(msg, append(args, "Duration", time.Since(start).String())...)
+			if IsInfo() {
+				Info(msg, append(args, "Duration", time.Since(start).String())...)
+			}
 		},
 		Debug: func(msg string, args ...interface{}) {
 			if IsDebug() {
