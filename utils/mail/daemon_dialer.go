@@ -15,8 +15,6 @@
 package mail
 
 import (
-	"hash"
-	"hash/fnv"
 	"sync"
 
 	"github.com/go-gomail/gomail"
@@ -34,13 +32,11 @@ var newPlainDialer func(host string, port int, username, password string) *gomai
 type dialerContainer struct {
 	mu     sync.RWMutex
 	dialer map[uint64]Dialer
-	hash   hash.Hash64
 }
 
 func newPlainDialerPool() *dialerContainer {
 	return &dialerContainer{
 		dialer: make(map[uint64]Dialer),
-		hash:   fnv.New64(),
 	}
 }
 
@@ -48,10 +44,7 @@ func (dc *dialerContainer) allocatePlain(dm *Daemon) Dialer {
 	dc.mu.Lock()
 	defer dc.mu.Unlock()
 
-	dc.hash.Write(dm.internalID())
-	id := dc.hash.Sum64()
-	dc.hash.Reset()
-
+	id := dm.ID()
 	if _, ok := dc.dialer[id]; !ok {
 		gmd := newPlainDialer(dm.getHost(), dm.getPort(), dm.getUsername(), dm.getPassword())
 

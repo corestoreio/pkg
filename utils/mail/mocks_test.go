@@ -27,15 +27,15 @@ import (
 
 var configMock = config.NewMockReader(
 	config.MockInt(func(path string) int {
-		println("int", path)
+		//println("int", path)
 		return 25 // Port 25
 	}),
 	config.MockString(func(path string) string {
-		println("string", path)
+		//println("string", path)
 		return "localhost"
 	}),
 	config.MockBool(func(path string) bool {
-		//		println("bool", path)
+		//println("bool", path)
 		switch path {
 		case "stores/3001/system/smtp/disable":
 			return true

@@ -22,6 +22,9 @@ import (
 	"strconv"
 	"time"
 
+	"hash"
+	"hash/fnv"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/go-gomail/gomail"
@@ -47,7 +50,7 @@ const (
 )
 
 // OfflineLogger represents a special email logger if mail sending has
-// been deactivated for a scope ID. The underlying logger is a NullLogger.
+// been deactivated for a scope ID. The underlying default logger is a NullLogger.
 var OfflineLogger log.Logger = new(log.NullLogger)
 
 // OfflineSend defines a function which uses the OfflineLogger.Info function to
@@ -90,6 +93,10 @@ type Daemon struct {
 	// tlsConfig caches the call to SetTLSConfig because TLS setting can only
 	// be applied when the dialer has already been set.
 	tlsConfig *tls.Config
+	// lastID caches the last ID() because configuration may change and then
+	// we need to reconnect the daemon to the new server.
+	lastID        uint64
+	lastIDchanged bool
 }
 
 var _ error = (*Daemon)(nil)
@@ -152,21 +159,30 @@ func (dm *Daemon) workerDial() error {
 				dm.closed = true
 				return nil
 			}
+			if open && dm.lastIDchanged {
+				// once the configuration changed and there is an open connection
+				// we have to close it and reconnect with the new SMTP login data.
+				open = false
+				dm.lastIDchanged = false
+				if err := s.Close(); err != nil {
+					log.Error("mail.daemon.workerDial.lastIDchanged.Close", "err", err) // no need to return
+				}
+			}
 			if !open {
 				if s, err = dm.dialer.Dial(); err != nil {
-					return log.Error("mail.daemon.Start.Dial", "err", err, "message", m)
+					return log.Error("mail.daemon.workerDial.Dial", "err", err, "message", m)
 				}
 				open = true
 			}
 			if err := gomail.Send(s, m); err != nil {
-				log.Error("mail.daemon.Start.Send", "err", err, "message", m)
+				log.Error("mail.daemon.workerDial.Send", "err", err, "message", m)
 			}
 		// Close the connection to the SMTP server if no email was sent in
 		// the last n seconds.
 		case <-time.After(dm.smtpTimeout):
 			if open {
 				if err := s.Close(); err != nil {
-					return log.Error("mail.daemon.Start.Close", "err", err)
+					return log.Error("mail.daemon.workerDial.timeout.Close", "err", err)
 				}
 				open = false
 			}
@@ -220,14 +236,18 @@ func (dm *Daemon) sendMsg(from, to, subject, body string, isHtml bool) error {
 	return nil
 }
 
-// Options applies optional arguments to the daemon
+// SetOptions applies optional arguments to the daemon
 // struct. It returns the last set option. More info about the returned function:
 // http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
-func (dm *Daemon) Option(opts ...DaemonOption) (previous DaemonOption) {
+func (dm *Daemon) SetOptions(opts ...DaemonOption) (previous DaemonOption) {
 	for _, o := range opts {
 		if o != nil {
 			previous = o(dm)
 		}
+	}
+	if dm.lastID != dm.ID() {
+		dm.lastID = dm.ID()
+		dm.lastIDchanged = true
 	}
 	return previous
 }
@@ -266,10 +286,17 @@ func (dm *Daemon) getPassword() string {
 	return dm.config.GetString(config.Path(PathSmtpPassword), config.ScopeStore(dm.scopeID))
 }
 
-// internalID with which you can identify a daemon connection to the same SMTP server
-// independent of the scope ID. Only used so far for the dialer pool.
-func (dm *Daemon) internalID() []byte {
-	return []byte(dm.getHost() + strconv.Itoa(dm.getPort()) + dm.getUsername())
+// ID with which you can identify a daemon connection to the same SMTP server
+// independent of the scope ID.
+func (dm *Daemon) ID() uint64 {
+	var h hash.Hash64
+	h = fnv.New64()
+	data := []byte(dm.getHost() + strconv.Itoa(dm.getPort()) + dm.getUsername())
+	if _, err := h.Write(data); err != nil {
+		log.Error("mail.daemon.ID", "err", err, "hashWrite", string(data))
+		return 0
+	}
+	return h.Sum64()
 }
 
 // NewDaemon creates a new mail sending daemon to send to a SMTP server.
@@ -282,7 +309,7 @@ func NewDaemon(opts ...DaemonOption) (*Daemon, error) {
 		scopeID:     config.ScopeID(0), // Default Scope aka Admin Scope
 		smtpTimeout: time.Second * 30,
 	}
-	d.Option(opts...)
+	d.SetOptions(opts...)
 
 	if d.IsOffline() {
 		SetSendFunc(OfflineSend)(d)

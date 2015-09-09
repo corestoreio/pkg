@@ -16,6 +16,7 @@ package mail
 
 import (
 	"bytes"
+
 	"github.com/corestoreio/csfw/config"
 )
 
@@ -49,19 +50,16 @@ func (m *Manager) Error() string {
 // Options applies optional arguments to the daemon
 // struct. It returns the last set option. More info about the returned function:
 // http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
-func (m *Manager) Option(opts ...ManagerOption) (previous ManagerOption) {
+func (m *Manager) Option(opts ...ManagerOption) *Manager {
 	for _, o := range opts {
 		if o != nil {
-			previous = o(m)
+			o(m)
 		}
 	}
-	return previous
+	return m
 }
 
-// NewManager creates a new mail sending daemon to send to a SMTP server.
-// Per default it uses localhost:25, creates an unbuffered channel, uses the
-// config.DefaultManager, applies the admin scope (0) and sets the SMTP
-// timeout to 30s.
+// NewManager creates a new
 func NewManager(opts ...ManagerOption) (*Manager, error) {
 	m := &Manager{
 		config: config.DefaultManager,

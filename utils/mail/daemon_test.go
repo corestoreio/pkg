@@ -33,7 +33,7 @@ var errLogBuf bytes.Buffer
 
 func init() {
 	log.Set(log.NewStdLogger(
-		log.StdErrorOption(&errLogBuf, "testErr", std.LstdFlags),
+		log.SetStdError(&errLogBuf, "testErr", std.LstdFlags),
 	))
 }
 
@@ -83,9 +83,9 @@ func TestDaemonOfflineLogger(t *testing.T) {
 	var logBufI bytes.Buffer
 	var logBufE bytes.Buffer
 	mail.OfflineLogger = log.NewStdLogger(
-		log.StdLevelOption(log.StdLevelInfo),
-		log.StdInfoOption(&logBufI, "test", std.LstdFlags),
-		log.StdErrorOption(&logBufE, "test", std.LstdFlags),
+		log.SetStdLevel(log.StdLevelInfo),
+		log.SetStdInfo(&logBufI, "test", std.LstdFlags),
+		log.SetStdError(&logBufE, "test", std.LstdFlags),
 	)
 
 	dm, err := mail.NewDaemon(

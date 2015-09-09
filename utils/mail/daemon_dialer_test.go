@@ -63,7 +63,7 @@ func TestDialerPoolDefaultConfig(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, dm)
-	assert.Equal(t, "localhost25", string(dm.internalID()))
+	assert.Equal(t, uint64(0xcc72e0b18f4a60fb), dm.ID()) // "localhost25"
 }
 
 func TestDialerPoolSingleton(t *testing.T) {
@@ -73,7 +73,7 @@ func TestDialerPoolSingleton(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	assert.NotNil(t, dm1)
-	assert.Equal(t, "smtp.fastmail.com40402522e71a49e", string(dm1.internalID()))
+	assert.Equal(t, uint64(0x96b8eb270abcef94), dm1.ID()) // "smtp.fastmail.com40402522e71a49e"
 
 	dm2, err := NewDaemon(
 		SetConfig(configMock),
