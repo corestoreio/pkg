@@ -63,6 +63,11 @@ type (
 		GetDateTime(o ...ArgFunc) time.Time
 	}
 
+	// Setter an interface for embedding in other structs.
+	Setter interface {
+		SetConfig(Reader, ScopeIDer)
+	}
+
 	// Writer thread safe storing of configuration values under different paths and scopes.
 	Writer interface {
 		Write(...ArgFunc) error
