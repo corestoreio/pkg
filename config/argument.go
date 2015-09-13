@@ -101,21 +101,21 @@ var int64Cache = []string{
 var int64CacheLen = int64(len(int64Cache))
 
 // newArg creates an argument container which requires different options depending on the use case.
-func newArg(opts ...ArgFunc) *arg {
-	var a = new(arg)
+func newArg(opts ...ArgFunc) arg {
+	var a = arg{}
 	for _, opt := range opts {
 		if opt != nil {
-			opt(a)
+			opt(&a)
 		}
 	}
 	return a
 }
 
-func (a *arg) isDefault() bool { return a.s == ScopeDefaultID || a.s == ScopeAbsentID }
+func (a arg) isDefault() bool { return a.s == ScopeDefaultID || a.s == ScopeAbsentID }
 
-func (a *arg) isBubbling() bool { return !a.nb }
+func (a arg) isBubbling() bool { return !a.nb }
 
-func (a *arg) scopePath() string {
+func (a arg) scopePath() string {
 	// first part of the path is called scope in Magento and in CoreStore ScopeRange
 	// e.g.: stores/2/system/currency/installed => scope/scope_id/path
 	// e.g.: websites/1/system/currency/installed => scope/scope_id/path
@@ -125,7 +125,7 @@ func (a *arg) scopePath() string {
 	return a.scopeRange() + PS + a.scopeID() + PS + a.p
 }
 
-func (a *arg) scopePathDefault() string {
+func (a arg) scopePathDefault() string {
 	// e.g.: default/0/system/currency/installed => scope/scope_id/path
 	if a.p == "" {
 		return ""
@@ -133,7 +133,7 @@ func (a *arg) scopePathDefault() string {
 	return ScopeRangeDefault + PS + "0" + PS + a.p
 }
 
-func (a *arg) scopeID() string {
+func (a arg) scopeID() string {
 	if a.r != nil {
 		if a.r.ScopeID() <= int64CacheLen {
 			return int64Cache[a.r.ScopeID()]
@@ -143,7 +143,7 @@ func (a *arg) scopeID() string {
 	return "0"
 }
 
-func (a *arg) scopeRange() string {
+func (a arg) scopeRange() string {
 	switch a.s {
 	case ScopeWebsiteID:
 		return ScopeRangeWebsites

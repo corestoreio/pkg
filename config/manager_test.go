@@ -28,6 +28,10 @@ func init() {
 	config.TableCollection.Init(dbc.NewSession())
 }
 
+func TestPubSub(t *testing.T) {
+	t.Error("@todo")
+}
+
 func TestScopeApplyDefaults(t *testing.T) {
 	pkgCfg := config.NewConfiguration(
 		&config.Section{

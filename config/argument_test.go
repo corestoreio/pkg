@@ -51,14 +51,8 @@ func TestScopeKey(t *testing.T) {
 		{nil, ""},
 	}
 
-	for i, test := range tests {
+	for _, test := range tests {
 		arg := newArg(test.haveArg...)
-
-		if arg == nil {
-			t.Errorf("\narg is nil at index %d => %#v\n", i, test)
-			return
-		}
-
 		actualPath := arg.scopePath()
 		assert.EqualValues(t, test.want, actualPath, "Test: %#v", test)
 	}
