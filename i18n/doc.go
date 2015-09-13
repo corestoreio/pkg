@@ -13,8 +13,10 @@
 // limitations under the License.
 
 /*
-Package i18n supports string translations with variable substitution, CLDR pluralization,
-currency, formats, language, regions and timezones.
+Package i18n supports string translations with variable substitution, CLDR
+pluralization, currency, formats, language, regions and timezones.
+
+Localization vs. Internationalization: http://www.w3.org/International/questions/qa-i18n
 
 Decimals
 
