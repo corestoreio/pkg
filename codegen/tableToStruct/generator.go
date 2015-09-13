@@ -234,7 +234,7 @@ func (g *generator) runTable() {
 		}
 
 		if data.Columns.PrimaryKeys().Len() > 0 {
-			data.FindByPk = "FindBy" + codegen.Camelize(data.Columns.PrimaryKeys().JoinFields("_"))
+			data.FindByPk = "FindBy" + utils.UnderscoreCamelize(data.Columns.PrimaryKeys().JoinFields("_"))
 		}
 
 		tplFuncs := template.FuncMap{

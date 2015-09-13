@@ -119,7 +119,7 @@ func detectMagentoVersion(dbrSess dbr.SessionRunner) (MageOne, MageTwo bool) {
 
 // findBy is a template function used in runTable()
 func findBy(s string) string {
-	return "FindBy" + codegen.Camelize(s)
+	return "FindBy" + utils.UnderscoreCamelize(s)
 }
 
 // dbrType is a template function used in runTable()

@@ -15,9 +15,10 @@
 package validation_test
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/utils/validation"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var _ validation.Validator = (*acceptance)(nil)

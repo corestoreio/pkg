@@ -23,6 +23,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/utils"
 	"github.com/corestoreio/csfw/utils/log"
 )
 
@@ -187,7 +188,7 @@ func (c column) Comment() string {
 }
 
 func (c column) updateGoPrimitive(useSQL bool) column {
-	c.GoName = Camelize(c.Field.String)
+	c.GoName = utils.UnderscoreCamelize(c.Field.String)
 	c.GoType = c.GetGoPrimitive(useSQL)
 	return c
 }

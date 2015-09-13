@@ -15,7 +15,6 @@
 package codegen
 
 import (
-	"database/sql"
 	"fmt"
 	"testing"
 
@@ -25,6 +24,7 @@ import (
 
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -133,29 +133,13 @@ func TestGetEavValueTables(t *testing.T) {
 
 func TestColumnComment(t *testing.T) {
 	c := column{
-		Field: sql.NullString{
-			String: "entity_id",
-			Valid:  true,
-		},
-		Type: sql.NullString{
-			String: "varchar",
-			Valid:  true,
-		},
-		Null: sql.NullString{
-			String: "YES",
-			Valid:  true,
-		},
-		Key: sql.NullString{
-			String: "PRI",
-			Valid:  true,
-		},
-		Default: sql.NullString{
-			String: "0",
-			Valid:  true,
-		},
-		Extra: sql.NullString{
-			String: "unsigned",
-			Valid:  true,
+		Column: csdb.Column{
+			Field:   dbr.NewNullString("entity_id", true),
+			Type:    dbr.NewNullString("varchar", true),
+			Null:    dbr.NewNullString("YES", true),
+			Key:     dbr.NewNullString("PRI", true),
+			Default: dbr.NewNullString("0", true),
+			Extra:   dbr.NewNullString("unsigned", true),
 		},
 	}
 	assert.Equal(t, "// entity_id varchar NULL PRI DEFAULT '0' unsigned", c.Comment())
@@ -225,7 +209,7 @@ func TestGetColumns(t *testing.T) {
 		if test.colName != "" {
 			assert.Equal(t, col.Field.String, test.colName)
 		} else {
-			assert.Nil(t, col)
+			assert.NotNil(t, col)
 		}
 
 		if test.table == "eav_attribute" {
