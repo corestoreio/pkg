@@ -10,13 +10,52 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInitNullString(t *testing.T) {
-	assert.Equal(t, "product", InitNullString("product").String)
-	assert.True(t, InitNullString("product", false).Valid)
-	assert.False(t, InitNullString("", false).Valid)
-	v, err := InitNullString("product", false).Value()
+func TestNewNullString(t *testing.T) {
+	assert.Equal(t, "product", NewNullString("product").String)
+	assert.True(t, NewNullString("product", false).Valid)
+	assert.False(t, NewNullString("", false).Valid)
+	v, err := NewNullString("product", false).Value()
 	assert.NoError(t, err)
 	assert.Equal(t, "product", v)
+}
+
+func TestNewNullInt64(t *testing.T) {
+	assert.EqualValues(t, 1257894000, NewNullInt64(1257894000).Int64)
+	assert.True(t, NewNullInt64(1257894000, false).Valid)
+	assert.False(t, NewNullInt64(0, false).Valid)
+	v, err := NewNullInt64(1257894000, false).Value()
+	assert.NoError(t, err)
+	assert.EqualValues(t, 1257894000, v)
+}
+
+func TestNewNullFloat64(t *testing.T) {
+	var test float64 = 1257894000.93445000001
+	assert.Equal(t, test, NewNullFloat64(test).Float64)
+	assert.True(t, NewNullFloat64(test, false).Valid)
+	assert.False(t, NewNullFloat64(0, false).Valid)
+	v, err := NewNullFloat64(test, false).Value()
+	assert.NoError(t, err)
+	assert.Equal(t, test, v)
+}
+
+func TestNewNullTime(t *testing.T) {
+	var test = time.Now()
+	assert.Equal(t, test, NewNullTime(test).Time)
+	assert.True(t, NewNullTime(test, false).Valid)
+	assert.False(t, NewNullTime(time.Time{}, false).Valid)
+	v, err := NewNullTime(test, false).Value()
+	assert.NoError(t, err)
+	assert.Equal(t, test, v)
+}
+
+func TestNewNullBool(t *testing.T) {
+
+	assert.Equal(t, true, NewNullBool(true, true).Bool)
+	assert.True(t, NewNullBool(true, false).Valid)
+	assert.False(t, NewNullBool(false, false).Valid)
+	v, err := NewNullBool(true, false).Value()
+	assert.NoError(t, err)
+	assert.Equal(t, true, v)
 }
 
 func TestNullTypeScanning(t *testing.T) {

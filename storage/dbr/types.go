@@ -10,41 +10,21 @@ import (
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/go-sql-driver/mysql"
 	"github.com/ugorji/go/codec"
+	"math"
 )
 
 //
 // Your app can use these Null types instead of the defaults. The sole benefit you get is a MarshalJSON method that is not retarded.
 //
 
-var _ codec.Selfer = (*NullString)(nil)
+var (
+	_          codec.Selfer = (*NullString)(nil)
+	nullString              = []byte("null")
+)
 
 // NullString is a type that can be null or a string
 type NullString struct {
 	sql.NullString
-}
-
-// InitNullString generates a new non-pointer type. Valid argument is optional
-// and will be detected automatically if left off. If value is empty, valid is
-// false which means database value is NULL.
-func InitNullString(value string, valid ...bool) NullString {
-	ok := value != ""
-	if len(valid) > 0 && value == "" {
-		ok = valid[0]
-	}
-	return NullString{
-		sql.NullString{
-			String: value,
-			Valid:  ok,
-		},
-	}
-}
-
-// GoString satisfies the interface fmt.GoStringer when using %#v in Printf methods.
-// Returns
-// 		dbr.InitNullString(`...`,bool)
-func (ns NullString) GoString() string {
-	// @todo fix bug to escape back ticks properly
-	return fmt.Sprintf("dbr.InitNullString(`%s`, %t)", ns.String, ns.Valid)
 }
 
 // NullFloat64 is a type that can be null or a float64
@@ -67,7 +47,29 @@ type NullBool struct {
 	sql.NullBool
 }
 
-var nullString = []byte("null")
+// NewNullString generates a new non-pointer type. Valid argument is optional
+// and will be detected automatically if left off. If value is empty, valid is
+// false which means database value is NULL.
+func NewNullString(value string, valid ...bool) NullString {
+	ok := value != ""
+	if len(valid) > 0 && value == "" {
+		ok = valid[0]
+	}
+	return NullString{
+		sql.NullString{
+			String: value,
+			Valid:  ok,
+		},
+	}
+}
+
+// GoString satisfies the interface fmt.GoStringer when using %#v in Printf methods.
+// Returns
+// 		dbr.NewNullString(`...`,bool)
+func (ns NullString) GoString() string {
+	// @todo fix bug to escape back ticks properly
+	return fmt.Sprintf("dbr.NewNullString(`%s`, %t)", ns.String, ns.Valid)
+}
 
 // CodecEncodeSelf for ugorji.go codec package
 func (n *NullString) CodecEncodeSelf(e *codec.Encoder) {
@@ -93,6 +95,31 @@ func (n *NullString) MarshalJSON() ([]byte, error) {
 	return nullString, nil
 }
 
+// UnmarshalJSON correctly deserializes a NullString from JSON
+func (n *NullString) UnmarshalJSON(b []byte) error {
+	var s interface{}
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	return n.Scan(s)
+}
+
+// NewNullInt64 generates a new non-pointer type. Valid argument is optional
+// and will be detected automatically if left off. If value is 0, valid is
+// false which means database value is NULL.
+func NewNullInt64(value int64, valid ...bool) NullInt64 {
+	ok := value != 0
+	if len(valid) > 0 && value == 0 {
+		ok = valid[0]
+	}
+	return NullInt64{
+		sql.NullInt64{
+			Int64: value,
+			Valid: ok,
+		},
+	}
+}
+
 // MarshalJSON correctly serializes a NullInt64 to JSON
 func (n *NullInt64) MarshalJSON() ([]byte, error) {
 	if n.Valid {
@@ -113,6 +140,31 @@ func (n *NullInt64) CodecEncodeSelf(e *codec.Encoder) {
 func (n *NullInt64) CodecDecodeSelf(d *codec.Decoder) {
 	if err := d.Decode(&n.Int64); err != nil {
 		log.Error("dbr.NullInt64.CodecEncodeSelf", "err", err, "n", n)
+	}
+}
+
+// UnmarshalJSON correctly deserializes a NullInt64 from JSON
+func (n *NullInt64) UnmarshalJSON(b []byte) error {
+	var s interface{}
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	return n.Scan(s)
+}
+
+// NewNullFloat64 generates a new non-pointer type. Valid argument is optional
+// and will be detected automatically if left off. If value is 0, valid is
+// false which means database value is NULL.
+func NewNullFloat64(value float64, valid ...bool) NullFloat64 {
+	ok := math.Abs(value) > 0.000000001
+	if len(valid) > 0 && math.Abs(value) < 0.000000001 {
+		ok = valid[0]
+	}
+	return NullFloat64{
+		sql.NullFloat64{
+			Float64: value,
+			Valid:   ok,
+		},
 	}
 }
 
@@ -139,6 +191,31 @@ func (n *NullFloat64) CodecDecodeSelf(d *codec.Decoder) {
 	}
 }
 
+// UnmarshalJSON correctly deserializes a NullFloat64 from JSON
+func (n *NullFloat64) UnmarshalJSON(b []byte) error {
+	var s interface{}
+	if err := json.Unmarshal(b, &s); err != nil {
+		return err
+	}
+	return n.Scan(s)
+}
+
+// NewNullTime generates a new non-pointer type. Valid argument is optional
+// and will be detected automatically if left off. If value is 0, valid is
+// false which means database value is NULL.
+func NewNullTime(value time.Time, valid ...bool) NullTime {
+	ok := false == value.IsZero()
+	if len(valid) > 0 && value.IsZero() {
+		ok = valid[0]
+	}
+	return NullTime{
+		mysql.NullTime{
+			Time:  value,
+			Valid: ok,
+		},
+	}
+}
+
 // MarshalJSON correctly serializes a NullTime to JSON
 func (n *NullTime) MarshalJSON() ([]byte, error) {
 	if n.Valid {
@@ -159,6 +236,34 @@ func (n *NullTime) CodecEncodeSelf(e *codec.Encoder) {
 func (n *NullTime) CodecDecodeSelf(d *codec.Decoder) {
 	if err := d.Decode(&n.Time); err != nil {
 		log.Error("dbr.NullTime.CodecEncodeSelf", "err", err, "n", n)
+	}
+}
+
+// UnmarshalJSON correctly deserializes a NullTime from JSON
+func (n *NullTime) UnmarshalJSON(b []byte) error {
+	// scan for null
+	if bytes.Equal(b, nullString) {
+		return n.Scan(nil)
+	}
+	// scan for JSON timestamp
+	var t time.Time
+	if err := json.Unmarshal(b, &t); err != nil {
+		return err
+	}
+	return n.Scan(t)
+}
+
+// NewNullBool generates a new non-pointer type. To allow NULL values pass a
+// false to the valid argument.
+func NewNullBool(value bool, valid bool) NullBool {
+	if value {
+		valid = true
+	}
+	return NullBool{
+		sql.NullBool{
+			Bool:  value,
+			Valid: valid,
+		},
 	}
 }
 
@@ -183,47 +288,6 @@ func (n *NullBool) CodecDecodeSelf(d *codec.Decoder) {
 	if err := d.Decode(&n.Bool); err != nil {
 		log.Error("dbr.NullBool.CodecEncodeSelf", "err", err, "n", n)
 	}
-}
-
-// UnmarshalJSON correctly deserializes a NullString from JSON
-func (n *NullString) UnmarshalJSON(b []byte) error {
-	var s interface{}
-	if err := json.Unmarshal(b, &s); err != nil {
-		return err
-	}
-	return n.Scan(s)
-}
-
-// UnmarshalJSON correctly deserializes a NullInt64 from JSON
-func (n *NullInt64) UnmarshalJSON(b []byte) error {
-	var s interface{}
-	if err := json.Unmarshal(b, &s); err != nil {
-		return err
-	}
-	return n.Scan(s)
-}
-
-// UnmarshalJSON correctly deserializes a NullFloat64 from JSON
-func (n *NullFloat64) UnmarshalJSON(b []byte) error {
-	var s interface{}
-	if err := json.Unmarshal(b, &s); err != nil {
-		return err
-	}
-	return n.Scan(s)
-}
-
-// UnmarshalJSON correctly deserializes a NullTime from JSON
-func (n *NullTime) UnmarshalJSON(b []byte) error {
-	// scan for null
-	if bytes.Equal(b, nullString) {
-		return n.Scan(nil)
-	}
-	// scan for JSON timestamp
-	var t time.Time
-	if err := json.Unmarshal(b, &t); err != nil {
-		return err
-	}
-	return n.Scan(t)
 }
 
 // UnmarshalJSON correctly deserializes a NullBool from JSON

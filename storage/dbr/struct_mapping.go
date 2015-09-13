@@ -3,6 +3,7 @@ package dbr
 import (
 	"errors"
 	"fmt"
+	"github.com/corestoreio/csfw/utils"
 	"reflect"
 )
 
@@ -44,7 +45,7 @@ func (sess *Session) calculateFieldMap(recordType reflect.Type, columns []string
 				name := fieldStruct.Tag.Get("db")
 				if name != "-" {
 					if name == "" {
-						name = NameMapping(fieldStruct.Name)
+						name = utils.CamelCaseToUnderscore(fieldStruct.Name)
 					}
 					if name == col {
 						fieldMap[i] = append(curIdxs, j)
