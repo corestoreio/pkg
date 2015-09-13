@@ -13,4 +13,8 @@
 // limitations under the License.
 
 // net provides functions and configuration values for the network.
+//
+// Network defines in CoreStore case any http, https or RPC request.
+//
+// TODO(cs) => github.com/streadway/handy
 package net
