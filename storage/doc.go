@@ -14,5 +14,8 @@
 
 /*
 Package storage provides everything from MySQL, Redis, BoltDB, file, etc functions.
+
+TODO(cs): github.com/youtube/vitess/go/mysql we should be compatible with this raw
+MYSQL driver.
 */
 package storage
