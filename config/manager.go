@@ -73,14 +73,6 @@ type (
 		Write(...ArgFunc) error
 	}
 
-	// Subscriber allows you listen to write actions. The order of calling
-	// each subscriber is totally random.
-	Subscriber interface {
-		// Message when a configuration value will be written Message gets
-		// called to allow you to listen to changes.
-		Message(path string, sg ScopeGroup, s ScopeIDer)
-	}
-
 	// Manager main configuration struct
 	Manager struct {
 		// why is Viper private? Because it can maybe replaced by something else ...
@@ -107,11 +99,8 @@ func init() {
 // NewManager creates the main new configuration for all scopes: default, website and store
 func NewManager() *Manager {
 	m := &Manager{
-		v: viper.New(),
-		pubSub: &pubSub{
-			subWriters: make(map[int]Subscriber),
-			publishArg: make(chan arg),
-		},
+		v:      viper.New(),
+		pubSub: newPubSub(),
 	}
 	m.v.Set(newArg(Path(PathCSBaseURL)).scopePath(), CSBaseURL)
 	go m.publish()
@@ -162,8 +151,8 @@ func (m *Manager) Write(o ...ArgFunc) error {
 		}
 		m.v.Set(a.scopePathDefault(), a.v)
 		aDefault := a
-		aDefault.s = ScopeDefaultID
-		aDefault.r = ScopeID(0)
+		aDefault.sg = ScopeDefaultID
+		aDefault.si = ScopeID(0)
 		m.sendMsg(aDefault)
 	}
 

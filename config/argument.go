@@ -42,7 +42,7 @@ func Scope(s ScopeGroup, r ScopeIDer) ArgFunc {
 	if s != ScopeDefaultID && r == nil {
 		s = ScopeDefaultID
 	}
-	return func(a *arg) { a.s = s; a.r = r }
+	return func(a *arg) { a.sg = s; a.si = r }
 }
 
 // Path option function to specify the configuration path. If one argument has been
@@ -58,7 +58,7 @@ func Path(paths ...string) ArgFunc {
 	if lp == 3 {
 		p = p + PS + paths[1] + PS + paths[2]
 	}
-	return func(a *arg) { a.p = p }
+	return func(a *arg) { a.pa = p }
 }
 
 // NoBubble disables the fallback to the default scope when a value in the current
@@ -86,9 +86,9 @@ func ValueReader(r io.Reader) ArgFunc {
 // arg responsible for the correct scope key e.g.: stores/2/system/currency/installed => scope/scope_id/path
 // which is used by the underlying configuration manager to fetch or store a value
 type arg struct {
-	p  string // p is the three level path e.g. a/b/c
-	s  ScopeGroup
-	r  ScopeIDer
+	pa string // p is the three level path e.g. a/b/c
+	sg ScopeGroup
+	si ScopeIDer
 	nb bool        // noBubble, if false value search: (store|website) -> default
 	v  interface{} // value use for saving
 	// lastError error @todo see userjwt package
@@ -111,7 +111,7 @@ func newArg(opts ...ArgFunc) arg {
 	return a
 }
 
-func (a arg) isDefault() bool { return a.s == ScopeDefaultID || a.s == ScopeAbsentID }
+func (a arg) isDefault() bool { return a.sg == ScopeDefaultID || a.sg == ScopeAbsentID }
 
 func (a arg) isBubbling() bool { return !a.nb }
 
@@ -119,32 +119,32 @@ func (a arg) scopePath() string {
 	// first part of the path is called scope in Magento and in CoreStore ScopeRange
 	// e.g.: stores/2/system/currency/installed => scope/scope_id/path
 	// e.g.: websites/1/system/currency/installed => scope/scope_id/path
-	if a.p == "" {
+	if a.pa == "" {
 		return ""
 	}
-	return a.scopeRange() + PS + a.scopeID() + PS + a.p
+	return a.scopeRange() + PS + a.scopeID() + PS + a.pa
 }
 
 func (a arg) scopePathDefault() string {
 	// e.g.: default/0/system/currency/installed => scope/scope_id/path
-	if a.p == "" {
+	if a.pa == "" {
 		return ""
 	}
-	return ScopeRangeDefault + PS + "0" + PS + a.p
+	return ScopeRangeDefault + PS + "0" + PS + a.pa
 }
 
 func (a arg) scopeID() string {
-	if a.r != nil {
-		if a.r.ScopeID() <= int64CacheLen {
-			return int64Cache[a.r.ScopeID()]
+	if a.si != nil {
+		if a.si.ScopeID() <= int64CacheLen {
+			return int64Cache[a.si.ScopeID()]
 		}
-		return strconv.FormatInt(a.r.ScopeID(), 10)
+		return strconv.FormatInt(a.si.ScopeID(), 10)
 	}
 	return "0"
 }
 
 func (a arg) scopeRange() string {
-	switch a.s {
+	switch a.sg {
 	case ScopeWebsiteID:
 		return ScopeRangeWebsites
 	case ScopeStoreID:

@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"errors"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/stretchr/testify/assert"

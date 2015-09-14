@@ -24,6 +24,15 @@ import (
 
 var ErrPublisherClosed = errors.New("config Manager Publisher already closed")
 
+// Subscriber allows you listen to write actions. The order of calling
+// each subscriber is totally random.
+type Subscriber interface {
+	// Message when a configuration value will be written Message gets
+	// called to allow you to listen to changes.
+	Message(path string, sg ScopeGroup, s ScopeIDer)
+}
+
+// pubSub embedded pointer struct into the Manager
 type pubSub struct {
 	// subWriters subscribe writers are getting called when a write even
 	// will happen.
@@ -90,21 +99,30 @@ func (ps *pubSub) publish() {
 			if len(ps.subWriters) > 0 {
 				ps.mu.RLock()
 				for _, s := range ps.subWriters {
-					func(sl Subscriber) {
-						defer func() { // protect ... you'll never know
-							if r := recover(); r != nil {
-								if err, ok := r.(error); ok {
-									log.Error("config.pubSub.publish.recover.err", "err", err)
-								} else {
-									log.Error("config.pubSub.publish.recover.wtf", "recover", r)
-								}
-							}
-						}()
-						sl.Message(a.p, a.s, a.r)
-					}(s)
+					sendMsgRecoverable(s, a)
 				}
 				ps.mu.RUnlock()
 			}
 		}
+	}
+}
+
+func sendMsgRecoverable(sl Subscriber, a arg) {
+	defer func() { // protect ... you'll never know
+		if r := recover(); r != nil {
+			if err, ok := r.(error); ok {
+				log.Error("config.pubSub.publish.recover.err", "err", err)
+			} else {
+				log.Error("config.pubSub.publish.recover.wtf", "recover", r)
+			}
+		}
+	}()
+	sl.Message(a.pa, a.sg, a.si)
+}
+
+func newPubSub() *pubSub {
+	return &pubSub{
+		subWriters: make(map[int]Subscriber),
+		publishArg: make(chan arg),
 	}
 }
