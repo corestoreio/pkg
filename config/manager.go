@@ -22,7 +22,6 @@ import (
 	"github.com/corestoreio/csfw/utils/cast"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/spf13/viper"
-	"sync"
 )
 
 // LeftDelim and RightDelim are used withing the core_config_data.value field to allow the replacement
@@ -86,12 +85,7 @@ type (
 	Manager struct {
 		// why is Viper private? Because it can maybe replaced by something else ...
 		v *viper.Viper
-		// subWriters subscribe writers are getting called when a write even
-		// will happen.
-		subWriters map[int]Subscriber
-		subAutoInc int // subAutoInc increased whenever a Subscriber has been added
-		mu         sync.RWMutex
-		publishArg chan arg
+		*pubSub
 	}
 )
 
@@ -113,71 +107,15 @@ func init() {
 // NewManager creates the main new configuration for all scopes: default, website and store
 func NewManager() *Manager {
 	m := &Manager{
-		v:          viper.New(),
-		subWriters: make(map[int]Subscriber),
-		publishArg: make(chan arg),
+		v: viper.New(),
+		pubSub: &pubSub{
+			subWriters: make(map[int]Subscriber),
+			publishArg: make(chan arg),
+		},
 	}
 	m.v.Set(newArg(Path(PathCSBaseURL)).scopePath(), CSBaseURL)
 	go m.publish()
 	return m
-}
-
-// Close closes the internal channel for the pubsub routines.
-func (m *Manager) Close() error {
-	close(m.publishArg)
-	return nil
-}
-
-// Subscribe adds a Subscriber to be called when a write event happens.
-// Returns a unique identifier for the Subscriber for later removal.
-func (m *Manager) Subscribe(s Subscriber) (subscriptionID int, err error) {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	m.subAutoInc++
-	m.subWriters[m.subAutoInc] = s
-	return m.subAutoInc, nil
-}
-
-// Unsubscribe removes a subscriber with a specific ID.
-func (m *Manager) Unsubscribe(subscriptionID int) error {
-	m.mu.Lock()
-	defer m.mu.Unlock()
-	if _, ok := m.subWriters[subscriptionID]; ok {
-		m.subWriters[subscriptionID] = nil // avoid mem leaks
-	}
-	delete(m.subWriters, subscriptionID)
-	return nil
-}
-
-func (m *Manager) publish() {
-	m.mu.RLock()
-	defer m.mu.RUnlock()
-
-	defer func() { // protect ... you'll never know
-		if r := recover(); r != nil {
-			if err, ok := r.(error); ok {
-				log.Error("config.Manager.publish.recover.err", "err", err)
-			} else {
-				log.Error("config.Manager.publish.recover.wtf", "recover", r)
-			}
-		}
-	}()
-
-	for {
-		select {
-		case a, ok := <-m.publishArg:
-			if !ok {
-				// channel closed
-				return
-			}
-
-			if len(m.subWriters) > 0 {
-				for _, s := range m.subWriters {
-					s.Message(a.p, a.s, a.r)
-				}
-			}
-		}
-	}
 }
 
 // ApplyDefaults reads the map and applies the keys and values to the default configuration
@@ -226,7 +164,7 @@ func (m *Manager) Write(o ...ArgFunc) error {
 		aDefault := a
 		aDefault.s = ScopeDefaultID
 		aDefault.r = ScopeID(0)
-		m.publishArg <- aDefault
+		m.sendMsg(aDefault)
 	}
 
 	if log.IsDebug() {
@@ -234,7 +172,7 @@ func (m *Manager) Write(o ...ArgFunc) error {
 	}
 	a.scopeID()
 	m.v.Set(a.scopePath(), a.v)
-	m.publishArg <- a
+	m.sendMsg(a)
 	return nil
 }
 

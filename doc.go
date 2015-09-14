@@ -51,6 +51,12 @@ Table indexes are iota constants and start with TableIndex[table name].
 The word "collection" will be appended to a variable or function when that variable or function contains
 a materialized slice or handles it.
 
+Event/Observer vs Publish/Subscribe
+
+Basically those two are nearly the same. The only difference lies in its behaviour.
+Event/Observer can modify a type and block an operation while Publish/Subscribe
+runs asynchronously in its own Goroutine and cannot modify anything.
+
 Required settings
 
 CS_DSN the environment variable for the MySQL connection.

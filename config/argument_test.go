@@ -18,14 +18,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/corestoreio/csfw/utils/log"
 	"github.com/stretchr/testify/assert"
 )
-
-func init() {
-	log.Set(log.NewStdLogger())
-	log.SetLevel(log.StdLevelError)
-}
 
 func TestScopeKey(t *testing.T) {
 	tests := []struct {
