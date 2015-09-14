@@ -89,7 +89,10 @@ func (ss SectionSlice) Defaults() DefaultMap {
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
-				arg := newArg(Path(s.ID, g.ID, f.ID))
+				arg, err := newArg(Path(s.ID, g.ID, f.ID))
+				if err != nil {
+					log.Error("config.SectionSlice.Defaults.newArg", "err", err, "s", s, "g", g, "f", f)
+				}
 				dm[arg.scopePath()] = f.Default
 			}
 		}
@@ -230,7 +233,10 @@ func (ss SectionSlice) Validate() error {
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
-				arg := newArg(Path(s.ID, g.ID, f.ID))
+				arg, err := newArg(Path(s.ID, g.ID, f.ID))
+				if err != nil {
+					log.Error("config.SectionSlice.Validate.newArg", "err", err, "s", s, "g", g, "f", f)
+				}
 				p := arg.scopePath()
 				if pc.Include(p) {
 					return errgo.Newf("Duplicate entry for path %s :: %s", p, ss.ToJSON())

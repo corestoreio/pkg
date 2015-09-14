@@ -15,15 +15,25 @@
 package config
 
 import (
+	"bytes"
 	"io"
 	"io/ioutil"
 	"strconv"
 
+	"errors"
+	"fmt"
+	"strings"
+
 	"github.com/corestoreio/csfw/utils/log"
 )
 
+const hierarchyLevel int = 3 // a/b/c
+
 // PS path separator used in the database table core_config_data and in config.Manager
 const PS = "/"
+
+// ErrPathEmpty when you provide an empty path in the function Path()
+var ErrPathEmpty = errors.New("Path cannot be empty")
 
 // ArgFunc Argument function to be used as variadic argument in ScopeKey() and ScopeKeyValue()
 type ArgFunc func(*arg)
@@ -54,11 +64,28 @@ func Path(paths ...string) ArgFunc {
 	if lp > 0 {
 		p = paths[0]
 	}
-
-	if lp == 3 {
-		p = p + PS + paths[1] + PS + paths[2]
+	if p == "" {
+		return func(a *arg) {
+			a.lastErrors = append(a.lastErrors, ErrPathEmpty)
+		}
 	}
-	return func(a *arg) { a.pa = p }
+
+	var paSlice []string
+	if lp == hierarchyLevel {
+		p = p + PS + paths[1] + PS + paths[2]
+		paSlice = paths
+	} else {
+		paSlice = strings.Split(p, PS)
+		if len(paSlice) != hierarchyLevel {
+			return func(a *arg) {
+				a.lastErrors = append(a.lastErrors, fmt.Errorf("Incorrect number of paths elements: want %d, have %d, Path: %v", hierarchyLevel, len(paSlice), paths))
+			}
+		}
+	}
+	return func(a *arg) {
+		a.pa = p
+		a.paSlice = paSlice
+	}
 }
 
 // NoBubble disables the fallback to the default scope when a value in the current
@@ -76,7 +103,9 @@ func ValueReader(r io.Reader) ArgFunc {
 	}
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
-		log.Error("config.ValueReader.ReadAll", "err", err)
+		return func(a *arg) {
+			a.lastErrors = append(a.lastErrors, fmt.Errorf("ValueReader error %s", err))
+		}
 	}
 	return func(a *arg) {
 		a.v = data
@@ -86,12 +115,13 @@ func ValueReader(r io.Reader) ArgFunc {
 // arg responsible for the correct scope key e.g.: stores/2/system/currency/installed => scope/scope_id/path
 // which is used by the underlying configuration manager to fetch or store a value
 type arg struct {
-	pa string // p is the three level path e.g. a/b/c
-	sg ScopeGroup
-	si ScopeIDer
-	nb bool        // noBubble, if false value search: (store|website) -> default
-	v  interface{} // value use for saving
-	// lastError error @todo see userjwt package
+	pa         string   // p is the three level path e.g. a/b/c
+	paSlice    []string // used for hierarchy for the pubSub system
+	sg         ScopeGroup
+	si         ScopeIDer
+	nb         bool        // noBubble, if false value search: (store|website) -> default
+	v          interface{} // value use for saving
+	lastErrors []error
 }
 
 // this "cache" should covers ~80% of all store setups
@@ -101,12 +131,25 @@ var int64Cache = []string{
 var int64CacheLen = int64(len(int64Cache))
 
 // newArg creates an argument container which requires different options depending on the use case.
-func newArg(opts ...ArgFunc) arg {
+func newArg(opts ...ArgFunc) (arg, error) {
 	var a = arg{}
 	for _, opt := range opts {
 		if opt != nil {
 			opt(&a)
 		}
+	}
+	if len(a.lastErrors) > 0 {
+		return arg{}, a
+	}
+	return a, nil
+}
+
+// mustNewArg panics on error. useful for initialization process
+func mustNewArg(opts ...ArgFunc) arg {
+	a, err := newArg(opts...)
+	if err != nil {
+		log.Error("config.mustNewArg", "err", err)
+		panic(err)
 	}
 	return a
 }
@@ -114,6 +157,18 @@ func newArg(opts ...ArgFunc) arg {
 func (a arg) isDefault() bool { return a.sg == ScopeDefaultID || a.sg == ScopeAbsentID }
 
 func (a arg) isBubbling() bool { return !a.nb }
+
+func (a arg) pathLevel1() string {
+	return a.paSlice[0]
+}
+
+func (a arg) pathLevel2() string {
+	return a.paSlice[0] + PS + a.paSlice[1]
+}
+
+func (a arg) pathLevel3() string {
+	return a.paSlice[0] + PS + a.paSlice[1] + PS + a.paSlice[2]
+}
 
 func (a arg) scopePath() string {
 	// first part of the path is called scope in Magento and in CoreStore ScopeRange
@@ -127,9 +182,6 @@ func (a arg) scopePath() string {
 
 func (a arg) scopePathDefault() string {
 	// e.g.: default/0/system/currency/installed => scope/scope_id/path
-	if a.pa == "" {
-		return ""
-	}
 	return ScopeRangeDefault + PS + "0" + PS + a.pa
 }
 
@@ -151,4 +203,18 @@ func (a arg) scopeRange() string {
 		return ScopeRangeStores
 	}
 	return ScopeRangeDefault
+}
+
+var _ error = (*arg)(nil)
+
+func (a arg) Error() string {
+	var buf bytes.Buffer
+	lle := len(a.lastErrors) - 1
+	for i, e := range a.lastErrors {
+		buf.WriteString(e.Error())
+		if i < lle {
+			buf.WriteString("\n")
+		}
+	}
+	return buf.String()
 }

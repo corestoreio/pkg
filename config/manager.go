@@ -102,7 +102,7 @@ func NewManager() *Manager {
 		v:      viper.New(),
 		pubSub: newPubSub(),
 	}
-	m.v.Set(newArg(Path(PathCSBaseURL)).scopePath(), CSBaseURL)
+	m.v.Set(mustNewArg(Path(PathCSBaseURL)).scopePath(), CSBaseURL)
 	go m.publish()
 	return m
 }
@@ -144,7 +144,11 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 // Website Scope: Write(config.Path("currency", "option", "base"), config.Value("EUR"), config.ScopeWebsite(w))
 // Store   Scope: Write(config.Path("currency", "option", "base"), config.ValueReader(resp.Body), config.ScopeStore(s))
 func (m *Manager) Write(o ...ArgFunc) error {
-	a := newArg(o...)
+	a, err := newArg(o...)
+	if err != nil {
+		return log.Error("config.Manager.Write.newArg", "err", err)
+	}
+
 	if a.isBubbling() {
 		if log.IsDebug() {
 			log.Debug("config.Manager.Write.isBubbling", "path", a.scopePathDefault(), "bubble", a.isBubbling(), "val", a.v)
@@ -167,7 +171,11 @@ func (m *Manager) Write(o ...ArgFunc) error {
 
 // get generic getter ... not sure if this should be public ...
 func (m *Manager) get(o ...ArgFunc) interface{} {
-	a := newArg(o...)
+	a, err := newArg(o...)
+	if err != nil {
+		return log.Error("config.Manager.get.newArg", "err", err)
+	}
+
 	vs := m.v.Get(a.scopePath()) // vs = value scope
 	if vs == nil && a.isBubbling() {
 		vs = m.v.Get(a.scopePathDefault())
@@ -235,7 +243,12 @@ func (m *Manager) GetDateTime(o ...ArgFunc) time.Time {
 // AllKeys return all keys regardless where they are set
 func (m *Manager) AllKeys() []string { return m.v.AllKeys() }
 
-// IsSet checks if a key is in the config. Does not bubble.
+// IsSet checks if a key is in the config. Does not bubble. Returns false on error.
 func (m *Manager) IsSet(o ...ArgFunc) bool {
-	return m.v.IsSet(newArg(o...).scopePath())
+	a, err := newArg(o...)
+	if err != nil {
+		log.Error("config.Manager.IsSet.newArg", "err", err)
+		return false
+	}
+	return m.v.IsSet(a.scopePath())
 }

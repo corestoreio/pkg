@@ -42,17 +42,23 @@ type testSubscriber struct {
 	f func(path string, sg config.ScopeGroup, s config.ScopeIDer)
 }
 
-func (ts *testSubscriber) Message(path string, sg config.ScopeGroup, s config.ScopeIDer) {
+func (ts *testSubscriber) MessageConfig(path string, sg config.ScopeGroup, s config.ScopeIDer) {
 	//ts.t.Logf("Message: %s Group %d Scope %d", path, sg, s.ScopeID())
 	ts.f(path, sg, s)
 }
 
 func TestPubSubBubbling(t *testing.T) {
+	defer errLogBuf.Reset()
+	testPath := "a/b/c"
 
 	m := config.NewManager()
-	subID, err := m.Subscribe(&testSubscriber{
+
+	_, err := m.Subscribe("", nil)
+	assert.EqualError(t, err, config.ErrPathEmpty.Error())
+
+	subID, err := m.Subscribe(testPath, &testSubscriber{
 		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
-			assert.Equal(t, "aa/bb/cc", path)
+			assert.Equal(t, testPath, path)
 			if sg == config.ScopeDefaultID {
 				assert.Equal(t, int64(0), s.ScopeID())
 			} else {
@@ -63,44 +69,48 @@ func TestPubSubBubbling(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
 
-	m.Write(config.Value(1), config.Path("aa/bb/cc"), config.Scope(config.ScopeWebsiteID, config.ScopeID(123)))
+	m.Write(config.Value(1), config.Path(testPath), config.Scope(config.ScopeWebsiteID, config.ScopeID(123)))
 
 	assert.NoError(t, m.Close())
 	time.Sleep(time.Millisecond * 10) // wait for goroutine to close
 
 	// send on closed channel
-	m.Write(config.NoBubble(), config.Value(1), config.Path("a/b/c"), config.Scope(config.ScopeWebsiteID, config.ScopeID(3)))
+	m.Write(config.NoBubble(), config.Value(1), config.Path(testPath+"Doh"), config.Scope(config.ScopeWebsiteID, config.ScopeID(3)))
 	assert.EqualError(t, m.Close(), config.ErrPublisherClosed.Error())
 }
 
 func TestPubSubPanic(t *testing.T) {
 	defer errLogBuf.Reset()
+	testPath := "x/y/z"
+
 	m := config.NewManager()
-	subID, err := m.Subscribe(&testSubscriber{
+	subID, err := m.Subscribe(testPath, &testSubscriber{
 		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
 			panic("Don't panic!")
 		},
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
-	m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(config.ScopeID(123)), config.NoBubble())
+	m.Write(config.Value(321), config.Path(testPath), config.ScopeStore(config.ScopeID(123)), config.NoBubble())
 	assert.NoError(t, m.Close())
 	time.Sleep(time.Millisecond * 10) // wait for goroutine to close
-	assert.Contains(t, errLogBuf.String(), `config.pubSub.publish.recover.wtf recover: "Don't panic!"`)
+	assert.Contains(t, errLogBuf.String(), `config.pubSub.publish.recover.r recover: "Don't panic!"`)
 }
 
 func TestPubSubPanicError(t *testing.T) {
 	defer errLogBuf.Reset()
+	testPath := "™/ö/º"
+
 	var pErr = errors.New("OMG! Panic!")
 	m := config.NewManager()
-	subID, err := m.Subscribe(&testSubscriber{
+	subID, err := m.Subscribe(testPath, &testSubscriber{
 		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
 			panic(pErr)
 		},
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
-	m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(config.ScopeID(123)), config.NoBubble())
+	m.Write(config.Value(321), config.Path(testPath), config.ScopeStore(config.ScopeID(123)), config.NoBubble())
 	// not closing channel to let the Goroutine around egging aka. herumeiern.
 	time.Sleep(time.Millisecond * 10) // wait for goroutine ...
 	assert.Contains(t, errLogBuf.String(), `config.pubSub.publish.recover.err err: OMG! Panic!`)
@@ -110,24 +120,27 @@ func TestPubSubPanicMultiple(t *testing.T) {
 	defer errLogBuf.Reset()
 	m := config.NewManager()
 
-	subID, err := m.Subscribe(&testSubscriber{
+	subID, err := m.Subscribe("x", &testSubscriber{
 		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
+			assert.Equal(t, "x/y/z", path)
 			panic("One: Don't panic!")
 		},
 	})
 	assert.NoError(t, err)
 	assert.True(t, subID > 0)
 
-	subID, err = m.Subscribe(&testSubscriber{
+	subID, err = m.Subscribe("x/y", &testSubscriber{
 		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
+			assert.Equal(t, "x/y/z", path)
 			panic("Two: Don't panic!")
 		},
 	})
 	assert.NoError(t, err)
 	assert.True(t, subID > 0)
 
-	subID, err = m.Subscribe(&testSubscriber{
+	subID, err = m.Subscribe("x/y/z", &testSubscriber{
 		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
+			assert.Equal(t, "x/y/z", path)
 			panic("Three: Don't panic!")
 		},
 	})
@@ -137,9 +150,9 @@ func TestPubSubPanicMultiple(t *testing.T) {
 	m.Write(config.Value(789), config.Path("x/y/z"), config.ScopeStore(config.ScopeID(987)), config.NoBubble())
 	assert.NoError(t, m.Close())
 	time.Sleep(time.Millisecond * 30) // wait for goroutine to close
-	assert.Contains(t, errLogBuf.String(), `testErr: stdLib.go:228: config.pubSub.publish.recover.wtf recover: "One: Don't panic!"
-testErr: stdLib.go:228: config.pubSub.publish.recover.wtf recover: "Two: Don't panic!"
-testErr: stdLib.go:228: config.pubSub.publish.recover.wtf recover: "Three: Don't panic!"`+"\n")
+	assert.Contains(t, errLogBuf.String(), `testErr: stdLib.go:228: config.pubSub.publish.recover.r recover: "One: Don't panic!"
+testErr: stdLib.go:228: config.pubSub.publish.recover.r recover: "Two: Don't panic!"
+testErr: stdLib.go:228: config.pubSub.publish.recover.r recover: "Three: Don't panic!"`+"\n")
 }
 
 func TestPubSubUnsubscribe(t *testing.T) {
@@ -147,7 +160,7 @@ func TestPubSubUnsubscribe(t *testing.T) {
 
 	var pErr = errors.New("WTF? Panic!")
 	m := config.NewManager()
-	subID, err := m.Subscribe(&testSubscriber{
+	subID, err := m.Subscribe("x/y/z", &testSubscriber{
 		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
 			panic(pErr)
 		},
@@ -156,7 +169,46 @@ func TestPubSubUnsubscribe(t *testing.T) {
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
 	assert.NoError(t, m.Unsubscribe(subID))
 	m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(config.ScopeID(123)), config.NoBubble())
-	// not closing channel to let the Goroutine around egging aka. herumeiern.
 	time.Sleep(time.Millisecond) // wait for goroutine ...
 	assert.Empty(t, errLogBuf.String())
+}
+
+func TestPubSubEvict(t *testing.T) {
+	defer errLogBuf.Reset()
+
+	var level2Calls int
+	var level3Calls int
+
+	var pErr = errors.New("WTF Eviction? Panic!")
+	m := config.NewManager()
+	subID, err := m.Subscribe("x/y", &testSubscriber{
+		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
+			assert.Contains(t, path, "x/y")
+			// this function gets called 3 times
+			level2Calls++
+		},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, 1, subID)
+
+	subID, err = m.Subscribe("x/y/z", &testSubscriber{
+		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
+			level3Calls++
+			// this function gets called 1 times and then gets removed
+			panic(pErr)
+		},
+	})
+	assert.NoError(t, err)
+	assert.Equal(t, 2, subID)
+
+	m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(config.ScopeID(123)), config.NoBubble())
+	m.Write(config.Value(321), config.Path("x/y/a"), config.ScopeStore(config.ScopeID(123)), config.NoBubble())
+	m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(config.ScopeID(123)), config.NoBubble())
+
+	time.Sleep(time.Millisecond * 20) // wait for goroutine ...
+
+	assert.Contains(t, errLogBuf.String(), "testErr: stdLib.go:228: config.pubSub.publish.recover.err err: WTF Eviction? Panic!")
+
+	assert.Equal(t, 3, level2Calls)
+	assert.Equal(t, 1, level3Calls)
 }

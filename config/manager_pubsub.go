@@ -24,19 +24,21 @@ import (
 
 var ErrPublisherClosed = errors.New("config Manager Publisher already closed")
 
-// Subscriber allows you listen to write actions. The order of calling
-// each subscriber is totally random.
+// Subscriber allows you to listen to write actions. The order of calling
+// each subscriber is totally random. If a subscriber panics, it gets securely
+// removed without crashing the whole system.
 type Subscriber interface {
-	// Message when a configuration value will be written Message gets
-	// called to allow you to listen to changes.
-	Message(path string, sg ScopeGroup, s ScopeIDer)
+	// MessageConfig when a configuration value will be written MessageConfig
+	// gets called to allow you to listen to changes.
+	MessageConfig(path string, sg ScopeGroup, s ScopeIDer)
 }
 
 // pubSub embedded pointer struct into the Manager
 type pubSub struct {
-	// subWriters subscribe writers are getting called when a write even
-	// will happen.
-	subWriters map[int]Subscriber
+	// subMap, subscribed writers are getting called when a write event
+	// will happen. String is the path (aka topic) and int the Subscriber ID for later
+	// removal.
+	subMap     map[string]map[int]Subscriber
 	subAutoInc int // subAutoInc increased whenever a Subscriber has been added
 	mu         sync.RWMutex
 	publishArg chan arg
@@ -55,13 +57,26 @@ func (ps *pubSub) Close() error {
 }
 
 // Subscribe adds a Subscriber to be called when a write event happens.
-// Returns a unique identifier for the Subscriber for later removal.
-func (ps *pubSub) Subscribe(s Subscriber) (subscriptionID int, err error) {
+// Path allows you to filter to which path or part of a path you would like to listen.
+// A path can be e.g. "system/smtp/host" to receive messages by single host changes or
+// "system/smtp" to receive message from all smtp changes or "system" to receive changes
+// for all paths beginning with "system". A path is equal to a topic in a PubSub system.
+// Path cannot be empty means you cannot listen to all changes.
+// Returns a unique identifier for the Subscriber for later removal, or an error.
+func (ps *pubSub) Subscribe(path string, s Subscriber) (subscriptionID int, err error) {
+	if path == "" {
+		return 0, ErrPathEmpty
+	}
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
 	ps.subAutoInc++
-	ps.subWriters[ps.subAutoInc] = s
 	subscriptionID = ps.subAutoInc
+
+	if _, ok := ps.subMap[path]; !ok {
+		ps.subMap[path] = make(map[int]Subscriber)
+	}
+	ps.subMap[path][subscriptionID] = s
+
 	return
 }
 
@@ -69,10 +84,16 @@ func (ps *pubSub) Subscribe(s Subscriber) (subscriptionID int, err error) {
 func (ps *pubSub) Unsubscribe(subscriptionID int) error {
 	ps.mu.Lock()
 	defer ps.mu.Unlock()
-	if _, ok := ps.subWriters[subscriptionID]; ok {
-		ps.subWriters[subscriptionID] = nil // avoid mem leaks
+
+	for path, subs := range ps.subMap {
+		if _, ok := subs[subscriptionID]; ok {
+			delete(ps.subMap[path], subscriptionID) // mem leaks?
+			if len(ps.subMap[path]) == 0 {
+				delete(ps.subMap, path)
+			}
+			return nil
+		}
 	}
-	delete(ps.subWriters, subscriptionID)
 	return nil
 }
 
@@ -96,33 +117,64 @@ func (ps *pubSub) publish() {
 				return
 			}
 
-			if len(ps.subWriters) > 0 {
-				ps.mu.RLock()
-				for _, s := range ps.subWriters {
-					sendMsgRecoverable(s, a)
+			if len(ps.subMap) == 0 {
+				break
+			}
+
+			ps.mu.RLock()
+			var evict []int
+
+			if subs, ok := ps.subMap[a.pathLevel1()]; ok { // e.g.: system
+				evict = append(evict, sendMessages(subs, a)...)
+			}
+			if subs, ok := ps.subMap[a.pathLevel2()]; ok { // e.g.: system/smtp
+				evict = append(evict, sendMessages(subs, a)...)
+			}
+			if subs, ok := ps.subMap[a.pathLevel3()]; ok { // e.g.: system/smtp/host
+				evict = append(evict, sendMessages(subs, a)...)
+			}
+			ps.mu.RUnlock()
+
+			// remove all Subscribers which failed
+			if len(evict) > 0 {
+				for _, e := range evict {
+					if err := ps.Unsubscribe(e); err != nil {
+						log.Error("config.pubSub.publish.evict.Unsubscribe.err", "err", err, "subscriptionID", e)
+					}
 				}
-				ps.mu.RUnlock()
 			}
 		}
 	}
 }
 
-func sendMsgRecoverable(sl Subscriber, a arg) {
+func sendMessages(subs map[int]Subscriber, a arg) (evict []int) {
+	for id, s := range subs {
+		if err := sendMsgRecoverable(id, s, a); err != nil {
+			evict = append(evict, id) // mark Subscribers for removal which failed ...
+		}
+	}
+	return
+}
+
+func sendMsgRecoverable(id int, sl Subscriber, a arg) (err error) {
 	defer func() { // protect ... you'll never know
 		if r := recover(); r != nil {
-			if err, ok := r.(error); ok {
-				log.Error("config.pubSub.publish.recover.err", "err", err)
+			if recErr, ok := r.(error); ok {
+				err = log.Error("config.pubSub.publish.recover.err", "err", recErr)
 			} else {
-				log.Error("config.pubSub.publish.recover.wtf", "recover", r)
+				err = log.Error("config.pubSub.publish.recover.r", "recover", r)
 			}
+			// the overall trick here is, that defer will assign a new error to err
+			// and therefore will overwrite the returned nil value!
 		}
 	}()
-	sl.Message(a.pa, a.sg, a.si)
+	sl.MessageConfig(a.pa, a.sg, a.si)
+	return
 }
 
 func newPubSub() *pubSub {
 	return &pubSub{
-		subWriters: make(map[int]Subscriber),
+		subMap:     make(map[string]map[int]Subscriber),
 		publishArg: make(chan arg),
 	}
 }

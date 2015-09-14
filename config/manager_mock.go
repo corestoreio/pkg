@@ -105,30 +105,30 @@ func (sr *MockReader) GetString(opts ...ArgFunc) string {
 	if sr.s == nil {
 		return ""
 	}
-	return sr.s(newArg(opts...).scopePath())
+	return sr.s(mustNewArg(opts...).scopePath())
 }
 
 func (sr *MockReader) GetBool(opts ...ArgFunc) bool {
 	if sr.b == nil {
 		return false
 	}
-	return sr.b(newArg(opts...).scopePath())
+	return sr.b(mustNewArg(opts...).scopePath())
 }
 func (sr *MockReader) GetFloat64(opts ...ArgFunc) float64 {
 	if sr.f64 == nil {
 		return 0.0
 	}
-	return sr.f64(newArg(opts...).scopePath())
+	return sr.f64(mustNewArg(opts...).scopePath())
 }
 func (sr *MockReader) GetInt(opts ...ArgFunc) int {
 	if sr.i == nil {
 		return 0
 	}
-	return sr.i(newArg(opts...).scopePath())
+	return sr.i(mustNewArg(opts...).scopePath())
 }
 func (sr *MockReader) GetDateTime(opts ...ArgFunc) time.Time {
 	if sr.t == nil {
 		return time.Time{}
 	}
-	return sr.t(newArg(opts...).scopePath())
+	return sr.t(mustNewArg(opts...).scopePath())
 }
