@@ -27,6 +27,7 @@ func init() {
 
 // BenchmarkSectionSliceValidate	    1000	   1791239 ns/op	  158400 B/op	    4016 allocs/op => Go 1.4.2
 // BenchmarkSectionSliceValidate   	    1000	   1636547 ns/op	  158400 B/op	    3213 allocs/op => Go 1.5.0
+// BenchmarkSectionSliceValidate	    1000	   1807597 ns/op	  248336 B/op	    4016 allocs/op => WTF?
 func BenchmarkSectionSliceValidate(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
