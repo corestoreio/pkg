@@ -20,6 +20,7 @@ import (
 
 	"bytes"
 
+	"encoding/json"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/stretchr/testify/assert"
@@ -34,5 +35,15 @@ func TestToJSON(t *testing.T) {
 
 	var buf bytes.Buffer
 	assert.NoError(t, s.ToJSON(&buf))
+
 	assert.Equal(t, `{"StoreID":1,"Code":"de","WebsiteID":1,"GroupID":1,"Name":"Germany","SortOrder":10,"IsActive":true}`, buf.String())
+
+	var ds store.TableStore
+	dec := json.NewDecoder(&buf)
+	dec.Decode(&ds)
+
+	assert.Equal(t, "de", ds.Code.String)
+	assert.Equal(t, "Germany", ds.Name)
+	assert.Equal(t, int64(1), ds.WebsiteID)
+
 }
