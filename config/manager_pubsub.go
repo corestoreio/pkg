@@ -28,9 +28,12 @@ var ErrPublisherClosed = errors.New("config Manager Publisher already closed")
 // each subscriber is totally random. If a subscriber panics, it gets securely
 // removed without crashing the whole system.
 type Subscriber interface {
-	// MessageConfig when a configuration value will be written MessageConfig
-	// gets called to allow you to listen to changes.
-	MessageConfig(path string, sg ScopeGroup, s ScopeIDer)
+	// SubscribeConfig when a configuration value will be written this function
+	// gets called to allow you to listen to changes. Path cannot be empty.
+	// Path may contains up to three levels. For more details see the Subscribe
+	// function of this package. If an error will be returned, the subscriber
+	// gets unsubscribed.
+	SubscribeConfig(path string, sg ScopeGroup, s ScopeIDer) error
 }
 
 // pubSub embedded pointer struct into the Manager
@@ -150,6 +153,7 @@ func (ps *pubSub) publish() {
 func sendMessages(subs map[int]Subscriber, a arg) (evict []int) {
 	for id, s := range subs {
 		if err := sendMsgRecoverable(id, s, a); err != nil {
+			log.Error("config.pubSub.publish.sendMessages", "err", err, "id", id)
 			evict = append(evict, id) // mark Subscribers for removal which failed ...
 		}
 	}
@@ -168,7 +172,7 @@ func sendMsgRecoverable(id int, sl Subscriber, a arg) (err error) {
 			// and therefore will overwrite the returned nil value!
 		}
 	}()
-	sl.MessageConfig(a.pa, a.sg, a.si)
+	err = sl.SubscribeConfig(a.pa, a.sg, a.si)
 	return
 }
 

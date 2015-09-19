@@ -39,12 +39,12 @@ func init() {
 var _ config.Subscriber = (*testSubscriber)(nil)
 
 type testSubscriber struct {
-	f func(path string, sg config.ScopeGroup, s config.ScopeIDer)
+	f func(path string, sg config.ScopeGroup, s config.ScopeIDer) error
 }
 
-func (ts *testSubscriber) MessageConfig(path string, sg config.ScopeGroup, s config.ScopeIDer) {
+func (ts *testSubscriber) SubscribeConfig(path string, sg config.ScopeGroup, s config.ScopeIDer) error {
 	//ts.t.Logf("Message: %s Group %d Scope %d", path, sg, s.ScopeID())
-	ts.f(path, sg, s)
+	return ts.f(path, sg, s)
 }
 
 func TestPubSubBubbling(t *testing.T) {
@@ -57,13 +57,14 @@ func TestPubSubBubbling(t *testing.T) {
 	assert.EqualError(t, err, config.ErrPathEmpty.Error())
 
 	subID, err := m.Subscribe(testPath, &testSubscriber{
-		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
+		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) error {
 			assert.Equal(t, testPath, path)
 			if sg == config.ScopeDefaultID {
 				assert.Equal(t, int64(0), s.ScopeID())
 			} else {
 				assert.Equal(t, int64(123), s.ScopeID())
 			}
+			return nil
 		},
 	})
 	assert.NoError(t, err)
@@ -85,8 +86,9 @@ func TestPubSubPanic(t *testing.T) {
 
 	m := config.NewManager()
 	subID, err := m.Subscribe(testPath, &testSubscriber{
-		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
+		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) error {
 			panic("Don't panic!")
+			return nil
 		},
 	})
 	assert.NoError(t, err)
@@ -104,8 +106,9 @@ func TestPubSubPanicError(t *testing.T) {
 	var pErr = errors.New("OMG! Panic!")
 	m := config.NewManager()
 	subID, err := m.Subscribe(testPath, &testSubscriber{
-		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
+		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) error {
 			panic(pErr)
+			return nil
 		},
 	})
 	assert.NoError(t, err)
@@ -121,27 +124,30 @@ func TestPubSubPanicMultiple(t *testing.T) {
 	m := config.NewManager()
 
 	subID, err := m.Subscribe("x", &testSubscriber{
-		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
+		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) error {
 			assert.Equal(t, "x/y/z", path)
 			panic("One: Don't panic!")
+			return nil
 		},
 	})
 	assert.NoError(t, err)
 	assert.True(t, subID > 0)
 
 	subID, err = m.Subscribe("x/y", &testSubscriber{
-		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
+		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) error {
 			assert.Equal(t, "x/y/z", path)
 			panic("Two: Don't panic!")
+			return nil
 		},
 	})
 	assert.NoError(t, err)
 	assert.True(t, subID > 0)
 
 	subID, err = m.Subscribe("x/y/z", &testSubscriber{
-		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
+		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) error {
 			assert.Equal(t, "x/y/z", path)
 			panic("Three: Don't panic!")
+			return nil
 		},
 	})
 	assert.NoError(t, err)
@@ -150,9 +156,9 @@ func TestPubSubPanicMultiple(t *testing.T) {
 	m.Write(config.Value(789), config.Path("x/y/z"), config.ScopeStore(config.ScopeID(987)), config.NoBubble())
 	assert.NoError(t, m.Close())
 	time.Sleep(time.Millisecond * 30) // wait for goroutine to close
-	assert.Contains(t, errLogBuf.String(), `testErr: stdLib.go:228: config.pubSub.publish.recover.r recover: "One: Don't panic!"
-testErr: stdLib.go:228: config.pubSub.publish.recover.r recover: "Two: Don't panic!"
-testErr: stdLib.go:228: config.pubSub.publish.recover.r recover: "Three: Don't panic!"`+"\n")
+	assert.Contains(t, errLogBuf.String(), `testErr: stdLib.go:228: config.pubSub.publish.recover.r recover: "One: Don't panic!`)
+	assert.Contains(t, errLogBuf.String(), `testErr: stdLib.go:228: config.pubSub.publish.recover.r recover: "Two: Don't panic!"`)
+	assert.Contains(t, errLogBuf.String(), `testErr: stdLib.go:228: config.pubSub.publish.recover.r recover: "Three: Don't panic!"`)
 }
 
 func TestPubSubUnsubscribe(t *testing.T) {
@@ -161,8 +167,9 @@ func TestPubSubUnsubscribe(t *testing.T) {
 	var pErr = errors.New("WTF? Panic!")
 	m := config.NewManager()
 	subID, err := m.Subscribe("x/y/z", &testSubscriber{
-		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
+		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) error {
 			panic(pErr)
+			return nil
 		},
 	})
 	assert.NoError(t, err)
@@ -182,20 +189,22 @@ func TestPubSubEvict(t *testing.T) {
 	var pErr = errors.New("WTF Eviction? Panic!")
 	m := config.NewManager()
 	subID, err := m.Subscribe("x/y", &testSubscriber{
-		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
+		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) error {
 			assert.Contains(t, path, "x/y")
 			// this function gets called 3 times
 			level2Calls++
+			return nil
 		},
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID)
 
 	subID, err = m.Subscribe("x/y/z", &testSubscriber{
-		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) {
+		f: func(path string, sg config.ScopeGroup, s config.ScopeIDer) error {
 			level3Calls++
 			// this function gets called 1 times and then gets removed
 			panic(pErr)
+			return nil
 		},
 	})
 	assert.NoError(t, err)
