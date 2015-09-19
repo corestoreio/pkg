@@ -63,13 +63,15 @@ type (
 		GetDateTime(o ...ArgFunc) time.Time
 	}
 
-	// Setter an interface for embedding in other structs.
+	// Setter represents an interface for embedding into other types that
+	// these types can receive a config.Reader with a Scope.
 	Setter interface {
 		SetConfig(Reader, ScopeIDer)
 	}
 
 	// Writer thread safe storing of configuration values under different paths and scopes.
 	Writer interface {
+		// Write writes a configuration entry and may return an error
 		Write(...ArgFunc) error
 	}
 
@@ -82,8 +84,9 @@ type (
 )
 
 var (
-	_ Reader = (*Manager)(nil)
-	_ Writer = (*Manager)(nil)
+	_ Reader     = (*Manager)(nil)
+	_ Writer     = (*Manager)(nil)
+	_ Subscriber = (*Manager)(nil)
 )
 
 // TableCollection handles all tables and its columns. init() in generated Go file will set the value.

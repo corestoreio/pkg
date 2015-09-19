@@ -36,13 +36,13 @@ func init() {
 	log.SetLevel(log.StdLevelError)
 }
 
-var _ config.Subscriber = (*testSubscriber)(nil)
+var _ config.MessageReceiver = (*testSubscriber)(nil)
 
 type testSubscriber struct {
 	f func(path string, sg config.ScopeGroup, s config.ScopeIDer) error
 }
 
-func (ts *testSubscriber) SubscribeConfig(path string, sg config.ScopeGroup, s config.ScopeIDer) error {
+func (ts *testSubscriber) MessageConfig(path string, sg config.ScopeGroup, s config.ScopeIDer) error {
 	//ts.t.Logf("Message: %s Group %d Scope %d", path, sg, s.ScopeID())
 	return ts.f(path, sg, s)
 }

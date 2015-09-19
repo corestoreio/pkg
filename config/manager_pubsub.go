@@ -22,18 +22,34 @@ import (
 	"github.com/corestoreio/csfw/utils/log"
 )
 
+// ErrPublisherClosed will returned when the channel has been closed.
 var ErrPublisherClosed = errors.New("config Manager Publisher already closed")
 
-// Subscriber allows you to listen to write actions. The order of calling
+// MessageReceiver allows you to listen to write actions. The order of calling
 // each subscriber is totally random. If a subscriber panics, it gets securely
 // removed without crashing the whole system.
+// This interface should be implemented in other packages.
+type MessageReceiver interface {
+	// MessageConfig when a configuration value will be written this function
+	// gets called to allow you to listen to changes. Path is never empty.
+	// Path may contains up to three levels. For more details see the Subscriber
+	// interface of this package. If an error will be returned, the subscriber
+	// gets unsubscribed/removed.
+	MessageConfig(path string, sg ScopeGroup, s ScopeIDer) error
+}
+
+// Subscriber represents the overall manager to receive subscriptions from
+// MessageReceiver interfaces. This interface is at the moment only implemented
+// by the config.Manager.
 type Subscriber interface {
-	// SubscribeConfig when a configuration value will be written this function
-	// gets called to allow you to listen to changes. Path cannot be empty.
-	// Path may contains up to three levels. For more details see the Subscribe
-	// function of this package. If an error will be returned, the subscriber
-	// gets unsubscribed.
-	SubscribeConfig(path string, sg ScopeGroup, s ScopeIDer) error
+	// Subscribe subscribes a MessageReceiver to a path.
+	// Path allows you to filter to which path or part of a path you would like to listen.
+	// A path can be e.g. "system/smtp/host" to receive messages by single host changes or
+	// "system/smtp" to receive message from all smtp changes or "system" to receive changes
+	// for all paths beginning with "system". A path is equal to a topic in a PubSub system.
+	// Path cannot be empty means you cannot listen to all changes.
+	// Returns a unique identifier for the Subscriber for later removal, or an error.
+	Subscribe(path string, s MessageReceiver) (subscriptionID int, err error)
 }
 
 // pubSub embedded pointer struct into the Manager
@@ -41,7 +57,7 @@ type pubSub struct {
 	// subMap, subscribed writers are getting called when a write event
 	// will happen. String is the path (aka topic) and int the Subscriber ID for later
 	// removal.
-	subMap     map[string]map[int]Subscriber
+	subMap     map[string]map[int]MessageReceiver
 	subAutoInc int // subAutoInc increased whenever a Subscriber has been added
 	mu         sync.RWMutex
 	publishArg chan arg
@@ -60,13 +76,8 @@ func (ps *pubSub) Close() error {
 }
 
 // Subscribe adds a Subscriber to be called when a write event happens.
-// Path allows you to filter to which path or part of a path you would like to listen.
-// A path can be e.g. "system/smtp/host" to receive messages by single host changes or
-// "system/smtp" to receive message from all smtp changes or "system" to receive changes
-// for all paths beginning with "system". A path is equal to a topic in a PubSub system.
-// Path cannot be empty means you cannot listen to all changes.
-// Returns a unique identifier for the Subscriber for later removal, or an error.
-func (ps *pubSub) Subscribe(path string, s Subscriber) (subscriptionID int, err error) {
+// See interface Subscriber for a detailed description.
+func (ps *pubSub) Subscribe(path string, s MessageReceiver) (subscriptionID int, err error) {
 	if path == "" {
 		return 0, ErrPathEmpty
 	}
@@ -76,7 +87,7 @@ func (ps *pubSub) Subscribe(path string, s Subscriber) (subscriptionID int, err 
 	subscriptionID = ps.subAutoInc
 
 	if _, ok := ps.subMap[path]; !ok {
-		ps.subMap[path] = make(map[int]Subscriber)
+		ps.subMap[path] = make(map[int]MessageReceiver)
 	}
 	ps.subMap[path][subscriptionID] = s
 
@@ -150,7 +161,7 @@ func (ps *pubSub) publish() {
 	}
 }
 
-func sendMessages(subs map[int]Subscriber, a arg) (evict []int) {
+func sendMessages(subs map[int]MessageReceiver, a arg) (evict []int) {
 	for id, s := range subs {
 		if err := sendMsgRecoverable(id, s, a); err != nil {
 			log.Error("config.pubSub.publish.sendMessages", "err", err, "id", id)
@@ -160,7 +171,7 @@ func sendMessages(subs map[int]Subscriber, a arg) (evict []int) {
 	return
 }
 
-func sendMsgRecoverable(id int, sl Subscriber, a arg) (err error) {
+func sendMsgRecoverable(id int, sl MessageReceiver, a arg) (err error) {
 	defer func() { // protect ... you'll never know
 		if r := recover(); r != nil {
 			if recErr, ok := r.(error); ok {
@@ -172,13 +183,13 @@ func sendMsgRecoverable(id int, sl Subscriber, a arg) (err error) {
 			// and therefore will overwrite the returned nil value!
 		}
 	}()
-	err = sl.SubscribeConfig(a.pa, a.sg, a.si)
+	err = sl.MessageConfig(a.pa, a.sg, a.si)
 	return
 }
 
 func newPubSub() *pubSub {
 	return &pubSub{
-		subMap:     make(map[string]map[int]Subscriber),
+		subMap:     make(map[string]map[int]MessageReceiver),
 		publishArg: make(chan arg),
 	}
 }
