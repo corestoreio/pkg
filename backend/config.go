@@ -141,43 +141,6 @@ var PackageConfiguration = config.NewConfiguration(
 					},
 				},
 			},
-
-			&config.Group{
-				ID:        "email",
-				Label:     `Transactional Emails`,
-				Comment:   ``,
-				SortOrder: 510,
-				Scope:     config.ScopePermAll,
-				Fields: config.FieldSlice{
-					&config.Field{
-						// Path: `design/email/logo`,
-						ID:           "logo",
-						Label:        `Logo Image`,
-						Comment:      `Allowed file types: jpg, jpeg, gif, png`,
-						Type:         config.TypeImage,
-						SortOrder:    10,
-						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
-						Default:      nil,
-						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Logo
-						SourceModel:  nil,
-					},
-
-					&config.Field{
-						// Path: `design/email/logo_alt`,
-						ID:           "logo_alt",
-						Label:        `Logo Image Alt`,
-						Comment:      ``,
-						Type:         config.TypeText,
-						SortOrder:    20,
-						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
-						Default:      nil,
-						BackendModel: nil,
-						SourceModel:  nil,
-					},
-				},
-			},
 		},
 	},
 	&config.Section{

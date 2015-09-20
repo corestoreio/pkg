@@ -18,6 +18,98 @@ import "github.com/corestoreio/csfw/config"
 
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
+		ID: "design",
+		Groups: config.GroupSlice{
+			&config.Group{
+				ID:        "email",
+				Label:     `Transactional Emails`,
+				Comment:   ``,
+				SortOrder: 510,
+				Scope:     config.ScopePermAll,
+				Fields: config.FieldSlice{
+					&config.Field{
+						// Path: `design/email/logo`,
+						ID:           "logo",
+						Label:        `Logo Image`,
+						Comment:      `Allowed file types: jpg, jpeg, gif, png. To optimize logo for high-resolution displays, upload an image that is 3x normal size and then specify 1x dimensions in width/height fields below.`,
+						Type:         config.TypeImage,
+						SortOrder:    10,
+						Visible:      true,
+						Scope:        config.ScopePermAll,
+						Default:      nil,
+						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Logo
+						SourceModel:  nil,
+					},
+					&config.Field{
+						// Path: `design/email/logo_alt`,
+						ID:           "logo_alt",
+						Label:        `Logo Image Alt`,
+						Comment:      ``,
+						Type:         config.TypeText,
+						SortOrder:    20,
+						Visible:      true,
+						Scope:        config.ScopePermAll,
+						Default:      nil,
+						BackendModel: nil,
+						SourceModel:  nil,
+					},
+					&config.Field{
+						// Path: `design/email/logo_width`,
+						ID:           "logo_width",
+						Label:        `Logo Width`,
+						Comment:      `Only necessary if image has been uploaded above. Enter number of pixels, without appending "px".`,
+						Type:         config.TypeText,
+						SortOrder:    30,
+						Visible:      true,
+						Scope:        config.ScopePermAll,
+						Default:      nil,
+						BackendModel: nil,
+						SourceModel:  nil,
+					},
+					&config.Field{
+						// Path: `design/email/logo_height`,
+						ID:           "logo_height",
+						Label:        `Logo Height`,
+						Comment:      `Only necessary if image has been uploaded above. Enter number of pixels, without appending "px".`,
+						Type:         config.TypeText,
+						SortOrder:    40,
+						Visible:      true,
+						Scope:        config.ScopePermAll,
+						Default:      nil,
+						BackendModel: nil,
+						SourceModel:  nil,
+					},
+					&config.Field{
+						// Path: `design/email/header_template`,
+						ID:           "header_template",
+						Label:        `Header Template`,
+						Comment:      `Email template chosen based on theme fallback when "Default" option is selected.`,
+						Type:         config.TypeSelect,
+						SortOrder:    50,
+						Visible:      true,
+						Scope:        config.ScopePermAll,
+						Default:      `design_email_header_template`,
+						BackendModel: nil,
+						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
+					},
+					&config.Field{
+						// Path: `design/email/footer_template`,
+						ID:           "footer_template",
+						Label:        `Footer Template`,
+						Comment:      `Email template chosen based on theme fallback when "Default" option is selected.`,
+						Type:         config.TypeSelect,
+						SortOrder:    60,
+						Visible:      true,
+						Scope:        config.ScopePermAll,
+						Default:      `design_email_footer_template`,
+						BackendModel: nil,
+						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
+					},
+				},
+			},
+		},
+	},
+	&config.Section{
 		ID:        "trans_email",
 		Label:     "Store Email Addresses",
 		SortOrder: 90,
@@ -40,7 +132,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Visible:      config.VisibleYes,
 						Scope:        config.ScopePermAll,
 						Default:      nil,
-						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Address
+						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Address => validation for correct mail address
 						SourceModel:  nil,
 					},
 
@@ -54,7 +146,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Visible:      config.VisibleYes,
 						Scope:        config.ScopePermAll,
 						Default:      nil,
-						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Sender
+						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Sender => validation for a name to use only visible characters & is max 255 long
 						SourceModel:  nil,
 					},
 				},
