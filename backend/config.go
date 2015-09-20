@@ -233,7 +233,7 @@ var PackageConfiguration = config.NewConfiguration(
 					&config.Field{
 						// Path: `dev/translate_inline/active`,
 						ID:           "active",
-						Label:        `Enabled for Frontend`,
+						Label:        `Enabled for Storefront`,
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    10,
@@ -248,7 +248,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `dev/translate_inline/active_admin`,
 						ID:           "active_admin",
 						Label:        `Enabled for Admin`,
-						Comment:      `Translate, blocks and other output caches should be disabled for both frontend and admin inline translations.`,
+						Comment:      `Translate, blocks and other output caches should be disabled for both Storefront and Admin inline translations.`,
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
@@ -449,6 +449,20 @@ var PackageConfiguration = config.NewConfiguration(
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
 					},
+
+					&config.Field{
+						// Path: `general/country/destinations`,
+						ID:           "destinations",
+						Label:        `Top destinations`,
+						Comment:      ``,
+						Type:         config.TypeMultiselect,
+						SortOrder:    40,
+						Visible:      config.VisibleYes,
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Default:      nil,
+						BackendModel: nil,
+						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
+					},
 				},
 			},
 
@@ -524,6 +538,47 @@ var PackageConfiguration = config.NewConfiguration(
 				SortOrder: 100,
 				Scope:     config.ScopePermAll,
 				Fields: config.FieldSlice{
+					&config.Field{
+						// Path: `general/store_information/name`,
+						ID:           "name",
+						Label:        `Store Name`,
+						Comment:      ``,
+						Type:         config.TypeText,
+						SortOrder:    10,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
+						Default:      nil,
+						BackendModel: nil,
+						SourceModel:  nil,
+					},
+
+					&config.Field{
+						// Path: `general/store_information/phone`,
+						ID:           "phone",
+						Label:        `Store Phone Number`,
+						Comment:      ``,
+						Type:         config.TypeText,
+						SortOrder:    20,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
+						Default:      nil,
+						BackendModel: nil,
+						SourceModel:  nil,
+					},
+
+					&config.Field{
+						// Path: `general/store_information/hours`,
+						ID:           "hours",
+						Label:        `Store Hours of Operation`,
+						Comment:      ``,
+						Type:         config.TypeText,
+						SortOrder:    22,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
+						Default:      nil,
+						BackendModel: nil,
+						SourceModel:  nil,
+					},
 
 					&config.Field{
 						// Path: `general/store_information/country_id`,
@@ -624,6 +679,29 @@ var PackageConfiguration = config.NewConfiguration(
 					},
 				},
 			},
+
+			&config.Group{
+				ID:        "single_store_mode",
+				Label:     `Single-Store Mode`,
+				Comment:   ``,
+				SortOrder: 150,
+				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Fields: config.FieldSlice{
+					&config.Field{
+						// Path: `general/single_store_mode/enabled`,
+						ID:           "enabled",
+						Label:        `Enable Single-Store Mode`,
+						Comment:      `This setting will not be taken into account if system has more than one store view.`,
+						Type:         config.TypeSelect,
+						SortOrder:    10,
+						Visible:      config.VisibleYes,
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Default:      nil,
+						BackendModel: nil,
+						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+					},
+				},
+			},
 		},
 	},
 	&config.Section{
@@ -643,7 +721,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `admin/emails/forgot_email_template`,
 						ID:           "forgot_email_template",
 						Label:        `Forgot Password Email Template`,
-						Comment:      ``,
+						Comment:      `Email template chosen based on theme fallback when "Default" option is selected.`,
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
@@ -759,7 +837,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `admin/url/custom_path`,
 						ID:           "custom_path",
 						Label:        `Custom Admin Path`,
-						Comment:      `You will have to log in after you save your custom admin path.`,
+						Comment:      `You will have to sign in after you save your custom admin path.`,
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
@@ -811,7 +889,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:           "session_lifetime",
 						Label:        `Admin Session Lifetime (seconds)`,
 						Comment:      `Values less than 60 are ignored.`,
-						Type:         config.Type,
+						Type:         config.TypeDuration,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
 						Scope:        config.NewScopePerm(config.ScopeDefaultID),
@@ -964,7 +1042,7 @@ var PackageConfiguration = config.NewConfiguration(
 					&config.Field{
 						// Path: `web/session/use_frontend_sid`,
 						ID:           "use_frontend_sid",
-						Label:        `Use SID on Frontend`,
+						Label:        `Use SID on Storefront`,
 						Comment:      `Allows customers to stay logged in when switching between different stores.`,
 						Type:         config.TypeSelect,
 						SortOrder:    50,
@@ -979,7 +1057,7 @@ var PackageConfiguration = config.NewConfiguration(
 		},
 	},
 
-	// Hidden Configuration
+	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "system",
 		Groups: config.GroupSlice{
