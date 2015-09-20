@@ -235,8 +235,7 @@ func init() {
 			},
 		},
 		&config.Section{
-			ID:    "system",
-			Scope: config.NewScopePerm(),
+			ID: "system",
 			Groups: config.GroupSlice{
 				&config.Group{
 					ID:        "currency",
@@ -263,12 +262,10 @@ func init() {
 			},
 		},
 		&config.Section{
-			ID:    "general",
-			Scope: config.NewScopePerm(),
+			ID: "general",
 			Groups: config.GroupSlice{
 				&config.Group{
-					ID:    "country",
-					Scope: config.NewScopePerm(),
+					ID: "country",
 					Fields: config.FieldSlice{
 						&config.Field{
 							// Path: `general/country/optional_zip_countries`,
@@ -289,6 +286,7 @@ func init() {
 				&config.Group{
 					ID:        "region",
 					Label:     `State Options`,
+					Comment:   ``,
 					SortOrder: 4,
 					Scope:     config.NewScopePerm(config.ScopeDefaultID),
 					Fields: config.FieldSlice{
@@ -324,7 +322,25 @@ func init() {
 			},
 		},
 
-		// Hidden Configuration
+		// Hidden Configuration, may be visible somewhere else ...
+		&config.Section{
+			ID: "currency",
+			Groups: config.GroupSlice{
+				&config.Group{
+					ID: "import",
+					Fields: config.FieldSlice{
+						&config.Field{
+							// Path: `currency/import/error_email`,
+							ID:      "error_email",
+							Type:    config.TypeHidden,
+							Visible: config.VisibleNo,
+							Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+							Default: nil,
+						},
+					},
+				},
+			},
+		},
 		&config.Section{
 			ID: "general",
 			Groups: config.GroupSlice{
