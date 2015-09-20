@@ -9,14 +9,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "system",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "backup",
 				Label:     `Scheduled Backup Settings`,
 				Comment:   ``,
 				SortOrder: 500,
-				Scope:     config.NewScopePerm(config.IDScopeDefault),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `system/backup/enabled`,
@@ -26,7 +26,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -40,7 +40,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Backup\Model\Config\Source\Type
@@ -54,7 +54,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeTime,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -68,7 +68,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Backup\Model\Config\Backend\Cron
 						SourceModel:  nil, // Magento\Cron\Model\Config\Source\Frequency
@@ -82,7 +82,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno

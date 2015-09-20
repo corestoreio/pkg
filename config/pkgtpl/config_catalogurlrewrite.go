@@ -4,21 +4,19 @@ package catalogurlrewrite
 
 import "github.com/corestoreio/csfw/config"
 
-import "github.com/corestoreio/csfw/config"
-
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "catalog",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "seo",
 				Label:     `Search Engine Optimization`,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     nil,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/seo/category_url_suffix`,

@@ -9,7 +9,7 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "catalog",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "downloadable",
@@ -26,7 +26,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      9,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Downloadable\Model\System\Config\Source\Orderitemstatus
@@ -40,7 +40,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    200,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -54,7 +54,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    300,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -96,7 +96,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    600,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -124,7 +124,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    800,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno

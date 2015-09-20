@@ -7,7 +7,7 @@ import "github.com/corestoreio/csfw/config"
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "wishlist",
-		Label:     "Wishlist",
+		Label:     "Wish List",
 		SortOrder: 140,
 		Scope:     config.ScopePermAll,
 		Groups: config.GroupSlice{
@@ -36,7 +36,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `wishlist/email/email_template`,
 						ID:           "email_template",
 						Label:        `Email Template`,
-						Comment:      ``,
+						Comment:      `Email template chosen based on theme fallback when "Default" option is selected.`,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
@@ -104,7 +104,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `My Wish List Link`,
 				Comment:   ``,
 				SortOrder: 3,
-				Scope:     config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `wishlist/wishlist_link/use_qty`,
@@ -114,7 +114,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Wishlist\Model\Config\Source\Summary
@@ -127,11 +127,11 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "rss",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "wishlist",
-				Label:     `Wishlist`,
+				Label:     `Wish List`,
 				Comment:   ``,
 				SortOrder: 2,
 				Scope:     config.ScopePermAll,

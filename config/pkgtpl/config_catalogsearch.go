@@ -9,14 +9,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "catalog",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "seo",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     nil,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/seo/search_terms`,
@@ -49,7 +49,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.Type,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(),
+						Scope:        nil,
 						Default:      `mysql`,
 						BackendModel: nil, // Magento\CatalogSearch\Model\Adminhtml\System\Config\Backend\Engine
 						SourceModel:  nil,

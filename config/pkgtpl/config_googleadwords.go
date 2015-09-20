@@ -9,7 +9,7 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "google",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "adwords",
@@ -134,7 +134,7 @@ var PackageConfiguration = config.NewConfiguration(
 		},
 	},
 
-	// Hidden Configuration
+	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "google",
 		Groups: config.GroupSlice{
@@ -146,7 +146,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "languages",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"ar":"ar","bg":"bg","ca":"ca","cs":"cs","da":"da","de":"de","el":"el","en":"en","es":"es","et":"et","fi":"fi","fr":"fr","hi":"hi","hr":"hr","hu":"hu","id":"id","is":"is","it":"it","iw":"iw","ja":"ja","ko":"ko","lt":"lt","lv":"lv","nl":"nl","no":"no","pl":"pl","pt":"pt","ro":"ro","ru":"ru","sk":"sk","sl":"sl","sr":"sr","sv":"sv","th":"th","tl":"tl","tr":"tr","uk":"uk","ur":"ur","vi":"vi","zh_TW":"zh_TW","zh_CN":"zh_CN"}`,
 					},
 
@@ -155,7 +155,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "language_convert",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"zh_CN":"zh_Hans","zh_TW":"zh_Hant","iw":"he"}`,
 					},
 
@@ -164,7 +164,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "conversion_js_src",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `https://www.googleadservices.com/pagead/conversion.js`,
 					},
 
@@ -173,7 +173,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "conversion_img_src",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `https://www.googleadservices.com/pagead/conversion/%s/?label=%s&guid=ON&script=0`,
 					},
 				},

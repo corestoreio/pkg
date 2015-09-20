@@ -9,14 +9,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "web",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "default",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     nil,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `web/default/cms_home_page`,
@@ -159,7 +159,7 @@ var PackageConfiguration = config.NewConfiguration(
 		},
 	},
 
-	// Hidden Configuration
+	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "web",
 		Groups: config.GroupSlice{
@@ -171,7 +171,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "front",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `cms`,
 					},
 
@@ -180,7 +180,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "no_route",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `cms/noroute/index`,
 					},
 				},
@@ -198,7 +198,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "allowed_resources",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"wysiwyg_image_folder":"wysiwyg"}`,
 					},
 				},

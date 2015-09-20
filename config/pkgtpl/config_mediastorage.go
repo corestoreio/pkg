@@ -26,7 +26,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\MediaStorage\Model\Config\Source\Storage\Media\Storage
@@ -40,7 +40,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    200,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\MediaStorage\Model\Config\Backend\Storage\Media\Database
 						SourceModel:  nil, // Magento\MediaStorage\Model\Config\Source\Storage\Media\Database
@@ -54,7 +54,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeButton,
 						SortOrder:    300,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -68,7 +68,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    400,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,

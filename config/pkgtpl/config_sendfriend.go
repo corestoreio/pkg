@@ -4,8 +4,6 @@ package sendfriend
 
 import "github.com/corestoreio/csfw/config"
 
-import "github.com/corestoreio/csfw/config"
-
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "sendfriend",
@@ -38,7 +36,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `sendfriend/email/template`,
 						ID:           "template",
 						Label:        `Select Email Template`,
-						Comment:      ``,
+						Comment:      `Email template chosen based on theme fallback when "Default" option is selected.`,
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
@@ -101,7 +99,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Scope:        config.ScopePermAll,
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Sendfriend\Model\Source\Checktype
+						SourceModel:  nil, // Magento\SendFriend\Model\Source\Checktype
 					},
 				},
 			},

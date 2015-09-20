@@ -26,7 +26,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      `{{name}}`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -40,7 +40,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      `{{name}}`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -54,7 +54,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      `{{name}}`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -68,7 +68,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      `{{name}} {{description}}`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -78,7 +78,7 @@ var PackageConfiguration = config.NewConfiguration(
 
 			&config.Group{
 				ID:        "frontend",
-				Label:     `Frontend`,
+				Label:     `Storefront`,
 				Comment:   ``,
 				SortOrder: 100,
 				Scope:     config.ScopePermAll,
@@ -161,7 +161,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      false,
 						BackendModel: nil, // Magento\Catalog\Model\Indexer\Category\Flat\System\Config\Mode
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -175,7 +175,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Catalog\Model\Indexer\Product\Flat\System\Config\Mode
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -304,7 +304,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Price`,
 				Comment:   ``,
 				SortOrder: 400,
-				Scope:     config.NewScopePerm(config.IDScopeDefault),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/price/scope`,
@@ -314,7 +314,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Catalog\Model\Indexer\Product\Price\System\Config\PriceScope
 						SourceModel:  nil, // Magento\Catalog\Model\Config\Source\Price\Scope
@@ -337,7 +337,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -415,7 +415,7 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "design",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "watermark",
@@ -487,14 +487,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "cms",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "wysiwyg",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     nil,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `cms/wysiwyg/use_static_urls_in_catalog`,
@@ -504,7 +504,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -517,7 +517,7 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "rss",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "catalog",
@@ -572,7 +572,7 @@ var PackageConfiguration = config.NewConfiguration(
 		},
 	},
 
-	// Hidden Configuration
+	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "catalog",
 		Groups: config.GroupSlice{
@@ -584,7 +584,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "flat",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"max_index_count":"64"}`,
 					},
 
@@ -593,7 +593,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "default_tax_group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: 2,
 					},
 				},
@@ -607,7 +607,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "product_url_suffix",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `.html`,
 					},
 
@@ -616,7 +616,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "category_url_suffix",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `.html`,
 					},
 
@@ -625,7 +625,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "product_use_categories",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: false,
 					},
 
@@ -634,7 +634,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "save_rewrites_history",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: true,
 					},
 				},
@@ -648,7 +648,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "forbidden_extensions",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `php,exe`,
 					},
 				},
@@ -666,8 +666,8 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "allowed_resources",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
-						Default: `{"catalog_images_folder":"catalog","product_custom_options_fodler":"custom_options"}`,
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Default: `{"tmp_images_folder":"tmp","catalog_images_folder":"catalog","product_custom_options_fodler":"custom_options"}`,
 					},
 				},
 			},

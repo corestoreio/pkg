@@ -26,7 +26,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Tax\Model\TaxClass\Source\Product
@@ -40,7 +40,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      2,
 						BackendModel: nil, // Magento\Tax\Model\Config\TaxClass
 						SourceModel:  nil, // Magento\Tax\Model\TaxClass\Source\Product
@@ -54,7 +54,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      3,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Tax\Model\TaxClass\Source\Customer
@@ -77,7 +77,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `TOTAL_BASE_CALCULATION`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Algorithm
@@ -91,7 +91,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `shipping`,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\Config\Source\Basedon
@@ -101,11 +101,11 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `tax/calculation/price_includes_tax`,
 						ID:           "price_includes_tax",
 						Label:        `Catalog Prices`,
-						Comment:      `This sets whether catalog prices entered by admin include tax.`,
+						Comment:      `This sets whether catalog prices entered from Magento Admin include tax.`,
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      false,
 						BackendModel: nil, // Magento\Tax\Model\Config\Price\IncludePrice
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\PriceType
@@ -115,11 +115,11 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `tax/calculation/shipping_includes_tax`,
 						ID:           "shipping_includes_tax",
 						Label:        `Shipping Prices`,
-						Comment:      `This sets whether shipping amounts entered by admin or obtained from gateways include tax.`,
+						Comment:      `This sets whether shipping amounts entered from Magento Admin or obtained from gateways include tax.`,
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      false,
 						BackendModel: nil, // Magento\Tax\Model\Config\Price\IncludePrice
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\PriceType
@@ -133,7 +133,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Apply
@@ -143,11 +143,11 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `tax/calculation/discount_tax`,
 						ID:           "discount_tax",
 						Label:        `Apply Discount On Prices`,
-						Comment:      `Apply discount on price including tax is calculated based on store tax, if "Apply Tax after Discount" is selected.`,
+						Comment:      `Apply discount on price including tax is calculated based on store tax if "Apply Tax after Discount" is selected.`,
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `["0","0"]`,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\PriceType
@@ -161,7 +161,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Tax\Model\Config\Source\Apply\On
@@ -171,11 +171,11 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `tax/calculation/cross_border_trade_enabled`,
 						ID:           "cross_border_trade_enabled",
 						Label:        `Enable Cross Border Trade`,
-						Comment:      `When catalog price includes tax, enable this setting will fix the price no matter what the customer's tax rate is.`,
+						Comment:      `When catalog price includes tax, enable this setting to fix the price no matter what the customer's tax rate.`,
 						Type:         config.TypeSelect,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -459,7 +459,7 @@ var PackageConfiguration = config.NewConfiguration(
 		},
 	},
 
-	// Hidden Configuration
+	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "tax",
 		Groups: config.GroupSlice{
@@ -471,7 +471,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "discount",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: true,
 					},
 				},
@@ -485,7 +485,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "discount",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: true,
 					},
 				},
@@ -499,7 +499,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "url",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `http://www.magentocommerce.com/knowledge-base/entry/magento-ce-18-ee-113-tax-calc`,
 					},
 				},

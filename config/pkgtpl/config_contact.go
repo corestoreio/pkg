@@ -4,8 +4,6 @@ package contact
 
 import "github.com/corestoreio/csfw/config"
 
-import "github.com/corestoreio/csfw/config"
-
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "contact",
@@ -75,7 +73,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `contact/email/email_template`,
 						ID:           "email_template",
 						Label:        `Email Template`,
-						Comment:      ``,
+						Comment:      `Email template chosen based on theme fallback when "Default" option is selected.`,
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,

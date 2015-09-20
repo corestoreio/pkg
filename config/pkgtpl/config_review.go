@@ -9,14 +9,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "catalog",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "review",
 				Label:     `Product Reviews`,
 				Comment:   ``,
 				SortOrder: 100,
-				Scope:     config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/review/allow_guest`,
@@ -26,7 +26,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno

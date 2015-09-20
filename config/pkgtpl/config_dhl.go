@@ -9,7 +9,7 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "carriers",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "dhl",
@@ -26,7 +26,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -40,7 +40,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `https://xmlpi-ea.dhl.com/XMLShippingServlet`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -68,7 +68,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeObscure,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Encrypted // @todo Magento\Config\Model\Config\Backend\Encrypted
 						SourceModel:  nil,
@@ -82,7 +82,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeObscure,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Encrypted // @todo Magento\Config\Model\Config\Backend\Encrypted
 						SourceModel:  nil,
@@ -96,7 +96,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -110,7 +110,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    90,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `N`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Dhl\Model\Source\Contenttype
@@ -124,7 +124,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `F`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingType
@@ -138,7 +138,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    110,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `O`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingAction
@@ -152,7 +152,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    120,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -162,7 +162,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `carriers/dhl/divide_order_weight`,
 						ID:           "divide_order_weight",
 						Label:        `Divide Order Weight`,
-						Comment:      `This allows breaking total order weight into smaller pieces if it exeeds 70 kg to ensure accurate calculation of shipping charges.`,
+						Comment:      `Select this to allow DHL to optimize shipping charges by splitting the order if it exceeds 70 kg.`,
 						Type:         config.TypeSelect,
 						SortOrder:    130,
 						Visible:      config.VisibleYes,
@@ -250,7 +250,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeMultiselect,
 						SortOrder:    170,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `2,5,6,7,9,B,C,D,U,K,L,G,W,I,N,O,R,S,T,X`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Dhl\Model\Source\Method\Doc
@@ -264,7 +264,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeMultiselect,
 						SortOrder:    170,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `1,3,4,8,P,Q,E,F,H,J,M,V,Y`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Dhl\Model\Source\Method\Nondoc
@@ -278,7 +278,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    180,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -306,7 +306,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1200,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Dhl\Model\Source\Method\Freedoc
@@ -320,7 +320,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1200,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Dhl\Model\Source\Method\Freenondoc
@@ -334,7 +334,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1210,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
@@ -348,7 +348,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    1220,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -362,7 +362,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1900,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
@@ -376,7 +376,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeMultiselect,
 						SortOrder:    1910,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -390,7 +390,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1940,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -404,7 +404,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    2000,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -418,7 +418,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1950,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -428,7 +428,7 @@ var PackageConfiguration = config.NewConfiguration(
 		},
 	},
 
-	// Hidden Configuration
+	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "system",
 		Groups: config.GroupSlice{
@@ -440,7 +440,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "allowed_resources",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"dhl_folder":"dhl"}`,
 					},
 				},
@@ -458,7 +458,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `Magento\Dhl\Model\Carrier`,
 					},
 
@@ -467,7 +467,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "account",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: nil,
 					},
 
@@ -476,7 +476,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "free_method",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `G`,
 					},
 
@@ -485,7 +485,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "shipment_days",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `Mon,Tue,Wed,Thu,Fri`,
 					},
 
@@ -494,7 +494,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "active_rma",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: false,
 					},
 
@@ -503,7 +503,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "is_online",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: true,
 					},
 				},

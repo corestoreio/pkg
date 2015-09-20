@@ -1,32 +1,35 @@
 // +build ignore
 
-package googleoptimizer
+package swatches
 
 import "github.com/corestoreio/csfw/config"
 
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
-		ID: "google",
+		ID:        "catalog",
+		Label:     "",
+		SortOrder: 40,
+		Scope:     config.ScopePermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
-				ID:        "analytics",
+				ID:        "frontend",
 				Label:     ``,
 				Comment:   ``,
-				SortOrder: 0,
-				Scope:     nil,
+				SortOrder: 100,
+				Scope:     config.ScopePermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
-						// Path: `google/analytics/experiments`,
-						ID:           "experiments",
-						Label:        `Enable Content Experiments`,
+						// Path: `catalog/frontend/swatches_per_product`,
+						ID:           "swatches_per_product",
+						Label:        `Swatches per Product`,
 						Comment:      ``,
-						Type:         config.TypeSelect,
-						SortOrder:    30,
+						Type:         config.TypeText,
+						SortOrder:    300,
 						Visible:      config.VisibleYes,
 						Scope:        config.ScopePermAll,
-						Default:      nil,
+						Default:      16,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						SourceModel:  nil,
 					},
 				},
 			},
@@ -35,18 +38,18 @@ var PackageConfiguration = config.NewConfiguration(
 
 	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
-		ID: "google",
+		ID: "general",
 		Groups: config.GroupSlice{
 			&config.Group{
-				ID: "optimizer",
+				ID: "validator_data",
 				Fields: config.FieldSlice{
 					&config.Field{
-						// Path: `google/optimizer/active`,
-						ID:      "active",
+						// Path: `general/validator_data/input_types`,
+						ID:      "input_types",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
 						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
-						Default: false,
+						Default: `{"swatch_visual":"swatch_visual","swatch_text":"swatch_text"}`,
 					},
 				},
 			},

@@ -9,14 +9,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "catalog",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "recently_products",
 				Label:     `Recently Viewed/Compared Products`,
 				Comment:   ``,
 				SortOrder: 350,
-				Scope:     config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/recently_products/scope`,
@@ -26,7 +26,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `website`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Reports\Scope
@@ -67,14 +67,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "reports",
 		Label:     "Reports",
 		SortOrder: 1000,
-		Scope:     config.NewScopePerm(config.IDScopeDefault),
+		Scope:     config.NewScopePerm(config.ScopeDefaultID),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "dashboard",
 				Label:     `Dashboard`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.NewScopePerm(config.IDScopeDefault),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `reports/dashboard/ytd_start`,
@@ -84,7 +84,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      `1,1`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -98,7 +98,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil,

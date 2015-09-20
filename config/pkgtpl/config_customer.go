@@ -16,7 +16,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Account Sharing Options`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.NewScopePerm(config.IDScopeDefault),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `customer/account_share/scope`,
@@ -26,7 +26,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      true,
 						BackendModel: nil, // Magento\Customer\Model\Config\Share
 						SourceModel:  nil, // Magento\Customer\Model\Config\Share
@@ -161,7 +161,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    57,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\CreateAccount\DisableAutoGroupAssignDefault
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -170,12 +170,12 @@ var PackageConfiguration = config.NewConfiguration(
 					&config.Field{
 						// Path: `customer/create_account/vat_frontend_visibility`,
 						ID:           "vat_frontend_visibility",
-						Label:        `Show VAT Number on Frontend`,
-						Comment:      `To show VAT number on frontend, set Show VAT Number on Frontend option to Yes.`,
+						Label:        `Show VAT Number on Storefront`,
+						Comment:      `To show VAT number on Storefront, set Show VAT Number on Storefront option to Yes.`,
 						Type:         config.TypeSelect,
 						SortOrder:    58,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -199,12 +199,27 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `customer/create_account/email_template`,
 						ID:           "email_template",
 						Label:        `Default Welcome Email`,
-						Comment:      ``,
+						Comment:      `Email template chosen based on theme fallback when "Default" option is selected.`,
 						Type:         config.TypeSelect,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
 						Scope:        config.ScopePermAll,
 						Default:      `customer_create_account_email_template`,
+						BackendModel: nil,
+						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
+					},
+
+					&config.Field{
+						// Path: `customer/create_account/email_no_password_template`,
+						ID:    "email_no_password_template",
+						Label: `Default Welcome Email Without Password`,
+						Comment: `This email will be sent instead of the Default Welcome Email, if a customer was created without password. <br /><br />
+                        Email template chosen based on theme fallback when "Default" option is selected.`,
+						Type:         config.TypeSelect,
+						SortOrder:    75,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
+						Default:      `customer_create_account_email_no_password_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
 					},
@@ -231,7 +246,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    90,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -241,7 +256,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `customer/create_account/email_confirmation_template`,
 						ID:           "email_confirmation_template",
 						Label:        `Confirmation Link Email`,
-						Comment:      ``,
+						Comment:      `Email template chosen based on theme fallback when "Default" option is selected.`,
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
@@ -253,9 +268,10 @@ var PackageConfiguration = config.NewConfiguration(
 
 					&config.Field{
 						// Path: `customer/create_account/email_confirmed_template`,
-						ID:           "email_confirmed_template",
-						Label:        `Welcome Email`,
-						Comment:      `This email will be sent instead of default welcome email, after account confirmation.`,
+						ID:    "email_confirmed_template",
+						Label: `Welcome Email`,
+						Comment: `This email will be sent instead of the Default Welcome Email, after account confirmation. <br /><br />
+                        Email template chosen based on theme fallback when "Default" option is selected.`,
 						Type:         config.TypeSelect,
 						SortOrder:    110,
 						Visible:      config.VisibleYes,
@@ -273,7 +289,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    120,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -292,7 +308,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `customer/password/forgot_email_template`,
 						ID:           "forgot_email_template",
 						Label:        `Forgot Email Template`,
-						Comment:      ``,
+						Comment:      `Email template chosen based on theme fallback when "Default" option is selected.`,
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
@@ -306,7 +322,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `customer/password/remind_email_template`,
 						ID:           "remind_email_template",
 						Label:        `Remind Email Template`,
-						Comment:      ``,
+						Comment:      `Email template chosen based on theme fallback when "Default" option is selected.`,
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
@@ -320,7 +336,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `customer/password/reset_password_template`,
 						ID:           "reset_password_template",
 						Label:        `Reset Password Template`,
-						Comment:      ``,
+						Comment:      `Email template chosen based on theme fallback when "Default" option is selected.`,
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
@@ -352,7 +368,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      1,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\Password\Link\Expirationperiod
 						SourceModel:  nil,
@@ -375,7 +391,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.Type,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      2,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\Address\Street
 						SourceModel:  nil,
@@ -389,7 +405,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\Show\Address
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Nooptreq
@@ -403,7 +419,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.Type,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -417,7 +433,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\Show\Address
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -431,7 +447,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\Show\Address
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Nooptreq
@@ -445,7 +461,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.Type,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -459,7 +475,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\Show\Customer
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Nooptreq
@@ -473,7 +489,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\Show\Customer
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Nooptreq
@@ -487,7 +503,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    90,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\Show\Customer
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Nooptreq
@@ -510,7 +526,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -534,86 +550,32 @@ var PackageConfiguration = config.NewConfiguration(
 						SortOrder: 1,
 						Visible:   config.VisibleYes,
 						Scope:     config.ScopePermAll,
-						Default: `{{depend prefix}}{{import "github.com/corestoreio/csfw/config"
-
-var prefix}} {{/depend}}{{import "github.com/corestoreio/csfw/config"
-
-var firstname}} {{depend middlename}}{{import "github.com/corestoreio/csfw/config"
-
-var middlename}} {{/depend}}{{import "github.com/corestoreio/csfw/config"
-
-var lastname}}{{depend suffix}} {{import "github.com/corestoreio/csfw/config"
-
-var suffix}}{{/depend}}
-{{depend company}}{{import "github.com/corestoreio/csfw/config"
-
-var company}}{{/depend}}
-{{if street1}}{{import "github.com/corestoreio/csfw/config"
-
-var street1}}
+						Default: `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}
+{{depend company}}{{var company}}{{/depend}}
+{{if street1}}{{var street1}}
 {{/if}}
-{{depend street2}}{{import "github.com/corestoreio/csfw/config"
-
-var street2}}{{/depend}}
-{{depend street3}}{{import "github.com/corestoreio/csfw/config"
-
-var street3}}{{/depend}}
-{{depend street4}}{{import "github.com/corestoreio/csfw/config"
-
-var street4}}{{/depend}}
-{{if city}}{{import "github.com/corestoreio/csfw/config"
-
-var city}},  {{/if}}{{if region}}{{import "github.com/corestoreio/csfw/config"
-
-var region}}, {{/if}}{{if postcode}}{{import "github.com/corestoreio/csfw/config"
-
-var postcode}}{{/if}}
-{{import "github.com/corestoreio/csfw/config"
-
-var country}}
-T: {{import "github.com/corestoreio/csfw/config"
-
-var telephone}}
-{{depend fax}}F: {{import "github.com/corestoreio/csfw/config"
-
-var fax}}{{/depend}}
-{{depend vat_id}}VAT: {{import "github.com/corestoreio/csfw/config"
-
-var vat_id}}{{/depend}}`,
+{{depend street2}}{{var street2}}{{/depend}}
+{{depend street3}}{{var street3}}{{/depend}}
+{{depend street4}}{{var street4}}{{/depend}}
+{{if city}}{{var city}},  {{/if}}{{if region}}{{var region}}, {{/if}}{{if postcode}}{{var postcode}}{{/if}}
+{{var country}}
+T: {{var telephone}}
+{{depend fax}}F: {{var fax}}{{/depend}}
+{{depend vat_id}}VAT: {{var vat_id}}{{/depend}}`,
 						BackendModel: nil,
 						SourceModel:  nil,
 					},
 
 					&config.Field{
 						// Path: `customer/address_templates/oneline`,
-						ID:        "oneline",
-						Label:     `Text One Line`,
-						Comment:   ``,
-						Type:      config.TypeTextarea,
-						SortOrder: 2,
-						Visible:   config.VisibleYes,
-						Scope:     config.ScopePermAll,
-						Default: `{{depend prefix}}{{import "github.com/corestoreio/csfw/config"
-
-var prefix}} {{/depend}}{{import "github.com/corestoreio/csfw/config"
-
-var firstname}} {{depend middlename}}{{import "github.com/corestoreio/csfw/config"
-
-var middlename}} {{/depend}}{{import "github.com/corestoreio/csfw/config"
-
-var lastname}}{{depend suffix}} {{import "github.com/corestoreio/csfw/config"
-
-var suffix}}{{/depend}}, {{import "github.com/corestoreio/csfw/config"
-
-var street}}, {{import "github.com/corestoreio/csfw/config"
-
-var city}}, {{import "github.com/corestoreio/csfw/config"
-
-var region}} {{import "github.com/corestoreio/csfw/config"
-
-var postcode}}, {{import "github.com/corestoreio/csfw/config"
-
-var country}}`,
+						ID:           "oneline",
+						Label:        `Text One Line`,
+						Comment:      ``,
+						Type:         config.TypeTextarea,
+						SortOrder:    2,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
+						Default:      `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}, {{var street}}, {{var city}}, {{var region}} {{var postcode}}, {{var country}}`,
 						BackendModel: nil,
 						SourceModel:  nil,
 					},
@@ -627,51 +589,17 @@ var country}}`,
 						SortOrder: 3,
 						Visible:   config.VisibleYes,
 						Scope:     config.ScopePermAll,
-						Default: `{{depend prefix}}{{import "github.com/corestoreio/csfw/config"
-
-var prefix}} {{/depend}}{{import "github.com/corestoreio/csfw/config"
-
-var firstname}} {{depend middlename}}{{import "github.com/corestoreio/csfw/config"
-
-var middlename}} {{/depend}}{{import "github.com/corestoreio/csfw/config"
-
-var lastname}}{{depend suffix}} {{import "github.com/corestoreio/csfw/config"
-
-var suffix}}{{/depend}}{{depend firstname}}<br/>{{/depend}}
-{{depend company}}{{import "github.com/corestoreio/csfw/config"
-
-var company}}<br />{{/depend}}
-{{if street1}}{{import "github.com/corestoreio/csfw/config"
-
-var street1}}<br />{{/if}}
-{{depend street2}}{{import "github.com/corestoreio/csfw/config"
-
-var street2}}<br />{{/depend}}
-{{depend street3}}{{import "github.com/corestoreio/csfw/config"
-
-var street3}}<br />{{/depend}}
-{{depend street4}}{{import "github.com/corestoreio/csfw/config"
-
-var street4}}<br />{{/depend}}
-{{if city}}{{import "github.com/corestoreio/csfw/config"
-
-var city}},  {{/if}}{{if region}}{{import "github.com/corestoreio/csfw/config"
-
-var region}}, {{/if}}{{if postcode}}{{import "github.com/corestoreio/csfw/config"
-
-var postcode}}{{/if}}<br/>
-{{import "github.com/corestoreio/csfw/config"
-
-var country}}<br/>
-{{depend telephone}}T: {{import "github.com/corestoreio/csfw/config"
-
-var telephone}}{{/depend}}
-{{depend fax}}<br/>F: {{import "github.com/corestoreio/csfw/config"
-
-var fax}}{{/depend}}
-{{depend vat_id}}<br/>VAT: {{import "github.com/corestoreio/csfw/config"
-
-var vat_id}}{{/depend}}`,
+						Default: `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}{{depend firstname}}<br/>{{/depend}}
+{{depend company}}{{var company}}<br />{{/depend}}
+{{if street1}}{{var street1}}<br />{{/if}}
+{{depend street2}}{{var street2}}<br />{{/depend}}
+{{depend street3}}{{var street3}}<br />{{/depend}}
+{{depend street4}}{{var street4}}<br />{{/depend}}
+{{if city}}{{var city}},  {{/if}}{{if region}}{{var region}}, {{/if}}{{if postcode}}{{var postcode}}{{/if}}<br/>
+{{var country}}<br/>
+{{depend telephone}}T: {{var telephone}}{{/depend}}
+{{depend fax}}<br/>F: {{var fax}}{{/depend}}
+{{depend vat_id}}<br/>VAT: {{var vat_id}}{{/depend}}`,
 						BackendModel: nil,
 						SourceModel:  nil,
 					},
@@ -685,53 +613,42 @@ var vat_id}}{{/depend}}`,
 						SortOrder: 4,
 						Visible:   config.VisibleYes,
 						Scope:     config.ScopePermAll,
-						Default: `{{depend prefix}}{{import "github.com/corestoreio/csfw/config"
-
-var prefix}} {{/depend}}{{import "github.com/corestoreio/csfw/config"
-
-var firstname}} {{depend middlename}}{{import "github.com/corestoreio/csfw/config"
-
-var middlename}} {{/depend}}{{import "github.com/corestoreio/csfw/config"
-
-var lastname}}{{depend suffix}} {{import "github.com/corestoreio/csfw/config"
-
-var suffix}}{{/depend}}|
-{{depend company}}{{import "github.com/corestoreio/csfw/config"
-
-var company}}|{{/depend}}
-{{if street1}}{{import "github.com/corestoreio/csfw/config"
-
-var street1}}
+						Default: `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}|
+{{depend company}}{{var company}}|{{/depend}}
+{{if street1}}{{var street1}}
 {{/if}}
-{{depend street2}}{{import "github.com/corestoreio/csfw/config"
+{{depend street2}}{{var street2}}|{{/depend}}
+{{depend street3}}{{var street3}}|{{/depend}}
+{{depend street4}}{{var street4}}|{{/depend}}
+{{if city}}{{var city}},|{{/if}}
+{{if region}}{{var region}}, {{/if}}{{if postcode}}{{var postcode}}{{/if}}|
+{{var country}}|
+{{depend telephone}}T: {{var telephone}}{{/depend}}|
+{{depend fax}}<br/>F: {{var fax}}{{/depend}}|
+{{depend vat_id}}<br/>VAT: {{var vat_id}}{{/depend}}|`,
+						BackendModel: nil,
+						SourceModel:  nil,
+					},
+				},
+			},
 
-var street2}}|{{/depend}}
-{{depend street3}}{{import "github.com/corestoreio/csfw/config"
-
-var street3}}|{{/depend}}
-{{depend street4}}{{import "github.com/corestoreio/csfw/config"
-
-var street4}}|{{/depend}}
-{{if city}}{{import "github.com/corestoreio/csfw/config"
-
-var city}},|{{/if}}
-{{if region}}{{import "github.com/corestoreio/csfw/config"
-
-var region}}, {{/if}}{{if postcode}}{{import "github.com/corestoreio/csfw/config"
-
-var postcode}}{{/if}}|
-{{import "github.com/corestoreio/csfw/config"
-
-var country}}|
-{{depend telephone}}T: {{import "github.com/corestoreio/csfw/config"
-
-var telephone}}{{/depend}}|
-{{depend fax}}<br/>F: {{import "github.com/corestoreio/csfw/config"
-
-var fax}}{{/depend}}|
-{{depend vat_id}}<br/>VAT: {{import "github.com/corestoreio/csfw/config"
-
-var vat_id}}{{/depend}}|`,
+			&config.Group{
+				ID:        "online_customers",
+				Label:     `Online Customers Options`,
+				Comment:   ``,
+				SortOrder: 10,
+				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Fields: config.FieldSlice{
+					&config.Field{
+						// Path: `customer/online_customers/online_minutes_interval`,
+						ID:           "online_minutes_interval",
+						Label:        `Online Minutes Interval`,
+						Comment:      `Leave empty for default (15 minutes).`,
+						Type:         config.TypeText,
+						SortOrder:    1,
+						Visible:      config.VisibleYes,
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
 					},
@@ -743,14 +660,14 @@ var vat_id}}{{/depend}}|`,
 		ID:        "general",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "store_information",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     nil,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `general/store_information/validate_vat_number`,
@@ -760,17 +677,40 @@ var vat_id}}{{/depend}}|`,
 						Type:         config.Type,
 						SortOrder:    62,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
 					},
 				},
 			},
+
+			&config.Group{
+				ID:        "restriction",
+				Label:     ``,
+				Comment:   ``,
+				SortOrder: 0,
+				Scope:     nil,
+				Fields: config.FieldSlice{
+					&config.Field{
+						// Path: `general/restriction/autocomplete_on_storefront`,
+						ID:           "autocomplete_on_storefront",
+						Label:        `Enable Autocomplete on login/forgot password forms`,
+						Comment:      ``,
+						Type:         config.TypeSelect,
+						SortOrder:    65,
+						Visible:      config.VisibleYes,
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Default:      false,
+						BackendModel: nil,
+						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+					},
+				},
+			},
 		},
 	},
 
-	// Hidden Configuration
+	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "customer",
 		Groups: config.GroupSlice{
@@ -782,7 +722,7 @@ var vat_id}}{{/depend}}|`,
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: true,
 					},
 				},
@@ -796,7 +736,7 @@ var vat_id}}{{/depend}}|`,
 						ID:      "prefix_show",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: nil,
 					},
 
@@ -805,7 +745,7 @@ var vat_id}}{{/depend}}|`,
 						ID:      "prefix_options",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: nil,
 					},
 
@@ -814,7 +754,7 @@ var vat_id}}{{/depend}}|`,
 						ID:      "middlename_show",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: nil,
 					},
 
@@ -823,7 +763,7 @@ var vat_id}}{{/depend}}|`,
 						ID:      "suffix_show",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: nil,
 					},
 
@@ -832,7 +772,7 @@ var vat_id}}{{/depend}}|`,
 						ID:      "suffix_options",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: nil,
 					},
 
@@ -841,7 +781,7 @@ var vat_id}}{{/depend}}|`,
 						ID:      "dob_show",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: nil,
 					},
 
@@ -850,7 +790,7 @@ var vat_id}}{{/depend}}|`,
 						ID:      "gender_show",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: nil,
 					},
 				},

@@ -4,8 +4,6 @@ package rss
 
 import "github.com/corestoreio/csfw/config"
 
-import "github.com/corestoreio/csfw/config"
-
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "rss",

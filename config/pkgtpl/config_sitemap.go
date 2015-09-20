@@ -141,7 +141,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Generation Settings`,
 				Comment:   ``,
 				SortOrder: 4,
-				Scope:     config.NewScopePerm(config.IDScopeDefault),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sitemap/generate/enabled`,
@@ -179,7 +179,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    6,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `general`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -189,11 +189,11 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `sitemap/generate/error_email_template`,
 						ID:           "error_email_template",
 						Label:        `Error Email Template`,
-						Comment:      ``,
+						Comment:      `Email template chosen based on theme fallback when "Default" option is selected.`,
 						Type:         config.TypeSelect,
 						SortOrder:    7,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `sitemap_generate_error_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -291,7 +291,7 @@ var PackageConfiguration = config.NewConfiguration(
 		},
 	},
 
-	// Hidden Configuration
+	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "sitemap",
 		Groups: config.GroupSlice{
@@ -303,7 +303,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "error_email",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: nil,
 					},
 				},
@@ -317,7 +317,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "valid_paths",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"available":{"any_path":"\/*\/*.xml"}}`,
 					},
 				},

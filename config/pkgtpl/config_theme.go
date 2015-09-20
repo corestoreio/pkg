@@ -9,7 +9,7 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "design",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "head",
@@ -205,6 +205,34 @@ var PackageConfiguration = config.NewConfiguration(
 					},
 
 					&config.Field{
+						// Path: `design/header/logo_width`,
+						ID:           "logo_width",
+						Label:        `Logo Image Width`,
+						Comment:      ``,
+						Type:         config.TypeText,
+						SortOrder:    11,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
+						Default:      nil,
+						BackendModel: nil,
+						SourceModel:  nil,
+					},
+
+					&config.Field{
+						// Path: `design/header/logo_height`,
+						ID:           "logo_height",
+						Label:        `Logo Image Height`,
+						Comment:      ``,
+						Type:         config.TypeText,
+						SortOrder:    12,
+						Visible:      config.VisibleYes,
+						Scope:        config.ScopePermAll,
+						Default:      nil,
+						BackendModel: nil,
+						SourceModel:  nil,
+					},
+
+					&config.Field{
 						// Path: `design/header/logo_alt`,
 						ID:           "logo_alt",
 						Label:        `Logo Image Alt`,
@@ -273,7 +301,7 @@ var PackageConfiguration = config.NewConfiguration(
 		},
 	},
 
-	// Hidden Configuration
+	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "design",
 		Groups: config.GroupSlice{
@@ -285,7 +313,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "_value",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"default_title":"Magento Commerce","default_description":"Default Description","default_keywords":"Magento, Varien, E-commerce","default_media_type":"text\/html","default_charset":"utf-8"}`,
 					},
 
@@ -294,7 +322,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "_attribute",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"translate":"default_description"}`,
 					},
 				},
@@ -308,16 +336,13 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "default_custom_instructions",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `
 User-agent: *
 Disallow: /index.php/
 Disallow: /*?
-Disallow: /*.js$
-Disallow: /*.css$
 Disallow: /checkout/
 Disallow: /app/
-Disallow: /js/
 Disallow: /lib/
 Disallow: /*.php$
 Disallow: /pkginfo/
@@ -341,7 +366,7 @@ Disallow: /*SID=
 						ID:      "_value",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"logo_alt":"Magento Commerce","welcome":"Default welcome msg!"}`,
 					},
 
@@ -350,7 +375,7 @@ Disallow: /*SID=
 						ID:      "_attribute",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"translate":"welcome"}`,
 					},
 				},
@@ -364,8 +389,8 @@ Disallow: /*SID=
 						ID:      "_value",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
-						Default: `{"copyright":"&copy; 2014 Magento Demo Store. All Rights Reserved."}`,
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Default: `{"copyright":"Copyright \u00a9 2015 Magento. All rights reserved."}`,
 					},
 
 					&config.Field{
@@ -373,7 +398,7 @@ Disallow: /*SID=
 						ID:      "_attribute",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"translate":"copyright"}`,
 					},
 				},
@@ -391,7 +416,7 @@ Disallow: /*SID=
 						ID:      "custom_css",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `Magento\Theme\Model\Theme\Customization\File\CustomCss`,
 					},
 				},
@@ -409,7 +434,7 @@ Disallow: /*SID=
 						ID:      "allowed_resources",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"site_favicons":"favicon"}`,
 					},
 				},

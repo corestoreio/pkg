@@ -9,14 +9,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "dev",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "js",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     nil,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/js/translate_strategy`,
@@ -26,8 +26,8 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
-						Default:      `none`,
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Default:      `dictionary`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Translation\Model\Js\Config\Source\Strategy
 					},
@@ -36,7 +36,7 @@ var PackageConfiguration = config.NewConfiguration(
 		},
 	},
 
-	// Hidden Configuration
+	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "dev",
 		Groups: config.GroupSlice{
@@ -48,7 +48,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "active",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: false,
 					},
 
@@ -57,7 +57,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "active_admin",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: false,
 					},
 
@@ -66,7 +66,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "invalid_caches",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"block_html":null}`,
 					},
 				},

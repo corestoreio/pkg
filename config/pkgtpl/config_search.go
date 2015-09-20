@@ -9,14 +9,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "catalog",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "search",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     nil,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/search/engine`,
@@ -26,7 +26,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    19,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Search\Model\Adminhtml\System\Config\Source\Engine
@@ -40,7 +40,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.Type,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(),
+						Scope:        nil,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -54,7 +54,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.Type,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(),
+						Scope:        nil,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,

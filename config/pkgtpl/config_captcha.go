@@ -9,14 +9,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "admin",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "captcha",
 				Label:     `CAPTCHA`,
 				Comment:   ``,
 				SortOrder: 50,
-				Scope:     config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `admin/captcha/enable`,
@@ -26,7 +26,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -40,7 +40,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      `linlibertine`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Captcha\Model\Config\Font
@@ -54,7 +54,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeMultiselect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      `backend_forgotpassword`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Captcha\Model\Config\Form\Backend
@@ -68,7 +68,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      `after_fail`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Captcha\Model\Config\Mode
@@ -82,7 +82,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      3,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -96,7 +96,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    6,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      7,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -110,7 +110,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    7,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      `4-5`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -124,7 +124,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    8,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      `ABCDEFGHJKMnpqrstuvwxyz23456789`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -138,7 +138,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    9,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -151,24 +151,24 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "customer",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "captcha",
 				Label:     `CAPTCHA`,
 				Comment:   ``,
 				SortOrder: 110,
-				Scope:     config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `customer/captcha/enable`,
 						ID:           "enable",
-						Label:        `Enable CAPTCHA on Frontend`,
+						Label:        `Enable CAPTCHA on Storefront`,
 						Comment:      ``,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -182,7 +182,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `linlibertine`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Captcha\Model\Config\Font
@@ -196,7 +196,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeMultiselect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `user_forgotpassword`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Captcha\Model\Config\Form\Frontend
@@ -210,7 +210,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `after_fail`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Captcha\Model\Config\Mode
@@ -224,7 +224,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      3,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -238,7 +238,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    6,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      7,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -252,7 +252,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    7,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `4-5`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -266,7 +266,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    8,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      `ABCDEFGHJKMnpqrstuvwxyz23456789`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -280,7 +280,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    9,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault, config.IDScopeWebsite),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -290,7 +290,7 @@ var PackageConfiguration = config.NewConfiguration(
 		},
 	},
 
-	// Hidden Configuration
+	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "system",
 		Groups: config.GroupSlice{
@@ -302,7 +302,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "allowed_resources",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"captcha_folder":"captcha"}`,
 					},
 				},
@@ -320,7 +320,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "type",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `default`,
 					},
 
@@ -329,7 +329,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "failed_attempts_ip",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: 1000,
 					},
 
@@ -338,7 +338,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "shown_to_logged_in_user",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: nil,
 					},
 
@@ -347,7 +347,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "always_for",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"backend_forgotpassword":"1"}`,
 					},
 				},
@@ -365,7 +365,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "type",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `default`,
 					},
 
@@ -374,7 +374,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "failed_attempts_ip",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: 1000,
 					},
 
@@ -383,7 +383,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "shown_to_logged_in_user",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"contact_us":"1"}`,
 					},
 
@@ -392,7 +392,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "always_for",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"user_create":"1","user_forgotpassword":"1","guest_checkout":"1","register_during_checkout":"1","contact_us":"1"}`,
 					},
 				},
@@ -410,7 +410,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "fonts",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"linlibertine":{"label":"LinLibertine","path":"LinLibertineFont\/LinLibertine_Bd-2.8.1.ttf"}}`,
 					},
 
@@ -419,8 +419,8 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "frontend",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
-						Default: `{"areas":{"user_create":{"label":"Create user"},"user_login":{"label":"Login"},"user_forgotpassword":{"label":"Forgot password"},"guest_checkout":{"label":"Checkout as Guest"},"register_during_checkout":{"label":"Register during Checkout"},"contact_us":{"label":"Contact Us"}}}`,
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Default: `{"areas":{"user_create":{"label":"Create user"},"user_login":{"label":"Login"},"user_forgotpassword":{"label":"Forgot password"},"guest_checkout":{"label":"Check Out as Guest"},"register_during_checkout":{"label":"Register during Checkout"},"contact_us":{"label":"Contact Us"}}}`,
 					},
 
 					&config.Field{
@@ -428,7 +428,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "backend",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"areas":{"backend_login":{"label":"Admin Login"},"backend_forgotpassword":{"label":"Admin Forgot Password"}}}`,
 					},
 				},
@@ -442,7 +442,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "translate",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `label`,
 					},
 				},

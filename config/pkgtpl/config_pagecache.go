@@ -9,14 +9,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "system",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "full_page_cache",
 				Label:     `Full Page Cache`,
 				Comment:   ``,
 				SortOrder: 600,
-				Scope:     config.NewScopePerm(config.IDScopeDefault),
+				Scope:     config.NewScopePerm(config.ScopeDefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `system/full_page_cache/caching_application`,
@@ -26,7 +26,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\PageCache\Model\System\Config\Source\Application
@@ -36,12 +36,12 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `system/full_page_cache/ttl`,
 						ID:           "ttl",
 						Label:        `TTL for public content`,
-						Comment:      `Public content cache lifetime in seconds. If field is empty default value 120 will be saved.`,
+						Comment:      `Public content cache lifetime in seconds. If field is empty default value 86400 will be saved.`,
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.IDScopeDefault),
-						Default:      120,
+						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Default:      86400,
 						BackendModel: nil, // Magento\PageCache\Model\System\Config\Backend\Ttl
 						SourceModel:  nil,
 					},
@@ -50,7 +50,7 @@ var PackageConfiguration = config.NewConfiguration(
 		},
 	},
 
-	// Hidden Configuration
+	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "system",
 		Groups: config.GroupSlice{
@@ -62,7 +62,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "varnish3",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"path":"Magento\/PageCache\/etc\/varnish3.vcl"}`,
 					},
 
@@ -71,7 +71,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "varnish4",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: `{"path":"Magento\/PageCache\/etc\/varnish4.vcl"}`,
 					},
 
@@ -80,8 +80,8 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "default",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
-						Default: `{"access_list":"localhost","backend_host":"localhost","backend_port":"8080","ttl":"120"}`,
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Default: `{"access_list":"localhost","backend_host":"localhost","backend_port":"8080","ttl":"86400"}`,
 					},
 				},
 			},

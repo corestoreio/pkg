@@ -4,21 +4,19 @@ package configurableproduct
 
 import "github.com/corestoreio/csfw/config"
 
-import "github.com/corestoreio/csfw/config"
-
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "checkout",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     nil,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "cart",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     nil,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `checkout/cart/configurable_product_image`,

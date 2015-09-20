@@ -64,7 +64,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `newsletter/subscription/confirm_email_template`,
 						ID:           "confirm_email_template",
 						Label:        `Confirmation Email Template`,
-						Comment:      ``,
+						Comment:      `Email template chosen based on theme fallback when "Default" option is selected.`,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
@@ -92,7 +92,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `newsletter/subscription/success_email_template`,
 						ID:           "success_email_template",
 						Label:        `Success Email Template`,
-						Comment:      ``,
+						Comment:      `Email template chosen based on theme fallback when "Default" option is selected.`,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
@@ -120,7 +120,7 @@ var PackageConfiguration = config.NewConfiguration(
 						// Path: `newsletter/subscription/un_email_template`,
 						ID:           "un_email_template",
 						Label:        `Unsubscription Email Template`,
-						Comment:      ``,
+						Comment:      `Email template chosen based on theme fallback when "Default" option is selected.`,
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
@@ -134,7 +134,7 @@ var PackageConfiguration = config.NewConfiguration(
 		},
 	},
 
-	// Hidden Configuration
+	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "newsletter",
 		Groups: config.GroupSlice{
@@ -146,7 +146,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "set_return_path",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.IDScopeDefault), // @todo search for that
+						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
 						Default: false,
 					},
 				},
