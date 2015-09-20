@@ -1,4 +1,4 @@
-# Configuration package templates
+# Configuration ppkg templates
 
 These files have been generated from the Magento2 system.xml and config.xml files.
 
