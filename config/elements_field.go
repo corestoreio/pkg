@@ -73,6 +73,9 @@ type (
 		BackendModel FieldBackendModeller `json:",omitempty"`
 		// Default can contain any default config value: float64, int64, string, bool
 		Default interface{} `json:",omitempty"`
+
+		// ConfigPath    string  @todo see typeConfigPath in app/code/Magento/Config/etc/system_file.xsd
+
 	}
 )
 

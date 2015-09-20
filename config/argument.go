@@ -59,6 +59,7 @@ func Scope(s ScopeGroup, r ScopeIDer) ArgFunc {
 // provided then it must be a full valid path. If more than one argument has been provided
 // then the arguments will be joined together. Panics if nil arguments will be provided.
 func Path(paths ...string) ArgFunc {
+	// TODO(cs) validation of the path see typeConfigPath in app/code/Magento/Config/etc/system_file.xsd
 	var p string
 	lp := len(paths)
 	if lp > 0 {

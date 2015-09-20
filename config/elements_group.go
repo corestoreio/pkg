@@ -41,6 +41,7 @@ type (
 		Scope     ScopePerm `json:",omitempty"`
 		SortOrder int       `json:",omitempty"`
 		Fields    FieldSlice
+		// Groups     GroupSlice @todo see recursive options <xs:element name="group"> in app/code/Magento/Config/etc/system_file.xsd
 	}
 )
 
