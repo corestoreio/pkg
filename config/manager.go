@@ -63,12 +63,6 @@ type (
 		GetDateTime(o ...ArgFunc) time.Time
 	}
 
-	// Setter represents an interface for embedding into other types that
-	// these types can receive a config.Reader with a Scope.
-	Setter interface {
-		SetConfig(Reader, ScopeIDer)
-	}
-
 	// Writer thread safe storing of configuration values under different paths and scopes.
 	Writer interface {
 		// Write writes a configuration entry and may return an error
