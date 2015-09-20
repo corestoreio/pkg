@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mail
+package email
 
 import (
 	"bytes"
@@ -45,7 +45,7 @@ func SetMandrill(opts ...MandrillOptions) DaemonOption {
 	return func(da *Daemon) DaemonOption {
 		// this whole func is just a quick write down. no idea if it's working
 		// and refactor ... 8-)
-		apiKey := da.config.GetString(config.ScopeStore(da.scopeID), config.Path(PathSmtpMandrillAPIKey))
+		apiKey := da.Config.GetString(config.ScopeStore(da.ScopeID), config.Path(PathSmtpMandrillAPIKey))
 
 		if apiKey == "" {
 			da.lastErrs = append(da.lastErrs, errors.New("Mandrill API Key is empty."))

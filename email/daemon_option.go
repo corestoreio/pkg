@@ -12,15 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mail
+package email
 
 import (
-	"time"
-
 	"crypto/tls"
 	"errors"
 
-	"github.com/corestoreio/csfw/config"
 	"github.com/go-gomail/gomail"
 )
 
@@ -50,6 +47,7 @@ func SetDialer(di Dialer) DaemonOption {
 			da.lastErrs = append(da.lastErrs, errors.New("gomail.Dialer cannot be nil"))
 		}
 		da.dialer = di
+		da.dialerIsCustom = true
 		da.sendFunc = nil
 		return SetDialer(previous)
 	}
@@ -70,32 +68,6 @@ func SetSendFunc(sf gomail.SendFunc) DaemonOption {
 	}
 }
 
-// SetStoreConfig sets the config.Reader to the daemon.
-// Default reader is config.DefaultManager
-func SetConfig(cr config.Reader) DaemonOption {
-	return func(da *Daemon) DaemonOption {
-		previous := da.config
-		if cr == nil {
-			da.lastErrs = append(da.lastErrs, errors.New("config.Reader cannot be nil"))
-		}
-		da.config = cr
-		return SetConfig(previous)
-	}
-}
-
-// SetSMTPTimeout sets the time when the daemon should closes the connection
-// to the SMTP server if no email was sent in the last default 30 seconds.
-func SetSMTPTimeout(t time.Duration) DaemonOption {
-	return func(da *Daemon) DaemonOption {
-		previous := da.smtpTimeout
-		if t == 0 {
-			da.lastErrs = append(da.lastErrs, errors.New("Time.Duration cannot be 0")) // really?
-		}
-		da.smtpTimeout = t
-		return SetSMTPTimeout(previous)
-	}
-}
-
 // SetTLSConfig sets the TLS configuration for a default plain dialer used for TLS
 // (when the STARTTLS extension is used) or SSL connections.
 func SetTLSConfig(c *tls.Config) DaemonOption {
@@ -106,18 +78,5 @@ func SetTLSConfig(c *tls.Config) DaemonOption {
 		}
 		da.tlsConfig = c
 		return SetTLSConfig(previous)
-	}
-}
-
-// SetScope sets the config scope which can be default, website or store.
-// Default scope is 0 = admin.
-func SetScope(s config.ScopeIDer) DaemonOption {
-	return func(da *Daemon) DaemonOption {
-		previous := da.scopeID
-		if s == nil {
-			da.lastErrs = append(da.lastErrs, errors.New("config.ScopeIDer cannot be nil"))
-		}
-		da.scopeID = s
-		return SetScope(previous)
 	}
 }

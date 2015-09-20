@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mail_test
+package email_test
 
 import (
 	"bytes"

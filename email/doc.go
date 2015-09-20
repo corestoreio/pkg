@@ -86,4 +86,4 @@ be send to a custom logger.
 mailcatcher.me to read the emails.
 
 */
-package mail
+package email
