@@ -19,6 +19,11 @@ import (
 	"github.com/go-gomail/gomail"
 )
 
+const (
+	defaultHost = "localhost"
+	defaultPort = 25
+)
+
 // newPlainDialer stubbed out for tests
 var newPlainDialer func(host string, port int, username, password string) *gomail.Dialer = gomail.NewPlainDialer
 
@@ -32,4 +37,38 @@ type gomailPlainDialer struct {
 // SetConfigReader noop method to comply with the interface Dialer.
 func (gomailPlainDialer) SetConfigReader(config.Reader) {
 	// noop
+}
+
+type emailConfig struct {
+	Config config.Reader
+}
+
+func (c *emailConfig) getHost(s config.ScopeIDer) string {
+	h := c.Config.GetString(config.Path(PathSmtpHost), config.ScopeStore(s))
+	if h == "" {
+		h = defaultHost
+	}
+	return h
+}
+
+func (c *emailConfig) getPort(s config.ScopeIDer) int {
+	p := c.Config.GetInt(config.Path(PathSmtpPort), config.ScopeStore(s))
+	if p < 1 {
+		p = defaultPort
+	}
+	return p
+}
+
+func (c *emailConfig) getUsername(s config.ScopeIDer) string {
+	return c.Config.GetString(config.Path(PathSmtpUsername), config.ScopeStore(s))
+}
+
+func (c *emailConfig) getPassword(s config.ScopeIDer) string {
+	return c.Config.GetString(config.Path(PathSmtpPassword), config.ScopeStore(s))
+}
+
+func newEmailConfig(c config.Reader) *emailConfig {
+	return &emailConfig{
+		Config: c,
+	}
 }

@@ -25,23 +25,19 @@ import (
 
 // PathSmtp* defines the configuration settings for a SMTP daemon.
 const (
-	PathSmtpDisable         = "system/smtp/disable"           // Scope: Default, Website, Store
-	PathSmtpHost            = "system/smtp/host"              // Scope: Default, Website, Store
-	PathSmtpPort            = "system/smtp/port"              // Scope: Default, Website, Store
-	PathSmtpUsername        = "system/smtp/username"          // Scope: Default, Website, Store
-	PathSmtpPassword        = "system/smtp/password"          // Scope: Default, Website, Store
-	PathSmtpSetReturnPath   = "system/smtp/set_return_path"   // Scope: Default; 0 = no, 1 = yes, 2 = specified in PathSmtpReturnPathEmail
-	PathSmtpReturnPathEmail = "system/smtp/return_path_email" // Scope: Default; email address
-	PathSmtpMandrillAPIKey  = "system/smtp/mandrill_api_key"  // Scope: Default, Website, Store @todo
+	PathSmtp                = "system/smtp"                   // Used for pubsub
+	PathSmtpDisable         = PathSmtp + "/disable"           // Scope: Default, Website, Store
+	PathSmtpHost            = PathSmtp + "/host"              // Scope: Default, Website, Store
+	PathSmtpPort            = PathSmtp + "/port"              // Scope: Default, Website, Store
+	PathSmtpUsername        = PathSmtp + "/username"          // Scope: Default, Website, Store
+	PathSmtpPassword        = PathSmtp + "/password"          // Scope: Default, Website, Store
+	PathSmtpSetReturnPath   = PathSmtp + "/set_return_path"   // Scope: Default; 0 = no, 1 = yes, 2 = specified in PathSmtpReturnPathEmail
+	PathSmtpReturnPathEmail = PathSmtp + "/return_path_email" // Scope: Default; email address
+	PathSmtpMandrillAPIKey  = PathSmtp + "/mandrill_api_key"  // Scope: Default, Website, Store @todo
 )
 
-const (
-	defaultHost = "localhost"
-	defaultPort = 25
-)
-
-// TOOD(cs) implement config paths and options for TLS certificates and its configuration.
-// TOOD(cs) implement ideas from https://github.com/nathan-osman/go-cannon
+// TODO(cs) implement config paths and options for TLS certificates and its configuration.
+// TODO(cs) implement ideas from https://github.com/nathan-osman/go-cannon
 
 // ManagerOption can be used as an argument in NewManager to configure a manager.
 type ManagerOption func(*Manager)
@@ -53,7 +49,7 @@ type Manager struct {
 	// be accumulated here for later output in the NewManager() function.
 	lastErrs []error
 
-	Config config.Reader
+	*emailConfig
 
 	mu     sync.RWMutex
 	dialer map[uint64]Dialer
@@ -90,11 +86,10 @@ func (m *Manager) Send(si config.ScopeIDer, m *gomail.Message) error {
 	return nil
 }
 
-// SubscribeToConfigChanges subcribes the function MessageConfig to the
+// SubscribeToConfigChanges subscribes the function MessageConfig to the
 // config.Subscriber
-func (m *Manager) SubscribeToConfigChanges(s config.Subscriber) config.MessageReceiver {
-
-	return m
+func (m *Manager) SubscribeToConfigChanges(s config.Subscriber) (subscriptionID int, err error) {
+	return s.Subscribe(PathSmtp, m)
 }
 
 // MessageConfig allows subscription to the publish/subscribe message system of
@@ -102,31 +97,12 @@ func (m *Manager) SubscribeToConfigChanges(s config.Subscriber) config.MessageRe
 // config.Subscriber.
 // IF a configuration change
 func (m *Manager) MessageConfig(path string, sg config.ScopeGroup, si config.ScopeIDer) {
-
-}
-
-func (m *Manager) getHost(s config.ScopeIDer) string {
-	h := m.Config.GetString(config.Path(PathSmtpHost), config.ScopeStore(s))
-	if h == "" {
-		h = defaultHost
+	switch path {
+	case PathSmtpHost, PathSmtpPort, PathSmtpUsername:
+		// start and stop the daemon for the corresponding scope group and id
+	case PathSmtpDisable:
+		// stop daemon and replace dialer
 	}
-	return h
-}
-
-func (m *Manager) getPort(s config.ScopeIDer) int {
-	p := m.Config.GetInt(config.Path(PathSmtpPort), config.ScopeStore(s))
-	if p < 1 {
-		p = defaultPort
-	}
-	return p
-}
-
-func (m *Manager) getUsername(s config.ScopeIDer) string {
-	return m.Config.GetString(config.Path(PathSmtpUsername), config.ScopeStore(s))
-}
-
-func (m *Manager) getPassword(s config.ScopeIDer) string {
-	return m.Config.GetString(config.Path(PathSmtpPassword), config.ScopeStore(s))
 }
 
 func (m *Manager) allocate(dm *Daemon) Dialer {
@@ -163,8 +139,8 @@ func (m *Manager) allocate(dm *Daemon) Dialer {
 
 func NewManager(opts ...ManagerOption) (*Manager, error) {
 	m := &Manager{
-		Config: config.DefaultManager,
-		dialer: make(map[uint64]Dialer),
+		emailConfig: newEmailConfig(config.DefaultManager),
+		dialer:      make(map[uint64]Dialer),
 	}
 	m.Option(opts...)
 
