@@ -21,6 +21,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/utils"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
@@ -44,8 +45,8 @@ type (
 		ID    string
 		Label string `json:",omitempty"`
 		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
-		Scope     ScopePerm `json:",omitempty"`
-		SortOrder int       `json:",omitempty"`
+		Scope     scope.Perm `json:",omitempty"`
+		SortOrder int        `json:",omitempty"`
 		// Permission some kind of ACL if someone is allowed for no,read or write access @todo
 		Permission uint `json:",omitempty"`
 		Groups     GroupSlice

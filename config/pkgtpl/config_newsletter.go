@@ -2,21 +2,24 @@
 
 package newsletter
 
-import "github.com/corestoreio/csfw/config"
+import (
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+)
 
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "newsletter",
 		Label:     "Newsletter",
 		SortOrder: 110,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "subscription",
 				Label:     `Subscription Options`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `newsletter/subscription/allow_guest_subscribe`,
@@ -26,7 +29,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -40,7 +43,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -54,7 +57,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `support`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -68,7 +71,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `newsletter_subscription_confirm_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -82,7 +85,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `general`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -96,7 +99,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `newsletter_subscription_success_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -110,7 +113,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `support`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -124,7 +127,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `newsletter_subscription_un_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -146,7 +149,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "set_return_path",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: false,
 					},
 				},

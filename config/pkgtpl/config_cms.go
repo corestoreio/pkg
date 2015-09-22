@@ -2,7 +2,10 @@
 
 package cms
 
-import "github.com/corestoreio/csfw/config"
+import (
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+)
 
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
@@ -26,7 +29,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `home`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Cms\Model\Config\Source\Page
@@ -40,7 +43,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `no-route`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Cms\Model\Config\Source\Page
@@ -54,7 +57,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `enable-cookies`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Cms\Model\Config\Source\Page
@@ -68,7 +71,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -81,7 +84,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Browser Capabilities Detection`,
 				Comment:   ``,
 				SortOrder: 200,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `web/browser_capabilities/cookies`,
@@ -91,7 +94,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -105,7 +108,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    200,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -119,7 +122,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    300,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -132,14 +135,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "cms",
 		Label:     "Content Management",
 		SortOrder: 1001,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "wysiwyg",
 				Label:     `WYSIWYG Options`,
 				Comment:   ``,
 				SortOrder: 100,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `cms/wysiwyg/enabled`,
@@ -149,7 +152,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `enabled`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Cms\Model\Config\Source\Wysiwyg\Enabled
@@ -171,7 +174,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "front",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `cms`,
 					},
 
@@ -180,7 +183,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "no_route",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `cms/noroute/index`,
 					},
 				},
@@ -198,7 +201,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "allowed_resources",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"wysiwyg_image_folder":"wysiwyg"}`,
 					},
 				},

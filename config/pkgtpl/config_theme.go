@@ -2,7 +2,10 @@
 
 package theme
 
-import "github.com/corestoreio/csfw/config"
+import (
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+)
 
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
@@ -16,7 +19,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `HTML Head`,
 				Comment:   ``,
 				SortOrder: 20,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `design/head/shortcut_icon`,
@@ -26,7 +29,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeImage,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Image\Favicon
 						SourceModel:  nil,
@@ -40,7 +43,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -54,7 +57,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    12,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -68,7 +71,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    14,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -82,7 +85,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeTextarea,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -96,7 +99,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeTextarea,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -110,7 +113,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeTextarea,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -124,7 +127,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -137,7 +140,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Search Engine Robots`,
 				Comment:   ``,
 				SortOrder: 25,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `design/search_engine_robots/default_robots`,
@@ -147,7 +150,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `INDEX,FOLLOW`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Design\Robots
@@ -161,7 +164,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeTextarea,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Admin\Robots
 						SourceModel:  nil,
@@ -175,7 +178,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeButton,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -188,7 +191,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Header`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `design/header/logo_src`,
@@ -198,7 +201,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeImage,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Image\Logo
 						SourceModel:  nil,
@@ -212,7 +215,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    11,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -226,7 +229,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    12,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -240,7 +243,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -254,7 +257,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -267,7 +270,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Footer`,
 				Comment:   ``,
 				SortOrder: 40,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `design/footer/copyright`,
@@ -277,7 +280,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeTextarea,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -291,7 +294,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeTextarea,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -313,7 +316,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "_value",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"default_title":"Magento Commerce","default_description":"Default Description","default_keywords":"Magento, Varien, E-commerce","default_media_type":"text\/html","default_charset":"utf-8"}`,
 					},
 
@@ -322,7 +325,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "_attribute",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"translate":"default_description"}`,
 					},
 				},
@@ -336,7 +339,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "default_custom_instructions",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `
 User-agent: *
 Disallow: /index.php/
@@ -366,7 +369,7 @@ Disallow: /*SID=
 						ID:      "_value",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"logo_alt":"Magento Commerce","welcome":"Default welcome msg!"}`,
 					},
 
@@ -375,7 +378,7 @@ Disallow: /*SID=
 						ID:      "_attribute",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"translate":"welcome"}`,
 					},
 				},
@@ -389,7 +392,7 @@ Disallow: /*SID=
 						ID:      "_value",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"copyright":"Copyright \u00a9 2015 Magento. All rights reserved."}`,
 					},
 
@@ -398,7 +401,7 @@ Disallow: /*SID=
 						ID:      "_attribute",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"translate":"copyright"}`,
 					},
 				},
@@ -416,7 +419,7 @@ Disallow: /*SID=
 						ID:      "custom_css",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Magento\Theme\Model\Theme\Customization\File\CustomCss`,
 					},
 				},
@@ -434,7 +437,7 @@ Disallow: /*SID=
 						ID:      "allowed_resources",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"site_favicons":"favicon"}`,
 					},
 				},

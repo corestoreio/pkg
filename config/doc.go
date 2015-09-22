@@ -50,7 +50,7 @@ Can also be rewritten without using slashes:
 Returning a website scope based value:
 
 	w := store.Manager.Website()
-	val := config.Manager.GetString(config.Path("path/to/setting"), config.Scope(config.ScopeWebsiteID, w))
+	val := config.Manager.GetString(config.Path("path/to/setting"), config.Scope(scope.WebsiteID, w))
 
 can be rewritten as:
 
@@ -63,7 +63,7 @@ default value will be returned.
 Returning a store scope based value:
 
 	w := store.Manager.Website()
-	val := config.Manager.GetString(config.Path("path/to/setting"), config.Scope(config.ScopeStoreID, w))
+	val := config.Manager.GetString(config.Path("path/to/setting"), config.Scope(scope.StoreID, w))
 
 can be rewritten as:
 

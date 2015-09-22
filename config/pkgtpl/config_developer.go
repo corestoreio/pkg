@@ -2,7 +2,10 @@
 
 package developer
 
-import "github.com/corestoreio/csfw/config"
+import (
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+)
 
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
@@ -16,7 +19,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Front-end development workflow`,
 				Comment:   ``,
 				SortOrder: 8,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/front_end_development_workflow/type`,
@@ -26,7 +29,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `server_side_compilation`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Developer\Model\Config\Source\WorkflowType
@@ -39,7 +42,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Developer Client Restrictions`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/restrict/allow_ips`,
@@ -49,7 +52,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Developer\Model\Config\Backend\AllowedIps
 						SourceModel:  nil,
@@ -71,7 +74,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "allow_ips",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: nil,
 					},
 				},

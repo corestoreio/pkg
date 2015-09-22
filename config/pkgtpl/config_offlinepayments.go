@@ -2,21 +2,24 @@
 
 package offlinepayments
 
-import "github.com/corestoreio/csfw/config"
+import (
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+)
 
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "payment",
 		Label:     "",
 		SortOrder: 400,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "checkmo",
 				Label:     `Check / Money Order`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `payment/checkmo/active`,
@@ -26,7 +29,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -40,7 +43,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `pending`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sales\Model\Config\Source\Order\Status\NewStatus
@@ -54,7 +57,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -68,7 +71,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Check / Money order`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -82,7 +85,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeAllowspecific,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Payment\Model\Config\Source\Allspecificcountries
@@ -96,7 +99,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeMultiselect,
 						SortOrder:    51,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -110,7 +113,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.Type,
 						SortOrder:    61,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -124,7 +127,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeTextarea,
 						SortOrder:    62,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -138,7 +141,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    98,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -152,7 +155,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    99,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -179,7 +182,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Purchase Order`,
 				Comment:   ``,
 				SortOrder: 32,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `payment/purchaseorder/active`,
@@ -189,7 +192,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -203,7 +206,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `pending`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sales\Model\Config\Source\Order\Status\NewStatus
@@ -217,7 +220,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -231,7 +234,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Purchase Order`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -245,7 +248,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeAllowspecific,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Payment\Model\Config\Source\Allspecificcountries
@@ -259,7 +262,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeMultiselect,
 						SortOrder:    51,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -273,7 +276,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    98,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -287,7 +290,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    99,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -314,7 +317,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Bank Transfer Payment`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `payment/banktransfer/active`,
@@ -324,7 +327,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -338,7 +341,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Bank Transfer Payment`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -352,7 +355,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `pending`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sales\Model\Config\Source\Order\Status\NewStatus
@@ -366,7 +369,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeAllowspecific,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Payment\Model\Config\Source\Allspecificcountries
@@ -380,7 +383,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeMultiselect,
 						SortOrder:    51,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -394,7 +397,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeTextarea,
 						SortOrder:    62,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -408,7 +411,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    98,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -422,7 +425,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    99,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -436,7 +439,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -449,7 +452,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Cash On Delivery Payment`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `payment/cashondelivery/active`,
@@ -459,7 +462,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -473,7 +476,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Cash On Delivery`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -487,7 +490,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `pending`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sales\Model\Config\Source\Order\Status\NewStatus
@@ -501,7 +504,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeAllowspecific,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Payment\Model\Config\Source\Allspecificcountries
@@ -515,7 +518,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeMultiselect,
 						SortOrder:    51,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -529,7 +532,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeTextarea,
 						SortOrder:    62,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -543,7 +546,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    98,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -557,7 +560,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    99,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -571,7 +574,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -584,7 +587,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Zero Subtotal Checkout`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `payment/free/active`,
@@ -594,7 +597,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -608,7 +611,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sales\Model\Config\Source\Order\Status\Newprocessing
@@ -622,7 +625,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Payment\Model\Source\Invoice
@@ -636,7 +639,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -650,7 +653,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -664,7 +667,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeAllowspecific,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Payment\Model\Config\Source\Allspecificcountries
@@ -678,7 +681,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeMultiselect,
 						SortOrder:    51,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -714,7 +717,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `offline`,
 					},
 				},
@@ -728,7 +731,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `offline`,
 					},
 				},
@@ -742,7 +745,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Magento\OfflinePayments\Model\Banktransfer`,
 					},
 
@@ -751,7 +754,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `offline`,
 					},
 				},
@@ -765,7 +768,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Magento\OfflinePayments\Model\Cashondelivery`,
 					},
 
@@ -774,7 +777,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `offline`,
 					},
 				},
@@ -788,7 +791,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `offline`,
 					},
 				},

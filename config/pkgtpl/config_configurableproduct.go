@@ -26,7 +26,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `parent`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Catalog\Model\Config\Source\Product\Thumbnail

@@ -2,21 +2,24 @@
 
 package persistent
 
-import "github.com/corestoreio/csfw/config"
+import (
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+)
 
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "persistent",
 		Label:     "Persistent Shopping Cart",
 		SortOrder: 500,
-		Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+		Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "options",
 				Label:     `General Options`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `persistent/options/enabled`,
@@ -26,7 +29,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -40,7 +43,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      31536000,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -54,7 +57,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -68,7 +71,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -82,7 +85,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -96,7 +99,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno

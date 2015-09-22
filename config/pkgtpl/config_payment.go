@@ -2,14 +2,17 @@
 
 package payment
 
-import "github.com/corestoreio/csfw/config"
+import (
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+)
 
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "payment",
 		Label:     "Payment Methods",
 		SortOrder: 400,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups:    config.GroupSlice{},
 	},
 
@@ -25,7 +28,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "active",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -34,7 +37,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Magento\Payment\Model\Method\Free`,
 					},
 
@@ -43,7 +46,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "order_status",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `pending`,
 					},
 
@@ -52,7 +55,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "title",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `No Payment Information Required`,
 					},
 
@@ -61,7 +64,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "allowspecific",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: false,
 					},
 
@@ -70,7 +73,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "sort_order",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 				},
@@ -84,7 +87,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "active",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: false,
 					},
 
@@ -93,7 +96,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Magento\Payment\Model\Method\Substitution`,
 					},
 
@@ -102,7 +105,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "allowspecific",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: false,
 					},
 				},

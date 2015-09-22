@@ -17,6 +17,7 @@ package config
 import (
 	"time"
 
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils/cast"
@@ -129,8 +130,8 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 
 	for _, cd := range ccd {
 		if cd.Value.Valid {
-			// ScopeID(cd.ScopeID) because cd.ScopeID is a struct field and cannot satisfy interface ScopeIDer
-			m.Write(Path(cd.Path), Scope(GetScopeGroup(cd.Scope), ScopeID(cd.ScopeID)))
+			// scope.ID(cd.ScopeID) because cd.ScopeID is a struct field and cannot satisfy interface scope.IDer
+			m.Write(Path(cd.Path), Scope(scope.GetGroup(cd.Scope), scope.ID(cd.ScopeID)))
 		}
 	}
 	return nil
@@ -152,8 +153,8 @@ func (m *Manager) Write(o ...ArgFunc) error {
 		}
 		m.v.Set(a.scopePathDefault(), a.v)
 		aDefault := a
-		aDefault.sg = ScopeDefaultID
-		aDefault.si = ScopeID(0)
+		aDefault.sg = scope.DefaultID
+		aDefault.si = scope.ID(0)
 		m.sendMsg(aDefault)
 	}
 

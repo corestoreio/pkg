@@ -2,21 +2,24 @@
 
 package integration
 
-import "github.com/corestoreio/csfw/config"
+import (
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+)
 
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "oauth",
 		Label:     "OAuth",
 		SortOrder: 300,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "cleanup",
 				Label:     `Cleanup Settings`,
 				Comment:   ``,
 				SortOrder: 300,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `oauth/cleanup/cleanup_probability`,
@@ -26,7 +29,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      100,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -40,7 +43,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      120,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -53,7 +56,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Consumer Settings`,
 				Comment:   ``,
 				SortOrder: 400,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `oauth/consumer/expiration_period`,
@@ -63,7 +66,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      300,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -77,7 +80,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -91,7 +94,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      5,
 						BackendModel: nil,
 						SourceModel:  nil,

@@ -24,6 +24,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/utils/log"
 )
 
@@ -39,18 +40,18 @@ var ErrPathEmpty = errors.New("Path cannot be empty")
 type ArgFunc func(*arg)
 
 // ScopeWebsite wrapper helper function. See Scope()
-func ScopeWebsite(r ScopeIDer) ArgFunc { return Scope(ScopeWebsiteID, r) }
+func ScopeWebsite(r scope.IDer) ArgFunc { return Scope(scope.WebsiteID, r) }
 
 // ScopeStore wrapper helper function. See Scope()
-func ScopeStore(r ScopeIDer) ArgFunc { return Scope(ScopeStoreID, r) }
+func ScopeStore(r scope.IDer) ArgFunc { return Scope(scope.StoreID, r) }
 
-// Scope sets the scope using the ScopeGroup and a config.ScopeIDer.
-// A config.ScopeIDer can contain an ID from a website or a store. Make sure
-// the correct ScopeGroup has also been set. If config.ScopeIDer is nil
+// Scope sets the scope using the scope.Group and a scope.IDer.
+// A scope.IDer can contain an ID from a website or a store. Make sure
+// the correct scope.Group has also been set. If scope.IDer is nil
 // the scope will fallback to default scope.
-func Scope(s ScopeGroup, r ScopeIDer) ArgFunc {
-	if s != ScopeDefaultID && r == nil {
-		s = ScopeDefaultID
+func Scope(s scope.Group, r scope.IDer) ArgFunc {
+	if s != scope.DefaultID && r == nil {
+		s = scope.DefaultID
 	}
 	return func(a *arg) { a.sg = s; a.si = r }
 }
@@ -118,8 +119,8 @@ func ValueReader(r io.Reader) ArgFunc {
 type arg struct {
 	pa         string   // p is the three level path e.g. a/b/c
 	paSlice    []string // used for hierarchy for the pubSub system
-	sg         ScopeGroup
-	si         ScopeIDer
+	sg         scope.Group
+	si         scope.IDer
 	nb         bool        // noBubble, if false value search: (store|website) -> default
 	v          interface{} // value use for saving
 	lastErrors []error
@@ -155,7 +156,7 @@ func mustNewArg(opts ...ArgFunc) arg {
 	return a
 }
 
-func (a arg) isDefault() bool { return a.sg == ScopeDefaultID || a.sg == ScopeAbsentID }
+func (a arg) isDefault() bool { return a.sg == scope.DefaultID || a.sg == scope.AbsentID }
 
 func (a arg) isBubbling() bool { return !a.nb }
 
@@ -183,7 +184,7 @@ func (a arg) scopePath() string {
 
 func (a arg) scopePathDefault() string {
 	// e.g.: default/0/system/currency/installed => scope/scope_id/path
-	return ScopeRangeDefault + PS + "0" + PS + a.pa
+	return scope.RangeDefault + PS + "0" + PS + a.pa
 }
 
 func (a arg) scopeID() string {
@@ -198,12 +199,12 @@ func (a arg) scopeID() string {
 
 func (a arg) scopeRange() string {
 	switch a.sg {
-	case ScopeWebsiteID:
-		return ScopeRangeWebsites
-	case ScopeStoreID:
-		return ScopeRangeStores
+	case scope.WebsiteID:
+		return scope.RangeWebsites
+	case scope.StoreID:
+		return scope.RangeStores
 	}
-	return ScopeRangeDefault
+	return scope.RangeDefault
 }
 
 var _ error = (*arg)(nil)

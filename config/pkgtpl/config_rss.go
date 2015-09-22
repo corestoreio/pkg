@@ -9,14 +9,14 @@ var PackageConfiguration = config.NewConfiguration(
 		ID:        "rss",
 		Label:     "RSS Feeds",
 		SortOrder: 80,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "config",
 				Label:     `Rss Config`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `rss/config/active`,
@@ -26,7 +26,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Rss\Model\System\Config\Backend\Links
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable

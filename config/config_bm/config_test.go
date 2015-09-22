@@ -20,21 +20,19 @@ package config_test
 
 import (
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 )
 
 var packageAllConfiguration = config.NewConfigurationMerge(
 	&config.Section{
-		ID:        "system",
-		Label:     "",
-		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		ID: "system",
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "adminnotification",
 				Label:     `Notifications`,
 				Comment:   ``,
 				SortOrder: 250,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `system/adminnotification/use_https`,
@@ -44,7 +42,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -58,7 +56,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\AdminNotification\Model\Config\Source\Frequency
@@ -72,7 +70,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeLabel,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -94,7 +92,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "feed_url",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `notifications.magentocommerce.com/magento2/community/notifications.rss`,
 					},
 
@@ -103,7 +101,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "popup_url",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `widgets.magentocommerce.com/notificationPopup`,
 					},
 
@@ -112,7 +110,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "severity_icons_url",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `widgets.magentocommerce.com/%s/%s.gif`,
 					},
 				},
@@ -123,14 +121,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "advanced",
 		Label:     "Advanced",
 		SortOrder: 910,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "modules_disable_output",
 				Label:     `Disable Modules Output`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields:    config.FieldSlice{},
 			},
 		},
@@ -139,14 +137,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "trans_email",
 		Label:     "Store Email Addresses",
 		SortOrder: 90,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "ident_custom1",
 				Label:     `Custom Email 1`,
 				Comment:   ``,
 				SortOrder: 4,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `trans_email/ident_custom1/email`,
@@ -156,7 +154,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Address
 						SourceModel:  nil,
@@ -170,7 +168,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Sender
 						SourceModel:  nil,
@@ -183,7 +181,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Custom Email 2`,
 				Comment:   ``,
 				SortOrder: 5,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `trans_email/ident_custom2/email`,
@@ -193,7 +191,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Address
 						SourceModel:  nil,
@@ -207,7 +205,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Sender
 						SourceModel:  nil,
@@ -220,7 +218,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `General Contact`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `trans_email/ident_general/email`,
@@ -230,7 +228,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Address
 						SourceModel:  nil,
@@ -244,7 +242,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Sender
 						SourceModel:  nil,
@@ -257,7 +255,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Sales Representative`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `trans_email/ident_sales/email`,
@@ -267,7 +265,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Address
 						SourceModel:  nil,
@@ -281,7 +279,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Sender
 						SourceModel:  nil,
@@ -294,7 +292,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Customer Support`,
 				Comment:   ``,
 				SortOrder: 3,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `trans_email/ident_support/email`,
@@ -304,7 +302,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Address
 						SourceModel:  nil,
@@ -318,7 +316,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Sender
 						SourceModel:  nil,
@@ -331,14 +329,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "design",
 		Label:     "Design",
 		SortOrder: 30,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "theme",
 				Label:     `Design Theme`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `design/theme/theme_id`,
@@ -348,7 +346,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Theme\Model\Design\Backend\Theme
 						SourceModel:  nil, // Magento\Framework\View\Design\Theme\Label::getLabelsCollectionForSystemConfiguration
@@ -362,7 +360,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Theme\Model\Design\Backend\Exceptions
 						SourceModel:  nil,
@@ -375,7 +373,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Pagination`,
 				Comment:   ``,
 				SortOrder: 500,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `design/pagination/pagination_frame`,
@@ -385,7 +383,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    7,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -399,7 +397,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    8,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -413,7 +411,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    9,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -427,7 +425,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -440,7 +438,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Transactional Emails`,
 				Comment:   ``,
 				SortOrder: 510,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `design/email/logo`,
@@ -450,7 +448,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeImage,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Logo
 						SourceModel:  nil,
@@ -464,7 +462,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -477,14 +475,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "dev",
 		Label:     "Developer",
 		SortOrder: 920,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "debug",
 				Label:     `Debug`,
 				Comment:   ``,
 				SortOrder: 20,
-				Scope:     config.NewScopePerm(config.ScopeWebsiteID, config.ScopeStoreID),
+				Scope:     scope.NewPerm(scope.WebsiteID, scope.StoreID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/debug/template_hints`,
@@ -494,7 +492,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeWebsiteID, config.ScopeStoreID),
+						Scope:        scope.NewPerm(scope.WebsiteID, scope.StoreID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -508,7 +506,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    21,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeWebsiteID, config.ScopeStoreID),
+						Scope:        scope.NewPerm(scope.WebsiteID, scope.StoreID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -521,7 +519,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Template Settings`,
 				Comment:   ``,
 				SortOrder: 25,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/template/allow_symlink`,
@@ -531,7 +529,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -545,7 +543,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    25,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -558,7 +556,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Translate Inline`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/translate_inline/active`,
@@ -568,7 +566,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Translate
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -582,7 +580,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Translate
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -595,7 +593,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `JavaScript Settings`,
 				Comment:   ``,
 				SortOrder: 100,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/js/merge_files`,
@@ -605,7 +603,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -619,7 +617,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -633,7 +631,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -646,7 +644,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `CSS Settings`,
 				Comment:   ``,
 				SortOrder: 110,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/css/merge_css_files`,
@@ -656,7 +654,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -670,7 +668,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -683,7 +681,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Image Processing Settings`,
 				Comment:   ``,
 				SortOrder: 120,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/image/default_adapter`,
@@ -693,7 +691,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Image\Adapter
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Image\Adapter
@@ -706,7 +704,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Static Files Settings`,
 				Comment:   ``,
 				SortOrder: 130,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/static/sign`,
@@ -716,7 +714,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -729,14 +727,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "general",
 		Label:     "General",
 		SortOrder: 10,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "country",
 				Label:     `Country Options`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `general/country/allow`,
@@ -746,7 +744,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeMultiselect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -760,7 +758,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -774,7 +772,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeMultiselect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -787,7 +785,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Locale Options`,
 				Comment:   ``,
 				SortOrder: 8,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `general/locale/timezone`,
@@ -797,7 +795,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Locale\Timezone
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Timezone
@@ -811,7 +809,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale
@@ -825,7 +823,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Weekdays
@@ -839,7 +837,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeMultiselect,
 						SortOrder:    15,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Weekdays
@@ -852,7 +850,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Store Information`,
 				Comment:   ``,
 				SortOrder: 100,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `general/store_information/name`,
@@ -862,7 +860,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -876,7 +874,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -890,7 +888,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    25,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -904,7 +902,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    27,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -918,7 +916,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -932,7 +930,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    45,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -946,7 +944,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    55,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -960,7 +958,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -974,7 +972,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    61,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -987,7 +985,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Single-Store Mode`,
 				Comment:   ``,
 				SortOrder: 150,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `general/single_store_mode/enabled`,
@@ -997,7 +995,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1010,14 +1008,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "system",
 		Label:     "System",
 		SortOrder: 900,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "smtp",
 				Label:     `Mail Sending Settings`,
 				Comment:   ``,
 				SortOrder: 20,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `system/smtp/disable`,
@@ -1027,7 +1025,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1041,7 +1039,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -1055,7 +1053,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -1069,7 +1067,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesnocustom
@@ -1083,7 +1081,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Address
 						SourceModel:  nil,
@@ -1096,14 +1094,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "admin",
 		Label:     "Admin",
 		SortOrder: 20,
-		Scope:     config.NewScopePerm(config.ScopeDefaultID),
+		Scope:     scope.NewPerm(scope.DefaultID),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "emails",
 				Label:     `Admin User Emails`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `admin/emails/forgot_email_template`,
@@ -1113,7 +1111,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -1127,7 +1125,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -1141,7 +1139,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Admin\Password\Link\Expirationperiod
 						SourceModel:  nil,
@@ -1154,7 +1152,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Startup Page`,
 				Comment:   ``,
 				SortOrder: 20,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `admin/startup/menu_item_id`,
@@ -1164,7 +1162,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Admin\Page
@@ -1177,7 +1175,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Admin Base URL`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `admin/url/use_custom`,
@@ -1187,7 +1185,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Admin\Usecustom
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1201,7 +1199,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Admin\Custom
 						SourceModel:  nil,
@@ -1215,7 +1213,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Admin\Custompath
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1229,7 +1227,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Admin\Custompath
 						SourceModel:  nil,
@@ -1242,7 +1240,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Security`,
 				Comment:   ``,
 				SortOrder: 35,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `admin/security/use_form_key`,
@@ -1252,7 +1250,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Admin\Usesecretkey
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1266,7 +1264,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1280,7 +1278,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -1293,7 +1291,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Dashboard`,
 				Comment:   ``,
 				SortOrder: 40,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `admin/dashboard/enable_charts`,
@@ -1303,7 +1301,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1316,14 +1314,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "web",
 		Label:     "Web",
 		SortOrder: 20,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "url",
 				Label:     `Url Options`,
 				Comment:   ``,
 				SortOrder: 3,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `web/url/use_store`,
@@ -1333,7 +1331,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Store
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1347,7 +1345,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Web\Redirect
@@ -1360,7 +1358,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Search Engine Optimization`,
 				Comment:   ``,
 				SortOrder: 5,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `web/seo/use_rewrites`,
@@ -1370,7 +1368,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1383,7 +1381,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Base URLs`,
 				Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`,
 				SortOrder: 10,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `web/unsecure/base_url`,
@@ -1393,7 +1391,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 						SourceModel:  nil,
@@ -1407,7 +1405,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 						SourceModel:  nil,
@@ -1421,7 +1419,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    25,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 						SourceModel:  nil,
@@ -1435,7 +1433,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 						SourceModel:  nil,
@@ -1448,7 +1446,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Base URLs (Secure)`,
 				Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`,
 				SortOrder: 20,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `web/secure/base_url`,
@@ -1458,7 +1456,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 						SourceModel:  nil,
@@ -1472,7 +1470,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 						SourceModel:  nil,
@@ -1486,7 +1484,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    25,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 						SourceModel:  nil,
@@ -1500,7 +1498,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 						SourceModel:  nil,
@@ -1514,7 +1512,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Secure
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1528,7 +1526,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Secure
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1542,7 +1540,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -1555,7 +1553,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Default Pages`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `web/default/front`,
@@ -1565,7 +1563,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -1579,7 +1577,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -1592,7 +1590,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Session Validation Settings`,
 				Comment:   ``,
 				SortOrder: 60,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `web/session/use_remote_addr`,
@@ -1602,7 +1600,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1616,7 +1614,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1630,7 +1628,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1644,7 +1642,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1658,7 +1656,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1680,7 +1678,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "allowed_resources",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"email_folder":"email"}`,
 					},
 				},
@@ -1694,7 +1692,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "forgot_email_template",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `system_emails_forgot_email_template`,
 					},
 
@@ -1703,7 +1701,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "forgot_email_identity",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `general`,
 					},
 				},
@@ -1717,7 +1715,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "enable_charts",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: true,
 					},
 				},
@@ -1735,7 +1733,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "input_types",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"price":"price","media_image":"media_image","gallery":"gallery"}`,
 					},
 				},
@@ -1746,14 +1744,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "system",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "backup",
 				Label:     `Scheduled Backup Settings`,
 				Comment:   ``,
 				SortOrder: 500,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `system/backup/enabled`,
@@ -1763,7 +1761,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1777,7 +1775,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Backup\Model\Config\Source\Type
@@ -1791,7 +1789,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeTime,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -1805,7 +1803,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Backup\Model\Config\Backend\Cron
 						SourceModel:  nil, // Magento\Cron\Model\Config\Source\Frequency
@@ -1819,7 +1817,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1832,14 +1830,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "admin",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "captcha",
 				Label:     `CAPTCHA`,
 				Comment:   ``,
 				SortOrder: 50,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `admin/captcha/enable`,
@@ -1849,7 +1847,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1863,7 +1861,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `linlibertine`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Captcha\Model\Config\Font
@@ -1877,7 +1875,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeMultiselect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `backend_forgotpassword`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Captcha\Model\Config\Form\Backend
@@ -1891,7 +1889,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `after_fail`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Captcha\Model\Config\Mode
@@ -1905,7 +1903,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      3,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -1919,7 +1917,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    6,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      7,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -1933,7 +1931,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    7,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `4-5`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -1947,7 +1945,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    8,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `ABCDEFGHJKMnpqrstuvwxyz23456789`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -1961,7 +1959,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    9,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -1974,14 +1972,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "customer",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "captcha",
 				Label:     `CAPTCHA`,
 				Comment:   ``,
 				SortOrder: 110,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `customer/captcha/enable`,
@@ -1991,7 +1989,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -2005,7 +2003,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `linlibertine`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Captcha\Model\Config\Font
@@ -2019,7 +2017,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeMultiselect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `user_forgotpassword`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Captcha\Model\Config\Form\Frontend
@@ -2033,7 +2031,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `after_fail`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Captcha\Model\Config\Mode
@@ -2047,7 +2045,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      3,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2061,7 +2059,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    6,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      7,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2075,7 +2073,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    7,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `4-5`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2089,7 +2087,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    8,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `ABCDEFGHJKMnpqrstuvwxyz23456789`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2103,7 +2101,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    9,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -2125,7 +2123,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "allowed_resources",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"captcha_folder":"captcha"}`,
 					},
 				},
@@ -2143,7 +2141,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "type",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `default`,
 					},
 
@@ -2152,7 +2150,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "failed_attempts_ip",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: 1000,
 					},
 
@@ -2161,7 +2159,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "shown_to_logged_in_user",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 
@@ -2170,7 +2168,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "always_for",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"backend_forgotpassword":"1"}`,
 					},
 				},
@@ -2188,7 +2186,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "type",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `default`,
 					},
 
@@ -2197,7 +2195,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "failed_attempts_ip",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: 1000,
 					},
 
@@ -2206,7 +2204,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "shown_to_logged_in_user",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"contact_us":"1"}`,
 					},
 
@@ -2215,7 +2213,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "always_for",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"user_create":"1","user_forgotpassword":"1","guest_checkout":"1","register_during_checkout":"1","contact_us":"1"}`,
 					},
 				},
@@ -2233,7 +2231,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "fonts",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"linlibertine":{"label":"LinLibertine","path":"LinLibertineFont\/LinLibertine_Bd-2.8.1.ttf"}}`,
 					},
 
@@ -2242,7 +2240,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "frontend",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"areas":{"user_create":{"label":"Create user"},"user_login":{"label":"Login"},"user_forgotpassword":{"label":"Forgot password"},"guest_checkout":{"label":"Checkout as Guest"},"register_during_checkout":{"label":"Register during Checkout"},"contact_us":{"label":"Contact Us"}}}`,
 					},
 
@@ -2251,7 +2249,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "backend",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"areas":{"backend_login":{"label":"Admin Login"},"backend_forgotpassword":{"label":"Admin Forgot Password"}}}`,
 					},
 				},
@@ -2265,7 +2263,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "translate",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `label`,
 					},
 				},
@@ -2277,14 +2275,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "catalog",
 		Label:     "Catalog",
 		SortOrder: 40,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "fields_masks",
 				Label:     `Product Fields Auto-Generation`,
 				Comment:   ``,
 				SortOrder: 90,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/fields_masks/sku`,
@@ -2294,7 +2292,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `{{name}}`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2308,7 +2306,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `{{name}}`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2322,7 +2320,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `{{name}}`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2336,7 +2334,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `{{name}} {{description}}`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2349,7 +2347,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Frontend`,
 				Comment:   ``,
 				SortOrder: 100,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/frontend/list_mode`,
@@ -2359,7 +2357,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `grid-list`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Catalog\Model\Config\Source\ListMode
@@ -2373,7 +2371,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `9,15,30`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2387,7 +2385,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      9,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2401,7 +2399,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `5,10,15,20,25`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2415,7 +2413,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      10,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2429,7 +2427,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      false,
 						BackendModel: nil, // Magento\Catalog\Model\Indexer\Category\Flat\System\Config\Mode
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -2443,7 +2441,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Catalog\Model\Indexer\Product\Flat\System\Config\Mode
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -2457,7 +2455,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    6,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `position`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Catalog\Model\Config\Source\ListSort
@@ -2471,7 +2469,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    6,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -2485,7 +2483,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    200,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -2498,7 +2496,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Product Image Placeholders`,
 				Comment:   ``,
 				SortOrder: 300,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/placeholder/placeholder`,
@@ -2508,7 +2506,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeImage,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Image
 						SourceModel:  nil,
@@ -2521,7 +2519,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Search Engine Optimization`,
 				Comment:   ``,
 				SortOrder: 500,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/seo/title_separator`,
@@ -2531,7 +2529,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    6,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `-`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2545,7 +2543,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    7,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -2559,7 +2557,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    8,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -2572,7 +2570,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Price`,
 				Comment:   ``,
 				SortOrder: 400,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/price/scope`,
@@ -2582,7 +2580,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Catalog\Model\Indexer\Product\Price\System\Config\PriceScope
 						SourceModel:  nil, // Magento\Catalog\Model\Config\Source\Price\Scope
@@ -2595,7 +2593,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Category Top Navigation`,
 				Comment:   ``,
 				SortOrder: 500,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/navigation/max_depth`,
@@ -2605,7 +2603,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2618,7 +2616,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Date & Time Custom Options`,
 				Comment:   ``,
 				SortOrder: 700,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/custom_options/use_calendar`,
@@ -2628,7 +2626,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -2642,7 +2640,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `m,d,y`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2656,7 +2654,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `12h`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Catalog\Model\Config\Source\TimeFormat
@@ -2670,7 +2668,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2683,14 +2681,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "design",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "watermark",
 				Label:     `Product Image Watermarks`,
 				Comment:   ``,
 				SortOrder: 400,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `design/watermark/size`,
@@ -2700,7 +2698,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2714,7 +2712,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    150,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -2728,7 +2726,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeImage,
 						SortOrder:    200,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Image
 						SourceModel:  nil,
@@ -2742,7 +2740,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    300,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Catalog\Model\Config\Source\Watermark\Position
@@ -2755,14 +2753,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "cms",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "wysiwyg",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     scope.NewPerm(),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `cms/wysiwyg/use_static_urls_in_catalog`,
@@ -2772,7 +2770,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -2785,14 +2783,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "rss",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "catalog",
 				Label:     `Catalog`,
 				Comment:   ``,
 				SortOrder: 3,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `rss/catalog/new`,
@@ -2802,7 +2800,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
@@ -2816,7 +2814,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    11,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
@@ -2830,7 +2828,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    14,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
@@ -2852,7 +2850,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "flat",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"max_index_count":"64"}`,
 					},
 
@@ -2861,7 +2859,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "default_tax_group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: 2,
 					},
 				},
@@ -2875,7 +2873,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "product_url_suffix",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `.html`,
 					},
 
@@ -2884,7 +2882,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "category_url_suffix",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `.html`,
 					},
 
@@ -2893,7 +2891,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "product_use_categories",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 
@@ -2902,7 +2900,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "save_rewrites_history",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: true,
 					},
 				},
@@ -2916,7 +2914,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "forbidden_extensions",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `php,exe`,
 					},
 				},
@@ -2934,7 +2932,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "allowed_resources",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"catalog_images_folder":"catalog","product_custom_options_fodler":"custom_options"}`,
 					},
 				},
@@ -2946,14 +2944,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "cataloginventory",
 		Label:     "Inventory",
 		SortOrder: 50,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "options",
 				Label:     `Stock Options`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `cataloginventory/options/can_subtract`,
@@ -2963,7 +2961,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -2977,7 +2975,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -2991,7 +2989,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      false,
 						BackendModel: nil, // Magento\CatalogInventory\Model\Config\Backend\ShowOutOfStock
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3005,7 +3003,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -3019,7 +3017,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3032,7 +3030,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Product Stock Options`,
 				Comment:   `Please note that these settings apply to individual items in the cart, not to the entire cart.`,
 				SortOrder: 10,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `cataloginventory/item_options/manage_stock`,
@@ -3042,7 +3040,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      true,
 						BackendModel: nil, // Magento\CatalogInventory\Model\Config\Backend\Managestock
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3056,7 +3054,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      false,
 						BackendModel: nil, // Magento\CatalogInventory\Model\Config\Backend\Backorders
 						SourceModel:  nil, // Magento\CatalogInventory\Model\Source\Backorders
@@ -3070,7 +3068,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      10000,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -3084,7 +3082,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      0,
 						BackendModel: nil, // Magento\CatalogInventory\Model\System\Config\Backend\Minqty
 						SourceModel:  nil,
@@ -3098,7 +3096,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    6,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      1,
 						BackendModel: nil, // Magento\CatalogInventory\Model\System\Config\Backend\Minsaleqty
 						SourceModel:  nil,
@@ -3112,7 +3110,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    7,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      1,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -3126,7 +3124,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3140,7 +3138,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    8,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3154,7 +3152,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    9,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      1,
 						BackendModel: nil, // Magento\CatalogInventory\Model\System\Config\Backend\Qtyincrements
 						SourceModel:  nil,
@@ -3168,14 +3166,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "catalog",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "seo",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     scope.NewPerm(),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/seo/search_terms`,
@@ -3185,7 +3183,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
@@ -3198,7 +3196,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Catalog Search`,
 				Comment:   ``,
 				SortOrder: 500,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/search/engine`,
@@ -3208,7 +3206,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(),
+						Scope:        scope.NewPerm(),
 						Default:      `mysql`,
 						BackendModel: nil, // Magento\CatalogSearch\Model\Adminhtml\System\Config\Backend\Engine
 						SourceModel:  nil,
@@ -3222,7 +3220,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      1,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -3236,7 +3234,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      128,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -3250,7 +3248,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    25,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -3264,14 +3262,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "catalog",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "seo",
 				Label:     `Search Engine Optimization`,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     scope.NewPerm(),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/seo/category_url_suffix`,
@@ -3281,7 +3279,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
 						SourceModel:  nil,
@@ -3295,7 +3293,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
 						SourceModel:  nil,
@@ -3309,7 +3307,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3323,7 +3321,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3337,14 +3335,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "payment_services",
 		Label:     "Payment Services",
 		SortOrder: 450,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "centinel",
 				Label:     `3D Secure Credit Card Validation`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `payment_services/centinel/processor_id`,
@@ -3354,7 +3352,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -3368,7 +3366,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -3382,7 +3380,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeObscure,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Encrypted
 						SourceModel:  nil,
@@ -3396,7 +3394,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3410,7 +3408,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3424,14 +3422,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "checkout",
 		Label:     "Checkout",
 		SortOrder: 305,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "options",
 				Label:     `Checkout Options`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `checkout/options/onepage_checkout_enabled`,
@@ -3441,7 +3439,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3455,7 +3453,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3469,7 +3467,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    15,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3482,7 +3480,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Shopping Cart`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `checkout/cart/delete_quote_after`,
@@ -3492,7 +3490,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      30,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -3506,7 +3504,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3519,7 +3517,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `My Cart Link`,
 				Comment:   ``,
 				SortOrder: 3,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `checkout/cart_link/use_qty`,
@@ -3529,7 +3527,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Checkout\Model\Config\Source\Cart\Summary
@@ -3542,7 +3540,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Shopping Cart Sidebar`,
 				Comment:   ``,
 				SortOrder: 4,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `checkout/sidebar/display`,
@@ -3552,7 +3550,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3566,7 +3564,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      5,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -3579,7 +3577,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Payment Failed Emails`,
 				Comment:   ``,
 				SortOrder: 100,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `checkout/payment_failed/identity`,
@@ -3589,7 +3587,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `general`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -3603,7 +3601,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `general`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -3617,7 +3615,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `checkout_payment_failed_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -3631,7 +3629,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -3645,7 +3643,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Method
@@ -3659,14 +3657,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "checkout",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "options",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     scope.NewPerm(),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `checkout/options/enable_agreements`,
@@ -3676,7 +3674,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3690,14 +3688,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "web",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "default",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     scope.NewPerm(),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `web/default/cms_home_page`,
@@ -3707,7 +3705,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `home`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Cms\Model\Config\Source\Page
@@ -3721,7 +3719,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `no-route`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Cms\Model\Config\Source\Page
@@ -3735,7 +3733,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `enable-cookies`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Cms\Model\Config\Source\Page
@@ -3749,7 +3747,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3762,7 +3760,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Browser Capabilities Detection`,
 				Comment:   ``,
 				SortOrder: 200,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `web/browser_capabilities/cookies`,
@@ -3772,7 +3770,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3786,7 +3784,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    200,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3800,7 +3798,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    300,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3813,14 +3811,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "cms",
 		Label:     "Content Management",
 		SortOrder: 1001,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "wysiwyg",
 				Label:     `WYSIWYG Options`,
 				Comment:   ``,
 				SortOrder: 100,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `cms/wysiwyg/enabled`,
@@ -3830,7 +3828,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `enabled`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Cms\Model\Config\Source\Wysiwyg\Enabled
@@ -3852,7 +3850,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "front",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `cms`,
 					},
 
@@ -3861,7 +3859,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "no_route",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `cms/noroute/index`,
 					},
 				},
@@ -3879,7 +3877,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "allowed_resources",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"wysiwyg_image_folder":"wysiwyg"}`,
 					},
 				},
@@ -3891,14 +3889,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "checkout",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "cart",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     scope.NewPerm(),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `checkout/cart/configurable_product_image`,
@@ -3908,7 +3906,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `parent`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Catalog\Model\Config\Source\Product\Thumbnail
@@ -3922,14 +3920,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "contact",
 		Label:     "Contacts",
 		SortOrder: 100,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "contact",
 				Label:     `Contact Us`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `contact/contact/enabled`,
@@ -3939,7 +3937,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Contact\Model\System\Config\Backend\Links
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -3952,7 +3950,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Email Options`,
 				Comment:   ``,
 				SortOrder: 50,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `contact/email/recipient_email`,
@@ -3962,7 +3960,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `hello@example.com`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -3976,7 +3974,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `custom2`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -3990,7 +3988,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `contact_email_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -4004,14 +4002,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "web",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "cookie",
 				Label:     `Default Cookie Settings`,
 				Comment:   ``,
 				SortOrder: 50,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `web/cookie/cookie_lifetime`,
@@ -4021,7 +4019,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      3600,
 						BackendModel: nil, // Magento\Cookie\Model\Config\Backend\Lifetime
 						SourceModel:  nil,
@@ -4035,7 +4033,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Cookie\Model\Config\Backend\Path
 						SourceModel:  nil,
@@ -4049,7 +4047,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Cookie\Model\Config\Backend\Domain
 						SourceModel:  nil,
@@ -4063,7 +4061,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -4077,7 +4075,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil, // Magento\Cookie\Model\Config\Backend\Cookie
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -4099,7 +4097,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						ID:      "cookie_restriction_lifetime",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: 31536000,
 					},
 				},
@@ -4111,14 +4109,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "system",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "cron",
 				Label:     `Cron (Scheduled Tasks) - all the times are in minutes`,
 				Comment:   `For correct URLs generated during cron runs please make sure that Web > Secure and Unsecure Base URLs are explicitly set.`,
 				SortOrder: 15,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields:    config.FieldSlice{},
 			},
 		},
@@ -4128,14 +4126,14 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 		ID:        "customer",
 		Label:     "Customer Configuration",
 		SortOrder: 130,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "account_share",
 				Label:     `Account Sharing Options`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `customer/account_share/scope`,
@@ -4145,7 +4143,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      true,
 						BackendModel: nil, // Magento\Customer\Model\Config\Share
 						SourceModel:  nil, // Magento\Customer\Model\Config\Share
@@ -4158,7 +4156,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Create New Account Options`,
 				Comment:   ``,
 				SortOrder: 20,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `customer/create_account/auto_group_assign`,
@@ -4168,7 +4166,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -4182,7 +4180,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `billing`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Customer\Model\Config\Source\Address\Type
@@ -4196,7 +4194,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Customer\Model\Config\Source\Group
@@ -4210,7 +4208,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Customer\Model\Config\Source\Group
@@ -4224,7 +4222,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Customer\Model\Config\Source\Group
@@ -4238,7 +4236,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Customer\Model\Config\Source\Group
@@ -4252,7 +4250,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    55,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Customer\Model\Config\Source\Group
@@ -4266,7 +4264,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    56,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -4280,7 +4278,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    57,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\CreateAccount\DisableAutoGroupAssignDefault
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -4294,7 +4292,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    58,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -4308,7 +4306,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `example.com`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -4322,7 +4320,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `customer_create_account_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -4336,7 +4334,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `general`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -4350,7 +4348,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    90,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -4364,7 +4362,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `customer_create_account_email_confirmation_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -4378,7 +4376,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    110,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `customer_create_account_email_confirmed_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -4392,7 +4390,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    120,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -4405,7 +4403,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Password Options`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `customer/password/forgot_email_template`,
@@ -4415,7 +4413,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `customer_password_forgot_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -4429,7 +4427,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `customer_password_remind_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -4443,7 +4441,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `customer_password_reset_password_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -4457,7 +4455,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `support`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -4471,7 +4469,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      1,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\Password\Link\Expirationperiod
 						SourceModel:  nil,
@@ -4484,7 +4482,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Name and Address Options`,
 				Comment:   ``,
 				SortOrder: 40,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `customer/address/street_lines`,
@@ -4494,7 +4492,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      2,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\Address\Street
 						SourceModel:  nil,
@@ -4508,7 +4506,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\Show\Address
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Nooptreq
@@ -4522,7 +4520,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -4536,7 +4534,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\Show\Address
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -4550,7 +4548,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\Show\Address
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Nooptreq
@@ -4564,7 +4562,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeText,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -4578,7 +4576,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\Show\Customer
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Nooptreq
@@ -4592,7 +4590,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\Show\Customer
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Nooptreq
@@ -4606,7 +4604,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    90,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Customer\Model\Config\Backend\Show\Customer
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Nooptreq
@@ -4619,7 +4617,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Login Options`,
 				Comment:   ``,
 				SortOrder: 90,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `customer/startup/redirect_dashboard`,
@@ -4629,7 +4627,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -4642,7 +4640,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 				Label:     `Address Templates`,
 				Comment:   ``,
 				SortOrder: 100,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `customer/address_templates/text`,
@@ -4652,7 +4650,7 @@ var packageAllConfiguration = config.NewConfigurationMerge(
 						Type:      config.TypeTextarea,
 						SortOrder: 1,
 						Visible:   config.VisibleYes,
-						Scope:     config.ScopePermAll,
+						Scope:     scope.PermAll,
 						Default: `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}
 {{depend company}}{{var company}}{{/depend}}
 {{if street1}}{{var street1}}
@@ -4677,7 +4675,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}, {{var street}}, {{var city}}, {{var region}} {{var postcode}}, {{var country}}`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -4691,7 +4689,7 @@ T: {{var telephone}}
 						Type:      config.TypeTextarea,
 						SortOrder: 3,
 						Visible:   config.VisibleYes,
-						Scope:     config.ScopePermAll,
+						Scope:     scope.PermAll,
 						Default: `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}{{depend firstname}}<br/>{{/depend}}
 {{depend company}}{{var company}}<br />{{/depend}}
 {{if street1}}{{var street1}}<br />{{/if}}
@@ -4715,7 +4713,7 @@ T: {{var telephone}}
 						Type:      config.TypeTextarea,
 						SortOrder: 4,
 						Visible:   config.VisibleYes,
-						Scope:     config.ScopePermAll,
+						Scope:     scope.PermAll,
 						Default: `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}|
 {{depend company}}{{var company}}|{{/depend}}
 {{if street1}}{{var street1}}
@@ -4740,14 +4738,14 @@ T: {{var telephone}}
 		ID:        "general",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "store_information",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     scope.NewPerm(),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `general/store_information/validate_vat_number`,
@@ -4757,7 +4755,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    62,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -4779,7 +4777,7 @@ T: {{var telephone}}
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: true,
 					},
 				},
@@ -4793,7 +4791,7 @@ T: {{var telephone}}
 						ID:      "prefix_show",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 
@@ -4802,7 +4800,7 @@ T: {{var telephone}}
 						ID:      "prefix_options",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 
@@ -4811,7 +4809,7 @@ T: {{var telephone}}
 						ID:      "middlename_show",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 
@@ -4820,7 +4818,7 @@ T: {{var telephone}}
 						ID:      "suffix_show",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 
@@ -4829,7 +4827,7 @@ T: {{var telephone}}
 						ID:      "suffix_options",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 
@@ -4838,7 +4836,7 @@ T: {{var telephone}}
 						ID:      "dob_show",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 
@@ -4847,7 +4845,7 @@ T: {{var telephone}}
 						ID:      "gender_show",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 				},
@@ -4859,14 +4857,14 @@ T: {{var telephone}}
 		ID:        "dev",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "front_end_development_workflow",
 				Label:     `Front-end development workflow`,
 				Comment:   ``,
 				SortOrder: 8,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/front_end_development_workflow/type`,
@@ -4876,7 +4874,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `server_side_compilation`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Developer\Model\Config\Source\WorkflowType
@@ -4889,7 +4887,7 @@ T: {{var telephone}}
 				Label:     `Developer Client Restrictions`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/restrict/allow_ips`,
@@ -4899,7 +4897,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Developer\Model\Config\Backend\AllowedIps
 						SourceModel:  nil,
@@ -4921,7 +4919,7 @@ T: {{var telephone}}
 						ID:      "allow_ips",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 				},
@@ -4933,14 +4931,14 @@ T: {{var telephone}}
 		ID:        "carriers",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "dhl",
 				Label:     `DHL`,
 				Comment:   ``,
 				SortOrder: 140,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `carriers/dhl/active`,
@@ -4950,7 +4948,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -4964,7 +4962,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `https://xmlpi-ea.dhl.com/XMLShippingServlet`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -4978,7 +4976,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `DHL`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -4992,7 +4990,7 @@ T: {{var telephone}}
 						Type:         config.TypeObscure,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Encrypted // @to do Magento\Config\Model\Config\Backend\Encrypted
 						SourceModel:  nil,
@@ -5006,7 +5004,7 @@ T: {{var telephone}}
 						Type:         config.TypeObscure,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Encrypted // @to do Magento\Config\Model\Config\Backend\Encrypted
 						SourceModel:  nil,
@@ -5020,7 +5018,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5034,7 +5032,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    90,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `N`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Dhl\Model\Source\Contenttype
@@ -5048,7 +5046,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `F`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingType
@@ -5062,7 +5060,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    110,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `O`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingAction
@@ -5076,7 +5074,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    120,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5090,7 +5088,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    130,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -5104,7 +5102,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    140,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `K`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Dhl\Model\Source\Method\Unitofmeasure
@@ -5118,7 +5116,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    150,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `R`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Dhl\Model\Source\Method\Size
@@ -5132,7 +5130,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    151,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5146,7 +5144,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    152,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5160,7 +5158,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    153,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5174,7 +5172,7 @@ T: {{var telephone}}
 						Type:         config.TypeMultiselect,
 						SortOrder:    170,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `2,5,6,7,9,B,C,D,U,K,L,G,W,I,N,O,R,S,T,X`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Dhl\Model\Source\Method\Doc
@@ -5188,7 +5186,7 @@ T: {{var telephone}}
 						Type:         config.TypeMultiselect,
 						SortOrder:    170,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `1,3,4,8,P,Q,E,F,H,J,M,V,Y`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Dhl\Model\Source\Method\Nondoc
@@ -5202,7 +5200,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    180,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5216,7 +5214,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    800,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5230,7 +5228,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1200,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Dhl\Model\Source\Method\Freedoc
@@ -5244,7 +5242,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1200,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Dhl\Model\Source\Method\Freenondoc
@@ -5258,7 +5256,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1210,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
@@ -5272,7 +5270,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    1220,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5286,7 +5284,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1900,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
@@ -5300,7 +5298,7 @@ T: {{var telephone}}
 						Type:         config.TypeMultiselect,
 						SortOrder:    1910,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -5314,7 +5312,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1940,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -5328,7 +5326,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    2000,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5342,7 +5340,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1950,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -5364,7 +5362,7 @@ T: {{var telephone}}
 						ID:      "allowed_resources",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"dhl_folder":"dhl"}`,
 					},
 				},
@@ -5382,7 +5380,7 @@ T: {{var telephone}}
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `Magento\Dhl\Model\Carrier`,
 					},
 
@@ -5391,7 +5389,7 @@ T: {{var telephone}}
 						ID:      "account",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 
@@ -5400,7 +5398,7 @@ T: {{var telephone}}
 						ID:      "free_method",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `G`,
 					},
 
@@ -5409,7 +5407,7 @@ T: {{var telephone}}
 						ID:      "shipment_days",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `Mon,Tue,Wed,Thu,Fri`,
 					},
 
@@ -5418,7 +5416,7 @@ T: {{var telephone}}
 						ID:      "active_rma",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 
@@ -5427,7 +5425,7 @@ T: {{var telephone}}
 						ID:      "is_online",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: true,
 					},
 				},
@@ -5439,14 +5437,14 @@ T: {{var telephone}}
 		ID:        "catalog",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "downloadable",
 				Label:     `Downloadable Product Options`,
 				Comment:   ``,
 				SortOrder: 600,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/downloadable/order_item_status`,
@@ -5456,7 +5454,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      9,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Downloadable\Model\System\Config\Source\Orderitemstatus
@@ -5470,7 +5468,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    200,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5484,7 +5482,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    300,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -5498,7 +5496,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    400,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Samples`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5512,7 +5510,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    500,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Links`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5526,7 +5524,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    600,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -5540,7 +5538,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    700,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `inline`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Downloadable\Model\System\Config\Source\Contentdisposition
@@ -5554,7 +5552,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    800,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -5568,14 +5566,14 @@ T: {{var telephone}}
 		ID:        "carriers",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "fedex",
 				Label:     `FedEx`,
 				Comment:   ``,
 				SortOrder: 120,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `carriers/fedex/active`,
@@ -5585,7 +5583,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -5599,7 +5597,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Federal Express`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5613,7 +5611,7 @@ T: {{var telephone}}
 						Type:         config.TypeObscure,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Encrypted // @to do Magento\Config\Model\Config\Backend\Encrypted
 						SourceModel:  nil,
@@ -5627,7 +5625,7 @@ T: {{var telephone}}
 						Type:         config.TypeObscure,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Encrypted // @to do Magento\Config\Model\Config\Backend\Encrypted
 						SourceModel:  nil,
@@ -5641,7 +5639,7 @@ T: {{var telephone}}
 						Type:         config.TypeObscure,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Encrypted // @to do Magento\Config\Model\Config\Backend\Encrypted
 						SourceModel:  nil,
@@ -5655,7 +5653,7 @@ T: {{var telephone}}
 						Type:         config.TypeObscure,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Encrypted // @to do Magento\Config\Model\Config\Backend\Encrypted
 						SourceModel:  nil,
@@ -5669,7 +5667,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -5683,7 +5681,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    90,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `https://ws.fedex.com:443/web-services/`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5697,7 +5695,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `https://wsbeta.fedex.com:443/web-services/`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5711,7 +5709,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    110,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Online\Requesttype
@@ -5725,7 +5723,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    120,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `YOUR_PACKAGING`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Fedex\Model\Source\Packaging
@@ -5739,7 +5737,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    130,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `REGULAR_PICKUP`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Fedex\Model\Source\Dropoff
@@ -5753,7 +5751,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    135,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `LB`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Fedex\Model\Source\Unitofmeasure
@@ -5767,7 +5765,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    140,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      150,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5781,7 +5779,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    150,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `F`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingType
@@ -5795,7 +5793,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    160,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `O`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingAction
@@ -5809,7 +5807,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    170,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5823,7 +5821,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    180,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -5837,7 +5835,7 @@ T: {{var telephone}}
 						Type:         config.TypeMultiselect,
 						SortOrder:    190,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `EUROPE_FIRST_INTERNATIONAL_PRIORITY,FEDEX_1_DAY_FREIGHT,FEDEX_2_DAY_FREIGHT,FEDEX_2_DAY,FEDEX_2_DAY_AM,FEDEX_3_DAY_FREIGHT,FEDEX_EXPRESS_SAVER,FEDEX_GROUND,FIRST_OVERNIGHT,GROUND_HOME_DELIVERY,INTERNATIONAL_ECONOMY,INTERNATIONAL_ECONOMY_FREIGHT,INTERNATIONAL_FIRST,INTERNATIONAL_GROUND,INTERNATIONAL_PRIORITY,INTERNATIONAL_PRIORITY_FREIGHT,PRIORITY_OVERNIGHT,SMART_POST,STANDARD_OVERNIGHT,FEDEX_FREIGHT,FEDEX_NATIONAL_FREIGHT`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Fedex\Model\Source\Method
@@ -5851,7 +5849,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    200,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5865,7 +5863,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    210,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `FEDEX_GROUND`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Fedex\Model\Source\Freemethod
@@ -5879,7 +5877,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    220,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
@@ -5893,7 +5891,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    230,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5907,7 +5905,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    240,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5921,7 +5919,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    250,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
@@ -5935,7 +5933,7 @@ T: {{var telephone}}
 						Type:         config.TypeMultiselect,
 						SortOrder:    260,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -5949,7 +5947,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    270,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -5963,7 +5961,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    280,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -5977,7 +5975,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    290,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -5999,7 +5997,7 @@ T: {{var telephone}}
 						ID:      "cutoff_cost",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 
@@ -6008,7 +6006,7 @@ T: {{var telephone}}
 						ID:      "handling",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 
@@ -6017,7 +6015,7 @@ T: {{var telephone}}
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `Magento\Fedex\Model\Carrier`,
 					},
 
@@ -6026,7 +6024,7 @@ T: {{var telephone}}
 						ID:      "active_rma",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 
@@ -6035,7 +6033,7 @@ T: {{var telephone}}
 						ID:      "is_online",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: true,
 					},
 				},
@@ -6047,14 +6045,14 @@ T: {{var telephone}}
 		ID:        "sales",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "gift_options",
 				Label:     `Gift Options`,
 				Comment:   ``,
 				SortOrder: 100,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales/gift_options/allow_order`,
@@ -6064,7 +6062,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -6078,7 +6076,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -6100,7 +6098,7 @@ T: {{var telephone}}
 						ID:      "allow_items",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 
@@ -6109,7 +6107,7 @@ T: {{var telephone}}
 						ID:      "allow_order",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 				},
@@ -6121,14 +6119,14 @@ T: {{var telephone}}
 		ID:        "google",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "adwords",
 				Label:     `Google AdWords`,
 				Comment:   ``,
 				SortOrder: 15,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `google/adwords/active`,
@@ -6138,7 +6136,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -6152,7 +6150,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    11,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\GoogleAdwords\Model\Config\Backend\ConversionId
 						SourceModel:  nil,
@@ -6166,7 +6164,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    12,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `en`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\GoogleAdwords\Model\Config\Source\Language
@@ -6180,7 +6178,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    13,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      2,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6194,7 +6192,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    14,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `FFFFFF`,
 						BackendModel: nil, // Magento\GoogleAdwords\Model\Config\Backend\Color
 						SourceModel:  nil,
@@ -6208,7 +6206,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    15,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6222,7 +6220,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    16,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\GoogleAdwords\Model\Config\Source\ValueType
@@ -6236,7 +6234,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    17,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6258,7 +6256,7 @@ T: {{var telephone}}
 						ID:      "languages",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"ar":"ar","bg":"bg","ca":"ca","cs":"cs","da":"da","de":"de","el":"el","en":"en","es":"es","et":"et","fi":"fi","fr":"fr","hi":"hi","hr":"hr","hu":"hu","id":"id","is":"is","it":"it","iw":"iw","ja":"ja","ko":"ko","lt":"lt","lv":"lv","nl":"nl","no":"no","pl":"pl","pt":"pt","ro":"ro","ru":"ru","sk":"sk","sl":"sl","sr":"sr","sv":"sv","th":"th","tl":"tl","tr":"tr","uk":"uk","ur":"ur","vi":"vi","zh_TW":"zh_TW","zh_CN":"zh_CN"}`,
 					},
 
@@ -6267,7 +6265,7 @@ T: {{var telephone}}
 						ID:      "language_convert",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"zh_CN":"zh_Hans","zh_TW":"zh_Hant","iw":"he"}`,
 					},
 
@@ -6276,7 +6274,7 @@ T: {{var telephone}}
 						ID:      "conversion_js_src",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `https://www.googleadservices.com/pagead/conversion.js`,
 					},
 
@@ -6285,7 +6283,7 @@ T: {{var telephone}}
 						ID:      "conversion_img_src",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `https://www.googleadservices.com/pagead/conversion/%s/?label=%s&guid=ON&script=0`,
 					},
 				},
@@ -6297,14 +6295,14 @@ T: {{var telephone}}
 		ID:        "google",
 		Label:     "Google API",
 		SortOrder: 340,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "analytics",
 				Label:     `Google Analytics`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `google/analytics/active`,
@@ -6314,7 +6312,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -6328,7 +6326,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6342,14 +6340,14 @@ T: {{var telephone}}
 		ID:        "google",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "analytics",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     scope.NewPerm(),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `google/analytics/experiments`,
@@ -6359,7 +6357,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -6381,7 +6379,7 @@ T: {{var telephone}}
 						ID:      "active",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 				},
@@ -6393,14 +6391,14 @@ T: {{var telephone}}
 		ID:        "google",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "googleshopping",
 				Label:     `Google Shopping`,
 				Comment:   ``,
 				SortOrder: 20,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `google/googleshopping/account_id`,
@@ -6410,7 +6408,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6424,7 +6422,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6438,7 +6436,7 @@ T: {{var telephone}}
 						Type:         config.TypeObscure,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Encrypted // @to do Magento\Config\Model\Config\Backend\Encrypted
 						SourceModel:  nil,
@@ -6452,7 +6450,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `HOSTED_OR_GOOGLE`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\GoogleShopping\Model\Source\Accounttype
@@ -6466,7 +6464,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    90,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `US`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\GoogleShopping\Model\Source\Country
@@ -6480,7 +6478,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -6494,7 +6492,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    110,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6508,7 +6506,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    140,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -6522,7 +6520,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    150,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `{"product_search":"ProductSearch","product_ads":"ProductAds","commerce_search":"CommerceSearch"}`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6536,7 +6534,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    151,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\GoogleShopping\Model\Source\Destinationstates
@@ -6550,7 +6548,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    152,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\GoogleShopping\Model\Source\Destinationstates
@@ -6564,7 +6562,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    153,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\GoogleShopping\Model\Source\Destinationstates
@@ -6586,7 +6584,7 @@ T: {{var telephone}}
 						ID:      "allowed_countries",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"AU":{"_value":{"name":"Australia","language":"en","currency":"AUD","currency_name":"Australian Dollar"},"_attribute":{"translate":"name currency_name"}},"BR":{"_value":{"name":"Brazil","language":"pt","locale":"pt_BR","currency":"BRL","currency_name":"Brazilian Real"},"_attribute":{"translate":"name currency_name"}},"CN":{"_value":{"name":"China","language":"zh_CN","currency":"CNY","currency_name":"Chinese Yuan Renminbi"},"_attribute":{"translate":"name currency_name"}},"FR":{"_value":{"name":"France","language":"fr","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"DE":{"_value":{"name":"Germany","language":"de","locale":"de_DE","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"IT":{"_value":{"name":"Italy","language":"it","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"JP":{"_value":{"name":"Japan","language":"ja","currency":"JPY","currency_name":"Japanese Yen"},"_attribute":{"translate":"name currency_name"}},"NL":{"_value":{"name":"Netherlands","language":"nl","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"ES":{"_value":{"name":"Spain","language":"es","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"CH":{"_value":{"name":"Switzerland","language":"de","locale":"de_CH","currency":"CHF","currency_name":"Swiss Franc"},"_attribute":{"translate":"name currency_name"}},"GB":{"_value":{"name":"United Kingdom","language":"en","locale":"en_GB","currency":"GBP","currency_name":"British Pound Sterling"},"_attribute":{"translate":"name currency_name"}},"US":{"_value":{"name":"United States","language":"en","locale":"en_US","currency":"USD","currency_name":"US Dollar"},"_attribute":{"translate":"name currency_name"}}}`,
 					},
 
@@ -6595,7 +6593,7 @@ T: {{var telephone}}
 						ID:      "attributes",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"Item":{"title":{"_value":{"name":"Title","required":"1"},"_attribute":{"translate":"name"}},"content":{"_value":{"name":"Description","required":"1"},"_attribute":{"translate":"name"}},"expiration_date":{"_value":{"name":"Expiration date","required":"0"},"_attribute":{"translate":"name"}},"adult":{"_value":{"name":"Adult","required":"0"},"_attribute":{"translate":"name"}}},"ProductSearch":{"condition":{"_value":{"name":"Condition","required":"1"},"_attribute":{"translate":"name"}},"price":{"_value":{"name":"Price","required":"1"},"_attribute":{"translate":"name"}},"sale_price":{"_value":{"name":"Sale Price","required":"0","country":"US"},"_attribute":{"translate":"name"}},"sale_price_effective_date_from":{"_value":{"name":"Sale Price Effective From Date","required":"0","country":"US"},"_attribute":{"translate":"name"}},"sale_price_effective_date_to":{"_value":{"name":"Sale Price Effective To Date","required":"0","country":"US"},"_attribute":{"translate":"name"}},"age_group":{"_value":{"name":"Age Group","required":"1"},"_attribute":{"translate":"name"}},"brand":{"_value":{"name":"Brand","required":"1"},"_attribute":{"translate":"name"}},"color":{"_value":{"name":"Color","required":"1"},"_attribute":{"translate":"name"}},"gender":{"_value":{"name":"Gender","required":"1"},"_attribute":{"translate":"name"}},"mpn":{"_value":{"name":"Manufacturer\\'s Part Number (MPN)","required":"1"},"_attribute":{"translate":"name"}},"online_only":{"_value":{"name":"Online Only","required":"0"},"_attribute":{"translate":"name"}},"gtin":{"_value":{"name":"GTIN","required":"1"},"_attribute":{"translate":"name"}},"product_type":{"_value":{"name":"Product Type (Category)","required":"0"},"_attribute":{"translate":"name"}},"product_review_average":{"_value":{"name":"Product Review Average","required":"0"},"_attribute":{"translate":"name"}},"product_review_count":{"_value":{"name":"Product Review Count","required":"0"},"_attribute":{"translate":"name"}},"shipping_weight":{"_value":{"name":"Shipping Weight","required":"0"},"_attribute":{"translate":"name"}},"size":{"_value":{"name":"Size","required":"1"},"_attribute":{"translate":"name"}},"material":{"_value":{"name":"Material","required":"1"},"_attribute":{"translate":"name"}},"pattern":{"_value":{"name":"Pattern\/Graphic","required":"1"},"_attribute":{"translate":"name"}}},"ProductAds":{"adwords_grouping":{"_value":{"name":"Grouping","required":"0"},"_attribute":{"translate":"name"}},"adwords_labels":{"_value":{"name":"Labels","required":"0"},"_attribute":{"translate":"name"}},"adwords_redirect":{"_value":{"name":"Redirect","required":"0"},"_attribute":{"translate":"name"}},"adwords_queryparam":{"_value":{"name":"Query Param","required":"0"},"_attribute":{"translate":"name"}}}}`,
 					},
 
@@ -6604,7 +6602,7 @@ T: {{var telephone}}
 						ID:      "attribute_groups",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"price":{"sale_price":null,"tax":null,"sale_price_effective_date":null,"sale_price_effective_date_from":null,"sale_price_effective_date_to":null},"shipping_weight":{"weight":null},"title":{"name":null},"content":{"description":null}}`,
 					},
 
@@ -6613,7 +6611,7 @@ T: {{var telephone}}
 						ID:      "base_attributes",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"id":null,"title":null,"link":null,"content":null,"price":null,"image_link":null,"condition":null,"target_country":null,"content_language":null,"destinations":null,"availability":null,"google_product_category":null,"product_type":null}`,
 					},
 				},
@@ -6625,14 +6623,14 @@ T: {{var telephone}}
 		ID:        "checkout",
 		Label:     "",
 		SortOrder: 305,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "cart",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `checkout/cart/grouped_product_image`,
@@ -6642,7 +6640,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `itself`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Catalog\Model\Config\Source\Product\Thumbnail
@@ -6656,14 +6654,14 @@ T: {{var telephone}}
 		ID:        "oauth",
 		Label:     "OAuth",
 		SortOrder: 300,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "cleanup",
 				Label:     `Cleanup Settings`,
 				Comment:   ``,
 				SortOrder: 300,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `oauth/cleanup/cleanup_probability`,
@@ -6673,7 +6671,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      100,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6687,7 +6685,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      120,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6700,7 +6698,7 @@ T: {{var telephone}}
 				Label:     `Consumer Settings`,
 				Comment:   ``,
 				SortOrder: 400,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `oauth/consumer/expiration_period`,
@@ -6710,7 +6708,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      300,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6724,7 +6722,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6738,7 +6736,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      5,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6752,14 +6750,14 @@ T: {{var telephone}}
 		ID:        "catalog",
 		Label:     "",
 		SortOrder: 40,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "layered_navigation",
 				Label:     `Layered Navigation`,
 				Comment:   ``,
 				SortOrder: 490,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/layered_navigation/display_product_count`,
@@ -6769,7 +6767,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -6783,7 +6781,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `auto`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Catalog\Model\Config\Source\Price\Step
@@ -6797,7 +6795,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    15,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      100,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6811,7 +6809,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      10,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6825,7 +6823,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    15,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -6839,7 +6837,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      9,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6853,14 +6851,14 @@ T: {{var telephone}}
 		ID:        "customer",
 		Label:     "",
 		SortOrder: 130,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "online_customers",
 				Label:     `Online Customers Options`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `customer/online_customers/online_minutes_interval`,
@@ -6870,7 +6868,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6883,14 +6881,14 @@ T: {{var telephone}}
 		ID:        "system",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "log",
 				Label:     `Log Cleaning`,
 				Comment:   ``,
 				SortOrder: 200,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `system/log/clean_after_day`,
@@ -6900,7 +6898,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      180,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6914,7 +6912,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -6928,7 +6926,7 @@ T: {{var telephone}}
 						Type:         config.TypeTime,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6942,7 +6940,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `D`,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Log\Cron
 						SourceModel:  nil, // Magento\Cron\Model\Config\Source\Frequency
@@ -6956,7 +6954,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -6970,7 +6968,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    6,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `general`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -6984,7 +6982,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    7,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `system_log_error_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -7006,7 +7004,7 @@ T: {{var telephone}}
 						ID:      "online_update_frequency",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: 60,
 					},
 				},
@@ -7024,7 +7022,7 @@ T: {{var telephone}}
 						ID:      "time",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 
@@ -7033,7 +7031,7 @@ T: {{var telephone}}
 						ID:      "error_email",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 				},
@@ -7045,14 +7043,14 @@ T: {{var telephone}}
 		ID:        "system",
 		Label:     "",
 		SortOrder: 900,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "media_storage_configuration",
 				Label:     `Storage Configuration for Media`,
 				Comment:   ``,
 				SortOrder: 900,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `system/media_storage_configuration/media_storage`,
@@ -7062,7 +7060,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\MediaStorage\Model\Config\Source\Storage\Media\Storage
@@ -7076,7 +7074,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    200,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\MediaStorage\Model\Config\Backend\Storage\Media\Database
 						SourceModel:  nil, // Magento\MediaStorage\Model\Config\Source\Storage\Media\Database
@@ -7090,7 +7088,7 @@ T: {{var telephone}}
 						Type:         config.TypeButton,
 						SortOrder:    300,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7104,7 +7102,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    400,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7118,14 +7116,14 @@ T: {{var telephone}}
 		ID:        "sales",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "msrp",
 				Label:     `Minimum Advertised Price`,
 				Comment:   ``,
 				SortOrder: 110,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales/msrp/enabled`,
@@ -7135,7 +7133,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -7149,7 +7147,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Msrp\Model\Product\Attribute\Source\Type
@@ -7163,7 +7161,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Our price is lower than the manufacturer's "minimum advertised price." As a result, we cannot show you the price in catalog or the product page. <br /><br /> You have no obligation to purchase the product once you know the price. You can simply remove the item from your cart.`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7177,7 +7175,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Our price is lower than the manufacturer's "minimum advertised price." As a result, we cannot show you the price in catalog or the product page. <br /><br /> You have no obligation to purchase the product once you know the price. You can simply remove the item from your cart.`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7191,14 +7189,14 @@ T: {{var telephone}}
 		ID:        "multishipping",
 		Label:     "Multishipping Settings",
 		SortOrder: 311,
-		Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+		Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "options",
 				Label:     `Options`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `multishipping/options/checkout_multiple`,
@@ -7208,7 +7206,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -7222,7 +7220,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      100,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7236,14 +7234,14 @@ T: {{var telephone}}
 		ID:        "newsletter",
 		Label:     "Newsletter",
 		SortOrder: 110,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "subscription",
 				Label:     `Subscription Options`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `newsletter/subscription/allow_guest_subscribe`,
@@ -7253,7 +7251,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -7267,7 +7265,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -7281,7 +7279,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `support`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -7295,7 +7293,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `newsletter_subscription_confirm_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -7309,7 +7307,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `general`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -7323,7 +7321,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `newsletter_subscription_success_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -7337,7 +7335,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `support`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -7351,7 +7349,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `newsletter_subscription_un_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -7373,7 +7371,7 @@ T: {{var telephone}}
 						ID:      "set_return_path",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 				},
@@ -7385,14 +7383,14 @@ T: {{var telephone}}
 		ID:        "payment",
 		Label:     "",
 		SortOrder: 400,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "checkmo",
 				Label:     `Check / Money Order`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `payment/checkmo/active`,
@@ -7402,7 +7400,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -7416,7 +7414,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `pending`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sales\Model\Config\Source\Order\Status\NewStatus
@@ -7430,7 +7428,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7444,7 +7442,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Check / Money order`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7458,7 +7456,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Payment\Model\Config\Source\Allspecificcountries
@@ -7472,7 +7470,7 @@ T: {{var telephone}}
 						Type:         config.TypeMultiselect,
 						SortOrder:    51,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -7486,7 +7484,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    61,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7500,7 +7498,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    62,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7514,7 +7512,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    98,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7528,7 +7526,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    99,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7542,7 +7540,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(),
+						Scope:        scope.NewPerm(),
 						Default:      `Magento\OfflinePayments\Model\Checkmo`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7555,7 +7553,7 @@ T: {{var telephone}}
 				Label:     `Purchase Order`,
 				Comment:   ``,
 				SortOrder: 32,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `payment/purchaseorder/active`,
@@ -7565,7 +7563,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -7579,7 +7577,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `pending`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sales\Model\Config\Source\Order\Status\NewStatus
@@ -7593,7 +7591,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7607,7 +7605,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Purchase Order`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7621,7 +7619,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Payment\Model\Config\Source\Allspecificcountries
@@ -7635,7 +7633,7 @@ T: {{var telephone}}
 						Type:         config.TypeMultiselect,
 						SortOrder:    51,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -7649,7 +7647,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    98,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7663,7 +7661,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    99,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7677,7 +7675,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(),
+						Scope:        scope.NewPerm(),
 						Default:      `Magento\OfflinePayments\Model\Purchaseorder`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7690,7 +7688,7 @@ T: {{var telephone}}
 				Label:     `Bank Transfer Payment`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `payment/banktransfer/active`,
@@ -7700,7 +7698,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -7714,7 +7712,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Bank Transfer Payment`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7728,7 +7726,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `pending`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sales\Model\Config\Source\Order\Status\NewStatus
@@ -7742,7 +7740,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Payment\Model\Config\Source\Allspecificcountries
@@ -7756,7 +7754,7 @@ T: {{var telephone}}
 						Type:         config.TypeMultiselect,
 						SortOrder:    51,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -7770,7 +7768,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    62,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7784,7 +7782,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    98,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7798,7 +7796,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    99,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7812,7 +7810,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7825,7 +7823,7 @@ T: {{var telephone}}
 				Label:     `Cash On Delivery Payment`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `payment/cashondelivery/active`,
@@ -7835,7 +7833,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -7849,7 +7847,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Cash On Delivery`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7863,7 +7861,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `pending`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sales\Model\Config\Source\Order\Status\NewStatus
@@ -7877,7 +7875,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      0,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Payment\Model\Config\Source\Allspecificcountries
@@ -7891,7 +7889,7 @@ T: {{var telephone}}
 						Type:         config.TypeMultiselect,
 						SortOrder:    51,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -7905,7 +7903,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    62,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7919,7 +7917,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    98,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7933,7 +7931,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    99,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7947,7 +7945,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -7960,7 +7958,7 @@ T: {{var telephone}}
 				Label:     `Zero Subtotal Checkout`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `payment/free/active`,
@@ -7970,7 +7968,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -7984,7 +7982,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sales\Model\Config\Source\Order\Status\Newprocessing
@@ -7998,7 +7996,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Payment\Model\Source\Invoice
@@ -8012,7 +8010,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8026,7 +8024,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8040,7 +8038,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Payment\Model\Config\Source\Allspecificcountries
@@ -8054,7 +8052,7 @@ T: {{var telephone}}
 						Type:         config.TypeMultiselect,
 						SortOrder:    51,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -8068,7 +8066,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(),
+						Scope:        scope.NewPerm(),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8090,7 +8088,7 @@ T: {{var telephone}}
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `offline`,
 					},
 				},
@@ -8104,7 +8102,7 @@ T: {{var telephone}}
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `offline`,
 					},
 				},
@@ -8118,7 +8116,7 @@ T: {{var telephone}}
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `Magento\OfflinePayments\Model\Banktransfer`,
 					},
 
@@ -8127,7 +8125,7 @@ T: {{var telephone}}
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `offline`,
 					},
 				},
@@ -8141,7 +8139,7 @@ T: {{var telephone}}
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `Magento\OfflinePayments\Model\Cashondelivery`,
 					},
 
@@ -8150,7 +8148,7 @@ T: {{var telephone}}
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `offline`,
 					},
 				},
@@ -8164,7 +8162,7 @@ T: {{var telephone}}
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `offline`,
 					},
 				},
@@ -8176,14 +8174,14 @@ T: {{var telephone}}
 		ID:        "carriers",
 		Label:     "",
 		SortOrder: 320,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "flatrate",
 				Label:     `Flat Rate`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `carriers/flatrate/active`,
@@ -8193,7 +8191,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -8207,7 +8205,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Fixed`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8221,7 +8219,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      5.00,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8235,7 +8233,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    7,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `F`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingType
@@ -8249,7 +8247,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    8,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8263,7 +8261,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8277,7 +8275,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Flat Rate`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8291,7 +8289,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `I`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\OfflineShipping\Model\Config\Source\Flatrate
@@ -8305,7 +8303,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    90,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
@@ -8319,7 +8317,7 @@ T: {{var telephone}}
 						Type:         config.TypeMultiselect,
 						SortOrder:    91,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -8333,7 +8331,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    92,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -8347,7 +8345,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `This shipping method is not available. To use this shipping method, please contact us.`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8360,7 +8358,7 @@ T: {{var telephone}}
 				Label:     `Table Rates`,
 				Comment:   ``,
 				SortOrder: 3,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `carriers/tablerate/handling_type`,
@@ -8370,7 +8368,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    7,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `F`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingType
@@ -8384,7 +8382,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    8,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8398,7 +8396,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -8412,7 +8410,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `package_weight`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\OfflineShipping\Model\Config\Source\Tablerate
@@ -8426,7 +8424,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -8440,7 +8438,7 @@ T: {{var telephone}}
 						Type:         config.TypeCustom, // @to do: Magento\OfflineShipping\Block\Adminhtml\Form\Field\Export,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8454,7 +8452,7 @@ T: {{var telephone}}
 						Type:         config.TypeCustom, // @to do: Magento\OfflineShipping\Block\Adminhtml\Form\Field\Import,
 						SortOrder:    6,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\OfflineShipping\Model\Config\Backend\Tablerate
 						SourceModel:  nil,
@@ -8468,7 +8466,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Table Rate`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8482,7 +8480,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8496,7 +8494,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Best Way`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8510,7 +8508,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    90,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
@@ -8524,7 +8522,7 @@ T: {{var telephone}}
 						Type:         config.TypeMultiselect,
 						SortOrder:    91,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -8538,7 +8536,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    92,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -8552,7 +8550,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `This shipping method is not available. To use this shipping method, please contact us.`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8565,7 +8563,7 @@ T: {{var telephone}}
 				Label:     `Free Shipping`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `carriers/freeshipping/active`,
@@ -8575,7 +8573,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -8589,7 +8587,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8603,7 +8601,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Free`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8617,7 +8615,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8631,7 +8629,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `Free Shipping`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8645,7 +8643,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    90,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
@@ -8659,7 +8657,7 @@ T: {{var telephone}}
 						Type:         config.TypeMultiselect,
 						SortOrder:    91,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -8673,7 +8671,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    92,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -8687,7 +8685,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `This shipping method is not available. To use this shipping method, please contact us.`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8709,7 +8707,7 @@ T: {{var telephone}}
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `Magento\OfflineShipping\Model\Carrier\Flatrate`,
 					},
 				},
@@ -8723,7 +8721,7 @@ T: {{var telephone}}
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `Magento\OfflineShipping\Model\Carrier\Tablerate`,
 					},
 				},
@@ -8737,7 +8735,7 @@ T: {{var telephone}}
 						ID:      "cutoff_cost",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: 50,
 					},
 
@@ -8746,7 +8744,7 @@ T: {{var telephone}}
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `Magento\OfflineShipping\Model\Carrier\Freeshipping`,
 					},
 				},
@@ -8758,14 +8756,14 @@ T: {{var telephone}}
 		ID:        "system",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "full_page_cache",
 				Label:     `Full Page Cache`,
 				Comment:   ``,
 				SortOrder: 600,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `system/full_page_cache/caching_application`,
@@ -8775,7 +8773,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\PageCache\Model\System\Config\Source\Application
@@ -8789,7 +8787,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      120,
 						BackendModel: nil, // Magento\PageCache\Model\System\Config\Backend\Ttl
 						SourceModel:  nil,
@@ -8811,7 +8809,7 @@ T: {{var telephone}}
 						ID:      "varnish3",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"path":"Magento\/PageCache\/etc\/varnish3.vcl"}`,
 					},
 
@@ -8820,7 +8818,7 @@ T: {{var telephone}}
 						ID:      "varnish4",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"path":"Magento\/PageCache\/etc\/varnish4.vcl"}`,
 					},
 
@@ -8829,7 +8827,7 @@ T: {{var telephone}}
 						ID:      "default",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"access_list":"localhost","backend_host":"localhost","backend_port":"8080","ttl":"120"}`,
 					},
 				},
@@ -8841,7 +8839,7 @@ T: {{var telephone}}
 		ID:        "payment",
 		Label:     "Payment Methods",
 		SortOrder: 400,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups:    config.GroupSlice{},
 	},
 
@@ -8857,7 +8855,7 @@ T: {{var telephone}}
 						ID:      "active",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: true,
 					},
 
@@ -8866,7 +8864,7 @@ T: {{var telephone}}
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `Magento\Payment\Model\Method\Free`,
 					},
 
@@ -8875,7 +8873,7 @@ T: {{var telephone}}
 						ID:      "order_status",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `pending`,
 					},
 
@@ -8884,7 +8882,7 @@ T: {{var telephone}}
 						ID:      "title",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `No Payment Information Required`,
 					},
 
@@ -8893,7 +8891,7 @@ T: {{var telephone}}
 						ID:      "allowspecific",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 
@@ -8902,7 +8900,7 @@ T: {{var telephone}}
 						ID:      "sort_order",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: true,
 					},
 				},
@@ -8916,7 +8914,7 @@ T: {{var telephone}}
 						ID:      "active",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 
@@ -8925,7 +8923,7 @@ T: {{var telephone}}
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `Magento\Payment\Model\Method\Substitution`,
 					},
 
@@ -8934,7 +8932,7 @@ T: {{var telephone}}
 						ID:      "allowspecific",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 				},
@@ -8946,14 +8944,14 @@ T: {{var telephone}}
 		ID:        "persistent",
 		Label:     "Persistent Shopping Cart",
 		SortOrder: 500,
-		Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+		Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "options",
 				Label:     `General Options`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `persistent/options/enabled`,
@@ -8963,7 +8961,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -8977,7 +8975,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      31536000,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -8991,7 +8989,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -9005,7 +9003,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -9019,7 +9017,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -9033,7 +9031,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -9047,14 +9045,14 @@ T: {{var telephone}}
 		ID:        "catalog",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "productalert",
 				Label:     `Product Alerts`,
 				Comment:   ``,
 				SortOrder: 250,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/productalert/allow_price`,
@@ -9064,7 +9062,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -9078,7 +9076,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -9092,7 +9090,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `catalog_productalert_email_price_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -9106,7 +9104,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `catalog_productalert_email_stock_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -9120,7 +9118,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `general`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -9133,7 +9131,7 @@ T: {{var telephone}}
 				Label:     `Product Alerts Run Settings`,
 				Comment:   ``,
 				SortOrder: 260,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/productalert_cron/frequency`,
@@ -9143,7 +9141,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Cron\Model\Config\Backend\Product\Alert
 						SourceModel:  nil, // Magento\Cron\Model\Config\Source\Frequency
@@ -9157,7 +9155,7 @@ T: {{var telephone}}
 						Type:         config.TypeTime,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9171,7 +9169,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9185,7 +9183,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `general`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -9199,7 +9197,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `catalog_productalert_cron_error_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -9221,7 +9219,7 @@ T: {{var telephone}}
 						ID:      "error_email",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 				},
@@ -9233,14 +9231,14 @@ T: {{var telephone}}
 		ID:        "catalog",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "recently_products",
 				Label:     `Recently Viewed/Compared Products`,
 				Comment:   ``,
 				SortOrder: 350,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/recently_products/scope`,
@@ -9250,7 +9248,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `website`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Reports\Scope
@@ -9264,7 +9262,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      5,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9278,7 +9276,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      5,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9291,14 +9289,14 @@ T: {{var telephone}}
 		ID:        "reports",
 		Label:     "Reports",
 		SortOrder: 1000,
-		Scope:     config.NewScopePerm(config.ScopeDefaultID),
+		Scope:     scope.NewPerm(scope.DefaultID),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "dashboard",
 				Label:     `Dashboard`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `reports/dashboard/ytd_start`,
@@ -9308,7 +9306,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `1,1`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9322,7 +9320,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9336,14 +9334,14 @@ T: {{var telephone}}
 		ID:        "catalog",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "review",
 				Label:     `Product Reviews`,
 				Comment:   ``,
 				SortOrder: 100,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/review/allow_guest`,
@@ -9353,7 +9351,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -9367,14 +9365,14 @@ T: {{var telephone}}
 		ID:        "rss",
 		Label:     "RSS Feeds",
 		SortOrder: 80,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "config",
 				Label:     `Rss Config`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `rss/config/active`,
@@ -9384,7 +9382,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Rss\Model\System\Config\Backend\Links
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
@@ -9398,14 +9396,14 @@ T: {{var telephone}}
 		ID:        "sales",
 		Label:     "Sales",
 		SortOrder: 300,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "general",
 				Label:     `General`,
 				Comment:   ``,
 				SortOrder: 5,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales/general/hide_customer_ip`,
@@ -9415,7 +9413,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -9428,7 +9426,7 @@ T: {{var telephone}}
 				Label:     `Checkout Totals Sort Order`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales/totals_sort/discount`,
@@ -9438,7 +9436,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      20,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9452,7 +9450,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      100,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9466,7 +9464,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      30,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9480,7 +9478,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      10,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9494,7 +9492,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      40,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9507,7 +9505,7 @@ T: {{var telephone}}
 				Label:     `Reorder`,
 				Comment:   ``,
 				SortOrder: 20,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales/reorder/allow`,
@@ -9517,7 +9515,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -9530,7 +9528,7 @@ T: {{var telephone}}
 				Label:     `Invoice and Packing Slip Design`,
 				Comment:   ``,
 				SortOrder: 40,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales/identity/logo`,
@@ -9540,7 +9538,7 @@ T: {{var telephone}}
 						Type:         config.TypeImage,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Image\Pdf
 						SourceModel:  nil,
@@ -9554,7 +9552,7 @@ T: {{var telephone}}
 						Type:         config.TypeImage,
 						SortOrder:    150,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Image
 						SourceModel:  nil,
@@ -9568,7 +9566,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    200,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9581,7 +9579,7 @@ T: {{var telephone}}
 				Label:     `Minimum Order Amount`,
 				Comment:   ``,
 				SortOrder: 50,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales/minimum_order/active`,
@@ -9591,7 +9589,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -9605,7 +9603,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9619,7 +9617,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    15,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -9633,7 +9631,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9647,7 +9645,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9661,7 +9659,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -9675,7 +9673,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9689,7 +9687,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9702,7 +9700,7 @@ T: {{var telephone}}
 				Label:     `Dashboard`,
 				Comment:   ``,
 				SortOrder: 60,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales/dashboard/use_aggregated_data`,
@@ -9712,7 +9710,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -9725,14 +9723,14 @@ T: {{var telephone}}
 		ID:        "sales_email",
 		Label:     "Sales Emails",
 		SortOrder: 301,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "general",
 				Label:     `General Settings`,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales_email/general/async_sending`,
@@ -9742,7 +9740,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      false,
 						BackendModel: nil, // Magento\Sales\Model\Config\Backend\Email\AsyncSending
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
@@ -9755,7 +9753,7 @@ T: {{var telephone}}
 				Label:     `Order`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales_email/order/enabled`,
@@ -9765,7 +9763,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -9779,7 +9777,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -9793,7 +9791,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales_email_order_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -9807,7 +9805,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales_email_order_guest_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -9821,7 +9819,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9835,7 +9833,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `bcc`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Method
@@ -9848,7 +9846,7 @@ T: {{var telephone}}
 				Label:     `Order Comments`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales_email/order_comment/enabled`,
@@ -9858,7 +9856,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -9872,7 +9870,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -9886,7 +9884,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales_email_order_comment_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -9900,7 +9898,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales_email_order_comment_guest_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -9914,7 +9912,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -9928,7 +9926,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `bcc`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Method
@@ -9941,7 +9939,7 @@ T: {{var telephone}}
 				Label:     `Invoice`,
 				Comment:   ``,
 				SortOrder: 3,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales_email/invoice/enabled`,
@@ -9951,7 +9949,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -9965,7 +9963,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -9979,7 +9977,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales_email_invoice_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -9993,7 +9991,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales_email_invoice_guest_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -10007,7 +10005,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10021,7 +10019,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `bcc`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Method
@@ -10034,7 +10032,7 @@ T: {{var telephone}}
 				Label:     `Invoice Comments`,
 				Comment:   ``,
 				SortOrder: 4,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales_email/invoice_comment/enabled`,
@@ -10044,7 +10042,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -10058,7 +10056,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -10072,7 +10070,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales_email_invoice_comment_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -10086,7 +10084,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales_email_invoice_comment_guest_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -10100,7 +10098,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10114,7 +10112,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `bcc`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Method
@@ -10127,7 +10125,7 @@ T: {{var telephone}}
 				Label:     `Shipment`,
 				Comment:   ``,
 				SortOrder: 5,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales_email/shipment/enabled`,
@@ -10137,7 +10135,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -10151,7 +10149,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -10165,7 +10163,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales_email_shipment_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -10179,7 +10177,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales_email_shipment_guest_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -10193,7 +10191,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10207,7 +10205,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `bcc`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Method
@@ -10220,7 +10218,7 @@ T: {{var telephone}}
 				Label:     `Shipment Comments`,
 				Comment:   ``,
 				SortOrder: 6,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales_email/shipment_comment/enabled`,
@@ -10230,7 +10228,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -10244,7 +10242,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -10258,7 +10256,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales_email_shipment_comment_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -10272,7 +10270,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales_email_shipment_comment_guest_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -10286,7 +10284,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10300,7 +10298,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `bcc`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Method
@@ -10313,7 +10311,7 @@ T: {{var telephone}}
 				Label:     `Credit Memo`,
 				Comment:   ``,
 				SortOrder: 7,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales_email/creditmemo/enabled`,
@@ -10323,7 +10321,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -10337,7 +10335,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -10351,7 +10349,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales_email_creditmemo_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -10365,7 +10363,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales_email_creditmemo_guest_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -10379,7 +10377,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10393,7 +10391,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `bcc`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Method
@@ -10406,7 +10404,7 @@ T: {{var telephone}}
 				Label:     `Credit Memo Comments`,
 				Comment:   ``,
 				SortOrder: 8,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales_email/creditmemo_comment/enabled`,
@@ -10416,7 +10414,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -10430,7 +10428,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -10444,7 +10442,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales_email_creditmemo_comment_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -10458,7 +10456,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sales_email_creditmemo_comment_guest_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -10472,7 +10470,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10486,7 +10484,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `bcc`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Method
@@ -10499,14 +10497,14 @@ T: {{var telephone}}
 		ID:        "sales_pdf",
 		Label:     "PDF Print-outs",
 		SortOrder: 302,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "invoice",
 				Label:     `Invoice`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales_pdf/invoice/put_order_id`,
@@ -10516,7 +10514,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -10529,7 +10527,7 @@ T: {{var telephone}}
 				Label:     `Shipment`,
 				Comment:   ``,
 				SortOrder: 20,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales_pdf/shipment/put_order_id`,
@@ -10539,7 +10537,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -10552,7 +10550,7 @@ T: {{var telephone}}
 				Label:     `Credit Memo`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales_pdf/creditmemo/put_order_id`,
@@ -10562,7 +10560,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -10575,14 +10573,14 @@ T: {{var telephone}}
 		ID:        "rss",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "order",
 				Label:     `Order`,
 				Comment:   ``,
 				SortOrder: 4,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `rss/order/status`,
@@ -10592,7 +10590,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
@@ -10605,14 +10603,14 @@ T: {{var telephone}}
 		ID:        "dev",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "grid",
 				Label:     `Grid Settings`,
 				Comment:   ``,
 				SortOrder: 131,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/grid/async_indexing`,
@@ -10622,7 +10620,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      false,
 						BackendModel: nil, // Magento\Sales\Model\Config\Backend\Grid\AsyncIndexing
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
@@ -10636,14 +10634,14 @@ T: {{var telephone}}
 		ID:        "promo",
 		Label:     "Promotions",
 		SortOrder: 400,
-		Scope:     config.NewScopePerm(config.ScopeDefaultID),
+		Scope:     scope.NewPerm(scope.DefaultID),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "auto_generated_coupon_codes",
 				Label:     `Auto Generated Specific Coupon Codes`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `promo/auto_generated_coupon_codes/length`,
@@ -10653,7 +10651,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      12,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10667,7 +10665,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\SalesRule\Model\System\Config\Source\Coupon\Format
@@ -10681,7 +10679,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10695,7 +10693,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10709,7 +10707,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10722,14 +10720,14 @@ T: {{var telephone}}
 		ID:        "rss",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "catalog",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     scope.NewPerm(),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `rss/catalog/discounts`,
@@ -10739,7 +10737,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    12,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
@@ -10753,14 +10751,14 @@ T: {{var telephone}}
 		ID:        "catalog",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "search",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     scope.NewPerm(),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/search/engine`,
@@ -10770,7 +10768,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    19,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Search\Model\Adminhtml\System\Config\Source\Engine
@@ -10784,7 +10782,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(),
+						Scope:        scope.NewPerm(),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10798,7 +10796,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    0,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(),
+						Scope:        scope.NewPerm(),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10812,14 +10810,14 @@ T: {{var telephone}}
 		ID:        "sendfriend",
 		Label:     "Email to a Friend",
 		SortOrder: 120,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "email",
 				Label:     `Email Templates`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sendfriend/email/enabled`,
@@ -10829,7 +10827,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -10843,7 +10841,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `sendfriend_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -10857,7 +10855,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -10871,7 +10869,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      5,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10885,7 +10883,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      5,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10899,7 +10897,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    6,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sendfriend\Model\Source\Checktype
@@ -10913,14 +10911,14 @@ T: {{var telephone}}
 		ID:        "shipping",
 		Label:     "Shipping Settings",
 		SortOrder: 310,
-		Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+		Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "origin",
 				Label:     `Origin`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `shipping/origin/country_id`,
@@ -10930,7 +10928,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `US`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -10944,7 +10942,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      12,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10958,7 +10956,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      90034,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10972,7 +10970,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -10986,7 +10984,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -11000,7 +10998,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -11013,7 +11011,7 @@ T: {{var telephone}}
 		ID:        "carriers",
 		Label:     "Shipping Methods",
 		SortOrder: 320,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups:    config.GroupSlice{},
 	},
 
@@ -11021,14 +11019,14 @@ T: {{var telephone}}
 		ID:        "sitemap",
 		Label:     "XML Sitemap",
 		SortOrder: 70,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "category",
 				Label:     `Categories Options`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sitemap/category/changefreq`,
@@ -11038,7 +11036,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `daily`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sitemap\Model\Config\Source\Frequency
@@ -11052,7 +11050,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      0.5,
 						BackendModel: nil, // Magento\Sitemap\Model\Config\Backend\Priority
 						SourceModel:  nil,
@@ -11065,7 +11063,7 @@ T: {{var telephone}}
 				Label:     `Products Options`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sitemap/product/changefreq`,
@@ -11075,7 +11073,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `daily`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sitemap\Model\Config\Source\Frequency
@@ -11089,7 +11087,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      1,
 						BackendModel: nil, // Magento\Sitemap\Model\Config\Backend\Priority
 						SourceModel:  nil,
@@ -11103,7 +11101,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `all`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sitemap\Model\Source\Product\Image\IncludeImage
@@ -11116,7 +11114,7 @@ T: {{var telephone}}
 				Label:     `CMS Pages Options`,
 				Comment:   ``,
 				SortOrder: 3,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sitemap/page/changefreq`,
@@ -11126,7 +11124,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `daily`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Sitemap\Model\Config\Source\Frequency
@@ -11140,7 +11138,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      0.25,
 						BackendModel: nil, // Magento\Sitemap\Model\Config\Backend\Priority
 						SourceModel:  nil,
@@ -11153,7 +11151,7 @@ T: {{var telephone}}
 				Label:     `Generation Settings`,
 				Comment:   ``,
 				SortOrder: 4,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID),
+				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sitemap/generate/enabled`,
@@ -11163,7 +11161,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -11177,7 +11175,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -11191,7 +11189,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    6,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `general`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -11205,7 +11203,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    7,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `sitemap_generate_error_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -11219,7 +11217,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Cron\Model\Config\Backend\Sitemap
 						SourceModel:  nil, // Magento\Cron\Model\Config\Source\Frequency
@@ -11233,7 +11231,7 @@ T: {{var telephone}}
 						Type:         config.TypeTime,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -11246,7 +11244,7 @@ T: {{var telephone}}
 				Label:     `Sitemap File Limits`,
 				Comment:   ``,
 				SortOrder: 5,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sitemap/limit/max_lines`,
@@ -11256,7 +11254,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      50000,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -11270,7 +11268,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      10485760,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -11283,7 +11281,7 @@ T: {{var telephone}}
 				Label:     `Search Engine Submission Settings`,
 				Comment:   ``,
 				SortOrder: 6,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sitemap/search_engines/submission_robots`,
@@ -11293,7 +11291,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -11315,7 +11313,7 @@ T: {{var telephone}}
 						ID:      "error_email",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 				},
@@ -11329,7 +11327,7 @@ T: {{var telephone}}
 						ID:      "valid_paths",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"available":{"any_path":"\/*\/*.xml"}}`,
 					},
 				},
@@ -11341,14 +11339,14 @@ T: {{var telephone}}
 		ID:        "tax",
 		Label:     "Tax",
 		SortOrder: 303,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "classes",
 				Label:     `Tax Classes`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `tax/classes/shipping_tax_class`,
@@ -11358,7 +11356,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Tax\Model\TaxClass\Source\Product
@@ -11372,7 +11370,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      2,
 						BackendModel: nil, // Magento\Tax\Model\Config\TaxClass
 						SourceModel:  nil, // Magento\Tax\Model\TaxClass\Source\Product
@@ -11386,7 +11384,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      3,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Tax\Model\TaxClass\Source\Customer
@@ -11399,7 +11397,7 @@ T: {{var telephone}}
 				Label:     `Calculation Settings`,
 				Comment:   ``,
 				SortOrder: 20,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `tax/calculation/algorithm`,
@@ -11409,7 +11407,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `TOTAL_BASE_CALCULATION`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Algorithm
@@ -11423,7 +11421,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `shipping`,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\Config\Source\Basedon
@@ -11437,7 +11435,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil, // Magento\Tax\Model\Config\Price\IncludePrice
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\PriceType
@@ -11451,7 +11449,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil, // Magento\Tax\Model\Config\Price\IncludePrice
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\PriceType
@@ -11465,7 +11463,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Apply
@@ -11479,7 +11477,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `["0","0"]`,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\PriceType
@@ -11493,7 +11491,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Tax\Model\Config\Source\Apply\On
@@ -11507,7 +11505,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -11520,7 +11518,7 @@ T: {{var telephone}}
 				Label:     `Default Tax Destination Calculation`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `tax/defaults/country`,
@@ -11530,7 +11528,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `US`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Country
@@ -11544,7 +11542,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Region
@@ -11558,7 +11556,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `*`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -11571,7 +11569,7 @@ T: {{var telephone}}
 				Label:     `Price Display Settings`,
 				Comment:   ``,
 				SortOrder: 40,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `tax/display/type`,
@@ -11581,7 +11579,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -11595,7 +11593,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -11608,7 +11606,7 @@ T: {{var telephone}}
 				Label:     `Shopping Cart Display Settings`,
 				Comment:   ``,
 				SortOrder: 50,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `tax/cart_display/price`,
@@ -11618,7 +11616,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -11632,7 +11630,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -11646,7 +11644,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -11660,7 +11658,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -11674,7 +11672,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -11688,7 +11686,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    120,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -11701,7 +11699,7 @@ T: {{var telephone}}
 				Label:     `Orders, Invoices, Credit Memos Display Settings`,
 				Comment:   ``,
 				SortOrder: 60,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `tax/sales_display/price`,
@@ -11711,7 +11709,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -11725,7 +11723,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -11739,7 +11737,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
 						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -11753,7 +11751,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -11767,7 +11765,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -11781,7 +11779,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    120,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -11803,7 +11801,7 @@ T: {{var telephone}}
 						ID:      "discount",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: true,
 					},
 				},
@@ -11817,7 +11815,7 @@ T: {{var telephone}}
 						ID:      "discount",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: true,
 					},
 				},
@@ -11831,7 +11829,7 @@ T: {{var telephone}}
 						ID:      "url",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `http://www.magentocommerce.com/knowledge-base/entry/magento-ce-18-ee-113-tax-calc`,
 					},
 				},
@@ -11843,14 +11841,14 @@ T: {{var telephone}}
 		ID:        "design",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "head",
 				Label:     `HTML Head`,
 				Comment:   ``,
 				SortOrder: 20,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `design/head/shortcut_icon`,
@@ -11860,7 +11858,7 @@ T: {{var telephone}}
 						Type:         config.TypeImage,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Image\Favicon
 						SourceModel:  nil,
@@ -11874,7 +11872,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -11888,7 +11886,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    12,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -11902,7 +11900,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    14,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -11916,7 +11914,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -11930,7 +11928,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -11944,7 +11942,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -11958,7 +11956,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -11971,7 +11969,7 @@ T: {{var telephone}}
 				Label:     `Search Engine Robots`,
 				Comment:   ``,
 				SortOrder: 25,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `design/search_engine_robots/default_robots`,
@@ -11981,7 +11979,7 @@ T: {{var telephone}}
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `INDEX,FOLLOW`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Design\Robots
@@ -11995,7 +11993,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Admin\Robots
 						SourceModel:  nil,
@@ -12009,7 +12007,7 @@ T: {{var telephone}}
 						Type:         config.TypeButton,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12022,7 +12020,7 @@ T: {{var telephone}}
 				Label:     `Header`,
 				Comment:   ``,
 				SortOrder: 30,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `design/header/logo_src`,
@@ -12032,7 +12030,7 @@ T: {{var telephone}}
 						Type:         config.TypeImage,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Image\Logo
 						SourceModel:  nil,
@@ -12046,7 +12044,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12060,7 +12058,7 @@ T: {{var telephone}}
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12073,7 +12071,7 @@ T: {{var telephone}}
 				Label:     `Footer`,
 				Comment:   ``,
 				SortOrder: 40,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `design/footer/copyright`,
@@ -12083,7 +12081,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12097,7 +12095,7 @@ T: {{var telephone}}
 						Type:         config.TypeTextarea,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12119,7 +12117,7 @@ T: {{var telephone}}
 						ID:      "_value",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"default_title":"Magento Commerce","default_description":"Default Description","default_keywords":"Magento, Varien, E-commerce","default_media_type":"text\/html","default_charset":"utf-8"}`,
 					},
 
@@ -12128,7 +12126,7 @@ T: {{var telephone}}
 						ID:      "_attribute",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"translate":"default_description"}`,
 					},
 				},
@@ -12142,7 +12140,7 @@ T: {{var telephone}}
 						ID:      "default_custom_instructions",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `
 User-agent: *
 Disallow: /index.php/
@@ -12175,7 +12173,7 @@ Disallow: /*SID=
 						ID:      "_value",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"logo_alt":"Magento Commerce","welcome":"Default welcome msg!"}`,
 					},
 
@@ -12184,7 +12182,7 @@ Disallow: /*SID=
 						ID:      "_attribute",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"translate":"welcome"}`,
 					},
 				},
@@ -12198,7 +12196,7 @@ Disallow: /*SID=
 						ID:      "_value",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"copyright":"&copy; 2014 Magento Demo Store. All Rights Reserved."}`,
 					},
 
@@ -12207,7 +12205,7 @@ Disallow: /*SID=
 						ID:      "_attribute",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"translate":"copyright"}`,
 					},
 				},
@@ -12225,7 +12223,7 @@ Disallow: /*SID=
 						ID:      "custom_css",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `Magento\Theme\Model\Theme\Customization\File\CustomCss`,
 					},
 				},
@@ -12243,7 +12241,7 @@ Disallow: /*SID=
 						ID:      "allowed_resources",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"site_favicons":"favicon"}`,
 					},
 				},
@@ -12255,14 +12253,14 @@ Disallow: /*SID=
 		ID:        "dev",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "js",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     scope.NewPerm(),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `dev/js/translate_strategy`,
@@ -12272,7 +12270,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `none`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Translation\Model\Js\Config\Source\Strategy
@@ -12294,7 +12292,7 @@ Disallow: /*SID=
 						ID:      "active",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 
@@ -12303,7 +12301,7 @@ Disallow: /*SID=
 						ID:      "active_admin",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 
@@ -12312,7 +12310,7 @@ Disallow: /*SID=
 						ID:      "invalid_caches",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"block_html":null}`,
 					},
 				},
@@ -12324,14 +12322,14 @@ Disallow: /*SID=
 		ID:        "carriers",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "ups",
 				Label:     `UPS`,
 				Comment:   ``,
 				SortOrder: 100,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `carriers/ups/access_license_number`,
@@ -12341,7 +12339,7 @@ Disallow: /*SID=
 						Type:         config.TypeObscure,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Encrypted // @to do Magento\Config\Model\Config\Backend\Encrypted
 						SourceModel:  nil,
@@ -12355,7 +12353,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -12369,7 +12367,7 @@ Disallow: /*SID=
 						Type:         config.TypeMultiselect,
 						SortOrder:    170,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `1DM,1DML,1DA,1DAL,1DAPI,1DP,1DPL,2DM,2DML,2DA,2DAL,3DS,GND,GNDCOM,GNDRES,STD,XPR,WXS,XPRL,XDM,XDML,XPD,01,02,03,07,08,11,12,14,54,59,65`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Ups\Model\Config\Source\Method
@@ -12383,7 +12381,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    47,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Online\Requesttype
@@ -12397,7 +12395,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `CP`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Ups\Model\Config\Source\Container
@@ -12411,7 +12409,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    210,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
@@ -12425,7 +12423,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    220,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12439,7 +12437,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `RES`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Ups\Model\Config\Source\DestType
@@ -12453,7 +12451,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    200,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `GND`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Ups\Model\Config\Source\Freemethod
@@ -12467,7 +12465,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `http://www.ups.com/using/services/rave/qcostcgi.cgi`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12481,7 +12479,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `https://onlinetools.ups.com/ups.app/xml/Rate`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12495,7 +12493,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    110,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `F`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingType
@@ -12509,7 +12507,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    120,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `O`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingAction
@@ -12523,7 +12521,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    130,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12537,7 +12535,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      150,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12551,7 +12549,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    90,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      0.1,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12565,7 +12563,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `Shipments Originating in United States`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Ups\Model\Config\Source\OriginShipment
@@ -12579,7 +12577,7 @@ Disallow: /*SID=
 						Type:         config.TypeObscure,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Encrypted // @to do Magento\Config\Model\Config\Backend\Encrypted
 						SourceModel:  nil,
@@ -12593,7 +12591,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `CC`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Ups\Model\Config\Source\Pickup
@@ -12607,7 +12605,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    1000,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12621,7 +12619,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `United Parcel Service`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12635,7 +12633,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `https://www.ups.com/ups.app/xml/Track`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12649,7 +12647,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `UPS`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Ups\Model\Config\Source\Type
@@ -12663,7 +12661,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    25,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -12677,7 +12675,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `LBS`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Ups\Model\Config\Source\Unitofmeasure
@@ -12691,7 +12689,7 @@ Disallow: /*SID=
 						Type:         config.TypeObscure,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Encrypted // @to do Magento\Config\Model\Config\Backend\Encrypted
 						SourceModel:  nil,
@@ -12705,7 +12703,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -12719,7 +12717,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12733,7 +12731,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    900,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
@@ -12747,7 +12745,7 @@ Disallow: /*SID=
 						Type:         config.TypeMultiselect,
 						SortOrder:    910,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -12761,7 +12759,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    920,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -12775,7 +12773,7 @@ Disallow: /*SID=
 						Type:         config.TypeTextarea,
 						SortOrder:    800,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12789,7 +12787,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Online\Mode
@@ -12803,7 +12801,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    920,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -12825,7 +12823,7 @@ Disallow: /*SID=
 						ID:      "cutoff_cost",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 
@@ -12834,7 +12832,7 @@ Disallow: /*SID=
 						ID:      "handling",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 
@@ -12843,7 +12841,7 @@ Disallow: /*SID=
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `Magento\Ups\Model\Carrier`,
 					},
 
@@ -12852,7 +12850,7 @@ Disallow: /*SID=
 						ID:      "active_rma",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 
@@ -12861,7 +12859,7 @@ Disallow: /*SID=
 						ID:      "is_online",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: true,
 					},
 				},
@@ -12873,14 +12871,14 @@ Disallow: /*SID=
 		ID:        "admin",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "emails",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     scope.NewPerm(),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `admin/emails/reset_password_template`,
@@ -12890,7 +12888,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID),
+						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `admin_emails_reset_password_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -12912,7 +12910,7 @@ Disallow: /*SID=
 						ID:      "forgot_email_template",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `admin_emails_forgot_email_template`,
 					},
 
@@ -12921,7 +12919,7 @@ Disallow: /*SID=
 						ID:      "forgot_email_identity",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `general`,
 					},
 
@@ -12930,7 +12928,7 @@ Disallow: /*SID=
 						ID:      "password_reset_link_expiration_period",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: true,
 					},
 				},
@@ -12942,14 +12940,14 @@ Disallow: /*SID=
 		ID:        "carriers",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "usps",
 				Label:     `USPS`,
 				Comment:   ``,
 				SortOrder: 110,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `carriers/usps/active`,
@@ -12959,7 +12957,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -12973,7 +12971,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `http://production.shippingapis.com/ShippingAPI.dll`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -12987,7 +12985,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `https://secure.shippingapis.com/ShippingAPI.dll`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -13001,7 +12999,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `United States Postal Service`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -13015,7 +13013,7 @@ Disallow: /*SID=
 						Type:         config.TypeObscure,
 						SortOrder:    50,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Encrypted // @to do Magento\Config\Model\Config\Backend\Encrypted
 						SourceModel:  nil,
@@ -13029,7 +13027,7 @@ Disallow: /*SID=
 						Type:         config.TypeObscure,
 						SortOrder:    53,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Encrypted // @to do Magento\Config\Model\Config\Backend\Encrypted
 						SourceModel:  nil,
@@ -13043,7 +13041,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    54,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Online\Mode
@@ -13057,7 +13055,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    55,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Online\Requesttype
@@ -13071,7 +13069,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `VARIABLE`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Usps\Model\Source\Container
@@ -13085,7 +13083,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `REGULAR`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Usps\Model\Source\Size
@@ -13099,7 +13097,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    73,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -13113,7 +13111,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    72,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -13127,7 +13125,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    74,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -13141,7 +13139,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    76,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -13155,7 +13153,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `true`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Usps\Model\Source\Machinable
@@ -13169,7 +13167,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    90,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      70,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -13183,7 +13181,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `F`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingType
@@ -13197,7 +13195,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    110,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `O`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingAction
@@ -13211,7 +13209,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    120,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -13225,7 +13223,7 @@ Disallow: /*SID=
 						Type:         config.TypeMultiselect,
 						SortOrder:    130,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `0_FCLE,0_FCL,0_FCP,1,2,3,4,6,7,13,16,17,22,23,25,27,28,33,34,35,36,37,42,43,53,55,56,57,61,INT_1,INT_2,INT_4,INT_6,INT_7,INT_8,INT_9,INT_10,INT_11,INT_12,INT_13,INT_14,INT_15,INT_16,INT_20,INT_26`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Usps\Model\Source\Method
@@ -13239,7 +13237,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    140,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Usps\Model\Source\Freemethod
@@ -13253,7 +13251,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    1500,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
@@ -13267,7 +13265,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    160,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -13281,7 +13279,7 @@ Disallow: /*SID=
 						Type:         config.TypeTextarea,
 						SortOrder:    170,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -13295,7 +13293,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    180,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
@@ -13309,7 +13307,7 @@ Disallow: /*SID=
 						Type:         config.TypeMultiselect,
 						SortOrder:    190,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
@@ -13323,7 +13321,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    200,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -13337,7 +13335,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    210,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -13351,7 +13349,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    220,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -13373,7 +13371,7 @@ Disallow: /*SID=
 						ID:      "cutoff_cost",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 
@@ -13382,7 +13380,7 @@ Disallow: /*SID=
 						ID:      "free_method",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 
@@ -13391,7 +13389,7 @@ Disallow: /*SID=
 						ID:      "handling",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 
@@ -13400,7 +13398,7 @@ Disallow: /*SID=
 						ID:      "methods",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: nil,
 					},
 
@@ -13409,7 +13407,7 @@ Disallow: /*SID=
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `Magento\Usps\Model\Carrier`,
 					},
 
@@ -13418,7 +13416,7 @@ Disallow: /*SID=
 						ID:      "isproduction",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 
@@ -13427,7 +13425,7 @@ Disallow: /*SID=
 						ID:      "active_rma",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: false,
 					},
 
@@ -13436,7 +13434,7 @@ Disallow: /*SID=
 						ID:      "is_online",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: true,
 					},
 				},
@@ -13448,14 +13446,14 @@ Disallow: /*SID=
 		ID:        "webapi",
 		Label:     "Magento Web API",
 		SortOrder: 102,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "soap",
 				Label:     `SOAP Settings`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `webapi/soap/charset`,
@@ -13465,7 +13463,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -13479,14 +13477,14 @@ Disallow: /*SID=
 		ID:        "tax",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "weee",
 				Label:     `Fixed Product Taxes`,
 				Comment:   ``,
 				SortOrder: 100,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `tax/weee/enable`,
@@ -13496,7 +13494,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -13510,7 +13508,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Weee\Model\Config\Source\Display
@@ -13524,7 +13522,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    20,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Weee\Model\Config\Source\Display
@@ -13538,7 +13536,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    30,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Weee\Model\Config\Source\Display
@@ -13552,7 +13550,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    40,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Weee\Model\Config\Source\Display
@@ -13566,7 +13564,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    60,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -13580,7 +13578,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -13593,14 +13591,14 @@ Disallow: /*SID=
 		ID:        "sales",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "totals_sort",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.NewScopePerm(),
+				Scope:     scope.NewPerm(),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `sales/totals_sort/weee`,
@@ -13610,7 +13608,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      35,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -13632,7 +13630,7 @@ Disallow: /*SID=
 						ID:      "weee_tax",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: 35,
 					},
 				},
@@ -13650,7 +13648,7 @@ Disallow: /*SID=
 						ID:      "input_types",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID),
+						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: `{"weee":"weee"}`,
 					},
 				},
@@ -13662,14 +13660,14 @@ Disallow: /*SID=
 		ID:        "wishlist",
 		Label:     "Wishlist",
 		SortOrder: 140,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "email",
 				Label:     `Share Options`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `wishlist/email/email_identity`,
@@ -13679,7 +13677,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `general`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -13693,7 +13691,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      `wishlist_email_email_template`,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -13707,7 +13705,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      10,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -13721,7 +13719,7 @@ Disallow: /*SID=
 						Type:         config.TypeText,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      255,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -13734,7 +13732,7 @@ Disallow: /*SID=
 				Label:     `General Options`,
 				Comment:   ``,
 				SortOrder: 1,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `wishlist/general/active`,
@@ -13744,7 +13742,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -13757,7 +13755,7 @@ Disallow: /*SID=
 				Label:     `My Wish List Link`,
 				Comment:   ``,
 				SortOrder: 3,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `wishlist/wishlist_link/use_qty`,
@@ -13767,7 +13765,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Wishlist\Model\Config\Source\Summary
@@ -13780,14 +13778,14 @@ Disallow: /*SID=
 		ID:        "rss",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     config.NewScopePerm(),
+		Scope:     scope.NewPerm(),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "wishlist",
 				Label:     `Wishlist`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `rss/wishlist/active`,
@@ -13797,7 +13795,7 @@ Disallow: /*SID=
 						Type:         config.TypeSelect,
 						SortOrder:    10,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable

@@ -2,7 +2,10 @@
 
 package paypal
 
-import "github.com/corestoreio/csfw/config"
+import (
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+)
 
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
@@ -16,7 +19,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 0,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields:    config.FieldSlice{},
 			},
 
@@ -25,7 +28,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `Merchant Location`,
 				Comment:   ``,
 				SortOrder: 5,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `payment/account/merchant_country`,
@@ -35,7 +38,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Paypal\Model\System\Config\Backend\MerchantCountry
 						SourceModel:  nil, // Magento\Paypal\Model\System\Config\Source\MerchantCountry
@@ -73,7 +76,7 @@ var PackageConfiguration = config.NewConfiguration(
                 `,
 				Comment:   `Choose a secure bundled payment solution for your business.`,
 				SortOrder: 10,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields:    config.FieldSlice{},
 			},
 
@@ -82,7 +85,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `PayPal Payment Gateways`,
 				Comment:   `Process payments using your own internet merchant account.`,
 				SortOrder: 15,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields:    config.FieldSlice{},
 			},
 
@@ -91,7 +94,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `PayPal Express Checkout`,
 				Comment:   `Add another payment method to your existing solution or as a stand-alone option.`,
 				SortOrder: 20,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields:    config.FieldSlice{},
 			},
 		},
@@ -109,7 +112,7 @@ var PackageConfiguration = config.NewConfiguration(
                 `,
 				Comment:   `Choose a secure bundled payment solution for your business.`,
 				SortOrder: 10,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields:    config.FieldSlice{},
 			},
 
@@ -118,7 +121,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `PayPal Express Checkout`,
 				Comment:   `Add another payment method to your existing solution or as a stand-alone option.`,
 				SortOrder: 20,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields:    config.FieldSlice{},
 			},
 		},
@@ -134,7 +137,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `PayPal Payment Solutions`,
 				Comment:   `Add another payment method to your existing solution or as a stand-alone option.`,
 				SortOrder: 10,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields:    config.FieldSlice{},
 			},
 		},
@@ -150,7 +153,7 @@ var PackageConfiguration = config.NewConfiguration(
 				Label:     `PayPal Payment Solutions`,
 				Comment:   `Add another payment method to your existing solution or as a stand-alone option.`,
 				SortOrder: 10,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields:    config.FieldSlice{},
 			},
 		},
@@ -296,7 +299,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "logo",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `nowAccepting_150x60`,
 					},
 				},
@@ -310,7 +313,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "api_password",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 					},
 
@@ -319,7 +322,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "api_signature",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 					},
 
@@ -328,7 +331,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "api_username",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 					},
 
@@ -337,7 +340,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "button_flavor",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `dynamic`,
 					},
 				},
@@ -351,7 +354,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "user",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 					},
 
@@ -360,7 +363,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "pwd",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 					},
 				},
@@ -374,7 +377,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "ftp_login",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 					},
 
@@ -383,7 +386,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "ftp_password",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 					},
 
@@ -392,7 +395,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "schedule",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -401,7 +404,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "time",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `00,00,00`,
 					},
 				},
@@ -419,7 +422,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Magento\Paypal\Model\Express`,
 					},
 
@@ -428,7 +431,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "title",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `PayPal Express Checkout`,
 					},
 
@@ -437,7 +440,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "payment_action",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Authorization`,
 					},
 
@@ -446,7 +449,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "solution_type",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Mark`,
 					},
 
@@ -455,7 +458,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "line_items_enabled",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -464,7 +467,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "visible_on_cart",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -473,7 +476,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "visible_on_product",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -482,7 +485,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "allow_ba_signup",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `never`,
 					},
 
@@ -491,7 +494,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `paypal`,
 					},
 
@@ -500,7 +503,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "authorization_honor_period",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: 3,
 					},
 
@@ -509,7 +512,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "order_valid_period",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: 29,
 					},
 
@@ -518,7 +521,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "child_authorization_number",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -527,7 +530,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "verify_peer",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -536,7 +539,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "skip_order_review_step",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 				},
@@ -550,7 +553,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Magento\Paypal\Model\Bml`,
 					},
 
@@ -559,7 +562,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "title",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `PayPal Credit`,
 					},
 
@@ -568,7 +571,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `paypal`,
 					},
 				},
@@ -582,7 +585,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "title",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `PayPal Express Checkout Payflow Edition`,
 					},
 
@@ -591,7 +594,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "payment_action",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Authorization`,
 					},
 
@@ -600,7 +603,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "line_items_enabled",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -609,7 +612,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "visible_on_cart",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -618,7 +621,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "visible_on_product",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -627,7 +630,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `paypal`,
 					},
 
@@ -636,7 +639,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "verify_peer",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -645,7 +648,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Magento\Paypal\Model\PayflowExpress`,
 					},
 				},
@@ -659,7 +662,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Magento\Paypal\Model\Payflow\Bml`,
 					},
 
@@ -668,7 +671,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "title",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `PayPal Credit`,
 					},
 
@@ -677,7 +680,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `paypal`,
 					},
 				},
@@ -691,7 +694,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Magento\Paypal\Model\Payflow\Transparent`,
 					},
 
@@ -700,7 +703,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "title",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Credit Card`,
 					},
 
@@ -709,7 +712,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "payment_action",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Authorization`,
 					},
 
@@ -718,7 +721,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "cctypes",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `AE,VI`,
 					},
 
@@ -727,7 +730,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "useccv",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -736,7 +739,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "tender",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `C`,
 					},
 
@@ -745,7 +748,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "verbosity",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `MEDIUM`,
 					},
 
@@ -754,7 +757,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "user",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 					},
 
@@ -763,7 +766,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "pwd",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 					},
 
@@ -772,7 +775,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `paypal`,
 					},
 
@@ -781,7 +784,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "verify_peer",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -790,7 +793,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "date_delim",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: nil,
 					},
 
@@ -799,7 +802,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "ccfields",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `csc,expdate,acct`,
 					},
 
@@ -808,7 +811,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "place_order_url",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `paypal/transparent/requestSecureToken`,
 					},
 
@@ -817,7 +820,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "cgi_url_test_mode",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `https://pilot-payflowlink.paypal.com`,
 					},
 
@@ -826,7 +829,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "cgi_url",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `https://payflowlink.paypal.com`,
 					},
 
@@ -835,7 +838,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "transaction_url_test_mode",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `https://pilot-payflowpro.paypal.com`,
 					},
 
@@ -844,7 +847,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "transaction_url",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `https://payflowpro.paypal.com`,
 					},
 
@@ -853,7 +856,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "avs_street",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: false,
 					},
 
@@ -862,7 +865,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "avs_zip",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: false,
 					},
 
@@ -871,7 +874,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "avs_international",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: false,
 					},
 
@@ -880,7 +883,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "avs_security_code",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -889,7 +892,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "cc_year_length",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: 2,
 					},
 				},
@@ -903,7 +906,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "active",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -912,7 +915,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "allow_billing_agreement_wizard",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -921,7 +924,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Magento\Paypal\Model\Method\Agreement`,
 					},
 
@@ -930,7 +933,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "title",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `PayPal Billing Agreement`,
 					},
 
@@ -939,7 +942,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `paypal`,
 					},
 
@@ -948,7 +951,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "verify_peer",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 				},
@@ -962,7 +965,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Magento\Paypal\Model\Payflowlink`,
 					},
 
@@ -971,7 +974,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "payment_action",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Authorization`,
 					},
 
@@ -980,7 +983,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "verbosity",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `HIGH`,
 					},
 
@@ -989,7 +992,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "user",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 					},
 
@@ -998,7 +1001,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "pwd",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 					},
 
@@ -1007,7 +1010,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `paypal`,
 					},
 
@@ -1016,7 +1019,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "title",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Credit Card`,
 					},
 
@@ -1025,7 +1028,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "partner",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `PayPal`,
 					},
 
@@ -1034,7 +1037,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "csc_required",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -1043,7 +1046,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "csc_editable",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -1052,7 +1055,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "url_method",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `GET`,
 					},
 
@@ -1061,7 +1064,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "email_confirmation",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: false,
 					},
 
@@ -1070,7 +1073,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "verify_peer",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -1079,7 +1082,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "transaction_url_test_mode",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `https://pilot-payflowpro.paypal.com`,
 					},
 
@@ -1088,7 +1091,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "transaction_url",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `https://payflowpro.paypal.com`,
 					},
 
@@ -1097,7 +1100,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "cgi_url_test_mode",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `https://pilot-payflowlink.paypal.com`,
 					},
 
@@ -1106,7 +1109,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "cgi_url",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `https://payflowlink.paypal.com`,
 					},
 				},
@@ -1120,7 +1123,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Magento\Paypal\Model\Payflowadvanced`,
 					},
 
@@ -1129,7 +1132,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "payment_action",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Authorization`,
 					},
 
@@ -1138,7 +1141,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "verbosity",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `HIGH`,
 					},
 
@@ -1147,7 +1150,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "user",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `[{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}},"PayPal"]`,
 					},
 
@@ -1156,7 +1159,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "pwd",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 					},
 
@@ -1165,7 +1168,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `paypal`,
 					},
 
@@ -1174,7 +1177,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "title",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Credit Card`,
 					},
 
@@ -1183,7 +1186,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "partner",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `PayPal`,
 					},
 
@@ -1192,7 +1195,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "vendor",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `PayPal`,
 					},
 
@@ -1201,7 +1204,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "csc_required",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -1210,7 +1213,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "csc_editable",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -1219,7 +1222,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "url_method",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `GET`,
 					},
 
@@ -1228,7 +1231,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "email_confirmation",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: false,
 					},
 
@@ -1237,7 +1240,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "verify_peer",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
@@ -1246,7 +1249,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "transaction_url_test_mode",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `https://pilot-payflowpro.paypal.com`,
 					},
 
@@ -1255,7 +1258,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "transaction_url",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `https://payflowpro.paypal.com`,
 					},
 
@@ -1264,7 +1267,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "cgi_url_test_mode",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `https://pilot-payflowlink.paypal.com`,
 					},
 
@@ -1273,7 +1276,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "cgi_url",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `https://payflowlink.paypal.com`,
 					},
 				},
@@ -1287,7 +1290,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "model",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Magento\Paypal\Model\Hostedpro`,
 					},
 
@@ -1296,7 +1299,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "title",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Payment by cards or by PayPal account`,
 					},
 
@@ -1305,7 +1308,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "payment_action",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `Authorization`,
 					},
 
@@ -1314,7 +1317,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "group",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `paypal`,
 					},
 
@@ -1323,7 +1326,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "display_ec",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: false,
 					},
 
@@ -1332,7 +1335,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "verify_peer",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 				},

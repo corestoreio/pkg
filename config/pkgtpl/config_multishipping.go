@@ -2,21 +2,24 @@
 
 package multishipping
 
-import "github.com/corestoreio/csfw/config"
+import (
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+)
 
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "multishipping",
 		Label:     "Multishipping Settings",
 		SortOrder: 311,
-		Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+		Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "options",
 				Label:     `Options`,
 				Comment:   ``,
 				SortOrder: 2,
-				Scope:     config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `multishipping/options/checkout_multiple`,
@@ -26,7 +29,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
 						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -40,7 +43,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        config.NewScopePerm(config.ScopeDefaultID, config.ScopeWebsiteID),
+						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      100,
 						BackendModel: nil,
 						SourceModel:  nil,

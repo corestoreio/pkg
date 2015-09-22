@@ -21,6 +21,7 @@ import (
 
 	"strings"
 
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,22 +31,22 @@ func TestScopeKeyPath(t *testing.T) {
 		want    string
 		wantErr error
 	}{
-		{[]ArgFunc{Path("a/b/c")}, ScopeRangeDefault + "/0/a/b/c", nil},
+		{[]ArgFunc{Path("a/b/c")}, scope.RangeDefault + "/0/a/b/c", nil},
 		{[]ArgFunc{Path("")}, "", ErrPathEmpty},
 		{[]ArgFunc{Path()}, "", ErrPathEmpty},
-		{[]ArgFunc{Scope(ScopeDefaultID, nil)}, "", nil},
-		{[]ArgFunc{Scope(ScopeWebsiteID, nil)}, "", nil},
-		{[]ArgFunc{Scope(ScopeStoreID, nil)}, "", nil},
-		{[]ArgFunc{Path("a/b/c"), Scope(ScopeWebsiteID, nil)}, ScopeRangeDefault + "/0/a/b/c", nil},
-		{[]ArgFunc{Path("a/b/c"), Scope(ScopeWebsiteID, ScopeID(2))}, ScopeRangeWebsites + "/2/a/b/c", nil},
-		{[]ArgFunc{Path("a", "b", "c"), Scope(ScopeWebsiteID, ScopeID(200))}, ScopeRangeWebsites + "/200/a/b/c", nil},
-		{[]ArgFunc{Path("a", "b", "c"), Scope(ScopeStoreID, ScopeID(4))}, ScopeRangeStores + "/4/a/b/c", nil},
-		{[]ArgFunc{Path("a", "b"), Scope(ScopeStoreID, ScopeID(4))}, "", errors.New("Incorrect number of paths elements: want 3, have 1, Path: [a b]")},
-		{[]ArgFunc{nil, Scope(ScopeStoreID, ScopeID(4))}, "", nil},
-		{[]ArgFunc{Path("a", "b", "c"), ScopeStore(ScopeID(5))}, ScopeRangeStores + "/5/a/b/c", nil},
-		{[]ArgFunc{Path("a", "b", "c"), ScopeStore(nil)}, ScopeRangeDefault + "/0/a/b/c", nil},
-		{[]ArgFunc{Path("a", "b", "c"), ScopeWebsite(ScopeID(50))}, ScopeRangeWebsites + "/50/a/b/c", nil},
-		{[]ArgFunc{Path("a", "b", "c"), ScopeWebsite(nil)}, ScopeRangeDefault + "/0/a/b/c", nil},
+		{[]ArgFunc{Scope(scope.DefaultID, nil)}, "", nil},
+		{[]ArgFunc{Scope(scope.WebsiteID, nil)}, "", nil},
+		{[]ArgFunc{Scope(scope.StoreID, nil)}, "", nil},
+		{[]ArgFunc{Path("a/b/c"), Scope(scope.WebsiteID, nil)}, scope.RangeDefault + "/0/a/b/c", nil},
+		{[]ArgFunc{Path("a/b/c"), Scope(scope.WebsiteID, scope.ID(2))}, scope.RangeWebsites + "/2/a/b/c", nil},
+		{[]ArgFunc{Path("a", "b", "c"), Scope(scope.WebsiteID, scope.ID(200))}, scope.RangeWebsites + "/200/a/b/c", nil},
+		{[]ArgFunc{Path("a", "b", "c"), Scope(scope.StoreID, scope.ID(4))}, scope.RangeStores + "/4/a/b/c", nil},
+		{[]ArgFunc{Path("a", "b"), Scope(scope.StoreID, scope.ID(4))}, "", errors.New("Incorrect number of paths elements: want 3, have 1, Path: [a b]")},
+		{[]ArgFunc{nil, Scope(scope.StoreID, scope.ID(4))}, "", nil},
+		{[]ArgFunc{Path("a", "b", "c"), ScopeStore(scope.ID(5))}, scope.RangeStores + "/5/a/b/c", nil},
+		{[]ArgFunc{Path("a", "b", "c"), ScopeStore(nil)}, scope.RangeDefault + "/0/a/b/c", nil},
+		{[]ArgFunc{Path("a", "b", "c"), ScopeWebsite(scope.ID(50))}, scope.RangeWebsites + "/50/a/b/c", nil},
+		{[]ArgFunc{Path("a", "b", "c"), ScopeWebsite(nil)}, scope.RangeDefault + "/0/a/b/c", nil},
 		{nil, "", nil},
 	}
 
@@ -67,22 +68,22 @@ func TestScopeKeyValue(t *testing.T) {
 		want    string
 		wantErr error
 	}{
-		{[]ArgFunc{Value(1), Path("a/b/c")}, ScopeRangeDefault + "/0/a/b/c", nil},
+		{[]ArgFunc{Value(1), Path("a/b/c")}, scope.RangeDefault + "/0/a/b/c", nil},
 		{[]ArgFunc{Value("1"), Path("")}, "", ErrPathEmpty},
 		{[]ArgFunc{Value(1.1), Path()}, "", ErrPathEmpty},
-		{[]ArgFunc{Value(1), Scope(ScopeDefaultID, nil)}, "", nil},
-		{[]ArgFunc{Value(1), Scope(ScopeWebsiteID, nil)}, "", nil},
-		{[]ArgFunc{Value(1), Scope(ScopeStoreID, nil)}, "", nil},
-		{[]ArgFunc{Value(1), Path("a/b/c"), Scope(ScopeWebsiteID, nil)}, ScopeRangeDefault + "/0/a/b/c", nil},
-		{[]ArgFunc{Value(1), Path("a/b/c"), Scope(ScopeWebsiteID, ScopeID(2))}, ScopeRangeWebsites + "/2/a/b/c", nil},
-		{[]ArgFunc{Value(1), Path("a", "b", "c"), Scope(ScopeWebsiteID, ScopeID(200))}, ScopeRangeWebsites + "/200/a/b/c", nil},
-		{[]ArgFunc{Value(1), Path("a", "b", "c"), Scope(ScopeStoreID, ScopeID(4))}, ScopeRangeStores + "/4/a/b/c", nil},
-		{[]ArgFunc{Value(1), Path("a", "b"), Scope(ScopeStoreID, ScopeID(4))}, "", errors.New("Incorrect number of paths elements: want 3, have 1, Path: [a b]")},
-		{[]ArgFunc{Value(1), nil, Scope(ScopeStoreID, ScopeID(4))}, "", nil},
-		{[]ArgFunc{Value(1), Path("a", "b", "c"), ScopeStore(ScopeID(5))}, ScopeRangeStores + "/5/a/b/c", nil},
-		{[]ArgFunc{Value(1.2), Path("a", "b", "c"), ScopeStore(nil)}, ScopeRangeDefault + "/0/a/b/c", nil},
-		{[]ArgFunc{Value(1.3), Path("a", "b", "c"), ScopeWebsite(ScopeID(50))}, ScopeRangeWebsites + "/50/a/b/c", nil},
-		{[]ArgFunc{ValueReader(strings.NewReader("a config value")), Path("a", "b", "c"), ScopeWebsite(nil)}, ScopeRangeDefault + "/0/a/b/c", nil},
+		{[]ArgFunc{Value(1), Scope(scope.DefaultID, nil)}, "", nil},
+		{[]ArgFunc{Value(1), Scope(scope.WebsiteID, nil)}, "", nil},
+		{[]ArgFunc{Value(1), Scope(scope.StoreID, nil)}, "", nil},
+		{[]ArgFunc{Value(1), Path("a/b/c"), Scope(scope.WebsiteID, nil)}, scope.RangeDefault + "/0/a/b/c", nil},
+		{[]ArgFunc{Value(1), Path("a/b/c"), Scope(scope.WebsiteID, scope.ID(2))}, scope.RangeWebsites + "/2/a/b/c", nil},
+		{[]ArgFunc{Value(1), Path("a", "b", "c"), Scope(scope.WebsiteID, scope.ID(200))}, scope.RangeWebsites + "/200/a/b/c", nil},
+		{[]ArgFunc{Value(1), Path("a", "b", "c"), Scope(scope.StoreID, scope.ID(4))}, scope.RangeStores + "/4/a/b/c", nil},
+		{[]ArgFunc{Value(1), Path("a", "b"), Scope(scope.StoreID, scope.ID(4))}, "", errors.New("Incorrect number of paths elements: want 3, have 1, Path: [a b]")},
+		{[]ArgFunc{Value(1), nil, Scope(scope.StoreID, scope.ID(4))}, "", nil},
+		{[]ArgFunc{Value(1), Path("a", "b", "c"), ScopeStore(scope.ID(5))}, scope.RangeStores + "/5/a/b/c", nil},
+		{[]ArgFunc{Value(1.2), Path("a", "b", "c"), ScopeStore(nil)}, scope.RangeDefault + "/0/a/b/c", nil},
+		{[]ArgFunc{Value(1.3), Path("a", "b", "c"), ScopeWebsite(scope.ID(50))}, scope.RangeWebsites + "/50/a/b/c", nil},
+		{[]ArgFunc{ValueReader(strings.NewReader("a config value")), Path("a", "b", "c"), ScopeWebsite(nil)}, scope.RangeDefault + "/0/a/b/c", nil},
 		{nil, "", nil},
 	}
 
@@ -134,7 +135,7 @@ var benchmarkScopeKey string
 func BenchmarkScopeKey____InMap(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		arg, _ := newArg(Path("a", "b", "c"), Scope(ScopeWebsiteID, ScopeID(4)))
+		arg, _ := newArg(Path("a", "b", "c"), Scope(scope.WebsiteID, scope.ID(4)))
 		benchmarkScopeKey = arg.scopePath()
 	}
 }
@@ -143,7 +144,7 @@ func BenchmarkScopeKey____InMap(b *testing.B) {
 func BenchmarkScopeKey_NotInMap(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		arg, _ := newArg(Path("a", "b", "c"), Scope(ScopeWebsiteID, ScopeID(40)))
+		arg, _ := newArg(Path("a", "b", "c"), Scope(scope.WebsiteID, scope.ID(40)))
 		benchmarkScopeKey = arg.scopePath()
 	}
 }
@@ -152,7 +153,7 @@ func BenchmarkScopeKey_NotInMap(b *testing.B) {
 func BenchmarkScopeKey____InMapNoJoin(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		arg, _ := newArg(Path("a/b/c"), Scope(ScopeWebsiteID, ScopeID(3)))
+		arg, _ := newArg(Path("a/b/c"), Scope(scope.WebsiteID, scope.ID(3)))
 		benchmarkScopeKey = arg.scopePath()
 	}
 }

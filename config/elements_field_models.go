@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"sort"
 
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/utils"
 	"github.com/corestoreio/csfw/utils/log"
 )
@@ -43,7 +44,7 @@ type (
 	// Nearly all functions will return not nil. The Construct() function takes what it needs.
 	ModelConstructor struct {
 		// Scope contains a website/store ID or nil (=default scope)
-		Scope ScopeIDer
+		Scope scope.IDer
 		// ConfigReader returns the configuration reader and never nil
 		ConfigReader Reader
 		// @todo more fields to be added, depends on the overall requirements of all Magento models.

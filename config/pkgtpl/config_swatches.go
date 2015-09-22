@@ -2,21 +2,24 @@
 
 package swatches
 
-import "github.com/corestoreio/csfw/config"
+import (
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+)
 
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "catalog",
 		Label:     "",
 		SortOrder: 40,
-		Scope:     config.ScopePermAll,
+		Scope:     scope.PermAll,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "frontend",
 				Label:     ``,
 				Comment:   ``,
 				SortOrder: 100,
-				Scope:     config.ScopePermAll,
+				Scope:     scope.PermAll,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `catalog/frontend/swatches_per_product`,
@@ -26,7 +29,7 @@ var PackageConfiguration = config.NewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    300,
 						Visible:      config.VisibleYes,
-						Scope:        config.ScopePermAll,
+						Scope:        scope.PermAll,
 						Default:      16,
 						BackendModel: nil,
 						SourceModel:  nil,
@@ -48,7 +51,7 @@ var PackageConfiguration = config.NewConfiguration(
 						ID:      "input_types",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   config.NewScopePerm(config.ScopeDefaultID), // @todo search for that
+						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"swatch_visual":"swatch_visual","swatch_text":"swatch_text"}`,
 					},
 				},

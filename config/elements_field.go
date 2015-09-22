@@ -19,6 +19,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/juju/errgo"
 )
 
@@ -62,8 +63,8 @@ type (
 		Label   string     `json:",omitempty"`
 		Comment string     `json:",omitempty"`
 		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
-		Scope     ScopePerm `json:",omitempty"`
-		SortOrder int       `json:",omitempty"`
+		Scope     scope.Perm `json:",omitempty"`
+		SortOrder int        `json:",omitempty"`
 		// Visible used for configuration settings which are not exposed to the user.
 		// In Magento2 they do not have an entry in the system.xml
 		Visible Visible `json:",omitempty"`

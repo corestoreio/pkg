@@ -12,18 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config_test
+package scope_test
 
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestScopeBits(t *testing.T) {
 	const (
-		scope1 config.ScopeGroup = iota + 1
+		scope1 scope.Group = iota + 1
 		scope2
 		scope3
 		scope4
@@ -31,18 +31,18 @@ func TestScopeBits(t *testing.T) {
 	)
 
 	tests := []struct {
-		have    []config.ScopeGroup
-		want    config.ScopeGroup
-		notWant config.ScopeGroup
+		have    []scope.Group
+		want    scope.Group
+		notWant scope.Group
 		human   []string
 	}{
-		{[]config.ScopeGroup{scope1, scope2}, scope2, scope3, []string{"ScopeDefault", "ScopeWebsite"}},
-		{[]config.ScopeGroup{scope3, scope4}, scope3, scope2, []string{"ScopeGroup", "ScopeStore"}},
-		{[]config.ScopeGroup{scope4, scope5}, scope4, scope2, []string{"ScopeStore", "ScopeGroup(5)"}},
+		{[]scope.Group{scope1, scope2}, scope2, scope3, []string{"ScopeDefault", "ScopeWebsite"}},
+		{[]scope.Group{scope3, scope4}, scope3, scope2, []string{"ScopeGroup", "ScopeStore"}},
+		{[]scope.Group{scope4, scope5}, scope4, scope2, []string{"ScopeStore", "ScopeGroup(5)"}},
 	}
 
 	for _, test := range tests {
-		var b config.ScopePerm
+		var b scope.Perm
 		b.Set(test.have...)
 		if b.Has(test.want) == false {
 			t.Errorf("%d should contain %d", b, test.want)

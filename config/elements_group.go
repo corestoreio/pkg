@@ -20,6 +20,7 @@ import (
 	"errors"
 	"sort"
 
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 )
@@ -38,8 +39,8 @@ type (
 		Label   string `json:",omitempty"`
 		Comment string `json:",omitempty"`
 		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
-		Scope     ScopePerm `json:",omitempty"`
-		SortOrder int       `json:",omitempty"`
+		Scope     scope.Perm `json:",omitempty"`
+		SortOrder int        `json:",omitempty"`
 		Fields    FieldSlice
 		// Groups     GroupSlice @todo see recursive options <xs:element name="group"> in app/code/Magento/Config/etc/system_file.xsd
 	}
