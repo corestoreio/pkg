@@ -36,7 +36,7 @@ type MessageReceiver interface {
 	// Path may contains up to three levels. For more details see the Subscriber
 	// interface of this package. If an error will be returned, the subscriber
 	// gets unsubscribed/removed.
-	MessageConfig(path string, sg scope.Group, s scope.IDer) error
+	MessageConfig(path string, sg scope.Scope, id int64) error
 }
 
 // Subscriber represents the overall manager to receive subscriptions from

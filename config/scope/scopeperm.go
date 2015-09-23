@@ -24,7 +24,7 @@ type Perm uint64
 var PermAll = Perm(1<<DefaultID | 1<<WebsiteID | 1<<StoreID)
 
 // NewPerm returns a new permission container
-func NewPerm(scopes ...Group) Perm {
+func NewPerm(scopes ...Scope) Perm {
 	p := Perm(0)
 	p.Set(scopes...)
 	return p
@@ -37,7 +37,7 @@ func (bits *Perm) All() Perm {
 }
 
 // Set takes a variadic amount of Group to set them to Bits
-func (bits *Perm) Set(scopes ...Group) Perm {
+func (bits *Perm) Set(scopes ...Scope) Perm {
 	for _, i := range scopes {
 		*bits = *bits | (1 << i) // (1 << power = 2^power)
 	}
@@ -45,8 +45,8 @@ func (bits *Perm) Set(scopes ...Group) Perm {
 }
 
 // Has checks if Group is in Bits
-func (bits Perm) Has(s Group) bool {
-	var one Group = 1 // ^^
+func (bits Perm) Has(s Scope) bool {
+	var one Scope = 1 // ^^
 	return (bits & Perm(one<<s)) != 0
 }
 
@@ -57,7 +57,7 @@ func (bits Perm) Human() utils.StringSlice {
 	for i = 0; i < 64; i++ {
 		bit := ((bits & (1 << i)) != 0)
 		if bit {
-			ret.Append(Group(i).String())
+			ret.Append(Scope(i).String())
 		}
 	}
 	return ret

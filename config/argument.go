@@ -40,20 +40,24 @@ var ErrPathEmpty = errors.New("Path cannot be empty")
 type ArgFunc func(*arg)
 
 // ScopeWebsite wrapper helper function. See Scope()
-func ScopeWebsite(r scope.IDer) ArgFunc { return Scope(scope.WebsiteID, r) }
+func ScopeWebsite(id int64) ArgFunc { return Scope(scope.WebsiteID, id) }
+
+// ScopeGroup wrapper helper function. See Scope()
+func ScopeGroup(id int64) ArgFunc { return Scope(scope.GroupID, id) }
 
 // ScopeStore wrapper helper function. See Scope()
-func ScopeStore(r scope.IDer) ArgFunc { return Scope(scope.StoreID, r) }
+func ScopeStore(id int64) ArgFunc { return Scope(scope.StoreID, id) }
 
 // Scope sets the scope using the scope.Group and a scope.IDer.
 // A scope.IDer can contain an ID from a website or a store. Make sure
 // the correct scope.Group has also been set. If scope.IDer is nil
 // the scope will fallback to default scope.
-func Scope(s scope.Group, r scope.IDer) ArgFunc {
-	if s != scope.DefaultID && r == nil {
+func Scope(s scope.Scope, id int64) ArgFunc {
+	if s != scope.DefaultID && id < 1 {
+		id = 0
 		s = scope.DefaultID
 	}
-	return func(a *arg) { a.sg = s; a.si = r }
+	return func(a *arg) { a.sg = s; a.si = id }
 }
 
 // Path option function to specify the configuration path. If one argument has been
@@ -119,8 +123,8 @@ func ValueReader(r io.Reader) ArgFunc {
 type arg struct {
 	pa         string   // p is the three level path e.g. a/b/c
 	paSlice    []string // used for hierarchy for the pubSub system
-	sg         scope.Group
-	si         scope.IDer
+	sg         scope.Scope
+	si         int64       // scope ID
 	nb         bool        // noBubble, if false value search: (store|website) -> default
 	v          interface{} // value use for saving
 	lastErrors []error
@@ -188,11 +192,11 @@ func (a arg) scopePathDefault() string {
 }
 
 func (a arg) scopeID() string {
-	if a.si != nil {
-		if a.si.ScopeID() <= int64CacheLen {
-			return int64Cache[a.si.ScopeID()]
+	if a.si > 0 {
+		if a.si <= int64CacheLen {
+			return int64Cache[a.si]
 		}
-		return strconv.FormatInt(a.si.ScopeID(), 10)
+		return strconv.FormatInt(a.si, 10)
 	}
 	return "0"
 }

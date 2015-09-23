@@ -25,6 +25,6 @@ type (
 )
 
 // ShowNonRequiredState
-func ShowNonRequiredState(cr config.Reader, r scope.IDer) bool {
-	return cr.GetBool(config.ScopeStore(r), config.Path(PathDisplayAllStates))
+func ShowNonRequiredState(cr config.Reader, r scope.StoreIDer) bool {
+	return cr.GetBool(config.ScopeStore(r.StoreID()), config.Path(PathDisplayAllStates))
 }

@@ -13,6 +13,6 @@
 // limitations under the License.
 
 /*
-Package scope defines the configuration scopes
+Package scope defines the configuration of scopes: website, group and store.
 */
 package scope

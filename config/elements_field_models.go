@@ -43,8 +43,9 @@ type (
 	// by the FieldSourceModeller or FieldBackendModeller types.
 	// Nearly all functions will return not nil. The Construct() function takes what it needs.
 	ModelConstructor struct {
-		// Scope contains a website/store ID or nil (=default scope)
-		Scope scope.IDer
+		// WebsiteID contains a website/store ID or nil (=default scope) both can be nil or just one
+		WebsiteID scope.WebsiteIDer
+		StoreID   scope.StoreIDer
 		// ConfigReader returns the configuration reader and never nil
 		ConfigReader Reader
 		// @todo more fields to be added, depends on the overall requirements of all Magento models.

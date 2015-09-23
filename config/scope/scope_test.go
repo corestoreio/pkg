@@ -23,7 +23,7 @@ import (
 
 func TestScopeBits(t *testing.T) {
 	const (
-		scope1 scope.Group = iota + 1
+		scope1 scope.Scope = iota + 1
 		scope2
 		scope3
 		scope4
@@ -31,14 +31,14 @@ func TestScopeBits(t *testing.T) {
 	)
 
 	tests := []struct {
-		have    []scope.Group
-		want    scope.Group
-		notWant scope.Group
+		have    []scope.Scope
+		want    scope.Scope
+		notWant scope.Scope
 		human   []string
 	}{
-		{[]scope.Group{scope1, scope2}, scope2, scope3, []string{"ScopeDefault", "ScopeWebsite"}},
-		{[]scope.Group{scope3, scope4}, scope3, scope2, []string{"ScopeGroup", "ScopeStore"}},
-		{[]scope.Group{scope4, scope5}, scope4, scope2, []string{"ScopeStore", "ScopeGroup(5)"}},
+		{[]scope.Scope{scope1, scope2}, scope2, scope3, []string{"ScopeDefault", "ScopeWebsite"}},
+		{[]scope.Scope{scope3, scope4}, scope3, scope2, []string{"ScopeGroup", "ScopeStore"}},
+		{[]scope.Scope{scope4, scope5}, scope4, scope2, []string{"ScopeStore", "ScopeGroup(5)"}},
 	}
 
 	for _, test := range tests {

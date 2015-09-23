@@ -23,7 +23,7 @@ import (
 const (
 	// *ID defines the overall scopes in a configuration. If a Section/Group/Field
 	// can be shown in the current selected scope.
-	AbsentID Group = iota // order of the constants is used for comparison
+	AbsentID Scope = iota // order of the constants is used for comparison
 	DefaultID
 	WebsiteID
 	GroupID
@@ -43,45 +43,63 @@ const (
 
 type (
 
-	// Group used in constants where default is the lowest and store the highest. Func String() attached.
+	// Scope used in constants where default is the lowest and store the highest. Func String() attached.
 	// Part of Perm.
-	Group uint8
+	Scope uint8
 
-	// IDer implements how to get the ID. If IDer implements Coder
-	// then Coder has precedence. ID can be any of the website, group or store IDs.
-	IDer interface {
-		ScopeID() int64
+	// WebsiteIDer defines the scope of a website.
+	WebsiteIDer interface {
+		WebsiteID() int64
 	}
-	// Coder implements how to get an object by Code which can be website or store code.
-	// Groups doesn't have codes.
-	Coder interface {
-		ScopeCode() string
+
+	// GroupIDer defines the scope of a group.
+	GroupIDer interface {
+		GroupID() int64
 	}
-	// ID is convenience helper to satisfy the interface IDer.
-	ID int64
-	// Code is convenience helper to satisfy the interface Coder and IDer.
-	Code string
+
+	// StoreIDer defines the scope of a store.
+	StoreIDer interface {
+		StoreID() int64
+	}
+
+	// GroupCoder not available because not existent.
+
+	// WebsiteCoder defines the scope of a website by returning the store code.
+	WebsiteCoder interface {
+		WebsiteCode() string
+	}
+
+	// StoreCoder defines the scope of a store by returning the store code.
+	StoreCoder interface {
+		StoreCode() string
+	}
+
+//	// ID is convenience helper to satisfy the interface IDer.
+//	ID int64
+//	// Code is convenience helper to satisfy the interface Coder and IDer.
+//	Code string
 )
 
-var _ IDer = ID(0)
-var _ Coder = Code("")
+//var _ IDer = ID(0)
+//var _ Coder = Code("")
 
-// ScopeID is convenience helper to satisfy the interface IDer
-func (i ID) ScopeID() int64 { return int64(i) }
-
-// ScopeID is a noop method receiver to satisfy the interface IDer
-func (c Code) ScopeID() int64 { return int64(0) }
-
+//
+//// ScopeID is convenience helper to satisfy the interface IDer
+//func (i ID) ScopeID() int64 { return int64(i) }
+//
+//// ScopeID is a noop method receiver to satisfy the interface IDer
+//func (c Code) ScopeID() int64 { return int64(0) }
+//
 // ScopeCode is convenience helper to satisfy the interface Coder
-func (c Code) ScopeCode() string { return string(c) }
+//func (c Code) ScopeCode() string { return string(c) }
 
 const scopeGroupName = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
 
 var scopeGroupIndex = [...]uint8{0, 11, 23, 35, 45, 55}
 
 // String human readable name of Group. For Marshaling see Perm
-func (i Group) String() string {
-	if i+1 >= Group(len(scopeGroupIndex)) {
+func (i Scope) String() string {
+	if i+1 >= Scope(len(scopeGroupIndex)) {
 		return fmt.Sprintf("ScopeGroup(%d)", i)
 	}
 	return scopeGroupName[scopeGroupIndex[i]:scopeGroupIndex[i+1]]
@@ -92,7 +110,7 @@ func GroupNames() (r utils.StringSlice) {
 	return r.SplitStringer8(scopeGroupName, scopeGroupIndex[:]...)
 }
 
-func GetGroup(s string) Group {
+func FromString(s string) Scope {
 	switch s {
 	case RangeWebsites:
 		return WebsiteID

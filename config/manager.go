@@ -131,7 +131,7 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 	for _, cd := range ccd {
 		if cd.Value.Valid {
 			// scope.ID(cd.ScopeID) because cd.ScopeID is a struct field and cannot satisfy interface scope.IDer
-			m.Write(Path(cd.Path), Scope(scope.GetGroup(cd.Scope), scope.ID(cd.ScopeID)))
+			m.Write(Path(cd.Path), Scope(scope.FromString(cd.Scope), cd.ScopeID))
 		}
 	}
 	return nil
@@ -154,7 +154,7 @@ func (m *Manager) Write(o ...ArgFunc) error {
 		m.v.Set(a.scopePathDefault(), a.v)
 		aDefault := a
 		aDefault.sg = scope.DefaultID
-		aDefault.si = scope.ID(0)
+		aDefault.si = 0 // reset to 0
 		m.sendMsg(aDefault)
 	}
 
