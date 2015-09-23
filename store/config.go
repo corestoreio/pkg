@@ -16,6 +16,7 @@ package store
 
 import (
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 )
 
@@ -64,7 +65,7 @@ func init() {
 			ID:        "general",
 			Label:     "General",
 			SortOrder: 10,
-			Scope:     config.ScopePermAll,
+			Scope:     scope.PermAll,
 
 			Groups: config.GroupSlice{
 				&config.Group{
@@ -72,7 +73,7 @@ func init() {
 					Label:     `Single-Store Mode`,
 					Comment:   ``,
 					SortOrder: 150,
-					Scope:     config.NewScopePerm(config.ScopeDefaultID),
+					Scope:     scope.NewPerm(scope.DefaultID),
 					Fields: config.FieldSlice{
 						&config.Field{
 							// Path: `general/single_store_mode/enabled`,
@@ -82,7 +83,7 @@ func init() {
 							Type:         config.TypeSelect,
 							SortOrder:    10,
 							Visible:      config.VisibleYes,
-							Scope:        config.NewScopePerm(config.ScopeDefaultID),
+							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      nil,
 							BackendModel: nil,
 							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -95,7 +96,7 @@ func init() {
 					Label:     `Store Information`,
 					Comment:   ``,
 					SortOrder: 100,
-					Scope:     config.ScopePermAll,
+					Scope:     scope.PermAll,
 					Fields: config.FieldSlice{
 						&config.Field{
 							// Path: `general/store_information/name`,
@@ -105,7 +106,7 @@ func init() {
 							Type:         config.TypeText,
 							SortOrder:    10,
 							Visible:      config.VisibleYes,
-							Scope:        config.ScopePermAll,
+							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil,
 							SourceModel:  nil,
@@ -119,7 +120,7 @@ func init() {
 							Type:         config.TypeText,
 							SortOrder:    20,
 							Visible:      config.VisibleYes,
-							Scope:        config.ScopePermAll,
+							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil,
 							SourceModel:  nil,
@@ -133,14 +134,14 @@ func init() {
 			ID:        "web",
 			Label:     "Web",
 			SortOrder: 20,
-			Scope:     config.ScopePermAll,
+			Scope:     scope.PermAll,
 			Groups: config.GroupSlice{
 				&config.Group{
 					ID:        "url",
 					Label:     `Url Options`,
 					Comment:   ``,
 					SortOrder: 3,
-					Scope:     config.NewScopePerm(config.ScopeDefaultID),
+					Scope:     scope.NewPerm(scope.DefaultID),
 					Fields: config.FieldSlice{
 						&config.Field{
 							// Path: `web/url/use_store`,
@@ -150,7 +151,7 @@ func init() {
 							Type:         config.TypeSelect,
 							SortOrder:    10,
 							Visible:      config.VisibleYes,
-							Scope:        config.NewScopePerm(config.ScopeDefaultID),
+							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Store
 							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -164,7 +165,7 @@ func init() {
 							Type:         config.TypeSelect,
 							SortOrder:    20,
 							Visible:      config.VisibleYes,
-							Scope:        config.NewScopePerm(config.ScopeDefaultID),
+							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      nil,
 							BackendModel: nil,
 							SourceModel:  nil, // Magento\Config\Model\Config\Source\Web\Redirect
@@ -177,7 +178,7 @@ func init() {
 					Label:     `Base URLs`,
 					Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`,
 					SortOrder: 10,
-					Scope:     config.ScopePermAll,
+					Scope:     scope.PermAll,
 					Fields: config.FieldSlice{
 						&config.Field{
 							// Path: `web/unsecure/base_url`,
@@ -187,7 +188,7 @@ func init() {
 							Type:         config.TypeText,
 							SortOrder:    10,
 							Visible:      config.VisibleYes,
-							Scope:        config.ScopePermAll,
+							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 							SourceModel:  nil,
@@ -201,7 +202,7 @@ func init() {
 							Type:         config.TypeText,
 							SortOrder:    20,
 							Visible:      config.VisibleYes,
-							Scope:        config.ScopePermAll,
+							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 							SourceModel:  nil,
@@ -215,7 +216,7 @@ func init() {
 							Type:         config.TypeText,
 							SortOrder:    25,
 							Visible:      config.VisibleYes,
-							Scope:        config.ScopePermAll,
+							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 							SourceModel:  nil,
@@ -229,7 +230,7 @@ func init() {
 							Type:         config.TypeText,
 							SortOrder:    40,
 							Visible:      config.VisibleYes,
-							Scope:        config.ScopePermAll,
+							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 							SourceModel:  nil,
@@ -242,7 +243,7 @@ func init() {
 					Label:     `Base URLs (Secure)`,
 					Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`,
 					SortOrder: 20,
-					Scope:     config.ScopePermAll,
+					Scope:     scope.PermAll,
 					Fields: config.FieldSlice{
 						&config.Field{
 							// Path: `web/secure/base_url`,
@@ -252,7 +253,7 @@ func init() {
 							Type:         config.TypeText,
 							SortOrder:    10,
 							Visible:      config.VisibleYes,
-							Scope:        config.ScopePermAll,
+							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 							SourceModel:  nil,
@@ -266,7 +267,7 @@ func init() {
 							Type:         config.TypeText,
 							SortOrder:    20,
 							Visible:      config.VisibleYes,
-							Scope:        config.ScopePermAll,
+							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 							SourceModel:  nil,
@@ -280,7 +281,7 @@ func init() {
 							Type:         config.TypeText,
 							SortOrder:    25,
 							Visible:      config.VisibleYes,
-							Scope:        config.ScopePermAll,
+							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 							SourceModel:  nil,
@@ -294,7 +295,7 @@ func init() {
 							Type:         config.TypeText,
 							SortOrder:    40,
 							Visible:      config.VisibleYes,
-							Scope:        config.ScopePermAll,
+							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 							SourceModel:  nil,
@@ -303,12 +304,12 @@ func init() {
 						&config.Field{
 							// Path: `web/secure/use_in_frontend`,
 							ID:           "use_in_frontend",
-							Label:        `Use Secure URLs in Frontend`,
-							Comment:      `Enter https protocol to use Secure URLs in Frontend.`,
+							Label:        `Use Secure URLs on Storefront`,
+							Comment:      `Enter https protocol to use Secure URLs on Storefront.`,
 							Type:         config.TypeSelect,
 							SortOrder:    50,
 							Visible:      config.VisibleYes,
-							Scope:        config.ScopePermAll,
+							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Secure
 							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -322,7 +323,7 @@ func init() {
 							Type:         config.TypeSelect,
 							SortOrder:    60,
 							Visible:      config.VisibleYes,
-							Scope:        config.NewScopePerm(config.ScopeDefaultID),
+							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Secure
 							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -336,7 +337,7 @@ func init() {
 							Type:         config.TypeText,
 							SortOrder:    70,
 							Visible:      config.VisibleYes,
-							Scope:        config.NewScopePerm(config.ScopeDefaultID),
+							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      nil,
 							BackendModel: nil,
 							SourceModel:  nil,

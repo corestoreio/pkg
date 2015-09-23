@@ -16,6 +16,7 @@ package directory
 
 import (
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 )
 
 type (
@@ -24,6 +25,6 @@ type (
 )
 
 // ShowNonRequiredState
-func ShowNonRequiredState(cr config.Reader, r config.ScopeIDer) bool {
+func ShowNonRequiredState(cr config.Reader, r scope.IDer) bool {
 	return cr.GetBool(config.ScopeStore(r), config.Path(PathDisplayAllStates))
 }
