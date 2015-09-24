@@ -2,7 +2,10 @@
 
 package catalogsearch
 
-import "github.com/corestoreio/csfw/config"
+import (
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+)
 
 var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
