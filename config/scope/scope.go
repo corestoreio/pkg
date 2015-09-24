@@ -73,25 +73,7 @@ type (
 	StoreCoder interface {
 		StoreCode() string
 	}
-
-//	// ID is convenience helper to satisfy the interface IDer.
-//	ID int64
-//	// Code is convenience helper to satisfy the interface Coder and IDer.
-//	Code string
 )
-
-//var _ IDer = ID(0)
-//var _ Coder = Code("")
-
-//
-//// ScopeID is convenience helper to satisfy the interface IDer
-//func (i ID) ScopeID() int64 { return int64(i) }
-//
-//// ScopeID is a noop method receiver to satisfy the interface IDer
-//func (c Code) ScopeID() int64 { return int64(0) }
-//
-// ScopeCode is convenience helper to satisfy the interface Coder
-//func (c Code) ScopeCode() string { return string(c) }
 
 const scopeGroupName = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
 
