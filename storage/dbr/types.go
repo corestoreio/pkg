@@ -7,10 +7,11 @@ import (
 	"time"
 
 	"fmt"
+	"math"
+
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/go-sql-driver/mysql"
 	"github.com/ugorji/go/codec"
-	"math"
 )
 
 //

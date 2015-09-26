@@ -15,11 +15,12 @@
 package net_test
 
 import (
-	"github.com/corestoreio/csfw/net"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/corestoreio/csfw/net"
+	"github.com/stretchr/testify/assert"
 )
 
 type h1 struct{}

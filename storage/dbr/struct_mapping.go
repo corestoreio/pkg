@@ -3,8 +3,9 @@ package dbr
 import (
 	"errors"
 	"fmt"
-	"github.com/corestoreio/csfw/utils"
 	"reflect"
+
+	"github.com/corestoreio/csfw/utils"
 )
 
 var destDummy interface{}

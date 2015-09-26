@@ -15,8 +15,9 @@
 package net
 
 import (
-	"github.com/corestoreio/csfw/utils/log"
 	"net/http"
+
+	"github.com/corestoreio/csfw/utils/log"
 )
 
 const (
