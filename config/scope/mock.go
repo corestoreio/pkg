@@ -35,16 +35,27 @@ func (i MockID) StoreID() int64 { return int64(i) }
 
 var _ StoreCoder = MockCode("")
 var _ WebsiteCoder = MockCode("")
+var _ WebsiteIDer = MockCode("")
+var _ GroupIDer = MockCode("")
+var _ StoreIDer = MockCode("")
 
-// MockCode is convenience helper to satisfy the interface WebsiteCoder and StoreCoder.
+// MockCode is convenience helper to satisfy the interface WebsiteCoder, StoreCoder,
+// WebsiteIDer, GroupIDer and StoreIDer. Reason: In package store all functions have
+// as argument an *IDer interface but once they detect an *Coder interface, they
+// will once the *Coder return value.
 type MockCode string
 
+// WebsiteID is convenience helper to satisfy the interface WebsiteIDer. Returns -1.
+func (c MockCode) WebsiteID() int64 { return -1 }
+
 // WebsiteCode mock helper to return a website code
-func (c MockCode) WebsiteCode() string {
-	return string(c)
-}
+func (c MockCode) WebsiteCode() string { return string(c) }
+
+// StoreID is convenience helper to satisfy the interface StoreIDer. Returns -1.
+func (c MockCode) StoreID() int64 { return -1 }
 
 // StoreCode mock helper to return a store code
-func (c MockCode) StoreCode() string {
-	return string(c)
-}
+func (c MockCode) StoreCode() string { return string(c) }
+
+// GroupID is convenience helper to satisfy the interface GroupIDer. Returns -1.
+func (c MockCode) GroupID() int64 { return -1 }

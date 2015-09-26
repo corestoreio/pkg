@@ -15,10 +15,17 @@
 package scope
 
 import (
+	"bytes"
 	"fmt"
+
+	"strings"
 
 	"github.com/corestoreio/csfw/utils"
 )
+
+// Scope used in constants where default is the lowest and store the highest.
+// Func String() attached. Part of type Perm.
+type Scope uint8
 
 const (
 	// *ID defines the overall scopes in a configuration. If a Section/Group/Field
@@ -30,23 +37,9 @@ const (
 	StoreID
 )
 
-const (
-	// RangeDefault defines the global scope. Stored in table core_config_data.scope.
-	RangeDefault = "default"
-	// RangeWebsites defines the website scope which has default as parent and stores as child.
-	//  Stored in table core_config_data.scope.
-	RangeWebsites = "websites"
-	// RangeStores defines the store scope which has default and websites as parent.
-	//  Stored in table core_config_data.scope.
-	RangeStores = "stores"
-)
-
+// Interfaces for different scopes. Note that WebsiteIDer may have an underlying
+// WebsiteCoder interface
 type (
-
-	// Scope used in constants where default is the lowest and store the highest. Func String() attached.
-	// Part of Perm.
-	Scope uint8
-
 	// WebsiteIDer defines the scope of a website.
 	WebsiteIDer interface {
 		WebsiteID() int64
@@ -92,12 +85,79 @@ func GroupNames() (r utils.StringSlice) {
 	return r.SplitStringer8(scopeGroupName, scopeGroupIndex[:]...)
 }
 
+// PS path separator used in the database table core_config_data and in config.Manager
+const PS = "/"
+
+// StrScope represents a string scope from table core_config_data column scope with
+// special functions attached, mainly for path generation
+type StrScope string
+
+const (
+	strDefault  = "default"
+	strWebsites = "websites"
+	strStores   = "stores"
+)
+
+const (
+	// StrDefault defines the global scope.
+	StrDefault StrScope = strDefault
+	// StrWebsites defines the website scope which has default as parent and stores as child.
+	StrWebsites StrScope = strWebsites
+	// StrStores defines the store scope which has default and websites as parent.
+	StrStores StrScope = strStores
+)
+
+// FQPath returns the fully qualified path. ID is an int string. Paths is either
+// one path (system/smtp/host) including path separators or three
+// parts ("system", "smtp", "host").
+func (s StrScope) FQPath(scopeID string, paths ...string) string {
+	var buf bytes.Buffer
+	buf.WriteString(string(s))
+	buf.WriteString(PS)
+	buf.WriteString(scopeID)
+	buf.WriteString(PS)
+	lp := len(paths)
+	for i, path := range paths {
+		buf.WriteString(path)
+		if i < lp-1 {
+			buf.WriteString(PS)
+		}
+	}
+	return buf.String()
+}
+
+// String returns the scope as string
+func (s StrScope) String() string {
+	return string(s)
+}
+
+// FromString returns the scope ID from a string: default, websites or stores.
+// Opposite of FromScope
 func FromString(s string) Scope {
-	switch s {
-	case RangeWebsites:
+	switch StrScope(s) {
+	case StrWebsites:
 		return WebsiteID
-	case RangeStores:
+	case StrStores:
 		return StoreID
 	}
 	return DefaultID
+}
+
+// FromScope returns the string representation for a scope ID. Opposite of FromString.
+func FromScope(scopeID Scope) StrScope {
+	switch scopeID {
+	case WebsiteID:
+		return StrWebsites
+	case StoreID:
+		return StrStores
+	}
+	return StrDefault
+}
+
+func PathSplit(path string) []string {
+	return strings.Split(path, PS)
+}
+
+func PathJoin(path ...string) string {
+	return strings.Join(path, PS)
 }

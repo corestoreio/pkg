@@ -31,4 +31,8 @@ func TestMockID(t *testing.T) {
 func TestMockCode(t *testing.T) {
 	assert.Equal(t, "Waverly", scope.MockCode("Waverly").StoreCode())
 	assert.Equal(t, "Waverly", scope.MockCode("Waverly").WebsiteCode())
+	var i int64 = -1
+	assert.Equal(t, i, scope.MockCode("Waverly").WebsiteID())
+	assert.Equal(t, i, scope.MockCode("Waverly").GroupID())
+	assert.Equal(t, i, scope.MockCode("Waverly").StoreID())
 }
