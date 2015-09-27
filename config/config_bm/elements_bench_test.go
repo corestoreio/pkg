@@ -65,11 +65,11 @@ func BenchmarkSectionSliceFindFieldByPath1(b *testing.B) {
 // BenchmarkSectionSliceFindFieldByPath5	 3000000	       565 ns/op	       0 B/op	       0 allocs/op => Go 1.5.0
 func BenchmarkSectionSliceFindFieldByPath5(b *testing.B) {
 	var paths = [][]string{
-		[]string{"carriers", "usps", "gateway_url"},
-		[]string{"wishlist", "email", "number_limit"},
-		[]string{"tax", "calculation", "apply_tax_on"},
-		[]string{"sitemap", "generate", "frequency"},
-		[]string{"sales_email", "creditmemo_comment", "guest_template"},
+		{"carriers", "usps", "gateway_url"},
+		{"wishlist", "email", "number_limit"},
+		{"tax", "calculation", "apply_tax_on"},
+		{"sitemap", "generate", "frequency"},
+		{"sales_email", "creditmemo_comment", "guest_template"},
 	}
 	b.ReportAllocs()
 	b.ResetTimer()

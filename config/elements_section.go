@@ -105,7 +105,7 @@ func (ss SectionSlice) TotalFields() int {
 	fs := 0
 	for _, s := range ss {
 		for _, g := range s.Groups {
-			for _ = range g.Fields {
+			for range g.Fields {
 				fs++
 			}
 		}

@@ -34,7 +34,7 @@ func TestNewConfiguration(t *testing.T) {
 		},
 		1: {
 			have: []*config.Section{
-				&config.Section{
+				{
 					ID: "web",
 					Groups: config.GroupSlice{
 						&config.Group{
@@ -43,7 +43,7 @@ func TestNewConfiguration(t *testing.T) {
 						},
 					},
 				},
-				&config.Section{
+				{
 					ID: "system",
 					Groups: config.GroupSlice{
 						&config.Group{
@@ -57,16 +57,16 @@ func TestNewConfiguration(t *testing.T) {
 			wantLen: 3,
 		},
 		2: {
-			have:    []*config.Section{&config.Section{ID: "a", Groups: config.GroupSlice{}}},
+			have:    []*config.Section{{ID: "a", Groups: config.GroupSlice{}}},
 			wantErr: "",
 		},
 		3: {
-			have:    []*config.Section{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b", Fields: nil}}}},
+			have:    []*config.Section{{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b", Fields: nil}}}},
 			wantErr: "",
 		},
 		4: {
 			have: []*config.Section{
-				&config.Section{
+				{
 					ID: "a",
 					Groups: config.GroupSlice{
 						&config.Group{
@@ -166,7 +166,7 @@ func TestSectionSliceMerge(t *testing.T) {
 		0: {
 			have: []config.SectionSlice{
 				nil,
-				config.SectionSlice{
+				{
 					nil,
 					&config.Section{
 						ID: "a",
@@ -187,7 +187,7 @@ func TestSectionSliceMerge(t *testing.T) {
 						},
 					},
 				},
-				config.SectionSlice{
+				{
 					&config.Section{ID: "a", Label: "LabelA", Groups: nil},
 				},
 			},
@@ -197,7 +197,7 @@ func TestSectionSliceMerge(t *testing.T) {
 		},
 		1: {
 			have: []config.SectionSlice{
-				config.SectionSlice{
+				{
 					&config.Section{
 						ID:    "a",
 						Label: "SectionLabelA",
@@ -213,7 +213,7 @@ func TestSectionSliceMerge(t *testing.T) {
 						},
 					},
 				},
-				config.SectionSlice{
+				{
 					&config.Section{
 						ID:    "a",
 						Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID),
@@ -237,10 +237,10 @@ func TestSectionSliceMerge(t *testing.T) {
 		},
 		2: {
 			have: []config.SectionSlice{
-				config.SectionSlice{
+				{
 					&config.Section{ID: "a", Label: "SectionLabelA", SortOrder: 20, Permission: 22},
 				},
-				config.SectionSlice{
+				{
 					&config.Section{ID: "a", Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID), SortOrder: 10, Permission: 3},
 				},
 			},
@@ -249,7 +249,7 @@ func TestSectionSliceMerge(t *testing.T) {
 		},
 		3: {
 			have: []config.SectionSlice{
-				config.SectionSlice{
+				{
 					&config.Section{
 						ID:    "a",
 						Label: "SectionLabelA",
@@ -263,7 +263,7 @@ func TestSectionSliceMerge(t *testing.T) {
 						},
 					},
 				},
-				config.SectionSlice{
+				{
 					&config.Section{
 						ID:        "a",
 						SortOrder: 1000,
@@ -281,7 +281,7 @@ func TestSectionSliceMerge(t *testing.T) {
 		},
 		4: {
 			have: []config.SectionSlice{
-				config.SectionSlice{
+				{
 					&config.Section{
 						ID: "a",
 						Groups: config.GroupSlice{
@@ -304,7 +304,7 @@ func TestSectionSliceMerge(t *testing.T) {
 						},
 					},
 				},
-				config.SectionSlice{
+				{
 					&config.Section{
 						ID: "a",
 						Groups: config.GroupSlice{
@@ -326,7 +326,7 @@ func TestSectionSliceMerge(t *testing.T) {
 		},
 		5: {
 			have: []config.SectionSlice{
-				config.SectionSlice{
+				{
 					&config.Section{
 						ID: "a",
 						Groups: config.GroupSlice{
@@ -343,7 +343,7 @@ func TestSectionSliceMerge(t *testing.T) {
 						},
 					},
 				},
-				config.SectionSlice{
+				{
 					nil,
 					&config.Section{
 						ID: "a",
@@ -405,20 +405,20 @@ func TestGroupSliceMerge(t *testing.T) {
 	}{
 		{
 			have: []*config.Group{
-				&config.Group{
+				{
 					ID: "b",
 					Fields: config.FieldSlice{
 						&config.Field{ID: "c", Default: `c`, Type: config.TypeMultiselect},
 					},
 				},
-				&config.Group{
+				{
 					ID: "b",
 					Fields: config.FieldSlice{
 						&config.Field{ID: "d", Default: `d`, Comment: "Ring of fire", Type: config.TypeObscure},
 						&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect, Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID)},
 					},
 				},
-				&config.Group{
+				{
 					ID: "b",
 					Fields: config.FieldSlice{
 						&config.Field{ID: "d", Default: `overriddenD`, Label: "Sect2Group2Label4", Comment: "LOTR"},
