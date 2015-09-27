@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/utils/log"
 )
@@ -40,11 +41,11 @@ func TestSourceCurrencyAll(t *testing.T) {
 		}),
 	)
 
-	s := config.ScopeID(1)
+	var s scope.MockID = 1
 
 	sca := directory.NewSourceCurrencyAll(config.ModelConstructor{
 		ConfigReader: r,
-		Scope:        s,
+		ScopeStore:   s,
 	})
 
 	t.Logf("\n%#v\n", sca.Options())
