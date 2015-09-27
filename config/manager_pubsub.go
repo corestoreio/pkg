@@ -145,7 +145,7 @@ func (ps *pubSub) publish() {
 			if subs, ok := ps.subMap[a.pathLevel2()]; ok { // e.g.: system/smtp
 				evict = append(evict, sendMessages(subs, a)...)
 			}
-			if subs, ok := ps.subMap[a.pathLevel3()]; ok { // e.g.: system/smtp/host
+			if subs, ok := ps.subMap[a.pathLevelAll()]; ok { // e.g.: system/smtp/host
 				evict = append(evict, sendMessages(subs, a)...)
 			}
 			ps.mu.RUnlock()
@@ -184,7 +184,7 @@ func sendMsgRecoverable(id int, sl MessageReceiver, a arg) (err error) {
 			// and therefore will overwrite the returned nil value!
 		}
 	}()
-	err = sl.MessageConfig(a.path, a.scope, a.scopeID)
+	err = sl.MessageConfig(a.pathLevelAll(), a.scope, a.scopeID)
 	return
 }
 

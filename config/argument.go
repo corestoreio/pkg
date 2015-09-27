@@ -66,14 +66,11 @@ func Path(paths ...string) ArgFunc {
 		}
 	}
 
-	var pa string
 	lp := len(paths)
 	var paSlice []string
 	if lp >= hierarchyLevel {
-		pa = scope.PathJoin(paths...)
 		paSlice = paths
 	} else {
-		pa = paths[0]
 		paSlice = scope.PathSplit(paths[0])
 		if len(paSlice) < hierarchyLevel {
 			return func(a *arg) {
@@ -82,7 +79,6 @@ func Path(paths ...string) ArgFunc {
 		}
 	}
 	return func(a *arg) {
-		a.path = pa
 		a.pathSlice = paSlice
 	}
 }
@@ -121,8 +117,6 @@ func isValidPath(paths ...string) bool {
 // arg responsible for the correct scope key e.g.: stores/2/system/currency/installed => scope/scope_id/path
 // which is used by the underlying configuration manager to fetch or store a value
 type arg struct {
-	buf        bytes.Buffer
-	path       string   // full path as a string without scope and scope ID
 	pathSlice  []string // pa is the three level path e.g. a/b/c split by slash
 	scope      scope.Scope
 	scopeID    int64       // scope ID
@@ -155,33 +149,12 @@ func mustNewArg(opts ...ArgFunc) arg {
 	return a
 }
 
-func (a arg) isValidPath() bool {
-	return isValidPath(a.pathSlice...)
-}
-
-func (a arg) isDefault() bool { return a.scope == scope.DefaultID || a.scope == scope.AbsentID }
-
-func (a arg) isBubbling() bool { return !a.noBubble }
-
-func (a arg) pathLevel1() string {
-	return a.pathSlice[0]
-}
-
-func (a arg) pathLevel2() string {
-	a.buf.WriteString(a.pathSlice[0])
-	a.buf.WriteString(scope.PS)
-	a.buf.WriteString(a.pathSlice[1])
-	return a.buf.String()
-}
-
-func (a arg) pathLevel3() string {
-	a.buf.WriteString(a.pathSlice[0])
-	a.buf.WriteString(scope.PS)
-	a.buf.WriteString(a.pathSlice[1])
-	a.buf.WriteString(scope.PS)
-	a.buf.WriteString(a.pathSlice[2])
-	return a.buf.String()
-}
+func (a arg) isValidPath() bool    { return isValidPath(a.pathSlice...) }
+func (a arg) isDefault() bool      { return a.scope == scope.DefaultID || a.scope == scope.AbsentID }
+func (a arg) isBubbling() bool     { return !a.noBubble }
+func (a arg) pathLevel1() string   { return a.pathSlice[0] }
+func (a arg) pathLevel2() string   { return scope.PathJoin(a.pathSlice[:2]...) }
+func (a arg) pathLevelAll() string { return scope.PathJoin(a.pathSlice...) }
 
 func (a arg) scopePath() string {
 	// first part of the path is called scope in Magento and in CoreStore ScopeRange
@@ -193,10 +166,10 @@ func (a arg) scopePath() string {
 	return scope.FromScope(a.scope).FQPathInt64(a.scopeID, a.pathSlice...)
 }
 
-func (a arg) scopePathDefault() string {
-	// e.g.: default/0/system/currency/installed => scope/scope_id/path
-	return scope.StrDefault.FQPath("0", a.pathSlice...)
-}
+// scopePathDefault returns a path prefixed by default StrScope
+// e.g.: default/0/system/currency/installed
+// 		 scope/scope_id/path...
+func (a arg) scopePathDefault() string { return scope.StrDefault.FQPath("0", a.pathSlice...) }
 
 var _ error = (*arg)(nil)
 
