@@ -71,5 +71,6 @@ dependencies. This StdLogger obeys to the interface Logger of this package.
 
 log.NewStdLogger() accepts a wide range of optional arguments. Please see the functions Std*Option().
 
+TODO(cs): http://12factor.net/logs
 */
 package log
