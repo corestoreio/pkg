@@ -153,15 +153,15 @@ func (m *Manager) Write(o ...ArgFunc) error {
 		}
 		m.v.Set(a.scopePathDefault(), a.v)
 		aDefault := a
-		aDefault.sg = scope.DefaultID
-		aDefault.si = 0 // reset to 0
+		aDefault.scope = scope.DefaultID
+		aDefault.scopeID = 0 // reset to 0
 		m.sendMsg(aDefault)
 	}
 
 	if log.IsDebug() {
 		log.Debug("config.Manager.Write", "path", a.scopePath(), "val", a.v)
 	}
-	a.scopeID()
+
 	m.v.Set(a.scopePath(), a.v)
 	m.sendMsg(a)
 	return nil

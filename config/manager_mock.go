@@ -39,19 +39,19 @@ type MockReader struct {
 // MockPathScopeDefault creates for testing a fully qualified path for the
 // default scope from a Scope ID and a path string (a/b/c)
 func MockPathScopeDefault(id int64, path string) string {
-	return scope.RangeDefault + PS + strconv.FormatInt(id, 10) + PS + path
+	return scope.StrDefault.FQPath(strconv.FormatInt(id, 10), path)
 }
 
 // MockPathScopeWebsite creates for testing a fully qualified path for the
 // website scope from a Scope ID and a path string (a/b/c)
 func MockPathScopeWebsite(id int64, path string) string {
-	return scope.RangeWebsites + PS + strconv.FormatInt(id, 10) + PS + path
+	return scope.StrWebsites.FQPath(strconv.FormatInt(id, 10), path)
 }
 
 // MockPathScopeStore creates for testing a fully qualified path for the
 // store scope from a Scope ID and a path string (a/b/c)
 func MockPathScopeStore(id int64, path string) string {
-	return scope.RangeStores + PS + strconv.FormatInt(id, 10) + PS + path
+	return scope.StrStores.FQPath(strconv.FormatInt(id, 10), path)
 }
 
 // MockString returns a function which can be used in the NewMockReader().

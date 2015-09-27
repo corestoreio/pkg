@@ -184,7 +184,7 @@ func sendMsgRecoverable(id int, sl MessageReceiver, a arg) (err error) {
 			// and therefore will overwrite the returned nil value!
 		}
 	}()
-	err = sl.MessageConfig(a.pa, a.sg, a.si)
+	err = sl.MessageConfig(a.path, a.scope, a.scopeID)
 	return
 }
 

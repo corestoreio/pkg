@@ -16,22 +16,16 @@ package config
 
 import (
 	"bytes"
-	"io"
-	"io/ioutil"
-	"strconv"
-
 	"errors"
 	"fmt"
-	"strings"
+	"io"
+	"io/ioutil"
 
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/utils/log"
 )
 
 const hierarchyLevel int = 3 // a/b/c
-
-// PS path separator used in the database table core_config_data and in config.Manager
-const PS = "/"
 
 // ErrPathEmpty when you provide an empty path in the function Path()
 var ErrPathEmpty = errors.New("Path cannot be empty")
@@ -57,7 +51,7 @@ func Scope(s scope.Scope, id int64) ArgFunc {
 		id = 0
 		s = scope.DefaultID
 	}
-	return func(a *arg) { a.sg = s; a.si = id }
+	return func(a *arg) { a.scope = s; a.scopeID = id }
 }
 
 // Path option function to specify the configuration path. If one argument has been
@@ -65,38 +59,37 @@ func Scope(s scope.Scope, id int64) ArgFunc {
 // then the arguments will be joined together. Panics if nil arguments will be provided.
 func Path(paths ...string) ArgFunc {
 	// TODO(cs) validation of the path see typeConfigPath in app/code/Magento/Config/etc/system_file.xsd
-	var p string
-	lp := len(paths)
-	if lp > 0 {
-		p = paths[0]
-	}
-	if p == "" {
+
+	if false == isValidPath(paths...) {
 		return func(a *arg) {
 			a.lastErrors = append(a.lastErrors, ErrPathEmpty)
 		}
 	}
 
+	var pa string
+	lp := len(paths)
 	var paSlice []string
-	if lp == hierarchyLevel {
-		p = p + PS + paths[1] + PS + paths[2]
+	if lp >= hierarchyLevel {
+		pa = scope.PathJoin(paths...)
 		paSlice = paths
 	} else {
-		paSlice = strings.Split(p, PS)
-		if len(paSlice) != hierarchyLevel {
+		pa = paths[0]
+		paSlice = scope.PathSplit(paths[0])
+		if len(paSlice) < hierarchyLevel {
 			return func(a *arg) {
 				a.lastErrors = append(a.lastErrors, fmt.Errorf("Incorrect number of paths elements: want %d, have %d, Path: %v", hierarchyLevel, len(paSlice), paths))
 			}
 		}
 	}
 	return func(a *arg) {
-		a.pa = p
-		a.paSlice = paSlice
+		a.path = pa
+		a.pathSlice = paSlice
 	}
 }
 
 // NoBubble disables the fallback to the default scope when a value in the current
 // scope not exists.
-func NoBubble() ArgFunc { return func(a *arg) { a.nb = true } }
+func NoBubble() ArgFunc { return func(a *arg) { a.noBubble = true } }
 
 // Value sets the value for a scope key.
 func Value(v interface{}) ArgFunc { return func(a *arg) { a.v = v } }
@@ -118,23 +111,25 @@ func ValueReader(r io.Reader) ArgFunc {
 	}
 }
 
+// isValidPath checks for valid config path. Either full path like general/country/allow
+// or at least 3 path parts.
+func isValidPath(paths ...string) bool {
+	return (len(paths) == 1 && paths[0] != "") ||
+		(len(paths) >= hierarchyLevel && paths[0] != "" && paths[1] != "" && paths[2] != "")
+}
+
 // arg responsible for the correct scope key e.g.: stores/2/system/currency/installed => scope/scope_id/path
 // which is used by the underlying configuration manager to fetch or store a value
 type arg struct {
-	pa         string   // p is the three level path e.g. a/b/c
-	paSlice    []string // used for hierarchy for the pubSub system
-	sg         scope.Scope
-	si         int64       // scope ID
-	nb         bool        // noBubble, if false value search: (store|website) -> default
+	buf        bytes.Buffer
+	path       string   // full path as a string without scope and scope ID
+	pathSlice  []string // pa is the three level path e.g. a/b/c split by slash
+	scope      scope.Scope
+	scopeID    int64       // scope ID
+	noBubble   bool        // noBubble, if false value search: (store|website) -> default
 	v          interface{} // value use for saving
 	lastErrors []error
 }
-
-// this "cache" should covers ~80% of all store setups
-var int64Cache = []string{
-	"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
-}
-var int64CacheLen = int64(len(int64Cache))
 
 // newArg creates an argument container which requires different options depending on the use case.
 func newArg(opts ...ArgFunc) (arg, error) {
@@ -160,55 +155,47 @@ func mustNewArg(opts ...ArgFunc) arg {
 	return a
 }
 
-func (a arg) isDefault() bool { return a.sg == scope.DefaultID || a.sg == scope.AbsentID }
+func (a arg) isValidPath() bool {
+	return isValidPath(a.pathSlice...)
+}
 
-func (a arg) isBubbling() bool { return !a.nb }
+func (a arg) isDefault() bool { return a.scope == scope.DefaultID || a.scope == scope.AbsentID }
+
+func (a arg) isBubbling() bool { return !a.noBubble }
 
 func (a arg) pathLevel1() string {
-	return a.paSlice[0]
+	return a.pathSlice[0]
 }
 
 func (a arg) pathLevel2() string {
-	return a.paSlice[0] + PS + a.paSlice[1]
+	a.buf.WriteString(a.pathSlice[0])
+	a.buf.WriteString(scope.PS)
+	a.buf.WriteString(a.pathSlice[1])
+	return a.buf.String()
 }
 
 func (a arg) pathLevel3() string {
-	return a.paSlice[0] + PS + a.paSlice[1] + PS + a.paSlice[2]
+	a.buf.WriteString(a.pathSlice[0])
+	a.buf.WriteString(scope.PS)
+	a.buf.WriteString(a.pathSlice[1])
+	a.buf.WriteString(scope.PS)
+	a.buf.WriteString(a.pathSlice[2])
+	return a.buf.String()
 }
 
 func (a arg) scopePath() string {
 	// first part of the path is called scope in Magento and in CoreStore ScopeRange
 	// e.g.: stores/2/system/currency/installed => scope/scope_id/path
 	// e.g.: websites/1/system/currency/installed => scope/scope_id/path
-	if a.pa == "" {
+	if false == a.isValidPath() {
 		return ""
 	}
-	return a.scopeRange() + PS + a.scopeID() + PS + a.pa
+	return scope.FromScope(a.scope).FQPathInt64(a.scopeID, a.pathSlice...)
 }
 
 func (a arg) scopePathDefault() string {
 	// e.g.: default/0/system/currency/installed => scope/scope_id/path
-	return scope.RangeDefault + PS + "0" + PS + a.pa
-}
-
-func (a arg) scopeID() string {
-	if a.si > 0 {
-		if a.si <= int64CacheLen {
-			return int64Cache[a.si]
-		}
-		return strconv.FormatInt(a.si, 10)
-	}
-	return "0"
-}
-
-func (a arg) scopeRange() string {
-	switch a.sg {
-	case scope.WebsiteID:
-		return scope.RangeWebsites
-	case scope.StoreID:
-		return scope.RangeStores
-	}
-	return scope.RangeDefault
+	return scope.StrDefault.FQPath("0", a.pathSlice...)
 }
 
 var _ error = (*arg)(nil)
