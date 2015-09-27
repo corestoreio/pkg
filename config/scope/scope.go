@@ -17,7 +17,7 @@ package scope
 import (
 	"bytes"
 	"fmt"
-
+	"strconv"
 	"strings"
 
 	"github.com/corestoreio/csfw/utils"
@@ -124,6 +124,25 @@ func (s StrScope) FQPath(scopeID string, paths ...string) string {
 		}
 	}
 	return buf.String()
+}
+
+// this "cache" should cover ~80% of all store setups
+var int64Cache = []string{
+	"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
+}
+var int64CacheLen = int64(len(int64Cache))
+
+// FQPathInt64 same as FQPath() but for int64 scope IDs.
+func (s StrScope) FQPathInt64(scopeID int64, paths ...string) string {
+	scopeStr := "0"
+	if scopeID > 0 {
+		if scopeID <= int64CacheLen {
+			scopeStr = int64Cache[scopeID]
+		} else {
+			scopeStr = strconv.FormatInt(scopeID, 10)
+		}
+	}
+	return s.FQPath(scopeStr, paths...)
 }
 
 // String returns the scope as string

@@ -103,6 +103,8 @@ func TestStrScopeFQPath(t *testing.T) {
 	for _, test := range tests {
 		assert.Equal(t, test.want, test.str.FQPath(test.id, test.path...))
 	}
+	assert.Equal(t, "stores/7475/catalog/frontend/list_allow_all", StrStores.FQPathInt64(7475, "catalog", "frontend", "list_allow_all"))
+	assert.Equal(t, "stores/5/catalog/frontend/list_allow_all", StrStores.FQPathInt64(5, "catalog", "frontend", "list_allow_all"))
 }
 
 var benchmarkStrScopeFQPath string
