@@ -15,7 +15,6 @@
 package scope
 
 import (
-	"bytes"
 	"fmt"
 	"strconv"
 	"strings"
@@ -111,19 +110,7 @@ const (
 // one path (system/smtp/host) including path separators or three
 // parts ("system", "smtp", "host").
 func (s StrScope) FQPath(scopeID string, paths ...string) string {
-	var buf bytes.Buffer
-	buf.WriteString(string(s))
-	buf.WriteString(PS)
-	buf.WriteString(scopeID)
-	buf.WriteString(PS)
-	lp := len(paths)
-	for i, path := range paths {
-		buf.WriteString(path)
-		if i < lp-1 {
-			buf.WriteString(PS)
-		}
-	}
-	return buf.String()
+	return string(s) + PS + scopeID + PS + PathJoin(paths...)
 }
 
 // this "cache" should cover ~80% of all store setups
