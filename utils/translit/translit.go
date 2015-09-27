@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils
+package translit
 
 import "unicode"
 
@@ -21,14 +21,14 @@ import "unicode"
 	needs maybe a re-architecture
 */
 
-// Translit replaces characters in a string using a conversion table,
+// Runes replaces characters in a string using a conversion table,
 // e.g. ™ => tm; © => c; @ => at; € => euro
 // Magento compatible
-func Translit(str []rune) []rune {
+func Runes(str []rune) []rune {
 	// @todo thread safe
 	i := 0
 	for i < len(str) {
-		if to, ok := translitConvertTable[str[i]]; ok {
+		if to, ok := charMap[str[i]]; ok {
 			if len(to) < 1 {
 				i++
 				continue
@@ -47,11 +47,11 @@ func Translit(str []rune) []rune {
 	return str
 }
 
-// TranslitURL same as Translit() but removes after conversion any non 0-9A-Za-z
+// URL same as Runes() but removes after conversion any non 0-9A-Za-z
 // characters and replaces them with a dash. Magento compatible.
 // This function is responsible for the slug generation for product/category/cms URLs.
-func TranslitURL(str []rune) []rune {
-	str = Translit(str)
+func URL(str []rune) []rune {
+	str = Runes(str)
 	for i, r := range str {
 		str[i] = unicode.ToLower(r)
 		switch {
@@ -90,15 +90,15 @@ func TranslitURL(str []rune) []rune {
 	return str
 }
 
-// TranslitURLUnicode takes care of unicode characters. @todo
-func TranslitURLUnicode(str []rune) []rune {
+// URLUnicode takes care of unicode characters. @todo
+func URLUnicode(str []rune) []rune {
 	// @see https://github.com/raintreeinc/knowledgebase/blob/master/kb/slug.go
 	// and var translitConvertTableExtended below
 	return nil
 }
 
-// translitConvertTable courtesy: https://github.com/magento/magento2/blob/master/lib%2Finternal%2FMagento%2FFramework%2FFilter%2FTranslit.php
-var translitConvertTable = map[rune][]rune{
+// charMap courtesy: https://github.com/magento/magento2/blob/master/lib%2Finternal%2FMagento%2FFramework%2FFilter%2FTranslit.php
+var charMap = map[rune][]rune{
 	'€': []rune{'e', 'u', 'r', 'o'},
 	'&': []rune{'a', 'n', 'd'},
 	'@': []rune{'a', 't'},

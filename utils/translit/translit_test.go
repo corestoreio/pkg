@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package utils_test
+package translit_test
 
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/utils/translit"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +34,7 @@ func TestTranslit(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		assert.Equal(t, test.want, string(utils.Translit([]rune(test.have))), "%#v", test)
+		assert.Equal(t, test.want, string(translit.Runes([]rune(test.have))), "%#v", test)
 	}
 }
 
@@ -54,7 +54,7 @@ func TestTranslitURL(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		assert.Equal(t, test.want, string(utils.TranslitURL([]rune(test.have))), "%#v", test)
+		assert.Equal(t, test.want, string(translit.URL([]rune(test.have))), "%#v", test)
 	}
 }
 
@@ -66,7 +66,7 @@ func Benchmark_TranslitURL(b *testing.B) {
 	want := "weiss-goldmann-gobel-weiss-gothe-goethe-und-gotz"
 	have := []rune("Weiß$ Goldmann: Göbel; Weiss, Göthe, Goethe und Götz")
 	for i := 0; i < b.N; i++ {
-		benchmarkTranslitURL = string(utils.TranslitURL(have))
+		benchmarkTranslitURL = string(translit.URL(have))
 		if benchmarkTranslitURL != want {
 			b.Errorf("\nWant: %s\nHave: %s\n", want, benchmarkTranslitURL)
 		}
