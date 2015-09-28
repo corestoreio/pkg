@@ -16,9 +16,10 @@ package utils_test
 
 import (
 	"errors"
+	"testing"
+
 	"github.com/corestoreio/csfw/utils"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestErrors(t *testing.T) {
