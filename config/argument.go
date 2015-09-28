@@ -15,13 +15,13 @@
 package config
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 
 	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/utils"
 	"github.com/corestoreio/csfw/utils/log"
 )
 
@@ -174,13 +174,5 @@ func (a arg) scopePathDefault() string { return scope.StrDefault.FQPath("0", a.p
 var _ error = (*arg)(nil)
 
 func (a arg) Error() string {
-	var buf bytes.Buffer
-	lle := len(a.lastErrors) - 1
-	for i, e := range a.lastErrors {
-		buf.WriteString(e.Error())
-		if i < lle {
-			buf.WriteString("\n")
-		}
-	}
-	return buf.String()
+	return utils.Errors(a.lastErrors...)
 }
