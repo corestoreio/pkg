@@ -62,6 +62,9 @@ func (s *{{.Slice}}) {{ typePrefix "SQLDelete" }}(dbrSess dbr.SessionRunner, cbs
 `
 
 const FindBy = `
+
+var ErrIDNotFound{{.Slice}} = csdb.NewError("ID not found in {{.Slice}}")
+
 {{if (.FindByPk) ne ""}}
 // {{ typePrefix .FindByPk }} searches the primary keys and returns a *{{.Struct}} if found or an error
 func (s {{.Slice}}) {{ typePrefix .FindByPk }}(
@@ -72,7 +75,7 @@ func (s {{.Slice}}) {{ typePrefix .FindByPk }}(
 			return u, nil
 		}
 	}
-	return nil, csdb.NewError("ID not found in {{.Slice}}")
+	return nil, ErrIDNotFound{{.Slice}}
 }
 {{end}}
 
@@ -85,7 +88,7 @@ func (s {{$.Slice}}) {{ findBy $c.Name | typePrefix }} ( {{ $c.Name }} {{$c.GetG
 			return u, nil
 		}
 	}
-	return nil, csdb.NewError("ID not found in {{$.Slice}}")
+	return nil, ErrIDNotFound{{$.Slice}}
 }
 {{ end }}
 `
@@ -209,5 +212,22 @@ func (s {{$.Slice}}) {{ typePrefix "Extract" }}() Extract{{.Name | camelize}} {
 			return ext
 		},
 		{{end}} }
+}
+`
+
+const StructFunctions = `
+func (et *TableEntityType) LoadByCode(dbrSess dbr.SessionRunner, code string, cbs ...csdb.DbrSelectCb) error {
+	s, err := TableCollection.Structure(TableIndexEntityType)
+	if err != nil {
+		return errgo.Mask(err)
+	}
+
+	refactor like GetTables()
+
+	sb := dbrSess.Select(s.AllColumnAliasQuote(csdb.MainTable)...).From(s.Name, csdb.MainTable).Where("entity_type_code = ?", code)
+	for _, cb := range cbs {
+		sb = cb(sb)
+	}
+	return errgo.Mask(sb.LoadStruct(et))
 }
 `
