@@ -15,20 +15,11 @@
 package scope_test
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
-
-func TestOptionMultiError(t *testing.T) {
-	o, err := scope.NewOption(
-		scope.ApplyGroup(nil),
-		scope.ApplyStore(nil),
-		scope.ApplyWebsite(nil),
-	)
-	assert.NotNil(t, o)
-	assert.EqualError(t, err, "Group argument cannot be nil\nStore argument cannot be nil\nWebsite argument cannot be nil")
-}
 
 func TestApplyCode(t *testing.T) {
 	tests := []struct {
@@ -45,7 +36,7 @@ func TestApplyCode(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		so, err := scope.NewOption(scope.ApplyCode(test.haveCode, test.s))
+		so, err := scope.SetByCode(test.haveCode, test.s)
 		assert.NotNil(t, so)
 		if test.err != nil {
 			assert.EqualError(t, err, test.err.Error())
@@ -75,7 +66,7 @@ func TestApplyID(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		so, err := scope.NewOption(scope.ApplyID(test.haveID, test.s))
+		so, err := scope.SetByID(test.haveID, test.s)
 		assert.NotNil(t, so)
 		if test.err != nil {
 			assert.EqualError(t, err, test.err.Error())
@@ -112,51 +103,30 @@ func TestApplyID(t *testing.T) {
 
 func TestApplyWebsite(t *testing.T) {
 
-	so, err := scope.NewOption(scope.ApplyWebsite(scope.MockID(3)))
+	so := scope.Option{Website: scope.MockID(3)}
 	assert.NotNil(t, so)
-	assert.NoError(t, err)
 	assert.Equal(t, int64(3), so.Website.WebsiteID())
 	assert.Nil(t, so.Group)
 	assert.Nil(t, so.Store)
-
-	so, err = scope.NewOption(
-		scope.ApplyStore(scope.MockID(4)),
-		scope.ApplyWebsite(scope.MockID(3)),
-	)
-	assert.NotNil(t, so)
-	assert.EqualError(t, err, `Store or Group already set`)
 }
 
 func TestApplyGroup(t *testing.T) {
 
-	so, err := scope.NewOption(scope.ApplyGroup(scope.MockID(3)))
+	so := scope.Option{Group: scope.MockID(3)}
 	assert.NotNil(t, so)
-	assert.NoError(t, err)
+
 	assert.Equal(t, int64(3), so.Group.GroupID())
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Store)
-
-	so, err = scope.NewOption(
-		scope.ApplyStore(scope.MockID(4)),
-		scope.ApplyGroup(scope.MockID(3)),
-	)
-	assert.NotNil(t, so)
-	assert.EqualError(t, err, `Website or Store already set`)
 }
 
 func TestApplyStore(t *testing.T) {
 
-	so, err := scope.NewOption(scope.ApplyStore(scope.MockID(3)))
+	so := scope.Option{Store: scope.MockID(3)}
 	assert.NotNil(t, so)
-	assert.NoError(t, err)
+
 	assert.Equal(t, int64(3), so.Store.StoreID())
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)
 
-	so, err = scope.NewOption(
-		scope.ApplyStore(scope.MockID(4)),
-		scope.ApplyGroup(scope.MockID(3)),
-	)
-	assert.NotNil(t, so)
-	assert.EqualError(t, err, `Website or Store already set`)
 }

@@ -16,114 +16,55 @@ package scope
 
 import (
 	"errors"
-
-	"github.com/corestoreio/csfw/utils"
 )
 
 // ErrUnsupportedScope whenever a not valid scope ID will be provided this
 // error gets returned.
 var ErrUnsupportedScope = errors.New("Unsupported Scope ID")
 
-// OptionFunc for the Init() function. One of the three struct fields
-// must be set or the function panics. Instead of the IDer interface you can
-// also provide a *Coder interface. Order of scope calculation:
+// Option for the Init() function. Instead of the IDer interface you can
+// also provide a *Coder interface. Order of scope precedence:
 // Website -> Group -> Store. Be sure to set e.g. Website and Group to nil
 // if you need initialization for store level.
-type OptionFunc func(*option)
-
-// option will be kept private to not confuse others ...
-type option struct {
-	Website  WebsiteIDer
-	Group    GroupIDer
-	Store    StoreIDer
-	lastErrs []error
+type Option struct {
+	Website WebsiteIDer
+	Group   GroupIDer
+	Store   StoreIDer
 }
 
-func NewOption(opts ...OptionFunc) (option, error) {
-	o := option{}
-	for _, opt := range opts {
-		if nil != opt {
-			opt(&o)
-		}
+func SetByCode(code string, scopeType Scope) (o Option, err error) {
+	c := MockCode(code)
+	// GroupID does not have a scope code
+	switch scopeType {
+	case WebsiteID:
+		o.Website = c
+	case StoreID:
+		o.Store = c
+	default:
+		err = ErrUnsupportedScope
 	}
-	if nil != o.lastErrs {
-		return o, o
-	}
-	return o, nil
+	return
 }
 
-func ApplyWebsite(w WebsiteIDer) OptionFunc {
-	if w == nil {
-		return func(o *option) { o.lastErrs = append(o.lastErrs, errors.New("Website argument cannot be nil")) }
+func SetByID(scopeID int64, scopeType Scope) (o Option, err error) {
+	i := MockID(scopeID)
+	// the order of the cases is important
+	switch scopeType {
+	case WebsiteID:
+		o.Website = i
+	case GroupID:
+		o.Group = i
+	case StoreID:
+		o.Store = i
+	default:
+		err = ErrUnsupportedScope
 	}
-	return func(o *option) {
-		if o.Store != nil || o.Group != nil {
-			o.lastErrs = append(o.lastErrs, errors.New("Store or Group already set"))
-		} else {
-			o.Website = w
-		}
-	}
+	return
 }
 
-func ApplyGroup(g GroupIDer) OptionFunc {
-	if g == nil {
-		return func(o *option) { o.lastErrs = append(o.lastErrs, errors.New("Group argument cannot be nil")) }
-	}
-	return func(o *option) {
-		if o.Website != nil || o.Store != nil {
-			o.lastErrs = append(o.lastErrs, errors.New("Website or Store already set"))
-		} else {
-			o.Group = g
-		}
-	}
-}
-
-func ApplyStore(s StoreIDer) OptionFunc {
-	if s == nil {
-		return func(o *option) { o.lastErrs = append(o.lastErrs, errors.New("Store argument cannot be nil")) }
-	}
-	return func(o *option) {
-		if o.Website != nil || o.Group != nil {
-			o.lastErrs = append(o.lastErrs, errors.New("Website or Group already set"))
-		} else {
-			o.Store = s
-		}
-	}
-}
-
-func ApplyCode(code string, scopeType Scope) OptionFunc {
-	return func(o *option) {
-		c := MockCode(code)
-		// GroupID does not have a scope code
-		switch scopeType {
-		case WebsiteID:
-			o.Website = c
-		case StoreID:
-			o.Store = c
-		default:
-			o.lastErrs = append(o.lastErrs, ErrUnsupportedScope)
-		}
-	}
-}
-
-func ApplyID(scopeID int64, scopeType Scope) OptionFunc {
-	return func(o *option) {
-		i := MockID(scopeID)
-		switch scopeType {
-		case WebsiteID:
-			o.Website = i
-		case GroupID:
-			o.Group = i
-		case StoreID:
-			o.Store = i
-		default:
-			o.lastErrs = append(o.lastErrs, ErrUnsupportedScope)
-		}
-	}
-}
-
-func (o option) Scope() (s Scope) {
+func (o Option) Scope() (s Scope) {
 	s = AbsentID
+	// the order of the cases is important
 	switch {
 	case o.Website != nil:
 		s = WebsiteID
@@ -135,23 +76,16 @@ func (o option) Scope() (s Scope) {
 	return
 }
 
-func (o option) StoreCode() (code string) {
+func (o Option) StoreCode() (code string) {
 	if sc, ok := o.Store.(StoreCoder); ok {
 		code = sc.StoreCode()
 	}
 	return
 }
 
-func (o option) WebsiteCode() (code string) {
+func (o Option) WebsiteCode() (code string) {
 	if wc, ok := o.Website.(WebsiteCoder); ok {
 		code = wc.WebsiteCode()
 	}
 	return
-}
-
-var _ error = (*option)(nil)
-
-// Error satisfy the error interface
-func (o option) Error() string {
-	return utils.Errors(o.lastErrs...)
 }
