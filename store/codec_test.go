@@ -21,10 +21,22 @@ import (
 	"bytes"
 
 	"encoding/json"
+
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/stretchr/testify/assert"
 )
+
+// generated via https://github.com/ChimeraCoder/gojson json2struct
+type TestToJSONStore struct {
+	Code      string `json:"Code"`
+	GroupID   int    `json:"GroupID"`
+	IsActive  bool   `json:"IsActive"`
+	Name      string `json:"Name"`
+	SortOrder int    `json:"SortOrder"`
+	StoreID   int    `json:"StoreID"`
+	WebsiteID int    `json:"WebsiteID"`
+}
 
 func TestToJSON(t *testing.T) {
 	s := store.NewStore(
@@ -36,7 +48,12 @@ func TestToJSON(t *testing.T) {
 	var buf bytes.Buffer
 	assert.NoError(t, s.ToJSON(&buf))
 
-	assert.Equal(t, `{"StoreID":1,"Code":"de","WebsiteID":1,"GroupID":1,"Name":"Germany","SortOrder":10,"IsActive":true}`, buf.String())
+	tsd := TestToJSONStore{}
+	json.Unmarshal(buf.Bytes(), &tsd)
+
+	want := TestToJSONStore{Code: "de", GroupID: 1, IsActive: true, Name: "Germany", SortOrder: 10, StoreID: 1, WebsiteID: 1}
+
+	assert.Equal(t, want, tsd)
 
 	var ds store.TableStore
 	dec := json.NewDecoder(&buf)
