@@ -20,8 +20,7 @@ import (
 	"encoding/json"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/utils"
 )
 
@@ -30,25 +29,24 @@ const (
 	DefaultGroupID int64 = 0
 )
 
-type (
+// Group defines the root category id and default store id for a set of stores.
+// A group is assigned to one website and a group can have multiple stores.
+// A group does not have any kind of configuration setting.
+type Group struct {
+	cr config.Reader
+	// Data contains the raw group data.
+	Data *TableGroup
+	// Stores contains a slice to all stores associated to this group. Can be nil.
+	Stores StoreSlice
+	// Website contains the Website which belongs to this group. Can be nil.
+	Website *Website
+}
 
-	// Group defines the root category id and default store id for a set of stores.
-	// A group is assigned to one website and a group can have multiple stores.
-	// A group does not have any kind of configuration setting.
-	Group struct {
-		cr config.Reader
-		// Data contains the raw group data.
-		Data *TableGroup
-		// Stores contains a slice to all stores associated to this group. Can be nil.
-		Stores StoreSlice
-		// Website contains the Website which belongs to this group. Can be nil.
-		Website *Website
-	}
-	// GroupSlice collection of Group. GroupSlice has some nice method receivers.
-	GroupSlice []*Group
+// GroupSlice collection of Group. GroupSlice has some nice method receivers.
+type GroupSlice []*Group
 
-	GroupOption func(*Group)
-)
+// GroupOption can be used as an argument in NewGroup to configure a group.
+type GroupOption func(*Group)
 
 var (
 	ErrGroupNotFound             = errors.New("Group not found")
@@ -56,7 +54,6 @@ var (
 	// ErrGroupWebsiteNotFound the Website struct is nil so we cannot assign the stores to a group.
 	ErrGroupWebsiteNotFound = errors.New("Group Website not found or nil or ID do not match")
 )
-var _ config.ScopeIDer = (*Group)(nil)
 
 // SetGroupConfig sets the configuration Reader to the Group.
 // Default reader is config.DefaultManager
@@ -97,8 +94,10 @@ func NewGroup(tg *TableGroup, opts ...GroupOption) *Group {
 	return g
 }
 
-// ScopeID satisfies interface config.ScopeIDer
-func (g *Group) ScopeID() int64 {
+var _ scope.GroupIDer = (*Group)(nil)
+
+// GroupID satisfies interface scope.GroupIDer and returns the group ID.
+func (g *Group) GroupID() int64 {
 	return g.Data.GroupID
 }
 
@@ -187,55 +186,4 @@ func (s GroupSlice) IDs() utils.Int64Slice {
 		}
 	}
 	return ids
-}
-
-/*
-	TableGroup and TableGroupSlice method receivers
-*/
-
-// Load uses a dbr session to load all data from the core_store_group table into the current slice.
-// The variadic 2nd argument can be a call back function to manipulate the select.
-// Additional columns or joins cannot be added. This method receiver should only be used in development.
-// @see app/code/Magento/Store/Model/Resource/Group/Collection.php::_beforeLoad()
-func (s *TableGroupSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
-	return s.parentLoad(dbrSess, append(append([]csdb.DbrSelectCb{nil}, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
-		return sb.OrderBy("main_table.name ASC")
-	}), cbs...)...)
-}
-
-// FindByID returns a TableGroup if found by id or an error
-func (s TableGroupSlice) FindByID(id int64) (*TableGroup, error) {
-	for _, g := range s {
-		if g.GroupID == id {
-			return g, nil
-		}
-	}
-	return nil, ErrGroupNotFound
-}
-
-// FilterByWebsiteID returns a new slice with all groups belonging to a website id
-func (s TableGroupSlice) FilterByWebsiteID(id int64) TableGroupSlice {
-	return s.Filter(func(w *TableGroup) bool {
-		return w.WebsiteID == id
-	})
-}
-
-// Filter returns a new slice filtered by predicate f
-func (s TableGroupSlice) Filter(f func(*TableGroup) bool) TableGroupSlice {
-	var tgs TableGroupSlice
-	for _, v := range s {
-		if v != nil && f(v) {
-			tgs = append(tgs, v)
-		}
-	}
-	return tgs
-}
-
-// IDs returns an Int64Slice with all group ids
-func (s TableGroupSlice) IDs() utils.Int64Slice {
-	id := make(utils.Int64Slice, len(s))
-	for i, store := range s {
-		id[i] = store.GroupID
-	}
-	return id
 }

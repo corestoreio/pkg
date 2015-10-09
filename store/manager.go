@@ -20,16 +20,17 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 )
 
 type (
 	// Manager uses three internal maps to cache the pointers of Website, Group and Store.
 	Manager struct {
-		cr config.Reader
+		ConfigReader config.Reader
 
 		// storage get set of websites, groups and stores and also type assertion to StorageMutator for
 		// ReInit and Persisting
@@ -59,13 +60,10 @@ type (
 		// and can be overridden after creating a new Manager. @todo
 		// HealthJob health.EventReceiver
 	}
-
-	// ManagerOption option func for NewManager()
-	ManagerOption func(*Manager)
 )
 
 var (
-	ErrUnsupportedScopeGroup = errors.New("Unsupported scope id")
+	ErrUnsupportedScope      = errors.New("Unsupported Scope ID")
 	ErrStoreChangeNotAllowed = errors.New("Store change not allowed")
 	ErrAppStoreNotSet        = errors.New("AppStore is not initialized")
 	ErrAppStoreSet           = errors.New("AppStore already initialized")
@@ -73,14 +71,14 @@ var (
 )
 
 // NewManager creates a new store manager which handles websites, store groups and stores.
-// @todo Default Storager should be a hardcoded Table* struct ...
-func NewManager(opts ...ManagerOption) *Manager {
+func NewManager(storage Storager, opts ...ManagerOption) *Manager {
 	m := &Manager{
-		cr:         config.DefaultManager,
-		mu:         sync.RWMutex{},
-		websiteMap: make(map[uint64]*Website),
-		groupMap:   make(map[uint64]*Group),
-		storeMap:   make(map[uint64]*Store),
+		ConfigReader: config.DefaultManager,
+		storage:      storage,
+		mu:           sync.RWMutex{},
+		websiteMap:   make(map[uint64]*Website),
+		groupMap:     make(map[uint64]*Group),
+		storeMap:     make(map[uint64]*Store),
 		// HealthJob:  utils.HealthJobNoop, @todo
 	}
 	for _, opt := range opts {
@@ -91,132 +89,154 @@ func NewManager(opts ...ManagerOption) *Manager {
 	return m
 }
 
-// SetStorage sets the underlying storage system to the Manager. Required option.
-func SetManagerStorage(s Storager) ManagerOption {
-	return func(m *Manager) { m.storage = s }
-}
+// FindDefaultStoreByScope tries to detect the default store by a given scope option.
+// Precedence of detection by passed scope.Option: 1. Store 2. Group 3. Website
+func (sm *Manager) FindDefaultStoreByScope(so scope.Option) (store *Store, err error) {
 
-// SetManagerConfig sets the configuration Reader. Optional.
-// Default reader is config.DefaultManager
-func SetManagerConfig(cr config.Reader) ManagerOption {
-	return func(m *Manager) { m.cr = cr }
+	switch so.Scope() {
+	case scope.StoreID:
+		store, err = sm.Store(so.Store)
+	case scope.GroupID:
+		g, errG := sm.Group(so.Group)
+		if errG != nil {
+			return nil, log.Error("store.Manager.Init.Group", "err", errG, "ScopeOption", so)
+		}
+		store, err = g.DefaultStore()
+	case scope.WebsiteID:
+		w, errW := sm.Website(so.Website)
+		if errW != nil {
+			return nil, log.Error("store.Manager.Init.Website", "err", errW, "ScopeOption", so)
+		}
+		store, err = w.DefaultStore()
+	default:
+		err = ErrUnsupportedScope
+	}
+
+	return
 }
 
 // Init initializes the appStore from a scope code and a scope type.
 // This function is mainly used when booting the app to set the environment configuration
 // Also all other calls to any method receiver with nil arguments depends on the appStore.
 // @see \Magento\Store\Model\StorageFactory::_reinitStores
-func (sm *Manager) Init(scopeCode config.ScopeIDer, scopeType config.ScopeGroup) error {
+func (sm *Manager) Init(so scope.Option) error {
 	if sm.appStore != nil {
 		return ErrAppStoreSet
 	}
+
 	var err error
-	switch scopeType {
-	case config.ScopeStoreID:
-		sm.appStore, err = sm.Store(scopeCode)
-	case config.ScopeGroupID:
-		g, errG := sm.Group(scopeCode) // this is the group_id
-		if errG != nil {
-			return errgo.Mask(errG)
-		}
-		sm.appStore, err = g.DefaultStore()
-		break
-	case config.ScopeWebsiteID:
-		w, errW := sm.Website(scopeCode)
-		if errW != nil {
-			return errgo.Mask(errW)
-		}
-		sm.appStore, err = w.DefaultStore()
-		break
-	default:
-		return ErrUnsupportedScopeGroup
+	sm.appStore, err = sm.FindDefaultStoreByScope(so)
+
+	if err != nil { // seems unnecessary but it's faster.
+		return log.Error("store.Manager.Init", "err", err, "ScopeOption", so)
 	}
-	return errgo.Mask(err)
+	return nil
 }
 
-// InitByRequest returns a new Store read from a cookie or HTTP request param.
-// The internal appStore must be set before hand.
+// InitByRequest returns a new Store read from a cookie or HTTP request parameter.
+// It calls GetRequestStore() to determine the correct store.
+// The internal appStore must be set before hand, call Init() before calling this function.
 // 1. check cookie store, always a string and the store code
 // 2. check for ___store variable, always a string and the store code
 // 3. May return nil,nil if nothing is set.
 // This function must be used within an HTTP handler.
 // The returned new Store must be used in the HTTP context and overrides the appStore.
-// @see \Magento\Store\Model\StorageFactory::_reinitStores
-func (sm *Manager) InitByRequest(res http.ResponseWriter, req *http.Request, scopeType config.ScopeGroup) (*Store, error) {
+func (sm *Manager) InitByRequest(res http.ResponseWriter, req *http.Request, scopeType scope.Scope) (*Store, error) {
 	if sm.appStore == nil {
 		// that means you must call Init() before executing this function.
 		return nil, ErrAppStoreNotSet
 	}
 
 	var reqStore *Store
-	if keks := GetCodeFromCookie(req); keks != nil {
-		reqStore, _ = sm.GetRequestStore(keks, scopeType) // ignore errors
+	var so scope.Option
+	var err error
+	so, err = StoreCodeFromForm(req)
+	if err != nil { // no cookie set, lets try via form to find the store code
+
+		if err == ErrStoreCodeInvalid {
+			return nil, log.Error("store.Manager.InitByRequest.GetCodeFromForm", "err", err, "req", req, "scopeType", scopeType.String())
+		}
+
+		so, err = StoreCodeFromCookie(req)
+		switch err {
+		case ErrStoreCodeEmpty, http.ErrNoCookie:
+			err = nil
+		case nil:
+			// do nothing
+		default: // err != nil
+			return nil, log.Error("store.Manager.InitByRequest.GetCodeFromCookie", "err", err, "req", req, "scopeType", scopeType.String())
+		}
 	}
 
-	if reqStoreCode := req.URL.Query().Get(HTTPRequestParamStore); reqStoreCode != "" {
-		var err error
-		// @todo reqStoreCode if number ... cast to int64 because then group id if ScopeGroup is group.
-		if reqStore, err = sm.GetRequestStore(config.ScopeCode(reqStoreCode), scopeType); err != nil {
-			return nil, errgo.Mask(err)
+	// @todo reqStoreCode if number ... cast to int64 because then group id if ScopeGroup is group.
+	if reqStore, err = sm.GetRequestStore(so, scopeType); err != nil {
+		return nil, log.Error("store.Manager.InitByRequest.GetRequestStore", "err", err)
+	}
+	soStoreCode := so.StoreCode()
+
+	// also delete and re-set a new cookie
+	if reqStore != nil && reqStore.Data.Code.String == soStoreCode {
+		wds, err := reqStore.Website.DefaultStore()
+		if err != nil {
+			return nil, log.Error("store.Manager.InitByRequest.Website.DefaultStore", "err", err, "soStoreCode", soStoreCode)
 		}
-		// also delete and re-set a new cookie
-		if reqStore != nil && reqStore.Data.Code.String == reqStoreCode {
-			wds, err := reqStore.Website.DefaultStore()
-			if err != nil {
-				return nil, errgo.Mask(err)
-			}
-			if wds.Data.Code.String == reqStoreCode {
-				reqStore.DeleteCookie(res) // cookie not needed anymore
-			} else {
-				reqStore.SetCookie(res) // make sure we force set the new store
-			}
+		if wds.Data.Code.String == soStoreCode {
+			reqStore.DeleteCookie(res) // cookie not needed anymore
+		} else {
+			reqStore.SetCookie(res) // make sure we force set the new store
 		}
 	}
+
 	return reqStore, nil // can be nil,nil
 }
 
 // InitByToken returns a Store pointer from a JSON web token. If the store code is invalid,
-// this function can return nil,nil
-func (sm *Manager) InitByToken(t *jwt.Token, scopeType config.ScopeGroup) (*Store, error) {
+// this function can return nil,nil. Token argument is equal like jwt.Token.Claim.
+func (sm *Manager) InitByToken(token map[string]interface{}, scopeType scope.Scope) (*Store, error) {
 	if sm.appStore == nil {
 		// that means you must call Init() before executing this function.
 		return nil, ErrAppStoreNotSet
 	}
-
-	if tStore := GetCodeFromClaim(t); tStore != nil {
-		return sm.GetRequestStore(tStore, scopeType)
+	scopeOption, err := StoreCodeFromClaim(token)
+	if err == nil {
+		return sm.GetRequestStore(scopeOption, scopeType)
 	}
 	return nil, nil
 }
 
-// GetRequestStore is in Magento named setCurrentStore and only used by InitByRequest().
+// GetRequestStore is in Magento named setCurrentStore and only used by InitBy*().
 // First argument is the store ID or store code, 2nd arg the scope from the init process.
 // Also prevents running a store from another website or store group,
 // if website or store group was specified explicitly.
 // It returns either an error or the new Store. The returning errors can get ignored because if
 // a Store Code is invalid the parent calling function must fall back to the appStore.
 // This function must be used within an RPC handler.
-func (sm *Manager) GetRequestStore(r config.ScopeIDer, scopeType config.ScopeGroup) (*Store, error) {
+func (sm *Manager) GetRequestStore(so scope.Option, scopeType scope.Scope) (activeStore *Store, err error) {
 	if sm.appStore == nil {
 		// that means you must call Init() before executing this function.
 		return nil, ErrAppStoreNotSet
 	}
 
-	activeStore, err := sm.activeStore(r) // this is the active store from Cookie or Request.
+	activeStore, err = sm.FindDefaultStoreByScope(so)
+	if err != nil {
+		return nil, log.Error("store.Manager.GetRequestStore.FindDefaultStoreByScope", "err", err, "so", so)
+	}
+
+	activeStore, err = sm.activeStore(activeStore) // this is the active store from Cookie or Request.
 	if activeStore == nil || err != nil {
 		// store is not active so ignore
-		return nil, errgo.Mask(err)
+		return nil, err
 	}
 
 	allowStoreChange := false
 	switch scopeType {
-	case config.ScopeStoreID:
+	case scope.StoreID:
 		allowStoreChange = true
 		break
-	case config.ScopeGroupID:
+	case scope.GroupID:
 		allowStoreChange = activeStore.Data.GroupID == sm.appStore.Data.GroupID
 		break
-	case config.ScopeWebsiteID:
+	case scope.WebsiteID:
 		allowStoreChange = activeStore.Data.WebsiteID == sm.appStore.Data.WebsiteID
 		break
 	}
@@ -231,7 +251,7 @@ func (sm *Manager) GetRequestStore(r config.ScopeIDer, scopeType config.ScopeGro
 // This flag only shows that admin does not want to show certain UI components at backend (like store switchers etc)
 // if Magento has only one store view but it does not check the store view collection.
 func (sm *Manager) IsSingleStoreMode() bool {
-	return sm.HasSingleStore() && sm.cr.GetBool(config.Path(PathSingleStoreModeEnabled), config.ScopeStore(sm.appStore))
+	return sm.HasSingleStore() && sm.ConfigReader.GetBool(config.Path(PathSingleStoreModeEnabled), config.ScopeStore(sm.appStore.StoreID()))
 }
 
 // HasSingleStore checks if we only have one store view besides the admin store view.
@@ -250,8 +270,10 @@ func (sm *Manager) HasSingleStore() bool {
 // If ID and code are available then the non-empty code has precedence.
 // If no argument has been supplied then the Website of the internal appStore
 // will be returned. If more than one argument has been provided it returns an error.
-func (sm *Manager) Website(r ...config.ScopeIDer) (*Website, error) {
-	notR := notRetriever(r...)
+func (sm *Manager) Website(r ...scope.WebsiteIDer) (*Website, error) {
+	lr := len(r)
+	notR := lr == 0 || (lr == 1 && r[0] == nil) || lr > 1
+
 	switch {
 	case notR && sm.appStore == nil:
 		return nil, ErrAppStoreNotSet
@@ -259,7 +281,7 @@ func (sm *Manager) Website(r ...config.ScopeIDer) (*Website, error) {
 		return sm.appStore.Website, nil
 	}
 
-	key, err := hash(r[0])
+	key, err := hash(r[0], nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -290,8 +312,10 @@ func (sm *Manager) Websites() (WebsiteSlice, error) {
 // Only the argument ID is supported.
 // If no argument has been supplied then the Group of the internal appStore
 // will be returned. If more than one argument has been provided it returns an error.
-func (sm *Manager) Group(r ...config.ScopeIDer) (*Group, error) {
-	notR := notRetriever(r...)
+func (sm *Manager) Group(r ...scope.GroupIDer) (*Group, error) {
+	lr := len(r)
+	notR := lr == 0 || (lr == 1 && r[0] == nil) || lr > 1
+
 	switch {
 	case notR && sm.appStore == nil:
 		return nil, ErrAppStoreNotSet
@@ -299,7 +323,7 @@ func (sm *Manager) Group(r ...config.ScopeIDer) (*Group, error) {
 		return sm.appStore.Group, nil
 	}
 
-	key, err := hash(r[0])
+	key, err := hash(nil, r[0], nil)
 	if err != nil {
 		return nil, err
 	}
@@ -330,8 +354,10 @@ func (sm *Manager) Groups() (GroupSlice, error) {
 // If ID and code are available then the non-empty code has precedence.
 // If no argument has been supplied then the appStore
 // will be returned. If more than one argument has been provided it returns an error.
-func (sm *Manager) Store(r ...config.ScopeIDer) (*Store, error) {
-	notR := notRetriever(r...)
+func (sm *Manager) Store(r ...scope.StoreIDer) (*Store, error) {
+	lr := len(r)
+	notR := lr == 0 || (lr == 1 && r[0] == nil) || lr > 1
+
 	switch {
 	case notR && sm.appStore == nil:
 		return nil, ErrAppStoreNotSet
@@ -339,7 +365,7 @@ func (sm *Manager) Store(r ...config.ScopeIDer) (*Store, error) {
 		return sm.appStore, nil
 	}
 
-	key, err := hash(r[0])
+	key, err := hash(nil, nil, r[0])
 	if err != nil {
 		return nil, err
 	}
@@ -379,7 +405,7 @@ func (sm *Manager) DefaultStoreView() (*Store, error) {
 // activeStore returns a new non-cached Store with all its Websites and Groups but only if the Store
 // is marked as active. Argument can be an ID or a Code. Returns nil if Store not found or inactive.
 // No need here to return an error.
-func (sm *Manager) activeStore(r config.ScopeIDer) (*Store, error) {
+func (sm *Manager) activeStore(r scope.StoreIDer) (*Store, error) {
 	s, err := sm.storage.Store(r)
 	if err != nil {
 		return nil, err
@@ -437,30 +463,42 @@ func (sm *Manager) IsCacheEmpty() bool {
 		sm.websites == nil && sm.groups == nil && sm.stores == nil && sm.defaultStore == nil
 }
 
-// notRetriever checks if variadic ScopeIDer is nil or has more than two entries
-// or the first index is nil.
-func notRetriever(r ...config.ScopeIDer) bool {
-	lr := len(r)
-	return r == nil || (lr == 1 && r[0] == nil) || lr > 1
-}
-
 // hash generates the key for the map from either an id int64 or a code string.
 // If both interfaces are nil it returns 0 which is default for website, group or store.
 // fnv64a used to calculate the uint64 value of a string, especially website code and store code.
-func hash(r config.ScopeIDer) (uint64, error) {
+func hash(wID scope.WebsiteIDer, gID scope.GroupIDer, sID scope.StoreIDer) (uint64, error) {
 	uz := uint64(0)
-	if r == nil {
+	if nil == wID && nil == gID && nil == sID {
 		return uz, ErrHashRetrieverNil
 	}
 
-	if c, ok := r.(config.ScopeCoder); ok && c.ScopeCode() != "" {
-		data := []byte(c.ScopeCode())
-		var hash uint64 = 14695981039346656037
-		for _, c := range data {
-			hash ^= uint64(c)
-			hash *= 1099511628211
-		}
-		return hash, nil
+	if wC, ok := wID.(scope.WebsiteCoder); ok {
+		return hashCode(wC.WebsiteCode()), nil
 	}
-	return uint64(r.ScopeID()), nil
+	if nil != wID {
+		return uint64(wID.WebsiteID()), nil
+	}
+
+	if nil != gID {
+		return uint64(gID.GroupID()), nil
+	}
+
+	if sC, ok := sID.(scope.StoreCoder); ok {
+		return hashCode(sC.StoreCode()), nil
+	}
+	if nil != sID {
+		return uint64(sID.StoreID()), nil
+	}
+	return uz, ErrHashRetrieverNil // unreachable ....
+}
+
+// fnv hash
+func hashCode(code string) uint64 {
+	data := []byte(code)
+	var hash uint64 = 14695981039346656037
+	for _, c := range data {
+		hash ^= uint64(c)
+		hash *= 1099511628211
+	}
+	return hash
 }

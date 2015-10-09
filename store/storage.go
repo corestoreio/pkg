@@ -18,6 +18,7 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
@@ -30,19 +31,19 @@ type (
 		// Website creates a new Website pointer from an ID or code including all of its
 		// groups and all related stores. It panics when the integrity is incorrect.
 		// If ID and code are available then the non-empty code has precedence.
-		Website(config.ScopeIDer) (*Website, error)
+		Website(scope.WebsiteIDer) (*Website, error)
 		// Websites creates a slice containing all pointers to Websites with its associated
 		// groups and stores. It panics when the integrity is incorrect.
 		Websites() (WebsiteSlice, error)
 		// Group creates a new Group which contains all related stores and its website.
 		// Only the argument ID can be used to get a specific Group.
-		Group(config.ScopeIDer) (*Group, error)
+		Group(scope.GroupIDer) (*Group, error)
 		// Groups creates a slice containing all pointers to Groups with its associated
 		// stores and websites. It panics when the integrity is incorrect.
 		Groups() (GroupSlice, error)
 		// Store creates a new Store containing its group and its website.
 		// If ID and code are available then the non-empty code has precedence.
-		Store(config.ScopeIDer) (*Store, error)
+		Store(scope.StoreIDer) (*Store, error)
 		// Stores creates a new store slice. Can return an error when the website or
 		// the group cannot be found.
 		Stores() (StoreSlice, error)
@@ -105,25 +106,20 @@ func NewStorage(opts ...StorageOption) *Storage {
 	return s
 }
 
-// NewStorageOption sames as NewStorage() but returns a function to be used in NewManager()
-func NewStorageOption(opts ...StorageOption) ManagerOption {
-	return func(m *Manager) { m.storage = NewStorage(opts...) }
-}
-
 // website returns a TableWebsite by using either id or code to find it. If id and code are
 // available then the non-empty code has precedence.
-func (st *Storage) website(r config.ScopeIDer) (*TableWebsite, error) {
+func (st *Storage) website(r scope.WebsiteIDer) (*TableWebsite, error) {
 	if r == nil {
 		return nil, ErrWebsiteNotFound
 	}
-	if c, ok := r.(config.ScopeCoder); ok && c.ScopeCode() != "" {
-		return st.websites.FindByCode(c.ScopeCode())
+	if c, ok := r.(scope.WebsiteCoder); ok && c.WebsiteCode() != "" {
+		return st.websites.FindByCode(c.WebsiteCode())
 	}
-	return st.websites.FindByID(r.ScopeID())
+	return st.websites.FindByWebsiteID(r.WebsiteID())
 }
 
 // Website creates a new Website according to the interface definition.
-func (st *Storage) Website(r config.ScopeIDer) (*Website, error) {
+func (st *Storage) Website(r scope.WebsiteIDer) (*Website, error) {
 	w, err := st.website(r)
 	if err != nil {
 		return nil, err
@@ -142,22 +138,22 @@ func (st *Storage) Websites() (WebsiteSlice, error) {
 
 // group returns a TableGroup by using a group id as argument. If no argument or more than
 // one has been supplied it returns an error.
-func (st *Storage) group(r config.ScopeIDer) (*TableGroup, error) {
+func (st *Storage) group(r scope.GroupIDer) (*TableGroup, error) {
 	if r == nil {
 		return nil, ErrGroupNotFound
 	}
-	return st.groups.FindByID(r.ScopeID())
+	return st.groups.FindByGroupID(r.GroupID())
 }
 
 // Group creates a new Group which contains all related stores and its website according to the
 // interface definition.
-func (st *Storage) Group(id config.ScopeIDer) (*Group, error) {
+func (st *Storage) Group(id scope.GroupIDer) (*Group, error) {
 	g, err := st.group(id)
 	if err != nil {
 		return nil, err
 	}
 
-	w, err := st.website(config.ScopeID(g.WebsiteID))
+	w, err := st.website(scope.MockID(g.WebsiteID))
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +165,7 @@ func (st *Storage) Group(id config.ScopeIDer) (*Group, error) {
 func (st *Storage) Groups() (GroupSlice, error) {
 	groups := make(GroupSlice, len(st.groups), len(st.groups))
 	for i, g := range st.groups {
-		w, err := st.website(config.ScopeID(g.WebsiteID))
+		w, err := st.website(scope.MockID(g.WebsiteID))
 		if err != nil {
 			return nil, errgo.Mask(err)
 		}
@@ -180,28 +176,28 @@ func (st *Storage) Groups() (GroupSlice, error) {
 
 // store returns a TableStore by an id or code.
 // The non-empty code has precedence if available.
-func (st *Storage) store(r config.ScopeIDer) (*TableStore, error) {
+func (st *Storage) store(r scope.StoreIDer) (*TableStore, error) {
 	if r == nil {
 		return nil, ErrStoreNotFound
 	}
-	if c, ok := r.(config.ScopeCoder); ok && c.ScopeCode() != "" {
-		return st.stores.FindByCode(c.ScopeCode())
+	if c, ok := r.(scope.StoreCoder); ok && c.StoreCode() != "" {
+		return st.stores.FindByCode(c.StoreCode())
 	}
-	return st.stores.FindByID(r.ScopeID())
+	return st.stores.FindByStoreID(r.StoreID())
 }
 
 // Store creates a new Store which contains the the store, its group and website
 // according to the interface definition.
-func (st *Storage) Store(r config.ScopeIDer) (*Store, error) {
+func (st *Storage) Store(r scope.StoreIDer) (*Store, error) {
 	s, err := st.store(r)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	w, err := st.website(config.ScopeID(s.WebsiteID))
+	w, err := st.website(scope.MockID(s.WebsiteID))
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	g, err := st.group(config.ScopeID(s.GroupID))
+	g, err := st.group(scope.MockID(s.GroupID))
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
@@ -217,7 +213,7 @@ func (st *Storage) Stores() (StoreSlice, error) {
 	stores := make(StoreSlice, len(st.stores), len(st.stores))
 	for i, s := range st.stores {
 		var err error
-		if stores[i], err = st.Store(config.ScopeID(s.StoreID)); err != nil {
+		if stores[i], err = st.Store(scope.MockID(s.StoreID)); err != nil {
 			return nil, errgo.Mask(err)
 		}
 	}
@@ -229,11 +225,11 @@ func (st *Storage) Stores() (StoreSlice, error) {
 func (st *Storage) DefaultStoreView() (*Store, error) {
 	for _, website := range st.websites {
 		if website.IsDefault.Bool && website.IsDefault.Valid {
-			g, err := st.group(config.ScopeID(website.DefaultGroupID))
+			g, err := st.group(scope.MockID(website.DefaultGroupID))
 			if err != nil {
 				return nil, err
 			}
-			return st.Store(config.ScopeID(g.DefaultStoreID))
+			return st.Store(scope.MockID(g.DefaultStoreID))
 		}
 	}
 	return nil, ErrStoreNotFound
@@ -254,7 +250,7 @@ func (st *Storage) ReInit(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) er
 			st.websites[i] = nil // I'm not quite sure if that is needed to clear the pointers
 		}
 		st.websites = nil
-		_, err := st.websites.Load(dbrSess, cbs...)
+		_, err := st.websites.SQLSelect(dbrSess, cbs...)
 		errc <- errgo.Mask(err)
 	}()
 
@@ -263,7 +259,7 @@ func (st *Storage) ReInit(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) er
 			st.groups[i] = nil // I'm not quite sure if that is needed to clear the pointers
 		}
 		st.groups = nil
-		_, err := st.groups.Load(dbrSess, cbs...)
+		_, err := st.groups.SQLSelect(dbrSess, cbs...)
 		errc <- errgo.Mask(err)
 	}()
 
@@ -272,7 +268,7 @@ func (st *Storage) ReInit(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) er
 			st.stores[i] = nil // I'm not quite sure if that is needed to clear the pointers
 		}
 		st.stores = nil
-		_, err := st.stores.Load(dbrSess, cbs...)
+		_, err := st.stores.SQLSelect(dbrSess, cbs...)
 		errc <- errgo.Mask(err)
 	}()
 

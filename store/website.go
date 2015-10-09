@@ -21,9 +21,8 @@ import (
 	"sort"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/directory"
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
 	"golang.org/x/text/language"
 )
@@ -33,26 +32,25 @@ const (
 	DefaultWebsiteID int64 = 0
 )
 
-type (
-	// Website represents the overall parent structure of its children Group and Store.
-	// A website defines the default group ID. A website can contain custom configuration
-	// settings which overrides the default scope but get itself overridden by the Store scope.
-	Website struct {
-		cr config.Reader
-		// Data raw website data
-		Data *TableWebsite
+// Website represents the overall parent structure of its children Group and Store.
+// A website defines the default group ID. A website can contain custom configuration
+// settings which overrides the default scope but get itself overridden by the Store scope.
+type Website struct {
+	cr config.Reader
+	// Data raw website data
+	Data *TableWebsite
 
-		// Groups contains a slice to all groups associated to one website. This slice can be nil.
-		Groups GroupSlice
-		// Stores contains a slice to all stores associated to one website. This slice can be nil.
-		Stores StoreSlice
-	}
-	// WebsiteSlice contains pointer to Website struct and some nifty method receivers.
-	WebsiteSlice []*Website
+	// Groups contains a slice to all groups associated to one website. This slice can be nil.
+	Groups GroupSlice
+	// Stores contains a slice to all stores associated to one website. This slice can be nil.
+	Stores StoreSlice
+}
 
-	// WebsiteOption option func for NewWebsite()
-	WebsiteOption func(*Website)
-)
+// WebsiteSlice contains pointer to Website struct and some nifty method receivers.
+type WebsiteSlice []*Website
+
+// WebsiteOption can be used as an argument in NewWebsite to configure a website.
+type WebsiteOption func(*Website)
 
 var (
 	// ErrWebsiteNotFound when the website has not been found within a slice
@@ -60,9 +58,6 @@ var (
 	// ErrWebsiteDefaultGroupNotFound the default group cannot be found
 	ErrWebsiteDefaultGroupNotFound = errors.New("Website Default Group not found")
 )
-
-var _ config.ScopeIDer = (*Website)(nil)
-var _ config.ScopeCoder = (*Website)(nil)
 
 // SetWebsiteConfig sets the config.Reader to the Website.
 // Default reader is config.DefaultManager
@@ -84,19 +79,23 @@ func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) *Website {
 }
 
 // ApplyOptions sets the options on a Website
-func (w *Website) ApplyOptions(opts ...WebsiteOption) {
+func (w *Website) ApplyOptions(opts ...WebsiteOption) *Website {
 	for _, opt := range opts {
 		if opt != nil {
 			opt(w)
 		}
 	}
+	return w
 }
 
-// ScopeID satisfies the interface ScopeIDer and mainly used in the StoreManager for selecting Website,Group ...
-func (w *Website) ScopeID() int64 { return w.Data.WebsiteID }
+var _ scope.WebsiteIDer = (*Website)(nil)
+var _ scope.WebsiteCoder = (*Website)(nil)
 
-// ScopeCode satisfies the interface ScopeCoder
-func (w *Website) ScopeCode() string { return w.Data.Code.String }
+// WebsiteID satisfies the interface scope.WebsiteIDer and returns the website ID.
+func (w *Website) WebsiteID() int64 { return w.Data.WebsiteID }
+
+// WebsiteCode satisfies the interface scope.WebsiteCoder and returns the code.
+func (w *Website) WebsiteCode() string { return w.Data.Code.String }
 
 // MarshalJSON satisfies interface for JSON marshalling. The TableWebsite
 // struct will be encoded to JSON.
@@ -127,7 +126,9 @@ func (w *Website) DefaultStore() (*Store, error) {
 // SetGroupsStores uses a group slice and a table slice to set the groups associated to this website
 // and the stores associated to this website. It panics if the integrity is incorrect.
 func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *Website {
-	groups := tgs.FilterByWebsiteID(w.Data.WebsiteID)
+	groups := tgs.Filter(func(tg *TableGroup) bool {
+		return tg.WebsiteID == w.Data.WebsiteID
+	})
 	w.Groups = make(GroupSlice, groups.Len(), groups.Len())
 	for i, g := range groups {
 		w.Groups[i] = NewGroup(g, SetGroupWebsite(w.Data), SetGroupConfig(w.cr)).SetStores(tss, nil)
@@ -135,7 +136,7 @@ func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *Web
 	stores := tss.FilterByWebsiteID(w.Data.WebsiteID)
 	w.Stores = make(StoreSlice, stores.Len(), stores.Len())
 	for i, s := range stores {
-		group, err := tgs.FindByID(s.GroupID)
+		group, err := tgs.FindByGroupID(s.GroupID)
 		if err != nil {
 			panic(fmt.Sprintf("Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs))
 		}
@@ -148,7 +149,7 @@ func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *Web
 // falls back to default global scope.
 // If using etcd or consul maybe this can lead to round trip times because of network access.
 func (w *Website) ConfigString(path ...string) string {
-	val := w.cr.GetString(config.ScopeWebsite(w), config.Path(path...))
+	val := w.cr.GetString(config.ScopeWebsite(w.WebsiteID()), config.Path(path...))
 	if val == "" {
 		val = w.cr.GetString(config.Path(path...))
 	}
@@ -227,56 +228,6 @@ func (ws WebsiteSlice) IDs() utils.Int64Slice {
 	}
 	return ids
 }
-
-/*
-	TableWebsite and TableWebsiteSlice method receivers
-*/
-
-// Load uses a dbr session to load all data from the core_website table into the current slice.
-// The variadic 2nd argument can be a call back function to manipulate the select.
-// Additional columns or joins cannot be added. This method receiver should only be used in development.
-// @see app/code/Magento/Store/Model/Resource/Website/Collection.php::Load()
-func (s *TableWebsiteSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
-	return s.parentLoad(dbrSess, append(append([]csdb.DbrSelectCb{nil}, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
-		return sb.OrderBy("main_table.sort_order ASC").OrderBy("main_table.name ASC")
-	}), cbs...)...)
-}
-
-// FindByID returns a TableWebsite if found by id or an error
-func (s TableWebsiteSlice) FindByID(id int64) (*TableWebsite, error) {
-	for _, w := range s {
-		if w != nil && w.WebsiteID == id {
-			return w, nil
-		}
-	}
-	return nil, ErrWebsiteNotFound
-}
-
-// FindByCode returns a TableWebsite if found by code or an error
-func (s TableWebsiteSlice) FindByCode(code string) (*TableWebsite, error) {
-	for _, w := range s {
-		if w != nil && w.Code.Valid && w.Code.String == code {
-			return w, nil
-		}
-	}
-	return nil, ErrWebsiteNotFound
-}
-
-// Filter returns a new slice filtered by predicate f
-func (s TableWebsiteSlice) Filter(f func(*TableWebsite) bool) TableWebsiteSlice {
-	var tws TableWebsiteSlice
-	for _, w := range s {
-		if w != nil && f(w) {
-			tws = append(tws, w)
-		}
-	}
-	return tws
-}
-
-// @todo review Magento code because of column is_default
-//func (s TableWebsite) IsDefault() bool {
-//	return s.WebsiteID == DefaultWebsiteId
-//}
 
 /*
 	@todo implement Magento\Store\Model\Website

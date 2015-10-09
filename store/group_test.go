@@ -27,8 +27,10 @@ import (
 
 func init() {
 	dbc := csdb.MustConnectTest()
-	store.TableCollection.Init(dbc.NewSession())
-	dbc.Close()
+	defer dbc.Close()
+	if err := store.TableCollection.Init(dbc.NewSession()); err != nil {
+		panic(err)
+	}
 }
 
 func TestNewGroup(t *testing.T) {
@@ -172,27 +174,27 @@ func TestTableGroupSliceLoad(t *testing.T) {
 	dbrSess := dbc.NewSession()
 
 	var groups store.TableGroupSlice
-	rows, err := groups.Load(dbrSess)
+	rows, err := groups.SQLSelect(dbrSess)
 	assert.NoError(t, err)
 	assert.True(t, rows > 0)
 
-	assert.True(t, groups.Len() > 2)
+	assert.True(t, groups.Len() >= 2)
 	for _, s := range groups {
 		assert.True(t, len(s.Name) > 1)
 	}
 }
 
 func TestTableGroupSliceIDs(t *testing.T) {
-	assert.EqualValues(t, utils.Int64Slice{3, 1, 0, 2}, testGroups.IDs())
+	assert.EqualValues(t, []int64{3, 1, 0, 2}, testGroups.Extract().GroupID())
 	assert.True(t, testGroups.Len() == 4)
 }
 
 func TestTableGroupSliceFindByID(t *testing.T) {
-	g1, err := testGroups.FindByID(999)
-	assert.EqualError(t, store.ErrGroupNotFound, err.Error())
+	g1, err := testGroups.FindByGroupID(999)
+	assert.EqualError(t, err, "ID not found in TableGroupSlice")
 	assert.Nil(t, g1)
 
-	g2, err := testGroups.FindByID(3)
+	g2, err := testGroups.FindByGroupID(3)
 	assert.NoError(t, err)
 	assert.EqualValues(t, "Australia", g2.Name)
 }

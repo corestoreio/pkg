@@ -19,7 +19,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
@@ -53,17 +53,17 @@ var testStorage = store.NewStorage(
 func TestStorageWebsite(t *testing.T) {
 
 	tests := []struct {
-		have      config.ScopeIDer
+		have      scope.WebsiteIDer
 		err       error
 		wantWCode string
 	}{
 		{nil, store.ErrWebsiteNotFound, ""},
-		{config.ScopeID(2015), store.ErrWebsiteNotFound, ""},
-		{config.ScopeID(1), nil, "euro"},
-		{config.ScopeCode("asia"), store.ErrWebsiteNotFound, ""},
-		{config.ScopeCode("oz"), nil, "oz"},
+		{scope.MockID(2015), store.ErrIDNotFoundTableWebsiteSlice, ""},
+		{scope.MockID(1), nil, "euro"},
+		{scope.MockCode("asia"), store.ErrIDNotFoundTableWebsiteSlice, ""},
+		{scope.MockCode("oz"), nil, "oz"},
 		{mockIDCode{1, "oz"}, nil, "oz"},
-		{mockIDCode{1, "ozzz"}, store.ErrWebsiteNotFound, ""},
+		{mockIDCode{1, "ozzz"}, store.ErrIDNotFoundTableWebsiteSlice, ""},
 	}
 	for _, test := range tests {
 		w, err := testStorage.Website(test.have)
@@ -77,7 +77,7 @@ func TestStorageWebsite(t *testing.T) {
 		}
 	}
 
-	w, err := testStorage.Website(config.ScopeCode("euro"))
+	w, err := testStorage.Website(scope.MockCode("euro"))
 	assert.NoError(t, err)
 	assert.NotNil(t, w)
 
@@ -100,7 +100,7 @@ var benchmarkStorageWebsiteDefaultGroup *store.Group
 func BenchmarkStorageWebsiteGetDefaultGroup(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStorageWebsite, err = testStorage.Website(config.ScopeCode("euro"))
+		benchmarkStorageWebsite, err = testStorage.Website(scope.MockCode("euro"))
 		if err != nil {
 			b.Error(err)
 		}
@@ -150,19 +150,19 @@ func TestWebsiteSliceFilter(t *testing.T) {
 func TestStorageGroup(t *testing.T) {
 
 	tests := []struct {
-		id       config.ScopeIDer
+		id       scope.GroupIDer
 		err      error
 		wantName string
 	}{
 		{nil, store.ErrGroupNotFound, ""},
-		{config.ScopeID(2015), store.ErrGroupNotFound, ""},
-		{config.ScopeID(1), nil, "DACH Group"},
+		{scope.MockID(2015), store.ErrIDNotFoundTableGroupSlice, ""},
+		{scope.MockID(1), nil, "DACH Group"},
 	}
 	for _, test := range tests {
 		g, err := testStorage.Group(test.id)
 		if test.err != nil {
 			assert.Nil(t, g)
-			assert.EqualError(t, test.err, err.Error())
+			assert.EqualError(t, err, test.err.Error())
 		} else {
 			assert.NotNil(t, g)
 			assert.NoError(t, err)
@@ -170,7 +170,7 @@ func TestStorageGroup(t *testing.T) {
 		}
 	}
 
-	g, err := testStorage.Group(config.ScopeID(3))
+	g, err := testStorage.Group(scope.MockID(3))
 	assert.NoError(t, err)
 	assert.NotNil(t, g)
 
@@ -192,7 +192,7 @@ var benchmarkStorageGroupDefaultStore *store.Store
 func BenchmarkStorageGroupGetDefaultStore(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStorageGroup, err = testStorage.Group(config.ScopeID(3))
+		benchmarkStorageGroup, err = testStorage.Group(scope.MockID(3))
 		if err != nil {
 			b.Error(err)
 		}
@@ -245,35 +245,35 @@ func TestStorageGroupNoWebsite(t *testing.T) {
 			&store.TableStore{StoreID: 6, Code: dbr.NullString{NullString: sql.NullString{String: "nz", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),
 	)
-	g, err := tst.Group(config.ScopeID(3))
+	g, err := tst.Group(scope.MockID(3))
 	assert.Nil(t, g)
-	assert.EqualError(t, store.ErrWebsiteNotFound, err.Error())
+	assert.EqualError(t, store.ErrIDNotFoundTableWebsiteSlice, err.Error())
 
 	gs, err := tst.Groups()
 	assert.Nil(t, gs)
-	assert.EqualError(t, store.ErrWebsiteNotFound, err.Error())
+	assert.EqualError(t, store.ErrIDNotFoundTableWebsiteSlice, err.Error())
 }
 
 func TestStorageStore(t *testing.T) {
 
 	tests := []struct {
-		have     config.ScopeIDer
+		have     scope.StoreIDer
 		err      error
 		wantCode string
 	}{
 		{nil, store.ErrStoreNotFound, ""},
-		{config.ScopeID(2015), store.ErrStoreNotFound, ""},
-		{config.ScopeID(1), nil, "de"},
-		{config.ScopeCode("asia"), store.ErrStoreNotFound, ""},
-		{config.ScopeCode("nz"), nil, "nz"},
+		{scope.MockID(2015), store.ErrIDNotFoundTableStoreSlice, ""},
+		{scope.MockID(1), nil, "de"},
+		{scope.MockCode("asia"), store.ErrIDNotFoundTableStoreSlice, ""},
+		{scope.MockCode("nz"), nil, "nz"},
 		{mockIDCode{4, "nz"}, nil, "nz"},
-		{mockIDCode{4, "auuuuu"}, store.ErrStoreNotFound, ""},
+		{mockIDCode{4, "auuuuu"}, store.ErrIDNotFoundTableStoreSlice, ""},
 	}
-	for _, test := range tests {
+	for i, test := range tests {
 		s, err := testStorage.Store(test.have)
 		if test.err != nil {
 			assert.Nil(t, s, "%#v", test)
-			assert.EqualError(t, test.err, err.Error())
+			assert.EqualError(t, err, test.err.Error(), "Index: %d", i)
 		} else {
 			assert.NotNil(t, s, "%#v", test)
 			assert.NoError(t, err, "%#v", test)
@@ -281,7 +281,7 @@ func TestStorageStore(t *testing.T) {
 		}
 	}
 
-	s, err := testStorage.Store(config.ScopeCode("at"))
+	s, err := testStorage.Store(scope.MockCode("at"))
 	assert.NoError(t, err)
 	assert.NotNil(t, s)
 
@@ -304,7 +304,7 @@ var benchmarkStorageStoreWebsite *store.Website
 func BenchmarkStorageStoreGetWebsite(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStorageStore, err = testStorage.Store(config.ScopeCode("de"))
+		benchmarkStorageStore, err = testStorage.Store(scope.MockCode("de"))
 		if err != nil {
 			b.Error(err)
 		}
@@ -373,7 +373,7 @@ func TestDefaultStoreView(t *testing.T) {
 	)
 	dSt2, err := tst2.DefaultStoreView()
 	assert.Nil(t, dSt2)
-	assert.EqualError(t, store.ErrGroupNotFound, err.Error())
+	assert.EqualError(t, store.ErrIDNotFoundTableGroupSlice, err.Error())
 }
 
 func TestStorageStoreErrors(t *testing.T) {
@@ -386,13 +386,13 @@ func TestStorageStoreErrors(t *testing.T) {
 			&store.TableStore{StoreID: 6, Code: dbr.NullString{NullString: sql.NullString{String: "nz", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),
 	)
-	stw, err := nsw.Store(config.ScopeCode("nz"))
+	stw, err := nsw.Store(scope.MockCode("nz"))
 	assert.Nil(t, stw)
-	assert.EqualError(t, store.ErrWebsiteNotFound, err.Error())
+	assert.EqualError(t, store.ErrIDNotFoundTableWebsiteSlice, err.Error())
 
 	stws, err := nsw.Stores()
 	assert.Nil(t, stws)
-	assert.EqualError(t, store.ErrWebsiteNotFound, err.Error())
+	assert.EqualError(t, store.ErrIDNotFoundTableWebsiteSlice, err.Error())
 
 	var nsg = store.NewStorage(
 		store.SetStorageWebsites(
@@ -407,13 +407,13 @@ func TestStorageStoreErrors(t *testing.T) {
 		),
 	)
 
-	stg, err := nsg.Store(config.ScopeCode("nz"))
+	stg, err := nsg.Store(scope.MockCode("nz"))
 	assert.Nil(t, stg)
-	assert.EqualError(t, store.ErrGroupNotFound, err.Error())
+	assert.EqualError(t, store.ErrIDNotFoundTableGroupSlice, err.Error())
 
 	stgs, err := nsg.Stores()
 	assert.Nil(t, stgs)
-	assert.EqualError(t, store.ErrGroupNotFound, err.Error())
+	assert.EqualError(t, store.ErrIDNotFoundTableGroupSlice, err.Error())
 
 }
 

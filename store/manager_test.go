@@ -15,20 +15,31 @@
 package store_test
 
 import (
+	"bytes"
 	"database/sql"
+	std "log"
 	"net/http"
 	"net/http/httptest"
-	"runtime"
 	"testing"
 
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/utils/log"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/juju/errgo"
 	"github.com/stretchr/testify/assert"
 )
+
+// Within a test function use defer errLogBuf.Reset() to clean the logger
+var errLogBuf bytes.Buffer
+
+func init() {
+	log.Set(log.NewStdLogger(
+		log.SetStdError(&errLogBuf, "testErr: ", std.Lshortfile),
+	))
+	log.SetLevel(log.StdLevelError)
+}
 
 //func init() {
 //	// regarding SetConfigReader: https://twitter.com/davecheney/status/602633849374429185
@@ -50,7 +61,7 @@ func getTestManager(opts ...func(ms *mockStorage)) *store.Manager {
 	for _, opt := range opts {
 		opt(ms)
 	}
-	return store.NewManager(store.SetManagerStorage(ms))
+	return store.NewManager(ms)
 }
 
 var managerStoreSimpleTest = getTestManager(func(ms *mockStorage) {
@@ -66,7 +77,7 @@ var managerStoreSimpleTest = getTestManager(func(ms *mockStorage) {
 func TestNewManagerStore(t *testing.T) {
 	assert.True(t, managerStoreSimpleTest.IsCacheEmpty())
 	for j := 0; j < 3; j++ {
-		s, err := managerStoreSimpleTest.Store(config.ScopeCode("notNil"))
+		s, err := managerStoreSimpleTest.Store(scope.MockCode("notNil"))
 		assert.NoError(t, err)
 		assert.NotNil(t, s)
 		assert.EqualValues(t, "de", s.Data.Code.String)
@@ -76,11 +87,11 @@ func TestNewManagerStore(t *testing.T) {
 	assert.True(t, managerStoreSimpleTest.IsCacheEmpty())
 
 	tests := []struct {
-		have    config.ScopeIDer
+		have    scope.StoreIDer
 		wantErr error
 	}{
-		{config.ScopeCode("nilSlices"), store.ErrStoreNotFound},
-		{config.ScopeID(2), store.ErrStoreNotFound},
+		{scope.MockCode("nilSlices"), store.ErrStoreNotFound},
+		{scope.MockID(2), store.ErrStoreNotFound},
 		{nil, store.ErrAppStoreNotSet},
 	}
 
@@ -132,17 +143,17 @@ func TestNewManagerStoreInit(t *testing.T) {
 	})
 	tests := []struct {
 		haveManager *store.Manager
-		haveID      config.ScopeIDer
+		haveID      scope.StoreIDer
 		wantErr     error
 	}{
-		{tms, config.ScopeID(1), nil},
-		{tms, config.ScopeID(1), store.ErrAppStoreSet},
+		{tms, scope.MockID(1), nil},
+		{tms, scope.MockID(1), store.ErrAppStoreSet},
 		{tms, nil, store.ErrAppStoreSet},
 		{tms, nil, store.ErrAppStoreSet},
 	}
 
 	for _, test := range tests {
-		haveErr := test.haveManager.Init(test.haveID, config.ScopeStoreID)
+		haveErr := test.haveManager.Init(scope.Option{Store: test.haveID})
 		if test.wantErr != nil {
 			assert.Error(t, haveErr)
 			assert.EqualError(t, test.wantErr, haveErr.Error())
@@ -161,7 +172,7 @@ var benchmarkManagerStore *store.Store
 func BenchmarkManagerGetStore(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkManagerStore, err = managerStoreSimpleTest.Store(config.ScopeCode("de"))
+		benchmarkManagerStore, err = managerStoreSimpleTest.Store(scope.MockCode("de"))
 		if err != nil {
 			b.Error(err)
 		}
@@ -237,15 +248,15 @@ func TestNewManagerGroup(t *testing.T) {
 
 	tests := []struct {
 		m               *store.Manager
-		have            config.ScopeIDer
+		have            scope.GroupIDer
 		wantErr         error
 		wantGroupName   string
 		wantWebsiteCode string
 	}{
 		{managerGroupSimpleTest, nil, store.ErrAppStoreNotSet, "", ""},
-		{getTestManager(), config.ScopeID(20), store.ErrGroupNotFound, "", ""},
-		{managerGroupSimpleTest, config.ScopeID(1), nil, "DACH Group", "euro"},
-		{managerGroupSimpleTest, config.ScopeID(1), nil, "DACH Group", "euro"},
+		{getTestManager(), scope.MockID(20), store.ErrGroupNotFound, "", ""},
+		{managerGroupSimpleTest, scope.MockID(1), nil, "DACH Group", "euro"},
+		{managerGroupSimpleTest, scope.MockID(1), nil, "DACH Group", "euro"},
 	}
 
 	for _, test := range tests {
@@ -274,10 +285,10 @@ func TestNewManagerGroupInit(t *testing.T) {
 				store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}}),
 			), nil
 		}
-	}).Init(config.ScopeID(1), config.ScopeGroupID)
+	}).Init(scope.Option{Group: scope.MockID(1)})
 	assert.EqualError(t, store.ErrGroupDefaultStoreNotFound, err.Error(), "Incorrect DefaultStore for a Group")
 
-	err = getTestManager().Init(config.ScopeID(21), config.ScopeGroupID)
+	err = getTestManager().Init(scope.Option{Group: scope.MockID(21)})
 	assert.EqualError(t, store.ErrGroupNotFound, err.Error())
 
 	tm3 := getTestManager(func(ms *mockStorage) {
@@ -290,7 +301,7 @@ func TestNewManagerGroupInit(t *testing.T) {
 			}, nil), nil
 		}
 	})
-	err = tm3.Init(config.ScopeID(1), config.ScopeGroupID)
+	err = tm3.Init(scope.Option{Group: scope.MockID(1)})
 	assert.NoError(t, err)
 	g, err := tm3.Group()
 	assert.NoError(t, err)
@@ -333,16 +344,16 @@ func TestNewManagerWebsite(t *testing.T) {
 
 	tests := []struct {
 		m               *store.Manager
-		have            config.ScopeIDer
+		have            scope.WebsiteIDer
 		wantErr         error
 		wantWebsiteCode string
 	}{
 		{managerWebsite, nil, store.ErrAppStoreNotSet, ""},
-		{getTestManager(), config.ScopeID(20), store.ErrGroupNotFound, ""},
-		{managerWebsite, config.ScopeID(1), nil, "euro"},
-		{managerWebsite, config.ScopeID(1), nil, "euro"},
-		{managerWebsite, config.ScopeCode("notImportant"), nil, "euro"},
-		{managerWebsite, config.ScopeCode("notImportant"), nil, "euro"},
+		{getTestManager(), scope.MockID(20), store.ErrGroupNotFound, ""},
+		{managerWebsite, scope.MockID(1), nil, "euro"},
+		{managerWebsite, scope.MockID(1), nil, "euro"},
+		{managerWebsite, scope.MockCode("notImportant"), nil, "euro"},
+		{managerWebsite, scope.MockCode("notImportant"), nil, "euro"},
 	}
 
 	for _, test := range tests {
@@ -411,7 +422,7 @@ func TestNewManagerWebsiteInit(t *testing.T) {
 				&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
 			), nil
 		}
-	}).Init(config.ScopeCode("euro"), config.ScopeWebsiteID)
+	}).Init(scope.Option{Website: scope.MockCode("euro")})
 	assert.EqualError(t, store.ErrWebsiteDefaultGroupNotFound, err.Error())
 
 	managerWebsite := getTestManager(func(ms *mockStorage) {
@@ -435,25 +446,25 @@ func TestNewManagerWebsiteInit(t *testing.T) {
 	assert.EqualError(t, store.ErrAppStoreNotSet, err.Error())
 	assert.Nil(t, w1)
 
-	err = managerWebsite.Init(config.ScopeCode("euro"), config.ScopeWebsiteID)
+	err = managerWebsite.Init(scope.Option{Website: scope.MockCode("euro")})
 	assert.NoError(t, err)
 
 	w2, err := managerWebsite.Website()
 	assert.NoError(t, err)
 	assert.EqualValues(t, "euro", w2.Data.Code.String)
 
-	err3 := getTestManager(func(ms *mockStorage) {}).Init(config.ScopeCode("euronen"), config.ScopeWebsiteID)
-	assert.Error(t, err3, "config.ScopeCode(euro), config.ScopeWebsite: %#v => %s", err3, err3)
+	err3 := getTestManager(func(ms *mockStorage) {}).Init(scope.Option{Website: scope.MockCode("euronen")})
+	assert.Error(t, err3, "scope.MockCode(euro), config.ScopeWebsite: %#v => %s", err3, err3)
 	assert.EqualError(t, store.ErrWebsiteNotFound, err3.Error())
 }
 
 func TestNewManagerError(t *testing.T) {
-	err := getTestManager().Init(config.ScopeCode("euro"), config.ScopeDefaultID)
-	assert.EqualError(t, err, store.ErrUnsupportedScopeGroup.Error())
+	err := getTestManager().Init(scope.Option{})
+	assert.EqualError(t, err, store.ErrUnsupportedScope.Error())
 }
 
 var storeManagerRequestStore = store.NewManager(
-	store.NewStorageOption(
+	store.NewStorage(
 		store.SetStorageWebsites(
 			&store.TableWebsite{WebsiteID: 0, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
 			&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
@@ -478,17 +489,17 @@ var storeManagerRequestStore = store.NewManager(
 )
 
 type testNewManagerGetRequestStore struct {
-	haveR         config.ScopeIDer
+	haveSO        scope.Option
 	wantStoreCode string
 	wantErr       error
 }
 
-func runNewManagerGetRequestStore(t *testing.T, testScope config.ScopeGroup, tests []testNewManagerGetRequestStore) {
-	for _, test := range tests {
-		haveStore, haveErr := storeManagerRequestStore.GetRequestStore(test.haveR, testScope)
+func runNewManagerGetRequestStore(t *testing.T, testScope scope.Scope, tests []testNewManagerGetRequestStore) {
+	for i, test := range tests {
+		haveStore, haveErr := storeManagerRequestStore.GetRequestStore(test.haveSO, testScope)
 		if test.wantErr != nil {
-			assert.Nil(t, haveStore, "testScope %d: %#v", testScope, test)
-			assert.EqualError(t, test.wantErr, haveErr.Error(), "testScope %d: %#v", testScope, test)
+			assert.Nil(t, haveStore, "%d: testScope %d: %#v", i, testScope, test)
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "%d: testScope %d: %#v", i, testScope, test)
 		} else {
 			assert.NotNil(t, haveStore)
 			assert.NoError(t, haveErr, "%#v", test)
@@ -497,12 +508,13 @@ func runNewManagerGetRequestStore(t *testing.T, testScope config.ScopeGroup, tes
 	}
 	storeManagerRequestStore.ClearCache(true)
 }
+
 func TestNewManagerGetRequestStore_ScopeStore(t *testing.T) {
 
-	testCode := config.ScopeCode("de")
-	testScope := config.ScopeStoreID
+	testCode := scope.MockCode("de")
+	testScope := scope.StoreID
 
-	if haveStore, haveErr := storeManagerRequestStore.GetRequestStore(config.ScopeID(1), testScope); haveErr == nil {
+	if haveStore, haveErr := storeManagerRequestStore.GetRequestStore(scope.Option{Store: scope.MockID(1)}, testScope); haveErr == nil {
 		t.Error("appStore should not be set!")
 		t.Fail()
 	} else {
@@ -511,11 +523,11 @@ func TestNewManagerGetRequestStore_ScopeStore(t *testing.T) {
 	}
 
 	// init with scope store
-	if err := storeManagerRequestStore.Init(testCode, testScope); err != nil {
+	if err := storeManagerRequestStore.Init(scope.Option{Store: testCode}); err != nil {
 		t.Error(err)
 		t.Fail()
 	}
-	assert.EqualError(t, store.ErrAppStoreSet, storeManagerRequestStore.Init(testCode, testScope).Error())
+	assert.EqualError(t, store.ErrAppStoreSet, storeManagerRequestStore.Init(scope.Option{Store: testCode}).Error())
 
 	if s, err := storeManagerRequestStore.Store(); err == nil {
 		assert.EqualValues(t, "de", s.Data.Code.String)
@@ -525,29 +537,29 @@ func TestNewManagerGetRequestStore_ScopeStore(t *testing.T) {
 	}
 
 	tests := []testNewManagerGetRequestStore{
-		{config.ScopeID(232), "", store.ErrStoreNotFound},
-		{nil, "", store.ErrStoreNotFound},
-		{config.ScopeCode("\U0001f631"), "", store.ErrStoreNotFound},
+		{scope.Option{Store: scope.MockID(232)}, "", store.ErrIDNotFoundTableStoreSlice},
+		{scope.Option{}, "", store.ErrUnsupportedScope},
+		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableStoreSlice},
 
-		{config.ScopeID(6), "nz", nil},
-		{config.ScopeCode("ch"), "", store.ErrStoreNotActive},
+		{scope.Option{Store: scope.MockID(6)}, "nz", nil},
+		{scope.Option{Store: scope.MockCode("ch")}, "", store.ErrStoreNotActive},
 
-		{config.ScopeCode("nz"), "nz", nil},
-		{config.ScopeCode("de"), "de", nil},
-		{config.ScopeID(2), "at", nil},
+		{scope.Option{Store: scope.MockCode("nz")}, "nz", nil},
+		{scope.Option{Store: scope.MockCode("de")}, "de", nil},
+		{scope.Option{Store: scope.MockID(2)}, "at", nil},
 
-		{config.ScopeID(2), "at", nil},
-		{config.ScopeCode("au"), "au", nil},
-		{config.ScopeCode("ch"), "", store.ErrStoreNotActive},
+		{scope.Option{Store: scope.MockID(2)}, "at", nil},
+		{scope.Option{Store: scope.MockCode("au")}, "au", nil},
+		{scope.Option{Store: scope.MockCode("ch")}, "", store.ErrStoreNotActive},
 	}
 	runNewManagerGetRequestStore(t, testScope, tests)
 }
 
 func TestNewManagerGetRequestStore_ScopeGroup(t *testing.T) {
-	testCode := config.ScopeID(1)
-	testScope := config.ScopeGroupID
+	testOption := scope.Option{Group: scope.MockID(1)}
+	testScope := scope.GroupID
 
-	if haveStore, haveErr := storeManagerRequestStore.GetRequestStore(config.ScopeID(1), testScope); haveErr == nil {
+	if haveStore, haveErr := storeManagerRequestStore.GetRequestStore(testOption, testScope); haveErr == nil {
 		t.Error("appStore should not be set!")
 		t.Fail()
 	} else {
@@ -555,12 +567,12 @@ func TestNewManagerGetRequestStore_ScopeGroup(t *testing.T) {
 		assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
 	}
 
-	assert.EqualError(t, store.ErrGroupNotFound, storeManagerRequestStore.Init(config.ScopeID(123), testScope).Error())
-	if err := storeManagerRequestStore.Init(testCode, testScope); err != nil {
+	assert.EqualError(t, store.ErrIDNotFoundTableGroupSlice, storeManagerRequestStore.Init(scope.Option{Group: scope.MockID(123)}).Error())
+	if err := storeManagerRequestStore.Init(testOption); err != nil {
 		t.Error(err)
 		t.Fail()
 	}
-	assert.EqualError(t, store.ErrAppStoreSet, storeManagerRequestStore.Init(testCode, testScope).Error())
+	assert.EqualError(t, store.ErrAppStoreSet, storeManagerRequestStore.Init(testOption).Error())
 
 	if s, err := storeManagerRequestStore.Store(); err == nil {
 		assert.EqualValues(t, "at", s.Data.Code.String)
@@ -576,29 +588,39 @@ func TestNewManagerGetRequestStore_ScopeGroup(t *testing.T) {
 		t.Fail()
 	}
 
+	// we're testing here against Group ID = 1
 	tests := []testNewManagerGetRequestStore{
-		{config.ScopeID(232), "", store.ErrStoreNotFound},
-		{nil, "", store.ErrStoreNotFound},
-		{config.ScopeCode("\U0001f631"), "", store.ErrStoreNotFound},
+		{scope.Option{Group: scope.MockID(232)}, "", store.ErrIDNotFoundTableGroupSlice},
+		{scope.Option{Store: scope.MockID(232)}, "", store.ErrIDNotFoundTableStoreSlice},
+		{scope.Option{}, "", store.ErrUnsupportedScope},
+		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableStoreSlice},
 
-		{config.ScopeID(6), "nz", store.ErrStoreChangeNotAllowed},
-		{config.ScopeCode("ch"), "", store.ErrStoreNotActive},
+		{scope.Option{Store: scope.MockID(6)}, "nz", store.ErrStoreChangeNotAllowed},
+		{scope.Option{Store: scope.MockCode("ch")}, "", store.ErrStoreNotActive},
 
-		{config.ScopeCode("de"), "de", nil},
-		{config.ScopeID(2), "at", nil},
+		{scope.Option{Store: scope.MockCode("de")}, "de", nil},
+		{scope.Option{Store: scope.MockID(2)}, "at", nil},
 
-		{config.ScopeID(2), "at", nil},
-		{config.ScopeCode("au"), "au", store.ErrStoreChangeNotAllowed},
-		{config.ScopeCode("ch"), "", store.ErrStoreNotActive},
+		{scope.Option{Store: scope.MockID(2)}, "at", nil},
+		{scope.Option{Store: scope.MockCode("au")}, "au", store.ErrStoreChangeNotAllowed},
+		{scope.Option{Store: scope.MockCode("ch")}, "", store.ErrStoreNotActive},
+
+		{scope.Option{Group: scope.MockCode("ch")}, "", store.ErrIDNotFoundTableGroupSlice},
+		{scope.Option{Group: scope.MockID(2)}, "", store.ErrStoreChangeNotAllowed},
+		{scope.Option{Group: scope.MockID(1)}, "at", nil},
+
+		{scope.Option{Website: scope.MockCode("xxxx")}, "", store.ErrIDNotFoundTableWebsiteSlice},
+		{scope.Option{Website: scope.MockID(2)}, "", store.ErrStoreChangeNotAllowed},
+		{scope.Option{Website: scope.MockID(1)}, "at", nil},
 	}
-	runNewManagerGetRequestStore(t, testScope, tests)
+	runNewManagerGetRequestStore(t, scope.GroupID, tests)
 }
 
 func TestNewManagerGetRequestStore_ScopeWebsite(t *testing.T) {
-	testCode := config.ScopeID(1)
-	testScope := config.ScopeWebsiteID
+	testCode := scope.Option{Website: scope.MockID(1)}
+	testScope := scope.WebsiteID
 
-	if haveStore, haveErr := storeManagerRequestStore.GetRequestStore(config.ScopeID(1), testScope); haveErr == nil {
+	if haveStore, haveErr := storeManagerRequestStore.GetRequestStore(testCode, testScope); haveErr == nil {
 		t.Error("appStore should not be set!")
 		t.Fail()
 	} else {
@@ -606,13 +628,13 @@ func TestNewManagerGetRequestStore_ScopeWebsite(t *testing.T) {
 		assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
 	}
 
-	assert.EqualError(t, store.ErrUnsupportedScopeGroup, storeManagerRequestStore.Init(config.ScopeID(123), config.ScopeDefaultID).Error())
-	assert.EqualError(t, store.ErrWebsiteNotFound, storeManagerRequestStore.Init(config.ScopeID(123), testScope).Error())
-	if err := storeManagerRequestStore.Init(testCode, testScope); err != nil {
+	assert.EqualError(t, store.ErrUnsupportedScope, storeManagerRequestStore.Init(scope.Option{}).Error())
+	assert.EqualError(t, store.ErrIDNotFoundTableWebsiteSlice, storeManagerRequestStore.Init(scope.Option{Website: scope.MockID(123)}).Error())
+	if err := storeManagerRequestStore.Init(testCode); err != nil {
 		t.Error(err)
 		t.Fail()
 	}
-	assert.EqualError(t, store.ErrAppStoreSet, storeManagerRequestStore.Init(testCode, testScope).Error())
+	assert.EqualError(t, store.ErrAppStoreSet, storeManagerRequestStore.Init(testCode).Error())
 
 	if s, err := storeManagerRequestStore.Store(); err == nil {
 		assert.EqualValues(t, "at", s.Data.Code.String)
@@ -628,28 +650,33 @@ func TestNewManagerGetRequestStore_ScopeWebsite(t *testing.T) {
 		t.Fail()
 	}
 
+	// test against website euro
 	tests := []testNewManagerGetRequestStore{
-		{config.ScopeID(232), "", store.ErrStoreNotFound},
-		{nil, "", store.ErrStoreNotFound},
-		{config.ScopeCode("\U0001f631"), "", store.ErrStoreNotFound},
+		{scope.Option{Website: scope.MockID(232)}, "", store.ErrIDNotFoundTableWebsiteSlice},
+		{scope.Option{}, "", store.ErrUnsupportedScope},
+		{scope.Option{Website: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableWebsiteSlice},
+		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableStoreSlice},
 
-		{config.ScopeID(6), "nz", store.ErrStoreChangeNotAllowed},
-		{config.ScopeCode("ch"), "", store.ErrStoreNotActive},
+		{scope.Option{Store: scope.MockID(6)}, "", store.ErrStoreChangeNotAllowed},
+		{scope.Option{Website: scope.MockCode("oz")}, "", store.ErrStoreChangeNotAllowed},
+		{scope.Option{Store: scope.MockCode("ch")}, "", store.ErrStoreNotActive},
 
-		{config.ScopeCode("de"), "de", nil},
-		{config.ScopeID(2), "at", nil},
+		{scope.Option{Store: scope.MockCode("de")}, "de", nil},
+		{scope.Option{Store: scope.MockID(2)}, "at", nil},
 
-		{config.ScopeID(2), "at", nil},
-		{config.ScopeCode("au"), "au", store.ErrStoreChangeNotAllowed},
-		{config.ScopeCode("ch"), "", store.ErrStoreNotActive},
+		{scope.Option{Store: scope.MockID(2)}, "at", nil},
+		{scope.Option{Store: scope.MockCode("au")}, "au", store.ErrStoreChangeNotAllowed},
+		{scope.Option{Store: scope.MockCode("ch")}, "", store.ErrStoreNotActive},
+
+		{scope.Option{Group: scope.MockID(3)}, "", store.ErrStoreChangeNotAllowed},
 	}
-	runNewManagerGetRequestStore(t, testScope, tests)
+	runNewManagerGetRequestStore(t, scope.WebsiteID, tests)
 }
 
-func getTestRequest(t *testing.T, m, u string, c *http.Cookie) *http.Request {
+func getTestRequest(m, u string, c *http.Cookie) *http.Request {
 	req, err := http.NewRequest(m, u, nil)
 	if err != nil {
-		t.Fatal(err)
+		panic(err)
 	}
 	if c != nil {
 		req.AddCookie(c)
@@ -657,90 +684,91 @@ func getTestRequest(t *testing.T, m, u string, c *http.Cookie) *http.Request {
 	return req
 }
 
-// cyclomatic complexity 12 of function TestInitByRequest() is high (> 10) (gocyclo)
-func TestInitByRequest(t *testing.T) {
-	tests := []struct {
-		req                  *http.Request
-		haveR                config.ScopeIDer
-		haveScopeType        config.ScopeGroup
-		wantStoreCode        string // this is the default store in a scope, lookup in storeManagerRequestStore
-		wantRequestStoreCode config.ScopeCoder
-		wantErr              error
-		wantCookie           string
-	}{
-		{
-			getTestRequest(t, "GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "uk"}),
-			config.ScopeID(1), config.ScopeStoreID, "de", config.ScopeCode("uk"), nil, "",
-		},
-		{
-			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
-			config.ScopeID(1), config.ScopeStoreID, "de", config.ScopeCode("uk"), nil, store.CookieName + "=uk;", // generates a new 1y valid cookie
-		},
-		{
-			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=%20uk", nil),
-			config.ScopeID(1), config.ScopeStoreID, "de", config.ScopeCode("uk"), store.ErrStoreNotFound, "",
-		},
+var testsInitByRequest = []struct {
+	req                  *http.Request
+	haveSO               scope.Option
+	haveScopeType        scope.Scope
+	wantStoreCode        string           // this is the default store in a scope, lookup in storeManagerRequestStore
+	wantRequestStoreCode scope.StoreCoder // can be nil in tests
+	wantErr              error
+	wantCookie           string
+}{
+	{
+		getTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "uk"}),
+		scope.Option{Store: scope.MockID(1)}, scope.StoreID, "de", scope.MockCode("uk"), nil, store.CookieName + "=uk;",
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
+		scope.Option{Store: scope.MockID(1)}, scope.StoreID, "de", scope.MockCode("uk"), nil, store.CookieName + "=uk;", // generates a new 1y valid cookie
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=%20uk", nil),
+		scope.Option{Store: scope.MockID(1)}, scope.StoreID, "de", scope.MockCode("uk"), store.ErrStoreCodeInvalid, "",
+	},
+	{
+		getTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "de"}),
+		scope.Option{Group: scope.MockID(1)}, scope.GroupID, "at", scope.MockCode("de"), nil, store.CookieName + "=de;",
+	},
+	{
+		getTestRequest("GET", "http://cs.io", nil),
+		scope.Option{Group: scope.MockID(1)}, scope.GroupID, "at", nil, store.ErrUnsupportedScope, "",
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=de", nil),
+		scope.Option{Group: scope.MockID(1)}, scope.GroupID, "at", scope.MockCode("de"), nil, store.CookieName + "=de;", // generates a new 1y valid cookie
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=at", nil),
+		scope.Option{Group: scope.MockID(1)}, scope.GroupID, "at", scope.MockCode("at"), nil, store.CookieName + "=;", // generates a delete cookie
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=cz", nil),
+		scope.Option{Group: scope.MockID(1)}, scope.GroupID, "at", nil, store.ErrIDNotFoundTableStoreSlice, "",
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
+		scope.Option{Group: scope.MockID(1)}, scope.GroupID, "at", nil, store.ErrStoreChangeNotAllowed, "",
+	},
 
-		{
-			getTestRequest(t, "GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "de"}),
-			config.ScopeID(1), config.ScopeGroupID, "at", config.ScopeCode("de"), nil, "",
-		},
-		{
-			getTestRequest(t, "GET", "http://cs.io", nil),
-			config.ScopeID(1), config.ScopeGroupID, "at", nil, nil, "",
-		},
-		{
-			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=de", nil),
-			config.ScopeID(1), config.ScopeGroupID, "at", config.ScopeCode("de"), nil, store.CookieName + "=de;", // generates a new 1y valid cookie
-		},
-		{
-			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=at", nil),
-			config.ScopeID(1), config.ScopeGroupID, "at", config.ScopeCode("at"), nil, store.CookieName + "=;", // generates a delete cookie
-		},
-		{
-			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=cz", nil),
-			config.ScopeID(1), config.ScopeGroupID, "at", nil, store.ErrStoreNotFound, "",
-		},
-		{
-			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
-			config.ScopeID(1), config.ScopeGroupID, "at", nil, store.ErrStoreChangeNotAllowed, "",
-		},
+	{
+		getTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "nz"}),
+		scope.Option{Website: scope.MockID(2)}, scope.WebsiteID, "au", scope.MockCode("nz"), nil, store.CookieName + "=nz;",
+	},
+	{
+		getTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "n'z"}),
+		scope.Option{Website: scope.MockID(2)}, scope.WebsiteID, "au", nil, store.ErrStoreCodeInvalid, "",
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
+		scope.Option{Website: scope.MockID(2)}, scope.WebsiteID, "au", nil, store.ErrStoreChangeNotAllowed, "",
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=nz", nil),
+		scope.Option{Website: scope.MockID(2)}, scope.WebsiteID, "au", scope.MockCode("nz"), nil, store.CookieName + "=nz;",
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=ch", nil),
+		scope.Option{Website: scope.MockID(1)}, scope.WebsiteID, "at", nil, store.ErrStoreNotActive, "",
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=nz", nil),
+		scope.Option{Website: scope.MockID(1)}, scope.DefaultID, "at", scope.MockCode("nz"), store.ErrStoreChangeNotAllowed, "",
+	},
+}
 
-		{
-			getTestRequest(t, "GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "nz"}),
-			config.ScopeID(2), config.ScopeWebsiteID, "au", config.ScopeCode("nz"), nil, "",
-		},
-		{
-			getTestRequest(t, "GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "n'z"}),
-			config.ScopeID(2), config.ScopeWebsiteID, "au", nil, nil, "",
-		},
-		{
-			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
-			config.ScopeID(2), config.ScopeWebsiteID, "au", nil, store.ErrStoreChangeNotAllowed, "",
-		},
-		{
-			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=nz", nil),
-			config.ScopeID(2), config.ScopeWebsiteID, "au", config.ScopeCode("nz"), nil, store.CookieName + "=nz;",
-		},
-		{
-			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=ch", nil),
-			config.ScopeID(1), config.ScopeWebsiteID, "at", nil, store.ErrStoreNotActive, "",
-		},
-		{
-			getTestRequest(t, "GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=nz", nil),
-			config.ScopeID(1), config.ScopeDefaultID, "at", config.ScopeCode("nz"), nil, "",
-		},
-	}
+func TestInitByRequestGeneral(t *testing.T) {
+	errLogBuf.Reset()
+	defer errLogBuf.Reset()
 
-	for _, test := range tests {
+	for _, test := range testsInitByRequest {
 		if _, haveErr := storeManagerRequestStore.InitByRequest(nil, nil, test.haveScopeType); haveErr != nil {
 			assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
 		} else {
 			t.Fatal("InitByRequest should return an error if used without running Init() first.")
 		}
 
-		if err := storeManagerRequestStore.Init(test.haveR, test.haveScopeType); err != nil {
-			assert.EqualError(t, store.ErrUnsupportedScopeGroup, err.Error())
+		if err := storeManagerRequestStore.Init(test.haveSO); err != nil {
+			assert.EqualError(t, store.ErrUnsupportedScope, err.Error())
 			t.Log("continuing for loop because of expected store.ErrUnsupportedScopeGroup")
 			storeManagerRequestStore.ClearCache(true)
 			continue
@@ -754,21 +782,36 @@ func TestInitByRequest(t *testing.T) {
 			storeManagerRequestStore.ClearCache(true)
 			continue
 		}
+		storeManagerRequestStore.ClearCache(true)
+	}
+}
+
+func TestInitByRequestInDepth(t *testing.T) {
+	errLogBuf.Reset()
+	defer errLogBuf.Reset()
+
+	for i, test := range testsInitByRequest {
+		if err := storeManagerRequestStore.Init(test.haveSO); err != nil {
+			assert.EqualError(t, store.ErrUnsupportedScope, err.Error())
+			t.Log("continuing for loop because of expected store.ErrUnsupportedScopeGroup")
+			storeManagerRequestStore.ClearCache(true)
+			continue
+		}
 
 		resRec := httptest.NewRecorder()
 
 		haveStore, haveErr := storeManagerRequestStore.InitByRequest(resRec, test.req, test.haveScopeType)
 		if test.wantErr != nil {
 			assert.Nil(t, haveStore)
-			assert.EqualError(t, test.wantErr, haveErr.Error())
+			assert.Error(t, haveErr, "Index %d", i)
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "\nIndex: %d\nError: %s", i, errLogBuf.String())
 		} else {
-			if msg, ok := haveErr.(errgo.Locationer); ok {
-				t.Logf("\nLocation: %s => %s\n", haveErr, msg.Location())
-			}
-			assert.NoError(t, haveErr, "%#v", test)
+
+			assert.NoError(t, haveErr, "Test: %#v\n\n%s\n\n", test, errLogBuf.String())
+
 			if test.wantRequestStoreCode != nil {
-				assert.NotNil(t, haveStore, "%#v", test.req.URL.Query())
-				assert.EqualValues(t, test.wantRequestStoreCode.ScopeCode(), haveStore.Data.Code.String)
+				assert.NotNil(t, haveStore, "URL Query: %#v\nCookies %#v", test.req.URL.Query(), test.req.Cookies())
+				assert.EqualValues(t, test.wantRequestStoreCode.StoreCode(), haveStore.Data.Code.String)
 
 				newKeks := resRec.HeaderMap.Get("Set-Cookie")
 				if test.wantCookie != "" {
@@ -799,28 +842,28 @@ func TestInitByToken(t *testing.T) {
 	}
 
 	tests := []struct {
-		haveR              config.ScopeIDer
+		haveSO             scope.Option
 		haveCodeToken      string
-		haveScopeType      config.ScopeGroup
-		wantStoreCode      string // this is the default store in a scope, lookup in storeManagerRequestStore
-		wantTokenStoreCode config.ScopeCoder
+		haveScopeType      scope.Scope
+		wantStoreCode      string           // this is the default store in a scope, lookup in storeManagerRequestStore
+		wantTokenStoreCode scope.StoreCoder // can be nil
 		wantErr            error
 	}{
-		{config.ScopeCode("de"), "de", config.ScopeStoreID, "de", config.ScopeCode("de"), nil},
-		{config.ScopeCode("de"), "at", config.ScopeStoreID, "de", config.ScopeCode("at"), nil},
-		{config.ScopeCode("de"), "a$t", config.ScopeStoreID, "de", nil, nil},
-		{config.ScopeCode("at"), "ch", config.ScopeStoreID, "at", nil, store.ErrStoreNotActive},
-		{config.ScopeCode("at"), "", config.ScopeStoreID, "at", nil, nil},
+		{scope.Option{Store: scope.MockCode("de")}, "de", scope.StoreID, "de", scope.MockCode("de"), nil},
+		{scope.Option{Store: scope.MockCode("de")}, "at", scope.StoreID, "de", scope.MockCode("at"), nil},
+		{scope.Option{Store: scope.MockCode("de")}, "a$t", scope.StoreID, "de", nil, nil},
+		{scope.Option{Store: scope.MockCode("at")}, "ch", scope.StoreID, "at", nil, store.ErrStoreNotActive},
+		{scope.Option{Store: scope.MockCode("at")}, "", scope.StoreID, "at", nil, nil},
 
-		{config.ScopeID(1), "de", config.ScopeGroupID, "at", config.ScopeCode("de"), nil},
-		{config.ScopeID(1), "ch", config.ScopeGroupID, "at", nil, store.ErrStoreNotActive},
-		{config.ScopeID(1), " ch", config.ScopeGroupID, "at", nil, nil},
-		{config.ScopeID(1), "uk", config.ScopeGroupID, "at", nil, store.ErrStoreChangeNotAllowed},
+		{scope.Option{Group: scope.MockID(1)}, "de", scope.GroupID, "at", scope.MockCode("de"), nil},
+		{scope.Option{Group: scope.MockID(1)}, "ch", scope.GroupID, "at", nil, store.ErrStoreNotActive},
+		{scope.Option{Group: scope.MockID(1)}, " ch", scope.GroupID, "at", nil, nil},
+		{scope.Option{Group: scope.MockID(1)}, "uk", scope.GroupID, "at", nil, store.ErrStoreChangeNotAllowed},
 
-		{config.ScopeID(2), "uk", config.ScopeWebsiteID, "au", nil, store.ErrStoreChangeNotAllowed},
-		{config.ScopeID(2), "nz", config.ScopeWebsiteID, "au", config.ScopeCode("nz"), nil},
-		{config.ScopeID(2), "n z", config.ScopeWebsiteID, "au", nil, nil},
-		{config.ScopeID(2), "", config.ScopeWebsiteID, "au", nil, nil},
+		{scope.Option{Website: scope.MockID(2)}, "uk", scope.WebsiteID, "au", nil, store.ErrStoreChangeNotAllowed},
+		{scope.Option{Website: scope.MockID(2)}, "nz", scope.WebsiteID, "au", scope.MockCode("nz"), nil},
+		{scope.Option{Website: scope.MockID(2)}, "n z", scope.WebsiteID, "au", nil, nil},
+		{scope.Option{Website: scope.MockID(2)}, "", scope.WebsiteID, "au", nil, nil},
 	}
 	for _, test := range tests {
 
@@ -828,7 +871,7 @@ func TestInitByToken(t *testing.T) {
 		assert.Nil(t, haveStore)
 		assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
 
-		if err := storeManagerRequestStore.Init(test.haveR, test.haveScopeType); err != nil {
+		if err := storeManagerRequestStore.Init(test.haveSO); err != nil {
 			t.Fatal(err)
 		}
 
@@ -839,7 +882,7 @@ func TestInitByToken(t *testing.T) {
 			t.Fail()
 		}
 
-		haveStore, haveErr = storeManagerRequestStore.InitByToken(getToken(test.haveCodeToken), test.haveScopeType)
+		haveStore, haveErr = storeManagerRequestStore.InitByToken(getToken(test.haveCodeToken).Claims, test.haveScopeType)
 		if test.wantErr != nil {
 			assert.Nil(t, haveStore, "%#v", test)
 			assert.Error(t, haveErr, "%#v", test)
@@ -848,7 +891,7 @@ func TestInitByToken(t *testing.T) {
 			if test.wantTokenStoreCode != nil {
 				assert.NotNil(t, haveStore, "%#v", test)
 				assert.NoError(t, haveErr)
-				assert.Equal(t, test.wantTokenStoreCode.ScopeCode(), haveStore.Data.Code.String)
+				assert.Equal(t, test.wantTokenStoreCode.StoreCode(), haveStore.Data.Code.String)
 			} else {
 				assert.Nil(t, haveStore, "%#v", test)
 				assert.NoError(t, haveErr, "%#v", test)
@@ -860,29 +903,27 @@ func TestInitByToken(t *testing.T) {
 }
 
 func TestNewManagerReInit(t *testing.T) {
-	numCPU := runtime.NumCPU()
-	prevCPU := runtime.GOMAXPROCS(numCPU)
-	t.Logf("GOMAXPROCS was: %d now: %d", prevCPU, numCPU)
-	defer runtime.GOMAXPROCS(prevCPU)
+
+	t.Skip(TODO_Better_Test_Data)
 
 	// quick implement, use mock of dbr.SessionRunner and remove connection
 	dbc := csdb.MustConnectTest()
 	defer dbc.Close()
 	dbrSess := dbc.NewSession()
 
-	storeManager := store.NewManager(store.NewStorageOption(nil /* trick it*/))
+	storeManager := store.NewManager(store.NewStorage(nil /* trick it*/))
 	if err := storeManager.ReInit(dbrSess); err != nil {
 		t.Fatal(err)
 	}
 
 	tests := []struct {
-		have    config.ScopeIDer
+		have    scope.StoreIDer
 		wantErr error
 	}{
-		{config.ScopeCode("dede"), nil},
-		{config.ScopeCode("czcz"), store.ErrStoreNotFound},
-		{config.ScopeID(1), nil},
-		{config.ScopeID(100), store.ErrStoreNotFound},
+		{scope.MockCode("dede"), nil},
+		{scope.MockCode("czcz"), store.ErrIDNotFoundTableStoreSlice},
+		{scope.MockID(1), nil},
+		{scope.MockID(100), store.ErrStoreNotFound},
 		{mockIDCode{1, "dede"}, nil},
 		{mockIDCode{2, "czfr"}, store.ErrStoreNotFound},
 		{mockIDCode{2, ""}, nil},
@@ -915,10 +956,16 @@ type mockIDCode struct {
 	code string
 }
 
-func (ic mockIDCode) ScopeID() int64 {
+func (ic mockIDCode) StoreID() int64 {
 	return ic.id
 }
-func (ic mockIDCode) ScopeCode() string {
+func (ic mockIDCode) StoreCode() string {
+	return ic.code
+}
+func (ic mockIDCode) WebsiteID() int64 {
+	return ic.id
+}
+func (ic mockIDCode) WebsiteCode() string {
 	return ic.code
 }
 
@@ -934,7 +981,7 @@ type mockStorage struct {
 
 var _ store.Storager = (*mockStorage)(nil)
 
-func (ms *mockStorage) Website(_ config.ScopeIDer) (*store.Website, error) {
+func (ms *mockStorage) Website(_ scope.WebsiteIDer) (*store.Website, error) {
 	if ms.w == nil {
 		return nil, store.ErrWebsiteNotFound
 	}
@@ -946,7 +993,7 @@ func (ms *mockStorage) Websites() (store.WebsiteSlice, error) {
 	}
 	return ms.ws()
 }
-func (ms *mockStorage) Group(_ config.ScopeIDer) (*store.Group, error) {
+func (ms *mockStorage) Group(_ scope.GroupIDer) (*store.Group, error) {
 	if ms.g == nil {
 		return nil, store.ErrGroupNotFound
 	}
@@ -958,7 +1005,7 @@ func (ms *mockStorage) Groups() (store.GroupSlice, error) {
 	}
 	return ms.gs()
 }
-func (ms *mockStorage) Store(_ config.ScopeIDer) (*store.Store, error) {
+func (ms *mockStorage) Store(_ scope.StoreIDer) (*store.Store, error) {
 	if ms.s == nil {
 		return nil, store.ErrStoreNotFound
 	}

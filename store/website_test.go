@@ -130,11 +130,11 @@ func TestTableWebsiteSlice(t *testing.T) {
 	}
 	assert.True(t, websites.Len() == 4)
 
-	w1, err := websites.FindByID(999)
+	w1, err := websites.FindByWebsiteID(999)
 	assert.Nil(t, w1)
-	assert.EqualError(t, store.ErrWebsiteNotFound, err.Error())
+	assert.EqualError(t, store.ErrIDNotFoundTableWebsiteSlice, err.Error())
 
-	w2, err := websites.FindByID(2)
+	w2, err := websites.FindByWebsiteID(2)
 	assert.NotNil(t, w2)
 	assert.NoError(t, err)
 	assert.Equal(t, int64(2), w2.WebsiteID)
@@ -146,10 +146,10 @@ func TestTableWebsiteSlice(t *testing.T) {
 
 	w4, err := websites.FindByCode("corestore")
 	assert.Nil(t, w4)
-	assert.EqualError(t, store.ErrWebsiteNotFound, err.Error())
+	assert.EqualError(t, store.ErrIDNotFoundTableWebsiteSlice, err.Error())
 
 	wf1 := websites.Filter(func(w *store.TableWebsite) bool {
-		return w.WebsiteID == 1
+		return w != nil && w.WebsiteID == 1
 	})
 	assert.EqualValues(t, "Europe", wf1[0].Name.String)
 }
@@ -160,8 +160,8 @@ func TestTableWebsiteSliceLoad(t *testing.T) {
 	dbrSess := dbc.NewSession()
 
 	var websites store.TableWebsiteSlice
-	websites.Load(dbrSess)
-	assert.True(t, websites.Len() > 2)
+	websites.SQLSelect(dbrSess)
+	assert.True(t, websites.Len() >= 2)
 	for _, s := range websites {
 		assert.True(t, len(s.Code.String) > 1)
 	}

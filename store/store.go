@@ -24,11 +24,9 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/directory"
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
-	"github.com/dgrijalva/jwt-go"
 )
 
 const (
@@ -47,25 +45,24 @@ const (
 	PriceScopeWebsite = `1` // must be string
 )
 
-type (
-	// Store represents the scope in which a shop runs. Everything is bound to a Store. A store
-	// knows its website ID, group ID and if its active. A store can have its own configuration settings
-	// which overrides the default scope and website scope.
-	Store struct {
-		cr config.Reader
-		// Website points to the current website for this store. No integrity checks. Can be nil.
-		Website *Website
-		// Group points to the current store group for this store. No integrity checks. Can be nil.
-		Group *Group
-		// Data underlying raw data
-		Data *TableStore
-	}
-	// StoreSlice a collection of pointers to the Store structs. StoreSlice has some nifty method receviers.
-	StoreSlice []*Store
+// Store represents the scope in which a shop runs. Everything is bound to a Store. A store
+// knows its website ID, group ID and if its active. A store can have its own configuration settings
+// which overrides the default scope and website scope.
+type Store struct {
+	cr config.Reader
+	// Website points to the current website for this store. No integrity checks. Can be nil.
+	Website *Website
+	// Group points to the current store group for this store. No integrity checks. Can be nil.
+	Group *Group
+	// Data underlying raw data
+	Data *TableStore
+}
 
-	// StoreOption option func for NewStore()
-	StoreOption func(s *Store)
-)
+// StoreSlice a collection of pointers to the Store structs. StoreSlice has some nifty method receivers.
+type StoreSlice []*Store
+
+// StoreOption can be used as an argument in NewStore to configure a store.
+type StoreOption func(s *Store)
 
 var (
 	ErrStoreNotFound         = errors.New("Store not found")
@@ -73,11 +70,9 @@ var (
 	ErrStoreNewArgNil        = errors.New("An argument cannot be nil")
 	ErrStoreIncorrectGroup   = errors.New("Incorrect group")
 	ErrStoreIncorrectWebsite = errors.New("Incorrect website")
+	ErrStoreCodeEmpty        = errors.New("Store Code is empty")
 	ErrStoreCodeInvalid      = errors.New("The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter")
 )
-
-var _ config.ScopeIDer = (*Store)(nil)
-var _ config.ScopeCoder = (*Store)(nil)
 
 // SetStoreConfig sets the config.Reader to the Store.
 // Default reader is config.DefaultManager
@@ -120,16 +115,19 @@ func (s *Store) ApplyOptions(opts ...StoreOption) *Store {
 }
 
 /*
-	@todo implement Magento\Store\Model\Store
+	TODO(cs) implement Magento\Store\Model\Store
 */
 
-// ScopeID satisfies the interface ScopeIDer and mainly used in the StoreManager for selecting Website,Group ...
-func (s *Store) ScopeID() int64 {
+var _ scope.StoreIDer = (*Store)(nil)
+var _ scope.StoreCoder = (*Store)(nil)
+
+// StoreID satisfies the interface scope.StoreIDer and returns the store ID.
+func (s *Store) StoreID() int64 {
 	return s.Data.StoreID
 }
 
-// ScopeCode satisfies the interface ScopeCoder
-func (s *Store) ScopeCode() string {
+// StoreCode satisfies the interface scope.StoreCoder and returns the store code.
+func (s *Store) StoreCode() string {
 	return s.Data.Code.String
 }
 
@@ -148,7 +146,7 @@ func (s *Store) Path() string {
 	return url.Path
 }
 
-// BaseUrl returns the path from the URL or config where CoreStore is installed @todo
+// BaseUrl returns the path from the URL or config where CoreStore is installed TODO(cs)
 // @see https://github.com/magento/magento2/blob/0.74.0-beta7/app/code/Magento/Store/Model/Store.php#L539
 func (s *Store) BaseURL(ut config.URLType, isSecure bool) string {
 	var url string
@@ -172,7 +170,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) string {
 			p = PathSecureBaseMediaURL
 		}
 		break
-	// @todo rethink that here and maybe add the other paths if needed.
+	// TODO(cs) rethink that here and maybe add the other paths if needed.
 	default:
 		panic("Unsupported UrlType")
 	}
@@ -180,7 +178,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) string {
 	url = s.ConfigString(p)
 
 	if strings.Contains(url, PlaceholderBaseURL) {
-		// @todo replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
+		// TODO(cs) replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
 		// getDistroBaseUrl will be generated from the $_SERVER variable,
 		url = strings.Replace(url, PlaceholderBaseURL, s.cr.GetString(config.Path(config.PathCSBaseURL)), 1)
 	}
@@ -193,7 +191,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) string {
 // falls back to default global scope.
 // If using etcd or consul maybe this can lead to round trip times because of network access.
 func (s *Store) ConfigString(path ...string) string {
-	val := s.cr.GetString(config.ScopeStore(s), config.Path(path...))
+	val := s.cr.GetString(config.ScopeStore(s.StoreID()), config.Path(path...)) // TODO(cs) check for not bubbeling
 	if val == "" {
 		val = s.cr.GetString(config.Path(path...))
 	}
@@ -201,7 +199,7 @@ func (s *Store) ConfigString(path ...string) string {
 }
 
 // NewCookie creates a new pre-configured cookie.
-// @todo create cookie manager to stick to the limits of http://www.ietf.org/rfc/rfc2109.txt page 15
+// TODO(cs) create cookie manager to stick to the limits of http://www.ietf.org/rfc/rfc2109.txt page 15
 // @see http://browsercookielimits.squawky.net/
 func (s *Store) NewCookie() *http.Cookie {
 	return &http.Cookie{
@@ -233,9 +231,10 @@ func (s *Store) DeleteCookie(res http.ResponseWriter) {
 	}
 }
 
-// AddClaim adds the store code to a JSON web token
-func (s *Store) AddClaim(t *jwt.Token) {
-	t.Claims[CookieName] = s.Data.Code.String
+// AddClaim adds the store code to a JSON web token.
+// tokenClaim may be *jwt.Token.Claim
+func (s *Store) AddClaim(tokenClaim map[string]interface{}) {
+	tokenClaim[CookieName] = s.Data.Code.String
 }
 
 // RootCategoryId returns the root category ID assigned to this store view.
@@ -252,51 +251,9 @@ func (s *Store) AllowedCurrencies() []string {
 	return strings.Split(s.cr.GetString(config.Path(directory.PathSystemCurrencyInstalled)), ",")
 }
 
-// CurrentCurrency @todo
+// CurrentCurrency TODO(cs)
 // @see app/code/Magento/Store/Model/Store.php::getCurrentCurrency
 func (s *Store) CurrentCurrency() *directory.Currency {
-	return nil
-}
-
-/*
-	Global functions
-*/
-// GetClaim returns a valid store code from a JSON web token or nil
-func GetCodeFromClaim(t *jwt.Token) config.ScopeIDer {
-	if t == nil {
-		return nil
-	}
-	c, ok := t.Claims[CookieName]
-	if cs, okcs := c.(string); okcs && ok && nil == ValidateStoreCode(cs) {
-		return config.ScopeCode(cs)
-	}
-	return nil
-}
-
-// GetCookie returns from a Request the value of the store cookie or nil.
-func GetCodeFromCookie(req *http.Request) config.ScopeIDer {
-	if req == nil {
-		return nil
-	}
-	if keks, err := req.Cookie(CookieName); nil == err && nil == ValidateStoreCode(keks.Value) {
-		return config.ScopeCode(keks.Value)
-	}
-	return nil
-}
-
-// ValidateStoreCode checks if a store code is valid. Returns an ErrStoreCodeInvalid if the
-// first letter is not a-zA-Z and followed by a-zA-Z0-9_ or store code length is greater than 32 characters.
-func ValidateStoreCode(c string) error {
-	if c == "" || len(c) > 32 {
-		return ErrStoreCodeInvalid
-	}
-	c1 := c[0]
-	if false == ((c1 >= 'a' && c1 <= 'z') || (c1 >= 'A' && c1 <= 'Z')) {
-		return ErrStoreCodeInvalid
-	}
-	if false == utils.StrIsAlNum(c) {
-		return ErrStoreCodeInvalid
-	}
 	return nil
 }
 
@@ -363,102 +320,4 @@ func (s StoreSlice) LastItem() *Store {
 		return s[s.Len()-1]
 	}
 	return nil
-}
-
-/*
-	TableStore and TableStoreSlice method receivers
-*/
-
-// IsDefault returns true if the current store is the default store.
-func (s TableStore) IsDefault() bool {
-	return s.StoreID == DefaultStoreID
-}
-
-// Load uses a dbr session to load all data from the core_store table into the current slice.
-// The variadic 2nd argument can be a call back function to manipulate the select.
-// Additional columns or joins cannot be added. This method receiver should only be used in development.
-// @see https://github.com/magento/magento2/blob/0.74.0-beta7/app%2Fcode%2FMagento%2FStore%2FModel%2FResource%2FStore%2FCollection.php#L147
-// regarding the sort order.
-func (s *TableStoreSlice) Load(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
-	return s.parentLoad(dbrSess, append(append([]csdb.DbrSelectCb{nil}, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
-		sb.OrderBy("CASE WHEN main_table.store_id = 0 THEN 0 ELSE 1 END ASC")
-		sb.OrderBy("main_table.sort_order ASC")
-		return sb.OrderBy("main_table.name ASC")
-	}), cbs...)...)
-}
-
-// FindByID returns a TableStore if found by id or an error
-func (s TableStoreSlice) FindByID(id int64) (*TableStore, error) {
-	for _, st := range s {
-		if st != nil && st.StoreID == id {
-			return st, nil
-		}
-	}
-	return nil, ErrStoreNotFound
-}
-
-// FindByCode returns a TableStore if found by id or an error
-func (s TableStoreSlice) FindByCode(code string) (*TableStore, error) {
-	for _, st := range s {
-		if st != nil && st.Code.Valid && st.Code.String == code {
-			return st, nil
-		}
-	}
-	return nil, ErrStoreNotFound
-}
-
-// FilterByGroupID returns a new slice with all TableStores belonging to a group id
-func (s TableStoreSlice) FilterByGroupID(id int64) TableStoreSlice {
-	return s.Filter(func(ts *TableStore) bool {
-		return ts.GroupID == id
-	})
-}
-
-// FilterByWebsiteID returns a new slice with all TableStores belonging to a website id
-func (s TableStoreSlice) FilterByWebsiteID(id int64) TableStoreSlice {
-	return s.Filter(func(ts *TableStore) bool {
-		return ts.WebsiteID == id
-	})
-}
-
-// Filter returns a new slice containing TableStores filtered by predicate f
-func (s TableStoreSlice) Filter(f func(*TableStore) bool) TableStoreSlice {
-	if len(s) == 0 {
-		return nil
-	}
-	var tss TableStoreSlice
-	for _, v := range s {
-		if v != nil && f(v) {
-			tss = append(tss, v)
-		}
-	}
-	return tss
-}
-
-// Codes returns a StringSlice with all store codes
-func (s TableStoreSlice) Codes() utils.StringSlice {
-	if len(s) == 0 {
-		return nil
-	}
-	var c utils.StringSlice
-	for _, store := range s {
-		if store != nil {
-			c.Append(store.Code.String)
-		}
-	}
-	return c
-}
-
-// IDs returns an Int64Slice with all store ids
-func (s TableStoreSlice) IDs() utils.Int64Slice {
-	if len(s) == 0 {
-		return nil
-	}
-	var ids utils.Int64Slice
-	for _, store := range s {
-		if store != nil {
-			ids.Append(store.StoreID)
-		}
-	}
-	return ids
 }
