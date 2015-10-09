@@ -207,7 +207,9 @@ func (s {{$.Slice}}) {{ typePrefix "Extract" }}() Extract{{.Name | camelize}} {
 		{{ range $k,$c := .Columns }} {{$c.Name | camelize }} : func() []{{$c.GetGoPrimitive false}} {
 			ext := make([]{{$c.GetGoPrimitive false}}, 0, len(s))
 			for _, v := range s {
-				ext = append(ext, v.{{ $c.Name | camelize }}{{dbrType $c}})
+				if v != nil {
+					ext = append(ext, v.{{ $c.Name | camelize }}{{dbrType $c}})
+				}
 			}
 			return ext
 		},
