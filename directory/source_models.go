@@ -18,6 +18,7 @@ import (
 	"fmt"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 )
@@ -29,7 +30,7 @@ type (
 	}
 )
 
-var _ config.FieldSourceModeller = (*SourceCurrencyAll)(nil)
+var _ config.SourceModeller = (*SourceCurrencyAll)(nil)
 
 // NewSourceCurrencyAll creates a new option for all currencies. If one argument of
 // the ModelConstructor has been provided you may skip the calling of Construct().
@@ -54,7 +55,7 @@ func (sca *SourceCurrencyAll) Construct(mc config.ModelConstructor) error {
 	sca.mc = mc
 	return nil
 }
-func (sca *SourceCurrencyAll) Options() config.ValueLabelSlice {
+func (sca *SourceCurrencyAll) Options() valuelabel.Slice {
 	// Magento\Framework\Locale\Resolver
 	// 1. get all allowed currencies from the config
 	// 2. get slice of currency code and currency name and filter out all not-allowed currencies
