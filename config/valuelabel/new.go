@@ -1,0 +1,101 @@
+// Copyright 2015, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package valuelabel
+
+import "errors"
+
+// ErrImbalancedPairs reports whether the value/label pairs are incorrect
+var ErrImbalancedPairs = errors.New("Imbalanced value/label pairs")
+
+// NewByString creates a new ValueLabelSlice (VLS) from key,value list.
+// It panics when arguments are imbalanced. Example:
+// 		mySlice := NewValueLabelSlice("http", "HTTP (unsecure)", "https", "HTTPS (TLS)")
+func NewByString(vl ...string) Slice {
+	lkv := len(vl)
+	if lkv%2 != 0 {
+		panic(ErrImbalancedPairs)
+	}
+	vls := make(Slice, lkv/2)
+	j := 0
+	for i := 0; i < lkv; i = i + 2 {
+		vls[j] = Pair{
+			String:  vl[i],
+			NotNull: NotNullString,
+			label:   vl[i+1],
+		}
+		j++
+	}
+	return vls
+}
+
+// Ints a slice only used as argument to NewByInt.
+type Ints []struct {
+	Value int
+	Label string
+}
+
+// NewByInt creates a new slice with integer values
+func NewByInt(vl Ints) Slice {
+	lkv := len(vl)
+	vls := make(Slice, lkv)
+	for i := 0; i < lkv; i++ {
+		vls[i] = Pair{
+			Int:     vl[i].Value,
+			NotNull: NotNullInt,
+			label:   vl[i].Label,
+		}
+	}
+	return vls
+}
+
+// F64s a slice only used as argument to NewByFloat64.
+type F64s []struct {
+	Value float64
+	Label string
+}
+
+// NewByFloat64 creates a new slice with float64 values
+func NewByFloat64(vl F64s) Slice {
+	lkv := len(vl)
+	vls := make(Slice, lkv)
+	for i := 0; i < lkv; i++ {
+		vls[i] = Pair{
+			Float64: vl[i].Value,
+			NotNull: NotNullFloat64,
+			label:   vl[i].Label,
+		}
+	}
+	return vls
+}
+
+// Bools a slice only used as argument to NewByBool.
+type Bools []struct {
+	Value bool
+	Label string
+}
+
+// NewByBool creates a new slice with bool values
+func NewByBool(vl Bools) Slice {
+	lkv := len(vl)
+	vls := make(Slice, lkv)
+	for i := 0; i < lkv; i++ {
+		vls[i] = Pair{
+			Bool:    vl[i].Value,
+			NotNull: NotNullBool,
+			label:   vl[i].Label,
+		}
+	}
+	return vls
+}

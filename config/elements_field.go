@@ -69,9 +69,9 @@ type (
 		// In Magento2 they do not have an entry in the system.xml
 		Visible Visible `json:",omitempty"`
 		// SourceModel defines how to retrieve all option values
-		SourceModel FieldSourceModeller `json:",omitempty"`
+		SourceModel SourceModeller `json:",omitempty"`
 		// BackendModel defines how to save and load? the data
-		BackendModel FieldBackendModeller `json:",omitempty"`
+		BackendModel BackendModeller `json:",omitempty"`
 		// Default can contain any default config value: float64, int64, string, bool
 		Default interface{} `json:",omitempty"`
 
