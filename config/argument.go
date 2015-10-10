@@ -33,6 +33,10 @@ var ErrPathEmpty = errors.New("Path cannot be empty")
 // ArgFunc Argument function to be used as variadic argument in ScopeKey() and ScopeKeyValue()
 type ArgFunc func(*arg)
 
+// ScopeDefault wrapper helper function. See Scope(). Mainly used to show humans
+// than a config value can only be set for a global scope.
+func ScopeDefault() ArgFunc { return Scope(scope.DefaultID, 0) }
+
 // ScopeWebsite wrapper helper function. See Scope()
 func ScopeWebsite(id int64) ArgFunc { return Scope(scope.WebsiteID, id) }
 
@@ -42,10 +46,10 @@ func ScopeGroup(id int64) ArgFunc { return Scope(scope.GroupID, id) }
 // ScopeStore wrapper helper function. See Scope()
 func ScopeStore(id int64) ArgFunc { return Scope(scope.StoreID, id) }
 
-// Scope sets the scope using the scope.Group and a scope.IDer.
-// A scope.IDer can contain an ID from a website or a store. Make sure
-// the correct scope.Group has also been set. If scope.IDer is nil
-// the scope will fallback to default scope.
+// Scope sets the scope using the scope.Group and a ID.
+// The ID can contain an integer from a website or a store. Make sure
+// the correct scope.Scope has also been set. If the ID is smaller
+// than zero the scope will fallback to default scope.
 func Scope(s scope.Scope, id int64) ArgFunc {
 	if s != scope.DefaultID && id < 1 {
 		id = 0

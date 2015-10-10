@@ -30,6 +30,7 @@ var ErrPublisherClosed = errors.New("config Manager Publisher already closed")
 // each subscriber is totally random. If a subscriber panics, it gets securely
 // removed without crashing the whole system.
 // This interface should be implemented in other packages.
+// The Subscriber interface requires the MessageReceiver interface.
 type MessageReceiver interface {
 	// MessageConfig when a configuration value will be written this function
 	// gets called to allow you to listen to changes. Path is never empty.

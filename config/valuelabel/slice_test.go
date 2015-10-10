@@ -15,12 +15,12 @@
 package valuelabel_test
 
 import (
+	"math"
 	"testing"
 
 	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/corestoreio/csfw/utils"
 	"github.com/stretchr/testify/assert"
-	"math"
 )
 
 func TestValueLabelSliceStringPanic(t *testing.T) {

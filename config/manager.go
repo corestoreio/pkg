@@ -64,6 +64,13 @@ type (
 		GetDateTime(o ...ArgFunc) time.Time
 	}
 
+	// ReaderPubSuber implements a configuration Reader and a Subscriber for
+	// Publish and Subscribe pattern.
+	ReaderPubSuber interface {
+		Reader
+		Subscriber
+	}
+
 	// Writer thread safe storing of configuration values under different paths and scopes.
 	Writer interface {
 		// Write writes a configuration entry and may return an error
