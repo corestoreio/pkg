@@ -38,20 +38,23 @@ const (
 	CSBaseURL     = "http://localhost:9500/"
 )
 
+// URL* defines the types of available URLs.
 const (
 	URLTypeAbsent URLType = iota
-	// UrlTypeWeb defines the ULR type to generate the main base URL.
+	// URLTypeWeb defines the URL type to generate the main base URL.
 	URLTypeWeb
-	// UrlTypeStatic defines the url to the static assets like css, js or theme images
+	// URLTypeStatic defines the URL to the static assets like CSS, JS or theme images
 	URLTypeStatic
+
 	// UrlTypeLink hmmm
 	// UrlTypeLink
-	// UrlTypeMedia defines the ULR type for generating URLs to product photos
+
+	// URLTypeMedia defines the URL type for generating URLs to product photos
 	URLTypeMedia
 )
 
 type (
-	// UrlType defines the type of the URL. Used in const declaration.
+	// URLType defines the type of the URL. Used in constant declaration.
 	// @see https://github.com/magento/magento2/blob/0.74.0-beta7/lib/internal/Magento/Framework/UrlInterface.php#L13
 	URLType uint8
 
@@ -200,6 +203,7 @@ func (m *Manager) GetString(o ...ArgFunc) string {
 	return cast.ToString(vs)
 }
 
+// GetStringSlice returns a slice of strings with config values.
 // @todo use the backend model of a config value. most/all magento string slices are comma lists.
 func (m *Manager) GetStringSlice(o ...ArgFunc) []string {
 	return nil

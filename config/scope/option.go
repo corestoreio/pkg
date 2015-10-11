@@ -32,6 +32,7 @@ type Option struct {
 	Store   StoreIDer
 }
 
+// SetByCode sets an Option by Store or Website code.
 func SetByCode(code string, scopeType Scope) (o Option, err error) {
 	c := MockCode(code)
 	// GroupID does not have a scope code
@@ -46,6 +47,7 @@ func SetByCode(code string, scopeType Scope) (o Option, err error) {
 	return
 }
 
+// SetByID sets an Option by Website, Group or Store ID.
 func SetByID(scopeID int64, scopeType Scope) (o Option, err error) {
 	i := MockID(scopeID)
 	// the order of the cases is important
@@ -62,6 +64,7 @@ func SetByID(scopeID int64, scopeType Scope) (o Option, err error) {
 	return
 }
 
+// Scope returns the underlying scope ID.
 func (o Option) Scope() (s Scope) {
 	s = AbsentID
 	// the order of the cases is important
@@ -76,6 +79,8 @@ func (o Option) Scope() (s Scope) {
 	return
 }
 
+// StoreCode extracts the Store code. Checks if the interface StoreCoder
+// is available.
 func (o Option) StoreCode() (code string) {
 	if sc, ok := o.Store.(StoreCoder); ok {
 		code = sc.StoreCode()
@@ -83,6 +88,8 @@ func (o Option) StoreCode() (code string) {
 	return
 }
 
+// WebsiteCode extracts the Website code. Checks if the interface WebsiteCoder
+// is available.
 func (o Option) WebsiteCode() (code string) {
 	if wc, ok := o.Website.(WebsiteCoder); ok {
 		code = wc.WebsiteCode()

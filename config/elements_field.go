@@ -23,6 +23,7 @@ import (
 	"github.com/juju/errgo"
 )
 
+// Type* defines the type of the front end user input/display form
 const (
 	TypeButton FieldType = iota + 1 // must be + 1 because 0 is not set
 	TypeCustom
@@ -51,9 +52,10 @@ type (
 		ToHTML() []byte // @see \Magento\Framework\Data\Form\Element\AbstractElement
 	}
 
-	// FieldSlice contains a set of Fields
+	// FieldSlice contains a set of Fields. Has several method receivers attached.
 	FieldSlice []*Field
-	// Element contains the final path element of a configuration.
+
+	// Field contains the final path element of a configuration. Includes several options.
 	// @see magento2/app/code/Magento/Config/etc/system_file.xsd
 	Field struct {
 		// ID unique ID and NOT merged with others. 3rd and final part of the path.

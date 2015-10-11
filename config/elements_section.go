@@ -189,7 +189,7 @@ func (ss SectionSlice) FindGroupByPath(paths ...string) (*Group, error) {
 	return cs.Groups.FindByID(paths[1])
 }
 
-// FindGroupByPath searches for a field using the all three path segments.
+// FindFieldByPath searches for a field using all three path segments.
 // If one argument is given then considered as the full path e.g. a/b/c
 // If three arguments are given then each argument will be treated as a path part.
 func (ss SectionSlice) FindFieldByPath(paths ...string) (*Field, error) {

@@ -26,9 +26,9 @@ import (
 // Func String() attached. Part of type Perm.
 type Scope uint8
 
+// *ID defines the overall scopes in a configuration. If a Section/Group/Field
+// can be shown in the current selected scope.
 const (
-	// *ID defines the overall scopes in a configuration. If a Section/Group/Field
-	// can be shown in the current selected scope.
 	AbsentID Scope = iota // order of the constants is used for comparison
 	DefaultID
 	WebsiteID
@@ -160,10 +160,12 @@ func FromScope(scopeID Scope) StrScope {
 	return StrDefault
 }
 
+// PathSplit splits a configuration path by the path separator PS.
 func PathSplit(path string) []string {
 	return strings.Split(path, PS)
 }
 
+// PathJoin joins configuration path parts by the path separator PS.
 func PathJoin(path ...string) string {
 	return strings.Join(path, PS)
 }
