@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cshttp
+package ctxhttp
 
 import (
 	"net/http"
@@ -23,69 +23,69 @@ import (
 
 // More information about context.Context https://joeshaw.org/net-context-and-http-handler/
 
-// ContextHandler allows http Handlers to include a context.
-type ContextHandler interface {
+// Handler allows http Handlers to include a context.
+type Handler interface {
 	ServeHTTPContext(context.Context, http.ResponseWriter, *http.Request) error
 }
 
-// ContextHandlerFunc defines a function that implements the ContextHandler
-// interface.
-type ContextHandlerFunc func(context.Context, http.ResponseWriter, *http.Request) error
+// HandlerFunc defines a function that implements the Handler
+// interface including the context.
+type HandlerFunc func(context.Context, http.ResponseWriter, *http.Request) error
 
 // ServeHTTPContext calls the ContextHandlerFunc with the given context,
 // ResponseWrite and Request.
-func (h ContextHandlerFunc) ServeHTTPContext(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
+func (h HandlerFunc) ServeHTTPContext(ctx context.Context, rw http.ResponseWriter, req *http.Request) error {
 	return h(ctx, rw, req)
 }
 
-var _ http.Handler = (*ContextStdLib)(nil)
+var _ http.Handler = (*HandlerStdLib)(nil)
 
-// ContextStdLib type allows to use existing http.Handler middleware, as
+// HandlerStdLib type allows to use existing http.Handler middleware, as
 // long as they run before it does.
-type ContextStdLib struct {
+type HandlerStdLib struct {
 	Ctx     context.Context
-	Handler ContextHandler
+	Handler Handler
 }
 
 // ServeHTTP calls ServeHTTPContext(ca.ctx, rw, req).
-func (ca *ContextStdLib) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+func (ca *HandlerStdLib) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	ca.Handler.ServeHTTPContext(ca.Ctx, rw, req)
 }
 
-// ContextAdapter is a wrapper for the http.Handler
-type ContextAdapter func(ContextHandler) ContextHandler
+// Adapter is a wrapper for the ctxhttp.Handler
+type Adapter func(Handler) Handler
 
-// ContextAdapt function will iterate over all adapters, calling them one by one
+// Adapt function will iterate over all adapters, calling them one by one
 // in a chained manner, returning the result of the final adapter.
-func ContextAdapt(h ContextHandler, adapters ...ContextAdapter) ContextHandler {
+func Adapt(h Handler, adapters ...Adapter) Handler {
 	for _, a := range adapters {
 		h = a(h)
 	}
 	return h
 }
 
-// WithHeader is an Adapter that sets an HTTP handler. Will panic if kv
+// WithHeader is an Adapter that sets multiple HTTP headers. Will panic if kv
 // is imbalanced. len(kv)%2 == 0
-func WithHeader(kv ...string) ContextAdapter {
+func WithHeader(kv ...string) Adapter {
 	lkv := len(kv)
-	return func(h ContextHandler) ContextHandler {
-		return ContextHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(h Handler) Handler {
+		return HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			for i := 0; i < lkv; i = i + 2 {
-				w.Header().Add(kv[i], kv[i+1])
+				w.Header().Set(kv[i], kv[i+1])
 			}
 			return h.ServeHTTPContext(ctx, w, r)
 		})
 	}
 }
 
-// SupportXHTTPMethodOverride adds support for the X-HTTP-Method-Override
+// WithXHTTPMethodOverride adds support for the X-HTTP-Method-Override
 // header. Submitted value will be checked against known methods. Adding
 // HTTPMethodOverrideFormKey to any form will take precedence before
 // HTTP header. If an unknown method will be submitted it gets logged as an
 // Info log.
-func SupportXHTTPMethodOverride() ContextAdapter {
-	return func(h ContextHandler) ContextHandler {
-		return ContextHandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func WithXHTTPMethodOverride() Adapter {
+	return func(h Handler) Handler {
+		return HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			mo := r.FormValue(HTTPMethodOverrideFormKey)
 			if mo == "" {
 				mo = r.Header.Get(HTTPMethodOverrideHeader)
@@ -97,7 +97,7 @@ func SupportXHTTPMethodOverride() ContextAdapter {
 			default:
 				// not sure if an error is here really needed ...
 				if log.IsInfo() {
-					log.Info("cshttp.SupportXHTTPMethodOverride.switch", "err", "Unknown http method", "method", mo, "form", r.Form.Encode(), "header", r.Header)
+					log.Info("ctxhttp.SupportXHTTPMethodOverride.switch", "err", "Unknown http method", "method", mo, "form", r.Form.Encode(), "header", r.Header)
 				}
 			}
 

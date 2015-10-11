@@ -12,26 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cshttp_test
+package ctxhttp_test
 
-import (
-	"testing"
+import "testing"
 
-	"github.com/corestoreio/csfw/net/cshttp"
-	"github.com/stretchr/testify/assert"
-)
+func TestIsSecure(t *testing.T) {
+	t.Log("TODO")
+}
 
-func TestVersionize(t *testing.T) {
-	tests := []struct {
-		have, want string
-	}{
-		{"login", "/V1/login"},
-		{"/login", "/V1/login"},
-		{"", "/V1/"},
-	}
-	for _, test := range tests {
-		h := cshttp.APIRoute.Versionize(test.have)
-		assert.Equal(t, test.want, h)
-	}
-	assert.Equal(t, "/V1/", cshttp.APIRoute.String())
+func TestIsSafeMethod(t *testing.T) {
+	t.Log("TODO")
+}
+
+func TestIsAjax(t *testing.T) {
+	t.Log("TODO")
 }

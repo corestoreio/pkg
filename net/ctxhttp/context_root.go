@@ -12,23 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cshttp
+package ctxhttp
+
+import "golang.org/x/net/context"
+
+// ctxKey type is unexported to prevent collisions with context keys defined in
+// other packages.
+type ctxKey uint
 
 const (
-	// HTTPMethodOverrideHeader represents a commonly used http header to override a request method.
-	HTTPMethodOverrideHeader = "X-HTTP-Method-Override"
-	// HTTPMethodOverrideFormKey represents a commonly used HTML form key to override a request method.
-	HTTPMethodOverrideFormKey = "_method"
+	CtxAdminUserKey ctxKey = iota
+	CtxStoreKey
+	// todo more keys
 )
 
-// HTTPMethodxxx defines the available methods which this framework supports
-const (
-	HTTPMethodHead    = `HEAD`
-	HTTPMethodGet     = "GET"
-	HTTPMethodPost    = "POST"
-	HTTPMethodPut     = "PUT"
-	HTTPMethodPatch   = "PATCH"
-	HTTPMethodDelete  = "DELETE"
-	HTTPMethodTrace   = "TRACE"
-	HTTPMethodOptions = "OPTIONS"
-)
+// NewRootContext returns a context with the database set. This serves as the root
+// context for all other contexts. @todo implementation
+func NewRootContext(todo1, todo2, todo3, todo4 int) context.Context {
+	return context.WithValue(context.Background(), CtxStoreKey, todo1)
+}

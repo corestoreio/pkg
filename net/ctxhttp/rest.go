@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cshttp
+package ctxhttp
 
 import (
 	"encoding/json"
@@ -66,7 +66,7 @@ func WriteJSON(w http.ResponseWriter, v interface{}) error {
 //		msg = he.Error()
 //	}
 //	if log.IsDebug() {
-//		log.Error("cshttp.RESTErrorHandler", "err", err)
+//		log.Error("ctxhttp.RESTErrorHandler", "err", err)
 //	}
 //	msg = err.Error()
 //

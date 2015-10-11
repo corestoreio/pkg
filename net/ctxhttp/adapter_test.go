@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cshttp_test
+package ctxhttp_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/corestoreio/csfw/net/cshttp"
+	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -33,45 +33,45 @@ func (h1) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, r *http.R
 
 func TestAdapters(t *testing.T) {
 
-	hndlr := cshttp.ContextAdapt(
+	hndlr := ctxhttp.Adapt(
 		h1{},
-		cshttp.SupportXHTTPMethodOverride(),
-		cshttp.WithHeader("X-Men", "Y-Women"),
+		ctxhttp.WithXHTTPMethodOverride(),
+		ctxhttp.WithHeader("X-Men", "Y-Women"),
 	)
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(cshttp.HTTPMethodGet, "http://example.com/foo", nil)
-	req.Header.Set(cshttp.HTTPMethodOverrideHeader, cshttp.HTTPMethodPut)
+	req, err := http.NewRequest(ctxhttp.HTTPMethodGet, "http://example.com/foo", nil)
+	req.Header.Set(ctxhttp.HTTPMethodOverrideHeader, ctxhttp.HTTPMethodPut)
 	assert.NoError(t, err)
 
 	hndlr.ServeHTTPContext(context.Background(), w, req)
 
-	assert.Equal(t, cshttp.HTTPMethodPut, req.Method)
+	assert.Equal(t, ctxhttp.HTTPMethodPut, req.Method)
 	assert.Equal(t, "h1 called", w.Body.String())
 	assert.Equal(t, "Y-Women", w.Header().Get("X-Men"))
 }
 
 func TestHttpMethodOverride(t *testing.T) {
-	hndlr := cshttp.ContextAdapt(
+	hndlr := ctxhttp.Adapt(
 		h1{},
-		cshttp.SupportXHTTPMethodOverride())
+		ctxhttp.WithXHTTPMethodOverride())
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(cshttp.HTTPMethodGet, "http://example.com/foo?_method="+cshttp.HTTPMethodPatch, nil)
+	req, err := http.NewRequest(ctxhttp.HTTPMethodGet, "http://example.com/foo?_method="+ctxhttp.HTTPMethodPatch, nil)
 	assert.NoError(t, err)
 	hndlr.ServeHTTPContext(context.Background(), w, req)
-	assert.Equal(t, cshttp.HTTPMethodPatch, req.Method)
+	assert.Equal(t, ctxhttp.HTTPMethodPatch, req.Method)
 	assert.Equal(t, "h1 called", w.Body.String())
 
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(cshttp.HTTPMethodGet, "http://example.com/foo?_method=KARATE", nil)
+	req, err = http.NewRequest(ctxhttp.HTTPMethodGet, "http://example.com/foo?_method=KARATE", nil)
 	assert.NoError(t, err)
 	hndlr.ServeHTTPContext(context.Background(), w, req)
-	assert.Equal(t, cshttp.HTTPMethodGet, req.Method)
+	assert.Equal(t, ctxhttp.HTTPMethodGet, req.Method)
 
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(cshttp.HTTPMethodGet, "http://example.com/foobar", nil)
+	req, err = http.NewRequest(ctxhttp.HTTPMethodGet, "http://example.com/foobar", nil)
 	assert.NoError(t, err)
 	hndlr.ServeHTTPContext(context.Background(), w, req)
-	assert.Equal(t, cshttp.HTTPMethodGet, req.Method)
+	assert.Equal(t, ctxhttp.HTTPMethodGet, req.Method)
 
 }
