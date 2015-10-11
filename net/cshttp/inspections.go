@@ -49,7 +49,7 @@ func IsSecure(r *http.Request, cr config.Reader) bool {
 func IsSafeMethod(r *http.Request) bool {
 	// TODD(cs): figure out the usage for that function ...
 	switch r.Method {
-	case "GET", "HEAD", "TRACE", "OPTIONS":
+	case HTTPMethodGet, HTTPMethodHead, HTTPMethodTrace, HTTPMethodOptions:
 		return true
 	}
 	return false

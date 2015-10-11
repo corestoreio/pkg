@@ -12,9 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package cshttp provides functions and configuration values for the http transport.
-//
-// Network defines in CoreStore case any http, https or RPC request.
-//
-// TODO(cs) => github.com/streadway/handy
 package cshttp
+
+const (
+	// HTTPMethodOverrideHeader represents a commonly used http header to override a request method.
+	HTTPMethodOverrideHeader = "X-HTTP-Method-Override"
+	// HTTPMethodOverrideFormKey represents a commonly used HTML form key to override a request method.
+	HTTPMethodOverrideFormKey = "_method"
+)
+
+// HTTPMethodxxx defines the available methods which this framework supports
+const (
+	HTTPMethodHead    = `HEAD`
+	HTTPMethodGet     = "GET"
+	HTTPMethodPost    = "POST"
+	HTTPMethodPut     = "PUT"
+	HTTPMethodPatch   = "PATCH"
+	HTTPMethodDelete  = "DELETE"
+	HTTPMethodTrace   = "TRACE"
+	HTTPMethodOptions = "OPTIONS"
+)

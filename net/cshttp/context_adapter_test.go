@@ -21,50 +21,57 @@ import (
 
 	"github.com/corestoreio/csfw/net/cshttp"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/net/context"
 )
 
 type h1 struct{}
 
-func (h1) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(`h1 called`))
+func (h1) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	_, err := w.Write([]byte(`h1 called`))
+	return err
 }
 
 func TestAdapters(t *testing.T) {
-	hndlr := cshttp.Adapt(
+
+	hndlr := cshttp.ContextAdapt(
 		h1{},
 		cshttp.SupportXHTTPMethodOverride(),
-		cshttp.WithHeader("X-Men", "Y-Women"))
+		cshttp.WithHeader("X-Men", "Y-Women"),
+	)
+
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(cshttp.HTTPMethodGet, "http://example.com/foo", nil)
 	req.Header.Set(cshttp.HTTPMethodOverrideHeader, cshttp.HTTPMethodPut)
 	assert.NoError(t, err)
-	hndlr.ServeHTTP(w, req)
+
+	hndlr.ServeHTTPContext(context.Background(), w, req)
+
 	assert.Equal(t, cshttp.HTTPMethodPut, req.Method)
 	assert.Equal(t, "h1 called", w.Body.String())
 	assert.Equal(t, "Y-Women", w.Header().Get("X-Men"))
 }
 
 func TestHttpMethodOverride(t *testing.T) {
-	hndlr := cshttp.Adapt(
+	hndlr := cshttp.ContextAdapt(
 		h1{},
 		cshttp.SupportXHTTPMethodOverride())
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(cshttp.HTTPMethodGet, "http://example.com/foo?_method="+cshttp.HTTPMethodPatch, nil)
 	assert.NoError(t, err)
-	hndlr.ServeHTTP(w, req)
+	hndlr.ServeHTTPContext(context.Background(), w, req)
 	assert.Equal(t, cshttp.HTTPMethodPatch, req.Method)
 	assert.Equal(t, "h1 called", w.Body.String())
 
 	w = httptest.NewRecorder()
 	req, err = http.NewRequest(cshttp.HTTPMethodGet, "http://example.com/foo?_method=KARATE", nil)
 	assert.NoError(t, err)
-	hndlr.ServeHTTP(w, req)
+	hndlr.ServeHTTPContext(context.Background(), w, req)
 	assert.Equal(t, cshttp.HTTPMethodGet, req.Method)
 
 	w = httptest.NewRecorder()
 	req, err = http.NewRequest(cshttp.HTTPMethodGet, "http://example.com/foobar", nil)
 	assert.NoError(t, err)
-	hndlr.ServeHTTP(w, req)
+	hndlr.ServeHTTPContext(context.Background(), w, req)
 	assert.Equal(t, cshttp.HTTPMethodGet, req.Method)
 
 }
