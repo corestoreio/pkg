@@ -85,4 +85,5 @@ func TestApplyCoreConfigData(t *testing.T) {
 	if err := m.ApplyCoreConfigData(sess); err != nil {
 		t.Error(err)
 	}
+	// todo check if data has been really written ;-)
 }
