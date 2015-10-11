@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package net
+package cshttp
 
 import (
 	"net/http"
@@ -82,7 +82,7 @@ func SupportXHTTPMethodOverride() Adapter {
 			default:
 				// not sure if an error is here really needed ...
 				if log.IsInfo() {
-					log.Info("net.SupportXHTTPMethodOverride.switch", "err", "Unknown http method", "method", mo, "form", r.Form.Encode(), "header", r.Header)
+					log.Info("cshttp.SupportXHTTPMethodOverride.switch", "err", "Unknown http method", "method", mo, "form", r.Form.Encode(), "header", r.Header)
 				}
 			}
 

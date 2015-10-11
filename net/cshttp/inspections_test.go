@@ -12,9 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// net provides functions and configuration values for the network.
-//
-// Network defines in CoreStore case any http, https or RPC request.
-//
-// TODO(cs) => github.com/streadway/handy
-package net
+package cshttp_test
+
+import "testing"
+
+func TestIsSecure(t *testing.T) {
+	t.Log("TODO")
+}
+
+func TestIsSafeMethod(t *testing.T) {
+	t.Log("TODO")
+}
+
+func TestIsAjax(t *testing.T) {
+	t.Log("TODO")
+}

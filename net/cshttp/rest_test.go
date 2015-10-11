@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package net_test
+package cshttp_test
 
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/net"
+	"github.com/corestoreio/csfw/net/cshttp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,8 +30,8 @@ func TestVersionize(t *testing.T) {
 		{"", "/V1/"},
 	}
 	for _, test := range tests {
-		h := net.APIRoute.Versionize(test.have)
+		h := cshttp.APIRoute.Versionize(test.have)
 		assert.Equal(t, test.want, h)
 	}
-	assert.Equal(t, "/V1/", net.APIRoute.String())
+	assert.Equal(t, "/V1/", cshttp.APIRoute.String())
 }

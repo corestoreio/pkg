@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package net_test
+package cshttp_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/corestoreio/csfw/net"
+	"github.com/corestoreio/csfw/net/cshttp"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,41 +30,41 @@ func (h1) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func TestAdapters(t *testing.T) {
-	hndlr := net.Adapt(
+	hndlr := cshttp.Adapt(
 		h1{},
-		net.SupportXHTTPMethodOverride(),
-		net.WithHeader("X-Men", "Y-Women"))
+		cshttp.SupportXHTTPMethodOverride(),
+		cshttp.WithHeader("X-Men", "Y-Women"))
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(net.HTTPMethodGet, "http://example.com/foo", nil)
-	req.Header.Set(net.HTTPMethodOverrideHeader, net.HTTPMethodPut)
+	req, err := http.NewRequest(cshttp.HTTPMethodGet, "http://example.com/foo", nil)
+	req.Header.Set(cshttp.HTTPMethodOverrideHeader, cshttp.HTTPMethodPut)
 	assert.NoError(t, err)
 	hndlr.ServeHTTP(w, req)
-	assert.Equal(t, net.HTTPMethodPut, req.Method)
+	assert.Equal(t, cshttp.HTTPMethodPut, req.Method)
 	assert.Equal(t, "h1 called", w.Body.String())
 	assert.Equal(t, "Y-Women", w.Header().Get("X-Men"))
 }
 
 func TestHttpMethodOverride(t *testing.T) {
-	hndlr := net.Adapt(
+	hndlr := cshttp.Adapt(
 		h1{},
-		net.SupportXHTTPMethodOverride())
+		cshttp.SupportXHTTPMethodOverride())
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(net.HTTPMethodGet, "http://example.com/foo?_method="+net.HTTPMethodPatch, nil)
+	req, err := http.NewRequest(cshttp.HTTPMethodGet, "http://example.com/foo?_method="+cshttp.HTTPMethodPatch, nil)
 	assert.NoError(t, err)
 	hndlr.ServeHTTP(w, req)
-	assert.Equal(t, net.HTTPMethodPatch, req.Method)
+	assert.Equal(t, cshttp.HTTPMethodPatch, req.Method)
 	assert.Equal(t, "h1 called", w.Body.String())
 
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(net.HTTPMethodGet, "http://example.com/foo?_method=KARATE", nil)
+	req, err = http.NewRequest(cshttp.HTTPMethodGet, "http://example.com/foo?_method=KARATE", nil)
 	assert.NoError(t, err)
 	hndlr.ServeHTTP(w, req)
-	assert.Equal(t, net.HTTPMethodGet, req.Method)
+	assert.Equal(t, cshttp.HTTPMethodGet, req.Method)
 
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(net.HTTPMethodGet, "http://example.com/foobar", nil)
+	req, err = http.NewRequest(cshttp.HTTPMethodGet, "http://example.com/foobar", nil)
 	assert.NoError(t, err)
 	hndlr.ServeHTTP(w, req)
-	assert.Equal(t, net.HTTPMethodGet, req.Method)
+	assert.Equal(t, cshttp.HTTPMethodGet, req.Method)
 
 }
