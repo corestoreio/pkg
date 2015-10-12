@@ -50,6 +50,24 @@ var (
        - getIncrementPadLength
        - getIncrementPadChar
    - feature provide a second increment model: UUID
+
+TODO Increment
+
+If an EAV entity type has an attribute with the code increment_id, and
+no backend model is set for that attribute, the
+Magento\Eav\Model\Entity\Attribute\Backend\Increment model is assigned automatically.
+
+All the increment attribute backend model does is call
+$this->getAttribute()->getEntity()->setNewIncrementId($object)
+in the beforeSave() hook method.
+
+Note: See \Magento\Eav\Model\Entity\Attribute::_getDefaultBackendModel()
+for more automatic backend model assignment rules.
+
+By default, Magento 2 uses only the numeric increment model for customers, orders,
+shipments, invoices and credit memos. The increment models shipped with Magento 2 out
+of the box can be found in the directory app/code/Magento/Eav/Model/Entity/Attribute/Increment/.
+
 */
 
 func InitEntityStoreMap(dbrSess *dbr.Session) error {

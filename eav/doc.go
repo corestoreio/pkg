@@ -18,5 +18,15 @@ Package eav contains the logic for the Entity-Attribute-Value model based on the
 To use this library with additional columns in the EAV tables you must run from the
 tools folder first `tableToStruct` and then build the program `eavToStruct` and run it.
 
+TODO EAV Models
+
+For what are attribute backend, source, and frontend models for:
+
+- Backend: Provides hooks before and after save, load, and delete operations with an attribute value.
+- Source: Provides option values and labels for select and multi-select attributes.
+- Frontend: Prepares an attribute value for rendering on the storefront.
+
+Backend models can be an alternative to an observer; for example, when you have to do
+something that depends on an attribute value when an entity is saved.
 */
 package eav
