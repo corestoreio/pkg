@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/config"
+	"golang.org/x/net/context"
 )
 
 // PathOffloaderHeader defines the header name when a proxy server forwards an already
@@ -26,12 +27,12 @@ const PathOffloaderHeader = "web/secure/offloader_header"
 
 // IsSecure checks if a request has been sent over a TLS connection. Also checks
 // if the app runs behind a proxy server and therefore checks the off loader header.
-func IsSecure(r *http.Request, cr config.Reader) bool {
+func IsSecure(ctx context.Context, r *http.Request) bool {
 	if r.TLS != nil {
 		return true
 	}
 
-	oh := cr.GetString(config.Path(PathOffloaderHeader), config.ScopeDefault())
+	oh := config.ContextMustReader(ctx).GetString(config.Path(PathOffloaderHeader), config.ScopeDefault())
 
 	h := r.Header.Get(oh)
 	hh := r.Header.Get("HTTP_" + oh)

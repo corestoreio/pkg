@@ -38,35 +38,58 @@ func (h HandlerFunc) ServeHTTPContext(ctx context.Context, rw http.ResponseWrite
 	return h(ctx, rw, req)
 }
 
-var _ http.Handler = (*HandlerStdLib)(nil)
+var _ http.Handler = (*Adapter)(nil)
 
-// HandlerStdLib type allows to use existing http.Handler middleware, as
+// AdapterErrorFunc specifies the error handler for the Adapter
+type AdapterErrFunc func(http.ResponseWriter, *http.Request, error)
+
+// Adapter type allows to use existing http.Handler middleware, as
 // long as they run before it does.
-type HandlerStdLib struct {
-	Ctx     context.Context
-	Handler Handler
+type Adapter struct {
+	Ctx       context.Context // Root Context
+	Handler   Handler         // will be called
+	ErrorFunc AdapterErrFunc  // gets called when Handler returns an error
+}
+
+// DefaultAdapterErrFunc logs the error and sends a 400 StatusBadRequest. You can replace
+// this variable with your own default version.
+var DefaultAdapterErrFunc AdapterErrFunc = func(rw http.ResponseWriter, req *http.Request, err error) {
+	log.Error("ctxhttp.AdapterErrorFunc", "err", err, "req", req, "url", req.URL)
+	code := http.StatusBadRequest
+	http.Error(rw, http.StatusText(code), code)
 }
 
 // ServeHTTP calls ServeHTTPContext(ca.ctx, rw, req).
-func (ca *HandlerStdLib) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
-	ca.Handler.ServeHTTPContext(ca.Ctx, rw, req)
+func (ca *Adapter) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	if err := ca.Handler.ServeHTTPContext(ca.Ctx, rw, req); err != nil {
+		ca.ErrorFunc(rw, req, err)
+	}
 }
 
-// Adapter is a wrapper for the ctxhttp.Handler
-type Adapter func(Handler) Handler
+// NewAdapter creates a new Adapter with the default AdapterErrorFunc.
+func NewAdapter(ctx context.Context, h Handler) *Adapter {
+	return &Adapter{
+		Ctx:       ctx,
+		Handler:   h,
+		ErrorFunc: DefaultAdapterErrFunc,
+	}
+}
 
-// Adapt function will iterate over all adapters, calling them one by one
-// in a chained manner, returning the result of the final adapter.
-func Adapt(h Handler, adapters ...Adapter) Handler {
-	for _, a := range adapters {
-		h = a(h)
+// Middleware is a wrapper for the ctxhttp.Handler to create middleware functions.
+type Middleware func(Handler) Handler
+
+// Chain function will iterate over all middleware, calling them one by one
+// in a chained manner, returning the result of the final middleware.
+func Chain(h Handler, mws ...Middleware) Handler {
+	for _, mw := range mws {
+		h = mw(h)
 	}
 	return h
 }
 
-// WithHeader is an Adapter that sets multiple HTTP headers. Will panic if kv
-// is imbalanced. len(kv)%2 == 0
-func WithHeader(kv ...string) Adapter {
+// WithHeader is a middleware that sets multiple HTTP headers. Will panic if kv
+// is imbalanced. len(kv)%2 == 0.
+func WithHeader(kv ...string) Middleware {
 	lkv := len(kv)
 	return func(h Handler) Handler {
 		return HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -82,8 +105,8 @@ func WithHeader(kv ...string) Adapter {
 // header. Submitted value will be checked against known methods. Adding
 // HTTPMethodOverrideFormKey to any form will take precedence before
 // HTTP header. If an unknown method will be submitted it gets logged as an
-// Info log.
-func WithXHTTPMethodOverride() Adapter {
+// Info log. This function is chainable.
+func WithXHTTPMethodOverride() Middleware {
 	return func(h Handler) Handler {
 		return HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			mo := r.FormValue(HTTPMethodOverrideFormKey)

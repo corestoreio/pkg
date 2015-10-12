@@ -33,7 +33,7 @@ func (h1) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, r *http.R
 
 func TestAdapters(t *testing.T) {
 
-	hndlr := ctxhttp.Adapt(
+	hndlr := ctxhttp.Chain(
 		h1{},
 		ctxhttp.WithXHTTPMethodOverride(),
 		ctxhttp.WithHeader("X-Men", "Y-Women"),
@@ -44,15 +44,20 @@ func TestAdapters(t *testing.T) {
 	req.Header.Set(ctxhttp.HTTPMethodOverrideHeader, ctxhttp.HTTPMethodPut)
 	assert.NoError(t, err)
 
-	hndlr.ServeHTTPContext(context.Background(), w, req)
+	a := ctxhttp.NewAdapter(context.Background(), hndlr)
+	a.ServeHTTP(w, req)
 
 	assert.Equal(t, ctxhttp.HTTPMethodPut, req.Method)
 	assert.Equal(t, "h1 called", w.Body.String())
 	assert.Equal(t, "Y-Women", w.Header().Get("X-Men"))
 }
 
+func TestDefaultAdapterErrFunc(t *testing.T) {
+	t.Log("@todo")
+}
+
 func TestHttpMethodOverride(t *testing.T) {
-	hndlr := ctxhttp.Adapt(
+	hndlr := ctxhttp.Chain(
 		h1{},
 		ctxhttp.WithXHTTPMethodOverride())
 	w := httptest.NewRecorder()

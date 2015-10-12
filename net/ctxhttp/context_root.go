@@ -20,14 +20,17 @@ import "golang.org/x/net/context"
 // other packages.
 type ctxKey uint
 
+// Key* defines the keys to access a value in a context.Context
 const (
-	CtxAdminUserKey ctxKey = iota
-	CtxStoreKey
+	KeyDatabase ctxKey = iota
+	// KeyConfigReader see package config
+	KeyAdminUserKey
+	KeyStoreKey
 	// todo more keys
 )
 
 // NewRootContext returns a context with the database set. This serves as the root
 // context for all other contexts. @todo implementation
 func NewRootContext(todo1, todo2, todo3, todo4 int) context.Context {
-	return context.WithValue(context.Background(), CtxStoreKey, todo1)
+	return context.WithValue(context.Background(), KeyDatabase, todo1)
 }
