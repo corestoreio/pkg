@@ -14,5 +14,14 @@
 
 /*
 Package customer handles a customer entity with its addresses.
+
+TODO validation
+
+Maybe for use for customer and customer/address or sales/orders, etc but my
+concerns are that sometimes people wish to have a different validation than the default one.
+So that means refactoring to provide a validation configuration besides struct tags
+
+https://github.com/go-playground/validator
+
 */
 package customer
