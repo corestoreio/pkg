@@ -22,6 +22,7 @@ import (
 )
 
 var _ Reader = (*MockReader)(nil)
+var _ ReaderPubSuber = (*MockReader)(nil)
 
 // mockOptionFunc to initialize the NewMockReader
 type mockOptionFunc func(*MockReader)
@@ -29,11 +30,13 @@ type mockOptionFunc func(*MockReader)
 // MockReader used for testing. Contains functions which will be called in the
 // appropriate methods of interface config.Reader.
 type MockReader struct {
-	s   func(path string) string
-	b   func(path string) bool
-	f64 func(path string) float64
-	i   func(path string) int
-	t   func(path string) time.Time
+	s               func(path string) string
+	b               func(path string) bool
+	f64             func(path string) float64
+	i               func(path string) int
+	t               func(path string) time.Time
+	SubscriptionID  int
+	SubscriptionErr error
 }
 
 // MockPathScopeDefault creates for testing a fully qualified path for the
@@ -56,35 +59,21 @@ func MockPathScopeStore(id int64, path string) string {
 
 // MockString returns a function which can be used in the NewMockReader().
 // Your function returns a string value from a given path.
-func MockString(f func(path string) string) mockOptionFunc {
-	return func(mr *MockReader) {
-		mr.s = f
-	}
-}
+func MockString(f func(path string) string) mockOptionFunc { return func(mr *MockReader) { mr.s = f } }
 
 // MockBool returns a function which can be used in the NewMockReader().
 // Your function returns a bool value from a given path.
-func MockBool(f func(path string) bool) mockOptionFunc {
-	return func(mr *MockReader) {
-		mr.b = f
-	}
-}
+func MockBool(f func(path string) bool) mockOptionFunc { return func(mr *MockReader) { mr.b = f } }
 
 // MockFloat64 returns a function which can be used in the NewMockReader().
 // Your function returns a float64 value from a given path.
 func MockFloat64(f func(path string) float64) mockOptionFunc {
-	return func(mr *MockReader) {
-		mr.f64 = f
-	}
+	return func(mr *MockReader) { mr.f64 = f }
 }
 
 // MockInt returns a function which can be used in the NewMockReader().
 // Your function returns an int value from a given path.
-func MockInt(f func(path string) int) mockOptionFunc {
-	return func(mr *MockReader) {
-		mr.i = f
-	}
-}
+func MockInt(f func(path string) int) mockOptionFunc { return func(mr *MockReader) { mr.i = f } }
 
 // MockTime returns a function which can be used in the NewMockReader().
 // Your function returns a Time value from a given path.
@@ -133,4 +122,8 @@ func (sr *MockReader) GetDateTime(opts ...ArgFunc) time.Time {
 		return time.Time{}
 	}
 	return sr.t(mustNewArg(opts...).scopePath())
+}
+
+func (sr *MockReader) Subscribe(path string, s MessageReceiver) (subscriptionID int, err error) {
+	return sr.SubscriptionID, sr.SubscriptionErr
 }

@@ -36,7 +36,17 @@ func TestContextMustReader(t *testing.T) {
 }
 
 func TestContextMustReaderPubSuber(t *testing.T) {
+	mr := config.NewMockReader()
+	ctx := context.WithValue(context.Background(), config.CtxKeyReaderPubSuber, mr)
+	assert.Exactly(t, mr, config.ContextMustReaderPubSuber(ctx))
 
+	defer func() {
+		if r := recover(); r != nil {
+			assert.EqualError(t, r.(error), config.ErrTypeAssertionReaderPubSuberFailed.Error())
+		}
+	}()
+	ctx = context.WithValue(context.Background(), config.CtxKeyReaderPubSuber, "Hello")
+	config.ContextMustReaderPubSuber(ctx)
 }
 
 type cWrite struct {
@@ -49,9 +59,9 @@ func (w cWrite) Write(_ ...config.ArgFunc) error {
 var _ config.Writer = (*cWrite)(nil)
 
 func TestContextMustWriter(t *testing.T) {
-	mr := cWrite{}
-	ctx := context.WithValue(context.Background(), config.CtxKeyWriter, mr)
-	assert.Exactly(t, mr, config.ContextMustWriter(ctx))
+	wr := cWrite{}
+	ctx := context.WithValue(context.Background(), config.CtxKeyWriter, wr)
+	assert.Exactly(t, wr, config.ContextMustWriter(ctx))
 
 	defer func() {
 		if r := recover(); r != nil {
