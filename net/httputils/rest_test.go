@@ -12,23 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxhttp
+package httputils_test
 
-const (
-	// HTTPMethodOverrideHeader represents a commonly used http header to override a request method.
-	HTTPMethodOverrideHeader = "X-HTTP-Method-Override"
-	// HTTPMethodOverrideFormKey represents a commonly used HTML form key to override a request method.
-	HTTPMethodOverrideFormKey = "_method"
+import (
+	"testing"
+
+	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/stretchr/testify/assert"
 )
 
-// HTTPMethodxxx defines the available methods which this framework supports
-const (
-	HTTPMethodHead    = `HEAD`
-	HTTPMethodGet     = "GET"
-	HTTPMethodPost    = "POST"
-	HTTPMethodPut     = "PUT"
-	HTTPMethodPatch   = "PATCH"
-	HTTPMethodDelete  = "DELETE"
-	HTTPMethodTrace   = "TRACE"
-	HTTPMethodOptions = "OPTIONS"
-)
+func TestVersionize(t *testing.T) {
+	tests := []struct {
+		have, want string
+	}{
+		{"login", "/V1/login"},
+		{"/login", "/V1/login"},
+		{"", "/V1/"},
+	}
+	for _, test := range tests {
+		h := httputils.APIRoute.Versionize(test.have)
+		assert.Equal(t, test.want, h)
+	}
+	assert.Equal(t, "/V1/", httputils.APIRoute.String())
+}

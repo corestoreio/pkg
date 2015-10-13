@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
+	"github.com/corestoreio/csfw/net/httputils"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -40,14 +41,14 @@ func TestAdapters(t *testing.T) {
 	)
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(ctxhttp.HTTPMethodGet, "http://example.com/foo", nil)
-	req.Header.Set(ctxhttp.HTTPMethodOverrideHeader, ctxhttp.HTTPMethodPut)
+	req, err := http.NewRequest(httputils.MethodGet, "http://example.com/foo", nil)
+	req.Header.Set(httputils.MethodOverrideHeader, httputils.MethodPut)
 	assert.NoError(t, err)
 
 	a := ctxhttp.NewAdapter(context.Background(), hndlr)
 	a.ServeHTTP(w, req)
 
-	assert.Equal(t, ctxhttp.HTTPMethodPut, req.Method)
+	assert.Equal(t, httputils.MethodPut, req.Method)
 	assert.Equal(t, "h1 called", w.Body.String())
 	assert.Equal(t, "Y-Women", w.Header().Get("X-Men"))
 }
@@ -61,22 +62,22 @@ func TestHttpMethodOverride(t *testing.T) {
 		h1{},
 		ctxhttp.WithXHTTPMethodOverride())
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(ctxhttp.HTTPMethodGet, "http://example.com/foo?_method="+ctxhttp.HTTPMethodPatch, nil)
+	req, err := http.NewRequest(httputils.MethodGet, "http://example.com/foo?_method="+httputils.MethodPatch, nil)
 	assert.NoError(t, err)
 	hndlr.ServeHTTPContext(context.Background(), w, req)
-	assert.Equal(t, ctxhttp.HTTPMethodPatch, req.Method)
+	assert.Equal(t, httputils.MethodPatch, req.Method)
 	assert.Equal(t, "h1 called", w.Body.String())
 
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(ctxhttp.HTTPMethodGet, "http://example.com/foo?_method=KARATE", nil)
+	req, err = http.NewRequest(httputils.MethodGet, "http://example.com/foo?_method=KARATE", nil)
 	assert.NoError(t, err)
 	hndlr.ServeHTTPContext(context.Background(), w, req)
-	assert.Equal(t, ctxhttp.HTTPMethodGet, req.Method)
+	assert.Equal(t, httputils.MethodGet, req.Method)
 
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(ctxhttp.HTTPMethodGet, "http://example.com/foobar", nil)
+	req, err = http.NewRequest(httputils.MethodGet, "http://example.com/foobar", nil)
 	assert.NoError(t, err)
 	hndlr.ServeHTTPContext(context.Background(), w, req)
-	assert.Equal(t, ctxhttp.HTTPMethodGet, req.Method)
+	assert.Equal(t, httputils.MethodGet, req.Method)
 
 }

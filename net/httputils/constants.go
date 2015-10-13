@@ -12,18 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxhttp_test
+package httputils
 
-import "testing"
+const (
+	// MethodOverrideHeader represents a commonly used http header to override a request method.
+	MethodOverrideHeader = "X-HTTP-Method-Override"
+	// MethodOverrideFormKey represents a commonly used HTML form key to override a request method.
+	MethodOverrideFormKey = "_method"
+)
 
-func TestIsSecure(t *testing.T) {
-	t.Log("TODO")
-}
-
-func TestIsSafeMethod(t *testing.T) {
-	t.Log("TODO")
-}
-
-func TestIsAjax(t *testing.T) {
-	t.Log("TODO")
-}
+// Method* defines the available methods which this framework supports
+const (
+	MethodHead    = `HEAD`
+	MethodGet     = "GET"
+	MethodPost    = "POST"
+	MethodPut     = "PUT"
+	MethodPatch   = "PATCH"
+	MethodDelete  = "DELETE"
+	MethodTrace   = "TRACE"
+	MethodOptions = "OPTIONS"
+)

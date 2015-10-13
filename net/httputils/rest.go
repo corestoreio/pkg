@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxhttp
+package httputils
 
 import (
 	"encoding/json"
@@ -56,20 +56,3 @@ func WriteJSON(w http.ResponseWriter, v interface{}) error {
 	w.WriteHeader(http.StatusOK)
 	return errgo.Mask(json.NewEncoder(w).Encode(v))
 }
-
-// RESTErrorHandler default REST error handler ... @todo remove echo dependency
-//func RESTErrorHandler(err error, c *echo.Context) {
-//	code := http.StatusInternalServerError
-//	msg := http.StatusText(code)
-//	if he, ok := err.(*echo.HTTPError); ok {
-//		code = he.Code()
-//		msg = he.Error()
-//	}
-//	if log.IsDebug() {
-//		log.Error("ctxhttp.RESTErrorHandler", "err", err)
-//	}
-//	msg = err.Error()
-//
-//	http.Error(c.Response(), msg, code)
-//
-//}

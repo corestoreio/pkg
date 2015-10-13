@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxhttp
+package httputils
 
 import (
 	"net/http"
@@ -28,6 +28,7 @@ const PathOffloaderHeader = "web/secure/offloader_header"
 // IsSecure checks if a request has been sent over a TLS connection. Also checks
 // if the app runs behind a proxy server and therefore checks the off loader header.
 func IsSecure(ctx context.Context, r *http.Request) bool {
+	// due to import cycle this function must be in this package
 	if r.TLS != nil {
 		return true
 	}
@@ -50,7 +51,7 @@ func IsSecure(ctx context.Context, r *http.Request) bool {
 func IsSafeMethod(r *http.Request) bool {
 	// TODD(cs): figure out the usage for that function ...
 	switch r.Method {
-	case HTTPMethodGet, HTTPMethodHead, HTTPMethodTrace, HTTPMethodOptions:
+	case MethodGet, MethodHead, MethodTrace, MethodOptions:
 		return true
 	}
 	return false

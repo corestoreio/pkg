@@ -17,6 +17,9 @@ package ctxhttp
 import (
 	"net/http"
 
+	"fmt"
+
+	"github.com/corestoreio/csfw/net/httputils"
 	"github.com/corestoreio/csfw/utils/log"
 	"golang.org/x/net/context"
 )
@@ -51,15 +54,13 @@ type Adapter struct {
 	ErrorFunc AdapterErrFunc  // gets called when Handler returns an error
 }
 
-// DefaultAdapterErrFunc logs the error and sends a 400 StatusBadRequest. You can replace
-// this variable with your own default version.
-var DefaultAdapterErrFunc AdapterErrFunc = func(rw http.ResponseWriter, req *http.Request, err error) {
-	log.Error("ctxhttp.AdapterErrorFunc", "err", err, "req", req, "url", req.URL)
-	code := http.StatusBadRequest
-	http.Error(rw, http.StatusText(code), code)
-}
+// DefaultAdapterErrFunc logs the error (if Debug is enabled) and sends a
+// 400 StatusBadRequest. You can replace this variable with your own default
+// version. This function gets called in ServeHTTP of the Adapter type.
+var DefaultAdapterErrFunc AdapterErrFunc = defaultAdapterErrFunc
 
-// ServeHTTP calls ServeHTTPContext(ca.ctx, rw, req).
+// ServeHTTP calls ServeHTTPContext(ca.ctx, rw, req) and on error calls the
+// ErrorFunc.
 func (ca *Adapter) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if err := ca.Handler.ServeHTTPContext(ca.Ctx, rw, req); err != nil {
 		ca.ErrorFunc(rw, req, err)
@@ -73,6 +74,18 @@ func NewAdapter(ctx context.Context, h Handler) *Adapter {
 		Handler:   h,
 		ErrorFunc: DefaultAdapterErrFunc,
 	}
+}
+
+func defaultAdapterErrFunc(rw http.ResponseWriter, req *http.Request, err error) {
+	if log.IsDebug() {
+		log.Error("ctxhttp.AdapterErrorFunc", "err", err, "req", req, "url", req.URL)
+	}
+	code := http.StatusBadRequest
+	http.Error(rw, fmt.Sprintf(
+		"%s\nApp Error: %s",
+		http.StatusText(code),
+		err,
+	), code)
 }
 
 // Middleware is a wrapper for the ctxhttp.Handler to create middleware functions.
@@ -109,13 +122,13 @@ func WithHeader(kv ...string) Middleware {
 func WithXHTTPMethodOverride() Middleware {
 	return func(h Handler) Handler {
 		return HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			mo := r.FormValue(HTTPMethodOverrideFormKey)
+			mo := r.FormValue(httputils.MethodOverrideFormKey)
 			if mo == "" {
-				mo = r.Header.Get(HTTPMethodOverrideHeader)
+				mo = r.Header.Get(httputils.MethodOverrideHeader)
 			}
 			switch mo {
 			case "": // do nothing
-			case HTTPMethodHead, HTTPMethodGet, HTTPMethodPost, HTTPMethodPut, HTTPMethodPatch, HTTPMethodDelete, HTTPMethodTrace, HTTPMethodOptions:
+			case httputils.MethodHead, httputils.MethodGet, httputils.MethodPost, httputils.MethodPut, httputils.MethodPatch, httputils.MethodDelete, httputils.MethodTrace, httputils.MethodOptions:
 				r.Method = mo
 			default:
 				// not sure if an error is here really needed ...
