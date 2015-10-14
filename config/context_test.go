@@ -15,38 +15,37 @@
 package config_test
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
-	"testing"
 )
 
 func TestContextMustReader(t *testing.T) {
 	mr := config.NewMockReader()
-	ctx := context.WithValue(context.Background(), config.CtxKeyReader, mr)
-	assert.Exactly(t, mr, config.ContextMustReader(ctx))
+	ctx := config.NewContextReader(context.Background(), mr)
+	mrHave, ok := config.FromContextReader(ctx)
+	assert.Exactly(t, mr, mrHave)
+	assert.True(t, ok)
 
-	defer func() {
-		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), config.ErrTypeAssertionReaderFailed.Error())
-		}
-	}()
-	ctx = context.WithValue(context.Background(), config.CtxKeyReader, "Hello")
-	config.ContextMustReader(ctx)
+	ctx = config.NewContextReader(context.Background(), nil)
+	mrHave, ok = config.FromContextReader(ctx)
+	assert.Nil(t, mrHave)
+	assert.False(t, ok)
 }
 
 func TestContextMustReaderPubSuber(t *testing.T) {
 	mr := config.NewMockReader()
-	ctx := context.WithValue(context.Background(), config.CtxKeyReaderPubSuber, mr)
-	assert.Exactly(t, mr, config.ContextMustReaderPubSuber(ctx))
+	ctx := config.NewContextReaderPubSuber(context.Background(), mr)
+	mrHave, ok := config.FromContextReaderPubSuber(ctx)
+	assert.Exactly(t, mr, mrHave)
+	assert.True(t, ok)
 
-	defer func() {
-		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), config.ErrTypeAssertionReaderPubSuberFailed.Error())
-		}
-	}()
-	ctx = context.WithValue(context.Background(), config.CtxKeyReaderPubSuber, "Hello")
-	config.ContextMustReaderPubSuber(ctx)
+	ctx = config.NewContextReaderPubSuber(context.Background(), nil)
+	mrHave, ok = config.FromContextReaderPubSuber(ctx)
+	assert.Nil(t, mrHave)
+	assert.False(t, ok)
 }
 
 type cWrite struct {
@@ -60,14 +59,13 @@ var _ config.Writer = (*cWrite)(nil)
 
 func TestContextMustWriter(t *testing.T) {
 	wr := cWrite{}
-	ctx := context.WithValue(context.Background(), config.CtxKeyWriter, wr)
-	assert.Exactly(t, wr, config.ContextMustWriter(ctx))
+	ctx := config.NewContextWriter(context.Background(), wr)
+	wrHave, ok := config.FromContextWriter(ctx)
+	assert.Exactly(t, wr, wrHave)
+	assert.True(t, ok)
 
-	defer func() {
-		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), config.ErrTypeAssertionWriterFailed.Error())
-		}
-	}()
-	ctx = context.WithValue(context.Background(), config.CtxKeyWriter, "Hello")
-	config.ContextMustWriter(ctx)
+	ctx = config.NewContextWriter(context.Background(), nil)
+	wrHave, ok = config.FromContextWriter(ctx)
+	assert.Nil(t, wrHave)
+	assert.False(t, ok)
 }

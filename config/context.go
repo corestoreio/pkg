@@ -14,10 +14,7 @@
 
 package config
 
-import (
-	"errors"
-	"golang.org/x/net/context"
-)
+import "golang.org/x/net/context"
 
 // ctxKey type is unexported to prevent collisions with context keys defined in
 // other packages.
@@ -25,40 +22,40 @@ type ctxKey uint
 
 // Key* defines the keys to access a value in a context.Context
 const (
-	CtxKeyReader ctxKey = iota
-	CtxKeyReaderPubSuber
-	CtxKeyWriter
+	ctxKeyReader ctxKey = iota
+	ctxKeyReaderPubSuber
+	ctxKeyWriter
 )
 
-var (
-	ErrTypeAssertionReaderFailed         = errors.New("Type assertion to config.Reader failed. Maybe missing?")
-	ErrTypeAssertionReaderPubSuberFailed = errors.New("Type assertion to config.ReaderPubSuber failed. Maybe missing?")
-	ErrTypeAssertionWriterFailed         = errors.New("Type assertion to config.Writer failed. Maybe missing?")
-)
-
-// ContextMustReader returns a config.Reader from a context.
-func ContextMustReader(ctx context.Context) Reader {
-	r, ok := ctx.Value(CtxKeyReader).(Reader)
-	if !ok {
-		panic(ErrTypeAssertionReaderFailed)
-	}
-	return r
+// FromContextReader returns a config.Reader from a context.
+func FromContextReader(ctx context.Context) (r Reader, ok bool) {
+	r, ok = ctx.Value(ctxKeyReader).(Reader)
+	return
 }
 
-// ContextMustReaderPubSuber returns a config.ReaderPubSuber from a context.
-func ContextMustReaderPubSuber(ctx context.Context) ReaderPubSuber {
-	r, ok := ctx.Value(CtxKeyReaderPubSuber).(ReaderPubSuber)
-	if !ok {
-		panic(ErrTypeAssertionReaderPubSuberFailed)
-	}
-	return r
+// NewContextReader adds a Reader to a context
+func NewContextReader(ctx context.Context, r Reader) context.Context {
+	return context.WithValue(ctx, ctxKeyReader, r)
 }
 
-// ContextMustWriter returns a config.Writer from a context.
-func ContextMustWriter(ctx context.Context) Writer {
-	r, ok := ctx.Value(CtxKeyWriter).(Writer)
-	if !ok {
-		panic(ErrTypeAssertionWriterFailed)
-	}
-	return r
+// FromContextReaderPubSuber returns a config.ReaderPubSuber from a context.
+func FromContextReaderPubSuber(ctx context.Context) (r ReaderPubSuber, ok bool) {
+	r, ok = ctx.Value(ctxKeyReaderPubSuber).(ReaderPubSuber)
+	return
+}
+
+// NewContextReaderPubSuber adds a ReaderPubSuber to a context.
+func NewContextReaderPubSuber(ctx context.Context, r ReaderPubSuber) context.Context {
+	return context.WithValue(ctx, ctxKeyReaderPubSuber, r)
+}
+
+// FromContextWriter returns a config.Writer from a context.
+func FromContextWriter(ctx context.Context) (w Writer, ok bool) {
+	w, ok = ctx.Value(ctxKeyWriter).(Writer)
+	return
+}
+
+// NewContextWriter adds a writer to a context
+func NewContextWriter(ctx context.Context, w Writer) context.Context {
+	return context.WithValue(ctx, ctxKeyWriter, w)
 }
