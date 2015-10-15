@@ -87,10 +87,6 @@ func Path(paths ...string) ArgFunc {
 	}
 }
 
-// NoBubble disables the fallback to the default scope when a value in the current
-// scope not exists.
-func NoBubble() ArgFunc { return func(a *arg) { a.noBubble = true } }
-
 // Value sets the value for a scope key.
 func Value(v interface{}) ArgFunc { return func(a *arg) { a.v = v } }
 
@@ -124,7 +120,6 @@ type arg struct {
 	pathSlice  []string // pa is the three level path e.g. a/b/c split by slash
 	scope      scope.Scope
 	scopeID    int64       // scope ID
-	noBubble   bool        // noBubble, if false value search: (store|website) -> default
 	v          interface{} // value use for saving
 	lastErrors []error
 }
@@ -155,7 +150,6 @@ func mustNewArg(opts ...ArgFunc) arg {
 
 func (a arg) isValidPath() bool    { return isValidPath(a.pathSlice...) }
 func (a arg) isDefault() bool      { return a.scope == scope.DefaultID || a.scope == scope.AbsentID }
-func (a arg) isBubbling() bool     { return !a.noBubble }
 func (a arg) pathLevel1() string   { return a.pathSlice[0] }
 func (a arg) pathLevel2() string   { return scope.PathJoin(a.pathSlice[:2]...) }
 func (a arg) pathLevelAll() string { return scope.PathJoin(a.pathSlice...) }
@@ -173,7 +167,7 @@ func (a arg) scopePath() string {
 // scopePathDefault returns a path prefixed by default StrScope
 // e.g.: default/0/system/currency/installed
 // 		 scope/scope_id/path...
-func (a arg) scopePathDefault() string { return scope.StrDefault.FQPath("0", a.pathSlice...) }
+//func (a arg) scopePathDefault() string { return scope.StrDefault.FQPath("0", a.pathSlice...) }
 
 var _ error = (*arg)(nil)
 

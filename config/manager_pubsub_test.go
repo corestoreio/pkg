@@ -77,7 +77,7 @@ func TestPubSubBubbling(t *testing.T) {
 	time.Sleep(time.Millisecond * 10) // wait for goroutine to close
 
 	// send on closed channel
-	m.Write(config.NoBubble(), config.Value(1), config.Path(testPath+"Doh"), config.Scope(scope.WebsiteID, 3))
+	m.Write(config.Value(1), config.Path(testPath+"Doh"), config.Scope(scope.WebsiteID, 3))
 	assert.EqualError(t, m.Close(), config.ErrPublisherClosed.Error())
 }
 
@@ -94,7 +94,7 @@ func TestPubSubPanic(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
-	m.Write(config.Value(321), config.Path(testPath), config.ScopeStore(123), config.NoBubble())
+	m.Write(config.Value(321), config.Path(testPath), config.ScopeStore(123))
 	assert.NoError(t, m.Close())
 	time.Sleep(time.Millisecond * 10) // wait for goroutine to close
 	assert.Contains(t, errLogBuf.String(), `config.pubSub.publish.recover.r recover: "Don't panic!"`)
@@ -114,7 +114,7 @@ func TestPubSubPanicError(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
-	m.Write(config.Value(321), config.Path(testPath), config.ScopeStore(123), config.NoBubble())
+	m.Write(config.Value(321), config.Path(testPath), config.ScopeStore(123))
 	// not closing channel to let the Goroutine around egging aka. herumeiern.
 	time.Sleep(time.Millisecond * 10) // wait for goroutine ...
 	assert.Contains(t, errLogBuf.String(), `config.pubSub.publish.recover.err err: OMG! Panic!`)
@@ -154,7 +154,7 @@ func TestPubSubPanicMultiple(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, subID > 0)
 
-	m.Write(config.Value(789), config.Path("x/y/z"), config.ScopeStore(987), config.NoBubble())
+	m.Write(config.Value(789), config.Path("x/y/z"), config.ScopeStore(987))
 	assert.NoError(t, m.Close())
 	time.Sleep(time.Millisecond * 30) // wait for goroutine to close
 	assert.Contains(t, errLogBuf.String(), `testErr: stdLib.go:228: config.pubSub.publish.recover.r recover: "One: Don't panic!`)
@@ -176,7 +176,7 @@ func TestPubSubUnsubscribe(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
 	assert.NoError(t, m.Unsubscribe(subID))
-	m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(123), config.NoBubble())
+	m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(123))
 	time.Sleep(time.Millisecond) // wait for goroutine ...
 	assert.Empty(t, errLogBuf.String())
 }
@@ -211,9 +211,9 @@ func TestPubSubEvict(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, subID)
 
-	m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(123), config.NoBubble())
-	m.Write(config.Value(321), config.Path("x/y/a"), config.ScopeStore(123), config.NoBubble())
-	m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(123), config.NoBubble())
+	m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(123))
+	m.Write(config.Value(321), config.Path("x/y/a"), config.ScopeStore(123))
+	m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(123))
 
 	time.Sleep(time.Millisecond * 20) // wait for goroutine ...
 

@@ -73,7 +73,9 @@ func TestScopeApplyDefaults(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	assert.Exactly(t, cer.Default.(string), s.GetString(config.Path("contact/email/recipient_email")))
+	sval, err := s.GetString(config.Path("contact/email/recipient_email"))
+	assert.NoError(t, err)
+	assert.Exactly(t, cer.Default.(string), sval)
 }
 
 func TestApplyCoreConfigData(t *testing.T) {

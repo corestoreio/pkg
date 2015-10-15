@@ -17,6 +17,7 @@ package config
 import (
 	"time"
 
+	"errors"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -58,13 +59,17 @@ type (
 	// @see https://github.com/magento/magento2/blob/0.74.0-beta7/lib/internal/Magento/Framework/UrlInterface.php#L13
 	URLType uint8
 
-	// Reader implements how to receive thread safe a configuration value from a path and or scope.
+	// Reader implements how to receive thread-safe a configuration value from
+	// a path and or scope.
+	//
+	// These functions are also available in the ScopedReader interface.
 	Reader interface {
-		GetString(...ArgFunc) string
-		GetBool(...ArgFunc) bool
-		GetFloat64(o ...ArgFunc) float64
-		GetInt(o ...ArgFunc) int
-		GetDateTime(o ...ArgFunc) time.Time
+		NewScoped(websiteID, groupID, storeID int64) ScopedReader
+		GetString(...ArgFunc) (string, error)
+		GetBool(...ArgFunc) (bool, error)
+		GetFloat64(...ArgFunc) (float64, error)
+		GetInt(...ArgFunc) (int, error)
+		GetDateTime(...ArgFunc) (time.Time, error)
 	}
 
 	// ReaderPubSuber implements a configuration Reader and a Subscriber for
@@ -80,7 +85,7 @@ type (
 		Write(...ArgFunc) error
 	}
 
-	// Manager main configuration struct
+	// Manager main configuration provider
 	Manager struct {
 		// why is Viper private? Because it can maybe replaced by something else ...
 		v *viper.Viper
@@ -98,7 +103,10 @@ var (
 var TableCollection csdb.Manager
 
 // DefaultManager provides a default manager
-var DefaultManager *Manager
+var DefaultManager *Manager = NewManager()
+
+// ErrKeyNotFound will be returned if a key cannot be found or value is nil.
+var ErrKeyNotFound = errors.New("Key not found")
 
 func init() {
 	DefaultManager = NewManager()
@@ -113,6 +121,11 @@ func NewManager() *Manager {
 	m.v.Set(mustNewArg(Path(PathCSBaseURL)).scopePath(), CSBaseURL)
 	go m.publish()
 	return m
+}
+
+// NewScoped creates a new scope base configuration reader
+func (m *Manager) NewScoped(websiteID, groupID, storeID int64) ScopedReader {
+	return newScopedManager(m, websiteID, groupID, storeID)
 }
 
 // ApplyDefaults reads the map and applies the keys and values to the default configuration
@@ -157,17 +170,6 @@ func (m *Manager) Write(o ...ArgFunc) error {
 		return log.Error("config.Manager.Write.newArg", "err", err)
 	}
 
-	if a.isBubbling() {
-		if log.IsDebug() {
-			log.Debug("config.Manager.Write.isBubbling", "path", a.scopePathDefault(), "bubble", a.isBubbling(), "val", a.v)
-		}
-		m.v.Set(a.scopePathDefault(), a.v)
-		aDefault := a
-		aDefault.scope = scope.DefaultID
-		aDefault.scopeID = 0 // reset to 0
-		m.sendMsg(aDefault)
-	}
-
 	if log.IsDebug() {
 		log.Debug("config.Manager.Write", "path", a.scopePath(), "val", a.v)
 	}
@@ -184,75 +186,70 @@ func (m *Manager) get(o ...ArgFunc) interface{} {
 		return log.Error("config.Manager.get.newArg", "err", err)
 	}
 
-	vs := m.v.Get(a.scopePath()) // vs = value scope
-	if vs == nil && a.isBubbling() {
-		vs = m.v.Get(a.scopePathDefault())
-	}
-	return vs
+	return m.v.Get(a.scopePath())
 }
 
 // GetString returns a string from the manager. Example usage:
 // Default value: GetString(config.Path("general/locale/timezone"))
 // Website value: GetString(config.Path("general/locale/timezone"), config.ScopeWebsite(w))
 // Store   value: GetString(config.Path("general/locale/timezone"), config.ScopeStore(s))
-func (m *Manager) GetString(o ...ArgFunc) string {
+func (m *Manager) GetString(o ...ArgFunc) (string, error) {
 	vs := m.get(o...)
 	if vs == nil {
-		return ""
+		return "", ErrKeyNotFound
 	}
-	return cast.ToString(vs)
-}
-
-// GetStringSlice returns a slice of strings with config values.
-// @todo use the backend model of a config value. most/all magento string slices are comma lists.
-func (m *Manager) GetStringSlice(o ...ArgFunc) []string {
-	return nil
-	//	return m.v.GetStringSlice(newArg(o...))
+	return cast.ToStringE(vs)
 }
 
 // GetBool returns bool from the manager. Example usage see GetString.
-func (m *Manager) GetBool(o ...ArgFunc) bool {
+func (m *Manager) GetBool(o ...ArgFunc) (bool, error) {
 	vs := m.get(o...)
 	if vs == nil {
-		return false
+		return false, ErrKeyNotFound
 	}
-	return cast.ToBool(vs)
+	return cast.ToBoolE(vs)
 }
 
 // GetFloat64 returns a float64 from the manager. Example usage see GetString.
-func (m *Manager) GetFloat64(o ...ArgFunc) float64 {
+func (m *Manager) GetFloat64(o ...ArgFunc) (float64, error) {
 	vs := m.get(o...)
 	if vs == nil {
-		return 0.0
+		return 0.0, ErrKeyNotFound
 	}
-	return cast.ToFloat64(vs)
+	return cast.ToFloat64E(vs)
 }
 
 // GetInt returns an int from the manager. Example usage see GetString.
-func (m *Manager) GetInt(o ...ArgFunc) int {
+func (m *Manager) GetInt(o ...ArgFunc) (int, error) {
 	vs := m.get(o...)
 	if vs == nil {
-		return 0
+		return 0, ErrKeyNotFound
 	}
-	return cast.ToInt(vs)
+	return cast.ToIntE(vs)
 }
 
 // GetDateTime returns a date and time object from the manager. Example usage see GetString.
-func (m *Manager) GetDateTime(o ...ArgFunc) time.Time {
+func (m *Manager) GetDateTime(o ...ArgFunc) (time.Time, error) {
 	vs := m.get(o...)
-	t, err := cast.ToTimeE(vs)
-	if err != nil {
-		log.Error("config.Manager.GetDateTime.ToTimeE", "err", err, "val", vs)
+	if vs == nil {
+		return time.Time{}, ErrKeyNotFound
 	}
-	return t
+	return cast.ToTimeE(vs)
 }
 
 // @todo consider adding other Get* from the viper package
 
+// GetStringSlice returns a slice of strings with config values.
+// @todo use the backend model of a config value. most/all magento string slices are comma lists.
+func (m *Manager) GetStringSlice(o ...ArgFunc) ([]string, error) {
+	return nil, ErrKeyNotFound
+	//	return m.v.GetStringSlice(newArg(o...))
+}
+
 // AllKeys return all keys regardless where they are set
 func (m *Manager) AllKeys() []string { return m.v.AllKeys() }
 
-// IsSet checks if a key is in the config. Does not bubble. Returns false on error.
+// IsSet checks if a key is in the configuration. Returns false on error.
 func (m *Manager) IsSet(o ...ArgFunc) bool {
 	a, err := newArg(o...)
 	if err != nil {
