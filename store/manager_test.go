@@ -237,7 +237,7 @@ func TestNewManagerGroup(t *testing.T) {
 			return store.NewGroup(
 				&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 				store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}}),
-			), nil
+			)
 		}
 		ms.s = func() (*store.Store, error) {
 			return store.NewStore(
@@ -285,7 +285,7 @@ func TestNewManagerGroupInit(t *testing.T) {
 			return store.NewGroup(
 				&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 				store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}}),
-			), nil
+			)
 		}
 	}).Init(scope.Option{Group: scope.MockID(1)})
 	assert.EqualError(t, store.ErrGroupDefaultStoreNotFound, err.Error(), "Incorrect DefaultStore for a Group")
@@ -295,12 +295,16 @@ func TestNewManagerGroupInit(t *testing.T) {
 
 	tm3 := getTestManager(func(ms *mockStorage) {
 		ms.g = func() (*store.Group, error) {
-			return store.NewGroup(
+			ng, err := store.NewGroup(
 				&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 				store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}}),
-			).SetStores(store.TableStoreSlice{
+			)
+			if err != nil {
+				return nil, err
+			}
+			return ng.SetStores(store.TableStoreSlice{
 				&store.TableStore{StoreID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "at", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
-			}, nil), nil
+			}, nil)
 		}
 	})
 	err = tm3.Init(scope.Option{Group: scope.MockID(1)})

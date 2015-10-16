@@ -24,6 +24,7 @@ import (
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/utils/log"
 	"golang.org/x/text/language"
 )
 
@@ -133,7 +134,14 @@ func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) (*We
 	})
 	w.Groups = make(GroupSlice, groups.Len(), groups.Len())
 	for i, g := range groups {
-		w.Groups[i] = NewGroup(g, SetGroupWebsite(w.Data), SetGroupConfig(w.cr)).SetStores(tss, nil)
+		ng, err := NewGroup(g, SetGroupWebsite(w.Data), SetGroupConfig(w.cr))
+		if err != nil {
+			return nil, log.Error("store.Website.SetGroupsStores", "err", err, "g", g, "w", w.Data)
+		}
+		w.Groups[i], err = ng.SetStores(tss, nil)
+		if err != nil {
+			return nil, log.Error("store.Website.SetStores", "err", err, "g", g, "w", w.Data, "tss", tss)
+		}
 	}
 	stores := tss.FilterByWebsiteID(w.Data.WebsiteID)
 	w.Stores = make(StoreSlice, stores.Len(), stores.Len())

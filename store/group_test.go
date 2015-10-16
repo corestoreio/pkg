@@ -34,10 +34,11 @@ func init() {
 }
 
 func TestNewGroup(t *testing.T) {
-	g := store.NewGroup(
+	g, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		nil,
 	)
+	assert.NoError(t, err)
 	assert.EqualValues(t, "DACH Group", g.Data.Name)
 	assert.Nil(t, g.Stores)
 
@@ -47,98 +48,58 @@ func TestNewGroup(t *testing.T) {
 }
 
 func TestNewGroupPanic(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			if err, ok := r.(error); ok {
-				assert.EqualError(t, store.ErrArgumentCannotBeNil, err.Error())
-			} else {
-				t.Errorf("Failed to convert to type error: %#v", err)
-			}
-		} else {
-			t.Error("Cannot find panic")
-		}
-	}()
-	_ = store.NewGroup(nil, nil)
+	ng, err := store.NewGroup(nil, nil)
+	assert.Nil(t, ng)
+	assert.EqualError(t, store.ErrArgumentCannotBeNil, err.Error())
 }
 
 func TestNewGroupPanicWebsiteIncorrect(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			if err, ok := r.(error); ok {
-				assert.EqualError(t, store.ErrGroupWebsiteNotFound, err.Error())
-			} else {
-				t.Errorf("Failed to convert to type error: %#v", err)
-			}
-		} else {
-			t.Error("Cannot find panic")
-		}
-	}()
-
-	_ = store.NewGroup(
+	ng, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "oz", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "OZ", Valid: true}}, SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}}),
 	)
-
+	assert.Nil(t, ng)
+	assert.EqualError(t, store.ErrGroupWebsiteNotFound, err.Error())
 }
 
 func TestNewGroupSetStoresPanicWebsiteIsNil(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			if err, ok := r.(error); ok {
-				assert.EqualError(t, store.ErrGroupWebsiteNotFound, err.Error())
-			} else {
-				t.Errorf("Failed to convert to type error: %#v", err)
-			}
-		} else {
-			t.Error("Cannot find panic")
-		}
-	}()
-
-	g := store.NewGroup(
+	g, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		nil,
 	)
-	g.SetStores(
+	assert.NoError(t, err)
+	_, err = g.SetStores(
 		store.TableStoreSlice{
 			&store.TableStore{StoreID: 0, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
 		},
 		nil,
 	)
+	assert.EqualError(t, store.ErrGroupWebsiteNotFound, err.Error())
 }
 
 func TestNewGroupSetStoresPanicWebsiteIncorrect(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			if err, ok := r.(error); ok {
-				assert.EqualError(t, store.ErrGroupWebsiteNotFound, err.Error())
-			} else {
-				t.Errorf("Failed to convert to type error: %#v", err)
-			}
-		} else {
-			t.Error("Cannot find panic")
-		}
-	}()
-
-	g := store.NewGroup(
+	g, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		nil,
 	)
-
-	g.SetStores(
+	assert.NoError(t, err)
+	_, err = g.SetStores(
 		store.TableStoreSlice{
 			&store.TableStore{StoreID: 0, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
 		},
 		&store.TableWebsite{WebsiteID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "oz", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "OZ", Valid: true}}, SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
 	)
+	assert.EqualError(t, store.ErrGroupWebsiteNotFound, err.Error())
 }
 
 func TestNewGroupSetStores(t *testing.T) {
 
-	g := store.NewGroup(
+	g, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		nil,
 	)
-	g.SetStores(
+	assert.NoError(t, err)
+	_, err = g.SetStores(
 		store.TableStoreSlice{
 			&store.TableStore{StoreID: 0, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
 			&store.TableStore{StoreID: 5, Code: dbr.NullString{NullString: sql.NullString{String: "au", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
@@ -150,6 +111,7 @@ func TestNewGroupSetStores(t *testing.T) {
 		},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
 	)
+	assert.NoError(t, err)
 
 	assert.NotNil(t, g.Stores)
 	assert.EqualValues(t, utils.StringSlice{"de", "at", "ch"}, g.Stores.Codes())

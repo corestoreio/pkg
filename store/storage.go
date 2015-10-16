@@ -167,9 +167,13 @@ func (st *Storage) Group(id scope.GroupIDer) (*Group, error) {
 
 	w, err := st.website(scope.MockID(g.WebsiteID))
 	if err != nil {
-		return nil, err
+		return nil, log.Error("store.Storage.Group.website", "err", err, "websiteID", g.WebsiteID, "groupID", id.GroupID())
 	}
-	return NewGroup(g, SetGroupWebsite(w), SetGroupConfig(st.cr)).SetStores(st.stores, nil), nil
+	ng, err := NewGroup(g, SetGroupWebsite(w), SetGroupConfig(st.cr))
+	if err != nil {
+		return nil, log.Error("store.Storage.Group.NewGroup", "err", err, "g", g, "groupID", id.GroupID())
+	}
+	return ng.SetStores(st.stores, nil)
 }
 
 // Groups creates a new group slice containing its website all related stores.
@@ -179,9 +183,16 @@ func (st *Storage) Groups() (GroupSlice, error) {
 	for i, g := range st.groups {
 		w, err := st.website(scope.MockID(g.WebsiteID))
 		if err != nil {
-			return nil, errgo.Mask(err)
+			return nil, log.Error("store.Storage.Groups.website", "err", err, "g", g, "websiteID", g.WebsiteID)
 		}
-		groups[i] = NewGroup(g, SetGroupConfig(st.cr), SetGroupWebsite(w)).SetStores(st.stores, nil)
+		ng, err := NewGroup(g, SetGroupConfig(st.cr), SetGroupWebsite(w))
+		if err != nil {
+			return nil, log.Error("store.Storage.Groups.NewGroup", "err", err, "g", g, "websiteID", g.WebsiteID)
+		}
+		groups[i], err = ng.SetStores(st.stores, nil)
+		if err != nil {
+			return nil, log.Error("store.Storage.Groups.SetStores", "err", err, "g", g, "websiteID", g.WebsiteID)
+		}
 	}
 	return groups, nil
 }

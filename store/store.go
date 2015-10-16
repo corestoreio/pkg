@@ -110,18 +110,18 @@ func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOpt
 	}
 	nw, err := NewWebsite(tw)
 	if err != nil {
-		return nil // ,err
+		return nil //, log.Error("store.NewStore.NewWebsite", "err", err,   "tw", tw)
 	}
-	//	ng, err := NewGroup(tg, SetGroupWebsite(tw))
-	//	if err != nil {
-	//		return nil // ,err
-	//	}
+	ng, err := NewGroup(tg, SetGroupWebsite(tw))
+	if err != nil {
+		return nil //, log.Error("store.NewStore.NewGroup", "err", err, "tg", tg, "tw", tw)
+	}
 
 	s := &Store{
 		cr:      config.DefaultManager,
 		Data:    ts,
 		Website: nw,
-		Group:   NewGroup(tg, SetGroupWebsite(tw)),
+		Group:   ng,
 	}
 	s.ApplyOptions(opts...)
 	s.Website.ApplyOptions(SetWebsiteConfig(s.cr))

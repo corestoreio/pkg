@@ -22,6 +22,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/utils/log"
 )
 
 const (
@@ -66,14 +67,16 @@ var (
 func SetGroupConfig(cr config.Reader) GroupOption { return func(g *Group) { g.cr = cr } }
 
 // WithGroupWebsite assigns a website to a group. If website ID does not match
-// the group website ID then this function panics.
+// the group website ID then add error will be generated.
 func SetGroupWebsite(tw *TableWebsite) GroupOption {
 	return func(g *Group) {
 		if g.Data == nil {
-			panic(ErrGroupNotFound)
+			g.addError(ErrGroupNotFound)
+			return
 		}
 		if tw != nil && g.Data.WebsiteID != tw.WebsiteID {
-			panic(ErrGroupWebsiteNotFound)
+			g.addError(ErrGroupWebsiteNotFound)
+			return
 		}
 		if tw != nil {
 			var err error
@@ -84,9 +87,9 @@ func SetGroupWebsite(tw *TableWebsite) GroupOption {
 }
 
 // NewGroup initializes a new Group with the config.DefaultManager
-func NewGroup(tg *TableGroup, opts ...GroupOption) *Group {
+func NewGroup(tg *TableGroup, opts ...GroupOption) (*Group, error) {
 	if tg == nil {
-		panic(ErrArgumentCannotBeNil)
+		return nil, ErrArgumentCannotBeNil
 	}
 
 	g := &Group{
@@ -99,17 +102,23 @@ func NewGroup(tg *TableGroup, opts ...GroupOption) *Group {
 var _ scope.GroupIDer = (*Group)(nil)
 
 // ApplyOptions sets the options to a Group.
-func (g *Group) ApplyOptions(opts ...GroupOption) *Group {
+func (g *Group) ApplyOptions(opts ...GroupOption) (*Group, error) {
 	for _, opt := range opts {
 		if opt != nil {
 			opt(g)
 		}
 	}
+	if len(g.lastErrors) > 0 {
+		return nil, g
+	}
 	if g.Website != nil {
-		g.Website.ApplyOptions(SetWebsiteConfig(g.cr))
+		_, err := g.Website.ApplyOptions(SetWebsiteConfig(g.cr))
+		if err != nil {
+			return nil, log.Error("store.Group.ApplyOptions.Website.ApplyOptions", "err", err, "g", g)
+		}
 		g.Config = g.cr.NewScoped(g.Website.WebsiteID(), g.GroupID(), 0) // Scope Store is not available
 	}
-	return g
+	return g, nil
 }
 
 // addError adds a non nil error to the internal error collector
@@ -149,26 +158,26 @@ func (g *Group) DefaultStore() (*Store, error) {
 
 // SetStores uses the full store collection to extract the stores which are
 // assigned to a group. Either Website must be set before calling SetStores() or
-// the second argument must be set i.e. 2nd argument can be nil. Panics if both
-// values are nil. If both are set, the 2nd argument will be considered.
-func (g *Group) SetStores(tss TableStoreSlice, w *TableWebsite) *Group {
+// the second argument must be set i.e. 2nd argument can be nil. Returns an
+// error if both arguments are nil. If both are set, the 2nd argument will be considered.
+func (g *Group) SetStores(tss TableStoreSlice, w *TableWebsite) (*Group, error) {
 	if tss == nil {
 		g.Stores = nil
-		return g
+		return g, nil
 	}
 	if g.Website == nil && w == nil {
-		panic(ErrGroupWebsiteNotFound)
+		return nil, ErrGroupWebsiteNotFound
 	}
 	if w == nil {
 		w = g.Website.Data
 	}
 	if w.WebsiteID != g.Data.WebsiteID {
-		panic(ErrGroupWebsiteNotFound)
+		return nil, ErrGroupWebsiteNotFound
 	}
 	for _, s := range tss.FilterByGroupID(g.Data.GroupID) {
 		g.Stores = append(g.Stores, NewStore(s, w, g.Data, SetStoreConfig(g.cr)))
 	}
-	return g
+	return g, nil
 }
 
 /*
