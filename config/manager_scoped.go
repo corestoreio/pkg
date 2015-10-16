@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/corestoreio/csfw/utils/log"
 	"time"
+
+	"github.com/corestoreio/csfw/utils/log"
 )
 
 // ScopedReader is equal to Reader but the underlying implementation takes
@@ -10,7 +11,7 @@ import (
 // up the scope chain from store -> website -> default.
 //
 // This interface is mainly implemented in the store package. The functions
-// should be the same as in Reader but with only the different paths
+// should be the same as in Reader but only the different is the paths
 // argument. A path can be either one string containing a valid path like a/b/c
 // or it can consists of 3 path parts like "a", "b", "c". All other arguments
 // are invalid, should log an error if debug is enabled and return the empty type value.

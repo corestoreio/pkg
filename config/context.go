@@ -14,7 +14,11 @@
 
 package config
 
-import "golang.org/x/net/context"
+import (
+	"errors"
+
+	"golang.org/x/net/context"
+)
 
 // ctxKey type is unexported to prevent collisions with context keys defined in
 // other packages.
@@ -25,6 +29,13 @@ const (
 	ctxKeyReader ctxKey = iota
 	ctxKeyReaderPubSuber
 	ctxKeyWriter
+)
+
+// ErrContextTypeAssert* defines global errors when type assertion to an interface is failing.
+var (
+	ErrContextTypeAssertReaderFailed         = errors.New("Type assertion to config.Reader failed")
+	ErrContextTypeAssertReaderPubSuberFailed = errors.New("Type assertion to config.ReaderPubSuber failed")
+	ErrContextTypeAssertReaderWriterFailed   = errors.New("Type assertion to config.Writer failed")
 )
 
 // FromContextReader returns a config.Reader from a context.
