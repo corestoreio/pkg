@@ -31,13 +31,13 @@ func init() {
 func TestSourceCurrencyAll(t *testing.T) {
 
 	r := config.NewMockReader(
-		config.MockString(func(path string) string {
+		config.MockString(func(path string) (string, error) {
 			t.Log(path)
 			switch path {
 			case config.MockPathScopeStore(1, directory.PathDefaultLocale):
-				return "de_CH"
+				return "de_CH", nil
 			}
-			return "Not Found"
+			return "Not Found", nil
 		}),
 	)
 

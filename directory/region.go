@@ -14,10 +14,7 @@
 
 package directory
 
-import (
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/scope"
-)
+import "github.com/corestoreio/csfw/config"
 
 type (
 	Region struct {
@@ -25,6 +22,6 @@ type (
 )
 
 // ShowNonRequiredState
-func ShowNonRequiredState(cr config.Reader, r scope.StoreIDer) bool {
-	return cr.GetBool(config.ScopeStore(r.StoreID()), config.Path(PathDisplayAllStates))
+func ShowNonRequiredState(cr config.ScopedReader) bool {
+	return cr.GetBool(PathDisplayAllStates)
 }

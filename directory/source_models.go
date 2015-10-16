@@ -62,9 +62,9 @@ func (sca *SourceCurrencyAll) Options() valuelabel.Slice {
 	// grep locale from general/locale/code scope::store for the current store ID
 	// the store locale greps the currencies from http://php.net/manual/en/class.resourcebundle.php
 	// in the correct language
-	storeLocale := sca.mc.ConfigReader.GetString(config.Path(PathDefaultLocale), config.ScopeStore(sca.mc.ScopeStore.StoreID()))
+	storeLocale, err := sca.mc.ConfigReader.GetString(config.Path(PathDefaultLocale), config.ScopeStore(sca.mc.ScopeStore.StoreID()))
 
-	fmt.Printf("\nstoreLocale: %s\n", storeLocale)
+	fmt.Printf("\nstoreLocale: %s\n Err %s\n", storeLocale, err)
 
 	return nil
 }

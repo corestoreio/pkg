@@ -14,10 +14,7 @@
 
 package directory
 
-import (
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/scope"
-)
+import "github.com/corestoreio/csfw/config"
 
 type (
 	Country struct {
@@ -25,6 +22,6 @@ type (
 )
 
 // DefaultCountry returns the country code. Store argument is optional.
-func DefaultCountry(cr config.Reader, r scope.StoreIDer) string {
-	return cr.GetString(config.Path(PathDefaultCountry), config.ScopeStore(r.StoreID()))
+func DefaultCountry(cr config.ScopedReader) string {
+	return cr.GetString(PathDefaultCountry)
 }
