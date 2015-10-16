@@ -15,6 +15,8 @@
 package directory
 
 import (
+	"strings"
+
 	"github.com/corestoreio/csfw/config"
 	"golang.org/x/text/language"
 )
@@ -31,4 +33,14 @@ func BaseCurrencyCode(cr config.Reader) (language.Currency, error) {
 		return language.Currency{}, err
 	}
 	return language.ParseCurrency(base)
+}
+
+// AllowedCurrencies returns all installed currencies from global scope.
+func AllowedCurrencies(cr config.Reader) ([]string, error) {
+	installedCur, err := cr.GetString(config.Path(PathSystemCurrencyInstalled))
+	if err != nil && err != config.ErrKeyNotFound {
+		return nil, err
+	}
+	// TODO use internal model of PathSystemCurrencyInstalled defined in package directory
+	return strings.Split(installedCur, ","), nil
 }
