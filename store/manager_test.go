@@ -340,7 +340,7 @@ func TestNewManagerWebsite(t *testing.T) {
 		ms.w = func() (*store.Website, error) {
 			return store.NewWebsite(
 				&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
-			), nil
+			)
 		}
 	})
 
@@ -422,16 +422,20 @@ func TestNewManagerWebsiteInit(t *testing.T) {
 		ms.w = func() (*store.Website, error) {
 			return store.NewWebsite(
 				&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
-			), nil
+			)
 		}
 	}).Init(scope.Option{Website: scope.MockCode("euro")})
 	assert.EqualError(t, store.ErrWebsiteDefaultGroupNotFound, err.Error())
 
 	managerWebsite := getTestManager(func(ms *mockStorage) {
 		ms.w = func() (*store.Website, error) {
-			return store.NewWebsite(
+			nw, err := store.NewWebsite(
 				&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
-			).SetGroupsStores(
+			)
+			if err != nil {
+				return nil, err
+			}
+			return nw.SetGroupsStores(
 				store.TableGroupSlice{
 					&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 				},
@@ -441,7 +445,7 @@ func TestNewManagerWebsiteInit(t *testing.T) {
 					&store.TableStore{StoreID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "at", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
 					&store.TableStore{StoreID: 3, Code: dbr.NullString{NullString: sql.NullString{String: "ch", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
 				},
-			), nil
+			)
 		}
 	})
 	w1, err := managerWebsite.Website()

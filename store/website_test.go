@@ -26,9 +26,10 @@ import (
 )
 
 func TestNewWebsite(t *testing.T) {
-	w := store.NewWebsite(
+	w, err := store.NewWebsite(
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
 	)
+	assert.NoError(t, err)
 	assert.Equal(t, "euro", w.Data.Code.String)
 
 	dg, err := w.DefaultGroup()
@@ -44,9 +45,10 @@ func TestNewWebsite(t *testing.T) {
 }
 
 func TestNewWebsiteSetGroupsStores(t *testing.T) {
-	w := store.NewWebsite(
+	w, err := store.NewWebsite(
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
 	)
+	assert.NoError(t, err)
 	w.SetGroupsStores(
 		store.TableGroupSlice{
 			&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
@@ -92,21 +94,11 @@ func TestNewWebsiteSetGroupsStores(t *testing.T) {
 }
 
 func TestNewWebsiteSetGroupsStoresPanic(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			if str, ok := r.(string); ok {
-				assert.Contains(t, str, "Integrity error")
-			} else {
-				t.Errorf("Failed to convert to type error: %#v", str)
-			}
-		} else {
-			t.Error("Cannot find panic")
-		}
-	}()
-	w := store.NewWebsite(
+	w, err := store.NewWebsite(
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
 	)
-	w.SetGroupsStores(
+	assert.NoError(t, err)
+	w, err = w.SetGroupsStores(
 		store.TableGroupSlice{
 			&store.TableGroup{GroupID: 0, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 		},
@@ -119,6 +111,8 @@ func TestNewWebsiteSetGroupsStoresPanic(t *testing.T) {
 			&store.TableStore{StoreID: 3, Code: dbr.NullString{NullString: sql.NullString{String: "ch", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
 		},
 	)
+	assert.Nil(t, w)
+	assert.Contains(t, err.Error(), "Integrity error")
 }
 
 func TestTableWebsiteSlice(t *testing.T) {

@@ -44,7 +44,8 @@ type Group struct {
 	// Stores contains a slice to all stores associated to this group. Can be nil.
 	Stores StoreSlice
 	// Website contains the Website which belongs to this group. Can be nil.
-	Website *Website
+	Website    *Website
+	lastErrors []error
 }
 
 // GroupSlice collection of Group. GroupSlice has some nice method receivers.
@@ -75,7 +76,9 @@ func SetGroupWebsite(tw *TableWebsite) GroupOption {
 			panic(ErrGroupWebsiteNotFound)
 		}
 		if tw != nil {
-			g.Website = NewWebsite(tw)
+			var err error
+			g.Website, err = NewWebsite(tw)
+			g.addError(err)
 		}
 	}
 }
@@ -83,7 +86,7 @@ func SetGroupWebsite(tw *TableWebsite) GroupOption {
 // NewGroup initializes a new Group with the config.DefaultManager
 func NewGroup(tg *TableGroup, opts ...GroupOption) *Group {
 	if tg == nil {
-		panic(ErrStoreNewArgNil)
+		panic(ErrArgumentCannotBeNil)
 	}
 
 	g := &Group{
@@ -107,6 +110,19 @@ func (g *Group) ApplyOptions(opts ...GroupOption) *Group {
 		g.Config = g.cr.NewScoped(g.Website.WebsiteID(), g.GroupID(), 0) // Scope Store is not available
 	}
 	return g
+}
+
+// addError adds a non nil error to the internal error collector
+func (g *Group) addError(err error) {
+	if err != nil {
+		g.lastErrors = append(g.lastErrors, err)
+	}
+}
+
+// Error implements the error interface. Returns a string where each error has
+// been separated by a line break.
+func (g *Group) Error() string {
+	return utils.Errors(g.lastErrors...)
 }
 
 // GroupID satisfies interface scope.GroupIDer and returns the group ID.

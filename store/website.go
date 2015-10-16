@@ -67,9 +67,9 @@ var (
 func SetWebsiteConfig(cr config.Reader) WebsiteOption { return func(w *Website) { w.cr = cr } }
 
 // NewWebsite returns a new pointer to a Website.
-func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) *Website {
+func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) (*Website, error) {
 	if tw == nil {
-		panic(ErrStoreNewArgNil)
+		return nil, ErrArgumentCannotBeNil
 	}
 	w := &Website{
 		cr:   config.DefaultManager,
@@ -79,14 +79,14 @@ func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) *Website {
 }
 
 // ApplyOptions sets the options on a Website
-func (w *Website) ApplyOptions(opts ...WebsiteOption) *Website {
+func (w *Website) ApplyOptions(opts ...WebsiteOption) (*Website, error) {
 	for _, opt := range opts {
 		if opt != nil {
 			opt(w)
 		}
 	}
 	w.Config = w.cr.NewScoped(w.WebsiteID(), 0, 0) // Scope Store and Group is not available
-	return w
+	return w, nil
 }
 
 var _ scope.WebsiteIDer = (*Website)(nil)
@@ -124,9 +124,10 @@ func (w *Website) DefaultStore() (*Store, error) {
 	return g.DefaultStore()
 }
 
-// SetGroupsStores uses a group slice and a table slice to set the groups associated to this website
-// and the stores associated to this website. It panics if the integrity is incorrect.
-func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *Website {
+// SetGroupsStores uses a group slice and a table slice to set the groups associated
+// to this website and the stores associated to this website. It returns an error if
+// the data integrity is incorrect.
+func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) (*Website, error) {
 	groups := tgs.Filter(func(tg *TableGroup) bool {
 		return tg.WebsiteID == w.Data.WebsiteID
 	})
@@ -139,11 +140,11 @@ func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *Web
 	for i, s := range stores {
 		group, err := tgs.FindByGroupID(s.GroupID)
 		if err != nil {
-			panic(fmt.Sprintf("Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs))
+			return nil, fmt.Errorf("Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs)
 		}
 		w.Stores[i] = NewStore(s, w.Data, group, SetStoreConfig(w.cr))
 	}
-	return w
+	return w, nil
 }
 
 // @todo

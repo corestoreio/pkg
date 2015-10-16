@@ -78,7 +78,7 @@ type StoreOption func(s *Store)
 var (
 	ErrStoreNotFound         = errors.New("Store not found")
 	ErrStoreNotActive        = errors.New("Store not active")
-	ErrStoreNewArgNil        = errors.New("An argument cannot be nil")
+	ErrArgumentCannotBeNil   = errors.New("An argument cannot be nil")
 	ErrStoreIncorrectGroup   = errors.New("Incorrect group")
 	ErrStoreIncorrectWebsite = errors.New("Incorrect website")
 	ErrStoreCodeEmpty        = errors.New("Store Code is empty")
@@ -97,7 +97,7 @@ func SetStoreConfig(cr config.Reader) StoreOption {
 // Panics if integrity checks fail. config.Reader will be set to Group and Website.
 func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) *Store {
 	if ts == nil || tw == nil || tg == nil { // group and website required so at least 2 args
-		panic(ErrStoreNewArgNil)
+		panic(ErrArgumentCannotBeNil)
 	}
 	if ts.WebsiteID != tw.WebsiteID {
 		panic(ErrStoreIncorrectWebsite)
@@ -108,10 +108,19 @@ func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOpt
 	if ts.GroupID != tg.GroupID {
 		panic(ErrStoreIncorrectGroup)
 	}
+	nw, err := NewWebsite(tw)
+	if err != nil {
+		return nil // ,err
+	}
+	//	ng, err := NewGroup(tg, SetGroupWebsite(tw))
+	//	if err != nil {
+	//		return nil // ,err
+	//	}
+
 	s := &Store{
 		cr:      config.DefaultManager,
 		Data:    ts,
-		Website: NewWebsite(tw),
+		Website: nw,
 		Group:   NewGroup(tg, SetGroupWebsite(tw)),
 	}
 	s.ApplyOptions(opts...)

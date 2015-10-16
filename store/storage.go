@@ -21,6 +21,7 @@ import (
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 )
 
@@ -124,14 +125,25 @@ func (st *Storage) Website(r scope.WebsiteIDer) (*Website, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewWebsite(w).SetGroupsStores(st.groups, st.stores), nil
+	nw, err := NewWebsite(w)
+	if err != nil {
+		return nil, log.Error("store.Storage.Website.NewWebsite", "err", err, "w", w, "st", st, "websiteID", r.WebsiteID())
+	}
+	return nw.SetGroupsStores(st.groups, st.stores)
 }
 
 // Websites creates a slice of Website pointers according to the interface definition.
 func (st *Storage) Websites() (WebsiteSlice, error) {
 	websites := make(WebsiteSlice, len(st.websites), len(st.websites))
 	for i, w := range st.websites {
-		websites[i] = NewWebsite(w).SetGroupsStores(st.groups, st.stores)
+		nw, err := NewWebsite(w)
+		if err != nil {
+			return nil, log.Error("store.Storage.Websites.NewWebsite", "err", err, "w", w, "websites", st.websites)
+		}
+		websites[i], err = nw.SetGroupsStores(st.groups, st.stores)
+		if err != nil {
+			return nil, log.Error("store.Storage.Websites.SetGroupsStores", "err", err, "w", w, "websites", st.websites)
+		}
 	}
 	return websites, nil
 }

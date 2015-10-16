@@ -66,7 +66,7 @@ func TestNewStorePanicArgsNil(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
 			if err, ok := r.(error); ok {
-				assert.EqualError(t, store.ErrStoreNewArgNil, err.Error())
+				assert.EqualError(t, store.ErrArgumentCannotBeNil, err.Error())
 			} else {
 				t.Errorf("Failed to convert to type error: %#v", err)
 			}
