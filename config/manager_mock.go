@@ -135,5 +135,5 @@ func (sr *MockReader) Subscribe(path string, s MessageReceiver) (subscriptionID 
 }
 
 func (sr *MockReader) NewScoped(websiteID, groupID, storeID int64) ScopedReader {
-	return nil
+	return newScopedManager(sr, websiteID, groupID, storeID)
 }

@@ -15,9 +15,9 @@
 package config
 
 import (
+	"errors"
 	"time"
 
-	"errors"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
