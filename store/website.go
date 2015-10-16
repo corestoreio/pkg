@@ -36,7 +36,10 @@ const (
 // A website defines the default group ID. A website can contain custom configuration
 // settings which overrides the default scope but get itself overridden by the Store scope.
 type Website struct {
-	cr config.Reader
+	cr config.Reader // internal root config.Reader which can be overriden
+	// Config contains a config.Manager which takes care of the scope based
+	// configuration values.
+	Config config.ScopedReader
 	// Data raw website data
 	Data *TableWebsite
 
@@ -61,9 +64,7 @@ var (
 
 // SetWebsiteConfig sets the config.Reader to the Website.
 // Default reader is config.DefaultManager
-func SetWebsiteConfig(cr config.Reader) WebsiteOption {
-	return func(w *Website) { w.cr = cr }
-}
+func SetWebsiteConfig(cr config.Reader) WebsiteOption { return func(w *Website) { w.cr = cr } }
 
 // NewWebsite returns a new pointer to a Website.
 func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) *Website {
@@ -74,8 +75,7 @@ func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) *Website {
 		cr:   config.DefaultManager,
 		Data: tw,
 	}
-	w.ApplyOptions(opts...)
-	return w
+	return w.ApplyOptions(opts...)
 }
 
 // ApplyOptions sets the options on a Website
@@ -85,6 +85,7 @@ func (w *Website) ApplyOptions(opts ...WebsiteOption) *Website {
 			opt(w)
 		}
 	}
+	w.Config = w.cr.NewScoped(w.WebsiteID(), 0, 0) // Scope Store and Group is not available
 	return w
 }
 
@@ -145,24 +146,13 @@ func (w *Website) SetGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) *Web
 	return w
 }
 
-// ConfigString tries to get a value from the scopeStore if empty
-// falls back to default global scope.
-// If using etcd or consul maybe this can lead to round trip times because of network access.
-func (w *Website) ConfigString(path ...string) string {
-	val := w.cr.GetString(config.ScopeWebsite(w.WebsiteID()), config.Path(path...))
-	if val == "" {
-		val = w.cr.GetString(config.Path(path...))
-	}
-	return val
-}
-
 // @todo
 func (w *Website) BaseCurrencyCode() (language.Currency, error) {
 	var c string
-	if w.ConfigString(PathPriceScope) == PriceScopeGlobal {
-		c = w.cr.GetString(config.Path(directory.PathCurrencyBase))
+	if w.Config.GetString(PathPriceScope) == PriceScopeGlobal {
+		c, _ = w.cr.GetString(config.Path(directory.PathCurrencyBase)) // TODO check for error
 	} else {
-		c = w.ConfigString(directory.PathCurrencyBase)
+		c = w.Config.GetString(directory.PathCurrencyBase)
 	}
 	return language.ParseCurrency(c)
 }

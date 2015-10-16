@@ -17,7 +17,7 @@ package store
 import (
 	"net/http"
 
-	"github.com/corestoreio/csfw/net"
+	"github.com/corestoreio/csfw/net/httputils"
 	"github.com/corestoreio/csfw/utils/log"
 )
 
@@ -38,6 +38,7 @@ var (
 
 // RESTStores creates a list of all stores
 func RESTStores(sm *Manager) http.HandlerFunc {
+	// @todo refactor
 	return func(w http.ResponseWriter, r *http.Request) {
 		stores, err := sm.Stores()
 		if err != nil {
@@ -45,7 +46,7 @@ func RESTStores(sm *Manager) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 
-		err = net.WriteJSON(w, stores)
+		err = httputils.WriteJSON(w, stores)
 		if err != nil {
 			log.Error("store.RESTStores.WriteJSON", "err", err, "req", r)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

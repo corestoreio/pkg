@@ -33,7 +33,12 @@ const (
 // A group is assigned to one website and a group can have multiple stores.
 // A group does not have any kind of configuration setting.
 type Group struct {
-	cr config.Reader
+	cr config.Reader // internal root config.Reader which can be overridden
+	// Config contains a config.Manager which takes care of the scope based
+	// configuration values. Not an official feature based on a Group.
+	// This Config can be nil when a Website has not yet been set.
+	Config config.ScopedReader
+
 	// Data contains the raw group data.
 	Data *TableGroup
 	// Stores contains a slice to all stores associated to this group. Can be nil.
@@ -55,13 +60,11 @@ var (
 	ErrGroupWebsiteNotFound = errors.New("Group Website not found or nil or ID do not match")
 )
 
-// SetGroupConfig sets the configuration Reader to the Group.
+// WithGroupConfig sets the configuration Reader to the Group.
 // Default reader is config.DefaultManager
-func SetGroupConfig(cr config.Reader) GroupOption {
-	return func(g *Group) { g.cr = cr }
-}
+func SetGroupConfig(cr config.Reader) GroupOption { return func(g *Group) { g.cr = cr } }
 
-// SetGroupWebsite assigns a website to a group. If website ID does not match
+// WithGroupWebsite assigns a website to a group. If website ID does not match
 // the group website ID then this function panics.
 func SetGroupWebsite(tw *TableWebsite) GroupOption {
 	return func(g *Group) {
@@ -87,19 +90,10 @@ func NewGroup(tg *TableGroup, opts ...GroupOption) *Group {
 		cr:   config.DefaultManager,
 		Data: tg,
 	}
-	g.ApplyOptions(opts...)
-	if g.Website != nil {
-		g.Website.ApplyOptions(SetWebsiteConfig(g.cr))
-	}
-	return g
+	return g.ApplyOptions(opts...)
 }
 
 var _ scope.GroupIDer = (*Group)(nil)
-
-// GroupID satisfies interface scope.GroupIDer and returns the group ID.
-func (g *Group) GroupID() int64 {
-	return g.Data.GroupID
-}
 
 // ApplyOptions sets the options to a Group.
 func (g *Group) ApplyOptions(opts ...GroupOption) *Group {
@@ -108,7 +102,16 @@ func (g *Group) ApplyOptions(opts ...GroupOption) *Group {
 			opt(g)
 		}
 	}
+	if g.Website != nil {
+		g.Website.ApplyOptions(SetWebsiteConfig(g.cr))
+		g.Config = g.cr.NewScoped(g.Website.WebsiteID(), g.GroupID(), 0) // Scope Store is not available
+	}
 	return g
+}
+
+// GroupID satisfies interface scope.GroupIDer and returns the group ID.
+func (g *Group) GroupID() int64 {
+	return g.Data.GroupID
 }
 
 // MarshalJSON satisfies interface for JSON marshalling. The TableWebsite

@@ -28,9 +28,26 @@ import (
 )
 
 type (
+	// ManagerReader specifies a store manager from which you can only read.
+	// Without any arguments applied to any function it returns the
+	// store for the current scope for a request. @todo better description.
+	ManagerReader interface {
+		IsSingleStoreMode() bool
+		HasSingleStore() bool
+		Website(r ...scope.WebsiteIDer) (*Website, error)
+		Websites() (WebsiteSlice, error)
+		Group(r ...scope.GroupIDer) (*Group, error)
+		Groups() (GroupSlice, error)
+		Store(r ...scope.StoreIDer) (*Store, error)
+		Stores() (StoreSlice, error)
+		DefaultStoreView() (*Store, error)
+	}
+)
+
+type (
 	// Manager uses three internal maps to cache the pointers of Website, Group and Store.
 	Manager struct {
-		ConfigReader config.Reader
+		cr config.Reader
 
 		// storage get set of websites, groups and stores and also type assertion to StorageMutator for
 		// ReInit and Persisting
@@ -62,6 +79,8 @@ type (
 	}
 )
 
+var _ ManagerReader = (*Manager)(nil)
+
 var (
 	ErrUnsupportedScope      = errors.New("Unsupported Scope ID")
 	ErrStoreChangeNotAllowed = errors.New("Store change not allowed")
@@ -73,12 +92,12 @@ var (
 // NewManager creates a new store manager which handles websites, store groups and stores.
 func NewManager(storage Storager, opts ...ManagerOption) *Manager {
 	m := &Manager{
-		ConfigReader: config.DefaultManager,
-		storage:      storage,
-		mu:           sync.RWMutex{},
-		websiteMap:   make(map[uint64]*Website),
-		groupMap:     make(map[uint64]*Group),
-		storeMap:     make(map[uint64]*Store),
+		cr:         config.DefaultManager,
+		storage:    storage,
+		mu:         sync.RWMutex{},
+		websiteMap: make(map[uint64]*Website),
+		groupMap:   make(map[uint64]*Group),
+		storeMap:   make(map[uint64]*Store),
 		// HealthJob:  utils.HealthJobNoop, @todo
 	}
 	for _, opt := range opts {
@@ -142,6 +161,9 @@ func (sm *Manager) Init(so scope.Option) error {
 // This function must be used within an HTTP handler.
 // The returned new Store must be used in the HTTP context and overrides the appStore.
 func (sm *Manager) InitByRequest(res http.ResponseWriter, req *http.Request, scopeType scope.Scope) (*Store, error) {
+
+	// todo remove this func and convert to a middleware passing the current store scope to the context.Context
+
 	if sm.appStore == nil {
 		// that means you must call Init() before executing this function.
 		return nil, ErrAppStoreNotSet
@@ -193,6 +215,9 @@ func (sm *Manager) InitByRequest(res http.ResponseWriter, req *http.Request, sco
 // InitByToken returns a Store pointer from a JSON web token. If the store code is invalid,
 // this function can return nil,nil. Token argument is equal like jwt.Token.Claim.
 func (sm *Manager) InitByToken(token map[string]interface{}, scopeType scope.Scope) (*Store, error) {
+
+	// todo remove this func and convert to a middleware passing the current store scope to the context.Context
+
 	if sm.appStore == nil {
 		// that means you must call Init() before executing this function.
 		return nil, ErrAppStoreNotSet
@@ -251,7 +276,12 @@ func (sm *Manager) GetRequestStore(so scope.Option, scopeType scope.Scope) (acti
 // This flag only shows that admin does not want to show certain UI components at backend (like store switchers etc)
 // if Magento has only one store view but it does not check the store view collection.
 func (sm *Manager) IsSingleStoreMode() bool {
-	return sm.HasSingleStore() && sm.ConfigReader.GetBool(config.Path(PathSingleStoreModeEnabled), config.ScopeStore(sm.appStore.StoreID()))
+	isEnabled, err := sm.cr.GetBool(config.Path(PathSingleStoreModeEnabled)) // default scope
+	if err != nil && err != config.ErrKeyNotFound {
+		// TODO maybe log error here
+		return false
+	}
+	return sm.HasSingleStore() && isEnabled
 }
 
 // HasSingleStore checks if we only have one store view besides the admin store view.

@@ -12,12 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store
+package store_test
 
-import "github.com/corestoreio/csfw/config"
+import (
+	"testing"
 
-// ManagerOption option func for NewManager(). Not yet used.
-type ManagerOption func(*Manager)
+	"github.com/corestoreio/csfw/store"
+	"github.com/stretchr/testify/assert"
+	"golang.org/x/net/context"
+)
 
-// WithManagerConfigReader sets the root config.Reader to the manager
-func WithManagerConfigReader(cr config.Reader) ManagerOption { return func(m *Manager) { m.cr = cr } }
+func TestContextManagerReader(t *testing.T) {
+	mr := &mockManager{}
+	ctx := store.NewContextManagerReader(context.Background(), mr)
+	haveMr, ok := store.FromContextManagerReader(ctx)
+	assert.True(t, ok)
+	assert.Exactly(t, mr, haveMr)
+
+	ctx = store.NewContextManagerReader(context.Background(), nil)
+	store.FromContextManagerReader(ctx)
+}

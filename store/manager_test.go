@@ -42,7 +42,9 @@ func init() {
 }
 
 //func init() {
+// TODO(cs): check this
 //	// regarding SetConfigReader: https://twitter.com/davecheney/status/602633849374429185
+// 		@ianthomasrose @francesc package variables are a smell, modifying them for tests is a stink.
 //	store.SetConfigReader(config.NewMockReader(func(path string) string {
 //		switch path {
 //		case store.PathSecureBaseURL:
@@ -1027,3 +1029,23 @@ func (ms *mockStorage) DefaultStoreView() (*store.Store, error) {
 func (ms *mockStorage) ReInit(dbr.SessionRunner, ...csdb.DbrSelectCb) error {
 	return nil
 }
+
+type mockManager struct{}
+
+func (m *mockManager) IsSingleStoreMode() bool { return false }
+func (m *mockManager) HasSingleStore() bool    { return false }
+func (m *mockManager) Website(r ...scope.WebsiteIDer) (*store.Website, error) {
+	return nil, store.ErrWebsiteNotFound
+}
+func (m *mockManager) Websites() (store.WebsiteSlice, error) { return nil, store.ErrWebsiteNotFound }
+func (m *mockManager) Group(r ...scope.GroupIDer) (*store.Group, error) {
+	return nil, store.ErrGroupNotFound
+}
+func (m *mockManager) Groups() (store.GroupSlice, error) { return nil, store.ErrGroupNotFound }
+func (m *mockManager) Store(r ...scope.StoreIDer) (*store.Store, error) {
+	return nil, store.ErrStoreNotFound
+}
+func (m *mockManager) Stores() (store.StoreSlice, error)       { return nil, store.ErrStoreNotFound }
+func (m *mockManager) DefaultStoreView() (*store.Store, error) { return nil, store.ErrStoreNotFound }
+
+var _ store.ManagerReader = (*mockManager)(nil)

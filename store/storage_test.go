@@ -16,7 +16,6 @@ package store_test
 
 import (
 	"database/sql"
-	"runtime"
 	"testing"
 
 	"github.com/corestoreio/csfw/config/scope"
@@ -426,15 +425,10 @@ func BenchmarkStorageDefaultStoreView(b *testing.B) {
 		if err != nil {
 			b.Error(err)
 		}
-
 	}
 }
 
 func TestStorageReInit(t *testing.T) {
-	numCPU := runtime.NumCPU()
-	prevCPU := runtime.GOMAXPROCS(numCPU)
-	t.Logf("GOMAXPROCS was: %d now: %d", prevCPU, numCPU)
-	defer runtime.GOMAXPROCS(prevCPU)
 
 	// quick implement, use mock of dbr.SessionRunner and remove connection
 	dbc := csdb.MustConnectTest()

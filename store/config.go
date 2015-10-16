@@ -16,6 +16,7 @@ package store
 
 import (
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/configsource"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 )
@@ -28,8 +29,8 @@ const (
 	PathSingleStoreModeEnabled = "general/single_store_mode/enabled"
 	PathStoreStoreName         = "general/store_information/name"
 	PathStoreStorePhone        = "general/store_information/phone"
-	PathStoreInURL             = "web/url/use_store"
-	PathStoreRedirectToBase    = "web/url/redirect_to_base"
+	PathStoreCodeInURL         = "web/url/use_store"
+	PathRedirectToBase         = "web/url/redirect_to_base"
 	PathSecureInFrontend       = "web/secure/use_in_frontend"
 
 	PathUnsecureBaseURL = "web/unsecure/base_url"
@@ -86,7 +87,7 @@ func init() {
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      nil,
 							BackendModel: nil,
-							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+							SourceModel:  configsource.YesNo, // Magento\Config\Model\Config\Source\Yesno
 						},
 					},
 				},
@@ -153,8 +154,8 @@ func init() {
 							Visible:      config.VisibleYes,
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      nil,
-							BackendModel: nil, // Magento\Config\Model\Config\Backend\Store
-							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+							BackendModel: nil,                // Magento\Config\Model\Config\Backend\Store
+							SourceModel:  configsource.YesNo, // Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&config.Field{
@@ -168,7 +169,7 @@ func init() {
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      nil,
 							BackendModel: nil,
-							SourceModel:  nil, // Magento\Config\Model\Config\Source\Web\Redirect
+							SourceModel:  configsource.Redirect, // Magento\Config\Model\Config\Source\Web\Redirect
 						},
 					},
 				},
@@ -310,9 +311,9 @@ func init() {
 							SortOrder:    50,
 							Visible:      config.VisibleYes,
 							Scope:        scope.PermAll,
-							Default:      nil,
-							BackendModel: nil, // Magento\Config\Model\Config\Backend\Secure
-							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+							Default:      false,
+							BackendModel: nil,                // Magento\Config\Model\Config\Backend\Secure
+							SourceModel:  configsource.YesNo, // Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&config.Field{
@@ -324,9 +325,9 @@ func init() {
 							SortOrder:    60,
 							Visible:      config.VisibleYes,
 							Scope:        scope.NewPerm(scope.DefaultID),
-							Default:      nil,
-							BackendModel: nil, // Magento\Config\Model\Config\Backend\Secure
-							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+							Default:      false,
+							BackendModel: nil,                // Magento\Config\Model\Config\Backend\Secure
+							SourceModel:  configsource.YesNo, // Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&config.Field{
@@ -338,7 +339,7 @@ func init() {
 							SortOrder:    70,
 							Visible:      config.VisibleYes,
 							Scope:        scope.NewPerm(scope.DefaultID),
-							Default:      nil,
+							Default:      "SSL_OFFLOADED",
 							BackendModel: nil,
 							SourceModel:  nil,
 						},

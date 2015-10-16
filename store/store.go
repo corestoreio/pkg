@@ -26,17 +26,22 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/directory"
+	"github.com/corestoreio/csfw/net/httputils"
 	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/utils/log"
+	"golang.org/x/net/context"
 )
 
 const (
 	// DefaultStoreID is always 0.
 	DefaultStoreID int64 = 0
-	// HTTPRequestParamStore name of the GET parameter to set a new store in a current website/group context
+	// HTTPRequestParamStore name of the GET parameter to set a new store in a
+	// current website/group context
 	HTTPRequestParamStore = `___store`
-	// CookieName important when the user selects a different store within the current website/group context.
-	// This cookie permanently saves the new selected store code for one year.
-	// The cookie must be removed when the default store of the current website if equal to the current store.
+	// CookieName important when the user selects a different store within the
+	// current website/group context. This cookie permanently saves the new selected
+	// store code for one year. The cookie must be removed when the default store of
+	// the current website if equal to the current store.
 	CookieName = `store`
 
 	// PriceScopeGlobal prices are for all stores and websites the same.
@@ -45,14 +50,20 @@ const (
 	PriceScopeWebsite = `1` // must be string
 )
 
-// Store represents the scope in which a shop runs. Everything is bound to a Store. A store
-// knows its website ID, group ID and if its active. A store can have its own configuration settings
-// which overrides the default scope and website scope.
+// Store represents the scope in which a shop runs. Everything is bound to a
+// Store. A store knows its website ID, group ID and if its active. A store can
+// have its own configuration settings which overrides the default scope and
+// website scope.
 type Store struct {
-	cr config.Reader
-	// Website points to the current website for this store. No integrity checks. Can be nil.
+	cr config.Reader // internal root config.Reader which can be overriden
+	// Config contains a config.Manager which takes care of the scope based
+	// configuration values.
+	Config config.ScopedReader
+	// Website points to the current website for this store. No integrity checks.
+	// Can be nil.
 	Website *Website
-	// Group points to the current store group for this store. No integrity checks. Can be nil.
+	// Group points to the current store group for this store. No integrity
+	// checks. Can be nil.
 	Group *Group
 	// Data underlying raw data
 	Data *TableStore
@@ -74,10 +85,12 @@ var (
 	ErrStoreCodeInvalid      = errors.New("The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter")
 )
 
-// SetStoreConfig sets the config.Reader to the Store.
-// Default reader is config.DefaultManager
+// WithStoreConfig creates a new scoped config.ScopedReader for this store.
+// WebsiteID, GroupID and StoreID will be set automatically.
 func SetStoreConfig(cr config.Reader) StoreOption {
-	return func(s *Store) { s.cr = cr }
+	return func(s *Store) {
+		s.cr = cr
+	}
 }
 
 // NewStore creates a new Store. Panics if TableGroup and TableWebsite have not been provided
@@ -89,6 +102,9 @@ func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOpt
 	if ts.WebsiteID != tw.WebsiteID {
 		panic(ErrStoreIncorrectWebsite)
 	}
+	if tg.WebsiteID != tw.WebsiteID {
+		panic(ErrStoreIncorrectWebsite)
+	}
 	if ts.GroupID != tg.GroupID {
 		panic(ErrStoreIncorrectGroup)
 	}
@@ -96,7 +112,7 @@ func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOpt
 		cr:      config.DefaultManager,
 		Data:    ts,
 		Website: NewWebsite(tw),
-		Group:   NewGroup(tg),
+		Group:   NewGroup(tg, SetGroupWebsite(tw)),
 	}
 	s.ApplyOptions(opts...)
 	s.Website.ApplyOptions(SetWebsiteConfig(s.cr))
@@ -110,6 +126,9 @@ func (s *Store) ApplyOptions(opts ...StoreOption) *Store {
 		if opt != nil {
 			opt(s)
 		}
+	}
+	if nil != s.Website && nil != s.Group {
+		s.Config = s.cr.NewScoped(s.Website.WebsiteID(), s.Group.GroupID(), s.StoreID())
 	}
 	return s
 }
@@ -148,8 +167,7 @@ func (s *Store) Path() string {
 
 // BaseUrl returns the path from the URL or config where CoreStore is installed TODO(cs)
 // @see https://github.com/magento/magento2/blob/0.74.0-beta7/app/code/Magento/Store/Model/Store.php#L539
-func (s *Store) BaseURL(ut config.URLType, isSecure bool) string {
-	var url string
+func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url string) {
 	var p string
 	switch ut {
 	case config.URLTypeWeb:
@@ -175,27 +193,49 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) string {
 		panic("Unsupported UrlType")
 	}
 
-	url = s.ConfigString(p)
+	url = s.Config.GetString(p)
 
 	if strings.Contains(url, PlaceholderBaseURL) {
 		// TODO(cs) replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
 		// getDistroBaseUrl will be generated from the $_SERVER variable,
-		url = strings.Replace(url, PlaceholderBaseURL, s.cr.GetString(config.Path(config.PathCSBaseURL)), 1)
+		base, err := s.cr.GetString(config.Path(config.PathCSBaseURL))
+		if err != nil && err != config.ErrKeyNotFound {
+			log.Error("store.Store.BaseURL.GetString", "err", err, "path", config.PathCSBaseURL)
+			base = config.CSBaseURL
+		}
+		url = strings.Replace(url, PlaceholderBaseURL, base, 1)
 	}
 	url = strings.TrimRight(url, "/") + "/"
 
 	return url
 }
 
-// ConfigString tries to get a value from the scopeStore if empty
-// falls back to default global scope.
-// If using etcd or consul maybe this can lead to round trip times because of network access.
-func (s *Store) ConfigString(path ...string) string {
-	val := s.cr.GetString(config.ScopeStore(s.StoreID()), config.Path(path...)) // TODO(cs) check for not bubbeling
-	if val == "" {
-		val = s.cr.GetString(config.Path(path...))
+// IsFrontUrlSecure returns true if TLS is active on the frontend.
+func (s *Store) IsFrontUrlSecure() bool {
+	return s.Config.GetBool(PathSecureInFrontend)
+}
+
+// IsCurrentlySecure checks if a request for a give store aka. scope is secure. Checks
+// include if base URL has been set and if front URL is secure
+// This function might gets executed on every request.
+func (s *Store) IsCurrentlySecure(r *http.Request) bool {
+	if httputils.IsSecure(config.NewContextReader(context.Background(), s.cr), r) { // hmmm not that nice
+		return true
 	}
-	return val
+
+	secureBaseURL := s.Config.GetString(PathSecureBaseURL)
+
+	if secureBaseURL == "" || false == s.IsFrontUrlSecure() {
+		return false
+	}
+
+	uri, err := url.Parse(secureBaseURL)
+	if err != nil {
+		log.Error("store.Store.IsCurrentlySecure.secureBaseURL", "err", err, "secureBaseURL", secureBaseURL)
+		return false
+	}
+
+	return uri.Scheme == "https" && r.URL.Scheme == "https" // todo(cs) check for ports !?
 }
 
 // NewCookie creates a new pre-configured cookie.
@@ -245,11 +285,6 @@ func (s *Store) RootCategoryId() int64 {
 /*
 	Store Currency
 */
-
-// AllowedCurrencies returns all installed currencies from global scope.
-func (s *Store) AllowedCurrencies() []string {
-	return strings.Split(s.cr.GetString(config.Path(directory.PathSystemCurrencyInstalled)), ",")
-}
 
 // CurrentCurrency TODO(cs)
 // @see app/code/Magento/Store/Model/Store.php::getCurrentCurrency
