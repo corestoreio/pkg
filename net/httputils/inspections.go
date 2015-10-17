@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/utils/log"
 	"golang.org/x/net/context"
 )
 
@@ -33,7 +34,16 @@ func IsSecure(ctx context.Context, r *http.Request) bool {
 		return true
 	}
 
-	oh := config.ContextMustReader(ctx).GetString(config.Path(PathOffloaderHeader), config.ScopeDefault())
+	cr, ok := config.FromContextReader(ctx)
+	if !ok {
+		log.Error("net.httputils.IsSecure.FromContextReader", "err", config.ErrContextTypeAssertReaderFailed, "ctx", ctx)
+		cr = config.DefaultManager
+	}
+	oh, err := cr.GetString(config.Path(PathOffloaderHeader), config.ScopeDefault())
+	if err != nil {
+		log.Error("net.httputils.IsSecure.FromContextReader.GetString", "err", err, "path", PathOffloaderHeader, "ctx", ctx)
+		return false
+	}
 
 	h := r.Header.Get(oh)
 	hh := r.Header.Get("HTTP_" + oh)
