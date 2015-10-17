@@ -50,7 +50,8 @@ func TestNewStore(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		s := store.NewStore(test.s, test.w, test.g)
+		s, err := store.NewStore(test.s, test.w, test.g)
+		assert.NoError(t, err)
 		assert.NotNil(t, s)
 		assert.EqualValues(t, test.w.WebsiteID, s.Website.Data.WebsiteID)
 		assert.EqualValues(t, test.g.GroupID, s.Group.Data.GroupID)
@@ -62,69 +63,42 @@ func TestNewStore(t *testing.T) {
 	}
 }
 
-func TestNewStorePanicArgsNil(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			if err, ok := r.(error); ok {
-				assert.EqualError(t, store.ErrArgumentCannotBeNil, err.Error())
-			} else {
-				t.Errorf("Failed to convert to type error: %#v", err)
-			}
-		} else {
-			t.Error("Cannot find panic")
-		}
-	}()
-	_ = store.NewStore(nil, nil, nil)
+func TestNewStoreErrorArgsNil(t *testing.T) {
+	s, err := store.NewStore(nil, nil, nil)
+	assert.Nil(t, s)
+	assert.EqualError(t, store.ErrArgumentCannotBeNil, err.Error())
 }
 
-func TestNewStorePanicIncorrectGroup(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			if err, ok := r.(error); ok {
-				assert.EqualError(t, store.ErrStoreIncorrectGroup, err.Error())
-			} else {
-				t.Errorf("Failed to convert to type error: %#v", err)
-			}
-		} else {
-			t.Error("Cannot find panic")
-		}
-	}()
-	_ = store.NewStore(
+func TestNewStoreErrorIncorrectGroup(t *testing.T) {
+	s, err := store.NewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
 		&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 	)
+	assert.Nil(t, s)
+	assert.EqualError(t, store.ErrStoreIncorrectGroup, err.Error())
 }
 
-func TestNewStorePanicIncorrectWebsite(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			if err, ok := r.(error); ok {
-				assert.EqualError(t, store.ErrStoreIncorrectWebsite, err.Error())
-			} else {
-				t.Errorf("Failed to convert to type error: %#v", err)
-			}
-		} else {
-			t.Error("Cannot find panic")
-		}
-	}()
-	_ = store.NewStore(
+func TestNewStoreErrorIncorrectWebsite(t *testing.T) {
+	s, err := store.NewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 	)
+	assert.Nil(t, s)
+	assert.EqualError(t, store.ErrStoreIncorrectWebsite, err.Error())
 }
 
 func TestStoreSlice(t *testing.T) {
 
 	storeSlice := store.StoreSlice{
-		store.NewStore(
+		store.MustNewStore(
 			&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 			&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
 			&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 		),
 		nil,
-		store.NewStore(
+		store.MustNewStore(
 			&store.TableStore{StoreID: 5, Code: dbr.NullString{NullString: sql.NullString{String: "au", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
 			&store.TableWebsite{WebsiteID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "oz", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "OZ", Valid: true}}, SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
 			&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
@@ -248,11 +222,15 @@ func TestTableStoreSliceIDs(t *testing.T) {
 
 func TestStoreBaseURLandPath(t *testing.T) {
 
-	s := store.NewStore(
+	s, err := store.NewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 1},
 	)
+	assert.NoError(t, err)
+	if s == nil {
+		t.Fail()
+	}
 
 	tests := []struct {
 		haveR        config.Reader
@@ -275,36 +253,36 @@ func TestStoreBaseURLandPath(t *testing.T) {
 			)),
 			config.URLTypeWeb, true, "https://corestore.io/", "/",
 		},
-		//		{
-		//			config.NewMockReader(config.MockString(
-		//				func(path string) (string, error) {
-		//					switch path {
-		//					case scope.StrDefault.FQPath("0", store.PathSecureBaseURL):
-		//						return "https://myplatform.io/customer1", nil
-		//					case scope.StrDefault.FQPath("0", store.PathUnsecureBaseURL):
-		//						return "http://myplatform.io/customer1", nil
-		//					}
-		//					return "", config.ErrKeyNotFound
-		//				},
-		//			)),
-		//			config.URLTypeWeb, false, "http://myplatform.io/customer1/", "/customer1/",
-		//		},
-		//		{
-		//			config.NewMockReader(config.MockString(
-		//				func(path string) (string, error) {
-		//					switch path {
-		//					case scope.StrDefault.FQPath("0", store.PathSecureBaseURL):
-		//						return store.PlaceholderBaseURL, nil
-		//					case scope.StrDefault.FQPath("0", store.PathUnsecureBaseURL):
-		//						return store.PlaceholderBaseURL, nil
-		//					case scope.StrDefault.FQPath("0", config.PathCSBaseURL):
-		//						return config.CSBaseURL, nil
-		//					}
-		//					return "", config.ErrKeyNotFound
-		//				},
-		//			)),
-		//			config.URLTypeWeb, false, config.CSBaseURL, "/",
-		//		},
+		{
+			config.NewMockReader(config.MockString(
+				func(path string) (string, error) {
+					switch path {
+					case scope.StrDefault.FQPath("0", store.PathSecureBaseURL):
+						return "https://myplatform.io/customer1", nil
+					case scope.StrDefault.FQPath("0", store.PathUnsecureBaseURL):
+						return "http://myplatform.io/customer1", nil
+					}
+					return "", config.ErrKeyNotFound
+				},
+			)),
+			config.URLTypeWeb, false, "http://myplatform.io/customer1/", "/customer1/",
+		},
+		{
+			config.NewMockReader(config.MockString(
+				func(path string) (string, error) {
+					switch path {
+					case scope.StrDefault.FQPath("0", store.PathSecureBaseURL):
+						return store.PlaceholderBaseURL, nil
+					case scope.StrDefault.FQPath("0", store.PathUnsecureBaseURL):
+						return store.PlaceholderBaseURL, nil
+					case scope.StrDefault.FQPath("0", config.PathCSBaseURL):
+						return config.CSBaseURL, nil
+					}
+					return "", config.ErrKeyNotFound
+				},
+			)),
+			config.URLTypeWeb, false, config.CSBaseURL, "/",
+		},
 	}
 
 	for i, test := range tests {
@@ -345,7 +323,7 @@ func TestValidateStoreCode(t *testing.T) {
 }
 
 func TestClaim(t *testing.T) {
-	s := store.NewStore(
+	s := store.MustNewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
@@ -373,7 +351,7 @@ func TestClaim(t *testing.T) {
 }
 
 func TestMarshalJSON(t *testing.T) {
-	s := store.NewStore(
+	s := store.MustNewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},

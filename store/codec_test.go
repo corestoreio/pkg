@@ -39,11 +39,12 @@ type TestToJSONStore struct {
 }
 
 func TestToJSON(t *testing.T) {
-	s := store.NewStore(
+	s, err := store.NewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 	)
+	assert.NoError(t, err)
 
 	var buf bytes.Buffer
 	assert.NoError(t, s.ToJSON(&buf))

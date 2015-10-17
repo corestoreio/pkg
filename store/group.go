@@ -59,7 +59,8 @@ var (
 	ErrGroupNotFound             = errors.New("Group not found")
 	ErrGroupDefaultStoreNotFound = errors.New("Group default store not found")
 	// ErrGroupWebsiteNotFound the Website struct is nil so we cannot assign the stores to a group.
-	ErrGroupWebsiteNotFound = errors.New("Group Website not found or nil or ID do not match")
+	ErrGroupWebsiteNotFound        = errors.New("Group Website not found or nil or ID do not match")
+	ErrGroupWebsiteIntegrityFailed = errors.New("Groups WebsiteID does not match the Websites ID")
 )
 
 // WithGroupConfig sets the configuration Reader to the Group.
@@ -86,7 +87,40 @@ func SetGroupWebsite(tw *TableWebsite) GroupOption {
 	}
 }
 
-// NewGroup initializes a new Group with the config.DefaultManager
+// SetGroupStores uses the full store collection to extract the stores which are
+// assigned to a group. Either Website must be set before calling SetGroupStores() or
+// the second argument may not be nil. Does nothing if tss variable is nil.
+func SetGroupStores(tss TableStoreSlice, w *TableWebsite) GroupOption {
+	return func(g *Group) {
+		if tss == nil {
+			g.Stores = nil
+			return
+		}
+		if g.Website == nil && w == nil {
+			g.addError(ErrGroupWebsiteNotFound)
+			return
+		}
+		if w == nil {
+			w = g.Website.Data
+		}
+		if w.WebsiteID != g.Data.WebsiteID {
+			g.addError(ErrGroupWebsiteIntegrityFailed)
+			return
+		}
+		for _, s := range tss.FilterByGroupID(g.Data.GroupID) {
+			ns, err := NewStore(s, w, g.Data, SetStoreConfig(g.cr))
+			if err != nil {
+				g.addError(log.Error("store.SetGroupStores.NewStore", "err", err, "s", s, "w", w, "g.Data", g.Data))
+				return
+			}
+			g.Stores = append(g.Stores, ns)
+		}
+	}
+}
+
+// NewGroup creates a new Group. Returns an error if 1st argument is nil.
+// Config will only be set if there has been a Website provided via
+// an option argument,
 func NewGroup(tg *TableGroup, opts ...GroupOption) (*Group, error) {
 	if tg == nil {
 		return nil, ErrArgumentCannotBeNil
@@ -97,6 +131,15 @@ func NewGroup(tg *TableGroup, opts ...GroupOption) (*Group, error) {
 		Data: tg,
 	}
 	return g.ApplyOptions(opts...)
+}
+
+// MustNewGroup creates a NewGroup but panics on error.
+func MustNewGroup(tg *TableGroup, opts ...GroupOption) *Group {
+	g, err := NewGroup(tg, opts...)
+	if err != nil {
+		panic(err)
+	}
+	return g
 }
 
 var _ scope.GroupIDer = (*Group)(nil)
@@ -154,30 +197,6 @@ func (g *Group) DefaultStore() (*Store, error) {
 		}
 	}
 	return nil, ErrGroupDefaultStoreNotFound
-}
-
-// SetStores uses the full store collection to extract the stores which are
-// assigned to a group. Either Website must be set before calling SetStores() or
-// the second argument must be set i.e. 2nd argument can be nil. Returns an
-// error if both arguments are nil. If both are set, the 2nd argument will be considered.
-func (g *Group) SetStores(tss TableStoreSlice, w *TableWebsite) (*Group, error) {
-	if tss == nil {
-		g.Stores = nil
-		return g, nil
-	}
-	if g.Website == nil && w == nil {
-		return nil, ErrGroupWebsiteNotFound
-	}
-	if w == nil {
-		w = g.Website.Data
-	}
-	if w.WebsiteID != g.Data.WebsiteID {
-		return nil, ErrGroupWebsiteNotFound
-	}
-	for _, s := range tss.FilterByGroupID(g.Data.GroupID) {
-		g.Stores = append(g.Stores, NewStore(s, w, g.Data, SetStoreConfig(g.cr)))
-	}
-	return g, nil
 }
 
 /*

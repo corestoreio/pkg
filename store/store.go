@@ -93,28 +93,29 @@ func SetStoreConfig(cr config.Reader) StoreOption {
 	}
 }
 
-// NewStore creates a new Store. Panics if TableGroup and TableWebsite have not been provided
-// Panics if integrity checks fail. config.Reader will be set to Group and Website.
-func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) *Store {
-	if ts == nil || tw == nil || tg == nil { // group and website required so at least 2 args
-		panic(ErrArgumentCannotBeNil)
+// NewStore creates a new Store. Returns an error if the first three arguments
+// are nil. Returns an error if integrity checks fail. config.Reader will be
+// also set to Group and Website.
+func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) (*Store, error) {
+	if ts == nil || tw == nil || tg == nil {
+		return nil, ErrArgumentCannotBeNil
 	}
 	if ts.WebsiteID != tw.WebsiteID {
-		panic(ErrStoreIncorrectWebsite)
+		return nil, ErrStoreIncorrectWebsite
 	}
 	if tg.WebsiteID != tw.WebsiteID {
-		panic(ErrStoreIncorrectWebsite)
+		return nil, ErrStoreIncorrectWebsite
 	}
 	if ts.GroupID != tg.GroupID {
-		panic(ErrStoreIncorrectGroup)
+		return nil, ErrStoreIncorrectGroup
 	}
 	nw, err := NewWebsite(tw)
 	if err != nil {
-		return nil //, log.Error("store.NewStore.NewWebsite", "err", err,   "tw", tw)
+		return nil, log.Error("store.NewStore.NewWebsite", "err", err, "tw", tw)
 	}
 	ng, err := NewGroup(tg, SetGroupWebsite(tw))
 	if err != nil {
-		return nil //, log.Error("store.NewStore.NewGroup", "err", err, "tg", tg, "tw", tw)
+		return nil, log.Error("store.NewStore.NewGroup", "err", err, "tg", tg, "tw", tw)
 	}
 
 	s := &Store{
@@ -126,6 +127,15 @@ func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOpt
 	s.ApplyOptions(opts...)
 	s.Website.ApplyOptions(SetWebsiteConfig(s.cr))
 	s.Group.ApplyOptions(SetGroupConfig(s.cr))
+	return s, nil
+}
+
+// MustNewStore same as NewStore except that it panics on an error.
+func MustNewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) *Store {
+	s, err := NewStore(ts, tw, tg, opts...)
+	if err != nil {
+		panic(err)
+	}
 	return s
 }
 

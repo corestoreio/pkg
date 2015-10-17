@@ -125,24 +125,17 @@ func (st *Storage) Website(r scope.WebsiteIDer) (*Website, error) {
 	if err != nil {
 		return nil, err
 	}
-	nw, err := NewWebsite(w)
-	if err != nil {
-		return nil, log.Error("store.Storage.Website.NewWebsite", "err", err, "w", w, "st", st, "websiteID", r.WebsiteID())
-	}
-	return nw.SetGroupsStores(st.groups, st.stores)
+	return NewWebsite(w, SetWebsiteGroupsStores(st.groups, st.stores))
 }
 
 // Websites creates a slice of Website pointers according to the interface definition.
 func (st *Storage) Websites() (WebsiteSlice, error) {
 	websites := make(WebsiteSlice, len(st.websites), len(st.websites))
 	for i, w := range st.websites {
-		nw, err := NewWebsite(w)
+		var err error
+		websites[i], err = NewWebsite(w, SetWebsiteGroupsStores(st.groups, st.stores))
 		if err != nil {
 			return nil, log.Error("store.Storage.Websites.NewWebsite", "err", err, "w", w, "websites", st.websites)
-		}
-		websites[i], err = nw.SetGroupsStores(st.groups, st.stores)
-		if err != nil {
-			return nil, log.Error("store.Storage.Websites.SetGroupsStores", "err", err, "w", w, "websites", st.websites)
 		}
 	}
 	return websites, nil
@@ -169,11 +162,7 @@ func (st *Storage) Group(id scope.GroupIDer) (*Group, error) {
 	if err != nil {
 		return nil, log.Error("store.Storage.Group.website", "err", err, "websiteID", g.WebsiteID, "groupID", id.GroupID())
 	}
-	ng, err := NewGroup(g, SetGroupWebsite(w), SetGroupConfig(st.cr))
-	if err != nil {
-		return nil, log.Error("store.Storage.Group.NewGroup", "err", err, "g", g, "groupID", id.GroupID())
-	}
-	return ng.SetStores(st.stores, nil)
+	return NewGroup(g, SetGroupWebsite(w), SetGroupConfig(st.cr), SetGroupStores(st.stores, nil))
 }
 
 // Groups creates a new group slice containing its website all related stores.
@@ -185,13 +174,10 @@ func (st *Storage) Groups() (GroupSlice, error) {
 		if err != nil {
 			return nil, log.Error("store.Storage.Groups.website", "err", err, "g", g, "websiteID", g.WebsiteID)
 		}
-		ng, err := NewGroup(g, SetGroupConfig(st.cr), SetGroupWebsite(w))
+
+		groups[i], err = NewGroup(g, SetGroupConfig(st.cr), SetGroupWebsite(w), SetGroupStores(st.stores, nil))
 		if err != nil {
 			return nil, log.Error("store.Storage.Groups.NewGroup", "err", err, "g", g, "websiteID", g.WebsiteID)
-		}
-		groups[i], err = ng.SetStores(st.stores, nil)
-		if err != nil {
-			return nil, log.Error("store.Storage.Groups.SetStores", "err", err, "g", g, "websiteID", g.WebsiteID)
 		}
 	}
 	return groups, nil
@@ -224,9 +210,12 @@ func (st *Storage) Store(r scope.StoreIDer) (*Store, error) {
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	ns := NewStore(s, w, g, SetStoreConfig(st.cr))
-	ns.Website.SetGroupsStores(st.groups, st.stores)
-	ns.Group.SetStores(st.stores, w)
+	ns, err := NewStore(s, w, g, SetStoreConfig(st.cr))
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	ns.Website.ApplyOptions(SetWebsiteGroupsStores(st.groups, st.stores))
+	ns.Group.ApplyOptions(SetGroupStores(st.stores, w))
 	return ns, nil
 }
 
