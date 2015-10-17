@@ -218,7 +218,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url string) {
 		// TODO(cs) replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
 		// getDistroBaseUrl will be generated from the $_SERVER variable,
 		base, err := s.cr.GetString(config.Path(config.PathCSBaseURL))
-		if err != nil && err != config.ErrKeyNotFound {
+		if config.NotKeyNotFoundError(err) {
 			log.Error("store.Store.BaseURL.GetString", "err", err, "path", config.PathCSBaseURL)
 			base = config.CSBaseURL
 		}

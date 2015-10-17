@@ -277,7 +277,7 @@ func (sm *Manager) GetRequestStore(so scope.Option, scopeType scope.Scope) (acti
 // if Magento has only one store view but it does not check the store view collection.
 func (sm *Manager) IsSingleStoreMode() bool {
 	isEnabled, err := sm.cr.GetBool(config.Path(PathSingleStoreModeEnabled)) // default scope
-	if err != nil && err != config.ErrKeyNotFound {
+	if config.NotKeyNotFoundError(err) {
 		// TODO maybe log error here
 		return false
 	}

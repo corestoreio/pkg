@@ -29,7 +29,7 @@ type Currency struct {
 // BaseCurrencyCode retrieves application base currency code
 func BaseCurrencyCode(cr config.Reader) (language.Currency, error) {
 	base, err := cr.GetString(config.Path(PathCurrencyBase))
-	if err != nil && err != config.ErrKeyNotFound {
+	if config.NotKeyNotFoundError(err) {
 		return language.Currency{}, err
 	}
 	return language.ParseCurrency(base)
@@ -38,7 +38,7 @@ func BaseCurrencyCode(cr config.Reader) (language.Currency, error) {
 // AllowedCurrencies returns all installed currencies from global scope.
 func AllowedCurrencies(cr config.Reader) ([]string, error) {
 	installedCur, err := cr.GetString(config.Path(PathSystemCurrencyInstalled))
-	if err != nil && err != config.ErrKeyNotFound {
+	if config.NotKeyNotFoundError(err) {
 		return nil, err
 	}
 	// TODO use internal model of PathSystemCurrencyInstalled defined in package directory

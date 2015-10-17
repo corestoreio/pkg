@@ -258,3 +258,8 @@ func (m *Manager) IsSet(o ...ArgFunc) bool {
 	}
 	return m.v.IsSet(a.scopePath())
 }
+
+// NotKeyNotFoundError returns true if err is not nil and not of type Key Not Found.
+func NotKeyNotFoundError(err error) bool {
+	return err != nil && err != ErrKeyNotFound
+}
