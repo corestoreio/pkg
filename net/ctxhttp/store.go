@@ -27,8 +27,8 @@ import (
 	"golang.org/x/net/context"
 )
 
-// ErrBaseUrlDonotMatch will be returned if the request URL does not match the configured URL.
-var ErrBaseUrlDonotMatch = errors.New("The Base URLs do not match")
+// ErrBaseUrlDoNotMatch will be returned if the request URL does not match the configured URL.
+var ErrBaseUrlDoNotMatch = errors.New("The Base URLs do not match")
 
 // WithValidateBaseUrl is a middleware which checks if the request base URL
 // is equal to the one store in the configuration, if not
@@ -39,36 +39,39 @@ func WithValidateBaseUrl(cr config.ReaderPubSuber) Middleware {
 	// Having the GetBool command here, means you must restart the app to take
 	// changes in effect. @todo refactor and use pub/sub to automatically change
 	// the isRedirectToBase value.
-	checkBaseURL := cr.GetBool(config.Path(store.PathRedirectToBase), config.ScopeDefault())
+	checkBaseURL, err := cr.GetBool(config.Path(store.PathRedirectToBase)) // scope default
+	if config.NotKeyNotFoundError(err) {
+		log.Error("ctxhttp.WithValidateBaseUrl.GetBool", "err", err, "path", store.PathRedirectToBase)
+	}
 
 	redirectCode := http.StatusMovedPermanently
-	if rc := cr.GetInt(config.Path(store.PathRedirectToBase), config.ScopeDefault()); rc != redirectCode {
+	if rc, err := cr.GetInt(config.Path(store.PathRedirectToBase)); rc != redirectCode && false == config.NotKeyNotFoundError(err) {
 		redirectCode = http.StatusFound
 	}
 
 	return func(h Handler) Handler {
-		return HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) {
+		return HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			storeManager := store.ContextMustManagerReader(ctx)
+			storeManager, ok := store.FromContextManagerReader(ctx)
+			if !ok {
+				return log.Error("ctxhttp.WithValidateBaseUrl.FromContextManagerReader", "err", errors.New("Cannot extract config.Reader from context"), "ctx", ctx)
+			}
 
 			if checkBaseURL && r.Method != "POST" {
-				store, err := sm.Store()
+				store, err := storeManager.Store()
 				if err != nil {
-					log.Error("store.ValidateBaseUrl.sm.Store", "err", err)
-					http.Error(w, "Cannot get Store(): "+err.Error(), http.StatusInternalServerError)
-					return
+					return log.Error("ctxhttp.WithValidateBaseUrl.storeManager.Store", "err", err, "ctx", ctx)
 				}
 
 				baseURL := store.BaseURL(config.URLTypeWeb, store.IsCurrentlySecure(r))
-				if false == isBaseUrlCorrect(r, baseURL) {
+				if nil == isBaseUrlCorrect(r, baseURL) {
 					redirectURL := baseURL + r.URL.Path
-					w.Header().Set("Location", redirectURL)
-					w.WriteHeader(redirectCode)
-					return
+					http.Redirect(w, r, redirectURL, redirectCode)
+					return nil
 				}
 			}
 
-			h.ServeHTTPContext(ctx, w, r)
+			return h.ServeHTTPContext(ctx, w, r)
 		})
 	}
 }
@@ -84,5 +87,5 @@ func isBaseUrlCorrect(r *http.Request, baseURL string) error {
 	if r.Host == uri.Host && r.URL.Host == uri.Host && r.URL.Scheme == uri.Scheme && strings.Contains(r.URL.RequestURI(), uri.Path) {
 		return nil
 	}
-	return log.Error("store.isBaseUrlCorrect.compare", "err", ErrBaseUrlDonotMatch, "r.Host", r.Host, "baseURL", uri.String(), "requestURL", r.URL.String(), "strings.Contains", []string{r.URL.RequestURI(), uri.Path})
+	return log.Error("store.isBaseUrlCorrect.compare", "err", ErrBaseUrlDoNotMatch, "r.Host", r.Host, "baseURL", uri.String(), "requestURL", r.URL.String(), "strings.Contains", []string{r.URL.RequestURI(), uri.Path})
 }

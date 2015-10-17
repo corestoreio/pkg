@@ -16,11 +16,12 @@ package httputils_test
 
 import (
 	"errors"
-	"github.com/corestoreio/csfw/net/httputils"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestWriteError(t *testing.T) {
