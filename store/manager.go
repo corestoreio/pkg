@@ -16,7 +16,6 @@ package store
 
 import (
 	"errors"
-	"net/http"
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
@@ -150,83 +149,6 @@ func (sm *Manager) Init(so scope.Option) error {
 		return log.Error("store.Manager.Init", "err", err, "ScopeOption", so)
 	}
 	return nil
-}
-
-// InitByRequest returns a new Store read from a cookie or HTTP request parameter.
-// It calls GetRequestStore() to determine the correct store.
-// The internal appStore must be set before hand, call Init() before calling this function.
-// 1. check cookie store, always a string and the store code
-// 2. check for ___store variable, always a string and the store code
-// 3. May return nil,nil if nothing is set.
-// This function must be used within an HTTP handler.
-// The returned new Store must be used in the HTTP context and overrides the appStore.
-func (sm *Manager) InitByRequest(res http.ResponseWriter, req *http.Request, scopeType scope.Scope) (*Store, error) {
-
-	// todo remove this func and convert to a middleware passing the current store scope to the context.Context
-
-	if sm.appStore == nil {
-		// that means you must call Init() before executing this function.
-		return nil, ErrAppStoreNotSet
-	}
-
-	var reqStore *Store
-	var so scope.Option
-	var err error
-	so, err = StoreCodeFromForm(req)
-	if err != nil { // no cookie set, lets try via form to find the store code
-
-		if err == ErrStoreCodeInvalid {
-			return nil, log.Error("store.Manager.InitByRequest.GetCodeFromForm", "err", err, "req", req, "scopeType", scopeType.String())
-		}
-
-		so, err = StoreCodeFromCookie(req)
-		switch err {
-		case ErrStoreCodeEmpty, http.ErrNoCookie:
-			err = nil
-		case nil:
-			// do nothing
-		default: // err != nil
-			return nil, log.Error("store.Manager.InitByRequest.GetCodeFromCookie", "err", err, "req", req, "scopeType", scopeType.String())
-		}
-	}
-
-	// @todo reqStoreCode if number ... cast to int64 because then group id if ScopeGroup is group.
-	if reqStore, err = sm.GetRequestStore(so, scopeType); err != nil {
-		return nil, log.Error("store.Manager.InitByRequest.GetRequestStore", "err", err)
-	}
-	soStoreCode := so.StoreCode()
-
-	// also delete and re-set a new cookie
-	if reqStore != nil && reqStore.Data.Code.String == soStoreCode {
-		wds, err := reqStore.Website.DefaultStore()
-		if err != nil {
-			return nil, log.Error("store.Manager.InitByRequest.Website.DefaultStore", "err", err, "soStoreCode", soStoreCode)
-		}
-		if wds.Data.Code.String == soStoreCode {
-			reqStore.DeleteCookie(res) // cookie not needed anymore
-		} else {
-			reqStore.SetCookie(res) // make sure we force set the new store
-		}
-	}
-
-	return reqStore, nil // can be nil,nil
-}
-
-// InitByToken returns a Store pointer from a JSON web token. If the store code is invalid,
-// this function can return nil,nil. Token argument is equal like jwt.Token.Claim.
-func (sm *Manager) InitByToken(token map[string]interface{}, scopeType scope.Scope) (*Store, error) {
-
-	// todo remove this func and convert to a middleware passing the current store scope to the context.Context
-
-	if sm.appStore == nil {
-		// that means you must call Init() before executing this function.
-		return nil, ErrAppStoreNotSet
-	}
-	scopeOption, err := StoreCodeFromClaim(token)
-	if err == nil {
-		return sm.GetRequestStore(scopeOption, scopeType)
-	}
-	return nil, nil
 }
 
 // GetRequestStore is in Magento named setCurrentStore and only used by InitBy*().
