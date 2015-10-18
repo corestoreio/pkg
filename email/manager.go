@@ -15,11 +15,11 @@
 package email
 
 import (
-	"bytes"
-
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/utils"
 	"github.com/go-gomail/gomail"
 )
 
@@ -61,12 +61,7 @@ var _ config.MessageReceiver = (*Manager)(nil)
 // Error implements the error interface. Returns a string where each error has
 // been separated by a line break.
 func (m *Manager) Error() string {
-	var buf bytes.Buffer
-	for _, e := range m.lastErrs {
-		buf.WriteString(e.Error())
-		buf.WriteString("\n")
-	}
-	return buf.String()
+	return utils.Errors(m.lastErrs)
 }
 
 // Options applies optional arguments to the daemon
@@ -81,7 +76,7 @@ func (m *Manager) Option(opts ...ManagerOption) *Manager {
 	return m
 }
 
-func (m *Manager) Send(si config.ScopeIDer, m *gomail.Message) error {
+func (m *Manager) Send(s scope.Scope, id int64, m *gomail.Message) error {
 
 	return nil
 }
@@ -96,7 +91,7 @@ func (m *Manager) SubscribeToConfigChanges(s config.Subscriber) (subscriptionID 
 // config.Manager. MessageConfig will be added via SubscribeToConfigChanges to the
 // config.Subscriber.
 // IF a configuration change
-func (m *Manager) MessageConfig(path string, sg config.ScopeGroup, si config.ScopeIDer) {
+func (m *Manager) MessageConfig(path string, s scope.Scope, id int64) {
 	switch path {
 	case PathSmtpHost, PathSmtpPort, PathSmtpUsername:
 		// start and stop the daemon for the corresponding scope group and id

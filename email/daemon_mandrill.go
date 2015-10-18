@@ -45,7 +45,7 @@ func SetMandrill(opts ...MandrillOptions) DaemonOption {
 	return func(da *Daemon) DaemonOption {
 		// this whole func is just a quick write down. no idea if it's working
 		// and refactor ... 8-)
-		apiKey := da.Config.GetString(config.ScopeStore(da.ScopeID), config.Path(PathSmtpMandrillAPIKey))
+		apiKey := da.Config.GetString(config.ScopeStore(da.Scope), config.Path(PathSmtpMandrillAPIKey))
 
 		if apiKey == "" {
 			da.lastErrs = append(da.lastErrs, errors.New("Mandrill API Key is empty."))

@@ -20,21 +20,21 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/utils/mail"
+	"github.com/corestoreio/csfw/email"
 	"github.com/go-gomail/gomail"
 	"github.com/stretchr/testify/assert"
 )
 
 var configMock = config.NewMockReader(
-	config.MockInt(func(path string) int {
+	config.WithMockInt(func(path string) int {
 		//println("int", path)
 		return 25 // Port 25
 	}),
-	config.MockString(func(path string) string {
+	config.WithMockString(func(path string) string {
 		//println("string", path)
 		return "localhost"
 	}),
-	config.MockBool(func(path string) bool {
+	config.WithMockBool(func(path string) bool {
 		//println("bool", path)
 		switch path {
 		case "stores/3001/system/smtp/disable":
@@ -62,7 +62,7 @@ func (md mockDial) Dial() (gomail.SendCloser, error) {
 	}, md.dialErr
 }
 
-var _ mail.Dialer = (*mockDial)(nil)
+var _ email.Dialer = (*mockDial)(nil)
 
 type mockSendCloser struct {
 	t        *testing.T

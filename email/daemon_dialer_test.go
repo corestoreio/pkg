@@ -22,7 +22,7 @@ import (
 )
 
 var configMock = config.NewMockReader(
-	config.MockInt(func(path string) int {
+	config.WithMockInt(func(path string) int {
 		//		println("int", path)
 		switch path {
 		case "stores/5015/system/smtp/port":
@@ -33,7 +33,7 @@ var configMock = config.NewMockReader(
 			return 0
 		}
 	}),
-	config.MockString(func(path string) string {
+	config.WithMockString(func(path string) string {
 		//		println("string", path)
 		switch path {
 		case "stores/5015/system/smtp/host":
@@ -51,7 +51,7 @@ var configMock = config.NewMockReader(
 		}
 
 	}),
-	config.MockBool(func(path string) bool {
+	config.WithMockBool(func(path string) bool {
 		return false
 	}),
 )

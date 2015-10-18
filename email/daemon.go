@@ -22,6 +22,8 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/utils"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/go-gomail/gomail"
 )
@@ -55,7 +57,7 @@ var ErrMailChannelClosed = errors.New("The mail channel has been closed.")
 type Dialer interface {
 	// SetConfig allows instant access to the system wide configuration by the
 	// current scope ID.
-	SetConfig(config.Reader, config.ScopeIDer)
+	SetConfig(config.Reader, scope.StoreIDer)
 	// Dial initiates the connection to the mail server.
 	Dial() (gomail.SendCloser, error)
 }
@@ -75,8 +77,8 @@ type Daemon struct {
 	closed         bool
 	// Config contains the config.Manager
 	Config config.Reader
-	// ScopeID current scope id for this daemon
-	ScopeID config.ScopeIDer
+	// Scope current scope store id for this daemon
+	Scope scope.StoreID
 	// SmtpTimeout sets the time when the daemon should closes the connection
 	// to the SMTP server if no email was sent in the last default 30 seconds.
 	SmtpTimeout time.Duration
@@ -87,12 +89,7 @@ var _ error = (*Daemon)(nil)
 // Error implements the error interface. Returns a string where each error has
 // been separated by a line break.
 func (dm *Daemon) Error() string {
-	var buf bytes.Buffer
-	for _, e := range dm.lastErrs {
-		buf.WriteString(e.Error())
-		buf.WriteString("\n")
-	}
-	return buf.String()
+	return utils.Errors(dm.lastErrs...)
 }
 
 // Start listens to a channel and sends all incoming messages to a SMTP server.
@@ -239,7 +236,7 @@ func (dm *Daemon) IsOffline() bool {
 	if nil == dm.Config {
 		return true
 	}
-	return dm.Config.GetBool(config.Path(PathSmtpDisable), config.ScopeStore(dm.ScopeID))
+	return dm.Config.GetBool(config.Path(PathSmtpDisable), config.ScopeStore(dm.Scope))
 }
 
 // NewDaemon creates a new mail sending daemon to send to a SMTP server.
@@ -249,7 +246,7 @@ func (dm *Daemon) IsOffline() bool {
 func NewDaemon(opts ...DaemonOption) (*Daemon, error) {
 	d := &Daemon{
 		Config:      config.DefaultManager,
-		ScopeID:     config.ScopeID(0), // Default Scope aka Admin Scope
+		Scope:       scope.AdminScope,
 		SmtpTimeout: time.Second * 30,
 	}
 	d.SetOptions(opts...)
