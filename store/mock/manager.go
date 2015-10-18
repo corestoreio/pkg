@@ -19,6 +19,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
+	"golang.org/x/net/context"
 )
 
 // NewManager creates a new StoreManager
@@ -28,6 +29,11 @@ func NewManager(opts ...func(ms *Storage)) *store.Manager {
 		opt(ms)
 	}
 	return store.NewManager(ms)
+}
+
+// NewContextManager creates a new StoreManager wrapped in a context.Context
+func NewContextManager(opts ...func(ms *Storage)) context.Context {
+	return store.NewContextManagerReader(context.Background(), NewManager(opts...))
 }
 
 // Storage main underlying data container
