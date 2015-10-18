@@ -90,7 +90,7 @@ func TestInvalidSigningMethod(t *testing.T) {
 func TestPasswordFromConfig(t *testing.T) {
 
 	cfg := config.NewMockReader(
-		config.MockString(func(path string) string {
+		config.WithMockString(func(path string) string {
 			if path == userjwt.PathJWTPassword {
 				return `Rump3lst!lzch3n`
 			}
