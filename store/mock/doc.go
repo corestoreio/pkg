@@ -12,24 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store_test
+/*
+Package mock implements mocking of the store.Manager for tests.
 
-import (
-	"testing"
+Please import this package as:
 
-	"github.com/corestoreio/csfw/store"
-	storemock "github.com/corestoreio/csfw/store/mock"
-	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
-)
+	import (
+		storemock "github.com/corestoreio/csfw/store/mock"
+	)
 
-func TestContextManagerReader(t *testing.T) {
-	mr := storemock.NewNullManager()
-	ctx := store.NewContextManagerReader(context.Background(), mr)
-	haveMr, ok := store.FromContextManagerReader(ctx)
-	assert.True(t, ok)
-	assert.Exactly(t, mr, haveMr)
-
-	ctx = store.NewContextManagerReader(context.Background(), nil)
-	store.FromContextManagerReader(ctx)
-}
+To avoid confusion with other mock packages.
+*/
+package mock

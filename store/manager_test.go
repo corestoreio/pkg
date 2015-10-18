@@ -26,6 +26,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
+	storemock "github.com/corestoreio/csfw/store/mock"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
@@ -42,7 +43,7 @@ func init() {
 }
 
 //func init() {
-// TODO(cs): check this
+// Reminder to myself:
 //	// regarding SetConfigReader: https://twitter.com/davecheney/status/602633849374429185
 // 		@ianthomasrose @francesc package variables are a smell, modifying them for tests is a stink.
 //	store.SetConfigReader(config.NewMockReader(func(path string) string {
@@ -58,16 +59,8 @@ func init() {
 //	}, nil))
 //}
 
-func getTestManager(opts ...func(ms *mockStorage)) *store.Manager {
-	ms := &mockStorage{}
-	for _, opt := range opts {
-		opt(ms)
-	}
-	return store.NewManager(ms)
-}
-
-var managerStoreSimpleTest = getTestManager(func(ms *mockStorage) {
-	ms.s = func() (*store.Store, error) {
+var managerStoreSimpleTest = storemock.NewManager(func(ms *storemock.Storage) {
+	ms.MockStore = func() (*store.Store, error) {
 		return store.NewStore(
 			&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 			&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
@@ -97,7 +90,7 @@ func TestNewManagerStore(t *testing.T) {
 		{nil, store.ErrAppStoreNotSet},
 	}
 
-	managerEmpty := getTestManager()
+	managerEmpty := storemock.NewManager()
 	for _, test := range tests {
 		s, err := managerEmpty.Store(test.have)
 		assert.Nil(t, s)
@@ -107,8 +100,8 @@ func TestNewManagerStore(t *testing.T) {
 }
 
 func TestNewManagerDefaultStoreView(t *testing.T) {
-	managerDefaultStore := getTestManager(func(ms *mockStorage) {
-		ms.dsv = func() (*store.Store, error) {
+	managerDefaultStore := storemock.NewManager(func(ms *storemock.Storage) {
+		ms.MockDefaultStore = func() (*store.Store, error) {
 			return store.NewStore(
 				&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 				&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
@@ -134,8 +127,8 @@ func TestNewManagerDefaultStoreView(t *testing.T) {
 
 func TestNewManagerStoreInit(t *testing.T) {
 
-	tms := getTestManager(func(ms *mockStorage) {
-		ms.s = func() (*store.Store, error) {
+	tms := storemock.NewManager(func(ms *storemock.Storage) {
+		ms.MockStore = func() (*store.Store, error) {
 			return store.NewStore(
 				&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 				&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
@@ -185,8 +178,8 @@ func BenchmarkManagerGetStore(b *testing.B) {
 }
 
 func TestNewManagerStores(t *testing.T) {
-	managerStores := getTestManager(func(ms *mockStorage) {
-		ms.ss = func() (store.StoreSlice, error) {
+	managerStores := storemock.NewManager(func(ms *storemock.Storage) {
+		ms.MockStoreSlice = func() (store.StoreSlice, error) {
 			return store.StoreSlice{
 				store.MustNewStore(
 					&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
@@ -222,8 +215,8 @@ func TestNewManagerStores(t *testing.T) {
 	managerStores.ClearCache()
 	assert.True(t, managerStores.IsCacheEmpty())
 
-	ss, err = getTestManager(func(ms *mockStorage) {
-		ms.ss = func() (store.StoreSlice, error) {
+	ss, err = storemock.NewManager(func(ms *storemock.Storage) {
+		ms.MockStoreSlice = func() (store.StoreSlice, error) {
 			return nil, nil
 		}
 	}).Stores()
@@ -232,14 +225,14 @@ func TestNewManagerStores(t *testing.T) {
 }
 
 func TestNewManagerGroup(t *testing.T) {
-	var managerGroupSimpleTest = getTestManager(func(ms *mockStorage) {
-		ms.g = func() (*store.Group, error) {
+	var managerGroupSimpleTest = storemock.NewManager(func(ms *storemock.Storage) {
+		ms.MockGroup = func() (*store.Group, error) {
 			return store.NewGroup(
 				&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 				store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}}),
 			)
 		}
-		ms.s = func() (*store.Store, error) {
+		ms.MockStore = func() (*store.Store, error) {
 			return store.NewStore(
 				&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 				&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
@@ -256,7 +249,7 @@ func TestNewManagerGroup(t *testing.T) {
 		wantWebsiteCode string
 	}{
 		{managerGroupSimpleTest, nil, store.ErrAppStoreNotSet, "", ""},
-		{getTestManager(), scope.MockID(20), store.ErrGroupNotFound, "", ""},
+		{storemock.NewManager(), scope.MockID(20), store.ErrGroupNotFound, "", ""},
 		{managerGroupSimpleTest, scope.MockID(1), nil, "DACH Group", "euro"},
 		{managerGroupSimpleTest, scope.MockID(1), nil, "DACH Group", "euro"},
 	}
@@ -280,8 +273,8 @@ func TestNewManagerGroup(t *testing.T) {
 
 func TestNewManagerGroupInit(t *testing.T) {
 
-	err := getTestManager(func(ms *mockStorage) {
-		ms.g = func() (*store.Group, error) {
+	err := storemock.NewManager(func(ms *storemock.Storage) {
+		ms.MockGroup = func() (*store.Group, error) {
 			return store.NewGroup(
 				&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 				store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}}),
@@ -290,11 +283,11 @@ func TestNewManagerGroupInit(t *testing.T) {
 	}).Init(scope.Option{Group: scope.MockID(1)})
 	assert.EqualError(t, store.ErrGroupDefaultStoreNotFound, err.Error(), "Incorrect DefaultStore for a Group")
 
-	err = getTestManager().Init(scope.Option{Group: scope.MockID(21)})
+	err = storemock.NewManager().Init(scope.Option{Group: scope.MockID(21)})
 	assert.EqualError(t, store.ErrGroupNotFound, err.Error())
 
-	tm3 := getTestManager(func(ms *mockStorage) {
-		ms.g = func() (*store.Group, error) {
+	tm3 := storemock.NewManager(func(ms *storemock.Storage) {
+		ms.MockGroup = func() (*store.Group, error) {
 			return store.NewGroup(
 				&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 				store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}}),
@@ -313,8 +306,8 @@ func TestNewManagerGroupInit(t *testing.T) {
 }
 
 func TestNewManagerGroups(t *testing.T) {
-	managerGroups := getTestManager(func(ms *mockStorage) {
-		ms.gs = func() (store.GroupSlice, error) {
+	managerGroups := storemock.NewManager(func(ms *storemock.Storage) {
+		ms.MockGroupSlice = func() (store.GroupSlice, error) {
 			return store.GroupSlice{}, nil
 		}
 	})
@@ -337,8 +330,8 @@ func TestNewManagerGroups(t *testing.T) {
 
 func TestNewManagerWebsite(t *testing.T) {
 
-	var managerWebsite = getTestManager(func(ms *mockStorage) {
-		ms.w = func() (*store.Website, error) {
+	var managerWebsite = storemock.NewManager(func(ms *storemock.Storage) {
+		ms.MockWebsite = func() (*store.Website, error) {
 			return store.NewWebsite(
 				&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
 			)
@@ -352,7 +345,7 @@ func TestNewManagerWebsite(t *testing.T) {
 		wantWebsiteCode string
 	}{
 		{managerWebsite, nil, store.ErrAppStoreNotSet, ""},
-		{getTestManager(), scope.MockID(20), store.ErrGroupNotFound, ""},
+		{storemock.NewManager(), scope.MockID(20), store.ErrGroupNotFound, ""},
 		{managerWebsite, scope.MockID(1), nil, "euro"},
 		{managerWebsite, scope.MockID(1), nil, "euro"},
 		{managerWebsite, scope.MockCode("notImportant"), nil, "euro"},
@@ -377,8 +370,8 @@ func TestNewManagerWebsite(t *testing.T) {
 }
 
 func TestNewManagerWebsites(t *testing.T) {
-	managerWebsites := getTestManager(func(ms *mockStorage) {
-		ms.ws = func() (store.WebsiteSlice, error) {
+	managerWebsites := storemock.NewManager(func(ms *storemock.Storage) {
+		ms.MockWebsiteSlice = func() (store.WebsiteSlice, error) {
 			return store.WebsiteSlice{}, nil
 		}
 	})
@@ -390,8 +383,8 @@ func TestNewManagerWebsites(t *testing.T) {
 	}{
 		{managerWebsites, nil, false},
 		{managerWebsites, nil, false},
-		{getTestManager(func(ms *mockStorage) {
-			ms.ws = func() (store.WebsiteSlice, error) {
+		{storemock.NewManager(func(ms *storemock.Storage) {
+			ms.MockWebsiteSlice = func() (store.WebsiteSlice, error) {
 				return nil, nil
 			}
 		}), nil, true},
@@ -419,8 +412,8 @@ func TestNewManagerWebsites(t *testing.T) {
 
 func TestNewManagerWebsiteInit(t *testing.T) {
 
-	err := getTestManager(func(ms *mockStorage) {
-		ms.w = func() (*store.Website, error) {
+	err := storemock.NewManager(func(ms *storemock.Storage) {
+		ms.MockWebsite = func() (*store.Website, error) {
 			return store.NewWebsite(
 				&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
 			)
@@ -428,8 +421,8 @@ func TestNewManagerWebsiteInit(t *testing.T) {
 	}).Init(scope.Option{Website: scope.MockCode("euro")})
 	assert.EqualError(t, store.ErrWebsiteDefaultGroupNotFound, err.Error())
 
-	managerWebsite := getTestManager(func(ms *mockStorage) {
-		ms.w = func() (*store.Website, error) {
+	managerWebsite := storemock.NewManager(func(ms *storemock.Storage) {
+		ms.MockWebsite = func() (*store.Website, error) {
 			return store.NewWebsite(
 				&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
 				store.SetWebsiteGroupsStores(
@@ -457,13 +450,13 @@ func TestNewManagerWebsiteInit(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, "euro", w2.Data.Code.String)
 
-	err3 := getTestManager(func(ms *mockStorage) {}).Init(scope.Option{Website: scope.MockCode("euronen")})
+	err3 := storemock.NewManager(func(ms *storemock.Storage) {}).Init(scope.Option{Website: scope.MockCode("euronen")})
 	assert.Error(t, err3, "scope.MockCode(euro), config.ScopeWebsite: %#v => %s", err3, err3)
 	assert.EqualError(t, store.ErrWebsiteNotFound, err3.Error())
 }
 
 func TestNewManagerError(t *testing.T) {
-	err := getTestManager().Init(scope.Option{})
+	err := storemock.NewManager().Init(scope.Option{})
 	assert.EqualError(t, err, store.ErrUnsupportedScope.Error())
 }
 
@@ -972,82 +965,3 @@ func (ic mockIDCode) WebsiteID() int64 {
 func (ic mockIDCode) WebsiteCode() string {
 	return ic.code
 }
-
-type mockStorage struct {
-	w   func() (*store.Website, error)
-	ws  func() (store.WebsiteSlice, error)
-	g   func() (*store.Group, error)
-	gs  func() (store.GroupSlice, error)
-	s   func() (*store.Store, error)
-	dsv func() (*store.Store, error)
-	ss  func() (store.StoreSlice, error)
-}
-
-var _ store.Storager = (*mockStorage)(nil)
-
-func (ms *mockStorage) Website(_ scope.WebsiteIDer) (*store.Website, error) {
-	if ms.w == nil {
-		return nil, store.ErrWebsiteNotFound
-	}
-	return ms.w()
-}
-func (ms *mockStorage) Websites() (store.WebsiteSlice, error) {
-	if ms.ws == nil {
-		return nil, nil
-	}
-	return ms.ws()
-}
-func (ms *mockStorage) Group(_ scope.GroupIDer) (*store.Group, error) {
-	if ms.g == nil {
-		return nil, store.ErrGroupNotFound
-	}
-	return ms.g()
-}
-func (ms *mockStorage) Groups() (store.GroupSlice, error) {
-	if ms.gs == nil {
-		return nil, nil
-	}
-	return ms.gs()
-}
-func (ms *mockStorage) Store(_ scope.StoreIDer) (*store.Store, error) {
-	if ms.s == nil {
-		return nil, store.ErrStoreNotFound
-	}
-	return ms.s()
-}
-
-func (ms *mockStorage) Stores() (store.StoreSlice, error) {
-	if ms.ss == nil {
-		return nil, nil
-	}
-	return ms.ss()
-}
-func (ms *mockStorage) DefaultStoreView() (*store.Store, error) {
-	if ms.dsv == nil {
-		return nil, store.ErrStoreNotFound
-	}
-	return ms.dsv()
-}
-func (ms *mockStorage) ReInit(dbr.SessionRunner, ...csdb.DbrSelectCb) error {
-	return nil
-}
-
-type mockManager struct{}
-
-func (m *mockManager) IsSingleStoreMode() bool { return false }
-func (m *mockManager) HasSingleStore() bool    { return false }
-func (m *mockManager) Website(r ...scope.WebsiteIDer) (*store.Website, error) {
-	return nil, store.ErrWebsiteNotFound
-}
-func (m *mockManager) Websites() (store.WebsiteSlice, error) { return nil, store.ErrWebsiteNotFound }
-func (m *mockManager) Group(r ...scope.GroupIDer) (*store.Group, error) {
-	return nil, store.ErrGroupNotFound
-}
-func (m *mockManager) Groups() (store.GroupSlice, error) { return nil, store.ErrGroupNotFound }
-func (m *mockManager) Store(r ...scope.StoreIDer) (*store.Store, error) {
-	return nil, store.ErrStoreNotFound
-}
-func (m *mockManager) Stores() (store.StoreSlice, error)       { return nil, store.ErrStoreNotFound }
-func (m *mockManager) DefaultStoreView() (*store.Store, error) { return nil, store.ErrStoreNotFound }
-
-var _ store.ManagerReader = (*mockManager)(nil)

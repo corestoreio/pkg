@@ -20,7 +20,6 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
@@ -240,12 +239,12 @@ func TestStoreBaseURLandPath(t *testing.T) {
 		wantPath     string
 	}{
 		{
-			config.NewMockReader(config.MockString(
+			config.NewMockReader(config.WithMockString(
 				func(path string) (string, error) {
 					switch path {
-					case scope.StrDefault.FQPath("0", store.PathSecureBaseURL):
+					case config.MockPathScopeDefault(store.PathSecureBaseURL):
 						return "https://corestore.io", nil
-					case scope.StrDefault.FQPath("0", store.PathUnsecureBaseURL):
+					case config.MockPathScopeDefault(store.PathUnsecureBaseURL):
 						return "http://corestore.io", nil
 					}
 					return "", config.ErrKeyNotFound
@@ -254,12 +253,12 @@ func TestStoreBaseURLandPath(t *testing.T) {
 			config.URLTypeWeb, true, "https://corestore.io/", "/",
 		},
 		{
-			config.NewMockReader(config.MockString(
+			config.NewMockReader(config.WithMockString(
 				func(path string) (string, error) {
 					switch path {
-					case scope.StrDefault.FQPath("0", store.PathSecureBaseURL):
+					case config.MockPathScopeDefault(store.PathSecureBaseURL):
 						return "https://myplatform.io/customer1", nil
-					case scope.StrDefault.FQPath("0", store.PathUnsecureBaseURL):
+					case config.MockPathScopeDefault(store.PathUnsecureBaseURL):
 						return "http://myplatform.io/customer1", nil
 					}
 					return "", config.ErrKeyNotFound
@@ -268,14 +267,14 @@ func TestStoreBaseURLandPath(t *testing.T) {
 			config.URLTypeWeb, false, "http://myplatform.io/customer1/", "/customer1/",
 		},
 		{
-			config.NewMockReader(config.MockString(
+			config.NewMockReader(config.WithMockString(
 				func(path string) (string, error) {
 					switch path {
-					case scope.StrDefault.FQPath("0", store.PathSecureBaseURL):
+					case config.MockPathScopeDefault(store.PathSecureBaseURL):
 						return store.PlaceholderBaseURL, nil
-					case scope.StrDefault.FQPath("0", store.PathUnsecureBaseURL):
+					case config.MockPathScopeDefault(store.PathUnsecureBaseURL):
 						return store.PlaceholderBaseURL, nil
-					case scope.StrDefault.FQPath("0", config.PathCSBaseURL):
+					case config.MockPathScopeDefault(config.PathCSBaseURL):
 						return config.CSBaseURL, nil
 					}
 					return "", config.ErrKeyNotFound
