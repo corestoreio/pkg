@@ -85,13 +85,11 @@ var (
 	ErrStoreCodeInvalid      = errors.New("The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter")
 )
 
-// WithStoreConfig creates a new scoped config.ScopedReader for this store.
-// WebsiteID, GroupID and StoreID will be set automatically.
-func SetStoreConfig(cr config.Reader) StoreOption {
-	return func(s *Store) {
-		s.cr = cr
-	}
-}
+// SetStoreConfig sets the config.Reader to the Group. Default reader is
+// config.DefaultManager. You should call this function before calling other
+// option functions otherwise your preferred config.Reader won't be inherited
+// to a Website or a Group.
+func SetStoreConfig(cr config.Reader) StoreOption { return func(s *Store) { s.cr = cr } }
 
 // NewStore creates a new Store. Returns an error if the first three arguments
 // are nil. Returns an error if integrity checks fail. config.Reader will be

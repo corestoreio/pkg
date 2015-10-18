@@ -64,8 +64,10 @@ var (
 	ErrWebsiteDefaultGroupNotFound = errors.New("Website Default Group not found")
 )
 
-// SetWebsiteConfig sets the config.Reader to the Website.
-// Default reader is config.DefaultManager
+// SetWebsiteConfig sets the config.Reader to the Website. Default reader is
+// config.DefaultManager. You should call this function before calling other
+// option functions otherwise your preferred config.Reader won't be inherited
+// to a Group or Store.
 func SetWebsiteConfig(cr config.Reader) WebsiteOption { return func(w *Website) { w.cr = cr } }
 
 // SetGroupsStores uses a group slice and a table slice to set the groups associated

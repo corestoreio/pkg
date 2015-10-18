@@ -125,7 +125,7 @@ func (st *Storage) Website(r scope.WebsiteIDer) (*Website, error) {
 	if err != nil {
 		return nil, err
 	}
-	return NewWebsite(w, SetWebsiteGroupsStores(st.groups, st.stores))
+	return NewWebsite(w, SetWebsiteConfig(st.cr), SetWebsiteGroupsStores(st.groups, st.stores))
 }
 
 // Websites creates a slice of Website pointers according to the interface definition.
@@ -133,7 +133,7 @@ func (st *Storage) Websites() (WebsiteSlice, error) {
 	websites := make(WebsiteSlice, len(st.websites), len(st.websites))
 	for i, w := range st.websites {
 		var err error
-		websites[i], err = NewWebsite(w, SetWebsiteGroupsStores(st.groups, st.stores))
+		websites[i], err = NewWebsite(w, SetWebsiteConfig(st.cr), SetWebsiteGroupsStores(st.groups, st.stores))
 		if err != nil {
 			return nil, log.Error("store.Storage.Websites.NewWebsite", "err", err, "w", w, "websites", st.websites)
 		}
@@ -162,7 +162,7 @@ func (st *Storage) Group(id scope.GroupIDer) (*Group, error) {
 	if err != nil {
 		return nil, log.Error("store.Storage.Group.website", "err", err, "websiteID", g.WebsiteID, "groupID", id.GroupID())
 	}
-	return NewGroup(g, SetGroupWebsite(w), SetGroupConfig(st.cr), SetGroupStores(st.stores, nil))
+	return NewGroup(g, SetGroupConfig(st.cr), SetGroupWebsite(w), SetGroupStores(st.stores, nil))
 }
 
 // Groups creates a new group slice containing its website all related stores.

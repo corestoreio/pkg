@@ -63,8 +63,10 @@ var (
 	ErrGroupWebsiteIntegrityFailed = errors.New("Groups WebsiteID does not match the Websites ID")
 )
 
-// WithGroupConfig sets the configuration Reader to the Group.
-// Default reader is config.DefaultManager
+// SetGroupConfig sets the config.Reader to the Group. Default reader is
+// config.DefaultManager. You should call this function before calling other
+// option functions otherwise your preferred config.Reader won't be inherited
+// to a Website or a Store.
 func SetGroupConfig(cr config.Reader) GroupOption { return func(g *Group) { g.cr = cr } }
 
 // WithGroupWebsite assigns a website to a group. If website ID does not match
@@ -81,7 +83,7 @@ func SetGroupWebsite(tw *TableWebsite) GroupOption {
 		}
 		if tw != nil {
 			var err error
-			g.Website, err = NewWebsite(tw)
+			g.Website, err = NewWebsite(tw, SetWebsiteConfig(g.cr))
 			g.addError(err)
 		}
 	}
