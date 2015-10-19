@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package userjwt_test
+package token_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/corestoreio/csfw/user/userjwt"
+	"github.com/corestoreio/csfw/net/token"
 )
 
 // BenchmarkAuthorizationHMAC-4	  100000	     20215 ns/op	    5552 B/op	     105 allocs/op
@@ -31,7 +31,7 @@ func BenchmarkAuthorizationHMAC(b *testing.B) {
 	*/
 
 	password := []byte(`Rump3lst!lzch3n`)
-	jm, err := userjwt.New(userjwt.SetPassword(password))
+	jm, err := token.New(token.SetPassword(password))
 	if err != nil {
 		b.Error(err)
 	}

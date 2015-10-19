@@ -12,33 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package userjwt
+package token
 
 import (
-	"time"
-
 	"github.com/dgrijalva/jwt-go"
-	"github.com/pborman/uuid"
+	"golang.org/x/net/context"
 )
 
-// PrivateKeyBits used when auto generating a private key
-const PrivateKeyBits = 4096
+// ctxKey type is unexported to prevent collisions with context keys defined in
+// other packages.
+type ctxKey uint
 
-func setAuthManagerDefaults(a *AuthManager) {
-	a.hasKey = true
-	a.SigningMethod = jwt.SigningMethodHS512
-	a.password = []byte(uuid.NewRandom()) // @todo can be better ...
+// key* defines the keys to access a value in a context.Context
+const (
+	keyJSONWebToken ctxKey = iota
+)
+
+// NewContext creates a new context with jwt.Token attached.
+func NewContext(ctx context.Context, t *jwt.Token) context.Context {
+	return context.WithValue(ctx, keyJSONWebToken, t)
 }
 
-// nullBL is the black hole black list
-type nullBL struct{}
-
-func (b nullBL) Set(_ string, _ time.Duration) error { return nil }
-func (b nullBL) Has(_ string) bool                   { return false }
-
-// jti type to generate a JTI for a token, a unique ID
-type jti struct{}
-
-func (j jti) Get() string {
-	return uuid.New()
+// FromContext returns the jwt.Token in ctx if it exists.
+func FromContext(ctx context.Context) (t *jwt.Token, ok bool) {
+	t, ok = ctx.Value(keyJSONWebToken).(*jwt.Token)
+	return
 }

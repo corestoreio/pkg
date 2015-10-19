@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package userjwt handles JSON web tokens
-package userjwt
+// Package token handles JSON web tokens and adds/removes it to/from a context.Context
+package token

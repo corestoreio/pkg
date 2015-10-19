@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package userjwt
+package token
 
 import (
 	"crypto/rand"
@@ -29,6 +29,7 @@ import (
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/juju/errgo"
+	"github.com/pborman/uuid"
 )
 
 // PathJWTPassword defines the path where the password has been stored.
@@ -37,22 +38,25 @@ const PathJWTPassword = "corestore/userjwt/password"
 // @todo add more KeyFrom...()
 
 // OptionFunc can be used as an argument in NewUser to configure a user.
-type OptionFunc func(a *AuthManager)
+type OptionFunc func(a *Service)
 
 // SetPasswordFromConfig retrieves the password from the configuration with path
 // as defined in constant PathJWTPassword
 func SetPasswordFromConfig(cr config.Reader) OptionFunc {
-	pw := cr.GetString(config.Path(PathJWTPassword))
+	pw, err := cr.GetString(config.Path(PathJWTPassword))
+	if config.NotKeyNotFoundError(err) {
+		pw = string(uuid.NewRandom())
+	}
 	return SetPassword([]byte(pw))
 }
 
 // SetPassword sets the HMAC 256 bit signing method with a password. Useful to use Magento encryption key.
 func SetPassword(key []byte) OptionFunc {
-	return func(a *AuthManager) {
-		a.lastError = nil
-		a.hasKey = true
-		a.SigningMethod = jwt.SigningMethodHS256
-		a.password = key
+	return func(s *Service) {
+		s.lastError = nil
+		s.hasKey = true
+		s.SigningMethod = jwt.SigningMethodHS256
+		s.password = key
 	}
 }
 
@@ -60,8 +64,8 @@ func SetPassword(key []byte) OptionFunc {
 func SetECDSAFromFile(privateKey string, password ...[]byte) OptionFunc {
 	fpk, err := os.Open(privateKey)
 	if err != nil {
-		return func(a *AuthManager) {
-			a.lastError = errgo.Mask(err)
+		return func(s *Service) {
+			s.lastError = errgo.Mask(err)
 		}
 	}
 	return SetECDSA(fpk, password...)
@@ -74,18 +78,18 @@ func SetECDSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 	if cl, ok := privateKey.(io.Closer); ok {
 		defer func() {
 			if err := cl.Close(); err != nil { // close file
-				log.Error("userjwt.ECDSAKey.ioCloser", "err", err)
+				log.Error("token.ECDSAKey.ioCloser", "err", err)
 			}
 		}()
 	}
 
 	// @todo implement
 
-	return func(a *AuthManager) {
-		a.hasKey = false // set to true if fully implemented
-		a.lastError = errgo.New("@todo implement")
-		a.SigningMethod = jwt.SigningMethodES256
-		a.ecdsapk = nil
+	return func(s *Service) {
+		s.hasKey = false // set to true if fully implemented
+		s.lastError = errgo.New("@todo implement")
+		s.SigningMethod = jwt.SigningMethodES256
+		s.ecdsapk = nil
 	}
 }
 
@@ -95,8 +99,8 @@ func SetECDSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 func SetRSAFromFile(privateKey string, password ...[]byte) OptionFunc {
 	fpk, err := os.Open(privateKey)
 	if err != nil {
-		return func(a *AuthManager) {
-			a.lastError = errgo.Mask(err)
+		return func(s *Service) {
+			s.lastError = errgo.Mask(err)
 		}
 	}
 	return SetRSA(fpk, password...)
@@ -111,20 +115,20 @@ func SetRSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 	if cl, ok := privateKey.(io.Closer); ok {
 		defer func() {
 			if err := cl.Close(); err != nil { // close file
-				log.Error("userjwt.RSAKey.ioCloser", "err", err)
+				log.Error("token.RSAKey.ioCloser", "err", err)
 			}
 		}()
 	}
 	prKeyData, errRA := ioutil.ReadAll(privateKey)
 	if errRA != nil {
-		return func(a *AuthManager) {
+		return func(a *Service) {
 			a.lastError = errgo.Mask(errRA)
 		}
 	}
 	var prKeyPEM *pem.Block
 	if prKeyPEM, _ = pem.Decode(prKeyData); prKeyPEM == nil {
-		return func(a *AuthManager) {
-			a.lastError = errgo.New("Private Key from io.Reader no found")
+		return func(s *Service) {
+			s.lastError = errgo.New("Private Key from io.Reader no found")
 		}
 	}
 
@@ -132,15 +136,15 @@ func SetRSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 	var err error
 	if x509.IsEncryptedPEMBlock(prKeyPEM) {
 		if len(password) != 1 || len(password[0]) == 0 {
-			return func(a *AuthManager) {
-				a.lastError = errgo.New("Private Key is encrypted but password was not set")
+			return func(s *Service) {
+				s.lastError = errgo.New("Private Key is encrypted but password was not set")
 			}
 		}
 		var dd []byte
 		var errPEM error
 		if dd, errPEM = x509.DecryptPEMBlock(prKeyPEM, password[0]); errPEM != nil {
-			return func(a *AuthManager) {
-				a.lastError = errgo.Newf("Private Key decryption failed: %s", errPEM.Error())
+			return func(s *Service) {
+				s.lastError = errgo.Newf("Private Key decryption failed: %s", errPEM.Error())
 			}
 		}
 		rsaPrivateKey, err = x509.ParsePKCS1PrivateKey(dd)
@@ -148,11 +152,11 @@ func SetRSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 		rsaPrivateKey, err = x509.ParsePKCS1PrivateKey(prKeyPEM.Bytes)
 	}
 
-	return func(a *AuthManager) {
-		a.SigningMethod = jwt.SigningMethodRS256
-		a.rsapk = rsaPrivateKey
-		a.hasKey = true
-		a.lastError = errgo.Mask(err)
+	return func(s *Service) {
+		s.SigningMethod = jwt.SigningMethodRS256
+		s.rsapk = rsaPrivateKey
+		s.hasKey = true
+		s.lastError = errgo.Mask(err)
 	}
 }
 
@@ -160,12 +164,12 @@ func SetRSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 // This function may run around ~3secs.
 func SetRSAGenerator() OptionFunc {
 	pk, err := rsa.GenerateKey(rand.Reader, PrivateKeyBits)
-	return func(a *AuthManager) {
+	return func(s *Service) {
 		if pk != nil {
-			a.rsapk = pk
-			a.hasKey = true
-			a.SigningMethod = jwt.SigningMethodRS256
+			s.rsapk = pk
+			s.hasKey = true
+			s.SigningMethod = jwt.SigningMethodRS256
 		}
-		a.lastError = errgo.Mask(err)
+		s.lastError = errgo.Mask(err)
 	}
 }

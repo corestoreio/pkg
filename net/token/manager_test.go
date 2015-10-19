@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package userjwt_test
+package token_test
 
 import (
 	"fmt"
@@ -29,7 +29,7 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/user/userjwt"
+	"github.com/corestoreio/csfw/net/token"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 )
@@ -37,13 +37,13 @@ import (
 const uuidLen = 36
 
 func TestNewDefault(t *testing.T) {
-	jm, err := userjwt.New()
+	jm, err := token.New()
 	assert.NoError(t, err)
 	assert.Equal(t, time.Hour, jm.Expire)
 
 	assert.Nil(t, jm.Blacklist.Set("test", time.Hour))
 	assert.False(t, jm.Blacklist.Has("test"))
-	assert.Equal(t, userjwt.PostFormVarPrefix, jm.PostFormVarPrefix)
+	assert.Equal(t, token.PostFormVarPrefix, jm.PostFormVarPrefix)
 	assert.Len(t, jm.JTI.Get(), uuidLen)
 
 	testClaims := map[string]interface{}{
@@ -63,15 +63,15 @@ func TestNewDefault(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, failedToken)
 
-	jmRSA, err := userjwt.New(userjwt.SetRSAFromFile("invalid.key"))
+	jmRSA, err := token.New(token.SetRSAFromFile("invalid.key"))
 	assert.Nil(t, jmRSA)
 	assert.Contains(t, err.Error(), "open invalid.key: no such file or directory")
 }
 
 func TestInvalidSigningMethod(t *testing.T) {
 	password := []byte(`Rump3lst!lzch3n`)
-	jm, err := userjwt.New(
-		userjwt.SetPassword(password),
+	jm, err := token.New(
+		token.SetPassword(password),
 	)
 	assert.NoError(t, err)
 
@@ -83,7 +83,7 @@ func TestInvalidSigningMethod(t *testing.T) {
 	assert.NoError(t, err)
 
 	mt, err := jm.Parse(malformedToken)
-	assert.EqualError(t, err, userjwt.ErrUnexpectedSigningMethod.Error())
+	assert.EqualError(t, err, token.ErrUnexpectedSigningMethod.Error())
 	assert.Nil(t, mt)
 }
 
@@ -91,15 +91,15 @@ func TestPasswordFromConfig(t *testing.T) {
 
 	cfg := config.NewMockReader(
 		config.WithMockString(func(path string) string {
-			if path == userjwt.PathJWTPassword {
+			if path == token.PathJWTPassword {
 				return `Rump3lst!lzch3n`
 			}
 			return ""
 		}),
 	)
 
-	jm, err := userjwt.New(
-		userjwt.SetPasswordFromConfig(cfg),
+	jm, err := token.New(
+		token.SetPasswordFromConfig(cfg),
 	)
 	assert.NoError(t, err)
 
@@ -110,7 +110,7 @@ func TestPasswordFromConfig(t *testing.T) {
 }
 
 func TestJTI(t *testing.T) {
-	jm, err := userjwt.New()
+	jm, err := token.New()
 	assert.NoError(t, err)
 	jm.EnableJTI = true
 
@@ -137,7 +137,7 @@ func (b *testBL) Has(_ string) bool { return false }
 func TestLogout(t *testing.T) {
 
 	tbl := &testBL{T: t}
-	jm, err := userjwt.New()
+	jm, err := token.New()
 	assert.NoError(t, err)
 	jm.Blacklist = tbl
 
@@ -157,17 +157,17 @@ func TestLogout(t *testing.T) {
 var pkFile = filepath.Join(build.Default.GOPATH, "src", "github.com", "corestoreio", "csfw", "user", "userjwt", "test_rsa")
 
 func TestRSAEncryptedNoOrFailedPassword(t *testing.T) {
-	jm, err := userjwt.New(userjwt.SetRSAFromFile(pkFile))
+	jm, err := token.New(token.SetRSAFromFile(pkFile))
 	assert.Contains(t, err.Error(), "Private Key is encrypted but password was not set")
 	assert.Nil(t, jm)
 
-	jm2, err2 := userjwt.New(userjwt.SetRSAFromFile(pkFile, []byte(`adfasdf`)))
+	jm2, err2 := token.New(token.SetRSAFromFile(pkFile, []byte(`adfasdf`)))
 	assert.Contains(t, err2.Error(), "Private Key decryption failed: x509: decryption password incorrect")
 	assert.Nil(t, jm2)
 }
 
-func testRsaOption(t *testing.T, opt userjwt.OptionFunc) {
-	jm, err := userjwt.New(opt)
+func testRsaOption(t *testing.T, opt token.OptionFunc) {
+	jm, err := token.New(opt)
 	assert.NoError(t, err)
 	assert.NotNil(t, jm)
 
@@ -183,20 +183,20 @@ func testRsaOption(t *testing.T, opt userjwt.OptionFunc) {
 
 func TestRSAEncryptedPassword(t *testing.T) {
 	pw := []byte("cccamp")
-	testRsaOption(t, userjwt.SetRSAFromFile(pkFile, pw))
+	testRsaOption(t, token.SetRSAFromFile(pkFile, pw))
 }
 
 func TestRSAWithoutPassword(t *testing.T) {
 	pkFileNP := filepath.Join(build.Default.GOPATH, "src", "github.com", "corestoreio", "csfw", "user", "userjwt", "test_rsa_np")
-	testRsaOption(t, userjwt.SetRSAFromFile(pkFileNP))
+	testRsaOption(t, token.SetRSAFromFile(pkFileNP))
 }
 
 func TestRSAGenerate(t *testing.T) {
-	testRsaOption(t, userjwt.SetRSAGenerator())
+	testRsaOption(t, token.SetRSAGenerator())
 }
 
-func testAuth(t *testing.T, opts ...userjwt.OptionFunc) (http.Handler, string) {
-	jm, err := userjwt.New(opts...)
+func testAuth(t *testing.T, opts ...token.OptionFunc) (http.Handler, string) {
+	jm, err := token.New(opts...)
 	assert.NoError(t, err)
 	token, _, err := jm.GenerateToken(map[string]interface{}{
 		"xfoo": "bar",
@@ -227,7 +227,7 @@ func TestAuthorizationNoToken(t *testing.T) {
 
 func TestAuthorizationHTTPErrorHandler(t *testing.T) {
 
-	authHandler, _ := testAuth(t, func(a *userjwt.AuthManager) {
+	authHandler, _ := testAuth(t, func(a *token.AuthManager) {
 
 		a.HTTPErrorHandler = func(err error) http.Handler {
 			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
