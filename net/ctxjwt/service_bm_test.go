@@ -12,14 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package token_test
+package ctxjwt_test
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/corestoreio/csfw/net/token"
+	"github.com/corestoreio/csfw/net/ctxhttp"
+	"github.com/corestoreio/csfw/net/ctxjwt"
+	"golang.org/x/net/context"
 )
 
 // BenchmarkAuthorizationHMAC-4	  100000	     20215 ns/op	    5552 B/op	     105 allocs/op
@@ -31,11 +33,11 @@ func BenchmarkAuthorizationHMAC(b *testing.B) {
 	*/
 
 	password := []byte(`Rump3lst!lzch3n`)
-	jm, err := token.New(token.SetPassword(password))
+	service, err := ctxjwt.NewService(ctxjwt.WithPassword(password))
 	if err != nil {
 		b.Error(err)
 	}
-	token, _, err := jm.GenerateToken(map[string]interface{}{
+	tok, _, err := service.GenerateToken(map[string]interface{}{
 		"xfoo": "bar",
 		"zfoo": 4711,
 	})
@@ -43,11 +45,13 @@ func BenchmarkAuthorizationHMAC(b *testing.B) {
 		b.Error(err)
 	}
 
-	final := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	final := ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
 		w.WriteHeader(http.StatusOK)
+		return nil
 	})
-	authHandler := jm.Authorization(final)
+	jwtHandler := service.WithParseAndValidate()(final)
 
+	ctx := context.Background()
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -56,11 +60,11 @@ func BenchmarkAuthorizationHMAC(b *testing.B) {
 		if err != nil {
 			b.Error(err)
 		}
-		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Authorization", "Bearer "+tok)
 		w := httptest.NewRecorder()
 		//</>
 
-		authHandler.ServeHTTP(w, req)
+		jwtHandler.ServeHTTPContext(ctx, w, req)
 
 	}
 }

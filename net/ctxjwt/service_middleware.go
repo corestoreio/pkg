@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package token
+package ctxjwt
 
 import (
 	"net/http"
@@ -23,13 +23,13 @@ import (
 	"golang.org/x/net/context"
 )
 
-// WithToken represent a middleware handler. For POST or PUT requests, it also
-// parses the request body as a form. The extracted valid token will be added
-// to the context. The extracted token will be checked against the Blacklist.
-// errHandler is an optional argument. Only the first item in the
-// slice will be considered. Default errHandler is:
+// WithParseAndValidate represent a middleware handler. For POST or
+// PUT requests, it also parses the request body as a form. The extracted valid
+// token will be added to the context. The extracted token will be checked
+// against the Blacklist. errHandler is an optional argument. Only the first
+// item in the slice will be considered. Default errHandler is:
 //		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-func WithToken(s *Service, errHandler ...ctxhttp.Handler) ctxhttp.Middleware {
+func (s *Service) WithParseAndValidate(errHandler ...ctxhttp.Handler) ctxhttp.Middleware {
 	var errH ctxhttp.Handler
 	errH = ctxhttp.HandlerFunc(defaultTokenErrorHandler)
 	if len(errHandler) == 1 && errHandler[0] != nil {
@@ -48,9 +48,9 @@ func WithToken(s *Service, errHandler ...ctxhttp.Handler) ctxhttp.Middleware {
 				return h.ServeHTTPContext(NewContext(ctx, token), w, r)
 			}
 			if log.IsInfo() {
-				log.Info("token.Service.Authenticate", "err", err, "token", token, "inBlacklist", inBL)
+				log.Info("ctxjwt.Service.Authenticate", "err", err, "token", token, "inBlacklist", inBL)
 			}
-			return errH.ServeHTTPContext(ctx, w, r)
+			return errH.ServeHTTPContext(NewContextWithError(ctx, err), w, r)
 		})
 	}
 }

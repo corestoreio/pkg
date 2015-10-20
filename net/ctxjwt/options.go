@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package token
+package ctxjwt
 
 import (
 	"crypto/rand"
@@ -33,25 +33,25 @@ import (
 )
 
 // PathJWTPassword defines the path where the password has been stored.
-const PathJWTPassword = "corestore/userjwt/password"
+const PathJWTPassword = "corestore/jwt/password"
 
 // @todo add more KeyFrom...()
 
-// OptionFunc can be used as an argument in NewUser to configure a user.
-type OptionFunc func(a *Service)
+// Option can be used as an argument in NewService to configure a token service.
+type Option func(a *Service)
 
-// SetPasswordFromConfig retrieves the password from the configuration with path
+// WithPasswordFromConfig retrieves the password from the configuration with path
 // as defined in constant PathJWTPassword
-func SetPasswordFromConfig(cr config.Reader) OptionFunc {
+func WithPasswordFromConfig(cr config.Reader) Option {
 	pw, err := cr.GetString(config.Path(PathJWTPassword))
 	if config.NotKeyNotFoundError(err) {
 		pw = string(uuid.NewRandom())
 	}
-	return SetPassword([]byte(pw))
+	return WithPassword([]byte(pw))
 }
 
-// SetPassword sets the HMAC 256 bit signing method with a password. Useful to use Magento encryption key.
-func SetPassword(key []byte) OptionFunc {
+// WithPassword sets the HMAC 256 bit signing method with a password. Useful to use Magento encryption key.
+func WithPassword(key []byte) Option {
 	return func(s *Service) {
 		s.lastError = nil
 		s.hasKey = true
@@ -60,25 +60,25 @@ func SetPassword(key []byte) OptionFunc {
 	}
 }
 
-// SetECDSAFromFile @todo
-func SetECDSAFromFile(privateKey string, password ...[]byte) OptionFunc {
+// WithECDSAFromFile @todo
+func WithECDSAFromFile(privateKey string, password ...[]byte) Option {
 	fpk, err := os.Open(privateKey)
 	if err != nil {
 		return func(s *Service) {
 			s.lastError = errgo.Mask(err)
 		}
 	}
-	return SetECDSA(fpk, password...)
+	return WithECDSA(fpk, password...)
 
 }
 
-// SetECDSA @todo
+// WithECDSA @todo
 // Default Signing bits 256.
-func SetECDSA(privateKey io.Reader, password ...[]byte) OptionFunc {
+func WithECDSA(privateKey io.Reader, password ...[]byte) Option {
 	if cl, ok := privateKey.(io.Closer); ok {
 		defer func() {
 			if err := cl.Close(); err != nil { // close file
-				log.Error("token.ECDSAKey.ioCloser", "err", err)
+				log.Error("ctxjwt.ECDSAKey.ioCloser", "err", err)
 			}
 		}()
 	}
@@ -93,29 +93,29 @@ func SetECDSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 	}
 }
 
-// SetRSAFromFile reads an RSA private key from a file and applies it as an option
+// WithRSAFromFile reads an RSA private key from a file and applies it as an option
 // to the AuthManager. Password as second argument is only required when the
 // private key is encrypted. Public key will be derived from the private key.
-func SetRSAFromFile(privateKey string, password ...[]byte) OptionFunc {
+func WithRSAFromFile(privateKey string, password ...[]byte) Option {
 	fpk, err := os.Open(privateKey)
 	if err != nil {
 		return func(s *Service) {
 			s.lastError = errgo.Mask(err)
 		}
 	}
-	return SetRSA(fpk, password...)
+	return WithRSA(fpk, password...)
 }
 
-// SetRSA reads PEM byte data and decodes it and parses the private key.
+// WithRSA reads PEM byte data and decodes it and parses the private key.
 // Applies the private and the public key to the AuthManager. Password as second
 // argument is only required when the private key is encrypted.
 // Checks for io.Close and closes the resource. Public key will be derived from
 // the private key. Default Signing bits 256.
-func SetRSA(privateKey io.Reader, password ...[]byte) OptionFunc {
+func WithRSA(privateKey io.Reader, password ...[]byte) Option {
 	if cl, ok := privateKey.(io.Closer); ok {
 		defer func() {
 			if err := cl.Close(); err != nil { // close file
-				log.Error("token.RSAKey.ioCloser", "err", err)
+				log.Error("ctxjwt.RSAKey.ioCloser", "err", err)
 			}
 		}()
 	}
@@ -160,9 +160,9 @@ func SetRSA(privateKey io.Reader, password ...[]byte) OptionFunc {
 	}
 }
 
-// SetRSAGenerator creates an in-memory RSA key without persisting it.
+// WithRSAGenerator creates an in-memory RSA key without persisting it.
 // This function may run around ~3secs.
-func SetRSAGenerator() OptionFunc {
+func WithRSAGenerator() Option {
 	pk, err := rsa.GenerateKey(rand.Reader, PrivateKeyBits)
 	return func(s *Service) {
 		if pk != nil {

@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package token handles JSON web tokens and adds/removes it to/from a context.Context
-package token
+// Package ctxjwt handles JSON web tokens within a context.Context.
+package ctxjwt

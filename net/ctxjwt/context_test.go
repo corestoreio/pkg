@@ -12,29 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package token
+package ctxjwt_test
 
 import (
-	"github.com/dgrijalva/jwt-go"
+	"errors"
+	"testing"
+
+	"github.com/corestoreio/csfw/net/ctxjwt"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
 
-// ctxKey type is unexported to prevent collisions with context keys defined in
-// other packages.
-type ctxKey uint
+func TestContextWithError(t *testing.T) {
 
-// key* defines the keys to access a value in a context.Context
-const (
-	keyJSONWebToken ctxKey = iota
-)
+	var wantErr = errors.New("Contiki Context")
+	ctx := ctxjwt.NewContextWithError(context.Background(), wantErr)
+	assert.NotNil(t, ctx)
 
-// NewContext creates a new context with jwt.Token attached.
-func NewContext(ctx context.Context, t *jwt.Token) context.Context {
-	return context.WithValue(ctx, keyJSONWebToken, t)
-}
-
-// FromContext returns the jwt.Token in ctx if it exists.
-func FromContext(ctx context.Context) (t *jwt.Token, ok bool) {
-	t, ok = ctx.Value(keyJSONWebToken).(*jwt.Token)
-	return
+	haveErr, ok := ctxjwt.FromContextWithError(ctx)
+	assert.True(t, ok)
+	assert.EqualError(t, haveErr, wantErr.Error())
 }

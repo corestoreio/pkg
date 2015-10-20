@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package token
+package ctxjwt
 
 import (
 	"crypto/ecdsa"
@@ -56,11 +56,11 @@ type Service struct {
 	}
 }
 
-// New create a new manager. If key option will not be
+// NewService create a new manager. If key option will not be
 // passed then a HMAC password will be generated.
 // Default expire is one hour. Default signing method is HMAC512. The auto
 // generated password will not be output.
-func New(opts ...OptionFunc) (*Service, error) {
+func NewService(opts ...Option) (*Service, error) {
 	s := new(Service)
 	for _, opt := range opts {
 		opt(s)
@@ -91,6 +91,7 @@ func New(opts ...OptionFunc) (*Service, error) {
 // If EnableJTI is false the returned argument jti is empty.
 // For details of the registered claim names please see
 // http://self-issued.info/docs/draft-ietf-oauth-json-web-token.html#rfc.section.4.1
+// This function is thread safe.
 func (s *Service) GenerateToken(claims map[string]interface{}) (token, jti string, err error) {
 	now := time.Now()
 	t := jwt.New(s.SigningMethod)
@@ -140,7 +141,7 @@ func (s *Service) Logout(token *jwt.Token) error {
 // keyFunc runs parallel and concurrent
 func (s *Service) keyFunc(t *jwt.Token) (interface{}, error) {
 	if t.Method.Alg() != s.SigningMethod.Alg() {
-		return nil, log.Error("token.AuthManager.Authenticate.SigningMethod", "err", ErrUnexpectedSigningMethod, "token", t, "method", s.SigningMethod.Alg())
+		return nil, log.Error("ctxjwt.AuthManager.Authenticate.SigningMethod", "err", ErrUnexpectedSigningMethod, "token", t, "method", s.SigningMethod.Alg())
 	} else {
 		switch t.Method.Alg() {
 		case jwt.SigningMethodRS256.Alg(), jwt.SigningMethodRS384.Alg(), jwt.SigningMethodRS512.Alg():
