@@ -20,13 +20,17 @@ import (
 	"errors"
 	"time"
 
+	"fmt"
+
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/juju/errgo"
+	"github.com/pborman/uuid"
 )
 
 // ErrUnexpectedSigningMethod will be returned if some outside dude tries to trick us
 var ErrUnexpectedSigningMethod = errors.New("JWT: Unexpected signing method")
+
+var DefaultExpire time.Duration = time.Hour
 
 // Service main object for handling JWT authentication, generation, blacklists and log outs.
 type Service struct {
@@ -56,10 +60,10 @@ type Service struct {
 	}
 }
 
-// NewService create a new manager. If key option will not be
+// NewService creates a new token service. If key option will not be
 // passed then a HMAC password will be generated.
-// Default expire is one hour. Default signing method is HMAC512. The auto
-// generated password will not be output.
+// Default expire is one hour as in variable DefaultExpire. Default signing
+// method is HMAC512. The auto generated password will not be outputted.
 func NewService(opts ...Option) (*Service, error) {
 	s := new(Service)
 	for _, opt := range opts {
@@ -69,13 +73,12 @@ func NewService(opts ...Option) (*Service, error) {
 		return nil, s.lastError
 	}
 	if !s.hasKey {
-		setAuthManagerDefaults(s)
-	}
-	if s.lastError != nil {
-		return nil, s.lastError
+		s.hasKey = true
+		s.SigningMethod = jwt.SigningMethodHS512
+		s.password = []byte(uuid.NewRandom()) // @todo can be better ...
 	}
 	if s.Expire.Seconds() < 1 {
-		s.Expire = time.Hour
+		s.Expire = DefaultExpire
 	}
 	if s.Blacklist == nil {
 		s.Blacklist = nullBL{}
@@ -113,7 +116,7 @@ func (s *Service) GenerateToken(claims map[string]interface{}) (token, jti strin
 	case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
 		token, err = t.SignedString(s.password)
 	default:
-		return "", "", errgo.Newf("GenerateToken: Unknown algorithm %s", t.Method.Alg())
+		return "", "", fmt.Errorf("GenerateToken: Unknown algorithm %s", t.Method.Alg())
 	}
 
 	return
@@ -151,7 +154,7 @@ func (s *Service) keyFunc(t *jwt.Token) (interface{}, error) {
 		case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
 			return s.password, nil
 		default:
-			return nil, errgo.Newf("Authenticate: Unknown algorithm %s", t.Method.Alg())
+			return nil, fmt.Errorf("ctxjwt.Service.keyFunc: Unknown algorithm %s", t.Method.Alg())
 		}
 	}
 }
@@ -159,8 +162,12 @@ func (s *Service) keyFunc(t *jwt.Token) (interface{}, error) {
 // Parse parses a token string and returns the valid token or an error
 func (s *Service) Parse(rawToken string) (*jwt.Token, error) {
 	token, err := jwt.Parse(rawToken, s.keyFunc)
-	if token != nil && err == nil && token.Valid && !s.Blacklist.Has(token.Raw) {
+	var inBL bool
+	if token != nil {
+		inBL = s.Blacklist.Has(token.Raw)
+	}
+	if token != nil && err == nil && token.Valid && !inBL {
 		return token, nil
 	}
-	return nil, errgo.Mask(err)
+	return nil, log.Error("ctxjwt.Service.Parse", "err", err, "inBlackList", inBL, "rawToken", rawToken, "token", token)
 }

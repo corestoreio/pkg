@@ -26,7 +26,8 @@ import (
 
 	"fmt"
 
-	"github.com/corestoreio/csfw/config"
+	"crypto/x509"
+
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/dgrijalva/jwt-go"
@@ -87,25 +88,6 @@ func TestInvalidSigningMethod(t *testing.T) {
 	assert.Nil(t, mt)
 }
 
-func TestPasswordFromConfig(t *testing.T) {
-
-	cfg := config.NewMockReader(
-		config.WithMockValues(config.MockPV{
-			config.MockPathScopeDefault(ctxjwt.PathJWTPassword): `Rump3lst!lzch3n`,
-		}),
-	)
-
-	jm, err := ctxjwt.NewService(
-		ctxjwt.WithPasswordFromConfig(cfg),
-	)
-	assert.NoError(t, err)
-
-	theToken, _, err := jm.GenerateToken(nil)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, theToken)
-
-}
-
 func TestJTI(t *testing.T) {
 	jm, err := ctxjwt.NewService()
 	assert.NoError(t, err)
@@ -155,11 +137,11 @@ var pkFile = filepath.Join(build.Default.GOPATH, "src", "github.com", "corestore
 
 func TestRSAEncryptedNoOrFailedPassword(t *testing.T) {
 	jm, err := ctxjwt.NewService(ctxjwt.WithRSAFromFile(pkFile))
-	assert.Contains(t, err.Error(), "Private Key is encrypted but password was not set")
+	assert.EqualError(t, err, ctxjwt.ErrPrivateKeyNoPassword.Error())
 	assert.Nil(t, jm)
 
 	jm2, err2 := ctxjwt.NewService(ctxjwt.WithRSAFromFile(pkFile, []byte(`adfasdf`)))
-	assert.Contains(t, err2.Error(), "Private Key decryption failed: x509: decryption password incorrect")
+	assert.EqualError(t, err2, x509.IncorrectPasswordError.Error())
 	assert.Nil(t, jm2)
 }
 
@@ -258,6 +240,12 @@ func TestWithParseAndValidateSuccess(t *testing.T) {
 	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusTeapot)
 		fmt.Fprintf(w, "I'm more of a coffee pot")
+
+		ctxToken, ok := ctxjwt.FromContext(ctx)
+		assert.True(t, ok)
+		assert.NotNil(t, ctxToken)
+		assert.Exactly(t, "bar", ctxToken.Claims["xfoo"].(string))
+
 		return nil
 	})
 	authHandler := jm.WithParseAndValidate()(finalHandler)
@@ -287,10 +275,7 @@ func TestWithParseAndValidateInBlackList(t *testing.T) {
 
 	bl := &testRealBL{}
 	jm.Blacklist = bl
-	theToken, _, err := jm.GenerateToken(map[string]interface{}{
-		"xfoo": "bar",
-		"zfoo": 4711,
-	})
+	theToken, _, err := jm.GenerateToken(nil)
 	bl.token = theToken
 	assert.NoError(t, err)
 	assert.NotEmpty(t, theToken)

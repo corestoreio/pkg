@@ -19,23 +19,31 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"os"
-
+	"errors"
 	"io"
-
 	"io/ioutil"
+	"os"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/juju/errgo"
 	"github.com/pborman/uuid"
 )
 
 // PathJWTPassword defines the path where the password has been stored.
 const PathJWTPassword = "corestore/jwt/password"
 
-// @todo add more KeyFrom...()
+// ErrPrivateKeyNotFound will be returned when the PK cannot be read from the Reader
+var ErrPrivateKeyNotFound = errors.New("Private Key from io.Reader no found")
+
+// ErrPrivateKeyNoPassword will be returned when the PK is encrypted but you
+// forgot to provide a password.
+var ErrPrivateKeyNoPassword = errors.New("Private Key is encrypted but password was not set")
+
+// PrivateKeyBits used when auto generating a private key
+const PrivateKeyBits = 4096
+
+// @todo add more WithKeyFrom...()
 
 // Option can be used as an argument in NewService to configure a token service.
 type Option func(a *Service)
@@ -60,12 +68,12 @@ func WithPassword(key []byte) Option {
 	}
 }
 
-// WithECDSAFromFile @todo
-func WithECDSAFromFile(privateKey string, password ...[]byte) Option {
-	fpk, err := os.Open(privateKey)
+// WithECDSAFromFile loads the ECDSA key from a file @todo
+func WithECDSAFromFile(fileName string, password ...[]byte) Option {
+	fpk, err := os.Open(fileName)
 	if err != nil {
 		return func(s *Service) {
-			s.lastError = errgo.Mask(err)
+			s.lastError = log.Error("ctxjwt.WithECDSAFromFile.os.Open", "err", err, "file", fileName)
 		}
 	}
 	return WithECDSA(fpk, password...)
@@ -83,11 +91,9 @@ func WithECDSA(privateKey io.Reader, password ...[]byte) Option {
 		}()
 	}
 
-	// @todo implement
-
 	return func(s *Service) {
 		s.hasKey = false // set to true if fully implemented
-		s.lastError = errgo.New("@todo implement")
+		s.lastError = errors.New("@todo implement")
 		s.SigningMethod = jwt.SigningMethodES256
 		s.ecdsapk = nil
 	}
@@ -96,11 +102,11 @@ func WithECDSA(privateKey io.Reader, password ...[]byte) Option {
 // WithRSAFromFile reads an RSA private key from a file and applies it as an option
 // to the AuthManager. Password as second argument is only required when the
 // private key is encrypted. Public key will be derived from the private key.
-func WithRSAFromFile(privateKey string, password ...[]byte) Option {
-	fpk, err := os.Open(privateKey)
+func WithRSAFromFile(fileName string, password ...[]byte) Option {
+	fpk, err := os.Open(fileName)
 	if err != nil {
 		return func(s *Service) {
-			s.lastError = errgo.Mask(err)
+			s.lastError = log.Error("ctxjwt.WithRSAFromFile.os.Open", "err", err, "file", fileName)
 		}
 	}
 	return WithRSA(fpk, password...)
@@ -122,13 +128,13 @@ func WithRSA(privateKey io.Reader, password ...[]byte) Option {
 	prKeyData, errRA := ioutil.ReadAll(privateKey)
 	if errRA != nil {
 		return func(a *Service) {
-			a.lastError = errgo.Mask(errRA)
+			a.lastError = log.Error("ctxjwt.WithRSA.ioutil.ReadAll", "err", errRA, "privateKey", privateKey)
 		}
 	}
 	var prKeyPEM *pem.Block
 	if prKeyPEM, _ = pem.Decode(prKeyData); prKeyPEM == nil {
 		return func(s *Service) {
-			s.lastError = errgo.New("Private Key from io.Reader no found")
+			s.lastError = log.Error("ctxjwt.WithRSA.pem.Decode", "err", ErrPrivateKeyNotFound, "prKeyData", prKeyData)
 		}
 	}
 
@@ -137,14 +143,14 @@ func WithRSA(privateKey io.Reader, password ...[]byte) Option {
 	if x509.IsEncryptedPEMBlock(prKeyPEM) {
 		if len(password) != 1 || len(password[0]) == 0 {
 			return func(s *Service) {
-				s.lastError = errgo.New("Private Key is encrypted but password was not set")
+				s.lastError = log.Error("ctxjwt.WithRSA.IsEncryptedPEMBlock", "err", ErrPrivateKeyNoPassword)
 			}
 		}
 		var dd []byte
 		var errPEM error
 		if dd, errPEM = x509.DecryptPEMBlock(prKeyPEM, password[0]); errPEM != nil {
 			return func(s *Service) {
-				s.lastError = errgo.Newf("Private Key decryption failed: %s", errPEM.Error())
+				s.lastError = log.Error("ctxjwt.WithRSA.DecryptPEMBlock", "err", errPEM)
 			}
 		}
 		rsaPrivateKey, err = x509.ParsePKCS1PrivateKey(dd)
@@ -156,7 +162,9 @@ func WithRSA(privateKey io.Reader, password ...[]byte) Option {
 		s.SigningMethod = jwt.SigningMethodRS256
 		s.rsapk = rsaPrivateKey
 		s.hasKey = true
-		s.lastError = errgo.Mask(err)
+		if err != nil {
+			s.lastError = log.Error("ctxjwt.WithRSA.ParsePKCS1PrivateKey", "err", err)
+		}
 	}
 }
 
@@ -170,6 +178,8 @@ func WithRSAGenerator() Option {
 			s.hasKey = true
 			s.SigningMethod = jwt.SigningMethodRS256
 		}
-		s.lastError = errgo.Mask(err)
+		if err != nil {
+			s.lastError = log.Error("ctxjwt.WithRSAGenerator.GenerateKey", "err", err)
+		}
 	}
 }
