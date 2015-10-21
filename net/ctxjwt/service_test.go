@@ -116,9 +116,10 @@ func (b *testBL) Has(_ string) bool { return false }
 func TestLogout(t *testing.T) {
 
 	tbl := &testBL{T: t}
-	jm, err := ctxjwt.NewService()
+	jm, err := ctxjwt.NewService(
+		ctxjwt.WithBlacklist(tbl),
+	)
 	assert.NoError(t, err)
-	jm.Blacklist = tbl
 
 	theToken, _, err := jm.GenerateToken(nil)
 	assert.NoError(t, err)
@@ -235,7 +236,7 @@ func TestWithParseAndValidateSuccess(t *testing.T) {
 
 	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
 	assert.NoError(t, err)
-	req.Header.Set("Authorization", "Bearer "+theToken)
+	ctxjwt.SetHeaderAuthorization(req, theToken)
 
 	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusTeapot)
@@ -270,11 +271,12 @@ func (b *testRealBL) Set(t string, exp time.Duration) error {
 func (b *testRealBL) Has(t string) bool { return b.token == t }
 
 func TestWithParseAndValidateInBlackList(t *testing.T) {
-	jm, err := ctxjwt.NewService()
+	bl := &testRealBL{}
+	jm, err := ctxjwt.NewService(
+		ctxjwt.WithBlacklist(bl),
+	)
 	assert.NoError(t, err)
 
-	bl := &testRealBL{}
-	jm.Blacklist = bl
 	theToken, _, err := jm.GenerateToken(nil)
 	bl.token = theToken
 	assert.NoError(t, err)
@@ -282,7 +284,7 @@ func TestWithParseAndValidateInBlackList(t *testing.T) {
 
 	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
 	assert.NoError(t, err)
-	req.Header.Set("Authorization", "Bearer   "+theToken)
+	ctxjwt.SetHeaderAuthorization(req, theToken)
 
 	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusTeapot)

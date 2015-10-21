@@ -32,6 +32,13 @@ var ErrUnexpectedSigningMethod = errors.New("JWT: Unexpected signing method")
 
 var DefaultExpire time.Duration = time.Hour
 
+// Blacklister a backend storage to handle blocked tokens.
+// Default black hole storage. Must be thread safe.
+type Blacklister interface {
+	Set(token string, expires time.Duration) error
+	Has(token string) bool
+}
+
 // Service main object for handling JWT authentication, generation, blacklists and log outs.
 type Service struct {
 	rsapk    *rsa.PrivateKey
@@ -51,13 +58,8 @@ type Service struct {
 	JTI interface {
 		Get() string
 	}
-
-	// Blacklist a backend storage to handle blocked tokens.
-	// Default black hole storage. Must be thread safe.
-	Blacklist interface {
-		Set(token string, expires time.Duration) error
-		Has(token string) bool
-	}
+	// Blacklist concurrent safe black list service
+	Blacklist Blacklister
 }
 
 // NewService creates a new token service. If key option will not be

@@ -24,20 +24,12 @@ import (
 	"golang.org/x/net/context"
 )
 
-// BenchmarkAuthorizationHMAC-4	  100000	     20215 ns/op	    5552 B/op	     105 allocs/op
-func BenchmarkAuthorizationHMAC(b *testing.B) {
-
-	/*
-		that benchmark gives a false impression because we're also
-		measuring the NewRequest/Response creation ...
-	*/
-
-	password := []byte(`Rump3lst!lzch3n`)
-	service, err := ctxjwt.NewService(ctxjwt.WithPassword(password))
+func bmServeHTTP(b *testing.B, opts ...ctxjwt.Option) {
+	service, err := ctxjwt.NewService(opts...)
 	if err != nil {
 		b.Error(err)
 	}
-	tok, _, err := service.GenerateToken(map[string]interface{}{
+	token, _, err := service.GenerateToken(map[string]interface{}{
 		"xfoo": "bar",
 		"zfoo": 4711,
 	})
@@ -46,25 +38,50 @@ func BenchmarkAuthorizationHMAC(b *testing.B) {
 	}
 
 	final := ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
-		w.WriteHeader(http.StatusOK)
+		w.WriteHeader(http.StatusTeapot)
 		return nil
 	})
 	jwtHandler := service.WithParseAndValidate()(final)
 
+	req, err := http.NewRequest("GET", "http://abc.xyz", nil)
+	if err != nil {
+		b.Error(err)
+	}
+	ctxjwt.SetHeaderAuthorization(req, token)
+	w := httptest.NewRecorder()
 	ctx := context.Background()
+
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		// <15 allocs>
-		req, err := http.NewRequest("GET", "http://auth.xyz", nil)
-		if err != nil {
+		if err := jwtHandler.ServeHTTPContext(ctx, w, req); err != nil {
 			b.Error(err)
 		}
-		req.Header.Set("Authorization", "Bearer "+tok)
-		w := httptest.NewRecorder()
-		//</>
-
-		jwtHandler.ServeHTTPContext(ctx, w, req)
-
+		if w.Code != http.StatusTeapot {
+			b.Errorf("Response Code want %d; have %d", http.StatusTeapot, w.Code)
+		}
 	}
+	//service.Logout()
+}
+
+// BenchmarkServeHTTPHMAC-4        	  100000	     15851 ns/op	    3808 B/op	      82 allocs/op Go 1.5.0
+func BenchmarkServeHTTPHMAC(b *testing.B) {
+	password := []byte(`Rump3lst!lzch3n`)
+	bmServeHTTP(b, ctxjwt.WithPassword(password))
+}
+
+// BenchmarkServeHTTPHMACSimpleBL-4	  100000	     16037 ns/op	    3808 B/op	      82 allocs/op Go 1.5.0
+func BenchmarkServeHTTPHMACSimpleBL(b *testing.B) {
+	bl := ctxjwt.NewSimpleMapBlackList()
+	password := []byte(`Rump3lst!lzch3n`)
+	bmServeHTTP(b,
+		ctxjwt.WithPassword(password),
+		ctxjwt.WithBlacklist(bl),
+	)
+	b.Logf("Blacklist Items %d", bl.Len())
+}
+
+// BenchmarkServeHTTPRSAGenerator-4	    5000	    328220 ns/op	   34544 B/op	     105 allocs/op Go 1.5.0
+func BenchmarkServeHTTPRSAGenerator(b *testing.B) {
+	bmServeHTTP(b, ctxjwt.WithRSAGenerator())
 }

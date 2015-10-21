@@ -23,6 +23,12 @@ import (
 	"golang.org/x/net/context"
 )
 
+// SetHeaderAuthorization convenience function to set the Authorization Bearer
+// Header on a request.
+func SetHeaderAuthorization(req *http.Request, token string) {
+	req.Header.Set("Authorization", "Bearer "+token)
+}
+
 // WithParseAndValidate represent a middleware handler. For POST or
 // PUT requests, it also parses the request body as a form. The extracted valid
 // token will be added to the context. The extracted token will be checked

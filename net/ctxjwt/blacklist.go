@@ -46,8 +46,8 @@ func NewSimpleMapBlackList() *SimpleMapBlackList {
 
 // Has checks if token is within the blacklist.
 func (bl *SimpleMapBlackList) Has(token string) bool {
-	bl.mu.RLock()
-	defer bl.mu.RUnlock()
+	bl.mu.Lock()
+	defer bl.mu.Unlock()
 
 	d, ok := bl.tokens[token]
 	if !ok {
@@ -73,6 +73,13 @@ func (bl *SimpleMapBlackList) Set(token string, expires time.Duration) error {
 	}
 	bl.tokens[token] = time.Now().Add(expires)
 	return nil
+}
+
+// Len returns the number of entries in the blacklist
+func (bl *SimpleMapBlackList) Len() int {
+	bl.mu.RLock()
+	defer bl.mu.RUnlock()
+	return len(bl.tokens)
 }
 
 // jti type to generate a JTI for a token, a unique ID

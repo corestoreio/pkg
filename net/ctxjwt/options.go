@@ -48,6 +48,13 @@ const PrivateKeyBits = 4096
 // Option can be used as an argument in NewService to configure a token service.
 type Option func(a *Service)
 
+// WithBlacklist sets a new black list service.
+func WithBlacklist(blacklist Blacklister) Option {
+	return func(s *Service) {
+		s.Blacklist = blacklist
+	}
+}
+
 // WithPasswordFromConfig retrieves the password from the configuration with path
 // as defined in constant PathJWTPassword
 func WithPasswordFromConfig(cr config.Reader) Option {
