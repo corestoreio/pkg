@@ -61,7 +61,6 @@ func bmServeHTTP(b *testing.B, opts ...ctxjwt.Option) {
 			b.Errorf("Response Code want %d; have %d", http.StatusTeapot, w.Code)
 		}
 	}
-	//service.Logout()
 }
 
 // BenchmarkServeHTTPHMAC-4        	  100000	     15851 ns/op	    3808 B/op	      82 allocs/op Go 1.5.0

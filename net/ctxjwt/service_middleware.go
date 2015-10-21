@@ -34,7 +34,12 @@ func SetHeaderAuthorization(req *http.Request, token string) {
 // token will be added to the context. The extracted token will be checked
 // against the Blacklist. errHandler is an optional argument. Only the first
 // item in the slice will be considered. Default errHandler is:
+//
 //		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+//
+// ProTip: Instead of passing the token as an HTML Header you can also add the token
+// to a form (multipart/form-data) with an input name of access_token. If the
+// token cannot be found within the Header the fallback triggers the lookup within the form.
 func (s *Service) WithParseAndValidate(errHandler ...ctxhttp.Handler) ctxhttp.Middleware {
 	var errH ctxhttp.Handler
 	errH = ctxhttp.HandlerFunc(defaultTokenErrorHandler)
