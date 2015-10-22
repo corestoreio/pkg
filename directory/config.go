@@ -266,8 +266,67 @@ func init() {
 			ID: "general",
 			Groups: config.GroupSlice{
 				&config.Group{
-					ID: "country",
+					ID:        "country",
+					Label:     `Country Options`,
+					Comment:   ``,
+					SortOrder: 1,
+					Scope:     scope.PermAll,
 					Fields: config.FieldSlice{
+						&config.Field{
+							// Path: `general/country/allow`,
+							ID:           "allow",
+							Label:        `Allow Countries`,
+							Comment:      ``,
+							Type:         config.TypeMultiselect,
+							SortOrder:    2,
+							Visible:      config.VisibleYes,
+							Scope:        scope.PermAll,
+							Default:      `AF,AL,DZ,AS,AD,AO,AI,AQ,AG,AR,AM,AW,AU,AT,AX,AZ,BS,BH,BD,BB,BY,BE,BZ,BJ,BM,BL,BT,BO,BA,BW,BV,BR,IO,VG,BN,BG,BF,BI,KH,CM,CA,CD,CV,KY,CF,TD,CL,CN,CX,CC,CO,KM,CG,CK,CR,HR,CU,CY,CZ,DK,DJ,DM,DO,EC,EG,SV,GQ,ER,EE,ET,FK,FO,FJ,FI,FR,GF,PF,TF,GA,GM,GE,DE,GG,GH,GI,GR,GL,GD,GP,GU,GT,GN,GW,GY,HT,HM,HN,HK,HU,IS,IM,IN,ID,IR,IQ,IE,IL,IT,CI,JE,JM,JP,JO,KZ,KE,KI,KW,KG,LA,LV,LB,LS,LR,LY,LI,LT,LU,ME,MF,MO,MK,MG,MW,MY,MV,ML,MT,MH,MQ,MR,MU,YT,FX,MX,FM,MD,MC,MN,MS,MA,MZ,MM,NA,NR,NP,NL,AN,NC,NZ,NI,NE,NG,NU,NF,KP,MP,NO,OM,PK,PW,PA,PG,PY,PE,PH,PN,PL,PS,PT,PR,QA,RE,RO,RS,RU,RW,SH,KN,LC,PM,VC,WS,SM,ST,SA,SN,SC,SL,SG,SK,SI,SB,SO,ZA,GS,KR,ES,LK,SD,SR,SJ,SZ,SE,CH,SY,TL,TW,TJ,TZ,TH,TG,TK,TO,TT,TN,TR,TM,TC,TV,VI,UG,UA,AE,GB,US,UM,UY,UZ,VU,VA,VE,VN,WF,EH,YE,ZM,ZW`,
+							BackendModel: nil,
+							SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
+						},
+
+						&config.Field{
+							// Path: `general/country/default`,
+							ID:           "default",
+							Label:        `Default Country`,
+							Comment:      ``,
+							Type:         config.TypeSelect,
+							SortOrder:    1,
+							Visible:      config.VisibleYes,
+							Scope:        scope.PermAll,
+							Default:      `US`,
+							BackendModel: nil,
+							SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
+						},
+
+						&config.Field{
+							// Path: `general/country/eu_countries`,
+							ID:           "eu_countries",
+							Label:        `European Union Countries`,
+							Comment:      ``,
+							Type:         config.TypeMultiselect,
+							SortOrder:    30,
+							Visible:      config.VisibleYes,
+							Scope:        scope.NewPerm(scope.DefaultID),
+							Default:      `AT,BE,BG,CY,CZ,DK,EE,FI,FR,DE,GR,HR,HU,IE,IT,LV,LT,LU,MT,NL,PL,PT,RO,SK,SI,ES,SE,GB`,
+							BackendModel: nil,
+							SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
+						},
+
+						&config.Field{
+							// Path: `general/country/destinations`,
+							ID:           "destinations",
+							Label:        `Top destinations`,
+							Comment:      ``,
+							Type:         config.TypeMultiselect,
+							SortOrder:    40,
+							Visible:      config.VisibleYes,
+							Scope:        scope.NewPerm(scope.DefaultID),
+							Default:      nil,
+							BackendModel: nil,
+							SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
+						},
 						&config.Field{
 							// Path: `general/country/optional_zip_countries`,
 							ID:           "optional_zip_countries",
@@ -283,7 +342,6 @@ func init() {
 						},
 					},
 				},
-
 				&config.Group{
 					ID:        "region",
 					Label:     `State Options`,
@@ -320,6 +378,70 @@ func init() {
 						},
 					},
 				},
+				&config.Group{
+					ID:        "locale",
+					Label:     `Locale Options`,
+					Comment:   ``,
+					SortOrder: 8,
+					Scope:     scope.PermAll,
+					Fields: config.FieldSlice{
+						&config.Field{
+							// Path: `general/locale/timezone`,
+							ID:           "timezone",
+							Label:        `Timezone`,
+							Comment:      ``,
+							Type:         config.TypeSelect,
+							SortOrder:    1,
+							Visible:      config.VisibleYes,
+							Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Default:      `Europe/Berlin`,
+							BackendModel: nil, // Magento\Config\Model\Config\Backend\Locale\Timezone
+							SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Timezone
+						},
+
+						&config.Field{
+							// Path: `general/locale/code`,
+							ID:           "code",
+							Label:        `Locale`,
+							Comment:      ``,
+							Type:         config.TypeSelect,
+							SortOrder:    5,
+							Visible:      config.VisibleYes,
+							Scope:        scope.PermAll,
+							Default:      `en_US`,
+							BackendModel: nil,
+							SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale
+						},
+
+						&config.Field{
+							// Path: `general/locale/firstday`,
+							ID:           "firstday",
+							Label:        `First Day of Week`,
+							Comment:      ``,
+							Type:         config.TypeSelect,
+							SortOrder:    10,
+							Visible:      config.VisibleYes,
+							Scope:        scope.PermAll,
+							Default:      nil,
+							BackendModel: nil,
+							SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Weekdays
+						},
+
+						&config.Field{
+							// Path: `general/locale/weekend`,
+							ID:           "weekend",
+							Label:        `Weekend Days`,
+							Comment:      ``,
+							Type:         config.TypeMultiselect,
+							SortOrder:    15,
+							Visible:      config.VisibleYes,
+							Scope:        scope.PermAll,
+							Default:      nil,
+							BackendModel: nil,
+							SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Weekdays
+						},
+					},
+				},
 			},
 		},
 
@@ -327,28 +449,6 @@ func init() {
 		&config.Section{
 			ID: "general",
 			Groups: config.GroupSlice{
-				&config.Group{
-					ID: "country",
-					Fields: config.FieldSlice{
-						&config.Field{
-							// Path: `general/country/allow`,
-							ID:      "allow",
-							Type:    config.TypeHidden,
-							Visible: config.VisibleNo,
-							Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
-							Default: `AF,AL,DZ,AS,AD,AO,AI,AQ,AG,AR,AM,AW,AU,AT,AX,AZ,BS,BH,BD,BB,BY,BE,BZ,BJ,BM,BL,BT,BO,BA,BW,BV,BR,IO,VG,BN,BG,BF,BI,KH,CM,CA,CD,CV,KY,CF,TD,CL,CN,CX,CC,CO,KM,CG,CK,CR,HR,CU,CY,CZ,DK,DJ,DM,DO,EC,EG,SV,GQ,ER,EE,ET,FK,FO,FJ,FI,FR,GF,PF,TF,GA,GM,GE,DE,GG,GH,GI,GR,GL,GD,GP,GU,GT,GN,GW,GY,HT,HM,HN,HK,HU,IS,IM,IN,ID,IR,IQ,IE,IL,IT,CI,JE,JM,JP,JO,KZ,KE,KI,KW,KG,LA,LV,LB,LS,LR,LY,LI,LT,LU,ME,MF,MO,MK,MG,MW,MY,MV,ML,MT,MH,MQ,MR,MU,YT,FX,MX,FM,MD,MC,MN,MS,MA,MZ,MM,NA,NR,NP,NL,AN,NC,NZ,NI,NE,NG,NU,NF,KP,MP,NO,OM,PK,PW,PA,PG,PY,PE,PH,PN,PL,PS,PT,PR,QA,RE,RO,RS,RU,RW,SH,KN,LC,PM,VC,WS,SM,ST,SA,SN,SC,SL,SG,SK,SI,SB,SO,ZA,GS,KR,ES,LK,SD,SR,SJ,SZ,SE,CH,SY,TL,TW,TJ,TZ,TH,TG,TK,TO,TT,TN,TR,TM,TC,TV,VI,UG,UA,AE,GB,US,UM,UY,UZ,VU,VA,VE,VN,WF,EH,YE,ZM,ZW`,
-						},
-
-						&config.Field{
-							// Path: `general/country/default`,
-							ID:      "default",
-							Type:    config.TypeHidden,
-							Visible: config.VisibleNo,
-							Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
-							Default: `US`,
-						},
-					},
-				},
 
 				&config.Group{
 					ID: "locale",
@@ -414,24 +514,6 @@ func init() {
 							Visible: config.VisibleNo,
 							Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 							Default: `en`,
-						},
-
-						&config.Field{
-							// Path: `general/locale/code`,
-							ID:      "code",
-							Type:    config.TypeHidden,
-							Visible: config.VisibleNo,
-							Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
-							Default: `en_US`,
-						},
-
-						&config.Field{
-							// Path: `general/locale/timezone`,
-							ID:      "timezone",
-							Type:    config.TypeHidden,
-							Visible: config.VisibleNo,
-							Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
-							Default: `America/Los_Angeles`,
 						},
 					},
 				},
