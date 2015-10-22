@@ -26,10 +26,10 @@ import (
 // Func String() attached. Part of type Perm.
 type Scope uint8
 
-// *ID defines the overall scopes in a configuration. If a Section/Group/Field
-// can be shown in the current selected scope.
+// *ID defines the overall scopes. The hierarchical order is always
+// Default -> Website -> Group -> Store.
 const (
-	AbsentID Scope = iota // order of the constants is used for comparison
+	AbsentID Scope = iota // must start with 0
 	DefaultID
 	WebsiteID
 	GroupID

@@ -22,8 +22,11 @@ import (
 // error gets returned.
 var ErrUnsupportedScope = errors.New("Unsupported Scope ID")
 
-// Option for the Init() function. Instead of the IDer interface you can
-// also provide a *Coder interface. Order of scope precedence:
+// Option takes care of the hierarchical level between Website, Group and Store.
+// Option can be used as an argument in other functions.
+// Instead of the [Website|Group|Store]IDer interface you can
+// also provide a [Website|Group|Store]Coder interface.
+// Order of scope precedence:
 // Website -> Group -> Store. Be sure to set e.g. Website and Group to nil
 // if you need initialization for store level.
 type Option struct {
@@ -32,7 +35,10 @@ type Option struct {
 	Store   StoreIDer
 }
 
-// SetByCode sets an Option by Store or Website code.
+// SetByCode depending on the scopeType the code string gets converted into a
+// StoreCoder or WebsiteCoder interface and the appropriate struct fields
+// get assigned with the *Coder interface. scopeType can only be WebsiteID or
+// StoreID because a Group code does not exists.
 func SetByCode(code string, scopeType Scope) (o Option, err error) {
 	c := MockCode(code)
 	// GroupID does not have a scope code
@@ -47,7 +53,8 @@ func SetByCode(code string, scopeType Scope) (o Option, err error) {
 	return
 }
 
-// SetByID sets an Option by Website, Group or Store ID.
+// SetByID depending on the scopeType the scopeID int64 gets converted into a
+// [Website|Group|Store]IDer.
 func SetByID(scopeID int64, scopeType Scope) (o Option, err error) {
 	i := MockID(scopeID)
 	// the order of the cases is important
@@ -64,7 +71,8 @@ func SetByID(scopeID int64, scopeType Scope) (o Option, err error) {
 	return
 }
 
-// Scope returns the underlying scope ID.
+// Scope returns the underlying scope ID depending on which struct field is set.
+// It maintains the hierarchical order: 1. Website, 2. Group, 3. Store.
 func (o Option) Scope() (s Scope) {
 	s = AbsentID
 	// the order of the cases is important

@@ -142,8 +142,7 @@ func newArg(opts ...ArgFunc) (arg, error) {
 func mustNewArg(opts ...ArgFunc) arg {
 	a, err := newArg(opts...)
 	if err != nil {
-		log.Error("config.mustNewArg", "err", err)
-		panic(err)
+		panic(log.Error("config.mustNewArg", "err", err))
 	}
 	return a
 }
