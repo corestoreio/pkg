@@ -180,7 +180,7 @@ func (ss SectionSlice) FindGroupByPath(paths ...string) (*Group, error) {
 		paths = scope.PathSplit(paths[0])
 	}
 	if len(paths) < 2 {
-		return nil, errgo.Mask(ErrGroupNotFound)
+		return nil, ErrGroupNotFound
 	}
 	cs, err := ss.FindByID(paths[0])
 	if err != nil {
@@ -197,7 +197,7 @@ func (ss SectionSlice) FindFieldByPath(paths ...string) (*Field, error) {
 		paths = scope.PathSplit(paths[0])
 	}
 	if len(paths) < 3 {
-		return nil, errgo.Mask(ErrFieldNotFound)
+		return nil, ErrFieldNotFound
 	}
 	cg, err := ss.FindGroupByPath(paths...)
 	if err != nil {
