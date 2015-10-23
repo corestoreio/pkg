@@ -17,14 +17,41 @@ package directory_test
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/directory"
+	"github.com/corestoreio/csfw/utils"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/text/language"
 )
 
-func TestCountry(t *testing.T) {
+//func TestCountry(t *testing.T) {
+//	ch := language.MustParseRegion("CH")
+//	tld, err := ch.Canonicalize().TLD()
+//	assert.NoError(t, err)
+//	t.Logf("\n%#v\n", tld.String())
+//}
 
-	ch := language.MustParseRegion("CH")
-	tld, err := ch.Canonicalize().TLD()
+func TestDefaultCountry(t *testing.T) {
+	t.Log("@todo")
+}
+
+func TestAllowedCountriesFound(t *testing.T) {
+	cr := config.NewMockReader(
+		config.WithMockValues(config.MockPV{
+			config.MockPathScopeStore(1, directory.PathCountryAllowed): "DE,AU,CH,AT",
+		}),
+	)
+
+	haveCountries, err := directory.AllowedCountries(cr.NewScoped(1, 1, 1))
 	assert.NoError(t, err)
-	t.Logf("\n%#v\n", tld.String())
+	assert.Exactly(t, utils.StringSlice{"DE", "AU", "CH", "AT"}, haveCountries)
+}
+
+func TestAllowedCountriesDefault(t *testing.T) {
+	cr := config.NewMockReader(
+		config.WithMockValues(config.MockPV{}),
+	)
+
+	haveCountries, err := directory.AllowedCountries(cr.NewScoped(1, 1, 1))
+	assert.NoError(t, err)
+	assert.True(t, len(haveCountries) > 100)
 }

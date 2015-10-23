@@ -14,7 +14,13 @@
 
 package directory
 
-import "github.com/corestoreio/csfw/config"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/utils"
+)
 
 type (
 	Country struct {
@@ -24,4 +30,25 @@ type (
 // DefaultCountry returns the country code. Store argument is optional.
 func DefaultCountry(cr config.ScopedReader) string {
 	return cr.GetString(PathDefaultCountry)
+}
+
+// AllowedCountries returns a list of all allowed countries per scope.
+// This function might gets refactored into a SourceModel.
+// May return nil,nil when it's unable to determine any list of countries.
+func AllowedCountries(cr config.ScopedReader) (utils.StringSlice, error) {
+	cStr := cr.GetString(PathCountryAllowed)
+
+	if cStr == "" {
+		field, err := PackageConfiguration.FindFieldByPath(PathCountryAllowed) // get default value
+		if err != nil {
+			return nil, err
+		}
+
+		var ok bool
+		cStr, ok = field.Default.(string)
+		if cStr == "" || !ok {
+			return nil, fmt.Errorf("Cannot type assert field.Default value to string: %#v", field)
+		}
+	}
+	return utils.StringSlice(strings.Split(cStr, `,`)), nil
 }

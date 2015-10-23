@@ -28,6 +28,9 @@ const (
 	PathCurrencyDefault = "currency/options/default"
 	PathCurrencyAllow   = "currency/options/allow"
 
+	// PathCountryAllowed per store view allowed countries
+	PathCountryAllowed = "general/country/allow"
+
 	// PathOptionalZipCountries lists ISO2 country codes which have optional Zip/Postal pre-configured
 	PathOptionalZipCountries = "general/country/optional_zip_countries"
 	// PathStatesRequired lists countries, for which state is required. No default values.
