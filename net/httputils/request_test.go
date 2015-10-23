@@ -15,11 +15,12 @@
 package httputils_test
 
 import (
-	"github.com/corestoreio/csfw/net/httputils"
-	"github.com/stretchr/testify/assert"
 	"net"
 	"net/http"
 	"testing"
+
+	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetRemoteAddr(t *testing.T) {
