@@ -14,6 +14,8 @@
 
 // Package geoip detects the country by an IP address using the maxmind database.
 //
+// This package is compatible to IPv4 and IPv6.
+//
 // The detected country and all its attributes will be added to a context.
 // It may also check general/country/allow
 package geoip

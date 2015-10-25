@@ -31,19 +31,19 @@ func NewContextCountry(ctx context.Context, c *IPCountry) context.Context {
 	return context.WithValue(ctx, keyctxCountry, c)
 }
 
-// FromContextCountry returns the geoip.Country in ctx if it exists.
-func FromContextCountry(ctx context.Context) (c *IPCountry, ok bool) {
-	c, ok = ctx.Value(keyctxCountry).(*IPCountry)
-	return
-}
-
 // NewContextWithError creates a new context with an error attached.
 func NewContextWithError(ctx context.Context, err error) context.Context {
 	return context.WithValue(ctx, keyctxErr, err)
 }
 
-// FromContextWithError returns an error in ctx if it exists.
-func FromContextWithError(ctx context.Context) (err error, ok bool) {
-	err, ok = ctx.Value(keyctxErr).(error)
-	return
+// FromContextCountry returns the geoip.Country in ctx if it exists or
+// and error if that one exists. The error has been previously set
+// by NewContextWithError.
+func FromContextCountry(ctx context.Context) (*IPCountry, error, bool) {
+	err, ok := ctx.Value(keyctxErr).(error)
+	if ok {
+		return nil, err, ok
+	}
+	c, ok := ctx.Value(keyctxCountry).(*IPCountry)
+	return c, nil, ok
 }
