@@ -29,7 +29,8 @@ func TestContextWithError(t *testing.T) {
 	ctx := ctxjwt.NewContextWithError(context.Background(), wantErr)
 	assert.NotNil(t, ctx)
 
-	haveErr, ok := ctxjwt.FromContextWithError(ctx)
+	haveToken, haveErr, ok := ctxjwt.FromContext(ctx)
+	assert.Nil(t, haveToken)
 	assert.True(t, ok)
 	assert.EqualError(t, haveErr, wantErr.Error())
 }

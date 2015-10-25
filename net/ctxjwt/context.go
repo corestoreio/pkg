@@ -34,19 +34,19 @@ func NewContext(ctx context.Context, t *jwt.Token) context.Context {
 	return context.WithValue(ctx, keyJSONWebToken, t)
 }
 
-// FromContext returns the jwt.Token in ctx if it exists.
-func FromContext(ctx context.Context) (t *jwt.Token, ok bool) {
-	t, ok = ctx.Value(keyJSONWebToken).(*jwt.Token)
-	return
+// FromContext returns the jwt.Token in ctx if it exists or an error.
+// Check the ok bool value if an error or jwt.Token is within the
+// context.Context
+func FromContext(ctx context.Context) (*jwt.Token, error, bool) {
+	err, ok := ctx.Value(keyctxErr).(error)
+	if ok {
+		return nil, err, ok
+	}
+	t, ok := ctx.Value(keyJSONWebToken).(*jwt.Token)
+	return t, nil, ok
 }
 
 // NewContextWithError creates a new context with an error attached.
 func NewContextWithError(ctx context.Context, err error) context.Context {
 	return context.WithValue(ctx, keyctxErr, err)
-}
-
-// FromContextWithError returns an error in ctx if it exists.
-func FromContextWithError(ctx context.Context) (err error, ok bool) {
-	err, ok = ctx.Value(keyctxErr).(error)
-	return
 }

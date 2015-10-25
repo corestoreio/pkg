@@ -207,9 +207,9 @@ func TestWithParseAndValidateNoToken(t *testing.T) {
 func TestWithParseAndValidateHTTPErrorHandler(t *testing.T) {
 
 	authHandler, _ := testAuth(t, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		err, ok := ctxjwt.FromContextWithError(ctx)
+		tok, err, ok := ctxjwt.FromContext(ctx)
 		assert.True(t, ok)
-
+		assert.Nil(t, tok)
 		w.WriteHeader(http.StatusTeapot)
 		_, err = w.Write([]byte(err.Error()))
 		return err
@@ -242,8 +242,9 @@ func TestWithParseAndValidateSuccess(t *testing.T) {
 		w.WriteHeader(http.StatusTeapot)
 		fmt.Fprintf(w, "I'm more of a coffee pot")
 
-		ctxToken, ok := ctxjwt.FromContext(ctx)
+		ctxToken, err, ok := ctxjwt.FromContext(ctx)
 		assert.True(t, ok)
+		assert.NoError(t, err)
 		assert.NotNil(t, ctxToken)
 		assert.Exactly(t, "bar", ctxToken.Claims["xfoo"].(string))
 
