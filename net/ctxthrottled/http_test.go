@@ -11,6 +11,20 @@
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// Copyright 2015, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package ctxthrottled_test
 
 import (
@@ -20,6 +34,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/net/ctxhttp"
+	"github.com/corestoreio/csfw/net/ctxthrottled"
+	"golang.org/x/net/context"
 	"gopkg.in/throttled/throttled.v2"
 )
 
@@ -49,14 +67,15 @@ type httpTestCase struct {
 	headers map[string]string
 }
 
-func TestHTTPRateLimiter(t *testing.T) {
-	limiter := throttled.HTTPRateLimiter{
+func TestHTTPRateLimit(t *testing.T) {
+	limiter := ctxthrottled.HTTPRateLimit{
 		RateLimiter: &stubLimiter{},
 		VaryBy:      &pathGetter{},
 	}
 
-	handler := limiter.RateLimit(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := limiter.WithRateLimit(nil, ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
 		w.WriteHeader(200)
+		return nil
 	}))
 
 	runHTTPTestCases(t, handler, []httpTestCase{
@@ -66,29 +85,53 @@ func TestHTTPRateLimiter(t *testing.T) {
 	})
 }
 
-func TestCustomHTTPRateLimiterHandlers(t *testing.T) {
-	limiter := throttled.HTTPRateLimiter{
-		RateLimiter: &stubLimiter{},
-		VaryBy:      &pathGetter{},
-		DeniedHandler: http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			http.Error(w, "custom limit exceeded", 400)
+func TestHTTPRateLimitConfig(t *testing.T) {
+	cr := config.NewMockReader(
+		config.WithMockValues(config.MockPV{
+			config.MockPathScopeDefault(ctxthrottled.PathRateLimitBurst):    0,
+			config.MockPathScopeDefault(ctxthrottled.PathRateLimitRequests): 1,
+			config.MockPathScopeDefault(ctxthrottled.PathRateLimitDuration): "i",
 		}),
-		Error: func(w http.ResponseWriter, r *http.Request, err error) {
-			http.Error(w, "custom internal error", 501)
-		},
+	)
+
+	limiter := ctxthrottled.HTTPRateLimit{
+		Config: cr,
+		VaryBy: &pathGetter{},
 	}
 
-	handler := limiter.RateLimit(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	handler := limiter.WithRateLimit(nil, ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
 		w.WriteHeader(200)
+		return nil
+	}))
+
+	runHTTPTestCases(t, handler, []httpTestCase{
+		{"xx", 200, map[string]string{"X-Ratelimit-Limit": "1", "X-Ratelimit-Remaining": "0", "X-Ratelimit-Reset": "60"}},
+		{"xx", 429, map[string]string{"X-Ratelimit-Limit": "1", "X-Ratelimit-Remaining": "0", "X-Ratelimit-Reset": "60", "Retry-After": "60"}},
+	})
+}
+
+func TestCustomHTTPRateLimitHandlers(t *testing.T) {
+	limiter := ctxthrottled.HTTPRateLimit{
+		RateLimiter: &stubLimiter{},
+		VaryBy:      &pathGetter{},
+		DeniedHandler: ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
+			http.Error(w, "custom limit exceeded", 400)
+			return nil
+		}),
+	}
+
+	handler := limiter.WithRateLimit(nil, ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
+		w.WriteHeader(200)
+		return nil
 	}))
 
 	runHTTPTestCases(t, handler, []httpTestCase{
 		{"limit", 400, map[string]string{}},
-		{"error", 501, map[string]string{}},
+		{"error", 500, map[string]string{}},
 	})
 }
 
-func runHTTPTestCases(t *testing.T, h http.Handler, cs []httpTestCase) {
+func runHTTPTestCases(t *testing.T, h ctxhttp.Handler, cs []httpTestCase) {
 	for i, c := range cs {
 		req, err := http.NewRequest("GET", c.path, nil)
 		if err != nil {
@@ -96,7 +139,11 @@ func runHTTPTestCases(t *testing.T, h http.Handler, cs []httpTestCase) {
 		}
 
 		rr := httptest.NewRecorder()
-		h.ServeHTTP(rr, req)
+		serveErr := h.ServeHTTPContext(context.Background(), rr, req)
+		if serveErr != nil {
+			http.Error(rr, serveErr.Error(), http.StatusInternalServerError)
+		}
+
 		if have, want := rr.Code, c.code; have != want {
 			t.Errorf("Expected request %d at %s to return %d but got %d",
 				i, c.path, want, have)

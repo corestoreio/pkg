@@ -11,27 +11,45 @@
 //
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+// Copyright 2015, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package ctxthrottled
 
 import (
-	"errors"
+	"math"
+	"net/http"
+	"strconv"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"golang.org/x/net/context"
 	"gopkg.in/throttled/throttled.v2"
-	"math"
-	"net/http"
-	"strconv"
+	"gopkg.in/throttled/throttled.v2/store/memstore"
 )
 
 const (
 	// PathRateLimitBurst defines the number of requests that
 	// will be allowed to exceed the rate in a single burst and must be
 	// greater than or equal to zero.
+	// Scope Global, Type Int.
 	PathRateLimitBurst = `corestore/ctxthrottled/burst`
-	// PathRateLimitDuration number of requests
+	// PathRateLimitDuration number of requests allowed per time period
+	// Scope Global, Type Int.
 	PathRateLimitRequests = `corestore/ctxthrottled/requests`
-	// PathRateLimitDuration per second (s), minute (i), hour (h), day (d), month (m)
+	// PathRateLimitDuration per second (s), minute (i), hour (h), day (d)
+	// Scope Global, Type String.
 	PathRateLimitDuration = `corestore/ctxthrottled/duration`
 )
 
@@ -43,10 +61,23 @@ var DefaultDeniedHandler = ctxhttp.Handler(ctxhttp.HandlerFunc(func(_ context.Co
 	return nil
 }))
 
+// DefaultBurst defines the number of requests that
+// will be allowed to exceed the rate in a single burst and must be
+// greater than or equal to zero.
+var DefaultBurst int = 5
+
+// DefaultRequests number of requests allowed per time period
+var DefaultRequests int = 100
+
+// DefaultDuration per second (s), minute (i), hour (h), day (d)
+var DefaultDuration string = "h"
+
 // HTTPRateLimit faciliates using a Limiter to limit HTTP requests.
 type HTTPRateLimit struct {
 	// Config is the config.Manager with PubSub
 	Config config.ReaderPubSuber
+
+	// configScope config.ScopedReader todo for later: rate limit on a per website level
 
 	// DeniedHandler is called if the request is disallowed. If it is
 	// nil, the DefaultDeniedHandler variable is used.
@@ -63,25 +94,35 @@ type HTTPRateLimit struct {
 	}
 }
 
-func NewHTTPRateLimit() *HTTPRateLimit {
-	rl := &HTTPRateLimit{
-		Config:        config.DefaultManager,
-		DeniedHandler: DefaultDeniedHandler,
-	}
-	return rl
-}
-
 func (t *HTTPRateLimit) quota() throttled.RateQuota {
 	var burst, request int
 	var duration string
 
-	// Maximum burst of 5 which refills at 20 tokens per minute.
-	quota := throttled.RateQuota{throttled.PerMin(20), 5}
-	//	if rc, err := cr.GetInt(config.Path(PathRedirectToBase)); rc != redirectCode && false == config.NotKeyNotFoundError(err) {
-	//		redirectCode = http.StatusFound
-	//	}
+	if burst, _ = t.Config.GetInt(config.Path(PathRateLimitBurst)); burst < 0 {
+		burst = DefaultBurst
+	}
+	if request, _ = t.Config.GetInt(config.Path(PathRateLimitRequests)); request == 0 {
+		request = DefaultRequests
+	}
+	if duration, _ = t.Config.GetString(config.Path(PathRateLimitDuration)); duration == "" {
+		duration = DefaultDuration
+	}
 
-	return quota
+	var r throttled.Rate
+	switch duration {
+	case "s": // second
+		r = throttled.PerSec(request)
+	case "i": // minute
+		r = throttled.PerMin(request)
+	case "h": // hour
+		r = throttled.PerHour(request)
+	case "d": // day
+		r = throttled.PerDay(request)
+	default:
+		r = throttled.PerHour(request)
+	}
+
+	return throttled.RateQuota{r, burst}
 }
 
 // WithRateLimit wraps an ctxhttp.Handler to limit incoming requests.
@@ -91,22 +132,27 @@ func (t *HTTPRateLimit) quota() throttled.RateQuota {
 // Retry-After headers will be written to the response based on the
 // values in the RateLimitResult.
 func (t *HTTPRateLimit) WithRateLimit(rlStore throttled.GCRAStore, h ctxhttp.Handler) ctxhttp.Handler {
-
-	// "gopkg.in/throttled/throttled.v2/store/memstore"
-	//	store, err := memstore.New(65536)
-	//	if err != nil {
-	//		log.Fatal(err)
-	//	}
+	if t.Config == nil {
+		t.Config = config.DefaultManager
+	}
+	if t.DeniedHandler == nil {
+		t.DeniedHandler = DefaultDeniedHandler
+	}
 
 	if t.RateLimiter == nil {
+		if rlStore == nil {
+			var err error
+			rlStore, err = memstore.New(65536)
+			if err != nil {
+				panic(err)
+			}
+		}
+
 		var err error
 		t.RateLimiter, err = throttled.NewGCRARateLimiter(rlStore, t.quota())
 		if err != nil {
 			panic(err)
 		}
-	}
-	if t.VaryBy == nil {
-		t.VaryBy = &throttled.VaryBy{Path: true}
 	}
 
 	return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
