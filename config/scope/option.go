@@ -73,8 +73,9 @@ func SetByID(scopeID int64, scopeType Scope) (o Option, err error) {
 
 // Scope returns the underlying scope ID depending on which struct field is set.
 // It maintains the hierarchical order: 1. Website, 2. Group, 3. Store.
+// If no field has been set returns DefaultID.
 func (o Option) Scope() (s Scope) {
-	s = AbsentID
+	s = DefaultID
 	// the order of the cases is important
 	switch {
 	case o.Website != nil:

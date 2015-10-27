@@ -96,7 +96,6 @@ func TestApplyID(t *testing.T) {
 			} else {
 				assert.Nil(t, test.wantStoreID)
 			}
-
 		}
 	}
 }
@@ -128,5 +127,10 @@ func TestApplyStore(t *testing.T) {
 	assert.Equal(t, int64(3), so.Store.StoreID())
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)
+}
 
+func TestApplyDefault(t *testing.T) {
+	so := scope.Option{}
+	assert.NotNil(t, so)
+	assert.Exactly(t, scope.DefaultID, so.Scope())
 }
