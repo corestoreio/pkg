@@ -20,6 +20,7 @@ import (
 	"github.com/corestoreio/csfw/net/httputils"
 	"github.com/corestoreio/csfw/utils/log"
 	"golang.org/x/net/context"
+	"time"
 )
 
 // Middleware is a wrapper for the ctxhttp.Handler to create middleware functions.
@@ -70,6 +71,42 @@ func WithXHTTPMethodOverride() Middleware {
 					log.Info("ctxhttp.SupportXHTTPMethodOverride.switch", "err", "Unknown http method", "method", mo, "form", r.Form.Encode(), "header", r.Header)
 				}
 			}
+			return h.ServeHTTPContext(ctx, w, r)
+		})
+	}
+}
+
+// WithCloseNotify returns a Handler cancelling the context when the client
+// connection close unexpectedly.
+func WithCloseNotify() Middleware {
+	return func(h Handler) Handler {
+		return HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+			// Cancel the context if the client closes the connection
+			if wcn, ok := w.(http.CloseNotifier); ok {
+
+				var cancel context.CancelFunc
+				ctx, cancel = context.WithCancel(ctx)
+				defer cancel()
+
+				notify := wcn.CloseNotify()
+				go func() {
+					<-notify
+					cancel()
+				}()
+			}
+			return h.ServeHTTPContext(ctx, w, r)
+		})
+	}
+}
+
+// WithTimeout returns a Handler which adds a timeout to the context.
+//
+// Child handlers have the responsibility to obey the context deadline and to return
+// an appropriate error (or not) response in case of timeout.
+func WithTimeout(timeout time.Duration) Middleware {
+	return func(h Handler) Handler {
+		return HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+			ctx, _ = context.WithTimeout(ctx, timeout)
 			return h.ServeHTTPContext(ctx, w, r)
 		})
 	}

@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package ctxhttp provides functions and configuration values for the http transport.
+// Package ctxhttp provides a bridge between http.Handler and net/context.
 //
-// Network defines in CoreStore case any http, https or RPC request.
-//
-// TODO(cs) => github.com/streadway/handy
 package ctxhttp
