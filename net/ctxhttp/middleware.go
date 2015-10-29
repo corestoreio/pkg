@@ -16,11 +16,11 @@ package ctxhttp
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/corestoreio/csfw/net/httputils"
 	"github.com/corestoreio/csfw/utils/log"
 	"golang.org/x/net/context"
-	"time"
 )
 
 // Middleware is a wrapper for the ctxhttp.Handler to create middleware functions.
