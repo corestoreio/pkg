@@ -18,6 +18,9 @@ import "bytes"
 
 // Errors returns a string where each error has been separated by a line break.
 func Errors(errs ...error) string {
+	if len(errs) == 0 || (len(errs) == 1 && errs[0] == nil) {
+		return ""
+	}
 	var buf bytes.Buffer
 	le := len(errs) - 1
 	for i, e := range errs {
