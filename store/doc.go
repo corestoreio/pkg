@@ -17,7 +17,7 @@ Package store implements the handling of websites, groups and stores.
 
 Usage
 
-	m := store.NewManager(options ...)
+	m := store.NewService(options ...)
 
 
 */

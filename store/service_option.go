@@ -16,8 +16,8 @@ package store
 
 import "github.com/corestoreio/csfw/config"
 
-// ManagerOption option func for NewManager(). Not yet used.
-type ManagerOption func(*Manager)
+// ServiceOption option func for NewService(). Not yet used.
+type ServiceOption func(*Service)
 
-// WithManagerConfigReader sets the root config.Reader to the manager
-func WithManagerConfigReader(cr config.Reader) ManagerOption { return func(m *Manager) { m.cr = cr } }
+// WithServiceConfigReader sets the root config.Reader to the Service.
+func WithServiceConfigReader(cr config.Reader) ServiceOption { return func(m *Service) { m.cr = cr } }

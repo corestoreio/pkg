@@ -37,7 +37,7 @@ var (
 )
 
 // RESTStores creates a list of all stores
-func RESTStores(sm *Manager) http.HandlerFunc {
+func RESTStores(sm *Service) http.HandlerFunc {
 	// @todo refactor
 	return func(w http.ResponseWriter, r *http.Request) {
 		stores, err := sm.Stores()
@@ -55,7 +55,7 @@ func RESTStores(sm *Manager) http.HandlerFunc {
 }
 
 // RESTStoreCreate creates a new store
-//func RESTStoreCreate(m *Manager) httprouter.Handle {
+//func RESTStoreCreate(m *Service) httprouter.Handle {
 //	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 //		fmt.Printf("\n%#v\n", r)
 //		w.Write([]byte("RESTStoreCreate\n"))
@@ -63,21 +63,21 @@ func RESTStores(sm *Manager) http.HandlerFunc {
 //}
 //
 //// RESTStore lists a single store
-//func RESTStore(m *Manager) httprouter.Handle {
+//func RESTStore(m *Service) httprouter.Handle {
 //	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 //		w.Write([]byte("RESTStore\n"))
 //	}
 //}
 //
 //// RESTStoreSave saves a given store
-//func RESTStoreSave(m *Manager) httprouter.Handle {
+//func RESTStoreSave(m *Service) httprouter.Handle {
 //	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 //		w.Write([]byte("RESTStoreSave\n"))
 //	}
 //}
 //
 //// RESTStoreDelete saves a given store
-//func RESTStoreDelete(m *Manager) httprouter.Handle {
+//func RESTStoreDelete(m *Service) httprouter.Handle {
 //	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 //		w.Write([]byte("RESTStoreDelete\n"))
 //	}

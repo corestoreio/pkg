@@ -14,24 +14,48 @@
 
 package store
 
-import "golang.org/x/net/context"
+import (
+	"errors"
 
-// ctxKey type is unexported to prevent collisions with context keys defined in
-// other packages.
-type ctxKey uint
-
-// Key* defines the keys to access a value in a context.Context
-const (
-	ctxKeyManagerReader ctxKey = iota
+	"golang.org/x/net/context"
 )
 
-// ContextMustManagerReader returns a store.ManagerReader from a context.
-func FromContextManagerReader(ctx context.Context) (r ManagerReader, ok bool) {
-	r, ok = ctx.Value(ctxKeyManagerReader).(ManagerReader)
-	return
+// ErrContextServiceNotFound gets returned when store.Reader cannot be found in context.Context
+var ErrContextServiceNotFound = errors.New("store.Reader not found in context.Context")
+
+type ctxServiceKey struct{}
+type ctxServiceWrapper struct {
+	service        Reader
+	requestedStore *Store
 }
 
-// NewContextManagerReader adds a ManagerReader to the context.
-func NewContextManagerReader(ctx context.Context, r ManagerReader) context.Context {
-	return context.WithValue(ctx, ctxKeyManagerReader, r)
+// FromContextReader returns a store.Reader and a store.Store from a context.
+// The *store.Store is either the current requested store (via JWT or cookie or REQUEST
+// parameter) or if those are not set then the default initialized store when
+// instantiating a new Reader. The returned store.Store identifies the current
+// scope.Scope of a request. If it cannot determine a store.Store then the
+// error ErrStoreNotFound will get returned.
+func FromContextReader(ctx context.Context) (Reader, *Store, error) {
+	sw, ok := ctx.Value(ctxServiceKey{}).(ctxServiceWrapper)
+	if !ok || sw.service == nil {
+		return nil, nil, ErrContextServiceNotFound
+	}
+
+	if sw.requestedStore == nil {
+		var err error
+		sw.requestedStore, err = sw.service.Store()
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+	return sw.service, sw.requestedStore, nil
+}
+
+// NewContextReader adds a store.Reader and requestedStore *store.Store to the context.
+// requestedStore can be nil.
+func NewContextReader(ctx context.Context, r Reader, requestedStore *Store) context.Context {
+	return context.WithValue(ctx, ctxServiceKey{}, ctxServiceWrapper{
+		service:        r,
+		requestedStore: requestedStore,
+	})
 }

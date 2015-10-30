@@ -27,10 +27,10 @@ import (
 )
 
 type (
-	// ManagerReader specifies a store manager from which you can only read.
+	// Reader specifies a store Service from which you can only read.
 	// Without any arguments applied to any function it returns the
 	// store for the current scope for a request. @todo better description.
-	ManagerReader interface {
+	Reader interface {
 		IsSingleStoreMode() bool
 		HasSingleStore() bool
 		Website(r ...scope.WebsiteIDer) (*Website, error)
@@ -40,13 +40,24 @@ type (
 		Store(r ...scope.StoreIDer) (*Store, error)
 		Stores() (StoreSlice, error)
 		DefaultStoreView() (*Store, error)
+		GetRequestedStore(scope.Option) (activeStore *Store, err error)
 	}
 )
 
 type (
-	// Manager uses three internal maps to cache the pointers of Website, Group and Store.
-	Manager struct {
+	// Service represents type which handles the underlying storage and takes care
+	// of the default stores. A Service is bound a specific scope.Scope. Depending
+	// on the scope it is possible or not to switch stores. A Service contains also
+	// a config.Reader which gets passed to the scope of a Store(), Group() or
+	// Website() so that you always have the possibility to access a scoped based
+	// configuration value.
+	// This Service uses three internal maps to cache the pointers
+	// of Website, Group and Store.
+	Service struct {
 		cr config.Reader
+
+		// to which scope is this current Service bound to
+		boundToScope scope.Scope
 
 		// storage get set of websites, groups and stores and also type assertion to StorageMutator for
 		// ReInit and Persisting
@@ -71,45 +82,59 @@ type (
 
 		// defaultStore some one must be always default.
 		defaultStore *Store
-
-		// HealthJob allows profiling and error handling. Default is a noop type
-		// and can be overridden after creating a new Manager. @todo
-		// HealthJob health.EventReceiver
 	}
 )
 
-var _ ManagerReader = (*Manager)(nil)
+var _ Reader = (*Service)(nil)
 
 var (
-	ErrUnsupportedScope      = errors.New("Unsupported Scope ID")
 	ErrStoreChangeNotAllowed = errors.New("Store change not allowed")
-	ErrAppStoreNotSet        = errors.New("AppStore is not initialized")
-	ErrAppStoreSet           = errors.New("AppStore already initialized")
 	ErrHashRetrieverNil      = errors.New("Hash argument is nil")
 )
 
-// NewManager creates a new store manager which handles websites, store groups and stores.
-func NewManager(storage Storager, opts ...ManagerOption) *Manager {
-	m := &Manager{
-		cr:         config.DefaultManager,
-		storage:    storage,
-		mu:         sync.RWMutex{},
-		websiteMap: make(map[uint64]*Website),
-		groupMap:   make(map[uint64]*Group),
-		storeMap:   make(map[uint64]*Store),
-		// HealthJob:  utils.HealthJobNoop, @todo
+// NewService creates a new store Service which handles websites, store groups and stores.
+// A Service can only act on a certain scope (MAGE_RUN_TYPE) and scope ID (MAGE_RUN_CODE).
+// This function is mainly used when booting the app to set the environment configuration
+// Also all other calls to any method receiver with nil arguments depends on the internal
+// appStore which reflects the default store ID.
+func NewService(so scope.Option, storage Storager, opts ...ServiceOption) (*Service, error) {
+	m := &Service{
+		cr:           config.DefaultManager,
+		boundToScope: so.Scope(),
+		storage:      storage,
+		mu:           sync.RWMutex{},
+		websiteMap:   make(map[uint64]*Website),
+		groupMap:     make(map[uint64]*Group),
+		storeMap:     make(map[uint64]*Store),
 	}
 	for _, opt := range opts {
 		if opt != nil {
 			opt(m)
 		}
 	}
+
+	var err error
+	m.appStore, err = m.findDefaultStoreByScope(so)
+
+	if err != nil {
+		return nil, log.Error("store.Service.Init", "err", err, "ScopeOption", so)
+	}
+
+	return m, nil
+}
+
+// MustNewService same as NewService, but panics on error.
+func MustNewService(so scope.Option, storage Storager, opts ...ServiceOption) *Service {
+	m, err := NewService(so, storage, opts...)
+	if err != nil {
+		panic(err)
+	}
 	return m
 }
 
-// FindDefaultStoreByScope tries to detect the default store by a given scope option.
+// findDefaultStoreByScope tries to detect the default store by a given scope option.
 // Precedence of detection by passed scope.Option: 1. Store 2. Group 3. Website
-func (sm *Manager) FindDefaultStoreByScope(so scope.Option) (store *Store, err error) {
+func (sm *Service) findDefaultStoreByScope(so scope.Option) (store *Store, err error) {
 
 	switch so.Scope() {
 	case scope.StoreID:
@@ -117,56 +142,32 @@ func (sm *Manager) FindDefaultStoreByScope(so scope.Option) (store *Store, err e
 	case scope.GroupID:
 		g, errG := sm.Group(so.Group)
 		if errG != nil {
-			return nil, log.Error("store.Manager.Init.Group", "err", errG, "ScopeOption", so)
+			return nil, log.Error("store.Service.Init.Group", "err", errG, "ScopeOption", so)
 		}
 		store, err = g.DefaultStore()
 	case scope.WebsiteID:
 		w, errW := sm.Website(so.Website)
 		if errW != nil {
-			return nil, log.Error("store.Manager.Init.Website", "err", errW, "ScopeOption", so)
+			return nil, log.Error("store.Service.Init.Website", "err", errW, "ScopeOption", so)
 		}
 		store, err = w.DefaultStore()
 	default:
-		err = ErrUnsupportedScope
+		store, err = sm.storage.DefaultStoreView()
 	}
-
 	return
 }
 
-// Init initializes the appStore from a scope code and a scope type.
-// This function is mainly used when booting the app to set the environment configuration
-// Also all other calls to any method receiver with nil arguments depends on the appStore.
-// @see \Magento\Store\Model\StorageFactory::_reinitStores
-func (sm *Manager) Init(so scope.Option) error {
-	if sm.appStore != nil {
-		return ErrAppStoreSet
-	}
-
-	var err error
-	sm.appStore, err = sm.FindDefaultStoreByScope(so)
-
-	if err != nil { // seems unnecessary but it's faster.
-		return log.Error("store.Manager.Init", "err", err, "ScopeOption", so)
-	}
-	return nil
-}
-
-// GetRequestStore is in Magento named setCurrentStore and only used by InitBy*().
-// First argument is the store ID or store code, 2nd arg the scope from the init process.
+// GetRequestedStore figures out the default active store for a scope.Option.
 // Also prevents running a store from another website or store group,
 // if website or store group was specified explicitly.
 // It returns either an error or the new Store. The returning errors can get ignored because if
-// a Store Code is invalid the parent calling function must fall back to the appStore.
-// This function must be used within an RPC handler.
-func (sm *Manager) GetRequestStore(so scope.Option, scopeType scope.Scope) (activeStore *Store, err error) {
-	if sm.appStore == nil {
-		// that means you must call Init() before executing this function.
-		return nil, ErrAppStoreNotSet
-	}
+// a Store Code is invalid the parent calling function must fall back to the default store which
+// has been initialized via NewService() function.
+func (sm *Service) GetRequestedStore(so scope.Option) (activeStore *Store, err error) {
 
-	activeStore, err = sm.FindDefaultStoreByScope(so)
+	activeStore, err = sm.findDefaultStoreByScope(so)
 	if err != nil {
-		return nil, log.Error("store.Manager.GetRequestStore.FindDefaultStoreByScope", "err", err, "so", so)
+		return nil, log.Error("store.Service.GetRequestedStore.FindDefaultStoreByScope", "err", err, "so", so)
 	}
 
 	activeStore, err = sm.activeStore(activeStore) // this is the active store from Cookie or Request.
@@ -176,7 +177,7 @@ func (sm *Manager) GetRequestStore(so scope.Option, scopeType scope.Scope) (acti
 	}
 
 	allowStoreChange := false
-	switch scopeType {
+	switch sm.boundToScope {
 	case scope.StoreID:
 		allowStoreChange = true
 		break
@@ -197,7 +198,7 @@ func (sm *Manager) GetRequestStore(so scope.Option, scopeType scope.Scope) (acti
 // IsSingleStoreMode check if Single-Store mode is enabled in configuration and from Store count < 3.
 // This flag only shows that admin does not want to show certain UI components at backend (like store switchers etc)
 // if Magento has only one store view but it does not check the store view collection.
-func (sm *Manager) IsSingleStoreMode() bool {
+func (sm *Service) IsSingleStoreMode() bool {
 	isEnabled, err := sm.cr.GetBool(config.Path(PathSingleStoreModeEnabled)) // default scope
 	if config.NotKeyNotFoundError(err) {
 		// TODO maybe log error here
@@ -208,7 +209,7 @@ func (sm *Manager) IsSingleStoreMode() bool {
 
 // HasSingleStore checks if we only have one store view besides the admin store view.
 // Mostly used in models to the set store id and in blocks to not display the store switch.
-func (sm *Manager) HasSingleStore() bool {
+func (sm *Service) HasSingleStore() bool {
 	ss, err := sm.Stores()
 	if err != nil {
 		return false
@@ -222,18 +223,15 @@ func (sm *Manager) HasSingleStore() bool {
 // If ID and code are available then the non-empty code has precedence.
 // If no argument has been supplied then the Website of the internal appStore
 // will be returned. If more than one argument has been provided it returns an error.
-func (sm *Manager) Website(r ...scope.WebsiteIDer) (*Website, error) {
-	lr := len(r)
-	notR := lr == 0 || (lr == 1 && r[0] == nil) || lr > 1
+func (sm *Service) Website(ids ...scope.WebsiteIDer) (*Website, error) {
+	lIDs := len(ids)
+	emptyIDs := lIDs == 0 || (lIDs == 1 && ids[0] == nil) || lIDs > 1
 
-	switch {
-	case notR && sm.appStore == nil:
-		return nil, ErrAppStoreNotSet
-	case notR && sm.appStore != nil:
+	if emptyIDs {
 		return sm.appStore.Website, nil
 	}
 
-	key, err := hash(r[0], nil, nil)
+	key, err := hash(ids[0], nil, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -244,14 +242,14 @@ func (sm *Manager) Website(r ...scope.WebsiteIDer) (*Website, error) {
 		return w, nil
 	}
 
-	w, err := sm.storage.Website(r[0])
+	w, err := sm.storage.Website(ids[0])
 	sm.websiteMap[key] = w
 	return sm.websiteMap[key], errgo.Mask(err)
 }
 
 // Websites returns a cached slice containing all pointers to Websites with its associated
 // groups and stores. It panics when the integrity is incorrect.
-func (sm *Manager) Websites() (WebsiteSlice, error) {
+func (sm *Service) Websites() (WebsiteSlice, error) {
 	if sm.websites != nil {
 		return sm.websites, nil
 	}
@@ -264,18 +262,15 @@ func (sm *Manager) Websites() (WebsiteSlice, error) {
 // Only the argument ID is supported.
 // If no argument has been supplied then the Group of the internal appStore
 // will be returned. If more than one argument has been provided it returns an error.
-func (sm *Manager) Group(r ...scope.GroupIDer) (*Group, error) {
-	lr := len(r)
-	notR := lr == 0 || (lr == 1 && r[0] == nil) || lr > 1
+func (sm *Service) Group(ids ...scope.GroupIDer) (*Group, error) {
+	lIDs := len(ids)
+	emptyIDs := lIDs == 0 || (lIDs == 1 && ids[0] == nil) || lIDs > 1
 
-	switch {
-	case notR && sm.appStore == nil:
-		return nil, ErrAppStoreNotSet
-	case notR && sm.appStore != nil:
+	if emptyIDs {
 		return sm.appStore.Group, nil
 	}
 
-	key, err := hash(nil, r[0], nil)
+	key, err := hash(nil, ids[0], nil)
 	if err != nil {
 		return nil, err
 	}
@@ -286,14 +281,14 @@ func (sm *Manager) Group(r ...scope.GroupIDer) (*Group, error) {
 		return g, nil
 	}
 
-	g, err := sm.storage.Group(r[0])
+	g, err := sm.storage.Group(ids[0])
 	sm.groupMap[key] = g
 	return sm.groupMap[key], errgo.Mask(err)
 }
 
 // Groups returns a cached slice containing all pointers to Groups with its associated
 // stores and websites. It panics when the integrity is incorrect.
-func (sm *Manager) Groups() (GroupSlice, error) {
+func (sm *Service) Groups() (GroupSlice, error) {
 	if sm.groups != nil {
 		return sm.groups, nil
 	}
@@ -306,18 +301,15 @@ func (sm *Manager) Groups() (GroupSlice, error) {
 // If ID and code are available then the non-empty code has precedence.
 // If no argument has been supplied then the appStore
 // will be returned. If more than one argument has been provided it returns an error.
-func (sm *Manager) Store(r ...scope.StoreIDer) (*Store, error) {
-	lr := len(r)
-	notR := lr == 0 || (lr == 1 && r[0] == nil) || lr > 1
+func (sm *Service) Store(ids ...scope.StoreIDer) (*Store, error) {
+	lIDs := len(ids)
+	emptyIDs := lIDs == 0 || (lIDs == 1 && ids[0] == nil) || lIDs > 1
 
-	switch {
-	case notR && sm.appStore == nil:
-		return nil, ErrAppStoreNotSet
-	case notR && sm.appStore != nil:
+	if emptyIDs {
 		return sm.appStore, nil
 	}
 
-	key, err := hash(nil, nil, r[0])
+	key, err := hash(nil, nil, ids[0])
 	if err != nil {
 		return nil, err
 	}
@@ -328,14 +320,14 @@ func (sm *Manager) Store(r ...scope.StoreIDer) (*Store, error) {
 		return s, nil
 	}
 
-	s, err := sm.storage.Store(r[0])
+	s, err := sm.storage.Store(ids[0])
 	sm.storeMap[key] = s
 	return sm.storeMap[key], errgo.Mask(err)
 }
 
 // Stores returns a cached Store slice. Can return an error when the website or
 // the group cannot be found.
-func (sm *Manager) Stores() (StoreSlice, error) {
+func (sm *Service) Stores() (StoreSlice, error) {
 	if sm.stores != nil {
 		return sm.stores, nil
 	}
@@ -345,7 +337,7 @@ func (sm *Manager) Stores() (StoreSlice, error) {
 }
 
 // DefaultStoreView returns the default store view.
-func (sm *Manager) DefaultStoreView() (*Store, error) {
+func (sm *Service) DefaultStoreView() (*Store, error) {
 	if sm.defaultStore != nil {
 		return sm.defaultStore, nil
 	}
@@ -355,9 +347,8 @@ func (sm *Manager) DefaultStoreView() (*Store, error) {
 }
 
 // activeStore returns a new non-cached Store with all its Websites and Groups but only if the Store
-// is marked as active. Argument can be an ID or a Code. Returns nil if Store not found or inactive.
-// No need here to return an error.
-func (sm *Manager) activeStore(r scope.StoreIDer) (*Store, error) {
+// is marked as active. Argument can be an ID or a Code. Returns err if Store not found or inactive.
+func (sm *Service) activeStore(r scope.StoreIDer) (*Store, error) {
 	s, err := sm.storage.Store(r)
 	if err != nil {
 		return nil, err
@@ -370,7 +361,7 @@ func (sm *Manager) activeStore(r scope.StoreIDer) (*Store, error) {
 
 // ReInit reloads the website, store group and store view data from the database.
 // After reloading internal cache will be cleared if there are no errors.
-func (sm *Manager) ReInit(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) error {
+func (sm *Service) ReInit(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) error {
 	err := sm.storage.ReInit(dbrSess, cbs...)
 	if err == nil {
 		sm.ClearCache()
@@ -381,7 +372,7 @@ func (sm *Manager) ReInit(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) er
 // ClearCache resets the internal caches which stores the pointers to a Website, Group or Store and
 // all related slices. Please use with caution. ReInit() also uses this method.
 // Providing argument true clears also the internal appStore cache.
-func (sm *Manager) ClearCache(clearAll ...bool) {
+func (sm *Service) ClearCache(clearAll ...bool) {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
 	if len(sm.websiteMap) > 0 {
@@ -410,7 +401,7 @@ func (sm *Manager) ClearCache(clearAll ...bool) {
 }
 
 // IsCacheEmpty returns true if the internal cache is empty.
-func (sm *Manager) IsCacheEmpty() bool {
+func (sm *Service) IsCacheEmpty() bool {
 	return len(sm.websiteMap) == 0 && len(sm.groupMap) == 0 && len(sm.storeMap) == 0 &&
 		sm.websites == nil && sm.groups == nil && sm.stores == nil && sm.defaultStore == nil
 }

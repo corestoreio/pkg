@@ -22,18 +22,34 @@ import (
 	"golang.org/x/net/context"
 )
 
-// NewManager creates a new StoreManager
-func NewManager(opts ...func(ms *Storage)) *store.Manager {
+// NewService creates a new StoreService
+func NewService(so scope.Option, opts ...func(ms *Storage)) (*store.Service, error) {
 	ms := &Storage{}
 	for _, opt := range opts {
 		opt(ms)
 	}
-	return store.NewManager(ms)
+	return store.NewService(so, ms)
 }
 
-// NewContextManager creates a new StoreManager wrapped in a context.Context
-func NewContextManager(opts ...func(ms *Storage)) context.Context {
-	return store.NewContextManagerReader(context.Background(), NewManager(opts...))
+// MustNewService creates a new StoreService but panics on error
+func MustNewService(so scope.Option, opts ...func(ms *Storage)) *store.Service {
+	ms := &Storage{}
+	for _, opt := range opts {
+		opt(ms)
+	}
+	return store.MustNewService(so, ms)
+}
+
+// NewContextService creates a new StoreService wrapped in a context.Context
+func NewContextService(so scope.Option, opts ...func(ms *Storage)) context.Context {
+	var sm *store.Service
+	{
+		var err error
+		if sm, err = NewService(so, opts...); err != nil {
+			panic(err)
+		}
+	}
+	return store.NewContextReader(context.Background(), sm, nil)
 }
 
 // Storage main underlying data container
@@ -87,10 +103,13 @@ func (ms *Storage) Stores() (store.StoreSlice, error) {
 	return ms.MockStoreSlice()
 }
 func (ms *Storage) DefaultStoreView() (*store.Store, error) {
-	if ms.MockDefaultStore == nil {
-		return nil, store.ErrStoreNotFound
+	if ms.MockDefaultStore != nil {
+		return ms.MockDefaultStore()
 	}
-	return ms.MockDefaultStore()
+	if ms.MockStore != nil {
+		return ms.MockStore()
+	}
+	return nil, store.ErrStoreNotFound
 }
 func (ms *Storage) ReInit(dbr.SessionRunner, ...csdb.DbrSelectCb) error {
 	return nil

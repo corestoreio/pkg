@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /*
-Package mock implements mocking of the store.Manager for tests.
+Package mock implements mocking of the store.Service for tests.
 
 Please import this package as:
 

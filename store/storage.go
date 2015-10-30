@@ -27,7 +27,7 @@ import (
 
 type (
 	// Storager implements the requirements to get new websites, groups and store views.
-	// This interface is used in the StoreManager
+	// This interface is used in the StoreService
 	Storager interface {
 		// Website creates a new Website pointer from an ID or code including all of its
 		// groups and all related stores. It panics when the integrity is incorrect.

@@ -22,6 +22,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/httputils"
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -100,7 +101,8 @@ func TestWithValidateBaseUrlNoRedirectValidBaseURL(t *testing.T) {
 		}),
 	)
 
-	var mockedContextStoreManager = storemock.NewContextManager(
+	var mockedContextStoreService = storemock.NewContextService(
+		scope.Option{},
 		func(ms *storemock.Storage) {
 			ms.MockStore = func() (*store.Store, error) {
 				return store.NewStore(
@@ -127,7 +129,7 @@ func TestWithValidateBaseUrlNoRedirectValidBaseURL(t *testing.T) {
 		return nil
 	}))
 
-	err = mw.ServeHTTPContext(mockedContextStoreManager, w, req)
+	err = mw.ServeHTTPContext(mockedContextStoreService, w, req)
 	assert.NoError(t, err)
 
 	//	w = httptest.NewRecorder()
@@ -154,7 +156,7 @@ func TestWithValidateBaseUrlNoRedirectValidBaseURL(t *testing.T) {
 //	req                  *http.Request
 //	haveSO               scope.Option
 //	haveScopeType        scope.Scope
-//	wantStoreCode        string           // this is the default store in a scope, lookup in storeManagerRequestStore
+//	wantStoreCode        string           // this is the default store in a scope, lookup in getInitializedStoreService
 //	wantRequestStoreCode scope.StoreCoder // can be nil in tests
 //	wantErr              error
 //	wantCookie           string
@@ -227,28 +229,28 @@ func TestWithValidateBaseUrlNoRedirectValidBaseURL(t *testing.T) {
 //	defer errLogBuf.Reset()
 //
 //	for _, test := range testsInitByRequest {
-//		if _, haveErr := storeManagerRequestStore.InitByRequest(nil, nil, test.haveScopeType); haveErr != nil {
+//		if _, haveErr := getInitializedStoreService.InitByRequest(nil, nil, test.haveScopeType); haveErr != nil {
 //			assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
 //		} else {
 //			t.Fatal("InitByRequest should return an error if used without running Init() first.")
 //		}
 //
-//		if err := storeManagerRequestStore.Init(test.haveSO); err != nil {
+//		if err := getInitializedStoreService.Init(test.haveSO); err != nil {
 //			assert.EqualError(t, store.ErrUnsupportedScope, err.Error())
 //			t.Log("continuing for loop because of expected store.ErrUnsupportedScopeGroup")
-//			storeManagerRequestStore.ClearCache(true)
+//			getInitializedStoreService.ClearCache(true)
 //			continue
 //		}
 //
-//		if s, err := storeManagerRequestStore.Store(); err == nil {
+//		if s, err := getInitializedStoreService.Store(); err == nil {
 //			assert.EqualValues(t, test.wantStoreCode, s.Data.Code.String)
 //		} else {
 //			assert.EqualError(t, err, store.ErrStoreNotFound.Error())
 //			t.Log("continuing for loop because of expected store.ErrStoreNotFound")
-//			storeManagerRequestStore.ClearCache(true)
+//			getInitializedStoreService.ClearCache(true)
 //			continue
 //		}
-//		storeManagerRequestStore.ClearCache(true)
+//		getInitializedStoreService.ClearCache(true)
 //	}
 //}
 //
@@ -257,16 +259,16 @@ func TestWithValidateBaseUrlNoRedirectValidBaseURL(t *testing.T) {
 //	defer errLogBuf.Reset()
 //
 //	for i, test := range testsInitByRequest {
-//		if err := storeManagerRequestStore.Init(test.haveSO); err != nil {
+//		if err := getInitializedStoreService.Init(test.haveSO); err != nil {
 //			assert.EqualError(t, store.ErrUnsupportedScope, err.Error())
 //			t.Log("continuing for loop because of expected store.ErrUnsupportedScopeGroup")
-//			storeManagerRequestStore.ClearCache(true)
+//			getInitializedStoreService.ClearCache(true)
 //			continue
 //		}
 //
 //		resRec := httptest.NewRecorder()
 //
-//		haveStore, haveErr := storeManagerRequestStore.InitByRequest(resRec, test.req, test.haveScopeType)
+//		haveStore, haveErr := getInitializedStoreService.InitByRequest(resRec, test.req, test.haveScopeType)
 //		if test.wantErr != nil {
 //			assert.Nil(t, haveStore)
 //			assert.Error(t, haveErr, "Index %d", i)
@@ -295,75 +297,75 @@ func TestWithValidateBaseUrlNoRedirectValidBaseURL(t *testing.T) {
 //				assert.Nil(t, haveStore, "%#v", haveStore)
 //			}
 //		}
-//		storeManagerRequestStore.ClearCache(true)
+//		getInitializedStoreService.ClearCache(true)
 //	}
 //}
 
-func TestWithInitStoreByToken(t *testing.T) {
-
-	//	getToken := func(code string) *jwt.Token {
-	//		t := jwt.New(jwt.SigningMethodHS256)
-	//		t.Claims[store.CookieName] = code
-	//		return t
-	//	}
-	//
-	//	tests := []struct {
-	//		haveSO             scope.Option
-	//		haveCodeToken      string
-	//		haveScopeType      scope.Scope
-	//		wantStoreCode      string           // this is the default store in a scope, lookup in storeManagerRequestStore
-	//		wantTokenStoreCode scope.StoreCoder // can be nil
-	//		wantErr            error
-	//	}{
-	//		{scope.Option{Store: scope.MockCode("de")}, "de", scope.StoreID, "de", scope.MockCode("de"), nil},
-	//		{scope.Option{Store: scope.MockCode("de")}, "at", scope.StoreID, "de", scope.MockCode("at"), nil},
-	//		{scope.Option{Store: scope.MockCode("de")}, "a$t", scope.StoreID, "de", nil, nil},
-	//		{scope.Option{Store: scope.MockCode("at")}, "ch", scope.StoreID, "at", nil, store.ErrStoreNotActive},
-	//		{scope.Option{Store: scope.MockCode("at")}, "", scope.StoreID, "at", nil, nil},
-	//
-	//		{scope.Option{Group: scope.MockID(1)}, "de", scope.GroupID, "at", scope.MockCode("de"), nil},
-	//		{scope.Option{Group: scope.MockID(1)}, "ch", scope.GroupID, "at", nil, store.ErrStoreNotActive},
-	//		{scope.Option{Group: scope.MockID(1)}, " ch", scope.GroupID, "at", nil, nil},
-	//		{scope.Option{Group: scope.MockID(1)}, "uk", scope.GroupID, "at", nil, store.ErrStoreChangeNotAllowed},
-	//
-	//		{scope.Option{Website: scope.MockID(2)}, "uk", scope.WebsiteID, "au", nil, store.ErrStoreChangeNotAllowed},
-	//		{scope.Option{Website: scope.MockID(2)}, "nz", scope.WebsiteID, "au", scope.MockCode("nz"), nil},
-	//		{scope.Option{Website: scope.MockID(2)}, "n z", scope.WebsiteID, "au", nil, nil},
-	//		{scope.Option{Website: scope.MockID(2)}, "", scope.WebsiteID, "au", nil, nil},
-	//	}
-	//	for _, test := range tests {
-	//
-	//		haveStore, haveErr := storeManagerRequestStore.InitByToken(nil, test.haveScopeType)
-	//		assert.Nil(t, haveStore)
-	//		assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
-	//
-	//		if err := storeManagerRequestStore.Init(test.haveSO); err != nil {
-	//			t.Fatal(err)
-	//		}
-	//
-	//		if s, err := storeManagerRequestStore.Store(); err == nil {
-	//			assert.EqualValues(t, test.wantStoreCode, s.Data.Code.String)
-	//		} else {
-	//			assert.EqualError(t, err, store.ErrStoreNotFound.Error())
-	//			t.Fail()
-	//		}
-	//
-	//		haveStore, haveErr = storeManagerRequestStore.InitByToken(getToken(test.haveCodeToken).Claims, test.haveScopeType)
-	//		if test.wantErr != nil {
-	//			assert.Nil(t, haveStore, "%#v", test)
-	//			assert.Error(t, haveErr, "%#v", test)
-	//			assert.EqualError(t, test.wantErr, haveErr.Error())
-	//		} else {
-	//			if test.wantTokenStoreCode != nil {
-	//				assert.NotNil(t, haveStore, "%#v", test)
-	//				assert.NoError(t, haveErr)
-	//				assert.Equal(t, test.wantTokenStoreCode.StoreCode(), haveStore.Data.Code.String)
-	//			} else {
-	//				assert.Nil(t, haveStore, "%#v", test)
-	//				assert.NoError(t, haveErr, "%#v", test)
-	//			}
-	//
-	//		}
-	//		storeManagerRequestStore.ClearCache(true)
-	//	}
-}
+//func TestWithInitStoreByToken(t *testing.T) {
+//
+//	getToken := func(code string) *jwt.Token {
+//		t := jwt.New(jwt.SigningMethodHS256)
+//		t.Claims[store.CookieName] = code
+//		return t
+//	}
+//
+//	tests := []struct {
+//		haveSO             scope.Option
+//		haveCodeToken      string
+//		haveScopeType      scope.Scope
+//		wantStoreCode      string           // this is the default store in a scope, lookup in getInitializedStoreService
+//		wantTokenStoreCode scope.StoreCoder // can be nil
+//		wantErr            error
+//	}{
+//		{scope.Option{Store: scope.MockCode("de")}, "de", scope.StoreID, "de", scope.MockCode("de"), nil},
+//		{scope.Option{Store: scope.MockCode("de")}, "at", scope.StoreID, "de", scope.MockCode("at"), nil},
+//		{scope.Option{Store: scope.MockCode("de")}, "a$t", scope.StoreID, "de", nil, nil},
+//		{scope.Option{Store: scope.MockCode("at")}, "ch", scope.StoreID, "at", nil, store.ErrStoreNotActive},
+//		{scope.Option{Store: scope.MockCode("at")}, "", scope.StoreID, "at", nil, nil},
+//
+//		{scope.Option{Group: scope.MockID(1)}, "de", scope.GroupID, "at", scope.MockCode("de"), nil},
+//		{scope.Option{Group: scope.MockID(1)}, "ch", scope.GroupID, "at", nil, store.ErrStoreNotActive},
+//		{scope.Option{Group: scope.MockID(1)}, " ch", scope.GroupID, "at", nil, nil},
+//		{scope.Option{Group: scope.MockID(1)}, "uk", scope.GroupID, "at", nil, store.ErrStoreChangeNotAllowed},
+//
+//		{scope.Option{Website: scope.MockID(2)}, "uk", scope.WebsiteID, "au", nil, store.ErrStoreChangeNotAllowed},
+//		{scope.Option{Website: scope.MockID(2)}, "nz", scope.WebsiteID, "au", scope.MockCode("nz"), nil},
+//		{scope.Option{Website: scope.MockID(2)}, "n z", scope.WebsiteID, "au", nil, nil},
+//		{scope.Option{Website: scope.MockID(2)}, "", scope.WebsiteID, "au", nil, nil},
+//	}
+//	for _, test := range tests {
+//
+//		haveStore, haveErr := getInitializedStoreService.InitByToken(nil, test.haveScopeType)
+//		assert.Nil(t, haveStore)
+//		assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
+//
+//		if err := getInitializedStoreService.Init(test.haveSO); err != nil {
+//			t.Fatal(err)
+//		}
+//
+//		if s, err := getInitializedStoreService.Store(); err == nil {
+//			assert.EqualValues(t, test.wantStoreCode, s.Data.Code.String)
+//		} else {
+//			assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+//			t.Fail()
+//		}
+//
+//		haveStore, haveErr = getInitializedStoreService.InitByToken(getToken(test.haveCodeToken).Claims, test.haveScopeType)
+//		if test.wantErr != nil {
+//			assert.Nil(t, haveStore, "%#v", test)
+//			assert.Error(t, haveErr, "%#v", test)
+//			assert.EqualError(t, test.wantErr, haveErr.Error())
+//		} else {
+//			if test.wantTokenStoreCode != nil {
+//				assert.NotNil(t, haveStore, "%#v", test)
+//				assert.NoError(t, haveErr)
+//				assert.Equal(t, test.wantTokenStoreCode.StoreCode(), haveStore.Data.Code.String)
+//			} else {
+//				assert.Nil(t, haveStore, "%#v", test)
+//				assert.NoError(t, haveErr, "%#v", test)
+//			}
+//
+//		}
+//		getInitializedStoreService.ClearCache(true)
+//	}
+//}

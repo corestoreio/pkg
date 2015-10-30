@@ -97,6 +97,7 @@ var benchmarkStorageWebsiteDefaultGroup *store.Group
 // MBA mid 2012 CPU: Intel Core i5-3427U CPU @ 1.80GHz
 // BenchmarkStorageWebsiteGetDefaultGroup	  200000	      6081 ns/op	    1712 B/op	      45 allocs/op
 func BenchmarkStorageWebsiteGetDefaultGroup(b *testing.B) {
+	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var err error
 		benchmarkStorageWebsite, err = testStorage.Website(scope.MockCode("euro"))
@@ -189,6 +190,7 @@ var benchmarkStorageGroupDefaultStore *store.Store
 // MBA mid 2012 CPU: Intel Core i5-3427U CPU @ 1.80GHz
 // BenchmarkStorageGroupGetDefaultStore	 1000000	      1916 ns/op	     464 B/op	      14 allocs/op
 func BenchmarkStorageGroupGetDefaultStore(b *testing.B) {
+	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var err error
 		benchmarkStorageGroup, err = testStorage.Group(scope.MockID(3))
@@ -210,10 +212,10 @@ func TestStorageGroups(t *testing.T) {
 	assert.True(t, groups.Len() == 4)
 
 	var ids = []utils.Int64Slice{
-		utils.Int64Slice{5, 6},    // oz
-		utils.Int64Slice{1, 2, 3}, // dach
-		utils.Int64Slice{0},       // default
-		utils.Int64Slice{4},       // uk
+		{5, 6},    // oz
+		{1, 2, 3}, // dach
+		{0},       // default
+		{4},       // uk
 	}
 
 	for i, g := range groups {
@@ -301,6 +303,7 @@ var benchmarkStorageStoreWebsite *store.Website
 // MBA mid 2012 CPU: Intel Core i5-3427U CPU @ 1.80GHz
 // BenchmarkStorageStoreGetWebsite	 2000000	       656 ns/op	     176 B/op	       6 allocs/op
 func BenchmarkStorageStoreGetWebsite(b *testing.B) {
+	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var err error
 		benchmarkStorageStore, err = testStorage.Store(scope.MockCode("de"))
@@ -419,6 +422,7 @@ func TestStorageStoreErrors(t *testing.T) {
 // MBA mid 2012 CPU: Intel Core i5-3427U CPU @ 1.80GHz
 // BenchmarkStorageDefaultStoreView	 2000000	       724 ns/op	     176 B/op	       7 allocs/op
 func BenchmarkStorageDefaultStoreView(b *testing.B) {
+	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var err error
 		benchmarkStorageStore, err = testStorage.DefaultStoreView()

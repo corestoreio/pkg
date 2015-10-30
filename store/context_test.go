@@ -17,19 +17,56 @@ package store_test
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	storemock "github.com/corestoreio/csfw/store/mock"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
 
-func TestContextManagerReader(t *testing.T) {
-	mr := storemock.NewNullManager()
-	ctx := store.NewContextManagerReader(context.Background(), mr)
-	haveMr, ok := store.FromContextManagerReader(ctx)
-	assert.True(t, ok)
-	assert.Exactly(t, mr, haveMr)
+func TestContextReaderError(t *testing.T) {
+	haveMr, s, err := store.FromContextReader(context.Background())
+	assert.Nil(t, haveMr)
+	assert.Nil(t, s)
+	assert.EqualError(t, err, store.ErrContextServiceNotFound.Error())
 
-	ctx = store.NewContextManagerReader(context.Background(), nil)
-	store.FromContextManagerReader(ctx)
+	ctx := store.NewContextReader(context.Background(), nil, nil)
+	assert.NotNil(t, ctx)
+	haveMr, s, err = store.FromContextReader(ctx)
+	assert.Nil(t, haveMr)
+	assert.Nil(t, s)
+	assert.EqualError(t, err, store.ErrContextServiceNotFound.Error())
+
+	mr := storemock.NewNullService()
+	ctx = store.NewContextReader(context.Background(), mr, nil)
+	assert.NotNil(t, ctx)
+	haveMr, s, err = store.FromContextReader(ctx)
+	assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+	assert.Nil(t, haveMr)
+	assert.Nil(t, s)
+
+}
+
+func TestContextReaderSuccess(t *testing.T) {
+	ctx := storemock.NewContextService(scope.Option{},
+		func(ms *storemock.Storage) {
+			ms.MockStore = func() (*store.Store, error) {
+				return store.NewStore(
+					&store.TableStore{StoreID: 6, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+					&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true, true)},
+					&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 6},
+				)
+			}
+		},
+	)
+
+	haveMr, s, err := store.FromContextReader(ctx)
+	assert.NoError(t, err)
+	assert.Exactly(t, int64(6), s.StoreID())
+
+	s2, err2 := haveMr.Store()
+	assert.NoError(t, err2)
+	assert.Exactly(t, int64(6), s2.StoreID())
+
 }

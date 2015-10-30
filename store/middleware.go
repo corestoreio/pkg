@@ -24,6 +24,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/net/ctxhttp"
+	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/utils/log"
 	"golang.org/x/net/context"
 )
@@ -55,17 +56,12 @@ func WithValidateBaseUrl(cr config.ReaderPubSuber) ctxhttp.Middleware {
 
 			if checkBaseURL && r.Method != "POST" {
 
-				storeManager, ok := FromContextManagerReader(ctx)
-				if !ok {
-					return log.Error("ctxhttp.WithValidateBaseUrl.FromContextManagerReader", "err", errors.New("Cannot extract config.Reader from context"), "ctx", ctx)
-				}
-
-				activeStore, err := storeManager.Store()
+				_, requestedStore, err := FromContextReader(ctx)
 				if err != nil {
-					return log.Error("ctxhttp.WithValidateBaseUrl.storeManager.Store", "err", err, "ctx", ctx)
+					return log.Error("ctxhttp.WithValidateBaseUrl.FromContextServiceReader", "err", errors.New("Cannot extract config.Reader from context"), "ctx", ctx)
 				}
 
-				baseURL := activeStore.BaseURL(config.URLTypeWeb, activeStore.IsCurrentlySecure(r))
+				baseURL := requestedStore.BaseURL(config.URLTypeWeb, requestedStore.IsCurrentlySecure(r))
 				if nil == isBaseUrlCorrect(r, baseURL) {
 					redirectURL := baseURL + r.URL.Path
 					http.Redirect(w, r, redirectURL, redirectCode)
@@ -91,27 +87,43 @@ func isBaseUrlCorrect(r *http.Request, baseURL string) error {
 	return log.Error("store.isBaseUrlCorrect.compare", "err", ErrBaseUrlDoNotMatch, "r.Host", r.Host, "baseURL", uri.String(), "requestURL", r.URL.String(), "strings.Contains", []string{r.URL.RequestURI(), uri.Path})
 }
 
-// InitByToken returns a Store pointer from a JSON web token. If the store code is invalid,
-// this function can return nil,nil. Token argument is equal like jwt.Token.Claim.
+// WithInitStoreByToken
 func WithInitStoreByToken(scopeType scope.Scope) ctxhttp.Middleware {
 
 	return func(h ctxhttp.Handler) ctxhttp.Handler {
 		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			//			storeManager, ok := FromContextManagerReader(ctx)
-			//			if !ok {
-			//				return log.Error("ctxhttp.WithValidateBaseUrl.FromContextManagerReader", "err", errors.New("Cannot extract config.Reader from context"), "ctx", ctx)
-			//			}
+			storeService, requestedStore, err := FromContextReader(ctx)
+			if err != nil {
+				return log.Error("store.WithInitStoreByToken.FromContextServiceReader", "err", err, "ctx", ctx)
+			}
 
-			return nil
+			token, err, ok := ctxjwt.FromContext(ctx)
+			if !ok {
+				return log.Error("store.WithInitStoreByToken.ctxjwt.FromContext.ok", "err", errors.New("Cannot extract ctxjwt nor an error from context"), "ctx", ctx)
+			}
+			if err != nil {
+				return log.Error("store.WithInitStoreByToken.ctxjwt.FromContext.err", "err", err, "ctx", ctx)
+			}
+
+			scopeOption, err := StoreCodeFromClaim(token.Claims)
+			if err != nil {
+				return log.Error("store.WithInitStoreByToken.StoreCodeFromClaim", "err", err, "token", token, "ctx", ctx)
+			}
+			newRequestedStore, err := storeService.GetRequestedStore(scopeOption)
+			if err != nil {
+				return log.Error("store.WithInitStoreByToken.GetRequestedStore", "err", err, "token", token, "scopeOption", scopeOption, "ctx", ctx)
+			}
+
+			if newRequestedStore.StoreID() != requestedStore.StoreID() {
+				// this may lead to a bug because the previously setted storeService and requestedStore
+				// will still exists and have not been removed.
+				ctx = NewContextReader(ctx, storeService, newRequestedStore)
+			}
+
+			return h.ServeHTTPContext(ctx, w, r)
 		})
 	}
-
-	//	scopeOption, err := store.StoreCodeFromClaim(token)
-	//	if err == nil {
-	//		return sm.GetRequestStore(scopeOption, scopeType)
-	//	}
-
 }
 
 // InitByRequest returns a new Store read from a cookie or HTTP request parameter.
@@ -144,7 +156,7 @@ func WithInitStoreByRequest(scopeType scope.Scope) ctxhttp.Middleware {
 	//	if err != nil { // no cookie set, lets try via form to find the store code
 	//
 	//		if err == ErrStoreCodeInvalid {
-	//			return nil, log.Error("store.Manager.InitByRequest.GetCodeFromForm", "err", err, "req", req, "scopeType", scopeType.String())
+	//			return nil, log.Error("store.Service.InitByRequest.GetCodeFromForm", "err", err, "req", req, "scopeType", scopeType.String())
 	//		}
 	//
 	//		so, err = StoreCodeFromCookie(req)
@@ -154,13 +166,13 @@ func WithInitStoreByRequest(scopeType scope.Scope) ctxhttp.Middleware {
 	//		case nil:
 	//		// do nothing
 	//		default: // err != nil
-	//			return nil, log.Error("store.Manager.InitByRequest.GetCodeFromCookie", "err", err, "req", req, "scopeType", scopeType.String())
+	//			return nil, log.Error("store.Service.InitByRequest.GetCodeFromCookie", "err", err, "req", req, "scopeType", scopeType.String())
 	//		}
 	//	}
 	//
 	//	// @todo reqStoreCode if number ... cast to int64 because then group id if ScopeGroup is group.
 	//	if reqStore, err = sm.GetRequestStore(so, scopeType); err != nil {
-	//		return nil, log.Error("store.Manager.InitByRequest.GetRequestStore", "err", err)
+	//		return nil, log.Error("store.Service.InitByRequest.GetRequestStore", "err", err)
 	//	}
 	//	soStoreCode := so.StoreCode()
 	//
@@ -168,7 +180,7 @@ func WithInitStoreByRequest(scopeType scope.Scope) ctxhttp.Middleware {
 	//	if reqStore != nil && reqStore.Data.Code.String == soStoreCode {
 	//		wds, err := reqStore.Website.DefaultStore()
 	//		if err != nil {
-	//			return nil, log.Error("store.Manager.InitByRequest.Website.DefaultStore", "err", err, "soStoreCode", soStoreCode)
+	//			return nil, log.Error("store.Service.InitByRequest.Website.DefaultStore", "err", err, "soStoreCode", soStoreCode)
 	//		}
 	//		if wds.Data.Code.String == soStoreCode {
 	//			reqStore.DeleteCookie(res) // cookie not needed anymore

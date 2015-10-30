@@ -169,7 +169,7 @@ func TestWithIsCountryAllowedByIPErrorStoreManager(t *testing.T) {
 	assert.EqualError(t, countryHandler.ServeHTTPContext(context.Background(), rec, req), geoip.ErrCannotGetStoreManagerReader.Error())
 }
 
-var managerStoreSimpleTest = storemock.NewContextManager(func(ms *storemock.Storage) {
+var managerStoreSimpleTest = storemock.NewContextService(func(ms *storemock.Storage) {
 	ms.MockStore = func() (*store.Store, error) {
 		return store.NewStore(
 			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
@@ -206,7 +206,7 @@ func TestWithIsCountryAllowedByIPErrorStore(t *testing.T) {
 
 	countryHandler := s.WithIsCountryAllowedByIP()(finalHandlerFinland(t))
 	rec := httptest.NewRecorder()
-	ctxsm := storemock.NewContextManager()
+	ctxsm := storemock.NewContextService()
 
 	// ErrAppStoreNotSet will get refactored
 	assert.EqualError(t, countryHandler.ServeHTTPContext(ctxsm, rec, mustGetRequestFinland()), store.ErrAppStoreNotSet.Error())

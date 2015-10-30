@@ -53,9 +53,9 @@ func StoreCodeFromCookie(req *http.Request) (o scope.Option, err error) {
 	return setByCode(keks.Value)
 }
 
-// GetCodeFromForm returns from a Request form the value of the store code or
+// StoreCodeFromRequestGET returns from a Request form the value of the store code or
 // an ErrStoreNotFound.
-func StoreCodeFromForm(req *http.Request) (o scope.Option, err error) {
+func StoreCodeFromRequestGET(req *http.Request) (o scope.Option, err error) {
 	err = ErrStoreNotFound
 	if req == nil {
 		return

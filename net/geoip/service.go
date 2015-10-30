@@ -145,7 +145,7 @@ func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 	return func(h ctxhttp.Handler) ctxhttp.Handler {
 		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			sm, ok := store.FromContextManagerReader(ctx)
+			sm, ok := store.FromContextReader(ctx)
 			if !ok {
 				return log.Error("geoip.WithCountryByIP.FromContextManagerReader", "err", ErrCannotGetStoreManagerReader)
 			}
