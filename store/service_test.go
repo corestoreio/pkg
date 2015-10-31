@@ -67,7 +67,7 @@ var serviceStoreSimpleTest = storemock.MustNewService(scope.Option{}, func(ms *s
 })
 
 func TestNewServiceStore(t *testing.T) {
-	assert.True(t, serviceStoreSimpleTest.IsCacheEmpty())
+	assert.False(t, serviceStoreSimpleTest.IsCacheEmpty())
 	for j := 0; j < 3; j++ {
 		s, err := serviceStoreSimpleTest.Store(scope.MockCode("notNil"))
 		assert.NoError(t, err)
@@ -108,7 +108,7 @@ func TestMustNewService(t *testing.T) {
 
 func TestNewServiceDefaultStoreView(t *testing.T) {
 	serviceDefaultStore := storemock.MustNewService(scope.Option{}, func(ms *storemock.Storage) {
-		ms.MockDefaultStore = func() (*store.Store, error) {
+		ms.MockStore = func() (*store.Store, error) {
 			return store.NewStore(
 				&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 				&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true, true)},
@@ -152,7 +152,7 @@ func BenchmarkServiceGetStore(b *testing.B) {
 func TestNewServiceStores(t *testing.T) {
 	serviceStores := storemock.MustNewService(scope.Option{}, func(ms *storemock.Storage) {
 
-		ms.MockDefaultStore = func() (*store.Store, error) {
+		ms.MockStore = func() (*store.Store, error) {
 			return store.MustNewStore(
 				&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 				&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
@@ -395,9 +395,9 @@ func getInitializedStoreService(so scope.Option) *store.Service {
 	return store.MustNewService(so,
 		store.NewStorage(
 			store.SetStorageWebsites(
-				&store.TableWebsite{WebsiteID: 0, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
-				&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
-				&store.TableWebsite{WebsiteID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "oz", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "OZ", Valid: true}}, SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
+				&store.TableWebsite{WebsiteID: 0, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false, true)},
+				&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true, true)},
+				&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false, true)},
 			),
 			store.SetStorageGroups(
 				&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
@@ -406,13 +406,13 @@ func getInitializedStoreService(so scope.Option) *store.Service {
 				&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 			),
 			store.SetStorageStores(
-				&store.TableStore{StoreID: 0, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
-				&store.TableStore{StoreID: 5, Code: dbr.NullString{NullString: sql.NullString{String: "au", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
-				&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-				&store.TableStore{StoreID: 4, Code: dbr.NullString{NullString: sql.NullString{String: "uk", Valid: true}}, WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
-				&store.TableStore{StoreID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "at", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
-				&store.TableStore{StoreID: 6, Code: dbr.NullString{NullString: sql.NullString{String: "nz", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
-				&store.TableStore{IsActive: false, StoreID: 3, Code: dbr.NullString{NullString: sql.NullString{String: "ch", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30},
+				&store.TableStore{StoreID: 0, Code: dbr.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
+				&store.TableStore{StoreID: 5, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
+				&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+				&store.TableStore{StoreID: 4, Code: dbr.NewNullString("uk"), WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
+				&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
+				&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
+				&store.TableStore{IsActive: false, StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30},
 			),
 		),
 	)
@@ -431,9 +431,9 @@ func runTestsGetRequestedStore(t *testing.T, sm *store.Service, tests []testNewS
 			assert.Nil(t, haveStore, "Index: %d: %#v", i, test)
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index: %d: %#v", i, test)
 		} else {
-			assert.NotNil(t, haveStore)
-			assert.NoError(t, haveErr, "%#v", test)
-			assert.EqualValues(t, test.wantStoreCode, haveStore.Data.Code.String)
+			assert.NotNil(t, haveStore, "Index %d", i)
+			assert.NoError(t, haveErr, "Index %d => %#v", i, test)
+			assert.EqualValues(t, test.wantStoreCode, haveStore.Data.Code.String, "Index %d", i)
 		}
 	}
 	sm.ClearCache(true)
@@ -468,7 +468,7 @@ func TestNewServiceGetRequestStore_ScopeStore(t *testing.T) {
 
 	tests := []testNewServiceGetRequestStore{
 		{scope.Option{Store: scope.MockID(232)}, "", store.ErrIDNotFoundTableStoreSlice},
-		{scope.Option{}, "at", nil},
+		{scope.Option{}, "de", scope.ErrUnsupportedScope},
 		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableStoreSlice},
 
 		{scope.Option{Store: scope.MockID(6)}, "nz", nil},
@@ -513,6 +513,7 @@ func TestNewServiceGetRequestStore_ScopeGroup(t *testing.T) {
 	//	// we're testing here against Group ID = 1
 	tests := []testNewServiceGetRequestStore{
 		{scope.Option{Group: scope.MockID(232)}, "", store.ErrIDNotFoundTableGroupSlice},
+
 		{scope.Option{Store: scope.MockID(232)}, "", store.ErrIDNotFoundTableStoreSlice},
 		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableStoreSlice},
 

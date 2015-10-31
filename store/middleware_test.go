@@ -93,7 +93,7 @@ func TestWithValidateBaseUrlNoRedirectPOST(t *testing.T) {
 
 func TestWithValidateBaseUrlNoRedirectValidBaseURL(t *testing.T) {
 
-	var mockReader = config.NewMockReader(
+	var configReader = config.NewMockReader(
 		config.WithMockValues(config.MockPV{
 			config.MockPathScopeDefault(store.PathRedirectToBase):   1,
 			config.MockPathScopeStore(1, store.PathUnsecureBaseURL): "http://www.corestore.io/",
@@ -101,7 +101,7 @@ func TestWithValidateBaseUrlNoRedirectValidBaseURL(t *testing.T) {
 		}),
 	)
 
-	var mockedContextStoreService = storemock.NewContextService(
+	var ctxStoreService = storemock.NewContextService(
 		scope.Option{},
 		func(ms *storemock.Storage) {
 			ms.MockStore = func() (*store.Store, error) {
@@ -109,7 +109,7 @@ func TestWithValidateBaseUrlNoRedirectValidBaseURL(t *testing.T) {
 					&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 					&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
 					&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-					store.SetStoreConfig(mockReader),
+					store.SetStoreConfig(configReader),
 				)
 			}
 		},
@@ -119,7 +119,7 @@ func TestWithValidateBaseUrlNoRedirectValidBaseURL(t *testing.T) {
 	req, err := http.NewRequest(httputils.MethodGet, "http://corestore.io/catalog/product/view", nil)
 	assert.NoError(t, err)
 
-	mw := store.WithValidateBaseUrl(mockReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	mw := store.WithValidateBaseUrl(configReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		assert.NotNil(t, ctx)
 		assert.NotNil(t, w)
 		assert.NotNil(t, r)
@@ -129,7 +129,7 @@ func TestWithValidateBaseUrlNoRedirectValidBaseURL(t *testing.T) {
 		return nil
 	}))
 
-	err = mw.ServeHTTPContext(mockedContextStoreService, w, req)
+	err = mw.ServeHTTPContext(ctxStoreService, w, req)
 	assert.NoError(t, err)
 
 	//	w = httptest.NewRecorder()

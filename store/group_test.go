@@ -47,10 +47,19 @@ func TestNewGroup(t *testing.T) {
 	assert.EqualError(t, store.ErrGroupDefaultStoreNotFound, err.Error())
 }
 
-func TestNewGroupPanic(t *testing.T) {
+func TestNewGroupErrorArgument(t *testing.T) {
 	ng, err := store.NewGroup(nil, nil)
 	assert.Nil(t, ng)
 	assert.EqualError(t, store.ErrArgumentCannotBeNil, err.Error())
+}
+
+func TestNewGroupPanic(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			assert.EqualError(t, r.(error), store.ErrArgumentCannotBeNil.Error())
+		}
+	}()
+	_ = store.MustNewGroup(nil, nil)
 }
 
 func TestNewGroupPanicWebsiteIncorrect(t *testing.T) {

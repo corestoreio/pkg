@@ -145,6 +145,7 @@ func MustNewGroup(tg *TableGroup, opts ...GroupOption) *Group {
 }
 
 var _ scope.GroupIDer = (*Group)(nil)
+var _ scope.StoreIDer = (*Group)(nil)
 
 // ApplyOptions sets the options to a Group.
 func (g *Group) ApplyOptions(opts ...GroupOption) (*Group, error) {
@@ -184,6 +185,11 @@ func (g *Group) GroupID() int64 {
 	return g.Data.GroupID
 }
 
+// StoreID satisfies interface scope.StoreIDer and returns the default store ID.
+func (g *Group) StoreID() int64 {
+	return g.Data.DefaultStoreID
+}
+
 // MarshalJSON satisfies interface for JSON marshalling. The TableWebsite
 // struct will be encoded to JSON.
 func (g *Group) MarshalJSON() ([]byte, error) {
@@ -191,7 +197,10 @@ func (g *Group) MarshalJSON() ([]byte, error) {
 	return json.Marshal(g.Data)
 }
 
-// DefaultStore returns the default Store or an error.
+// DefaultStore returns the default *Store or an error. If an error will be returned of
+// type ErrGroupDefaultStoreNotFound you can then access Data field to get the
+// DefaultStoreID. The returned *Store does not contain that much data to other
+// Website or Groups.
 func (g *Group) DefaultStore() (*Store, error) {
 	for _, sb := range g.Stores {
 		if sb.Data.StoreID == g.Data.DefaultStoreID {

@@ -155,6 +155,8 @@ func (s *Store) ApplyOptions(opts ...StoreOption) *Store {
 */
 
 var _ scope.StoreIDer = (*Store)(nil)
+var _ scope.GroupIDer = (*Store)(nil)
+var _ scope.WebsiteIDer = (*Store)(nil)
 var _ scope.StoreCoder = (*Store)(nil)
 
 // StoreID satisfies the interface scope.StoreIDer and returns the store ID.
@@ -165,6 +167,16 @@ func (s *Store) StoreID() int64 {
 // StoreCode satisfies the interface scope.StoreCoder and returns the store code.
 func (s *Store) StoreCode() string {
 	return s.Data.Code.String
+}
+
+// GroupID implements scope.GroupIDer interface
+func (s *Store) GroupID() int64 {
+	return s.Data.GroupID
+}
+
+// WebsiteID implements scope.WebsiteIDer interface
+func (s *Store) WebsiteID() int64 {
+	return s.Data.WebsiteID
 }
 
 // MarshalJSON satisfies interface for JSON marshalling. The TableStore

@@ -92,15 +92,21 @@ var (
 	ErrHashRetrieverNil      = errors.New("Hash argument is nil")
 )
 
-// NewService creates a new store Service which handles websites, store groups and stores.
+// NewService creates a new store Service which handles websites, groups and stores.
 // A Service can only act on a certain scope (MAGE_RUN_TYPE) and scope ID (MAGE_RUN_CODE).
+// Default scope.Scope is always the scope.WebsiteID constant.
 // This function is mainly used when booting the app to set the environment configuration
 // Also all other calls to any method receiver with nil arguments depends on the internal
 // appStore which reflects the default store ID.
 func NewService(so scope.Option, storage Storager, opts ...ServiceOption) (*Service, error) {
-	m := &Service{
+	scopeID := so.Scope()
+	if scopeID == scope.DefaultID {
+		scopeID = scope.WebsiteID
+	}
+
+	s := &Service{
 		cr:           config.DefaultManager,
-		boundToScope: so.Scope(),
+		boundToScope: scopeID,
 		storage:      storage,
 		mu:           sync.RWMutex{},
 		websiteMap:   make(map[uint64]*Website),
@@ -109,18 +115,17 @@ func NewService(so scope.Option, storage Storager, opts ...ServiceOption) (*Serv
 	}
 	for _, opt := range opts {
 		if opt != nil {
-			opt(m)
+			opt(s)
 		}
 	}
 
 	var err error
-	m.appStore, err = m.findDefaultStoreByScope(so)
-
+	s.appStore, err = s.findDefaultStoreByScope(s.boundToScope, so)
 	if err != nil {
 		return nil, log.Error("store.Service.Init", "err", err, "ScopeOption", so)
 	}
 
-	return m, nil
+	return s, nil
 }
 
 // MustNewService same as NewService, but panics on error.
@@ -134,25 +139,42 @@ func MustNewService(so scope.Option, storage Storager, opts ...ServiceOption) *S
 
 // findDefaultStoreByScope tries to detect the default store by a given scope option.
 // Precedence of detection by passed scope.Option: 1. Store 2. Group 3. Website
-func (sm *Service) findDefaultStoreByScope(so scope.Option) (store *Store, err error) {
+func (sm *Service) findDefaultStoreByScope(allowedScope scope.Scope, so scope.Option) (store *Store, err error) {
 
-	switch so.Scope() {
+	switch allowedScope {
 	case scope.StoreID:
 		store, err = sm.Store(so.Store)
 	case scope.GroupID:
 		g, errG := sm.Group(so.Group)
 		if errG != nil {
-			return nil, log.Error("store.Service.Init.Group", "err", errG, "ScopeOption", so)
+			return nil, log.Error("store.Service.findDefaultStoreByScope.Group", "err", errG, "ScopeOption", so)
 		}
-		store, err = g.DefaultStore()
+		store, err = sm.Store(g) // Group g implements StoreIDer interface to get the default store ID
+		if err != nil {
+			err = log.Error("store.Service.findDefaultStoreByScope.Group.Store", "err", ErrGroupDefaultStoreNotFound, "ScopeOption", so)
+		}
 	case scope.WebsiteID:
-		w, errW := sm.Website(so.Website)
-		if errW != nil {
-			return nil, log.Error("store.Service.Init.Website", "err", errW, "ScopeOption", so)
+		if so.Website == nil { // if so.Website == nil then search default website
+			store, err = sm.storage.DefaultStoreView() // returns a Store containing less data
+			if err == nil {
+				store, err = sm.Store(store) // this Store contains more data
+			}
+		} else {
+			w, errW := sm.Website(so.Website)
+			if errW != nil {
+				return nil, log.Error("store.Service.findDefaultStoreByScope.Website", "err", errW, "ScopeOption", so)
+			}
+			g, errG := w.DefaultGroup()
+			if errG != nil {
+				return nil, log.Error("store.Service.findDefaultStoreByScope.Website.DefaultGroup", "err", errG, "ScopeOption", so)
+			}
+			store, err = sm.Store(g) // Group g implements StoreIDer interface to get the default store ID
+			if err != nil {
+				err = log.Error("store.Service.findDefaultStoreByScope.Website.Store", "err", ErrGroupDefaultStoreNotFound, "ScopeOption", so)
+			}
 		}
-		store, err = w.DefaultStore()
 	default:
-		store, err = sm.storage.DefaultStoreView()
+		err = log.Error("store.Service.findDefaultStoreByScope.Default", "err", scope.ErrUnsupportedScope, "ScopeOption", so)
 	}
 	return
 }
@@ -165,7 +187,7 @@ func (sm *Service) findDefaultStoreByScope(so scope.Option) (store *Store, err e
 // has been initialized via NewService() function.
 func (sm *Service) GetRequestedStore(so scope.Option) (activeStore *Store, err error) {
 
-	activeStore, err = sm.findDefaultStoreByScope(so)
+	activeStore, err = sm.findDefaultStoreByScope(so.Scope(), so)
 	if err != nil {
 		return nil, log.Error("store.Service.GetRequestedStore.FindDefaultStoreByScope", "err", err, "so", so)
 	}

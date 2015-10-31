@@ -117,6 +117,15 @@ func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) (*Website, error) {
 	return w.ApplyOptions(opts...)
 }
 
+// MustNewWebsite same as NewWebsite but panics on error.
+func MustNewWebsite(tw *TableWebsite, opts ...WebsiteOption) *Website {
+	w, err := NewWebsite(tw, opts...)
+	if err != nil {
+		panic(err)
+	}
+	return w
+}
+
 // ApplyOptions sets the options on a Website
 func (w *Website) ApplyOptions(opts ...WebsiteOption) (*Website, error) {
 	for _, opt := range opts {
@@ -145,6 +154,8 @@ func (w *Website) Error() string {
 }
 
 var _ scope.WebsiteIDer = (*Website)(nil)
+var _ scope.StoreIDer = (*Website)(nil)
+var _ scope.GroupIDer = (*Website)(nil)
 var _ scope.WebsiteCoder = (*Website)(nil)
 
 // WebsiteID satisfies the interface scope.WebsiteIDer and returns the website ID.
@@ -152,6 +163,23 @@ func (w *Website) WebsiteID() int64 { return w.Data.WebsiteID }
 
 // WebsiteCode satisfies the interface scope.WebsiteCoder and returns the code.
 func (w *Website) WebsiteCode() string { return w.Data.Code.String }
+
+// GroupID implements the GroupIDer interface and returns the default group ID.
+func (w *Website) GroupID() int64 {
+	return w.Data.DefaultGroupID
+}
+
+// StoreID implements the StoreIDer interface and returns the default store ID.
+// It may return a scope.UnavailableStoreID when finding the DefaultGroup()
+// returns an error. Error will be logged.
+func (w *Website) StoreID() int64 {
+	g, err := w.DefaultGroup()
+	if err != nil {
+		log.Error("store.Website.StoreID", "err", err, "Website", w)
+		return scope.UnavailableStoreID
+	}
+	return g.Data.DefaultStoreID
+}
 
 // MarshalJSON satisfies interface for JSON marshalling. The TableWebsite
 // struct will be encoded to JSON.

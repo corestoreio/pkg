@@ -58,6 +58,8 @@ func TestNewStore(t *testing.T) {
 		assert.NotEmpty(t, s.Group.Website.WebsiteID())
 		assert.Nil(t, s.Group.Stores)
 		assert.EqualValues(t, test.s.StoreID, s.StoreID())
+		assert.EqualValues(t, test.s.GroupID, s.GroupID())
+		assert.EqualValues(t, test.s.WebsiteID, s.WebsiteID())
 	}
 }
 
