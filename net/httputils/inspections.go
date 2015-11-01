@@ -15,12 +15,19 @@
 package httputils
 
 import (
+	"errors"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 	"golang.org/x/net/context"
 )
+
+// ErrBaseUrlDoNotMatch will be returned if the request URL does not match the configured URL.
+var ErrBaseUrlDoNotMatch = errors.New("The Base URLs do not match")
 
 // PathOffloaderHeader defines the header name when a proxy server forwards an already
 // terminated TLS request.
@@ -36,12 +43,16 @@ func IsSecure(ctx context.Context, r *http.Request) bool {
 
 	cr, ok := config.FromContextReader(ctx)
 	if !ok {
-		log.Error("net.httputils.IsSecure.FromContextReader", "err", config.ErrContextTypeAssertReaderFailed, "ctx", ctx)
+		if log.IsDebug() {
+			log.Debug("net.httputils.IsSecure.FromContextReader", "err", config.ErrContextTypeAssertReaderFailed, "ctx", ctx)
+		}
 		cr = config.DefaultManager
 	}
 	oh, err := cr.GetString(config.Path(PathOffloaderHeader), config.ScopeDefault())
 	if err != nil {
-		log.Error("net.httputils.IsSecure.FromContextReader.GetString", "err", err, "path", PathOffloaderHeader, "ctx", ctx)
+		if log.IsDebug() {
+			log.Debug("net.httputils.IsSecure.FromContextReader.GetString", "err", err, "path", PathOffloaderHeader, "ctx", ctx)
+		}
 		return false
 	}
 
@@ -56,19 +67,19 @@ func IsSecure(ctx context.Context, r *http.Request) bool {
 	return isHttps
 }
 
-// IsSafeMethod checks if the request method is one of "GET", "HEAD", "TRACE", "OPTIONS"
-// which can be considered as "safe".
-func IsSafeMethod(r *http.Request) bool {
-	// TODD(cs): figure out the usage for that function ...
-	switch r.Method {
-	case MethodGet, MethodHead, MethodTrace, MethodOptions:
-		return true
+// IsBaseUrlCorrect checks if the requested host, scheme and path are same as the servers and
+// if the path of the baseURL is included in the request URI.
+func IsBaseUrlCorrect(r *http.Request, baseURL string) error {
+	uri, err := url.Parse(baseURL)
+	if err != nil {
+		return errgo.Mask(err)
 	}
-	return false
-}
 
-// IsAjax checks if the request has been initiated by a XMLHttpRequest
-// or a form parameter of ajax or isAjax has been submitted.
-func IsAjax(r *http.Request) bool {
-	return r.Header.Get("X_REQUESTED_WITH") == "XMLHttpRequest" || r.FormValue("ajax") != "" || r.FormValue("isAjax") != ""
+	if r.Host == uri.Host && r.URL.Host == uri.Host && r.URL.Scheme == uri.Scheme && strings.Contains(r.URL.RequestURI(), uri.Path) {
+		return nil
+	}
+	if log.IsDebug() {
+		log.Debug("store.isBaseUrlCorrect.compare", "err", ErrBaseUrlDoNotMatch, "r.Host", r.Host, "baseURL", uri.String(), "requestURL", r.URL.String(), "strings.Contains", []string{r.URL.RequestURI(), uri.Path})
+	}
+	return errgo.Mask(ErrBaseUrlDoNotMatch)
 }

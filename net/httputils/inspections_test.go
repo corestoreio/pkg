@@ -14,16 +14,47 @@
 
 package httputils_test
 
-import "testing"
+import (
+	"errors"
+	"net/http"
+	"testing"
+
+	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/stretchr/testify/assert"
+)
 
 func TestIsSecure(t *testing.T) {
 	t.Log("TODO")
 }
 
-func TestIsSafeMethod(t *testing.T) {
-	t.Log("TODO")
-}
+func TestIsBaseUrlCorrect(t *testing.T) {
 
-func TestIsAjax(t *testing.T) {
-	t.Log("TODO")
+	var nr = func(urlStr string) *http.Request {
+		r, err := http.NewRequest("GET", urlStr, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return r
+	}
+
+	tests := []struct {
+		req         *http.Request
+		haveBaseURL string
+		wantErr     error
+	}{
+		{nr("http://corestore.io/"), "http://corestore.io/", nil},
+		{nr("http://www.corestore.io/"), "http://corestore.io/", httputils.ErrBaseUrlDoNotMatch},
+		{nr("http://corestore.io/"), "https://corestore.io/", httputils.ErrBaseUrlDoNotMatch},
+		{nr("http://corestore.io/"), "http://corestore.io/subpath", httputils.ErrBaseUrlDoNotMatch},
+		{nr("http://corestore.io/subpath"), "http://corestore.io/subpath", nil},
+		{nr("http://corestore.io/subpath"), "://cs.io", errors.New("parse ://cs.io: missing protocol scheme")},
+	}
+	for i, test := range tests {
+		haveErr := httputils.IsBaseUrlCorrect(test.req, test.haveBaseURL)
+		if test.wantErr != nil {
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+		} else {
+			assert.NoError(t, haveErr, "Index %d", i)
+		}
+	}
 }
