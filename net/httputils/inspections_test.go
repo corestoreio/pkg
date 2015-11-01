@@ -19,12 +19,76 @@ import (
 	"net/http"
 	"testing"
 
+	"crypto/tls"
+
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/httputils"
 	"github.com/stretchr/testify/assert"
+	"golang.org/x/net/context"
 )
 
 func TestIsSecure(t *testing.T) {
-	t.Log("TODO")
+	tests := []struct {
+		ctx          context.Context
+		req          *http.Request
+		wantIsSecure bool
+	}{
+		{
+			context.Background(),
+			func() *http.Request {
+				r, err := http.NewRequest("GET", "/", nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				r.TLS = new(tls.ConnectionState)
+				return r
+			}(),
+			true,
+		},
+		{
+			config.NewContextMockReader(context.Background(), config.WithMockValues(config.MockPV{
+				config.MockPathScopeDefault(httputils.PathOffloaderHeader): "X_FORWARDED_PROTO",
+			})),
+			func() *http.Request {
+				r, err := http.NewRequest("GET", "/", nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				r.Header.Set("HTTP_X_FORWARDED_PROTO", "https")
+				return r
+			}(),
+			true,
+		},
+		{
+			config.NewContextMockReader(context.Background(), config.WithMockValues(config.MockPV{
+				config.MockPathScopeDefault(httputils.PathOffloaderHeader): "X_FORWARDED_PROTO",
+			})),
+			func() *http.Request {
+				r, err := http.NewRequest("GET", "/", nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				r.Header.Set("HTTP_X_FORWARDED_PROTO", "tls")
+				return r
+			}(),
+			false,
+		},
+		{
+			config.NewContextMockReader(context.Background(), config.WithMockValues(config.MockPV{})),
+			func() *http.Request {
+				r, err := http.NewRequest("GET", "/", nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				r.Header.Set("HTTP_X_FORWARDED_PROTO", "does not matter")
+				return r
+			}(),
+			false,
+		},
+	}
+	for _, test := range tests {
+		assert.Exactly(t, test.wantIsSecure, httputils.IsSecure(test.ctx, test.req))
+	}
 }
 
 func TestIsBaseUrlCorrect(t *testing.T) {
