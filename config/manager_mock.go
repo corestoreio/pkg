@@ -24,6 +24,7 @@ import (
 
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/dustin/gojson"
+	"golang.org/x/net/context"
 )
 
 var _ Reader = (*MockReader)(nil)
@@ -130,6 +131,11 @@ func WithMockValuesJSON(r io.Reader) mockOptionFunc {
 		mr.mv = pathValues
 		mr.mu.Unlock()
 	}
+}
+
+// NewContextMockReader adds a MockReader to a context.
+func NewContextMockReader(ctx context.Context, opts ...mockOptionFunc) context.Context {
+	return context.WithValue(ctx, ctxKeyReader, NewMockReader(opts...))
 }
 
 // NewMockReader creates a new MockReader used in testing.

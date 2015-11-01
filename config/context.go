@@ -26,7 +26,7 @@ type ctxKey uint
 
 // Key* defines the keys to access a value in a context.Context
 const (
-	ctxKeyReader ctxKey = iota
+	ctxKeyReader ctxKey = iota + 1
 	ctxKeyReaderPubSuber
 	ctxKeyWriter
 )
