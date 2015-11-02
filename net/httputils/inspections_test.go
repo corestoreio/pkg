@@ -27,7 +27,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func TestIsSecure(t *testing.T) {
+func TestCtxIsSecure(t *testing.T) {
 	tests := []struct {
 		ctx          context.Context
 		req          *http.Request
@@ -87,7 +87,7 @@ func TestIsSecure(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		assert.Exactly(t, test.wantIsSecure, httputils.IsSecure(test.ctx, test.req))
+		assert.Exactly(t, test.wantIsSecure, httputils.CtxIsSecure(test.ctx, test.req))
 	}
 }
 

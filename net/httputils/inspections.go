@@ -26,32 +26,32 @@ import (
 	"golang.org/x/net/context"
 )
 
-// ErrBaseUrlDoNotMatch will be returned if the request URL does not match the configured URL.
+// ErrBaseUrlDoNotMatch will be returned if the request URL does not match the
+// configured URL.
 var ErrBaseUrlDoNotMatch = errors.New("The Base URLs do not match")
 
-// PathOffloaderHeader defines the header name when a proxy server forwards an already
-// terminated TLS request.
+// PathOffloaderHeader defines the header name when a proxy server forwards an
+// already terminated TLS request.
 const PathOffloaderHeader = "web/secure/offloader_header"
+
+// CtxIsSecure same as IsSecure() but extract the config.Reader out of the context.
+// Wrapper function.
+func CtxIsSecure(ctx context.Context, r *http.Request) bool {
+	return IsSecure(config.FromContextReader(ctx), r)
+}
 
 // IsSecure checks if a request has been sent over a TLS connection. Also checks
 // if the app runs behind a proxy server and therefore checks the off loader header.
-func IsSecure(ctx context.Context, r *http.Request) bool {
+func IsSecure(cr config.Reader, r *http.Request) bool {
 	// due to import cycle this function must be in this package
 	if r.TLS != nil {
 		return true
 	}
 
-	cr, ok := config.FromContextReader(ctx)
-	if !ok {
-		if log.IsDebug() {
-			log.Debug("net.httputils.IsSecure.FromContextReader", "err", config.ErrContextTypeAssertReaderFailed, "ctx", ctx)
-		}
-		cr = config.DefaultManager
-	}
 	oh, err := cr.GetString(config.Path(PathOffloaderHeader), config.ScopeDefault())
 	if err != nil {
 		if log.IsDebug() {
-			log.Debug("net.httputils.IsSecure.FromContextReader.GetString", "err", err, "path", PathOffloaderHeader, "ctx", ctx)
+			log.Debug("net.httputils.IsSecure.FromContextReader.GetString", "err", err, "path", PathOffloaderHeader)
 		}
 		return false
 	}
