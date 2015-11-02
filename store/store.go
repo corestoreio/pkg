@@ -29,7 +29,6 @@ import (
 	"github.com/corestoreio/csfw/net/httputils"
 	"github.com/corestoreio/csfw/utils"
 	"github.com/corestoreio/csfw/utils/log"
-	"golang.org/x/net/context"
 )
 
 const (
@@ -239,7 +238,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url string) {
 	return url
 }
 
-// IsFrontUrlSecure returns true if TLS is active on the frontend.
+// IsFrontUrlSecure returns true from the config if the frontend must be secure.
 func (s *Store) IsFrontUrlSecure() bool {
 	return s.Config.GetBool(PathSecureInFrontend)
 }
@@ -248,12 +247,11 @@ func (s *Store) IsFrontUrlSecure() bool {
 // include if base URL has been set and if front URL is secure
 // This function might gets executed on every request.
 func (s *Store) IsCurrentlySecure(r *http.Request) bool {
-	if httputils.IsSecure(config.NewContextReader(context.Background(), s.cr), r) { // hmmm not that nice
+	if httputils.IsSecure(s.cr, r) {
 		return true
 	}
 
 	secureBaseURL := s.Config.GetString(PathSecureBaseURL)
-
 	if secureBaseURL == "" || false == s.IsFrontUrlSecure() {
 		return false
 	}
@@ -264,7 +262,7 @@ func (s *Store) IsCurrentlySecure(r *http.Request) bool {
 		return false
 	}
 
-	return uri.Scheme == "https" && r.URL.Scheme == "https" // todo(cs) check for ports !?
+	return uri.Scheme == "https" && r.URL.Scheme == "https" // todo(cs) check for ports !? other schemes?
 }
 
 // NewCookie creates a new pre-configured cookie.

@@ -96,9 +96,10 @@ func TestWithValidateBaseUrl_ActivatedAndShouldRedirectWithGETRequest(t *testing
 
 	var configReader = config.NewMockReader(
 		config.WithMockValues(config.MockPV{
-			config.MockPathScopeDefault(store.PathRedirectToBase):   1,
-			config.MockPathScopeStore(1, store.PathUnsecureBaseURL): "http://www.corestore.io/",
-			config.MockPathScopeStore(1, store.PathSecureBaseURL):   "https://www.corestore.io/",
+			config.MockPathScopeDefault(store.PathRedirectToBase):    1,
+			config.MockPathScopeStore(1, store.PathSecureInFrontend): true,
+			config.MockPathScopeStore(1, store.PathUnsecureBaseURL):  "http://www.corestore.io/",
+			config.MockPathScopeStore(1, store.PathSecureBaseURL):    "https://www.corestore.io/",
 		}),
 	)
 
@@ -116,6 +117,14 @@ func TestWithValidateBaseUrl_ActivatedAndShouldRedirectWithGETRequest(t *testing
 		},
 	)
 
+	var newReq = func(urlStr string) *http.Request {
+		req, err := http.NewRequest(httputils.MethodGet, urlStr, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return req
+	}
+
 	tests := []struct {
 		rec             *httptest.ResponseRecorder
 		req             *http.Request
@@ -123,46 +132,22 @@ func TestWithValidateBaseUrl_ActivatedAndShouldRedirectWithGETRequest(t *testing
 	}{
 		{
 			httptest.NewRecorder(),
-			func() *http.Request {
-				req, err := http.NewRequest(httputils.MethodGet, "http://corestore.io/catalog/product/view", nil)
-				if err != nil {
-					t.Fatal(err)
-				}
-				return req
-			}(),
+			newReq("http://corestore.io/catalog/product/view"),
 			"http://www.corestore.io/catalog/product/view",
 		},
 		{
 			httptest.NewRecorder(),
-			func() *http.Request {
-				req, err := http.NewRequest(httputils.MethodGet, "http://corestore.io", nil)
-				if err != nil {
-					t.Fatal(err)
-				}
-				return req
-			}(),
+			newReq("http://corestore.io"),
 			"http://www.corestore.io/",
 		},
 		{
 			httptest.NewRecorder(),
-			func() *http.Request {
-				req, err := http.NewRequest(httputils.MethodGet, "https://corestore.io/catalog/category/view?catid=1916", nil)
-				if err != nil {
-					t.Fatal(err)
-				}
-				return req
-			}(),
+			newReq("https://corestore.io/catalog/category/view?catid=1916"),
 			"https://www.corestore.io/catalog/category/view?catid=1916",
 		},
 		{
 			httptest.NewRecorder(),
-			func() *http.Request {
-				req, err := http.NewRequest(httputils.MethodGet, "https://corestore.io/customer/comments/view?id=1916#tab=ratings", nil)
-				if err != nil {
-					t.Fatal(err)
-				}
-				return req
-			}(),
+			newReq("https://corestore.io/customer/comments/view?id=1916#tab=ratings"),
 			"https://www.corestore.io/customer/comments/view?id=1916#tab=ratings",
 		},
 	}
