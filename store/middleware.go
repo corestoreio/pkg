@@ -18,19 +18,16 @@ import (
 	"net/http"
 
 	"errors"
-	"net/url"
-	"strings"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
+	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/corestoreio/csfw/utils/bufferpool"
 	"github.com/corestoreio/csfw/utils/log"
 	"golang.org/x/net/context"
 )
-
-// ErrBaseUrlDoNotMatch will be returned if the request URL does not match the configured URL.
-var ErrBaseUrlDoNotMatch = errors.New("The Base URLs do not match")
 
 // WithValidateBaseUrl is a middleware which checks if the request base URL
 // is equal to the one store in the configuration, if not
@@ -62,29 +59,33 @@ func WithValidateBaseUrl(cr config.ReaderPubSuber) ctxhttp.Middleware {
 				}
 
 				baseURL := requestedStore.BaseURL(config.URLTypeWeb, requestedStore.IsCurrentlySecure(r))
-				if nil == isBaseUrlCorrect(r, baseURL) {
-					redirectURL := baseURL + r.URL.Path
-					http.Redirect(w, r, redirectURL, redirectCode)
+				if err := httputils.IsBaseUrlCorrect(r, baseURL); err != nil {
+					if log.IsDebug() {
+						log.Debug("store.WithValidateBaseUrl.IsBaseUrlCorrect.error", "err", err, "baseURL", baseURL, "request", r)
+					}
+
+					var urlBuffer = bufferpool.Get()
+					urlBuffer.WriteString(baseURL)
+					if r.URL.Path != "" {
+						var rURI = r.URL.RequestURI()
+						if baseURL[len(baseURL)-1:] == "/" && rURI[:1] == "/" {
+							rURI = rURI[1:] // remove leading /
+						}
+						urlBuffer.WriteString(rURI)
+					}
+					if r.URL.Fragment != "" {
+						urlBuffer.WriteByte('#')
+						urlBuffer.WriteString(r.URL.Fragment)
+					}
+
+					http.Redirect(w, r, urlBuffer.String(), redirectCode)
+					bufferpool.Put(urlBuffer)
 					return nil
 				}
 			}
 			return h.ServeHTTPContext(ctx, w, r)
 		})
 	}
-}
-
-// isBaseUrlCorrect checks if the requested host, scheme are same as the servers and
-// if the path of the baseURL is included in the request URI.
-func isBaseUrlCorrect(r *http.Request, baseURL string) error {
-	uri, err := url.Parse(baseURL)
-	if err != nil {
-		return log.Error("store.isBaseUrlCorrect.url.Parse", "err", err)
-	}
-
-	if r.Host == uri.Host && r.URL.Host == uri.Host && r.URL.Scheme == uri.Scheme && strings.Contains(r.URL.RequestURI(), uri.Path) {
-		return nil
-	}
-	return log.Error("store.isBaseUrlCorrect.compare", "err", ErrBaseUrlDoNotMatch, "r.Host", r.Host, "baseURL", uri.String(), "requestURL", r.URL.String(), "strings.Contains", []string{r.URL.RequestURI(), uri.Path})
 }
 
 // WithInitStoreByToken

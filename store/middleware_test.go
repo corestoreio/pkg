@@ -16,6 +16,7 @@ package store_test
 
 import (
 	"database/sql"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -32,7 +33,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func TestWithValidateBaseUrlNoRedirectGET(t *testing.T) {
+func TestWithValidateBaseUrl_DeactivatedAndShouldNotRedirectWithGETRequest(t *testing.T) {
 
 	mockReader := config.NewMockReader(
 		config.WithMockValues(config.MockPV{
@@ -57,7 +58,7 @@ func TestWithValidateBaseUrlNoRedirectGET(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestWithValidateBaseUrlNoRedirectPOST(t *testing.T) {
+func TestWithValidateBaseUrl_ActivatedAndShouldNotRedirectWithPOSTRequest(t *testing.T) {
 
 	mockReader := config.NewMockReader(
 		config.WithMockValues(config.MockPV{
@@ -91,7 +92,7 @@ func TestWithValidateBaseUrlNoRedirectPOST(t *testing.T) {
 
 }
 
-func TestWithValidateBaseUrlNoRedirectValidBaseURL(t *testing.T) {
+func TestWithValidateBaseUrl_ActivatedAndShouldRedirectWithGETRequest(t *testing.T) {
 
 	var configReader = config.NewMockReader(
 		config.WithMockValues(config.MockPV{
@@ -115,30 +116,64 @@ func TestWithValidateBaseUrlNoRedirectValidBaseURL(t *testing.T) {
 		},
 	)
 
-	w := httptest.NewRecorder()
-	req, err := http.NewRequest(httputils.MethodGet, "http://corestore.io/catalog/product/view", nil)
-	assert.NoError(t, err)
+	tests := []struct {
+		rec             *httptest.ResponseRecorder
+		req             *http.Request
+		wantRedirectURL string
+	}{
+		{
+			httptest.NewRecorder(),
+			func() *http.Request {
+				req, err := http.NewRequest(httputils.MethodGet, "http://corestore.io/catalog/product/view", nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return req
+			}(),
+			"http://www.corestore.io/catalog/product/view",
+		},
+		{
+			httptest.NewRecorder(),
+			func() *http.Request {
+				req, err := http.NewRequest(httputils.MethodGet, "http://corestore.io", nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return req
+			}(),
+			"http://www.corestore.io/",
+		},
+		{
+			httptest.NewRecorder(),
+			func() *http.Request {
+				req, err := http.NewRequest(httputils.MethodGet, "https://corestore.io/catalog/category/view?catid=1916", nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return req
+			}(),
+			"https://www.corestore.io/catalog/category/view?catid=1916",
+		},
+		{
+			httptest.NewRecorder(),
+			func() *http.Request {
+				req, err := http.NewRequest(httputils.MethodGet, "https://corestore.io/customer/comments/view?id=1916#tab=ratings", nil)
+				if err != nil {
+					t.Fatal(err)
+				}
+				return req
+			}(),
+			"https://www.corestore.io/customer/comments/view?id=1916#tab=ratings",
+		},
+	}
 
-	mw := store.WithValidateBaseUrl(configReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		assert.NotNil(t, ctx)
-		assert.NotNil(t, w)
-		assert.NotNil(t, r)
-
-		assert.Empty(t, w.Header().Get("Location"))
-
-		return nil
-	}))
-
-	err = mw.ServeHTTPContext(ctxStoreService, w, req)
-	assert.NoError(t, err)
-
-	//	w = httptest.NewRecorder()
-	//	req, err = http.NewRequest(httputils.MethodPost, "http://corestore.io/catalog/product/view", strings.NewReader(`{ "k1": "v1",  "k2": { "k3": ["va1"]  }}`))
-	//	assert.NoError(t, err)
-	//
-	//	err = mw.ServeHTTPContext(context.Background(), w, req)
-	//	assert.NoError(t, err)
-
+	for i, test := range tests {
+		mw := store.WithValidateBaseUrl(configReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+			return fmt.Errorf("This handler should not be called! Iindex %d", i)
+		}))
+		assert.NoError(t, mw.ServeHTTPContext(ctxStoreService, test.rec, test.req), "Index %d", i)
+		assert.Exactly(t, test.wantRedirectURL, test.rec.HeaderMap.Get("Location"), "Index %d", i)
+	}
 }
 
 //func getTestRequest(m, u string, c *http.Cookie) *http.Request {
