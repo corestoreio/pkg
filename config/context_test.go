@@ -25,14 +25,12 @@ import (
 func TestContextMustReader(t *testing.T) {
 	mr := config.NewMockReader()
 	ctx := config.NewContextReader(context.Background(), mr)
-	mrHave, ok := config.FromContextReader(ctx)
+	mrHave := config.FromContextReader(ctx)
 	assert.Exactly(t, mr, mrHave)
-	assert.True(t, ok)
 
 	ctx = config.NewContextReader(context.Background(), nil)
-	mrHave, ok = config.FromContextReader(ctx)
-	assert.Nil(t, mrHave)
-	assert.False(t, ok)
+	mrHave = config.FromContextReader(ctx)
+	assert.Exactly(t, config.DefaultManager, mrHave)
 }
 
 func TestContextMustReaderPubSuber(t *testing.T) {

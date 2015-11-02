@@ -14,11 +14,7 @@
 
 package config
 
-import (
-	"errors"
-
-	"golang.org/x/net/context"
-)
+import "golang.org/x/net/context"
 
 // ctxKey type is unexported to prevent collisions with context keys defined in
 // other packages.
@@ -28,25 +24,33 @@ type ctxKey uint
 const (
 	ctxKeyReader ctxKey = iota + 1
 	ctxKeyReaderPubSuber
+	ctxKeyScopedReader
 	ctxKeyWriter
 )
 
-// ErrContextTypeAssert* defines global errors when type assertion to an interface is failing.
-var (
-	ErrContextTypeAssertReaderFailed         = errors.New("Type assertion to config.Reader failed")
-	ErrContextTypeAssertReaderPubSuberFailed = errors.New("Type assertion to config.ReaderPubSuber failed")
-	ErrContextTypeAssertReaderWriterFailed   = errors.New("Type assertion to config.Writer failed")
-)
+// FromContextReader returns a config.Reader from a context. If not found returns
+// the config.DefaultManager
+func FromContextReader(ctx context.Context) Reader {
+	if r, ok := ctx.Value(ctxKeyReader).(Reader); ok {
+		return r
+	}
+	return DefaultManager
+}
 
-// FromContextReader returns a config.Reader from a context.
-func FromContextReader(ctx context.Context) (r Reader, ok bool) {
-	r, ok = ctx.Value(ctxKeyReader).(Reader)
+// NewContextReader adds a config.Reader to a context
+func NewContextReader(ctx context.Context, r Reader) context.Context {
+	return context.WithValue(ctx, ctxKeyReader, r)
+}
+
+// FromContextScopedReader returns a config.ScopedReader from a context.
+func FromContextScopedReader(ctx context.Context) (r ScopedReader, ok bool) {
+	r, ok = ctx.Value(ctxKeyScopedReader).(ScopedReader)
 	return
 }
 
-// NewContextReader adds a Reader to a context
-func NewContextReader(ctx context.Context, r Reader) context.Context {
-	return context.WithValue(ctx, ctxKeyReader, r)
+// NewContextScopedReader adds a config.ScopedReader to a context
+func NewContextScopedReader(ctx context.Context, r ScopedReader) context.Context {
+	return context.WithValue(ctx, ctxKeyScopedReader, r)
 }
 
 // FromContextReaderPubSuber returns a config.ReaderPubSuber from a context.
