@@ -33,32 +33,7 @@ const (
 	RightDelim = "}}"
 )
 
-// PathCSBaseURL main CoreStore base URL, used if no configuration on a store level can be found.
-const (
-	PathCSBaseURL = "web/corestore/base_url"
-	CSBaseURL     = "http://localhost:9500/"
-)
-
-// URL* defines the types of available URLs.
-const (
-	URLTypeAbsent URLType = iota
-	// URLTypeWeb defines the URL type to generate the main base URL.
-	URLTypeWeb
-	// URLTypeStatic defines the URL to the static assets like CSS, JS or theme images
-	URLTypeStatic
-
-	// UrlTypeLink hmmm
-	// UrlTypeLink
-
-	// URLTypeMedia defines the URL type for generating URLs to product photos
-	URLTypeMedia
-)
-
 type (
-	// URLType defines the type of the URL. Used in constant declaration.
-	// @see https://github.com/magento/magento2/blob/0.74.0-beta7/lib/internal/Magento/Framework/UrlInterface.php#L13
-	URLType uint8
-
 	// Reader implements how to receive thread-safe a configuration value from
 	// a path and or scope.
 	//
