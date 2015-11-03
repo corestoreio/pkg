@@ -23,6 +23,7 @@ import (
 	"strings"
 	"time"
 
+	"fmt"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/directory"
@@ -66,6 +67,11 @@ type Store struct {
 	Group *Group
 	// Data underlying raw data
 	Data *TableStore
+
+	urlcache *struct {
+		secure   *config.URLCache
+		unsecure *config.URLCache
+	}
 }
 
 // StoreSlice a collection of pointers to the Store structs. StoreSlice has some nifty method receivers.
@@ -120,6 +126,13 @@ func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOpt
 		Data:    ts,
 		Website: nw,
 		Group:   ng,
+		urlcache: &struct {
+			secure   *config.URLCache
+			unsecure *config.URLCache
+		}{
+			secure:   config.NewURLCache(),
+			unsecure: config.NewURLCache(),
+		},
 	}
 	s.ApplyOptions(opts...)
 	s.Website.ApplyOptions(SetWebsiteConfig(s.cr))
@@ -186,16 +199,31 @@ func (s *Store) MarshalJSON() ([]byte, error) {
 
 // Path returns the sub path from the URL where CoreStore is installed
 func (s *Store) Path() string {
-	url, err := url.ParseRequestURI(s.BaseURL(config.URLTypeWeb, false))
+	url, err := s.BaseURL(config.URLTypeWeb, false)
 	if err != nil {
 		return "/"
 	}
 	return url.Path
 }
 
-// BaseUrl returns the path from the URL or config where CoreStore is installed TODO(cs)
-// @see https://github.com/magento/magento2/blob/0.74.0-beta7/app/code/Magento/Store/Model/Store.php#L539
-func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url string) {
+// BaseUrl returns a parsed and maybe cached URL from config.ScopedReader.
+// It returns a copy of url.URL or an error. Possible URLTypes are:
+//     - config.URLTypeWeb
+//     - config.URLTypeStatic
+//     - config.URLTypeMedia
+func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
+
+	switch isSecure {
+	case true:
+		if pu := s.urlcache.secure.Get(ut); pu != nil {
+			return *pu, nil
+		}
+	case false:
+		if pu := s.urlcache.unsecure.Get(ut); pu != nil {
+			return *pu, nil
+		}
+	}
+
 	var p string
 	switch ut {
 	case config.URLTypeWeb:
@@ -216,14 +244,17 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url string) {
 			p = PathSecureBaseMediaURL
 		}
 		break
+	case config.URLTypeAbsent: // hack to clear the cache
+		s.urlcache.unsecure.Clear()
+		return url.URL{}, s.urlcache.secure.Clear()
 	// TODO(cs) rethink that here and maybe add the other paths if needed.
 	default:
-		panic("Unsupported UrlType")
+		return url.URL{}, fmt.Errorf("Unsupported UrlType: %d", ut)
 	}
 
-	url = s.Config.GetString(p)
+	rawURL := s.Config.GetString(p)
 
-	if strings.Contains(url, PlaceholderBaseURL) {
+	if strings.Contains(rawURL, PlaceholderBaseURL) {
 		// TODO(cs) replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
 		// getDistroBaseUrl will be generated from the $_SERVER variable,
 		base, err := s.cr.GetString(config.Path(config.PathCSBaseURL))
@@ -231,11 +262,16 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url string) {
 			log.Error("store.Store.BaseURL.GetString", "err", err, "path", config.PathCSBaseURL)
 			base = config.CSBaseURL
 		}
-		url = strings.Replace(url, PlaceholderBaseURL, base, 1)
+		rawURL = strings.Replace(rawURL, PlaceholderBaseURL, base, 1)
 	}
-	url = strings.TrimRight(url, "/") + "/"
+	rawURL = strings.TrimRight(rawURL, "/") + "/"
 
-	return url
+	if isSecure {
+		retURL, retErr := s.urlcache.secure.Set(ut, rawURL)
+		return *retURL, retErr
+	}
+	retURL, retErr := s.urlcache.unsecure.Set(ut, rawURL)
+	return *retURL, retErr
 }
 
 // IsFrontUrlSecure returns true from the config if the frontend must be secure.
@@ -251,6 +287,7 @@ func (s *Store) IsCurrentlySecure(r *http.Request) bool {
 		return true
 	}
 
+	// todo: refactor and use baseURL function
 	secureBaseURL := s.Config.GetString(PathSecureBaseURL)
 	if secureBaseURL == "" || false == s.IsFrontUrlSecure() {
 		return false

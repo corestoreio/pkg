@@ -24,7 +24,6 @@ import (
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/net/httputils"
-	"github.com/corestoreio/csfw/utils/bufferpool"
 	"github.com/corestoreio/csfw/utils/log"
 	"golang.org/x/net/context"
 )
@@ -58,28 +57,21 @@ func WithValidateBaseUrl(cr config.ReaderPubSuber) ctxhttp.Middleware {
 					return log.Error("ctxhttp.WithValidateBaseUrl.FromContextServiceReader", "err", errors.New("Cannot extract config.Reader from context"), "ctx", ctx)
 				}
 
-				baseURL := requestedStore.BaseURL(config.URLTypeWeb, requestedStore.IsCurrentlySecure(r))
-				if err := httputils.IsBaseUrlCorrect(r, baseURL); err != nil {
+				baseURL, err := requestedStore.BaseURL(config.URLTypeWeb, requestedStore.IsCurrentlySecure(r))
+				if err != nil {
+					return log.Error("ctxhttp.WithValidateBaseUrl.requestedStore.BaseURL", "err", err, "ctx", ctx)
+				}
+
+				if err := httputils.IsBaseUrlCorrect(r, &baseURL); err != nil {
 					if log.IsDebug() {
 						log.Debug("store.WithValidateBaseUrl.IsBaseUrlCorrect.error", "err", err, "baseURL", baseURL, "request", r)
 					}
 
-					var urlBuffer = bufferpool.Get()
-					urlBuffer.WriteString(baseURL)
-					if r.URL.Path != "" {
-						var rURI = r.URL.RequestURI()
-						if baseURL[len(baseURL)-1:] == "/" && rURI[:1] == "/" {
-							rURI = rURI[1:] // remove leading /
-						}
-						urlBuffer.WriteString(rURI)
-					}
-					if r.URL.Fragment != "" {
-						urlBuffer.WriteByte('#')
-						urlBuffer.WriteString(r.URL.Fragment)
-					}
-
-					http.Redirect(w, r, urlBuffer.String(), redirectCode)
-					bufferpool.Put(urlBuffer)
+					baseURL.Path = r.URL.Path
+					baseURL.RawPath = r.URL.RawPath
+					baseURL.RawQuery = r.URL.RawQuery
+					baseURL.Fragment = r.URL.Fragment
+					http.Redirect(w, r, (&baseURL).String(), redirectCode)
 					return nil
 				}
 			}

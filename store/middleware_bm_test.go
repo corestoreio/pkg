@@ -31,6 +31,8 @@ import (
 )
 
 // Benchmark_WithValidateBaseUrl-4         	  200000	     11339 ns/op	    2716 B/op	      49 allocs/op
+// Benchmark_WithValidateBaseUrl-4         	  200000	     10432 ns/op	    2940 B/op	      50 allocs/op
+// Benchmark_WithValidateBaseUrl-4         	  200000	      8697 ns/op	    2556 B/op	      39 allocs/op
 func Benchmark_WithValidateBaseUrl(b *testing.B) {
 
 	var configReader = config.NewMockReader(

@@ -288,8 +288,13 @@ func TestStoreBaseURLandPath(t *testing.T) {
 	for i, test := range tests {
 		s.ApplyOptions(store.SetStoreConfig(test.haveR))
 		assert.NotNil(t, s.Config, "Index %d", i)
-		assert.EqualValues(t, test.wantBaseUrl, s.BaseURL(test.haveUT, test.haveIsSecure))
+		baseURL, err := s.BaseURL(test.haveUT, test.haveIsSecure)
+		assert.NoError(t, err)
+		assert.EqualValues(t, test.wantBaseUrl, baseURL.String())
 		assert.EqualValues(t, test.wantPath, s.Path())
+
+		_, err = s.BaseURL(config.URLTypeAbsent, false)
+		assert.EqualError(t, err, config.ErrURLCacheCleared.Error())
 	}
 }
 

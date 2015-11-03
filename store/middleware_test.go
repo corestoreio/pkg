@@ -131,13 +131,18 @@ func TestWithValidateBaseUrl_ActivatedAndShouldRedirectWithGETRequest(t *testing
 	}{
 		{
 			httptest.NewRecorder(),
+			newReq("http://corestore.io/catalog/product/view/"),
+			"http://www.corestore.io/catalog/product/view/",
+		},
+		{
+			httptest.NewRecorder(),
 			newReq("http://corestore.io/catalog/product/view"),
 			"http://www.corestore.io/catalog/product/view",
 		},
 		{
 			httptest.NewRecorder(),
 			newReq("http://corestore.io"),
-			"http://www.corestore.io/",
+			"http://www.corestore.io",
 		},
 		{
 			httptest.NewRecorder(),
