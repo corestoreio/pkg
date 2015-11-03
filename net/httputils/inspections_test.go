@@ -15,11 +15,10 @@
 package httputils_test
 
 import (
-	"errors"
-	"net/http"
-	"testing"
-
 	"crypto/tls"
+	"net/http"
+	"net/url"
+	"testing"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/httputils"
@@ -101,17 +100,26 @@ func TestIsBaseUrlCorrect(t *testing.T) {
 		return r
 	}
 
+	var pu = func(rawURL string) *url.URL {
+		u, err := url.Parse(rawURL)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return u
+	}
+
 	tests := []struct {
 		req         *http.Request
-		haveBaseURL string
+		haveBaseURL *url.URL
 		wantErr     error
 	}{
-		{nr("http://corestore.io/"), "http://corestore.io/", nil},
-		{nr("http://www.corestore.io/"), "http://corestore.io/", httputils.ErrBaseUrlDoNotMatch},
-		{nr("http://corestore.io/"), "https://corestore.io/", httputils.ErrBaseUrlDoNotMatch},
-		{nr("http://corestore.io/"), "http://corestore.io/subpath", httputils.ErrBaseUrlDoNotMatch},
-		{nr("http://corestore.io/subpath"), "http://corestore.io/subpath", nil},
-		{nr("http://corestore.io/subpath"), "://cs.io", errors.New("parse ://cs.io: missing protocol scheme")},
+		{nr("http://corestore.io/"), pu("http://corestore.io/"), nil},
+		{nr("http://www.corestore.io/"), pu("http://corestore.io/"), httputils.ErrBaseUrlDoNotMatch},
+		{nr("http://corestore.io/"), pu("https://corestore.io/"), httputils.ErrBaseUrlDoNotMatch},
+		{nr("http://corestore.io/"), pu("http://corestore.io/subpath"), httputils.ErrBaseUrlDoNotMatch},
+		{nr("http://corestore.io/subpath"), pu("http://corestore.io/subpath"), nil},
+		{nr("http://corestore.io/"), pu("http://corestore.io/"), nil},
+		{nr("http://corestore.io/subpath/catalog/product/list"), pu("http://corestore.io/subpath"), nil},
 	}
 	for i, test := range tests {
 		haveErr := httputils.IsBaseUrlCorrect(test.req, test.haveBaseURL)

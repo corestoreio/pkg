@@ -69,17 +69,12 @@ func IsSecure(cr config.Reader, r *http.Request) bool {
 
 // IsBaseUrlCorrect checks if the requested host, scheme and path are same as the servers and
 // if the path of the baseURL is included in the request URI.
-func IsBaseUrlCorrect(r *http.Request, baseURL string) error {
-	uri, err := url.Parse(baseURL)
-	if err != nil {
-		return errgo.Mask(err)
-	}
-
-	if r.Host == uri.Host && r.URL.Host == uri.Host && r.URL.Scheme == uri.Scheme && strings.Contains(r.URL.RequestURI(), uri.Path) {
+func IsBaseUrlCorrect(r *http.Request, baseURL *url.URL) error {
+	if r.Host == baseURL.Host && r.URL.Host == baseURL.Host && r.URL.Scheme == baseURL.Scheme && strings.HasPrefix(r.URL.Path, baseURL.Path) {
 		return nil
 	}
 	if log.IsDebug() {
-		log.Debug("store.isBaseUrlCorrect.compare", "err", ErrBaseUrlDoNotMatch, "r.Host", r.Host, "baseURL", uri.String(), "requestURL", r.URL.String(), "strings.Contains", []string{r.URL.RequestURI(), uri.Path})
+		log.Debug("store.isBaseUrlCorrect.compare", "err", ErrBaseUrlDoNotMatch, "r.Host", r.Host, "baseURL", baseURL.String(), "requestURL", r.URL.String(), "strings.Contains", []string{r.URL.RequestURI(), baseURL.Path})
 	}
 	return errgo.Mask(ErrBaseUrlDoNotMatch)
 }
