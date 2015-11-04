@@ -287,19 +287,12 @@ func (s *Store) IsCurrentlySecure(r *http.Request) bool {
 		return true
 	}
 
-	// todo: refactor and use baseURL function
-	secureBaseURL := s.Config.GetString(PathSecureBaseURL)
-	if secureBaseURL == "" || false == s.IsFrontUrlSecure() {
+	secureBaseURL, err := s.BaseURL(config.URLTypeWeb, true)
+	if err != nil || false == s.IsFrontUrlSecure() {
+		log.Error("store.Store.IsCurrentlySecure.BaseURL", "err", err, "secureBaseURL", secureBaseURL)
 		return false
 	}
-
-	uri, err := url.Parse(secureBaseURL)
-	if err != nil {
-		log.Error("store.Store.IsCurrentlySecure.secureBaseURL", "err", err, "secureBaseURL", secureBaseURL)
-		return false
-	}
-
-	return uri.Scheme == "https" && r.URL.Scheme == "https" // todo(cs) check for ports !? other schemes?
+	return secureBaseURL.Scheme == "https" && r.URL.Scheme == "https" // todo(cs) check for ports !? other schemes?
 }
 
 // NewCookie creates a new pre-configured cookie.
