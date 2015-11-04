@@ -38,7 +38,7 @@ func Benchmark_NumberWriter(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		c := money.New(money.Precision(100)).Setf(-123456.789)
+		c := money.New(money.WithPrecision(100)).Setf(-123456.789)
 		_, err = c.NumberWriter(&bufferNumberWriter)
 		if err != nil {
 			b.Error(err)
@@ -55,7 +55,7 @@ var benchmarkMoneyNewGetf float64
 func Benchmark_MoneyNewGetf(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		c := money.New(money.Precision(100)).Setf(-123456.789)
+		c := money.New(money.WithPrecision(100)).Setf(-123456.789)
 		benchmarkMoneyNewGetf = c.Getf()
 	}
 }

@@ -16,8 +16,9 @@ package money
 
 /*
 	@todo
-	http://unicode.org/reports/tr35/tr35-numbers.html#Supplemental_Currency_Data to automatically
-	set the Swedish rounding
+	- http://unicode.org/reports/tr35/tr35-numbers.html#Supplemental_Currency_Data to automatically
+	- set the Swedish rounding
+	- Currency
 */
 
 import (
@@ -29,6 +30,7 @@ import (
 	"github.com/corestoreio/csfw/i18n"
 	"github.com/corestoreio/csfw/utils"
 	"github.com/corestoreio/csfw/utils/log"
+	"golang.org/x/text/currency"
 )
 
 var (
@@ -71,20 +73,24 @@ type (
 	// Currency represents a money aka currency type to avoid rounding errors
 	// with floats. Includes options for printing, Swedish rounding,
 	// database scanning and JSON en/decoding.
-	Currency struct {
+	Money struct {
 		// m money in Guard/DP
 		m int64
-		// fmtCur to allow language and format specific outputs in a currency format
-		fmtCur i18n.CurrencyFormatter
-		// fmtNum to allow language and format specific outputs in a number format
-		fmtNum i18n.NumberFormatter
+		// FmtCur to allow language and format specific outputs in a currency format
+		FmtCur i18n.CurrencyFormatter
+		// FmtNum to allow language and format specific outputs in a number format
+		FmtNum i18n.NumberFormatter
 		// Valid if false the internal value is NULL
 		Valid bool
 		// Interval defines how the swedish rounding can be applied.
 		Interval Interval
 
-		jm  JSONMarshaller
-		jum JSONUnmarshaller
+		// Valuta TODO(cs) defines the currency of this money type and allows
+		// comparisons and calculations with other currencies.
+		Valuta currency.Currency
+
+		Encoder // Encoder default ToJSON
+		Decoder // Decoder default FromJSON
 
 		guard  int64
 		guardf float64
@@ -93,66 +99,35 @@ type (
 		dpf    float64
 	}
 
-	// OptionFunc used to apply options to the Currency struct
-	OptionFunc func(*Currency) OptionFunc
+	// Option used to apply options to the Money struct
+	Option func(*Money) Option
 )
 
-// FormatCurrency to allow language and format specific outputs in a currency format
-func FormatCurrency(cf i18n.CurrencyFormatter) OptionFunc {
-	// @todo later idea for those two Format* functions
-	// maintain an internal cache of formatters and let the user only pass
-	// the option functions from the i18n package. rethink that.
-	// Another idea: maintain an internal cache depending on the store ID.
-	// Another idea: opts ...i18n.CurrencyOptFunc as 2nd parameter, if first is
-	//				 nil and 2nd has been provided, copy DefaultFormatterCurrency
-	//				 to a new instance and apply those options.
-	//				 create a Clone function for i18n formatter ...
-	if cf == nil {
-		cf = DefaultFormatterCurrency
-	}
-	return func(c *Currency) OptionFunc {
-		previous := c.fmtCur
-		c.fmtCur = cf
-		return FormatCurrency(previous)
-	}
-}
-
-// FormatNumber to allow language and format specific outputs in a number format
-func FormatNumber(nf i18n.NumberFormatter) OptionFunc {
-	if nf == nil {
-		nf = DefaultFormatterNumber
-	}
-	return func(c *Currency) OptionFunc {
-		previous := c.fmtNum
-		c.fmtNum = nf
-		return FormatNumber(previous)
-	}
-}
-
-// Swedish sets the Swedish rounding
+// WithSwedish sets the Swedish rounding
 // http://en.wikipedia.org/wiki/Swedish_rounding
 // Errors will be logged
-func Swedish(i Interval) OptionFunc {
+func WithSwedish(i Interval) Option {
 	if i >= interval999 {
 		log.Error("money.Swedish", "err", errors.New("Interval out of scope. Resetting."), "interval", i)
 		i = Interval000
 	}
-	return func(c *Currency) OptionFunc {
+	return func(c *Money) Option {
 		previous := c.Interval
 		c.Interval = i
-		return Swedish(previous)
+		return WithSwedish(previous)
 	}
 }
 
-// CashRounding same as Swedish() option function, but:
+// WithCashRounding same as Swedish() option function, but:
 // Rounding increment, in units of 10-digits. The default is 0, which
 // means no rounding is to be done. Therefore, rounding=0 and rounding=1
 // have identical behavior. Thus with fraction digits of 2 and rounding
 // increment of 5, numeric values are rounded to the nearest 0.05 units
 // in formatting. With fraction digits of 0 and rounding increment of
 // 50, numeric values are rounded to the nearest 50.
-// Possible values: 5, 10, 15, 25, 50, 100
-func CashRounding(rounding int) OptionFunc {
+// Possible values: 5, 10, 15, 25, 50, 100.
+// todo: refactor to use text/currency package
+func WithCashRounding(rounding int) Option {
 	// somehow that feels like ... not very nice
 	i := Interval000
 	switch rounding {
@@ -170,7 +145,7 @@ func CashRounding(rounding int) OptionFunc {
 		i = Interval100
 	}
 
-	return func(c *Currency) OptionFunc {
+	return func(c *Money) Option {
 		var p int
 		switch c.Interval {
 		case Interval005:
@@ -187,16 +162,16 @@ func CashRounding(rounding int) OptionFunc {
 			p = 100
 		}
 		c.Interval = i
-		return CashRounding(p)
+		return WithCashRounding(p)
 	}
 }
 
-// Guard sets the guard
-func Guard(g int) OptionFunc {
-	return func(c *Currency) OptionFunc {
+// WithGuard sets the guard
+func WithGuard(g int) Option {
+	return func(c *Money) Option {
 		previous := int(c.guard)
 		c.guard, c.guardf = guard(g)
-		return Guard(previous)
+		return WithGuard(previous)
 	}
 }
 
@@ -208,14 +183,14 @@ func guard(g int) (int64, float64) {
 	return int64(g), float64(g)
 }
 
-// Precision sets the precision.
+// WithPrecision sets the precision.
 // 2 decimal places => 10^2; 3 decimal places => 10^3; x decimal places => 10^x
 // If not a decimal power then falls back to the default value.
-func Precision(p int) OptionFunc {
-	return func(c *Currency) OptionFunc {
+func WithPrecision(p int) Option {
+	return func(c *Money) Option {
 		previous := int(c.dp)
 		c.dp, c.dpf, c.prec = precision(p)
-		return Precision(previous)
+		return WithPrecision(previous)
 	}
 }
 
@@ -232,132 +207,108 @@ func precision(p int) (int64, float64, int) {
 	return p64, float64(p64), decimals(p64)
 }
 
-// JSONMarshal sets a custom JSON Marshaller. Default is JSONLocale.
-func JSONMarshal(m JSONMarshaller) OptionFunc {
-	if m == nil {
-		m = NewJSONEncoder()
-	}
-	return func(c *Currency) OptionFunc {
-		previous := c.jm
-		c.jm = m
-		return JSONMarshal(previous)
-	}
-}
-
-// JSONUnmarshal sets a custom JSON Unmmarshaller. Default is JSONLocale.
-func JSONUnmarshal(um JSONUnmarshaller) OptionFunc {
-	if um == nil {
-		um = NewJSONDecoder()
-	}
-	return func(c *Currency) OptionFunc {
-		previous := c.jum
-		c.jum = um
-		return JSONUnmarshal(previous)
-	}
-}
-
-// New creates a new empty Currency struct with package default values.
+// New creates a new empty Money struct with package default values.
 // Formatter can be overridden after you have created the new type.
 // Implements the interfaces: database.Scanner, driver.Valuer,
 // json.Marshaller, json.Unmarshaller
-func New(opts ...OptionFunc) Currency {
-	c := Currency{}
+func New(opts ...Option) Money {
+	c := Money{}
 	c.applyDefaults()
 	c.Option(opts...)
 	return c
 }
 
 // applyDefaults used in New() and Scan()
-func (c *Currency) applyDefaults() {
-	if c.guard == 0 {
-		c.guard, c.guardf = guard(gGuardi)
+func (m *Money) applyDefaults() {
+	if m.guard == 0 {
+		m.guard, m.guardf = guard(gGuardi)
 	}
-	if c.dp == 0 {
-		c.dp, c.dpf, c.prec = precision(gDPi)
+	if m.dp == 0 {
+		m.dp, m.dpf, m.prec = precision(gDPi)
 	}
-	if c.jm == nil {
-		c.jm = DefaultJSONEncode
+	if m.Encoder == nil {
+		m.Encoder = DefaultJSONEncode
 	}
-	if c.jum == nil {
-		c.jum = DefaultJSONDecode
+	if m.Decoder == nil {
+		m.Decoder = DefaultJSONDecode
 	}
-	if c.fmtCur == nil {
-		c.fmtCur = DefaultFormatterCurrency
+	if m.FmtCur == nil {
+		m.FmtCur = DefaultFormatterCurrency
 	}
-	if c.fmtNum == nil {
-		c.fmtNum = DefaultFormatterNumber
+	if m.FmtNum == nil {
+		m.FmtNum = DefaultFormatterNumber
 	}
-	c.Interval = gSwedish
+	m.Interval = gSwedish
 }
 
 // Options besides New() also Option() can apply options to the current
 // struct. It returns the last set option. More info about the returned function:
 // http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
-func (c *Currency) Option(opts ...OptionFunc) (previous OptionFunc) {
+func (m *Money) Option(opts ...Option) (previous Option) {
 	for _, o := range opts {
 		if o != nil {
-			previous = o(c)
+			previous = o(m)
 		}
 	}
 	return previous
 }
 
 // Abs returns the absolute value of Currency
-func (c Currency) Abs() Currency {
-	if c.m < 0 {
-		return c.Neg()
+func (m Money) Abs() Money {
+	if m.m < 0 {
+		return m.Neg()
 	}
-	return c
+	return m
 }
 
 // Getf gets the float64 value of money (see Raw() for int64)
-func (c Currency) Getf() float64 {
-	return float64(c.m) / c.dpf
+func (m Money) Getf() float64 {
+	return float64(m.m) / m.dpf
 }
 
 // Geti gets value of money truncating after decimal precision (see Raw() for no truncation).
 // Rounds always down
-func (c Currency) Geti() int64 {
-	return c.m / c.dp
+func (m Money) Geti() int64 {
+	return m.m / m.dp
 }
 
 // Dec returns the decimals
-func (c Currency) Dec() int64 {
-	return c.Abs().Raw() % c.dp
+func (m Money) Dec() int64 {
+	return m.Abs().Raw() % m.dp
 }
 
 // Raw returns in int64 the value of Currency (also see Geti(), See Getf() for float64)
-func (c Currency) Raw() int64 {
-	return c.m
+func (m Money) Raw() int64 {
+	return m.m
 }
 
 // Set sets the raw Currency field m
-func (c Currency) Set(i int64) Currency {
-	c.m = i
-	c.Valid = true
-	return c
+func (m Money) Set(i int64) Money {
+	m.m = i
+	m.Valid = true
+	return m
 }
 
 // Setf sets a float64 into a Currency type for precision calculations
-func (c Currency) Setf(f float64) Currency {
-	fDPf := f * c.dpf
-	r := int64(f * c.dpf)
-	c.Valid = true
-	return c.Set(rnd(r, fDPf-float64(r)))
+func (m Money) Setf(f float64) Money {
+	fDPf := f * m.dpf
+	r := int64(f * m.dpf)
+	m.Valid = true
+	return m.Set(rnd(r, fDPf-float64(r)))
 }
 
 // ParseFloat transforms a string float value into a real float64 value and
 // sets it. Current value will be overridden. Returns a logged error.
-func (c *Currency) ParseFloat(s string) error {
+func (m *Money) ParseFloat(s string) error {
 	f, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		if log.IsTrace() {
-			log.Trace("money.Currency.ParseFloat", "err", err, "arg", s, "currency", c)
+			log.Trace("money.Currency.ParseFloat", "err", err, "arg", s, "currency", m)
 		}
 		return log.Error("money.Currency.ParseFloat.ParseFloat", "err", err, "arg", s)
 	}
-	c.Valid = true
-	*c = c.Setf(f)
+	m.Valid = true
+	*m = m.Setf(f)
 	return nil
 }
 
@@ -366,181 +317,182 @@ func (c *Currency) ParseFloat(s string) error {
 //	-1 if x <  0
 //	+1 if x >=  0
 //
-func (c Currency) Sign() int {
-	if c.m < 0 {
+func (m Money) Sign() int {
+	if m.m < 0 {
 		return -1
 	}
 	return 1
 }
 
 // Precision returns the amount of decimal digits
-func (c Currency) Precision() int {
-	return c.prec
+func (m Money) Precision() int {
+	return m.prec
 }
 
 // Localize for money type representation in a specific locale.
-func (c Currency) Localize() ([]byte, error) {
+func (m Money) Localize() ([]byte, error) {
 	var bufC buf
-	_, err := c.LocalizeWriter(&bufC)
+	_, err := m.LocalizeWriter(&bufC)
 	return bufC, err
 }
 
 // LocalizeWriter for money type representation in a specific locale.
 // Returns the number bytes written or an error.
-func (c Currency) LocalizeWriter(w io.Writer) (int, error) {
-	if false == c.Valid {
+func (m Money) LocalizeWriter(w io.Writer) (int, error) {
+	if false == m.Valid {
 		return w.Write(gNaN)
 	}
-	return c.fmtCur.FmtNumber(w, c.Sign(), c.Geti(), c.Precision(), c.Dec())
+	return m.FmtCur.FmtNumber(w, m.Sign(), m.Geti(), m.Precision(), m.Dec())
 }
 
 // String for money type representation in a specific locale.
-func (c Currency) String() string {
+func (m Money) String() string {
 	var bufC buf
-	if _, err := c.LocalizeWriter(&bufC); err != nil {
+	if _, err := m.LocalizeWriter(&bufC); err != nil {
 		if log.IsTrace() {
-			log.Trace("money.Currency.String", "err", err, "c", c)
+			log.Trace("money.Currency.String", "err", err, "c", m)
 		}
-		log.Error("money.Currency.String.LocalizeWriter", "err", err, "c", c)
+		log.Error("money.Currency.String.LocalizeWriter", "err", err, "c", m)
 	}
 	return string(bufC)
 }
 
 // Number prints the currency without any locale specific formatting.
 // E.g. useful in JavaScript.
-func (c Currency) Number() ([]byte, error) {
+func (m Money) Number() ([]byte, error) {
 	var bufC buf
-	_, err := c.NumberWriter(&bufC)
+	_, err := m.NumberWriter(&bufC)
 	return bufC, err
 }
 
 // NumberWriter prints the currency as a locale specific formatted number.
 // Returns the number bytes written or an error.
-func (c Currency) NumberWriter(w io.Writer) (int, error) {
-	if false == c.Valid {
+func (m Money) NumberWriter(w io.Writer) (int, error) {
+	if false == m.Valid {
 		return w.Write(gNaN)
 	}
-	return c.fmtNum.FmtNumber(w, c.Sign(), c.Geti(), c.Precision(), c.Dec())
+	return m.FmtNum.FmtNumber(w, m.Sign(), m.Geti(), m.Precision(), m.Dec())
 }
 
 // Symbol returns the currency symbol: €, $, AU$, CHF depending on the formatter.
-func (c Currency) Symbol() []byte {
-	return c.fmtCur.Sign()
+func (m Money) Symbol() []byte {
+	return m.FmtCur.Sign()
 }
 
 // Ftoa converts the internal floating-point number to a byte slice without
 // any applied formatting.
-func (c Currency) Ftoa() []byte {
-	return c.FtoaAppend(nil)
+func (m Money) Ftoa() []byte {
+	return m.FtoaAppend(nil)
 }
 
 // FtoaAppend converts the internal floating-point number to a byte slice without
 // any applied formatting and appends it to dst and returns the extended buffer.
-func (c Currency) FtoaAppend(dst []byte) []byte {
-	if false == c.Valid {
+func (m Money) FtoaAppend(dst []byte) []byte {
+	if false == m.Valid {
 		return append(dst, gNaN...)
 	}
 	if dst == nil {
-		dst = make([]byte, 0, max(c.Precision()+4, 24))
+		dst = make([]byte, 0, max(m.Precision()+4, 24))
 	}
-	return strconv.AppendFloat(dst, c.Getf(), 'f', c.Precision(), 64)
+	return strconv.AppendFloat(dst, m.Getf(), 'f', m.Precision(), 64)
 }
 
 // Add adds two Currency types. Returns empty Currency on integer overflow.
 // Errors will be logged and a trace is available when the level for tracing has been set.
-func (c Currency) Add(d Currency) Currency {
-	r := c.m + d.m
-	if (r^c.m)&(r^d.m) < 0 {
+func (m Money) Add(d Money) Money {
+	r := m.m + d.m
+	if (r^m.m)&(r^d.m) < 0 {
 		if log.IsTrace() {
-			log.Trace("money.Currency.Add", "err", ErrOverflow, "m", c, "n", d)
+			log.Trace("money.Currency.Add", "err", ErrOverflow, "m", m, "n", d)
 		}
-		log.Error("money.Currency.Add.Overflow", "err", ErrOverflow, "m", c, "n", d)
+		log.Error("money.Currency.Add.Overflow", "err", ErrOverflow, "m", m, "n", d)
 		return New()
 	}
-	c.m = r
-	c.Valid = true
-	return c
+	m.m = r
+	m.Valid = true
+	return m
 }
 
 // Sub subtracts one Currency type from another. Returns empty Currency on integer overflow.
 // Errors will be logged and a trace is available when the level for tracing has been set.
-func (c Currency) Sub(d Currency) Currency {
-	r := c.m - d.m
-	if (r^c.m)&^(r^d.m) < 0 {
+func (m Money) Sub(d Money) Money {
+	r := m.m - d.m
+	if (r^m.m)&^(r^d.m) < 0 {
 		if log.IsTrace() {
-			log.Trace("money.Currency.Sub", "err", ErrOverflow, "m", c, "n", d)
+			log.Trace("money.Currency.Sub", "err", ErrOverflow, "m", m, "n", d)
 		}
-		log.Error("money.Currency.Sub.Overflow", "err", ErrOverflow, "m", c, "n", d)
+		log.Error("money.Currency.Sub.Overflow", "err", ErrOverflow, "m", m, "n", d)
 		return New()
 	}
-	c.m = r
-	return c
+	m.m = r
+	return m
 }
 
 // Mul multiplies two Currency types. Both types must have the same precision.
-func (c Currency) Mul(d Currency) Currency {
+func (m Money) Mul(d Money) Money {
 	// @todo c.m*d.m will overflow int64
-	r := utils.Round(float64(c.m*d.m)/c.dpf, .5, 0)
-	return c.Set(int64(r))
+	r := utils.Round(float64(m.m*d.m)/m.dpf, .5, 0)
+	return m.Set(int64(r))
 }
 
 // Div divides one Currency type from another
-func (c Currency) Div(d Currency) Currency {
-	f := (c.guardf * c.dpf * float64(c.m)) / float64(d.m) / c.guardf
+func (m Money) Div(d Money) Money {
+	f := (m.guardf * m.dpf * float64(m.m)) / float64(d.m) / m.guardf
 	i := int64(f)
-	return c.Set(rnd(i, f-float64(i)))
+	return m.Set(rnd(i, f-float64(i)))
 }
 
 // Mulf multiplies a Currency with a float to return a money-stored type
-func (c Currency) Mulf(f float64) Currency {
-	i := c.m * int64(f*c.guardf*c.dpf)
-	r := i / c.guard / c.dp
-	return c.Set(rnd(r, float64(i)/c.guardf/c.dpf-float64(r)))
+func (m Money) Mulf(f float64) Money {
+	i := m.m * int64(f*m.guardf*m.dpf)
+	r := i / m.guard / m.dp
+	return m.Set(rnd(r, float64(i)/m.guardf/m.dpf-float64(r)))
 }
 
 // Neg returns the negative value of Currency
-func (c Currency) Neg() Currency {
-	if c.m != 0 {
-		c.m *= -1
+func (m Money) Neg() Money {
+	if m.m != 0 {
+		m.m *= -1
 	}
-	return c
+	return m
 }
 
 // Pow is the power of Currency
-func (c Currency) Pow(f float64) Currency {
-	return c.Setf(math.Pow(c.Getf(), f))
+func (m Money) Pow(f float64) Money {
+	return m.Setf(math.Pow(m.Getf(), f))
 }
 
 // Swedish applies the Swedish rounding. You may set the usual options.
-func (c Currency) Swedish(opts ...OptionFunc) Currency {
-	c.Option(opts...)
+// TODO: Consider text/currency package based on Valuta field
+func (m Money) Swedish(opts ...Option) Money {
+	m.Option(opts...)
 	const (
 		roundOn float64 = .5
 		places  int     = 0
 	)
-	switch c.Interval {
+	switch m.Interval {
 	case Interval005:
 		// NL, SG, SA, CH, TR, CL, IE
 		// 5 cent rounding
-		return c.Setf(utils.Round(c.Getf()*20, roundOn, places) / 20) // base 5
+		return m.Setf(utils.Round(m.Getf()*20, roundOn, places) / 20) // base 5
 	case Interval010:
 		// New Zealand & Hong Kong
 		// 10 cent rounding
 		// In Sweden between 1985 and 1992, prices were rounded up for sales
 		// ending in 5 öre.
-		return c.Setf(utils.Round(c.Getf()*10, roundOn, places) / 10)
+		return m.Setf(utils.Round(m.Getf()*10, roundOn, places) / 10)
 	case Interval015:
 		// 10 cent rounding, special case
 		// Special case: In NZ, it is up to the business to decide if they
 		// will round 5¢ intervals up or down. The majority of retailers follow
 		// government advice and round it down.
-		if c.m%5 == 0 {
-			c.m = c.m - 1
+		if m.m%5 == 0 {
+			m.m = m.m - 1
 		}
-		return c.Setf(utils.Round(c.Getf()*10, roundOn, places) / 10)
+		return m.Setf(utils.Round(m.Getf()*10, roundOn, places) / 10)
 	case Interval025:
 		// round to quarter
-		return c.Setf(utils.Round(c.Getf()*4, roundOn, places) / 4)
+		return m.Setf(utils.Round(m.Getf()*4, roundOn, places) / 4)
 	case Interval050:
 		// 50 cent rounding
 		// The system used in Sweden from 1992 to 2010, in Norway from 1993 to 2012,
@@ -549,14 +501,19 @@ func (c Currency) Swedish(opts ...OptionFunc) Currency {
 		// Sales ending in 25–49 öre round up to 50 öre.
 		// Sales ending in 51–74 öre round down to 50 öre.
 		// Sales ending in 75–99 öre round up to the next whole Krone/krona.
-		return c.Setf(utils.Round(c.Getf()*2, roundOn, places) / 2)
+		return m.Setf(utils.Round(m.Getf()*2, roundOn, places) / 2)
 	case Interval100:
 		// The system used in Sweden since 30 September 2010 and used in Norway since 1 May 2012.
 		// Sales ending in 1–49 öre/øre round down to 0 öre/øre.
 		// Sales ending in 50–99 öre/øre round up to the next whole krona/krone.
-		return c.Setf(utils.Round(c.Getf()*1, roundOn, places) / 1) // ;-)
+		return m.Setf(utils.Round(m.Getf()*1, roundOn, places) / 1) // ;-)
 	}
-	return c
+	return m
+}
+
+// CompareTo depends on the Valuta field (TODO)
+func (m Money) CompareTo(d Money) bool {
+	return false
 }
 
 // rnd rounds int64 remainder rounded half towards plus infinity

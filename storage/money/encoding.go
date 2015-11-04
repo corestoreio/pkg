@@ -15,303 +15,73 @@
 package money
 
 import (
-	"bytes"
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"errors"
-	"text/template"
-	"unicode"
-	"unicode/utf8"
 
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 )
 
 var (
-	_          json.Unmarshaler = (*Currency)(nil)
-	_          json.Marshaler   = (*Currency)(nil)
-	_          sql.Scanner      = (*Currency)(nil)
-	_          driver.Valuer    = (*Currency)(nil)
+	_          json.Unmarshaler = (*Money)(nil)
+	_          json.Marshaler   = (*Money)(nil)
+	_          sql.Scanner      = (*Money)(nil)
+	_          driver.Valuer    = (*Money)(nil)
 	nullString                  = []byte(`null`)
 )
 
-// ErrDecodeMissingColon can be returned on malformed JSON value when decoding a currency.
-var ErrDecodeMissingColon = errors.New("No colon found in JSON array")
-
-const (
-	// JSONNumber encodes/decodes a currency as a number string to directly use
-	// in e.g. JavaScript
-	JSONNumber JSONType = 1 << iota
-	// JSONLocale encodes/decodes a currency according to its locale format.
-	// Decoding: Considers the locale if the currency symbol is valid.
-	JSONLocale
-	// JSONExtended encodes/decodes a currency into a JSON array:
-	// [1234.56, "€", "1.234,56 €"].
-	// Decoding: Considers the locale if the currency symbol is valid.
-	JSONExtended
-)
-
-// JSONType defines the type of the marshaller/unmarshaller
-type JSONType uint8
-
 type (
-	// JSONMarshaller interface for JSON encoding
-	JSONMarshaller interface {
-		// MarshalJSON encodes the currency
-		MarshalJSON(*Currency) ([]byte, error)
+	// Encoder interface to encode money into bytes
+	Encoder interface {
+		// Encode encodes the currency into bytes
+		Encode(*Money) ([]byte, error)
 	}
-	// JSONUnmarshaller interface for JSON decoding
-	JSONUnmarshaller interface {
-		// UnmarshalJSON reads the bytes and decodes them into the currency
-		UnmarshalJSON(*Currency, []byte) error
+	// Decoder interface to decode money type
+	Decoder interface {
+		// Decode reads the bytes and decodes them into the currency
+		Decode(*Money, []byte) error
 	}
 )
 
-// MarshalJSON generates JSON output depending on the Marshaller.
-func (c Currency) MarshalJSON() ([]byte, error) {
-	return c.jm.MarshalJSON(&c)
+// MarshalJSON generates JSON output depending on the Encoder.
+func (m Money) MarshalJSON() ([]byte, error) {
+	return m.Encode(&m)
 }
 
-// UnmarshalJSON reads JSON and fills the currency struct depending on the Unmarshaller.
-func (c *Currency) UnmarshalJSON(src []byte) error {
-	c.applyDefaults()
+// UnmarshalJSON reads JSON and fills the money struct depending on the Decoder.
+func (m *Money) UnmarshalJSON(src []byte) error {
+	m.applyDefaults()
 	if src == nil {
-		c.m, c.Valid = 0, false
+		m.m, m.Valid = 0, false
 		return nil
 	}
-	return c.jum.UnmarshalJSON(c, src)
+	return m.Decode(m, src)
 }
 
 // Value implements the SQL driver Valuer interface.
-func (c Currency) Value() (driver.Value, error) {
-	if !c.Valid {
+func (m Money) Value() (driver.Value, error) {
+	if !m.Valid {
 		return nil, nil
 	}
-	return c.Getf(), nil
+	return m.Getf(), nil
 }
 
-// Scan scans a value into the Currency struct. Returns an error on data loss.
+// Scan scans a value into the Money struct. Returns an error on data loss.
 // Errors will be logged. Initial default settings are the guard and precision value.
-func (c *Currency) Scan(src interface{}) error {
-	c.applyDefaults()
+func (m *Money) Scan(src interface{}) error {
+	m.applyDefaults()
 
 	if src == nil {
-		c.m, c.Valid = 0, false
+		m.m, m.Valid = 0, false
 		if log.IsDebug() {
-			log.Debug("money.Currency.Scan", "case", 89, "c", c, "src", src)
+			log.Debug("money.Currency.Scan", "case", 89, "c", m, "src", src)
 		}
 		return nil
 	}
 
 	if b, ok := src.([]byte); ok {
-		return c.ParseFloat(string(b))
+		return m.ParseFloat(string(b))
 	}
 	return log.Error("money.Currency.Scan.Assertion", "err", errgo.Newf("Unsupported Type %T for value. Supported: []byte", src), "src", src)
-}
-
-// NewJSONEncoder creates a new encoder depending on the type.
-// Accepts either zero or one argument.
-// Default encoder is JSONLocale
-func NewJSONEncoder(jts ...JSONType) JSONMarshaller {
-	if len(jts) != 1 {
-		return JSONLocale
-	}
-	return jts[0]
-}
-
-// NewJSONDecoder creates a new decoder depending on the type.
-// Accepts either zero or one argument.
-// Default decoder is JSONLocale
-func NewJSONDecoder(jts ...JSONType) JSONUnmarshaller {
-	if len(jts) != 1 {
-		return JSONLocale
-	}
-	return jts[0]
-}
-
-var _ JSONMarshaller = new(JSONType)
-var _ JSONUnmarshaller = new(JSONType)
-
-// MarshalJSON encodes a currency to JSON bytes according to the defined JSONType
-func (t JSONType) MarshalJSON(c *Currency) ([]byte, error) {
-	switch t {
-	case JSONNumber:
-		return jsonNumberMarshal(c)
-	case JSONExtended:
-		return jsonExtendedMarshal(c)
-	default:
-		return jsonLocaleMarshal(c)
-	}
-}
-
-// UnmarshalJSON decodes three different currency representations into a currency
-// struct.
-func (t JSONType) UnmarshalJSON(c *Currency, b []byte) error {
-	if len(b) < 1 || false == utf8.Valid(b) { // we must have a valid string
-		if log.IsDebug() {
-			log.Debug("money.JSONType.UnmarshalJSON.1", "case", "invalid_bytes", "c", c, "bytes", string(b))
-		}
-		c.m, c.Valid = 0, false
-		return nil
-	}
-
-	runes := bytes.Runes(b)
-	lenRunes := len(runes)
-	var realNumber, isNull, lRunes, posSepComma, posSepDot int
-	var isArray bool
-	number := make([]rune, 0, lenRunes)
-	// atm not needed because currency symbol depends on the formatter
-	//symbol := make([]rune, 0, lenRunes)
-
-	// strip quotes
-	if lenRunes > 1 && runes[0] == '"' && runes[lenRunes-1] == '"' {
-		runes = runes[1 : lenRunes-1]
-	}
-	lenRunes = len(runes)
-
-	if 0 == lenRunes {
-		if log.IsDebug() {
-			log.Debug("money.JSONType.UnmarshalJSON.2", "case", "lenRunes=0", "c", c, "bytes", string(b))
-		}
-		c.m, c.Valid = 0, false
-		return nil
-	}
-
-OuterLoop:
-	for i, r := range runes {
-
-		switch {
-		case unicode.IsSpace(r):
-			continue
-		case r == '[':
-			isArray = true // [999.0000,"$","$ 999.00"] only until the first comma will be considered.
-		case unicode.IsNumber(r): // 1234.56
-			number = append(number, r)
-			realNumber++
-		case r == '.', r == '-': // -1234.56
-			number = append(number, r)
-			realNumber++
-		case r == ',': // -1,234.56 or -1.234,56 or -1 234,56
-			if isArray { // we stop after the first colon, because then the 2nd entry starts in the array
-				isArray = false
-				break OuterLoop
-			}
-			number = append(number, r)
-			//case unicode.IsLetter(r), unicode.IsSymbol(r):
-			//	symbol = append(symbol, r)
-		}
-
-		if posSepComma == 0 && r == ',' { // check for first occurrence of the comma
-			posSepComma = i
-		}
-		if posSepDot == 0 && r == '.' {
-			posSepDot = i
-		}
-
-		switch unicode.ToLower(r) {
-		case 'n', 'u', 'l':
-			isNull++
-		}
-
-		if isNull == 4 {
-			if log.IsDebug() {
-				log.Debug("money.JSONType.UnmarshalJSON.3", "case", "isNull", "c", c, "bytes", string(b), "runes", string(runes))
-			}
-			c.m, c.Valid = 0, false
-			return nil
-		}
-
-		lRunes++
-	}
-
-	if isArray { // now it's an error because no colon found
-		c.m, c.Valid = 0, false
-		return log.Error("money.JSONType.UnmarshalJSON.MissingColon", "err", ErrDecodeMissingColon, "bytes", string(b), "number", string(number))
-	}
-
-	switch {
-	case realNumber == lRunes: // real number e.g. -1234.56 without any other stuff
-		return c.ParseFloat(string(runes))
-
-	case posSepComma == 0 && posSepDot == 0, // no decimals but included any other stripped of character
-		posSepComma == 0 && posSepDot > 0: // currency contains only a dot
-		return c.ParseFloat(string(number))
-
-	case posSepComma > 0 && posSepDot == 0: // currency contains only a comma
-		for i, r := range number {
-			if r == ',' {
-				number[i] = '.'
-			}
-		}
-		return c.ParseFloat(string(number))
-
-	case posSepComma > 0 && posSepDot > 0:
-		replaceChar := ','           // number is 12,211,232.45 or 1,234.56
-		if posSepDot < posSepComma { // number is 12.211.232,45 or 1.234,56
-			replaceChar = '.'
-		}
-
-		var i int
-		for i < len(number) {
-			switch {
-			case replaceChar == '.' && number[i] == ',':
-				number[i] = '.' // replace decimal comma with a dot to create fractals
-			case number[i] == replaceChar:
-				number = append(number[:i], number[i+1:]...) // cut comma
-				i = 0                                        // restart loop
-			}
-			i++
-		}
-		return c.ParseFloat(string(number))
-	}
-
-	c.m, c.Valid = 0, false
-	return log.Error("money.JSONType.UnmarshalJSON.Invalid", "err", errors.New("Invalid bytes"), "bytes", string(b), "number", string(number))
-}
-
-// jsonNumberMarshal generates a number formatted currency string
-func jsonNumberMarshal(c *Currency) ([]byte, error) {
-	if c == nil || c.Valid == false {
-		return nullString, nil
-	}
-	return c.Ftoa(), nil
-}
-
-// jsonLocaleMarshal encodes into a locale specific quoted string
-func jsonLocaleMarshal(c *Currency) ([]byte, error) {
-	if c == nil || c.Valid == false {
-		return nullString, nil
-	}
-	var b bytes.Buffer
-	b.WriteString(`"`)
-	lb, err := c.Localize()
-	if err != nil {
-		return nil, log.Error("money.jsonLocaleMarshal.Localize", "err", err, "currency", c, "bytes", lb)
-	}
-	template.JSEscape(&b, lb)
-	b.WriteString(`"`)
-	return b.Bytes(), err
-}
-
-// jsonExtendedMarshal encodes a currency into a JSON array: [1234.56, "€", "1.234,56 €"]
-func jsonExtendedMarshal(c *Currency) ([]byte, error) {
-	if c == nil || c.Valid == false {
-		return nullString, nil
-	}
-	var b bytes.Buffer
-	b.WriteRune('[')
-	b.Write(c.Ftoa())
-	b.WriteString(`, "`)
-	b.WriteString(template.JSEscapeString(string(c.Symbol())))
-	b.WriteString(`", "`)
-	lb, err := c.Localize()
-	if err != nil {
-		return nil, log.Error("money.jsonExtendedMarshal.Localize", "err", err, "currency", c, "bytes", lb)
-	}
-	template.JSEscape(&b, lb)
-
-	b.WriteRune('"')
-	b.WriteRune(']')
-	return b.Bytes(), err
 }

@@ -32,7 +32,7 @@ func Benchmark_MoneyScan(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var c money.Currency
+		var c money.Money
 		c.Scan(d)
 		benchmarkMoneyScan = c.Getf()
 		if benchmarkMoneyScan != want {
@@ -84,7 +84,7 @@ func benchmark_JSONUnMarshalSingle(b *testing.B, data []byte, want int64) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var c money.Currency
+		var c money.Money
 		if err := c.UnmarshalJSON(data); err != nil {
 			b.Error(err)
 		}

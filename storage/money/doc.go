@@ -29,7 +29,7 @@ http://en.wikipedia.org/wiki/Floating_point#Accuracy_problems
 
 New()
 
-Creating a new Currency struct:
+Creating a new money struct:
 
 	c := New()
 

@@ -36,7 +36,7 @@ func TestJSONMarshal(t *testing.T) {
 	tests := []struct {
 		prec      int
 		haveI     int64
-		haveEnc   money.JSONMarshaller
+		haveEnc   money.Encoder
 		haveValid bool
 		want      string
 		wantErr   error
@@ -65,12 +65,12 @@ func TestJSONMarshal(t *testing.T) {
 
 	for _, test := range tests {
 		c := money.New(
-			money.Precision(test.prec),
-			money.JSONMarshal(test.haveEnc),
-			money.FormatCurrency(testFmtCur),
-			money.FormatNumber(testFmtNum),
+			money.WithPrecision(test.prec),
 		).Set(test.haveI)
 		c.Valid = test.haveValid
+		c.FmtCur = testFmtCur
+		c.FmtNum = testFmtNum
+		c.Encoder = test.haveEnc
 
 		have, err := c.MarshalJSON()
 		if test.wantErr != nil {
@@ -88,7 +88,7 @@ func TestJSONMarshal(t *testing.T) {
 }
 func TestJSONUnMarshalSingle(t *testing.T) {
 	tests := []struct {
-		haveEnc  money.JSONMarshaller
+		haveEnc  money.Encoder
 		jsonData []byte
 		want     string
 		wantErr  error
@@ -127,7 +127,7 @@ func TestJSONUnMarshalSingle(t *testing.T) {
 		{money.JSONExtended, []byte(`[ ]`), `NaN`, money.ErrDecodeMissingColon},
 	}
 	for _, test := range tests {
-		var c money.Currency
+		var c money.Money
 		err := c.UnmarshalJSON(test.jsonData)
 
 		if test.wantErr != nil {
@@ -149,7 +149,7 @@ func TestJSONUnMarshalSingle(t *testing.T) {
 func TestJSONUnMarshalSlice(t *testing.T) {
 
 	tests := []struct {
-		haveEnc  money.JSONMarshaller
+		haveEnc  money.Encoder
 		jsonData []byte
 		want     string
 		wantErr  error
@@ -215,9 +215,8 @@ func TestJSONUnMarshalSlice(t *testing.T) {
 
 		var buf bytes.Buffer
 		for _, ped := range peds {
-			ped.Value.Option(
-				money.FormatNumber(testFmtNum),
-			)
+			ped.Value.FmtNum = testFmtNum
+
 			_, err := ped.Value.NumberWriter(&buf)
 			if test.wantErr != nil {
 				assert.Error(t, err)
@@ -235,11 +234,11 @@ func TestJSONUnMarshalSlice(t *testing.T) {
 }
 
 type TableProductEntityDecimal struct {
-	ValueID     int64          `db:"value_id"`     // value_id int(11) NOT NULL PRI  auto_increment
-	AttributeID int64          `db:"attribute_id"` // attribute_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
-	StoreID     int64          `db:"store_id"`     // store_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
-	EntityID    int64          `db:"entity_id"`    // entity_id int(10) unsigned NOT NULL MUL DEFAULT '0'
-	Value       money.Currency `db:"value"`        // value decimal(12,4) NULL
+	ValueID     int64       `db:"value_id"`     // value_id int(11) NOT NULL PRI  auto_increment
+	AttributeID int64       `db:"attribute_id"` // attribute_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
+	StoreID     int64       `db:"store_id"`     // store_id smallint(5) unsigned NOT NULL MUL DEFAULT '0'
+	EntityID    int64       `db:"entity_id"`    // entity_id int(10) unsigned NOT NULL MUL DEFAULT '0'
+	Value       money.Money `db:"value"`        // value decimal(12,4) NULL
 }
 
 type TableProductEntityDecimalSlice []*TableProductEntityDecimal
@@ -300,8 +299,8 @@ func off_TestLoadFromDb(t *testing.T) {
 func TestValue(t *testing.T) {
 	dbrSess := csdb.MustConnectTest().NewSession()
 
-	tuple := &TableProductEntityDecimal{ValueID: 0, AttributeID: 73, StoreID: 3, EntityID: 231, Value: money.New(money.Precision(4)).Set(7779933)}
-	tuple2 := &TableProductEntityDecimal{ValueID: 0, AttributeID: 74, StoreID: 2, EntityID: 231, Value: money.New(money.Precision(4)).Set(8889933)}
+	tuple := &TableProductEntityDecimal{ValueID: 0, AttributeID: 73, StoreID: 3, EntityID: 231, Value: money.New(money.WithPrecision(4)).Set(7779933)}
+	tuple2 := &TableProductEntityDecimal{ValueID: 0, AttributeID: 74, StoreID: 2, EntityID: 231, Value: money.New(money.WithPrecision(4)).Set(8889933)}
 	ib := dbrSess.InsertInto("catalog_product_entity_decimal")
 	ib.Columns("attribute_id", "store_id", "entity_id", "value")
 
@@ -338,12 +337,10 @@ func TestScan(t *testing.T) {
 
 	var buf bytes.Buffer
 	for _, test := range tests {
-		var c money.Currency
+		var c money.Money
 		err := c.Scan(test.src)
-		c.Option(
-			money.FormatCurrency(testFmtCur),
-			money.FormatNumber(testFmtNum),
-		)
+		c.FmtCur = testFmtCur
+		c.FmtNum = testFmtNum
 
 		if test.wantErr != nil {
 			assert.Error(t, err, "%v", test)
@@ -369,14 +366,14 @@ func TestScan(t *testing.T) {
 func TestJSONEncode(t *testing.T) {
 
 	var peds = TableProductEntityDecimalSlice{
-		&TableProductEntityDecimal{ValueID: 1, AttributeID: 73, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4)).Set(9990000)},
-		&TableProductEntityDecimal{ValueID: 2, AttributeID: 78, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4))}, // null values
-		&TableProductEntityDecimal{ValueID: 3, AttributeID: 74, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4))}, // null values
-		&TableProductEntityDecimal{ValueID: 4, AttributeID: 77, StoreID: 0, EntityID: 1, Value: money.New(money.Precision(4))}, // null values
-		&TableProductEntityDecimal{ValueID: 5, AttributeID: 73, StoreID: 1, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
-		&TableProductEntityDecimal{ValueID: 6, AttributeID: 73, StoreID: 4, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
-		&TableProductEntityDecimal{ValueID: 7, AttributeID: 73, StoreID: 2, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
-		&TableProductEntityDecimal{ValueID: 8, AttributeID: 73, StoreID: 3, EntityID: 1, Value: money.New(money.Precision(4)).Set(7059933)},
+		&TableProductEntityDecimal{ValueID: 1, AttributeID: 73, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(9990000)},
+		&TableProductEntityDecimal{ValueID: 2, AttributeID: 78, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4))}, // null values
+		&TableProductEntityDecimal{ValueID: 3, AttributeID: 74, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4))}, // null values
+		&TableProductEntityDecimal{ValueID: 4, AttributeID: 77, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4))}, // null values
+		&TableProductEntityDecimal{ValueID: 5, AttributeID: 73, StoreID: 1, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(7059933)},
+		&TableProductEntityDecimal{ValueID: 6, AttributeID: 73, StoreID: 4, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(7059933)},
+		&TableProductEntityDecimal{ValueID: 7, AttributeID: 73, StoreID: 2, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(7059933)},
+		&TableProductEntityDecimal{ValueID: 8, AttributeID: 73, StoreID: 3, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(7059933)},
 	}
 
 	jb, err := json.Marshal(peds)

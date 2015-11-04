@@ -74,10 +74,11 @@ func TestString(t *testing.T) {
 
 	for i, test := range tests {
 		c := money.New(
-			money.Precision(test.prec),
-			money.FormatCurrency(testFmtCur),
-			money.FormatNumber(testFmtNum),
+			money.WithPrecision(test.prec),
 		).Set(test.have)
+		c.FmtCur = testFmtCur
+		c.FmtNum = testFmtNum
+
 		have := c.String()
 		if have != test.want {
 			t.Errorf("\nWant: %s\nHave: %s\nIndex: %d\n", test.want, have, i)
@@ -131,7 +132,7 @@ func TestPrecisionAndGet(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		c := money.New(money.Precision(test.prec)).Set(test.have)
+		c := money.New(money.WithPrecision(test.prec)).Set(test.have)
 		haveCI := c.Geti()
 		haveCF := c.Getf()
 
@@ -169,7 +170,7 @@ func TestSetf(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		c := money.New(money.Precision(test.prec)).Setf(test.havef)
+		c := money.New(money.WithPrecision(test.prec)).Setf(test.havef)
 		haveR := c.Raw()
 		if haveR != test.want {
 			t.Errorf("\nWantI: %d\nHaveI: %d\nIndex: %d\n", test.want, haveR, i)
@@ -273,12 +274,12 @@ func TestSwedishNumber(t *testing.T) {
 	}
 	for _, test := range tests {
 		c := money.New(
-			money.Precision(test.prec),
-			money.FormatCurrency(testFmtCur),
-			money.FormatNumber(testFmtNum),
+			money.WithPrecision(test.prec),
 		).Set(test.have)
+		c.FmtCur = testFmtCur
+		c.FmtNum = testFmtNum
 
-		haveB, err := c.Swedish(money.Swedish(test.iv)).Number()
+		haveB, err := c.Swedish(money.WithSwedish(test.iv)).Number()
 		assert.NoError(t, err, "%v", test)
 		have := string(haveB)
 		if have != test.want {
@@ -355,12 +356,12 @@ func TestMulNumber(t *testing.T) {
 
 	for _, test := range tests {
 		c := money.New(
-			money.Precision(test.prec),
-			money.FormatCurrency(testFmtCur),
-			money.FormatNumber(testFmtNum),
+			money.WithPrecision(test.prec),
 		).Set(test.have1)
+		c.FmtCur = testFmtCur
+		c.FmtNum = testFmtNum
 
-		c = c.Mul(money.New(money.Precision(test.prec)).Set(test.have2))
+		c = c.Mul(money.New(money.WithPrecision(test.prec)).Set(test.have2))
 
 		haveB, err := c.Number()
 		assert.NoError(t, err)
@@ -393,7 +394,7 @@ func TestMulf(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		c := money.New(money.Precision(test.prec)).Set(test.have1)
+		c := money.New(money.WithPrecision(test.prec)).Set(test.have1)
 		c = c.Mulf(test.have2)
 		haveB, err := c.Number()
 		assert.NoError(t, err)

@@ -40,10 +40,10 @@ var DefaultFormatterCurrency i18n.CurrencyFormatter = i18n.DefaultCurrency
 var DefaultFormatterNumber i18n.NumberFormatter = i18n.DefaultNumber
 
 // DefaultJSONEncode is JSONLocale
-var DefaultJSONEncode JSONMarshaller = NewJSONEncoder()
+var DefaultJSONEncode Encoder = NewJSONEncoder()
 
 // DefaultJSONDecode is JSONLocale
-var DefaultJSONDecode JSONUnmarshaller = NewJSONDecoder()
+var DefaultJSONDecode Decoder = NewJSONDecoder()
 
 // DefaultSwedish sets the global and New() defaults swedish rounding. Errors will be logged.
 // http://en.wikipedia.org/wiki/Swedish_rounding
