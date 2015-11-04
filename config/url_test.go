@@ -28,6 +28,7 @@ func TestURLCache(t *testing.T) {
 		url       string
 		wantError error
 	}{
+		{config.URLTypeStatic, "", config.ErrURLEmpty},
 		{config.URLTypeWeb, "http://corestore.io/", nil},
 		{config.URLTypeStatic, "://corestore.io/", errors.New("parse ://corestore.io/: missing protocol scheme")},
 		{config.URLType(254), "https://corestore.io/catalog", errors.New("Unknown Index 254")},

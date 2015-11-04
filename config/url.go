@@ -15,10 +15,10 @@
 package config
 
 import (
+	"errors"
 	"net/url"
 
 	"github.com/juju/errgo"
-	"github.com/juju/errgo/errors"
 )
 
 // PathCSBaseURL main CoreStore base URL, used if no configuration on a store level can be found.
@@ -43,7 +43,11 @@ const (
 	maxURLTypes
 )
 
+// ErrURLCacheCleared gets returned by Clean() when it's called
 var ErrURLCacheCleared = errors.New("URLCached cleared")
+
+// ErrURLEmpty whenever Set() receives an empty URL
+var ErrURLEmpty = errors.New("URL argument is empty")
 
 // URLType defines the type of the URL. Used in constant declaration.
 // @see https://github.com/magento/magento2/blob/0.74.0-beta7/lib/internal/Magento/Framework/UrlInterface.php#L13
@@ -75,6 +79,9 @@ func (uc *URLCache) Get(t URLType) *url.URL {
 func (uc *URLCache) Set(t URLType, rawURL string) (*url.URL, error) {
 	if t >= maxURLTypes {
 		return nil, errgo.Newf("Unknown Index %d", t)
+	}
+	if rawURL == "" {
+		return nil, errgo.Mask(ErrURLEmpty)
 	}
 	u, err := url.Parse(rawURL)
 	if err != nil {
