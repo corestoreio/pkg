@@ -80,8 +80,12 @@ func WithValidateBaseUrl(cr config.ReaderPubSuber) ctxhttp.Middleware {
 	}
 }
 
-// WithInitStoreByToken
-func WithInitStoreByToken(scopeType scope.Scope) ctxhttp.Middleware {
+// WithInitStoreByToken is a middleware which initializes a request based store
+// via a JSON Web Token.
+// Extracts the store.Reader and jwt.Token from context.Context. If the requested
+// store is different than the initialized requested store than the new requested
+// store will be saved in the context.
+func WithInitStoreByToken() ctxhttp.Middleware {
 
 	return func(h ctxhttp.Handler) ctxhttp.Handler {
 		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -91,10 +95,7 @@ func WithInitStoreByToken(scopeType scope.Scope) ctxhttp.Middleware {
 				return log.Error("store.WithInitStoreByToken.FromContextServiceReader", "err", err, "ctx", ctx)
 			}
 
-			token, err, ok := ctxjwt.FromContext(ctx)
-			if !ok {
-				return log.Error("store.WithInitStoreByToken.ctxjwt.FromContext.ok", "err", errors.New("Cannot extract ctxjwt nor an error from context"), "ctx", ctx)
-			}
+			token, err := ctxjwt.FromContext(ctx)
 			if err != nil {
 				return log.Error("store.WithInitStoreByToken.ctxjwt.FromContext.err", "err", err, "ctx", ctx)
 			}
@@ -109,7 +110,7 @@ func WithInitStoreByToken(scopeType scope.Scope) ctxhttp.Middleware {
 			}
 
 			if newRequestedStore.StoreID() != requestedStore.StoreID() {
-				// this may lead to a bug because the previously setted storeService and requestedStore
+				// this may lead to a bug because the previously set storeService and requestedStore
 				// will still exists and have not been removed.
 				ctx = NewContextReader(ctx, storeService, newRequestedStore)
 			}
