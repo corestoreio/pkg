@@ -20,7 +20,7 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/utils/log"
-	"golang.org/x/text/language"
+	"golang.org/x/text/currency"
 )
 
 // DefaultCurrencyName 3-letter ISO 4217 code
@@ -55,8 +55,8 @@ type (
 	Currency struct {
 		*Number
 		// ISO contains the 3-letter ISO 4217 currency code.
-		// Maybe one day that will get extended in text/language package ...
-		ISO language.Currency
+		// Maybe one day that will get extended in text/currency package ...
+		ISO currency.Currency
 		sgn []byte // € or USD or ...
 		buf buf
 		mu  sync.RWMutex
@@ -112,18 +112,18 @@ func init() {
 // SetCurrencyISO parses a 3-letter ISO 4217 code and sets it to the Currency
 // struct. If parsing fails errors will be logged and falls back to DefaultCurrencyName.
 // Calling this function sets also the CurrencySign() to the at the moment
-// 3-letter ISO code. (Missing feature in text/language package)
+// 3-letter ISO code. (Missing feature in text/currency package)
 // This function is called in NewCurrency().
 func SetCurrencyISO(cur string) CurrencyOptions {
 	return func(c *Currency) CurrencyOptions {
 		previous := c.ISO.String()
-		lc, err := language.ParseCurrency(cur)
+		lc, err := currency.ParseISO(cur)
 		if err != nil {
 			if log.IsTrace() {
 				log.Trace("i18n.CurrencyISO.ParseCurrency.error", "err", err, "cur", cur)
 			}
 			log.Error("i18n.CurrencyISO.ParseCurrency", "err", err, "cur", cur)
-			lc = language.MustParseCurrency(DefaultCurrencyName)
+			lc = currency.MustParseISO(DefaultCurrencyName)
 		}
 		c.ISO = lc
 		SetCurrencySign([]byte(lc.String()))(c)
