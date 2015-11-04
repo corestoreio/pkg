@@ -15,6 +15,8 @@
 package ctxjwt
 
 import (
+	"errors"
+
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/net/context"
 )
@@ -29,6 +31,8 @@ const (
 	keyctxErr
 )
 
+var ErrContextJWTNotFound = errors.New("Cannot extract ctxjwt nor an error from context")
+
 // NewContext creates a new context with jwt.Token attached.
 func NewContext(ctx context.Context, t *jwt.Token) context.Context {
 	return context.WithValue(ctx, keyJSONWebToken, t)
@@ -37,13 +41,16 @@ func NewContext(ctx context.Context, t *jwt.Token) context.Context {
 // FromContext returns the jwt.Token in ctx if it exists or an error.
 // Check the ok bool value if an error or jwt.Token is within the
 // context.Context
-func FromContext(ctx context.Context) (*jwt.Token, error, bool) {
+func FromContext(ctx context.Context) (*jwt.Token, error) {
 	err, ok := ctx.Value(keyctxErr).(error)
 	if ok {
-		return nil, err, ok
+		return nil, err
 	}
 	t, ok := ctx.Value(keyJSONWebToken).(*jwt.Token)
-	return t, nil, ok
+	if !ok || t == nil {
+		return nil, ErrContextJWTNotFound
+	}
+	return t, nil
 }
 
 // NewContextWithError creates a new context with an error attached.
