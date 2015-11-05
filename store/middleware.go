@@ -104,10 +104,13 @@ func WithInitStoreByToken() ctxhttp.Middleware {
 			if err != nil {
 				return log.Error("store.WithInitStoreByToken.StoreCodeFromClaim", "err", err, "token", token, "ctx", ctx)
 			}
+
 			newRequestedStore, err := storeService.GetRequestedStore(scopeOption)
 			if err != nil {
 				return log.Error("store.WithInitStoreByToken.GetRequestedStore", "err", err, "token", token, "scopeOption", scopeOption, "ctx", ctx)
 			}
+
+			//			fmt.Printf("%#v\n%#v\n\n", requestedStore, newRequestedStore)
 
 			if newRequestedStore.StoreID() != requestedStore.StoreID() {
 				// this may lead to a bug because the previously set storeService and requestedStore

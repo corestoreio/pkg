@@ -393,6 +393,7 @@ func TestWithInitStoreByToken(t *testing.T) {
 }
 
 func TestWithInitStoreByToken_Alloc_Investigations_TEMP(t *testing.T) {
+	// this Test is related to Benchmark_WithInitStoreByToken
 
 	ctx := newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "nz")
 	rec := httptest.NewRecorder()
@@ -406,7 +407,6 @@ func TestWithInitStoreByToken_Alloc_Investigations_TEMP(t *testing.T) {
 		if err != nil {
 			return err
 		}
-		t.Logf("%#v\n", haveReqStore)
 		if "nz" != haveReqStore.StoreCode() {
 			t.Errorf("Have: %s\nWant: nz", haveReqStore.StoreCode())
 		}

@@ -79,8 +79,11 @@ func Benchmark_WithValidateBaseUrl(b *testing.B) {
 	}
 }
 
-// Benchmark_WithInitStoreByToken-4	  100000	     17297 ns/op	    9112 B/op	     203 allocs/op
+// Benchmark_WithInitStoreByToken-4	  100000	     17297 ns/op	    9112 B/op	     203 allocs/op => old
+// Benchmark_WithInitStoreByToken-4	 2000000	       810 ns/op	     128 B/op	       5 allocs/op => new
 func Benchmark_WithInitStoreByToken(b *testing.B) {
+	// see TestWithInitStoreByToken_Alloc_Investigations_TEMP
+
 	b.ReportAllocs()
 
 	wantStoreCode := "nz"

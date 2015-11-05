@@ -192,10 +192,16 @@ func (sm *Service) GetRequestedStore(so scope.Option) (activeStore *Store, err e
 		return nil, log.Error("store.Service.GetRequestedStore.FindDefaultStoreByScope", "err", err, "so", so)
 	}
 
-	activeStore, err = sm.activeStore(activeStore) // this is the active store from Cookie or Request.
-	if activeStore == nil || err != nil {
-		// store is not active so ignore
-		return nil, err
+	//	activeStore, err = sm.newActiveStore(activeStore) // this is the active store from a request.
+	// todo rethink here if we really need a newActiveStore
+	// newActiveStore creates a new Store, Website and Group pointers !!!
+	//	if activeStore == nil || err != nil {
+	//		// store is not active so ignore
+	//		return nil, err
+	//	}
+
+	if false == activeStore.Data.IsActive {
+		return nil, ErrStoreNotActive
 	}
 
 	allowStoreChange := false
@@ -368,18 +374,18 @@ func (sm *Service) DefaultStoreView() (*Store, error) {
 	return sm.defaultStore, err
 }
 
-// activeStore returns a new non-cached Store with all its Websites and Groups but only if the Store
+// newActiveStore returns a new non-cached Store with all its Websites and Groups but only if the Store
 // is marked as active. Argument can be an ID or a Code. Returns err if Store not found or inactive.
-func (sm *Service) activeStore(r scope.StoreIDer) (*Store, error) {
-	s, err := sm.storage.Store(r)
-	if err != nil {
-		return nil, err
-	}
-	if s.Data.IsActive {
-		return s, nil
-	}
-	return nil, ErrStoreNotActive
-}
+//func (sm *Service) newActiveStore(r scope.StoreIDer) (*Store, error) {
+//	s, err := sm.storage.Store(r)
+//	if err != nil {
+//		return nil, err
+//	}
+//	if s.Data.IsActive {
+//		return s, nil
+//	}
+//	return nil, ErrStoreNotActive
+//}
 
 // ReInit reloads the website, store group and store view data from the database.
 // After reloading internal cache will be cleared if there are no errors.
