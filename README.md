@@ -48,7 +48,47 @@ $ export CS_DSN_TEST='magento1:magento1@tcp(localhost:3306)/magento1'
 $ export CS_DSN_TEST='magento2:magento2@tcp(localhost:3306)/magento2'
 ```
 
-TODO: Create Magento 1+2 modules to setup test database and test Magento system.
+### Finding Allocations
+
+Side note: There is a new testing approach: TBDD = Test n' Benchmark Driven Development.
+
+On the first run we got this result:
+
+```
+$ go test -run=😶 -bench=Benchmark_WithInitStoreByToken .
+PASS
+Benchmark_WithInitStoreByToken-4	  100000	     17297 ns/op	    9112 B/op	     203 allocs/op
+ok  	github.com/corestoreio/csfw/store	2.569s
+
+```
+
+Quite shocking to use 203 allocs for just figuring out the current store view within a request.
+
+Now compile your tests into an executable binary:
+
+```
+$ go test -c
+```
+
+This compilation reduces the noise in the below output trace log.
+
+```
+$ GODEBUG=allocfreetrace=1 ./store -test.run=😶 -test.bench=Benchmark_WithInitStoreByToken -test.benchtime=10ms 2>trace.log
+```
+
+Now open the trace.log file (around 26MB) and investigate all the allocations and refactor your code. Once finished you can achieve results like:
+
+```
+$ go test -run=😶  -bench=Benchmark_WithInitStoreByToken .
+PASS
+Benchmark_WithInitStoreByToken-4	 2000000	       826 ns/op	     128 B/op	       5 allocs/op
+ok  	github.com/corestoreio/csfw/store	2.569s
+```
+
+
+## TODO
+
+- Create Magento 1+2 modules to setup test database and test Magento system.
 
 ## Contributing
 
