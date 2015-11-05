@@ -328,13 +328,16 @@ func TestWithValidateBaseUrl_ActivatedAndShouldRedirectWithGETRequest(t *testing
 //	}
 //}
 
+func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) context.Context {
+	ctx := store.NewContextReader(context.Background(), getInitializedStoreService(initO), nil)
+	tok := jwt.New(jwt.SigningMethodHS256)
+	tok.Claims[store.CookieName] = tokenStoreCode
+	ctx = ctxjwt.NewContext(ctx, tok)
+	return ctx
+}
+
 func TestWithInitStoreByToken(t *testing.T) {
 
-	var getToken = func(code string) *jwt.Token {
-		tok := jwt.New(jwt.SigningMethodHS256)
-		tok.Claims[store.CookieName] = code
-		return tok
-	}
 	var newReq = func(i int) *http.Request {
 		req, err := http.NewRequest(httputils.MethodGet, fmt.Sprintf("https://corestore.io/store/list/%d", i), nil)
 		if err != nil {
@@ -342,11 +345,7 @@ func TestWithInitStoreByToken(t *testing.T) {
 		}
 		return req
 	}
-	var newCtx = func(initO scope.Option, tokenStoreCode string) context.Context {
-		ctx := store.NewContextReader(context.Background(), getInitializedStoreService(initO), nil)
-		ctx = ctxjwt.NewContext(ctx, getToken(tokenStoreCode))
-		return ctx
-	}
+
 	tests := []struct {
 		ctx           context.Context
 		wantStoreCode string
@@ -354,22 +353,22 @@ func TestWithInitStoreByToken(t *testing.T) {
 	}{
 		{store.NewContextReader(context.Background(), nil, nil), "de", store.ErrContextServiceNotFound},
 		{store.NewContextReader(context.Background(), getInitializedStoreService(scope.Option{Store: scope.MockCode("de")}), nil), "de", ctxjwt.ErrContextJWTNotFound},
-		{newCtx(scope.Option{Store: scope.MockCode("de")}, "de"), "de", nil},
-		{newCtx(scope.Option{Store: scope.MockCode("at")}, "ch"), "at", store.ErrStoreNotActive},
-		{newCtx(scope.Option{Store: scope.MockCode("de")}, "at"), "at", nil},
-		{newCtx(scope.Option{Store: scope.MockCode("de")}, "a$t"), "de", store.ErrStoreCodeInvalid},
-		{newCtx(scope.Option{Store: scope.MockCode("at")}, ""), "at", store.ErrStoreCodeEmpty},
+		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "de"), "de", nil},
+		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("at")}, "ch"), "at", store.ErrStoreNotActive},
+		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "at"), "at", nil},
+		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "a$t"), "de", store.ErrStoreCodeInvalid},
+		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("at")}, ""), "at", store.ErrStoreCodeEmpty},
 
-		{newCtx(scope.Option{Group: scope.MockID(1)}, "de"), "de", nil},
-		{newCtx(scope.Option{Group: scope.MockID(1)}, "ch"), "at", store.ErrStoreNotActive},
-		{newCtx(scope.Option{Group: scope.MockID(1)}, " ch"), "at", store.ErrStoreCodeInvalid},
-		{newCtx(scope.Option{Group: scope.MockID(1)}, "uk"), "at", store.ErrStoreChangeNotAllowed},
+		{newStoreServiceWithTokenCtx(scope.Option{Group: scope.MockID(1)}, "de"), "de", nil},
+		{newStoreServiceWithTokenCtx(scope.Option{Group: scope.MockID(1)}, "ch"), "at", store.ErrStoreNotActive},
+		{newStoreServiceWithTokenCtx(scope.Option{Group: scope.MockID(1)}, " ch"), "at", store.ErrStoreCodeInvalid},
+		{newStoreServiceWithTokenCtx(scope.Option{Group: scope.MockID(1)}, "uk"), "at", store.ErrStoreChangeNotAllowed},
 
-		{newCtx(scope.Option{Website: scope.MockID(2)}, "uk"), "au", store.ErrStoreChangeNotAllowed},
-		{newCtx(scope.Option{Website: scope.MockID(2)}, "nz"), "nz", nil},
-		{newCtx(scope.Option{Website: scope.MockID(2)}, "n z"), "au", store.ErrStoreCodeInvalid},
-		{newCtx(scope.Option{Website: scope.MockID(2)}, "au"), "au", nil},
-		{newCtx(scope.Option{Website: scope.MockID(2)}, ""), "au", store.ErrStoreCodeEmpty},
+		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "uk"), "au", store.ErrStoreChangeNotAllowed},
+		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "nz"), "nz", nil},
+		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "n z"), "au", store.ErrStoreCodeInvalid},
+		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "au"), "au", nil},
+		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, ""), "au", store.ErrStoreCodeEmpty},
 	}
 	for i, test := range tests {
 
@@ -390,5 +389,33 @@ func TestWithInitStoreByToken(t *testing.T) {
 		}
 
 		assert.NoError(t, surfErr, "Index %d", i)
+	}
+}
+
+func TestWithInitStoreByToken_Alloc_Investigations_TEMP(t *testing.T) {
+
+	ctx := newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "nz")
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest(httputils.MethodGet, "https://corestore.io/store/list", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	mw := store.WithInitStoreByToken()(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		_, haveReqStore, err := store.FromContextReader(ctx)
+		if err != nil {
+			return err
+		}
+		t.Logf("%#v\n", haveReqStore)
+		if "nz" != haveReqStore.StoreCode() {
+			t.Errorf("Have: %s\nWant: nz", haveReqStore.StoreCode())
+		}
+		return nil
+	}))
+
+	for i := 0; i < 2; i++ {
+		if err := mw.ServeHTTPContext(ctx, rec, req); err != nil {
+			t.Error(err)
+		}
 	}
 }

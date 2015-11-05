@@ -78,3 +78,36 @@ func Benchmark_WithValidateBaseUrl(b *testing.B) {
 		rec.HeaderMap = nil
 	}
 }
+
+// Benchmark_WithInitStoreByToken-4	  100000	     17297 ns/op	    9112 B/op	     203 allocs/op
+func Benchmark_WithInitStoreByToken(b *testing.B) {
+	b.ReportAllocs()
+
+	wantStoreCode := "nz"
+	ctx := newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "nz")
+
+	mw := store.WithInitStoreByToken()(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		_, haveReqStore, err := store.FromContextReader(ctx)
+		if err != nil {
+			return err
+		}
+
+		if wantStoreCode != haveReqStore.StoreCode() {
+			b.Errorf("Want: %s\nHave: %s", wantStoreCode, haveReqStore.StoreCode())
+		}
+		return nil
+	}))
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest(httputils.MethodGet, "https://corestore.io/store/list/", nil)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := mw.ServeHTTPContext(ctx, rec, req); err != nil {
+			b.Error(err)
+		}
+	}
+}
