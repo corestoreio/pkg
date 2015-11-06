@@ -22,7 +22,6 @@ import (
 
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/utils"
-	"github.com/corestoreio/csfw/utils/log"
 )
 
 const hierarchyLevel int = 3 // a/b/c
@@ -142,7 +141,7 @@ func newArg(opts ...ArgFunc) (arg, error) {
 func mustNewArg(opts ...ArgFunc) arg {
 	a, err := newArg(opts...)
 	if err != nil {
-		panic(log.Error("config.mustNewArg", "err", err))
+		panic(err)
 	}
 	return a
 }

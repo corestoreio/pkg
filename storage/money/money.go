@@ -29,7 +29,7 @@ import (
 
 	"github.com/corestoreio/csfw/i18n"
 	"github.com/corestoreio/csfw/utils"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 	"golang.org/x/text/currency"
 )
 
@@ -108,7 +108,7 @@ type (
 // Errors will be logged
 func WithSwedish(i Interval) Option {
 	if i >= interval999 {
-		log.Error("money.Swedish", "err", errors.New("Interval out of scope. Resetting."), "interval", i)
+		PkgLog.Debug("money.Swedish", "err", errors.New("Interval out of scope. Resetting."), "interval", i)
 		i = Interval000
 	}
 	return func(c *Money) Option {
@@ -302,10 +302,10 @@ func (m Money) Setf(f float64) Money {
 func (m *Money) ParseFloat(s string) error {
 	f, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		if log.IsTrace() {
-			log.Trace("money.Currency.ParseFloat", "err", err, "arg", s, "currency", m)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("money.Currency.strconv.ParseFloat", "err", err, "arg", s, "currency", m)
 		}
-		return log.Error("money.Currency.ParseFloat.ParseFloat", "err", err, "arg", s)
+		return errgo.Mask(err)
 	}
 	m.Valid = true
 	*m = m.Setf(f)
@@ -349,10 +349,7 @@ func (m Money) LocalizeWriter(w io.Writer) (int, error) {
 func (m Money) String() string {
 	var bufC buf
 	if _, err := m.LocalizeWriter(&bufC); err != nil {
-		if log.IsTrace() {
-			log.Trace("money.Currency.String", "err", err, "c", m)
-		}
-		log.Error("money.Currency.String.LocalizeWriter", "err", err, "c", m)
+		PkgLog.Debug("money.Currency.String.LocalizeWriter", "err", err, "c", m)
 	}
 	return string(bufC)
 }
@@ -402,10 +399,7 @@ func (m Money) FtoaAppend(dst []byte) []byte {
 func (m Money) Add(d Money) Money {
 	r := m.m + d.m
 	if (r^m.m)&(r^d.m) < 0 {
-		if log.IsTrace() {
-			log.Trace("money.Currency.Add", "err", ErrOverflow, "m", m, "n", d)
-		}
-		log.Error("money.Currency.Add.Overflow", "err", ErrOverflow, "m", m, "n", d)
+		PkgLog.Debug("money.Currency.Add.Overflow", "err", ErrOverflow, "m", m, "n", d)
 		return New()
 	}
 	m.m = r
@@ -418,10 +412,7 @@ func (m Money) Add(d Money) Money {
 func (m Money) Sub(d Money) Money {
 	r := m.m - d.m
 	if (r^m.m)&^(r^d.m) < 0 {
-		if log.IsTrace() {
-			log.Trace("money.Currency.Sub", "err", ErrOverflow, "m", m, "n", d)
-		}
-		log.Error("money.Currency.Sub.Overflow", "err", ErrOverflow, "m", m, "n", d)
+		PkgLog.Debug("money.Currency.Sub.Overflow", "err", ErrOverflow, "m", m, "n", d)
 		return New()
 	}
 	m.m = r

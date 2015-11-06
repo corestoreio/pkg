@@ -40,8 +40,8 @@ func TestSet(t *testing.T) {
 func TestNull(t *testing.T) {
 	log.SetNull()
 	log.SetLevel(-1000)
-	if log.IsDebug() {
-		t.Error("There should be no debug")
+	if !log.IsDebug() {
+		t.Error("There should be debug logging")
 	}
 	if log.IsInfo() {
 		t.Error("There should be no info")

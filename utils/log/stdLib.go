@@ -152,7 +152,8 @@ func (l *StdLogger) log(level int, msg string, args []interface{}) {
 	if l.level >= level {
 		switch level {
 		case StdLevelDebug:
-			l.debug.Print(stdFormat(msg, append(args, "in", getStackTrace())))
+			// l.debug.Print(stdFormat(msg, append(args, "in", getStackTrace())))
+			l.debug.Print(stdFormat(msg, args))
 			break
 		case StdLevelInfo:
 			l.info.Print(stdFormat(msg, args))

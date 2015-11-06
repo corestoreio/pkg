@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/scope"
 )
 
-var PackageConfiguration = config.NewConfiguration(
+var PackageConfiguration = config.MustNewConfiguration(
 	&config.Section{
 		ID:        "admin",
 		Label:     "",

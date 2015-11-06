@@ -23,7 +23,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 )
 
 const (
@@ -54,7 +54,10 @@ func GetColumns(dbrSess dbr.SessionRunner, table string) (Columns, error) {
 	rows, err := sel.Query(selSql, selArg...)
 
 	if err != nil {
-		return nil, log.Error("csdb.GetColumns.Query", "err", err, "query", selSql, "args", selArg)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("csdb.GetColumns.Query", "err", err, "query", selSql, "args", selArg)
+		}
+		return nil, errgo.Mask(err)
 	}
 	defer rows.Close()
 
@@ -62,13 +65,19 @@ func GetColumns(dbrSess dbr.SessionRunner, table string) (Columns, error) {
 	for rows.Next() {
 		err := rows.Scan(&col.Field, &col.Type, &col.Null, &col.Key, &col.Default, &col.Extra)
 		if err != nil {
-			return nil, log.Error("csdb.GetColumns.Rows.Scan", "err", err, "query", selSql, "args", selArg)
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("csdb.GetColumns.Rows.Scan", "err", err, "query", selSql, "args", selArg)
+			}
+			return nil, errgo.Mask(err)
 		}
 		cols = append(cols, col)
 	}
 	err = rows.Err()
 	if err != nil {
-		return nil, log.Error("csdb.GetColumns.Rows.Err", "err", err, "query", selSql, "args", selArg)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("csdb.GetColumns.Rows.Err", "err", err, "query", selSql, "args", selArg)
+		}
+		return nil, errgo.Mask(err)
 	}
 	return cols, nil
 }
@@ -308,7 +317,7 @@ func (c Column) GetGoPrimitive(useNullType bool) string {
 	case c.IsString():
 		goType = "string"
 	case c.IsMoney():
-		goType = "money.Currency"
+		goType = "money.Money"
 	case c.IsFloat() && isNull:
 		goType = "dbr.NullFloat64"
 	case c.IsFloat():

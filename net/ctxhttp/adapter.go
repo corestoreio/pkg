@@ -19,7 +19,6 @@ import (
 
 	"fmt"
 
-	"github.com/corestoreio/csfw/utils/log"
 	"golang.org/x/net/context"
 )
 
@@ -79,8 +78,8 @@ type AdapterErrFunc func(http.ResponseWriter, *http.Request, error)
 var DefaultAdapterErrFunc AdapterErrFunc = defaultAdapterErrFunc
 
 func defaultAdapterErrFunc(rw http.ResponseWriter, req *http.Request, err error) {
-	if log.IsDebug() {
-		log.Error("ctxhttp.AdapterErrorFunc", "err", err, "req", req, "url", req.URL)
+	if PkgLog.IsDebug() {
+		PkgLog.Debug("ctxhttp.AdapterErrorFunc", "err", err, "req", req, "url", req.URL)
 	}
 	code := http.StatusBadRequest
 	http.Error(rw, fmt.Sprintf(

@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 	"golang.org/x/net/context"
 )
@@ -50,8 +49,8 @@ func IsSecure(cr config.Reader, r *http.Request) bool {
 
 	oh, err := cr.GetString(config.Path(PathOffloaderHeader), config.ScopeDefault())
 	if err != nil {
-		if log.IsDebug() {
-			log.Debug("net.httputils.IsSecure.FromContextReader.GetString", "err", err, "path", PathOffloaderHeader)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("net.httputils.IsSecure.FromContextReader.GetString", "err", err, "path", PathOffloaderHeader)
 		}
 		return false
 	}
@@ -73,8 +72,8 @@ func IsBaseUrlCorrect(r *http.Request, baseURL *url.URL) error {
 	if r.Host == baseURL.Host && r.URL.Host == baseURL.Host && r.URL.Scheme == baseURL.Scheme && strings.HasPrefix(r.URL.Path, baseURL.Path) {
 		return nil
 	}
-	if log.IsDebug() {
-		log.Debug("store.isBaseUrlCorrect.compare", "err", ErrBaseUrlDoNotMatch, "r.Host", r.Host, "baseURL", baseURL.String(), "requestURL", r.URL.String(), "strings.Contains", []string{r.URL.RequestURI(), baseURL.Path})
+	if PkgLog.IsDebug() {
+		PkgLog.Debug("store.isBaseUrlCorrect.compare", "err", ErrBaseUrlDoNotMatch, "r.Host", r.Host, "baseURL", baseURL.String(), "requestURL", r.URL.String(), "strings.Contains", []string{r.URL.RequestURI(), baseURL.Path})
 	}
 	return errgo.Mask(ErrBaseUrlDoNotMatch)
 }

@@ -24,8 +24,8 @@ import (
 )
 
 func init() {
-	log.Set(log.NewStdLogger())
-	log.SetLevel(log.StdLevelDebug)
+	directory.PkgLog = log.NewStdLogger()
+	directory.PkgLog.SetLevel(log.StdLevelDebug)
 }
 
 func TestSourceCurrencyAll(t *testing.T) {

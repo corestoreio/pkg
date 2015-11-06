@@ -20,7 +20,7 @@ import (
 	"errors"
 
 	"github.com/corestoreio/csfw/config/scope"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 )
 
 // ErrPublisherClosed will returned when the channel has been closed.
@@ -154,8 +154,8 @@ func (ps *pubSub) publish() {
 			// remove all Subscribers which failed
 			if len(evict) > 0 {
 				for _, e := range evict {
-					if err := ps.Unsubscribe(e); err != nil {
-						log.Error("config.pubSub.publish.evict.Unsubscribe.err", "err", err, "subscriptionID", e)
+					if err := ps.Unsubscribe(e); err != nil && PkgLog.IsDebug() {
+						PkgLog.Debug("config.pubSub.publish.evict.Unsubscribe.err", "err", err, "subscriptionID", e)
 					}
 				}
 			}
@@ -166,7 +166,9 @@ func (ps *pubSub) publish() {
 func sendMessages(subs map[int]MessageReceiver, a arg) (evict []int) {
 	for id, s := range subs {
 		if err := sendMsgRecoverable(id, s, a); err != nil {
-			log.Error("config.pubSub.publish.sendMessages", "err", err, "id", id)
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("config.pubSub.publish.sendMessages", "err", err, "id", id)
+			}
 			evict = append(evict, id) // mark Subscribers for removal which failed ...
 		}
 	}
@@ -177,9 +179,11 @@ func sendMsgRecoverable(id int, sl MessageReceiver, a arg) (err error) {
 	defer func() { // protect ... you'll never know
 		if r := recover(); r != nil {
 			if recErr, ok := r.(error); ok {
-				err = log.Error("config.pubSub.publish.recover.err", "err", recErr)
+				PkgLog.Debug("config.pubSub.publish.recover.err", "err", recErr)
+				err = recErr
 			} else {
-				err = log.Error("config.pubSub.publish.recover.r", "recover", r)
+				PkgLog.Debug("config.pubSub.publish.recover.r", "recover", r)
+				err = errgo.Newf("%#v", r)
 			}
 			// the overall trick here is, that defer will assign a new error to err
 			// and therefore will overwrite the returned nil value!

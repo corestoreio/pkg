@@ -25,6 +25,7 @@ import (
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
 	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 )
 
 const (
@@ -85,15 +86,15 @@ func GetTables(dbrSess dbr.SessionRunner, sql ...string) ([]string, error) {
 			qry = sql[0]
 		}
 	}
-	if log.IsDebug() { // this if reduces 9 allocs ...
-		defer log.WhenDone().Debug("Stats", "Package", "codegen", "Step", "GetTables", "query", qry)
+	if PkgLog.IsInfo() { // this if reduces 9 allocs ...
+		defer log.WhenDone(PkgLog).Info("Stats", "Package", "codegen", "Step", "GetTables", "query", qry)
 	}
 
 	sb := dbrSess.SelectBySql(qry)
 	query, args := sb.ToSql()
 	rows, err := sb.Query(query, args...)
 	if err != nil {
-		return nil, log.Error("codegen.GetTables.Query", "err", err)
+		return nil, errgo.Mask(err)
 	}
 	defer rows.Close()
 
@@ -101,13 +102,13 @@ func GetTables(dbrSess dbr.SessionRunner, sql ...string) ([]string, error) {
 	var tableNames = make([]string, 0, 200)
 	for rows.Next() {
 		if err := rows.Scan(&tableName); err != nil {
-			return nil, log.Error("codegen.GetTables.Scan", "err", err)
+			return nil, errgo.Mask(err)
 		}
 		tableNames = append(tableNames, tableName)
 	}
 
 	if err = rows.Err(); err != nil {
-		return nil, log.Error("codegen.GetTables.rows", "err", err)
+		return nil, errgo.Mask(err)
 	}
 	return tableNames, nil
 }
@@ -129,7 +130,7 @@ func GetEavValueTables(dbrConn *dbr.Connection, entityTypeCodes []string) (TypeC
 			ReturnString()
 
 		if err != nil && err != dbr.ErrNotFound {
-			return nil, log.Error("codegen.GetEavValueTables.select", "err", err)
+			return nil, errgo.Mask(err)
 		}
 		if vtp == "" {
 			vtp = typeCode + TableNameSeparator + TableEntityTypeSuffix + TableNameSeparator // e.g. catalog_product_entity_
@@ -139,7 +140,7 @@ func GetEavValueTables(dbrConn *dbr.Connection, entityTypeCodes []string) (TypeC
 
 		tableNames, err := GetTables(dbrConn.NewSession(), vtp+`%`)
 		if err != nil {
-			return nil, log.Error("codegen.GetEavValueTables.GetTables", "err", err)
+			return nil, errgo.Mask(err)
 		}
 
 		if _, ok := typeCodeTables[typeCode]; !ok {
@@ -272,7 +273,7 @@ func GetColumns(db *sql.DB, table string) (Columns, error) {
 	var cols = make(Columns, 0, 200)
 	rows, err := db.Query("SHOW COLUMNS FROM `" + table + "`")
 	if err != nil {
-		return nil, log.Error("codegen.GetColumns.Query", "err", err)
+		return nil, errgo.Mask(err)
 	}
 	defer rows.Close()
 
@@ -281,7 +282,7 @@ func GetColumns(db *sql.DB, table string) (Columns, error) {
 
 		err := rows.Scan(&col.Field, &col.Type, &col.Null, &col.Key, &col.Default, &col.Extra)
 		if err != nil {
-			return nil, log.Error("codegen.GetColumns.Scan", "err", err)
+			return nil, errgo.Mask(err)
 		}
 		if isIgnoredColumn(table, col.Field.String) {
 			continue
@@ -290,7 +291,7 @@ func GetColumns(db *sql.DB, table string) (Columns, error) {
 	}
 	err = rows.Err()
 	if err != nil {
-		return nil, log.Error("codegen.GetColumns.rows", "err", err)
+		return nil, errgo.Mask(err)
 	}
 	return cols, nil
 }
@@ -327,7 +328,7 @@ func SQLQueryToColumns(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string)
 	}
 	_, err := db.Exec("CREATE TABLE `"+tableName+"` AS "+qry, args...)
 	if err != nil {
-		return nil, log.Error("codegen.SQLQueryToColumns.Exec382", "err", err)
+		return nil, errgo.Mask(err)
 	}
 
 	return GetColumns(db, tableName)
@@ -365,13 +366,13 @@ func LoadStringEntities(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string
 
 	rows, err := db.Query(qry, args...)
 	if err != nil {
-		return nil, log.Error("codegen.LoadStringEntities.Query420", "err", err)
+		return nil, errgo.Mask(err)
 	}
 	defer rows.Close()
 
 	columnNames, err := rows.Columns()
 	if err != nil {
-		return nil, log.Error("codegen.LoadStringEntities.Columns", "err", err)
+		return nil, errgo.Mask(err)
 	}
 
 	ret := make([]StringEntities, 0, 2000)
@@ -379,11 +380,11 @@ func LoadStringEntities(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string
 	for rows.Next() {
 
 		if err := rows.Scan(rss.cp...); err != nil {
-			return nil, log.Error("codegen.LoadStringEntities.Scan", "err", err)
+			return nil, errgo.Mask(err)
 		}
 		err := rss.toString()
 		if err != nil {
-			return nil, log.Error("codegen.LoadStringEntities.ToString", "err", err)
+			return nil, errgo.Mask(err)
 		}
 		rss.append(&ret)
 	}

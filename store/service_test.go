@@ -33,10 +33,10 @@ import (
 var errLogBuf bytes.Buffer
 
 func init() {
-	log.Set(log.NewStdLogger(
-		log.SetStdError(&errLogBuf, "testErr: ", std.Lshortfile),
-	))
-	log.SetLevel(log.StdLevelError)
+	store.PkgLog = log.NewStdLogger(
+		log.SetStdDebug(&errLogBuf, "testErr: ", std.Lshortfile),
+	)
+	store.PkgLog.SetLevel(log.StdLevelDebug)
 }
 
 //func init() {

@@ -20,7 +20,7 @@ import (
 	"sort"
 
 	"github.com/corestoreio/csfw/utils"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 )
 
 // Slice type is returned by the SourceModel.Options() interface
@@ -96,7 +96,10 @@ func (s Slice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 func (s Slice) ToJSON() (string, error) {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(s); err != nil {
-		return "", log.Error("config.ValueLabelSlice.ToJSON.Encode", "err", err, "slice", s)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.ValueLabelSlice.ToJSON.Encode", "err", err, "slice", s)
+		}
+		return "", errgo.Mask(err)
 	}
 	return buf.String(), nil
 }

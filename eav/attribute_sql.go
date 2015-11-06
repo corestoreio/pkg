@@ -20,7 +20,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 )
 
 // GetAttributeSelectSql generates the select query to retrieve full attribute configuration
@@ -31,15 +31,24 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 
 	ta, err := TableCollection.Structure(TableIndexAttribute)
 	if err != nil {
-		return nil, log.Error("eav.GetAttributeSelectSql.TableCollection.Structure", "err", err, "entityTypeID", entityTypeID, "websiteID", websiteID)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("eav.GetAttributeSelectSql.TableCollection.Structure", "err", err, "entityTypeID", entityTypeID, "websiteID", websiteID)
+		}
+		return nil, errgo.Mask(err)
 	}
 	taa, err := aat.TableAdditionalAttribute()
 	if err != nil {
-		return nil, log.Error("eav.GetAttributeSelectSql.TableAdditionalAttribute", "err", err, "ta", ta, "entityTypeID", entityTypeID, "websiteID", websiteID)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("eav.GetAttributeSelectSql.TableAdditionalAttribute", "err", err, "ta", ta, "entityTypeID", entityTypeID, "websiteID", websiteID)
+		}
+		return nil, errgo.Mask(err)
 	}
 	tew, err := aat.TableEavWebsite()
 	if err != nil {
-		return nil, log.Error("eav.GetAttributeSelectSql.TableEavWebsite", "err", err, "ta", ta, "taa", taa, "entityTypeID", entityTypeID, "websiteID", websiteID)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("eav.GetAttributeSelectSql.TableEavWebsite", "err", err, "ta", ta, "taa", taa, "entityTypeID", entityTypeID, "websiteID", websiteID)
+		}
+		return nil, errgo.Mask(err)
 	}
 	// tew table can now contains columns names which can occur in table eav_attribute and
 	// or [catalog|customer|entity]_eav_attribute
@@ -62,10 +71,11 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 				t = csdb.AdditionalTable
 				break
 			default:
-				return nil, log.Error("eav.GetAttributeSelectSql.Columns.FieldNames.default", "err",
-					fmt.Errorf("Cannot find column name %s.%s neither in table %s nor in %s.", tew.Name, tewC, ta.Name, taa.Name),
-					"ta", ta, "taa", taa,
-					"entityTypeID", entityTypeID, "websiteID", websiteID)
+				err := fmt.Errorf("Cannot find column name %s.%s neither in table %s nor in %s.", tew.Name, tewC, ta.Name, taa.Name)
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("eav.GetAttributeSelectSql.Columns.FieldNames.default", "err", err, "ta", ta, "taa", taa, "entityTypeID", entityTypeID, "websiteID", websiteID)
+				}
+				return nil, err
 			}
 			ifnull[i] = dbr.IfNullAs(csdb.ScopeTable, tewC, t, tewC, tewC)
 			tewAddedCols = append(tewAddedCols, tewC)

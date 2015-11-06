@@ -19,7 +19,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 	"golang.org/x/text/currency"
 )
 
@@ -119,10 +119,9 @@ func SetCurrencyISO(cur string) CurrencyOptions {
 		previous := c.ISO.String()
 		lc, err := currency.ParseISO(cur)
 		if err != nil {
-			if log.IsTrace() {
-				log.Trace("i18n.CurrencyISO.ParseCurrency.error", "err", err, "cur", cur)
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("i18n.CurrencyISO.ParseCurrency.error", "err", err, "cur", cur)
 			}
-			log.Error("i18n.CurrencyISO.ParseCurrency", "err", err, "cur", cur)
 			lc = currency.MustParseISO(DefaultCurrencyName)
 		}
 		c.ISO = lc
@@ -246,7 +245,10 @@ func (c *Currency) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac 
 	c.clearBuf()
 
 	if _, err := c.Number.FmtNumber(&c.buf, sign, intgr, prec, frac); err != nil {
-		return 0, log.Error("i18n.Currency.FmtNumber.FmtNumber", "err", err, "buffer", string(c.buf), "sign", sign, "i", intgr, "prec", prec, "frac", frac)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("i18n.Currency.FmtNumber.FmtNumber", "err", err, "buffer", string(c.buf), "sign", sign, "i", intgr, "prec", prec, "frac", frac)
+		}
+		return 0, errgo.Mask(err)
 	}
 	return c.flushBuf(w)
 }
@@ -259,7 +261,10 @@ func (c *Currency) FmtInt64(w io.Writer, i int64) (int, error) {
 	c.clearBuf()
 
 	if _, err := c.Number.FmtInt64(&c.buf, i); err != nil {
-		return 0, log.Error("i18n.Currency.FmtInt64.FmtInt64", "err", err, "buffer", string(c.buf), "int", i)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("i18n.Currency.FmtInt64.FmtInt64", "err", err, "buffer", string(c.buf), "int", i)
+		}
+		return 0, errgo.Mask(err)
 	}
 	return c.flushBuf(w)
 }
@@ -272,7 +277,10 @@ func (c *Currency) FmtFloat64(w io.Writer, f float64) (int, error) {
 	c.clearBuf()
 
 	if _, err := c.Number.FmtFloat64(&c.buf, f); err != nil {
-		return 0, log.Error("i18n.Currency.FmtFloat64.FmtFloat64", "err", err, "buffer", string(c.buf), "float64", f)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("i18n.Currency.FmtFloat64.FmtFloat64", "err", err, "buffer", string(c.buf), "float64", f)
+		}
+		return 0, errgo.Mask(err)
 	}
 	return c.flushBuf(w)
 }

@@ -30,7 +30,7 @@ import (
 var (
 	_ = (*sort.IntSlice)(nil)
 	_ = (*time.Time)(nil)
-	_ = (*money.Currency)(nil)
+	_ = (*money.Money)(nil)
 )
 
 // TableIndex... is the index to a table. These constants are guaranteed

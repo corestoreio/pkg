@@ -21,7 +21,6 @@ import (
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 )
 
@@ -135,7 +134,10 @@ func (st *Storage) Websites() (WebsiteSlice, error) {
 		var err error
 		websites[i], err = NewWebsite(w, SetWebsiteConfig(st.cr), SetWebsiteGroupsStores(st.groups, st.stores))
 		if err != nil {
-			return nil, log.Error("store.Storage.Websites.NewWebsite", "err", err, "w", w, "websites", st.websites)
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("store.Storage.Websites.NewWebsite", "err", err, "w", w, "websites", st.websites)
+			}
+			return nil, errgo.Mask(err)
 		}
 	}
 	return websites, nil
@@ -160,7 +162,10 @@ func (st *Storage) Group(id scope.GroupIDer) (*Group, error) {
 
 	w, err := st.website(scope.MockID(g.WebsiteID))
 	if err != nil {
-		return nil, log.Error("store.Storage.Group.website", "err", err, "websiteID", g.WebsiteID, "groupID", id.GroupID())
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("store.Storage.Group.website", "err", err, "websiteID", g.WebsiteID, "groupID", id.GroupID())
+		}
+		return nil, errgo.Mask(err)
 	}
 	return NewGroup(g, SetGroupConfig(st.cr), SetGroupWebsite(w), SetGroupStores(st.stores, nil))
 }
@@ -172,12 +177,18 @@ func (st *Storage) Groups() (GroupSlice, error) {
 	for i, g := range st.groups {
 		w, err := st.website(scope.MockID(g.WebsiteID))
 		if err != nil {
-			return nil, log.Error("store.Storage.Groups.website", "err", err, "g", g, "websiteID", g.WebsiteID)
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("store.Storage.Groups.website", "err", err, "g", g, "websiteID", g.WebsiteID)
+			}
+			return nil, errgo.Mask(err)
 		}
 
 		groups[i], err = NewGroup(g, SetGroupConfig(st.cr), SetGroupWebsite(w), SetGroupStores(st.stores, nil))
 		if err != nil {
-			return nil, log.Error("store.Storage.Groups.NewGroup", "err", err, "g", g, "websiteID", g.WebsiteID)
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("store.Storage.Groups.NewGroup", "err", err, "g", g, "websiteID", g.WebsiteID)
+			}
+			return nil, errgo.Mask(err)
 		}
 	}
 	return groups, nil

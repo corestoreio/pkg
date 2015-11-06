@@ -25,7 +25,6 @@ import (
 	"os"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/utils/log"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/pborman/uuid"
 )
@@ -80,7 +79,10 @@ func WithECDSAFromFile(fileName string, password ...[]byte) Option {
 	fpk, err := os.Open(fileName)
 	if err != nil {
 		return func(s *Service) {
-			s.lastError = log.Error("ctxjwt.WithECDSAFromFile.os.Open", "err", err, "file", fileName)
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("ctxjwt.WithECDSAFromFile.os.Open", "err", err, "file", fileName)
+			}
+			s.lastError = err
 		}
 	}
 	return WithECDSA(fpk, password...)
@@ -93,7 +95,7 @@ func WithECDSA(privateKey io.Reader, password ...[]byte) Option {
 	if cl, ok := privateKey.(io.Closer); ok {
 		defer func() {
 			if err := cl.Close(); err != nil { // close file
-				log.Error("ctxjwt.ECDSAKey.ioCloser", "err", err)
+				PkgLog.Debug("ctxjwt.ECDSAKey.ioCloser", "err", err)
 			}
 		}()
 	}
@@ -113,7 +115,10 @@ func WithRSAFromFile(fileName string, password ...[]byte) Option {
 	fpk, err := os.Open(fileName)
 	if err != nil {
 		return func(s *Service) {
-			s.lastError = log.Error("ctxjwt.WithRSAFromFile.os.Open", "err", err, "file", fileName)
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("ctxjwt.WithRSAFromFile.os.Open", "err", err, "file", fileName)
+			}
+			s.lastError = err
 		}
 	}
 	return WithRSA(fpk, password...)
@@ -128,20 +133,26 @@ func WithRSA(privateKey io.Reader, password ...[]byte) Option {
 	if cl, ok := privateKey.(io.Closer); ok {
 		defer func() {
 			if err := cl.Close(); err != nil { // close file
-				log.Error("ctxjwt.RSAKey.ioCloser", "err", err)
+				PkgLog.Debug("ctxjwt.RSAKey.ioCloser", "err", err)
 			}
 		}()
 	}
 	prKeyData, errRA := ioutil.ReadAll(privateKey)
 	if errRA != nil {
 		return func(a *Service) {
-			a.lastError = log.Error("ctxjwt.WithRSA.ioutil.ReadAll", "err", errRA, "privateKey", privateKey)
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("ctxjwt.WithRSA.ioutil.ReadAll", "err", errRA, "privateKey", privateKey)
+			}
+			a.lastError = errRA
 		}
 	}
 	var prKeyPEM *pem.Block
 	if prKeyPEM, _ = pem.Decode(prKeyData); prKeyPEM == nil {
 		return func(s *Service) {
-			s.lastError = log.Error("ctxjwt.WithRSA.pem.Decode", "err", ErrPrivateKeyNotFound, "prKeyData", prKeyData)
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("ctxjwt.WithRSA.pem.Decode", "err", ErrPrivateKeyNotFound, "prKeyData", prKeyData)
+			}
+			s.lastError = ErrPrivateKeyNotFound
 		}
 	}
 
@@ -150,14 +161,20 @@ func WithRSA(privateKey io.Reader, password ...[]byte) Option {
 	if x509.IsEncryptedPEMBlock(prKeyPEM) {
 		if len(password) != 1 || len(password[0]) == 0 {
 			return func(s *Service) {
-				s.lastError = log.Error("ctxjwt.WithRSA.IsEncryptedPEMBlock", "err", ErrPrivateKeyNoPassword)
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("ctxjwt.WithRSA.IsEncryptedPEMBlock", "err", ErrPrivateKeyNoPassword)
+				}
+				s.lastError = ErrPrivateKeyNoPassword
 			}
 		}
 		var dd []byte
 		var errPEM error
 		if dd, errPEM = x509.DecryptPEMBlock(prKeyPEM, password[0]); errPEM != nil {
 			return func(s *Service) {
-				s.lastError = log.Error("ctxjwt.WithRSA.DecryptPEMBlock", "err", errPEM)
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("ctxjwt.WithRSA.DecryptPEMBlock", "err", errPEM)
+				}
+				s.lastError = errPEM
 			}
 		}
 		rsaPrivateKey, err = x509.ParsePKCS1PrivateKey(dd)
@@ -170,7 +187,10 @@ func WithRSA(privateKey io.Reader, password ...[]byte) Option {
 		s.rsapk = rsaPrivateKey
 		s.hasKey = true
 		if err != nil {
-			s.lastError = log.Error("ctxjwt.WithRSA.ParsePKCS1PrivateKey", "err", err)
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("ctxjwt.WithRSA.ParsePKCS1PrivateKey", "err", err)
+			}
+			s.lastError = err
 		}
 	}
 }
@@ -186,7 +206,10 @@ func WithRSAGenerator() Option {
 			s.SigningMethod = jwt.SigningMethodRS256
 		}
 		if err != nil {
-			s.lastError = log.Error("ctxjwt.WithRSAGenerator.GenerateKey", "err", err)
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("ctxjwt.WithRSAGenerator.GenerateKey", "err", err)
+			}
+			s.lastError = err
 		}
 	}
 }

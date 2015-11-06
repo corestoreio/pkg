@@ -19,7 +19,6 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 )
 
@@ -74,8 +73,8 @@ func (m *Money) Scan(src interface{}) error {
 
 	if src == nil {
 		m.m, m.Valid = 0, false
-		if log.IsDebug() {
-			log.Debug("money.Currency.Scan", "case", 89, "c", m, "src", src)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("money.Currency.Scan", "case", 87, "c", m, "src", src)
 		}
 		return nil
 	}
@@ -83,5 +82,9 @@ func (m *Money) Scan(src interface{}) error {
 	if b, ok := src.([]byte); ok {
 		return m.ParseFloat(string(b))
 	}
-	return log.Error("money.Currency.Scan.Assertion", "err", errgo.Newf("Unsupported Type %T for value. Supported: []byte", src), "src", src)
+	err := errgo.Newf("Unsupported Type %T for value. Supported: []byte", src)
+	if PkgLog.IsDebug() {
+		PkgLog.Debug("money.Currency.Scan.Assertion", "err", err, "src", src)
+	}
+	return err
 }

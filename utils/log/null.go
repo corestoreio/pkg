@@ -32,7 +32,7 @@ func (l NullLogger) Info(msg string, args ...interface{}) {}
 func (l NullLogger) Fatal(msg string, args ...interface{}) { panic("exit due to fatal error: " + msg) }
 
 // IsDebug determines if this logger logs a debug statement.
-func (l NullLogger) IsDebug() bool { return false }
+func (l NullLogger) IsDebug() bool { return true }
 
 // IsInfo determines if this logger logs an info statement.
 func (l NullLogger) IsInfo() bool { return false }

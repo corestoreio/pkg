@@ -19,7 +19,6 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/net/httputils"
-	"github.com/corestoreio/csfw/utils/log"
 	"golang.org/x/net/context"
 )
 
@@ -67,8 +66,8 @@ func WithXHTTPMethodOverride() Middleware {
 				r.Method = mo
 			default:
 				// not sure if an error is here really needed ...
-				if log.IsInfo() {
-					log.Info("ctxhttp.SupportXHTTPMethodOverride.switch", "err", "Unknown http method", "method", mo, "form", r.Form.Encode(), "header", r.Header)
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("ctxhttp.SupportXHTTPMethodOverride.switch", "err", "Unknown http method", "method", mo, "form", r.Form.Encode(), "header", r.Header)
 				}
 			}
 			return h.ServeHTTPContext(ctx, w, r)

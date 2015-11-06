@@ -46,27 +46,27 @@ func getCommands() []aCommand {
 	// @todo make it configurable if your catalog or customer tables different names.
 	// @todo also include table_prefix for the whole database
 	return []aCommand{
-		aCommand{
+		{
 			name: goCmd,
 			args: []string{"build", "-a", "github.com/corestoreio/csfw/codegen/tableToStruct"},
 			rm:   false,
 		},
-		aCommand{
+		{
 			name: "find",
 			args: []string{pwd, "-name", "generated_*.go", "-delete"},
 			rm:   false,
 		},
-		aCommand{
+		{
 			name: pwd + "tableToStruct",
 			rm:   true,
 		},
-		aCommand{
+		{
 			// this commands depends on the generated source from tableToStruct 8-)
 			name: goCmd,
 			args: []string{"build", "-a", "github.com/corestoreio/csfw/codegen/materialization"},
 			rm:   false,
 		},
-		aCommand{
+		{
 			name: pwd + "materialization",
 			rm:   true,
 		},
@@ -86,6 +86,8 @@ func checkEnv() error {
 }
 
 func main() {
+
+	log.Fatalln("@todo refactor")
 
 	if err := checkEnv(); err != nil {
 		log.Fatal(err)

@@ -21,7 +21,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 )
 
 // ErrDecodeMissingColon can be returned on malformed JSON value when decoding a currency.
@@ -81,8 +81,8 @@ func (t JSONType) Encode(c *Money) ([]byte, error) {
 // Decode decodes three different currency representations into a Money struct.
 func (t JSONType) Decode(c *Money, b []byte) error {
 	if len(b) < 1 || false == utf8.Valid(b) { // we must have a valid string
-		if log.IsDebug() {
-			log.Debug("money.JSONType.UnmarshalJSON.1", "case", "invalid_bytes", "c", c, "bytes", string(b))
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("money.JSONType.UnmarshalJSON.1", "case", "invalid_bytes", "c", c, "bytes", string(b))
 		}
 		c.m, c.Valid = 0, false
 		return nil
@@ -103,8 +103,8 @@ func (t JSONType) Decode(c *Money, b []byte) error {
 	lenRunes = len(runes)
 
 	if 0 == lenRunes {
-		if log.IsDebug() {
-			log.Debug("money.JSONType.UnmarshalJSON.2", "case", "lenRunes=0", "c", c, "bytes", string(b))
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("money.JSONType.UnmarshalJSON.2", "case", "lenRunes=0", "c", c, "bytes", string(b))
 		}
 		c.m, c.Valid = 0, false
 		return nil
@@ -147,8 +147,8 @@ OuterLoop:
 		}
 
 		if isNull == 4 {
-			if log.IsDebug() {
-				log.Debug("money.JSONType.UnmarshalJSON.3", "case", "isNull", "c", c, "bytes", string(b), "runes", string(runes))
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("money.JSONType.UnmarshalJSON.3", "case", "isNull", "c", c, "bytes", string(b), "runes", string(runes))
 			}
 			c.m, c.Valid = 0, false
 			return nil
@@ -159,7 +159,10 @@ OuterLoop:
 
 	if isArray { // now it's an error because no colon found
 		c.m, c.Valid = 0, false
-		return log.Error("money.JSONType.UnmarshalJSON.MissingColon", "err", ErrDecodeMissingColon, "bytes", string(b), "number", string(number))
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("money.JSONType.UnmarshalJSON.MissingColon", "err", ErrDecodeMissingColon, "bytes", string(b), "number", string(number))
+		}
+		return errgo.Mask(ErrDecodeMissingColon)
 	}
 
 	switch {
@@ -199,7 +202,11 @@ OuterLoop:
 	}
 
 	c.m, c.Valid = 0, false
-	return log.Error("money.JSONType.UnmarshalJSON.Invalid", "err", errors.New("Invalid bytes"), "bytes", string(b), "number", string(number))
+	err := errgo.New("Invalid bytes")
+	if PkgLog.IsDebug() {
+		PkgLog.Debug("money.JSONType.UnmarshalJSON.Invalid", "err", err, "bytes", string(b), "number", string(number))
+	}
+	return err
 }
 
 // jsonNumberMarshal generates a number formatted currency string
@@ -219,7 +226,10 @@ func jsonLocaleMarshal(c *Money) ([]byte, error) {
 	b.WriteString(`"`)
 	lb, err := c.Localize()
 	if err != nil {
-		return nil, log.Error("money.jsonLocaleMarshal.Localize", "err", err, "currency", c, "bytes", lb)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("money.jsonLocaleMarshal.Localize", "err", err, "currency", c, "bytes", lb)
+		}
+		return nil, errgo.Mask(err)
 	}
 	template.JSEscape(&b, lb)
 	b.WriteString(`"`)
@@ -239,7 +249,10 @@ func jsonExtendedMarshal(c *Money) ([]byte, error) {
 	b.WriteString(`", "`)
 	lb, err := c.Localize()
 	if err != nil {
-		return nil, log.Error("money.jsonExtendedMarshal.Localize", "err", err, "currency", c, "bytes", lb)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("money.jsonExtendedMarshal.Localize", "err", err, "currency", c, "bytes", lb)
+		}
+		return nil, errgo.Mask(err)
 	}
 	template.JSEscape(&b, lb)
 

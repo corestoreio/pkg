@@ -19,7 +19,6 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/valuelabel"
-	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 )
 
@@ -38,7 +37,8 @@ func NewSourceCurrencyAll(mc ...config.ModelConstructor) *SourceCurrencyAll {
 	sca := &SourceCurrencyAll{}
 	if len(mc) == 1 {
 		if err := sca.Construct(mc[0]); err != nil {
-			log.Error("directory.NewSourceCurrencyAll.Construct", "err", err)
+			// refactor this func to return an error
+			PkgLog.Info("directory.NewSourceCurrencyAll.Construct", "err", err)
 		}
 	}
 	return sca

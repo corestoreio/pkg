@@ -30,7 +30,7 @@ import (
 	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/net/httputils"
 	"github.com/corestoreio/csfw/utils"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 )
 
 const (
@@ -115,11 +115,17 @@ func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOpt
 	}
 	nw, err := NewWebsite(tw)
 	if err != nil {
-		return nil, log.Error("store.NewStore.NewWebsite", "err", err, "tw", tw)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("store.NewStore.NewWebsite", "err", err, "tw", tw)
+		}
+		return nil, errgo.Mask(err)
 	}
 	ng, err := NewGroup(tg, SetGroupWebsite(tw))
 	if err != nil {
-		return nil, log.Error("store.NewStore.NewGroup", "err", err, "tg", tg, "tw", tw)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("store.NewStore.NewGroup", "err", err, "tg", tg, "tw", tw)
+		}
+		return nil, err
 	}
 
 	s := &Store{
@@ -260,7 +266,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 		// getDistroBaseUrl will be generated from the $_SERVER variable,
 		base, err := s.cr.GetString(config.Path(config.PathCSBaseURL))
 		if config.NotKeyNotFoundError(err) {
-			log.Error("store.Store.BaseURL.GetString", "err", err, "path", config.PathCSBaseURL)
+			PkgLog.Debug("store.Store.BaseURL.GetString", "err", err, "path", config.PathCSBaseURL)
 			base = config.CSBaseURL
 		}
 		rawURL = strings.Replace(rawURL, PlaceholderBaseURL, base, 1)
@@ -290,7 +296,7 @@ func (s *Store) IsCurrentlySecure(r *http.Request) bool {
 
 	secureBaseURL, err := s.BaseURL(config.URLTypeWeb, true)
 	if err != nil || false == s.IsFrontUrlSecure() {
-		log.Error("store.Store.IsCurrentlySecure.BaseURL", "err", err, "secureBaseURL", secureBaseURL)
+		PkgLog.Debug("store.Store.IsCurrentlySecure.BaseURL", "err", err, "secureBaseURL", secureBaseURL)
 		return false
 	}
 	return secureBaseURL.Scheme == "https" && r.URL.Scheme == "https" // todo(cs) check for ports !? other schemes?

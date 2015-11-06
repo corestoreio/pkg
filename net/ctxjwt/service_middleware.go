@@ -18,7 +18,6 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/utils/log"
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/net/context"
 )
@@ -58,8 +57,8 @@ func (s *Service) WithParseAndValidate(errHandler ...ctxhttp.Handler) ctxhttp.Mi
 			if token != nil && err == nil && token.Valid && !inBL {
 				return h.ServeHTTPContext(NewContext(ctx, token), w, r)
 			}
-			if log.IsInfo() {
-				log.Info("ctxjwt.Service.Authenticate", "err", err, "token", token, "inBlacklist", inBL)
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("ctxjwt.Service.Authenticate", "err", err, "token", token, "inBlacklist", inBL)
 			}
 			return errH.ServeHTTPContext(NewContextWithError(ctx, err), w, r)
 		})

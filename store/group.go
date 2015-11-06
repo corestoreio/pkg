@@ -22,7 +22,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/utils"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 )
 
 const (
@@ -112,7 +112,10 @@ func SetGroupStores(tss TableStoreSlice, w *TableWebsite) GroupOption {
 		for _, s := range tss.FilterByGroupID(g.Data.GroupID) {
 			ns, err := NewStore(s, w, g.Data, SetStoreConfig(g.cr))
 			if err != nil {
-				g.addError(log.Error("store.SetGroupStores.NewStore", "err", err, "s", s, "w", w, "g.Data", g.Data))
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("store.SetGroupStores.NewStore", "err", err, "s", s, "w", w, "g.Data", g.Data)
+				}
+				g.addError(errgo.Mask(err))
 				return
 			}
 			g.Stores = append(g.Stores, ns)
@@ -160,7 +163,10 @@ func (g *Group) ApplyOptions(opts ...GroupOption) (*Group, error) {
 	if g.Website != nil {
 		_, err := g.Website.ApplyOptions(SetWebsiteConfig(g.cr))
 		if err != nil {
-			return nil, log.Error("store.Group.ApplyOptions.Website.ApplyOptions", "err", err, "g", g)
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("store.Group.ApplyOptions.Website.ApplyOptions", "err", err, "g", g)
+			}
+			return nil, errgo.Mask(err)
 		}
 		g.Config = g.cr.NewScoped(g.Website.WebsiteID(), g.GroupID(), 0) // Scope Store is not available
 	}

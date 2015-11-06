@@ -22,14 +22,11 @@ import (
 	"github.com/corestoreio/csfw/utils/log"
 )
 
-func init() {
-	log.Set(
-		log.NewStdLogger(),
-	)
-}
+// PkgLog global package based logger
+var PkgLog log.Logger = log.NewStdLogger()
 
 func main() {
-	defer log.WhenDone().Info("Stats")
+	defer log.WhenDone(PkgLog).Info("Stats")
 	dbc, err := csdb.Connect()
 	codegen.LogFatal(err)
 	defer dbc.Close()

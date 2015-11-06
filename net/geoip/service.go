@@ -28,17 +28,13 @@ import (
 	"github.com/corestoreio/csfw/net/httputils"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/utils"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 	"github.com/oschwald/geoip2-golang"
 )
 
 // ErrCannotGetRemoteAddr will be returned if there is an invalid or not found
 // RemoteAddr in the request.
 var ErrCannotGetRemoteAddr = errors.New("Cannot get request.RemoteAddr")
-
-// ErrCannotGetStoreManagerReader will be returned when the store.ManagerReader
-// cannot be found in a context.
-var ErrCannotGetStoreManagerReader = errors.New("Cannot get store.ManagerReader from context.Context")
 
 // IPCountry contains the found country and the IP address
 type IPCountry struct {
@@ -113,12 +109,18 @@ func (s *Service) newContextCountryByIP(ctx context.Context, r *http.Request) (c
 
 	remoteAddr := httputils.GetRemoteAddr(r)
 	if remoteAddr == nil {
-		return ctx, nil, log.Error("geoip.WithCountryByIP.GetRemoteAddr", "err", ErrCannotGetRemoteAddr, "req", r)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("geoip.WithCountryByIP.GetRemoteAddr", "err", ErrCannotGetRemoteAddr, "req", r)
+		}
+		return ctx, nil, ErrCannotGetRemoteAddr
 	}
 
 	c, err := s.GetCountryByIP(remoteAddr)
 	if err != nil {
-		return ctx, nil, log.Error("geoip.WithCountryByIP.GetCountryByIP", "err", err, "remoteAddr", remoteAddr, "req", r)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("geoip.WithCountryByIP.GetCountryByIP", "err", err, "remoteAddr", remoteAddr, "req", r)
+		}
+		return ctx, nil, errgo.Mask(err)
 	}
 	c.IP = remoteAddr
 	return NewContextCountry(ctx, c), c, nil
@@ -145,11 +147,14 @@ func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 	return func(h ctxhttp.Handler) ctxhttp.Handler {
 		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			sm, ok := store.FromContextReader(ctx)
-			if !ok {
-				return log.Error("geoip.WithCountryByIP.FromContextManagerReader", "err", ErrCannotGetStoreManagerReader)
+			_, requestedStore, err := store.FromContextReader(ctx)
+			if err != nil {
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("geoip.WithCountryByIP.FromContextManagerReader", "err", err)
+				}
+				return errgo.Mask(err)
 			}
-			var err error
+
 			var ipCountry *IPCountry
 			ctx, ipCountry, err = s.newContextCountryByIP(ctx, r)
 			if err != nil {
@@ -157,17 +162,16 @@ func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 				return h.ServeHTTPContext(ctx, w, r)
 			}
 
-			st, err := sm.Store()
+			allowedCountries, err := directory.AllowedCountries(requestedStore.Config)
 			if err != nil {
-				return log.Error("geoip.WithCountryByIP.sm.Store", "err", err)
-			}
-			allowedCountries, err := directory.AllowedCountries(st.Config)
-			if err != nil {
-				return log.Error("geoip.WithCountryByIP.directory.AllowedCountries", "err", err, "st.Config", st.Config)
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("geoip.WithCountryByIP.directory.AllowedCountries", "err", err, "st.Config", requestedStore.Config)
+				}
+				return errgo.Mask(err)
 			}
 
-			if false == s.IsAllowed(st, ipCountry, allowedCountries, r) {
-				h = s.altHandlerByID(st)
+			if false == s.IsAllowed(requestedStore, ipCountry, allowedCountries, r) {
+				h = s.altHandlerByID(requestedStore)
 			}
 
 			return h.ServeHTTPContext(ctx, w, r)
@@ -222,16 +226,16 @@ func findHandlerByID(so scope.Scope, id int64, idsIdx utils.Int64Slice, handlers
 		return DefaultAlternativeHandler
 	}
 
-	if log.IsInfo() {
-		log.Info("geoip.findHandlerByID.found", "scope", so.String(), "id", id, "idsIdx", idsIdx)
+	if PkgLog.IsInfo() {
+		PkgLog.Info("geoip.findHandlerByID.found", "scope", so.String(), "id", id, "idsIdx", idsIdx)
 	}
 	return prospect
 }
 
 func defaultIsCountryAllowed(_ *store.Store, c *IPCountry, allowedCountries utils.StringSlice, r *http.Request) bool {
 	if false == allowedCountries.Include(c.Country.Country.IsoCode) {
-		if log.IsInfo() {
-			log.Info("geoip.checkAllow", "IPCountry", c, "allowedCountries", allowedCountries, "request", r)
+		if PkgLog.IsInfo() {
+			PkgLog.Info("geoip.checkAllow", "IPCountry", c, "allowedCountries", allowedCountries, "request", r)
 		}
 		return false
 	}

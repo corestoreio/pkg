@@ -82,7 +82,7 @@ func TestWithValidateBaseUrl_ActivatedAndShouldNotRedirectWithPOSTRequest(t *tes
 	}))
 
 	err = mw.ServeHTTPContext(context.Background(), w, req)
-	assert.Contains(t, err.Error(), "Cannot extract config.Reader from context")
+	assert.EqualError(t, err, store.ErrContextServiceNotFound.Error())
 
 	w = httptest.NewRecorder()
 	req, err = http.NewRequest(httputils.MethodPost, "http://corestore.io/catalog/product/view", strings.NewReader(`{ "k1": "v1",  "k2": { "k3": ["va1"]  }}`))

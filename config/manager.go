@@ -22,7 +22,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils/cast"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 	"github.com/spf13/viper"
 )
 
@@ -106,8 +106,8 @@ func (m *Manager) NewScoped(websiteID, groupID, storeID int64) ScopedReader {
 // ApplyDefaults reads the map and applies the keys and values to the default configuration
 func (m *Manager) ApplyDefaults(ss Sectioner) *Manager {
 	for k, v := range ss.Defaults() {
-		if log.IsDebug() {
-			log.Debug("config.Manager.ApplyDefaults", k, v)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.Manager.ApplyDefaults", k, v)
 		}
 		m.v.Set(k, v)
 	}
@@ -119,11 +119,14 @@ func (m *Manager) ApplyDefaults(ss Sectioner) *Manager {
 func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 	var ccd TableCoreConfigDataSlice
 	rows, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexCoreConfigData, &ccd)
-	if log.IsDebug() {
-		log.Debug("config.Manager.ApplyCoreConfigData", "rows", rows)
+	if PkgLog.IsDebug() {
+		PkgLog.Debug("config.Manager.ApplyCoreConfigData", "rows", rows)
 	}
 	if err != nil {
-		return log.Error("config.Manager.ApplyCoreConfigData.LoadSlice", "err", err)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.Manager.ApplyCoreConfigData.LoadSlice", "err", err)
+		}
+		return errgo.Mask(err)
 	}
 
 	for _, cd := range ccd {
@@ -142,11 +145,14 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 func (m *Manager) Write(o ...ArgFunc) error {
 	a, err := newArg(o...)
 	if err != nil {
-		return log.Error("config.Manager.Write.newArg", "err", err)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.Manager.Write.newArg", "err", err)
+		}
+		return errgo.Mask(err)
 	}
 
-	if log.IsDebug() {
-		log.Debug("config.Manager.Write", "path", a.scopePath(), "val", a.v)
+	if PkgLog.IsDebug() {
+		PkgLog.Debug("config.Manager.Write", "path", a.scopePath(), "val", a.v)
 	}
 
 	m.v.Set(a.scopePath(), a.v)
@@ -158,7 +164,10 @@ func (m *Manager) Write(o ...ArgFunc) error {
 func (m *Manager) get(o ...ArgFunc) interface{} {
 	a, err := newArg(o...)
 	if err != nil {
-		return log.Error("config.Manager.get.newArg", "err", err)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.Manager.get.newArg", "err", err)
+		}
+		return errgo.Mask(err)
 	}
 
 	return m.v.Get(a.scopePath())
@@ -228,7 +237,9 @@ func (m *Manager) AllKeys() []string { return m.v.AllKeys() }
 func (m *Manager) IsSet(o ...ArgFunc) bool {
 	a, err := newArg(o...)
 	if err != nil {
-		log.Error("config.Manager.IsSet.newArg", "err", err)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.Manager.IsSet.newArg", "err", err)
+		}
 		return false
 	}
 	return m.v.IsSet(a.scopePath())

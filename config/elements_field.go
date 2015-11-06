@@ -36,6 +36,7 @@ const (
 	TypeText
 	TypeTextarea
 	TypeTime
+	TypeDuration
 )
 
 // ErrFieldNotFound error when a field cannot be found.

@@ -22,7 +22,6 @@ import (
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 )
 
@@ -122,7 +121,10 @@ func NewService(so scope.Option, storage Storager, opts ...ServiceOption) (*Serv
 	var err error
 	s.appStore, err = s.findDefaultStoreByScope(s.boundToScope, so)
 	if err != nil {
-		return nil, log.Error("store.Service.Init", "err", err, "ScopeOption", so)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("store.Service.Init", "err", err, "ScopeOption", so)
+		}
+		return nil, errgo.Mask(err)
 	}
 
 	return s, nil
@@ -147,11 +149,14 @@ func (sm *Service) findDefaultStoreByScope(allowedScope scope.Scope, so scope.Op
 	case scope.GroupID:
 		g, errG := sm.Group(so.Group)
 		if errG != nil {
-			return nil, log.Error("store.Service.findDefaultStoreByScope.Group", "err", errG, "ScopeOption", so)
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("store.Service.findDefaultStoreByScope.Group", "err", errG, "ScopeOption", so)
+			}
+			return nil, errgo.Mask(errG)
 		}
 		store, err = sm.Store(g) // Group g implements StoreIDer interface to get the default store ID
 		if err != nil {
-			err = log.Error("store.Service.findDefaultStoreByScope.Group.Store", "err", ErrGroupDefaultStoreNotFound, "ScopeOption", so)
+			err = errgo.Mask(ErrGroupDefaultStoreNotFound)
 		}
 	case scope.WebsiteID:
 		if so.Website == nil { // if so.Website == nil then search default website
@@ -162,19 +167,25 @@ func (sm *Service) findDefaultStoreByScope(allowedScope scope.Scope, so scope.Op
 		} else {
 			w, errW := sm.Website(so.Website)
 			if errW != nil {
-				return nil, log.Error("store.Service.findDefaultStoreByScope.Website", "err", errW, "ScopeOption", so)
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("store.Service.findDefaultStoreByScope.Website", "err", errW, "ScopeOption", so)
+				}
+				return nil, errgo.Mask(errW)
 			}
 			g, errG := w.DefaultGroup()
 			if errG != nil {
-				return nil, log.Error("store.Service.findDefaultStoreByScope.Website.DefaultGroup", "err", errG, "ScopeOption", so)
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("store.Service.findDefaultStoreByScope.Website.DefaultGroup", "err", errG, "ScopeOption", so)
+				}
+				return nil, errgo.Mask(errG)
 			}
 			store, err = sm.Store(g) // Group g implements StoreIDer interface to get the default store ID
 			if err != nil {
-				err = log.Error("store.Service.findDefaultStoreByScope.Website.Store", "err", ErrGroupDefaultStoreNotFound, "ScopeOption", so)
+				err = errgo.Mask(ErrGroupDefaultStoreNotFound)
 			}
 		}
 	default:
-		err = log.Error("store.Service.findDefaultStoreByScope.Default", "err", scope.ErrUnsupportedScope, "ScopeOption", so)
+		err = errgo.Mask(scope.ErrUnsupportedScope)
 	}
 	return
 }
@@ -189,7 +200,10 @@ func (sm *Service) GetRequestedStore(so scope.Option) (activeStore *Store, err e
 
 	activeStore, err = sm.findDefaultStoreByScope(so.Scope(), so)
 	if err != nil {
-		return nil, log.Error("store.Service.GetRequestedStore.FindDefaultStoreByScope", "err", err, "so", so)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("store.Service.GetRequestedStore.FindDefaultStoreByScope", "err", err, "so", so)
+		}
+		return nil, err
 	}
 
 	//	activeStore, err = sm.newActiveStore(activeStore) // this is the active store from a request.

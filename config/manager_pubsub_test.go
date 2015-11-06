@@ -31,10 +31,10 @@ import (
 var errLogBuf bytes.Buffer
 
 func init() {
-	log.Set(log.NewStdLogger(
-		log.SetStdError(&errLogBuf, "testErr: ", std.Lshortfile),
-	))
-	log.SetLevel(log.StdLevelError)
+	config.PkgLog = log.NewStdLogger(
+		log.SetStdDebug(&errLogBuf, "testErr: ", std.Lshortfile),
+	)
+	config.PkgLog.SetLevel(log.StdLevelDebug)
 }
 
 var _ config.MessageReceiver = (*testSubscriber)(nil)
@@ -157,9 +157,9 @@ func TestPubSubPanicMultiple(t *testing.T) {
 	m.Write(config.Value(789), config.Path("x/y/z"), config.ScopeStore(987))
 	assert.NoError(t, m.Close())
 	time.Sleep(time.Millisecond * 30) // wait for goroutine to close
-	assert.Contains(t, errLogBuf.String(), `testErr: stdLib.go:228: config.pubSub.publish.recover.r recover: "One: Don't panic!`)
-	assert.Contains(t, errLogBuf.String(), `testErr: stdLib.go:228: config.pubSub.publish.recover.r recover: "Two: Don't panic!"`)
-	assert.Contains(t, errLogBuf.String(), `testErr: stdLib.go:228: config.pubSub.publish.recover.r recover: "Three: Don't panic!"`)
+	assert.Contains(t, errLogBuf.String(), `config.pubSub.publish.recover.r recover: "One: Don't panic!`)
+	assert.Contains(t, errLogBuf.String(), `config.pubSub.publish.recover.r recover: "Two: Don't panic!"`)
+	assert.Contains(t, errLogBuf.String(), `config.pubSub.publish.recover.r recover: "Three: Don't panic!"`)
 }
 
 func TestPubSubUnsubscribe(t *testing.T) {
@@ -178,7 +178,7 @@ func TestPubSubUnsubscribe(t *testing.T) {
 	assert.NoError(t, m.Unsubscribe(subID))
 	m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(123))
 	time.Sleep(time.Millisecond) // wait for goroutine ...
-	assert.Empty(t, errLogBuf.String())
+	assert.Contains(t, errLogBuf.String(), `config.Manager.Write path: "stores/123/x/y/z" val: 321`)
 }
 
 func TestPubSubEvict(t *testing.T) {
@@ -217,7 +217,7 @@ func TestPubSubEvict(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 20) // wait for goroutine ...
 
-	assert.Contains(t, errLogBuf.String(), "testErr: stdLib.go:228: config.pubSub.publish.recover.err err: WTF Eviction? Panic!")
+	assert.Contains(t, errLogBuf.String(), "config.pubSub.publish.recover.err err: WTF Eviction? Panic!")
 
 	assert.Equal(t, 3, level2Calls)
 	assert.Equal(t, 1, level3Calls)

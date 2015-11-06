@@ -94,7 +94,7 @@ func TestNewConfiguration(t *testing.T) {
 				}
 			}()
 
-			haveSlice := config.NewConfiguration(have...)
+			haveSlice := config.MustNewConfiguration(have...)
 			if wantErr != "" {
 				assert.Nil(t, haveSlice, "Index %d", i)
 			} else {
@@ -107,7 +107,7 @@ func TestNewConfiguration(t *testing.T) {
 }
 
 func TestSectionSliceDefaults(t *testing.T) {
-	pkgCfg := config.NewConfiguration(
+	pkgCfg := config.MustNewConfiguration(
 		&config.Section{
 			ID: "contact",
 			Groups: config.GroupSlice{

@@ -17,14 +17,12 @@ package store
 import (
 	"net/http"
 
-	"errors"
-
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/net/httputils"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 	"golang.org/x/net/context"
 )
 
@@ -38,8 +36,8 @@ func WithValidateBaseUrl(cr config.ReaderPubSuber) ctxhttp.Middleware {
 	// changes in effect. @todo refactor and use pub/sub to automatically change
 	// the isRedirectToBase value.
 	checkBaseURL, err := cr.GetBool(config.Path(PathRedirectToBase)) // scope default
-	if config.NotKeyNotFoundError(err) {
-		log.Error("ctxhttp.WithValidateBaseUrl.GetBool", "err", err, "path", PathRedirectToBase)
+	if config.NotKeyNotFoundError(err) && PkgLog.IsDebug() {
+		PkgLog.Debug("ctxhttp.WithValidateBaseUrl.GetBool", "err", err, "path", PathRedirectToBase)
 	}
 
 	redirectCode := http.StatusMovedPermanently
@@ -54,17 +52,23 @@ func WithValidateBaseUrl(cr config.ReaderPubSuber) ctxhttp.Middleware {
 
 				_, requestedStore, err := FromContextReader(ctx)
 				if err != nil {
-					return log.Error("ctxhttp.WithValidateBaseUrl.FromContextServiceReader", "err", errors.New("Cannot extract config.Reader from context"), "ctx", ctx)
+					if PkgLog.IsDebug() {
+						PkgLog.Debug("ctxhttp.WithValidateBaseUrl.FromContextServiceReader", "err", err, "ctx", ctx)
+					}
+					return errgo.Mask(err)
 				}
 
 				baseURL, err := requestedStore.BaseURL(config.URLTypeWeb, requestedStore.IsCurrentlySecure(r))
 				if err != nil {
-					return log.Error("ctxhttp.WithValidateBaseUrl.requestedStore.BaseURL", "err", err, "ctx", ctx)
+					if PkgLog.IsDebug() {
+						PkgLog.Debug("ctxhttp.WithValidateBaseUrl.requestedStore.BaseURL", "err", err, "ctx", ctx)
+					}
+					return errgo.Mask(err)
 				}
 
 				if err := httputils.IsBaseUrlCorrect(r, &baseURL); err != nil {
-					if log.IsDebug() {
-						log.Debug("store.WithValidateBaseUrl.IsBaseUrlCorrect.error", "err", err, "baseURL", baseURL, "request", r)
+					if PkgLog.IsDebug() {
+						PkgLog.Debug("store.WithValidateBaseUrl.IsBaseUrlCorrect.error", "err", err, "baseURL", baseURL, "request", r)
 					}
 
 					baseURL.Path = r.URL.Path
@@ -92,25 +96,35 @@ func WithInitStoreByToken() ctxhttp.Middleware {
 
 			storeService, requestedStore, err := FromContextReader(ctx)
 			if err != nil {
-				return log.Error("store.WithInitStoreByToken.FromContextServiceReader", "err", err, "ctx", ctx)
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("store.WithInitStoreByToken.FromContextServiceReader", "err", err, "ctx", ctx)
+				}
+				return errgo.Mask(err)
 			}
 
 			token, err := ctxjwt.FromContext(ctx)
 			if err != nil {
-				return log.Error("store.WithInitStoreByToken.ctxjwt.FromContext.err", "err", err, "ctx", ctx)
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("store.WithInitStoreByToken.ctxjwt.FromContext.err", "err", err, "ctx", ctx)
+				}
+				return errgo.Mask(err)
 			}
 
 			scopeOption, err := StoreCodeFromClaim(token.Claims)
 			if err != nil {
-				return log.Error("store.WithInitStoreByToken.StoreCodeFromClaim", "err", err, "token", token, "ctx", ctx)
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("store.WithInitStoreByToken.StoreCodeFromClaim", "err", err, "token", token, "ctx", ctx)
+				}
+				return errgo.Mask(err)
 			}
 
 			newRequestedStore, err := storeService.GetRequestedStore(scopeOption)
 			if err != nil {
-				return log.Error("store.WithInitStoreByToken.GetRequestedStore", "err", err, "token", token, "scopeOption", scopeOption, "ctx", ctx)
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("store.WithInitStoreByToken.GetRequestedStore", "err", err, "token", token, "scopeOption", scopeOption, "ctx", ctx)
+				}
+				return errgo.Mask(err)
 			}
-
-			//			fmt.Printf("%#v\n%#v\n\n", requestedStore, newRequestedStore)
 
 			if newRequestedStore.StoreID() != requestedStore.StoreID() {
 				// this may lead to a bug because the previously set storeService and requestedStore
@@ -153,7 +167,7 @@ func WithInitStoreByRequest(scopeType scope.Scope) ctxhttp.Middleware {
 	//	if err != nil { // no cookie set, lets try via form to find the store code
 	//
 	//		if err == ErrStoreCodeInvalid {
-	//			return nil, log.Error("store.Service.InitByRequest.GetCodeFromForm", "err", err, "req", req, "scopeType", scopeType.String())
+	//			return nil, PkgLog.Error("store.Service.InitByRequest.GetCodeFromForm", "err", err, "req", req, "scopeType", scopeType.String())
 	//		}
 	//
 	//		so, err = StoreCodeFromCookie(req)
@@ -163,13 +177,13 @@ func WithInitStoreByRequest(scopeType scope.Scope) ctxhttp.Middleware {
 	//		case nil:
 	//		// do nothing
 	//		default: // err != nil
-	//			return nil, log.Error("store.Service.InitByRequest.GetCodeFromCookie", "err", err, "req", req, "scopeType", scopeType.String())
+	//			return nil, PkgLog.Error("store.Service.InitByRequest.GetCodeFromCookie", "err", err, "req", req, "scopeType", scopeType.String())
 	//		}
 	//	}
 	//
 	//	// @todo reqStoreCode if number ... cast to int64 because then group id if ScopeGroup is group.
 	//	if reqStore, err = sm.GetRequestStore(so, scopeType); err != nil {
-	//		return nil, log.Error("store.Service.InitByRequest.GetRequestStore", "err", err)
+	//		return nil, PkgLog.Error("store.Service.InitByRequest.GetRequestStore", "err", err)
 	//	}
 	//	soStoreCode := so.StoreCode()
 	//
@@ -177,7 +191,7 @@ func WithInitStoreByRequest(scopeType scope.Scope) ctxhttp.Middleware {
 	//	if reqStore != nil && reqStore.Data.Code.String == soStoreCode {
 	//		wds, err := reqStore.Website.DefaultStore()
 	//		if err != nil {
-	//			return nil, log.Error("store.Service.InitByRequest.Website.DefaultStore", "err", err, "soStoreCode", soStoreCode)
+	//			return nil, PkgLog.Error("store.Service.InitByRequest.Website.DefaultStore", "err", err, "soStoreCode", soStoreCode)
 	//		}
 	//		if wds.Data.Code.String == soStoreCode {
 	//			reqStore.DeleteCookie(res) // cookie not needed anymore

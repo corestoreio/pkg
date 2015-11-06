@@ -78,7 +78,8 @@ func IsInfo() bool   { return logger.IsInfo() }
 // Deferred defines a logger type which can be used to trace the duration.
 // Usage:
 //		function main(){
-// 			defer log.WhenDone().Info("Stats", "Package", "main")
+//			var PkgLog = log.NewStdLogger()
+// 			defer log.WhenDone(PkgLog).Info("Stats", "Package", "main")
 //			...
 // 		}
 // Outputs the duration for the main action.
@@ -88,18 +89,18 @@ type Deferred struct {
 }
 
 // WhenDone returns a Logger which tracks the duration
-func WhenDone() Deferred {
+func WhenDone(l Logger) Deferred {
 	// @see http://play.golang.org/p/K53LV16F9e from @francesc
 	start := time.Now()
 	return Deferred{
 		Info: func(msg string, args ...interface{}) {
-			if IsInfo() {
-				Info(msg, append(args, "Duration", time.Since(start).String())...)
+			if l.IsInfo() {
+				l.Info(msg, append(args, "Duration", time.Since(start).String())...)
 			}
 		},
 		Debug: func(msg string, args ...interface{}) {
-			if IsDebug() {
-				Debug(msg, append(args, "Duration", time.Since(start).String())...)
+			if l.IsDebug() {
+				l.Debug(msg, append(args, "Duration", time.Since(start).String())...)
 			}
 		},
 	}

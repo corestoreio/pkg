@@ -22,7 +22,6 @@ import (
 
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/utils"
-	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 )
 
@@ -56,30 +55,48 @@ var _ Sectioner = (*SectionSlice)(nil)
 
 // NewConfiguration creates a new validated SectionSlice with a three level configuration.
 // Panics if a path is redundant.
-func NewConfiguration(sections ...*Section) SectionSlice {
+func NewConfiguration(sections ...*Section) (SectionSlice, error) {
 	ss := SectionSlice(sections)
 	if err := ss.Validate(); err != nil {
-		if log.IsWarn() {
-			log.Warn("config.NewConfiguration.Validate", "err", err)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.NewConfiguration.Validate", "err", err)
 		}
+		return nil, errgo.Mask(err)
+	}
+	return ss, nil
+}
+
+// MustNewConfiguration same as NewConfiguration but panics on error.
+func MustNewConfiguration(sections ...*Section) SectionSlice {
+	s, err := NewConfiguration(sections...)
+	if err != nil {
 		panic(err)
 	}
-	return ss
+	return s
 }
 
 // NewConfigurationMerge creates a new validated SectionSlice with a three level configuration.
 // Before validation, slices are all merged together. Panics if a path is redundant.
 // Only use this function if your package configuration really has duplicated entries.
-func NewConfigurationMerge(sections ...*Section) SectionSlice {
+func NewConfigurationMerge(sections ...*Section) (SectionSlice, error) {
 	var ss SectionSlice
 	ss.Merge(sections...)
 	if err := ss.Validate(); err != nil {
-		if log.IsWarn() {
-			log.Warn("config.NewConfigurationMerge.Validate", "err", err)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.NewConfigurationMerge.Validate", "err", err)
 		}
+		return nil, errgo.Mask(err)
+	}
+	return ss, nil
+}
+
+// MustNewConfigurationMerge same as NewConfigurationMerge but panics on error.
+func MustNewConfigurationMerge(sections ...*Section) SectionSlice {
+	s, err := NewConfigurationMerge(sections...)
+	if err != nil {
 		panic(err)
 	}
-	return ss
+	return s
 }
 
 // Defaults iterates over all slices, creates a path and uses the default value
@@ -91,7 +108,7 @@ func (ss SectionSlice) Defaults() DefaultMap {
 			for _, f := range g.Fields {
 				arg, err := newArg(Path(s.ID, g.ID, f.ID))
 				if err != nil {
-					log.Error("config.SectionSlice.Defaults.newArg", "err", err, "s", s, "g", g, "f", f)
+					PkgLog.Debug("config.SectionSlice.Defaults.newArg", "err", err, "s", s, "g", g, "f", f)
 				}
 				dm[arg.scopePath()] = f.Default
 			}
@@ -216,7 +233,7 @@ func (ss *SectionSlice) Append(s ...*Section) *SectionSlice {
 func (ss SectionSlice) ToJSON() string {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(ss); err != nil {
-		log.Error("config.SectionSlice.ToJSON.Encode", "err", err)
+		PkgLog.Debug("config.SectionSlice.ToJSON.Encode", "err", err)
 		return ""
 	}
 	return buf.String()
@@ -235,7 +252,7 @@ func (ss SectionSlice) Validate() error {
 			for _, f := range g.Fields {
 				arg, err := newArg(Path(s.ID, g.ID, f.ID))
 				if err != nil {
-					log.Error("config.SectionSlice.Validate.newArg", "err", err, "s", s, "g", g, "f", f)
+					PkgLog.Debug("config.SectionSlice.Validate.newArg", "err", err, "s", s, "g", g, "f", f)
 				}
 				p := arg.scopePath()
 				if pc.Include(p) {

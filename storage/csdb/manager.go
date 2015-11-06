@@ -22,7 +22,6 @@ import (
 	"fmt"
 
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 )
 
@@ -150,7 +149,7 @@ func (tm *TableManager) Next(i Index) bool {
 // Append adds a table. Overrides silently existing entries.
 func (tm *TableManager) Append(i Index, ts *Table) error {
 	if ts == nil {
-		return log.Error("csdb.TableManager.Init", "err", errgo.Newf("Table pointer cannot be nil for Index %d", i))
+		return errgo.Newf("Table pointer cannot be nil for Index %d", i)
 	}
 	tm.mu.Lock()
 	tm.ts[i] = ts
@@ -169,7 +168,7 @@ func (tm *TableManager) Init(dbrSess dbr.SessionRunner, reInit ...bool) error {
 		return nil
 	}
 	if false == tm.initDone && true == reLoad {
-		return log.Error("csdb.TableManager.Init", "err", ErrManagerInitReload)
+		return errgo.Mask(ErrManagerInitReload)
 	}
 	tm.mu.Lock()
 	defer tm.mu.Unlock()
@@ -177,7 +176,10 @@ func (tm *TableManager) Init(dbrSess dbr.SessionRunner, reInit ...bool) error {
 
 	for _, table := range tm.ts {
 		if err := table.LoadColumns(dbrSess); err != nil {
-			return log.Error("csdb.TableManager.Init.LoadColumns", "err", err, "table", table)
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("csdb.TableManager.Init.LoadColumns", "err", err, "table", table)
+			}
+			return errgo.Mask(err)
 		}
 	}
 
@@ -191,7 +193,7 @@ func (tm *TableManager) appendErr(err error) {
 func (tm *TableManager) errFlush() string {
 	var buf bytes.Buffer
 	for i, e := range tm.errs {
-		log.Error("csdb.NewTableManager.errs", "err", e, "tablemanager", tm)
+		PkgLog.Debug("csdb.NewTableManager.errs", "err", e, "tablemanager", tm)
 		fmt.Fprintf(&buf, "%02d: %s", i, e.Error())
 		if l, ok := e.(errgo.Locationer); ok {
 			buf.WriteString("\nLocation: " + l.Location().String())

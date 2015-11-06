@@ -22,8 +22,8 @@ import (
 
 	"fmt"
 
-	"github.com/corestoreio/csfw/utils/log"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/juju/errgo"
 	"github.com/pborman/uuid"
 )
 
@@ -146,7 +146,10 @@ func (s *Service) Logout(token *jwt.Token) error {
 // keyFunc runs parallel and concurrent
 func (s *Service) keyFunc(t *jwt.Token) (interface{}, error) {
 	if t.Method.Alg() != s.SigningMethod.Alg() {
-		return nil, log.Error("ctxjwt.AuthManager.Authenticate.SigningMethod", "err", ErrUnexpectedSigningMethod, "token", t, "method", s.SigningMethod.Alg())
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("ctxjwt.AuthManager.Authenticate.SigningMethod", "err", ErrUnexpectedSigningMethod, "token", t, "method", s.SigningMethod.Alg())
+		}
+		return nil, ErrUnexpectedSigningMethod
 	} else {
 		switch t.Method.Alg() {
 		case jwt.SigningMethodRS256.Alg(), jwt.SigningMethodRS384.Alg(), jwt.SigningMethodRS512.Alg():
@@ -171,5 +174,8 @@ func (s *Service) Parse(rawToken string) (*jwt.Token, error) {
 	if token != nil && err == nil && token.Valid && !inBL {
 		return token, nil
 	}
-	return nil, log.Error("ctxjwt.Service.Parse", "err", err, "inBlackList", inBL, "rawToken", rawToken, "token", token)
+	if PkgLog.IsDebug() {
+		PkgLog.Debug("ctxjwt.Service.Parse", "err", err, "inBlackList", inBL, "rawToken", rawToken, "token", token)
+	}
+	return nil, errgo.Mask(err)
 }

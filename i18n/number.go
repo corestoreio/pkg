@@ -27,7 +27,6 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/utils"
-	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 )
 
@@ -253,7 +252,10 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac i
 
 	usedFmt, err := no.GetFormat(sign < 0)
 	if err != nil {
-		return 0, log.Error("i18n.Number.FmtNumber.GetFormat", "err", err, "format", usedFmt.String())
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("i18n.Number.FmtNumber.GetFormat", "err", err, "format", usedFmt.String())
+		}
+		return 0, errgo.Mask(err)
 	}
 
 	var wrote int
@@ -419,7 +421,10 @@ func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
 
 	usedFmt, err := no.GetFormat(sign < 0)
 	if err != nil {
-		return 0, log.Error("i18n.Number.FmtFloat64.GetFormat", "err", err, "format", usedFmt.String())
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("i18n.Number.FmtFloat64.GetFormat", "err", err, "format", usedFmt.String())
+		}
+		return 0, errgo.Mask(err)
 	}
 
 	// to test the next lines: http://play.golang.org/p/L0ykFv3G4B

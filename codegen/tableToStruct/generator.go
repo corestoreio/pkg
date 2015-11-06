@@ -59,7 +59,7 @@ func newGenerator(tts codegen.TableToStruct, dbrConn *dbr.Connection, wg *sync.W
 }
 
 func (g *generator) run() {
-	defer log.WhenDone().Info("Stats", "Package", g.tts.Package)
+	defer log.WhenDone(PkgLog).Info("Stats", "Package", g.tts.Package)
 	defer g.wg.Done()
 	g.analyzePackage()
 
@@ -84,7 +84,7 @@ func (g *generator) setMagentoVersion(magento1, magento2 bool) *generator {
 // analyzePackage extracts from all types the method receivers and type names. If we found existing
 // functions we will add a MethodRecvPrefix to the generated functions to avoid conflicts.
 func (g *generator) analyzePackage() {
-	defer log.WhenDone().Info("Stats", "Package", g.tts.Package, "Step", "AnalyzePackage")
+	defer log.WhenDone(PkgLog).Info("Stats", "Package", g.tts.Package, "Step", "AnalyzePackage")
 	fset := token.NewFileSet()
 
 	path := filepath.Dir(g.tts.OutputFile.String())
@@ -141,7 +141,7 @@ func (g *generator) appendToFile(tpl string, data interface{}, addFM template.Fu
 }
 
 func (g *generator) initTables() {
-	defer log.WhenDone().Info("Stats", "Package", g.tts.Package, "Step", "InitTables")
+	defer log.WhenDone(PkgLog).Info("Stats", "Package", g.tts.Package, "Step", "InitTables")
 	var err error
 	g.tables, err = codegen.GetTables(g.dbrConn.NewSession(), codegen.ReplaceTablePrefix(g.tts.SQLQuery))
 	codegen.LogFatal(err)
@@ -173,7 +173,7 @@ func (g *generator) initTables() {
 }
 
 func (g *generator) runHeader() {
-	defer log.WhenDone().Info("Stats", "Package", g.tts.Package, "Step", "RunHeader")
+	defer log.WhenDone(PkgLog).Info("Stats", "Package", g.tts.Package, "Step", "RunHeader")
 	type Table struct {
 		Name      string
 		TableName string
@@ -199,7 +199,7 @@ func (g *generator) runHeader() {
 }
 
 func (g *generator) runTable() {
-	defer log.WhenDone().Info("Stats", "Package", g.tts.Package, "Step", "RunTable")
+	defer log.WhenDone(PkgLog).Info("Stats", "Package", g.tts.Package, "Step", "RunTable")
 	type OneTable struct {
 		Package          string
 		Tick             string
@@ -287,7 +287,7 @@ func (g *generator) runEAValueTables() {
 	if len(g.eavValueTables) == 0 {
 		return
 	}
-	defer log.WhenDone().Info("Stats", "Package", g.tts.Package, "Step", "RunEAValueTables")
+	defer log.WhenDone(PkgLog).Info("Stats", "Package", g.tts.Package, "Step", "RunEAValueTables")
 
 	data := struct {
 		TypeCodeValueTables codegen.TypeCodeValueTable

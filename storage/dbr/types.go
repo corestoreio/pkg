@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/corestoreio/csfw/utils/log"
 	"github.com/go-sql-driver/mysql"
 	"github.com/ugorji/go/codec"
 )
@@ -75,14 +74,14 @@ func (ns NullString) GoString() string {
 // CodecEncodeSelf for ugorji.go codec package
 func (n *NullString) CodecEncodeSelf(e *codec.Encoder) {
 	if err := e.Encode(n.String); err != nil {
-		log.Error("dbr.NullString.CodecEncodeSelf", "err", err, "n", n)
+		PkgLog.Debug("dbr.NullString.CodecEncodeSelf", "err", err, "n", n)
 	}
 }
 
 // CodecDecodeSelf  for ugorji.go codec package @todo write test ... not sure if ok
 func (n *NullString) CodecDecodeSelf(d *codec.Decoder) {
 	if err := d.Decode(&n.String); err != nil {
-		log.Error("dbr.NullString.CodecEncodeSelf", "err", err, "n", n)
+		PkgLog.Debug("dbr.NullString.CodecDecodeSelf", "err", err, "n", n)
 	}
 	// think about empty string and Valid value ...
 }
@@ -133,14 +132,14 @@ func (n *NullInt64) MarshalJSON() ([]byte, error) {
 // CodecEncodeSelf for ugorji.go codec package
 func (n *NullInt64) CodecEncodeSelf(e *codec.Encoder) {
 	if err := e.Encode(n.Int64); err != nil {
-		log.Error("dbr.NullInt64.CodecEncodeSelf", "err", err, "n", n)
+		PkgLog.Debug("dbr.NullInt64.CodecEncodeSelf", "err", err, "n", n)
 	}
 }
 
 // CodecDecodeSelf  for ugorji.go codec package @todo write test ... not sure if ok
 func (n *NullInt64) CodecDecodeSelf(d *codec.Decoder) {
 	if err := d.Decode(&n.Int64); err != nil {
-		log.Error("dbr.NullInt64.CodecEncodeSelf", "err", err, "n", n)
+		PkgLog.Debug("dbr.NullInt64.CodecDecodeSelf", "err", err, "n", n)
 	}
 }
 
@@ -181,14 +180,14 @@ func (n *NullFloat64) MarshalJSON() ([]byte, error) {
 // CodecEncodeSelf for ugorji.go codec package
 func (n *NullFloat64) CodecEncodeSelf(e *codec.Encoder) {
 	if err := e.Encode(n.Float64); err != nil {
-		log.Error("dbr.NullFloat64.CodecEncodeSelf", "err", err, "n", n)
+		PkgLog.Debug("dbr.NullFloat64.CodecEncodeSelf", "err", err, "n", n)
 	}
 }
 
 // CodecDecodeSelf  for ugorji.go codec package @todo write test ... not sure if ok
 func (n *NullFloat64) CodecDecodeSelf(d *codec.Decoder) {
 	if err := d.Decode(&n.Float64); err != nil {
-		log.Error("dbr.NullFloat64.CodecEncodeSelf", "err", err, "n", n)
+		PkgLog.Debug("dbr.NullFloat64.CodecDecodeSelf", "err", err, "n", n)
 	}
 }
 
@@ -229,14 +228,14 @@ func (n *NullTime) MarshalJSON() ([]byte, error) {
 // CodecEncodeSelf for ugorji.go codec package
 func (n *NullTime) CodecEncodeSelf(e *codec.Encoder) {
 	if err := e.Encode(n.Time); err != nil {
-		log.Error("dbr.NullTime.CodecEncodeSelf", "err", err, "n", n)
+		PkgLog.Debug("dbr.NullTime.CodecEncodeSelf", "err", err, "n", n)
 	}
 }
 
 // CodecDecodeSelf  for ugorji.go codec package @todo write test ... not sure if ok
 func (n *NullTime) CodecDecodeSelf(d *codec.Decoder) {
 	if err := d.Decode(&n.Time); err != nil {
-		log.Error("dbr.NullTime.CodecEncodeSelf", "err", err, "n", n)
+		PkgLog.Debug("dbr.NullTime.CodecDecodeSelf", "err", err, "n", n)
 	}
 }
 
@@ -280,14 +279,14 @@ func (n *NullBool) MarshalJSON() ([]byte, error) {
 // CodecEncodeSelf for ugorji.go codec package
 func (n *NullBool) CodecEncodeSelf(e *codec.Encoder) {
 	if err := e.Encode(n.Bool); err != nil {
-		log.Error("dbr.NullBool.CodecEncodeSelf", "err", err, "n", n)
+		PkgLog.Debug("dbr.NullBool.CodecEncodeSelf", "err", err, "n", n)
 	}
 }
 
 // CodecDecodeSelf  for ugorji.go codec package @todo write test ... not sure if ok
 func (n *NullBool) CodecDecodeSelf(d *codec.Decoder) {
 	if err := d.Decode(&n.Bool); err != nil {
-		log.Error("dbr.NullBool.CodecEncodeSelf", "err", err, "n", n)
+		PkgLog.Debug("dbr.NullBool.CodecDecodeSelf", "err", err, "n", n)
 	}
 }
 

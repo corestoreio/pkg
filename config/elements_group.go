@@ -21,7 +21,6 @@ import (
 	"sort"
 
 	"github.com/corestoreio/csfw/config/scope"
-	"github.com/corestoreio/csfw/utils/log"
 	"github.com/juju/errgo"
 )
 
@@ -103,7 +102,7 @@ func (gs *GroupSlice) merge(g *Group) error {
 func (gs GroupSlice) ToJSON() string {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(gs); err != nil {
-		log.Error("config.GroupSlice.ToJSON.Encode", "err", err)
+		PkgLog.Debug("config.GroupSlice.ToJSON.Encode", "err", err)
 		return ""
 	}
 	return buf.String()

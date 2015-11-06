@@ -71,7 +71,7 @@ func (dc *duplicateChecker) debug() string {
 	dc.mu.RLock()
 	defer dc.mu.RUnlock()
 	var ret string
-	for n, _ := range dc.dups {
+	for n := range dc.dups {
 		ret = ret + n + ", "
 	}
 	return ret
@@ -79,7 +79,7 @@ func (dc *duplicateChecker) debug() string {
 
 // runCodec generates the codecs to be used later in JSON or msgpack or etc
 func runCodec(pkg, outfile, readfile string) {
-	defer log.WhenDone().Info("Stats", "Package", pkg, "Step", "runCodec")
+	defer log.WhenDone(PkgLog).Info("Stats", "Package", pkg, "Step", "runCodec")
 	if err := codecgen.Generate(
 		outfile, // outfile
 		"",      // buildTag
@@ -106,7 +106,7 @@ func isDuplicate(sl []string, st string) bool {
 }
 
 func detectMagentoVersion(dbrSess dbr.SessionRunner) (MageOne, MageTwo bool) {
-	defer log.WhenDone().Info("Stats", "Package", "DetectMagentoVersion")
+	defer log.WhenDone(PkgLog).Info("Stats", "Package", "DetectMagentoVersion")
 	allTables, err := codegen.GetTables(dbrSess)
 	codegen.LogFatal(err)
 	MageOne, MageTwo = utils.MagentoVersion(codegen.TablePrefix, allTables)
@@ -133,7 +133,7 @@ func dbrType(c csdb.Column) string {
 	case c.IsString():
 		return ".String" // dbr.NullString
 	case c.IsMoney():
-		return "" // money.Currency
+		return "" // money.Money
 	case c.IsFloat():
 		return ".Float64" // dbr.NullFloat64
 	case c.IsInt():

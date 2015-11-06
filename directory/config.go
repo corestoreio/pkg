@@ -49,7 +49,7 @@ var TableCollection csdb.Manager
 var PackageConfiguration config.SectionSlice
 
 func init() {
-	PackageConfiguration = config.NewConfiguration(
+	PackageConfiguration = config.MustNewConfiguration(
 		&config.Section{
 			ID:        "currency",
 			Label:     "Currency Setup",

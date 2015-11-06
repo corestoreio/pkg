@@ -29,7 +29,7 @@ func init() {
 }
 
 func TestScopeApplyDefaults(t *testing.T) {
-	pkgCfg := config.NewConfiguration(
+	pkgCfg := config.MustNewConfiguration(
 		&config.Section{
 			ID: "contact",
 			Groups: config.GroupSlice{

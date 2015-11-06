@@ -24,7 +24,7 @@ import (
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/utils"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 	"golang.org/x/text/language"
 )
 
@@ -84,7 +84,10 @@ func SetWebsiteGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) WebsiteOpt
 			var err error
 			w.Groups[i], err = NewGroup(g, SetGroupWebsite(w.Data), SetGroupConfig(w.cr), SetGroupStores(tss, nil))
 			if err != nil {
-				w.addError(log.Error("store.SetWebsiteGroupsStores.NewGroup", "err", err, "g", g, "w", w.Data))
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("store.SetWebsiteGroupsStores.NewGroup", "err", err, "g", g, "w", w.Data)
+				}
+				w.addError(errgo.Mask(err))
 				return
 			}
 		}
@@ -98,7 +101,10 @@ func SetWebsiteGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) WebsiteOpt
 			}
 			w.Stores[i], err = NewStore(s, w.Data, group, SetStoreConfig(w.cr))
 			if err != nil {
-				w.addError(log.Error("store.SetWebsiteGroupsStores.NewStore", "err", err, "s", s, "w.Data", w.Data, "group", group))
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("store.SetWebsiteGroupsStores.NewStore", "err", err, "s", s, "w.Data", w.Data, "group", group)
+				}
+				w.addError(errgo.Mask(err))
 				return
 			}
 		}
@@ -175,7 +181,9 @@ func (w *Website) GroupID() int64 {
 func (w *Website) StoreID() int64 {
 	g, err := w.DefaultGroup()
 	if err != nil {
-		log.Error("store.Website.StoreID", "err", err, "Website", w)
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("store.Website.StoreID", "err", err, "Website", w)
+		}
 		return scope.UnavailableStoreID
 	}
 	return g.Data.DefaultStoreID

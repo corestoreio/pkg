@@ -19,7 +19,6 @@ import (
 	"math"
 
 	"github.com/corestoreio/csfw/i18n"
-	"github.com/corestoreio/csfw/utils/log"
 )
 
 var (
@@ -51,7 +50,7 @@ func DefaultSwedish(i Interval) {
 	if i < interval999 {
 		gSwedish = i
 	} else {
-		log.Error("money.DefaultSwedish", "err", errors.New("Interval out of scope"), "interval", i)
+		PkgLog.Debug("money.DefaultSwedish", "err", errors.New("Interval out of scope"), "interval", i)
 	}
 }
 
