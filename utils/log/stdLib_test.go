@@ -16,7 +16,6 @@ package log_test
 
 import (
 	"bytes"
-	"errors"
 	std "log"
 	"testing"
 
@@ -29,45 +28,28 @@ func TestStdLogger(t *testing.T) {
 	var buf bytes.Buffer
 
 	sl := log.NewStdLogger(
-		log.SetStdLevel(log.StdLevelTrace),
-		log.SetStdTrace(&buf, "TEST-TRACE ", std.LstdFlags),
+		log.SetStdLevel(log.StdLevelDebug),
 		log.SetStdDebug(&buf, "TEST-DEBUG ", std.LstdFlags),
 		log.SetStdInfo(&buf, "TEST-INFO ", std.LstdFlags),
-		log.SetStdWarn(&buf, "TEST-WARN ", std.LstdFlags),
-		log.SetStdError(&buf, "TEST-ERROR ", std.LstdFlags),
 		log.SetStdFatal(&buf, "TEST-FATAL ", std.LstdFlags),
 	)
 	sl.SetLevel(log.StdLevelInfo)
-	assert.False(t, sl.IsTrace())
 	assert.False(t, sl.IsDebug())
 	assert.True(t, sl.IsInfo())
-	assert.True(t, sl.IsWarn())
 
-	sl.Trace("my trace1")
-	sl.Trace("my trace2", "int", 29)
 	sl.Debug("my Debug", "float", 3.14152)
 	sl.Debug("my Debug2", 2.14152)
 	sl.Info("InfoTEST")
-	sl.Warn("WarnTEST")
-	haveErr := sl.Error("ErrorTEST", "err1a", 1, "err2", 32.4232)
-	assert.Contains(t, "ErrorTEST53", sl.Error("ErrorTEST53").Error())
+
 	logs := buf.String()
 
-	assert.EqualError(t, haveErr, "ErrorTEST")
 	assert.Contains(t, logs, "InfoTEST")
-	assert.Contains(t, logs, "WarnTEST")
-	assert.Contains(t, logs, "ErrorTEST")
-	assert.NotContains(t, logs, "trace1")
 	assert.NotContains(t, logs, "Debug2")
 
 	buf.Reset()
-	sl.SetLevel(log.StdLevelTrace)
-	assert.True(t, sl.IsTrace())
+	sl.SetLevel(log.StdLevelDebug)
 	assert.True(t, sl.IsDebug())
 	assert.True(t, sl.IsInfo())
-	assert.True(t, sl.IsWarn())
-	sl.Trace("my trace1")
-	sl.Trace("my trace2", "int", 29)
 	sl.Debug("my Debug", "float", 3.14152)
 	sl.Debug("my Debug2", 2.14152)
 	sl.Info("InfoTEST")
@@ -75,7 +57,6 @@ func TestStdLogger(t *testing.T) {
 	logs = buf.String()
 
 	assert.Contains(t, logs, "InfoTEST")
-	assert.Contains(t, logs, "trace1")
 	assert.Contains(t, logs, "Debug2")
 
 }
@@ -88,8 +69,6 @@ func TestStdLoggerGlobals(t *testing.T) {
 		log.SetStdWriter(&buf),
 		log.SetStdFlag(std.Ldate),
 	)
-	sl.Trace("my trace1")
-	sl.Trace("my trace2", "int", 29)
 	sl.Debug("my Debug", "float", 3.14152)
 	sl.Debug("my Debug2", 2.14152)
 	sl.Info("InfoTEST")
@@ -117,23 +96,17 @@ func TestStdLoggerFormat(t *testing.T) {
 	sl.Debug("my Debug3", "key3", 3105, 4711, "Hello")
 	sl.Info("InfoTEST")
 	sl.Info("InfoTEST", "keyI", 117, 2009)
-
-	aTestErr := errors.New("Cannot run PHP code")
-	haveErr := sl.Error("ErrorTEST", "myErr", aTestErr)
+	sl.Info("InfoTEST", "Now we have the salad")
 
 	logs := buf.String()
 	logsInfo := bufInfo.String()
 
-	//	t.Log("", logs)
-	//	t.Log("", logsInfo)
-
-	assert.EqualError(t, haveErr, aTestErr.Error())
 	assert.Contains(t, logs, "Debug2")
 	assert.Contains(t, logs, "BAD_KEY_AT_INDEX_0")
 	assert.Contains(t, logs, `key3: 3105 BAD_KEY_AT_INDEX_2: "Hello"`)
-	assert.Contains(t, logs, "_: 3.14")
 
 	assert.Contains(t, logsInfo, "InfoTEST")
+	assert.Contains(t, logsInfo, `_: "Now we have the salad`)
 	assert.Contains(t, logsInfo, `FIX_IMBALANCED_PAIRS: []interface {}{"keyI", 117, 2009}`)
 }
 
@@ -154,4 +127,19 @@ func TestStdLoggerNewPanic(t *testing.T) {
 		log.SetStdWriter(&buf),
 	)
 	sl.New(log.SetStdLevel(log.StdLevelDebug), 1)
+}
+
+func TestStdLoggerFatal(t *testing.T) {
+
+	defer func() {
+		if r := recover(); r != nil {
+			assert.Contains(t, r.(string), "This is sparta")
+		}
+	}()
+
+	var buf bytes.Buffer
+	sl := log.NewStdLogger(
+		log.SetStdWriter(&buf),
+	)
+	sl.Fatal("This is sparta")
 }

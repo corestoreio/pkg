@@ -28,32 +28,25 @@ var (
 	_       Logger = (*StdLogger)(nil)
 )
 
-// Interface idea by: https://github.com/mgutz Mario Gutierrez / MIT License
-
 // Logger defines the minimum requirements for logging. See doc.go for more details.
-// Interface may be extended ...
 type Logger interface {
 	// New returns a new Logger that has this logger's context plus the given context
 	New(ctx ...interface{}) Logger
 
-	Trace(msg string, args ...interface{})
+	// Debug outputs information for developers including a strack trace.
 	Debug(msg string, args ...interface{})
+	// Info outputs information for users of the app
 	Info(msg string, args ...interface{})
-	Warn(msg string, args ...interface{})
 
-	// Error logs an error entry. Returns the first argument as an error OR
-	// if the 2nd index of args (that is args[1] ;-) ) contains the error
-	// then that error will be returned.
-	Error(msg string, args ...interface{}) error
+	// Fatal exists the app with logging the error
 	Fatal(msg string, args ...interface{})
-	Log(level int, msg string, args []interface{})
 
+	// SetLevel sets the global log level
 	SetLevel(int)
-	IsTrace() bool
+	// IsDebug returns true if Debug level is enabled
 	IsDebug() bool
+	// IsInfo returns true if Info level is enabled
 	IsInfo() bool
-	IsWarn() bool
-	// Error, Fatal not needed, those SHOULD always be logged
 }
 
 func init() {
@@ -62,9 +55,6 @@ func init() {
 
 // SetNullLogger resets the logger to the null logger aka. black hole.
 func SetNull() {
-	if logger != nil {
-		Warn("SetNull logger called to reset the logger")
-	}
 	logger = nullLog
 }
 
@@ -77,19 +67,13 @@ func Set(l Logger) {
 	logger = l
 }
 
-func Trace(msg string, args ...interface{})         { logger.Trace(msg, args...) }
-func Debug(msg string, args ...interface{})         { logger.Debug(msg, args...) }
-func Info(msg string, args ...interface{})          { logger.Info(msg, args...) }
-func Warn(msg string, args ...interface{})          { logger.Warn(msg, args...) }
-func Error(msg string, args ...interface{}) error   { return logger.Error(msg, args...) }
-func Fatal(msg string, args ...interface{})         { logger.Fatal(msg, args...) }
-func Log(level int, msg string, args []interface{}) { logger.Log(level, msg, args) }
+func Debug(msg string, args ...interface{}) { logger.Debug(msg, args...) }
+func Info(msg string, args ...interface{})  { logger.Info(msg, args...) }
+func Fatal(msg string, args ...interface{}) { logger.Fatal(msg, args...) }
 
 func SetLevel(l int) { logger.SetLevel(l) }
-func IsTrace() bool  { return logger.IsTrace() }
 func IsDebug() bool  { return logger.IsDebug() }
 func IsInfo() bool   { return logger.IsInfo() }
-func IsWarn() bool   { return logger.IsWarn() }
 
 // Deferred defines a logger type which can be used to trace the duration.
 // Usage:

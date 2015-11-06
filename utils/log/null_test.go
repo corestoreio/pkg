@@ -21,34 +21,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSet(t *testing.T) {
-	nn1 := &log.NullLogger{}
-	log.Set(nn1)
+func TestNullLoggerFatal(t *testing.T) {
+
 	defer func() {
 		if r := recover(); r != nil {
-			if es, ok := r.(error); ok {
-				assert.EqualError(t, log.ErrLoggerSet, es.Error())
-			} else {
-				t.Error("Expected a cast to error interface")
-			}
+			assert.Contains(t, r.(string), "This is sparta")
 		}
 	}()
-	nn2 := &log.NullLogger{}
-	log.Set(nn2)
-}
 
-func TestNull(t *testing.T) {
-	log.SetNull()
-	log.SetLevel(-1000)
-	if log.IsDebug() {
-		t.Error("There should be no debug")
-	}
-	if log.IsInfo() {
-		t.Error("There should be no info")
-	}
-	var args []interface{}
-	args = append(args, "key1", 1, "key2", 3.14152)
-
-	log.Debug("Hello World", args...)
-	log.Info("Hello World", args...)
+	nl := &log.NullLogger{}
+	nl.Fatal("This is sparta")
 }

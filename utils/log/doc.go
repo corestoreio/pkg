@@ -71,6 +71,12 @@ dependencies. This StdLogger obeys to the interface Logger of this package.
 
 log.NewStdLogger() accepts a wide range of optional arguments. Please see the functions Std*Option().
 
+Additional Reading
+
+- http://dave.cheney.net/2015/11/05/lets-talk-about-logging
+- https://www.reddit.com/r/golang/comments/3rljir/lets_talk_about_logging/
+- https://forum.golangbridge.org/t/whats-so-bad-about-the-stdlibs-log-package/1435/2
+
 TODO(cs): http://12factor.net/logs
 */
 package log

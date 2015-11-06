@@ -20,7 +20,6 @@ package log
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	std "log"
@@ -32,11 +31,8 @@ import (
 
 const (
 	StdLevelFatal int = iota + 1
-	StdLevelError
-	StdLevelWarn
 	StdLevelInfo
 	StdLevelDebug
-	StdLevelTrace
 )
 
 // StdLogger implements logging with Go's standard library
@@ -44,11 +40,8 @@ type StdLogger struct {
 	level int
 	gw    io.Writer // global writer
 	flag  int       // global flag http://golang.org/pkg/log/#pkg-constants
-	trace *std.Logger
 	debug *std.Logger
 	info  *std.Logger
-	warn  *std.Logger
-	error *std.Logger
 	fatal *std.Logger
 }
 
@@ -67,20 +60,11 @@ func NewStdLogger(opts ...StdOption) *StdLogger {
 	for _, o := range opts {
 		o(sl)
 	}
-	if sl.trace == nil {
-		sl.trace = std.New(sl.gw, "TRACE ", sl.flag)
-	}
 	if sl.debug == nil {
 		sl.debug = std.New(sl.gw, "DEBUG ", sl.flag)
 	}
 	if sl.info == nil {
 		sl.info = std.New(sl.gw, "INFO ", sl.flag)
-	}
-	if sl.warn == nil {
-		sl.warn = std.New(sl.gw, "WARN ", sl.flag)
-	}
-	if sl.error == nil {
-		sl.error = std.New(sl.gw, "ERROR ", sl.flag)
 	}
 	if sl.fatal == nil {
 		sl.fatal = std.New(sl.gw, "FATAL ", sl.flag)
@@ -113,13 +97,6 @@ func SetStdLevel(level int) StdOption {
 	}
 }
 
-// SetStdTrace applies options for trace logging
-func SetStdTrace(out io.Writer, prefix string, flag int) StdOption {
-	return func(l *StdLogger) {
-		l.trace = std.New(out, prefix, flag)
-	}
-}
-
 // SetStdDebug applies options for debug logging
 func SetStdDebug(out io.Writer, prefix string, flag int) StdOption {
 	return func(l *StdLogger) {
@@ -131,20 +108,6 @@ func SetStdDebug(out io.Writer, prefix string, flag int) StdOption {
 func SetStdInfo(out io.Writer, prefix string, flag int) StdOption {
 	return func(l *StdLogger) {
 		l.info = std.New(out, prefix, flag)
-	}
-}
-
-// SetStdWarn applies options for warn logging
-func SetStdWarn(out io.Writer, prefix string, flag int) StdOption {
-	return func(l *StdLogger) {
-		l.warn = std.New(out, prefix, flag)
-	}
-}
-
-// SetStdError applies options for error logging
-func SetStdError(out io.Writer, prefix string, flag int) StdOption {
-	return func(l *StdLogger) {
-		l.error = std.New(out, prefix, flag)
 	}
 }
 
@@ -169,63 +132,30 @@ func (l *StdLogger) New(iOpts ...interface{}) Logger {
 	return NewStdLogger(opts...)
 }
 
-// Trace logs a trace entry.
-func (l *StdLogger) Trace(msg string, args ...interface{}) {
-	l.Log(StdLevelTrace, msg, args)
-}
-
 // Debug logs a debug entry.
 func (l *StdLogger) Debug(msg string, args ...interface{}) {
-	l.Log(StdLevelDebug, msg, args)
+	l.log(StdLevelDebug, msg, args)
 }
 
 // Info logs an info entry.
 func (l *StdLogger) Info(msg string, args ...interface{}) {
-	l.Log(StdLevelInfo, msg, args)
-}
-
-// Warn logs a warn entry.
-func (l *StdLogger) Warn(msg string, args ...interface{}) {
-	l.Log(StdLevelWarn, msg, args)
-}
-
-// Error logs an error entry. Returns the first argument as an error OR
-// if the 2nd index of args (that is args[1] ;-) ) contains the error
-// then that error will be returned.
-func (l *StdLogger) Error(msg string, args ...interface{}) error {
-	defer l.Log(StdLevelError, msg, args)
-	lArgs := len(args)
-	if lArgs > 0 && lArgs%2 == 0 {
-		if err, ok := args[1].(error); ok {
-			return err
-		}
-	}
-	return errors.New(msg)
+	l.log(StdLevelInfo, msg, args)
 }
 
 // Fatal logs a fatal entry then panics.
 func (l *StdLogger) Fatal(msg string, args ...interface{}) {
-	l.Log(StdLevelFatal, msg, args)
+	l.log(StdLevelFatal, msg, args)
 }
 
-// Log logs a leveled entry. Panics if an unknown level has been provided.
-func (l *StdLogger) Log(level int, msg string, args []interface{}) {
+// log logs a leveled entry. Panics if an unknown level has been provided.
+func (l *StdLogger) log(level int, msg string, args []interface{}) {
 	if l.level >= level {
 		switch level {
-		case StdLevelTrace:
-			l.trace.Print(stdFormat(msg, append(args, "in", getStackTrace())))
-			break
 		case StdLevelDebug:
-			l.debug.Print(stdFormat(msg, args))
+			l.debug.Print(stdFormat(msg, append(args, "in", getStackTrace())))
 			break
 		case StdLevelInfo:
 			l.info.Print(stdFormat(msg, args))
-			break
-		case StdLevelWarn:
-			l.warn.Print(stdFormat(msg, args))
-			break
-		case StdLevelError:
-			l.error.Print(stdFormat(msg, args))
 			break
 		case StdLevelFatal:
 			l.fatal.Panic(stdFormat(msg, args))
@@ -236,17 +166,11 @@ func (l *StdLogger) Log(level int, msg string, args []interface{}) {
 	}
 }
 
-// IsTrace determines if this logger logs a trace statement.
-func (l *StdLogger) IsTrace() bool { return l.level >= StdLevelTrace }
-
 // IsDebug determines if this logger logs a debug statement.
 func (l *StdLogger) IsDebug() bool { return l.level >= StdLevelDebug }
 
 // IsInfo determines if this logger logs an info statement.
 func (l *StdLogger) IsInfo() bool { return l.level >= StdLevelInfo }
-
-// IsWarn determines if this logger logs a warning statement.
-func (l *StdLogger) IsWarn() bool { return l.level >= StdLevelWarn }
 
 // SetLevel sets the level of this logger.
 func (l *StdLogger) SetLevel(level int) {
