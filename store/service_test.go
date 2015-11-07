@@ -424,9 +424,9 @@ type testNewServiceGetRequestStore struct {
 	wantErr       error
 }
 
-func runTestsGetRequestedStore(t *testing.T, sm *store.Service, tests []testNewServiceGetRequestStore) {
+func runTestsRequestedStore(t *testing.T, sm *store.Service, tests []testNewServiceGetRequestStore) {
 	for i, test := range tests {
-		haveStore, haveErr := sm.GetRequestedStore(test.haveSO)
+		haveStore, haveErr := sm.RequestedStore(test.haveSO)
 		if test.wantErr != nil {
 			assert.Nil(t, haveStore, "Index: %d: %#v", i, test)
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index: %d: %#v", i, test)
@@ -444,7 +444,7 @@ func TestNewServiceGetRequestStore_ScopeStore(t *testing.T) {
 	initScope := scope.Option{Store: scope.MockID(1)}
 	sm := getInitializedStoreService(initScope)
 
-	if haveStore, haveErr := sm.GetRequestedStore(initScope); haveErr != nil {
+	if haveStore, haveErr := sm.RequestedStore(initScope); haveErr != nil {
 		t.Fatal(haveErr)
 	} else {
 		assert.NoError(t, haveErr)
@@ -482,14 +482,14 @@ func TestNewServiceGetRequestStore_ScopeStore(t *testing.T) {
 		{scope.Option{Store: scope.MockCode("au")}, "au", nil},
 		{scope.Option{Store: scope.MockCode("ch")}, "", store.ErrStoreNotActive},
 	}
-	runTestsGetRequestedStore(t, sm, tests)
+	runTestsRequestedStore(t, sm, tests)
 }
 
 func TestNewServiceGetRequestStore_ScopeGroup(t *testing.T) {
 	initScope := scope.Option{Group: scope.MockID(1)}
 
 	sm := getInitializedStoreService(initScope)
-	if haveStore, haveErr := sm.GetRequestedStore(initScope); haveErr != nil {
+	if haveStore, haveErr := sm.RequestedStore(initScope); haveErr != nil {
 		t.Fatal(haveErr)
 	} else {
 		assert.NoError(t, haveErr)
@@ -535,7 +535,7 @@ func TestNewServiceGetRequestStore_ScopeGroup(t *testing.T) {
 		{scope.Option{Website: scope.MockID(2)}, "", store.ErrStoreChangeNotAllowed},
 		{scope.Option{Website: scope.MockID(1)}, "at", nil},
 	}
-	runTestsGetRequestedStore(t, sm, tests)
+	runTestsRequestedStore(t, sm, tests)
 }
 
 func TestNewServiceGetRequestStore_ScopeWebsite(t *testing.T) {
@@ -543,7 +543,7 @@ func TestNewServiceGetRequestStore_ScopeWebsite(t *testing.T) {
 
 	sm := getInitializedStoreService(initScope)
 
-	if haveStore, haveErr := sm.GetRequestedStore(initScope); haveErr != nil {
+	if haveStore, haveErr := sm.RequestedStore(initScope); haveErr != nil {
 		t.Fatal(haveErr)
 	} else {
 		assert.NoError(t, haveErr)
@@ -583,7 +583,7 @@ func TestNewServiceGetRequestStore_ScopeWebsite(t *testing.T) {
 
 		{scope.Option{Group: scope.MockID(3)}, "", store.ErrStoreChangeNotAllowed},
 	}
-	runTestsGetRequestedStore(t, sm, tests)
+	runTestsRequestedStore(t, sm, tests)
 }
 
 func TestNewServiceReInit(t *testing.T) {

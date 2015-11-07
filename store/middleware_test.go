@@ -251,35 +251,36 @@ func TestWithValidateBaseUrl_ActivatedAndShouldRedirectWithGETRequest(t *testing
 //	},
 //}
 //
-//func TestInitByRequestGeneral(t *testing.T) {
-//	errLogBuf.Reset()
-//	defer errLogBuf.Reset()
-//
-//	for _, test := range testsInitByRequest {
-//		if _, haveErr := getInitializedStoreService.InitByRequest(nil, nil, test.haveScopeType); haveErr != nil {
-//			assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
-//		} else {
-//			t.Fatal("InitByRequest should return an error if used without running Init() first.")
-//		}
-//
-//		if err := getInitializedStoreService.Init(test.haveSO); err != nil {
-//			assert.EqualError(t, store.ErrUnsupportedScope, err.Error())
-//			t.Log("continuing for loop because of expected store.ErrUnsupportedScopeGroup")
-//			getInitializedStoreService.ClearCache(true)
-//			continue
-//		}
-//
-//		if s, err := getInitializedStoreService.Store(); err == nil {
-//			assert.EqualValues(t, test.wantStoreCode, s.Data.Code.String)
-//		} else {
-//			assert.EqualError(t, err, store.ErrStoreNotFound.Error())
-//			t.Log("continuing for loop because of expected store.ErrStoreNotFound")
-//			getInitializedStoreService.ClearCache(true)
-//			continue
-//		}
-//		getInitializedStoreService.ClearCache(true)
-//	}
-//}
+func TestWithInitStoreByRequest(t *testing.T) {
+	//	errLogBuf.Reset()
+	//	defer errLogBuf.Reset()
+	//
+	//	for _, test := range testsInitByRequest {
+	//		if _, haveErr := getInitializedStoreService.InitByRequest(nil, nil, test.haveScopeType); haveErr != nil {
+	//			assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
+	//		} else {
+	//			t.Fatal("InitByRequest should return an error if used without running Init() first.")
+	//		}
+	//
+	//		if err := getInitializedStoreService.Init(test.haveSO); err != nil {
+	//			assert.EqualError(t, store.ErrUnsupportedScope, err.Error())
+	//			t.Log("continuing for loop because of expected store.ErrUnsupportedScopeGroup")
+	//			getInitializedStoreService.ClearCache(true)
+	//			continue
+	//		}
+	//
+	//		if s, err := getInitializedStoreService.Store(); err == nil {
+	//			assert.EqualValues(t, test.wantStoreCode, s.Data.Code.String)
+	//		} else {
+	//			assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+	//			t.Log("continuing for loop because of expected store.ErrStoreNotFound")
+	//			getInitializedStoreService.ClearCache(true)
+	//			continue
+	//		}
+	//		getInitializedStoreService.ClearCache(true)
+	//	}
+}
+
 //
 //func TestInitByRequestInDepth(t *testing.T) {
 //	errLogBuf.Reset()

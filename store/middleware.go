@@ -118,10 +118,10 @@ func WithInitStoreByToken() ctxhttp.Middleware {
 				return errgo.Mask(err)
 			}
 
-			newRequestedStore, err := storeService.GetRequestedStore(scopeOption)
+			newRequestedStore, err := storeService.RequestedStore(scopeOption)
 			if err != nil {
 				if PkgLog.IsDebug() {
-					PkgLog.Debug("store.WithInitStoreByToken.GetRequestedStore", "err", err, "token", token, "scopeOption", scopeOption, "ctx", ctx)
+					PkgLog.Debug("store.WithInitStoreByToken.RequestedStore", "err", err, "token", token, "scopeOption", scopeOption, "ctx", ctx)
 				}
 				return errgo.Mask(err)
 			}

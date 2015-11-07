@@ -37,7 +37,7 @@ func (m *NullService) Store(r ...scope.StoreIDer) (*store.Store, error) {
 }
 func (m *NullService) Stores() (store.StoreSlice, error)       { return nil, store.ErrStoreNotFound }
 func (m *NullService) DefaultStoreView() (*store.Store, error) { return nil, store.ErrStoreNotFound }
-func (m *NullService) GetRequestedStore(scope.Option) (*store.Store, error) {
+func (m *NullService) RequestedStore(scope.Option) (*store.Store, error) {
 	return nil, store.ErrStoreNotFound
 }
 

@@ -27,8 +27,7 @@ import (
 
 type (
 	// Reader specifies a store Service from which you can only read.
-	// Without any arguments applied to any function it returns the
-	// store for the current scope for a request. @todo better description.
+	// A Reader is bound to a scope.Scope.
 	Reader interface {
 		IsSingleStoreMode() bool
 		HasSingleStore() bool
@@ -38,8 +37,18 @@ type (
 		Groups() (GroupSlice, error)
 		Store(r ...scope.StoreIDer) (*Store, error)
 		Stores() (StoreSlice, error)
+
+		// DefaultStoreView because a Reader is bound to a specific scope.Scope,
+		// this function will return always the default store view depending on
+		// the scope.
 		DefaultStoreView() (*Store, error)
-		GetRequestedStore(scope.Option) (activeStore *Store, err error)
+
+		// RequestedStore figures out the default active store for a scope.Option.
+		// It takes into account that Reader is bound to a specific scope.Scope.
+		// It also prevents running a store from another website or store group,
+		// if website or store group was specified explicitly. RequestedStore returns
+		// either an error or the store.
+		RequestedStore(scope.Option) (activeStore *Store, err error)
 	}
 )
 
@@ -190,18 +199,13 @@ func (sm *Service) findDefaultStoreByScope(allowedScope scope.Scope, so scope.Op
 	return
 }
 
-// GetRequestedStore figures out the default active store for a scope.Option.
-// Also prevents running a store from another website or store group,
-// if website or store group was specified explicitly.
-// It returns either an error or the new Store. The returning errors can get ignored because if
-// a Store Code is invalid the parent calling function must fall back to the default store which
-// has been initialized via NewService() function.
-func (sm *Service) GetRequestedStore(so scope.Option) (activeStore *Store, err error) {
+// RequestedStore see interface description Reader.RequestedStore
+func (sm *Service) RequestedStore(so scope.Option) (activeStore *Store, err error) {
 
 	activeStore, err = sm.findDefaultStoreByScope(so.Scope(), so)
 	if err != nil {
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("store.Service.GetRequestedStore.FindDefaultStoreByScope", "err", err, "so", so)
+			PkgLog.Debug("store.Service.RequestedStore.FindDefaultStoreByScope", "err", err, "so", so)
 		}
 		return nil, err
 	}
