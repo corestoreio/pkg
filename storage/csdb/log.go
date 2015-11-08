@@ -17,4 +17,4 @@ package csdb
 import "github.com/corestoreio/csfw/utils/log"
 
 // PkgLog global package based logger
-var PkgLog log.Logger = log.NullLogger{}
+var PkgLog log.Logger = log.PkgLog

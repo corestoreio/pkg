@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNullLoggerFatal(t *testing.T) {
+func TestBlackHoleFatal(t *testing.T) {
 
 	defer func() {
 		if r := recover(); r != nil {
@@ -29,6 +29,6 @@ func TestNullLoggerFatal(t *testing.T) {
 		}
 	}()
 
-	nl := &log.NullLogger{}
+	nl := &log.BlackHole{}
 	nl.Fatal("This is sparta")
 }

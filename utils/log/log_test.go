@@ -18,33 +18,15 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/utils/log"
-	"github.com/stretchr/testify/assert"
 )
 
-func TestSet(t *testing.T) {
-	nn1 := &log.NullLogger{}
-	log.Set(nn1)
-	defer func() {
-		if r := recover(); r != nil {
-			if es, ok := r.(error); ok {
-				assert.EqualError(t, log.ErrLoggerSet, es.Error())
-			} else {
-				t.Error("Expected a cast to error interface")
-			}
-		}
-	}()
-	nn2 := &log.NullLogger{}
-	log.Set(nn2)
-}
-
 func TestNull(t *testing.T) {
-	log.SetNull()
 	log.SetLevel(-1000)
 	if !log.IsDebug() {
 		t.Error("There should be debug logging")
 	}
-	if log.IsInfo() {
-		t.Error("There should be no info")
+	if !log.IsInfo() {
+		t.Error("There should be info logging")
 	}
 	var args []interface{}
 	args = append(args, "key1", 1, "key2", 3.14152)

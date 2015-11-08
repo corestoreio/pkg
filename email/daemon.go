@@ -30,7 +30,7 @@ import (
 
 // OfflineLogger represents a special email logger if mail sending has
 // been deactivated for a scope ID. The underlying default logger is a NullLogger.
-var OfflineLogger log.Logger = new(log.NullLogger)
+var OfflineLogger log.Logger = new(log.BlackHole)
 
 // OfflineSend defines a function which uses the OfflineLogger.Info function to
 // log emails when SMTP has been disabled.

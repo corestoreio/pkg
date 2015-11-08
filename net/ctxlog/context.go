@@ -38,5 +38,5 @@ func FromContext(ctx context.Context) log.Logger {
 	if l, ok := ctx.Value(keyLog).(log.Logger); ok {
 		return l
 	}
-	return log.NullLogger{}
+	return log.BlackHole{}
 }

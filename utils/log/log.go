@@ -14,19 +14,16 @@
 
 package log
 
-import (
-	"errors"
-	"time"
-)
+import "time"
 
 var (
-	ErrLoggerSet = errors.New("Logger already initialized")
-	logger       Logger
-
-	nullLog        = &NullLogger{}
-	_       Logger = (*NullLogger)(nil)
-	_       Logger = (*StdLogger)(nil)
+	_ Logger = (*BlackHole)(nil)
+	_ Logger = (*StdLogger)(nil)
 )
+
+// PkgLog global package based logger. This logger gets inherited to other
+// packages. Default BlackHole
+var PkgLog Logger = BlackHole{}
 
 // Logger defines the minimum requirements for logging. See doc.go for more details.
 type Logger interface {
@@ -49,31 +46,13 @@ type Logger interface {
 	IsInfo() bool
 }
 
-func init() {
-	SetNull()
-}
+func Debug(msg string, args ...interface{}) { PkgLog.Debug(msg, args...) }
+func Info(msg string, args ...interface{})  { PkgLog.Info(msg, args...) }
+func Fatal(msg string, args ...interface{}) { PkgLog.Fatal(msg, args...) }
 
-// SetNullLogger resets the logger to the null logger aka. black hole.
-func SetNull() {
-	logger = nullLog
-}
-
-// Set sets your preferred Logger to be used in CoreStore. Default Logger is
-// a null-logger. Panics if called twice.
-func Set(l Logger) {
-	if logger != nullLog {
-		panic(ErrLoggerSet)
-	}
-	logger = l
-}
-
-func Debug(msg string, args ...interface{}) { logger.Debug(msg, args...) }
-func Info(msg string, args ...interface{})  { logger.Info(msg, args...) }
-func Fatal(msg string, args ...interface{}) { logger.Fatal(msg, args...) }
-
-func SetLevel(l int) { logger.SetLevel(l) }
-func IsDebug() bool  { return logger.IsDebug() }
-func IsInfo() bool   { return logger.IsInfo() }
+func SetLevel(l int) { PkgLog.SetLevel(l) }
+func IsDebug() bool  { return PkgLog.IsDebug() }
+func IsInfo() bool   { return PkgLog.IsInfo() }
 
 // Deferred defines a logger type which can be used to trace the duration.
 // Usage:

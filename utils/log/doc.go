@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /*
-Package log contains NullLogger, StdLogger and the Logger interface.
+Package log contains BlackHole, StdLogger and the Logger interface.
 
 Logging
 

@@ -14,28 +14,27 @@
 
 package log
 
-// Following Code by: https://github.com/mgutz Mario Gutierrez / MIT License
-
-// NullLogger is the default logger for this package.
-type NullLogger struct{}
+// BlackHole logs and does nothing. An empty struct. IsDebug() and IsInfo() will
+// always return true.
+type BlackHole struct{}
 
 // New returns a new Logger that has this logger's context plus the given context
-func (l NullLogger) New(ctx ...interface{}) Logger { return &NullLogger{} }
+func (l BlackHole) New(ctx ...interface{}) Logger { return BlackHole{} }
 
 // Debug logs a debug entry.
-func (l NullLogger) Debug(msg string, args ...interface{}) {}
+func (l BlackHole) Debug(msg string, args ...interface{}) {}
 
 // Info logs an info entry.
-func (l NullLogger) Info(msg string, args ...interface{}) {}
+func (l BlackHole) Info(msg string, args ...interface{}) {}
 
 // Fatal logs a fatal entry then panics.
-func (l NullLogger) Fatal(msg string, args ...interface{}) { panic("exit due to fatal error: " + msg) }
+func (l BlackHole) Fatal(msg string, args ...interface{}) { panic("exit due to fatal error: " + msg) }
 
-// IsDebug determines if this logger logs a debug statement.
-func (l NullLogger) IsDebug() bool { return true }
+// IsDebug determines if this logger logs a debug statement. Returns always true.
+func (l BlackHole) IsDebug() bool { return true }
 
-// IsInfo determines if this logger logs an info statement.
-func (l NullLogger) IsInfo() bool { return false }
+// IsInfo determines if this logger logs an info statement. Returns always true.
+func (l BlackHole) IsInfo() bool { return true }
 
 // SetLevel sets the level of this logger.
-func (l NullLogger) SetLevel(level int) {}
+func (l BlackHole) SetLevel(level int) {}
