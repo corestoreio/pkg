@@ -18,6 +18,7 @@ package tpl
 
 const Type = `
 // {{.Struct}} and {{.Slice}}, a type for DB table {{ .TableName }}
+// Generated via tableToStruct.
 type (
     {{.Slice}} []*{{.Struct}}
     {{.Struct}} struct {
@@ -40,33 +41,40 @@ const (
 )
 
 const SQL = `
-// {{ typePrefix "SQLSelect" }} fills this slice with data from the database
+// {{ typePrefix "SQLSelect" }} fills this slice with data from the database.
+// Generated via tableToStruct.
 func (s *{{.Slice}}) {{ typePrefix "SQLSelect" }}(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
 	return csdb.LoadSlice(dbrSess, TableCollection, TableIndex{{.Name}}, &(*s), cbs...)
 }
 
-// {{ typePrefix "SQLInsert" }} inserts all records into the database @todo
+// {{ typePrefix "SQLInsert" }} inserts all records into the database @todo.
+// Generated via tableToStruct.
 func (s *{{.Slice}}) {{ typePrefix "SQLInsert" }}(dbrSess dbr.SessionRunner, cbs ...csdb.DbrInsertCb) (int, error) {
 	return 0, nil
 }
 
-// {{ typePrefix "SQLUpdate" }} updates all record in the database @todo
+// {{ typePrefix "SQLUpdate" }} updates all record in the database @todo.
+// Generated via tableToStruct.
 func (s *{{.Slice}}) {{ typePrefix "SQLUpdate" }}(dbrSess dbr.SessionRunner, cbs ...csdb.DbrUpdateCb) (int, error) {
 	return 0, nil
 }
 
-// {{ typePrefix "SQLDelete" }} deletes all record from the database @todo
+// {{ typePrefix "SQLDelete" }} deletes all record from the database @todo.
+// Generated via tableToStruct.
 func (s *{{.Slice}}) {{ typePrefix "SQLDelete" }}(dbrSess dbr.SessionRunner, cbs ...csdb.DbrDeleteCb) (int, error) {
 	return 0, nil
 }
 `
 
 const FindBy = `
-
+// ErrIDNotFound{{.Slice}} gets returned when an ID cannot be found in a {{.Slice}} slice.
+// Generated via tableToStruct.
 var ErrIDNotFound{{.Slice}} = csdb.NewError("ID not found in {{.Slice}}")
 
 {{if (.FindByPk) ne ""}}
-// {{ typePrefix .FindByPk }} searches the primary keys and returns a *{{.Struct}} if found or an error
+// {{ typePrefix .FindByPk }} searches the primary keys and returns a
+// *{{.Struct}} if found or an error.
+// Generated via tableToStruct.
 func (s {{.Slice}}) {{ typePrefix .FindByPk }}(
 {{range $k,$v := .Columns.PrimaryKeys}} {{ $v.Name }} {{$v.GetGoPrimitive false}},
 {{end}}	) (*{{.Struct}}, error) {
@@ -81,7 +89,8 @@ func (s {{.Slice}}) {{ typePrefix .FindByPk }}(
 
 {{ range $k,$c := .Columns.UniqueKeys }}
 // {{ findBy $c.Name | typePrefix }} searches through this unique key and returns
-// a *{{$.Struct}} if found or an error
+// a *{{$.Struct}} if found or an error.
+// Generated via tableToStruct.
 func (s {{$.Slice}}) {{ findBy $c.Name | typePrefix }} ( {{ $c.Name }} {{$c.GetGoPrimitive false}} ) (*{{$.Struct}}, error) {
 	for _, u := range s {
 		if u != nil && u.{{ $c.Name | camelize }}{{ dbrType $c }} == {{$c.Name}} {
@@ -95,23 +104,28 @@ func (s {{$.Slice}}) {{ findBy $c.Name | typePrefix }} ( {{ $c.Name }} {{$c.GetG
 
 const Sort = `var _ sort.Interface = (*{{.Slice}})(nil)
 
-// {{ typePrefix "Len" }} returns the length and  will satisfy the sort.Interface
+// {{ typePrefix "Len" }} returns the length and  will satisfy the sort.Interface.
+// Generated via tableToStruct.
 func (s {{.Slice}}) {{ typePrefix "Len" }}() int { return len(s) }
 
 // {{ typePrefix "Less" }} will satisfy the sort.Interface and compares via
-// the primary key
+// the primary key.
+// Generated via tableToStruct.
 func (s {{.Slice}}) {{ typePrefix "Less" }}(i, j int) bool {
 	return {{ range $c := .Columns.PrimaryKeys }} s[i].{{ $c.Name | camelize }}{{dbrType $c}} < s[j].{{ $c.Name | camelize }}{{dbrType $c}} && {{ end }} 1 == 1
 }
 
-// {{ typePrefix "Swap" }} will satisfy the sort.Interface
+// {{ typePrefix "Swap" }} will satisfy the sort.Interface.
+// Generated via tableToStruct.
 func (s {{.Slice}}) {{ typePrefix "Swap" }}(i, j int) { s[i], s[j] = s[j], s[i] }
 
-// {{ typePrefix "Sort" }} will sort {{.Slice}}
+// {{ typePrefix "Sort" }} will sort {{.Slice}}.
+// Generated via tableToStruct.
 func (s {{.Slice}}) {{ typePrefix "Sort" }}() { sort.Sort(s) }
 `
 
-const SliceFunctions = `// {{ typePrefix "FilterThis" }} filters the current slice by predicate f without memory allocation
+const SliceFunctions = `// {{ typePrefix "FilterThis" }} filters the current slice by predicate f without memory allocation.
+// Generated via tableToStruct.
 func (s {{.Slice}}) {{ typePrefix "FilterThis" }} (f func(*{{.Struct}}) bool) {{.Slice}} {
 	b := s[:0]
 	for _, x := range s {
@@ -122,7 +136,8 @@ func (s {{.Slice}}) {{ typePrefix "FilterThis" }} (f func(*{{.Struct}}) bool) {{
 	return b
 }
 
-// {{ typePrefix "Filter" }} returns a new slice filtered by predicate f
+// {{ typePrefix "Filter" }} returns a new slice filtered by predicate f.
+// Generated via tableToStruct.
 func (s {{.Slice}}) {{ typePrefix "Filter" }} (f func(*{{.Struct}}) bool) {{.Slice}} {
 	sl := make({{.Slice}}, 0, len(s))
 	for _, w := range s {
@@ -133,8 +148,9 @@ func (s {{.Slice}}) {{ typePrefix "Filter" }} (f func(*{{.Struct}}) bool) {{.Sli
 	return sl
 }
 
-// {{ typePrefix "FilterNot" }} will return a new {{.Slice}} that do not match
+// {{ typePrefix "FilterNot" }} will return a new {{.Slice}} that does not match
 // by calling the function f
+// Generated via tableToStruct.
 func (s {{.Slice}}) {{ typePrefix "FilterNot" }}(f func(*{{.Struct}}) bool) {{.Slice}} {
 	sl := make({{.Slice}}, 0, len(s))
 	for _, v := range s {
@@ -145,7 +161,8 @@ func (s {{.Slice}}) {{ typePrefix "FilterNot" }}(f func(*{{.Struct}}) bool) {{.S
 	return sl
 }
 
-// {{ typePrefix "Map" }} will run function f on all items in {{.Slice}}
+// {{ typePrefix "Map" }} will run function f on all items in {{.Slice}}.
+// Generated via tableToStruct.
 func (s {{.Slice}}) Map(f func(*{{.Struct}}) ) {{.Slice}} {
 	for i := range s {
 		f(s[i])
@@ -153,7 +170,8 @@ func (s {{.Slice}}) Map(f func(*{{.Struct}}) ) {{.Slice}} {
 	return s
 }
 
-// {{ typePrefix "Cut" }} will remove items i through j-1
+// {{ typePrefix "Cut" }} will remove items i through j-1.
+// Generated via tableToStruct.
 func (s *{{.Slice}}) {{ typePrefix "Cut" }}(i, j int) {
 	z := *s // copy slice header
 	copy(z[i:], z[j:])
@@ -164,7 +182,8 @@ func (s *{{.Slice}}) {{ typePrefix "Cut" }}(i, j int) {
 	*s = z
 }
 
-// {{ typePrefix "Delete" }} will remove item i
+// {{ typePrefix "Delete" }} will remove an item from the slice.
+// Generated via tableToStruct.
 func (s *{{.Slice}}) {{ typePrefix "Delete" }}(i int) {
 	z := *s // copy the slice header
 	end := len(z) - 1
@@ -175,7 +194,8 @@ func (s *{{.Slice}}) {{ typePrefix "Delete" }}(i int) {
 	*s = z
 }
 
-// {{ typePrefix "Insert" }} will place a new item at position i
+// {{ typePrefix "Insert" }} will place a new item at position i.
+// Generated via tableToStruct.
 func (s *{{.Slice}}) {{ typePrefix "Insert" }}(n *{{.Struct}}, i int) {
 	z := *s // copy the slice header
 	z = append(z, &{{.Struct}}{})
@@ -184,24 +204,28 @@ func (s *{{.Slice}}) {{ typePrefix "Insert" }}(n *{{.Struct}}, i int) {
 	*s = z
 }
 
-// {{ typePrefix "Append" }} will add a new item at the end of {{.Slice}}
+// {{ typePrefix "Append" }} will add a new item at the end of {{.Slice}}.
+// Generated via tableToStruct.
 func (s *{{.Slice}}) {{ typePrefix "Append" }}(n ...*{{.Struct}}) {
 	*s = append(*s, n...)
 }
 
-// {{ typePrefix "Prepend" }} will add a new item at the beginning of {{.Slice}}
+// {{ typePrefix "Prepend" }} will add a new item at the beginning of {{.Slice}}.
+// Generated via tableToStruct.
 func (s *{{.Slice}}) {{ typePrefix "Prepend" }}(n *{{.Struct}}) {
 	s.Insert(n, 0)
 }
 `
 
 const ExtractFromSlice = `
-// Extract{{.Name | camelize}} functions for extracting fields
+// Extract{{.Name | camelize}} functions for extracting fields from {{.Name | camelize}}
+// slice. Generated via tableToStruct.
 type Extract{{.Name | camelize}} struct {
 {{ range $k,$c := .Columns }} {{$c.Name | camelize }} func() []{{$c.GetGoPrimitive false}}
 {{end}} }
 
-// {{ typePrefix "Extract" }} generates slices from all fields
+// {{ typePrefix "Extract" }} extracts from a specified field all values into a slice.
+// Generated via tableToStruct.
 func (s {{$.Slice}}) {{ typePrefix "Extract" }}() Extract{{.Name | camelize}} {
 	return Extract{{.Name | camelize}} {
 		{{ range $k,$c := .Columns }} {{$c.Name | camelize }} : func() []{{$c.GetGoPrimitive false}} {
