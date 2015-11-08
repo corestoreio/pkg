@@ -18,8 +18,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/corestoreio/csfw/utils"
 )
 
 // Scope used in constants where default is the lowest and store the highest.
@@ -67,21 +65,16 @@ type (
 	}
 )
 
-const scopeGroupName = "ScopeAbsentScopeDefaultScopeWebsiteScopeGroupScopeStore"
+const _Scope_name = "AbsentDefaultWebsiteGroupStore"
 
-var scopeGroupIndex = [...]uint8{0, 11, 23, 35, 45, 55}
+var _Scope_index = [...]uint8{0, 6, 13, 20, 25, 30}
 
 // String human readable name of Group. For Marshaling see Perm
 func (i Scope) String() string {
-	if i+1 >= Scope(len(scopeGroupIndex)) {
-		return fmt.Sprintf("ScopeGroup(%d)", i)
+	if i+1 >= Scope(len(_Scope_index)) {
+		return fmt.Sprintf("Scope(%d)", i)
 	}
-	return scopeGroupName[scopeGroupIndex[i]:scopeGroupIndex[i+1]]
-}
-
-// GroupNames returns a slice containing all constant names
-func GroupNames() (r utils.StringSlice) {
-	return r.SplitStringer8(scopeGroupName, scopeGroupIndex[:]...)
+	return _Scope_name[_Scope_index[i]:_Scope_index[i+1]]
 }
 
 // PS path separator used in the database table core_config_data and in config.Manager
@@ -97,13 +90,14 @@ const (
 	strStores   = "stores"
 )
 
+// Str* constants are used in the database table core_config_data.
+// StrDefault defines the global scope.
+// StrWebsites defines the website scope which has default as parent and stores as child.
+// StrStores defines the store scope which has default and websites as parent.
 const (
-	// StrDefault defines the global scope.
-	StrDefault StrScope = strDefault
-	// StrWebsites defines the website scope which has default as parent and stores as child.
+	StrDefault  StrScope = strDefault
 	StrWebsites StrScope = strWebsites
-	// StrStores defines the store scope which has default and websites as parent.
-	StrStores StrScope = strStores
+	StrStores   StrScope = strStores
 )
 
 // FQPath returns the fully qualified path. ID is an int string. Paths is either

@@ -88,6 +88,11 @@ func (o Option) Scope() (s Scope) {
 	return
 }
 
+// String is short hand for Option.Scope().String()
+func (o Option) String() string {
+	return o.Scope().String()
+}
+
 // StoreCode extracts the Store code. Checks if the interface StoreCoder
 // is available.
 func (o Option) StoreCode() (code string) {

@@ -35,9 +35,9 @@ func TestScopeBits(t *testing.T) {
 		notWant Scope
 		human   []string
 	}{
-		{[]Scope{scope1, scope2}, scope2, scope3, []string{"ScopeDefault", "ScopeWebsite"}},
-		{[]Scope{scope3, scope4}, scope3, scope2, []string{"ScopeGroup", "ScopeStore"}},
-		{[]Scope{scope4, scope5}, scope4, scope2, []string{"ScopeStore", "ScopeGroup(5)"}},
+		{[]Scope{scope1, scope2}, scope2, scope3, []string{"Default", "Website"}},
+		{[]Scope{scope3, scope4}, scope3, scope2, []string{"Group", "Store"}},
+		{[]Scope{scope4, scope5}, scope4, scope2, []string{"Store", "Scope(5)"}},
 	}
 
 	for _, test := range tests {

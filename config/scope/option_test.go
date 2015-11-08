@@ -107,6 +107,7 @@ func TestApplyWebsite(t *testing.T) {
 	assert.Equal(t, int64(3), so.Website.WebsiteID())
 	assert.Nil(t, so.Group)
 	assert.Nil(t, so.Store)
+	assert.Exactly(t, scope.WebsiteID.String(), so.String())
 }
 
 func TestApplyGroup(t *testing.T) {
@@ -117,6 +118,7 @@ func TestApplyGroup(t *testing.T) {
 	assert.Equal(t, int64(3), so.Group.GroupID())
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Store)
+	assert.Exactly(t, scope.GroupID.String(), so.String())
 }
 
 func TestApplyStore(t *testing.T) {
@@ -127,6 +129,7 @@ func TestApplyStore(t *testing.T) {
 	assert.Equal(t, int64(3), so.Store.StoreID())
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)
+	assert.Exactly(t, scope.StoreID.String(), so.String())
 }
 
 func TestApplyDefault(t *testing.T) {
