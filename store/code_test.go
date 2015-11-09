@@ -205,7 +205,7 @@ func TestStoreCodeFromRequestGET(t *testing.T) {
 		},
 		{
 			getRootRequest("invalid", "dede"),
-			store.ErrStoreCodeEmpty,
+			store.ErrStoreCodeInvalid,
 			scope.DefaultID,
 			"",
 			scope.UnavailableStoreID,
@@ -251,7 +251,7 @@ func TestValidateStoreCode(t *testing.T) {
 		{"DE", nil},
 		{"deCH09_", nil},
 		{"_de", store.ErrStoreCodeInvalid},
-		{"", store.ErrStoreCodeEmpty},
+		{"", store.ErrStoreCodeInvalid},
 		{"\U0001f41c", store.ErrStoreCodeInvalid},
 		{"au_en", nil},
 		{"au-fr", store.ErrStoreCodeInvalid},

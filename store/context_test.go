@@ -31,7 +31,7 @@ func TestContextReaderError(t *testing.T) {
 	assert.Nil(t, s)
 	assert.EqualError(t, err, store.ErrContextServiceNotFound.Error())
 
-	ctx := store.NewContextReader(context.Background(), nil, nil)
+	ctx := store.NewContextReader(context.Background(), nil)
 	assert.NotNil(t, ctx)
 	haveMr, s, err = store.FromContextReader(ctx)
 	assert.Nil(t, haveMr)
@@ -39,7 +39,7 @@ func TestContextReaderError(t *testing.T) {
 	assert.EqualError(t, err, store.ErrContextServiceNotFound.Error())
 
 	mr := storemock.NewNullService()
-	ctx = store.NewContextReader(context.Background(), mr, nil)
+	ctx = store.NewContextReader(context.Background(), mr)
 	assert.NotNil(t, ctx)
 	haveMr, s, err = store.FromContextReader(ctx)
 	assert.EqualError(t, err, store.ErrStoreNotFound.Error())

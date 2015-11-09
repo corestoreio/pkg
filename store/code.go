@@ -75,10 +75,7 @@ func setByCode(scopeCode string) (o scope.Option, err error) {
 // or an ErrStoreCodeInvalid if the first letter is not a-zA-Z and followed by
 // a-zA-Z0-9_ or store code length is greater than 32 characters.
 func ValidateStoreCode(c string) error {
-	if c == "" {
-		return ErrStoreCodeEmpty
-	}
-	if len(c) > 32 {
+	if c == "" || len(c) > 32 {
 		return ErrStoreCodeInvalid
 	}
 	c1 := c[0]

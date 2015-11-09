@@ -418,13 +418,13 @@ func getInitializedStoreService(so scope.Option) *store.Service {
 	)
 }
 
-type testNewServiceGetRequestStore struct {
+type testNewServiceRequestedStore struct {
 	haveSO        scope.Option
 	wantStoreCode string
 	wantErr       error
 }
 
-func runTestsRequestedStore(t *testing.T, sm *store.Service, tests []testNewServiceGetRequestStore) {
+func runTestsRequestedStore(t *testing.T, sm *store.Service, tests []testNewServiceRequestedStore) {
 	for i, test := range tests {
 		haveStore, haveErr := sm.RequestedStore(test.haveSO)
 		if test.wantErr != nil {
@@ -439,7 +439,7 @@ func runTestsRequestedStore(t *testing.T, sm *store.Service, tests []testNewServ
 	sm.ClearCache(true)
 }
 
-func TestNewServiceGetRequestStore_ScopeStore(t *testing.T) {
+func TestNewServiceRequestedStore_ScopeStore(t *testing.T) {
 
 	initScope := scope.Option{Store: scope.MockID(1)}
 	sm := getInitializedStoreService(initScope)
@@ -466,7 +466,7 @@ func TestNewServiceGetRequestStore_ScopeStore(t *testing.T) {
 		assert.EqualError(t, err, store.ErrIDNotFoundTableStoreSlice.Error())
 	}
 
-	tests := []testNewServiceGetRequestStore{
+	tests := []testNewServiceRequestedStore{
 		{scope.Option{Store: scope.MockID(232)}, "", store.ErrIDNotFoundTableStoreSlice},
 		{scope.Option{}, "de", scope.ErrUnsupportedScope},
 		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableStoreSlice},
@@ -485,7 +485,7 @@ func TestNewServiceGetRequestStore_ScopeStore(t *testing.T) {
 	runTestsRequestedStore(t, sm, tests)
 }
 
-func TestNewServiceGetRequestStore_ScopeGroup(t *testing.T) {
+func TestNewServiceRequestedStore_ScopeGroup(t *testing.T) {
 	initScope := scope.Option{Group: scope.MockID(1)}
 
 	sm := getInitializedStoreService(initScope)
@@ -511,7 +511,7 @@ func TestNewServiceGetRequestStore_ScopeGroup(t *testing.T) {
 	}
 
 	//	// we're testing here against Group ID = 1
-	tests := []testNewServiceGetRequestStore{
+	tests := []testNewServiceRequestedStore{
 		{scope.Option{Group: scope.MockID(232)}, "", store.ErrIDNotFoundTableGroupSlice},
 
 		{scope.Option{Store: scope.MockID(232)}, "", store.ErrIDNotFoundTableStoreSlice},
@@ -538,7 +538,7 @@ func TestNewServiceGetRequestStore_ScopeGroup(t *testing.T) {
 	runTestsRequestedStore(t, sm, tests)
 }
 
-func TestNewServiceGetRequestStore_ScopeWebsite(t *testing.T) {
+func TestNewServiceRequestedStore_ScopeWebsite(t *testing.T) {
 	initScope := scope.Option{Website: scope.MockID(1)}
 
 	sm := getInitializedStoreService(initScope)
@@ -565,7 +565,7 @@ func TestNewServiceGetRequestStore_ScopeWebsite(t *testing.T) {
 	}
 
 	// test against website euro
-	tests := []testNewServiceGetRequestStore{
+	tests := []testNewServiceRequestedStore{
 		{scope.Option{Website: scope.MockID(232)}, "", store.ErrIDNotFoundTableWebsiteSlice},
 		{scope.Option{Website: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableWebsiteSlice},
 		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableStoreSlice},

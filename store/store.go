@@ -87,7 +87,6 @@ var (
 	ErrArgumentCannotBeNil   = errors.New("An argument cannot be nil")
 	ErrStoreIncorrectGroup   = errors.New("Incorrect group")
 	ErrStoreIncorrectWebsite = errors.New("Incorrect website")
-	ErrStoreCodeEmpty        = errors.New("Store Code is empty")
 	ErrStoreCodeInvalid      = errors.New("The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter")
 )
 

@@ -49,7 +49,7 @@ func NewContextService(so scope.Option, opts ...func(ms *Storage)) context.Conte
 			panic(err)
 		}
 	}
-	return store.NewContextReader(context.Background(), sm, nil)
+	return store.NewContextReader(context.Background(), sm)
 }
 
 // Storage main underlying data container
