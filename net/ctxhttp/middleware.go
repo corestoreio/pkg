@@ -27,6 +27,8 @@ type Middleware func(Handler) Handler
 
 // Chain function will iterate over all middleware, calling them one by one
 // in a chained manner, returning the result of the final middleware.
+// Execution of the middleware takes place in reverse order! First to be called
+// handler must be added as last slice index.
 func Chain(h Handler, mws ...Middleware) Handler {
 	for _, mw := range mws {
 		h = mw(h)
