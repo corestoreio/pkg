@@ -21,6 +21,8 @@ import (
 	"strings"
 	"testing"
 
+	"reflect"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/net/ctxhttp"
@@ -168,117 +170,116 @@ func TestWithValidateBaseUrl_ActivatedAndShouldRedirectWithGETRequest(t *testing
 	}
 }
 
-//func getTestRequest(m, u string, c *http.Cookie) *http.Request {
-//	req, err := http.NewRequest(m, u, nil)
-//	if err != nil {
-//		panic(err)
-//	}
-//	if c != nil {
-//		req.AddCookie(c)
-//	}
-//	return req
-//}
-//
-//var testsInitByRequest = []struct {
-//	req                  *http.Request
-//	haveSO               scope.Option
-//	haveScopeType        scope.Scope
-//	wantStoreCode        string           // this is the default store in a scope, lookup in getInitializedStoreService
-//	wantRequestStoreCode scope.StoreCoder // can be nil in tests
-//	wantErr              error
-//	wantCookie           string
-//}{
-//	{
-//		getTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "uk"}),
-//		scope.Option{Store: scope.MockID(1)}, scope.StoreID, "de", scope.MockCode("uk"), nil, store.CookieName + "=uk;",
-//	},
-//	{
-//		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
-//		scope.Option{Store: scope.MockID(1)}, scope.StoreID, "de", scope.MockCode("uk"), nil, store.CookieName + "=uk;", // generates a new 1y valid cookie
-//	},
-//	{
-//		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=%20uk", nil),
-//		scope.Option{Store: scope.MockID(1)}, scope.StoreID, "de", scope.MockCode("uk"), store.ErrStoreCodeInvalid, "",
-//	},
-//	{
-//		getTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "de"}),
-//		scope.Option{Group: scope.MockID(1)}, scope.GroupID, "at", scope.MockCode("de"), nil, store.CookieName + "=de;",
-//	},
-//	{
-//		getTestRequest("GET", "http://cs.io", nil),
-//		scope.Option{Group: scope.MockID(1)}, scope.GroupID, "at", nil, store.ErrUnsupportedScope, "",
-//	},
-//	{
-//		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=de", nil),
-//		scope.Option{Group: scope.MockID(1)}, scope.GroupID, "at", scope.MockCode("de"), nil, store.CookieName + "=de;", // generates a new 1y valid cookie
-//	},
-//	{
-//		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=at", nil),
-//		scope.Option{Group: scope.MockID(1)}, scope.GroupID, "at", scope.MockCode("at"), nil, store.CookieName + "=;", // generates a delete cookie
-//	},
-//	{
-//		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=cz", nil),
-//		scope.Option{Group: scope.MockID(1)}, scope.GroupID, "at", nil, store.ErrIDNotFoundTableStoreSlice, "",
-//	},
-//	{
-//		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
-//		scope.Option{Group: scope.MockID(1)}, scope.GroupID, "at", nil, store.ErrStoreChangeNotAllowed, "",
-//	},
-//
-//	{
-//		getTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "nz"}),
-//		scope.Option{Website: scope.MockID(2)}, scope.WebsiteID, "au", scope.MockCode("nz"), nil, store.CookieName + "=nz;",
-//	},
-//	{
-//		getTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "n'z"}),
-//		scope.Option{Website: scope.MockID(2)}, scope.WebsiteID, "au", nil, store.ErrStoreCodeInvalid, "",
-//	},
-//	{
-//		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
-//		scope.Option{Website: scope.MockID(2)}, scope.WebsiteID, "au", nil, store.ErrStoreChangeNotAllowed, "",
-//	},
-//	{
-//		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=nz", nil),
-//		scope.Option{Website: scope.MockID(2)}, scope.WebsiteID, "au", scope.MockCode("nz"), nil, store.CookieName + "=nz;",
-//	},
-//	{
-//		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=ch", nil),
-//		scope.Option{Website: scope.MockID(1)}, scope.WebsiteID, "at", nil, store.ErrStoreNotActive, "",
-//	},
-//	{
-//		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=nz", nil),
-//		scope.Option{Website: scope.MockID(1)}, scope.DefaultID, "at", scope.MockCode("nz"), store.ErrStoreChangeNotAllowed, "",
-//	},
-//}
-//
+func getTestRequest(m, u string, c *http.Cookie) *http.Request {
+	req, err := http.NewRequest(m, u, nil)
+	if err != nil {
+		panic(err)
+	}
+	if c != nil {
+		req.AddCookie(c)
+	}
+	return req
+}
+
+var testsInitByRequest = []struct {
+	req                  *http.Request
+	haveSO               scope.Option
+	wantStoreCode        string           // this is the default store in a scope, lookup in getInitializedStoreService
+	wantRequestStoreCode scope.StoreCoder // can be nil in tests
+	wantErr              error
+	wantCookie           string
+}{
+	{
+		getTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "uk"}),
+		scope.Option{Store: scope.MockID(1)}, "de", scope.MockCode("uk"), nil, store.CookieName + "=uk;",
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
+		scope.Option{Store: scope.MockID(1)}, "de", scope.MockCode("uk"), nil, store.CookieName + "=uk;", // generates a new 1y valid cookie
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=%20uk", nil),
+		scope.Option{Store: scope.MockID(1)}, "de", scope.MockCode("uk"), store.ErrStoreCodeInvalid, "",
+	},
+	{
+		getTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "de"}),
+		scope.Option{Group: scope.MockID(1)}, "at", scope.MockCode("de"), nil, store.CookieName + "=de;",
+	},
+	{
+		getTestRequest("GET", "http://cs.io", nil),
+		scope.Option{Group: scope.MockID(1)}, "at", nil, scope.ErrUnsupportedScope, "",
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=de", nil),
+		scope.Option{Group: scope.MockID(1)}, "at", scope.MockCode("de"), nil, store.CookieName + "=de;", // generates a new 1y valid cookie
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=at", nil),
+		scope.Option{Group: scope.MockID(1)}, "at", scope.MockCode("at"), nil, store.CookieName + "=;", // generates a delete cookie
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=cz", nil),
+		scope.Option{Group: scope.MockID(1)}, "at", nil, store.ErrIDNotFoundTableStoreSlice, "",
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
+		scope.Option{Group: scope.MockID(1)}, "at", nil, store.ErrStoreChangeNotAllowed, "",
+	},
+
+	{
+		getTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "nz"}),
+		scope.Option{Website: scope.MockID(2)}, "au", scope.MockCode("nz"), nil, store.CookieName + "=nz;",
+	},
+	{
+		getTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "n'z"}),
+		scope.Option{Website: scope.MockID(2)}, "au", nil, store.ErrStoreCodeInvalid, "",
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
+		scope.Option{Website: scope.MockID(2)}, "au", nil, store.ErrStoreChangeNotAllowed, "",
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=nz", nil),
+		scope.Option{Website: scope.MockID(2)}, "au", scope.MockCode("nz"), nil, store.CookieName + "=nz;",
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=ch", nil),
+		scope.Option{Website: scope.MockID(1)}, "at", nil, store.ErrStoreNotActive, "",
+	},
+	{
+		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=nz", nil),
+		scope.Option{Website: scope.MockID(1)}, "at", scope.MockCode("nz"), store.ErrStoreChangeNotAllowed, "",
+	},
+}
+
 func TestWithInitStoreByRequest(t *testing.T) {
-	//	errLogBuf.Reset()
-	//	defer errLogBuf.Reset()
-	//
-	//	for _, test := range testsInitByRequest {
-	//		if _, haveErr := getInitializedStoreService.InitByRequest(nil, nil, test.haveScopeType); haveErr != nil {
-	//			assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
-	//		} else {
-	//			t.Fatal("InitByRequest should return an error if used without running Init() first.")
-	//		}
-	//
-	//		if err := getInitializedStoreService.Init(test.haveSO); err != nil {
-	//			assert.EqualError(t, store.ErrUnsupportedScope, err.Error())
-	//			t.Log("continuing for loop because of expected store.ErrUnsupportedScopeGroup")
-	//			getInitializedStoreService.ClearCache(true)
-	//			continue
-	//		}
-	//
-	//		if s, err := getInitializedStoreService.Store(); err == nil {
-	//			assert.EqualValues(t, test.wantStoreCode, s.Data.Code.String)
-	//		} else {
-	//			assert.EqualError(t, err, store.ErrStoreNotFound.Error())
-	//			t.Log("continuing for loop because of expected store.ErrStoreNotFound")
-	//			getInitializedStoreService.ClearCache(true)
-	//			continue
-	//		}
-	//		getInitializedStoreService.ClearCache(true)
-	//	}
+	errLogBuf.Reset()
+	defer errLogBuf.Reset()
+
+	for range testsInitByRequest {
+		//		if _, haveErr := getInitializedStoreService.InitByRequest(nil, nil, test.haveScopeType); haveErr != nil {
+		//			assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
+		//		} else {
+		//			t.Fatal("InitByRequest should return an error if used without running Init() first.")
+		//		}
+		//
+		//		if err := getInitializedStoreService.Init(test.haveSO); err != nil {
+		//			assert.EqualError(t, store.ErrUnsupportedScope, err.Error())
+		//			t.Log("continuing for loop because of expected store.ErrUnsupportedScopeGroup")
+		//			getInitializedStoreService.ClearCache(true)
+		//			continue
+		//		}
+		//
+		//		if s, err := getInitializedStoreService.Store(); err == nil {
+		//			assert.EqualValues(t, test.wantStoreCode, s.Data.Code.String)
+		//		} else {
+		//			assert.EqualError(t, err, store.ErrStoreNotFound.Error())
+		//			t.Log("continuing for loop because of expected store.ErrStoreNotFound")
+		//			getInitializedStoreService.ClearCache(true)
+		//			continue
+		//		}
+		//		getInitializedStoreService.ClearCache(true)
+	}
 }
 
 //
@@ -330,7 +331,7 @@ func TestWithInitStoreByRequest(t *testing.T) {
 //}
 
 func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) context.Context {
-	ctx := store.NewContextReader(context.Background(), getInitializedStoreService(initO), nil)
+	ctx := store.NewContextReader(context.Background(), getInitializedStoreService(initO))
 	tok := jwt.New(jwt.SigningMethodHS256)
 	tok.Claims[store.CookieName] = tokenStoreCode
 	ctx = ctxjwt.NewContext(ctx, tok)
@@ -352,13 +353,13 @@ func TestWithInitStoreByToken(t *testing.T) {
 		wantStoreCode string
 		wantErr       error
 	}{
-		{store.NewContextReader(context.Background(), nil, nil), "de", store.ErrContextServiceNotFound},
-		{store.NewContextReader(context.Background(), getInitializedStoreService(scope.Option{Store: scope.MockCode("de")}), nil), "de", ctxjwt.ErrContextJWTNotFound},
+		{store.NewContextReader(context.Background(), nil), "de", store.ErrContextServiceNotFound},
+		{store.NewContextReader(context.Background(), getInitializedStoreService(scope.Option{Store: scope.MockCode("de")})), "de", ctxjwt.ErrContextJWTNotFound},
 		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "de"), "de", nil},
 		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("at")}, "ch"), "at", store.ErrStoreNotActive},
 		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "at"), "at", nil},
 		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "a$t"), "de", store.ErrStoreCodeInvalid},
-		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("at")}, ""), "at", store.ErrStoreCodeEmpty},
+		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("at")}, ""), "at", store.ErrStoreCodeInvalid},
 
 		{newStoreServiceWithTokenCtx(scope.Option{Group: scope.MockID(1)}, "de"), "de", nil},
 		{newStoreServiceWithTokenCtx(scope.Option{Group: scope.MockID(1)}, "ch"), "at", store.ErrStoreNotActive},
@@ -369,7 +370,7 @@ func TestWithInitStoreByToken(t *testing.T) {
 		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "nz"), "nz", nil},
 		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "n z"), "au", store.ErrStoreCodeInvalid},
 		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "au"), "au", nil},
-		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, ""), "au", store.ErrStoreCodeEmpty},
+		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, ""), "au", store.ErrStoreCodeInvalid},
 	}
 	for i, test := range tests {
 
@@ -393,8 +394,10 @@ func TestWithInitStoreByToken(t *testing.T) {
 	}
 }
 
-func TestWithInitStoreByToken_Alloc_Investigations_TEMP(t *testing.T) {
+func TestWithInitStoreByToken_EqualPointers(t *testing.T) {
 	// this Test is related to Benchmark_WithInitStoreByToken
+	// The returned pointers from store.FromContextReader must be the
+	// same for each request with the same request pattern.
 
 	ctx := newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "nz")
 	rec := httptest.NewRecorder()
@@ -403,18 +406,32 @@ func TestWithInitStoreByToken_Alloc_Investigations_TEMP(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	var equalStorePointer *store.Store
 	mw := store.WithInitStoreByToken()(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		_, haveReqStore, err := store.FromContextReader(ctx)
 		if err != nil {
 			return err
 		}
+
+		if equalStorePointer == nil {
+			equalStorePointer = haveReqStore
+		}
+
 		if "nz" != haveReqStore.StoreCode() {
 			t.Errorf("Have: %s\nWant: nz", haveReqStore.StoreCode())
 		}
+
+		wantP := reflect.ValueOf(equalStorePointer)
+		haveP := reflect.ValueOf(haveReqStore)
+
+		if wantP.Pointer() != haveP.Pointer() {
+			t.Errorf("Expecting equal pointers for each request.\nWant: %p\nHave: %p", equalStorePointer, haveReqStore)
+		}
+
 		return nil
 	}))
 
-	for i := 0; i < 2; i++ {
+	for i := 0; i < 10; i++ {
 		if err := mw.ServeHTTPContext(ctx, rec, req); err != nil {
 			t.Error(err)
 		}

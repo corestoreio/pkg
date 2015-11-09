@@ -137,68 +137,82 @@ func WithInitStoreByToken() ctxhttp.Middleware {
 	}
 }
 
-// InitByRequest returns a new Store read from a cookie or HTTP request parameter.
-// It calls GetRequestStore() to determine the correct store.
-// The internal appStore must be set before hand, call Init() before calling this function.
-// 1. check cookie store, always a string and the store code
-// 2. check for ___store variable, always a string and the store code
-// 3. May return nil,nil if nothing is set.
-// This function must be used within an HTTP handler.
-// The returned new Store must be used in the HTTP context and overrides the appStore.
-func WithInitStoreByRequest(scopeType scope.Scope) ctxhttp.Middleware {
-
+// WithInitStoreByFormCookie read from a GET parameter or cookie the store code.
+// Checks if the store code is valid and allowed. If so it adjust the context.Context
+// so provide the new requestedStore.
+//
+// It calls Reader.RequestedStore() to determine the correct store.
+// 		1. check cookie store, always a string and the store code
+// 		2. check for GET ___store variable, always a string and the store code
+func WithInitStoreByFormCookie() ctxhttp.Middleware {
 	return func(h ctxhttp.Handler) ctxhttp.Handler {
 		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			return nil
+			storeService, requestedStore, err := FromContextReader(ctx)
+			if err != nil {
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("store.WithInitStoreByToken.FromContextServiceReader", "err", err, "ctx", ctx)
+				}
+				return errgo.Mask(err)
+			}
+
+			var reqSO scope.Option
+
+			reqSO, err = StoreCodeFromRequestGET(r)
+			if err != nil { // no cookie set, lets try via form to find the store code
+
+				if err == ErrStoreCodeInvalid && PkgLog.IsDebug() {
+					PkgLog.Debug("store.WithInitStoreByFormCookie.StoreCodeFromRequestGET", "err", err, "req", r, "scope", reqSO)
+				}
+
+				reqSO, err = StoreCodeFromCookie(r)
+				switch err {
+				case ErrStoreCodeInvalid, http.ErrNoCookie:
+					err = nil
+				case nil:
+				// do nothing
+				default: // err != nil
+					if PkgLog.IsDebug() {
+						PkgLog.Debug("store.WithInitStoreByFormCookie.StoreCodeFromCookie", "err", err, "req", r, "scope", reqSO)
+					}
+					return errgo.Mask(err)
+				}
+			}
+
+			var newRequestedStore *Store
+			if newRequestedStore, err = storeService.RequestedStore(reqSO); err != nil {
+				if PkgLog.IsDebug() {
+					PkgLog.Debug("store.WithInitStoreByFormCookie.storeService.RequestedStore", "err", err, "req", r, "scope", reqSO)
+				}
+				return errgo.Mask(err)
+			}
+
+			soStoreCode := reqSO.StoreCode()
+
+			// delete and re-set a new cookie, adjust context.Context
+			if newRequestedStore != nil && newRequestedStore.Data.Code.String == soStoreCode {
+				wds, err := newRequestedStore.Website.DefaultStore()
+				if err != nil {
+					if PkgLog.IsDebug() {
+						PkgLog.Debug("store.WithInitStoreByFormCookie.Website.DefaultStore", "err", err, "soStoreCode", soStoreCode)
+					}
+					return errgo.Mask(err)
+				}
+				if wds.Data.Code.String == soStoreCode {
+					newRequestedStore.DeleteCookie(w) // cookie not needed anymore
+				} else {
+					newRequestedStore.SetCookie(w) // make sure we force set the new store
+
+					if newRequestedStore.StoreID() != requestedStore.StoreID() {
+						// this may lead to a bug because the previously set storeService and requestedStore
+						// will still exists and have not been removed.
+						ctx = NewContextReader(ctx, storeService, newRequestedStore)
+					}
+				}
+			}
+
+			return h.ServeHTTPContext(ctx, w, r)
+
 		})
 	}
-
-	// res http.ResponseWriter, req *http.Request
-	//	if sm.appStore == nil {
-	//		// that means you must call Init() before executing this function.
-	//		return nil, ErrAppStoreNotSet
-	//	}
-	//
-	//	var reqStore *Store
-	//	var so scope.Option
-	//	var err error
-	//	so, err = StoreCodeFromForm(req)
-	//	if err != nil { // no cookie set, lets try via form to find the store code
-	//
-	//		if err == ErrStoreCodeInvalid {
-	//			return nil, PkgLog.Error("store.Service.InitByRequest.GetCodeFromForm", "err", err, "req", req, "scopeType", scopeType.String())
-	//		}
-	//
-	//		so, err = StoreCodeFromCookie(req)
-	//		switch err {
-	//		case ErrStoreCodeEmpty, http.ErrNoCookie:
-	//			err = nil
-	//		case nil:
-	//		// do nothing
-	//		default: // err != nil
-	//			return nil, PkgLog.Error("store.Service.InitByRequest.GetCodeFromCookie", "err", err, "req", req, "scopeType", scopeType.String())
-	//		}
-	//	}
-	//
-	//	// @todo reqStoreCode if number ... cast to int64 because then group id if ScopeGroup is group.
-	//	if reqStore, err = sm.GetRequestStore(so, scopeType); err != nil {
-	//		return nil, PkgLog.Error("store.Service.InitByRequest.GetRequestStore", "err", err)
-	//	}
-	//	soStoreCode := so.StoreCode()
-	//
-	//	// also delete and re-set a new cookie
-	//	if reqStore != nil && reqStore.Data.Code.String == soStoreCode {
-	//		wds, err := reqStore.Website.DefaultStore()
-	//		if err != nil {
-	//			return nil, PkgLog.Error("store.Service.InitByRequest.Website.DefaultStore", "err", err, "soStoreCode", soStoreCode)
-	//		}
-	//		if wds.Data.Code.String == soStoreCode {
-	//			reqStore.DeleteCookie(res) // cookie not needed anymore
-	//		} else {
-	//			reqStore.SetCookie(res) // make sure we force set the new store
-	//		}
-	//	}
-	//
-	//	return reqStore, nil // can be nil,nil
 }
