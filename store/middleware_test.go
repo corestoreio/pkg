@@ -37,6 +37,43 @@ import (
 	"golang.org/x/net/context"
 )
 
+var middlewareConfigReader *config.MockReader
+var middlewareCtxStoreService context.Context
+
+func init() {
+	middlewareConfigReader = config.NewMockReader(
+		config.WithMockValues(config.MockPV{
+			config.MockPathScopeDefault(store.PathRedirectToBase):    1,
+			config.MockPathScopeStore(1, store.PathSecureInFrontend): true,
+			config.MockPathScopeStore(1, store.PathUnsecureBaseURL):  "http://www.corestore.io/",
+			config.MockPathScopeStore(1, store.PathSecureBaseURL):    "https://www.corestore.io/",
+		}),
+	)
+
+	middlewareCtxStoreService = storemock.NewContextService(
+		scope.Option{},
+		func(ms *storemock.Storage) {
+			ms.MockStore = func() (*store.Store, error) {
+				return store.NewStore(
+					&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+					&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true, true)},
+					&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
+					store.SetStoreConfig(middlewareConfigReader),
+				)
+			}
+		},
+	)
+}
+func finalHandlerWithValidateBaseURL(t *testing.T) ctxhttp.Handler {
+	return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		assert.NotNil(t, ctx)
+		assert.NotNil(t, w)
+		assert.NotNil(t, r)
+		assert.Empty(t, w.Header().Get("Location"))
+		return nil
+	})
+}
+
 func TestWithValidateBaseUrl_DeactivatedAndShouldNotRedirectWithGETRequest(t *testing.T) {
 
 	mockReader := config.NewMockReader(
@@ -50,15 +87,7 @@ func TestWithValidateBaseUrl_DeactivatedAndShouldNotRedirectWithGETRequest(t *te
 	req, err := http.NewRequest(httputils.MethodGet, "http://corestore.io/catalog/product/view", nil)
 	assert.NoError(t, err)
 
-	err = store.WithValidateBaseUrl(mockReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		assert.NotNil(t, ctx)
-		assert.NotNil(t, w)
-		assert.NotNil(t, r)
-
-		assert.Empty(t, w.Header().Get("Location"))
-
-		return nil
-	})).ServeHTTPContext(context.Background(), w, req)
+	err = store.WithValidateBaseURL(mockReader)(finalHandlerWithValidateBaseURL(t)).ServeHTTPContext(context.Background(), w, req)
 	assert.NoError(t, err)
 }
 
@@ -74,15 +103,7 @@ func TestWithValidateBaseUrl_ActivatedAndShouldNotRedirectWithPOSTRequest(t *tes
 	req, err := http.NewRequest(httputils.MethodGet, "http://corestore.io/catalog/product/view", nil)
 	assert.NoError(t, err)
 
-	mw := store.WithValidateBaseUrl(mockReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		assert.NotNil(t, ctx)
-		assert.NotNil(t, w)
-		assert.NotNil(t, r)
-
-		assert.Empty(t, w.Header().Get("Location"))
-
-		return nil
-	}))
+	mw := store.WithValidateBaseURL(mockReader)(finalHandlerWithValidateBaseURL(t))
 
 	err = mw.ServeHTTPContext(context.Background(), w, req)
 	assert.EqualError(t, err, store.ErrContextServiceNotFound.Error())
@@ -97,29 +118,6 @@ func TestWithValidateBaseUrl_ActivatedAndShouldNotRedirectWithPOSTRequest(t *tes
 }
 
 func TestWithValidateBaseUrl_ActivatedAndShouldRedirectWithGETRequest(t *testing.T) {
-
-	var configReader = config.NewMockReader(
-		config.WithMockValues(config.MockPV{
-			config.MockPathScopeDefault(store.PathRedirectToBase):    1,
-			config.MockPathScopeStore(1, store.PathSecureInFrontend): true,
-			config.MockPathScopeStore(1, store.PathUnsecureBaseURL):  "http://www.corestore.io/",
-			config.MockPathScopeStore(1, store.PathSecureBaseURL):    "https://www.corestore.io/",
-		}),
-	)
-
-	var ctxStoreService = storemock.NewContextService(
-		scope.Option{},
-		func(ms *storemock.Storage) {
-			ms.MockStore = func() (*store.Store, error) {
-				return store.NewStore(
-					&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-					&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true, true)},
-					&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-					store.SetStoreConfig(configReader),
-				)
-			}
-		},
-	)
 
 	var newReq = func(urlStr string) *http.Request {
 		req, err := http.NewRequest(httputils.MethodGet, urlStr, nil)
@@ -162,10 +160,10 @@ func TestWithValidateBaseUrl_ActivatedAndShouldRedirectWithGETRequest(t *testing
 	}
 
 	for i, test := range tests {
-		mw := store.WithValidateBaseUrl(configReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		mw := store.WithValidateBaseURL(middlewareConfigReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			return fmt.Errorf("This handler should not be called! Iindex %d", i)
 		}))
-		assert.NoError(t, mw.ServeHTTPContext(ctxStoreService, test.rec, test.req), "Index %d", i)
+		assert.NoError(t, mw.ServeHTTPContext(middlewareCtxStoreService, test.rec, test.req), "Index %d", i)
 		assert.Exactly(t, test.wantRedirectURL, test.rec.HeaderMap.Get("Location"), "Index %d", i)
 	}
 }
@@ -179,6 +177,17 @@ func getMWTestRequest(m, u string, c *http.Cookie) *http.Request {
 		req.AddCookie(c)
 	}
 	return req
+}
+
+func finalInitStoreHandler(t *testing.T, wantStoreCode string) ctxhttp.Handler {
+	return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		_, haveReqStore, err := store.FromContextReader(ctx)
+		if err != nil {
+			return err
+		}
+		assert.Exactly(t, wantStoreCode, haveReqStore.StoreCode())
+		return nil
+	})
 }
 
 var testsMWInitByFormCookie = []struct {
@@ -260,15 +269,7 @@ func TestWithInitStoreByFormCookie(t *testing.T) {
 
 		ctx := store.NewContextReader(context.Background(), getInitializedStoreService(test.haveSO))
 
-		mw := store.WithInitStoreByFormCookie()(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			_, haveReqStore, err := store.FromContextReader(ctx)
-			if err != nil {
-				return err
-			}
-
-			assert.Exactly(t, test.wantStoreCode, haveReqStore.StoreCode(), "Index %d", i)
-			return nil
-		}))
+		mw := store.WithInitStoreByFormCookie()(finalInitStoreHandler(t, test.wantStoreCode))
 
 		rec := httptest.NewRecorder()
 		surfErr := mw.ServeHTTPContext(ctx, rec, test.req)
@@ -353,15 +354,7 @@ func TestWithInitStoreByToken(t *testing.T) {
 	}
 	for i, test := range tests {
 
-		mw := store.WithInitStoreByToken()(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			_, haveReqStore, err := store.FromContextReader(ctx)
-			if err != nil {
-				return err
-			}
-
-			assert.Exactly(t, test.wantStoreCode, haveReqStore.StoreCode(), "Index %d", i)
-			return nil
-		}))
+		mw := store.WithInitStoreByToken()(finalInitStoreHandler(t, test.wantStoreCode))
 		rec := httptest.NewRecorder()
 		surfErr := mw.ServeHTTPContext(test.ctx, rec, newReq(i))
 		if test.wantErr != nil {

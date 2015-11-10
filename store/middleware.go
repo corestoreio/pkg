@@ -26,11 +26,11 @@ import (
 	"golang.org/x/net/context"
 )
 
-// WithValidateBaseUrl is a middleware which checks if the request base URL
+// WithValidateBaseURL is a middleware which checks if the request base URL
 // is equal to the one store in the configuration, if not
 // i.e. redirect from http://example.com/store/ to http://www.example.com/store/
 // @see app/code/Magento/Store/App/FrontController/Plugin/RequestPreprocessor.php
-func WithValidateBaseUrl(cr config.ReaderPubSuber) ctxhttp.Middleware {
+func WithValidateBaseURL(cr config.ReaderPubSuber) ctxhttp.Middleware {
 
 	// Having the GetBool command here, means you must restart the app to take
 	// changes in effect. @todo refactor and use pub/sub to automatically change
