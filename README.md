@@ -48,6 +48,13 @@ $ export CS_DSN_TEST='magento1:magento1@tcp(localhost:3306)/magento1'
 $ export CS_DSN_TEST='magento2:magento2@tcp(localhost:3306)/magento2'
 ```
 
+### Linting
+
+Please install `$ go get -u -v github.com/alecthomas/gometalinter` and install
+all the required programs.
+
+During development run `$ gometalinter .`
+
 ### Finding Allocations
 
 Side note: There is a new testing approach: TBDD = Test n' Benchmark Driven Development.
