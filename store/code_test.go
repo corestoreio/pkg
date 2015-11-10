@@ -48,7 +48,7 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 	assert.Nil(t, so.Store)
 
 	token2 := jwt.New(jwt.SigningMethodHS256)
-	token2.Claims[store.CookieName] = "Invalid Cod€"
+	token2.Claims[store.ParamName] = "Invalid Cod€"
 	so, err = store.StoreCodeFromClaim(token2.Claims)
 	assert.EqualError(t, store.ErrStoreCodeInvalid, err.Error())
 	assert.Nil(t, so.Website)
@@ -72,21 +72,21 @@ func TestStoreCodeFromClaimNoToken(t *testing.T) {
 			0,
 		},
 		{
-			map[string]interface{}{store.CookieName: "dede"},
+			map[string]interface{}{store.ParamName: "dede"},
 			nil,
 			scope.StoreID,
 			"dede",
 			scope.UnavailableStoreID,
 		},
 		{
-			map[string]interface{}{store.CookieName: "de'de"},
+			map[string]interface{}{store.ParamName: "de'de"},
 			store.ErrStoreCodeInvalid,
 			scope.DefaultID,
 			"",
 			scope.UnavailableStoreID,
 		},
 		{
-			map[string]interface{}{store.CookieName: 1},
+			map[string]interface{}{store.ParamName: 1},
 			store.ErrStoreNotFound,
 			scope.DefaultID,
 			"",
@@ -127,14 +127,14 @@ func TestStoreCodeFromCookie(t *testing.T) {
 			0,
 		},
 		{
-			getRootRequest(&http.Cookie{Name: store.CookieName, Value: "dede"}),
+			getRootRequest(&http.Cookie{Name: store.ParamName, Value: "dede"}),
 			nil,
 			scope.StoreID,
 			"dede",
 			scope.UnavailableStoreID,
 		},
 		{
-			getRootRequest(&http.Cookie{Name: store.CookieName, Value: "ded'e"}),
+			getRootRequest(&http.Cookie{Name: store.ParamName, Value: "ded'e"}),
 			store.ErrStoreCodeInvalid,
 			scope.DefaultID,
 			"",

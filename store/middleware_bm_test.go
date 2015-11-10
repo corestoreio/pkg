@@ -27,6 +27,7 @@ import (
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	storemock "github.com/corestoreio/csfw/store/mock"
+	"github.com/corestoreio/csfw/utils/log"
 	"golang.org/x/net/context"
 )
 
@@ -79,11 +80,10 @@ func Benchmark_WithValidateBaseUrl(b *testing.B) {
 	}
 }
 
-// Benchmark_WithInitStoreByToken-4	  100000	     17297 ns/op	    9112 B/op	     203 allocs/op => old
+// Benchmark_WithInitStoreByToken-4	  100000	     17297 ns/op	    9112 B/op	     203 allocs/op => old bug
 // Benchmark_WithInitStoreByToken-4	 2000000	       810 ns/op	     128 B/op	       5 allocs/op => new
 func Benchmark_WithInitStoreByToken(b *testing.B) {
 	// see TestWithInitStoreByToken_Alloc_Investigations_TEMP
-
 	b.ReportAllocs()
 
 	wantStoreCode := "nz"
@@ -106,6 +106,46 @@ func Benchmark_WithInitStoreByToken(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := mw.ServeHTTPContext(ctx, rec, req); err != nil {
+			b.Error(err)
+		}
+	}
+}
+
+// Benchmark_WithInitStoreByFormCookie-4	    3000	    481881 ns/op	  189103 B/op	     232 allocs/op => with debug enabled
+// Benchmark_WithInitStoreByFormCookie-4	  300000	      4797 ns/op	    1016 B/op	      16 allocs/op => debug disabled
+func Benchmark_WithInitStoreByFormCookie(b *testing.B) {
+	store.PkgLog.SetLevel(log.StdLevelInfo)
+	b.ReportAllocs()
+
+	wantStoreCode := "nz"
+	ctx := store.NewContextReader(context.Background(), getInitializedStoreService(scope.Option{Website: scope.MockID(2)}))
+
+	mw := store.WithInitStoreByFormCookie()(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		_, haveReqStore, err := store.FromContextReader(ctx)
+		if err != nil {
+			return err
+		}
+
+		if wantStoreCode != haveReqStore.StoreCode() {
+			b.Errorf("Want: %s\nHave: %s", wantStoreCode, haveReqStore.StoreCode())
+		}
+		return nil
+	}))
+
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest(httputils.MethodGet, "https://corestore.io/store/list/", nil)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	req.AddCookie(&http.Cookie{
+		Name:  store.ParamName,
+		Value: wantStoreCode,
+	})
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

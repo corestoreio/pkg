@@ -137,9 +137,9 @@ func WithInitStoreByToken() ctxhttp.Middleware {
 	}
 }
 
-// WithInitStoreByFormCookie read from a GET parameter or cookie the store code.
-// Checks if the store code is valid and allowed. If so it adjust the context.Context
-// so provide the new requestedStore.
+// WithInitStoreByFormCookie reads from a GET parameter or cookie the store code.
+// Checks if the store code is valid and allowed. If so it adjusts the context.Context
+// to provide the new requestedStore.
 //
 // It calls Reader.RequestedStore() to determine the correct store.
 // 		1. check cookie store, always a string and the store code
@@ -159,23 +159,18 @@ func WithInitStoreByFormCookie() ctxhttp.Middleware {
 			var reqSO scope.Option
 
 			reqSO, err = StoreCodeFromRequestGET(r)
-			if err != nil { // no cookie set, lets try via form to find the store code
-
-				if err == ErrStoreCodeInvalid && PkgLog.IsDebug() {
+			if err != nil {
+				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.WithInitStoreByFormCookie.StoreCodeFromRequestGET", "err", err, "req", r, "scope", reqSO)
 				}
 
 				reqSO, err = StoreCodeFromCookie(r)
-				switch err {
-				case ErrStoreCodeInvalid, http.ErrNoCookie:
-					err = nil
-				case nil:
-				// do nothing
-				default: // err != nil
+				if err != nil {
+					// ignore further processing because all codes are invalid or not found
 					if PkgLog.IsDebug() {
 						PkgLog.Debug("store.WithInitStoreByFormCookie.StoreCodeFromCookie", "err", err, "req", r, "scope", reqSO)
 					}
-					return errgo.Mask(err)
+					return h.ServeHTTPContext(ctx, w, r)
 				}
 			}
 

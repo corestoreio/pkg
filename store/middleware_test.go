@@ -32,6 +32,7 @@ import (
 	"github.com/corestoreio/csfw/store"
 	storemock "github.com/corestoreio/csfw/store/mock"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/juju/errgo"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -161,7 +162,6 @@ func TestWithValidateBaseUrl_ActivatedAndShouldRedirectWithGETRequest(t *testing
 	}
 
 	for i, test := range tests {
-		i = i
 		mw := store.WithValidateBaseUrl(configReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			return fmt.Errorf("This handler should not be called! Iindex %d", i)
 		}))
@@ -170,7 +170,7 @@ func TestWithValidateBaseUrl_ActivatedAndShouldRedirectWithGETRequest(t *testing
 	}
 }
 
-func getTestRequest(m, u string, c *http.Cookie) *http.Request {
+func getMWTestRequest(m, u string, c *http.Cookie) *http.Request {
 	req, err := http.NewRequest(m, u, nil)
 	if err != nil {
 		panic(err)
@@ -181,159 +181,138 @@ func getTestRequest(m, u string, c *http.Cookie) *http.Request {
 	return req
 }
 
-var testsInitByRequest = []struct {
-	req                  *http.Request
-	haveSO               scope.Option
-	wantStoreCode        string           // this is the default store in a scope, lookup in getInitializedStoreService
-	wantRequestStoreCode scope.StoreCoder // can be nil in tests
-	wantErr              error
-	wantCookie           string
+var testsMWInitByFormCookie = []struct {
+	req           *http.Request
+	haveSO        scope.Option
+	wantStoreCode string // this is the default store in a scope, lookup in getInitializedStoreService
+	wantErr       error
+	wantCookie    string // the newly set cookie
+	wantLog       string
 }{
 	{
-		getTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "uk"}),
-		scope.Option{Store: scope.MockID(1)}, "de", scope.MockCode("uk"), nil, store.CookieName + "=uk;",
+		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.ParamName, Value: "uk"}),
+		scope.Option{Store: scope.MockID(1)}, "uk", nil, store.ParamName + "=uk;", store.ErrStoreCodeInvalid.Error(),
 	},
 	{
-		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
-		scope.Option{Store: scope.MockID(1)}, "de", scope.MockCode("uk"), nil, store.CookieName + "=uk;", // generates a new 1y valid cookie
+		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
+		scope.Option{Store: scope.MockID(1)}, "uk", nil, store.ParamName + "=uk;", "", // generates a new 1year valid cookie
 	},
 	{
-		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=%20uk", nil),
-		scope.Option{Store: scope.MockID(1)}, "de", scope.MockCode("uk"), store.ErrStoreCodeInvalid, "",
+		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=%20uk", nil),
+		scope.Option{Store: scope.MockID(1)}, "de", nil, "", store.ErrStoreCodeInvalid.Error(),
 	},
 	{
-		getTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "de"}),
-		scope.Option{Group: scope.MockID(1)}, "at", scope.MockCode("de"), nil, store.CookieName + "=de;",
+		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.ParamName, Value: "de"}),
+		scope.Option{Group: scope.MockID(1)}, "de", nil, store.ParamName + "=de;", store.ErrStoreCodeInvalid.Error(),
 	},
 	{
-		getTestRequest("GET", "http://cs.io", nil),
-		scope.Option{Group: scope.MockID(1)}, "at", nil, scope.ErrUnsupportedScope, "",
+		getMWTestRequest("GET", "http://cs.io", nil),
+		scope.Option{Group: scope.MockID(1)}, "at", nil, "", http.ErrNoCookie.Error(),
 	},
 	{
-		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=de", nil),
-		scope.Option{Group: scope.MockID(1)}, "at", scope.MockCode("de"), nil, store.CookieName + "=de;", // generates a new 1y valid cookie
+		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=de", nil),
+		scope.Option{Group: scope.MockID(1)}, "de", nil, store.ParamName + "=de;", "", // generates a new 1y valid cookie
 	},
 	{
-		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=at", nil),
-		scope.Option{Group: scope.MockID(1)}, "at", scope.MockCode("at"), nil, store.CookieName + "=;", // generates a delete cookie
+		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=at", nil),
+		scope.Option{Group: scope.MockID(1)}, "at", nil, store.ParamName + "=;", "", // generates a delete cookie
 	},
 	{
-		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=cz", nil),
-		scope.Option{Group: scope.MockID(1)}, "at", nil, store.ErrIDNotFoundTableStoreSlice, "",
+		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=cz", nil),
+		scope.Option{Group: scope.MockID(1)}, "at", store.ErrIDNotFoundTableStoreSlice, "", "",
 	},
 	{
-		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
-		scope.Option{Group: scope.MockID(1)}, "at", nil, store.ErrStoreChangeNotAllowed, "",
+		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
+		scope.Option{Group: scope.MockID(1)}, "at", store.ErrStoreChangeNotAllowed, "", "",
 	},
 
 	{
-		getTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "nz"}),
-		scope.Option{Website: scope.MockID(2)}, "au", scope.MockCode("nz"), nil, store.CookieName + "=nz;",
+		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.ParamName, Value: "nz"}),
+		scope.Option{Website: scope.MockID(2)}, "nz", nil, store.ParamName + "=nz;", store.ErrStoreCodeInvalid.Error(),
 	},
 	{
-		getTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.CookieName, Value: "n'z"}),
-		scope.Option{Website: scope.MockID(2)}, "au", nil, store.ErrStoreCodeInvalid, "",
+		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.ParamName, Value: "n'z"}),
+		scope.Option{Website: scope.MockID(2)}, "au", nil, "", store.ErrStoreCodeInvalid.Error(),
 	},
 	{
-		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
-		scope.Option{Website: scope.MockID(2)}, "au", nil, store.ErrStoreChangeNotAllowed, "",
+		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
+		scope.Option{Website: scope.MockID(2)}, "au", store.ErrStoreChangeNotAllowed, "", "",
 	},
 	{
-		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=nz", nil),
-		scope.Option{Website: scope.MockID(2)}, "au", scope.MockCode("nz"), nil, store.CookieName + "=nz;",
+		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=nz", nil),
+		scope.Option{Website: scope.MockID(2)}, "nz", nil, store.ParamName + "=nz;", "",
 	},
 	{
-		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=ch", nil),
-		scope.Option{Website: scope.MockID(1)}, "at", nil, store.ErrStoreNotActive, "",
+		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=ch", nil),
+		scope.Option{Website: scope.MockID(1)}, "at", store.ErrStoreNotActive, "", "",
 	},
 	{
-		getTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=nz", nil),
-		scope.Option{Website: scope.MockID(1)}, "at", scope.MockCode("nz"), store.ErrStoreChangeNotAllowed, "",
+		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=nz", nil),
+		scope.Option{Website: scope.MockID(1)}, "at", store.ErrStoreChangeNotAllowed, "", "",
 	},
 }
 
-func TestWithInitStoreByRequest(t *testing.T) {
+func TestWithInitStoreByFormCookie(t *testing.T) {
 	errLogBuf.Reset()
 	defer errLogBuf.Reset()
 
-	for range testsInitByRequest {
-		//		if _, haveErr := getInitializedStoreService.InitByRequest(nil, nil, test.haveScopeType); haveErr != nil {
-		//			assert.EqualError(t, store.ErrAppStoreNotSet, haveErr.Error())
-		//		} else {
-		//			t.Fatal("InitByRequest should return an error if used without running Init() first.")
-		//		}
-		//
-		//		if err := getInitializedStoreService.Init(test.haveSO); err != nil {
-		//			assert.EqualError(t, store.ErrUnsupportedScope, err.Error())
-		//			t.Log("continuing for loop because of expected store.ErrUnsupportedScopeGroup")
-		//			getInitializedStoreService.ClearCache(true)
-		//			continue
-		//		}
-		//
-		//		if s, err := getInitializedStoreService.Store(); err == nil {
-		//			assert.EqualValues(t, test.wantStoreCode, s.Data.Code.String)
-		//		} else {
-		//			assert.EqualError(t, err, store.ErrStoreNotFound.Error())
-		//			t.Log("continuing for loop because of expected store.ErrStoreNotFound")
-		//			getInitializedStoreService.ClearCache(true)
-		//			continue
-		//		}
-		//		getInitializedStoreService.ClearCache(true)
+	for i, test := range testsMWInitByFormCookie {
+
+		ctx := store.NewContextReader(context.Background(), getInitializedStoreService(test.haveSO))
+
+		mw := store.WithInitStoreByFormCookie()(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+			_, haveReqStore, err := store.FromContextReader(ctx)
+			if err != nil {
+				return err
+			}
+
+			assert.Exactly(t, test.wantStoreCode, haveReqStore.StoreCode(), "Index %d", i)
+			return nil
+		}))
+
+		rec := httptest.NewRecorder()
+		surfErr := mw.ServeHTTPContext(ctx, rec, test.req)
+		if test.wantErr != nil {
+			var loc string
+			if l, ok := surfErr.(errgo.Locationer); ok {
+				loc = l.Location().String()
+			}
+
+			assert.EqualError(t, surfErr, test.wantErr.Error(), "\nIndex %d\n%s", i, loc)
+			errLogBuf.Reset()
+			continue
+		}
+
+		if test.wantLog != "" {
+			assert.Contains(t, errLogBuf.String(), test.wantLog, "\nIndex %d\n", i)
+			errLogBuf.Reset()
+			continue
+		} else {
+			assert.Empty(t, errLogBuf.String(), "\nIndex %d\n", i)
+		}
+
+		assert.NoError(t, surfErr, "Index %d", i)
+
+		newKeks := rec.HeaderMap.Get("Set-Cookie")
+		if test.wantCookie != "" {
+			assert.Contains(t, newKeks, test.wantCookie, "\nIndex %d\n", i)
+		} else {
+			assert.Empty(t, newKeks, "%#v", test)
+		}
+		errLogBuf.Reset()
 	}
 }
 
-//
-//func TestInitByRequestInDepth(t *testing.T) {
-//	errLogBuf.Reset()
-//	defer errLogBuf.Reset()
-//
-//	for i, test := range testsInitByRequest {
-//		if err := getInitializedStoreService.Init(test.haveSO); err != nil {
-//			assert.EqualError(t, store.ErrUnsupportedScope, err.Error())
-//			t.Log("continuing for loop because of expected store.ErrUnsupportedScopeGroup")
-//			getInitializedStoreService.ClearCache(true)
-//			continue
-//		}
-//
-//		resRec := httptest.NewRecorder()
-//
-//		haveStore, haveErr := getInitializedStoreService.InitByRequest(resRec, test.req, test.haveScopeType)
-//		if test.wantErr != nil {
-//			assert.Nil(t, haveStore)
-//			assert.Error(t, haveErr, "Index %d", i)
-//			assert.EqualError(t, haveErr, test.wantErr.Error(), "\nIndex: %d\nError: %s", i, errLogBuf.String())
-//		} else {
-//
-//			assert.NoError(t, haveErr, "Test: %#v\n\n%s\n\n", test, errLogBuf.String())
-//
-//			if test.wantRequestStoreCode != nil {
-//				assert.NotNil(t, haveStore, "URL Query: %#v\nCookies %#v", test.req.URL.Query(), test.req.Cookies())
-//				assert.EqualValues(t, test.wantRequestStoreCode.StoreCode(), haveStore.Data.Code.String)
-//
-//				newKeks := resRec.HeaderMap.Get("Set-Cookie")
-//				if test.wantCookie != "" {
-//					assert.Contains(t, newKeks, test.wantCookie, "%#v", test)
-//					//					t.Logf(
-//					//						"\nwantRequestStoreCode: %s\nCookie Str: %#v\n",
-//					//						test.wantRequestStoreCode.Code(),
-//					//						newKeks,
-//					//					)
-//				} else {
-//					assert.Empty(t, newKeks, "%#v", test)
-//				}
-//
-//			} else {
-//				assert.Nil(t, haveStore, "%#v", haveStore)
-//			}
-//		}
-//		getInitializedStoreService.ClearCache(true)
-//	}
-//}
+func TestWithInitStoreByFormCookie_NilCtx(t *testing.T) {
+	mw := store.WithInitStoreByFormCookie()(nil)
+	surfErr := mw.ServeHTTPContext(context.Background(), nil, nil)
+	assert.EqualError(t, surfErr, store.ErrContextServiceNotFound.Error())
+}
 
 func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) context.Context {
 	ctx := store.NewContextReader(context.Background(), getInitializedStoreService(initO))
 	tok := jwt.New(jwt.SigningMethodHS256)
-	tok.Claims[store.CookieName] = tokenStoreCode
+	tok.Claims[store.ParamName] = tokenStoreCode
 	ctx = ctxjwt.NewContext(ctx, tok)
 	return ctx
 }
@@ -389,7 +368,6 @@ func TestWithInitStoreByToken(t *testing.T) {
 			assert.EqualError(t, surfErr, test.wantErr.Error(), "Index %d", i)
 			continue
 		}
-
 		assert.NoError(t, surfErr, "Index %d", i)
 	}
 }

@@ -29,7 +29,7 @@ func StoreCodeFromClaim(token map[string]interface{}) (o scope.Option, err error
 		return
 	}
 
-	tokVal, ok := token[CookieName]
+	tokVal, ok := token[ParamName]
 	scopeCode, okcs := tokVal.(string)
 
 	if okcs && ok {
@@ -46,7 +46,7 @@ func StoreCodeFromCookie(req *http.Request) (o scope.Option, err error) {
 		return
 	}
 	var keks *http.Cookie
-	keks, err = req.Cookie(CookieName)
+	keks, err = req.Cookie(ParamName)
 	if err != nil {
 		return
 	}

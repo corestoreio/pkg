@@ -39,12 +39,11 @@ const (
 	// HTTPRequestParamStore name of the GET parameter to set a new store in a
 	// current website/group context
 	HTTPRequestParamStore = `___store`
-	// CookieName important when the user selects a different store within the
-	// current website/group context. This cookie permanently saves the new selected
-	// store code for one year. The cookie must be removed when the default store of
-	// the current website if equal to the current store.
-	CookieName = `store`
-
+	// ParamName important when the user selects a different store within the
+	// current website/group context. This name will be used in a cookie or as
+	// key value in a token to permanently save the new selected
+	// store code.
+	ParamName = `store`
 	// PriceScopeGlobal prices are for all stores and websites the same.
 	PriceScopeGlobal = `0` // must be string
 	// PriceScopeWebsite prices are in each website different.
@@ -306,7 +305,7 @@ func (s *Store) IsCurrentlySecure(r *http.Request) bool {
 // @see http://browsercookielimits.squawky.net/
 func (s *Store) NewCookie() *http.Cookie {
 	return &http.Cookie{
-		Name:     CookieName,
+		Name:     ParamName,
 		Value:    "",
 		Path:     s.Path(),
 		Domain:   "",
@@ -337,7 +336,7 @@ func (s *Store) DeleteCookie(res http.ResponseWriter) {
 // AddClaim adds the store code to a JSON web token.
 // tokenClaim may be *jwt.Token.Claim
 func (s *Store) AddClaim(tokenClaim map[string]interface{}) {
-	tokenClaim[CookieName] = s.Data.Code.String
+	tokenClaim[ParamName] = s.Data.Code.String
 }
 
 // RootCategoryId returns the root category ID assigned to this store view.

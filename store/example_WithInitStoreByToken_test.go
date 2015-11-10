@@ -100,7 +100,7 @@ func ExampleWithInitStoreByToken() {
 		map[string]interface{}{
 			// Despite default store for Website ID 1 is AT we are currently
 			// in the store context of DE.
-			store.CookieName: "de",
+			store.ParamName: "de",
 		},
 	)
 	if err != nil {
@@ -126,4 +126,8 @@ func ExampleWithInitStoreByToken() {
 
 	fmt.Printf("Response: %s\n", response)
 	fmt.Printf("Log: %s\n", testDebugLogBuf.String())
+	// Output:
+	// Response: StoreCode: de
+	//
+	// Log:
 }
