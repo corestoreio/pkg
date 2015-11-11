@@ -308,5 +308,6 @@ func TestMarshalJSON(t *testing.T) {
 
 	jdata, err := json.Marshal(s)
 	assert.NoError(t, err)
-	assert.Equal(t, []byte(`{"StoreID":1,"Code":"de","WebsiteID":1,"GroupID":1,"Name":"Germany","SortOrder":10,"IsActive":true}`), jdata)
+	have := []byte(`{"StoreID":1,"Code":"de","WebsiteID":1,"GroupID":1,"Name":"Germany","SortOrder":10,"IsActive":true}`)
+	assert.Equal(t, have, jdata, "Have: %s\nWant: %s", have, jdata)
 }
