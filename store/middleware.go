@@ -66,7 +66,7 @@ func WithValidateBaseURL(cr config.ReaderPubSuber) ctxhttp.Middleware {
 					return errgo.Mask(err)
 				}
 
-				if err := httputils.IsBaseUrlCorrect(r, &baseURL); err != nil {
+				if err := httputils.IsBaseURLCorrect(r, &baseURL); err != nil {
 					if PkgLog.IsDebug() {
 						PkgLog.Debug("store.WithValidateBaseUrl.IsBaseUrlCorrect.error", "err", err, "baseURL", baseURL, "request", r)
 					}

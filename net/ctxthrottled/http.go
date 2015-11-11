@@ -45,7 +45,7 @@ const (
 	// greater than or equal to zero.
 	// Scope Global, Type Int.
 	PathRateLimitBurst = `corestore/ctxthrottled/burst`
-	// PathRateLimitDuration number of requests allowed per time period
+	// PathRateLimitRequests number of requests allowed per time period
 	// Scope Global, Type Int.
 	PathRateLimitRequests = `corestore/ctxthrottled/requests`
 	// PathRateLimitDuration per second (s), minute (i), hour (h), day (d)

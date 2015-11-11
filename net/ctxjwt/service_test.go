@@ -199,7 +199,7 @@ func TestWithParseAndValidateNoToken(t *testing.T) {
 	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
 	assert.NoError(t, err)
 	w := httptest.NewRecorder()
-	authHandler.ServeHTTPContext(context.Background(), w, req)
+	assert.NoError(t, authHandler.ServeHTTPContext(context.Background(), w, req))
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.Equal(t, w.Body.String(), http.StatusText(http.StatusUnauthorized)+"\n")
 }
@@ -217,7 +217,7 @@ func TestWithParseAndValidateHTTPErrorHandler(t *testing.T) {
 	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
 	assert.NoError(t, err)
 	w := httptest.NewRecorder()
-	authHandler.ServeHTTPContext(context.Background(), w, req)
+	assert.NoError(t, authHandler.ServeHTTPContext(context.Background(), w, req))
 	assert.Equal(t, http.StatusTeapot, w.Code)
 	assert.Equal(t, "no token present in request", w.Body.String())
 }
@@ -251,8 +251,7 @@ func TestWithParseAndValidateSuccess(t *testing.T) {
 	authHandler := jm.WithParseAndValidate()(finalHandler)
 
 	wRec := httptest.NewRecorder()
-	authHandler.ServeHTTPContext(context.Background(), wRec, req)
-
+	assert.NoError(t, authHandler.ServeHTTPContext(context.Background(), wRec, req))
 	assert.Equal(t, http.StatusTeapot, wRec.Code)
 	assert.Equal(t, `I'm more of a coffee pot`, wRec.Body.String())
 }
@@ -292,7 +291,7 @@ func TestWithParseAndValidateInBlackList(t *testing.T) {
 	authHandler := jm.WithParseAndValidate()(finalHandler)
 
 	wRec := httptest.NewRecorder()
-	authHandler.ServeHTTPContext(context.Background(), wRec, req)
+	assert.NoError(t, authHandler.ServeHTTPContext(context.Background(), wRec, req))
 
 	assert.NotEqual(t, http.StatusTeapot, wRec.Code)
 	assert.Equal(t, http.StatusUnauthorized, wRec.Code)

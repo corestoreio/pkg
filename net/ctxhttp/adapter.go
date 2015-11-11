@@ -69,7 +69,7 @@ func NewAdapter(ctx context.Context, h Handler) *Adapter {
 	}
 }
 
-// AdapterErrorFunc specifies the error handler for the Adapter
+// AdapterErrFunc specifies the error handler for the Adapter
 type AdapterErrFunc func(http.ResponseWriter, *http.Request, error)
 
 // DefaultAdapterErrFunc logs the error (if Debug is enabled) and sends a

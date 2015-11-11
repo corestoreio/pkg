@@ -64,20 +64,20 @@ func TestHttpMethodOverride(t *testing.T) {
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(httputils.MethodGet, "http://example.com/foo?_method="+httputils.MethodPatch, nil)
 	assert.NoError(t, err)
-	hndlr.ServeHTTPContext(context.Background(), w, req)
+	assert.NoError(t, hndlr.ServeHTTPContext(context.Background(), w, req))
 	assert.Equal(t, httputils.MethodPatch, req.Method)
 	assert.Equal(t, "h1 called", w.Body.String())
 
 	w = httptest.NewRecorder()
 	req, err = http.NewRequest(httputils.MethodGet, "http://example.com/foo?_method=KARATE", nil)
 	assert.NoError(t, err)
-	hndlr.ServeHTTPContext(context.Background(), w, req)
+	assert.NoError(t, hndlr.ServeHTTPContext(context.Background(), w, req))
 	assert.Equal(t, httputils.MethodGet, req.Method)
 
 	w = httptest.NewRecorder()
 	req, err = http.NewRequest(httputils.MethodGet, "http://example.com/foobar", nil)
 	assert.NoError(t, err)
-	hndlr.ServeHTTPContext(context.Background(), w, req)
+	assert.NoError(t, hndlr.ServeHTTPContext(context.Background(), w, req))
 	assert.Equal(t, httputils.MethodGet, req.Method)
 
 }

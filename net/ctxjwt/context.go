@@ -31,6 +31,7 @@ const (
 	keyctxErr
 )
 
+// ErrContextJWTNotFound gets returned when the jwt cannot be found.
 var ErrContextJWTNotFound = errors.New("Cannot extract ctxjwt nor an error from context")
 
 // NewContext creates a new context with jwt.Token attached.

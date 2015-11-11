@@ -114,15 +114,15 @@ func TestIsBaseUrlCorrect(t *testing.T) {
 		wantErr     error
 	}{
 		{nr("http://corestore.io/"), pu("http://corestore.io/"), nil},
-		{nr("http://www.corestore.io/"), pu("http://corestore.io/"), httputils.ErrBaseUrlDoNotMatch},
-		{nr("http://corestore.io/"), pu("https://corestore.io/"), httputils.ErrBaseUrlDoNotMatch},
-		{nr("http://corestore.io/"), pu("http://corestore.io/subpath"), httputils.ErrBaseUrlDoNotMatch},
+		{nr("http://www.corestore.io/"), pu("http://corestore.io/"), httputils.ErrBaseURLDoNotMatch},
+		{nr("http://corestore.io/"), pu("https://corestore.io/"), httputils.ErrBaseURLDoNotMatch},
+		{nr("http://corestore.io/"), pu("http://corestore.io/subpath"), httputils.ErrBaseURLDoNotMatch},
 		{nr("http://corestore.io/subpath"), pu("http://corestore.io/subpath"), nil},
 		{nr("http://corestore.io/"), pu("http://corestore.io/"), nil},
 		{nr("http://corestore.io/subpath/catalog/product/list"), pu("http://corestore.io/subpath"), nil},
 	}
 	for i, test := range tests {
-		haveErr := httputils.IsBaseUrlCorrect(test.req, test.haveBaseURL)
+		haveErr := httputils.IsBaseURLCorrect(test.req, test.haveBaseURL)
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
 		} else {

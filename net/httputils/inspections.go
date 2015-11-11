@@ -25,9 +25,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-// ErrBaseUrlDoNotMatch will be returned if the request URL does not match the
+// ErrBaseURLDoNotMatch will be returned if the request URL does not match the
 // configured URL.
-var ErrBaseUrlDoNotMatch = errors.New("The Base URLs do not match")
+var ErrBaseURLDoNotMatch = errors.New("The Base URLs do not match")
 
 // PathOffloaderHeader defines the header name when a proxy server forwards an
 // already terminated TLS request.
@@ -58,22 +58,22 @@ func IsSecure(cr config.Reader, r *http.Request) bool {
 	h := r.Header.Get(oh)
 	hh := r.Header.Get("HTTP_" + oh)
 
-	var isHttps bool
+	var isHTTPS bool
 	switch "https" {
 	case h, hh:
-		isHttps = true
+		isHTTPS = true
 	}
-	return isHttps
+	return isHTTPS
 }
 
-// IsBaseUrlCorrect checks if the requested host, scheme and path are same as the servers and
+// IsBaseURLCorrect checks if the requested host, scheme and path are same as the servers and
 // if the path of the baseURL is included in the request URI.
-func IsBaseUrlCorrect(r *http.Request, baseURL *url.URL) error {
+func IsBaseURLCorrect(r *http.Request, baseURL *url.URL) error {
 	if r.Host == baseURL.Host && r.URL.Host == baseURL.Host && r.URL.Scheme == baseURL.Scheme && strings.HasPrefix(r.URL.Path, baseURL.Path) {
 		return nil
 	}
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("store.isBaseUrlCorrect.compare", "err", ErrBaseUrlDoNotMatch, "r.Host", r.Host, "baseURL", baseURL.String(), "requestURL", r.URL.String(), "strings.Contains", []string{r.URL.RequestURI(), baseURL.Path})
+		PkgLog.Debug("store.isBaseUrlCorrect.compare", "err", ErrBaseURLDoNotMatch, "r.Host", r.Host, "baseURL", baseURL.String(), "requestURL", r.URL.String(), "strings.Contains", []string{r.URL.RequestURI(), baseURL.Path})
 	}
-	return errgo.Mask(ErrBaseUrlDoNotMatch)
+	return errgo.Mask(ErrBaseURLDoNotMatch)
 }

@@ -23,6 +23,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"io"
+
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/geoip"
@@ -82,34 +84,19 @@ func TestNewServiceErrorWithGeoIP2Reader(t *testing.T) {
 	assert.EqualError(t, err, "File Walhalla/GeoIP2-Country-Test.mmdb not found")
 }
 
+func deferClose(t *testing.T, c io.Closer) {
+	assert.NoError(t, c.Close())
+}
+
 func TestNewServiceWithGeoIP2Reader(t *testing.T) {
 	s := mustGetTestService()
-	defer s.GeoIP.Close()
+	defer deferClose(t, s.GeoIP)
 	ip, _, err := net.ParseCIDR("2a02:d200::/29") // IP range for Finland
 
 	assert.NoError(t, err)
 	haveCty, err := s.GetCountryByIP(ip)
 	assert.NoError(t, err)
 	assert.Exactly(t, "FI", haveCty.Country.Country.IsoCode)
-}
-
-func TestWithCountryByIPErrorRemoteAddr(t *testing.T) {
-	s := mustGetTestService()
-	defer s.GeoIP.Close()
-	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		ipc, err, ok := geoip.FromContextCountry(ctx)
-		assert.Nil(t, ipc)
-		assert.True(t, ok)
-		assert.EqualError(t, err, geoip.ErrCannotGetRemoteAddr.Error())
-		return nil
-	})
-
-	countryHandler := s.WithCountryByIP()(finalHandler)
-	rec := httptest.NewRecorder()
-	req, err := http.NewRequest("GET", "http://corestore.io", nil)
-	assert.NoError(t, err)
-	req.Header.Set("X-Forwarded-For", "2324.2334.432.534")
-	assert.NoError(t, countryHandler.ServeHTTPContext(context.Background(), rec, req))
 }
 
 type geoReaderMock struct{}
@@ -122,7 +109,7 @@ func (geoReaderMock) Close() error { return nil }
 func TestWithCountryByIPErrorGetCountryByIP(t *testing.T) {
 	s := mustGetTestService()
 	s.GeoIP = geoReaderMock{}
-	defer s.GeoIP.Close()
+	defer deferClose(t, s.GeoIP)
 
 	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		ipc, err, ok := geoip.FromContextCountry(ctx)
@@ -142,7 +129,7 @@ func TestWithCountryByIPErrorGetCountryByIP(t *testing.T) {
 
 func TestWithCountryByIPSuccess(t *testing.T) {
 	s := mustGetTestService()
-	defer s.GeoIP.Close()
+	defer deferClose(t, s.GeoIP)
 
 	countryHandler := s.WithCountryByIP()(finalHandlerFinland(t))
 	rec := httptest.NewRecorder()
@@ -152,7 +139,7 @@ func TestWithCountryByIPSuccess(t *testing.T) {
 
 func TestWithIsCountryAllowedByIPErrorStoreManager(t *testing.T) {
 	s := mustGetTestService()
-	defer s.GeoIP.Close()
+	defer deferClose(t, s.GeoIP)
 
 	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		ipc, err, ok := geoip.FromContextCountry(ctx)
@@ -179,19 +166,33 @@ var managerStoreSimpleTest = storemock.NewContextService(scope.Option{}, func(ms
 	}
 })
 
-func TestWithIsCountryAllowedByIPErrorNewContextCountryByIP(t *testing.T) {
-	s := mustGetTestService()
-	defer s.GeoIP.Close()
-
-	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func ipErrorFinalHandler(t *testing.T) ctxhttp.Handler {
+	return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		ipc, err, ok := geoip.FromContextCountry(ctx)
 		assert.Nil(t, ipc)
 		assert.True(t, ok)
 		assert.EqualError(t, err, geoip.ErrCannotGetRemoteAddr.Error())
 		return nil
 	})
+}
 
-	countryHandler := s.WithIsCountryAllowedByIP()(finalHandler)
+func TestWithCountryByIPErrorRemoteAddr(t *testing.T) {
+	s := mustGetTestService()
+	defer deferClose(t, s.GeoIP)
+
+	countryHandler := s.WithCountryByIP()(ipErrorFinalHandler(t))
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest("GET", "http://corestore.io", nil)
+	assert.NoError(t, err)
+	req.Header.Set("X-Forwarded-For", "2324.2334.432.534")
+	assert.NoError(t, countryHandler.ServeHTTPContext(context.Background(), rec, req))
+}
+
+func TestWithIsCountryAllowedByIPErrorNewContextCountryByIP(t *testing.T) {
+	s := mustGetTestService()
+	defer deferClose(t, s.GeoIP)
+
+	countryHandler := s.WithIsCountryAllowedByIP()(ipErrorFinalHandler(t))
 	rec := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "http://corestore.io", nil)
 	assert.NoError(t, err)

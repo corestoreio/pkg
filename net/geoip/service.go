@@ -53,6 +53,7 @@ type Reader interface {
 // names fetched from the config.Reader for a specific store view including fallback.
 type IsAllowedFunc func(*store.Store, *IPCountry, utils.StringSlice, *http.Request) bool
 
+// Service represents a service manager
 type Service struct {
 	// GeoIP searches the country for an IP address
 	GeoIP Reader
@@ -95,6 +96,7 @@ func (s *Service) Error() string {
 	return utils.Errors(s.lastErrors...)
 }
 
+// GetCountryByIP returns from an IP address the country
 func (s *Service) GetCountryByIP(ip net.IP) (*IPCountry, error) {
 	// todo maybe add caching layer
 	c, err := s.GeoIP.Country(ip)

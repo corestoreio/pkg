@@ -30,6 +30,7 @@ import (
 // ErrUnexpectedSigningMethod will be returned if some outside dude tries to trick us
 var ErrUnexpectedSigningMethod = errors.New("JWT: Unexpected signing method")
 
+// DefaultExpire duration when a token expires
 var DefaultExpire time.Duration = time.Hour
 
 // Blacklister a backend storage to handle blocked tokens.
@@ -150,17 +151,17 @@ func (s *Service) keyFunc(t *jwt.Token) (interface{}, error) {
 			PkgLog.Debug("ctxjwt.AuthManager.Authenticate.SigningMethod", "err", ErrUnexpectedSigningMethod, "token", t, "method", s.SigningMethod.Alg())
 		}
 		return nil, ErrUnexpectedSigningMethod
-	} else {
-		switch t.Method.Alg() {
-		case jwt.SigningMethodRS256.Alg(), jwt.SigningMethodRS384.Alg(), jwt.SigningMethodRS512.Alg():
-			return &s.rsapk.PublicKey, nil
-		case jwt.SigningMethodES256.Alg(), jwt.SigningMethodES384.Alg(), jwt.SigningMethodES512.Alg():
-			return &s.ecdsapk.PublicKey, nil
-		case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
-			return s.password, nil
-		default:
-			return nil, fmt.Errorf("ctxjwt.Service.keyFunc: Unknown algorithm %s", t.Method.Alg())
-		}
+	}
+
+	switch t.Method.Alg() {
+	case jwt.SigningMethodRS256.Alg(), jwt.SigningMethodRS384.Alg(), jwt.SigningMethodRS512.Alg():
+		return &s.rsapk.PublicKey, nil
+	case jwt.SigningMethodES256.Alg(), jwt.SigningMethodES384.Alg(), jwt.SigningMethodES512.Alg():
+		return &s.ecdsapk.PublicKey, nil
+	case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
+		return s.password, nil
+	default:
+		return nil, fmt.Errorf("ctxjwt.Service.keyFunc: Unknown algorithm %s", t.Method.Alg())
 	}
 }
 
