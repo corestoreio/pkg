@@ -26,20 +26,17 @@ var codecJSON codec.Handle = new(codec.JsonHandle)
 
 // ToJSON fast JSON encoding with http://ugorji.net/blog/go-codec-primer algorithm.
 func (s *Store) ToJSON(w io.Writer) error {
-	var enc *codec.Encoder = codec.NewEncoder(w, codecJSON)
-	return enc.Encode(s.Data)
+	return codec.NewEncoder(w, codecJSON).Encode(s.Data)
 }
 
 // ToJSON fast JSON encoding with http://ugorji.net/blog/go-codec-primer algorithm.
 func (ws *Website) ToJSON(w io.Writer) error {
-	var enc *codec.Encoder = codec.NewEncoder(w, codecJSON)
-	return enc.Encode(ws.Data)
+	return codec.NewEncoder(w, codecJSON).Encode(ws.Data)
 }
 
 // ToJSON fast JSON encoding with http://ugorji.net/blog/go-codec-primer algorithm.
 func (g *Group) ToJSON(w io.Writer) error {
-	var enc *codec.Encoder = codec.NewEncoder(w, codecJSON)
-	return enc.Encode(g.Data)
+	return codec.NewEncoder(w, codecJSON).Encode(g.Data)
 }
 
 // @todo add other encoding/decoding algorithms

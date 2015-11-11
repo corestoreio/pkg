@@ -225,7 +225,7 @@ func (s *Store) Path() string {
 	return url.Path
 }
 
-// BaseUrl returns a parsed and maybe cached URL from config.ScopedReader.
+// BaseURL returns a parsed and maybe cached URL from config.ScopedReader.
 // It returns a copy of url.URL or an error. Possible URLTypes are:
 //     - config.URLTypeWeb
 //     - config.URLTypeStatic
@@ -353,8 +353,8 @@ func (s *Store) AddClaim(tokenClaim map[string]interface{}) {
 	tokenClaim[ParamName] = s.Data.Code.String
 }
 
-// RootCategoryId returns the root category ID assigned to this store view.
-func (s *Store) RootCategoryId() int64 {
+// RootCategoryID returns the root category ID assigned to this store view.
+func (s *Store) RootCategoryID() int64 {
 	return s.Group.Data.RootCategoryID
 }
 

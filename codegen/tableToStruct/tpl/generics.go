@@ -17,14 +17,15 @@ package tpl
 // @todo hide password and other sensitive fields in JSON struct tags
 
 const Type = `
-// {{.Struct}} and {{.Slice}}, a type for DB table {{ .TableName }}
+// {{.Slice}} represents a collection type for DB table {{ .TableName }}
 // Generated via tableToStruct.
-type (
-    {{.Slice}} []*{{.Struct}}
-    {{.Struct}} struct {
-        {{ range .GoColumns }}{{.GoName}} {{.GoType}} {{ $.Tick }}db:"{{.Field.String}}" json:",omitempty"{{ $.Tick }} {{.Comment}}
-        {{ end }} }
-)
+type {{.Slice}} []*{{.Struct}}
+
+// {{.Struct}} represents a type for DB table {{ .TableName }}
+// Generated via tableToStruct.
+type {{.Struct}} struct {
+{{ range .GoColumns }}{{.GoName}} {{.GoType}} {{ $.Tick }}db:"{{.Field.String}}" json:",omitempty"{{ $.Tick }} {{.Comment}}
+{{ end }} }
 `
 
 // Generics defines the available templates

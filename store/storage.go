@@ -122,7 +122,7 @@ func (st *Storage) website(r scope.WebsiteIDer) (*TableWebsite, error) {
 func (st *Storage) Website(r scope.WebsiteIDer) (*Website, error) {
 	w, err := st.website(r)
 	if err != nil {
-		return nil, err
+		return nil, errgo.Mask(err)
 	}
 	return NewWebsite(w, SetWebsiteConfig(st.cr), SetWebsiteGroupsStores(st.groups, st.stores))
 }
@@ -157,7 +157,7 @@ func (st *Storage) group(r scope.GroupIDer) (*TableGroup, error) {
 func (st *Storage) Group(id scope.GroupIDer) (*Group, error) {
 	g, err := st.group(id)
 	if err != nil {
-		return nil, err
+		return nil, errgo.Mask(err)
 	}
 
 	w, err := st.website(scope.MockID(g.WebsiteID))
@@ -225,8 +225,12 @@ func (st *Storage) Store(r scope.StoreIDer) (*Store, error) {
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	ns.Website.ApplyOptions(SetWebsiteGroupsStores(st.groups, st.stores))
-	ns.Group.ApplyOptions(SetGroupStores(st.stores, w))
+	if _, err := ns.Website.ApplyOptions(SetWebsiteGroupsStores(st.groups, st.stores)); err != nil {
+		return nil, errgo.Mask(err)
+	}
+	if _, err := ns.Group.ApplyOptions(SetGroupStores(st.stores, w)); err != nil {
+		return nil, errgo.Mask(err)
+	}
 	return ns, nil
 }
 
@@ -250,7 +254,7 @@ func (st *Storage) DefaultStoreView() (*Store, error) {
 		if website.IsDefault.Bool && website.IsDefault.Valid {
 			g, err := st.group(scope.MockID(website.DefaultGroupID))
 			if err != nil {
-				return nil, err
+				return nil, errgo.Mask(err)
 			}
 			return st.Store(scope.MockID(g.DefaultStoreID))
 		}

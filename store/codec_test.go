@@ -50,15 +50,14 @@ func TestToJSON(t *testing.T) {
 	assert.NoError(t, s.ToJSON(&buf))
 
 	tsd := TestToJSONStore{}
-	json.Unmarshal(buf.Bytes(), &tsd)
+	assert.NoError(t, json.Unmarshal(buf.Bytes(), &tsd))
 
 	want := TestToJSONStore{Code: "de", GroupID: 1, IsActive: true, Name: "Germany", SortOrder: 10, StoreID: 1, WebsiteID: 1}
 
 	assert.Equal(t, want, tsd)
 
 	var ds store.TableStore
-	dec := json.NewDecoder(&buf)
-	dec.Decode(&ds)
+	assert.NoError(t, json.NewDecoder(&buf).Decode(&ds))
 
 	assert.Equal(t, "de", ds.Code.String)
 	assert.Equal(t, "Germany", ds.Name)
