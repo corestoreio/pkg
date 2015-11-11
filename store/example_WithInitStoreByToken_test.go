@@ -119,7 +119,10 @@ func ExampleWithInitStoreByToken() {
 	}
 
 	response, err := ioutil.ReadAll(res.Body)
-	res.Body.Close()
+	if errC := res.Body.Close(); errC != nil {
+		log.Fatal("res.Body.Close", "err", errC)
+	}
+
 	if err != nil {
 		log.Fatal("ioutil.ReadAll", "err", err)
 	}

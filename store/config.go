@@ -21,6 +21,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 )
 
+// Path constants defines the configuration paths in core_config_data
 const (
 	// SingleStoreModeEnabled if true then single store mode enabled
 	// This flag only shows that admin does not want to show certain
@@ -45,10 +46,15 @@ const (
 	PathSecureBaseMediaURL   = "web/secure/base_media_url"
 	PathUnsecureBaseMediaURL = "web/unsecure/base_media_url"
 
-	// This defines the base currency scope ("Currency Setup" > "Currency Options" > "Base Currency").
+	// PathPriceScope defines the base currency scope
+	// ("Currency Setup" > "Currency Options" > "Base Currency").
 	// can be 0 = Global or 1 = Website
 	PathPriceScope = "catalog/price/scope"
+)
 
+// Placeholder constants and their values can occur in the table core_config_data.
+// These placeholder must be replaced with the current values.
+const (
 	PlaceholderBaseURL         = config.LeftDelim + "base_url" + config.RightDelim
 	PlaceholderBaseURLSecure   = config.LeftDelim + "secure_base_url" + config.RightDelim
 	PlaceholderBaseURLUnSecure = config.LeftDelim + "unsecure_base_url" + config.RightDelim

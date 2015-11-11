@@ -592,7 +592,7 @@ func TestNewServiceReInit(t *testing.T) {
 
 	// quick implement, use mock of dbr.SessionRunner and remove connection
 	dbc := csdb.MustConnectTest()
-	defer dbc.Close()
+	defer func() { assert.NoError(t, dbc.Close()) }()
 	dbrSess := dbc.NewSession()
 
 	storeService := store.MustNewService(scope.Option{}, store.NewStorage(nil /* trick it*/))

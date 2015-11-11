@@ -30,7 +30,6 @@ import (
 	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/net/httputils"
 	"github.com/corestoreio/csfw/utils"
-	"github.com/juju/errgo"
 )
 
 const (
@@ -74,12 +73,15 @@ type Store struct {
 	}
 }
 
-// StoreSlice a collection of pointers to the Store structs. StoreSlice has some nifty method receivers.
+// StoreSlice a collection of pointers to the Store structs.
+// StoreSlice has some nifty method receivers.
 type StoreSlice []*Store
 
 // StoreOption can be used as an argument in NewStore to configure a store.
 type StoreOption func(s *Store)
 
+// ErrStore* are general errors when handling with the Store type.
+// They are self explanatory.
 var (
 	ErrStoreNotFound         = errors.New("Store not found")
 	ErrStoreNotActive        = errors.New("Store not active")
@@ -98,7 +100,7 @@ func SetStoreConfig(cr config.Reader) StoreOption { return func(s *Store) { s.cr
 // NewStore creates a new Store. Returns an error if the first three arguments
 // are nil. Returns an error if integrity checks fail. config.Reader will be
 // also set to Group and Website.
-func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) (*Store, error) {
+func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) (s *Store, err error) {
 	if ts == nil || tw == nil || tg == nil {
 		return nil, ErrArgumentCannotBeNil
 	}
@@ -111,22 +113,24 @@ func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOpt
 	if ts.GroupID != tg.GroupID {
 		return nil, ErrStoreIncorrectGroup
 	}
-	nw, err := NewWebsite(tw)
-	if err != nil {
+
+	var nw *Website
+	if nw, err = NewWebsite(tw); err != nil {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("store.NewStore.NewWebsite", "err", err, "tw", tw)
 		}
-		return nil, errgo.Mask(err)
+		return
 	}
-	ng, err := NewGroup(tg, SetGroupWebsite(tw))
-	if err != nil {
+
+	var ng *Group
+	if ng, err = NewGroup(tg, SetGroupWebsite(tw)); err != nil {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("store.NewStore.NewGroup", "err", err, "tg", tg, "tw", tw)
 		}
-		return nil, err
+		return
 	}
 
-	s := &Store{
+	s = &Store{
 		cr:      config.DefaultManager,
 		Data:    ts,
 		Website: nw,
@@ -140,8 +144,18 @@ func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOpt
 		},
 	}
 	s.ApplyOptions(opts...)
-	s.Website.ApplyOptions(SetWebsiteConfig(s.cr))
-	s.Group.ApplyOptions(SetGroupConfig(s.cr))
+	if _, err = s.Website.ApplyOptions(SetWebsiteConfig(s.cr)); err != nil {
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("store.Website.ApplyOptions", "err", err, "tg", tg, "tw", tw)
+		}
+		return
+	}
+	if _, err = s.Group.ApplyOptions(SetGroupConfig(s.cr)); err != nil {
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("store.Group.ApplyOptions", "err", err, "tg", tg, "tw", tw)
+		}
+		return
+	}
 	return s, nil
 }
 
@@ -250,7 +264,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 		}
 		break
 	case config.URLTypeAbsent: // hack to clear the cache
-		s.urlcache.unsecure.Clear()
+		_ = s.urlcache.unsecure.Clear()
 		return url.URL{}, s.urlcache.secure.Clear()
 	// TODO(cs) rethink that here and maybe add the other paths if needed.
 	default:
@@ -279,8 +293,8 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 	return *retURL, retErr
 }
 
-// IsFrontUrlSecure returns true from the config if the frontend must be secure.
-func (s *Store) IsFrontUrlSecure() bool {
+// IsFrontURLSecure returns true from the config if the frontend must be secure.
+func (s *Store) IsFrontURLSecure() bool {
 	return s.Config.GetBool(PathSecureInFrontend)
 }
 
@@ -293,7 +307,7 @@ func (s *Store) IsCurrentlySecure(r *http.Request) bool {
 	}
 
 	secureBaseURL, err := s.BaseURL(config.URLTypeWeb, true)
-	if err != nil || false == s.IsFrontUrlSecure() {
+	if err != nil || false == s.IsFrontURLSecure() {
 		PkgLog.Debug("store.Store.IsCurrentlySecure.BaseURL", "err", err, "secureBaseURL", secureBaseURL)
 		return false
 	}
@@ -373,9 +387,9 @@ func (ss *StoreSlice) Less(i, j int) bool {
 }
 
 // Filter returns a new slice filtered by predicate f
-func (s StoreSlice) Filter(f func(*Store) bool) StoreSlice {
+func (ss StoreSlice) Filter(f func(*Store) bool) StoreSlice {
 	var stores StoreSlice
-	for _, v := range s {
+	for _, v := range ss {
 		if v != nil && f(v) {
 			stores = append(stores, v)
 		}
@@ -384,12 +398,12 @@ func (s StoreSlice) Filter(f func(*Store) bool) StoreSlice {
 }
 
 // Codes returns a StringSlice with all store codes
-func (s StoreSlice) Codes() utils.StringSlice {
-	if len(s) == 0 {
+func (ss StoreSlice) Codes() utils.StringSlice {
+	if len(ss) == 0 {
 		return nil
 	}
 	var c utils.StringSlice
-	for _, st := range s {
+	for _, st := range ss {
 		if st != nil {
 			c.Append(st.Data.Code.String)
 		}
@@ -398,12 +412,12 @@ func (s StoreSlice) Codes() utils.StringSlice {
 }
 
 // IDs returns an Int64Slice with all store ids
-func (s StoreSlice) IDs() utils.Int64Slice {
-	if len(s) == 0 {
+func (ss StoreSlice) IDs() utils.Int64Slice {
+	if len(ss) == 0 {
 		return nil
 	}
 	var ids utils.Int64Slice
-	for _, st := range s {
+	for _, st := range ss {
 		if st != nil {
 			ids.Append(st.Data.StoreID)
 		}
@@ -412,9 +426,9 @@ func (s StoreSlice) IDs() utils.Int64Slice {
 }
 
 // LastItem returns the last item of this slice or nil
-func (s StoreSlice) LastItem() *Store {
-	if s.Len() > 0 {
-		return s[s.Len()-1]
+func (ss StoreSlice) LastItem() *Store {
+	if ss.Len() > 0 {
+		return ss[ss.Len()-1]
 	}
 	return nil
 }

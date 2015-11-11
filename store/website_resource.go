@@ -23,7 +23,7 @@ import (
 	TableWebsite and TableWebsiteSlice method receivers
 */
 
-// Load uses a dbr session to load all data from the core_website table into the current slice.
+// SQLSelect uses a dbr session to load all data from the core_website table into the current slice.
 // The variadic 2nd argument can be a call back function to manipulate the select.
 // Additional columns or joins cannot be added. This method receiver should only be used in development.
 // @see app/code/Magento/Store/Model/Resource/Website/Collection.php::Load()

@@ -168,11 +168,13 @@ func TestTableWebsiteSlice(t *testing.T) {
 
 func TestTableWebsiteSliceLoad(t *testing.T) {
 	dbc := csdb.MustConnectTest()
-	defer dbc.Close()
+	defer func() { assert.NoError(t, dbc.Close()) }()
 	dbrSess := dbc.NewSession()
 
 	var websites store.TableWebsiteSlice
-	websites.SQLSelect(dbrSess)
+	_, err := websites.SQLSelect(dbrSess)
+	assert.NoError(t, err)
+
 	assert.True(t, websites.Len() >= 2)
 	for _, s := range websites {
 		assert.True(t, len(s.Code.String) > 1)

@@ -436,12 +436,10 @@ func TestStorageReInit(t *testing.T) {
 
 	// quick implement, use mock of dbr.SessionRunner and remove connection
 	dbc := csdb.MustConnectTest()
-	defer dbc.Close()
+	defer func() { assert.NoError(t, dbc.Close()) }()
 
 	nsg := store.NewStorage(nil, nil, nil)
-	if err := nsg.ReInit(dbc.NewSession()); err != nil {
-		t.Error(err)
-	}
+	assert.NoError(t, nsg.ReInit(dbc.NewSession()))
 
 	stores, err := nsg.Stores()
 	assert.NoError(t, err)

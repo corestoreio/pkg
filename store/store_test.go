@@ -136,11 +136,12 @@ var testStores = store.TableStoreSlice{
 
 func TestTableStoreSliceLoad(t *testing.T) {
 	dbc := csdb.MustConnectTest()
-	defer dbc.Close()
+	defer func() { assert.NoError(t, dbc.Close()) }()
 	dbrSess := dbc.NewSession()
 
 	var stores store.TableStoreSlice
-	stores.SQLSelect(dbrSess)
+	_, err := stores.SQLSelect(dbrSess)
+	assert.NoError(t, err)
 	assert.True(t, stores.Len() >= 2) // @todo proper test data in database
 	for _, s := range stores {
 		assert.True(t, len(s.Code.String) > 1)

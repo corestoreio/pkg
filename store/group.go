@@ -55,10 +55,11 @@ type GroupSlice []*Group
 // GroupOption can be used as an argument in NewGroup to configure a group.
 type GroupOption func(*Group)
 
+// ErrGroup* are general errors when handling with the Group type.
+// They are self explanatory.
 var (
-	ErrGroupNotFound             = errors.New("Group not found")
-	ErrGroupDefaultStoreNotFound = errors.New("Group default store not found")
-	// ErrGroupWebsiteNotFound the Website struct is nil so we cannot assign the stores to a group.
+	ErrGroupNotFound               = errors.New("Group not found")
+	ErrGroupDefaultStoreNotFound   = errors.New("Group default store not found")
 	ErrGroupWebsiteNotFound        = errors.New("Group Website not found or nil or ID do not match")
 	ErrGroupWebsiteIntegrityFailed = errors.New("Groups WebsiteID does not match the Websites ID")
 )
@@ -69,7 +70,7 @@ var (
 // to a Website or a Store.
 func SetGroupConfig(cr config.Reader) GroupOption { return func(g *Group) { g.cr = cr } }
 
-// WithGroupWebsite assigns a website to a group. If website ID does not match
+// SetGroupWebsite assigns a website to a group. If website ID does not match
 // the group website ID then add error will be generated.
 func SetGroupWebsite(tw *TableWebsite) GroupOption {
 	return func(g *Group) {

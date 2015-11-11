@@ -104,7 +104,7 @@ func TestStoreCodeFromCookie(t *testing.T) {
 	var getRootRequest = func(c *http.Cookie) *http.Request {
 		rootRequest, err := http.NewRequest("GET", "/", nil)
 		if err != nil {
-			t.Fatal("Root request error: %s", err)
+			t.Fatalf("Root request error: %s", err)
 		}
 		if c != nil {
 			rootRequest.AddCookie(c)
@@ -169,7 +169,7 @@ func TestStoreCodeFromRequestGET(t *testing.T) {
 		}
 		rootRequest, err := http.NewRequest("GET", reqURL, nil)
 		if err != nil {
-			t.Fatal("Root request error: %s", err)
+			t.Fatalf("Root request error: %s", err)
 		}
 
 		return rootRequest

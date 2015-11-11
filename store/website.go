@@ -25,7 +25,7 @@ import (
 	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/utils"
 	"github.com/juju/errgo"
-	"golang.org/x/text/language"
+	"golang.org/x/text/currency"
 )
 
 const (
@@ -37,11 +37,10 @@ const (
 // A website defines the default group ID. A website can contain custom configuration
 // settings which overrides the default scope but get itself overridden by the Store scope.
 type Website struct {
-	cr config.Reader // internal root config.Reader which can be overriden
-	// Config contains a config.Manager which takes care of the scope based
-	// configuration values.
+	cr config.Reader // internal root config.Reader which can be overridden
+	// Config contains the scope based configuration reader.
 	Config config.ScopedReader
-	// Data raw website data
+	// Data raw website data from DB table.
 	Data *TableWebsite
 
 	// Groups contains a slice to all groups associated to one website. This slice can be nil.
@@ -57,10 +56,10 @@ type WebsiteSlice []*Website
 // WebsiteOption can be used as an argument in NewWebsite to configure a website.
 type WebsiteOption func(*Website)
 
+// ErrWebsite* are general errors when handling with the Website type.
+// They are self explanatory.
 var (
-	// ErrWebsiteNotFound when the website has not been found within a slice
-	ErrWebsiteNotFound = errors.New("Website not found")
-	// ErrWebsiteDefaultGroupNotFound the default group cannot be found
+	ErrWebsiteNotFound             = errors.New("Website not found")
 	ErrWebsiteDefaultGroupNotFound = errors.New("Website Default Group not found")
 )
 
@@ -70,7 +69,7 @@ var (
 // to a Group or Store.
 func SetWebsiteConfig(cr config.Reader) WebsiteOption { return func(w *Website) { w.cr = cr } }
 
-// SetGroupsStores uses a group slice and a table slice to set the groups associated
+// SetWebsiteGroupsStores uses a group slice and a table slice to set the groups associated
 // to this website and the stores associated to this website. It returns an error if
 // the data integrity is incorrect.
 func SetWebsiteGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) WebsiteOption {
@@ -111,7 +110,7 @@ func SetWebsiteGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) WebsiteOpt
 	}
 }
 
-// NewWebsite returns a new pointer to a Website.
+// NewWebsite creates a new website pointer with the config.DefaultManager.
 func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) (*Website, error) {
 	if tw == nil {
 		return nil, ErrArgumentCannotBeNil
@@ -215,18 +214,18 @@ func (w *Website) DefaultStore() (*Store, error) {
 	return g.DefaultStore()
 }
 
-// @todo
-func (w *Website) BaseCurrencyCode() (language.Currency, error) {
+// BaseCurrencyCode returns the base currency code of a website TODO.
+func (w *Website) BaseCurrencyCode() (currency.Currency, error) {
 	var c string
 	if w.Config.GetString(PathPriceScope) == PriceScopeGlobal {
 		c, _ = w.cr.GetString(config.Path(directory.PathCurrencyBase)) // TODO check for error
 	} else {
 		c = w.Config.GetString(directory.PathCurrencyBase)
 	}
-	return language.ParseCurrency(c)
+	return currency.ParseISO(c)
 }
 
-// @todo
+// BaseCurrency returns the base currency type. TODO.
 func (w *Website) BaseCurrency() directory.Currency {
 	return directory.Currency{}
 }
@@ -241,10 +240,13 @@ func (ws *WebsiteSlice) Sort() *WebsiteSlice {
 	return ws
 }
 
+// Len returns the length of the slice
 func (ws WebsiteSlice) Len() int { return len(ws) }
 
+// Swap swaps positions within the slice
 func (ws *WebsiteSlice) Swap(i, j int) { (*ws)[i], (*ws)[j] = (*ws)[j], (*ws)[i] }
 
+// Less checks the Data field SortOrder if index i < index j.
 func (ws *WebsiteSlice) Less(i, j int) bool {
 	return (*ws)[i].Data.SortOrder < (*ws)[j].Data.SortOrder
 }

@@ -95,10 +95,12 @@ type (
 
 var _ Reader = (*Service)(nil)
 
-var (
-	ErrStoreChangeNotAllowed = errors.New("Store change not allowed")
-	ErrHashRetrieverNil      = errors.New("Hash argument is nil")
-)
+// ErrStoreChangeNotAllowed if a given store within a website would like to
+// switch to another store in a different website.
+var ErrStoreChangeNotAllowed = errors.New("Store change not allowed")
+
+// ErrHashRetrieverNil internal hashing fails.
+var ErrHashRetrieverNil = errors.New("Hash argument is nil")
 
 // NewService creates a new store Service which handles websites, groups and stores.
 // A Service can only act on a certain scope (MAGE_RUN_TYPE) and scope ID (MAGE_RUN_CODE).
