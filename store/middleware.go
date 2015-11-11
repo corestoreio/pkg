@@ -110,7 +110,7 @@ func WithInitStoreByToken() ctxhttp.Middleware {
 				return errgo.Mask(err)
 			}
 
-			scopeOption, err := StoreCodeFromClaim(token.Claims)
+			scopeOption, err := CodeFromClaim(token.Claims)
 			if err != nil {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.WithInitStoreByToken.StoreCodeFromClaim", "err", err, "token", token, "ctx", ctx)
@@ -158,13 +158,13 @@ func WithInitStoreByFormCookie() ctxhttp.Middleware {
 
 			var reqSO scope.Option
 
-			reqSO, err = StoreCodeFromRequestGET(r)
+			reqSO, err = CodeFromRequestGET(r)
 			if err != nil {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.WithInitStoreByFormCookie.StoreCodeFromRequestGET", "err", err, "req", r, "scope", reqSO)
 				}
 
-				reqSO, err = StoreCodeFromCookie(r)
+				reqSO, err = CodeFromCookie(r)
 				if err != nil {
 					// ignore further processing because all codes are invalid or not found
 					if PkgLog.IsDebug() {

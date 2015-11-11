@@ -21,9 +21,9 @@ import (
 	"github.com/corestoreio/csfw/utils"
 )
 
-// StoreCodeFromClaim returns a valid store code from a JSON web token or ErrStoreNotFound.
+// CodeFromClaim returns a valid store code from a JSON web token or ErrStoreNotFound.
 // Token argument is a map like being used by jwt.Token.Claims.
-func StoreCodeFromClaim(token map[string]interface{}) (o scope.Option, err error) {
+func CodeFromClaim(token map[string]interface{}) (o scope.Option, err error) {
 	err = ErrStoreNotFound
 	if 0 == len(token) {
 		return
@@ -38,9 +38,9 @@ func StoreCodeFromClaim(token map[string]interface{}) (o scope.Option, err error
 	return
 }
 
-// StoreCodeFromCookie returns from a Request the value of the store cookie or
+// CodeFromCookie returns from a Request the value of the store cookie or
 // an ErrStoreNotFound.
-func StoreCodeFromCookie(req *http.Request) (o scope.Option, err error) {
+func CodeFromCookie(req *http.Request) (o scope.Option, err error) {
 	err = ErrStoreNotFound
 	if nil == req {
 		return
@@ -53,9 +53,9 @@ func StoreCodeFromCookie(req *http.Request) (o scope.Option, err error) {
 	return setByCode(keks.Value)
 }
 
-// StoreCodeFromRequestGET returns from a Request form the value of the store code or
+// CodeFromRequestGET returns from a Request form the value of the store code or
 // an ErrStoreNotFound.
-func StoreCodeFromRequestGET(req *http.Request) (o scope.Option, err error) {
+func CodeFromRequestGET(req *http.Request) (o scope.Option, err error) {
 	err = ErrStoreNotFound
 	if req == nil {
 		return
@@ -64,17 +64,17 @@ func StoreCodeFromRequestGET(req *http.Request) (o scope.Option, err error) {
 }
 
 func setByCode(scopeCode string) (o scope.Option, err error) {
-	err = ValidateStoreCode(scopeCode)
+	err = CodeIsValid(scopeCode)
 	if err == nil {
 		o, err = scope.SetByCode(scopeCode, scope.StoreID)
 	}
 	return
 }
 
-// ValidateStoreCode checks if a store code is valid. Returns an ErrStoreCodeEmpty
+// CodeIsValid checks if a store code is valid. Returns an ErrStoreCodeEmpty
 // or an ErrStoreCodeInvalid if the first letter is not a-zA-Z and followed by
 // a-zA-Z0-9_ or store code length is greater than 32 characters.
-func ValidateStoreCode(c string) error {
+func CodeIsValid(c string) error {
 	if c == "" || len(c) > 32 {
 		return ErrStoreCodeInvalid
 	}

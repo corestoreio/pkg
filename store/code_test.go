@@ -37,11 +37,11 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	s.AddClaim(token.Claims)
 
-	so, err := store.StoreCodeFromClaim(token.Claims)
+	so, err := store.CodeFromClaim(token.Claims)
 	assert.NoError(t, err)
 	assert.EqualValues(t, "de", so.StoreCode())
 
-	so, err = store.StoreCodeFromClaim(nil)
+	so, err = store.CodeFromClaim(nil)
 	assert.EqualError(t, store.ErrStoreNotFound, err.Error())
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)
@@ -49,7 +49,7 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 
 	token2 := jwt.New(jwt.SigningMethodHS256)
 	token2.Claims[store.ParamName] = "Invalid Cod€"
-	so, err = store.StoreCodeFromClaim(token2.Claims)
+	so, err = store.CodeFromClaim(token2.Claims)
 	assert.EqualError(t, store.ErrStoreCodeInvalid, err.Error())
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)
@@ -94,7 +94,7 @@ func TestStoreCodeFromClaimNoToken(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		so, err := store.StoreCodeFromClaim(test.token)
+		so, err := store.CodeFromClaim(test.token)
 		testStoreCodeFrom(t, i, err, test.wantErr, so, test.wantScope, test.wantCode, test.wantID)
 	}
 }
@@ -149,7 +149,7 @@ func TestStoreCodeFromCookie(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		so, err := store.StoreCodeFromCookie(test.req)
+		so, err := store.CodeFromCookie(test.req)
 		testStoreCodeFrom(t, i, err, test.wantErr, so, test.wantScope, test.wantCode, test.wantID)
 	}
 }
@@ -212,7 +212,7 @@ func TestStoreCodeFromRequestGET(t *testing.T) {
 		},
 	}
 	for i, test := range tests {
-		so, err := store.StoreCodeFromRequestGET(test.req)
+		so, err := store.CodeFromRequestGET(test.req)
 		testStoreCodeFrom(t, i, err, test.wantErr, so, test.wantScope, test.wantCode, test.wantID)
 	}
 }
@@ -260,7 +260,7 @@ func TestValidateStoreCode(t *testing.T) {
 		{"HelloGoLdhashdfkjahdjfhaskjdfhuiwehfiawehfuahweldsnjkasfkjkwejqwehqang", store.ErrStoreCodeInvalid},
 	}
 	for _, test := range tests {
-		haveErr := store.ValidateStoreCode(test.have)
+		haveErr := store.CodeIsValid(test.have)
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "err codes switched: %#v", test)
 		} else {
