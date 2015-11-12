@@ -24,8 +24,10 @@ import (
 
 func init() {
 	dbc := csdb.MustConnectTest()
-	defer dbc.Close()
 	config.TableCollection.Init(dbc.NewSession())
+	if err := dbc.Close(); err != nil {
+		panic(err)
+	}
 }
 
 func TestScopeApplyDefaults(t *testing.T) {
@@ -80,7 +82,7 @@ func TestScopeApplyDefaults(t *testing.T) {
 
 func TestApplyCoreConfigData(t *testing.T) {
 	dbc := csdb.MustConnectTest()
-	defer dbc.Close()
+	defer func() { assert.NoError(t, dbc.Close()) }()
 	sess := dbc.NewSession(nil)
 
 	m := config.NewManager()

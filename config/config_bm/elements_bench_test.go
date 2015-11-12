@@ -21,13 +21,13 @@ import (
 )
 
 func init() {
-	log.Set(log.NewStdLogger())
-	log.SetLevel(log.StdLevelDebug)
+	log.SetLevel(log.StdLevelInfo)
 }
 
 // BenchmarkSectionSliceValidate	    1000	   1791239 ns/op	  158400 B/op	    4016 allocs/op => Go 1.4.2
 // BenchmarkSectionSliceValidate   	    1000	   1636547 ns/op	  158400 B/op	    3213 allocs/op => Go 1.5.0
 // BenchmarkSectionSliceValidate	    1000	   1807597 ns/op	  248336 B/op	    4016 allocs/op => WTF?
+// BenchmarkSectionSliceValidate   	    1000	   1846581 ns/op	  239744 B/op	    4819 allocs/op
 func BenchmarkSectionSliceValidate(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -41,6 +41,7 @@ var bsstj string
 
 // BenchmarkSectionSliceToJson	     300	   4336829 ns/op	  973188 B/op	   17254 allocs/op => Go 1.4.2
 // BenchmarkSectionSliceToJson 	     500	   3609676 ns/op	  914083 B/op	   14943 allocs/op => Go 1.5.0
+// BenchmarkSectionSliceToJson 	     500	   3536716 ns/op	  809988 B/op	   14482 allocs/op
 func BenchmarkSectionSliceToJson(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {

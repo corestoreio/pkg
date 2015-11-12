@@ -51,7 +51,7 @@ func TestURLCache(t *testing.T) {
 		puCache := uc.Get(test.haveType)
 		assert.Exactly(t, test.url, puCache.String(), "Index %d", i)
 
-		uc.Clear()
+		assert.EqualError(t, uc.Clear(), config.ErrURLCacheCleared.Error())
 		assert.Nil(t, uc.Get(test.haveType), "Index %d", i)
 	}
 }

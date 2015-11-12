@@ -65,16 +65,16 @@ type (
 	}
 )
 
-const _Scope_name = "AbsentDefaultWebsiteGroupStore"
+const _ScopeName = "AbsentDefaultWebsiteGroupStore"
 
-var _Scope_index = [...]uint8{0, 6, 13, 20, 25, 30}
+var _ScopeIndex = [...]uint8{0, 6, 13, 20, 25, 30}
 
 // String human readable name of Group. For Marshaling see Perm
 func (i Scope) String() string {
-	if i+1 >= Scope(len(_Scope_index)) {
+	if i+1 >= Scope(len(_ScopeIndex)) {
 		return fmt.Sprintf("Scope(%d)", i)
 	}
-	return _Scope_name[_Scope_index[i]:_Scope_index[i+1]]
+	return _ScopeName[_ScopeIndex[i]:_ScopeIndex[i+1]]
 }
 
 // PS path separator used in the database table core_config_data and in config.Manager

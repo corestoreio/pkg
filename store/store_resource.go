@@ -43,7 +43,6 @@ func (s *TableStoreSlice) SQLSelect(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSe
 
 // FilterByGroupID returns a new slice with all TableStores belonging to a group id
 func (s TableStoreSlice) FilterByGroupID(id int64) TableStoreSlice {
-	// @todo remove this and use from auto generated code ??
 	return s.Filter(func(ts *TableStore) bool {
 		return ts != nil && ts.GroupID == id
 	})
@@ -51,7 +50,6 @@ func (s TableStoreSlice) FilterByGroupID(id int64) TableStoreSlice {
 
 // FilterByWebsiteID returns a new slice with all TableStores belonging to a website id
 func (s TableStoreSlice) FilterByWebsiteID(id int64) TableStoreSlice {
-	// @todo remove this and use from auto generated code ??
 	return s.Filter(func(ts *TableStore) bool {
 		return ts != nil && ts.WebsiteID == id
 	})

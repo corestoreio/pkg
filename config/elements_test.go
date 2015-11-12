@@ -232,7 +232,7 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 			},
 			wantErr: "",
-			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["ScopeDefault","ScopeWebsite"],"Groups":[{"ID":"b","Label":"GroupLabelB2","Scope":["ScopeDefault"],"Fields":[{"ID":"c","Default":"c"}]},{"ID":"b2","Fields":[{"ID":"d","Default":"d"}]}]}]` + "\n",
+			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["Default","Website"],"Groups":[{"ID":"b","Label":"GroupLabelB2","Scope":["Default"],"Fields":[{"ID":"c","Default":"c"}]},{"ID":"b2","Fields":[{"ID":"d","Default":"d"}]}]}]` + "\n",
 			wantLen: 2,
 		},
 		2: {
@@ -245,7 +245,7 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 			},
 			wantErr: "",
-			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["ScopeDefault","ScopeWebsite"],"SortOrder":10,"Permission":3,"Groups":null}]` + "\n",
+			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["Default","Website"],"SortOrder":10,"Permission":3,"Groups":null}]` + "\n",
 		},
 		3: {
 			have: []config.SectionSlice{
@@ -277,7 +277,7 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 			},
 			wantErr: "",
-			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["ScopeDefault","ScopeWebsite"],"SortOrder":1000,"Groups":[{"ID":"b","Label":"GroupLabelB2","Comment":"Section2AGroup3BComment","Scope":["ScopeDefault","ScopeWebsite","ScopeStore"],"SortOrder":100,"Fields":null},{"ID":"b2","Fields":null}]}]` + "\n",
+			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["Default","Website"],"SortOrder":1000,"Groups":[{"ID":"b","Label":"GroupLabelB2","Comment":"Section2AGroup3BComment","Scope":["Default","Website","Store"],"SortOrder":100,"Fields":null},{"ID":"b2","Fields":null}]}]` + "\n",
 		},
 		4: {
 			have: []config.SectionSlice{
@@ -321,7 +321,7 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 			},
 			wantErr: "",
-			want:    `[{"ID":"a","Groups":[{"ID":"b","Label":"b3","Fields":[{"ID":"c","Type":"hidden","Scope":["ScopeDefault","ScopeWebsite"],"SortOrder":1001,"Default":"overriddenHaha"},{"ID":"d","Type":"obscure","Label":"Sect2Group2Label4","Comment":"LOTR","Default":"overriddenD"}]}]}]` + "\n",
+			want:    `[{"ID":"a","Groups":[{"ID":"b","Label":"b3","Fields":[{"ID":"c","Type":"hidden","Scope":["Default","Website"],"SortOrder":1001,"Default":"overriddenHaha"},{"ID":"d","Type":"obscure","Label":"Sect2Group2Label4","Comment":"LOTR","Default":"overriddenD"}]}]}]` + "\n",
 			wantLen: 2,
 		},
 		5: {
@@ -427,7 +427,7 @@ func TestGroupSliceMerge(t *testing.T) {
 				},
 			},
 			wantErr: nil,
-			want:    `[{"ID":"b","Fields":[{"ID":"c","Type":"hidden","Scope":["ScopeDefault","ScopeWebsite"],"Default":"overriddenHaha"},{"ID":"d","Type":"obscure","Label":"Sect2Group2Label4","Comment":"LOTR","Default":"overriddenD"}]}]` + "\n",
+			want:    `[{"ID":"b","Fields":[{"ID":"c","Type":"hidden","Scope":["Default","Website"],"Default":"overriddenHaha"},{"ID":"d","Type":"obscure","Label":"Sect2Group2Label4","Comment":"LOTR","Default":"overriddenD"}]}]` + "\n",
 		},
 		{
 			have:    nil,

@@ -80,7 +80,12 @@ func MustNewConfiguration(sections ...*Section) SectionSlice {
 // Only use this function if your package configuration really has duplicated entries.
 func NewConfigurationMerge(sections ...*Section) (SectionSlice, error) {
 	var ss SectionSlice
-	ss.Merge(sections...)
+	if err := ss.Merge(sections...); err != nil {
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.NewConfigurationMerge.Merge", "err", err, "sections", sections)
+		}
+		return nil, errgo.Mask(err)
+	}
 	if err := ss.Validate(); err != nil {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.NewConfigurationMerge.Validate", "err", err)
@@ -106,11 +111,11 @@ func (ss SectionSlice) Defaults() DefaultMap {
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
-				arg, err := newArg(Path(s.ID, g.ID, f.ID))
+				a, err := newArg(Path(s.ID, g.ID, f.ID))
 				if err != nil {
 					PkgLog.Debug("config.SectionSlice.Defaults.newArg", "err", err, "s", s, "g", g, "f", f)
 				}
-				dm[arg.scopePath()] = f.Default
+				dm[a.scopePath()] = f.Default
 			}
 		}
 	}
@@ -250,11 +255,12 @@ func (ss SectionSlice) Validate() error {
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
-				arg, err := newArg(Path(s.ID, g.ID, f.ID))
+				a, err := newArg(Path(s.ID, g.ID, f.ID))
 				if err != nil {
 					PkgLog.Debug("config.SectionSlice.Validate.newArg", "err", err, "s", s, "g", g, "f", f)
+					return errgo.Mask(err)
 				}
-				p := arg.scopePath()
+				p := a.scopePath()
 				if pc.Include(p) {
 					return errgo.Newf("Duplicate entry for path %s :: %s", p, ss.ToJSON())
 				}

@@ -132,7 +132,9 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 	for _, cd := range ccd {
 		if cd.Value.Valid {
 			// scope.ID(cd.ScopeID) because cd.ScopeID is a struct field and cannot satisfy interface scope.IDer
-			m.Write(Path(cd.Path), Scope(scope.FromString(cd.Scope), cd.ScopeID))
+			if err := m.Write(Path(cd.Path), Scope(scope.FromString(cd.Scope), cd.ScopeID)); err != nil {
+				return errgo.Mask(err)
+			}
 		}
 	}
 	return nil

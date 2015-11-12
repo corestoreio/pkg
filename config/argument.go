@@ -92,10 +92,14 @@ func Value(v interface{}) ArgFunc { return func(a *arg) { a.v = v } }
 // ValueReader sets the value for a scope key using the io.Reader interface.
 // If asserting to a io.Closer is successful then Close() will be called.
 func ValueReader(r io.Reader) ArgFunc {
-	if c, ok := r.(io.Closer); ok {
-		defer c.Close()
-	}
 	data, err := ioutil.ReadAll(r)
+	if c, ok := r.(io.Closer); ok && c != nil {
+		if err := c.Close(); err != nil {
+			return func(a *arg) {
+				a.lastErrors = append(a.lastErrors, fmt.Errorf("ValueReader.Close error %s", err))
+			}
+		}
+	}
 	if err != nil {
 		return func(a *arg) {
 			a.lastErrors = append(a.lastErrors, fmt.Errorf("ValueReader error %s", err))

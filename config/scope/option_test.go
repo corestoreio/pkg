@@ -101,7 +101,6 @@ func TestApplyID(t *testing.T) {
 }
 
 func TestApplyWebsite(t *testing.T) {
-
 	so := scope.Option{Website: scope.MockID(3)}
 	assert.NotNil(t, so)
 	assert.Equal(t, int64(3), so.Website.WebsiteID())
@@ -111,10 +110,8 @@ func TestApplyWebsite(t *testing.T) {
 }
 
 func TestApplyGroup(t *testing.T) {
-
 	so := scope.Option{Group: scope.MockID(3)}
 	assert.NotNil(t, so)
-
 	assert.Equal(t, int64(3), so.Group.GroupID())
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Store)
@@ -122,10 +119,8 @@ func TestApplyGroup(t *testing.T) {
 }
 
 func TestApplyStore(t *testing.T) {
-
 	so := scope.Option{Store: scope.MockID(3)}
 	assert.NotNil(t, so)
-
 	assert.Equal(t, int64(3), so.Store.StoreID())
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)

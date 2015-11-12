@@ -94,8 +94,7 @@ func (gs *GroupSlice) merge(g *Group) error {
 	if g.SortOrder != 0 {
 		cg.SortOrder = g.SortOrder
 	}
-	cg.Fields.Merge(g.Fields...)
-	return nil
+	return cg.Fields.Merge(g.Fields...)
 }
 
 // ToJSON transforms the whole slice into JSON

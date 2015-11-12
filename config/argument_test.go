@@ -68,13 +68,13 @@ func TestScopeKeyPath(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		arg, err := newArg(test.haveArg...)
+		a, err := newArg(test.haveArg...)
 		if test.wantErr == nil {
 			assert.NoError(t, err, "test IDX: %d", i)
 		} else {
 			assert.EqualError(t, err, test.wantErr.Error(), "test IDX: %d", i)
 		}
-		actualPath := arg.scopePath()
+		actualPath := a.scopePath()
 		assert.EqualValues(t, test.want, actualPath, "Test: %#v", test)
 	}
 }
@@ -153,8 +153,8 @@ var benchmarkScopeKey string
 func BenchmarkScopeKey____InMap(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		arg, _ := newArg(Path("a", "b", "c"), Scope(scope.WebsiteID, 4))
-		benchmarkScopeKey = arg.scopePath()
+		a, _ := newArg(Path("a", "b", "c"), Scope(scope.WebsiteID, 4))
+		benchmarkScopeKey = a.scopePath()
 	}
 }
 
@@ -162,8 +162,8 @@ func BenchmarkScopeKey____InMap(b *testing.B) {
 func BenchmarkScopeKey_NotInMap(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		arg, _ := newArg(Path("a", "b", "c"), Scope(scope.WebsiteID, 40))
-		benchmarkScopeKey = arg.scopePath()
+		a, _ := newArg(Path("a", "b", "c"), Scope(scope.WebsiteID, 40))
+		benchmarkScopeKey = a.scopePath()
 	}
 }
 
@@ -171,7 +171,7 @@ func BenchmarkScopeKey_NotInMap(b *testing.B) {
 func BenchmarkScopeKey____InMapNoJoin(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		arg, _ := newArg(Path("a/b/c"), Scope(scope.WebsiteID, 3))
-		benchmarkScopeKey = arg.scopePath()
+		a, _ := newArg(Path("a/b/c"), Scope(scope.WebsiteID, 3))
+		benchmarkScopeKey = a.scopePath()
 	}
 }

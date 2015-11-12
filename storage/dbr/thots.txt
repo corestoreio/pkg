@@ -1,3 +1,4 @@
+TODO(CS): Update to API version 2 https://github.com/gocraft/dbr/tree/TS_postgres or other branch
 
 TODO:
  - wire up insert to instrument, make a test for that

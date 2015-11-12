@@ -116,13 +116,13 @@ func WithMockValues(pathValues MockPV) mockOptionFunc {
 // so you can read config from a JSON file.
 //
 func WithMockValuesJSON(r io.Reader) mockOptionFunc {
-	rawJson, err := ioutil.ReadAll(r)
+	rawJSON, err := ioutil.ReadAll(r)
 	if err != nil {
 		panic(err)
 	}
 
 	var pathValues MockPV
-	err = json.Unmarshal(rawJson, &pathValues)
+	err = json.Unmarshal(rawJSON, &pathValues)
 	if err != nil {
 		panic(err)
 	}
@@ -228,8 +228,8 @@ func (mr *MockReader) GetBool(opts ...ArgFunc) (bool, error) {
 	}
 }
 
-func (sr *MockReader) valFloat64(path string) (float64, error) {
-	switch s := sr.getVal(path).(type) {
+func (mr *MockReader) valFloat64(path string) (float64, error) {
+	switch s := mr.getVal(path).(type) {
 	case float64:
 		return s, nil
 	case float32:
@@ -240,20 +240,20 @@ func (sr *MockReader) valFloat64(path string) (float64, error) {
 }
 
 // GetFloat64 returns a float64 value
-func (sr *MockReader) GetFloat64(opts ...ArgFunc) (float64, error) {
+func (mr *MockReader) GetFloat64(opts ...ArgFunc) (float64, error) {
 	path := mustNewArg(opts...).scopePath()
 	switch {
-	case sr.hasVal(path):
-		return sr.valFloat64(path)
-	case sr.F64 != nil:
-		return sr.F64(path)
+	case mr.hasVal(path):
+		return mr.valFloat64(path)
+	case mr.F64 != nil:
+		return mr.F64(path)
 	default:
 		return 0.0, ErrKeyNotFound
 	}
 }
 
-func (sr *MockReader) valInt(path string) (int, error) {
-	switch s := sr.getVal(path).(type) {
+func (mr *MockReader) valInt(path string) (int, error) {
+	switch s := mr.getVal(path).(type) {
 	case int:
 		return s, nil
 	case nil:
@@ -264,20 +264,20 @@ func (sr *MockReader) valInt(path string) (int, error) {
 }
 
 // GetInt returns an integer value
-func (sr *MockReader) GetInt(opts ...ArgFunc) (int, error) {
+func (mr *MockReader) GetInt(opts ...ArgFunc) (int, error) {
 	path := mustNewArg(opts...).scopePath()
 	switch {
-	case sr.hasVal(path):
-		return sr.valInt(path)
-	case sr.Int != nil:
-		return sr.Int(path)
+	case mr.hasVal(path):
+		return mr.valInt(path)
+	case mr.Int != nil:
+		return mr.Int(path)
 	default:
 		return 0, ErrKeyNotFound
 	}
 }
 
-func (sr *MockReader) valDateTime(path string) (time.Time, error) {
-	switch s := sr.getVal(path).(type) {
+func (mr *MockReader) valDateTime(path string) (time.Time, error) {
+	switch s := mr.getVal(path).(type) {
 	case time.Time:
 		return s, nil
 	default:
@@ -286,13 +286,13 @@ func (sr *MockReader) valDateTime(path string) (time.Time, error) {
 }
 
 // GetDateTime returns a time value
-func (sr *MockReader) GetDateTime(opts ...ArgFunc) (time.Time, error) {
+func (mr *MockReader) GetDateTime(opts ...ArgFunc) (time.Time, error) {
 	path := mustNewArg(opts...).scopePath()
 	switch {
-	case sr.hasVal(path):
-		return sr.valDateTime(path)
-	case sr.Time != nil:
-		return sr.Time(path)
+	case mr.hasVal(path):
+		return mr.valDateTime(path)
+	case mr.Time != nil:
+		return mr.Time(path)
 	default:
 		return time.Time{}, ErrKeyNotFound
 	}
@@ -300,14 +300,14 @@ func (sr *MockReader) GetDateTime(opts ...ArgFunc) (time.Time, error) {
 
 // Subscribe returns the before applied SubscriptionID and SubscriptionErr
 // Does not start any underlying Goroutines.
-func (sr *MockReader) Subscribe(path string, s MessageReceiver) (subscriptionID int, err error) {
-	return sr.SubscriptionID, sr.SubscriptionErr
+func (mr *MockReader) Subscribe(path string, s MessageReceiver) (subscriptionID int, err error) {
+	return mr.SubscriptionID, mr.SubscriptionErr
 }
 
 // NewScoped creates a new config.ScopedReader which uses the underlying
 // mocked paths and values.
-func (sr *MockReader) NewScoped(websiteID, groupID, storeID int64) ScopedReader {
-	return newScopedManager(sr, websiteID, groupID, storeID)
+func (mr *MockReader) NewScoped(websiteID, groupID, storeID int64) ScopedReader {
+	return newScopedManager(mr, websiteID, groupID, storeID)
 }
 
 // From html/template/content.go

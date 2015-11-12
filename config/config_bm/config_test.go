@@ -23,7 +23,7 @@ import (
 	"github.com/corestoreio/csfw/config/scope"
 )
 
-var packageAllConfiguration = config.NewConfigurationMerge(
+var packageAllConfiguration = config.MustNewConfigurationMerge(
 	&config.Section{
 		ID: "system",
 		Groups: config.GroupSlice{
