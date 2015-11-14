@@ -21,6 +21,7 @@ import (
 	"strings"
 )
 
+// ErrOutOfRange gets returned from a slice type when the index is out of range
 var ErrOutOfRange = errors.New("Out of range")
 
 // StringSlice contains Map/Filter/Reduce/Sort/Unique/etc method receivers for []string.
@@ -197,7 +198,7 @@ func (l StringSlice) Join(sep string) string { return strings.Join(l, sep) }
 // Split uses string s and a separator and appends the parts to the slice.
 func (l *StringSlice) Split(s, sep string) StringSlice { return l.Append(strings.Split(s, sep)...) }
 
-// SplitStringer uses a name and position indexes to split the name and appends the parts to the slice.
+// SplitStringer8 uses a name and position indexes to split the name and appends the parts to the slice.
 // Cracking the names and indexes which the stringer command generates.
 func (l *StringSlice) SplitStringer8(n string, ps ...uint8) StringSlice {
 	var next uint8

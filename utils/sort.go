@@ -14,24 +14,27 @@
 
 package utils
 
+// Sort indicates the direction for sorting
 const (
 	SortAsc SortDirection = 1 << iota
 	SortDesc
 )
 const (
-	_SortDirection_name_0 = "ASC"
-	_SortDirection_name_1 = "DESC"
+	_SortDirectionName0 = "ASC"
+	_SortDirectionName1 = "DESC"
 )
 
+// SortDirection type which prints via String()
 type SortDirection uint8
 
+// String prints ASC or DESC
 func (i SortDirection) String() string {
 	switch {
 	case i == 1:
-		return _SortDirection_name_0
+		return _SortDirectionName0
 	case i == 2:
-		return _SortDirection_name_1
+		return _SortDirectionName1
 	default:
-		return _SortDirection_name_0
+		return _SortDirectionName0
 	}
 }

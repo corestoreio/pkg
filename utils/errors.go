@@ -14,7 +14,10 @@
 
 package utils
 
-import "bytes"
+import (
+	"bytes"
+	"fmt"
+)
 
 // Errors returns a string where each error has been separated by a line break.
 func Errors(errs ...error) string {
@@ -24,9 +27,14 @@ func Errors(errs ...error) string {
 	var buf bytes.Buffer
 	le := len(errs) - 1
 	for i, e := range errs {
-		buf.WriteString(e.Error())
+		if _, err := buf.WriteString(e.Error()); err != nil {
+			return fmt.Sprintf("buf.WriteString internal error (%s): %s", err, e)
+		}
 		if i < le {
-			buf.WriteString("\n")
+			if _, err := buf.WriteString("\n"); err != nil {
+				return fmt.Sprintf("buf.WriteString internal error: %s when writing line break", err)
+			}
+
 		}
 	}
 	return buf.String()
