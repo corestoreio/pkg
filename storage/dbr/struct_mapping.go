@@ -24,7 +24,7 @@ func (sess *Session) calculateFieldMap(recordType reflect.Type, columns []string
 	for i, col := range columns {
 		fieldMap[i] = nil
 
-		queue := []fieldMapQueueElement{fieldMapQueueElement{Type: recordType, Idxs: nil}}
+		queue := []fieldMapQueueElement{{Type: recordType, Idxs: nil}}
 
 	QueueLoop:
 		for len(queue) > 0 {

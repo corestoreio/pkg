@@ -100,7 +100,7 @@ func TestInterpolateErrors(t *testing.T) {
 	_, err = Preprocess("SELECT * FROM x WHERE a = ?", []interface{}{struct{}{}})
 	assert.Equal(t, err, ErrInvalidValue)
 
-	_, err = Preprocess("SELECT * FROM x WHERE a = ?", []interface{}{[]struct{}{struct{}{}, struct{}{}}})
+	_, err = Preprocess("SELECT * FROM x WHERE a = ?", []interface{}{[]struct{}{{}, {}}})
 	assert.Equal(t, err, ErrInvalidSliceValue)
 }
 
@@ -166,7 +166,7 @@ func TestPreprocess(t *testing.T) {
 		{"SELECT * FROM x WHERE a = ?", []interface{}{struct{}{}},
 			"", ErrInvalidValue},
 
-		{"SELECT * FROM x WHERE a = ?", []interface{}{[]struct{}{struct{}{}, struct{}{}}},
+		{"SELECT * FROM x WHERE a = ?", []interface{}{[]struct{}{{}, {}}},
 			"", ErrInvalidSliceValue},
 		{"SELECT 'hello", noArgs, "", ErrInvalidSyntax},
 		{`SELECT "hello`, noArgs, "", ErrInvalidSyntax},

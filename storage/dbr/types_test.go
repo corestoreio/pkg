@@ -67,11 +67,11 @@ func TestNullTypeScanning(t *testing.T) {
 	}
 
 	tests := []nullTypeScanningTest{
-		nullTypeScanningTest{
+		{
 			record: &nullTypedRecord{},
 			valid:  false,
 		},
-		nullTypeScanningTest{
+		{
 			record: newNullTypedRecordWithData(),
 			valid:  true,
 		},
@@ -109,11 +109,11 @@ func TestNullTypeJSONMarshal(t *testing.T) {
 	}
 
 	tests := []nullTypeJSONTest{
-		nullTypeJSONTest{
+		{
 			record:       &nullTypedRecord{},
 			expectedJSON: []byte(`{"Id":0,"StringVal":null,"Int64Val":null,"Float64Val":null,"TimeVal":null,"BoolVal":null}`),
 		},
-		nullTypeJSONTest{
+		{
 			record:       newNullTypedRecordWithData(),
 			expectedJSON: []byte(`{"Id":0,"StringVal":"wow","Int64Val":42,"Float64Val":1.618,"TimeVal":"2009-01-03T18:15:05Z","BoolVal":true}`),
 		},
