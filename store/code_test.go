@@ -15,14 +15,13 @@
 package store_test
 
 import (
-	"database/sql"
 	"testing"
 
 	"net/http"
 	"net/url"
 
 	"github.com/corestoreio/csfw/config/scope"
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/store"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
@@ -30,8 +29,8 @@ import (
 
 func TestStoreCodeFromClaimFullToken(t *testing.T) {
 	s := store.MustNewStore(
-		&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-		&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Admin", Valid: true}}, SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
+		&store.TableStore{StoreID: 1, Code: csdb.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+		&store.TableWebsite{WebsiteID: 1, Code: csdb.NewNullString("admin"), Name: csdb.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: csdb.NewNullBool(false)},
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 	)
 	token := jwt.New(jwt.SigningMethodHS256)

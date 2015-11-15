@@ -15,11 +15,9 @@
 package store_test
 
 import (
-	"database/sql"
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/utils"
 	"github.com/stretchr/testify/assert"
@@ -69,7 +67,7 @@ func TestNewGroupPanic(t *testing.T) {
 func TestNewGroupPanicWebsiteIncorrect(t *testing.T) {
 	ng, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-		store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "oz", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "OZ", Valid: true}}, SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}}),
+		store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 2, Code: csdb.NewNullString("oz"), Name: csdb.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: csdb.NewNullBool(false)}),
 	)
 	assert.Nil(t, ng)
 	assert.EqualError(t, store.ErrGroupWebsiteNotFound, err.Error())
@@ -81,7 +79,7 @@ func TestNewGroupSetStoresErrorWebsiteIsNil(t *testing.T) {
 		nil,
 		store.SetGroupStores(
 			store.TableStoreSlice{
-				&store.TableStore{StoreID: 0, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
+				&store.TableStore{StoreID: 0, Code: csdb.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
 			},
 			nil,
 		),
@@ -95,9 +93,9 @@ func TestNewGroupSetStoresErrorWebsiteIncorrect(t *testing.T) {
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		store.SetGroupStores(
 			store.TableStoreSlice{
-				&store.TableStore{StoreID: 0, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
+				&store.TableStore{StoreID: 0, Code: csdb.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
 			},
-			&store.TableWebsite{WebsiteID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "oz", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "OZ", Valid: true}}, SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: false, Valid: true}}},
+			&store.TableWebsite{WebsiteID: 2, Code: csdb.NewNullString("oz"), Name: csdb.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: csdb.NewNullBool(false)},
 		),
 	)
 	assert.Nil(t, g)
@@ -111,15 +109,15 @@ func TestNewGroupSetStores(t *testing.T) {
 		nil, // this is just for to confuse the NewGroup ApplyOption function
 		store.SetGroupStores(
 			store.TableStoreSlice{
-				&store.TableStore{StoreID: 0, Code: dbr.NullString{NullString: sql.NullString{String: "admin", Valid: true}}, WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
-				&store.TableStore{StoreID: 5, Code: dbr.NullString{NullString: sql.NullString{String: "au", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
-				&store.TableStore{StoreID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "de", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-				&store.TableStore{StoreID: 4, Code: dbr.NullString{NullString: sql.NullString{String: "uk", Valid: true}}, WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
-				&store.TableStore{StoreID: 2, Code: dbr.NullString{NullString: sql.NullString{String: "at", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
-				&store.TableStore{StoreID: 6, Code: dbr.NullString{NullString: sql.NullString{String: "nz", Valid: true}}, WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
-				&store.TableStore{StoreID: 3, Code: dbr.NullString{NullString: sql.NullString{String: "ch", Valid: true}}, WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
+				&store.TableStore{StoreID: 0, Code: csdb.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
+				&store.TableStore{StoreID: 5, Code: csdb.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
+				&store.TableStore{StoreID: 1, Code: csdb.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+				&store.TableStore{StoreID: 4, Code: csdb.NewNullString("uk"), WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
+				&store.TableStore{StoreID: 2, Code: csdb.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
+				&store.TableStore{StoreID: 6, Code: csdb.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
+				&store.TableStore{StoreID: 3, Code: csdb.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
 			},
-			&store.TableWebsite{WebsiteID: 1, Code: dbr.NullString{NullString: sql.NullString{String: "euro", Valid: true}}, Name: dbr.NullString{NullString: sql.NullString{String: "Europe", Valid: true}}, SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NullBool{NullBool: sql.NullBool{Bool: true, Valid: true}}},
+			&store.TableWebsite{WebsiteID: 1, Code: csdb.NewNullString("euro"), Name: csdb.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: csdb.NewNullBool(true)},
 		),
 	)
 	assert.NoError(t, err)

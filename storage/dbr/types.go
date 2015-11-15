@@ -6,11 +6,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"fmt"
-	"math"
-
 	"github.com/go-sql-driver/mysql"
-	"github.com/ugorji/go/codec"
 )
 
 //
@@ -18,8 +14,7 @@ import (
 //
 
 var (
-	_          codec.Selfer = (*NullString)(nil)
-	nullString              = []byte("null")
+	nullString = []byte("null")
 )
 
 // NullString is a type that can be null or a string
@@ -47,47 +42,14 @@ type NullBool struct {
 	sql.NullBool
 }
 
-// NewNullString generates a new non-pointer type. Valid argument is optional
-// and will be detected automatically if left off. If value is empty, valid is
-// false which means database value is NULL.
-func NewNullString(value string, valid ...bool) NullString {
-	ok := value != ""
-	if len(valid) > 0 && value == "" {
-		ok = valid[0]
-	}
-	return NullString{
-		sql.NullString{
-			String: value,
-			Valid:  ok,
-		},
-	}
-}
-
-// GoString satisfies the interface fmt.GoStringer when using %#v in Printf methods.
-// Returns
-// 		dbr.NewNullString(`...`,bool)
-func (ns NullString) GoString() string {
-	// @todo fix bug to escape back ticks properly
-	return fmt.Sprintf("dbr.NewNullString(`%s`, %t)", ns.String, ns.Valid)
-}
-
-// CodecEncodeSelf for ugorji.go codec package
-func (n *NullString) CodecEncodeSelf(e *codec.Encoder) {
-	if err := e.Encode(n.String); err != nil {
-		PkgLog.Debug("dbr.NullString.CodecEncodeSelf", "err", err, "n", n)
-	}
-}
-
-// CodecDecodeSelf  for ugorji.go codec package @todo write test ... not sure if ok
-func (n *NullString) CodecDecodeSelf(d *codec.Decoder) {
-	if err := d.Decode(&n.String); err != nil {
-		PkgLog.Debug("dbr.NullString.CodecDecodeSelf", "err", err, "n", n)
-	}
-	// think about empty string and Valid value ...
+// NewNullString creates a new database aware string.
+func NewNullString(v interface{}) (n NullString) {
+	n.Scan(v)
+	return
 }
 
 // MarshalJSON correctly serializes a NullString to JSON
-func (n *NullString) MarshalJSON() ([]byte, error) {
+func (n NullString) MarshalJSON() ([]byte, error) {
 	if n.Valid {
 		j, e := json.Marshal(n.String)
 		return j, e
@@ -104,20 +66,10 @@ func (n *NullString) UnmarshalJSON(b []byte) error {
 	return n.Scan(s)
 }
 
-// NewNullInt64 generates a new non-pointer type. Valid argument is optional
-// and will be detected automatically if left off. If value is 0, valid is
-// false which means database value is NULL.
-func NewNullInt64(value int64, valid ...bool) NullInt64 {
-	ok := value != 0
-	if len(valid) > 0 && value == 0 {
-		ok = valid[0]
-	}
-	return NullInt64{
-		sql.NullInt64{
-			Int64: value,
-			Valid: ok,
-		},
-	}
+// NewNullInt64 creates a new database aware type.
+func NewNullInt64(v interface{}) (n NullInt64) {
+	n.Scan(v)
+	return
 }
 
 // MarshalJSON correctly serializes a NullInt64 to JSON
@@ -129,20 +81,6 @@ func (n *NullInt64) MarshalJSON() ([]byte, error) {
 	return nullString, nil
 }
 
-// CodecEncodeSelf for ugorji.go codec package
-func (n *NullInt64) CodecEncodeSelf(e *codec.Encoder) {
-	if err := e.Encode(n.Int64); err != nil {
-		PkgLog.Debug("dbr.NullInt64.CodecEncodeSelf", "err", err, "n", n)
-	}
-}
-
-// CodecDecodeSelf  for ugorji.go codec package @todo write test ... not sure if ok
-func (n *NullInt64) CodecDecodeSelf(d *codec.Decoder) {
-	if err := d.Decode(&n.Int64); err != nil {
-		PkgLog.Debug("dbr.NullInt64.CodecDecodeSelf", "err", err, "n", n)
-	}
-}
-
 // UnmarshalJSON correctly deserializes a NullInt64 from JSON
 func (n *NullInt64) UnmarshalJSON(b []byte) error {
 	var s interface{}
@@ -152,43 +90,19 @@ func (n *NullInt64) UnmarshalJSON(b []byte) error {
 	return n.Scan(s)
 }
 
-// NewNullFloat64 generates a new non-pointer type. Valid argument is optional
-// and will be detected automatically if left off. If value is 0, valid is
-// false which means database value is NULL.
-func NewNullFloat64(value float64, valid ...bool) NullFloat64 {
-	ok := math.Abs(value) > 0.000000001
-	if len(valid) > 0 && math.Abs(value) < 0.000000001 {
-		ok = valid[0]
-	}
-	return NullFloat64{
-		sql.NullFloat64{
-			Float64: value,
-			Valid:   ok,
-		},
-	}
+// NewNullFloat64 creates a new database aware type.
+func NewNullFloat64(v interface{}) (n NullFloat64) {
+	n.Scan(v)
+	return
 }
 
 // MarshalJSON correctly serializes a NullFloat64 to JSON
-func (n *NullFloat64) MarshalJSON() ([]byte, error) {
+func (n NullFloat64) MarshalJSON() ([]byte, error) {
 	if n.Valid {
 		j, e := json.Marshal(n.Float64)
 		return j, e
 	}
 	return nullString, nil
-}
-
-// CodecEncodeSelf for ugorji.go codec package
-func (n *NullFloat64) CodecEncodeSelf(e *codec.Encoder) {
-	if err := e.Encode(n.Float64); err != nil {
-		PkgLog.Debug("dbr.NullFloat64.CodecEncodeSelf", "err", err, "n", n)
-	}
-}
-
-// CodecDecodeSelf  for ugorji.go codec package @todo write test ... not sure if ok
-func (n *NullFloat64) CodecDecodeSelf(d *codec.Decoder) {
-	if err := d.Decode(&n.Float64); err != nil {
-		PkgLog.Debug("dbr.NullFloat64.CodecDecodeSelf", "err", err, "n", n)
-	}
 }
 
 // UnmarshalJSON correctly deserializes a NullFloat64 from JSON
@@ -200,43 +114,19 @@ func (n *NullFloat64) UnmarshalJSON(b []byte) error {
 	return n.Scan(s)
 }
 
-// NewNullTime generates a new non-pointer type. Valid argument is optional
-// and will be detected automatically if left off. If value is 0, valid is
-// false which means database value is NULL.
-func NewNullTime(value time.Time, valid ...bool) NullTime {
-	ok := false == value.IsZero()
-	if len(valid) > 0 && value.IsZero() {
-		ok = valid[0]
-	}
-	return NullTime{
-		mysql.NullTime{
-			Time:  value,
-			Valid: ok,
-		},
-	}
+// NewNullTime creates a new database aware type.
+func NewNullTime(v interface{}) (n NullTime) {
+	n.Scan(v)
+	return
 }
 
 // MarshalJSON correctly serializes a NullTime to JSON
-func (n *NullTime) MarshalJSON() ([]byte, error) {
+func (n NullTime) MarshalJSON() ([]byte, error) {
 	if n.Valid {
 		j, e := json.Marshal(n.Time)
 		return j, e
 	}
 	return nullString, nil
-}
-
-// CodecEncodeSelf for ugorji.go codec package
-func (n *NullTime) CodecEncodeSelf(e *codec.Encoder) {
-	if err := e.Encode(n.Time); err != nil {
-		PkgLog.Debug("dbr.NullTime.CodecEncodeSelf", "err", err, "n", n)
-	}
-}
-
-// CodecDecodeSelf  for ugorji.go codec package @todo write test ... not sure if ok
-func (n *NullTime) CodecDecodeSelf(d *codec.Decoder) {
-	if err := d.Decode(&n.Time); err != nil {
-		PkgLog.Debug("dbr.NullTime.CodecDecodeSelf", "err", err, "n", n)
-	}
 }
 
 // UnmarshalJSON correctly deserializes a NullTime from JSON
@@ -253,18 +143,10 @@ func (n *NullTime) UnmarshalJSON(b []byte) error {
 	return n.Scan(t)
 }
 
-// NewNullBool generates a new non-pointer type. To allow NULL values pass a
-// false to the valid argument.
-func NewNullBool(value bool, valid bool) NullBool {
-	if value {
-		valid = true
-	}
-	return NullBool{
-		sql.NullBool{
-			Bool:  value,
-			Valid: valid,
-		},
-	}
+// NewNullBool creates a new database aware type.
+func NewNullBool(v interface{}) (n NullBool) {
+	n.Scan(v)
+	return
 }
 
 // MarshalJSON correctly serializes a NullBool to JSON
@@ -274,20 +156,6 @@ func (n *NullBool) MarshalJSON() ([]byte, error) {
 		return j, e
 	}
 	return nullString, nil
-}
-
-// CodecEncodeSelf for ugorji.go codec package
-func (n *NullBool) CodecEncodeSelf(e *codec.Encoder) {
-	if err := e.Encode(n.Bool); err != nil {
-		PkgLog.Debug("dbr.NullBool.CodecEncodeSelf", "err", err, "n", n)
-	}
-}
-
-// CodecDecodeSelf  for ugorji.go codec package @todo write test ... not sure if ok
-func (n *NullBool) CodecDecodeSelf(d *codec.Decoder) {
-	if err := d.Decode(&n.Bool); err != nil {
-		PkgLog.Debug("dbr.NullBool.CodecDecodeSelf", "err", err, "n", n)
-	}
 }
 
 // UnmarshalJSON correctly deserializes a NullBool from JSON

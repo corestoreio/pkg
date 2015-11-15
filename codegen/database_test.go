@@ -24,7 +24,6 @@ import (
 
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -134,12 +133,12 @@ func TestGetEavValueTables(t *testing.T) {
 func TestColumnComment(t *testing.T) {
 	c := column{
 		Column: csdb.Column{
-			Field:   dbr.NewNullString("entity_id", true),
-			Type:    dbr.NewNullString("varchar", true),
-			Null:    dbr.NewNullString("YES", true),
-			Key:     dbr.NewNullString("PRI", true),
-			Default: dbr.NewNullString("0", true),
-			Extra:   dbr.NewNullString("unsigned", true),
+			Field:   csdb.NewNullString("entity_id"),
+			Type:    csdb.NewNullString("varchar"),
+			Null:    csdb.NewNullString("YES"),
+			Key:     csdb.NewNullString("PRI"),
+			Default: csdb.NewNullString("0"),
+			Extra:   csdb.NewNullString("unsigned"),
 		},
 	}
 	assert.Equal(t, "// entity_id varchar NULL PRI DEFAULT '0' unsigned", c.Comment())
@@ -304,7 +303,7 @@ func TestSQLQueryToColumnsToStruct(t *testing.T) {
 
 	checkContains := [][]byte{
 		[]byte(`TeststructSlice`),
-		[]byte(`dbr.NullString`),
+		[]byte(`csdb.NullString`),
 		[]byte("`db:\"is_visible_in_advanced_search\"`"),
 	}
 	for _, s := range checkContains {
@@ -344,7 +343,6 @@ func TestGetSQLPrepareForTemplate(t *testing.T) {
 	for _, row := range attributeResultSlice {
 		assert.True(t, len(row["attribute_id"]) > 0, "Incorrect length of attribute_id: %#v", row)
 	}
-	t.FailNow()
 
 	colSliceDbr, err := SQLQueryToColumns(dbc.DB, dbrSelect)
 	if err != nil {

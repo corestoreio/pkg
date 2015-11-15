@@ -12,18 +12,20 @@ import (
 
 func TestNewNullString(t *testing.T) {
 	assert.Equal(t, "product", NewNullString("product").String)
-	assert.True(t, NewNullString("product", false).Valid)
-	assert.False(t, NewNullString("", false).Valid)
-	v, err := NewNullString("product", false).Value()
+	assert.True(t, NewNullString("product").Valid)
+	assert.False(t, NewNullString(nil).Valid)
+	assert.True(t, NewNullString("").Valid)
+	v, err := NewNullString("product").Value()
 	assert.NoError(t, err)
 	assert.Equal(t, "product", v)
 }
 
 func TestNewNullInt64(t *testing.T) {
 	assert.EqualValues(t, 1257894000, NewNullInt64(1257894000).Int64)
-	assert.True(t, NewNullInt64(1257894000, false).Valid)
-	assert.False(t, NewNullInt64(0, false).Valid)
-	v, err := NewNullInt64(1257894000, false).Value()
+	assert.True(t, NewNullInt64(1257894000).Valid)
+	assert.True(t, NewNullInt64(0).Valid)
+	assert.False(t, NewNullInt64(nil).Valid)
+	v, err := NewNullInt64(1257894000).Value()
 	assert.NoError(t, err)
 	assert.EqualValues(t, 1257894000, v)
 }
@@ -31,9 +33,10 @@ func TestNewNullInt64(t *testing.T) {
 func TestNewNullFloat64(t *testing.T) {
 	var test float64 = 1257894000.93445000001
 	assert.Equal(t, test, NewNullFloat64(test).Float64)
-	assert.True(t, NewNullFloat64(test, false).Valid)
-	assert.False(t, NewNullFloat64(0, false).Valid)
-	v, err := NewNullFloat64(test, false).Value()
+	assert.True(t, NewNullFloat64(test).Valid)
+	assert.True(t, NewNullFloat64(0).Valid)
+	assert.False(t, NewNullFloat64(nil).Valid)
+	v, err := NewNullFloat64(test).Value()
 	assert.NoError(t, err)
 	assert.Equal(t, test, v)
 }
@@ -41,19 +44,21 @@ func TestNewNullFloat64(t *testing.T) {
 func TestNewNullTime(t *testing.T) {
 	var test = time.Now()
 	assert.Equal(t, test, NewNullTime(test).Time)
-	assert.True(t, NewNullTime(test, false).Valid)
-	assert.False(t, NewNullTime(time.Time{}, false).Valid)
-	v, err := NewNullTime(test, false).Value()
+	assert.True(t, NewNullTime(test).Valid)
+	assert.True(t, NewNullTime(time.Time{}).Valid)
+	assert.False(t, NewNullTime(nil).Valid)
+	v, err := NewNullTime(test).Value()
 	assert.NoError(t, err)
 	assert.Equal(t, test, v)
 }
 
 func TestNewNullBool(t *testing.T) {
 
-	assert.Equal(t, true, NewNullBool(true, true).Bool)
-	assert.True(t, NewNullBool(true, false).Valid)
-	assert.False(t, NewNullBool(false, false).Valid)
-	v, err := NewNullBool(true, false).Value()
+	assert.Equal(t, true, NewNullBool(true).Bool)
+	assert.True(t, NewNullBool(true).Valid)
+	assert.True(t, NewNullBool(false).Valid)
+	assert.False(t, NewNullBool(nil).Valid)
+	v, err := NewNullBool(true).Value()
 	assert.NoError(t, err)
 	assert.Equal(t, true, v)
 }

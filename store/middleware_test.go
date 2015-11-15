@@ -28,7 +28,7 @@ import (
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/net/httputils"
-	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/store"
 	storemock "github.com/corestoreio/csfw/store/mock"
 	"github.com/dgrijalva/jwt-go"
@@ -55,8 +55,8 @@ func init() {
 		func(ms *storemock.Storage) {
 			ms.MockStore = func() (*store.Store, error) {
 				return store.NewStore(
-					&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-					&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true, true)},
+					&store.TableStore{StoreID: 1, Code: csdb.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+					&store.TableWebsite{WebsiteID: 1, Code: csdb.NewNullString("euro"), Name: csdb.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: csdb.NewNullBool(true)},
 					&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 					store.SetStoreConfig(middlewareConfigReader),
 				)
