@@ -80,8 +80,8 @@ func (b *SelectBuilder) From(from ...string) *SelectBuilder {
 
 // Where appends a WHERE clause to the statement for the given string and args
 // or map of column/value pairs
-func (b *SelectBuilder) Where(whereSqlOrMap interface{}, args ...interface{}) *SelectBuilder {
-	b.WhereFragments = append(b.WhereFragments, newWhereFragment(whereSqlOrMap, args))
+func (b *SelectBuilder) Where(args ...ConditionArg) *SelectBuilder {
+	b.WhereFragments = append(b.WhereFragments, newWhereFragments(args...)...)
 	return b
 }
 
@@ -92,8 +92,8 @@ func (b *SelectBuilder) GroupBy(group string) *SelectBuilder {
 }
 
 // Having appends a HAVING clause to the statement
-func (b *SelectBuilder) Having(whereSqlOrMap interface{}, args ...interface{}) *SelectBuilder {
-	b.HavingFragments = append(b.HavingFragments, newWhereFragment(whereSqlOrMap, args))
+func (b *SelectBuilder) Having(args ...ConditionArg) *SelectBuilder {
+	b.HavingFragments = append(b.HavingFragments, newWhereFragments(args...)...)
 	return b
 }
 
@@ -184,11 +184,7 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 	if len(b.JoinFragments) > 0 {
 		for _, f := range b.JoinFragments {
 			sql.WriteString(" " + f.joinType + " JOIN " + f.table + " ON ")
-			var w []*whereFragment
-			for _, oc := range f.onConditions {
-				w = append(w, newWhereFragment(oc.whereSqlOrMap, oc.args))
-			}
-			writeWhereFragmentsToSql(w, &sql, &args)
+			writeWhereFragmentsToSql(f.onConditions, &sql, &args)
 		}
 	}
 

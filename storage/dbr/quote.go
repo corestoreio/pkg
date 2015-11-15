@@ -1,9 +1,6 @@
 package dbr
 
-import (
-	"bytes"
-	"strings"
-)
+import "strings"
 
 const Quote string = "`"
 
@@ -18,7 +15,7 @@ type quoter interface {
 // MysqlQuoter implements Mysql-specific quoting
 type MysqlQuoter struct{}
 
-func (q MysqlQuoter) writeQuotedColumn(column string, sql *bytes.Buffer) {
+func (q MysqlQuoter) writeQuotedColumn(column string, sql StringWriter) {
 	sql.WriteString(Quote + column + Quote)
 }
 

@@ -42,8 +42,8 @@ func (tx *Tx) DeleteFrom(from string) *DeleteBuilder {
 
 // Where appends a WHERE clause to the statement whereSqlOrMap can be a
 // string or map. If it's a string, args wil replaces any places holders
-func (b *DeleteBuilder) Where(whereSqlOrMap interface{}, args ...interface{}) *DeleteBuilder {
-	b.WhereFragments = append(b.WhereFragments, newWhereFragment(whereSqlOrMap, args))
+func (b *DeleteBuilder) Where(args ...ConditionArg) *DeleteBuilder {
+	b.WhereFragments = append(b.WhereFragments, newWhereFragments(args...)...)
 	return b
 }
 

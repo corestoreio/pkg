@@ -1,9 +1,6 @@
 package dbr
 
-import (
-	"bytes"
-	"reflect"
-)
+import "reflect"
 
 // Eq is a map column -> value pairs which must be matched in a query
 type Eq map[string]interface{}
@@ -14,46 +11,57 @@ type whereFragment struct {
 	EqualityMap map[string]interface{}
 }
 
-func newWhereFragment(whereSqlOrMap interface{}, args []interface{}) *whereFragment {
-	switch pred := whereSqlOrMap.(type) {
-	case string:
-		return &whereFragment{Condition: pred, Values: args}
-	case map[string]interface{}:
-		return &whereFragment{EqualityMap: pred}
-	case Eq:
-		return &whereFragment{EqualityMap: map[string]interface{}(pred)}
-	default:
-		panic("Invalid argument passed to Where. Pass a string or an Eq map.")
-	}
+type ConditionArg func(*whereFragment)
 
-	return nil
+func ConditionRaw(raw string, values ...interface{}) ConditionArg {
+	if err := argsValuer(&values); err != nil {
+		PkgLog.Info("dbr.insertbuilder.values", "err", err, "args", values)
+	}
+	return func(wf *whereFragment) {
+		wf.Condition = raw
+		wf.Values = values
+	}
+}
+
+func ConditionMap(eq Eq) ConditionArg {
+	return func(wf *whereFragment) {
+		// todo add argsValuer
+		wf.EqualityMap = eq
+	}
+}
+
+func newWhereFragments(wargs ...ConditionArg) []*whereFragment {
+	ret := make([]*whereFragment, len(wargs))
+	for i, warg := range wargs {
+		ret[i] = new(whereFragment)
+		warg(ret[i])
+	}
+	return ret
 }
 
 // Invariant: only called when len(fragments) > 0
-func writeWhereFragmentsToSql(fragments []*whereFragment, sql *bytes.Buffer, args *[]interface{}) {
+func writeWhereFragmentsToSql(fragments []*whereFragment, sql StringWriter, args *[]interface{}) {
 	anyConditions := false
 	for _, f := range fragments {
 		if f.Condition != "" {
 			if anyConditions {
-				sql.WriteString(" AND (")
+				_, _ = sql.WriteString(" AND (")
 			} else {
-				sql.WriteRune('(')
+				_, _ = sql.WriteRune('(')
 				anyConditions = true
 			}
-			sql.WriteString(f.Condition)
-			sql.WriteRune(')')
+			_, _ = sql.WriteString(f.Condition)
+			_, _ = sql.WriteRune(')')
 			if len(f.Values) > 0 {
 				*args = append(*args, f.Values...)
 			}
 		} else if f.EqualityMap != nil {
 			anyConditions = writeEqualityMapToSql(f.EqualityMap, sql, args, anyConditions)
-		} else {
-			panic("invalid equality map")
 		}
 	}
 }
 
-func writeEqualityMapToSql(eq map[string]interface{}, sql *bytes.Buffer, args *[]interface{}, anyConditions bool) bool {
+func writeEqualityMapToSql(eq map[string]interface{}, sql StringWriter, args *[]interface{}, anyConditions bool) bool {
 	for k, v := range eq {
 		if v == nil {
 			anyConditions = writeWhereCondition(sql, k, " IS NULL", anyConditions)
@@ -67,9 +75,9 @@ func writeEqualityMapToSql(eq map[string]interface{}, sql *bytes.Buffer, args *[
 						anyConditions = writeWhereCondition(sql, k, " IS NULL", anyConditions)
 					} else {
 						if anyConditions {
-							sql.WriteString(" AND (1=0)")
+							_, _ = sql.WriteString(" AND (1=0)")
 						} else {
-							sql.WriteString("(1=0)")
+							_, _ = sql.WriteString("(1=0)")
 						}
 					}
 				} else if vValLen == 1 {
@@ -89,16 +97,16 @@ func writeEqualityMapToSql(eq map[string]interface{}, sql *bytes.Buffer, args *[
 	return anyConditions
 }
 
-func writeWhereCondition(sql *bytes.Buffer, k string, pred string, anyConditions bool) bool {
+func writeWhereCondition(sql StringWriter, k string, pred string, anyConditions bool) bool {
 	if anyConditions {
-		sql.WriteString(" AND (")
+		_, _ = sql.WriteString(" AND (")
 	} else {
-		sql.WriteRune('(')
+		_, _ = sql.WriteRune('(')
 		anyConditions = true
 	}
 	Quoter.writeQuotedColumn(k, sql)
-	sql.WriteString(pred)
-	sql.WriteRune(')')
+	_, _ = sql.WriteString(pred)
+	_, _ = sql.WriteRune(')')
 
 	return anyConditions
 }

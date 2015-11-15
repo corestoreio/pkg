@@ -12,7 +12,7 @@ func BenchmarkDeleteSql(b *testing.B) {
 	b.ResetTimer()
 
 	for i := 0; i < b.N; i++ {
-		s.DeleteFrom("alpha").Where("a", "b").Limit(1).OrderDir("id", true).ToSql()
+		s.DeleteFrom("alpha").Where(ConditionRaw("a", "b")).Limit(1).OrderDir("id", true).ToSql()
 	}
 }
 
@@ -27,7 +27,7 @@ func TestDeleteAllToSql(t *testing.T) {
 func TestDeleteSingleToSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args := s.DeleteFrom("a").Where("id = ?", 1).ToSql()
+	sql, args := s.DeleteFrom("a").Where(ConditionRaw("id = ?", 1)).ToSql()
 
 	assert.Equal(t, sql, "DELETE FROM a WHERE (id = ?)")
 	assert.Equal(t, args, []interface{}{1})
@@ -53,7 +53,7 @@ func TestDeleteReal(t *testing.T) {
 	assert.NoError(t, err, "LastInsertId")
 
 	// Delete Barack
-	res, err = s.DeleteFrom("dbr_people").Where("id = ?", id).Exec()
+	res, err = s.DeleteFrom("dbr_people").Where(ConditionRaw("id = ?", id)).Exec()
 	assert.NoError(t, err, "DeleteFrom")
 
 	// Ensure we only reflected one row and that the id no longer exists
@@ -62,7 +62,7 @@ func TestDeleteReal(t *testing.T) {
 	assert.Equal(t, rowsAff, int64(1), "RowsAffected")
 
 	var count int64
-	err = s.Select("count(*)").From("dbr_people").Where("id = ?", id).LoadValue(&count)
+	err = s.Select("count(*)").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadValue(&count)
 	assert.NoError(t, err)
 	assert.Equal(t, count, int64(0), "count")
 }

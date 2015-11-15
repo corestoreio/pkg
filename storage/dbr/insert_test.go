@@ -106,7 +106,7 @@ func validateInsertingBarack(t *testing.T, s *Session, res sql.Result, err error
 	assert.Equal(t, rowsAff, int64(1))
 
 	var person dbrPerson
-	err = s.Select("*").From("dbr_people").Where("id = ?", id).LoadStruct(&person)
+	err = s.Select("*").From("dbr_people").Where(ConditionRaw("id = ?", id)).LoadStruct(&person)
 	assert.NoError(t, err)
 
 	assert.Equal(t, person.Id, id)

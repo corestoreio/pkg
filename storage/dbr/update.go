@@ -97,11 +97,8 @@ func (b *UpdateBuilder) SetMap(clauses map[string]interface{}) *UpdateBuilder {
 }
 
 // Where appends a WHERE clause to the statement
-func (b *UpdateBuilder) Where(whereSqlOrMap interface{}, args ...interface{}) *UpdateBuilder {
-	if err := argsValuer(&args); err != nil {
-		b.EventErrKv("dbr.insertbuilder.values", err, kvs{"args": fmt.Sprint(args)})
-	}
-	b.WhereFragments = append(b.WhereFragments, newWhereFragment(whereSqlOrMap, args))
+func (b *UpdateBuilder) Where(args ...ConditionArg) *UpdateBuilder {
+	b.WhereFragments = append(b.WhereFragments, newWhereFragments(args...)...)
 	return b
 }
 
