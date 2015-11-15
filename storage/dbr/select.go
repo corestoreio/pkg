@@ -11,6 +11,8 @@ type SelectBuilder struct {
 	*Session
 	runner
 
+	toSQLed bool // true if ToSQL has been called
+
 	RawFullSql   string
 	RawArguments []interface{}
 
@@ -27,6 +29,8 @@ type SelectBuilder struct {
 	OffsetCount     uint64
 	OffsetValid     bool
 }
+
+var _ queryBuilder = (*SelectBuilder)(nil)
 
 // Select creates a new SelectBuilder that select that given columns
 func (sess *Session) Select(cols ...string) *SelectBuilder {
@@ -138,9 +142,12 @@ func (b *SelectBuilder) Paginate(page, perPage uint64) *SelectBuilder {
 
 // ToSql serialized the SelectBuilder to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *SelectBuilder) ToSql() (string, []interface{}) {
+func (b *SelectBuilder) ToSql() (string, []interface{}, error) {
+	if b.toSQLed {
+		return "", nil, ErrToSQLAlreadyCalled
+	}
 	if b.RawFullSql != "" {
-		return b.RawFullSql, b.RawArguments
+		return b.RawFullSql, b.RawArguments, nil
 	}
 
 	if len(b.JoinFragments) > 0 {
@@ -230,6 +237,6 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 		sql.WriteString(" OFFSET ")
 		fmt.Fprint(sql, b.OffsetCount)
 	}
-
-	return sql.String(), args
+	b.toSQLed = true
+	return sql.String(), args, nil
 }

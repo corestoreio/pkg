@@ -14,6 +14,8 @@ type UpdateBuilder struct {
 	*Session
 	runner
 
+	toSQLed bool
+
 	RawFullSql   string
 	RawArguments []interface{}
 
@@ -26,6 +28,8 @@ type UpdateBuilder struct {
 	OffsetCount    uint64
 	OffsetValid    bool
 }
+
+var _ queryBuilder = (*UpdateBuilder)(nil)
 
 type setClause struct {
 	column string
@@ -135,16 +139,19 @@ func (b *UpdateBuilder) Offset(offset uint64) *UpdateBuilder {
 
 // ToSql serialized the UpdateBuilder to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *UpdateBuilder) ToSql() (string, []interface{}) {
+func (b *UpdateBuilder) ToSql() (string, []interface{}, error) {
+	if b.toSQLed {
+		return "", nil, ErrToSQLAlreadyCalled
+	}
 	if b.RawFullSql != "" {
-		return b.RawFullSql, b.RawArguments
+		return b.RawFullSql, b.RawArguments, nil
 	}
 
 	if len(b.Table) == 0 {
-		panic("no table specified")
+		return "", nil, ErrMissingTable
 	}
 	if len(b.SetClauses) == 0 {
-		panic("no set clauses specified")
+		return "", nil, ErrMissingSet
 	}
 
 	var sql = bufferpool.Get()
@@ -198,14 +205,17 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}) {
 		sql.WriteString(" OFFSET ")
 		fmt.Fprint(sql, b.OffsetCount)
 	}
-
-	return sql.String(), args
+	b.toSQLed = true
+	return sql.String(), args, nil
 }
 
 // Exec executes the statement represented by the UpdateBuilder
 // It returns the raw database/sql Result and an error if there was one
 func (b *UpdateBuilder) Exec() (sql.Result, error) {
-	sql, args := b.ToSql()
+	sql, args, err := b.ToSql()
+	if err != nil {
+		return nil, b.EventErrKv("dbr.update.exec.tosql", err, nil)
+	}
 
 	fullSql, err := Preprocess(sql, args)
 	if err != nil {

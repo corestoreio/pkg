@@ -50,7 +50,12 @@ func (b *SelectBuilder) LoadStructs(dest interface{}) (int, error) {
 	//
 	// Get full SQL
 	//
-	fullSql, err := Preprocess(b.ToSql())
+	tSQL, tArg, err := b.ToSql()
+	if err != nil {
+		return 0, b.EventErr("dbr.select.load_structs.tosql", err)
+	}
+
+	fullSql, err := Preprocess(tSQL, tArg)
 	if err != nil {
 		return 0, b.EventErr("dbr.select.load_all.interpolate", err)
 	}
@@ -137,7 +142,12 @@ func (b *SelectBuilder) LoadStruct(dest interface{}) error {
 	//
 	// Get full SQL
 	//
-	fullSql, err := Preprocess(b.ToSql())
+	tSQL, tArg, err := b.ToSql()
+	if err != nil {
+		return b.EventErr("dbr.select.load_struct.tosql", err)
+	}
+
+	fullSql, err := Preprocess(tSQL, tArg)
 	if err != nil {
 		return err
 	}
@@ -221,7 +231,12 @@ func (b *SelectBuilder) LoadValues(dest interface{}) (int, error) {
 	//
 	// Get full SQL
 	//
-	fullSql, err := Preprocess(b.ToSql())
+	tSQL, tArg, err := b.ToSql()
+	if err != nil {
+		return 0, b.EventErr("dbr.select.load_values.tosql", err)
+	}
+
+	fullSql, err := Preprocess(tSQL, tArg)
 	if err != nil {
 		return 0, err
 	}
@@ -278,7 +293,12 @@ func (b *SelectBuilder) LoadValue(dest interface{}) error {
 	//
 	// Get full SQL
 	//
-	fullSql, err := Preprocess(b.ToSql())
+	tSQL, tArg, err := b.ToSql()
+	if err != nil {
+		return b.EventErr("dbr.select.load_value.tosql", err)
+	}
+
+	fullSql, err := Preprocess(tSQL, tArg)
 	if err != nil {
 		return err
 	}

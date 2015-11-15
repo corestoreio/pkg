@@ -1,6 +1,31 @@
 package dbr
 
-import "reflect"
+import (
+	"reflect"
+	"sync"
+)
+
+var wfPool = &sync.Pool{
+	New: func() interface{} {
+		return &whereFragment{}
+	},
+}
+
+// Get returns a buffer from the pool.
+func wfGet() *whereFragment {
+	return wfPool.Get().(*whereFragment)
+}
+
+// Put returns a buffer to the pool.
+// The buffer is reset before it is put back into circulation.
+func wfPut(wfs []*whereFragment) {
+	for _, wf := range wfs {
+		wf.Condition = ""
+		wf.Values = nil
+		wf.EqualityMap = nil
+		wfPool.Put(wf)
+	}
+}
 
 // Eq is a map column -> value pairs which must be matched in a query
 type Eq map[string]interface{}
@@ -33,7 +58,7 @@ func ConditionMap(eq Eq) ConditionArg {
 func newWhereFragments(wargs ...ConditionArg) []*whereFragment {
 	ret := make([]*whereFragment, len(wargs))
 	for i, warg := range wargs {
-		ret[i] = new(whereFragment)
+		ret[i] = wfGet()
 		warg(ret[i])
 	}
 	return ret
@@ -59,6 +84,7 @@ func writeWhereFragmentsToSql(fragments []*whereFragment, sql QueryWriter, args 
 			anyConditions = writeEqualityMapToSql(f.EqualityMap, sql, args, anyConditions)
 		}
 	}
+	wfPut(fragments) // return those guys back to the pool
 }
 
 func writeEqualityMapToSql(eq map[string]interface{}, sql QueryWriter, args *[]interface{}, anyConditions bool) bool {

@@ -12,7 +12,7 @@ import (
 type DeleteBuilder struct {
 	*Session
 	runner
-
+	toSQLed        bool
 	From           string
 	WhereFragments []*whereFragment
 	OrderBys       []string
@@ -21,6 +21,8 @@ type DeleteBuilder struct {
 	OffsetCount    uint64
 	OffsetValid    bool
 }
+
+var _ queryBuilder = (*DeleteBuilder)(nil)
 
 // DeleteFrom creates a new DeleteBuilder for the given table
 func (sess *Session) DeleteFrom(from string) *DeleteBuilder {
@@ -80,9 +82,12 @@ func (b *DeleteBuilder) Offset(offset uint64) *DeleteBuilder {
 
 // ToSql serialized the DeleteBuilder to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *DeleteBuilder) ToSql() (string, []interface{}) {
+func (b *DeleteBuilder) ToSql() (string, []interface{}, error) {
+	if b.toSQLed {
+		return "", nil, ErrToSQLAlreadyCalled
+	}
 	if len(b.From) == 0 {
-		panic("no table specified")
+		return "", nil, ErrMissingTable
 	}
 
 	var sql = bufferpool.Get()
@@ -118,14 +123,17 @@ func (b *DeleteBuilder) ToSql() (string, []interface{}) {
 		sql.WriteString(" OFFSET ")
 		fmt.Fprint(sql, b.OffsetCount)
 	}
-
-	return sql.String(), args
+	b.toSQLed = true
+	return sql.String(), args, nil
 }
 
 // Exec executes the statement represented by the DeleteBuilder
 // It returns the raw database/sql Result and an error if there was one
 func (b *DeleteBuilder) Exec() (sql.Result, error) {
-	sql, args := b.ToSql()
+	sql, args, err := b.ToSql()
+	if err != nil {
+		return nil, b.EventErrKv("dbr.delete.exec.tosql", err, nil)
+	}
 
 	fullSql, err := Preprocess(sql, args)
 	if err != nil {

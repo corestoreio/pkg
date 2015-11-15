@@ -38,8 +38,8 @@ func BenchmarkInsertRecordsSql(b *testing.B) {
 func TestInsertSingleToSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args := s.InsertInto("a").Columns("b", "c").Values(1, 2).ToSql()
-
+	sql, args, err := s.InsertInto("a").Columns("b", "c").Values(1, 2).ToSql()
+	assert.NoError(t, err)
 	assert.Equal(t, sql, "INSERT INTO a (`b`,`c`) VALUES (?,?)")
 	assert.Equal(t, args, []interface{}{1, 2})
 }
@@ -47,8 +47,8 @@ func TestInsertSingleToSql(t *testing.T) {
 func TestInsertMultipleToSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args := s.InsertInto("a").Columns("b", "c").Values(1, 2).Values(3, 4).ToSql()
-
+	sql, args, err := s.InsertInto("a").Columns("b", "c").Values(1, 2).Values(3, 4).ToSql()
+	assert.NoError(t, err)
 	assert.Equal(t, sql, "INSERT INTO a (`b`,`c`) VALUES (?,?),(?,?)")
 	assert.Equal(t, args, []interface{}{1, 2, 3, 4})
 }
@@ -57,8 +57,8 @@ func TestInsertRecordsToSql(t *testing.T) {
 	s := createFakeSession()
 
 	objs := []someRecord{{1, 88, false}, {2, 99, true}}
-	sql, args := s.InsertInto("a").Columns("something_id", "user_id", "other").Record(objs[0]).Record(objs[1]).ToSql()
-
+	sql, args, err := s.InsertInto("a").Columns("something_id", "user_id", "other").Record(objs[0]).Record(objs[1]).ToSql()
+	assert.NoError(t, err)
 	assert.Equal(t, sql, "INSERT INTO a (`something_id`,`user_id`,`other`) VALUES (?,?,?),(?,?,?)")
 	// without fmt.Sprint we have an error despite objects are equal ...
 	assert.Equal(t, fmt.Sprint(args), fmt.Sprint([]interface{}{1, 88, false, 2, 99, true}))

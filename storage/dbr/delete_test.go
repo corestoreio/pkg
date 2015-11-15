@@ -19,25 +19,29 @@ func BenchmarkDeleteSql(b *testing.B) {
 func TestDeleteAllToSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, _ := s.DeleteFrom("a").ToSql()
-
+	sql, _, err := s.DeleteFrom("a").ToSql()
+	assert.NoError(t, err)
 	assert.Equal(t, sql, "DELETE FROM a")
 }
 
 func TestDeleteSingleToSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, args := s.DeleteFrom("a").Where(ConditionRaw("id = ?", 1)).ToSql()
-
+	del := s.DeleteFrom("a").Where(ConditionRaw("id = ?", 1))
+	sql, args, err := del.ToSql()
+	assert.NoError(t, err)
 	assert.Equal(t, sql, "DELETE FROM a WHERE (id = ?)")
 	assert.Equal(t, args, []interface{}{1})
+
+	sql, args, err = del.ToSql()
+	assert.EqualError(t, err, ErrToSQLAlreadyCalled.Error())
 }
 
 func TestDeleteTenStaringFromTwentyToSql(t *testing.T) {
 	s := createFakeSession()
 
-	sql, _ := s.DeleteFrom("a").Limit(10).Offset(20).OrderBy("id").ToSql()
-
+	sql, _, err := s.DeleteFrom("a").Limit(10).Offset(20).OrderBy("id").ToSql()
+	assert.NoError(t, err)
 	assert.Equal(t, sql, "DELETE FROM a ORDER BY id LIMIT 10 OFFSET 20")
 }
 

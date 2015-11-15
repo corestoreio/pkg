@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/utils/bufferpool"
+	"github.com/juju/errgo"
 )
 
 // InsertBuilder contains the clauses for an INSERT statement
@@ -22,6 +23,8 @@ type InsertBuilder struct {
 	Recs []interface{}
 	Maps map[string]interface{}
 }
+
+var _ queryBuilder = (*InsertBuilder)(nil)
 
 // InsertInto instantiates a InsertBuilder for the given table
 func (sess *Session) InsertInto(into string) *InsertBuilder {
@@ -96,9 +99,9 @@ func (b *InsertBuilder) Pair(column string, value interface{}) *InsertBuilder {
 
 // ToSql serialized the InsertBuilder to a SQL string
 // It returns the string with placeholders and a slice of query arguments
-func (b *InsertBuilder) ToSql() (string, []interface{}) {
+func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 	if len(b.Into) == 0 {
-		panic("no table specified")
+		return "", nil, ErrMissingTable
 	}
 	if len(b.Cols) == 0 && len(b.Maps) == 0 {
 		panic("no columns or map specified")
@@ -170,13 +173,13 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 		}
 	}
 
-	return sql.String(), args
+	return sql.String(), args, nil
 }
 
 // MapToSql serialized the InsertBuilder to a SQL string
 // It goes through the Maps param and combined its keys/values into the SQL query string
 // It returns the string with placeholders and a slice of query arguments
-func (b *InsertBuilder) MapToSql(sql *bytes.Buffer) (string, []interface{}) {
+func (b *InsertBuilder) MapToSql(sql *bytes.Buffer) (string, []interface{}, error) {
 	keys := make([]string, len(b.Maps))
 	vals := make([]interface{}, len(b.Maps))
 	i := 0
@@ -186,7 +189,7 @@ func (b *InsertBuilder) MapToSql(sql *bytes.Buffer) (string, []interface{}) {
 			if val, err := dbVal.Value(); err == nil {
 				vals[i] = val
 			} else {
-				panic(err)
+				return "", nil, errgo.Mask(err)
 			}
 		} else {
 			vals[i] = v
@@ -214,7 +217,7 @@ func (b *InsertBuilder) MapToSql(sql *bytes.Buffer) (string, []interface{}) {
 		args = append(args, row)
 	}
 
-	return sql.String(), args
+	return sql.String(), args, nil
 }
 
 // Exec executes the statement represented by the InsertBuilder
@@ -224,7 +227,10 @@ func (b *InsertBuilder) MapToSql(sql *bytes.Buffer) (string, []interface{}) {
 // the first inserted row only. The reason for this is to make it possible to
 // reproduce easily the same INSERT statement against some other server.
 func (b *InsertBuilder) Exec() (sql.Result, error) {
-	sql, args := b.ToSql()
+	sql, args, err := b.ToSql()
+	if err != nil {
+		return nil, b.EventErrKv("dbr.insert.exec.tosql", err, nil)
+	}
 
 	fullSql, err := Preprocess(sql, args)
 	if err != nil {
