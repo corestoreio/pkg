@@ -21,7 +21,7 @@ import (
 	"net/url"
 
 	"github.com/corestoreio/csfw/config/scope"
-	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
@@ -29,8 +29,8 @@ import (
 
 func TestStoreCodeFromClaimFullToken(t *testing.T) {
 	s := store.MustNewStore(
-		&store.TableStore{StoreID: 1, Code: csdb.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-		&store.TableWebsite{WebsiteID: 1, Code: csdb.NewNullString("admin"), Name: csdb.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: csdb.NewNullBool(false)},
+		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 	)
 	token := jwt.New(jwt.SigningMethodHS256)

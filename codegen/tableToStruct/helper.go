@@ -129,17 +129,17 @@ func dbrType(c csdb.Column) string {
 	case false == c.IsNull():
 		return ""
 	case c.IsBool():
-		return ".Bool" // csdb.NullBool
+		return ".Bool" // dbr.NullBool
 	case c.IsString():
-		return ".String" // csdb.NullString
+		return ".String" // dbr.NullString
 	case c.IsMoney():
 		return "" // money.Money
 	case c.IsFloat():
-		return ".Float64" // csdb.NullFloat64
+		return ".Float64" // dbr.NullFloat64
 	case c.IsInt():
-		return ".Int64" // csdb.NullInt64
+		return ".Int64" // dbr.NullInt64
 	case c.IsDate():
-		return ".Time" // csdb.NullTime
+		return ".Time" // dbr.NullTime
 	}
 	return ""
 }

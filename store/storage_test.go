@@ -19,6 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/utils"
 	"github.com/stretchr/testify/assert"
@@ -26,9 +27,9 @@ import (
 
 var testStorage = store.NewStorage(
 	store.SetStorageWebsites(
-		&store.TableWebsite{WebsiteID: 0, Code: csdb.NewNullString("admin"), Name: csdb.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: csdb.NewNullBool(false)},
-		&store.TableWebsite{WebsiteID: 1, Code: csdb.NewNullString("euro"), Name: csdb.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: csdb.NewNullBool(true)},
-		&store.TableWebsite{WebsiteID: 2, Code: csdb.NewNullString("oz"), Name: csdb.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: csdb.NewNullBool(false)},
+		&store.TableWebsite{WebsiteID: 0, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
+		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+		&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
 	),
 	store.SetStorageGroups(
 		&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
@@ -37,13 +38,13 @@ var testStorage = store.NewStorage(
 		&store.TableGroup{GroupID: 2, WebsiteID: 1, Name: "UK Group", RootCategoryID: 2, DefaultStoreID: 4},
 	),
 	store.SetStorageStores(
-		&store.TableStore{StoreID: 0, Code: csdb.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
-		&store.TableStore{StoreID: 5, Code: csdb.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
-		&store.TableStore{StoreID: 1, Code: csdb.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
-		&store.TableStore{StoreID: 4, Code: csdb.NewNullString("uk"), WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
-		&store.TableStore{StoreID: 2, Code: csdb.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
-		&store.TableStore{StoreID: 6, Code: csdb.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
-		&store.TableStore{StoreID: 3, Code: csdb.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
+		&store.TableStore{StoreID: 0, Code: dbr.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
+		&store.TableStore{StoreID: 5, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
+		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
+		&store.TableStore{StoreID: 4, Code: dbr.NewNullString("uk"), WebsiteID: 1, GroupID: 2, Name: "UK", SortOrder: 10, IsActive: true},
+		&store.TableStore{StoreID: 2, Code: dbr.NewNullString("at"), WebsiteID: 1, GroupID: 1, Name: "Österreich", SortOrder: 20, IsActive: true},
+		&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
+		&store.TableStore{StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30, IsActive: true},
 	),
 )
 
@@ -234,14 +235,14 @@ func TestGroupSliceFilter(t *testing.T) {
 func TestStorageGroupNoWebsite(t *testing.T) {
 	var tst = store.NewStorage(
 		store.SetStorageWebsites(
-			&store.TableWebsite{WebsiteID: 21, Code: csdb.NewNullString("oz"), Name: csdb.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: csdb.NewNullBool(false)},
+			&store.TableWebsite{WebsiteID: 21, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
 		),
 		store.SetStorageGroups(
 			&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
 		),
 		store.SetStorageStores(
-			&store.TableStore{StoreID: 5, Code: csdb.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
-			&store.TableStore{StoreID: 6, Code: csdb.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
+			&store.TableStore{StoreID: 5, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
+			&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),
 	)
 	g, err := tst.Group(scope.MockID(3))
@@ -348,14 +349,14 @@ func TestDefaultStoreView(t *testing.T) {
 
 	var tst = store.NewStorage(
 		store.SetStorageWebsites(
-			&store.TableWebsite{WebsiteID: 21, Code: csdb.NewNullString("oz"), Name: csdb.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: csdb.NewNullBool(false)},
+			&store.TableWebsite{WebsiteID: 21, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
 		),
 		store.SetStorageGroups(
 			&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
 		),
 		store.SetStorageStores(
-			&store.TableStore{StoreID: 4, Code: csdb.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
-			&store.TableStore{StoreID: 6, Code: csdb.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
+			&store.TableStore{StoreID: 4, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
+			&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),
 	)
 	dSt, err := tst.DefaultStoreView()
@@ -364,7 +365,7 @@ func TestDefaultStoreView(t *testing.T) {
 
 	var tst2 = store.NewStorage(
 		store.SetStorageWebsites(
-			&store.TableWebsite{WebsiteID: 21, Code: csdb.NewNullString("oz"), Name: csdb.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: csdb.NewNullBool(true)},
+			&store.TableWebsite{WebsiteID: 21, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(true)},
 		),
 		store.SetStorageGroups(
 			&store.TableGroup{GroupID: 33, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
@@ -382,8 +383,8 @@ func TestStorageStoreErrors(t *testing.T) {
 		store.SetStorageWebsites(),
 		store.SetStorageGroups(),
 		store.SetStorageStores(
-			&store.TableStore{StoreID: 4, Code: csdb.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
-			&store.TableStore{StoreID: 6, Code: csdb.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
+			&store.TableStore{StoreID: 4, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
+			&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),
 	)
 	stw, err := nsw.Store(scope.MockCode("nz"))
@@ -396,14 +397,14 @@ func TestStorageStoreErrors(t *testing.T) {
 
 	var nsg = store.NewStorage(
 		store.SetStorageWebsites(
-			&store.TableWebsite{WebsiteID: 2, Code: csdb.NewNullString("oz"), Name: csdb.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: csdb.NewNullBool(false)},
+			&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
 		),
 		store.SetStorageGroups(
 			&store.TableGroup{GroupID: 13, WebsiteID: 12, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 4},
 		),
 		store.SetStorageStores(
-			&store.TableStore{StoreID: 4, Code: csdb.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
-			&store.TableStore{StoreID: 6, Code: csdb.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
+			&store.TableStore{StoreID: 4, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
+			&store.TableStore{StoreID: 6, Code: dbr.NewNullString("nz"), WebsiteID: 2, GroupID: 3, Name: "Kiwi", SortOrder: 30, IsActive: true},
 		),
 	)
 

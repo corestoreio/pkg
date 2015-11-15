@@ -40,7 +40,7 @@ type (
 	Columns []Column
 	// Column contains info about one database column retrieved from `SHOW COLUMNS FROM table`
 	Column struct {
-		Field, Type, Null, Key, Default, Extra NullString
+		Field, Type, Null, Key, Default, Extra dbr.NullString
 	}
 )
 
@@ -305,25 +305,25 @@ func (c Column) GetGoPrimitive(useNullType bool) string {
 	isNull := c.IsNull() && useNullType
 	switch {
 	case c.IsBool() && isNull:
-		goType = "csdb.NullBool"
+		goType = "dbr.NullBool"
 	case c.IsBool():
 		goType = "bool"
 	case c.IsInt() && isNull:
-		goType = "csdb.NullInt64"
+		goType = "dbr.NullInt64"
 	case c.IsInt():
 		goType = "int64" // rethink if it is worth to introduce uint64 because of some unsigned columns
 	case c.IsString() && isNull:
-		goType = "csdb.NullString"
+		goType = "dbr.NullString"
 	case c.IsString():
 		goType = "string"
 	case c.IsMoney():
 		goType = "money.Money"
 	case c.IsFloat() && isNull:
-		goType = "csdb.NullFloat64"
+		goType = "dbr.NullFloat64"
 	case c.IsFloat():
 		goType = "float64"
 	case c.IsDate() && isNull:
-		goType = "csdb.NullTime"
+		goType = "dbr.NullTime"
 	case c.IsDate():
 		goType = "time.Time"
 	}

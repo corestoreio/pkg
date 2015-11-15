@@ -215,7 +215,7 @@ func (cc Columns) GetByName(name string) column {
 
 // MapSQLToGoDBRType takes a slice of Columns and sets the fields GoType and GoName to the correct value
 // to create a Go struct. These generated structs are mainly used in a result from a SQL query. The field GoType
-// will contain csdb.Null* types.
+// will contain dbr.Null* types.
 func (cc Columns) MapSQLToGoDBRType() error {
 	for i, col := range cc {
 		cc[i] = col.updateGoPrimitive(true)
@@ -223,7 +223,7 @@ func (cc Columns) MapSQLToGoDBRType() error {
 	return nil
 }
 
-// MapSQLToGoType maps a column to a GoType. This GoType is not a csdb.Null* struct. This function only updates
+// MapSQLToGoType maps a column to a GoType. This GoType is not a dbr.Null* struct. This function only updates
 // the fields GoType and GoName of column struct. The 2nd argument ifm interface map replaces the primitive type
 // with an interface type, the column name must be found as a key in the map.
 func (cc Columns) MapSQLToGoType(ifm map[string]string) error {

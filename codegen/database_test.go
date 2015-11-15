@@ -24,6 +24,7 @@ import (
 
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -133,12 +134,12 @@ func TestGetEavValueTables(t *testing.T) {
 func TestColumnComment(t *testing.T) {
 	c := column{
 		Column: csdb.Column{
-			Field:   csdb.NewNullString("entity_id"),
-			Type:    csdb.NewNullString("varchar"),
-			Null:    csdb.NewNullString("YES"),
-			Key:     csdb.NewNullString("PRI"),
-			Default: csdb.NewNullString("0"),
-			Extra:   csdb.NewNullString("unsigned"),
+			Field:   dbr.NewNullString("entity_id"),
+			Type:    dbr.NewNullString("varchar"),
+			Null:    dbr.NewNullString("YES"),
+			Key:     dbr.NewNullString("PRI"),
+			Default: dbr.NewNullString("0"),
+			Extra:   dbr.NewNullString("unsigned"),
 		},
 	}
 	assert.Equal(t, "// entity_id varchar NULL PRI DEFAULT '0' unsigned", c.Comment())
@@ -303,7 +304,7 @@ func TestSQLQueryToColumnsToStruct(t *testing.T) {
 
 	checkContains := [][]byte{
 		[]byte(`TeststructSlice`),
-		[]byte(`csdb.NullString`),
+		[]byte(`dbr.NullString`),
 		[]byte("`db:\"is_visible_in_advanced_search\"`"),
 	}
 	for _, s := range checkContains {
