@@ -1,8 +1,9 @@
 package dbr
 
 import (
-	"bytes"
 	"fmt"
+
+	"github.com/corestoreio/csfw/utils/bufferpool"
 )
 
 // SelectBuilder contains the clauses for a SELECT statement
@@ -162,7 +163,9 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 		panic("no table specified")
 	}
 
-	var sql bytes.Buffer
+	var sql = bufferpool.Get()
+	defer bufferpool.Put(sql)
+
 	var args []interface{}
 
 	sql.WriteString("SELECT ")
@@ -184,13 +187,13 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 	if len(b.JoinFragments) > 0 {
 		for _, f := range b.JoinFragments {
 			sql.WriteString(" " + f.joinType + " JOIN " + f.table + " ON ")
-			writeWhereFragmentsToSql(f.onConditions, &sql, &args)
+			writeWhereFragmentsToSql(f.onConditions, sql, &args)
 		}
 	}
 
 	if len(b.WhereFragments) > 0 {
 		sql.WriteString(" WHERE ")
-		writeWhereFragmentsToSql(b.WhereFragments, &sql, &args)
+		writeWhereFragmentsToSql(b.WhereFragments, sql, &args)
 	}
 
 	if len(b.GroupBys) > 0 {
@@ -205,7 +208,7 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 
 	if len(b.HavingFragments) > 0 {
 		sql.WriteString(" HAVING ")
-		writeWhereFragmentsToSql(b.HavingFragments, &sql, &args)
+		writeWhereFragmentsToSql(b.HavingFragments, sql, &args)
 	}
 
 	if len(b.OrderBys) > 0 {
@@ -220,12 +223,12 @@ func (b *SelectBuilder) ToSql() (string, []interface{}) {
 
 	if b.LimitValid {
 		sql.WriteString(" LIMIT ")
-		fmt.Fprint(&sql, b.LimitCount)
+		fmt.Fprint(sql, b.LimitCount)
 	}
 
 	if b.OffsetValid {
 		sql.WriteString(" OFFSET ")
-		fmt.Fprint(&sql, b.OffsetCount)
+		fmt.Fprint(sql, b.OffsetCount)
 	}
 
 	return sql.String(), args

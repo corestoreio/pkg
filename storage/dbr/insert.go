@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"reflect"
 	"time"
+
+	"github.com/corestoreio/csfw/utils/bufferpool"
 )
 
 // InsertBuilder contains the clauses for an INSERT statement
@@ -109,7 +111,8 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 		}
 	}
 
-	var sql bytes.Buffer
+	var sql = bufferpool.Get()
+	defer bufferpool.Put(sql)
 
 	sql.WriteString("INSERT INTO ")
 	sql.WriteString(b.Into)
@@ -120,7 +123,9 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 	}
 
 	var args []interface{}
-	var placeholder bytes.Buffer // Build the placeholder like "(?,?,?)"
+	var placeholder = bufferpool.Get() // Build the placeholder like "(?,?,?)"
+	defer bufferpool.Put(placeholder)
+
 	// Simulataneously write the cols to the sql buffer, and build a placeholder
 	placeholder.WriteRune('(')
 	for i, c := range b.Cols {
@@ -128,7 +133,7 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 			sql.WriteRune(',')
 			placeholder.WriteRune(',')
 		}
-		Quoter.writeQuotedColumn(c, &sql)
+		Quoter.writeQuotedColumn(c, sql)
 		placeholder.WriteRune('?')
 	}
 	sql.WriteString(") VALUES ")
@@ -171,7 +176,7 @@ func (b *InsertBuilder) ToSql() (string, []interface{}) {
 // MapToSql serialized the InsertBuilder to a SQL string
 // It goes through the Maps param and combined its keys/values into the SQL query string
 // It returns the string with placeholders and a slice of query arguments
-func (b *InsertBuilder) MapToSql(sql bytes.Buffer) (string, []interface{}) {
+func (b *InsertBuilder) MapToSql(sql *bytes.Buffer) (string, []interface{}) {
 	keys := make([]string, len(b.Maps))
 	vals := make([]interface{}, len(b.Maps))
 	i := 0
@@ -189,7 +194,8 @@ func (b *InsertBuilder) MapToSql(sql bytes.Buffer) (string, []interface{}) {
 		i++
 	}
 	var args []interface{}
-	var placeholder bytes.Buffer // Build the placeholder like "(?,?,?)"
+	var placeholder = bufferpool.Get() // Build the placeholder like "(?,?,?)"
+	defer bufferpool.Put(placeholder)
 
 	placeholder.WriteRune('(')
 	for i, c := range keys {
@@ -197,7 +203,7 @@ func (b *InsertBuilder) MapToSql(sql bytes.Buffer) (string, []interface{}) {
 			sql.WriteRune(',')
 			placeholder.WriteRune(',')
 		}
-		Quoter.writeQuotedColumn(c, &sql)
+		Quoter.writeQuotedColumn(c, sql)
 		placeholder.WriteRune('?')
 	}
 	sql.WriteString(") VALUES ")

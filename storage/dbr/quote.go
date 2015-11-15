@@ -15,7 +15,7 @@ type quoter interface {
 // MysqlQuoter implements Mysql-specific quoting
 type MysqlQuoter struct{}
 
-func (q MysqlQuoter) writeQuotedColumn(column string, sql StringWriter) {
+func (q MysqlQuoter) writeQuotedColumn(column string, sql QueryWriter) {
 	sql.WriteString(Quote + column + Quote)
 }
 

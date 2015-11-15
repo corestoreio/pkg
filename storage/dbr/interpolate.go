@@ -2,13 +2,15 @@ package dbr
 
 import (
 	// "fmt"
-	"bytes"
+
 	"database/sql/driver"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
 	"unicode/utf8"
+
+	"github.com/corestoreio/csfw/utils/bufferpool"
 )
 
 func isUint(k reflect.Kind) bool {
@@ -55,7 +57,8 @@ func Preprocess(sql string, vals []interface{}) (string, error) {
 	}
 
 	curVal := 0
-	buf := new(bytes.Buffer)
+	var buf = bufferpool.Get()
+	defer bufferpool.Put(buf)
 
 	pos := 0
 	for pos < len(sql) {
@@ -170,9 +173,10 @@ func interpolate(w QueryWriter, v interface{}) error {
 				if !utf8.ValidString(str) {
 					return ErrNotUTF8
 				}
-				buf := new(bytes.Buffer)
+				var buf = bufferpool.Get()
 				D.EscapeString(buf, str)
 				stringSlice = append(stringSlice, buf.String())
+				bufferpool.Put(buf)
 			}
 		default:
 			return ErrInvalidSliceValue

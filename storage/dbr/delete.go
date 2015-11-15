@@ -1,10 +1,11 @@
 package dbr
 
 import (
-	"bytes"
 	"database/sql"
 	"fmt"
 	"time"
+
+	"github.com/corestoreio/csfw/utils/bufferpool"
 )
 
 // DeleteBuilder contains the clauses for a DELETE statement
@@ -84,7 +85,8 @@ func (b *DeleteBuilder) ToSql() (string, []interface{}) {
 		panic("no table specified")
 	}
 
-	var sql bytes.Buffer
+	var sql = bufferpool.Get()
+	defer bufferpool.Put(sql)
 	var args []interface{}
 
 	sql.WriteString("DELETE FROM ")
@@ -93,7 +95,7 @@ func (b *DeleteBuilder) ToSql() (string, []interface{}) {
 	// Write WHERE clause if we have any fragments
 	if len(b.WhereFragments) > 0 {
 		sql.WriteString(" WHERE ")
-		writeWhereFragmentsToSql(b.WhereFragments, &sql, &args)
+		writeWhereFragmentsToSql(b.WhereFragments, sql, &args)
 	}
 
 	// Ordering and limiting
@@ -109,12 +111,12 @@ func (b *DeleteBuilder) ToSql() (string, []interface{}) {
 
 	if b.LimitValid {
 		sql.WriteString(" LIMIT ")
-		fmt.Fprint(&sql, b.LimitCount)
+		fmt.Fprint(sql, b.LimitCount)
 	}
 
 	if b.OffsetValid {
 		sql.WriteString(" OFFSET ")
-		fmt.Fprint(&sql, b.OffsetCount)
+		fmt.Fprint(sql, b.OffsetCount)
 	}
 
 	return sql.String(), args

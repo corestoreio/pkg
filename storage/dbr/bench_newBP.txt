@@ -1,0 +1,9 @@
+PASS
+BenchmarkDeleteSql-4        	 1000000	      1336 ns/op	     288 B/op	      12 allocs/op
+BenchmarkInsertValuesSql-4  	 1000000	      1816 ns/op	     416 B/op	      13 allocs/op
+BenchmarkInsertRecordsSql-4 	  300000	      5608 ns/op	    1280 B/op	      48 allocs/op
+BenchmarkSelectBasicSql-4   	  500000	      2758 ns/op	     904 B/op	      21 allocs/op
+BenchmarkSelectFullSql-4    	  200000	      6589 ns/op	    2017 B/op	      51 allocs/op
+BenchmarkUpdateValuesSql-4  	 1000000	      1460 ns/op	     328 B/op	      14 allocs/op
+BenchmarkUpdateValueMapSql-4	  500000	      2834 ns/op	     920 B/op	      25 allocs/op
+ok  	github.com/corestoreio/csfw/storage/dbr	10.676s

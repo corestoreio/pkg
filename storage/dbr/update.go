@@ -1,11 +1,12 @@
 package dbr
 
 import (
-	"bytes"
 	"database/sql"
 	"database/sql/driver"
 	"fmt"
 	"time"
+
+	"github.com/corestoreio/csfw/utils/bufferpool"
 )
 
 // UpdateBuilder contains the clauses for an UPDATE statement
@@ -146,7 +147,9 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}) {
 		panic("no set clauses specified")
 	}
 
-	var sql bytes.Buffer
+	var sql = bufferpool.Get()
+	defer bufferpool.Put(sql)
+
 	var args []interface{}
 
 	sql.WriteString("UPDATE ")
@@ -158,7 +161,7 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}) {
 		if i > 0 {
 			sql.WriteString(", ")
 		}
-		Quoter.writeQuotedColumn(c.column, &sql)
+		Quoter.writeQuotedColumn(c.column, sql)
 		if e, ok := c.value.(*expr); ok {
 			sql.WriteString(" = ")
 			sql.WriteString(e.Sql)
@@ -172,7 +175,7 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}) {
 	// Write WHERE clause if we have any fragments
 	if len(b.WhereFragments) > 0 {
 		sql.WriteString(" WHERE ")
-		writeWhereFragmentsToSql(b.WhereFragments, &sql, &args)
+		writeWhereFragmentsToSql(b.WhereFragments, sql, &args)
 	}
 
 	// Ordering and limiting
@@ -188,12 +191,12 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}) {
 
 	if b.LimitValid {
 		sql.WriteString(" LIMIT ")
-		fmt.Fprint(&sql, b.LimitCount)
+		fmt.Fprint(sql, b.LimitCount)
 	}
 
 	if b.OffsetValid {
 		sql.WriteString(" OFFSET ")
-		fmt.Fprint(&sql, b.OffsetCount)
+		fmt.Fprint(sql, b.OffsetCount)
 	}
 
 	return sql.String(), args
