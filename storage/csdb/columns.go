@@ -50,9 +50,13 @@ func GetColumns(dbrSess dbr.SessionRunner, table string) (Columns, error) {
 	var cols = make(Columns, 0, 100)
 
 	sel := dbrSess.SelectBySql("SHOW COLUMNS FROM " + dbr.Quoter.Table(table))
-	selSql, selArg := sel.ToSql()
-	rows, err := sel.Query(selSql, selArg...)
 
+	selSql, selArg, err := sel.ToSql()
+	if err != nil {
+		return Columns{}, errgo.Mask(err)
+	}
+
+	rows, err := sel.Query(selSql, selArg...)
 	if err != nil {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("csdb.GetColumns.Query", "err", err, "query", selSql, "args", selArg)

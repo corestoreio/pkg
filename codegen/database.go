@@ -91,7 +91,10 @@ func GetTables(dbrSess dbr.SessionRunner, sql ...string) ([]string, error) {
 	}
 
 	sb := dbrSess.SelectBySql(qry)
-	query, args := sb.ToSql()
+	query, args, err := sb.ToSql()
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
 	rows, err := sb.Query(query, args...)
 	if err != nil {
 		return nil, errgo.Mask(err)
@@ -125,8 +128,7 @@ func GetEavValueTables(dbrConn *dbr.Connection, entityTypeCodes []string) (TypeC
 		vtp, err := dbrConn.NewSession().
 			Select("`value_table_prefix`").
 			From(TablePrefix+TableEavEntityType).
-			Where("`value_table_prefix` IS NOT NULL").
-			Where("`entity_type_code` = ?", typeCode).
+			Where(dbr.ConditionRaw("`value_table_prefix` IS NOT NULL"), dbr.ConditionRaw("`entity_type_code` = ?", typeCode)).
 			ReturnString()
 
 		if err != nil && err != dbr.ErrNotFound {
@@ -324,7 +326,11 @@ func SQLQueryToColumns(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string)
 	qry := strings.Join(query, " ")
 	var args []interface{}
 	if qry == "" && dbSelect != nil {
-		qry, args = dbSelect.ToSql()
+		var err error
+		qry, args, err = dbSelect.ToSql()
+		if err != nil {
+			return nil, errgo.Mask(err)
+		}
 	}
 	_, err := db.Exec("CREATE TABLE `"+tableName+"` AS "+qry, args...)
 	if err != nil {
@@ -361,7 +367,11 @@ func LoadStringEntities(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string
 	qry := strings.Join(query, " ")
 	var args []interface{}
 	if qry == "" && dbSelect != nil {
-		qry, args = dbSelect.ToSql()
+		var err error
+		qry, args, err = dbSelect.ToSql()
+		if err != nil {
+			return nil, errgo.Mask(err)
+		}
 	}
 
 	rows, err := db.Query(qry, args...)

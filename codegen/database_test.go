@@ -347,7 +347,7 @@ func TestGetSQLPrepareForTemplate(t *testing.T) {
 
 	colSliceDbr, err := SQLQueryToColumns(dbc.DB, dbrSelect)
 	if err != nil {
-		t.Error(err)
+		t.Fatal(err)
 	}
 
 	for _, col := range colSliceDbr {

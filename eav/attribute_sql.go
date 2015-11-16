@@ -90,8 +90,8 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 		Join(
 		dbr.JoinTable(taa.Name, csdb.AdditionalTable),
 		taaColumnsQuoted,
-		dbr.JoinOn(dbr.Quote+csdb.AdditionalTable+"`.`attribute_id` = `"+csdb.MainTable+"`.`attribute_id`"),
-		dbr.JoinOn(dbr.Quote+csdb.MainTable+"`.`entity_type_id` = ?", entityTypeID),
+		dbr.ConditionRaw(dbr.Quote+csdb.AdditionalTable+"`.`attribute_id` = `"+csdb.MainTable+"`.`attribute_id`"),
+		dbr.ConditionRaw(dbr.Quote+csdb.MainTable+"`.`entity_type_id` = ?", entityTypeID),
 	)
 
 	if len(tewAddedCols) > 0 {
@@ -99,8 +99,8 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 			LeftJoin(
 			dbr.JoinTable(tew.Name, csdb.ScopeTable),
 			append(ifnull),
-			dbr.JoinOn(dbr.Quote+csdb.ScopeTable+dbr.Quote+"."+dbr.Quote+"attribute_id"+dbr.Quote+" = "+dbr.Quote+csdb.MainTable+dbr.Quote+"."+dbr.Quote+"attribute_id"+dbr.Quote),
-			dbr.JoinOn(dbr.Quote+csdb.ScopeTable+dbr.Quote+"."+dbr.Quote+"website_id"+dbr.Quote+" = ?", websiteID),
+			dbr.ConditionRaw(dbr.Quote+csdb.ScopeTable+dbr.Quote+"."+dbr.Quote+"attribute_id"+dbr.Quote+" = "+dbr.Quote+csdb.MainTable+dbr.Quote+"."+dbr.Quote+"attribute_id"+dbr.Quote),
+			dbr.ConditionRaw(dbr.Quote+csdb.ScopeTable+dbr.Quote+"."+dbr.Quote+"website_id"+dbr.Quote+" = ?", websiteID),
 		)
 	}
 	return selectSql, nil
