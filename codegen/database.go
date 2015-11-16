@@ -362,16 +362,11 @@ func ColumnsToStructCode(tplData map[string]interface{}, name string, cols Colum
 }
 
 // LoadStringEntities executes a SELECT query and returns a slice containing columns names and its string values
-func LoadStringEntities(db *sql.DB, dbSelect *dbr.SelectBuilder, query ...string) ([]StringEntities, error) {
+func LoadStringEntities(db *sql.DB, dbSelect *dbr.SelectBuilder) ([]StringEntities, error) {
 
-	qry := strings.Join(query, " ")
-	var args []interface{}
-	if qry == "" && dbSelect != nil {
-		var err error
-		qry, args, err = dbSelect.ToSql()
-		if err != nil {
-			return nil, errgo.Mask(err)
-		}
+	qry, args, err := dbSelect.ToSql()
+	if err != nil {
+		return nil, errgo.Mask(err)
 	}
 
 	rows, err := db.Query(qry, args...)

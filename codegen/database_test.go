@@ -318,7 +318,8 @@ func TestGetSQLPrepareForTemplate(t *testing.T) {
 	dbc := csdb.MustConnectTest()
 	defer dbc.Close()
 
-	resultSlice2, err := LoadStringEntities(dbc.DB, nil, "SELECT * FROM `cataloginventory_stock` ", "ORDER BY stock_id")
+	sel := dbc.NewSession().Select("*").From("cataloginventory_stock").OrderBy("stock_id")
+	resultSlice2, err := LoadStringEntities(dbc.DB, sel)
 	if err != nil {
 		t.Error(err)
 	}
