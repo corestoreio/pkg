@@ -33,8 +33,13 @@ func TestDeleteSingleToSql(t *testing.T) {
 	assert.Equal(t, sql, "DELETE FROM a WHERE (id = ?)")
 	assert.Equal(t, args, []interface{}{1})
 
+	// once where was a sync.Pool for the whereFragments with which it was
+	// not possible to run ToSQL() twice.
 	sql, args, err = del.ToSql()
-	assert.EqualError(t, err, ErrToSQLAlreadyCalled.Error())
+	assert.NoError(t, err)
+	assert.Equal(t, sql, "DELETE FROM a WHERE (id = ?)")
+	assert.Equal(t, args, []interface{}{1})
+
 }
 
 func TestDeleteTenStaringFromTwentyToSql(t *testing.T) {

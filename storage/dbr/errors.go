@@ -15,5 +15,4 @@ var (
 	ErrInvalidSyntax      = errors.New("SQL syntax error")
 	ErrMissingTable       = errors.New("Table name not specified")
 	ErrMissingSet         = errors.New("Missing SET in UPDATE")
-	ErrToSQLAlreadyCalled = errors.New("ToSQL has already been called")
 )

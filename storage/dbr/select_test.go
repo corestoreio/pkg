@@ -57,18 +57,13 @@ func BenchmarkSelectFullSql(b *testing.B) {
 
 func TestSelectBasicToSql(t *testing.T) {
 	s := createFakeSession()
-
 	sel := s.Select("a", "b").From("c").Where(ConditionRaw("id = ?", 1))
-	//	for i := 0; i < 3; i++ {
-	sql, args, err := sel.ToSql()
-	assert.NoError(t, err)
-	assert.Equal(t, "SELECT a, b FROM c WHERE (id = ?)", sql, "Loop %d", 0)
-	assert.Equal(t, []interface{}{1}, args, "Loop %d", 0)
-
-	sql, args, err = sel.ToSql()
-	assert.EqualError(t, err, ErrToSQLAlreadyCalled.Error())
-	assert.Nil(t, args)
-	assert.Empty(t, sql)
+	for i := 0; i < 3; i++ {
+		sql, args, err := sel.ToSql()
+		assert.NoError(t, err)
+		assert.Equal(t, "SELECT a, b FROM c WHERE (id = ?)", sql, "Loop %d", 0)
+		assert.Equal(t, []interface{}{1}, args, "Loop %d", 0)
+	}
 }
 
 func TestSelectFullToSql(t *testing.T) {

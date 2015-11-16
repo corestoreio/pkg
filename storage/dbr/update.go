@@ -14,8 +14,6 @@ type UpdateBuilder struct {
 	*Session
 	runner
 
-	toSQLed bool
-
 	RawFullSql   string
 	RawArguments []interface{}
 
@@ -140,9 +138,6 @@ func (b *UpdateBuilder) Offset(offset uint64) *UpdateBuilder {
 // ToSql serialized the UpdateBuilder to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *UpdateBuilder) ToSql() (string, []interface{}, error) {
-	if b.toSQLed {
-		return "", nil, ErrToSQLAlreadyCalled
-	}
 	if b.RawFullSql != "" {
 		return b.RawFullSql, b.RawArguments, nil
 	}
@@ -205,7 +200,7 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}, error) {
 		sql.WriteString(" OFFSET ")
 		fmt.Fprint(sql, b.OffsetCount)
 	}
-	b.toSQLed = true
+
 	return sql.String(), args, nil
 }
 

@@ -12,7 +12,7 @@ import (
 type DeleteBuilder struct {
 	*Session
 	runner
-	toSQLed        bool
+
 	From           string
 	WhereFragments []*whereFragment
 	OrderBys       []string
@@ -83,9 +83,6 @@ func (b *DeleteBuilder) Offset(offset uint64) *DeleteBuilder {
 // ToSql serialized the DeleteBuilder to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *DeleteBuilder) ToSql() (string, []interface{}, error) {
-	if b.toSQLed {
-		return "", nil, ErrToSQLAlreadyCalled
-	}
 	if len(b.From) == 0 {
 		return "", nil, ErrMissingTable
 	}
@@ -123,7 +120,6 @@ func (b *DeleteBuilder) ToSql() (string, []interface{}, error) {
 		sql.WriteString(" OFFSET ")
 		fmt.Fprint(sql, b.OffsetCount)
 	}
-	b.toSQLed = true
 	return sql.String(), args, nil
 }
 
