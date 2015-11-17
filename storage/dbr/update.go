@@ -9,6 +9,16 @@ import (
 	"github.com/corestoreio/csfw/utils/bufferpool"
 )
 
+type expr struct {
+	Sql    string
+	Values []interface{}
+}
+
+// Expr is a SQL fragment with placeholders, and a slice of args to replace them with
+func Expr(sql string, values ...interface{}) *expr {
+	return &expr{Sql: sql, Values: values}
+}
+
 // UpdateBuilder contains the clauses for an UPDATE statement
 type UpdateBuilder struct {
 	*Session
@@ -17,7 +27,7 @@ type UpdateBuilder struct {
 	RawFullSql   string
 	RawArguments []interface{}
 
-	Table          string
+	Table          alias
 	SetClauses     []*setClause
 	WhereFragments []*whereFragment
 	OrderBys       []string
@@ -39,7 +49,7 @@ func (sess *Session) Update(table string) *UpdateBuilder {
 	return &UpdateBuilder{
 		Session: sess,
 		runner:  sess.cxn.DB,
-		Table:   table,
+		Table:   newAlias(table),
 	}
 }
 
@@ -61,7 +71,7 @@ func (tx *Tx) Update(table string) *UpdateBuilder {
 	return &UpdateBuilder{
 		Session: tx.Session,
 		runner:  tx.Tx,
-		Table:   table,
+		Table:   newAlias(table),
 	}
 }
 

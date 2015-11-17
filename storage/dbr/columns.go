@@ -14,22 +14,10 @@
 
 package dbr
 
-import "strings"
-
-// TableColumnQuote prefixes all columns with a table name/alias and puts quotes around them.
-func TableColumnQuote(t string, cols ...string) []string {
-	//r := make([]string, len(cols), len(cols))
-	for i, c := range cols {
-		if strings.Contains(c, Quote) {
-			cols[i] = c
-		} else {
-			cols[i] = Quote + t + Quote + "." + Quote + c + Quote
-		}
-	}
-	return cols
-}
-
-// IfNullAs returns IFNULL(t1.c1,t2.c2) AS as
+// IfNullAs returns IFNULL(`t1`.`c1`,`t2`.`c2`) AS `as`
 func IfNullAs(t1, c1, t2, c2, as string) string {
-	return "IFNULL(" + Quote + t1 + Quote + "." + Quote + c1 + Quote + ", " + Quote + t2 + Quote + "." + Quote + c2 + Quote + ") AS " + Quote + as + Quote
+	return newAlias(
+		"IFNULL("+Quoter.TableColumnAlias(t1, c1)[0]+", "+Quoter.TableColumnAlias(t2, c2)[0]+")",
+		as,
+	)
 }

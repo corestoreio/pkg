@@ -13,7 +13,7 @@ type DeleteBuilder struct {
 	*Session
 	runner
 
-	From           string
+	From           alias
 	WhereFragments []*whereFragment
 	OrderBys       []string
 	LimitCount     uint64

@@ -62,20 +62,21 @@ func (ts *Table) LoadColumns(dbrSess dbr.SessionRunner) (err error) {
 	return errgo.Mask(err)
 }
 
-// remove this once the ALIAS via []string is implemented in DBR
+// TableAliasQuote returns a table name with the alias.
+// catalog_product_entity with alias e would become `catalog_product_entity` AS `e`.
 func (ts *Table) TableAliasQuote(alias string) string {
-	return "`" + ts.Name + "` AS `" + alias + "`"
+	return dbr.Quoter.QuoteAs(ts.Name, alias)
 }
 
 // ColumnAliasQuote prefixes non-id columns with an alias and puts quotes around them. Returns a copy.
 func (ts *Table) ColumnAliasQuote(alias string) []string {
-	return dbr.TableColumnQuote(alias, append([]string(nil), ts.fields...)...)
+	return dbr.Quoter.TableColumnAlias(alias, append([]string(nil), ts.fields...)...)
 }
 
 // AllColumnAliasQuote prefixes all columns with an alias and puts quotes around them. Returns a copy.
 func (ts *Table) AllColumnAliasQuote(alias string) []string {
 	c := append([]string(nil), ts.fieldsPK...)
-	return dbr.TableColumnQuote(alias, append(c, ts.fields...)...)
+	return dbr.Quoter.TableColumnAlias(alias, append(c, ts.fields...)...)
 }
 
 // In checks if column name n is a column of this table
@@ -99,8 +100,8 @@ func (ts *Table) Select(dbrSess dbr.SessionRunner) (*dbr.SelectBuilder, error) {
 		return nil, ErrTableNotFound
 	}
 	return dbrSess.
-		Select(ts.AllColumnAliasQuote("main_table")...).
-		From(ts.Name, "main_table"), nil
+		Select(ts.AllColumnAliasQuote(MainTable)...).
+		From(ts.Name, MainTable), nil
 }
 
 func (ts *Table) Update() {}

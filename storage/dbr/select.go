@@ -16,7 +16,7 @@ type SelectBuilder struct {
 
 	IsDistinct      bool
 	Columns         []string
-	FromTable       string
+	FromTable       alias
 	WhereFragments  []*whereFragment
 	JoinFragments   []*joinFragment
 	GroupBys        []string
@@ -77,7 +77,7 @@ func (b *SelectBuilder) Distinct() *SelectBuilder {
 // From sets the table to SELECT FROM. If second argument will be provided this is
 // then considered as the alias. SELECT ... FROM table AS alias.
 func (b *SelectBuilder) From(from ...string) *SelectBuilder {
-	b.FromTable = quoteAs(from...)
+	b.FromTable = newAlias(from...)
 	return b
 }
 
@@ -145,23 +145,10 @@ func (b *SelectBuilder) ToSql() (string, []interface{}, error) {
 		return b.RawFullSql, b.RawArguments, nil
 	}
 
-	if len(b.JoinFragments) > 0 {
-		for _, f := range b.JoinFragments {
-			if f.columnsAdded == false && len(f.columns) > 0 {
-				for _, c := range f.columns {
-					if c != "" {
-						b.Columns = append(b.Columns, c)
-					}
-				}
-				f.columnsAdded = true
-			}
-		}
-	}
-
 	if len(b.Columns) == 0 {
 		panic("no columns specified")
 	}
-	if len(b.FromTable) == 0 {
+	if len(b.FromTable.Expression) == 0 {
 		panic("no table specified")
 	}
 
@@ -183,13 +170,26 @@ func (b *SelectBuilder) ToSql() (string, []interface{}, error) {
 		sql.WriteString(s)
 	}
 
+	if len(b.JoinFragments) > 0 {
+		for _, f := range b.JoinFragments {
+			for _, c := range f.Columns {
+				sql.WriteString(", ")
+				sql.WriteString(c)
+			}
+		}
+	}
+
 	sql.WriteString(" FROM ")
-	sql.WriteString(b.FromTable)
+	sql.WriteString(b.FromTable.QuoteAs())
 
 	if len(b.JoinFragments) > 0 {
 		for _, f := range b.JoinFragments {
-			sql.WriteString(" " + f.joinType + " JOIN " + f.table + " ON ")
-			writeWhereFragmentsToSql(f.onConditions, sql, &args)
+			sql.WriteRune(' ')
+			sql.WriteString(f.JoinType)
+			sql.WriteString(" JOIN ")
+			sql.WriteString(f.Table.QuoteAs())
+			sql.WriteString(" ON ")
+			writeWhereFragmentsToSql(f.OnConditions, sql, &args)
 		}
 	}
 

@@ -104,18 +104,17 @@ func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 		return "", nil, ErrMissingTable
 	}
 	if len(b.Cols) == 0 && len(b.Maps) == 0 {
-		panic("no columns or map specified")
+		return "", nil, errgo.New("no columns or map specified")
 	} else if len(b.Maps) == 0 {
 		if len(b.Vals) == 0 && len(b.Recs) == 0 {
-			panic("no values or records specified")
+			return "", nil, errgo.New("no values or records specified")
 		}
 		if len(b.Cols) == 0 && (len(b.Vals) > 0 || len(b.Recs) > 0) {
-			panic("no columns specified")
+			return "", nil, errgo.New("no columns specified")
 		}
 	}
 
 	var sql = bufferpool.Get()
-	defer bufferpool.Put(sql)
 
 	sql.WriteString("INSERT INTO ")
 	sql.WriteString(b.Into)
@@ -124,6 +123,7 @@ func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 	if len(b.Maps) != 0 {
 		return b.MapToSql(sql)
 	}
+	defer bufferpool.Put(sql)
 
 	var args []interface{}
 	var placeholder = bufferpool.Get() // Build the placeholder like "(?,?,?)"
@@ -166,7 +166,7 @@ func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 		ind := reflect.Indirect(reflect.ValueOf(rec))
 		vals, err := b.valuesFor(ind.Type(), ind, b.Cols)
 		if err != nil {
-			panic(err.Error())
+			return "", nil, errgo.Mask(err)
 		}
 		for _, v := range vals {
 			args = append(args, v)
@@ -180,6 +180,7 @@ func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 // It goes through the Maps param and combined its keys/values into the SQL query string
 // It returns the string with placeholders and a slice of query arguments
 func (b *InsertBuilder) MapToSql(sql *bytes.Buffer) (string, []interface{}, error) {
+	defer bufferpool.Put(sql)
 	keys := make([]string, len(b.Maps))
 	vals := make([]interface{}, len(b.Maps))
 	i := 0

@@ -49,7 +49,7 @@ type (
 func GetColumns(dbrSess dbr.SessionRunner, table string) (Columns, error) {
 	var cols = make(Columns, 0, 100)
 
-	sel := dbrSess.SelectBySql("SHOW COLUMNS FROM " + dbr.Quoter.Table(table))
+	sel := dbrSess.SelectBySql("SHOW COLUMNS FROM " + dbr.Quoter.QuoteAs(table))
 
 	selSql, selArg, err := sel.ToSql()
 	if err != nil {

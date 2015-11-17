@@ -391,7 +391,7 @@ func TestSelectJoin(t *testing.T) {
 		From("dbr_people", "p1").
 		RightJoin(
 		JoinTable("dbr_people", "p2"),
-		ColumnAlias("p2.name", "p2Name", "p2.email", "p2Email", "id", "internalID"),
+		Quoter.ColumnAlias("p2.name", "p2Name", "p2.email", "p2Email", "id", "internalID"),
 		ConditionRaw("`p2`.`id` = `p1`.`id`"),
 	)
 

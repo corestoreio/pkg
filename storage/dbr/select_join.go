@@ -3,15 +3,13 @@ package dbr
 type (
 	joinFragment struct {
 		// left, right, inner, middle, upper, lower ...
-		joinType string
+		JoinType string
 		// table name/alias which should be joined
-		table string
+		Table alias
 		// contains all column names from the joined table
-		columns []string
-		// if set to yes then the columns have already been added to select.columns slice
-		columnsAdded bool
+		Columns []string
 		// join on condition
-		onConditions []*whereFragment // slice is joined via AND
+		OnConditions []*whereFragment // slice is joined via AND
 	}
 )
 
@@ -27,11 +25,10 @@ func JoinColumns(columns ...string) []string {
 
 func (b *SelectBuilder) join(j string, t, c []string, on ...ConditionArg) *SelectBuilder {
 	b.JoinFragments = append(b.JoinFragments, &joinFragment{
-		joinType:     j,
-		table:        quoteAs(t...),
-		columns:      c,
-		columnsAdded: false,
-		onConditions: newWhereFragments(on...),
+		JoinType:     j,
+		Table:        newAlias(t...),
+		Columns:      c,
+		OnConditions: newWhereFragments(on...),
 	})
 	return b
 }

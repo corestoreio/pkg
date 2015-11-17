@@ -37,15 +37,20 @@ func TestTableColumnQuote(t *testing.T) {
 			[]string{"`t2`.`col1`", "`t2`.`col2`", "`t2`.`col3`"},
 		},
 		{
+			"t2a",
+			[]string{"col1", "col2", "t2.col3"},
+			[]string{"`t2a`.`col1`", "`t2a`.`col2`", "`t2`.`col3`"},
+		},
+		{
 			"t3",
 			[]string{"col1", "col2", "`col3`"},
 			[]string{"`t3`.`col1`", "`t3`.`col2`", "`col3`"},
 		},
 	}
 
-	for _, test := range tests {
-		actC := TableColumnQuote(test.haveT, test.haveC...)
-		assert.Equal(t, test.want, actC)
+	for i, test := range tests {
+		actC := Quoter.TableColumnAlias(test.haveT, test.haveC...)
+		assert.Equal(t, test.want, actC, "Index %d", i)
 	}
 }
 
