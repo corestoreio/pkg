@@ -25,21 +25,21 @@ type DeleteBuilder struct {
 var _ queryBuilder = (*DeleteBuilder)(nil)
 
 // DeleteFrom creates a new DeleteBuilder for the given table
-func (sess *Session) DeleteFrom(from string) *DeleteBuilder {
+func (sess *Session) DeleteFrom(from ...string) *DeleteBuilder {
 	return &DeleteBuilder{
 		Session: sess,
 		runner:  sess.cxn.DB,
-		From:    from,
+		From:    newAlias(from...),
 	}
 }
 
 // DeleteFrom creates a new DeleteBuilder for the given table
 // in the context for a transaction
-func (tx *Tx) DeleteFrom(from string) *DeleteBuilder {
+func (tx *Tx) DeleteFrom(from ...string) *DeleteBuilder {
 	return &DeleteBuilder{
 		Session: tx.Session,
 		runner:  tx.Tx,
-		From:    from,
+		From:    newAlias(from...),
 	}
 }
 
@@ -83,7 +83,7 @@ func (b *DeleteBuilder) Offset(offset uint64) *DeleteBuilder {
 // ToSql serialized the DeleteBuilder to a SQL string
 // It returns the string with placeholders and a slice of query arguments
 func (b *DeleteBuilder) ToSql() (string, []interface{}, error) {
-	if len(b.From) == 0 {
+	if len(b.From.Expression) == 0 {
 		return "", nil, ErrMissingTable
 	}
 
@@ -92,7 +92,7 @@ func (b *DeleteBuilder) ToSql() (string, []interface{}, error) {
 	var args []interface{}
 
 	sql.WriteString("DELETE FROM ")
-	sql.WriteString(b.From)
+	sql.WriteString(b.From.QuoteAs())
 
 	// Write WHERE clause if we have any fragments
 	if len(b.WhereFragments) > 0 {

@@ -61,7 +61,7 @@ func TestSelectBasicToSql(t *testing.T) {
 	for i := 0; i < 3; i++ {
 		sql, args, err := sel.ToSql()
 		assert.NoError(t, err)
-		assert.Equal(t, "SELECT a, b FROM c WHERE (id = ?)", sql, "Loop %d", 0)
+		assert.Equal(t, "SELECT a, b FROM `c` WHERE (id = ?)", sql, "Loop %d", 0)
 		assert.Equal(t, []interface{}{1}, args, "Loop %d", 0)
 	}
 }
@@ -71,7 +71,7 @@ func TestSelectFullToSql(t *testing.T) {
 
 	sel := s.Select("a", "b").
 		Distinct().
-		From("c").
+		From("c", "cc").
 		Where(ConditionRaw("d = ? OR e = ?", 1, "wat"), ConditionMap(Eq{"f": 2}), ConditionMap(Eq{"g": 3})).
 		Where(ConditionMap(Eq{"h": []int{4, 5, 6}})).
 		GroupBy("i").
@@ -82,7 +82,7 @@ func TestSelectFullToSql(t *testing.T) {
 
 	sql, args, err := sel.ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT DISTINCT a, b FROM c WHERE (d = ? OR e = ?) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY i HAVING (j = k) ORDER BY l LIMIT 7 OFFSET 8", sql)
+	assert.Equal(t, "SELECT DISTINCT a, b FROM `c` AS `cc` WHERE (d = ? OR e = ?) AND (`f` = ?) AND (`g` = ?) AND (`h` IN ?) GROUP BY i HAVING (j = k) ORDER BY l LIMIT 7 OFFSET 8", sql)
 	assert.Equal(t, []interface{}{1, "wat", 2, 3, []int{4, 5, 6}}, args)
 
 }
@@ -97,7 +97,7 @@ func TestSelectPaginateOrderDirToSql(t *testing.T) {
 		OrderDir("id", false).
 		ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT a, b FROM c WHERE (d = ?) ORDER BY id DESC LIMIT 20 OFFSET 0", sql)
+	assert.Equal(t, "SELECT a, b FROM `c` WHERE (d = ?) ORDER BY id DESC LIMIT 20 OFFSET 0", sql)
 	assert.Equal(t, []interface{}{1}, args)
 
 	sql, args, err = s.Select("a", "b").
@@ -107,7 +107,7 @@ func TestSelectPaginateOrderDirToSql(t *testing.T) {
 		OrderDir("id", true).
 		ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, "SELECT a, b FROM c WHERE (d = ?) ORDER BY id ASC LIMIT 30 OFFSET 60", sql)
+	assert.Equal(t, "SELECT a, b FROM `c` WHERE (d = ?) ORDER BY id ASC LIMIT 30 OFFSET 60", sql)
 	assert.Equal(t, []interface{}{1}, args)
 }
 
@@ -116,7 +116,7 @@ func TestSelectNoWhereSql(t *testing.T) {
 
 	sql, args, err := s.Select("a", "b").From("c").ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "SELECT a, b FROM c")
+	assert.Equal(t, sql, "SELECT a, b FROM `c`")
 	assert.Equal(t, args, []interface{}(nil))
 }
 
@@ -125,7 +125,7 @@ func TestSelectMultiHavingSql(t *testing.T) {
 
 	sql, args, err := s.Select("a", "b").From("c").Where(ConditionRaw("p = ?", 1)).GroupBy("z").Having(ConditionRaw("z = ?", 2), ConditionRaw("y = ?", 3)).ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "SELECT a, b FROM c WHERE (p = ?) GROUP BY z HAVING (z = ?) AND (y = ?)")
+	assert.Equal(t, sql, "SELECT a, b FROM `c` WHERE (p = ?) GROUP BY z HAVING (z = ?) AND (y = ?)")
 	assert.Equal(t, args, []interface{}{1, 2, 3})
 }
 
@@ -134,7 +134,7 @@ func TestSelectMultiOrderSql(t *testing.T) {
 
 	sql, args, err := s.Select("a", "b").From("c").OrderBy("name ASC").OrderBy("id DESC").ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "SELECT a, b FROM c ORDER BY name ASC, id DESC")
+	assert.Equal(t, sql, "SELECT a, b FROM `c` ORDER BY name ASC, id DESC")
 	assert.Equal(t, args, []interface{}(nil))
 }
 
@@ -143,43 +143,43 @@ func TestSelectWhereMapSql(t *testing.T) {
 
 	sql, args, err := s.Select("a").From("b").Where(ConditionMap(Eq{"a": 1})).ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` = ?)")
+	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` = ?)")
 	assert.Equal(t, args, []interface{}{1})
 
 	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": 1, "b": true})).ToSql()
 	assert.NoError(t, err)
-	if sql == "SELECT a FROM b WHERE (`a` = ?) AND (`b` = ?)" {
+	if sql == "SELECT a FROM `b` WHERE (`a` = ?) AND (`b` = ?)" {
 		assert.Equal(t, args, []interface{}{1, true})
 	} else {
-		assert.Equal(t, sql, "SELECT a FROM b WHERE (`b` = ?) AND (`a` = ?)")
+		assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`b` = ?) AND (`a` = ?)")
 		assert.Equal(t, args, []interface{}{true, 1})
 	}
 
 	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": nil})).ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` IS NULL)")
+	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` IS NULL)")
 	assert.Equal(t, args, []interface{}(nil))
 
 	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": []int{1, 2, 3}})).ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` IN ?)")
+	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` IN ?)")
 	assert.Equal(t, args, []interface{}{[]int{1, 2, 3}})
 
 	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": []int{1}})).ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` = ?)")
+	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` = ?)")
 	assert.Equal(t, args, []interface{}{1})
 
 	// NOTE: a has no valid values, we want a query that returns nothing
 	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": []int{}})).ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (1=0)")
+	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (1=0)")
 	assert.Equal(t, args, []interface{}(nil))
 
 	var aval []int
 	sql, args, err = s.Select("a").From("b").Where(ConditionMap(Eq{"a": aval})).ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` IS NULL)")
+	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` IS NULL)")
 	assert.Equal(t, args, []interface{}(nil))
 
 	sql, args, err = s.Select("a").From("b").
@@ -187,7 +187,7 @@ func TestSelectWhereMapSql(t *testing.T) {
 		Where(ConditionMap(Eq{"b": false})).
 		ToSql()
 	assert.NoError(t, err)
-	assert.Equal(t, sql, "SELECT a FROM b WHERE (`a` IS NULL) AND (`b` = ?)")
+	assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`a` IS NULL) AND (`b` = ?)")
 	assert.Equal(t, args, []interface{}{false})
 }
 
@@ -196,10 +196,10 @@ func TestSelectWhereEqSql(t *testing.T) {
 
 	sql, args, err := s.Select("a").From("b").Where(ConditionMap(Eq{"a": 1, "b": []int64{1, 2, 3}})).ToSql()
 	assert.NoError(t, err)
-	if sql == "SELECT a FROM b WHERE (`a` = ?) AND (`b` IN ?)" {
+	if sql == "SELECT a FROM `b` WHERE (`a` = ?) AND (`b` IN ?)" {
 		assert.Equal(t, args, []interface{}{1, []int64{1, 2, 3}})
 	} else {
-		assert.Equal(t, sql, "SELECT a FROM b WHERE (`b` IN ?) AND (`a` = ?)")
+		assert.Equal(t, sql, "SELECT a FROM `b` WHERE (`b` IN ?) AND (`a` = ?)")
 		assert.Equal(t, args, []interface{}{[]int64{1, 2, 3}, 1})
 	}
 }

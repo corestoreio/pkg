@@ -45,11 +45,11 @@ type setClause struct {
 }
 
 // Update creates a new UpdateBuilder for the given table
-func (sess *Session) Update(table string) *UpdateBuilder {
+func (sess *Session) Update(table ...string) *UpdateBuilder {
 	return &UpdateBuilder{
 		Session: sess,
 		runner:  sess.cxn.DB,
-		Table:   newAlias(table),
+		Table:   newAlias(table...),
 	}
 }
 
@@ -67,11 +67,11 @@ func (sess *Session) UpdateBySql(sql string, args ...interface{}) *UpdateBuilder
 }
 
 // Update creates a new UpdateBuilder for the given table bound to a transaction
-func (tx *Tx) Update(table string) *UpdateBuilder {
+func (tx *Tx) Update(table ...string) *UpdateBuilder {
 	return &UpdateBuilder{
 		Session: tx.Session,
 		runner:  tx.Tx,
-		Table:   newAlias(table),
+		Table:   newAlias(table...),
 	}
 }
 
@@ -152,7 +152,7 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}, error) {
 		return b.RawFullSql, b.RawArguments, nil
 	}
 
-	if len(b.Table) == 0 {
+	if len(b.Table.Expression) == 0 {
 		return "", nil, ErrMissingTable
 	}
 	if len(b.SetClauses) == 0 {
@@ -165,7 +165,7 @@ func (b *UpdateBuilder) ToSql() (string, []interface{}, error) {
 	var args []interface{}
 
 	sql.WriteString("UPDATE ")
-	sql.WriteString(b.Table)
+	sql.WriteString(b.Table.QuoteAs())
 	sql.WriteString(" SET ")
 
 	// Build SET clause SQL with placeholders and add values to args
