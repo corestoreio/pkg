@@ -20,7 +20,6 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
 )
@@ -409,7 +408,7 @@ func (sm *Service) DefaultStoreView() (*Store, error) {
 
 // ReInit reloads the website, store group and store view data from the database.
 // After reloading internal cache will be cleared if there are no errors.
-func (sm *Service) ReInit(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) error {
+func (sm *Service) ReInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error {
 	err := sm.storage.ReInit(dbrSess, cbs...)
 	if err == nil {
 		sm.ClearCache()

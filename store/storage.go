@@ -19,7 +19,6 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/juju/errgo"
 )
@@ -51,7 +50,7 @@ type (
 		// the default group which has the default store id assigned to. Only one website can be the default one.
 		DefaultStoreView() (*Store, error)
 		// ReInit reloads the websites, groups and stores from the database.
-		ReInit(dbr.SessionRunner, ...csdb.DbrSelectCb) error
+		ReInit(dbr.SessionRunner, ...dbr.SelectCb) error
 	}
 
 	// Storage contains a mutex and the raw slices from the database. @todo maybe make private?
@@ -265,7 +264,7 @@ func (st *Storage) DefaultStoreView() (*Store, error) {
 // ReInit reloads all websites, groups and stores concurrently from the database. If GOMAXPROCS
 // is set to > 1 then in parallel. Returns an error with location or nil. If an error occurs
 // then all internal slices will be reset.
-func (st *Storage) ReInit(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) error {
+func (st *Storage) ReInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error {
 	st.mu.Lock()
 	defer st.mu.Unlock()
 

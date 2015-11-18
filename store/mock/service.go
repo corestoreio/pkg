@@ -16,7 +16,6 @@ package mock
 
 import (
 	"github.com/corestoreio/csfw/config/scope"
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"golang.org/x/net/context"
@@ -111,6 +110,6 @@ func (ms *Storage) DefaultStoreView() (*store.Store, error) {
 	}
 	return nil, store.ErrStoreNotFound
 }
-func (ms *Storage) ReInit(dbr.SessionRunner, ...csdb.DbrSelectCb) error {
+func (ms *Storage) ReInit(dbr.SessionRunner, ...dbr.SelectCb) error {
 	return nil
 }
