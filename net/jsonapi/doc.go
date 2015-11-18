@@ -12,8 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package jsonapi implements functions for http://jsonapi.org @todo
+// Package jsonapi implements functions for http://jsonapi.org and Swagger and
+// default Magento2 JSON schema
 package jsonapi
 
 // https://github.com/shwoodard/jsonapi
 // https://github.com/manyminds/api2go
+
+// https://github.com/swagger-api
+// https://github.com/go-swagger/go-swagger
+// https://github.com/emicklei/go-restful
+// https://github.com/yvasiyarov/swagger
