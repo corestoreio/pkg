@@ -171,9 +171,9 @@ type SessionRunner interface {
 	SelectBySql(sql string, args ...interface{}) *SelectBuilder
 
 	InsertInto(into string) *InsertBuilder
-	Update(table string) *UpdateBuilder
+	Update(table ...string) *UpdateBuilder
 	UpdateBySql(sql string, args ...interface{}) *UpdateBuilder
-	DeleteFrom(from string) *DeleteBuilder
+	DeleteFrom(from ...string) *DeleteBuilder
 }
 
 type runner interface {

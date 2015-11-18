@@ -35,7 +35,7 @@ type User struct {
 	Data *TableAdminUser
 }
 
-func LoadOne(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) UserOption {
+func LoadOne(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) UserOption {
 	return func(u *User) {
 		// todo
 	}
