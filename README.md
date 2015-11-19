@@ -111,7 +111,8 @@ Please have a look at the [contribution guidelines](https://github.com/corestore
 | Martin Angers and Contributors. | [ctxthrottled](http://github.com/corestoreio/csfw/tree/master/net/ctxthrottled) | The MIT License (MIT) 2014 |
 | Canonical Ltd. | [errgo](https://github.com/juju/errgo) | [LGPLv3](http://www.gnu.org/licenses/lgpl-3.0.en.html) |
 | Jad Dittmar | [finance](https://github.com/Confunctionist/finance) aka. [money](http://github.com/corestoreio/csfw/tree/master/storage/money) | Copyright (c) 2011 |
-
+| Wenbin Xiao | [sqlparser](https://github.com/xwb1989/sqlparser) | Copyright 2015 BSD Style |
+| Google Inc | [youtube/vitess\sqlparser](https://github.com/youtube/vitess) | Copyright 2012 BSD Style |
 
 ## Licensing
 

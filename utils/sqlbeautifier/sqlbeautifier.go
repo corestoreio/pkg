@@ -16,9 +16,10 @@ package sqlbeautifier
 
 import (
 	"bytes"
-	"github.com/xwb1989/sqlparser"
 	"io"
 	"io/ioutil"
+
+	"github.com/corestoreio/csfw/utils/sqlparser"
 )
 
 // FromReader reads data from the Reader interface and converts that data
