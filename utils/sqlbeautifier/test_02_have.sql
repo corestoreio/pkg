@@ -1,0 +1,1 @@
+SELECT `main_table`.* FROM `store` AS `main_table` WHERE (`main_table`.`website_id` IN('1')) ORDER BY CASE WHEN main_table.store_id = 0 THEN 0 ELSE 1 END ASC, main_table.sort_order ASC, main_table.name ASC

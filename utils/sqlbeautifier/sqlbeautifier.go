@@ -63,6 +63,9 @@ func nodeFormatter(buf *sqlparser.TrackedBuffer, node sqlparser.SQLNode) {
 	case sqlparser.SelectExprs:
 		node.Format(buf)
 		buf.WriteString(" \n")
+	case *sqlparser.StarExpr:
+		buf.WriteString("\n\t")
+		node.Format(buf)
 	case *sqlparser.NonStarExpr:
 		buf.WriteString("\n\t")
 		node.Format(buf)
@@ -76,6 +79,9 @@ func nodeFormatter(buf *sqlparser.TrackedBuffer, node sqlparser.SQLNode) {
 	case *sqlparser.JoinTableExpr:
 		node.Format(buf)
 		buf.WriteRune('\n')
+	case *sqlparser.Where:
+		buf.WriteRune('\n')
+		node.Format(buf)
 	case *sqlparser.ParenBoolExpr:
 		buf.WriteString("\n\t\t")
 		node.Format(buf)
@@ -96,7 +102,7 @@ func nodeFormatter(buf *sqlparser.TrackedBuffer, node sqlparser.SQLNode) {
 		buf.WriteRune('\n')
 		node.Format(buf)
 	default:
-		// fmt.Printf("%#v\n", node)
+		//		fmt.Printf("%#v\n", node)
 		node.Format(buf)
 	}
 }

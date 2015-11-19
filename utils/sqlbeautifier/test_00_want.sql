@@ -44,7 +44,9 @@ select
 	customer_eav_attribute_website as scope_table on 
 		(scope_table.attribute_id = main_table.attribute_id) and 
 		(scope_table.website_id = :v2)
+
  where multiline_count > 0
+
  order by 
 	main_table.attribute_id asc
  limit 12, 13

@@ -30,25 +30,30 @@ import (
 
 func TestFromReader(t *testing.T) {
 	tests := []struct {
+		idx     int
 		wantErr error
 	}{
-		{nil},
+		{0, nil},
+		{1, nil},
+		{2, nil},
+		{3, nil},
+		{4, nil},
 	}
-	for i, test := range tests {
+	for _, test := range tests {
 
-		haveF := getTestFile(t, i, "have")
-		wantF := getTestFile(t, i, "want")
+		haveF := getTestFile(t, test.idx, "have")
+		wantF := getTestFile(t, test.idx, "want")
 
 		bufFormat, haveErr := sqlbeautifier.FromReader(bytes.NewReader(haveF))
 		if test.wantErr != nil {
-			assert.Error(t, haveErr, "Index %d", i)
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+			assert.Error(t, haveErr, "Index %d", test.idx)
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", test.idx)
 			continue
 		}
 
 		if bytes.Compare(wantF, bufFormat.Bytes()) != 0 {
-			// assert.NoError(t, ioutil.WriteFile(pathPrefix+".sql", bufFormat.Bytes(), 0644))
-			t.Errorf("Error @ Index %d\n%s\n", i, bufFormat.String())
+			assert.NoError(t, ioutil.WriteFile(fmt.Sprintf("%sformat_%02d.sql", pathPrefix, test.idx), bufFormat.Bytes(), 0644))
+			t.Errorf("Error @ Index %d\n%s\n", test.idx, bufFormat.String())
 		}
 	}
 }
