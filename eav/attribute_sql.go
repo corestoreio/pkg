@@ -15,8 +15,6 @@
 package eav
 
 import (
-	"fmt"
-
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils"
@@ -53,14 +51,14 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 	// tew table can now contains columns names which can occur in table eav_attribute and
 	// or [catalog|customer|entity]_eav_attribute
 	var (
-		ifnull           []string
+		ifNull           []string
 		tewAddedCols     []string
 		taColumnsQuoted  = utils.StringSlice(ta.AllColumnAliasQuote(csdb.MainTable))
 		taaColumnsQuoted = utils.StringSlice(taa.ColumnAliasQuote(csdb.AdditionalTable))
 	)
 
 	if tew != nil {
-		ifnull = make([]string, len(tew.Columns))
+		ifNull = make([]string, len(tew.Columns.ColumnsNoPK().FieldNames()))
 		for i, tewC := range tew.Columns.ColumnsNoPK().FieldNames() {
 			t := ""
 			switch {
@@ -71,13 +69,13 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 				t = csdb.AdditionalTable
 				break
 			default:
-				err := fmt.Errorf("Cannot find column name %s.%s neither in table %s nor in %s.", tew.Name, tewC, ta.Name, taa.Name)
+				err := errgo.Newf("Cannot find column name %s.%s neither in table %s nor in %s.", tew.Name, tewC, ta.Name, taa.Name)
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("eav.GetAttributeSelectSql.Columns.FieldNames.default", "err", err, "ta", ta, "taa", taa, "entityTypeID", entityTypeID, "websiteID", websiteID)
 				}
 				return nil, err
 			}
-			ifnull[i] = dbr.IfNullAs(csdb.ScopeTable, tewC, t, tewC, tewC)
+			ifNull[i] = dbr.IfNullAs(csdb.ScopeTable, tewC, t, tewC, tewC)
 			tewAddedCols = append(tewAddedCols, tewC)
 		}
 		taColumnsQuoted.ReduceContains(tewAddedCols...)
@@ -90,17 +88,17 @@ func GetAttributeSelectSql(dbrSess dbr.SessionRunner, aat EntityTypeAdditionalAt
 		Join(
 		dbr.JoinTable(taa.Name, csdb.AdditionalTable),
 		taaColumnsQuoted,
-		dbr.ConditionRaw(dbr.Quote+csdb.AdditionalTable+"`.`attribute_id` = `"+csdb.MainTable+"`.`attribute_id`"),
-		dbr.ConditionRaw(dbr.Quote+csdb.MainTable+"`.`entity_type_id` = ?", entityTypeID),
+		dbr.ConditionRaw(csdb.AdditionalTable+".attribute_id = "+csdb.MainTable+".attribute_id"),
+		dbr.ConditionRaw(csdb.MainTable+".entity_type_id = ?", entityTypeID),
 	)
 
 	if len(tewAddedCols) > 0 {
 		selectSql.
 			LeftJoin(
 			dbr.JoinTable(tew.Name, csdb.ScopeTable),
-			append(ifnull),
-			dbr.ConditionRaw(dbr.Quote+csdb.ScopeTable+dbr.Quote+"."+dbr.Quote+"attribute_id"+dbr.Quote+" = "+dbr.Quote+csdb.MainTable+dbr.Quote+"."+dbr.Quote+"attribute_id"+dbr.Quote),
-			dbr.ConditionRaw(dbr.Quote+csdb.ScopeTable+dbr.Quote+"."+dbr.Quote+"website_id"+dbr.Quote+" = ?", websiteID),
+			ifNull,
+			dbr.ConditionRaw(csdb.ScopeTable+"."+"attribute_id"+" = "+csdb.MainTable+"."+"attribute_id"),
+			dbr.ConditionRaw(csdb.ScopeTable+"."+"website_id"+" = ?", websiteID),
 		)
 	}
 	return selectSql, nil

@@ -258,11 +258,11 @@ func (cc Columns) GetFieldNames(pkOnly bool) []string {
 func isIgnoredColumn(table, column string) bool {
 	const etid = "entity_type_id"
 	switch {
-	case strings.Index(table, "catalog_") >= 0 && column == etid:
+	case strings.Contains(table, "catalog_") && column == etid:
 		return true
-	case strings.Index(table, "customer_") >= 0 && column == etid:
+	case strings.Contains(table, "customer_") && column == etid:
 		return true
-	case strings.Index(table, "eav_attribute") >= 0 && column == "attribute_model":
+	case strings.Contains(table, "eav_attribute") && column == "attribute_model":
 		return true
 	}
 	return false

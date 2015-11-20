@@ -1,3 +1,17 @@
+// Copyright 2015, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package eav_test
 
 import (
@@ -6,8 +20,12 @@ import (
 	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/utils/diff"
+	"github.com/corestoreio/csfw/utils/sqlbeautifier"
 	"github.com/stretchr/testify/assert"
 )
+
+var testWantGetAttributeSelectSql string = "Please specify a build tag: mage1 or mage2\n$ go test -tags mageX -v ."
 
 func TestGetAttributeSelectSql(t *testing.T) {
 	dbc := csdb.MustConnectTest()
@@ -16,10 +34,25 @@ func TestGetAttributeSelectSql(t *testing.T) {
 	dbrSess := dbc.NewSession()
 	dbrSelect, err := eav.GetAttributeSelectSql(dbrSess, codegen.NewAddAttrTables(dbc.DB, "customer"), 1, 4)
 	if err != nil {
-		t.Error(err)
-	} else {
-		sql, _ := dbrSelect.ToSql()
-		assert.Equal(t, "SELECT `main_table`.`attribute_id`, `main_table`.`entity_type_id`, `main_table`.`attribute_code`, `main_table`.`backend_model`, `main_table`.`backend_type`, `main_table`.`backend_table`, `main_table`.`frontend_model`, `main_table`.`frontend_input`, `main_table`.`frontend_label`, `main_table`.`frontend_class`, `main_table`.`source_model`, `main_table`.`is_user_defined`, `main_table`.`is_unique`, `main_table`.`note`, `additional_table`.`input_filter`, `additional_table`.`validate_rules`, `additional_table`.`is_system`, `additional_table`.`sort_order`, `additional_table`.`data_model`, IFNULL(`scope_table`.`is_visible`, `additional_table`.`is_visible`) AS `is_visible`, IFNULL(`scope_table`.`is_required`, `main_table`.`is_required`) AS `is_required`, IFNULL(`scope_table`.`default_value`, `main_table`.`default_value`) AS `default_value`, IFNULL(`scope_table`.`multiline_count`, `additional_table`.`multiline_count`) AS `multiline_count` FROM `eav_attribute` AS `main_table` INNER JOIN `customer_eav_attribute` AS `additional_table` ON (`additional_table`.`attribute_id` = `main_table`.`attribute_id`) AND (`main_table`.`entity_type_id` = ?) LEFT JOIN `customer_eav_attribute_website` AS `scope_table` ON (`scope_table`.`attribute_id` = `main_table`.`attribute_id`) AND (`scope_table`.`website_id` = ?)", sql)
+		t.Fatal(err)
+	}
+	sql, _, err := dbrSelect.ToSql()
+	assert.NoError(t, err)
+
+	_, err = sqlbeautifier.FromString(sql) // check for syntax errors
+	if err != nil {
+		t.Fatalf("%s\n\n%s\n", err, sql)
+	}
+
+	if testWantGetAttributeSelectSql != sql {
+
+		buf, err := sqlbeautifier.FromString(testWantGetAttributeSelectSql)
+		if err != nil {
+			t.Fatalf("%s\n%s\n", err, testWantGetAttributeSelectSql)
+		}
+		sql = sqlbeautifier.MustFromString(sql)
+		println(diff.MustUnified(buf.String(), sql), "\n")
+		t.Fatal(sql)
 	}
 
 	// @todo error is that we have column attribute_model in the select list but it should not occur

@@ -131,7 +131,7 @@ func SetEntityTypeCollection(sc CSEntityTypeSlice) {
 	csEntityTypeCollection = sc
 }
 
-func (et *TableEntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...csdb.DbrSelectCb) error {
+func (et *TableEntityType) LoadByCode(dbrSess *dbr.Session, code string, cbs ...dbr.SelectCb) error {
 	s, err := TableCollection.Structure(TableIndexEntityType)
 	if err != nil {
 		return errgo.Mask(err)
