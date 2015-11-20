@@ -17,4 +17,4 @@ package codegen
 import "github.com/corestoreio/csfw/utils/log"
 
 // PkgLog global package based logger
-var PkgLog log.Logger = log.NewStdLogger()
+var PkgLog log.Logger = log.PkgLog

@@ -18,7 +18,6 @@ import (
 	"bytes"
 	"fmt"
 	"go/format"
-	"log"
 	"math/rand"
 	"path/filepath"
 	"strings"
@@ -27,12 +26,6 @@ import (
 
 	"github.com/corestoreio/csfw/utils"
 	"github.com/juju/errgo"
-)
-
-// used for testing
-var (
-	logFatalln = log.Fatalln
-	logFatalf  = log.Fatalf
 )
 
 var (
@@ -140,7 +133,7 @@ func PrepareVar(pkg, s string) string {
 }
 
 // LogFatal logs an error as fatal with printed location and exists the program.
-func LogFatal(err error, args ...interface{}) {
+func LogFatal(err error) {
 	if err == nil {
 		return
 	}
@@ -148,13 +141,7 @@ func LogFatal(err error, args ...interface{}) {
 	if err, ok := err.(errgo.Locationer); ok {
 		s += " " + err.Location().String()
 	}
-	if len(args) > 0 {
-		msg := args[0].(string)
-		args = args[1:]
-		logFatalf(s+"\n"+msg, args...)
-		return
-	}
-	logFatalln(s)
+	PkgLog.Fatal(s)
 }
 
 // randSeq returns a random string with a defined length n.

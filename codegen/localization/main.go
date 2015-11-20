@@ -39,7 +39,7 @@ func main() {
 	d.SetDirFilter("main", "supplemental")
 	d.SetSectionFilter("localeDisplayNames", "numbers")
 	data, err := d.DecodeZip(r)
-	codegen.LogFatal(err, "DecodeZip: %v", err)
+	codegen.LogFatal(err)
 
 	curW := &bytes.Buffer{}
 	for _, loc := range data.Locales() {
@@ -67,7 +67,8 @@ func main() {
 
 	formatted, err := codegen.GenerateCode(codegen.ConfigLocalization.Package, tplCode, tplData, nil)
 	if err != nil {
-		codegen.LogFatal(err, "\n%s\n", formatted)
+		fmt.Printf("\n\n%s\n\n", formatted)
+		codegen.LogFatal(err)
 	}
 
 	codegen.LogFatal(ioutil.WriteFile(codegen.ConfigLocalization.OutputFile, formatted, 0600))

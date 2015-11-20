@@ -17,15 +17,10 @@ package codegen
 // global variables in benchmark tests are used to disable compiler optimizations
 
 import (
-	"errors"
-	"log"
+	"os"
 	"testing"
-
 	"text/template"
 
-	"os"
-
-	"github.com/juju/errgo"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,22 +38,6 @@ func TestOFile(t *testing.T) {
 		have := NewOFile(test.base).AppendDir(test.dir).AppendName(test.file).String()
 		assert.Equal(t, test.want, have)
 	}
-}
-
-func TestLogFatal(t *testing.T) {
-	defer func() { logFatalln = log.Fatalln }()
-	var err error
-	err = errors.New("Test")
-	logFatalln = func(v ...interface{}) {
-		assert.Contains(t, v[0].(string), "Error: Test")
-	}
-	LogFatal(err)
-
-	err = errgo.New("Test")
-	LogFatal(err)
-
-	err = nil
-	LogFatal(err)
 }
 
 func TestGenerateCode(t *testing.T) {

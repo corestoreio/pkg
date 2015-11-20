@@ -44,25 +44,25 @@ const (
 const SQL = `
 // {{ typePrefix "SQLSelect" }} fills this slice with data from the database.
 // Generated via tableToStruct.
-func (s *{{.Slice}}) {{ typePrefix "SQLSelect" }}(dbrSess dbr.SessionRunner, cbs ...csdb.DbrSelectCb) (int, error) {
+func (s *{{.Slice}}) {{ typePrefix "SQLSelect" }}(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) (int, error) {
 	return csdb.LoadSlice(dbrSess, TableCollection, TableIndex{{.Name}}, &(*s), cbs...)
 }
 
 // {{ typePrefix "SQLInsert" }} inserts all records into the database @todo.
 // Generated via tableToStruct.
-func (s *{{.Slice}}) {{ typePrefix "SQLInsert" }}(dbrSess dbr.SessionRunner, cbs ...csdb.DbrInsertCb) (int, error) {
+func (s *{{.Slice}}) {{ typePrefix "SQLInsert" }}(dbrSess dbr.SessionRunner, cbs ...dbr.InsertCb) (int, error) {
 	return 0, nil
 }
 
 // {{ typePrefix "SQLUpdate" }} updates all record in the database @todo.
 // Generated via tableToStruct.
-func (s *{{.Slice}}) {{ typePrefix "SQLUpdate" }}(dbrSess dbr.SessionRunner, cbs ...csdb.DbrUpdateCb) (int, error) {
+func (s *{{.Slice}}) {{ typePrefix "SQLUpdate" }}(dbrSess dbr.SessionRunner, cbs ...dbr.UpdateCb) (int, error) {
 	return 0, nil
 }
 
 // {{ typePrefix "SQLDelete" }} deletes all record from the database @todo.
 // Generated via tableToStruct.
-func (s *{{.Slice}}) {{ typePrefix "SQLDelete" }}(dbrSess dbr.SessionRunner, cbs ...csdb.DbrDeleteCb) (int, error) {
+func (s *{{.Slice}}) {{ typePrefix "SQLDelete" }}(dbrSess dbr.SessionRunner, cbs ...dbr.DeleteCb) (int, error) {
 	return 0, nil
 }
 `
@@ -243,7 +243,7 @@ func (s {{$.Slice}}) {{ typePrefix "Extract" }}() Extract{{.Name | camelize}} {
 `
 
 const StructFunctions = `
-func (et *TableEntityType) LoadByCode(dbrSess dbr.SessionRunner, code string, cbs ...csdb.DbrSelectCb) error {
+func (et *TableEntityType) LoadByCode(dbrSess dbr.SessionRunner, code string, cbs ...dbr.SelectCb) error {
 	s, err := TableCollection.Structure(TableIndexEntityType)
 	if err != nil {
 		return errgo.Mask(err)

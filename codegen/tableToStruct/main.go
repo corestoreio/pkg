@@ -25,6 +25,11 @@ import (
 // PkgLog global package based logger
 var PkgLog log.Logger = log.NewStdLogger()
 
+func init() {
+	codegen.PkgLog = PkgLog
+	log.PkgLog = PkgLog
+}
+
 func main() {
 	defer log.WhenDone(PkgLog).Info("Stats")
 	dbc, err := csdb.Connect()
@@ -40,9 +45,9 @@ func main() {
 
 	wg.Wait()
 
-	for _, ts := range codegen.ConfigTableToStruct {
-		// due to a race condition the codec generator must run after the newGenerator() calls
-		// TODO(cs) fix https://github.com/ugorji/go/issues/92#issuecomment-140410732
-		runCodec(ts.Package, ts.OutputFile.AppendName("_codec").String(), ts.OutputFile.String())
-	}
+	//	for _, ts := range codegen.ConfigTableToStruct {
+	//		// due to a race condition the codec generator must run after the newGenerator() calls
+	//		// TODO(cs) fix https://github.com/ugorji/go/issues/92#issuecomment-140410732
+	//		runCodec(ts.Package, ts.OutputFile.AppendName("_codec").String(), ts.OutputFile.String())
+	//	}
 }

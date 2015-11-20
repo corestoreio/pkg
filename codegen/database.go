@@ -86,8 +86,8 @@ func GetTables(dbrSess dbr.SessionRunner, sql ...string) ([]string, error) {
 			qry = sql[0]
 		}
 	}
-	if PkgLog.IsInfo() { // this if reduces 9 allocs ...
-		defer log.WhenDone(PkgLog).Info("Stats", "Package", "codegen", "Step", "GetTables", "query", qry)
+	if PkgLog.IsDebug() { // this if reduces 9 allocs ...
+		defer log.WhenDone(PkgLog).Debug("Stats", "Package", "codegen", "Step", "GetTables", "query", qry)
 	}
 
 	sb := dbrSess.SelectBySql(qry)

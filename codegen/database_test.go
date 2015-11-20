@@ -84,8 +84,7 @@ func TestGetTables(t *testing.T) {
 		if !test.expErr && err != nil {
 			t.Error(err)
 		}
-
-		assert.Len(t, tables, test.expCount)
+		assert.True(t, len(tables) >= test.expCount, "have %d min want %d", len(tables), test.expCount)
 	}
 }
 
@@ -117,17 +116,17 @@ func TestGetEavValueTables(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		tcMap, err := GetEavValueTables(dbc, test.haveETC)
 		if test.wantErr {
-			assert.Error(t, err)
+			assert.Error(t, err, "Index %d", i)
 		}
 		if !test.wantErr && err != nil {
 			t.Error(err)
 		}
 
-		assert.EqualValues(t, test.wantCVMap, tcMap)
-		assert.Len(t, tcMap, len(test.wantCVMap))
+		assert.EqualValues(t, test.wantCVMap, tcMap, "Index %d", i)
+		assert.Len(t, tcMap, len(test.wantCVMap), "Index %d", i)
 	}
 }
 

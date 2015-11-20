@@ -258,7 +258,10 @@ func (g *generator) runTable() {
 func (g *generator) getGenericTemplate(tableName string) string {
 	var finalTpl bytes.Buffer
 
-	finalTpl.WriteString(tpl.Type) // at least we need a type definition
+	// at least we need a type definition
+	if _, err := finalTpl.WriteString(tpl.Type); err != nil {
+		codegen.LogFatal(err)
+	}
 
 	if false == g.whiteListTables.Include(tableName) {
 		return finalTpl.String()
@@ -266,19 +269,24 @@ func (g *generator) getGenericTemplate(tableName string) string {
 	isAll := (g.tts.GenericsFunctions & tpl.OptAll) == tpl.OptAll
 
 	if isAll || (g.tts.GenericsFunctions&tpl.OptSQL) == tpl.OptSQL {
-		finalTpl.WriteString(tpl.SQL)
+		_, err := finalTpl.WriteString(tpl.SQL)
+		codegen.LogFatal(err)
 	}
 	if isAll || (g.tts.GenericsFunctions&tpl.OptFindBy) == tpl.OptFindBy {
-		finalTpl.WriteString(tpl.FindBy)
+		_, err := finalTpl.WriteString(tpl.FindBy)
+		codegen.LogFatal(err)
 	}
 	if isAll || (g.tts.GenericsFunctions&tpl.OptSort) == tpl.OptSort {
-		finalTpl.WriteString(tpl.Sort)
+		_, err := finalTpl.WriteString(tpl.Sort)
+		codegen.LogFatal(err)
 	}
 	if isAll || (g.tts.GenericsFunctions&tpl.OptSliceFunctions) == tpl.OptSliceFunctions {
-		finalTpl.WriteString(tpl.SliceFunctions)
+		_, err := finalTpl.WriteString(tpl.SliceFunctions)
+		codegen.LogFatal(err)
 	}
 	if isAll || (g.tts.GenericsFunctions&tpl.OptExtractFromSlice) == tpl.OptExtractFromSlice {
-		finalTpl.WriteString(tpl.ExtractFromSlice)
+		_, err := finalTpl.WriteString(tpl.ExtractFromSlice)
+		codegen.LogFatal(err)
 	}
 	return finalTpl.String()
 }
