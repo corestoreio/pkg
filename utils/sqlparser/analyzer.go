@@ -11,6 +11,7 @@ package sqlparser
 import (
 	"errors"
 	"fmt"
+
 	"github.com/corestoreio/csfw/utils/sqlparser/dependency/sqltypes"
 )
 

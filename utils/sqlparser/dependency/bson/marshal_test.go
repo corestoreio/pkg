@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/youtube/vitess/go/bytes2"
+	"github.com/corestoreio/csfw/utils/sqlparser/dependency/bytes2"
 )
 
 type String1 string

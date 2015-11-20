@@ -22,11 +22,11 @@ import (
 	"fmt"
 
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGetColumns(t *testing.T) {
-	// @todo fix test data retrieving from database ...
 	dbc := csdb.MustConnectTest()
 	defer dbc.Close()
 	sess := dbc.NewSession()

@@ -16,7 +16,6 @@ package user
 
 import (
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils/crypto"
 )

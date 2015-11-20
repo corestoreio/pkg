@@ -12,7 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
-Package configsource provides predefined valuelabel slices to be used in configuration elements
-*/
+// Package configsource provides predefined valuelabel slices to be used in configuration elements.
 package configsource

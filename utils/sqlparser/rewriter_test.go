@@ -2,8 +2,9 @@ package sqlparser
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRewriteQuery(t *testing.T) {

@@ -88,33 +88,20 @@ func TestGetTables(t *testing.T) {
 	}
 }
 
+type dataGetEavValueTables struct {
+	haveETC   []string // have entity type codes
+	wantErr   bool
+	wantCVMap TypeCodeValueTable
+}
+
 func TestGetEavValueTables(t *testing.T) {
 	dbc := csdb.MustConnectTest()
 	defer dbc.Close()
 
-	tests := []struct {
-		haveETC   []string // have entity type codes
-		wantErr   bool
-		wantCVMap TypeCodeValueTable
-	}{
-		{
-			haveETC: []string{"catalog_category", "catalog_product"},
-			wantErr: false,
-			wantCVMap: TypeCodeValueTable{"catalog_category": map[string]string{"catalog_category_entity_datetime": "datetime", "catalog_category_entity_decimal": "decimal", "catalog_category_entity_int": "int", "catalog_category_entity_text": "text", "catalog_category_entity_varchar": "varchar"},
-				"catalog_product": map[string]string{"catalog_product_entity_datetime": "datetime", "catalog_product_entity_decimal": "decimal", "catalog_product_entity_int": "int", "catalog_product_entity_text": "text", "catalog_product_entity_varchar": "varchar"}},
-		},
-		{
-			haveETC: []string{"customer_address", "customer"},
-			wantErr: false,
-			wantCVMap: TypeCodeValueTable{"customer_address": map[string]string{"customer_address_entity_text": "text", "customer_address_entity_varchar": "varchar", "customer_address_entity_datetime": "datetime", "customer_address_entity_decimal": "decimal", "customer_address_entity_int": "int"},
-				"customer": map[string]string{"csCustomer_value_decimal": "decimal", "csCustomer_value_int": "int", "csCustomer_value_text": "text", "csCustomer_value_varchar": "varchar", "csCustomer_value_datetime": "datetime"}},
-		},
-		{
-			haveETC:   []string{"catalog_address"},
-			wantErr:   false,
-			wantCVMap: TypeCodeValueTable{"catalog_address": map[string]string{}},
-		},
-	}
+	// @todo for mage2 we need more tests for custom named entity value tables (which is pretty rare)
+
+	// getDataGetEavValueTables depends on the build tag mage1 or mage2
+	var tests []dataGetEavValueTables = getDataGetEavValueTables() // type hint needed for Intellij
 
 	for i, test := range tests {
 		tcMap, err := GetEavValueTables(dbc, test.haveETC)

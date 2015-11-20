@@ -15,11 +15,12 @@
 package ctxlog_test
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/net/ctxlog"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
-	"testing"
 )
 
 func TestContext(t *testing.T) {

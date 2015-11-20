@@ -23,7 +23,10 @@ import (
 )
 
 // PkgLog global package based logger
-var PkgLog log.Logger = log.NewStdLogger()
+var PkgLog log.Logger = log.NewStdLogger(
+	log.SetStdLevel(log.StdLevelFatal),
+	//log.SetStdLevel(log.StdLevelDebug),
+)
 
 func init() {
 	codegen.PkgLog = PkgLog

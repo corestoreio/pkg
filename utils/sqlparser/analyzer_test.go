@@ -4,8 +4,9 @@ Tests for analyzer.go
 package sqlparser
 
 import (
-	"github.com/stretchr/testify/assert"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestPrimaryKey(t *testing.T) {
