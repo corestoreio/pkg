@@ -15,26 +15,38 @@
 package utils
 
 import (
-	"bytes"
 	"fmt"
+
+	"github.com/corestoreio/csfw/utils/bufferpool"
+	"github.com/juju/errgo"
 )
 
 // Errors returns a string where each error has been separated by a line break.
+// If an error implements errgo.Locationer the location will be added to the
+// output to show you the file name and line number.
 func Errors(errs ...error) string {
 	if len(errs) == 0 || (len(errs) == 1 && errs[0] == nil) {
 		return ""
 	}
-	var buf bytes.Buffer
+	var buf = bufferpool.Get()
+	defer bufferpool.Put(buf)
+
 	le := len(errs) - 1
 	for i, e := range errs {
 		if _, err := buf.WriteString(e.Error()); err != nil {
-			return fmt.Sprintf("buf.WriteString internal error (%s): %s", err, e)
+			return fmt.Sprintf("buf.WriteString (1) internal error (%s): %s\n%s", err, e, buf.String())
 		}
+
+		if lerr, ok := e.(errgo.Locationer); ok {
+			if _, err := buf.WriteString("\n" + lerr.Location().String()); err != nil {
+				return fmt.Sprintf("buf.WriteString (2) internal error (%s): %s\n%s", err, e, buf.String())
+			}
+		}
+
 		if i < le {
 			if _, err := buf.WriteString("\n"); err != nil {
-				return fmt.Sprintf("buf.WriteString internal error: %s when writing line break", err)
+				return fmt.Sprintf("buf.WriteString (3) internal error: %s\n%s", err, buf.String())
 			}
-
 		}
 	}
 	return buf.String()

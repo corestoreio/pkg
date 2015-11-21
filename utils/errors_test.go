@@ -19,14 +19,21 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/utils"
+	"github.com/juju/errgo"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestErrors(t *testing.T) {
-
 	assert.Equal(t, "Err1\nErr2\nErr3", utils.Errors(
 		errors.New("Err1"),
 		errors.New("Err2"),
 		errors.New("Err3"),
 	))
+
+	err := utils.Errors(
+		errgo.New("Err1"),
+		errgo.New("Err2"),
+		errors.New("Err3"),
+	)
+	assert.Contains(t, err, "corestoreio/csfw/utils/errors_test.go:34\nErr2")
 }
