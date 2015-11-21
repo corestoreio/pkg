@@ -25,7 +25,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testStorage = store.NewStorage(
+var testStorage = store.MustNewStorage(
 	store.SetStorageWebsites(
 		&store.TableWebsite{WebsiteID: 0, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
@@ -233,7 +233,7 @@ func TestGroupSliceFilter(t *testing.T) {
 }
 
 func TestStorageGroupNoWebsite(t *testing.T) {
-	var tst = store.NewStorage(
+	var tst = store.MustNewStorage(
 		store.SetStorageWebsites(
 			&store.TableWebsite{WebsiteID: 21, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
 		),
@@ -347,7 +347,7 @@ func TestDefaultStoreView(t *testing.T) {
 	assert.NoError(t, err)
 	assert.EqualValues(t, "at", st.Data.Code.String)
 
-	var tst = store.NewStorage(
+	var tst = store.MustNewStorage(
 		store.SetStorageWebsites(
 			&store.TableWebsite{WebsiteID: 21, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
 		),
@@ -363,7 +363,7 @@ func TestDefaultStoreView(t *testing.T) {
 	assert.Nil(t, dSt)
 	assert.EqualError(t, store.ErrStoreNotFound, err.Error())
 
-	var tst2 = store.NewStorage(
+	var tst2 = store.MustNewStorage(
 		store.SetStorageWebsites(
 			&store.TableWebsite{WebsiteID: 21, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(true)},
 		),
@@ -379,7 +379,7 @@ func TestDefaultStoreView(t *testing.T) {
 
 func TestStorageStoreErrors(t *testing.T) {
 
-	var nsw = store.NewStorage(
+	var nsw = store.MustNewStorage(
 		store.SetStorageWebsites(),
 		store.SetStorageGroups(),
 		store.SetStorageStores(
@@ -395,7 +395,7 @@ func TestStorageStoreErrors(t *testing.T) {
 	assert.Nil(t, stws)
 	assert.EqualError(t, store.ErrIDNotFoundTableWebsiteSlice, err.Error())
 
-	var nsg = store.NewStorage(
+	var nsg = store.MustNewStorage(
 		store.SetStorageWebsites(
 			&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
 		),
@@ -431,13 +431,21 @@ func BenchmarkStorageDefaultStoreView(b *testing.B) {
 	}
 }
 
+func TestStorageReInitError(t *testing.T) {
+	nsg, err := store.NewStorage(store.WithDatabaseInit(nil))
+	assert.Nil(t, nsg)
+	if assert.Error(t, err) {
+		assert.Contains(t, err.Error(), "dbr.SessionRunner is nil\n")
+	}
+}
+
 func TestStorageReInit(t *testing.T) {
 
 	// quick implement, use mock of dbr.SessionRunner and remove connection
 	dbc := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
 
-	nsg := store.NewStorage(nil, nil, nil)
+	nsg := store.MustNewStorage(nil, nil, nil)
 	assert.NoError(t, nsg.ReInit(dbc.NewSession()))
 
 	stores, err := nsg.Stores()

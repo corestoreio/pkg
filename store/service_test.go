@@ -392,7 +392,7 @@ func TestNewServiceWebsites(t *testing.T) {
 
 func getInitializedStoreService(so scope.Option) *store.Service {
 	return store.MustNewService(so,
-		store.NewStorage(
+		store.MustNewStorage(
 			store.SetStorageWebsites(
 				&store.TableWebsite{WebsiteID: 0, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
 				&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
@@ -594,7 +594,7 @@ func TestNewServiceReInit(t *testing.T) {
 	defer func() { assert.NoError(t, dbc.Close()) }()
 	dbrSess := dbc.NewSession()
 
-	storeService := store.MustNewService(scope.Option{}, store.NewStorage(nil /* trick it*/))
+	storeService := store.MustNewService(scope.Option{}, store.MustNewStorage(nil /* trick it*/))
 	if err := storeService.ReInit(dbrSess); err != nil {
 		t.Fatal(err)
 	}

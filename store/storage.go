@@ -20,6 +20,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/utils"
 	"github.com/juju/errgo"
 )
 
@@ -55,11 +56,12 @@ type (
 
 	// Storage contains a mutex and the raw slices from the database. @todo maybe make private?
 	Storage struct {
-		cr       config.Reader
-		mu       sync.RWMutex
-		websites TableWebsiteSlice
-		groups   TableGroupSlice
-		stores   TableStoreSlice
+		lastErrors []error
+		cr         config.Reader
+		mu         sync.RWMutex
+		websites   TableWebsiteSlice
+		groups     TableGroupSlice
+		stores     TableStoreSlice
 	}
 
 	// StorageOption option func for NewStorage()
@@ -90,9 +92,37 @@ func SetStorageConfig(cr config.Reader) StorageOption {
 	return func(s *Storage) { s.cr = cr }
 }
 
-// NewStorage creates a new storage object from three slice types. All three arguments can be nil
-// but then you call ReInit()
-func NewStorage(opts ...StorageOption) *Storage {
+// WithDatabaseInit triggers the ReInit function to load the data from the
+// database.
+func WithDatabaseInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) StorageOption {
+	return func(s *Storage) {
+		if err := s.ReInit(dbrSess, cbs...); err != nil {
+			s.lastErrors = append(s.lastErrors, err)
+		}
+	}
+}
+
+// NewStorage creates a new storage object which handles the raw data from the
+// three database tables for website, group and store. You can either provide
+// the raw data separately for each type or pass an option to load it from
+// the database.
+//		sto, err = store.NewStorage(
+//			store.SetStorageWebsites(
+//				&store.TableWebsite{WebsiteID: 0, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
+//				...
+//			),
+//			store.SetStorageGroups(
+//				&store.TableGroup{GroupID: 3, WebsiteID: 2, Name: "Australia", RootCategoryID: 2, DefaultStoreID: 5},
+//				...
+//			),
+//			store.SetStorageStores(
+//				&store.TableStore{StoreID: 0, Code: dbr.NewNullString("admin"), WebsiteID: 0, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
+//				...
+//			),
+//		)
+//		// or alternatively:
+// 		sto, err = store.NewStorage( store.WithDatabaseInit(dbrSession) )
+func NewStorage(opts ...StorageOption) (*Storage, error) {
 	s := &Storage{
 		cr: config.DefaultManager,
 		mu: sync.RWMutex{},
@@ -102,7 +132,24 @@ func NewStorage(opts ...StorageOption) *Storage {
 			opt(s)
 		}
 	}
+	if len(s.lastErrors) > 0 {
+		return nil, s
+	}
+	return s, nil
+}
+
+// MustNewStorage same as NewStorage but panics on error.
+func MustNewStorage(opts ...StorageOption) *Storage {
+	s, err := NewStorage(opts...)
+	if err != nil {
+		panic(err)
+	}
 	return s
+}
+
+// Error returns an error string
+func (st *Storage) Error() string {
+	return utils.Errors(st.lastErrors...)
 }
 
 // website returns a TableWebsite by using either id or code to find it. If id and code are
@@ -267,6 +314,10 @@ func (st *Storage) DefaultStoreView() (*Store, error) {
 func (st *Storage) ReInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error {
 	st.mu.Lock()
 	defer st.mu.Unlock()
+
+	if dbrSess == nil {
+		return errgo.New("dbr.SessionRunner is nil")
+	}
 
 	errc := make(chan error)
 	defer close(errc)

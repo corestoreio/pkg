@@ -44,7 +44,7 @@ func initStore() {
 		scope.Option{
 			Website: scope.MockID(1), // bound to website ID 1 = Europe
 		},
-		store.NewStorage(
+		store.MustNewStorage(
 			// Storage gets usually loaded from the database tables containing
 			// website, group and store. For the sake of this example the storage
 			// is hard coded.
