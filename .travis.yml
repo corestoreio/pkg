@@ -1,0 +1,13 @@
+sudo: false
+language: go
+go:
+  - 1.5
+  - tip
+os:
+  - linux
+  - osx
+matrix:
+  allow_failures:
+    - go: tip
+script:
+  - make testnodb
