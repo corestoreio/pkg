@@ -2,23 +2,15 @@
 
 WIP = Work in Progress
 
-[![Join the chat at https://gitter.im/corestoreio/csfw](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/corestoreio/csfw?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.org/corestoreio/csfw.png?branch=master)](https://travis-ci.org/corestoreio/csfw) [![GoDoc](http://godoc.org/github.com/corestoreio/csfw?status.svg)](http://godoc.org/github.com/corestoreio/csfw) [![Join the chat at https://gitter.im/corestoreio/csfw](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/corestoreio/csfw?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [goreportcard](http://goreportcard.com/report/Corestoreio/csfw)
 
-This repository contains the main framework.
-
-Please see [godoc.org](https://godoc.org/github.com/corestoreio/csfw) which is more up-to-date than this README.md file.
+eCommerce Framework which is compatible to Magento 1 and 2 database schema.
 
 Magento is a trademark of [MAGENTO, INC.](http://www.magentocommerce.com/license/).
 
-## Badges
-
-[goreportcard](http://goreportcard.com/report/Corestoreio/csfw) [![GoDoc](https://godoc.org/github.com/corestoreio/csfw?status.svg)](https://godoc.org/github.com/corestoreio/csfw)
-
-@todo add travis
-
 ## Usage
 
-To properly use the CoreStore framework some environment variables must be set before running `go generate`.
+To properly use the CoreStore framework some environment variables must be set before running `go generate`. (TODO)
 
 ### Required settings
 
@@ -33,7 +25,7 @@ $ export CS_DSN='magento2:magento2@tcp(localhost:3306)/magento2'
 $ go get github.com/corestoreio/csfw
 $ export CS_DSN_TEST='see next section'
 $ cd $GOPATH/src/github.com/corestoreio/csfw
-$ go generate ./...
+$ go run codegen/tableToStruct/*.go
 ```
 
 ## Testing
@@ -113,6 +105,7 @@ Please have a look at the [contribution guidelines](https://github.com/corestore
 | Jad Dittmar | [finance](https://github.com/Confunctionist/finance) aka. [money](http://github.com/corestoreio/csfw/tree/master/storage/money) | Copyright (c) 2011 |
 | Wenbin Xiao | [sqlparser](https://github.com/xwb1989/sqlparser) | Copyright 2015 BSD Style |
 | Google Inc | [youtube/vitess\sqlparser](https://github.com/youtube/vitess) | Copyright 2012 BSD Style |
+| Julien Schmidt | [ctxrouter](https://github.com/corestoreio/csfw/tree/master/net/ctxrouter) aka. [httprouter](https://github.com/julienschmidt/httprouter) | Copyright (c) 2013 MIT |
 
 ## Licensing
 
