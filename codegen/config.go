@@ -228,7 +228,7 @@ var TableMapMagento1To2 = map[string]string{
 var ConfigTableToStruct = TableToStructMap{
 	"authorization": TableToStruct{
 		Package:    "authorization",
-		OutputFile: BasePath.AppendDir("authorization", "generated_tables"),
+		OutputFile: BasePath.AppendDir("authorization", "tables_generated"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
 						TABLE_SCHEMA = DATABASE() AND
 						TABLE_NAME IN (
@@ -241,7 +241,7 @@ var ConfigTableToStruct = TableToStructMap{
 	},
 	"user": TableToStruct{
 		Package:           "user",
-		OutputFile:        BasePath.AppendDir("user", "generated_tables"),
+		OutputFile:        BasePath.AppendDir("user", "tables_generated"),
 		SQLQuery:          `{{tableprefix}}admin_user`,
 		EntityTypeCodes:   nil,
 		GenericsWhiteList: "SQLQuery",
@@ -249,7 +249,7 @@ var ConfigTableToStruct = TableToStructMap{
 	},
 	"config": TableToStruct{
 		Package:           "config",
-		OutputFile:        BasePath.AppendDir("config", "generated_tables"),
+		OutputFile:        BasePath.AppendDir("config", "tables_generated"),
 		SQLQuery:          `{{tableprefix}}core_config_data`,
 		EntityTypeCodes:   nil,
 		GenericsWhiteList: "",
@@ -257,7 +257,7 @@ var ConfigTableToStruct = TableToStructMap{
 	},
 	"directory": TableToStruct{
 		Package:    "directory",
-		OutputFile: BasePath.AppendDir("directory", "generated_tables"),
+		OutputFile: BasePath.AppendDir("directory", "tables_generated"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
 						TABLE_SCHEMA = DATABASE() AND
 						TABLE_NAME LIKE '{{tableprefix}}directory%' GROUP BY TABLE_NAME;`,
@@ -267,7 +267,7 @@ var ConfigTableToStruct = TableToStructMap{
 	},
 	"eav": TableToStruct{
 		Package:         "eav",
-		OutputFile:      BasePath.AppendDir("eav", "generated_tables"),
+		OutputFile:      BasePath.AppendDir("eav", "tables_generated"),
 		SQLQuery:        `{{tableprefix}}eav%`,
 		EntityTypeCodes: nil,
 		GenericsWhiteList: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
@@ -277,7 +277,7 @@ var ConfigTableToStruct = TableToStructMap{
 	},
 	"store": TableToStruct{
 		Package:    "store",
-		OutputFile: BasePath.AppendDir("store", "generated_tables"),
+		OutputFile: BasePath.AppendDir("store", "tables_generated"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
 					TABLE_SCHEMA = DATABASE() AND
 					TABLE_NAME IN (
@@ -292,7 +292,7 @@ var ConfigTableToStruct = TableToStructMap{
 	"catalog": TableToStruct{
 		// @todo figure out tables which are in both Magneto version present
 		Package:    "catalog",
-		OutputFile: BasePath.AppendDir("catalog", "generated_tables"),
+		OutputFile: BasePath.AppendDir("catalog", "tables_generated"),
 		SQLQuery: `SELECT TABLE_NAME FROM information_schema.COLUMNS WHERE
 						TABLE_SCHEMA = DATABASE() AND
 						(TABLE_NAME LIKE '{{tableprefix}}catalog\_%' OR TABLE_NAME LIKE '{{tableprefix}}catalogindex%' ) AND
@@ -310,7 +310,7 @@ var ConfigTableToStruct = TableToStructMap{
 	},
 	"customer": TableToStruct{
 		Package:           "customer",
-		OutputFile:        BasePath.AppendDir("customer", "generated_tables"),
+		OutputFile:        BasePath.AppendDir("customer", "tables_generated"),
 		SQLQuery:          `{{tableprefix}}customer%`,
 		EntityTypeCodes:   []string{"customer", "customer_address"},
 		GenericsWhiteList: "SQLQuery",

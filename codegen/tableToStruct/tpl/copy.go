@@ -28,5 +28,7 @@ const Copy = `// Copyright 2015, Cyrill @ Schumacher.fm and the CoreStore contri
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// +build mage1 mage2
+
 package {{ .Package }}
 `

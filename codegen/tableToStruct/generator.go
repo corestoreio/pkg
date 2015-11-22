@@ -99,8 +99,10 @@ func (g *generator) analyzePackage() {
 	}
 
 	for fName, astFile := range astPkg.Files {
-		if fName == g.tts.OutputFile.String() {
-			// skip the generated file or we have recursion 8-)
+		if fName == g.tts.OutputFile.String() || strings.Contains(fName, "_fallback.go") {
+			// skip the generated file (tables_generated.go) or we have recursion 8-)
+			// skip also the _fallback.go files which contain the generated code
+			// because those files get included if no build tag has been specified.
 			continue
 		}
 		ast.Inspect(astFile, func(n ast.Node) bool {
