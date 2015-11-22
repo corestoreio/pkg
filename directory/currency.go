@@ -18,21 +18,21 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/config"
-	"golang.org/x/text/language"
+	"golang.org/x/text/currency"
 )
 
 type Currency struct {
 	// https://godoc.org/golang.org/x/text/language
-	c language.Currency
+	c currency.Currency
 }
 
 // BaseCurrencyCode retrieves application base currency code
-func BaseCurrencyCode(cr config.Reader) (language.Currency, error) {
+func BaseCurrencyCode(cr config.Reader) (currency.Currency, error) {
 	base, err := cr.GetString(config.Path(PathCurrencyBase))
 	if config.NotKeyNotFoundError(err) {
-		return language.Currency{}, err
+		return currency.Currency{}, err
 	}
-	return language.ParseCurrency(base)
+	return currency.ParseISO(base)
 }
 
 // AllowedCurrencies returns all installed currencies from global scope.
