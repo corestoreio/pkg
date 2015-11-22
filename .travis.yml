@@ -11,3 +11,5 @@ matrix:
     - go: tip
 script:
   - make testnodb
+install:
+  - go get -v ./...
