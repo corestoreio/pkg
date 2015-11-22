@@ -77,8 +77,8 @@ var (
 // TableCollection handles all tables and its columns. init() in generated Go file will set the value.
 var TableCollection csdb.Manager
 
-// DefaultManager provides a default manager
-var DefaultManager *Manager = NewManager()
+// DefaultManager provides a standard NewManager via init() func loaded.
+var DefaultManager *Manager
 
 // ErrKeyNotFound will be returned if a key cannot be found or value is nil.
 var ErrKeyNotFound = errors.New("Key not found")
@@ -132,7 +132,7 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 	for _, cd := range ccd {
 		if cd.Value.Valid {
 			// scope.ID(cd.ScopeID) because cd.ScopeID is a struct field and cannot satisfy interface scope.IDer
-			if err := m.Write(Path(cd.Path), Scope(scope.FromString(cd.Scope), cd.ScopeID)); err != nil {
+			if err := m.Write(Path(cd.Path), Scope(scope.FromString(cd.Scope), cd.ScopeID), Value(cd.Value.String)); err != nil {
 				return errgo.Mask(err)
 			}
 		}
