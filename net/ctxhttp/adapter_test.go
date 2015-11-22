@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
+	"github.com/corestoreio/csfw/net/ctxmw"
 	"github.com/corestoreio/csfw/net/httputils"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
@@ -36,8 +37,8 @@ func TestAdapters(t *testing.T) {
 
 	hndlr := ctxhttp.Chain(
 		h1{},
-		ctxhttp.WithXHTTPMethodOverride(),
-		ctxhttp.WithHeader("X-Men", "Y-Women"),
+		ctxmw.WithXHTTPMethodOverride(),
+		ctxmw.WithHeader("X-Men", "Y-Women"),
 	)
 
 	w := httptest.NewRecorder()
@@ -60,7 +61,7 @@ func TestDefaultAdapterErrFunc(t *testing.T) {
 func TestHttpMethodOverride(t *testing.T) {
 	hndlr := ctxhttp.Chain(
 		h1{},
-		ctxhttp.WithXHTTPMethodOverride())
+		ctxmw.WithXHTTPMethodOverride())
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(httputils.MethodGet, "http://example.com/foo?_method="+httputils.MethodPatch, nil)
 	assert.NoError(t, err)

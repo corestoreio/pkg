@@ -72,15 +72,12 @@ func NewAdapter(ctx context.Context, h Handler) *Adapter {
 // AdapterErrFunc specifies the error handler for the Adapter
 type AdapterErrFunc func(http.ResponseWriter, *http.Request, error)
 
-// DefaultAdapterErrFunc logs the error (if Debug is enabled) and sends a
-// 400 StatusBadRequest. You can replace this variable with your own default
-// version. This function gets called in ServeHTTP of the Adapter type.
+// DefaultAdapterErrFunc sends a 400 StatusBadRequest. You can replace this
+// variable with your own default version. This function gets called in
+// ServeHTTP of the Adapter type.
 var DefaultAdapterErrFunc AdapterErrFunc = defaultAdapterErrFunc
 
 func defaultAdapterErrFunc(rw http.ResponseWriter, req *http.Request, err error) {
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("ctxhttp.AdapterErrorFunc", "err", err, "req", req, "url", req.URL)
-	}
 	code := http.StatusBadRequest
 	http.Error(rw, fmt.Sprintf(
 		"%s\nApp Error: %s",

@@ -12,13 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxhttp
+package ctxmw
 
 import (
 	"net/http"
 	"strconv"
 	"time"
 
+	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxlog"
 	"github.com/corestoreio/csfw/net/httputils"
 	"github.com/corestoreio/csfw/utils"
@@ -32,9 +33,9 @@ import (
 // WithAccessLog is a middleware that logs all access requests performed on the
 // sub handler using github.com/corestoreio/csfw/net/ctxlog and
 // github.com/rs/xstats stored in context.
-func WithAccessLog() Middleware {
-	return func(h Handler) Handler {
-		return HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func WithAccessLog() ctxhttp.Middleware {
+	return func(h ctxhttp.Handler) ctxhttp.Handler {
+		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
 			// Time request
 			reqStart := time.Now()

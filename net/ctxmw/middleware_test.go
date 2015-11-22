@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxhttp_test
+package ctxmw_test
 
 import (
 	"net/http"
@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
+	"github.com/corestoreio/csfw/net/ctxmw"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -68,7 +69,7 @@ func (w *closeNotifyWriter) CloseNotify() <-chan bool {
 
 func TestWithCloseHandler(t *testing.T) {
 	ctx := context.WithValue(context.Background(), ctxKey, "gopher life")
-	finalCH := ctxhttp.Chain(&handler{}, ctxhttp.WithCloseNotify())
+	finalCH := ctxhttp.Chain(&handler{}, ctxmw.WithCloseNotify())
 
 	w := &closeNotifyWriter{httptest.NewRecorder()}
 	r, err := http.NewRequest("GET", "http://corestore.io/catalog/product/id/3452", nil)
@@ -83,7 +84,7 @@ func TestWithCloseHandler(t *testing.T) {
 
 func TestWithTimeoutHandler(t *testing.T) {
 	ctx := context.WithValue(context.Background(), ctxKey, "gopher life")
-	finalCH := ctxhttp.Chain(&handler{}, ctxhttp.WithTimeout(time.Second))
+	finalCH := ctxhttp.Chain(&handler{}, ctxmw.WithTimeout(time.Second))
 
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "http://corestore.io/catalog/product/id/3452", nil)

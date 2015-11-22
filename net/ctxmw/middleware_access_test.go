@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxhttp_test
+package ctxmw_test
 
 // Idea: github.com/rs/xaccess Copyright (c) 2015 Olivier Poitrey <rs@dailymotion.com> MIT License
 
@@ -29,6 +29,7 @@ import (
 	"bytes"
 
 	"github.com/corestoreio/csfw/net/ctxlog"
+	"github.com/corestoreio/csfw/net/ctxmw"
 	"github.com/corestoreio/csfw/utils/log"
 )
 
@@ -53,10 +54,10 @@ func (c fakeContext) Value(key interface{}) interface{} {
 }
 
 func TestResponseStatus(t *testing.T) {
-	assert.Equal(t, "ok", ctxhttp.ResponseStatus(fakeContext{err: nil}, http.StatusOK))
-	assert.Equal(t, "canceled", ctxhttp.ResponseStatus(fakeContext{err: context.Canceled}, http.StatusOK))
-	assert.Equal(t, "timeout", ctxhttp.ResponseStatus(fakeContext{err: context.DeadlineExceeded}, http.StatusOK))
-	assert.Equal(t, "error", ctxhttp.ResponseStatus(fakeContext{err: nil}, http.StatusFound))
+	assert.Equal(t, "ok", ctxmw.ResponseStatus(fakeContext{err: nil}, http.StatusOK))
+	assert.Equal(t, "canceled", ctxmw.ResponseStatus(fakeContext{err: context.Canceled}, http.StatusOK))
+	assert.Equal(t, "timeout", ctxmw.ResponseStatus(fakeContext{err: context.DeadlineExceeded}, http.StatusOK))
+	assert.Equal(t, "error", ctxmw.ResponseStatus(fakeContext{err: nil}, http.StatusFound))
 }
 
 func TestWithAccessLog(t *testing.T) {
@@ -72,7 +73,7 @@ func TestWithAccessLog(t *testing.T) {
 			time.Sleep(time.Millisecond)
 			return err
 		}),
-		ctxhttp.WithAccessLog(),
+		ctxmw.WithAccessLog(),
 	)
 
 	r, _ := http.NewRequest("GET", "/gopherine", nil)

@@ -12,18 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxhttp
+package ctxmw
 
-// Middleware is a wrapper for the ctxhttp.Handler to create middleware functions.
-type Middleware func(Handler) Handler
+import "github.com/corestoreio/csfw/utils/log"
 
-// Chain function will iterate over all middleware, calling them one by one
-// in a chained manner, returning the result of the final middleware.
-// Execution of the middleware takes place in reverse order! First to be called
-// handler must be added as last slice index.
-func Chain(h Handler, mws ...Middleware) Handler {
-	for _, mw := range mws {
-		h = mw(h)
-	}
-	return h
-}
+// PkgLog global package based logger
+var PkgLog log.Logger = log.PkgLog

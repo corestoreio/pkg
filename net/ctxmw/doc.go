@@ -12,9 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxhttp
-
-import "github.com/corestoreio/csfw/utils/log"
-
-// PkgLog global package based logger
-var PkgLog log.Logger = log.PkgLog
+// Package ctxmw provides a various middleware for net/context.
+//
+package ctxmw
