@@ -15,12 +15,13 @@
 package config_test
 
 import (
-	"bytes"
 	std "log"
 	"testing"
 	"time"
 
 	"errors"
+
+	"sync"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
@@ -28,11 +29,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var errLogBuf bytes.Buffer
+var errLogBuf = new(log.MutexBuffer)
 
 func init() {
 	config.PkgLog = log.NewStdLogger(
-		log.SetStdDebug(&errLogBuf, "testErr: ", std.Lshortfile),
+		log.SetStdDebug(errLogBuf, "testErr: ", std.Lshortfile),
 	)
 	config.PkgLog.SetLevel(log.StdLevelDebug)
 }
@@ -81,7 +82,7 @@ func TestPubSubBubbling(t *testing.T) {
 	assert.EqualError(t, m.Close(), config.ErrPublisherClosed.Error())
 }
 
-func TestPubSubPanic(t *testing.T) {
+func TestPubSubPanicSimple(t *testing.T) {
 	defer errLogBuf.Reset()
 	testPath := "x/y/z"
 
@@ -116,6 +117,7 @@ func TestPubSubPanicError(t *testing.T) {
 	// not closing channel to let the Goroutine around egging aka. herumeiern.
 	time.Sleep(time.Millisecond * 10) // wait for goroutine ...
 	assert.Contains(t, errLogBuf.String(), `config.pubSub.publish.recover.err err: OMG! Panic!`)
+	assert.NoError(t, m.Close())
 }
 
 func TestPubSubPanicMultiple(t *testing.T) {
@@ -173,13 +175,19 @@ func TestPubSubUnsubscribe(t *testing.T) {
 	assert.NoError(t, m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(123)))
 	time.Sleep(time.Millisecond) // wait for goroutine ...
 	assert.Contains(t, errLogBuf.String(), `config.Manager.Write path: "stores/123/x/y/z" val: 321`)
+	assert.NoError(t, m.Close())
+}
+
+type levelCalls struct {
+	sync.Mutex
+	level2Calls int
+	level3Calls int
 }
 
 func TestPubSubEvict(t *testing.T) {
 	defer errLogBuf.Reset()
 
-	var level2Calls int
-	var level3Calls int
+	levelCall := new(levelCalls)
 
 	var pErr = errors.New("WTF Eviction? Panic!")
 	m := config.NewManager()
@@ -187,7 +195,9 @@ func TestPubSubEvict(t *testing.T) {
 		f: func(path string, sg scope.Scope, id int64) error {
 			assert.Contains(t, path, "x/y")
 			// this function gets called 3 times
-			level2Calls++
+			levelCall.Lock()
+			levelCall.level2Calls++
+			levelCall.Unlock()
 			return nil
 		},
 	})
@@ -196,7 +206,9 @@ func TestPubSubEvict(t *testing.T) {
 
 	subID, err = m.Subscribe("x/y/z", &testSubscriber{
 		f: func(path string, sg scope.Scope, id int64) error {
-			level3Calls++
+			levelCall.Lock()
+			levelCall.level3Calls++
+			levelCall.Unlock()
 			// this function gets called 1 times and then gets removed
 			panic(pErr)
 		},
@@ -212,6 +224,9 @@ func TestPubSubEvict(t *testing.T) {
 
 	assert.Contains(t, errLogBuf.String(), "config.pubSub.publish.recover.err err: WTF Eviction? Panic!")
 
-	assert.Equal(t, 3, level2Calls)
-	assert.Equal(t, 1, level3Calls)
+	levelCall.Lock()
+	assert.Equal(t, 3, levelCall.level2Calls)
+	assert.Equal(t, 1, levelCall.level3Calls)
+	levelCall.Unlock()
+	assert.NoError(t, m.Close())
 }

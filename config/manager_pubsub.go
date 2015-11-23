@@ -15,9 +15,8 @@
 package config
 
 import (
-	"sync"
-
 	"errors"
+	"sync"
 
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/juju/errgo"
