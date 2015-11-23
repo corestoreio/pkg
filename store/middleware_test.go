@@ -37,11 +37,11 @@ import (
 	"golang.org/x/net/context"
 )
 
-var middlewareConfigReader *config.MockReader
+var middlewareConfigReader *config.MockGet
 var middlewareCtxStoreService context.Context
 
 func init() {
-	middlewareConfigReader = config.NewMockReader(
+	middlewareConfigReader = config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
 			config.MockPathScopeDefault(store.PathRedirectToBase):    1,
 			config.MockPathScopeStore(1, store.PathSecureInFrontend): true,
@@ -76,7 +76,7 @@ func finalHandlerWithValidateBaseURL(t *testing.T) ctxhttp.Handler {
 
 func TestWithValidateBaseUrl_DeactivatedAndShouldNotRedirectWithGETRequest(t *testing.T) {
 
-	mockReader := config.NewMockReader(
+	mockReader := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
 			config.MockPathScopeDefault(store.PathRedirectToBase): 0,
 		}),
@@ -93,7 +93,7 @@ func TestWithValidateBaseUrl_DeactivatedAndShouldNotRedirectWithGETRequest(t *te
 
 func TestWithValidateBaseUrl_ActivatedAndShouldNotRedirectWithPOSTRequest(t *testing.T) {
 
-	mockReader := config.NewMockReader(
+	mockReader := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
 			config.MockPathScopeDefault(store.PathRedirectToBase): 301,
 		}),

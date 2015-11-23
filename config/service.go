@@ -34,23 +34,23 @@ const (
 )
 
 type (
-	// Reader implements how to receive thread-safe a configuration value from
+	// Getter implements how to receive thread-safe a configuration value from
 	// a path and or scope.
 	//
-	// These functions are also available in the ScopedReader interface.
-	Reader interface {
-		NewScoped(websiteID, groupID, storeID int64) ScopedReader
-		GetString(...ArgFunc) (string, error)
-		GetBool(...ArgFunc) (bool, error)
-		GetFloat64(...ArgFunc) (float64, error)
-		GetInt(...ArgFunc) (int, error)
-		GetDateTime(...ArgFunc) (time.Time, error)
+	// These functions are also available in the ScopedGetter interface.
+	Getter interface {
+		NewScoped(websiteID, groupID, storeID int64) ScopedGetter
+		String(...ArgFunc) (string, error)
+		Bool(...ArgFunc) (bool, error)
+		Float64(...ArgFunc) (float64, error)
+		Int(...ArgFunc) (int, error)
+		DateTime(...ArgFunc) (time.Time, error)
 	}
 
-	// ReaderPubSuber implements a configuration Reader and a Subscriber for
+	// GetterPubSuber implements a configuration Getter and a Subscriber for
 	// Publish and Subscribe pattern.
-	ReaderPubSuber interface {
-		Reader
+	GetterPubSuber interface {
+		Getter
 		Subscriber
 	}
 
@@ -60,8 +60,8 @@ type (
 		Write(...ArgFunc) error
 	}
 
-	// Manager main configuration provider
-	Manager struct {
+	// Service main configuration provider
+	Service struct {
 		// why is Viper private? Because it can maybe replaced by something else ...
 		v *viper.Viper
 		*pubSub
@@ -69,27 +69,27 @@ type (
 )
 
 var (
-	_ Reader     = (*Manager)(nil)
-	_ Writer     = (*Manager)(nil)
-	_ Subscriber = (*Manager)(nil)
+	_ Getter     = (*Service)(nil)
+	_ Writer     = (*Service)(nil)
+	_ Subscriber = (*Service)(nil)
 )
 
 // TableCollection handles all tables and its columns. init() in generated Go file will set the value.
 var TableCollection csdb.Manager
 
-// DefaultManager provides a standard NewManager via init() func loaded.
-var DefaultManager *Manager
+// DefaultService provides a standard NewService via init() func loaded.
+var DefaultService *Service
 
 // ErrKeyNotFound will be returned if a key cannot be found or value is nil.
 var ErrKeyNotFound = errors.New("Key not found")
 
 func init() {
-	DefaultManager = NewManager()
+	DefaultService = NewService()
 }
 
-// NewManager creates the main new configuration for all scopes: default, website and store
-func NewManager() *Manager {
-	m := &Manager{
+// NewService creates the main new configuration for all scopes: default, website and store
+func NewService() *Service {
+	m := &Service{
 		v:      viper.New(),
 		pubSub: newPubSub(),
 	}
@@ -99,32 +99,32 @@ func NewManager() *Manager {
 }
 
 // NewScoped creates a new scope base configuration reader
-func (m *Manager) NewScoped(websiteID, groupID, storeID int64) ScopedReader {
-	return newScopedManager(m, websiteID, groupID, storeID)
+func (s *Service) NewScoped(websiteID, groupID, storeID int64) ScopedGetter {
+	return newScopedService(s, websiteID, groupID, storeID)
 }
 
 // ApplyDefaults reads the map and applies the keys and values to the default configuration
-func (m *Manager) ApplyDefaults(ss Sectioner) *Manager {
+func (s *Service) ApplyDefaults(ss Sectioner) *Service {
 	for k, v := range ss.Defaults() {
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("config.Manager.ApplyDefaults", k, v)
+			PkgLog.Debug("config.Service.ApplyDefaults", k, v)
 		}
-		m.v.Set(k, v)
+		s.v.Set(k, v)
 	}
-	return m
+	return s
 }
 
-// ApplyCoreConfigData reads the table core_config_data into the Manager and overrides
+// ApplyCoreConfigData reads the table core_config_data into the Service and overrides
 // existing values. If the column value is NULL entry will be ignored.
-func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
+func (s *Service) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 	var ccd TableCoreConfigDataSlice
 	rows, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexCoreConfigData, &ccd)
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("config.Manager.ApplyCoreConfigData", "rows", rows)
+		PkgLog.Debug("config.Service.ApplyCoreConfigData", "rows", rows)
 	}
 	if err != nil {
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("config.Manager.ApplyCoreConfigData.LoadSlice", "err", err)
+			PkgLog.Debug("config.Service.ApplyCoreConfigData.LoadSlice", "err", err)
 		}
 		return errgo.Mask(err)
 	}
@@ -132,7 +132,7 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 	for _, cd := range ccd {
 		if cd.Value.Valid {
 			// scope.ID(cd.ScopeID) because cd.ScopeID is a struct field and cannot satisfy interface scope.IDer
-			if err := m.Write(Path(cd.Path), Scope(scope.FromString(cd.Scope), cd.ScopeID), Value(cd.Value.String)); err != nil {
+			if err := s.Write(Path(cd.Path), Scope(scope.FromString(cd.Scope), cd.ScopeID), Value(cd.Value.String)); err != nil {
 				return errgo.Mask(err)
 			}
 		}
@@ -140,111 +140,109 @@ func (m *Manager) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
 	return nil
 }
 
-// Write puts a value back into the manager. Example usage:
+// Write puts a value back into the Service. Example usage:
 // Default Scope: Write(config.Path("currency", "option", "base"), config.Value("USD"))
 // Website Scope: Write(config.Path("currency", "option", "base"), config.Value("EUR"), config.ScopeWebsite(w))
 // Store   Scope: Write(config.Path("currency", "option", "base"), config.ValueReader(resp.Body), config.ScopeStore(s))
-func (m *Manager) Write(o ...ArgFunc) error {
+func (s *Service) Write(o ...ArgFunc) error {
 	a, err := newArg(o...)
 	if err != nil {
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("config.Manager.Write.newArg", "err", err)
+			PkgLog.Debug("config.Service.Write.newArg", "err", err)
 		}
 		return errgo.Mask(err)
 	}
 
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("config.Manager.Write", "path", a.scopePath(), "val", a.v)
+		PkgLog.Debug("config.Service.Write", "path", a.scopePath(), "val", a.v)
 	}
 
-	m.v.Set(a.scopePath(), a.v)
-	m.sendMsg(a)
+	s.v.Set(a.scopePath(), a.v)
+	s.sendMsg(a)
 	return nil
 }
 
 // get generic getter ... not sure if this should be public ...
-func (m *Manager) get(o ...ArgFunc) interface{} {
+func (s *Service) get(o ...ArgFunc) interface{} {
 	a, err := newArg(o...)
 	if err != nil {
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("config.Manager.get.newArg", "err", err)
+			PkgLog.Debug("config.Service.get.newArg", "err", err)
 		}
 		return errgo.Mask(err)
 	}
 
-	return m.v.Get(a.scopePath())
+	return s.v.Get(a.scopePath())
 }
 
-// GetString returns a string from the manager. Example usage:
-// Default value: GetString(config.Path("general/locale/timezone"))
-// Website value: GetString(config.Path("general/locale/timezone"), config.ScopeWebsite(w))
-// Store   value: GetString(config.Path("general/locale/timezone"), config.ScopeStore(s))
-func (m *Manager) GetString(o ...ArgFunc) (string, error) {
-	vs := m.get(o...)
+// String returns a string from the Service. Example usage:
+// Default value: String(config.Path("general/locale/timezone"))
+// Website value: String(config.Path("general/locale/timezone"), config.ScopeWebsite(w))
+// Store   value: String(config.Path("general/locale/timezone"), config.ScopeStore(s))
+func (s *Service) String(o ...ArgFunc) (string, error) {
+	vs := s.get(o...)
 	if vs == nil {
 		return "", ErrKeyNotFound
 	}
 	return cast.ToStringE(vs)
 }
 
-// GetBool returns bool from the manager. Example usage see GetString.
-func (m *Manager) GetBool(o ...ArgFunc) (bool, error) {
-	vs := m.get(o...)
+// Bool returns bool from the Service. Example usage see String.
+func (s *Service) Bool(o ...ArgFunc) (bool, error) {
+	vs := s.get(o...)
 	if vs == nil {
 		return false, ErrKeyNotFound
 	}
 	return cast.ToBoolE(vs)
 }
 
-// GetFloat64 returns a float64 from the manager. Example usage see GetString.
-func (m *Manager) GetFloat64(o ...ArgFunc) (float64, error) {
-	vs := m.get(o...)
+// Float64 returns a float64 from the Service. Example usage see String.
+func (s *Service) Float64(o ...ArgFunc) (float64, error) {
+	vs := s.get(o...)
 	if vs == nil {
 		return 0.0, ErrKeyNotFound
 	}
 	return cast.ToFloat64E(vs)
 }
 
-// GetInt returns an int from the manager. Example usage see GetString.
-func (m *Manager) GetInt(o ...ArgFunc) (int, error) {
-	vs := m.get(o...)
+// Int returns an int from the Service. Example usage see String.
+func (s *Service) Int(o ...ArgFunc) (int, error) {
+	vs := s.get(o...)
 	if vs == nil {
 		return 0, ErrKeyNotFound
 	}
 	return cast.ToIntE(vs)
 }
 
-// GetDateTime returns a date and time object from the manager. Example usage see GetString.
-func (m *Manager) GetDateTime(o ...ArgFunc) (time.Time, error) {
-	vs := m.get(o...)
+// DateTime returns a date and time object from the Service. Example usage see String.
+func (s *Service) DateTime(o ...ArgFunc) (time.Time, error) {
+	vs := s.get(o...)
 	if vs == nil {
 		return time.Time{}, ErrKeyNotFound
 	}
 	return cast.ToTimeE(vs)
 }
 
-// @todo consider adding other Get* from the viper package
-
-// GetStringSlice returns a slice of strings with config values.
+// StringSlice returns a slice of strings with config values.
 // @todo use the backend model of a config value. most/all magento string slices are comma lists.
-func (m *Manager) GetStringSlice(o ...ArgFunc) ([]string, error) {
+func (s *Service) StringSlice(o ...ArgFunc) ([]string, error) {
 	return nil, ErrKeyNotFound
-	//	return m.v.GetStringSlice(newArg(o...))
+	//	return m.v.StringSlice(newArg(o...))
 }
 
 // AllKeys return all keys regardless where they are set
-func (m *Manager) AllKeys() []string { return m.v.AllKeys() }
+func (s *Service) AllKeys() []string { return s.v.AllKeys() }
 
 // IsSet checks if a key is in the configuration. Returns false on error.
-func (m *Manager) IsSet(o ...ArgFunc) bool {
+func (s *Service) IsSet(o ...ArgFunc) bool {
 	a, err := newArg(o...)
 	if err != nil {
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("config.Manager.IsSet.newArg", "err", err)
+			PkgLog.Debug("config.Service.IsSet.newArg", "err", err)
 		}
 		return false
 	}
-	return m.v.IsSet(a.scopePath())
+	return s.v.IsSet(a.scopePath())
 }
 
 // NotKeyNotFoundError returns true if err is not nil and not of type Key Not Found.

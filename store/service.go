@@ -61,7 +61,7 @@ type (
 	// This Service uses three internal maps to cache the pointers
 	// of Website, Group and Store.
 	Service struct {
-		cr config.Reader
+		cr config.Getter
 
 		// to which scope is this current Service bound to
 		boundToScope scope.Scope
@@ -114,7 +114,7 @@ func NewService(so scope.Option, storage Storager, opts ...ServiceOption) (*Serv
 	}
 
 	s := &Service{
-		cr:           config.DefaultManager,
+		cr:           config.DefaultService,
 		boundToScope: scopeID,
 		storage:      storage,
 		mu:           sync.RWMutex{},
@@ -246,7 +246,7 @@ func (sm *Service) RequestedStore(so scope.Option) (activeStore *Store, err erro
 // This flag only shows that admin does not want to show certain UI components at backend (like store switchers etc)
 // if Magento has only one store view but it does not check the store view collection.
 func (sm *Service) IsSingleStoreMode() bool {
-	isEnabled, err := sm.cr.GetBool(config.Path(PathSingleStoreModeEnabled)) // default scope
+	isEnabled, err := sm.cr.Bool(config.Path(PathSingleStoreModeEnabled)) // default scope
 	if config.NotKeyNotFoundError(err) {
 		// TODO maybe log error here
 		return false

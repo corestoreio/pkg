@@ -20,4 +20,6 @@ import "github.com/corestoreio/csfw/config"
 type ServiceOption func(*Service)
 
 // WithServiceConfigReader sets the root config.Reader to the Service.
-func WithServiceConfigReader(cr config.Reader) ServiceOption { return func(m *Service) { m.cr = cr } }
+func WithServiceConfigReader(cr config.Getter) ServiceOption {
+	return func(m *Service) { m.cr = cr }
+}

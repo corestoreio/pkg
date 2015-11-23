@@ -23,7 +23,7 @@ default values and their backend/source models (loading and saving).
 Those three elements represents the PackageConfiguration variable which can be found in any package.
 
 Your app which includes the csfw must merge all "PackageConfiguration"s into a single slice.
-You should submit all default values (interface config.Sectioner) to the config.Manager.ApplyDefaults()
+You should submit all default values (interface config.Sectioner) to the config.Service.ApplyDefaults()
 function.
 
 The models included in PackageConfiguration will be later used when handling the values
@@ -34,41 +34,41 @@ on the backend REST API and for debugging and testing. Only used in non performa
 
 Scope Values
 
-To get a value from the configuration manager via any Get* method you have to set up the arguments.
+To get a value from the configuration Service via any Get* method you have to set up the arguments.
 At least a config.Path() is needed. If you need a config value from another scope (store or website)
 you must also supply a Scope*() value. Without the scope the default value will be returned.
 The order of the arguments doesn't matter.
 
-	val := config.Manager.GetString(config.Path("path/to/setting"))
+	val := config.Service.String(config.Path("path/to/setting"))
 
 Above code returns the default value for path/to/setting key.
 
 Can also be rewritten without using slashes:
 
-	val := config.Manager.GetString(config.Path("path", "to", "setting"))
+	val := config.Service.String(config.Path("path", "to", "setting"))
 
 Returning a website scope based value:
 
-	w := store.Manager.Website()
-	val := config.Manager.GetString(config.Path("path/to/setting"), config.Scope(scope.WebsiteID, w))
+	w := store.Service.Website()
+	val := config.Service.String(config.Path("path/to/setting"), config.Scope(scope.WebsiteID, w))
 
 can be rewritten as:
 
-	w := store.Manager.Website()
-	val := config.Manager.GetString(config.Path("path/to/setting"), config.ScopeWebsite(w))
+	w := store.Service.Website()
+	val := config.Service.String(config.Path("path/to/setting"), config.ScopeWebsite(w))
 
 The code returns the value for a specific website scope. If the value has not been found then the
 default value will be returned.
 
 Returning a store scope based value:
 
-	w := store.Manager.Website()
-	val := config.Manager.GetString(config.Path("path/to/setting"), config.Scope(scope.StoreID, w))
+	w := store.Service.Website()
+	val := config.Service.String(config.Path("path/to/setting"), config.Scope(scope.StoreID, w))
 
 can be rewritten as:
 
-	w := store.Manager.Website()
-	val := config.Manager.GetString(config.Path("path/to/setting"), config.ScopeStore(w))
+	w := store.Service.Website()
+	val := config.Service.String(config.Path("path/to/setting"), config.ScopeStore(w))
 
 The code returns the value for a specific store scope. If the value has not been found then the
 default value will be returned.

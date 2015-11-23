@@ -57,7 +57,7 @@ var ErrMailChannelClosed = errors.New("The mail channel has been closed.")
 type Dialer interface {
 	// SetConfig allows instant access to the system wide configuration by the
 	// current scope ID.
-	SetConfig(config.Reader, scope.StoreIDer)
+	SetConfig(config.Getter, scope.StoreIDer)
 	// Dial initiates the connection to the mail server.
 	Dial() (gomail.SendCloser, error)
 }
@@ -75,8 +75,8 @@ type Daemon struct {
 	dialerIsCustom bool   // protects the custom dialer set via Option func
 	sendFunc       gomail.SendFunc
 	closed         bool
-	// Config contains the config.Manager
-	Config config.Reader
+	// Config contains the config.Service
+	Config config.Getter
 	// Scope current scope store id for this daemon
 	Scope scope.StoreID
 	// SmtpTimeout sets the time when the daemon should closes the connection
@@ -236,7 +236,7 @@ func (dm *Daemon) IsOffline() bool {
 	if nil == dm.Config {
 		return true
 	}
-	return dm.Config.GetBool(config.Path(PathSmtpDisable), config.ScopeStore(dm.Scope))
+	return dm.Config.Bool(config.Path(PathSmtpDisable), config.ScopeStore(dm.Scope))
 }
 
 // NewDaemon creates a new mail sending daemon to send to a SMTP server.
@@ -245,7 +245,7 @@ func (dm *Daemon) IsOffline() bool {
 // timeout to 30s.
 func NewDaemon(opts ...DaemonOption) (*Daemon, error) {
 	d := &Daemon{
-		Config:      config.DefaultManager,
+		Config:      config.DefaultService,
 		Scope:       scope.AdminScope,
 		SmtpTimeout: time.Second * 30,
 	}

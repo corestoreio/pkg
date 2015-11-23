@@ -16,61 +16,57 @@ package config
 
 import "golang.org/x/net/context"
 
-// ctxKey type is unexported to prevent collisions with context keys defined in
-// other packages.
-type ctxKey uint
-
-// Key* defines the keys to access a value in a context.Context
-const (
-	ctxKeyReader ctxKey = iota + 1
-	ctxKeyReaderPubSuber
-	ctxKeyScopedReader
-	ctxKeyWriter
+// ctx types are unexported to avoid collisions in context.Context with other packages
+type (
+	ctxKeyGetter         struct{}
+	ctxKeyGetterPubSuber struct{}
+	ctxKeyScopedGetter   struct{}
+	ctxKeyWriter         struct{}
 )
 
-// FromContextReader returns a config.Reader from a context. If not found returns
-// the config.DefaultManager
-func FromContextReader(ctx context.Context) Reader {
-	if r, ok := ctx.Value(ctxKeyReader).(Reader); ok {
+// FromContextGetter returns a config.Getter from a context. If not found returns
+// the config.DefaultService
+func FromContextGetter(ctx context.Context) Getter {
+	if r, ok := ctx.Value(ctxKeyGetter{}).(Getter); ok {
 		return r
 	}
-	return DefaultManager
+	return DefaultService
 }
 
-// NewContextReader adds a config.Reader to a context
-func NewContextReader(ctx context.Context, r Reader) context.Context {
-	return context.WithValue(ctx, ctxKeyReader, r)
+// NewContextGetter adds a config.Getter to a context
+func NewContextGetter(ctx context.Context, r Getter) context.Context {
+	return context.WithValue(ctx, ctxKeyGetter{}, r)
 }
 
-// FromContextScopedReader returns a config.ScopedReader from a context.
-func FromContextScopedReader(ctx context.Context) (r ScopedReader, ok bool) {
-	r, ok = ctx.Value(ctxKeyScopedReader).(ScopedReader)
+// FromContextScopedGetter returns a config.ScopedGetter from a context.
+func FromContextScopedGetter(ctx context.Context) (r ScopedGetter, ok bool) {
+	r, ok = ctx.Value(ctxKeyScopedGetter{}).(ScopedGetter)
 	return
 }
 
-// NewContextScopedReader adds a config.ScopedReader to a context
-func NewContextScopedReader(ctx context.Context, r ScopedReader) context.Context {
-	return context.WithValue(ctx, ctxKeyScopedReader, r)
+// NewContextScopedGetter adds a config.ScopedGetter to a context
+func NewContextScopedGetter(ctx context.Context, r ScopedGetter) context.Context {
+	return context.WithValue(ctx, ctxKeyScopedGetter{}, r)
 }
 
-// FromContextReaderPubSuber returns a config.ReaderPubSuber from a context.
-func FromContextReaderPubSuber(ctx context.Context) (r ReaderPubSuber, ok bool) {
-	r, ok = ctx.Value(ctxKeyReaderPubSuber).(ReaderPubSuber)
+// FromContextGetterPubSuber returns a config.GetterPubSuber from a context.
+func FromContextGetterPubSuber(ctx context.Context) (r GetterPubSuber, ok bool) {
+	r, ok = ctx.Value(ctxKeyGetterPubSuber{}).(GetterPubSuber)
 	return
 }
 
-// NewContextReaderPubSuber adds a ReaderPubSuber to a context.
-func NewContextReaderPubSuber(ctx context.Context, r ReaderPubSuber) context.Context {
-	return context.WithValue(ctx, ctxKeyReaderPubSuber, r)
+// NewContextGetterPubSuber adds a GetterPubSuber to a context.
+func NewContextGetterPubSuber(ctx context.Context, r GetterPubSuber) context.Context {
+	return context.WithValue(ctx, ctxKeyGetterPubSuber{}, r)
 }
 
 // FromContextWriter returns a config.Writer from a context.
 func FromContextWriter(ctx context.Context) (w Writer, ok bool) {
-	w, ok = ctx.Value(ctxKeyWriter).(Writer)
+	w, ok = ctx.Value(ctxKeyWriter{}).(Writer)
 	return
 }
 
 // NewContextWriter adds a writer to a context
 func NewContextWriter(ctx context.Context, w Writer) context.Context {
-	return context.WithValue(ctx, ctxKeyWriter, w)
+	return context.WithValue(ctx, ctxKeyWriter{}, w)
 }

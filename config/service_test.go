@@ -24,7 +24,9 @@ import (
 
 func init() {
 	dbc := csdb.MustConnectTest()
-	config.TableCollection.Init(dbc.NewSession())
+	if err := config.TableCollection.Init(dbc.NewSession()); err != nil {
+		panic(err)
+	}
 	if err := dbc.Close(); err != nil {
 		panic(err)
 	}
@@ -68,14 +70,14 @@ func TestScopeApplyDefaults(t *testing.T) {
 			},
 		},
 	)
-	s := config.NewManager()
+	s := config.NewService()
 	s.ApplyDefaults(pkgCfg)
 	cer, err := pkgCfg.FindFieldByPath("contact", "email", "recipient_email")
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	sval, err := s.GetString(config.Path("contact/email/recipient_email"))
+	sval, err := s.String(config.Path("contact/email/recipient_email"))
 	assert.NoError(t, err)
 	assert.Exactly(t, cer.Default.(string), sval)
 }
@@ -85,7 +87,7 @@ func TestApplyCoreConfigData(t *testing.T) {
 	defer func() { assert.NoError(t, dbc.Close()) }()
 	sess := dbc.NewSession(nil)
 
-	m := config.NewManager()
+	m := config.NewService()
 	if err := m.ApplyCoreConfigData(sess); err != nil {
 		t.Error(err)
 	}

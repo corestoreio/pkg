@@ -88,7 +88,7 @@ func (m *Manager) SubscribeToConfigChanges(s config.Subscriber) (subscriptionID 
 }
 
 // MessageConfig allows subscription to the publish/subscribe message system of
-// config.Manager. MessageConfig will be added via SubscribeToConfigChanges to the
+// config.Service. MessageConfig will be added via SubscribeToConfigChanges to the
 // config.Subscriber.
 // IF a configuration change
 func (m *Manager) MessageConfig(path string, s scope.Scope, id int64) {
@@ -134,7 +134,7 @@ func (m *Manager) allocate(dm *Daemon) Dialer {
 
 func NewManager(opts ...ManagerOption) (*Manager, error) {
 	m := &Manager{
-		emailConfig: newEmailConfig(config.DefaultManager),
+		emailConfig: newEmailConfig(config.DefaultService),
 		dialer:      make(map[uint64]Dialer),
 	}
 	m.Option(opts...)

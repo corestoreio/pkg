@@ -21,7 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var configMock = config.NewMockReader(
+var configMock = config.NewMockGetter(
 	config.WithMockInt(func(path string) int {
 		//		println("int", path)
 		switch path {

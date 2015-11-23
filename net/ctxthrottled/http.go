@@ -74,8 +74,8 @@ var DefaultDuration string = "h"
 
 // HTTPRateLimit faciliates using a Limiter to limit HTTP requests.
 type HTTPRateLimit struct {
-	// Config is the config.Manager with PubSub
-	Config config.ReaderPubSuber
+	// Config is the config.Service with PubSub
+	Config config.GetterPubSuber
 
 	// configScope config.ScopedReader todo for later: rate limit on a per website level
 
@@ -98,13 +98,13 @@ func (t *HTTPRateLimit) quota() throttled.RateQuota {
 	var burst, request int
 	var duration string
 
-	if burst, _ = t.Config.GetInt(config.Path(PathRateLimitBurst)); burst < 0 {
+	if burst, _ = t.Config.Int(config.Path(PathRateLimitBurst)); burst < 0 {
 		burst = DefaultBurst
 	}
-	if request, _ = t.Config.GetInt(config.Path(PathRateLimitRequests)); request == 0 {
+	if request, _ = t.Config.Int(config.Path(PathRateLimitRequests)); request == 0 {
 		request = DefaultRequests
 	}
-	if duration, _ = t.Config.GetString(config.Path(PathRateLimitDuration)); duration == "" {
+	if duration, _ = t.Config.String(config.Path(PathRateLimitDuration)); duration == "" {
 		duration = DefaultDuration
 	}
 
@@ -133,7 +133,7 @@ func (t *HTTPRateLimit) quota() throttled.RateQuota {
 // values in the RateLimitResult.
 func (t *HTTPRateLimit) WithRateLimit(rlStore throttled.GCRAStore, h ctxhttp.Handler) ctxhttp.Handler {
 	if t.Config == nil {
-		t.Config = config.DefaultManager
+		t.Config = config.DefaultService
 	}
 	if t.DeniedHandler == nil {
 		t.DeniedHandler = DefaultDeniedHandler

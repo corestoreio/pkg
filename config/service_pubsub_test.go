@@ -53,7 +53,7 @@ func TestPubSubBubbling(t *testing.T) {
 	defer errLogBuf.Reset()
 	testPath := "a/b/c"
 
-	m := config.NewManager()
+	m := config.NewService()
 
 	_, err := m.Subscribe("", nil)
 	assert.EqualError(t, err, config.ErrPathEmpty.Error())
@@ -86,7 +86,7 @@ func TestPubSubPanicSimple(t *testing.T) {
 	defer errLogBuf.Reset()
 	testPath := "x/y/z"
 
-	m := config.NewManager()
+	m := config.NewService()
 	subID, err := m.Subscribe(testPath, &testSubscriber{
 		f: func(path string, sg scope.Scope, id int64) error {
 			panic("Don't panic!")
@@ -105,7 +105,7 @@ func TestPubSubPanicError(t *testing.T) {
 	testPath := "™/ö/º"
 
 	var pErr = errors.New("OMG! Panic!")
-	m := config.NewManager()
+	m := config.NewService()
 	subID, err := m.Subscribe(testPath, &testSubscriber{
 		f: func(path string, sg scope.Scope, id int64) error {
 			panic(pErr)
@@ -122,7 +122,7 @@ func TestPubSubPanicError(t *testing.T) {
 
 func TestPubSubPanicMultiple(t *testing.T) {
 	defer errLogBuf.Reset()
-	m := config.NewManager()
+	m := config.NewService()
 
 	subID, err := m.Subscribe("x", &testSubscriber{
 		f: func(path string, sg scope.Scope, id int64) error {
@@ -163,7 +163,7 @@ func TestPubSubUnsubscribe(t *testing.T) {
 	defer errLogBuf.Reset()
 
 	var pErr = errors.New("WTF? Panic!")
-	m := config.NewManager()
+	m := config.NewService()
 	subID, err := m.Subscribe("x/y/z", &testSubscriber{
 		f: func(path string, sg scope.Scope, id int64) error {
 			panic(pErr)
@@ -174,7 +174,7 @@ func TestPubSubUnsubscribe(t *testing.T) {
 	assert.NoError(t, m.Unsubscribe(subID))
 	assert.NoError(t, m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(123)))
 	time.Sleep(time.Millisecond) // wait for goroutine ...
-	assert.Contains(t, errLogBuf.String(), `config.Manager.Write path: "stores/123/x/y/z" val: 321`)
+	assert.Contains(t, errLogBuf.String(), `config.Service.Write path: "stores/123/x/y/z" val: 321`)
 	assert.NoError(t, m.Close())
 }
 
@@ -190,7 +190,7 @@ func TestPubSubEvict(t *testing.T) {
 	levelCall := new(levelCalls)
 
 	var pErr = errors.New("WTF Eviction? Panic!")
-	m := config.NewManager()
+	m := config.NewService()
 	subID, err := m.Subscribe("x/y", &testSubscriber{
 		f: func(path string, sg scope.Scope, id int64) error {
 			assert.Contains(t, path, "x/y")

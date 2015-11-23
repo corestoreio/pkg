@@ -26,7 +26,7 @@ import (
 
 func TestPasswordFromConfig(t *testing.T) {
 
-	cfg := config.NewMockReader(
+	cfg := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
 			config.MockPathScopeDefault(ctxjwt.PathJWTPassword): `Rump3lst!lzch3n`,
 		}),

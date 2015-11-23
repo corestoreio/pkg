@@ -57,7 +57,7 @@ type (
 	// Storage contains a mutex and the raw slices from the database. @todo maybe make private?
 	Storage struct {
 		lastErrors []error
-		cr         config.Reader
+		cr         config.Getter
 		mu         sync.RWMutex
 		websites   TableWebsiteSlice
 		groups     TableGroupSlice
@@ -88,7 +88,7 @@ func SetStorageStores(tss ...*TableStore) StorageOption {
 
 // SetStorageConfig sets the configuration Reader. Optional.
 // Default reader is config.DefaultManager
-func SetStorageConfig(cr config.Reader) StorageOption {
+func SetStorageConfig(cr config.Getter) StorageOption {
 	return func(s *Storage) { s.cr = cr }
 }
 
@@ -124,7 +124,7 @@ func WithDatabaseInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) StorageOpt
 // 		sto, err = store.NewStorage( store.WithDatabaseInit(dbrSession) )
 func NewStorage(opts ...StorageOption) (*Storage, error) {
 	s := &Storage{
-		cr: config.DefaultManager,
+		cr: config.DefaultService,
 		mu: sync.RWMutex{},
 	}
 	for _, opt := range opts {

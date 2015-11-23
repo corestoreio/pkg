@@ -22,26 +22,26 @@ import (
 	"golang.org/x/net/context"
 )
 
-func TestContextMustReader(t *testing.T) {
-	mr := config.NewMockReader()
-	ctx := config.NewContextReader(context.Background(), mr)
-	mrHave := config.FromContextReader(ctx)
+func TestContextMustGetter(t *testing.T) {
+	mr := config.NewMockGetter()
+	ctx := config.NewContextGetter(context.Background(), mr)
+	mrHave := config.FromContextGetter(ctx)
 	assert.Exactly(t, mr, mrHave)
 
-	ctx = config.NewContextReader(context.Background(), nil)
-	mrHave = config.FromContextReader(ctx)
-	assert.Exactly(t, config.DefaultManager, mrHave)
+	ctx = config.NewContextGetter(context.Background(), nil)
+	mrHave = config.FromContextGetter(ctx)
+	assert.Exactly(t, config.DefaultService, mrHave)
 }
 
-func TestContextMustReaderPubSuber(t *testing.T) {
-	mr := config.NewMockReader()
-	ctx := config.NewContextReaderPubSuber(context.Background(), mr)
-	mrHave, ok := config.FromContextReaderPubSuber(ctx)
+func TestContextMustGetterPubSuber(t *testing.T) {
+	mr := config.NewMockGetter()
+	ctx := config.NewContextGetterPubSuber(context.Background(), mr)
+	mrHave, ok := config.FromContextGetterPubSuber(ctx)
 	assert.Exactly(t, mr, mrHave)
 	assert.True(t, ok)
 
-	ctx = config.NewContextReaderPubSuber(context.Background(), nil)
-	mrHave, ok = config.FromContextReaderPubSuber(ctx)
+	ctx = config.NewContextGetterPubSuber(context.Background(), nil)
+	mrHave, ok = config.FromContextGetterPubSuber(ctx)
 	assert.Nil(t, mrHave)
 	assert.False(t, ok)
 }

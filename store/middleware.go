@@ -30,18 +30,18 @@ import (
 // is equal to the one store in the configuration, if not
 // i.e. redirect from http://example.com/store/ to http://www.example.com/store/
 // @see app/code/Magento/Store/App/FrontController/Plugin/RequestPreprocessor.php
-func WithValidateBaseURL(cr config.ReaderPubSuber) ctxhttp.Middleware {
+func WithValidateBaseURL(cr config.GetterPubSuber) ctxhttp.Middleware {
 
 	// Having the GetBool command here, means you must restart the app to take
 	// changes in effect. @todo refactor and use pub/sub to automatically change
 	// the isRedirectToBase value.
-	checkBaseURL, err := cr.GetBool(config.Path(PathRedirectToBase)) // scope default
+	checkBaseURL, err := cr.Bool(config.Path(PathRedirectToBase)) // scope default
 	if config.NotKeyNotFoundError(err) && PkgLog.IsDebug() {
-		PkgLog.Debug("ctxhttp.WithValidateBaseUrl.GetBool", "err", err, "path", PathRedirectToBase)
+		PkgLog.Debug("ctxhttp.WithValidateBaseUrl.Bool", "err", err, "path", PathRedirectToBase)
 	}
 
 	redirectCode := http.StatusMovedPermanently
-	if rc, err := cr.GetInt(config.Path(PathRedirectToBase)); rc != redirectCode && false == config.NotKeyNotFoundError(err) {
+	if rc, err := cr.Int(config.Path(PathRedirectToBase)); rc != redirectCode && false == config.NotKeyNotFoundError(err) {
 		redirectCode = http.StatusFound
 	}
 

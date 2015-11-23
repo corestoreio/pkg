@@ -77,7 +77,7 @@ func (i Scope) String() string {
 	return _ScopeName[_ScopeIndex[i]:_ScopeIndex[i+1]]
 }
 
-// PS path separator used in the database table core_config_data and in config.Manager
+// PS path separator used in the database table core_config_data and in config.Service
 const PS = "/"
 
 // StrScope represents a string scope from table core_config_data column scope with

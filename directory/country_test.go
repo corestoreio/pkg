@@ -35,7 +35,7 @@ func TestDefaultCountry(t *testing.T) {
 }
 
 func TestAllowedCountriesFound(t *testing.T) {
-	cr := config.NewMockReader(
+	cr := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
 			config.MockPathScopeStore(1, directory.PathCountryAllowed): "DE,AU,CH,AT",
 		}),
@@ -47,7 +47,7 @@ func TestAllowedCountriesFound(t *testing.T) {
 }
 
 func TestAllowedCountriesDefault(t *testing.T) {
-	cr := config.NewMockReader(
+	cr := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{}),
 	)
 

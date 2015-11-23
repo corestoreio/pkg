@@ -54,10 +54,10 @@ const (
 // have its own configuration settings which overrides the default scope and
 // website scope.
 type Store struct {
-	cr config.Reader // internal root config.Reader which can be overriden
-	// Config contains a config.Manager which takes care of the scope based
+	cr config.Getter // internal root config.Reader which can be overriden
+	// Config contains a config.Service which takes care of the scope based
 	// configuration values.
-	Config config.ScopedReader
+	Config config.ScopedGetter
 	// Website points to the current website for this store. No integrity checks.
 	// Can be nil.
 	Website *Website
@@ -95,7 +95,7 @@ var (
 // config.DefaultManager. You should call this function before calling other
 // option functions otherwise your preferred config.Reader won't be inherited
 // to a Website or a Group.
-func SetStoreConfig(cr config.Reader) StoreOption { return func(s *Store) { s.cr = cr } }
+func SetStoreConfig(cr config.Getter) StoreOption { return func(s *Store) { s.cr = cr } }
 
 // NewStore creates a new Store. Returns an error if the first three arguments
 // are nil. Returns an error if integrity checks fail. config.Reader will be
@@ -131,7 +131,7 @@ func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOpt
 	}
 
 	s = &Store{
-		cr:      config.DefaultManager,
+		cr:      config.DefaultService,
 		Data:    ts,
 		Website: nw,
 		Group:   ng,
@@ -271,14 +271,14 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 		return url.URL{}, fmt.Errorf("Unsupported UrlType: %d", ut)
 	}
 
-	rawURL := s.Config.GetString(p)
+	rawURL := s.Config.String(p)
 
 	if strings.Contains(rawURL, PlaceholderBaseURL) {
 		// TODO(cs) replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
 		// getDistroBaseUrl will be generated from the $_SERVER variable,
-		base, err := s.cr.GetString(config.Path(config.PathCSBaseURL))
+		base, err := s.cr.String(config.Path(config.PathCSBaseURL))
 		if config.NotKeyNotFoundError(err) {
-			PkgLog.Debug("store.Store.BaseURL.GetString", "err", err, "path", config.PathCSBaseURL)
+			PkgLog.Debug("store.Store.BaseURL.String", "err", err, "path", config.PathCSBaseURL)
 			base = config.CSBaseURL
 		}
 		rawURL = strings.Replace(rawURL, PlaceholderBaseURL, base, 1)
@@ -295,7 +295,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 
 // IsFrontURLSecure returns true from the config if the frontend must be secure.
 func (s *Store) IsFrontURLSecure() bool {
-	return s.Config.GetBool(PathSecureInFrontend)
+	return s.Config.Bool(PathSecureInFrontend)
 }
 
 // IsCurrentlySecure checks if a request for a give store aka. scope is secure. Checks

@@ -34,11 +34,11 @@ const (
 // A group is assigned to one website and a group can have multiple stores.
 // A group does not have any kind of configuration setting.
 type Group struct {
-	cr config.Reader // internal root config.Reader which can be overridden
-	// Config contains a config.Manager which takes care of the scope based
+	cr config.Getter // internal root config.Reader which can be overridden
+	// Config contains a config.Service which takes care of the scope based
 	// configuration values. Not an official feature based on a Group.
 	// This Config can be nil when a Website has not yet been set.
-	Config config.ScopedReader
+	Config config.ScopedGetter
 
 	// Data contains the raw group data.
 	Data *TableGroup
@@ -68,7 +68,7 @@ var (
 // config.DefaultManager. You should call this function before calling other
 // option functions otherwise your preferred config.Reader won't be inherited
 // to a Website or a Store.
-func SetGroupConfig(cr config.Reader) GroupOption { return func(g *Group) { g.cr = cr } }
+func SetGroupConfig(cr config.Getter) GroupOption { return func(g *Group) { g.cr = cr } }
 
 // SetGroupWebsite assigns a website to a group. If website ID does not match
 // the group website ID then add error will be generated.
@@ -133,7 +133,7 @@ func NewGroup(tg *TableGroup, opts ...GroupOption) (*Group, error) {
 	}
 
 	g := &Group{
-		cr:   config.DefaultManager,
+		cr:   config.DefaultService,
 		Data: tg,
 	}
 	return g.ApplyOptions(opts...)

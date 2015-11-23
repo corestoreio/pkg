@@ -55,8 +55,8 @@ func (u *User) ApplyOptions(opts ...UserOption) *User {
 	return u
 }
 
-func (u *User) Authenticate(cr config.Reader, h crypto.Hasher, username, password string) error {
-	isCaseSensitive := cr.GetBool(config.Path("admin/security/use_case_sensitive_login"))
+func (u *User) Authenticate(cr config.Getter, h crypto.Hasher, username, password string) error {
+	isCaseSensitive := cr.Bool(config.Path("admin/security/use_case_sensitive_login"))
 
 	if !isCaseSensitive {
 		// ... hmm

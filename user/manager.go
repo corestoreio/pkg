@@ -21,7 +21,7 @@ import (
 )
 
 type Manager struct {
-	cr config.Reader
+	cr config.Getter
 
 	users UserSlice
 	mu    sync.RWMutex

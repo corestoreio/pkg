@@ -86,7 +86,7 @@ func TestHTTPRateLimit(t *testing.T) {
 }
 
 func TestHTTPRateLimitConfig(t *testing.T) {
-	cr := config.NewMockReader(
+	cr := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
 			config.MockPathScopeDefault(ctxthrottled.PathRateLimitBurst):    0,
 			config.MockPathScopeDefault(ctxthrottled.PathRateLimitRequests): 1,

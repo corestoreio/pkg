@@ -22,27 +22,28 @@ import (
 	"sync"
 	"time"
 
+	"encoding/json"
+
 	"github.com/corestoreio/csfw/config/scope"
-	"github.com/dustin/gojson"
 	"golang.org/x/net/context"
 )
 
-var _ Reader = (*MockReader)(nil)
-var _ ReaderPubSuber = (*MockReader)(nil)
+var _ Getter = (*MockGet)(nil)
+var _ GetterPubSuber = (*MockGet)(nil)
 
-// mockOptionFunc to initialize the NewMockReader
-type mockOptionFunc func(*MockReader)
+// mockOptionFunc to initialize the NewMockGetter
+type mockOptionFunc func(*MockGet)
 
-// MockReader used for testing. Contains functions which will be called in the
-// appropriate methods of interface config.Reader.
-type MockReader struct {
+// MockGet used for testing. Contains functions which will be called in the
+// appropriate methods of interface config.Getter.
+type MockGet struct {
 	mu              sync.RWMutex
 	mv              MockPV
-	String          func(path string) (string, error)
-	Bool            func(path string) (bool, error)
-	F64             func(path string) (float64, error)
-	Int             func(path string) (int, error)
-	Time            func(path string) (time.Time, error)
+	FString         func(path string) (string, error)
+	FBool           func(path string) (bool, error)
+	FFloat64        func(path string) (float64, error)
+	FInt            func(path string) (int, error)
+	FTime           func(path string) (time.Time, error)
 	SubscriptionID  int
 	SubscriptionErr error
 }
@@ -69,35 +70,35 @@ func MockPathScopeStore(id int64, path string) string {
 	return scope.StrStores.FQPathInt64(id, path)
 }
 
-// WithMockString returns a function which can be used in the NewMockReader().
+// WithMockString returns a function which can be used in the NewMockGetter().
 // Your function returns a string value from a given path.
 func WithMockString(f func(path string) (string, error)) mockOptionFunc {
-	return func(mr *MockReader) { mr.String = f }
+	return func(mr *MockGet) { mr.FString = f }
 }
 
-// WithMockBool returns a function which can be used in the NewMockReader().
+// WithMockBool returns a function which can be used in the NewMockGetter().
 // Your function returns a bool value from a given path.
 func WithMockBool(f func(path string) (bool, error)) mockOptionFunc {
-	return func(mr *MockReader) { mr.Bool = f }
+	return func(mr *MockGet) { mr.FBool = f }
 }
 
-// WithMockFloat64 returns a function which can be used in the NewMockReader().
+// WithMockFloat64 returns a function which can be used in the NewMockGetter().
 // Your function returns a float64 value from a given path.
 func WithMockFloat64(f func(path string) (float64, error)) mockOptionFunc {
-	return func(mr *MockReader) { mr.F64 = f }
+	return func(mr *MockGet) { mr.FFloat64 = f }
 }
 
-// WithMockInt returns a function which can be used in the NewMockReader().
+// WithMockInt returns a function which can be used in the NewMockGetter().
 // Your function returns an int value from a given path.
 func WithMockInt(f func(path string) (int, error)) mockOptionFunc {
-	return func(mr *MockReader) { mr.Int = f }
+	return func(mr *MockGet) { mr.FInt = f }
 }
 
-// WithMockTime returns a function which can be used in the NewMockReader().
+// WithMockTime returns a function which can be used in the NewMockGetter().
 // Your function returns a Time value from a given path.
 func WithMockTime(f func(path string) (time.Time, error)) mockOptionFunc {
-	return func(mr *MockReader) {
-		mr.Time = f
+	return func(mr *MockGet) {
+		mr.FTime = f
 	}
 }
 
@@ -105,7 +106,7 @@ func WithMockTime(f func(path string) (time.Time, error)) mockOptionFunc {
 // Key is the fully qualified configuration path and value is the value.
 // Value must be of the same type as returned by the functions.
 func WithMockValues(pathValues MockPV) mockOptionFunc {
-	return func(mr *MockReader) {
+	return func(mr *MockGet) {
 		mr.mu.Lock()
 		mr.mv = pathValues
 		mr.mu.Unlock()
@@ -126,23 +127,23 @@ func WithMockValuesJSON(r io.Reader) mockOptionFunc {
 	if err != nil {
 		panic(err)
 	}
-	return func(mr *MockReader) {
+	return func(mr *MockGet) {
 		mr.mu.Lock()
 		mr.mv = pathValues
 		mr.mu.Unlock()
 	}
 }
 
-// NewContextMockReader adds a MockReader to a context.
-func NewContextMockReader(ctx context.Context, opts ...mockOptionFunc) context.Context {
-	return context.WithValue(ctx, ctxKeyReader, NewMockReader(opts...))
+// NewContextMockGetter adds a MockGetter to a context.
+func NewContextMockGetter(ctx context.Context, opts ...mockOptionFunc) context.Context {
+	return context.WithValue(ctx, ctxKeyGetter{}, NewMockGetter(opts...))
 }
 
-// NewMockReader creates a new MockReader used in testing.
+// NewMockGetter creates a new MockGetter used in testing.
 // Allows you to set different options duration creation or you can
 // set the struct fields afterwards.
-func NewMockReader(opts ...mockOptionFunc) *MockReader {
-	mr := &MockReader{}
+func NewMockGetter(opts ...mockOptionFunc) *MockGet {
+	mr := &MockGet{}
 	for _, opt := range opts {
 		opt(mr)
 	}
@@ -150,7 +151,7 @@ func NewMockReader(opts ...mockOptionFunc) *MockReader {
 }
 
 // UpdateValues adds or overwrites the internal path => value map.
-func (mr *MockReader) UpdateValues(pathValues MockPV) {
+func (mr *MockGet) UpdateValues(pathValues MockPV) {
 	mr.mu.Lock()
 	for k, v := range pathValues {
 		mr.mv[k] = v
@@ -158,14 +159,14 @@ func (mr *MockReader) UpdateValues(pathValues MockPV) {
 	mr.mu.Unlock()
 }
 
-func (mr *MockReader) hasVal(path string) bool {
+func (mr *MockGet) hasVal(path string) bool {
 	mr.mu.Lock()
 	defer mr.mu.Unlock()
 	_, ok := mr.mv[path]
 	return ok
 }
 
-func (mr *MockReader) getVal(path string) interface{} {
+func (mr *MockGet) getVal(path string) interface{} {
 	mr.mu.Lock()
 	defer mr.mu.Unlock()
 	v := mr.mv[path]
@@ -173,7 +174,7 @@ func (mr *MockReader) getVal(path string) interface{} {
 	return v
 }
 
-func (mr *MockReader) valString(path string) (string, error) {
+func (mr *MockGet) valString(path string) (string, error) {
 	switch s := mr.getVal(path).(type) {
 	case string:
 		return s, nil
@@ -186,20 +187,20 @@ func (mr *MockReader) valString(path string) (string, error) {
 	}
 }
 
-// GetString returns a string value
-func (mr *MockReader) GetString(opts ...ArgFunc) (string, error) {
+// String returns a string value
+func (mr *MockGet) String(opts ...ArgFunc) (string, error) {
 	path := mustNewArg(opts...).scopePath()
 	switch {
 	case mr.hasVal(path):
 		return mr.valString(path)
-	case mr.String != nil:
-		return mr.String(path)
+	case mr.FString != nil:
+		return mr.FString(path)
 	default:
 		return "", ErrKeyNotFound
 	}
 }
 
-func (mr *MockReader) valBool(path string) (bool, error) {
+func (mr *MockGet) valBool(path string) (bool, error) {
 	switch b := mr.getVal(path).(type) {
 	case bool:
 		return b, nil
@@ -215,20 +216,20 @@ func (mr *MockReader) valBool(path string) (bool, error) {
 	}
 }
 
-// GetBool returns a bool value
-func (mr *MockReader) GetBool(opts ...ArgFunc) (bool, error) {
+// Bool returns a bool value
+func (mr *MockGet) Bool(opts ...ArgFunc) (bool, error) {
 	path := mustNewArg(opts...).scopePath()
 	switch {
 	case mr.hasVal(path):
 		return mr.valBool(path)
-	case mr.Bool != nil:
-		return mr.Bool(path)
+	case mr.FBool != nil:
+		return mr.FBool(path)
 	default:
 		return false, ErrKeyNotFound
 	}
 }
 
-func (mr *MockReader) valFloat64(path string) (float64, error) {
+func (mr *MockGet) valFloat64(path string) (float64, error) {
 	switch s := mr.getVal(path).(type) {
 	case float64:
 		return s, nil
@@ -239,20 +240,20 @@ func (mr *MockReader) valFloat64(path string) (float64, error) {
 	}
 }
 
-// GetFloat64 returns a float64 value
-func (mr *MockReader) GetFloat64(opts ...ArgFunc) (float64, error) {
+// Float64 returns a float64 value
+func (mr *MockGet) Float64(opts ...ArgFunc) (float64, error) {
 	path := mustNewArg(opts...).scopePath()
 	switch {
 	case mr.hasVal(path):
 		return mr.valFloat64(path)
-	case mr.F64 != nil:
-		return mr.F64(path)
+	case mr.FFloat64 != nil:
+		return mr.FFloat64(path)
 	default:
 		return 0.0, ErrKeyNotFound
 	}
 }
 
-func (mr *MockReader) valInt(path string) (int, error) {
+func (mr *MockGet) valInt(path string) (int, error) {
 	switch s := mr.getVal(path).(type) {
 	case int:
 		return s, nil
@@ -263,20 +264,20 @@ func (mr *MockReader) valInt(path string) (int, error) {
 	}
 }
 
-// GetInt returns an integer value
-func (mr *MockReader) GetInt(opts ...ArgFunc) (int, error) {
+// Int returns an integer value
+func (mr *MockGet) Int(opts ...ArgFunc) (int, error) {
 	path := mustNewArg(opts...).scopePath()
 	switch {
 	case mr.hasVal(path):
 		return mr.valInt(path)
-	case mr.Int != nil:
-		return mr.Int(path)
+	case mr.FInt != nil:
+		return mr.FInt(path)
 	default:
 		return 0, ErrKeyNotFound
 	}
 }
 
-func (mr *MockReader) valDateTime(path string) (time.Time, error) {
+func (mr *MockGet) valDateTime(path string) (time.Time, error) {
 	switch s := mr.getVal(path).(type) {
 	case time.Time:
 		return s, nil
@@ -285,14 +286,14 @@ func (mr *MockReader) valDateTime(path string) (time.Time, error) {
 	}
 }
 
-// GetDateTime returns a time value
-func (mr *MockReader) GetDateTime(opts ...ArgFunc) (time.Time, error) {
+// DateTime returns a time value
+func (mr *MockGet) DateTime(opts ...ArgFunc) (time.Time, error) {
 	path := mustNewArg(opts...).scopePath()
 	switch {
 	case mr.hasVal(path):
 		return mr.valDateTime(path)
-	case mr.Time != nil:
-		return mr.Time(path)
+	case mr.FTime != nil:
+		return mr.FTime(path)
 	default:
 		return time.Time{}, ErrKeyNotFound
 	}
@@ -300,14 +301,14 @@ func (mr *MockReader) GetDateTime(opts ...ArgFunc) (time.Time, error) {
 
 // Subscribe returns the before applied SubscriptionID and SubscriptionErr
 // Does not start any underlying Goroutines.
-func (mr *MockReader) Subscribe(path string, s MessageReceiver) (subscriptionID int, err error) {
+func (mr *MockGet) Subscribe(path string, s MessageReceiver) (subscriptionID int, err error) {
 	return mr.SubscriptionID, mr.SubscriptionErr
 }
 
 // NewScoped creates a new config.ScopedReader which uses the underlying
 // mocked paths and values.
-func (mr *MockReader) NewScoped(websiteID, groupID, storeID int64) ScopedReader {
-	return newScopedManager(mr, websiteID, groupID, storeID)
+func (mr *MockGet) NewScoped(websiteID, groupID, storeID int64) ScopedGetter {
+	return newScopedService(mr, websiteID, groupID, storeID)
 }
 
 // From html/template/content.go

@@ -30,7 +30,7 @@ func init() {
 
 func TestSourceCurrencyAll(t *testing.T) {
 
-	r := config.NewMockReader(
+	r := config.NewMockGetter(
 		config.WithMockString(func(path string) (string, error) {
 			t.Log(path)
 			switch path {
@@ -44,8 +44,8 @@ func TestSourceCurrencyAll(t *testing.T) {
 	var s scope.MockID = 1
 
 	sca := directory.NewSourceCurrencyAll(config.ModelConstructor{
-		ConfigReader: r,
-		ScopeStore:   s,
+		Config:     r,
+		ScopeStore: s,
 	})
 
 	t.Logf("\n%#v\n", sca.Options())

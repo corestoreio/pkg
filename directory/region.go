@@ -22,6 +22,6 @@ type (
 )
 
 // ShowNonRequiredState
-func ShowNonRequiredState(cr config.ScopedReader) bool {
-	return cr.GetBool(PathDisplayAllStates)
+func ShowNonRequiredState(cr config.ScopedGetter) bool {
+	return cr.Bool(PathDisplayAllStates)
 }

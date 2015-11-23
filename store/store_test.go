@@ -233,14 +233,14 @@ func TestStoreBaseURLandPath(t *testing.T) {
 	}
 
 	tests := []struct {
-		haveR        config.Reader
+		haveR        config.Getter
 		haveUT       config.URLType
 		haveIsSecure bool
 		wantBaseUrl  string
 		wantPath     string
 	}{
 		{
-			config.NewMockReader(config.WithMockString(
+			config.NewMockGetter(config.WithMockString(
 				func(path string) (string, error) {
 					switch path {
 					case config.MockPathScopeDefault(store.PathSecureBaseURL):
@@ -254,7 +254,7 @@ func TestStoreBaseURLandPath(t *testing.T) {
 			config.URLTypeWeb, true, "https://corestore.io/", "/",
 		},
 		{
-			config.NewMockReader(config.WithMockString(
+			config.NewMockGetter(config.WithMockString(
 				func(path string) (string, error) {
 					switch path {
 					case config.MockPathScopeDefault(store.PathSecureBaseURL):
@@ -268,7 +268,7 @@ func TestStoreBaseURLandPath(t *testing.T) {
 			config.URLTypeWeb, false, "http://myplatform.io/customer1/", "/customer1/",
 		},
 		{
-			config.NewMockReader(config.WithMockString(
+			config.NewMockGetter(config.WithMockString(
 				func(path string) (string, error) {
 					switch path {
 					case config.MockPathScopeDefault(store.PathSecureBaseURL):

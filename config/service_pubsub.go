@@ -23,7 +23,7 @@ import (
 )
 
 // ErrPublisherClosed will returned when the channel has been closed.
-var ErrPublisherClosed = errors.New("config Manager Publisher already closed")
+var ErrPublisherClosed = errors.New("config Service Publisher already closed")
 
 // MessageReceiver allows you to listen to write actions. The order of calling
 // each subscriber is totally random. If a subscriber panics, it gets securely
@@ -39,9 +39,9 @@ type MessageReceiver interface {
 	MessageConfig(path string, sg scope.Scope, id int64) error
 }
 
-// Subscriber represents the overall manager to receive subscriptions from
+// Subscriber represents the overall service to receive subscriptions from
 // MessageReceiver interfaces. This interface is at the moment only implemented
-// by the config.Manager.
+// by the config.Service.
 type Subscriber interface {
 	// Subscribe subscribes a MessageReceiver to a path.
 	// Path allows you to filter to which path or part of a path you would like to listen.
@@ -53,7 +53,7 @@ type Subscriber interface {
 	Subscribe(path string, s MessageReceiver) (subscriptionID int, err error)
 }
 
-// pubSub embedded pointer struct into the Manager
+// pubSub embedded pointer struct into the Service
 type pubSub struct {
 	// subMap, subscribed writers are getting called when a write event
 	// will happen. String is the path (aka topic) and int the Subscriber ID for later

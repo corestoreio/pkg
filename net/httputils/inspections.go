@@ -36,21 +36,21 @@ const PathOffloaderHeader = "web/secure/offloader_header"
 // CtxIsSecure same as IsSecure() but extract the config.Reader out of the context.
 // Wrapper function.
 func CtxIsSecure(ctx context.Context, r *http.Request) bool {
-	return IsSecure(config.FromContextReader(ctx), r)
+	return IsSecure(config.FromContextGetter(ctx), r)
 }
 
 // IsSecure checks if a request has been sent over a TLS connection. Also checks
 // if the app runs behind a proxy server and therefore checks the off loader header.
-func IsSecure(cr config.Reader, r *http.Request) bool {
+func IsSecure(cr config.Getter, r *http.Request) bool {
 	// due to import cycle this function must be in this package
 	if r.TLS != nil {
 		return true
 	}
 
-	oh, err := cr.GetString(config.Path(PathOffloaderHeader), config.ScopeDefault())
+	oh, err := cr.String(config.Path(PathOffloaderHeader), config.ScopeDefault())
 	if err != nil {
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("net.httputils.IsSecure.FromContextReader.GetString", "err", err, "path", PathOffloaderHeader)
+			PkgLog.Debug("net.httputils.IsSecure.FromContextReader.String", "err", err, "path", PathOffloaderHeader)
 		}
 		return false
 	}

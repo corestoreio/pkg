@@ -28,15 +28,15 @@ type (
 )
 
 // DefaultCountry returns the country code. Store argument is optional.
-func DefaultCountry(cr config.ScopedReader) string {
-	return cr.GetString(PathDefaultCountry)
+func DefaultCountry(cr config.ScopedGetter) string {
+	return cr.String(PathDefaultCountry)
 }
 
 // AllowedCountries returns a list of all allowed countries per scope.
 // This function might gets refactored into a SourceModel.
 // May return nil,nil when it's unable to determine any list of countries.
-func AllowedCountries(cr config.ScopedReader) (utils.StringSlice, error) {
-	cStr := cr.GetString(PathCountryAllowed)
+func AllowedCountries(cr config.ScopedGetter) (utils.StringSlice, error) {
+	cStr := cr.String(PathCountryAllowed)
 
 	if cStr == "" {
 		field, err := PackageConfiguration.FindFieldByPath(PathCountryAllowed) // get default value

@@ -118,7 +118,7 @@ func isValidPath(paths ...string) bool {
 }
 
 // arg responsible for the correct scope key e.g.: stores/2/system/currency/installed => scope/scope_id/path
-// which is used by the underlying configuration manager to fetch or store a value
+// which is used by the underlying configuration Service to fetch or store a value
 type arg struct {
 	pathSlice  []string // pa is the three level path e.g. a/b/c split by slash
 	scope      scope.Scope

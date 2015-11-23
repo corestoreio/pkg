@@ -35,16 +35,16 @@ type gomailPlainDialer struct {
 }
 
 // SetConfigReader noop method to comply with the interface Dialer.
-func (gomailPlainDialer) SetConfigReader(config.Reader) {
+func (gomailPlainDialer) SetConfigReader(config.Getter) {
 	// noop
 }
 
 type emailConfig struct {
-	Config config.Reader
+	Config config.Getter
 }
 
 func (c *emailConfig) getHost(s config.ScopeIDer) string {
-	h := c.Config.GetString(config.Path(PathSmtpHost), config.ScopeStore(s))
+	h := c.Config.String(config.Path(PathSmtpHost), config.ScopeStore(s))
 	if h == "" {
 		h = defaultHost
 	}
@@ -52,7 +52,7 @@ func (c *emailConfig) getHost(s config.ScopeIDer) string {
 }
 
 func (c *emailConfig) getPort(s config.ScopeIDer) int {
-	p := c.Config.GetInt(config.Path(PathSmtpPort), config.ScopeStore(s))
+	p := c.Config.Int(config.Path(PathSmtpPort), config.ScopeStore(s))
 	if p < 1 {
 		p = defaultPort
 	}
@@ -60,14 +60,14 @@ func (c *emailConfig) getPort(s config.ScopeIDer) int {
 }
 
 func (c *emailConfig) getUsername(s config.ScopeIDer) string {
-	return c.Config.GetString(config.Path(PathSmtpUsername), config.ScopeStore(s))
+	return c.Config.String(config.Path(PathSmtpUsername), config.ScopeStore(s))
 }
 
 func (c *emailConfig) getPassword(s config.ScopeIDer) string {
-	return c.Config.GetString(config.Path(PathSmtpPassword), config.ScopeStore(s))
+	return c.Config.String(config.Path(PathSmtpPassword), config.ScopeStore(s))
 }
 
-func newEmailConfig(c config.Reader) *emailConfig {
+func newEmailConfig(c config.Getter) *emailConfig {
 	return &emailConfig{
 		Config: c,
 	}

@@ -27,8 +27,8 @@ type Currency struct {
 }
 
 // BaseCurrencyCode retrieves application base currency code
-func BaseCurrencyCode(cr config.Reader) (currency.Currency, error) {
-	base, err := cr.GetString(config.Path(PathCurrencyBase))
+func BaseCurrencyCode(cr config.Getter) (currency.Currency, error) {
+	base, err := cr.String(config.Path(PathCurrencyBase))
 	if config.NotKeyNotFoundError(err) {
 		return currency.Currency{}, err
 	}
@@ -36,8 +36,8 @@ func BaseCurrencyCode(cr config.Reader) (currency.Currency, error) {
 }
 
 // AllowedCurrencies returns all installed currencies from global scope.
-func AllowedCurrencies(cr config.Reader) ([]string, error) {
-	installedCur, err := cr.GetString(config.Path(PathSystemCurrencyInstalled))
+func AllowedCurrencies(cr config.Getter) ([]string, error) {
+	installedCur, err := cr.String(config.Path(PathSystemCurrencyInstalled))
 	if config.NotKeyNotFoundError(err) {
 		return nil, err
 	}

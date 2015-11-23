@@ -45,7 +45,7 @@ func TestCtxIsSecure(t *testing.T) {
 			true,
 		},
 		{
-			config.NewContextMockReader(context.Background(), config.WithMockValues(config.MockPV{
+			config.NewContextMockGetter(context.Background(), config.WithMockValues(config.MockPV{
 				config.MockPathScopeDefault(httputils.PathOffloaderHeader): "X_FORWARDED_PROTO",
 			})),
 			func() *http.Request {
@@ -59,7 +59,7 @@ func TestCtxIsSecure(t *testing.T) {
 			true,
 		},
 		{
-			config.NewContextMockReader(context.Background(), config.WithMockValues(config.MockPV{
+			config.NewContextMockGetter(context.Background(), config.WithMockValues(config.MockPV{
 				config.MockPathScopeDefault(httputils.PathOffloaderHeader): "X_FORWARDED_PROTO",
 			})),
 			func() *http.Request {
@@ -73,7 +73,7 @@ func TestCtxIsSecure(t *testing.T) {
 			false,
 		},
 		{
-			config.NewContextMockReader(context.Background(), config.WithMockValues(config.MockPV{})),
+			config.NewContextMockGetter(context.Background(), config.WithMockValues(config.MockPV{})),
 			func() *http.Request {
 				r, err := http.NewRequest("GET", "/", nil)
 				if err != nil {

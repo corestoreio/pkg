@@ -37,9 +37,9 @@ const (
 // A website defines the default group ID. A website can contain custom configuration
 // settings which overrides the default scope but get itself overridden by the Store scope.
 type Website struct {
-	cr config.Reader // internal root config.Reader which can be overridden
+	cr config.Getter // internal root config.Reader which can be overridden
 	// Config contains the scope based configuration reader.
-	Config config.ScopedReader
+	Config config.ScopedGetter
 	// Data raw website data from DB table.
 	Data *TableWebsite
 
@@ -67,7 +67,7 @@ var (
 // config.DefaultManager. You should call this function before calling other
 // option functions otherwise your preferred config.Reader won't be inherited
 // to a Group or Store.
-func SetWebsiteConfig(cr config.Reader) WebsiteOption { return func(w *Website) { w.cr = cr } }
+func SetWebsiteConfig(cr config.Getter) WebsiteOption { return func(w *Website) { w.cr = cr } }
 
 // SetWebsiteGroupsStores uses a group slice and a table slice to set the groups associated
 // to this website and the stores associated to this website. It returns an error if
@@ -116,7 +116,7 @@ func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) (*Website, error) {
 		return nil, ErrArgumentCannotBeNil
 	}
 	w := &Website{
-		cr:   config.DefaultManager,
+		cr:   config.DefaultService,
 		Data: tw,
 	}
 	return w.ApplyOptions(opts...)
@@ -217,10 +217,10 @@ func (w *Website) DefaultStore() (*Store, error) {
 // BaseCurrencyCode returns the base currency code of a website TODO.
 func (w *Website) BaseCurrencyCode() (currency.Currency, error) {
 	var c string
-	if w.Config.GetString(PathPriceScope) == PriceScopeGlobal {
-		c, _ = w.cr.GetString(config.Path(directory.PathCurrencyBase)) // TODO check for error
+	if w.Config.String(PathPriceScope) == PriceScopeGlobal {
+		c, _ = w.cr.String(config.Path(directory.PathCurrencyBase)) // TODO check for error
 	} else {
-		c = w.Config.GetString(directory.PathCurrencyBase)
+		c = w.Config.String(directory.PathCurrencyBase)
 	}
 	return currency.ParseISO(c)
 }

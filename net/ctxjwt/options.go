@@ -56,8 +56,8 @@ func WithBlacklist(blacklist Blacklister) Option {
 
 // WithPasswordFromConfig retrieves the password from the configuration with path
 // as defined in constant PathJWTPassword
-func WithPasswordFromConfig(cr config.Reader) Option {
-	pw, err := cr.GetString(config.Path(PathJWTPassword))
+func WithPasswordFromConfig(cr config.Getter) Option {
+	pw, err := cr.String(config.Path(PathJWTPassword))
 	if config.NotKeyNotFoundError(err) {
 		pw = string(uuid.NewRandom())
 	}
