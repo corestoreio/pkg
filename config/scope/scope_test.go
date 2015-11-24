@@ -120,3 +120,29 @@ func BenchmarkStrScopeFQPath(b *testing.B) {
 		b.Errorf("Want: %s; Have, %s", want, benchmarkStrScopeFQPath)
 	}
 }
+
+func TestReverseFQPath(t *testing.T) {
+	tests := []struct {
+		have        string
+		wantScope   string
+		wantScopeID int64
+		wantPath    string
+		wantErr     error
+	}{
+		{"stores/7475/catalog/frontend/list_allow_all", strStores, 7475, "catalog/frontend/list_allow_all", nil},
+		{"websites/1/catalog/frontend/list_allow_all", strWebsites, 1, "catalog/frontend/list_allow_all", nil},
+		{"default/0/catalog/frontend/list_allow_all", strDefault, 0, "catalog/frontend/list_allow_all", nil},
+	}
+	for _, test := range tests {
+		haveScope, haveScopeID, havePath, haveErr := ReverseFQPath(test.have)
+
+		if test.wantErr != nil {
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "Test %v", test)
+			continue
+		}
+		assert.NoError(t, haveErr, "Test %v", test)
+		assert.Exactly(t, test.wantScope, haveScope, "Test %v", test)
+		assert.Exactly(t, test.wantScopeID, haveScopeID, "Test %v", test)
+		assert.Exactly(t, test.wantPath, havePath, "Test %v", test)
+	}
+}

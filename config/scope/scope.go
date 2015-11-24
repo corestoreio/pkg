@@ -163,3 +163,16 @@ func PathSplit(path string) []string {
 func PathJoin(path ...string) string {
 	return strings.Join(path, PS)
 }
+
+func ReverseFQPath(fqPath string) (scope string, scopeID int64, path string, err error) {
+	// todo optimize :-)
+	paths := PathSplit(fqPath)
+	if len(paths) < 5 {
+		err = fmt.Errorf("Incorrect fully qualified path: %q", fqPath)
+		return
+	}
+	scope = paths[0]
+	scopeID, err = strconv.ParseInt(paths[1], 10, 64)
+	path = PathJoin(paths[2:]...)
+	return
+}
