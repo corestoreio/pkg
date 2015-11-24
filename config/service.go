@@ -23,7 +23,6 @@ import (
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils/cast"
 	"github.com/juju/errgo"
-	"github.com/spf13/viper"
 )
 
 // LeftDelim and RightDelim are used withing the core_config_data.value field to allow the replacement
@@ -62,8 +61,8 @@ type (
 
 	// Service main configuration provider
 	Service struct {
-		// why is Viper private? Because it can maybe replaced by something else ...
-		v *viper.Viper
+		// Storage is the underlying backing data holding provider.
+		Storage Storager
 		*pubSub
 	}
 )
@@ -89,13 +88,13 @@ func init() {
 
 // NewService creates the main new configuration for all scopes: default, website and store
 func NewService() *Service {
-	m := &Service{
-		v:      viper.New(),
-		pubSub: newPubSub(),
+	s := &Service{
+		Storage: newSimpleStorage(),
+		pubSub:  newPubSub(),
 	}
-	m.v.Set(mustNewArg(Path(PathCSBaseURL)).scopePath(), CSBaseURL)
-	go m.publish()
-	return m
+	go s.publish()
+	s.Storage.Set(mustNewArg(Path(PathCSBaseURL)).scopePath(), CSBaseURL)
+	return s
 }
 
 // NewScoped creates a new scope base configuration reader
@@ -109,7 +108,7 @@ func (s *Service) ApplyDefaults(ss Sectioner) *Service {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.Service.ApplyDefaults", k, v)
 		}
-		s.v.Set(k, v)
+		s.Storage.Set(k, v)
 	}
 	return s
 }
@@ -157,7 +156,7 @@ func (s *Service) Write(o ...ArgFunc) error {
 		PkgLog.Debug("config.Service.Write", "path", a.scopePath(), "val", a.v)
 	}
 
-	s.v.Set(a.scopePath(), a.v)
+	s.Storage.Set(a.scopePath(), a.v)
 	s.sendMsg(a)
 	return nil
 }
@@ -172,7 +171,7 @@ func (s *Service) get(o ...ArgFunc) interface{} {
 		return errgo.Mask(err)
 	}
 
-	return s.v.Get(a.scopePath())
+	return s.Storage.Get(a.scopePath())
 }
 
 // String returns a string from the Service. Example usage:
@@ -230,9 +229,6 @@ func (s *Service) StringSlice(o ...ArgFunc) ([]string, error) {
 	//	return m.v.StringSlice(newArg(o...))
 }
 
-// AllKeys return all keys regardless where they are set
-func (s *Service) AllKeys() []string { return s.v.AllKeys() }
-
 // IsSet checks if a key is in the configuration. Returns false on error.
 func (s *Service) IsSet(o ...ArgFunc) bool {
 	a, err := newArg(o...)
@@ -242,7 +238,7 @@ func (s *Service) IsSet(o ...ArgFunc) bool {
 		}
 		return false
 	}
-	return s.v.IsSet(a.scopePath())
+	return s.Storage.Get(a.scopePath()) != nil
 }
 
 // NotKeyNotFoundError returns true if err is not nil and not of type Key Not Found.
