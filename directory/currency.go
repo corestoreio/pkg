@@ -23,14 +23,14 @@ import (
 
 type Currency struct {
 	// https://godoc.org/golang.org/x/text/language
-	c currency.Currency
+	currency.Unit
 }
 
 // BaseCurrencyCode retrieves application base currency code
-func BaseCurrencyCode(cr config.Getter) (currency.Currency, error) {
+func BaseCurrencyCode(cr config.Getter) (currency.Unit, error) {
 	base, err := cr.String(config.Path(PathCurrencyBase))
 	if config.NotKeyNotFoundError(err) {
-		return currency.Currency{}, err
+		return currency.Unit{}, err
 	}
 	return currency.ParseISO(base)
 }

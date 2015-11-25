@@ -215,7 +215,7 @@ func (w *Website) DefaultStore() (*Store, error) {
 }
 
 // BaseCurrencyCode returns the base currency code of a website TODO.
-func (w *Website) BaseCurrencyCode() (currency.Currency, error) {
+func (w *Website) BaseCurrencyCode() (currency.Unit, error) {
 	var c string
 	if w.Config.String(PathPriceScope) == PriceScopeGlobal {
 		c, _ = w.cr.String(config.Path(directory.PathCurrencyBase)) // TODO check for error

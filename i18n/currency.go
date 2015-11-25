@@ -56,7 +56,7 @@ type (
 		*Number
 		// ISO contains the 3-letter ISO 4217 currency code.
 		// Maybe one day that will get extended in text/currency package ...
-		ISO currency.Currency
+		ISO currency.Unit
 		sgn []byte // € or USD or ...
 		buf buf
 		mu  sync.RWMutex

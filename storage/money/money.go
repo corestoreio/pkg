@@ -87,7 +87,7 @@ type (
 
 		// Valuta TODO(cs) defines the currency of this money type and allows
 		// comparisons and calculations with other currencies.
-		Valuta currency.Currency
+		Valuta currency.Unit
 
 		Encoder // Encoder default ToJSON
 		Decoder // Decoder default FromJSON
