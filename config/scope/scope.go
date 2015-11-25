@@ -164,15 +164,25 @@ func PathJoin(path ...string) string {
 	return strings.Join(path, PS)
 }
 
+// ReverseFQPath takes a fully qualified path and splits it into its parts.
+// 	Input: stores/5/catalog/frontend/list_allow_all
+//	=>
+//		scope: 		stores
+//		scopeID: 	5
+//		path: 		catalog/frontend/list_allow_all
+// Zero allocations to memory.
 func ReverseFQPath(fqPath string) (scope string, scopeID int64, path string, err error) {
-	// todo optimize :-)
-	paths := PathSplit(fqPath)
-	if len(paths) < 5 {
+	if strings.Count(fqPath, PS) < 4 {
 		err = fmt.Errorf("Incorrect fully qualified path: %q", fqPath)
 		return
 	}
-	scope = paths[0]
-	scopeID, err = strconv.ParseInt(paths[1], 10, 64)
-	path = PathJoin(paths[2:]...)
+
+	fi := strings.Index(fqPath, PS)
+	scope = fqPath[:fi]
+	fqPath = fqPath[fi+1:]
+
+	fi = strings.Index(fqPath, PS)
+	scopeID, err = strconv.ParseInt(fqPath[:fi], 10, 64)
+	path = fqPath[fi+1:]
 	return
 }

@@ -15,6 +15,7 @@
 package scope
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -132,17 +133,37 @@ func TestReverseFQPath(t *testing.T) {
 		{"stores/7475/catalog/frontend/list_allow_all", strStores, 7475, "catalog/frontend/list_allow_all", nil},
 		{"websites/1/catalog/frontend/list_allow_all", strWebsites, 1, "catalog/frontend/list_allow_all", nil},
 		{"default/0/catalog/frontend/list_allow_all", strDefault, 0, "catalog/frontend/list_allow_all", nil},
+		{"default//catalog/frontend/list_allow_all", strDefault, 0, "catalog/frontend/list_allow_all", errors.New("strconv.ParseInt: parsing \"\\uf8ff\": invalid syntax")},
+		{"stores/123/catalog/index", "", 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\"")},
 	}
 	for _, test := range tests {
 		haveScope, haveScopeID, havePath, haveErr := ReverseFQPath(test.have)
 
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Test %v", test)
-			continue
+		} else {
+			assert.NoError(t, haveErr, "Test %v", test)
 		}
-		assert.NoError(t, haveErr, "Test %v", test)
 		assert.Exactly(t, test.wantScope, haveScope, "Test %v", test)
 		assert.Exactly(t, test.wantScopeID, haveScopeID, "Test %v", test)
 		assert.Exactly(t, test.wantPath, havePath, "Test %v", test)
+	}
+}
+
+var benchmarkReverseFQPath = struct {
+	scope   string
+	scopeID int64
+	path    string
+	err     error
+}{}
+
+// BenchmarkReverseFQPath-4 	10000000	       121 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkReverseFQPath(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchmarkReverseFQPath.scope, benchmarkReverseFQPath.scopeID, benchmarkReverseFQPath.path, benchmarkReverseFQPath.err = ReverseFQPath("stores/7475/catalog/frontend/list_allow_all")
+		if benchmarkReverseFQPath.err != nil {
+			b.Error(benchmarkReverseFQPath.err)
+		}
 	}
 }
