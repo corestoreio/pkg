@@ -40,6 +40,8 @@ func TestToString(t *testing.T) {
 	assert.Equal(t, ToString(template.URL("http://somehost.foo")), "http://somehost.foo")
 	assert.Equal(t, ToString(foo), "one more time")
 	assert.Equal(t, ToString(nil), "")
+	assert.Equal(t, ToString(true), "true")
+	assert.Equal(t, ToString(false), "false")
 }
 
 type foo struct {
@@ -82,14 +84,14 @@ func TestMaps(t *testing.T) {
 	var interfaceMapInterface = map[interface{}]interface{}{"key 1": "value 1", "key 2": "value 2", "key 3": "value 3"}
 
 	// ToStringMapStringSlice inputs/outputs
-	var stringMapStringSlice = map[string][]string{"key 1": []string{"value 1", "value 2", "value 3"}, "key 2": []string{"value 1", "value 2", "value 3"}, "key 3": []string{"value 1", "value 2", "value 3"}}
-	var stringMapInterfaceSlice = map[string][]interface{}{"key 1": []interface{}{"value 1", "value 2", "value 3"}, "key 2": []interface{}{"value 1", "value 2", "value 3"}, "key 3": []interface{}{"value 1", "value 2", "value 3"}}
-	var stringMapStringSingleSliceFieldsResult = map[string][]string{"key 1": []string{"value", "1"}, "key 2": []string{"value", "2"}, "key 3": []string{"value", "3"}}
-	var interfaceMapStringSlice = map[interface{}][]string{"key 1": []string{"value 1", "value 2", "value 3"}, "key 2": []string{"value 1", "value 2", "value 3"}, "key 3": []string{"value 1", "value 2", "value 3"}}
-	var interfaceMapInterfaceSlice = map[interface{}][]interface{}{"key 1": []interface{}{"value 1", "value 2", "value 3"}, "key 2": []interface{}{"value 1", "value 2", "value 3"}, "key 3": []interface{}{"value 1", "value 2", "value 3"}}
+	var stringMapStringSlice = map[string][]string{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
+	var stringMapInterfaceSlice = map[string][]interface{}{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
+	var stringMapStringSingleSliceFieldsResult = map[string][]string{"key 1": {"value", "1"}, "key 2": {"value", "2"}, "key 3": {"value", "3"}}
+	var interfaceMapStringSlice = map[interface{}][]string{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
+	var interfaceMapInterfaceSlice = map[interface{}][]interface{}{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
 
-	var stringMapStringSliceMultiple = map[string][]string{"key 1": []string{"value 1", "value 2", "value 3"}, "key 2": []string{"value 1", "value 2", "value 3"}, "key 3": []string{"value 1", "value 2", "value 3"}}
-	var stringMapStringSliceSingle = map[string][]string{"key 1": []string{"value 1"}, "key 2": []string{"value 2"}, "key 3": []string{"value 3"}}
+	var stringMapStringSliceMultiple = map[string][]string{"key 1": {"value 1", "value 2", "value 3"}, "key 2": {"value 1", "value 2", "value 3"}, "key 3": {"value 1", "value 2", "value 3"}}
+	var stringMapStringSliceSingle = map[string][]string{"key 1": {"value 1"}, "key 2": {"value 2"}, "key 3": {"value 3"}}
 
 	assert.Equal(t, ToStringMap(taxonomies), map[string]interface{}{"tag": "tags", "group": "groups"})
 	assert.Equal(t, ToStringMapBool(stringMapBool), map[string]bool{"v1": true, "v2": false})
