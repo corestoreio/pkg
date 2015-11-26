@@ -18,11 +18,14 @@ import (
 	"testing"
 	"time"
 
+	"fmt"
+	"strings"
+
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/utils"
 	"github.com/stretchr/testify/assert"
-	"strings"
 )
 
 func TestDBStorageOneStmt(t *testing.T) {
@@ -32,8 +35,6 @@ func TestDBStorageOneStmt(t *testing.T) {
 	defer func() { assert.NoError(t, dbc.Close()) }()
 
 	sdb := config.NewDBStorage(dbc.DB)
-	sdb.Read.Idle = time.Second * 2
-	sdb.Write.Idle = time.Second * 3
 
 	sdb.Start()
 	// Stop() would only be called under rare circumstances on a production system
@@ -64,9 +65,60 @@ func TestDBStorageOneStmt(t *testing.T) {
 	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), "(`scope`,`scope_id`,`path`,`value`) VALUES"))
 	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), "WHERE `scope`=? AND `scope_id`=? AND `path`=?"))
 
-	ak := utils.StringSlice(sdb.AllKeys())
 	for _, test := range tests {
+		ak := utils.StringSlice(sdb.AllKeys()) // trigger many queries with one statement
 		assert.True(t, ak.Include(test.key), "Missing Key: %s", test.key)
 	}
 	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), "CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`"))
+}
+
+func TestDBStorageMultipleStmt(t *testing.T) {
+	defer debugLogBuf.Reset() // contains only data from the debug level, info level will be dumped to os.Stdout
+
+	if testing.Short() {
+		t.Skip("Test skipped in short mode")
+	}
+
+	dbc := csdb.MustConnectTest()
+	defer func() { assert.NoError(t, dbc.Close()) }()
+
+	sdb := config.NewDBStorage(dbc.DB)
+	sdb.All.Idle = time.Second * 1
+	sdb.Read.Idle = time.Second * 1
+	sdb.Write.Idle = time.Second * 1
+
+	sdb.Start()
+
+	tests := []struct {
+		key       string
+		value     interface{}
+		wantValue string
+	}{
+		{"websites/10/testDBStorage/secure/base_url", "http://corestore.io", "http://corestore.io"},
+		{"websites/10/testDBStorage/log/active", 1, "1"},
+		{"websites/20/testDBStorage/log/clean", 19.999, "19.999"},
+		{"websites/20/testDBStorage/product/shipping", 29.999, "29.999"},
+		{"default/0/testDBStorage/checkout/multishipping", false, "false"},
+	}
+	for i, test := range tests {
+		sdb.Set(test.key, test.value)
+		assert.Exactly(t, test.wantValue, sdb.Get(test.key), "Test: %v", test)
+		if i < 2 {
+			// last two iterations reopen a new statement, not closing it and reusing it
+			time.Sleep(time.Millisecond * 1500) // trigger ticker to close statements
+		}
+	}
+
+	assert.Exactly(t, 5, strings.Count(debugLogBuf.String(), "(`scope`,`scope_id`,`path`,`value`) VALUES"))
+	assert.Exactly(t, 5, strings.Count(debugLogBuf.String(), "WHERE `scope`=? AND `scope_id`=? AND `path`=?"))
+
+	for i, test := range tests {
+		ak := utils.StringSlice(sdb.AllKeys())
+		assert.True(t, ak.Include(test.key), "Missing Key: %s", test.key)
+		if i < 2 {
+			time.Sleep(time.Millisecond * 1500) // trigger ticker to close statements
+		}
+	}
+	assert.NoError(t, sdb.Stop())
+	assert.Exactly(t, 6, strings.Count(debugLogBuf.String(), fmt.Sprintf("CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`", scope.PS, scope.PS)))
 }
