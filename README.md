@@ -40,13 +40,6 @@ $ export CS_DSN_TEST='magento1:magento1@tcp(localhost:3306)/magento1'
 $ export CS_DSN_TEST='magento2:magento2@tcp(localhost:3306)/magento2'
 ```
 
-### Linting
-
-Please install `$ go get -u -v github.com/alecthomas/gometalinter` and install
-all the required programs.
-
-During development run `$ gometalinter .`
-
 ### Finding Allocations
 
 Side note: There is a new testing approach: TBDD = Test n' Benchmark Driven Development.
@@ -84,6 +77,10 @@ Benchmark_WithInitStoreByToken-4	 2000000	       826 ns/op	     128 B/op	       
 ok  	github.com/corestoreio/csfw/store	2.569s
 ```
 
+#### Other development helpers
+
+- [go get github.com/maruel/panicparse/cmd/pp](https://github.com/maruel/panicparse)
+- [go get github.com/alecthomas/gometalinter](https://github.com/alecthomas/gometalinter)
 
 ## TODO
 
