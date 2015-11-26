@@ -15,7 +15,6 @@
 package config_test
 
 import (
-	std "log"
 	"testing"
 	"time"
 
@@ -25,18 +24,8 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
-	"github.com/corestoreio/csfw/utils/log"
 	"github.com/stretchr/testify/assert"
 )
-
-var errLogBuf = new(log.MutexBuffer)
-
-func init() {
-	config.PkgLog = log.NewStdLogger(
-		log.SetStdDebug(errLogBuf, "testErr: ", std.Lshortfile),
-	)
-	config.PkgLog.SetLevel(log.StdLevelDebug)
-}
 
 var _ config.MessageReceiver = (*testSubscriber)(nil)
 
@@ -50,7 +39,7 @@ func (ts *testSubscriber) MessageConfig(path string, sg scope.Scope, id int64) e
 }
 
 func TestPubSubBubbling(t *testing.T) {
-	defer errLogBuf.Reset()
+	defer debugLogBuf.Reset()
 	testPath := "a/b/c"
 
 	m := config.NewService()
@@ -83,7 +72,7 @@ func TestPubSubBubbling(t *testing.T) {
 }
 
 func TestPubSubPanicSimple(t *testing.T) {
-	defer errLogBuf.Reset()
+	defer debugLogBuf.Reset()
 	testPath := "x/y/z"
 
 	m := config.NewService()
@@ -97,11 +86,11 @@ func TestPubSubPanicSimple(t *testing.T) {
 	assert.NoError(t, m.Write(config.Value(321), config.Path(testPath), config.ScopeStore(123)))
 	assert.NoError(t, m.Close())
 	time.Sleep(time.Millisecond * 10) // wait for goroutine to close
-	assert.Contains(t, errLogBuf.String(), `config.pubSub.publish.recover.r recover: "Don't panic!"`)
+	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.r recover: "Don't panic!"`)
 }
 
 func TestPubSubPanicError(t *testing.T) {
-	defer errLogBuf.Reset()
+	defer debugLogBuf.Reset()
 	testPath := "™/ö/º"
 
 	var pErr = errors.New("OMG! Panic!")
@@ -116,12 +105,12 @@ func TestPubSubPanicError(t *testing.T) {
 	assert.NoError(t, m.Write(config.Value(321), config.Path(testPath), config.ScopeStore(123)))
 	// not closing channel to let the Goroutine around egging aka. herumeiern.
 	time.Sleep(time.Millisecond * 10) // wait for goroutine ...
-	assert.Contains(t, errLogBuf.String(), `config.pubSub.publish.recover.err err: OMG! Panic!`)
+	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.err err: OMG! Panic!`)
 	assert.NoError(t, m.Close())
 }
 
 func TestPubSubPanicMultiple(t *testing.T) {
-	defer errLogBuf.Reset()
+	defer debugLogBuf.Reset()
 	m := config.NewService()
 
 	subID, err := m.Subscribe("x", &testSubscriber{
@@ -154,13 +143,13 @@ func TestPubSubPanicMultiple(t *testing.T) {
 	assert.NoError(t, m.Write(config.Value(789), config.Path("x/y/z"), config.ScopeStore(987)))
 	assert.NoError(t, m.Close())
 	time.Sleep(time.Millisecond * 30) // wait for goroutine to close
-	assert.Contains(t, errLogBuf.String(), `config.pubSub.publish.recover.r recover: "One: Don't panic!`)
-	assert.Contains(t, errLogBuf.String(), `config.pubSub.publish.recover.r recover: "Two: Don't panic!"`)
-	assert.Contains(t, errLogBuf.String(), `config.pubSub.publish.recover.r recover: "Three: Don't panic!"`)
+	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.r recover: "One: Don't panic!`)
+	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.r recover: "Two: Don't panic!"`)
+	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.r recover: "Three: Don't panic!"`)
 }
 
 func TestPubSubUnsubscribe(t *testing.T) {
-	defer errLogBuf.Reset()
+	defer debugLogBuf.Reset()
 
 	var pErr = errors.New("WTF? Panic!")
 	m := config.NewService()
@@ -174,7 +163,7 @@ func TestPubSubUnsubscribe(t *testing.T) {
 	assert.NoError(t, m.Unsubscribe(subID))
 	assert.NoError(t, m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(123)))
 	time.Sleep(time.Millisecond) // wait for goroutine ...
-	assert.Contains(t, errLogBuf.String(), `config.Service.Write path: "stores/123/x/y/z" val: 321`)
+	assert.Contains(t, debugLogBuf.String(), `config.Service.Write path: "stores/123/x/y/z" val: 321`)
 	assert.NoError(t, m.Close())
 }
 
@@ -185,7 +174,7 @@ type levelCalls struct {
 }
 
 func TestPubSubEvict(t *testing.T) {
-	defer errLogBuf.Reset()
+	defer debugLogBuf.Reset()
 
 	levelCall := new(levelCalls)
 
@@ -222,7 +211,7 @@ func TestPubSubEvict(t *testing.T) {
 
 	time.Sleep(time.Millisecond * 20) // wait for goroutine ...
 
-	assert.Contains(t, errLogBuf.String(), "config.pubSub.publish.recover.err err: WTF Eviction? Panic!")
+	assert.Contains(t, debugLogBuf.String(), "config.pubSub.publish.recover.err err: WTF Eviction? Panic!")
 
 	levelCall.Lock()
 	assert.Equal(t, 3, levelCall.level2Calls)
