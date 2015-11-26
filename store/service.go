@@ -195,7 +195,7 @@ func (sm *Service) findDefaultStoreByScope(allowedScope scope.Scope, so scope.Op
 			}
 		}
 	default:
-		err = errgo.Mask(scope.ErrUnsupportedScope)
+		err = errgo.Mask(scope.ErrUnsupportedScopeID)
 	}
 	return
 }

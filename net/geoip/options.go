@@ -46,7 +46,7 @@ func WithAlternativeHandler(so scope.Scope, id int64, h ctxhttp.Handler) Option 
 			s.websiteIDs.Append(id)
 			s.websiteAltH = append(s.websiteAltH, h)
 		default:
-			s.lastErrors = append(s.lastErrors, scope.ErrUnsupportedScope)
+			s.lastErrors = append(s.lastErrors, scope.ErrUnsupportedScopeID)
 		}
 	}
 }

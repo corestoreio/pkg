@@ -75,7 +75,7 @@ func TestNewServiceErrorWithoutOptions(t *testing.T) {
 func TestNewServiceErrorWithAlternativeHandler(t *testing.T) {
 	s, err := geoip.NewService(geoip.WithAlternativeHandler(scope.AbsentID, 314152, nil))
 	assert.Nil(t, s)
-	assert.EqualError(t, err, scope.ErrUnsupportedScope.Error())
+	assert.EqualError(t, err, scope.ErrUnsupportedScopeID.Error())
 }
 
 func TestNewServiceErrorWithGeoIP2Reader(t *testing.T) {

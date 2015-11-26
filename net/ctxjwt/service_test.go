@@ -172,6 +172,9 @@ func TestRSAWithoutPassword(t *testing.T) {
 }
 
 func TestRSAGenerate(t *testing.T) {
+	if testing.Short() {
+		t.Skip("Test skipped in short mode")
+	}
 	testRsaOption(t, ctxjwt.WithRSAGenerator())
 }
 

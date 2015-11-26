@@ -467,7 +467,7 @@ func TestNewServiceRequestedStore_ScopeStore(t *testing.T) {
 
 	tests := []testNewServiceRequestedStore{
 		{scope.Option{Store: scope.MockID(232)}, "", store.ErrIDNotFoundTableStoreSlice},
-		{scope.Option{}, "de", scope.ErrUnsupportedScope},
+		{scope.Option{}, "de", scope.ErrUnsupportedScopeID},
 		{scope.Option{Store: scope.MockCode("\U0001f631")}, "", store.ErrIDNotFoundTableStoreSlice},
 
 		{scope.Option{Store: scope.MockID(6)}, "nz", nil},
