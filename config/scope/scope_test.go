@@ -122,7 +122,7 @@ func BenchmarkStrScopeFQPath(b *testing.B) {
 	}
 }
 
-func TestReverseFQPath(t *testing.T) {
+func TestSplitFQPath(t *testing.T) {
 	tests := []struct {
 		have        string
 		wantScope   string
@@ -130,6 +130,7 @@ func TestReverseFQPath(t *testing.T) {
 		wantPath    string
 		wantErr     error
 	}{
+		{"groups/1/catalog/frontend/list_allow_all", "groups", 0, "", ErrUnsupportedScope},
 		{"stores/7475/catalog/frontend/list_allow_all", strStores, 7475, "catalog/frontend/list_allow_all", nil},
 		{"websites/1/catalog/frontend/list_allow_all", strWebsites, 1, "catalog/frontend/list_allow_all", nil},
 		{"default/0/catalog/frontend/list_allow_all", strDefault, 0, "catalog/frontend/list_allow_all", nil},
@@ -137,7 +138,7 @@ func TestReverseFQPath(t *testing.T) {
 		{"stores/123/catalog/index", "", 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\"")},
 	}
 	for _, test := range tests {
-		haveScope, haveScopeID, havePath, haveErr := ReverseFQPath(test.have)
+		haveScope, haveScopeID, havePath, haveErr := SplitFQPath(test.have)
 
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Test %v", test)
@@ -161,7 +162,7 @@ var benchmarkReverseFQPath = struct {
 func BenchmarkReverseFQPath(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		benchmarkReverseFQPath.scope, benchmarkReverseFQPath.scopeID, benchmarkReverseFQPath.path, benchmarkReverseFQPath.err = ReverseFQPath("stores/7475/catalog/frontend/list_allow_all")
+		benchmarkReverseFQPath.scope, benchmarkReverseFQPath.scopeID, benchmarkReverseFQPath.path, benchmarkReverseFQPath.err = SplitFQPath("stores/7475/catalog/frontend/list_allow_all")
 		if benchmarkReverseFQPath.err != nil {
 			b.Error(benchmarkReverseFQPath.err)
 		}

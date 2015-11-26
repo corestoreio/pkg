@@ -31,8 +31,8 @@ func TestApplyCode(t *testing.T) {
 	}{
 		{"", "de1", "de1", scope.WebsiteID, nil},
 		{"de2", "", "de2", scope.StoreID, nil},
-		{"", "", "de3", scope.GroupID, scope.ErrUnsupportedScope},
-		{"", "", "de4", scope.AbsentID, scope.ErrUnsupportedScope},
+		{"", "", "de3", scope.GroupID, scope.ErrUnsupportedScopeID},
+		{"", "", "de4", scope.AbsentID, scope.ErrUnsupportedScopeID},
 	}
 
 	for _, test := range tests {
@@ -62,7 +62,7 @@ func TestApplyID(t *testing.T) {
 		{scope.MockID(1), nil, nil, 1, scope.WebsiteID, nil},
 		{nil, scope.MockID(3), nil, 3, scope.GroupID, nil},
 		{nil, nil, scope.MockID(2), 2, scope.StoreID, nil},
-		{nil, nil, nil, 4, scope.AbsentID, scope.ErrUnsupportedScope},
+		{nil, nil, nil, 4, scope.AbsentID, scope.ErrUnsupportedScopeID},
 	}
 
 	for _, test := range tests {

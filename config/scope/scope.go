@@ -154,6 +154,16 @@ func FromScope(scopeID Scope) StrScope {
 	return StrDefault
 }
 
+// ValidScope checks if s is a valid string of either
+// StrDefault, StrWebsites or StrStores.
+func ValidScope(s string) bool {
+	switch s {
+	case strWebsites, strStores, strDefault:
+		return true
+	}
+	return false
+}
+
 // PathSplit splits a configuration path by the path separator PS.
 func PathSplit(path string) []string {
 	return strings.Split(path, PS)
@@ -164,14 +174,15 @@ func PathJoin(path ...string) string {
 	return strings.Join(path, PS)
 }
 
-// ReverseFQPath takes a fully qualified path and splits it into its parts.
+// SplitFQPath takes a fully qualified path and splits it into its parts.
 // 	Input: stores/5/catalog/frontend/list_allow_all
 //	=>
 //		scope: 		stores
 //		scopeID: 	5
 //		path: 		catalog/frontend/list_allow_all
-// Zero allocations to memory.
-func ReverseFQPath(fqPath string) (scope string, scopeID int64, path string, err error) {
+// Zero allocations to memory. Err may contain an ErrUnsupportedScope or
+// failed to parse a string into an int64 or invalid fqPath.
+func SplitFQPath(fqPath string) (scope string, scopeID int64, path string, err error) {
 	if strings.Count(fqPath, PS) < 4 {
 		err = fmt.Errorf("Incorrect fully qualified path: %q", fqPath)
 		return
@@ -179,6 +190,12 @@ func ReverseFQPath(fqPath string) (scope string, scopeID int64, path string, err
 
 	fi := strings.Index(fqPath, PS)
 	scope = fqPath[:fi]
+
+	if false == ValidScope(scope) {
+		err = ErrUnsupportedScope
+		return
+	}
+
 	fqPath = fqPath[fi+1:]
 
 	fi = strings.Index(fqPath, PS)

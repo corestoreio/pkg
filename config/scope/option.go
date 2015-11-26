@@ -18,9 +18,13 @@ import (
 	"errors"
 )
 
-// ErrUnsupportedScope whenever a not valid scope ID will be provided this
-// error gets returned.
-var ErrUnsupportedScope = errors.New("Unsupported Scope ID")
+// ErrUnsupportedScope gets returned when a string does not match
+// StrDefault, StrWebsites or StrStores constants.
+var ErrUnsupportedScope = errors.New("Unsupported Scope")
+
+// ErrUnsupportedScopeID whenever a not valid scope ID will be provided.
+// Neither a WebsiteID nor a GroupID nor a StoreID.
+var ErrUnsupportedScopeID = errors.New("Unsupported Scope ID")
 
 // Option takes care of the hierarchical level between Website, Group and Store.
 // Option can be used as an argument in other functions.
@@ -48,7 +52,7 @@ func SetByCode(code string, scopeType Scope) (o Option, err error) {
 	case StoreID:
 		o.Store = c
 	default:
-		err = ErrUnsupportedScope
+		err = ErrUnsupportedScopeID
 	}
 	return
 }
@@ -66,7 +70,7 @@ func SetByID(scopeID int64, scopeType Scope) (o Option, err error) {
 	case StoreID:
 		o.Store = i
 	default:
-		err = ErrUnsupportedScope
+		err = ErrUnsupportedScopeID
 	}
 	return
 }
