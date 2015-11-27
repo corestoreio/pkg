@@ -23,33 +23,50 @@ import (
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils/cast"
 	"github.com/juju/errgo"
+	"sync"
 )
 
 var _ Storager = (*DBStorage)(nil)
 
 type stmtUsage struct {
-	SQL        string
-	stmt       *sql.Stmt
-	closed     bool
-	Idle       time.Duration
-	lastUsed   time.Time
-	inUse      bool
-	stopTicker chan struct{}
-	closeError error
+	SQL  string
+	Idle time.Duration
+	stop chan struct{} // tells the ticker to stop and close
+
+	mu       sync.Mutex // protects the last fields
+	stmt     *sql.Stmt
+	closed   bool       // stmt is closed and can be reopened
+	closeErr chan error // only available when Stop() has been called
+	lastUsed time.Time  // time when the stmt has last been used
+	inUse    bool       // stmt is currently in use by Set or Get
 }
 
-func (su *stmtUsage) close() {
+func (su *stmtUsage) close(retErr bool) {
+	// retErr returns only then the error when the main go routine of the ticker
+	// has been stopped. otherwise close errors will only be logged.
+	su.mu.Lock()
+	defer su.mu.Unlock()
 	if su.stmt == nil {
 		return
 	}
-	if su.closeError = errgo.Mask(su.stmt.Close()); su.closeError != nil {
-		PkgLog.Info("config.StmtUsage.stmt.Close.error", "err", su.closeError, "SQL", su.SQL)
+	err := errgo.Mask(su.stmt.Close())
+	if err != nil {
+		PkgLog.Info("config.StmtUsage.stmt.Close.error", "err", err, "SQL", su.SQL)
 	} else {
 		su.closed = true
+	}
+	if retErr {
+		su.closeErr <- err
 	}
 	if PkgLog.IsDebug() {
 		PkgLog.Debug("config.StmtUsage.stmt.Close", "SQL", su.SQL)
 	}
+}
+
+func (su *stmtUsage) canClose(t time.Time) bool {
+	su.mu.Lock()
+	defer su.mu.Unlock()
+	return t.After(su.lastUsed) && !su.closed && !su.inUse
 }
 
 func (su *stmtUsage) checkUsage() {
@@ -62,20 +79,23 @@ func (su *stmtUsage) checkUsage() {
 				// todo maybe debug log?
 				return
 			}
-			if t.After(su.lastUsed) && !su.closed && !su.inUse {
+
+			if su.canClose(t) {
 				// stmt has not been used within the last x seconds.
 				// so close the stmt and release the resources in the DB.
-				su.close()
+				su.close(false)
 			}
-		case <-su.stopTicker:
+		case <-su.stop:
 			ticker.Stop()
-			su.close()
+			su.close(true)
 			return
 		}
 	}
 }
 
 func (su *stmtUsage) getStmt(db *sql.DB) (*sql.Stmt, error) {
+	su.mu.Lock()
+	defer su.mu.Unlock()
 	if false == su.closed {
 		return su.stmt, nil
 	}
@@ -92,13 +112,17 @@ func (su *stmtUsage) getStmt(db *sql.DB) (*sql.Stmt, error) {
 }
 
 func (su *stmtUsage) startUse() {
+	su.mu.Lock()
 	su.lastUsed = time.Now()
 	su.inUse = true
+	su.mu.Unlock()
 }
 
 func (su *stmtUsage) stopUse() {
+	su.mu.Lock()
 	su.lastUsed = time.Now()
 	su.inUse = false
+	su.mu.Unlock()
 }
 
 type DBStorage struct {
@@ -127,27 +151,30 @@ func NewDBStorage(db *sql.DB) *DBStorage {
 				scope.PS,
 				TableCollection.Name(TableIndexCoreConfigData),
 			),
-			Idle:       time.Second * 15,
-			stopTicker: make(chan struct{}),
-			closed:     true,
+			Idle:     time.Second * 15,
+			stop:     make(chan struct{}),
+			closeErr: make(chan error),
+			closed:   true,
 		},
 		Read: &stmtUsage{
 			SQL: fmt.Sprintf(
 				"SELECT `value` FROM `%s` WHERE `scope`=? AND `scope_id`=? AND `path`=?",
 				TableCollection.Name(TableIndexCoreConfigData),
 			),
-			Idle:       time.Second * 10,
-			stopTicker: make(chan struct{}),
-			closed:     true,
+			Idle:     time.Second * 10,
+			stop:     make(chan struct{}),
+			closeErr: make(chan error),
+			closed:   true,
 		},
 		Write: &stmtUsage{
 			SQL: fmt.Sprintf(
 				"INSERT INTO `%s` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=?",
 				TableCollection.Name(TableIndexCoreConfigData),
 			),
-			Idle:       time.Second * 30,
-			stopTicker: make(chan struct{}),
-			closed:     true,
+			Idle:     time.Second * 30,
+			stop:     make(chan struct{}),
+			closeErr: make(chan error),
+			closed:   true,
 		},
 	}
 	return dbs
@@ -161,17 +188,17 @@ func (dbs *DBStorage) Start() *DBStorage {
 }
 
 func (dbs *DBStorage) Stop() (err error) {
-	dbs.All.stopTicker <- struct{}{}
-	dbs.Read.stopTicker <- struct{}{}
-	dbs.Write.stopTicker <- struct{}{}
-	if dbs.All.closeError != nil {
-		return dbs.All.closeError
+	dbs.All.stop <- struct{}{}
+	dbs.Read.stop <- struct{}{}
+	dbs.Write.stop <- struct{}{}
+	if err := <-dbs.All.closeErr; err != nil {
+		return err
 	}
-	if dbs.Read.closeError != nil {
-		return dbs.Read.closeError
+	if err := <-dbs.Read.closeErr; err != nil {
+		return err
 	}
-	if dbs.Write.closeError != nil {
-		return dbs.Write.closeError
+	if err := <-dbs.Write.closeErr; err != nil {
+		return err
 	}
 	return nil
 }
@@ -264,7 +291,7 @@ func (dbs *DBStorage) AllKeys() []string {
 	}
 	defer rows.Close()
 
-	var ret = make([]string, 0, 100)
+	var ret = make([]string, 0, 500)
 	var data dbr.NullString
 	for rows.Next() {
 		if err := rows.Scan(&data); err != nil {

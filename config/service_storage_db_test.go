@@ -120,5 +120,8 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 		}
 	}
 	assert.NoError(t, sdb.Stop())
+
+	//println("\n", debugLogBuf.String(), "\n")
+	// 6 is: open close for iteration 0+1, open in iteration 2 and close in iteration 4
 	assert.Exactly(t, 6, strings.Count(debugLogBuf.String(), fmt.Sprintf("CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`", scope.PS, scope.PS)))
 }
