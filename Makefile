@@ -42,3 +42,7 @@ clean:
 
 tts: clean
 	go run -v codegen/tableToStruct/*.go
+
+depgraph:
+	# http://talks.golang.org/2015/tricks.slide#51
+	find . -type d -not -iwholename '*.git*' -exec sh -c "godepgraph -horizontal {} | dot -Tsvg -o {}/godepgraph.svg" \;
