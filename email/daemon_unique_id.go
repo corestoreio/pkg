@@ -24,18 +24,16 @@ import (
 )
 
 type uniqueID struct {
-	config  config.Getter
-	scopeID config.ScopeIDer
-	lastID  uint64
+	config config.ScopedGetter
+	lastID uint64
 }
 
-func (u *uniqueID) SetConfig(r config.Getter, s config.ScopeIDer) {
+func (u *uniqueID) SetConfig(r config.ScopedGetter) {
 	u.config = r
-	u.scopeID = s
 }
 
 func (u *uniqueID) getHost() string {
-	h := u.config.String(config.Path(PathSmtpHost), config.ScopeStore(u.scopeID))
+	h := u.config.String(PathSmtpHost)
 	if h == "" {
 		h = defaultHost
 	}
@@ -43,7 +41,7 @@ func (u *uniqueID) getHost() string {
 }
 
 func (u *uniqueID) getPort() int {
-	p := u.config.Int(config.Path(PathSmtpPort), config.ScopeStore(u.scopeID))
+	p := u.config.Int(PathSmtpPort)
 	if p < 1 {
 		p = defaultPort
 	}
@@ -51,7 +49,7 @@ func (u *uniqueID) getPort() int {
 }
 
 func (u *uniqueID) getUsername() string {
-	return u.config.String(config.Path(PathSmtpUsername), config.ScopeStore(u.scopeID))
+	return u.config.String(PathSmtpUsername)
 }
 
 // ID with which you can identify a daemon connection to the same SMTP server

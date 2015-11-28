@@ -40,7 +40,8 @@ func offlineSend(from string, to []string, msg io.WriterTo) error {
 	if OfflineLogger.IsInfo() {
 		var buf bytes.Buffer
 		if _, err := msg.WriteTo(&buf); err != nil {
-			return log.Error("mail.daemon.OfflineSend", "err", err, "buf", buf.String(), "message", msg)
+			PkgLog.Info("mail.daemon.OfflineSend", "err", err, "buf", buf.String(), "message", msg)
+			return err
 		}
 		OfflineLogger.Info("mail.Send", "from", from, "to", to, "msg", buf.String())
 	}
@@ -76,9 +77,7 @@ type Daemon struct {
 	sendFunc       gomail.SendFunc
 	closed         bool
 	// Config contains the config.Service
-	Config config.Getter
-	// Scope current scope store id for this daemon
-	Scope scope.StoreID
+	Config config.ScopedGetter
 	// SmtpTimeout sets the time when the daemon should closes the connection
 	// to the SMTP server if no email was sent in the last default 30 seconds.
 	SmtpTimeout time.Duration
@@ -122,7 +121,8 @@ func (dm *Daemon) workerSendFunc() error {
 			}
 
 			if err := gomail.Send(dm.sendFunc, m); err != nil {
-				log.Error("mail.daemon.Start.Send", "err", err, "message", m)
+				// dont terminate this for loop
+				PkgLog.Info("mail.daemon.Start.Send", "err", err, "message", m)
 			}
 		}
 	}
@@ -141,12 +141,13 @@ func (dm *Daemon) workerDial() error {
 			}
 			if !open {
 				if s, err = dm.dialer.Dial(); err != nil {
-					return log.Error("mail.daemon.workerDial.Dial", "err", err, "message", m)
+					PkgLog.Info("mail.daemon.workerDial.Dial", "err", err, "message", m)
+					return err
 				}
 				open = true
 			}
 			if err := gomail.Send(s, m); err != nil {
-				log.Error("mail.daemon.workerDial.Send", "err", err, "message", m)
+				PkgLog.Info("mail.daemon.workerDial.Send", "err", err, "message", m)
 			}
 		// Close the connection to the SMTP server if no email was sent in
 		// the last n seconds.
@@ -163,7 +164,8 @@ func (dm *Daemon) workerDial() error {
 			//			}
 			if open {
 				if err := s.Close(); err != nil {
-					return log.Error("mail.daemon.workerDial.timeout.Close", "err", err)
+					PkgLog.Info("mail.daemon.workerDial.timeout.Close", "err", err)
+					return err
 				}
 				open = false
 			}

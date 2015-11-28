@@ -40,31 +40,31 @@ func (gomailPlainDialer) SetConfigReader(config.Getter) {
 }
 
 type emailConfig struct {
-	Config config.Getter
+	Config config.ScopedGetter
 }
 
-func (c *emailConfig) getHost(s config.ScopeIDer) string {
-	h := c.Config.String(config.Path(PathSmtpHost), config.ScopeStore(s))
+func (c *emailConfig) getHost() string {
+	h := c.Config.String(PathSmtpHost)
 	if h == "" {
 		h = defaultHost
 	}
 	return h
 }
 
-func (c *emailConfig) getPort(s config.ScopeIDer) int {
-	p := c.Config.Int(config.Path(PathSmtpPort), config.ScopeStore(s))
+func (c *emailConfig) getPort() int {
+	p := c.Config.Int(PathSmtpPort)
 	if p < 1 {
 		p = defaultPort
 	}
 	return p
 }
 
-func (c *emailConfig) getUsername(s config.ScopeIDer) string {
-	return c.Config.String(config.Path(PathSmtpUsername), config.ScopeStore(s))
+func (c *emailConfig) getUsername() string {
+	return c.Config.String(PathSmtpUsername)
 }
 
-func (c *emailConfig) getPassword(s config.ScopeIDer) string {
-	return c.Config.String(config.Path(PathSmtpPassword), config.ScopeStore(s))
+func (c *emailConfig) getPassword() string {
+	return c.Config.String(PathSmtpPassword)
 }
 
 func newEmailConfig(c config.Getter) *emailConfig {

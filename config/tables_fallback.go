@@ -26,13 +26,11 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/storage/money"
 )
 
 var (
 	_ = (*sort.IntSlice)(nil)
 	_ = (*time.Time)(nil)
-	_ = (*money.Money)(nil)
 )
 
 // TableIndex... is the index to a table. These constants are guaranteed
