@@ -6,9 +6,13 @@ go:
 os:
   - linux
   - osx
+  - windows
+git:
+  submodules: false
 matrix:
   allow_failures:
     - go: tip
+    - os: windows
 script:
   - make testnodb
 install:
