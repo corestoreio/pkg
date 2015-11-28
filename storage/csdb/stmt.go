@@ -75,6 +75,7 @@ func (su *ResurrectStmt) close(retErr bool) {
 	su.mu.Lock()
 	defer su.mu.Unlock()
 	if su.stmt == nil {
+		su.closeErr <- nil
 		return
 	}
 	err := errgo.Mask(su.stmt.Close())
@@ -110,11 +111,11 @@ func (su *ResurrectStmt) StartIdleChecker() {
 
 // StopIdleChecker stops the internal goroutine if it's started. Returns
 // the sql.Stmt.Close error.
-func (su *ResurrectStmt) StopIdleChecker() <-chan error {
+func (su *ResurrectStmt) StopIdleChecker() error {
 	if su.idleCheckStarted {
 		su.stop <- struct{}{}
 	}
-	return su.closeErr
+	return <-su.closeErr
 }
 
 func (su *ResurrectStmt) checkIdle() {

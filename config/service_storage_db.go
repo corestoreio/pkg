@@ -84,13 +84,13 @@ func (dbs *DBStorage) Start() *DBStorage {
 // Stop stops the internal goroutines for idle time checking. Returns the
 // first occurring sql.Stmt.Close() error.
 func (dbs *DBStorage) Stop() error {
-	if err := <-dbs.All.StopIdleChecker(); err != nil {
+	if err := dbs.All.StopIdleChecker(); err != nil {
 		return err
 	}
-	if err := <-dbs.Read.StopIdleChecker(); err != nil {
+	if err := dbs.Read.StopIdleChecker(); err != nil {
 		return err
 	}
-	if err := <-dbs.Write.StopIdleChecker(); err != nil {
+	if err := dbs.Write.StopIdleChecker(); err != nil {
 		return err
 	}
 	return nil

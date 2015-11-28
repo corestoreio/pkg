@@ -108,10 +108,6 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 		}
 	}
 
-	logStr := debugLogBuf.String()
-	assert.Exactly(t, 3, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Prepare SQL: "INSERT INTO`))
-	assert.Exactly(t, 3, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Prepare SQL: \"SELECT `value` FROM"))
-
 	for i, test := range tests {
 		ak := utils.StringSlice(sdb.AllKeys())
 		assert.True(t, ak.Include(test.key), "Missing Key: %s", test.key)
@@ -120,12 +116,16 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 		}
 	}
 	assert.NoError(t, sdb.Stop())
-	time.Sleep(time.Millisecond * 50) // that is bug because we have to wait until the goroutines stops ...
+	//	time.Sleep(time.Millisecond * 50) // that is a bug because we have to wait until the goroutines stops ...
 
-	logStr = debugLogBuf.String()
-	println("\n", logStr, "\n")
-	assert.Exactly(t, 4, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Close SQL: "INSERT INTO`))
+	logStr := debugLogBuf.String()
+	assert.Exactly(t, 3, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Prepare SQL: "INSERT INTO`))
+	assert.Exactly(t, 3, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Prepare SQL: \"SELECT `value` FROM"))
+
+	assert.Exactly(t, 4, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Close SQL: "INSERT INTO`), "\n%s\n", logStr)
 	assert.Exactly(t, 4, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Close SQL: \"SELECT `value` FROM"))
+
+	println("\n", logStr, "\n")
 
 	// 6 is: open close for iteration 0+1, open in iteration 2 and close in iteration 4
 	assert.Exactly(t, 6, strings.Count(logStr, fmt.Sprintf("CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`", scope.PS, scope.PS)))
