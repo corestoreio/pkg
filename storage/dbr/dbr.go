@@ -95,6 +95,19 @@ func NewConnection(opts ...ConnectionOption) (*Connection, error) {
 	return c, nil
 }
 
+// MustConnectAndVerify is like NewConnection but it verifies the connection
+// and panics on errors.
+func MustConnectAndVerify(opts ...ConnectionOption) *Connection {
+	c, err := NewConnection(opts...)
+	if err != nil {
+		panic(err)
+	}
+	if err := c.Ping(); err != nil {
+		panic(err)
+	}
+	return c
+}
+
 // ApplyOpts applies options to a connection
 func (c *Connection) ApplyOpts(opts ...ConnectionOption) *Connection {
 	for _, opt := range opts {
@@ -103,6 +116,26 @@ func (c *Connection) ApplyOpts(opts ...ConnectionOption) *Connection {
 		}
 	}
 	return c
+}
+
+// NewSession instantiates a Session for the Connection
+func (c *Connection) NewSession(opts ...SessionOption) *Session {
+	s := &Session{
+		cxn:           c,
+		EventReceiver: c.EventReceiver, // Use parent instrumentation
+	}
+	s.ApplyOpts(opts...)
+	return s
+}
+
+// Close closes the database, releasing any open resources.
+func (c *Connection) Close() error {
+	return c.EventErr("dbr.connection.close", c.DB.Close())
+}
+
+// Ping verifies a connection to the database is still alive, establishing a connection if necessary.
+func (c *Connection) Ping() error {
+	return c.EventErr("dbr.connection.ping", c.DB.Ping())
 }
 
 // SessionOption can be used as an argument in NewSession to configure a session.
@@ -123,16 +156,6 @@ func SetSessionEventReceiver(log EventReceiver) SessionOption {
 }
 
 // NewSession instantiates a Session for the Connection
-func (c *Connection) NewSession(opts ...SessionOption) *Session {
-	s := &Session{
-		cxn:           c,
-		EventReceiver: c.EventReceiver, // Use parent instrumentation
-	}
-	s.ApplyOpts(opts...)
-	return s
-}
-
-// NewSession instantiates a Session for the Connection
 func (s *Session) ApplyOpts(opts ...SessionOption) (previous SessionOption) {
 	for _, opt := range opts {
 		if opt != nil {
@@ -140,29 +163,6 @@ func (s *Session) ApplyOpts(opts ...SessionOption) (previous SessionOption) {
 		}
 	}
 	return previous
-}
-
-// MustConnectAndVerify is like NewConnection but it verifies the connection
-// and panics on errors.
-func MustConnectAndVerify(opts ...ConnectionOption) *Connection {
-	c, err := NewConnection(opts...)
-	if err != nil {
-		panic(err)
-	}
-	if err := c.Ping(); err != nil {
-		panic(err)
-	}
-	return c
-}
-
-// Close closes the database, releasing any open resources.
-func (c *Connection) Close() error {
-	return c.EventErr("dbr.connection.close", c.DB.Close())
-}
-
-// Ping verifies a connection to the database is still alive, establishing a connection if necessary.
-func (c *Connection) Ping() error {
-	return c.EventErr("dbr.connection.ping", c.DB.Ping())
 }
 
 // SessionRunner can do anything that a Session can except start a transaction.
