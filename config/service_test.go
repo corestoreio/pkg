@@ -92,4 +92,5 @@ func TestApplyCoreConfigData(t *testing.T) {
 		t.Error(err)
 	}
 	// todo check if data has been really written ;-)
+	// URGENT!!!
 }

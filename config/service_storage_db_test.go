@@ -62,14 +62,14 @@ func TestDBStorageOneStmt(t *testing.T) {
 		}
 	}
 
-	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), "(`scope`,`scope_id`,`path`,`value`) VALUES"))
-	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), "WHERE `scope`=? AND `scope_id`=? AND `path`=?"))
+	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), `csdb.ResurrectStmt.stmt.Prepare SQL: "INSERT INTO`))
+	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), "csdb.ResurrectStmt.stmt.Prepare SQL: \"SELECT `value` FROM"))
 
 	for _, test := range tests {
 		ak := utils.StringSlice(sdb.AllKeys()) // trigger many queries with one statement
 		assert.True(t, ak.Include(test.key), "Missing Key: %s", test.key)
 	}
-	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), "CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`"))
+	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), fmt.Sprintf("CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`", scope.PS, scope.PS)))
 }
 
 func TestDBStorageMultipleStmt(t *testing.T) {
@@ -78,7 +78,6 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Test skipped in short mode")
 	}
-
 	dbc := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
 
@@ -109,8 +108,9 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 		}
 	}
 
-	assert.Exactly(t, 5, strings.Count(debugLogBuf.String(), "(`scope`,`scope_id`,`path`,`value`) VALUES"))
-	assert.Exactly(t, 5, strings.Count(debugLogBuf.String(), "WHERE `scope`=? AND `scope_id`=? AND `path`=?"))
+	logStr := debugLogBuf.String()
+	assert.Exactly(t, 3, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Prepare SQL: "INSERT INTO`))
+	assert.Exactly(t, 3, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Prepare SQL: \"SELECT `value` FROM"))
 
 	for i, test := range tests {
 		ak := utils.StringSlice(sdb.AllKeys())
@@ -120,8 +120,13 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 		}
 	}
 	assert.NoError(t, sdb.Stop())
+	time.Sleep(time.Millisecond * 50) // that is bug because we have to wait until the goroutines stops ...
 
-	//println("\n", debugLogBuf.String(), "\n")
+	logStr = debugLogBuf.String()
+	println("\n", logStr, "\n")
+	assert.Exactly(t, 4, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Close SQL: "INSERT INTO`))
+	assert.Exactly(t, 4, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Close SQL: \"SELECT `value` FROM"))
+
 	// 6 is: open close for iteration 0+1, open in iteration 2 and close in iteration 4
-	assert.Exactly(t, 6, strings.Count(debugLogBuf.String(), fmt.Sprintf("CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`", scope.PS, scope.PS)))
+	assert.Exactly(t, 6, strings.Count(logStr, fmt.Sprintf("CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`", scope.PS, scope.PS)))
 }

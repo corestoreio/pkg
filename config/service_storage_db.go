@@ -20,195 +20,90 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/utils/cast"
-	"github.com/juju/errgo"
-	"sync"
 )
 
 var _ Storager = (*DBStorage)(nil)
 
-type stmtUsage struct {
-	SQL  string
-	Idle time.Duration
-	stop chan struct{} // tells the ticker to stop and close
-
-	mu       sync.Mutex // protects the last fields
-	stmt     *sql.Stmt
-	closed   bool       // stmt is closed and can be reopened
-	closeErr chan error // only available when Stop() has been called
-	lastUsed time.Time  // time when the stmt has last been used
-	inUse    bool       // stmt is currently in use by Set or Get
-}
-
-func (su *stmtUsage) close(retErr bool) {
-	// retErr returns only then the error when the main go routine of the ticker
-	// has been stopped. otherwise close errors will only be logged.
-	su.mu.Lock()
-	defer su.mu.Unlock()
-	if su.stmt == nil {
-		return
-	}
-	err := errgo.Mask(su.stmt.Close())
-	if err != nil {
-		PkgLog.Info("config.StmtUsage.stmt.Close.error", "err", err, "SQL", su.SQL)
-	} else {
-		su.closed = true
-	}
-	if retErr {
-		su.closeErr <- err
-	}
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("config.StmtUsage.stmt.Close", "SQL", su.SQL)
-	}
-}
-
-func (su *stmtUsage) canClose(t time.Time) bool {
-	su.mu.Lock()
-	defer su.mu.Unlock()
-	return t.After(su.lastUsed) && !su.closed && !su.inUse
-}
-
-func (su *stmtUsage) checkUsage() {
-	ticker := time.NewTicker(su.Idle)
-	for {
-		// maybe squeeze all three go routines into one. for each statement one select case.
-		select {
-		case t, ok := <-ticker.C:
-			if !ok {
-				// todo maybe debug log?
-				return
-			}
-
-			if su.canClose(t) {
-				// stmt has not been used within the last x seconds.
-				// so close the stmt and release the resources in the DB.
-				su.close(false)
-			}
-		case <-su.stop:
-			ticker.Stop()
-			su.close(true)
-			return
-		}
-	}
-}
-
-func (su *stmtUsage) getStmt(db *sql.DB) (*sql.Stmt, error) {
-	su.mu.Lock()
-	defer su.mu.Unlock()
-	if false == su.closed {
-		return su.stmt, nil
-	}
-	var err error
-	su.stmt, err = db.Prepare(su.SQL)
-	if err != nil {
-		return nil, errgo.Mask(err)
-	}
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("config.StmtUsage.stmt.Prepare", "SQL", su.SQL)
-	}
-	su.closed = false
-	return su.stmt, nil
-}
-
-func (su *stmtUsage) startUse() {
-	su.mu.Lock()
-	su.lastUsed = time.Now()
-	su.inUse = true
-	su.mu.Unlock()
-}
-
-func (su *stmtUsage) stopUse() {
-	su.mu.Lock()
-	su.lastUsed = time.Now()
-	su.inUse = false
-	su.mu.Unlock()
-}
-
+// DBStorage connects the MySQL DB with the config.Service type.
 type DBStorage struct {
-	db *sql.DB
 	// All is a SQL statement for the all keys query
-	All *stmtUsage
+	All *csdb.ResurrectStmt
 	// Read is a SQL statement for selecting a value from a path/key
-	Read *stmtUsage
+	Read *csdb.ResurrectStmt
 	// Write statement inserts or updates a value
-	Write *stmtUsage
+	Write *csdb.ResurrectStmt
 }
 
+// NewDBStorage creates a new pointer with resurrecting prepared SQL statements.
+// Default logger for the three underlying ResurrectStmt type is the PkgLog.
+//
+// All has an idle time of 15s. Read an idle time of 10s. Write an idle time of 30s.
 func NewDBStorage(db *sql.DB) *DBStorage {
-	// idea: as this is a long running service we should have
-	// two prepared statements for select, for insert and for all keys.
-	// After time x in which nothing happens neither select nor
-	// insert nor an update the prepared statement gets closed
-	// and once there is a new action then we recreate a prepared
-	// statement.
+	// todo: instead of logging the error we may write it into an
+	// error channel and the gopher who calls NewDBStorage is responsible
+	// for continuously reading from the error channel. or we accept an error channel
+	// as argument here and then writing to it ...
+
 	dbs := &DBStorage{
-		db: db,
-		All: &stmtUsage{
-			SQL: fmt.Sprintf(
-				"SELECT CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath` FROM `%s` ORDER BY scope,scope_id,path",
-				scope.PS,
-				scope.PS,
-				TableCollection.Name(TableIndexCoreConfigData),
-			),
-			Idle:     time.Second * 15,
-			stop:     make(chan struct{}),
-			closeErr: make(chan error),
-			closed:   true,
-		},
-		Read: &stmtUsage{
-			SQL: fmt.Sprintf(
-				"SELECT `value` FROM `%s` WHERE `scope`=? AND `scope_id`=? AND `path`=?",
-				TableCollection.Name(TableIndexCoreConfigData),
-			),
-			Idle:     time.Second * 10,
-			stop:     make(chan struct{}),
-			closeErr: make(chan error),
-			closed:   true,
-		},
-		Write: &stmtUsage{
-			SQL: fmt.Sprintf(
-				"INSERT INTO `%s` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=?",
-				TableCollection.Name(TableIndexCoreConfigData),
-			),
-			Idle:     time.Second * 30,
-			stop:     make(chan struct{}),
-			closeErr: make(chan error),
-			closed:   true,
-		},
+		All: csdb.NewResurrectStmt(db, fmt.Sprintf(
+			"SELECT CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath` FROM `%s` ORDER BY scope,scope_id,path",
+			scope.PS,
+			scope.PS,
+			TableCollection.Name(TableIndexCoreConfigData),
+		)),
+		Read: csdb.NewResurrectStmt(db, fmt.Sprintf(
+			"SELECT `value` FROM `%s` WHERE `scope`=? AND `scope_id`=? AND `path`=?",
+			TableCollection.Name(TableIndexCoreConfigData),
+		)),
+
+		Write: csdb.NewResurrectStmt(db, fmt.Sprintf(
+			"INSERT INTO `%s` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=?",
+			TableCollection.Name(TableIndexCoreConfigData),
+		)),
 	}
+	dbs.All.Idle = time.Second * 15
+	dbs.All.Log = PkgLog
+	dbs.Read.Idle = time.Second * 10
+	dbs.Read.Log = PkgLog
+	dbs.Write.Idle = time.Second * 30
+	dbs.Write.Log = PkgLog
 	return dbs
 }
 
+// Start starts the internal idle time checker for the resurrecting SQL statements.
 func (dbs *DBStorage) Start() *DBStorage {
-	go dbs.All.checkUsage()
-	go dbs.Read.checkUsage()
-	go dbs.Write.checkUsage()
+	dbs.All.StartIdleChecker()
+	dbs.Read.StartIdleChecker()
+	dbs.Write.StartIdleChecker()
 	return dbs
 }
 
-func (dbs *DBStorage) Stop() (err error) {
-	dbs.All.stop <- struct{}{}
-	dbs.Read.stop <- struct{}{}
-	dbs.Write.stop <- struct{}{}
-	if err := <-dbs.All.closeErr; err != nil {
+// Stop stops the internal goroutines for idle time checking. Returns the
+// first occurring sql.Stmt.Close() error.
+func (dbs *DBStorage) Stop() error {
+	if err := <-dbs.All.StopIdleChecker(); err != nil {
 		return err
 	}
-	if err := <-dbs.Read.closeErr; err != nil {
+	if err := <-dbs.Read.StopIdleChecker(); err != nil {
 		return err
 	}
-	if err := <-dbs.Write.closeErr; err != nil {
+	if err := <-dbs.Write.StopIdleChecker(); err != nil {
 		return err
 	}
 	return nil
 }
 
+// Set sets a value with its key. Database errors get logged as Info message.
+// Enabled debug level logs the insert ID or rows affected.
 func (dbs *DBStorage) Set(key string, value interface{}) {
 	// update lastUsed at the end because there might be the slight chance
 	// that a statement gets closed despite we're waiting for the result
 	// from the server.
-	dbs.Write.startUse()
-	defer dbs.Write.stopUse()
+	dbs.Write.StartStmtUse()
+	defer dbs.Write.StopStmtUse()
 
 	valStr, err := cast.ToStringE(value)
 	if err != nil {
@@ -216,7 +111,7 @@ func (dbs *DBStorage) Set(key string, value interface{}) {
 		return
 	}
 
-	stmt, err := dbs.Write.getStmt(dbs.db)
+	stmt, err := dbs.Write.Stmt()
 	if err != nil {
 		PkgLog.Info("config.DBStorage.Set.Write.getStmt", "err", err, "SQL", dbs.Write.SQL)
 		return
@@ -236,18 +131,21 @@ func (dbs *DBStorage) Set(key string, value interface{}) {
 	if PkgLog.IsDebug() {
 		li, err1 := result.LastInsertId()
 		ra, err2 := result.RowsAffected()
-		PkgLog.Info("config.DBStorage.Set.Write.Result", "lastInsertID", li, "lastInsertIDErr", err1, "rowsAffected", ra, "rowsAffectedErr", err2, "SQL", dbs.Write.SQL, "key", key, "value", value)
+		PkgLog.Debug("config.DBStorage.Set.Write.Result", "lastInsertID", li, "lastInsertIDErr", err1, "rowsAffected", ra, "rowsAffectedErr", err2, "SQL", dbs.Write.SQL, "key", key, "value", value)
 	}
 }
 
+// Get returns a value from the database by its key. It is guaranteed that the
+// type in the empty interface is a string. It returns nil on error but errors
+// get logged as info message
 func (dbs *DBStorage) Get(key string) interface{} {
 	// update lastUsed at the end because there might be the slight chance
 	// that a statement gets closed despite we're waiting for the result
 	// from the server.
-	dbs.Read.startUse()
-	defer dbs.Read.stopUse()
+	dbs.Read.StartStmtUse()
+	defer dbs.Read.StopStmtUse()
 
-	stmt, err := dbs.Read.getStmt(dbs.db)
+	stmt, err := dbs.Read.Stmt()
 	if err != nil {
 		PkgLog.Info("config.DBStorage.Get.Read.getStmt", "err", err, "SQL", dbs.Read.SQL)
 		return nil
@@ -271,14 +169,15 @@ func (dbs *DBStorage) Get(key string) interface{} {
 	return nil
 }
 
+// AllKeys returns all available keys. Database errors get logged as info message.
 func (dbs *DBStorage) AllKeys() []string {
 	// update lastUsed at the end because there might be the slight chance
 	// that a statement gets closed despite we're waiting for the result
 	// from the server.
-	dbs.All.startUse()
-	defer dbs.All.stopUse()
+	dbs.All.StartStmtUse()
+	defer dbs.All.StopStmtUse()
 
-	stmt, err := dbs.All.getStmt(dbs.db)
+	stmt, err := dbs.All.Stmt()
 	if err != nil {
 		PkgLog.Info("config.DBStorage.AllKeys.All.getStmt", "err", err, "SQL", dbs.All.SQL)
 		return nil
