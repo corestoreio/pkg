@@ -28,7 +28,7 @@ import (
 
 func TestGetColumns(t *testing.T) {
 	dbc := csdb.MustConnectTest()
-	defer dbc.Close()
+	defer func() { assert.NoError(t, dbc.Close()) }()
 	sess := dbc.NewSession()
 
 	tests := []struct {

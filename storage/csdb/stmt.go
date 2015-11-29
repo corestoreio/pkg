@@ -57,6 +57,9 @@ type ResurrectStmt struct {
 // to prepare the stmt and a SQL query string. Default idle time is defined
 // in DefaultResurrectStmtIdleTime. Default logger: PkgLog.
 func NewResurrectStmt(db *sql.DB, SQL string) *ResurrectStmt {
+	// the overall question here is if the Stmt() function should
+	// return an error once the ticker has been stopped or is not running.
+
 	return &ResurrectStmt{
 		DB:     db,
 		SQL:    SQL,
@@ -70,6 +73,8 @@ func NewResurrectStmt(db *sql.DB, SQL string) *ResurrectStmt {
 // StartIdleChecker starts the internal goroutine which checks the idle time.
 // You can only start it once. sql.Stmt.Close() errors gets logged to Info. Those
 // errors will only be returned if you stop the idle checker goroutine.
+// Starting the idle checker is recommended because otherwise you might have
+// a very long lived prepared statement.
 func (su *ResurrectStmt) StartIdleChecker() {
 	if su.idleCheckStarted {
 		return
@@ -88,18 +93,19 @@ func (su *ResurrectStmt) StopIdleChecker() error {
 	return su.close()
 }
 
-func (su *ResurrectStmt) close() error {
+// IsIdle returns true if the statement has been closed.
+func (su *ResurrectStmt) IsIdle() bool {
 	su.mu.Lock()
 	defer su.mu.Unlock()
+	return su.closed
+}
 
-	su.closed = true
-
-	if su.stmt == nil {
-		if su.Log.IsDebug() {
-			su.Log.Debug("csdb.ResurrectStmt.stmt.Close", "SQL", su.SQL)
-		}
-		return nil
-	}
+func (su *ResurrectStmt) close() error {
+	su.mu.Lock()
+	defer func() {
+		su.closed = true
+		su.mu.Unlock()
+	}()
 
 	if su.Log.IsDebug() {
 		su.Log.Debug("csdb.ResurrectStmt.stmt.Close", "SQL", su.SQL)
