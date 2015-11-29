@@ -22,6 +22,7 @@ import (
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxmw"
 	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/siddontang/ledisdb/Godeps/_workspace/src/github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -55,7 +56,13 @@ func TestAdapters(t *testing.T) {
 }
 
 func TestDefaultAdapterErrFunc(t *testing.T) {
-	t.Log("@todo")
+	anErr := errors.New("This error should be returned")
+	w := httptest.NewRecorder()
+	req, err := http.NewRequest(httputils.MethodGet, "http://example.com/foo?_method=KARATE", nil)
+	assert.NoError(t, err)
+	ctxhttp.DefaultAdapterErrFunc(w, req, anErr)
+	assert.Exactly(t, http.StatusBadRequest, w.Code)
+	assert.Exactly(t, "Bad Request\nApp Error: This error should be returned\n", w.Body.String())
 }
 
 func TestHttpMethodOverride(t *testing.T) {
