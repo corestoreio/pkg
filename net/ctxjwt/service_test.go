@@ -66,7 +66,7 @@ func TestNewDefault(t *testing.T) {
 
 	jmRSA, err := ctxjwt.NewService(ctxjwt.WithRSAFromFile("invalid.key"))
 	assert.Nil(t, jmRSA)
-	assert.Contains(t, err.Error(), "open invalid.key: no such file or directory")
+	assert.Contains(t, err.Error(), "open invalid.key:") //  no such file or directory OR The system cannot find the file specified.
 }
 
 func TestInvalidSigningMethod(t *testing.T) {
