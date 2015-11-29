@@ -24,6 +24,7 @@ environment:
 
 install:
   - copy c:\MinGW\bin\mingw32-make.exe c:\MinGW\bin\make.exe
+  - set PATH=c:\MinGW\bin;C:\cygwin\bin;%PATH%
   - echo %PATH%
   - echo %GOPATH%
   - go version
