@@ -40,11 +40,11 @@ const (
 // TODO(cs) implement ideas from https://github.com/nathan-osman/go-cannon
 
 // ManagerOption can be used as an argument in NewManager to configure a manager.
-type ManagerOption func(*Manager)
+type ServiceOption func(*Service)
 
 // Manager represents a daemon which must be created via NewManager() function.
 // A manager starts and stops a daemon. Restarts happens on config changes.
-type Manager struct {
+type Service struct {
 	// lastErrs a collector. While setting options, errors may occur and will
 	// be accumulated here for later output in the NewManager() function.
 	lastErrs []error
@@ -55,92 +55,95 @@ type Manager struct {
 	dialer map[uint64]Dialer
 }
 
-var _ error = (*Manager)(nil)
-var _ config.MessageReceiver = (*Manager)(nil)
+var _ error = (*Service)(nil)
+var _ config.MessageReceiver = (*Service)(nil)
 
 // Error implements the error interface. Returns a string where each error has
 // been separated by a line break.
-func (m *Manager) Error() string {
-	return utils.Errors(m.lastErrs)
+func (s *Service) Error() string {
+	return utils.Errors(s.lastErrs...)
 }
 
 // Options applies optional arguments to the daemon
 // struct. It returns the last set option. More info about the returned function:
 // http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
-func (m *Manager) Option(opts ...ManagerOption) *Manager {
+func (s *Service) Option(opts ...ServiceOption) *Service {
 	for _, o := range opts {
 		if o != nil {
-			o(m)
+			o(s)
 		}
 	}
-	return m
+	return s
 }
 
-func (m *Manager) Send(s scope.Scope, id int64, m *gomail.Message) error {
+func (s *Service) Send(sc scope.Scope, id int64, m *gomail.Message) error {
 
 	return nil
 }
 
 // SubscribeToConfigChanges subscribes the function MessageConfig to the
 // config.Subscriber
-func (m *Manager) SubscribeToConfigChanges(s config.Subscriber) (subscriptionID int, err error) {
-	return s.Subscribe(PathSmtp, m)
+func (s *Service) SubscribeToConfigChanges(sub config.Subscriber) (subscriptionID int, err error) {
+	return sub.Subscribe(PathSmtp, s)
 }
 
 // MessageConfig allows subscription to the publish/subscribe message system of
 // config.Service. MessageConfig will be added via SubscribeToConfigChanges to the
 // config.Subscriber.
 // IF a configuration change
-func (m *Manager) MessageConfig(path string, s scope.Scope, id int64) {
+func (s *Service) MessageConfig(path string, sc scope.Scope, id int64) error {
 	switch path {
 	case PathSmtpHost, PathSmtpPort, PathSmtpUsername:
 		// start and stop the daemon for the corresponding scope group and id
 	case PathSmtpDisable:
 		// stop daemon and replace dialer
 	}
+	return nil
 }
 
-func (m *Manager) allocate(dm *Daemon) Dialer {
-	m.mu.Lock()
-	defer m.mu.Unlock()
+func (s *Service) allocate(dm *Daemon) Dialer {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	id, changed := dm.UniqueID.Get()
-
-	if dm.lastIDchanged {
-		if _, ok := m.dialer[dm.lastID]; ok {
-			m.dialer[dm.lastID] = nil // current dialer will be GCed
-			delete(m.dialer, dm.lastID)
-		}
-		dm.lastIDchanged = false
-	}
-
-	if _, ok := m.dialer[id]; !ok {
-
-		m.dialer[id] = dm.dialer
-
-		if nil == m.dialer[id] {
-			nd := &gomailPlainDialer{
-				Dialer: newPlainDialer(m.getHost(), m.getPort(), m.getUsername(), m.getPassword()),
-			}
-
-			if nil != dm.tlsConfig {
-				nd.TLSConfig = dm.tlsConfig
-			}
-			m.dialer[id] = nd
-		}
-	}
-	return m.dialer[id]
+	//	id, changed := dm.UniqueID.Get()
+	//
+	//	if dm.lastIDchanged {
+	//		if _, ok := m.dialer[dm.lastID]; ok {
+	//			m.dialer[dm.lastID] = nil // current dialer will be GCed
+	//			delete(m.dialer, dm.lastID)
+	//		}
+	//		dm.lastIDchanged = false
+	//	}
+	//
+	//	if _, ok := m.dialer[id]; !ok {
+	//
+	//		m.dialer[id] = dm.dialer
+	//
+	//		if nil == m.dialer[id] {
+	//			nd := &gomailPlainDialer{
+	//				Dialer: newPlainDialer(m.getHost(), m.getPort(), m.getUsername(), m.getPassword()),
+	//			}
+	//
+	//			if nil != dm.tlsConfig {
+	//				nd.TLSConfig = dm.tlsConfig
+	//			}
+	//			m.dialer[id] = nd
+	//		}
+	//	}
+	//	return m.dialer[id]
+	return nil
 }
 
-func NewManager(opts ...ManagerOption) (*Manager, error) {
-	m := &Manager{
-		emailConfig: newEmailConfig(config.DefaultService),
-		dialer:      make(map[uint64]Dialer),
+func NewService(opts ...ServiceOption) (*Service, error) {
+	// load available configs from DB ... implement auto refresh
+	s := &Service{
+		//emailConfig: newEmailConfig(config.DefaultService),
+		dialer: make(map[uint64]Dialer),
 	}
-	m.Option(opts...)
+	s.Option(opts...)
 
-	if m.lastErrs != nil {
-		return nil, m // because Manager implements error interface
+	if s.lastErrs != nil {
+		return nil, s // because Manager implements error interface
 	}
-	return m, nil
+	return s, nil
 }

@@ -28,36 +28,7 @@ Running one daemon
 
 To run one daemon for a specific store view:
 
-	import (
-		"github.com/corestoreio/csfw/utils/log"
-		"github.com/corestoreio/csfw/utils/mail"
-		"github.com/corestoreio/csfw/store"
-	)
-
-	sm := store.NewManager(
-		store.NewStorageOption(),
-	)
-	sm.ReInit(dbrSess)
-
-	...
-
-	d := mail.NewDaemon(
-		mail.SetSMTPTimeout(20),
-		mail.SetScope(sm.Store())
-	)
-	go func(){
-		if err := d.Worker(); err != nil {
-			log.Error("daemon.Worker", "err", err)
-		}
-	}()
-
-	// send emails for customer registration, order confirmation, etc
-
-	d.Send(*gomail.Message)
-
-	// stop the daemon whenever you wish
-	d.Stop()
-
+	todo
 
 Running multiple daemons
 

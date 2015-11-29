@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/utils"
 	"github.com/corestoreio/csfw/utils/log"
 	"github.com/go-gomail/gomail"
@@ -58,7 +57,7 @@ var ErrMailChannelClosed = errors.New("The mail channel has been closed.")
 type Dialer interface {
 	// SetConfig allows instant access to the system wide configuration by the
 	// current scope ID.
-	SetConfig(config.Getter, scope.StoreIDer)
+	SetConfig(config.ScopedGetter)
 	// Dial initiates the connection to the mail server.
 	Dial() (gomail.SendCloser, error)
 }
@@ -238,17 +237,16 @@ func (dm *Daemon) IsOffline() bool {
 	if nil == dm.Config {
 		return true
 	}
-	return dm.Config.Bool(config.Path(PathSmtpDisable), config.ScopeStore(dm.Scope))
+	return dm.Config.Bool(PathSmtpDisable)
 }
 
 // NewDaemon creates a new mail sending daemon to send to a SMTP server.
 // Per default it uses localhost:25, creates an unbuffered channel, uses the
 // config.DefaultManager, applies the admin scope (0) and sets the SMTP
 // timeout to 30s.
-func NewDaemon(opts ...DaemonOption) (*Daemon, error) {
+func NewDaemon(c config.ScopedGetter, opts ...DaemonOption) (*Daemon, error) {
 	d := &Daemon{
-		Config:      config.DefaultService,
-		Scope:       scope.AdminScope,
+		Config:      c,
 		SmtpTimeout: time.Second * 30,
 	}
 	d.SetOptions(opts...)

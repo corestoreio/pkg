@@ -14,80 +14,69 @@
 
 package email_test
 
-import (
-	"bytes"
-	"io"
-	"testing"
+//var configMock = config.NewMockGetter(
+//	config.WithMockInt(func(path string) int {
+//		//println("int", path)
+//		return 25 // Port 25
+//	}),
+//	config.WithMockString(func(path string) string {
+//		//println("string", path)
+//		return "localhost"
+//	}),
+//	config.WithMockBool(func(path string) bool {
+//		//println("bool", path)
+//		switch path {
+//		case "stores/3001/system/smtp/disable":
+//			return true
+//		case "stores/4010/system/smtp/disable":
+//			return false
+//		default:
+//			return false
+//		}
+//	}),
+//)
+//
+//type mockDial struct {
+//	t        *testing.T
+//	dialErr  error
+//	sendErr  error
+//	closeErr error
+//}
+//
+//func (md mockDial) Dial() (gomail.SendCloser, error) {
+//	return mockSendCloser{
+//		t:        md.t,
+//		sendErr:  md.sendErr,
+//		closeErr: md.closeErr,
+//	}, md.dialErr
+//}
+//
+//var _ email.Dialer = (*mockDial)(nil)
+//
+//type mockSendCloser struct {
+//	t        *testing.T
+//	sendErr  error
+//	closeErr error
+//}
+//
+//func (msc mockSendCloser) Send(from string, to []string, msg io.WriterTo) error {
+//	assert.NotEmpty(msc.t, from)
+//	assert.NotEmpty(msc.t, to)
+//
+//	var buf bytes.Buffer
+//	msg.WriteTo(&buf)
+//	assert.NotEmpty(msc.t, buf.String())
+//
+//	//msc.t.Log(buf.String())
+//
+//	return msc.sendErr
+//}
+//func (msc mockSendCloser) Close() error {
+//
+//	return msc.closeErr
+//}
 
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/email"
-	"github.com/go-gomail/gomail"
-	"github.com/stretchr/testify/assert"
-)
-
-var configMock = config.NewMockGetter(
-	config.WithMockInt(func(path string) int {
-		//println("int", path)
-		return 25 // Port 25
-	}),
-	config.WithMockString(func(path string) string {
-		//println("string", path)
-		return "localhost"
-	}),
-	config.WithMockBool(func(path string) bool {
-		//println("bool", path)
-		switch path {
-		case "stores/3001/system/smtp/disable":
-			return true
-		case "stores/4010/system/smtp/disable":
-			return false
-		default:
-			return false
-		}
-	}),
-)
-
-type mockDial struct {
-	t        *testing.T
-	dialErr  error
-	sendErr  error
-	closeErr error
-}
-
-func (md mockDial) Dial() (gomail.SendCloser, error) {
-	return mockSendCloser{
-		t:        md.t,
-		sendErr:  md.sendErr,
-		closeErr: md.closeErr,
-	}, md.dialErr
-}
-
-var _ email.Dialer = (*mockDial)(nil)
-
-type mockSendCloser struct {
-	t        *testing.T
-	sendErr  error
-	closeErr error
-}
-
-func (msc mockSendCloser) Send(from string, to []string, msg io.WriterTo) error {
-	assert.NotEmpty(msc.t, from)
-	assert.NotEmpty(msc.t, to)
-
-	var buf bytes.Buffer
-	msg.WriteTo(&buf)
-	assert.NotEmpty(msc.t, buf.String())
-
-	//msc.t.Log(buf.String())
-
-	return msc.sendErr
-}
-func (msc mockSendCloser) Close() error {
-
-	return msc.closeErr
-}
-
-var _ gomail.SendCloser = (*mockSendCloser)(nil)
+//var _ gomail.SendCloser = (*mockSendCloser)(nil)
 
 //type mockSender gomail.SendFunc
 //

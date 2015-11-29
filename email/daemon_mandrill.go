@@ -21,8 +21,7 @@ import (
 	"net/http"
 	"net/mail"
 
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/juju/errgo"
 	"github.com/mattbaird/gochimp"
 )
 
@@ -45,7 +44,7 @@ func SetMandrill(opts ...MandrillOptions) DaemonOption {
 	return func(da *Daemon) DaemonOption {
 		// this whole func is just a quick write down. no idea if it's working
 		// and refactor ... 8-)
-		apiKey := da.Config.String(config.ScopeStore(da.Scope), config.Path(PathSmtpMandrillAPIKey))
+		apiKey := da.Config.String(PathSmtpMandrillAPIKey)
 
 		if apiKey == "" {
 			da.lastErrs = append(da.lastErrs, errors.New("Mandrill API Key is empty."))
@@ -67,7 +66,8 @@ func SetMandrill(opts ...MandrillOptions) DaemonOption {
 
 			addr, err := mail.ParseAddress(from)
 			if err != nil {
-				return log.Error("mail.daemon.Mandrill.ParseAddress", "err", err, "from", from, "to", to)
+				PkgLog.Info("mail.daemon.Mandrill.ParseAddress", "err", err, "from", from, "to", to)
+				return errgo.Mask(err)
 			}
 
 			r := gochimp.Recipient{
@@ -77,15 +77,17 @@ func SetMandrill(opts ...MandrillOptions) DaemonOption {
 
 			var buf bytes.Buffer
 			if _, err := msg.WriteTo(&buf); err != nil {
-				return log.Error("mail.daemon.Mandrill.MessageWriteTo", "err", err, "from", from, "to", to, "msg", buf.String())
+				PkgLog.Info("mail.daemon.Mandrill.MessageWriteTo", "err", err, "from", from, "to", to, "msg", buf.String())
+				return errgo.Mask(err)
 			}
 
 			resp, err := md.MessageSendRaw(buf.String(), to, r, false)
 			if err != nil {
-				return log.Error("mail.daemon.Mandrill.MessageSendRaw", "err", err, "from", from, "to", to, "msg", buf.String())
+				PkgLog.Info("mail.daemon.Mandrill.MessageSendRaw", "err", err, "from", from, "to", to, "msg", buf.String())
+				return errgo.Mask(err)
 			}
-			if log.IsDebug() {
-				log.Debug("mail.daemon.Mandrill.MessageSendRaw", "resp", resp, "from", from, "to", to, "msg", buf.String())
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("mail.daemon.Mandrill.MessageSendRaw", "resp", resp, "from", from, "to", to, "msg", buf.String())
 			}
 			// The last arg in MessageSendRaw means async in the Mandrill API:
 			// Async: enable a background sending mode that is optimized for bulk sending.

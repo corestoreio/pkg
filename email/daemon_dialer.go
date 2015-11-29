@@ -35,7 +35,7 @@ type gomailPlainDialer struct {
 }
 
 // SetConfigReader noop method to comply with the interface Dialer.
-func (gomailPlainDialer) SetConfigReader(config.Getter) {
+func (gomailPlainDialer) SetConfig(config.ScopedGetter) {
 	// noop
 }
 
@@ -67,7 +67,7 @@ func (c *emailConfig) getPassword() string {
 	return c.Config.String(PathSmtpPassword)
 }
 
-func newEmailConfig(c config.Getter) *emailConfig {
+func newEmailConfig(c config.ScopedGetter) *emailConfig {
 	return &emailConfig{
 		Config: c,
 	}

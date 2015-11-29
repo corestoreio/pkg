@@ -20,7 +20,6 @@ import (
 	"strconv"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/utils/log"
 )
 
 type uniqueID struct {
@@ -59,7 +58,7 @@ func (u *uniqueID) Get() (id uint64, hasChanged bool) {
 	h = fnv.New64()
 	data := []byte(u.getHost() + strconv.Itoa(u.getPort()) + u.getUsername())
 	if _, err := h.Write(data); err != nil {
-		log.Error("mail.daemon.ID", "err", err, "hashWrite", string(data))
+		PkgLog.Info("mail.daemon.ID", "err", err, "hashWrite", string(data))
 		return
 	}
 	if u.lastID != h.Sum64() {
