@@ -26,11 +26,8 @@ import (
 // ProTip: If you use MySQL as Storager don't execute function
 // ApplyCoreConfigData()
 type Storager interface {
-	// Set applies key and value to the storage
 	Set(key string, value interface{})
-	// Get retrieves the value by a key
 	Get(key string) interface{}
-	// AllKeys returns a ascending sorted list of all keys
 	AllKeys() []string
 }
 

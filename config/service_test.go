@@ -33,6 +33,9 @@ func init() {
 }
 
 func TestScopeApplyDefaults(t *testing.T) {
+	defer debugLogBuf.Reset()
+	defer infoLogBuf.Reset()
+
 	pkgCfg := config.MustNewConfiguration(
 		&config.Section{
 			ID: "contact",
@@ -80,17 +83,36 @@ func TestScopeApplyDefaults(t *testing.T) {
 	sval, err := s.String(config.Path("contact/email/recipient_email"))
 	assert.NoError(t, err)
 	assert.Exactly(t, cer.Default.(string), sval)
+	assert.NoError(t, s.Close())
 }
 
+// TestApplyCoreConfigData reads from the MySQL core_config_data table and applies
+// these value to the underlying storage. tries to get back the values from the
+// underlying storage
 func TestApplyCoreConfigData(t *testing.T) {
+	defer debugLogBuf.Reset()
+	defer infoLogBuf.Reset()
+
 	dbc := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
-	sess := dbc.NewSession(nil)
+	sess := dbc.NewSession(nil) // nil tricks the NewSession ;-)
 
-	m := config.NewService()
-	if err := m.ApplyCoreConfigData(sess); err != nil {
-		t.Error(err)
+	s := config.NewService()
+	defer func() { assert.NoError(t, s.Close()) }()
+
+	loadedRows, writtenRows, err := s.ApplyCoreConfigData(sess)
+	if err != nil {
+		t.Fatal(err)
 	}
-	// todo check if data has been really written ;-)
-	// URGENT!!!
+	assert.True(t, loadedRows > 10)
+	assert.True(t, writtenRows > 10)
+
+	//	println("\n", debugLogBuf.String(), "\n")
+	//	println("\n", infoLogBuf.String(), "\n")
+
+	h, err := s.String(config.Path("web/secure/offloader_header"), config.ScopeDefault())
+	assert.NoError(t, err)
+	assert.Exactly(t, "SSL_OFFLOADED", h)
+
+	assert.Len(t, s.Storage.AllKeys(), writtenRows+1)
 }

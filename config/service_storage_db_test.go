@@ -29,7 +29,9 @@ import (
 )
 
 func TestDBStorageOneStmt(t *testing.T) {
-	defer debugLogBuf.Reset() // contains only data from the debug level, info level will be dumped to os.Stdout
+	debugLogBuf.Reset()
+	defer debugLogBuf.Reset()
+	defer infoLogBuf.Reset()
 
 	dbc := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
@@ -73,7 +75,9 @@ func TestDBStorageOneStmt(t *testing.T) {
 }
 
 func TestDBStorageMultipleStmt(t *testing.T) {
+	debugLogBuf.Reset()
 	defer debugLogBuf.Reset() // contains only data from the debug level, info level will be dumped to os.Stdout
+	defer infoLogBuf.Reset()
 
 	if testing.Short() {
 		t.Skip("Test skipped in short mode")
@@ -116,7 +120,6 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 		}
 	}
 	assert.NoError(t, sdb.Stop())
-	//	time.Sleep(time.Millisecond * 50) // that is a bug because we have to wait until the goroutines stops ...
 
 	logStr := debugLogBuf.String()
 	assert.Exactly(t, 3, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Prepare SQL: "INSERT INTO`))
@@ -125,7 +128,7 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 	assert.Exactly(t, 4, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Close SQL: "INSERT INTO`), "\n%s\n", logStr)
 	assert.Exactly(t, 4, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Close SQL: \"SELECT `value` FROM"))
 
-	println("\n", logStr, "\n")
+	//println("\n", logStr, "\n")
 
 	// 6 is: open close for iteration 0+1, open in iteration 2 and close in iteration 4
 	assert.Exactly(t, 6, strings.Count(logStr, fmt.Sprintf("CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`", scope.PS, scope.PS)))

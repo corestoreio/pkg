@@ -114,35 +114,38 @@ func (s *Service) ApplyDefaults(ss Sectioner) *Service {
 }
 
 // ApplyCoreConfigData reads the table core_config_data into the Service and overrides
-// existing values. If the column value is NULL entry will be ignored.
-func (s *Service) ApplyCoreConfigData(dbrSess dbr.SessionRunner) error {
+// existing values. If the column `value` is NULL entry will be ignored. It returns the
+// loadedRows which are all rows from the table and the writtenRows which are the applied
+// config values where a value is valid.
+func (s *Service) ApplyCoreConfigData(dbrSess dbr.SessionRunner) (loadedRows, writtenRows int, err error) {
 	var ccd TableCoreConfigDataSlice
-	rows, err := csdb.LoadSlice(dbrSess, TableCollection, TableIndexCoreConfigData, &ccd)
+	loadedRows, err = csdb.LoadSlice(dbrSess, TableCollection, TableIndexCoreConfigData, &ccd)
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("config.Service.ApplyCoreConfigData", "rows", rows)
+		PkgLog.Debug("config.Service.ApplyCoreConfigData", "rows", loadedRows)
 	}
 	if err != nil {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.Service.ApplyCoreConfigData.LoadSlice", "err", err)
 		}
-		return errgo.Mask(err)
+		return loadedRows, writtenRows, errgo.Mask(err)
 	}
 
 	for _, cd := range ccd {
 		if cd.Value.Valid {
 			// scope.ID(cd.ScopeID) because cd.ScopeID is a struct field and cannot satisfy interface scope.IDer
 			if err := s.Write(Path(cd.Path), Scope(scope.FromString(cd.Scope), cd.ScopeID), Value(cd.Value.String)); err != nil {
-				return errgo.Mask(err)
+				return loadedRows, writtenRows, errgo.Mask(err)
 			}
+			writtenRows++
 		}
 	}
-	return nil
+	return loadedRows, writtenRows, err
 }
 
 // Write puts a value back into the Service. Example usage:
-// Default Scope: Write(config.Path("currency", "option", "base"), config.Value("USD"))
-// Website Scope: Write(config.Path("currency", "option", "base"), config.Value("EUR"), config.ScopeWebsite(w))
-// Store   Scope: Write(config.Path("currency", "option", "base"), config.ValueReader(resp.Body), config.ScopeStore(s))
+// 	Default Scope: Write(config.Path("currency", "option", "base"), config.Value("USD"))
+// 	Website Scope: Write(config.Path("currency", "option", "base"), config.Value("EUR"), config.ScopeWebsite(w))
+// 	Store   Scope: Write(config.Path("currency", "option", "base"), config.ValueReader(resp.Body), config.ScopeStore(s))
 func (s *Service) Write(o ...ArgFunc) error {
 	a, err := newArg(o...)
 	if err != nil {

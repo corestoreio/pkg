@@ -62,49 +62,55 @@ type pubSub struct {
 	subAutoInc int // subAutoInc increased whenever a Subscriber has been added
 	mu         sync.RWMutex
 	publishArg chan arg
-	closed     bool
+	stop       chan struct{} // terminates the goroutine
+	closeErr   chan error    // this one tells us that the go routine has really been terminated
+	closed     bool          // if Close() has been called the config.Service can still Write() without panic
 }
 
 // Close closes the internal channel for the pubsub Goroutine. Prevents a leaking
 // Goroutine.
-func (ps *pubSub) Close() error {
-	if ps.closed {
+func (s *pubSub) Close() error {
+	if s.closed {
 		return ErrPublisherClosed
 	}
-	ps.closed = true
-	close(ps.publishArg)
-	return nil
+	defer func() { close(s.closeErr) }() // last close(s.closeErr) does not work and panics
+	s.closed = true
+	s.stop <- struct{}{}
+	close(s.publishArg)
+	close(s.stop)
+	//close(s.closeErr)
+	return <-s.closeErr
 }
 
 // Subscribe adds a Subscriber to be called when a write event happens.
 // See interface Subscriber for a detailed description.
-func (ps *pubSub) Subscribe(path string, s MessageReceiver) (subscriptionID int, err error) {
+func (s *pubSub) Subscribe(path string, mr MessageReceiver) (subscriptionID int, err error) {
 	if path == "" {
 		return 0, ErrPathEmpty
 	}
-	ps.mu.Lock()
-	defer ps.mu.Unlock()
-	ps.subAutoInc++
-	subscriptionID = ps.subAutoInc
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.subAutoInc++
+	subscriptionID = s.subAutoInc
 
-	if _, ok := ps.subMap[path]; !ok {
-		ps.subMap[path] = make(map[int]MessageReceiver)
+	if _, ok := s.subMap[path]; !ok {
+		s.subMap[path] = make(map[int]MessageReceiver)
 	}
-	ps.subMap[path][subscriptionID] = s
+	s.subMap[path][subscriptionID] = mr
 
 	return
 }
 
 // Unsubscribe removes a subscriber with a specific ID.
-func (ps *pubSub) Unsubscribe(subscriptionID int) error {
-	ps.mu.Lock()
-	defer ps.mu.Unlock()
+func (s *pubSub) Unsubscribe(subscriptionID int) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 
-	for path, subs := range ps.subMap {
+	for path, subs := range s.subMap {
 		if _, ok := subs[subscriptionID]; ok {
-			delete(ps.subMap[path], subscriptionID) // mem leaks?
-			if len(ps.subMap[path]) == 0 {
-				delete(ps.subMap, path)
+			delete(s.subMap[path], subscriptionID) // mem leaks?
+			if len(s.subMap[path]) == 0 {
+				delete(s.subMap, path)
 			}
 			return nil
 		}
@@ -113,47 +119,50 @@ func (ps *pubSub) Unsubscribe(subscriptionID int) error {
 }
 
 // sendMsg sends the arg into the channel
-func (ps *pubSub) sendMsg(a arg) {
-	if false == ps.closed {
-		ps.publishArg <- a
+func (s *pubSub) sendMsg(a arg) {
+	if false == s.closed {
+		s.publishArg <- a
 	}
 }
 
 // publish runs in a Goroutine and listens on the channel publishArg. Every time
 // a message is coming in, it calls all subscribers. We must run asynchronously
 // because we don't know how long each subscriber needs.
-func (ps *pubSub) publish() {
+func (s *pubSub) publish() {
 
 	for {
 		select {
-		case a, ok := <-ps.publishArg:
+		case <-s.stop:
+			s.closeErr <- nil
+			return
+		case a, ok := <-s.publishArg:
 			if !ok {
 				// channel closed
 				return
 			}
 
-			if len(ps.subMap) == 0 {
+			if len(s.subMap) == 0 {
 				break
 			}
 
-			ps.mu.RLock()
+			s.mu.RLock()
 			var evict []int
 
-			if subs, ok := ps.subMap[a.pathLevel1()]; ok { // e.g.: system
+			if subs, ok := s.subMap[a.pathLevel1()]; ok { // e.g.: system
 				evict = append(evict, sendMessages(subs, a)...)
 			}
-			if subs, ok := ps.subMap[a.pathLevel2()]; ok { // e.g.: system/smtp
+			if subs, ok := s.subMap[a.pathLevel2()]; ok { // e.g.: system/smtp
 				evict = append(evict, sendMessages(subs, a)...)
 			}
-			if subs, ok := ps.subMap[a.pathLevelAll()]; ok { // e.g.: system/smtp/host
+			if subs, ok := s.subMap[a.pathLevelAll()]; ok { // e.g.: system/smtp/host
 				evict = append(evict, sendMessages(subs, a)...)
 			}
-			ps.mu.RUnlock()
+			s.mu.RUnlock()
 
 			// remove all Subscribers which failed
 			if len(evict) > 0 {
 				for _, e := range evict {
-					if err := ps.Unsubscribe(e); err != nil && PkgLog.IsDebug() {
+					if err := s.Unsubscribe(e); err != nil && PkgLog.IsDebug() {
 						PkgLog.Debug("config.pubSub.publish.evict.Unsubscribe.err", "err", err, "subscriptionID", e)
 					}
 				}
@@ -196,5 +205,7 @@ func newPubSub() *pubSub {
 	return &pubSub{
 		subMap:     make(map[string]map[int]MessageReceiver),
 		publishArg: make(chan arg),
+		stop:       make(chan struct{}),
+		closeErr:   make(chan error),
 	}
 }

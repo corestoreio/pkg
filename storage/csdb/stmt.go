@@ -29,21 +29,6 @@ import (
 // statement gets closed.
 var DefaultResurrectStmtIdleTime = time.Second * 10
 
-// NewResurrectStmt creates a new resurrected statement via a DB connection
-// to prepare the stmt and a SQL query string. Default idle time is defined
-// in DefaultResurrectStmtIdleTime. Default logger: PkgLog.
-func NewResurrectStmt(db *sql.DB, SQL string) *ResurrectStmt {
-	return &ResurrectStmt{
-		DB:       db,
-		SQL:      SQL,
-		Idle:     DefaultResurrectStmtIdleTime,
-		Log:      PkgLog,
-		stop:     make(chan struct{}),
-		closeErr: make(chan error),
-		closed:   true,
-	}
-}
-
 // ResurrectStmt creates a long living sql.Stmt in the database but closes it
 // if within an idle time no query will be executed. Once there is a new
 // query the statement gets resurrected. The ResurrectStmt type is safe for
@@ -63,39 +48,23 @@ type ResurrectStmt struct {
 
 	mu       sync.Mutex // protects the last fields
 	stmt     *sql.Stmt
-	closed   bool       // stmt is closed and can be reopened
-	closeErr chan error // only available when Stop() has been called
-	lastUsed time.Time  // time when the stmt has last been used
-	inUse    bool       // stmt is currently in use by Set or Get
+	closed   bool      // stmt is closed and can be reopened
+	lastUsed time.Time // time when the stmt has last been used
+	inUse    bool      // stmt is currently in use by Set or Get
 }
 
-func (su *ResurrectStmt) close(retErr bool) {
-	// retErr returns only then the error when the main go routine of the ticker
-	// has been stopped. otherwise close errors will only be logged.
-	su.mu.Lock()
-	defer su.mu.Unlock()
-	if su.stmt == nil {
-		su.closeErr <- nil
-		return
+// NewResurrectStmt creates a new resurrected statement via a DB connection
+// to prepare the stmt and a SQL query string. Default idle time is defined
+// in DefaultResurrectStmtIdleTime. Default logger: PkgLog.
+func NewResurrectStmt(db *sql.DB, SQL string) *ResurrectStmt {
+	return &ResurrectStmt{
+		DB:     db,
+		SQL:    SQL,
+		Idle:   DefaultResurrectStmtIdleTime,
+		Log:    PkgLog,
+		stop:   make(chan struct{}),
+		closed: true,
 	}
-	err := errgo.Mask(su.stmt.Close())
-	if err != nil {
-		su.Log.Info("csdb.ResurrectStmt.stmt.Close.error", "err", err, "SQL", su.SQL)
-	} else {
-		su.closed = true
-	}
-	if retErr {
-		su.closeErr <- err
-	}
-	if su.Log.IsDebug() {
-		su.Log.Debug("csdb.ResurrectStmt.stmt.Close", "SQL", su.SQL)
-	}
-}
-
-func (su *ResurrectStmt) canClose(t time.Time) bool {
-	su.mu.Lock()
-	defer su.mu.Unlock()
-	return t.After(su.lastUsed) && !su.closed && !su.inUse
 }
 
 // StartIdleChecker starts the internal goroutine which checks the idle time.
@@ -115,7 +84,27 @@ func (su *ResurrectStmt) StopIdleChecker() error {
 	if su.idleCheckStarted {
 		su.stop <- struct{}{}
 	}
-	return <-su.closeErr
+	su.idleCheckStarted = false
+	return su.close()
+}
+
+func (su *ResurrectStmt) close() error {
+	su.mu.Lock()
+	defer su.mu.Unlock()
+
+	su.closed = true
+
+	if su.stmt == nil {
+		if su.Log.IsDebug() {
+			su.Log.Debug("csdb.ResurrectStmt.stmt.Close", "SQL", su.SQL)
+		}
+		return nil
+	}
+
+	if su.Log.IsDebug() {
+		su.Log.Debug("csdb.ResurrectStmt.stmt.Close", "SQL", su.SQL)
+	}
+	return errgo.Mask(su.stmt.Close())
 }
 
 func (su *ResurrectStmt) checkIdle() {
@@ -125,25 +114,31 @@ func (su *ResurrectStmt) checkIdle() {
 		select {
 		case t, ok := <-ticker.C:
 			if !ok {
-				// todo maybe debug log?
 				return
 			}
 
 			if su.canClose(t) {
 				// stmt has not been used within the last x seconds.
 				// so close the stmt and release the resources in the DB.
-				su.close(false)
+				if err := su.close(); err != nil {
+					su.Log.Info("csdb.ResurrectStmt.stmt.Close.error", "err", err, "SQL", su.SQL)
+				}
 			}
 		case <-su.stop:
 			ticker.Stop()
-			su.close(true)
 			return
 		}
 	}
 }
 
+func (su *ResurrectStmt) canClose(t time.Time) bool {
+	su.mu.Lock()
+	defer su.mu.Unlock()
+	return t.After(su.lastUsed) && !su.closed && !su.inUse
+}
+
 // Stmt returns a prepared statement or an error. The statement gets
-// automatically re-opened once it's closed after an idle time.
+// automatically re-opened once it is closed after an idle time.
 func (su *ResurrectStmt) Stmt() (*sql.Stmt, error) {
 	su.mu.Lock()
 	defer su.mu.Unlock()

@@ -16,7 +16,6 @@ package config_test
 
 import (
 	"testing"
-	"time"
 
 	"errors"
 
@@ -42,12 +41,12 @@ func TestPubSubBubbling(t *testing.T) {
 	defer debugLogBuf.Reset()
 	testPath := "a/b/c"
 
-	m := config.NewService()
+	s := config.NewService()
 
-	_, err := m.Subscribe("", nil)
+	_, err := s.Subscribe("", nil)
 	assert.EqualError(t, err, config.ErrPathEmpty.Error())
 
-	subID, err := m.Subscribe(testPath, &testSubscriber{
+	subID, err := s.Subscribe(testPath, &testSubscriber{
 		f: func(path string, sg scope.Scope, id int64) error {
 			assert.Equal(t, testPath, path)
 			if sg == scope.DefaultID {
@@ -61,31 +60,28 @@ func TestPubSubBubbling(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
 
-	assert.NoError(t, m.Write(config.Value(1), config.Path(testPath), config.Scope(scope.WebsiteID, 123)))
-
-	assert.NoError(t, m.Close())
-	time.Sleep(time.Millisecond * 10) // wait for goroutine to close
+	assert.NoError(t, s.Write(config.Value(1), config.Path(testPath), config.Scope(scope.WebsiteID, 123)))
+	assert.NoError(t, s.Close())
 
 	// send on closed channel
-	assert.NoError(t, m.Write(config.Value(1), config.Path(testPath+"Doh"), config.Scope(scope.WebsiteID, 3)))
-	assert.EqualError(t, m.Close(), config.ErrPublisherClosed.Error())
+	assert.NoError(t, s.Write(config.Value(1), config.Path(testPath+"Doh"), config.Scope(scope.WebsiteID, 3)))
+	assert.EqualError(t, s.Close(), config.ErrPublisherClosed.Error())
 }
 
 func TestPubSubPanicSimple(t *testing.T) {
 	defer debugLogBuf.Reset()
 	testPath := "x/y/z"
 
-	m := config.NewService()
-	subID, err := m.Subscribe(testPath, &testSubscriber{
+	s := config.NewService()
+	subID, err := s.Subscribe(testPath, &testSubscriber{
 		f: func(path string, sg scope.Scope, id int64) error {
 			panic("Don't panic!")
 		},
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
-	assert.NoError(t, m.Write(config.Value(321), config.Path(testPath), config.ScopeStore(123)))
-	assert.NoError(t, m.Close())
-	time.Sleep(time.Millisecond * 10) // wait for goroutine to close
+	assert.NoError(t, s.Write(config.Value(321), config.Path(testPath), config.ScopeStore(123)))
+	assert.NoError(t, s.Close())
 	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.r recover: "Don't panic!"`)
 }
 
@@ -94,26 +90,25 @@ func TestPubSubPanicError(t *testing.T) {
 	testPath := "™/ö/º"
 
 	var pErr = errors.New("OMG! Panic!")
-	m := config.NewService()
-	subID, err := m.Subscribe(testPath, &testSubscriber{
+	s := config.NewService()
+	subID, err := s.Subscribe(testPath, &testSubscriber{
 		f: func(path string, sg scope.Scope, id int64) error {
 			panic(pErr)
 		},
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
-	assert.NoError(t, m.Write(config.Value(321), config.Path(testPath), config.ScopeStore(123)))
-	// not closing channel to let the Goroutine around egging aka. herumeiern.
-	time.Sleep(time.Millisecond * 10) // wait for goroutine ...
+	assert.NoError(t, s.Write(config.Value(321), config.Path(testPath), config.ScopeStore(123)))
+
+	assert.NoError(t, s.Close())
 	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.err err: OMG! Panic!`)
-	assert.NoError(t, m.Close())
 }
 
 func TestPubSubPanicMultiple(t *testing.T) {
 	defer debugLogBuf.Reset()
-	m := config.NewService()
+	s := config.NewService()
 
-	subID, err := m.Subscribe("x", &testSubscriber{
+	subID, err := s.Subscribe("x", &testSubscriber{
 		f: func(path string, sg scope.Scope, id int64) error {
 			assert.Equal(t, "x/y/z", path)
 			panic("One: Don't panic!")
@@ -122,7 +117,7 @@ func TestPubSubPanicMultiple(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, subID > 0)
 
-	subID, err = m.Subscribe("x/y", &testSubscriber{
+	subID, err = s.Subscribe("x/y", &testSubscriber{
 		f: func(path string, sg scope.Scope, id int64) error {
 			assert.Equal(t, "x/y/z", path)
 			panic("Two: Don't panic!")
@@ -131,7 +126,7 @@ func TestPubSubPanicMultiple(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, subID > 0)
 
-	subID, err = m.Subscribe("x/y/z", &testSubscriber{
+	subID, err = s.Subscribe("x/y/z", &testSubscriber{
 		f: func(path string, sg scope.Scope, id int64) error {
 			assert.Equal(t, "x/y/z", path)
 			panic("Three: Don't panic!")
@@ -140,9 +135,9 @@ func TestPubSubPanicMultiple(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, subID > 0)
 
-	assert.NoError(t, m.Write(config.Value(789), config.Path("x/y/z"), config.ScopeStore(987)))
-	assert.NoError(t, m.Close())
-	time.Sleep(time.Millisecond * 30) // wait for goroutine to close
+	assert.NoError(t, s.Write(config.Value(789), config.Path("x/y/z"), config.ScopeStore(987)))
+	assert.NoError(t, s.Close())
+
 	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.r recover: "One: Don't panic!`)
 	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.r recover: "Two: Don't panic!"`)
 	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.r recover: "Three: Don't panic!"`)
@@ -152,19 +147,19 @@ func TestPubSubUnsubscribe(t *testing.T) {
 	defer debugLogBuf.Reset()
 
 	var pErr = errors.New("WTF? Panic!")
-	m := config.NewService()
-	subID, err := m.Subscribe("x/y/z", &testSubscriber{
+	s := config.NewService()
+	subID, err := s.Subscribe("x/y/z", &testSubscriber{
 		f: func(path string, sg scope.Scope, id int64) error {
 			panic(pErr)
 		},
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
-	assert.NoError(t, m.Unsubscribe(subID))
-	assert.NoError(t, m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(123)))
-	time.Sleep(time.Millisecond) // wait for goroutine ...
+	assert.NoError(t, s.Unsubscribe(subID))
+	assert.NoError(t, s.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(123)))
+	assert.NoError(t, s.Close())
 	assert.Contains(t, debugLogBuf.String(), `config.Service.Write path: "stores/123/x/y/z" val: 321`)
-	assert.NoError(t, m.Close())
+
 }
 
 type levelCalls struct {
@@ -179,8 +174,8 @@ func TestPubSubEvict(t *testing.T) {
 	levelCall := new(levelCalls)
 
 	var pErr = errors.New("WTF Eviction? Panic!")
-	m := config.NewService()
-	subID, err := m.Subscribe("x/y", &testSubscriber{
+	s := config.NewService()
+	subID, err := s.Subscribe("x/y", &testSubscriber{
 		f: func(path string, sg scope.Scope, id int64) error {
 			assert.Contains(t, path, "x/y")
 			// this function gets called 3 times
@@ -193,7 +188,7 @@ func TestPubSubEvict(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID)
 
-	subID, err = m.Subscribe("x/y/z", &testSubscriber{
+	subID, err = s.Subscribe("x/y/z", &testSubscriber{
 		f: func(path string, sg scope.Scope, id int64) error {
 			levelCall.Lock()
 			levelCall.level3Calls++
@@ -205,11 +200,11 @@ func TestPubSubEvict(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, subID)
 
-	assert.NoError(t, m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(123)))
-	assert.NoError(t, m.Write(config.Value(321), config.Path("x/y/a"), config.ScopeStore(123)))
-	assert.NoError(t, m.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(123)))
+	assert.NoError(t, s.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(123)))
+	assert.NoError(t, s.Write(config.Value(321), config.Path("x/y/a"), config.ScopeStore(123)))
+	assert.NoError(t, s.Write(config.Value(321), config.Path("x/y/z"), config.ScopeStore(123)))
 
-	time.Sleep(time.Millisecond * 20) // wait for goroutine ...
+	assert.NoError(t, s.Close())
 
 	assert.Contains(t, debugLogBuf.String(), "config.pubSub.publish.recover.err err: WTF Eviction? Panic!")
 
@@ -217,5 +212,5 @@ func TestPubSubEvict(t *testing.T) {
 	assert.Equal(t, 3, levelCall.level2Calls)
 	assert.Equal(t, 1, levelCall.level3Calls)
 	levelCall.Unlock()
-	assert.NoError(t, m.Close())
+	assert.EqualError(t, s.Close(), config.ErrPublisherClosed.Error())
 }
