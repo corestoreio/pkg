@@ -2,7 +2,7 @@
 
 WIP = Work in Progress
 
-[![Build Status](https://travis-ci.org/corestoreio/csfw.svg?branch=master)](https://travis-ci.org/corestoreio/csfw) [![wercker status](https://app.wercker.com/status/d7d0bdda415d2228b6fb5bb01681b5c4/s/master "wercker status")](https://app.wercker.com/project/bykey/d7d0bdda415d2228b6fb5bb01681b5c4) [![GoDoc](http://godoc.org/github.com/corestoreio/csfw?status.svg)](http://godoc.org/github.com/corestoreio/csfw) [![Join the chat at https://gitter.im/corestoreio/csfw](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/corestoreio/csfw?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [goreportcard](http://goreportcard.com/report/Corestoreio/csfw)
+[![Build Status](https://travis-ci.org/corestoreio/csfw.svg?branch=master)](https://travis-ci.org/corestoreio/csfw) [![wercker status](https://app.wercker.com/status/d7d0bdda415d2228b6fb5bb01681b5c4/s/master "wercker status")](https://app.wercker.com/project/bykey/d7d0bdda415d2228b6fb5bb01681b5c4) [![Appveyor Build status](https://ci.appveyor.com/api/projects/status/lrlnbpcjdy585mg1/branch/master?svg=true)](https://ci.appveyor.com/project/SchumacherFM/csfw/branch/master) [![GoDoc](http://godoc.org/github.com/corestoreio/csfw?status.svg)](http://godoc.org/github.com/corestoreio/csfw) [![Join the chat at https://gitter.im/corestoreio/csfw](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/corestoreio/csfw?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge) [goreportcard](http://goreportcard.com/report/Corestoreio/csfw)
 
 eCommerce Framework which is compatible to Magento 1 and 2 database schema.
 

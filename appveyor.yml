@@ -1,0 +1,31 @@
+version: "{build}"
+
+os: Windows Server 2012 R2
+
+clone_folder: c:\gopath\src\github.com\corestoreio\csfw
+
+# branches to build
+branches:
+  # whitelist
+  only:
+    - master
+
+# Do not build on tags (GitHub only)
+skip_tags: true
+
+services:
+  - mysql               # start MySQL 5.6 service
+
+environment:
+  GOPATH: c:\gopath
+
+install:
+  - copy c:\MinGW\bin\mingw32-make.exe c:\MinGW\bin\make.exe
+  - echo %PATH%
+  - echo %GOPATH%
+  - go version
+  - go env
+  - go get -t -d -v ./...
+
+build_script:
+  - make testnodb
