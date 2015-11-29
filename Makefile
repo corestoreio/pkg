@@ -21,7 +21,7 @@ NONDBTESTS = ./utils/... ./net/... ./locale/... ./i18n/...
 test: testnodb test1 test2
 
 testnodb: clean
-	@go test -race -v $(NONDBTESTS)
+	go test -race -v $(NONDBTESTS)
 
 test1: clean
 	@echo "Running tests for Mage1 database schema"
@@ -38,9 +38,11 @@ test2: clean
 	go test -v -race -tags mage2 $(DBTESTS)
 
 clean:
-	@find . -name tables_generated.go -delete
+	find . -name tables_generated.go -delete
+	find . -name godepgraph.svg -delete
 
 tts: clean
+	@echo "Generating go source from MySQL tables"
 	go run -v codegen/tableToStruct/*.go
 
 depgraph:

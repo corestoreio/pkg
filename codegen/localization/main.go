@@ -24,11 +24,15 @@ import (
 	"text/template"
 
 	"github.com/corestoreio/csfw/codegen"
-	"github.com/corestoreio/csfw/codegen/localization/internal/gen"
+	"github.com/corestoreio/csfw/codegen/localization/gen"
 	"golang.org/x/text/cldr"
 )
 
 func main() {
+
+	fmt.Println("TODO refactor")
+	os.Exit(-1)
+
 	gen.Init()
 
 	// Read the CLDR zip file. Autodownloading if file not found

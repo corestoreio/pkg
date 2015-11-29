@@ -13,6 +13,6 @@
 // limitations under the License.
 
 /*
-package main generates i18n names of currencies, countries because not yet implemented in text/language
+package main generates i18n names of currencies, countries because not yet implemented in text/language TODO.
 */
 package main
