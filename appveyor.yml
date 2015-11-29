@@ -21,8 +21,6 @@ services:
 
 environment:
   GOPATH: c:\gopath
-  matrix:
-  - PATH: c:\MinGW\bin
 
 install:
   - copy c:\MinGW\bin\mingw32-make.exe c:\MinGW\bin\make.exe
@@ -33,4 +31,4 @@ install:
   - go get -t -d -v ./...
 
 build_script:
-  - make testnodb
+  - c:\MinGW\bin\make.exe testnodb
