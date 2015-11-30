@@ -41,7 +41,7 @@ type DBStorage struct {
 // Default logger for the three underlying ResurrectStmt type is the PkgLog.
 //
 // All has an idle time of 15s. Read an idle time of 10s. Write an idle time of 30s.
-func NewDBStorage(db *sql.DB) *DBStorage {
+func NewDBStorage(db *sql.DB) (*DBStorage, error) {
 	// todo: instead of logging the error we may write it into an
 	// error channel and the gopher who calls NewDBStorage is responsible
 	// for continuously reading from the error channel. or we accept an error channel
@@ -70,7 +70,17 @@ func NewDBStorage(db *sql.DB) *DBStorage {
 	dbs.Read.Log = PkgLog
 	dbs.Write.Idle = time.Second * 30
 	dbs.Write.Log = PkgLog
-	return dbs
+	// in the future we may add errors ... just to have for now the func signature
+	return dbs, nil
+}
+
+// MustNewDBStorage same as NewDBStorage but panics on error
+func MustNewDBStorage(db *sql.DB) *DBStorage {
+	s, err := NewDBStorage(db)
+	if err != nil {
+		panic(err)
+	}
+	return s
 }
 
 // Start starts the internal idle time checker for the resurrecting SQL statements.

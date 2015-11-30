@@ -36,9 +36,8 @@ func TestDBStorageOneStmt(t *testing.T) {
 	dbc := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
 
-	sdb := config.NewDBStorage(dbc.DB)
+	sdb := config.MustNewDBStorage(dbc.DB).Start()
 
-	sdb.Start()
 	// Stop() would only be called under rare circumstances on a production system
 	defer func() { assert.NoError(t, sdb.Stop()) }()
 
@@ -85,7 +84,7 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 	dbc := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
 
-	sdb := config.NewDBStorage(dbc.DB)
+	sdb := config.MustNewDBStorage(dbc.DB)
 	sdb.All.Idle = time.Second * 1
 	sdb.Read.Idle = time.Second * 1
 	sdb.Write.Idle = time.Second * 1
