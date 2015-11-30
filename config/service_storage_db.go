@@ -15,7 +15,6 @@
 package config
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
 
@@ -41,25 +40,25 @@ type DBStorage struct {
 // Default logger for the three underlying ResurrectStmt type is the PkgLog.
 //
 // All has an idle time of 15s. Read an idle time of 10s. Write an idle time of 30s.
-func NewDBStorage(db *sql.DB) (*DBStorage, error) {
+func NewDBStorage(p csdb.Preparer) (*DBStorage, error) {
 	// todo: instead of logging the error we may write it into an
 	// error channel and the gopher who calls NewDBStorage is responsible
 	// for continuously reading from the error channel. or we accept an error channel
 	// as argument here and then writing to it ...
 
 	dbs := &DBStorage{
-		All: csdb.NewResurrectStmt(db, fmt.Sprintf(
+		All: csdb.NewResurrectStmt(p, fmt.Sprintf(
 			"SELECT CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath` FROM `%s` ORDER BY scope,scope_id,path",
 			scope.PS,
 			scope.PS,
 			TableCollection.Name(TableIndexCoreConfigData),
 		)),
-		Read: csdb.NewResurrectStmt(db, fmt.Sprintf(
+		Read: csdb.NewResurrectStmt(p, fmt.Sprintf(
 			"SELECT `value` FROM `%s` WHERE `scope`=? AND `scope_id`=? AND `path`=?",
 			TableCollection.Name(TableIndexCoreConfigData),
 		)),
 
-		Write: csdb.NewResurrectStmt(db, fmt.Sprintf(
+		Write: csdb.NewResurrectStmt(p, fmt.Sprintf(
 			"INSERT INTO `%s` (`scope`,`scope_id`,`path`,`value`) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE `value`=?",
 			TableCollection.Name(TableIndexCoreConfigData),
 		)),
@@ -75,8 +74,8 @@ func NewDBStorage(db *sql.DB) (*DBStorage, error) {
 }
 
 // MustNewDBStorage same as NewDBStorage but panics on error
-func MustNewDBStorage(db *sql.DB) *DBStorage {
-	s, err := NewDBStorage(db)
+func MustNewDBStorage(p csdb.Preparer) *DBStorage {
+	s, err := NewDBStorage(p)
 	if err != nil {
 		panic(err)
 	}

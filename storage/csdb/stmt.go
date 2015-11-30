@@ -29,6 +29,12 @@ import (
 // statement gets closed.
 var DefaultResurrectStmtIdleTime = time.Second * 10
 
+// Preparer defines the only needed function to create a new statement
+// in the database.
+type Preparer interface {
+	Prepare(query string) (*sql.Stmt, error)
+}
+
 // ResurrectStmt creates a long living sql.Stmt in the database but closes it
 // if within an idle time no query will be executed. Once there is a new
 // query the statement gets resurrected. The ResurrectStmt type is safe for
@@ -36,7 +42,9 @@ var DefaultResurrectStmtIdleTime = time.Second * 10
 //
 // A full working implementation can be found in package config with type DBStorage.
 type ResurrectStmt struct {
-	DB *sql.DB
+	// DB contains for now only the prepare() function for a new statement
+	// may be extended in the far future.
+	DB Preparer
 	// SQL is any prepareable SQL command, use ? for argument placeholders
 	SQL string
 	// Idle defines the duration how to wait until no query will be executed.
@@ -56,12 +64,12 @@ type ResurrectStmt struct {
 // NewResurrectStmt creates a new resurrected statement via a DB connection
 // to prepare the stmt and a SQL query string. Default idle time is defined
 // in DefaultResurrectStmtIdleTime. Default logger: PkgLog.
-func NewResurrectStmt(db *sql.DB, SQL string) *ResurrectStmt {
+func NewResurrectStmt(p Preparer, SQL string) *ResurrectStmt {
 	// the overall question here is if the Stmt() function should
 	// return an error once the ticker has been stopped or is not running.
 
 	return &ResurrectStmt{
-		DB:     db,
+		DB:     p,
 		SQL:    SQL,
 		Idle:   DefaultResurrectStmtIdleTime,
 		Log:    PkgLog,

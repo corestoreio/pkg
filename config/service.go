@@ -86,11 +86,30 @@ func init() {
 	DefaultService = NewService()
 }
 
-// NewService creates the main new configuration for all scopes: default, website and store
-func NewService() *Service {
+// ServiceOption applies options to the NewService.
+type ServiceOption func(*Service)
+
+// WithDBStorage applies the MySQL storage to a new Service. It
+// starts the idle checker of the DBStorage type.
+func WithDBStorage(p csdb.Preparer) ServiceOption {
+	return func(s *Service) {
+		s.Storage = MustNewDBStorage(p).Start()
+	}
+}
+
+// NewService creates the main new configuration for all scopes: default, website
+// and store. Default Storage is a simple map[string]interface{}
+func NewService(opts ...ServiceOption) *Service {
 	s := &Service{
-		Storage: newSimpleStorage(),
-		pubSub:  newPubSub(),
+		pubSub: newPubSub(),
+	}
+	for _, opt := range opts {
+		if opt != nil {
+			opt(s)
+		}
+	}
+	if s.Storage == nil {
+		s.Storage = newSimpleStorage()
 	}
 	go s.publish()
 	s.Storage.Set(mustNewArg(Path(PathCSBaseURL)).scopePath(), CSBaseURL)
@@ -102,7 +121,8 @@ func (s *Service) NewScoped(websiteID, groupID, storeID int64) ScopedGetter {
 	return newScopedService(s, websiteID, groupID, storeID)
 }
 
-// ApplyDefaults reads the map and applies the keys and values to the default configuration
+// ApplyDefaults reads slice Sectioner and applies the keys and values to the
+// default configuration. Overwrites existing values.
 func (s *Service) ApplyDefaults(ss Sectioner) *Service {
 	for k, v := range ss.Defaults() {
 		if PkgLog.IsDebug() {
