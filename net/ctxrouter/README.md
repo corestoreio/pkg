@@ -47,7 +47,9 @@ See below for technical details of the implementation.
 occurring during handling a HTTP request. The router then recovers and lets the
 PanicHandler log what happened and deliver a nice error page.
 
-Of course you can also set **custom [NotFound](http://godoc.org/github.com/julienschmidt/httprouter#Router.NotFound) and  [MethodNotAllowed](http://godoc.org/github.com/julienschmidt/httprouter#Router.MethodNotAllowed) handlers** and [**serve static files**](http://godoc.org/github.com/julienschmidt/httprouter#Router.ServeFiles).
+Of course you can also set **custom [NotFound](http://godoc.org/github.com/julienschmidt/httprouter#Router.NotFound) 
+and  [MethodNotAllowed](http://godoc.org/github.com/julienschmidt/httprouter#Router.MethodNotAllowed) handlers** 
+and [**serve static files**](http://godoc.org/github.com/julienschmidt/httprouter#Router.ServeFiles).
 
 ## Usage
 This is just a quick introduction, view the [GoDoc](http://godoc.org/github.com/julienschmidt/httprouter) for details.
@@ -102,7 +104,10 @@ Pattern: /user/:user
  /user/                    no match
 ```
 
-**Note:** Since this router has only explicit matches, you can not register static routes and parameters for the same path segment. For example you can not register the patterns `/user/new` and `/user/:user` for the same request method at the same time. The routing of different request methods is independent from each other.
+**Note:** Since this router has only explicit matches, you can not register static routes and 
+parameters for the same path segment. For example you can not register the patterns `/user/new` 
+and `/user/:user` for the same request method at the same time. The routing of different 
+request methods is independent from each other.
 
 ### Catch-All parameters
 The second type are *catch-all* parameters and have the form `*name`.
@@ -177,14 +182,17 @@ structure. Nodes are evaluated from top to bottom and from left to right.
 
 ## Why doesn't this work with http.Handler?
 **It does!** The router itself implements the http.Handler interface.
-Moreover the router provides convenient [adapters for http.Handler](http://godoc.org/github.com/julienschmidt/httprouter#Router.Handler)s and [http.HandlerFunc](http://godoc.org/github.com/julienschmidt/httprouter#Router.HandlerFunc)s
-which allows them to be used as a [httprouter.Handle](http://godoc.org/github.com/julienschmidt/httprouter#Router.Handle) when registering a route.
+Moreover the router provides convenient [adapters for http.Handler](http://godoc.org/github.com/julienschmidt/httprouter#Router.Handler)s 
+and [http.HandlerFunc](http://godoc.org/github.com/julienschmidt/httprouter#Router.HandlerFunc)s
+which allows them to be used as a [httprouter.Handle](http://godoc.org/github.com/julienschmidt/httprouter#Router.Handle) 
+when registering a route.
 The only disadvantage is, that no parameter values can be retrieved when a
 http.Handler or http.HandlerFunc is used, since there is no efficient way to
 pass the values with the existing function parameters.
 Therefore [httprouter.Handle](http://godoc.org/github.com/julienschmidt/httprouter#Router.Handle) has a third function parameter.
 
-Just try it out for yourself, the usage of HttpRouter is very straightforward. The package is compact and minimalistic, but also probably one of the easiest routers to set up.
+Just try it out for yourself, the usage of HttpRouter is very straightforward. The package is compact 
+and minimalistic, but also probably one of the easiest routers to set up.
 
 
 ## Where can I find Middleware *X*?

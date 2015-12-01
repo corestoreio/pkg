@@ -155,6 +155,11 @@ type Router struct {
 	// unrecovered panics. You can extract the panic value from the context
 	// via the PanicFromContext() function.
 	PanicHandler ctxhttp.HandlerFunc
+
+	// RootContext overall initial context which will be passed
+	// to every handler. Default context is context.Background().
+	// A nil context causes a panic.
+	RootContext context.Context
 }
 
 // Make sure the Router conforms with the ctxhttp.Handler interface
@@ -163,11 +168,17 @@ var _ http.Handler = (*Router)(nil)
 
 // New returns a new initialized Router.
 // Path auto-correction, including trailing slashes, is enabled by default.
-func New() *Router {
+// Default Context is context.Background(). Argument cc can only be set 0 or 1.
+func New(cc ...context.Context) *Router {
+	rc := context.Background()
+	if len(cc) == 1 && cc[0] != nil {
+		rc = cc[0]
+	}
 	return &Router{
 		RedirectTrailingSlash:  true,
 		RedirectFixedPath:      true,
 		HandleMethodNotAllowed: true,
+		RootContext:            rc,
 	}
 }
 
@@ -293,10 +304,9 @@ func (r *Router) Lookup(method, path string) (ctxhttp.HandlerFunc, Params, bool)
 }
 
 // ServeHTTP makes the router implement the http.Handler interface. Calls the
-// ServeHTTPContext function with an empty context.Background().
+// ServeHTTPContext function with the RootContext.
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	ctx := context.Background()
-	if err := r.ServeHTTPContext(ctx, w, req); err != nil {
+	if err := r.ServeHTTPContext(r.RootContext, w, req); err != nil {
 		http.Error(w, utils.Errors(err), http.StatusInternalServerError)
 	}
 }
