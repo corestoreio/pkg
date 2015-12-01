@@ -15,6 +15,7 @@
 package ctxhttp_test
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -22,7 +23,6 @@ import (
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxmw"
 	"github.com/corestoreio/csfw/net/httputils"
-	"github.com/siddontang/ledisdb/Godeps/_workspace/src/github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -57,6 +57,7 @@ func TestAdapters(t *testing.T) {
 
 func TestDefaultAdapterErrFunc(t *testing.T) {
 	anErr := errors.New("This error should be returned")
+
 	w := httptest.NewRecorder()
 	req, err := http.NewRequest(httputils.MethodGet, "http://example.com/foo?_method=KARATE", nil)
 	assert.NoError(t, err)

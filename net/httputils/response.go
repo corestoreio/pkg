@@ -74,7 +74,8 @@ type Print struct {
 	Response http.ResponseWriter
 	Request  *http.Request
 	Renderer interface {
-		Render(w io.Writer, name string, data interface{}) error
+		// ExecuteTemplate is the interface function to text/template or html/template
+		ExecuteTemplate(wr io.Writer, name string, data interface{}) error
 	}
 }
 
@@ -86,7 +87,7 @@ func (p Print) Render(code int, name string, data interface{}) error {
 	}
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
-	if err := p.Renderer.Render(buf, name, data); err != nil {
+	if err := p.Renderer.ExecuteTemplate(buf, name, data); err != nil {
 		return err
 	}
 	return p.html(code, buf.Bytes())
@@ -123,7 +124,7 @@ func (p Print) String(code int, format string, a ...interface{}) (err error) {
 	return p.string(code, buf.Bytes())
 }
 
-// StringByte converts a string into []bytes and outputs it.
+// StringByte converts a string into []bytes and outputs it. Printf feature available.
 func (p Print) StringByte(code int, data string) (err error) {
 	return p.string(code, []byte(data))
 }
