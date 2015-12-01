@@ -12,22 +12,16 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httputils
+package httputils_test
 
-// APIRoute defines the current API version
-const APIRoute apiVersion = "/V1/"
+import "testing"
 
-type apiVersion string
-
-// Versionize prepends the API version as defined in constant APIRoute to a route.
-func (a apiVersion) Versionize(r string) string {
-	if len(r) > 0 && r[:1] == "/" {
-		r = r[1:]
-	}
-	return string(a) + r
-}
-
-// String returns the current version and not the full route
-func (a apiVersion) String() string {
-	return string(a)
+func TestRender(t *testing.T) {
+	//	tests := []struct {
+	//	}{
+	//		{},
+	//	}
+	//	for _, test := range tests {
+	//
+	//	}
 }
