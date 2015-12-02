@@ -71,9 +71,11 @@ func NewPrinter(w http.ResponseWriter, r *http.Request) Print {
 // act as a non-pointer type. Print functions uses internally a
 // byte buffer pool.
 type Print struct {
-	Response http.ResponseWriter
-	Request  *http.Request
-	Renderer interface {
+	// FileSystem stubbed out for testing. Default http.Dir
+	FileSystem http.FileSystem
+	Response   http.ResponseWriter
+	Request    *http.Request
+	Renderer   interface {
 		// ExecuteTemplate is the interface function to text/template or html/template
 		ExecuteTemplate(wr io.Writer, name string, data interface{}) error
 	}
@@ -226,6 +228,7 @@ func (p Print) File(path, name string, attachment bool) error {
 	}
 	if err := serveFile(dir, file, p); err != nil {
 		p.Response.Header().Del(ContentDisposition)
+		return err
 	}
 	return nil
 }
@@ -246,8 +249,11 @@ func (p Print) Redirect(code int, url string) error {
 }
 
 func serveFile(dir, file string, p Print) error {
-	fs := http.Dir(dir)
-	f, err := fs.Open(file)
+	if p.FileSystem == nil {
+		p.FileSystem = http.Dir(dir)
+	}
+
+	f, err := p.FileSystem.Open(file)
 	if err != nil {
 		return errgo.Newf("File not found: %s => %s", dir, file)
 	}
@@ -256,12 +262,13 @@ func serveFile(dir, file string, p Print) error {
 	fi, _ := f.Stat()
 	if fi.IsDir() {
 		file = filepath.Join(file, indexFile)
-		f, err = fs.Open(file)
+		f, err = p.FileSystem.Open(file)
 		if err != nil {
 			return errgo.Newf("Cannot access file: %s", file) // http.StatusForbidden
 		}
 		fi, _ = f.Stat()
 	}
+	fmt.Printf("\n%#v\n", fi)
 	http.ServeContent(p.Response, p.Request, fi.Name(), fi.ModTime(), f)
 	return nil
 }

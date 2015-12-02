@@ -22,7 +22,9 @@ import (
 	"text/template"
 
 	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
+	"net/http"
 )
 
 var nonMarshallableChannel chan bool
@@ -112,11 +114,13 @@ func TestPrintStringError(t *testing.T) {
 	assert.Equal(t, httputils.TextPlain, w.Header().Get(httputils.ContentType))
 }
 
-var jsonData = []struct {
+type EncData struct {
 	Title string
 	SKU   string
 	Price float64
-}{
+}
+
+var encodeData = []EncData{
 	{"Camera", "323423423", 45.12},
 	{"LCD TV", "8785344", 145.99},
 }
@@ -125,7 +129,7 @@ func TestPrintJSON(t *testing.T) {
 	w := httptest.NewRecorder()
 	p := httputils.NewPrinter(w, nil)
 
-	assert.NoError(t, p.JSON(3141, jsonData))
+	assert.NoError(t, p.JSON(3141, encodeData))
 	assert.Exactly(t, "[{\"Title\":\"Camera\",\"SKU\":\"323423423\",\"Price\":45.12},{\"Title\":\"LCD TV\",\"SKU\":\"8785344\",\"Price\":145.99}]\n", w.Body.String())
 	assert.Exactly(t, 3141, w.Code)
 	assert.Equal(t, httputils.ApplicationJSONCharsetUTF8, w.Header().Get(httputils.ContentType))
@@ -145,7 +149,7 @@ func TestPrintJSONIndent(t *testing.T) {
 	w := httptest.NewRecorder()
 	p := httputils.NewPrinter(w, nil)
 
-	assert.NoError(t, p.JSONIndent(3141, jsonData, "  ", "\t"))
+	assert.NoError(t, p.JSONIndent(3141, encodeData, "  ", "\t"))
 	assert.Exactly(t, "[\n  \t{\n  \t\t\"Title\": \"Camera\",\n  \t\t\"SKU\": \"323423423\",\n  \t\t\"Price\": 45.12\n  \t},\n  \t{\n  \t\t\"Title\": \"LCD TV\",\n  \t\t\"SKU\": \"8785344\",\n  \t\t\"Price\": 145.99\n  \t}\n  ]", w.Body.String())
 	assert.Exactly(t, 3141, w.Code)
 	assert.Equal(t, httputils.ApplicationJSONCharsetUTF8, w.Header().Get(httputils.ContentType))
@@ -165,7 +169,7 @@ func TestPrintJSONP(t *testing.T) {
 	w := httptest.NewRecorder()
 	p := httputils.NewPrinter(w, nil)
 
-	assert.NoError(t, p.JSONP(3141, "awesomeReact", jsonData))
+	assert.NoError(t, p.JSONP(3141, "awesomeReact", encodeData))
 	assert.Exactly(t, "awesomeReact([{\"Title\":\"Camera\",\"SKU\":\"323423423\",\"Price\":45.12},{\"Title\":\"LCD TV\",\"SKU\":\"8785344\",\"Price\":145.99}]\n);", w.Body.String())
 	assert.Exactly(t, 3141, w.Code)
 	assert.Equal(t, httputils.ApplicationJavaScriptCharsetUTF8, w.Header().Get(httputils.ContentType))
@@ -180,3 +184,102 @@ func TestPrintJSONPError(t *testing.T) {
 	assert.Exactly(t, 200, w.Code)
 	assert.Equal(t, "", w.Header().Get(httputils.ContentType))
 }
+
+func TestPrintXML(t *testing.T) {
+	w := httptest.NewRecorder()
+	p := httputils.NewPrinter(w, nil)
+
+	assert.NoError(t, p.XML(3141, encodeData))
+	assert.Exactly(t, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<EncData><Title>Camera</Title><SKU>323423423</SKU><Price>45.12</Price></EncData><EncData><Title>LCD TV</Title><SKU>8785344</SKU><Price>145.99</Price></EncData>", w.Body.String())
+	assert.Exactly(t, 3141, w.Code)
+	assert.Equal(t, httputils.ApplicationXMLCharsetUTF8, w.Header().Get(httputils.ContentType))
+}
+
+func TestPrintXMLError(t *testing.T) {
+	w := httptest.NewRecorder()
+	p := httputils.NewPrinter(w, nil)
+
+	assert.EqualError(t, p.XML(3141, nonMarshallableChannel), "xml: unsupported type: chan bool")
+	assert.Exactly(t, "", w.Body.String())
+	assert.Exactly(t, 200, w.Code)
+	assert.Equal(t, "", w.Header().Get(httputils.ContentType))
+}
+
+func TestPrintXMLIndent(t *testing.T) {
+	w := httptest.NewRecorder()
+	p := httputils.NewPrinter(w, nil)
+
+	assert.NoError(t, p.XMLIndent(3141, encodeData, "\n", "\t"))
+	assert.Exactly(t, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n\n<EncData>\n\n\t<Title>Camera</Title>\n\n\t<SKU>323423423</SKU>\n\n\t<Price>45.12</Price>\n\n</EncData>\n\n<EncData>\n\n\t<Title>LCD TV</Title>\n\n\t<SKU>8785344</SKU>\n\n\t<Price>145.99</Price>\n\n</EncData>", w.Body.String())
+	assert.Exactly(t, 3141, w.Code)
+	assert.Equal(t, httputils.ApplicationXMLCharsetUTF8, w.Header().Get(httputils.ContentType))
+}
+
+func TestPrintXMLIndentError(t *testing.T) {
+	w := httptest.NewRecorder()
+	p := httputils.NewPrinter(w, nil)
+
+	assert.EqualError(t, p.XMLIndent(3141, nonMarshallableChannel, " ", "  "), "xml: unsupported type: chan bool")
+	assert.Exactly(t, "", w.Body.String())
+	assert.Exactly(t, 200, w.Code)
+	assert.Equal(t, "", w.Header().Get(httputils.ContentType))
+}
+
+func TestPrintNoContent(t *testing.T) {
+	w := httptest.NewRecorder()
+	p := httputils.NewPrinter(w, nil)
+	assert.NoError(t, p.NoContent(501))
+	assert.Exactly(t, "", w.Body.String())
+	assert.Exactly(t, 501, w.Code)
+}
+
+func TestPrintRedirect(t *testing.T) {
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("GET", "http://coretore.io", nil)
+	assert.NoError(t, err)
+	p := httputils.NewPrinter(w, r)
+	assert.EqualError(t, p.Redirect(501, ""), httputils.ErrInvalidRedirectCode.Error())
+
+	p.Redirect(http.StatusMovedPermanently, "http://cs.io")
+	assert.Exactly(t, http.StatusMovedPermanently, w.Code)
+
+	assert.Equal(t, "http://cs.io", w.Header().Get("Location"))
+	assert.Exactly(t, "<a href=\"http://cs.io\">Moved Permanently</a>.\n\n", w.Body.String())
+}
+
+// wrapper type
+type memFS struct {
+	*afero.MemMapFs
+}
+
+// wrapper
+func (fs *memFS) Open(name string) (http.File, error) {
+	return fs.MemMapFs.Open(name)
+}
+
+//func TestPrintFile(t *testing.T) {
+//
+//	w := httptest.NewRecorder()
+//	p := httputils.NewPrinter(w, nil)
+//
+//	fs := &memFS{
+//		MemMapFs: new(afero.MemMapFs),
+//	}
+//	//	assert.NoError(t, fs.Mkdir("tmp", 0777))
+//
+//	f, err := fs.Create("gopher.svg")
+//	assert.NoError(t, err)
+//	_, err = f.Write([]byte(`<svg/>`))
+//	assert.NoError(t, err)
+//	assert.NoError(t, f.Close())
+//
+//	p.FileSystem = fs
+//
+//	t.Logf("\n%#v\n", fs.MemMapFs)
+//
+//	assert.NoError(t, p.File("gopher.svg", "gopher-logo.svg", false))
+//	assert.Exactly(t, http.Header{}, w.HeaderMap)
+//
+//	assert.Exactly(t, "", w.Body.String())
+//	assert.Exactly(t, 200, w.Code)
+//}
