@@ -14,5 +14,4 @@ matrix:
 script:
   - make testnodb
 install:
-  - go get github.com/stretchr/testify
-  - go get -d -v ./...
+  - go get -t -d -v ./...
