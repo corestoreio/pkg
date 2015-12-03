@@ -268,7 +268,6 @@ func serveFile(dir, file string, p Print) error {
 		}
 		fi, _ = f.Stat()
 	}
-	fmt.Printf("\n%#v\n", fi)
 	http.ServeContent(p.Response, p.Request, fi.Name(), fi.ModTime(), f)
 	return nil
 }

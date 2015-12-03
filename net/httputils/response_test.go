@@ -17,6 +17,7 @@ package httputils_test
 import (
 	"errors"
 	"math"
+	"net/http"
 	"net/http/httptest"
 	"testing"
 	"text/template"
@@ -24,7 +25,6 @@ import (
 	"github.com/corestoreio/csfw/net/httputils"
 	"github.com/spf13/afero"
 	"github.com/stretchr/testify/assert"
-	"net/http"
 )
 
 var nonMarshallableChannel chan bool
@@ -257,29 +257,96 @@ func (fs *memFS) Open(name string) (http.File, error) {
 	return fs.MemMapFs.Open(name)
 }
 
-//func TestPrintFile(t *testing.T) {
-//
-//	w := httptest.NewRecorder()
-//	p := httputils.NewPrinter(w, nil)
-//
-//	fs := &memFS{
-//		MemMapFs: new(afero.MemMapFs),
-//	}
-//	//	assert.NoError(t, fs.Mkdir("tmp", 0777))
-//
-//	f, err := fs.Create("gopher.svg")
-//	assert.NoError(t, err)
-//	_, err = f.Write([]byte(`<svg/>`))
-//	assert.NoError(t, err)
-//	assert.NoError(t, f.Close())
-//
-//	p.FileSystem = fs
-//
-//	t.Logf("\n%#v\n", fs.MemMapFs)
-//
-//	assert.NoError(t, p.File("gopher.svg", "gopher-logo.svg", false))
-//	assert.Exactly(t, http.Header{}, w.HeaderMap)
-//
-//	assert.Exactly(t, "", w.Body.String())
-//	assert.Exactly(t, 200, w.Code)
-//}
+var testMemFs *memFS
+
+func init() {
+	testMemFs = &memFS{MemMapFs: new(afero.MemMapFs)}
+	f, err := testMemFs.Create("gopher.svg")
+	if err != nil {
+		panic(err)
+	}
+	if _, err = f.Write([]byte(`<svg/>`)); err != nil {
+		panic(err)
+	}
+	if err := f.Close(); err != nil {
+		panic(err)
+	}
+}
+
+func TestPrintFileNoAttachment(t *testing.T) {
+
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("GET", "http://coretore.io", nil)
+	assert.NoError(t, err)
+
+	p := httputils.NewPrinter(w, r)
+
+	p.FileSystem = testMemFs
+
+	assert.NoError(t, p.File("gopher.svg", "gopher-logo.svg", false))
+	assert.Equal(t, "image/svg+xml", w.Header().Get(httputils.ContentType))
+
+	assert.Exactly(t, "<svg/>", w.Body.String())
+	assert.Exactly(t, 200, w.Code)
+}
+
+func TestPrintFileWithAttachment(t *testing.T) {
+
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("GET", "http://coretore.io", nil)
+	assert.NoError(t, err)
+	p := httputils.NewPrinter(w, r)
+
+	p.FileSystem = testMemFs
+
+	assert.NoError(t, p.File("gopher.svg", "gopher-logo.svg", true))
+	assert.Equal(t, "image/svg+xml", w.Header().Get(httputils.ContentType))
+	assert.Equal(t, "attachment; filename=gopher-logo.svg", w.Header().Get(httputils.ContentDisposition))
+
+	assert.Exactly(t, "<svg/>", w.Body.String())
+	assert.Exactly(t, 200, w.Code)
+}
+
+func TestPrintFileWithAttachmentError(t *testing.T) {
+
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("GET", "http://coretore.io", nil)
+	assert.NoError(t, err)
+	p := httputils.NewPrinter(w, r)
+
+	assert.EqualError(t, p.File("gopher.svg", "gopher-logo.svg", true), "File not found:  => gopher.svg")
+	assert.Equal(t, "", w.Header().Get(httputils.ContentType))
+	assert.Equal(t, "", w.Header().Get(httputils.ContentDisposition))
+
+	assert.Exactly(t, "", w.Body.String())
+	assert.Exactly(t, 200, w.Code)
+}
+
+func TestPrintFileDirectoryIndex(t *testing.T) {
+
+	t.Skip("todo")
+
+	//	testMemFs := &memFS{MemMapFs: new(afero.MemMapFs)}
+	//	f, err := testMemFs.Create("/index.html")
+	//	if err != nil {
+	//		t.Fatal(err)
+	//	}
+	//	if _, err = f.Write([]byte(`<h1>This is a huge h1 tag!</h1>`)); err != nil {
+	//		t.Fatal(err)
+	//	}
+	//	if err := f.Close(); err != nil {
+	//		t.Fatal(err)
+	//	}
+	//
+	//	w := httptest.NewRecorder()
+	//	r, err := http.NewRequest("GET", "http://coretore.io", nil)
+	//	assert.NoError(t, err)
+	//	p := httputils.NewPrinter(w, r)
+	//
+	//	assert.NoError(t, p.File("/", "index.php", false))
+	//	assert.Equal(t, "", w.Header().Get(httputils.ContentType))
+	//	assert.Equal(t, "", w.Header().Get(httputils.ContentDisposition))
+	//
+	//	assert.Exactly(t, "", w.Body.String())
+	//	assert.Exactly(t, 200, w.Code)
+}
