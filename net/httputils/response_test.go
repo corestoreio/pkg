@@ -324,29 +324,31 @@ func TestPrintFileWithAttachmentError(t *testing.T) {
 
 func TestPrintFileDirectoryIndex(t *testing.T) {
 
-	t.Skip("todo")
+	testMemFs := &memFS{MemMapFs: new(afero.MemMapFs)}
 
-	//	testMemFs := &memFS{MemMapFs: new(afero.MemMapFs)}
-	//	f, err := testMemFs.Create("/index.html")
-	//	if err != nil {
-	//		t.Fatal(err)
-	//	}
-	//	if _, err = f.Write([]byte(`<h1>This is a huge h1 tag!</h1>`)); err != nil {
-	//		t.Fatal(err)
-	//	}
-	//	if err := f.Close(); err != nil {
-	//		t.Fatal(err)
-	//	}
-	//
-	//	w := httptest.NewRecorder()
-	//	r, err := http.NewRequest("GET", "http://coretore.io", nil)
-	//	assert.NoError(t, err)
-	//	p := httputils.NewPrinter(w, r)
-	//
-	//	assert.NoError(t, p.File("/", "index.php", false))
-	//	assert.Equal(t, "", w.Header().Get(httputils.ContentType))
-	//	assert.Equal(t, "", w.Header().Get(httputils.ContentDisposition))
-	//
-	//	assert.Exactly(t, "", w.Body.String())
-	//	assert.Exactly(t, 200, w.Code)
+	assert.NoError(t, testMemFs.Mkdir("test", 0777))
+
+	f, err := testMemFs.Create("test/index.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err = f.Write([]byte(`<h1>This is a huge h1 tag!</h1>`)); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	r, err := http.NewRequest("GET", "http://coretore.io", nil)
+	assert.NoError(t, err)
+	p := httputils.NewPrinter(w, r)
+	p.FileSystem = testMemFs
+
+	assert.NoError(t, p.File("/test", "", false))
+	assert.Equal(t, "text/html; charset=utf-8", w.Header().Get(httputils.ContentType))
+	assert.Equal(t, "", w.Header().Get(httputils.ContentDisposition))
+
+	assert.Exactly(t, "<h1>This is a huge h1 tag!</h1>", w.Body.String())
+	assert.Exactly(t, 200, w.Code)
 }
