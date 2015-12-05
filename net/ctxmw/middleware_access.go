@@ -34,8 +34,8 @@ import (
 // sub handler using github.com/corestoreio/csfw/net/ctxlog and
 // github.com/rs/xstats stored in context.
 func WithAccessLog() ctxhttp.Middleware {
-	return func(h ctxhttp.Handler) ctxhttp.Handler {
-		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(h ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
 			// Time request
 			reqStart := time.Now()
@@ -74,7 +74,7 @@ func WithAccessLog() ctxhttp.Middleware {
 				"referer", r.Header.Get("Referer"),
 			)
 			return err
-		})
+		}
 	}
 }
 

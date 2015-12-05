@@ -14,16 +14,16 @@
 
 package ctxhttp
 
-// Middleware is a wrapper for the ctxhttp.Handler to create middleware functions.
-type Middleware func(Handler) Handler
+// Middleware is a wrapper for the function ctxhttp.HandlerFunc to create
+// middleware functions.
+type Middleware func(HandlerFunc) HandlerFunc
 
-// Chain function will iterate over all middleware, calling them one by one
+// Chain will iterate over all middleware functions, calling them one by one
 // in a chained manner, returning the result of the final middleware.
-// Execution of the middleware takes place in reverse order! First to be called
-// handler must be added as last slice index.
-func Chain(h Handler, mws ...Middleware) Handler {
-	for _, mw := range mws {
-		h = mw(h)
+func Chain(h HandlerFunc, mws ...Middleware) HandlerFunc {
+	// Chain middleware with handler in the end
+	for i := len(mws) - 1; i >= 0; i-- {
+		h = mws[i](h)
 	}
 	return h
 }

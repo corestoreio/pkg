@@ -27,13 +27,13 @@ import (
 // is imbalanced. len(kv)%2 == 0.
 func WithHeader(kv ...string) ctxhttp.Middleware {
 	lkv := len(kv)
-	return func(h ctxhttp.Handler) ctxhttp.Handler {
-		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			for i := 0; i < lkv; i = i + 2 {
 				w.Header().Set(kv[i], kv[i+1])
 			}
-			return h.ServeHTTPContext(ctx, w, r)
-		})
+			return hf(ctx, w, r)
+		}
 	}
 }
 
@@ -43,8 +43,8 @@ func WithHeader(kv ...string) ctxhttp.Middleware {
 // HTTP header. If an unknown method will be submitted it gets logged as an
 // Info log. This function is chainable.
 func WithXHTTPMethodOverride() ctxhttp.Middleware {
-	return func(h ctxhttp.Handler) ctxhttp.Handler {
-		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			mo := r.FormValue(httputils.MethodOverrideFormKey)
 			if mo == "" {
 				mo = r.Header.Get(httputils.MethodOverrideHeader)
@@ -59,16 +59,16 @@ func WithXHTTPMethodOverride() ctxhttp.Middleware {
 					PkgLog.Debug("ctxhttp.SupportXHTTPMethodOverride.switch", "err", "Unknown http method", "method", mo, "form", r.Form.Encode(), "header", r.Header)
 				}
 			}
-			return h.ServeHTTPContext(ctx, w, r)
-		})
+			return hf(ctx, w, r)
+		}
 	}
 }
 
 // WithCloseNotify returns a ctxhttp.Handler cancelling the context when the client
 // connection close unexpectedly.
 func WithCloseNotify() ctxhttp.Middleware {
-	return func(h ctxhttp.Handler) ctxhttp.Handler {
-		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			// Cancel the context if the client closes the connection
 			if wcn, ok := w.(http.CloseNotifier); ok {
 
@@ -82,8 +82,8 @@ func WithCloseNotify() ctxhttp.Middleware {
 					cancel()
 				}()
 			}
-			return h.ServeHTTPContext(ctx, w, r)
-		})
+			return hf(ctx, w, r)
+		}
 	}
 }
 
@@ -92,10 +92,10 @@ func WithCloseNotify() ctxhttp.Middleware {
 // Child handlers have the responsibility to obey the context deadline and to return
 // an appropriate error (or not) response in case of timeout.
 func WithTimeout(timeout time.Duration) ctxhttp.Middleware {
-	return func(h ctxhttp.Handler) ctxhttp.Handler {
-		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			ctx, _ = context.WithTimeout(ctx, timeout)
-			return h.ServeHTTPContext(ctx, w, r)
-		})
+			return hf(ctx, w, r)
+		}
 	}
 }
