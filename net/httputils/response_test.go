@@ -93,11 +93,11 @@ func TestPrintString(t *testing.T) {
 	assert.Equal(t, httputils.TextPlain, w.Header().Get(httputils.ContentType))
 }
 
-func TestPrintStringByte(t *testing.T) {
+func TestPrintWriteString(t *testing.T) {
 	w := httptest.NewRecorder()
 	p := httputils.NewPrinter(w, nil)
 
-	assert.NoError(t, p.StringByte(3141, "Hello %s. Wanna have some %.5f?"))
+	assert.NoError(t, p.WriteString(3141, "Hello %s. Wanna have some %.5f?"))
 	assert.Exactly(t, `Hello %s. Wanna have some %.5f?`, w.Body.String())
 	assert.Exactly(t, 3141, w.Code)
 	assert.Equal(t, httputils.TextPlain, w.Header().Get(httputils.ContentType))

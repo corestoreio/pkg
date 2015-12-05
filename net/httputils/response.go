@@ -114,8 +114,8 @@ func (p Print) html(code int, data []byte) (err error) {
 	return err
 }
 
-// String formats according to a format specifier and sends text response with status
-// code.
+// String formats according to a format specifier and sends text response with
+// status code.
 func (p Print) String(code int, format string, a ...interface{}) (err error) {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
@@ -126,16 +126,20 @@ func (p Print) String(code int, format string, a ...interface{}) (err error) {
 	return p.string(code, buf.Bytes())
 }
 
-// StringByte converts a string into []bytes and outputs it. Printf feature available.
-func (p Print) StringByte(code int, data string) (err error) {
-	return p.string(code, []byte(data))
+// WriteString converts a string into []bytes and outputs it. No formatting
+// feature available.
+func (p Print) WriteString(code int, s string) (err error) {
+	p.Response.Header().Set(ContentType, TextPlain)
+	p.Response.WriteHeader(code)
+	_, err = io.WriteString(p.Response, s)
+	return
 }
 
 func (p Print) string(code int, data []byte) (err error) {
 	p.Response.Header().Set(ContentType, TextPlain)
 	p.Response.WriteHeader(code)
 	_, err = p.Response.Write(data)
-	return err
+	return
 }
 
 // JSON sends a JSON response with status code.
