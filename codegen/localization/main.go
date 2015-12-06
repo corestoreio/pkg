@@ -25,7 +25,7 @@ import (
 
 	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/codegen/localization/gen"
-	"golang.org/x/text/cldr"
+	"golang.org/x/text/unicode/cldr"
 )
 
 func main() {

@@ -16,7 +16,7 @@ package i18n
 
 import (
 	"github.com/juju/errgo"
-	"golang.org/x/text/cldr"
+	"golang.org/x/text/unicode/cldr"
 )
 
 const (
