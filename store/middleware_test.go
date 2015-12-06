@@ -64,14 +64,14 @@ func init() {
 		},
 	)
 }
-func finalHandlerWithValidateBaseURL(t *testing.T) ctxhttp.Handler {
-	return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func finalHandlerWithValidateBaseURL(t *testing.T) ctxhttp.HandlerFunc {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		assert.NotNil(t, ctx)
 		assert.NotNil(t, w)
 		assert.NotNil(t, r)
 		assert.Empty(t, w.Header().Get("Location"))
 		return nil
-	})
+	}
 }
 
 func TestWithValidateBaseUrl_DeactivatedAndShouldNotRedirectWithGETRequest(t *testing.T) {
@@ -179,15 +179,15 @@ func getMWTestRequest(m, u string, c *http.Cookie) *http.Request {
 	return req
 }
 
-func finalInitStoreHandler(t *testing.T, wantStoreCode string) ctxhttp.Handler {
-	return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func finalInitStoreHandler(t *testing.T, wantStoreCode string) ctxhttp.HandlerFunc {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		_, haveReqStore, err := store.FromContextReader(ctx)
 		if err != nil {
 			return err
 		}
 		assert.Exactly(t, wantStoreCode, haveReqStore.StoreCode())
 		return nil
-	})
+	}
 }
 
 var testsMWInitByFormCookie = []struct {

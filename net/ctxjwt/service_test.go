@@ -178,7 +178,7 @@ func TestRSAGenerate(t *testing.T) {
 	testRsaOption(t, ctxjwt.WithRSAGenerator())
 }
 
-func testAuth(t *testing.T, errH ctxhttp.Handler, opts ...ctxjwt.Option) (ctxhttp.Handler, string) {
+func testAuth(t *testing.T, errH ctxhttp.HandlerFunc, opts ...ctxjwt.Option) (ctxhttp.Handler, string) {
 	jm, err := ctxjwt.NewService(opts...)
 	assert.NoError(t, err)
 	theToken, _, err := jm.GenerateToken(map[string]interface{}{
@@ -209,13 +209,13 @@ func TestWithParseAndValidateNoToken(t *testing.T) {
 
 func TestWithParseAndValidateHTTPErrorHandler(t *testing.T) {
 
-	authHandler, _ := testAuth(t, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	authHandler, _ := testAuth(t, func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		tok, err := ctxjwt.FromContext(ctx)
 		assert.Nil(t, tok)
 		w.WriteHeader(http.StatusTeapot)
 		_, err = w.Write([]byte(err.Error()))
 		return err
-	}))
+	})
 
 	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
 	assert.NoError(t, err)

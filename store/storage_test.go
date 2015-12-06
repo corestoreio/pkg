@@ -25,6 +25,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// todo inspect the high allocs
+
 var testStorage = store.MustNewStorage(
 	store.SetStorageWebsites(
 		&store.TableWebsite{WebsiteID: 0, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
@@ -95,6 +97,7 @@ var benchmarkStorageWebsiteDefaultGroup *store.Group
 
 // MBA mid 2012 CPU: Intel Core i5-3427U CPU @ 1.80GHz
 // BenchmarkStorageWebsiteGetDefaultGroup	  200000	      6081 ns/op	    1712 B/op	      45 allocs/op
+// BenchmarkStorageWebsiteGetDefaultGroup-4	   50000	     26210 ns/op	   10608 B/op	     229 allocs/op
 func BenchmarkStorageWebsiteGetDefaultGroup(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -188,6 +191,7 @@ var benchmarkStorageGroupDefaultStore *store.Store
 
 // MBA mid 2012 CPU: Intel Core i5-3427U CPU @ 1.80GHz
 // BenchmarkStorageGroupGetDefaultStore	 1000000	      1916 ns/op	     464 B/op	      14 allocs/op
+// BenchmarkStorageGroupGetDefaultStore-4  	  300000	      5387 ns/op	    2880 B/op	      64 allocs/op
 func BenchmarkStorageGroupGetDefaultStore(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -301,6 +305,7 @@ var benchmarkStorageStoreWebsite *store.Website
 
 // MBA mid 2012 CPU: Intel Core i5-3427U CPU @ 1.80GHz
 // BenchmarkStorageStoreGetWebsite	 2000000	       656 ns/op	     176 B/op	       6 allocs/op
+// BenchmarkStorageStoreGetWebsite-4       	   50000	     32968 ns/op	   15280 B/op	     334 allocs/op
 func BenchmarkStorageStoreGetWebsite(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -420,6 +425,7 @@ func TestStorageStoreErrors(t *testing.T) {
 
 // MBA mid 2012 CPU: Intel Core i5-3427U CPU @ 1.80GHz
 // BenchmarkStorageDefaultStoreView	 2000000	       724 ns/op	     176 B/op	       7 allocs/op
+// BenchmarkStorageDefaultStoreView-4      	   50000	     40856 ns/op	   15296 B/op	     335 allocs/op
 func BenchmarkStorageDefaultStoreView(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {

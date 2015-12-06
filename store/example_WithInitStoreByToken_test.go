@@ -79,7 +79,7 @@ func ExampleWithInitStoreByToken() {
 	jwtService, err := ctxjwt.NewService(ctxjwt.WithPassword([]byte(`GÒph3r`)))
 
 	finalHandler := ctxhttp.Chain(
-		ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			_, haveReqStore, err := store.FromContextReader(ctx)
 			if err != nil {
 				return err
@@ -87,9 +87,9 @@ func ExampleWithInitStoreByToken() {
 			// now we know that the current request depends on the store view DE.
 			fmt.Fprintf(w, "StoreCode: %s\n", haveReqStore.StoreCode())
 			return nil
-		}), // 								  executed 3rd
-		store.WithInitStoreByToken(),      // executed 2nd
-		jwtService.WithParseAndValidate(), // executed 1st
+		}, //
+		jwtService.WithParseAndValidate(),
+		store.WithInitStoreByToken(),
 	)
 
 	ts := httptest.NewServer(ctxhttp.NewAdapter(ctx, finalHandler))

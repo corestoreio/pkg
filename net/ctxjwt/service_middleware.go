@@ -39,14 +39,13 @@ func SetHeaderAuthorization(req *http.Request, token string) {
 // ProTip: Instead of passing the token as an HTML Header you can also add the token
 // to a form (multipart/form-data) with an input name of access_token. If the
 // token cannot be found within the Header the fallback triggers the lookup within the form.
-func (s *Service) WithParseAndValidate(errHandler ...ctxhttp.Handler) ctxhttp.Middleware {
-	var errH ctxhttp.Handler
-	errH = ctxhttp.HandlerFunc(defaultTokenErrorHandler)
+func (s *Service) WithParseAndValidate(errHandler ...ctxhttp.HandlerFunc) ctxhttp.Middleware {
+	errH := defaultTokenErrorHandler
 	if len(errHandler) == 1 && errHandler[0] != nil {
 		errH = errHandler[0]
 	}
-	return func(h ctxhttp.Handler) ctxhttp.Handler {
-		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(h ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
 			token, err := jwt.ParseFromRequest(r, s.keyFunc)
 
@@ -60,8 +59,8 @@ func (s *Service) WithParseAndValidate(errHandler ...ctxhttp.Handler) ctxhttp.Mi
 			if PkgLog.IsDebug() {
 				PkgLog.Debug("ctxjwt.Service.Authenticate", "err", err, "token", token, "inBlacklist", inBL)
 			}
-			return errH.ServeHTTPContext(NewContextWithError(ctx, err), w, r)
-		})
+			return errH(NewContextWithError(ctx, err), w, r)
+		}
 	}
 }
 

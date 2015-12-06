@@ -45,8 +45,8 @@ func WithValidateBaseURL(cr config.GetterPubSuber) ctxhttp.Middleware {
 		redirectCode = http.StatusFound
 	}
 
-	return func(h ctxhttp.Handler) ctxhttp.Handler {
-		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
 			if checkBaseURL && r.Method != "POST" {
 
@@ -79,8 +79,8 @@ func WithValidateBaseURL(cr config.GetterPubSuber) ctxhttp.Middleware {
 					return nil
 				}
 			}
-			return h.ServeHTTPContext(ctx, w, r)
-		})
+			return hf(ctx, w, r)
+		}
 	}
 }
 
@@ -91,8 +91,8 @@ func WithValidateBaseURL(cr config.GetterPubSuber) ctxhttp.Middleware {
 // store will be saved in the context.
 func WithInitStoreByToken() ctxhttp.Middleware {
 
-	return func(h ctxhttp.Handler) ctxhttp.Handler {
-		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
 			storeService, requestedStore, err := FromContextReader(ctx)
 			if err != nil {
@@ -132,8 +132,8 @@ func WithInitStoreByToken() ctxhttp.Middleware {
 				ctx = NewContextReader(ctx, storeService, newRequestedStore)
 			}
 
-			return h.ServeHTTPContext(ctx, w, r)
-		})
+			return hf.ServeHTTPContext(ctx, w, r)
+		}
 	}
 }
 
@@ -145,8 +145,8 @@ func WithInitStoreByToken() ctxhttp.Middleware {
 // 		1. check cookie store, always a string and the store code
 // 		2. check for GET ___store variable, always a string and the store code
 func WithInitStoreByFormCookie() ctxhttp.Middleware {
-	return func(h ctxhttp.Handler) ctxhttp.Handler {
-		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
 			storeService, requestedStore, err := FromContextReader(ctx)
 			if err != nil {
@@ -170,7 +170,7 @@ func WithInitStoreByFormCookie() ctxhttp.Middleware {
 					if PkgLog.IsDebug() {
 						PkgLog.Debug("store.WithInitStoreByFormCookie.StoreCodeFromCookie", "err", err, "req", r, "scope", reqSO)
 					}
-					return h.ServeHTTPContext(ctx, w, r)
+					return hf.ServeHTTPContext(ctx, w, r)
 				}
 			}
 
@@ -206,8 +206,8 @@ func WithInitStoreByFormCookie() ctxhttp.Middleware {
 				}
 			}
 
-			return h.ServeHTTPContext(ctx, w, r)
+			return hf(ctx, w, r)
 
-		})
+		}
 	}
 }

@@ -56,8 +56,8 @@ func Benchmark_WithValidateBaseUrl(b *testing.B) {
 	}
 }
 
-func benchValidationHandler(b *testing.B, wantStoreCode string) ctxhttp.Handler {
-	return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func benchValidationHandler(b *testing.B, wantStoreCode string) ctxhttp.HandlerFunc {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		_, haveReqStore, err := store.FromContextReader(ctx)
 		if err != nil {
 			return err
@@ -67,7 +67,7 @@ func benchValidationHandler(b *testing.B, wantStoreCode string) ctxhttp.Handler 
 			b.Errorf("Want: %s\nHave: %s", wantStoreCode, haveReqStore.StoreCode())
 		}
 		return nil
-	})
+	}
 }
 
 // Benchmark_WithInitStoreByToken-4	  100000	     17297 ns/op	    9112 B/op	     203 allocs/op => old bug

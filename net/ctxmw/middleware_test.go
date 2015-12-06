@@ -40,9 +40,7 @@ func fromContext(ctx context.Context) (string, bool) {
 	return value, ok
 }
 
-type handler struct{}
-
-func (h handler) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func serveHTTPContext(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
 	time.Sleep(time.Millisecond) // wait for other goroutines
 	val, _ := fromContext(ctx)
@@ -69,7 +67,7 @@ func (w *closeNotifyWriter) CloseNotify() <-chan bool {
 
 func TestWithCloseHandler(t *testing.T) {
 	ctx := context.WithValue(context.Background(), ctxKey, "gopher life")
-	finalCH := ctxhttp.Chain(&handler{}, ctxmw.WithCloseNotify())
+	finalCH := ctxhttp.Chain(serveHTTPContext, ctxmw.WithCloseNotify())
 
 	w := &closeNotifyWriter{httptest.NewRecorder()}
 	r, err := http.NewRequest("GET", "http://corestore.io/catalog/product/id/3452", nil)
@@ -84,7 +82,7 @@ func TestWithCloseHandler(t *testing.T) {
 
 func TestWithTimeoutHandler(t *testing.T) {
 	ctx := context.WithValue(context.Background(), ctxKey, "gopher life")
-	finalCH := ctxhttp.Chain(&handler{}, ctxmw.WithTimeout(time.Second))
+	finalCH := ctxhttp.Chain(serveHTTPContext, ctxmw.WithTimeout(time.Second))
 
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "http://corestore.io/catalog/product/id/3452", nil)
