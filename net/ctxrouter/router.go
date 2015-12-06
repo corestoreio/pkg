@@ -55,6 +55,7 @@ import (
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/utils"
 	"golang.org/x/net/context"
+	"golang.org/x/net/websocket"
 )
 
 // Param is a single URL parameter, consisting of a key and a value.
@@ -108,10 +109,29 @@ func PanicWithContext(ctx context.Context, p interface{}) context.Context {
 	return context.WithValue(ctx, ctxKeyPanic{}, p)
 }
 
+type webSocketKey struct{}
+
+// FromContextWebsocket extracts a websocket connection from the context.
+// Returns false even when the socket is nil. A true return value is guaranteed
+// that the socket is not nil.
+func FromContextWebsocket(ctx context.Context) (ws *websocket.Conn, ok bool) {
+	ws, ok = ctx.Value(webSocketKey{}).(*websocket.Conn)
+	if ok && ws == nil {
+		ok = false
+	}
+	return
+}
+
+func withContextWebsocket(ctx context.Context, ws *websocket.Conn) context.Context {
+	return context.WithValue(ctx, webSocketKey{}, ws)
+}
+
 // Router is a ctxhttp.Handler which can be used to dispatch requests to different
 // handler functions via configurable routes
 type Router struct {
-	trees map[string]*node
+	middleware ctxhttp.MiddlewareSlice
+	prefix     string
+	trees      map[string]*node
 
 	// Enables automatic redirection if the current route can't be matched but a
 	// handler for the path with (without) the trailing slash exists.
@@ -182,6 +202,35 @@ func New(cc ...context.Context) *Router {
 	}
 }
 
+// initTree prepares a tree of nodes. used in Group() and Handle() functions
+func (r *Router) initTree() {
+	if r.trees == nil {
+		r.trees = make(map[string]*node)
+	}
+}
+
+// Use applies middleware to the router
+func (r *Router) Use(mws ...ctxhttp.Middleware) {
+	r.middleware = append(r.middleware, mws...)
+}
+
+// Group creates a new sub router with prefix. It inherits all properties from
+// the parent. Passing middleware overrides parent middleware.
+func (r *Router) Group(prefix string, mws ...ctxhttp.Middleware) *Group {
+	r.initTree()
+	g := &Group{r: *r} // dereference it because of custom middleware and a prefix. BUT we still need the map in the group
+	g.r.prefix += prefix
+	if len(mws) == 0 {
+		mw := make(ctxhttp.MiddlewareSlice, len(g.r.middleware))
+		copy(mw, g.r.middleware)
+		g.r.middleware = mw
+	} else {
+		g.r.middleware = nil
+		g.Use(mws...)
+	}
+	return g
+}
+
 // GET is a shortcut for router.Handle("GET", path, handle)
 func (r *Router) GET(path string, handle ctxhttp.HandlerFunc) {
 	r.Handle("GET", path, handle)
@@ -217,6 +266,22 @@ func (r *Router) DELETE(path string, handle ctxhttp.HandlerFunc) {
 	r.Handle("DELETE", path, handle)
 }
 
+// WEBSOCKET adds a WebSocket route > handler to the router. Use the helper
+// function FromContextWebsocket() to extract the websocket.Conn in your HandlerFunc
+// from the context.
+func (r *Router) WEBSOCKET(path string, h ctxhttp.HandlerFunc) {
+	r.GET(path, func(ctx context.Context, w http.ResponseWriter, r *http.Request) (err error) {
+		wss := websocket.Server{
+			Handler: func(ws *websocket.Conn) {
+				w.WriteHeader(http.StatusSwitchingProtocols)
+				err = h(withContextWebsocket(ctx, ws), w, r)
+			},
+		}
+		wss.ServeHTTP(w, r)
+		return err
+	})
+}
+
 // Handle registers a new request handle with the given path and method.
 //
 // For GET, POST, PUT, PATCH and DELETE requests the respective shortcut
@@ -229,10 +294,11 @@ func (r *Router) Handle(method, path string, handle ctxhttp.HandlerFunc) {
 	if path[0] != '/' {
 		panic("path must begin with '/' in path '" + path + "'")
 	}
-
-	if r.trees == nil {
-		r.trees = make(map[string]*node)
+	if r.prefix != "" && r.prefix[0] != '/' {
+		panic("prefix must begin with '/' in path '" + r.prefix + "'")
 	}
+
+	r.initTree()
 
 	root := r.trees[method]
 	if root == nil {
@@ -240,7 +306,7 @@ func (r *Router) Handle(method, path string, handle ctxhttp.HandlerFunc) {
 		r.trees[method] = root
 	}
 
-	root.addRoute(path, handle)
+	root.addRoute(r.prefix+path, handle, r.middleware)
 }
 
 // Handler is an adapter which allows the usage of an ctxhttp.Handler as a
@@ -296,11 +362,11 @@ func (r *Router) recv(ctx context.Context, w http.ResponseWriter, req *http.Requ
 // If the path was found, it returns the handle function. Otherwise the third
 // return value indicates whether a redirection to
 // the same path with an extra / without the trailing slash should be performed.
-func (r *Router) Lookup(method, path string) (ctxhttp.HandlerFunc, Params, bool) {
+func (r *Router) Lookup(method, path string) (ctxhttp.HandlerFunc, ctxhttp.MiddlewareSlice, Params, bool) {
 	if root := r.trees[method]; root != nil {
 		return root.getValue(path)
 	}
-	return nil, nil, false
+	return nil, nil, nil, false
 }
 
 // ServeHTTP makes the router implement the http.Handler interface. Calls the
@@ -320,7 +386,11 @@ func (r *Router) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, re
 	if root := r.trees[req.Method]; root != nil {
 		path := req.URL.Path
 
-		if handle, ps, tsr := root.getValue(path); handle != nil {
+		if handle, mws, ps, tsr := root.getValue(path); handle != nil {
+			if mws != nil {
+				return mws.Chain(handle)(ParamsWithContext(ctx, ps), w, req)
+			}
+			// Do not apply any middleware
 			return handle(ParamsWithContext(ctx, ps), w, req)
 		} else if req.Method != "CONNECT" && path != "/" {
 			code := 301 // Permanent redirect, request with GET method
@@ -363,7 +433,7 @@ func (r *Router) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, re
 				continue
 			}
 
-			handle, _, _ := r.trees[method].getValue(req.URL.Path)
+			handle, _, _, _ := r.trees[method].getValue(req.URL.Path)
 			if handle != nil {
 				if r.MethodNotAllowed != nil {
 					return r.MethodNotAllowed.ServeHTTPContext(ctx, w, req)

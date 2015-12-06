@@ -2,10 +2,11 @@ package ctxrouter_test
 
 import (
 	"fmt"
-	"github.com/corestoreio/csfw/net/ctxrouter"
-	"golang.org/x/net/context"
 	"log"
 	"net/http"
+
+	"github.com/corestoreio/csfw/net/ctxrouter"
+	"golang.org/x/net/context"
 )
 
 func Index(ctx context.Context, w http.ResponseWriter, r *http.Request) error {

@@ -5,17 +5,21 @@
 package ctxrouter
 
 import (
+	"bufio"
+	"bytes"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/juju/errgo"
 	"golang.org/x/net/context"
-	"strings"
 )
 
 type mockResponseWriter struct{}
@@ -56,6 +60,7 @@ func TestParams(t *testing.T) {
 
 func TestRouter(t *testing.T) {
 	router := New()
+	router.Use(noopMW())
 
 	routed := false
 	router.Handle("GET", "/user/:name", func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -71,6 +76,38 @@ func TestRouter(t *testing.T) {
 	w := new(mockResponseWriter)
 
 	req, _ := http.NewRequest("GET", "/user/gopher", nil)
+	router.ServeHTTP(w, req)
+
+	if !routed {
+		t.Fatal("routing failed")
+	}
+}
+
+func TestRouterContext(t *testing.T) {
+	ctx := context.Background()
+	ctx = context.WithValue(ctx, 1, "Gopher")
+	router := New(ctx)
+	router.Use(noopMW())
+
+	routed := false
+	router.Handle("GET", "/user", func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		routed = true
+
+		have, ok := ctx.Value(1).(string)
+		if !ok {
+			t.Fatal("Cannot extract key 1 from context")
+		}
+		want := "Gopher"
+		if have != want {
+			t.Fatal("Have %s\nWant: %s", have, want)
+		}
+
+		return nil
+	})
+
+	w := new(mockResponseWriter)
+
+	req, _ := http.NewRequest("GET", "/user", nil)
 	router.ServeHTTP(w, req)
 
 	if !routed {
@@ -429,7 +466,7 @@ func TestRouterLookup(t *testing.T) {
 	router := New()
 
 	// try empty router first
-	handle, _, tsr := router.Lookup("GET", "/nope")
+	handle, _, _, tsr := router.Lookup("GET", "/nope")
 	if handle != nil {
 		t.Fatalf("Got handle for unregistered pattern: %v", handle)
 	}
@@ -440,7 +477,7 @@ func TestRouterLookup(t *testing.T) {
 	// insert route and try again
 	router.GET("/user/:name", wantHandle)
 
-	handle, params, tsr := router.Lookup("GET", "/user/gopher")
+	handle, _, params, tsr := router.Lookup("GET", "/user/gopher")
 	if handle == nil {
 		t.Fatal("Got no handle!")
 	} else {
@@ -454,7 +491,7 @@ func TestRouterLookup(t *testing.T) {
 		t.Fatalf("Wrong parameter values: want %v, got %v", wantParams, params)
 	}
 
-	handle, _, tsr = router.Lookup("GET", "/user/gopher/")
+	handle, _, _, tsr = router.Lookup("GET", "/user/gopher/")
 	if handle != nil {
 		t.Fatalf("Got handle for unregistered pattern: %v", handle)
 	}
@@ -462,7 +499,7 @@ func TestRouterLookup(t *testing.T) {
 		t.Error("Got no TSR recommendation!")
 	}
 
-	handle, _, tsr = router.Lookup("GET", "/nope")
+	handle, _, _, tsr = router.Lookup("GET", "/nope")
 	if handle != nil {
 		t.Fatalf("Got handle for unregistered pattern: %v", handle)
 	}
@@ -498,4 +535,58 @@ func TestRouterServeFiles(t *testing.T) {
 	if !mfs.opened {
 		t.Error("serving file failed")
 	}
+}
+
+// recorderHijacker is a ResponseRecorder that can be hijacked.
+type recorderHijacker struct {
+	*httptest.ResponseRecorder
+	fakeConn *fakeConn
+	buf      bytes.Buffer
+}
+
+func (rh *recorderHijacker) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+	return rh.fakeConn, bufio.NewReadWriter(bufio.NewReader(&rh.buf), bufio.NewWriter(&rh.buf)), nil
+}
+
+type fakeConn struct {
+	readBuf  bytes.Buffer
+	writeBuf bytes.Buffer
+}
+
+func (c *fakeConn) LocalAddr() net.Addr                { return nil }
+func (c *fakeConn) RemoteAddr() net.Addr               { return nil }
+func (c *fakeConn) SetDeadline(t time.Time) error      { return nil }
+func (c *fakeConn) SetReadDeadline(t time.Time) error  { return nil }
+func (c *fakeConn) SetWriteDeadline(t time.Time) error { return nil }
+func (c *fakeConn) Close() error                       { return nil }
+func (c *fakeConn) Read(b []byte) (int, error)         { return c.readBuf.Read(b) }
+func (c *fakeConn) Write(b []byte) (int, error)        { return c.writeBuf.Write(b) }
+
+func TestWEBSOCKET(t *testing.T) {
+
+	// TODO: setting up a proper websocket server test is quite complicated ...
+	// see test files in "golang.org/x/net/websocket"
+
+	router := New()
+	router.WEBSOCKET("/ws", func(ctx context.Context, _ http.ResponseWriter, r *http.Request) error {
+		ws, ok := FromContextWebsocket(ctx)
+		if !ok {
+			t.Fatal("Expecting a Websocket but got nothing")
+		}
+		if ws == nil {
+			t.Fatal("Expecting a Websocket but got nil")
+		}
+
+		return nil
+	})
+
+	w := &recorderHijacker{
+		ResponseRecorder: httptest.NewRecorder(),
+		fakeConn:         &fakeConn{},
+	}
+	r, _ := http.NewRequest("GET", "ws://localhost/ws", nil)
+	router.ServeHTTP(w, r)
+
+	// Bad Request
+	//t.Log(w.Body.String(), w.HeaderMap, w.buf.String())
 }
