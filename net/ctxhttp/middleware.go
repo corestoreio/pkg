@@ -18,6 +18,10 @@ package ctxhttp
 // middleware functions.
 type Middleware func(HandlerFunc) HandlerFunc
 
+// MiddlewareSlice a slice full of middleware functions and with function
+// receivers attached
+type MiddlewareSlice []Middleware
+
 // Chain will iterate over all middleware functions, calling them one by one
 // in a chained manner, returning the result of the final middleware.
 func Chain(h HandlerFunc, mws ...Middleware) HandlerFunc {
@@ -26,4 +30,10 @@ func Chain(h HandlerFunc, mws ...Middleware) HandlerFunc {
 		h = mws[i](h)
 	}
 	return h
+}
+
+// Chain will iterate over all middleware functions, calling them one by one
+// in a chained manner, returning the result of the final middleware.
+func (mws MiddlewareSlice) Chain(h HandlerFunc) HandlerFunc {
+	return Chain(h, mws...)
 }
