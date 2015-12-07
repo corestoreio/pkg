@@ -82,30 +82,30 @@ func (ps Params) ByName(name string) string {
 
 type ctxKeyParams struct{}
 
-// ParamsFromContext returns the Params slice from a context. It is guaranteed
+// FromContextParams returns the Params slice from a context. It is guaranteed
 // that the return value is non-nil.
-func ParamsFromContext(ctx context.Context) Params {
+func FromContextParams(ctx context.Context) Params {
 	if p, ok := ctx.Value(ctxKeyParams{}).(Params); ok {
 		return p
 	}
 	return Params{}
 }
 
-// ParamsWithContext puts Params into a context.
-func ParamsWithContext(ctx context.Context, p Params) context.Context {
+// WithContextParams puts Params into a context.
+func WithContextParams(ctx context.Context, p Params) context.Context {
 	return context.WithValue(ctx, ctxKeyParams{}, p)
 }
 
 type ctxKeyPanic struct{}
 
-// PanicFromContext returns the value of a panic. You are responsible
+// FromContextPanic returns the value of a panic. You are responsible
 // to extract the correct type from the interface{}.
-func PanicFromContext(ctx context.Context) interface{} {
+func FromContextPanic(ctx context.Context) interface{} {
 	return ctx.Value(ctxKeyPanic{})
 }
 
-// PanicWithContext puts a panic into a context.
-func PanicWithContext(ctx context.Context, p interface{}) context.Context {
+// WithContextPanic puts a panic into a context.
+func WithContextPanic(ctx context.Context, p interface{}) context.Context {
 	return context.WithValue(ctx, ctxKeyPanic{}, p)
 }
 
@@ -343,7 +343,7 @@ func (r *Router) ServeFiles(path string, root http.FileSystem) {
 	fileServer := http.FileServer(root)
 
 	r.GET(path, func(ctx context.Context, w http.ResponseWriter, req *http.Request) error {
-		req.URL.Path = ParamsFromContext(ctx).ByName("filepath")
+		req.URL.Path = FromContextParams(ctx).ByName("filepath")
 		fileServer.ServeHTTP(w, req)
 		return nil
 	})
@@ -351,7 +351,7 @@ func (r *Router) ServeFiles(path string, root http.FileSystem) {
 
 func (r *Router) recv(ctx context.Context, w http.ResponseWriter, req *http.Request) {
 	if rcv := recover(); rcv != nil {
-		if err := r.PanicHandler(PanicWithContext(ctx, rcv), w, req); err != nil {
+		if err := r.PanicHandler(WithContextPanic(ctx, rcv), w, req); err != nil {
 			http.Error(w, utils.Errors(err), http.StatusInternalServerError)
 		}
 	}
@@ -388,10 +388,10 @@ func (r *Router) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, re
 
 		if handle, mws, ps, tsr := root.getValue(path); handle != nil {
 			if mws != nil {
-				return mws.Chain(handle)(ParamsWithContext(ctx, ps), w, req)
+				return mws.Chain(handle)(WithContextParams(ctx, ps), w, req)
 			}
 			// Do not apply any middleware
-			return handle(ParamsWithContext(ctx, ps), w, req)
+			return handle(WithContextParams(ctx, ps), w, req)
 		} else if req.Method != "CONNECT" && path != "/" {
 			code := 301 // Permanent redirect, request with GET method
 			if req.Method != "GET" {

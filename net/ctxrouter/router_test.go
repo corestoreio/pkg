@@ -52,7 +52,7 @@ func TestParams(t *testing.T) {
 	if val := ps.ByName("noKey"); val != "" {
 		t.Errorf("Expected empty string for not found key; got: %s", val)
 	}
-	haveP := ParamsFromContext(context.Background())
+	haveP := FromContextParams(context.Background())
 	if len(haveP) != 0 || haveP == nil {
 		t.Errorf("ParamsFromContext should return a non-nil slice with length zero.\nHave: %#v", haveP)
 	}
@@ -66,7 +66,7 @@ func TestRouter(t *testing.T) {
 	router.Handle("GET", "/user/:name", func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		routed = true
 		want := Params{Param{"name", "gopher"}}
-		ps := ParamsFromContext(ctx)
+		ps := FromContextParams(ctx)
 		if !reflect.DeepEqual(ps, want) {
 			t.Fatalf("wrong wildcard values: want %v, got %v", want, ps)
 		}
@@ -377,12 +377,12 @@ func TestRouterPanicHandler(t *testing.T) {
 
 	router.PanicHandler = func(ctx context.Context, rw http.ResponseWriter, r *http.Request) error {
 		panicHandled = true
-		pa, ok := PanicFromContext(ctx).(string)
+		pa, ok := FromContextParams(ctx).(string)
 		if !ok {
 			t.Error("PanicFromContext should return a string")
 		}
 		if pa != "oops!" {
-			t.Errorf("Want: oops!\nHave: %s\nPanic %#v\n", pa, PanicFromContext(ctx))
+			t.Errorf("Want: oops!\nHave: %s\nPanic %#v\n", pa, FromContextParams(ctx))
 		}
 		return nil
 	}

@@ -15,7 +15,7 @@ func Index(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 }
 
 func Hello(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	ps := ctxrouter.ParamsFromContext(ctx)
+	ps := ctxrouter.FromContextParams(ctx)
 	fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
 	return nil
 }
