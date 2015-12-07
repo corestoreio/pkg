@@ -64,11 +64,11 @@ type Service struct {
 	// IDs and AltH slices must have both the same length because with the ID found in IDs slice
 	// we take the index key and access the appropriate handler in AltH.
 	websiteIDs  utils.Int64Slice
-	websiteAltH []ctxhttp.Handler
+	websiteAltH []ctxhttp.HandlerFunc
 	groupIDs    utils.Int64Slice
-	groupAltH   []ctxhttp.Handler
+	groupAltH   []ctxhttp.HandlerFunc
 	storeIDs    utils.Int64Slice
-	storeAltH   []ctxhttp.Handler
+	storeAltH   []ctxhttp.HandlerFunc
 }
 
 // NewService creates a new GeoIP service to be used as a middleware.
@@ -131,23 +131,23 @@ func (s *Service) newContextCountryByIP(ctx context.Context, r *http.Request) (c
 // WithCountryByIP is a simple middleware which detects the country via an IP
 // address. With the detected country a new tree context.Context gets created.
 func (s *Service) WithCountryByIP() ctxhttp.Middleware {
-	return func(h ctxhttp.Handler) ctxhttp.Handler {
-		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			var err error
 			ctx, _, err = s.newContextCountryByIP(ctx, r)
 			if err != nil {
 				ctx = NewContextWithError(ctx, err)
 			}
-			return h.ServeHTTPContext(ctx, w, r)
-		})
+			return hf(ctx, w, r)
+		}
 	}
 }
 
 // WithIsCountryAllowedByIP a more advanced function. It expects from the context
 // the store.ManagerReader ...
 func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
-	return func(h ctxhttp.Handler) ctxhttp.Handler {
-		return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	return func(h ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
 			_, requestedStore, err := store.FromContextReader(ctx)
 			if err != nil {
@@ -161,7 +161,7 @@ func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 			ctx, ipCountry, err = s.newContextCountryByIP(ctx, r)
 			if err != nil {
 				ctx = NewContextWithError(ctx, err)
-				return h.ServeHTTPContext(ctx, w, r)
+				return h(ctx, w, r)
 			}
 
 			allowedCountries, err := directory.AllowedCountries(requestedStore.Config)
@@ -176,8 +176,8 @@ func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 				h = s.altHandlerByID(requestedStore)
 			}
 
-			return h.ServeHTTPContext(ctx, w, r)
-		})
+			return h(ctx, w, r)
+		}
 	}
 }
 
@@ -187,17 +187,17 @@ func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 // WithIsCountryAllowedByIP.
 //
 // Status is StatusServiceUnavailable
-var DefaultAlternativeHandler ctxhttp.Handler = defaultAlternativeHandler
+var DefaultAlternativeHandler ctxhttp.HandlerFunc = defaultAlternativeHandler
 
-var defaultAlternativeHandler ctxhttp.Handler = ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
+var defaultAlternativeHandler = func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
 	http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
 	return nil
-})
+}
 
 // altHandlerByID searches in the hierarchical order of store -> group -> website
 // the next alternative handler IF a country is not allowed as defined in function
 // type IsAllowedFunc.
-func (s *Service) altHandlerByID(st *store.Store) ctxhttp.Handler {
+func (s *Service) altHandlerByID(st *store.Store) ctxhttp.HandlerFunc {
 
 	if s.storeIDs != nil && s.storeAltH != nil {
 		return findHandlerByID(scope.StoreID, st.StoreID(), s.storeIDs, s.storeAltH)
@@ -211,10 +211,10 @@ func (s *Service) altHandlerByID(st *store.Store) ctxhttp.Handler {
 	return DefaultAlternativeHandler
 }
 
-// altHandlerByID returns the Handler for the searchID. If not found
+// findHandlerByID returns the Handler for the searchID. If not found
 // or slices have an indifferent length or something is nil it will
 // return the DefaultErrorHandler.
-func findHandlerByID(so scope.Scope, id int64, idsIdx utils.Int64Slice, handlers []ctxhttp.Handler) ctxhttp.Handler {
+func findHandlerByID(so scope.Scope, id int64, idsIdx utils.Int64Slice, handlers []ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 
 	if len(idsIdx) != len(handlers) {
 		return DefaultAlternativeHandler

@@ -45,8 +45,8 @@ func mustGetTestService(opts ...geoip.Option) *geoip.Service {
 	return s
 }
 
-func finalHandlerFinland(t *testing.T) ctxhttp.Handler {
-	return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func finalHandlerFinland(t *testing.T) ctxhttp.HandlerFunc {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		ipc, err, ok := geoip.FromContextCountry(ctx)
 		assert.NotNil(t, ipc)
 		assert.True(t, ok)
@@ -54,7 +54,7 @@ func finalHandlerFinland(t *testing.T) ctxhttp.Handler {
 		assert.Exactly(t, "2a02:d200::", ipc.IP.String())
 		assert.Exactly(t, "FI", ipc.Country.Country.IsoCode)
 		return nil
-	})
+	}
 }
 
 func mustGetRequestFinland() *http.Request {
@@ -166,14 +166,14 @@ var managerStoreSimpleTest = storemock.NewContextService(scope.Option{}, func(ms
 	}
 })
 
-func ipErrorFinalHandler(t *testing.T) ctxhttp.Handler {
-	return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+func ipErrorFinalHandler(t *testing.T) ctxhttp.HandlerFunc {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		ipc, err, ok := geoip.FromContextCountry(ctx)
 		assert.Nil(t, ipc)
 		assert.True(t, ok)
 		assert.EqualError(t, err, geoip.ErrCannotGetRemoteAddr.Error())
 		return nil
-	})
+	}
 }
 
 func TestWithCountryByIPErrorRemoteAddr(t *testing.T) {

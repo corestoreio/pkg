@@ -30,21 +30,21 @@ type Option func(*Service)
 // on a Service. If the Handler h is nil falls back to the DefaultErrorHandler.
 // This function can be called as many times as you have websites, groups
 // or stores.
-func WithAlternativeHandler(so scope.Scope, id int64, h ctxhttp.Handler) Option {
-	if h == nil {
-		h = DefaultAlternativeHandler
+func WithAlternativeHandler(so scope.Scope, id int64, hf ctxhttp.HandlerFunc) Option {
+	if hf == nil {
+		hf = DefaultAlternativeHandler
 	}
 	return func(s *Service) {
 		switch so {
 		case scope.StoreID:
 			s.storeIDs.Append(id)
-			s.storeAltH = append(s.storeAltH, h)
+			s.storeAltH = append(s.storeAltH, hf)
 		case scope.GroupID:
 			s.groupIDs.Append(id)
-			s.groupAltH = append(s.groupAltH, h)
+			s.groupAltH = append(s.groupAltH, hf)
 		case scope.WebsiteID:
 			s.websiteIDs.Append(id)
-			s.websiteAltH = append(s.websiteAltH, h)
+			s.websiteAltH = append(s.websiteAltH, hf)
 		default:
 			s.lastErrors = append(s.lastErrors, scope.ErrUnsupportedScopeID)
 		}
