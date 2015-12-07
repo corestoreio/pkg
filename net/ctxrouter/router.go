@@ -388,10 +388,12 @@ func (r *Router) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, re
 
 		if handle, mws, ps, tsr := root.getValue(path); handle != nil {
 			if mws != nil {
-				return mws.Chain(handle)(WithContextParams(ctx, ps), w, req)
+				handle = mws.Chain(handle)
 			}
-			// Do not apply any middleware
-			return handle(WithContextParams(ctx, ps), w, req)
+			if ps != nil {
+				ctx = WithContextParams(ctx, ps)
+			}
+			return handle(ctx, w, req)
 		} else if req.Method != "CONNECT" && path != "/" {
 			code := 301 // Permanent redirect, request with GET method
 			if req.Method != "GET" {

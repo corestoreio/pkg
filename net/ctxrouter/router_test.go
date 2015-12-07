@@ -377,7 +377,7 @@ func TestRouterPanicHandler(t *testing.T) {
 
 	router.PanicHandler = func(ctx context.Context, rw http.ResponseWriter, r *http.Request) error {
 		panicHandled = true
-		pa, ok := FromContextParams(ctx).(string)
+		pa, ok := FromContextPanic(ctx).(string)
 		if !ok {
 			t.Error("PanicFromContext should return a string")
 		}

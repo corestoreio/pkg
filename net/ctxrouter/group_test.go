@@ -50,13 +50,12 @@ func groupHeader() ctxhttp.Middleware {
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			w.Header().Set("X-CoreStore-ID", "Goph3r")
-			println(r.RequestURI)
 			return hf(ctx, w, r)
 		}
 	}
 }
 
-func TestGroupMiddleware(t *testing.T) {
+func TestGroupMiddlewareNoParams(t *testing.T) {
 	r := New()
 	g := r.Group("/group", groupHeader())
 	h := func(context.Context, http.ResponseWriter, *http.Request) error { return errors.New("Group Error") }
@@ -71,6 +70,65 @@ func TestGroupMiddleware(t *testing.T) {
 	assert.Exactly(t, "Goph3r", w.Header().Get("X-CoreStore-ID"), "Header key X-CoreStore-ID not found, which has been applied by a middleware")
 }
 
+func mwGroup1() ctxhttp.Middleware {
+	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+			ps := FromContextParams(ctx)
+			w.Header().Set("X-CoreStore-ID", "group1")
+			w.Header().Set("X-CoreStore-MSG", ps.ByName("msg"))
+			return hf(ctx, w, r)
+		}
+	}
+}
+
+func mwGroup2() ctxhttp.Middleware {
+	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+			ps := FromContextParams(ctx)
+			w.Header().Set("X-CoreStore-ID", "group2")
+			w.Header().Set("X-CoreStore-MSG", ps.ByName("msg"))
+			return hf(ctx, w, r)
+		}
+	}
+}
+
 func TestGroupMiddlewareMultipleRoutes(t *testing.T) {
-	t.Log("add tests where we have different groups with different middlewarez and they do not each other conflict")
+
+	r := New()
+
+	gh1 := func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+		ps := FromContextParams(ctx)
+		assert.Exactly(t, "grouperror1", ps.ByName("msg"))
+		assert.Exactly(t, "grouperror1", w.Header().Get("X-CoreStore-MSG"), "X-CoreStore-MSG Header not set")
+		assert.Exactly(t, "group1", w.Header().Get("X-CoreStore-ID"), "X-CoreStore-ID Header not set")
+		return nil
+	}
+
+	r.Use(mwGroup1())
+	r.GET("/group/:msg", gh1)
+
+	g1 := r.Group("/group1", mwGroup1())
+	g1.GET("/error/:msg", gh1)
+
+	g2 := r.Group("/group2", mwGroup2())
+	g2.GET("/error/:msg", func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+		ps := FromContextParams(ctx)
+		assert.Exactly(t, "grouperror2", ps.ByName("msg"))
+		assert.Exactly(t, "grouperror2", w.Header().Get("X-CoreStore-MSG"))
+		assert.Exactly(t, "group2", w.Header().Get("X-CoreStore-ID"))
+		return nil
+	})
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/group1/error/grouperror1", nil)
+	r.ServeHTTP(w, req)
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/group2/error/grouperror2", nil)
+	r.ServeHTTP(w, req)
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/group/grouperror1", nil)
+	r.ServeHTTP(w, req)
+
 }
