@@ -26,7 +26,7 @@ import (
 func TestContextWithError(t *testing.T) {
 
 	var wantErr = errors.New("Contiki Context")
-	ctx := ctxjwt.NewContextWithError(context.Background(), wantErr)
+	ctx := ctxjwt.WithContextError(context.Background(), wantErr)
 	assert.NotNil(t, ctx)
 
 	haveToken, haveErr := ctxjwt.FromContext(ctx)
@@ -36,7 +36,7 @@ func TestContextWithError(t *testing.T) {
 
 func TestFromContext(t *testing.T) {
 
-	ctx := ctxjwt.NewContext(context.Background(), nil)
+	ctx := ctxjwt.WithContext(context.Background(), nil)
 	assert.NotNil(t, ctx)
 
 	haveToken, haveErr := ctxjwt.FromContext(ctx)

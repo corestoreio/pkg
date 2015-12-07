@@ -54,12 +54,12 @@ func (s *Service) WithParseAndValidate(errHandler ...ctxhttp.HandlerFunc) ctxhtt
 				inBL = s.Blacklist.Has(token.Raw)
 			}
 			if token != nil && err == nil && token.Valid && !inBL {
-				return h.ServeHTTPContext(NewContext(ctx, token), w, r)
+				return h.ServeHTTPContext(WithContext(ctx, token), w, r)
 			}
 			if PkgLog.IsDebug() {
 				PkgLog.Debug("ctxjwt.Service.Authenticate", "err", err, "token", token, "inBlacklist", inBL)
 			}
-			return errH(NewContextWithError(ctx, err), w, r)
+			return errH(WithContextError(ctx, err), w, r)
 		}
 	}
 }

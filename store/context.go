@@ -17,6 +17,7 @@ package store
 import (
 	"errors"
 
+	"github.com/corestoreio/csfw/config/scope"
 	"golang.org/x/net/context"
 )
 
@@ -51,10 +52,10 @@ func FromContextReader(ctx context.Context) (Reader, *Store, error) {
 	return sw.service, sw.requestedStore, nil
 }
 
-// NewContextReader adds a store.Reader and an optional requestedStore to the context.
+// WithContextReader adds a store.Reader and an optional requestedStore to the context.
 // requestedStore can be provided 0 or 1 time. If you provide the RequestedStore
 // argument then it will override the default RequestedStore from FromContextReader()
-func NewContextReader(ctx context.Context, r Reader, requestedStore ...*Store) context.Context {
+func WithContextReader(ctx context.Context, r Reader, requestedStore ...*Store) context.Context {
 	var rs *Store
 	if len(requestedStore) == 1 {
 		rs = requestedStore[0]
@@ -63,4 +64,14 @@ func NewContextReader(ctx context.Context, r Reader, requestedStore ...*Store) c
 		service:        r,
 		requestedStore: rs,
 	})
+}
+
+// WithContextMustService creates a new StoreService wrapped in a context.Background().
+// Convenience function. Panics on error.
+func WithContextMustService(so scope.Option, s Storager, opts ...ServiceOption) context.Context {
+	sm, err := NewService(so, s, opts...)
+	if err != nil {
+		panic(err)
+	}
+	return WithContextReader(context.Background(), sm)
 }

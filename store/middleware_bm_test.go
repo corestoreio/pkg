@@ -102,7 +102,7 @@ func Benchmark_WithInitStoreByFormCookie(b *testing.B) {
 	b.ReportAllocs()
 
 	wantStoreCode := "nz"
-	ctx := store.NewContextReader(context.Background(), getInitializedStoreService(scope.Option{Website: scope.MockID(2)}))
+	ctx := store.WithContextReader(context.Background(), getInitializedStoreService(scope.Option{Website: scope.MockID(2)}))
 
 	mw := store.WithInitStoreByFormCookie()(benchValidationHandler(b, wantStoreCode))
 

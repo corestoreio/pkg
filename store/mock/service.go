@@ -39,16 +39,14 @@ func MustNewService(so scope.Option, opts ...func(ms *Storage)) *store.Service {
 	return store.MustNewService(so, ms)
 }
 
-// NewContextService creates a new StoreService wrapped in a context.Context
-func NewContextService(so scope.Option, opts ...func(ms *Storage)) context.Context {
-	var sm *store.Service
-	{
-		var err error
-		if sm, err = NewService(so, opts...); err != nil {
-			panic(err)
-		}
+// WithContextMustService creates a new StoreService wrapped in a context.Background().
+// Panics on error.
+func WithContextMustService(so scope.Option, opts ...func(ms *Storage)) context.Context {
+	sm, err := NewService(so, opts...)
+	if err != nil {
+		panic(err)
 	}
-	return store.NewContextReader(context.Background(), sm)
+	return store.WithContextReader(context.Background(), sm)
 }
 
 // Storage main underlying data container

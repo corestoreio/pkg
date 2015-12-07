@@ -125,7 +125,7 @@ func (s *Service) newContextCountryByIP(ctx context.Context, r *http.Request) (c
 		return ctx, nil, errgo.Mask(err)
 	}
 	c.IP = remoteAddr
-	return NewContextCountry(ctx, c), c, nil
+	return WithContextCountry(ctx, c), c, nil
 }
 
 // WithCountryByIP is a simple middleware which detects the country via an IP
@@ -136,7 +136,7 @@ func (s *Service) WithCountryByIP() ctxhttp.Middleware {
 			var err error
 			ctx, _, err = s.newContextCountryByIP(ctx, r)
 			if err != nil {
-				ctx = NewContextWithError(ctx, err)
+				ctx = WithContextError(ctx, err)
 			}
 			return hf(ctx, w, r)
 		}
@@ -160,7 +160,7 @@ func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 			var ipCountry *IPCountry
 			ctx, ipCountry, err = s.newContextCountryByIP(ctx, r)
 			if err != nil {
-				ctx = NewContextWithError(ctx, err)
+				ctx = WithContextError(ctx, err)
 				return h(ctx, w, r)
 			}
 

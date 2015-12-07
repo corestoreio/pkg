@@ -19,23 +19,16 @@ import (
 	"golang.org/x/net/context"
 )
 
-// ctxKey type is unexported to prevent collisions with context keys defined in
-// other packages.
-type ctxKey uint
+type keyLog struct{}
 
-// key* defines the keys to access a value in a context.Context
-const (
-	keyLog ctxKey = iota
-)
-
-// NewContext creates a new context with jwt.Token attached.
-func NewContext(ctx context.Context, l log.Logger) context.Context {
-	return context.WithValue(ctx, keyLog, l)
+// WithContext creates a new context with jwt.Token attached.
+func WithContext(ctx context.Context, l log.Logger) context.Context {
+	return context.WithValue(ctx, keyLog{}, l)
 }
 
 // FromContext returns a log.Logger in ctx if it exists or an log.NullLogger.
 func FromContext(ctx context.Context) log.Logger {
-	if l, ok := ctx.Value(keyLog).(log.Logger); ok {
+	if l, ok := ctx.Value(keyLog{}).(log.Logger); ok {
 		return l
 	}
 	return log.BlackHole{}

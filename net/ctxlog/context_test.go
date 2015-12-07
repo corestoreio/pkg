@@ -26,7 +26,7 @@ import (
 func TestContext(t *testing.T) {
 	l := log.NewStdLogger()
 	ctx := context.Background()
-	ctx = ctxlog.NewContext(ctx, l)
+	ctx = ctxlog.WithContext(ctx, l)
 
 	haveL := ctxlog.FromContext(ctx)
 	assert.Exactly(t, l, haveL)

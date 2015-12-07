@@ -16,34 +16,32 @@ package geoip
 
 import "golang.org/x/net/context"
 
-// ctxKey type is unexported to prevent collisions with context keys defined in
+// keyctxCountry type is unexported to prevent collisions with context keys defined in
 // other packages.
-type ctxKey uint
+type keyctxCountry struct{}
 
-// key* defines the keys to access a value in a context.Context
-const (
-	keyctxCountry ctxKey = iota
-	keyctxErr
-)
+// keyctxErr type is unexported to prevent collisions with context keys defined in
+// other packages.
+type keyctxErr struct{}
 
-// NewContextCountry creates a new context with geoip.Country attached.
-func NewContextCountry(ctx context.Context, c *IPCountry) context.Context {
-	return context.WithValue(ctx, keyctxCountry, c)
+// WithContextCountry creates a new context with geoip.Country attached.
+func WithContextCountry(ctx context.Context, c *IPCountry) context.Context {
+	return context.WithValue(ctx, keyctxCountry{}, c)
 }
 
-// NewContextWithError creates a new context with an error attached.
-func NewContextWithError(ctx context.Context, err error) context.Context {
-	return context.WithValue(ctx, keyctxErr, err)
+// WithContextError creates a new context with an error attached.
+func WithContextError(ctx context.Context, err error) context.Context {
+	return context.WithValue(ctx, keyctxErr{}, err)
 }
 
 // FromContextCountry returns the geoip.Country in ctx if it exists or
 // and error if that one exists. The error has been previously set
-// by NewContextWithError.
+// by WithContextError.
 func FromContextCountry(ctx context.Context) (*IPCountry, error, bool) {
-	err, ok := ctx.Value(keyctxErr).(error)
+	err, ok := ctx.Value(keyctxErr{}).(error)
 	if ok {
 		return nil, err, ok
 	}
-	c, ok := ctx.Value(keyctxCountry).(*IPCountry)
+	c, ok := ctx.Value(keyctxCountry{}).(*IPCountry)
 	return c, nil, ok
 }

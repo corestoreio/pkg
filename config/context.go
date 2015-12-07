@@ -33,8 +33,8 @@ func FromContextGetter(ctx context.Context) Getter {
 	return DefaultService
 }
 
-// NewContextGetter adds a config.Getter to a context
-func NewContextGetter(ctx context.Context, r Getter) context.Context {
+// WithContextGetter adds a config.Getter to a context
+func WithContextGetter(ctx context.Context, r Getter) context.Context {
 	return context.WithValue(ctx, ctxKeyGetter{}, r)
 }
 
@@ -44,8 +44,8 @@ func FromContextScopedGetter(ctx context.Context) (r ScopedGetter, ok bool) {
 	return
 }
 
-// NewContextScopedGetter adds a config.ScopedGetter to a context
-func NewContextScopedGetter(ctx context.Context, r ScopedGetter) context.Context {
+// WithContextScopedGetter adds a config.ScopedGetter to a context
+func WithContextScopedGetter(ctx context.Context, r ScopedGetter) context.Context {
 	return context.WithValue(ctx, ctxKeyScopedGetter{}, r)
 }
 
@@ -55,8 +55,8 @@ func FromContextGetterPubSuber(ctx context.Context) (r GetterPubSuber, ok bool) 
 	return
 }
 
-// NewContextGetterPubSuber adds a GetterPubSuber to a context.
-func NewContextGetterPubSuber(ctx context.Context, r GetterPubSuber) context.Context {
+// WithContextGetterPubSuber adds a GetterPubSuber to a context.
+func WithContextGetterPubSuber(ctx context.Context, r GetterPubSuber) context.Context {
 	return context.WithValue(ctx, ctxKeyGetterPubSuber{}, r)
 }
 
@@ -66,7 +66,7 @@ func FromContextWriter(ctx context.Context) (w Writer, ok bool) {
 	return
 }
 
-// NewContextWriter adds a writer to a context
-func NewContextWriter(ctx context.Context, w Writer) context.Context {
+// WithContextWriter adds a writer to a context
+func WithContextWriter(ctx context.Context, w Writer) context.Context {
 	return context.WithValue(ctx, ctxKeyWriter{}, w)
 }

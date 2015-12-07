@@ -156,7 +156,7 @@ func TestWithIsCountryAllowedByIPErrorStoreManager(t *testing.T) {
 	assert.EqualError(t, countryHandler.ServeHTTPContext(context.Background(), rec, req), store.ErrContextServiceNotFound.Error())
 }
 
-var managerStoreSimpleTest = storemock.NewContextService(scope.Option{}, func(ms *storemock.Storage) {
+var managerStoreSimpleTest = storemock.WithContextMustService(scope.Option{}, func(ms *storemock.Storage) {
 	ms.MockStore = func() (*store.Store, error) {
 		return store.NewStore(
 			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
@@ -188,7 +188,7 @@ func TestWithCountryByIPErrorRemoteAddr(t *testing.T) {
 	assert.NoError(t, countryHandler.ServeHTTPContext(context.Background(), rec, req))
 }
 
-func TestWithIsCountryAllowedByIPErrorNewContextCountryByIP(t *testing.T) {
+func TestWithIsCountryAllowedByIPErrorWithContextCountryByIP(t *testing.T) {
 	s := mustGetTestService()
 	defer deferClose(t, s.GeoIP)
 

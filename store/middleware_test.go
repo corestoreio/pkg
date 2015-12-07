@@ -50,7 +50,7 @@ func init() {
 		}),
 	)
 
-	middlewareCtxStoreService = storemock.NewContextService(
+	middlewareCtxStoreService = storemock.WithContextMustService(
 		scope.Option{},
 		func(ms *storemock.Storage) {
 			ms.MockStore = func() (*store.Store, error) {
@@ -267,7 +267,7 @@ func TestWithInitStoreByFormCookie(t *testing.T) {
 
 	for i, test := range testsMWInitByFormCookie {
 
-		ctx := store.NewContextReader(context.Background(), getInitializedStoreService(test.haveSO))
+		ctx := store.WithContextReader(context.Background(), getInitializedStoreService(test.haveSO))
 
 		mw := store.WithInitStoreByFormCookie()(finalInitStoreHandler(t, test.wantStoreCode))
 
@@ -311,10 +311,10 @@ func TestWithInitStoreByFormCookie_NilCtx(t *testing.T) {
 }
 
 func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) context.Context {
-	ctx := store.NewContextReader(context.Background(), getInitializedStoreService(initO))
+	ctx := store.WithContextReader(context.Background(), getInitializedStoreService(initO))
 	tok := jwt.New(jwt.SigningMethodHS256)
 	tok.Claims[store.ParamName] = tokenStoreCode
-	ctx = ctxjwt.NewContext(ctx, tok)
+	ctx = ctxjwt.WithContext(ctx, tok)
 	return ctx
 }
 
@@ -333,8 +333,8 @@ func TestWithInitStoreByToken(t *testing.T) {
 		wantStoreCode string
 		wantErr       error
 	}{
-		{store.NewContextReader(context.Background(), nil), "de", store.ErrContextServiceNotFound},
-		{store.NewContextReader(context.Background(), getInitializedStoreService(scope.Option{Store: scope.MockCode("de")})), "de", ctxjwt.ErrContextJWTNotFound},
+		{store.WithContextReader(context.Background(), nil), "de", store.ErrContextServiceNotFound},
+		{store.WithContextReader(context.Background(), getInitializedStoreService(scope.Option{Store: scope.MockCode("de")})), "de", ctxjwt.ErrContextJWTNotFound},
 		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "de"), "de", nil},
 		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("at")}, "ch"), "at", store.ErrStoreNotActive},
 		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "at"), "at", nil},

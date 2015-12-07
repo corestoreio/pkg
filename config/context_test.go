@@ -24,23 +24,23 @@ import (
 
 func TestContextMustGetter(t *testing.T) {
 	mr := config.NewMockGetter()
-	ctx := config.NewContextGetter(context.Background(), mr)
+	ctx := config.WithContextGetter(context.Background(), mr)
 	mrHave := config.FromContextGetter(ctx)
 	assert.Exactly(t, mr, mrHave)
 
-	ctx = config.NewContextGetter(context.Background(), nil)
+	ctx = config.WithContextGetter(context.Background(), nil)
 	mrHave = config.FromContextGetter(ctx)
 	assert.Exactly(t, config.DefaultService, mrHave)
 }
 
 func TestContextMustGetterPubSuber(t *testing.T) {
 	mr := config.NewMockGetter()
-	ctx := config.NewContextGetterPubSuber(context.Background(), mr)
+	ctx := config.WithContextGetterPubSuber(context.Background(), mr)
 	mrHave, ok := config.FromContextGetterPubSuber(ctx)
 	assert.Exactly(t, mr, mrHave)
 	assert.True(t, ok)
 
-	ctx = config.NewContextGetterPubSuber(context.Background(), nil)
+	ctx = config.WithContextGetterPubSuber(context.Background(), nil)
 	mrHave, ok = config.FromContextGetterPubSuber(ctx)
 	assert.Nil(t, mrHave)
 	assert.False(t, ok)
@@ -57,12 +57,12 @@ var _ config.Writer = (*cWrite)(nil)
 
 func TestContextMustWriter(t *testing.T) {
 	wr := cWrite{}
-	ctx := config.NewContextWriter(context.Background(), wr)
+	ctx := config.WithContextWriter(context.Background(), wr)
 	wrHave, ok := config.FromContextWriter(ctx)
 	assert.Exactly(t, wr, wrHave)
 	assert.True(t, ok)
 
-	ctx = config.NewContextWriter(context.Background(), nil)
+	ctx = config.WithContextWriter(context.Background(), nil)
 	wrHave, ok = config.FromContextWriter(ctx)
 	assert.Nil(t, wrHave)
 	assert.False(t, ok)

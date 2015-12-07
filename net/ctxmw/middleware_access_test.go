@@ -64,7 +64,7 @@ func TestWithAccessLog(t *testing.T) {
 	var buf bytes.Buffer
 	defer buf.Reset()
 
-	ctx := ctxlog.NewContext(context.Background(), log.NewStdLogger(log.SetStdWriter(&buf)))
+	ctx := ctxlog.WithContext(context.Background(), log.NewStdLogger(log.SetStdWriter(&buf)))
 
 	finalH := ctxhttp.Chain(
 		ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {

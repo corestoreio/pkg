@@ -134,8 +134,8 @@ func WithMockValuesJSON(r io.Reader) mockOptionFunc {
 	}
 }
 
-// NewContextMockGetter adds a MockGetter to a context.
-func NewContextMockGetter(ctx context.Context, opts ...mockOptionFunc) context.Context {
+// WithContextMockGetter adds a MockGetter to a context.
+func WithContextMockGetter(ctx context.Context, opts ...mockOptionFunc) context.Context {
 	return context.WithValue(ctx, ctxKeyGetter{}, NewMockGetter(opts...))
 }
 

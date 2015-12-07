@@ -129,7 +129,7 @@ func WithInitStoreByToken() ctxhttp.Middleware {
 			if newRequestedStore.StoreID() != requestedStore.StoreID() {
 				// this may lead to a bug because the previously set storeService and requestedStore
 				// will still exists and have not been removed.
-				ctx = NewContextReader(ctx, storeService, newRequestedStore)
+				ctx = WithContextReader(ctx, storeService, newRequestedStore)
 			}
 
 			return hf.ServeHTTPContext(ctx, w, r)
@@ -201,7 +201,7 @@ func WithInitStoreByFormCookie() ctxhttp.Middleware {
 					if newRequestedStore.StoreID() != requestedStore.StoreID() {
 						// this may lead to a bug because the previously set storeService and requestedStore
 						// will still exists and have not been removed.
-						ctx = NewContextReader(ctx, storeService, newRequestedStore)
+						ctx = WithContextReader(ctx, storeService, newRequestedStore)
 					}
 				}
 			}

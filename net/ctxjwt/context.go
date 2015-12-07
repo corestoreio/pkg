@@ -21,40 +21,33 @@ import (
 	"golang.org/x/net/context"
 )
 
-// ctxKey type is unexported to prevent collisions with context keys defined in
-// other packages.
-type ctxKey uint
-
-// key* defines the keys to access a value in a context.Context
-const (
-	keyJSONWebToken ctxKey = iota
-	keyctxErr
-)
+type keyJSONWebToken struct{}
+type keyctxErr struct{}
 
 // ErrContextJWTNotFound gets returned when the jwt cannot be found.
 var ErrContextJWTNotFound = errors.New("Cannot extract ctxjwt nor an error from context")
 
-// NewContext creates a new context with jwt.Token attached.
-func NewContext(ctx context.Context, t *jwt.Token) context.Context {
-	return context.WithValue(ctx, keyJSONWebToken, t)
+// WithContext creates a new context with jwt.Token attached.
+func WithContext(ctx context.Context, t *jwt.Token) context.Context {
+	return context.WithValue(ctx, keyJSONWebToken{}, t)
 }
 
 // FromContext returns the jwt.Token in ctx if it exists or an error.
 // Check the ok bool value if an error or jwt.Token is within the
 // context.Context
 func FromContext(ctx context.Context) (*jwt.Token, error) {
-	err, ok := ctx.Value(keyctxErr).(error)
+	err, ok := ctx.Value(keyctxErr{}).(error)
 	if ok {
 		return nil, err
 	}
-	t, ok := ctx.Value(keyJSONWebToken).(*jwt.Token)
+	t, ok := ctx.Value(keyJSONWebToken{}).(*jwt.Token)
 	if !ok || t == nil {
 		return nil, ErrContextJWTNotFound
 	}
 	return t, nil
 }
 
-// NewContextWithError creates a new context with an error attached.
-func NewContextWithError(ctx context.Context, err error) context.Context {
-	return context.WithValue(ctx, keyctxErr, err)
+// WithContextError creates a new context with an error attached.
+func WithContextError(ctx context.Context, err error) context.Context {
+	return context.WithValue(ctx, keyctxErr{}, err)
 }

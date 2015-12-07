@@ -74,7 +74,7 @@ func initStore() {
 
 func ExampleWithInitStoreByToken() {
 	initStore()
-	ctx := store.NewContextReader(context.Background(), testStoreService)
+	ctx := store.WithContextReader(context.Background(), testStoreService)
 
 	jwtService, err := ctxjwt.NewService(ctxjwt.WithPassword([]byte(`GÒph3r`)))
 

@@ -31,7 +31,7 @@ func TestContextReaderError(t *testing.T) {
 	assert.Nil(t, s)
 	assert.EqualError(t, err, store.ErrContextServiceNotFound.Error())
 
-	ctx := store.NewContextReader(context.Background(), nil)
+	ctx := store.WithContextReader(context.Background(), nil)
 	assert.NotNil(t, ctx)
 	haveMr, s, err = store.FromContextReader(ctx)
 	assert.Nil(t, haveMr)
@@ -39,7 +39,7 @@ func TestContextReaderError(t *testing.T) {
 	assert.EqualError(t, err, store.ErrContextServiceNotFound.Error())
 
 	mr := storemock.NewNullService()
-	ctx = store.NewContextReader(context.Background(), mr)
+	ctx = store.WithContextReader(context.Background(), mr)
 	assert.NotNil(t, ctx)
 	haveMr, s, err = store.FromContextReader(ctx)
 	assert.EqualError(t, err, store.ErrStoreNotFound.Error())
@@ -49,7 +49,7 @@ func TestContextReaderError(t *testing.T) {
 }
 
 func TestContextReaderSuccess(t *testing.T) {
-	ctx := storemock.NewContextService(scope.Option{},
+	ctx := storemock.WithContextMustService(scope.Option{},
 		func(ms *storemock.Storage) {
 			ms.MockStore = func() (*store.Store, error) {
 				return store.NewStore(
@@ -69,4 +69,13 @@ func TestContextReaderSuccess(t *testing.T) {
 	assert.NoError(t, err2)
 	assert.Exactly(t, int64(6), s2.StoreID())
 
+}
+
+func TestWithContextMustService(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			t.Log(r.(error))
+		}
+	}()
+	store.WithContextMustService(scope.Option{}, nil)
 }
