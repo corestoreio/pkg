@@ -14,6 +14,8 @@
 
 package httputils
 
+// todo(CS) http://racksburg.com/choosing-an-http-status-code/
+
 // APIRoute defines the current API version
 const APIRoute apiVersion = "/V1/"
 

@@ -103,6 +103,7 @@ Please have a look at the [contribution guidelines](https://github.com/corestore
 | Wenbin Xiao | [sqlparser](https://github.com/xwb1989/sqlparser) | Copyright 2015 BSD Style |
 | Google Inc | [youtube/vitess\sqlparser](https://github.com/youtube/vitess) | Copyright 2012 BSD Style |
 | Julien Schmidt | [ctxrouter](https://github.com/corestoreio/csfw/tree/master/net/ctxrouter) aka. [httprouter](https://github.com/julienschmidt/httprouter) | Copyright (c) 2013 MIT |
+| Olivier Poitrey| [ctxmw.WithAccessLog](https://github.com/corestoreio/csfw/tree/master/net/ctxmw) | Copyright (c) 2015  MIT License |
 
 ## Licensing
 

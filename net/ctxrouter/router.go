@@ -80,52 +80,6 @@ func (ps Params) ByName(name string) string {
 	return ""
 }
 
-type ctxKeyParams struct{}
-
-// FromContextParams returns the Params slice from a context. It is guaranteed
-// that the return value is non-nil.
-func FromContextParams(ctx context.Context) Params {
-	if p, ok := ctx.Value(ctxKeyParams{}).(Params); ok {
-		return p
-	}
-	return Params{}
-}
-
-// WithContextParams puts Params into a context.
-func WithContextParams(ctx context.Context, p Params) context.Context {
-	return context.WithValue(ctx, ctxKeyParams{}, p)
-}
-
-type ctxKeyPanic struct{}
-
-// FromContextPanic returns the value of a panic. You are responsible
-// to extract the correct type from the interface{}.
-func FromContextPanic(ctx context.Context) interface{} {
-	return ctx.Value(ctxKeyPanic{})
-}
-
-// WithContextPanic puts a panic into a context.
-func WithContextPanic(ctx context.Context, p interface{}) context.Context {
-	return context.WithValue(ctx, ctxKeyPanic{}, p)
-}
-
-type webSocketKey struct{}
-
-// FromContextWebsocket extracts a websocket connection from the context.
-// Returns false even when the socket is nil. A true return value is guaranteed
-// that the socket is not nil.
-func FromContextWebsocket(ctx context.Context) (ws *websocket.Conn, ok bool) {
-	ws, ok = ctx.Value(webSocketKey{}).(*websocket.Conn)
-	if ok && ws == nil {
-		ok = false
-	}
-	return
-}
-
-func withContextWebsocket(ctx context.Context, ws *websocket.Conn) context.Context {
-	return context.WithValue(ctx, webSocketKey{}, ws)
-}
-
 // Router is a ctxhttp.Handler which can be used to dispatch requests to different
 // handler functions via configurable routes
 type Router struct {
@@ -168,13 +122,19 @@ type Router struct {
 	// If it is not set, http.Error with http.StatusMethodNotAllowed is used.
 	MethodNotAllowed ctxhttp.Handler
 
-	// Function to handle panics recovered from ctxhttp handlers.
+	// PanicHandler is a function to handle panics recovered from ctxhttp handlers.
 	// It should be used to generate a error page and return the http error code
 	// 500 (Internal Server Error).
 	// The handler can be used to keep your server from crashing because of
 	// unrecovered panics. You can extract the panic value from the context
 	// via the PanicFromContext() function.
 	PanicHandler ctxhttp.HandlerFunc
+
+	// ErrorHandler takes care of the errors returned by a ctxhttp.HandlerFunc.
+	// It returns itself an error which is then finally handled by the default
+	// http.Error(). You can extract the error from the context with the helper
+	// function ctxrouter.FromContextError()
+	ErrorHandler ctxhttp.HandlerFunc
 
 	// RootContext overall initial context which will be passed
 	// to every handler. Default context is context.Background().
@@ -370,11 +330,28 @@ func (r *Router) Lookup(method, path string) (ctxhttp.HandlerFunc, ctxhttp.Middl
 }
 
 // ServeHTTP makes the router implement the http.Handler interface. Calls the
-// ServeHTTPContext function with the RootContext.
+// ServeHTTPContext function with the RootContext. If an error occurs:
+//
 func (r *Router) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if err := r.ServeHTTPContext(r.RootContext, w, req); err != nil {
-		http.Error(w, utils.Errors(err), http.StatusInternalServerError)
+		if r.ErrorHandler == nil {
+			handleError(w, err)
+			return
+		}
+		if errH := r.ErrorHandler(withContextError(r.RootContext, err), w, req); errH != nil {
+			handleError(w, errH, err)
+		}
 	}
+}
+
+func handleError(w http.ResponseWriter, errs ...error) {
+	if len(errs) > 0 && errs[0] != nil {
+		if ctxErr, ok := errs[0].(*ctxhttp.Error); ok {
+			http.Error(w, ctxErr.Error(), ctxErr.Code)
+			return
+		}
+	}
+	http.Error(w, utils.Errors(errs...), http.StatusInternalServerError)
 }
 
 // ServeHTTPContext makes the router implement the ctxhttp.Handler interface.
