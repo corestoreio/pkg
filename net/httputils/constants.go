@@ -19,6 +19,8 @@ const (
 	MethodOverrideHeader = "X-HTTP-Method-Override"
 	// MethodOverrideFormKey represents a commonly used HTML form key to override a request method.
 	MethodOverrideFormKey = "_method"
+	// RequestIDHeader defines the name of the header used to transmit the request ID.
+	RequestIDHeader = "X-Request-Id"
 )
 
 // Method* defines the available methods which this framework supports
