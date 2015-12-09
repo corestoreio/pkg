@@ -34,19 +34,27 @@ import (
 // across multiple micro services.
 var reqID int64
 
-// RequestPrefixGenerator defines the functions needed to generate a request
+// RequestIDGenerator defines the functions needed to generate a request
 // prefix id.
-type RequestPrefixGenerator interface {
-	// Generate returns a unique string for the current (micro) service.
-	Generate() string
+type RequestIDGenerator interface {
+	// Init allows you to initialize a prefix which will be appended to
+	// the NewID() function. Init is only called once.
+	Init()
+	// NewID returns an atomic ID. This function gets executed for every
+	// request.
+	NewID() string
 }
+
+var _ RequestIDGenerator = (*RequestIDService)(nil)
 
 // DefaultRequestPrefix default prefix generator. Creates a prefix once the middleware
 // is set up.
-type DefaultRequestPrefix struct{}
+type RequestIDService struct {
+	prefix string
+}
 
-// Generate returns a unique string for the current (micro) service.
-func (rp DefaultRequestPrefix) Generate() string {
+// Prefix returns a unique prefix string for the current (micro) service.
+func (rp *RequestIDService) Init() {
 	// algorithm taken from https://github.com/zenazn/goji/blob/master/web/middleware/request_id.go#L40-L52
 	hostname, err := os.Hostname()
 	if hostname == "" || err != nil {
@@ -59,8 +67,12 @@ func (rp DefaultRequestPrefix) Generate() string {
 		b64 = base64.StdEncoding.EncodeToString(buf[:])
 		b64 = strings.NewReplacer("+", "", "/", "").Replace(b64)
 	}
+	rp.prefix = fmt.Sprintf("%s/%s-", hostname, b64[0:10])
+}
 
-	return fmt.Sprintf("%s/%s-", hostname, b64[0:10])
+// NewID returns a new ID unique for the current compilation.
+func (rp *RequestIDService) NewID() string {
+	return rp.prefix + strconv.FormatInt(atomic.AddInt64(&reqID, 1), 10)
 }
 
 // WithRequestID is a middleware that injects a request ID into the response header
@@ -70,20 +82,20 @@ func (rp DefaultRequestPrefix) Generate() string {
 // otherwise a random value is generated. You can specify your own generator by
 // providing the RequestPrefixGenerator once or pass no argument to use the default request
 // prefix generator.
-func WithRequestID(rpg ...RequestPrefixGenerator) ctxhttp.Middleware {
-	var pf RequestPrefixGenerator
-	pf = DefaultRequestPrefix{}
-	if len(rpg) == 1 && rpg[0] != nil {
-		pf = rpg[0]
+func WithRequestID(gen ...RequestIDGenerator) ctxhttp.Middleware {
+	var pf RequestIDGenerator
+	pf = &RequestIDService{}
+	if len(gen) == 1 && gen[0] != nil {
+		pf = gen[0]
 	}
 
-	reqPrefix := pf.Generate() // init once for all requests
+	pf.Init()
 
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			id := r.Header.Get(httputils.RequestIDHeader)
 			if id == "" {
-				id = reqPrefix + strconv.FormatInt(atomic.AddInt64(&reqID, 1), 10)
+				id = pf.NewID()
 			}
 			w.Header().Set(httputils.RequestIDHeader, id)
 			return hf(ctx, w, r)
