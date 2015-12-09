@@ -66,6 +66,8 @@ const (
 	TextPlain                        = "text/plain"
 	TextPlainCharsetUTF8             = TextPlain + "; " + CharsetUTF8
 	MultipartForm                    = "multipart/form-data"
+	CompressGZIP                     = "gzip"
+	CompressDeflate                  = "deflate"
 )
 
 // Charset
