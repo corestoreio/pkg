@@ -14,4 +14,6 @@
 
 // Package ctxmw provides a various middleware for net/context.
 //
+// TODO: maybe split this package into smaller once to reduce the dependency when
+// including just one middleware.
 package ctxmw
