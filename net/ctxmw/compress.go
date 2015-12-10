@@ -80,9 +80,10 @@ func (w *compressWriter) CloseNotify() <-chan bool {
 }
 
 // WithCompressor is a middleware applies the GZIP or deflate algorithm on
-// the bytes writter. GZIP or deflate usage depends on the HTTP Accept
+// the bytes writer. GZIP or deflate usage depends on the HTTP Accept
 // Encoding header. Flush(), Hijack() and CloseNotify() interfaces will be
-// preserved. No header set, no compression takes place.
+// preserved. No header set, no compression takes place. GZIP has priority
+// before deflate.
 func WithCompressor() ctxhttp.Middleware {
 
 	// todo: maybe the sync.Pools can be put in here because then
