@@ -18,9 +18,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package cors
+package ctxmw_test
 
 import (
+	"github.com/corestoreio/csfw/net/ctxmw"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -41,7 +42,7 @@ func assertHeaders(t *testing.T, resHeaders http.Header, reqHeaders map[string]s
 }
 
 func TestNoConfig(t *testing.T) {
-	s := New(CorsOptions{
+	s := ctxmw.New(ctxmw.CorsOptions{
 	// Intentionally left blank.
 	})
 
@@ -62,7 +63,7 @@ func TestNoConfig(t *testing.T) {
 }
 
 func TestMatchAllOrigin(t *testing.T) {
-	s := New(CorsOptions{
+	s := ctxmw.New(ctxmw.CorsOptions{
 		AllowedOrigins: []string{"*"},
 	})
 
@@ -84,7 +85,7 @@ func TestMatchAllOrigin(t *testing.T) {
 }
 
 func TestAllowedOrigin(t *testing.T) {
-	s := New(CorsOptions{
+	s := ctxmw.New(ctxmw.CorsOptions{
 		AllowedOrigins: []string{"http://foobar.com"},
 	})
 
@@ -106,7 +107,7 @@ func TestAllowedOrigin(t *testing.T) {
 }
 
 func TestWildcardOrigin(t *testing.T) {
-	s := New(CorsOptions{
+	s := ctxmw.New(ctxmw.CorsOptions{
 		AllowedOrigins: []string{"http://*.bar.com"},
 	})
 
@@ -128,7 +129,7 @@ func TestWildcardOrigin(t *testing.T) {
 }
 
 func TestDisallowedOrigin(t *testing.T) {
-	s := New(CorsOptions{
+	s := ctxmw.New(ctxmw.CorsOptions{
 		AllowedOrigins: []string{"http://foobar.com"},
 	})
 
@@ -150,7 +151,7 @@ func TestDisallowedOrigin(t *testing.T) {
 }
 
 func TestDisallowedWildcardOrigin(t *testing.T) {
-	s := New(CorsOptions{
+	s := ctxmw.New(ctxmw.CorsOptions{
 		AllowedOrigins: []string{"http://*.bar.com"},
 	})
 
@@ -173,7 +174,7 @@ func TestDisallowedWildcardOrigin(t *testing.T) {
 
 func TestAllowedOriginFunc(t *testing.T) {
 	r, _ := regexp.Compile("^http://foo")
-	s := New(CorsOptions{
+	s := ctxmw.New(ctxmw.CorsOptions{
 		AllowOriginFunc: func(o string) bool {
 			return r.MatchString(o)
 		},
@@ -197,7 +198,7 @@ func TestAllowedOriginFunc(t *testing.T) {
 }
 
 func TestAllowedMethod(t *testing.T) {
-	s := New(CorsOptions{
+	s := ctxmw.New(ctxmw.CorsOptions{
 		AllowedOrigins: []string{"http://foobar.com"},
 		AllowedMethods: []string{"PUT", "DELETE"},
 	})
@@ -221,7 +222,7 @@ func TestAllowedMethod(t *testing.T) {
 }
 
 func TestDisallowedMethod(t *testing.T) {
-	s := New(CorsOptions{
+	s := ctxmw.New(ctxmw.CorsOptions{
 		AllowedOrigins: []string{"http://foobar.com"},
 		AllowedMethods: []string{"PUT", "DELETE"},
 	})
@@ -245,7 +246,7 @@ func TestDisallowedMethod(t *testing.T) {
 }
 
 func TestAllowedHeader(t *testing.T) {
-	s := New(CorsOptions{
+	s := ctxmw.New(ctxmw.CorsOptions{
 		AllowedOrigins: []string{"http://foobar.com"},
 		AllowedHeaders: []string{"X-Header-1", "x-header-2"},
 	})
@@ -270,7 +271,7 @@ func TestAllowedHeader(t *testing.T) {
 }
 
 func TestAllowedWildcardHeader(t *testing.T) {
-	s := New(CorsOptions{
+	s := ctxmw.New(ctxmw.CorsOptions{
 		AllowedOrigins: []string{"http://foobar.com"},
 		AllowedHeaders: []string{"*"},
 	})
@@ -295,7 +296,7 @@ func TestAllowedWildcardHeader(t *testing.T) {
 }
 
 func TestDisallowedHeader(t *testing.T) {
-	s := New(CorsOptions{
+	s := ctxmw.New(ctxmw.CorsOptions{
 		AllowedOrigins: []string{"http://foobar.com"},
 		AllowedHeaders: []string{"X-Header-1", "x-header-2"},
 	})
@@ -320,7 +321,7 @@ func TestDisallowedHeader(t *testing.T) {
 }
 
 func TestOriginHeader(t *testing.T) {
-	s := New(CorsOptions{
+	s := ctxmw.New(ctxmw.CorsOptions{
 		AllowedOrigins: []string{"http://foobar.com"},
 	})
 
@@ -344,7 +345,7 @@ func TestOriginHeader(t *testing.T) {
 }
 
 func TestExposedHeader(t *testing.T) {
-	s := New(CorsOptions{
+	s := ctxmw.New(ctxmw.CorsOptions{
 		AllowedOrigins: []string{"http://foobar.com"},
 		ExposedHeaders: []string{"X-Header-1", "x-header-2"},
 	})
@@ -367,7 +368,7 @@ func TestExposedHeader(t *testing.T) {
 }
 
 func TestAllowedCredentials(t *testing.T) {
-	s := New(CorsOptions{
+	s := ctxmw.New(ctxmw.CorsOptions{
 		AllowedOrigins:   []string{"http://foobar.com"},
 		AllowCredentials: true,
 	})

@@ -18,27 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-/*
-Package cors is net/http handler to handle CORS related requests
-as defined by http://www.w3.org/TR/cors/
-
-You can configure it by passing an option struct to cors.New:
-
-    c := cors.New(cors.Options{
-        AllowedOrigins: []string{"foo.com"},
-        AllowedMethods: []string{"GET", "POST", "DELETE"},
-        AllowCredentials: true,
-    })
-
-Then insert the handler in the chain:
-
-    handler = c.Handler(handler)
-
-See Options documentation for more options.
-
-The resulting handler is a standard net/http handler.
-*/
-package cors
+package ctxmw
 
 import (
 	"log"
@@ -47,6 +27,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/rs/xhandler"
 	"golang.org/x/net/context"
 )
@@ -88,7 +69,14 @@ type CorsOptions struct {
 	Debug bool
 }
 
-// Cors http handler
+// CORS describes the CrossOriginResourceSharing which is used to create a
+// Container Filter that implements CORS. Cross-origin resource sharing (CORS)
+// is a mechanism that allows JavaScript on a web page to make XMLHttpRequests
+// to another domain, not the domain the JavaScript originated from.
+//
+// http://en.wikipedia.org/wiki/Cross-origin_resource_sharing
+// http://enable-cors.org/server.html
+// http://www.html5rocks.com/en/tutorials/cors/#toc-handling-a-not-so-simple-request
 type Cors struct {
 	// Debug logger
 	Log *log.Logger
@@ -229,6 +217,15 @@ func (c *Cors) HandlerC(h xhandler.HandlerC) xhandler.HandlerC {
 			h.ServeHTTPC(ctx, w, r)
 		}
 	})
+}
+
+func WithCORS(opts ...CorsOption) ctxhttp.Middleware {
+	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+
+			return nil
+		}
+	}
 }
 
 // HandlerFunc provides Martini compatible handler

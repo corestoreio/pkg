@@ -18,9 +18,10 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package cors
+package ctxmw_test
 
 import (
+	"github.com/corestoreio/csfw/net/ctxmw"
 	"net/http"
 	"testing"
 )
@@ -55,7 +56,7 @@ func BenchmarkDefault(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	req.Header.Add("Origin", "somedomain.com")
-	handler := Default().Handler(testHandler)
+	handler := ctxmw.Default().Handler(testHandler)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -68,7 +69,7 @@ func BenchmarkAllowedOrigin(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	req.Header.Add("Origin", "somedomain.com")
-	c := New(CorsOptions{
+	c := ctxmw.New(ctxmw.CorsOptions{
 		AllowedOrigins: []string{"somedomain.com"},
 	})
 	handler := c.Handler(testHandler)
@@ -84,7 +85,7 @@ func BenchmarkPreflight(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
 	req.Header.Add("Access-Control-Request-Method", "GET")
-	handler := Default().Handler(testHandler)
+	handler := ctxmw.Default().Handler(testHandler)
 
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -98,7 +99,7 @@ func BenchmarkPreflightHeader(b *testing.B) {
 	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
 	req.Header.Add("Access-Control-Request-Method", "GET")
 	req.Header.Add("Access-Control-Request-Headers", "Accept")
-	handler := Default().Handler(testHandler)
+	handler := ctxmw.Default().Handler(testHandler)
 
 	b.ReportAllocs()
 	b.ResetTimer()
