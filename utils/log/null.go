@@ -16,25 +16,34 @@ package log
 
 // BlackHole logs and does nothing. An empty struct. IsDebug() and IsInfo() will
 // always return true.
-type BlackHole struct{}
+type BlackHole struct {
+	EnableDebug bool
+	EnableInfo  bool
+}
+
+// NewBlackHole creates a new black hole logger where debug and info logging
+// is enabled.
+func NewBlackHole() BlackHole {
+	return BlackHole{true, true}
+}
 
 // New returns a new Logger that has this logger's context plus the given context
 func (l BlackHole) New(ctx ...interface{}) Logger { return BlackHole{} }
 
-// Debug logs a debug entry.
+// Debug logs a debug entry. Noop.
 func (l BlackHole) Debug(msg string, args ...interface{}) {}
 
-// Info logs an info entry.
+// Info logs an info entry. Noop.
 func (l BlackHole) Info(msg string, args ...interface{}) {}
 
 // Fatal logs a fatal entry then panics.
 func (l BlackHole) Fatal(msg string, args ...interface{}) { panic("exit due to fatal error: " + msg) }
 
 // IsDebug determines if this logger logs a debug statement. Returns always true.
-func (l BlackHole) IsDebug() bool { return true }
+func (l BlackHole) IsDebug() bool { return l.EnableDebug }
 
 // IsInfo determines if this logger logs an info statement. Returns always true.
-func (l BlackHole) IsInfo() bool { return true }
+func (l BlackHole) IsInfo() bool { return l.EnableInfo }
 
-// SetLevel sets the level of this logger.
+// SetLevel sets the level of this logger. Noop.
 func (l BlackHole) SetLevel(level int) {}
