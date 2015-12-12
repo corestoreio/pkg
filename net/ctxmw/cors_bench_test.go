@@ -21,9 +21,11 @@
 package ctxmw_test
 
 import (
-	"github.com/corestoreio/csfw/net/ctxmw"
 	"net/http"
 	"testing"
+
+	"github.com/corestoreio/csfw/net/ctxmw"
+	"golang.org/x/net/context"
 )
 
 type FakeResponse struct {
@@ -41,69 +43,78 @@ func (r FakeResponse) Write(b []byte) (n int, err error) {
 	return len(b), nil
 }
 
-func BenchmarkWithout(b *testing.B) {
+func BenchmarkCorsWithout(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-
+	ctx := context.Background()
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		testHandler.ServeHTTP(res, req)
+		testHandler(ctx, res, req)
 	}
 }
 
-func BenchmarkDefault(b *testing.B) {
-	res := FakeResponse{http.Header{}}
-	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-	req.Header.Add("Origin", "somedomain.com")
-	handler := ctxmw.Default().Handler(testHandler)
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		handler.ServeHTTP(res, req)
-	}
-}
-
-func BenchmarkAllowedOrigin(b *testing.B) {
+func BenchmarkCorsDefault(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	req.Header.Add("Origin", "somedomain.com")
-	c := ctxmw.New(ctxmw.CorsOptions{
-		AllowedOrigins: []string{"somedomain.com"},
-	})
-	handler := c.Handler(testHandler)
+	handler := ctxmw.NewCors().WithCORS()(testHandler)
 
+	ctx := context.Background()
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		handler.ServeHTTP(res, req)
+		if err := handler(ctx, res, req); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
-func BenchmarkPreflight(b *testing.B) {
+func BenchmarkCorsAllowedOrigin(b *testing.B) {
+	res := FakeResponse{http.Header{}}
+	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	req.Header.Add("Origin", "somedomain.com")
+	handler := ctxmw.NewCors(ctxmw.WithCorsAllowedOrigins("somedomain.com")).WithCORS()(testHandler)
+
+	ctx := context.Background()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		if err := handler(ctx, res, req); err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkCorsPreflight(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
 	req.Header.Add("Access-Control-Request-Method", "GET")
-	handler := ctxmw.Default().Handler(testHandler)
+	handler := ctxmw.NewCors().WithCORS()(testHandler)
 
+	ctx := context.Background()
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		handler.ServeHTTP(res, req)
+		if err := handler(ctx, res, req); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
-func BenchmarkPreflightHeader(b *testing.B) {
+func BenchmarkCorsPreflightHeader(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
 	req.Header.Add("Access-Control-Request-Method", "GET")
 	req.Header.Add("Access-Control-Request-Headers", "Accept")
-	handler := ctxmw.Default().Handler(testHandler)
+	handler := ctxmw.NewCors().WithCORS()(testHandler)
 
+	ctx := context.Background()
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		handler.ServeHTTP(res, req)
+		if err := handler(ctx, res, req); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
