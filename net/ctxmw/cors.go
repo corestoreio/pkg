@@ -95,7 +95,9 @@ func (c *Cors) applyOpts(opts ...CorsOption) *Cors {
 }
 
 // WithCORS to be used as a middleware for ctxhttp.Handler. Arguments can be used
-// to apply the last time any options.
+// to apply the last time any options. This middleware does not take into account
+// different configurations for different store scopes. The applied configuration
+// is used for the all store scopes.
 func (c *Cors) WithCORS(opts ...CorsOption) ctxhttp.Middleware {
 	c.applyOpts(opts...)
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {

@@ -23,7 +23,7 @@ import (
 
 // Path constants defines the configuration paths in core_config_data
 const (
-	// SingleStoreModeEnabled if true then single store mode enabled
+	// PathSingleStoreModeEnabled if true then single store mode enabled
 	// This flag only shows that admin does not want to show certain
 	// UI components in the backend (like store switchers etc)
 	// If there is only one store view but it does not check the store view collection. WTF?
