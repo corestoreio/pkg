@@ -39,7 +39,7 @@ var (
 //			http.Error(w, err.Error(), http.StatusInternalServerError)
 //		}
 //
-//		err = httputils.WriteJSON(w, stores)
+//		err = httputil.WriteJSON(w, stores)
 //		if err != nil {
 //			log.Error("store.RESTStores.WriteJSON", "err", err, "req", r)
 //			http.Error(w, err.Error(), http.StatusInternalServerError)

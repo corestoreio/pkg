@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/go-gomail/gomail"
 )
 
@@ -61,7 +61,7 @@ var _ config.MessageReceiver = (*Service)(nil)
 // Error implements the error interface. Returns a string where each error has
 // been separated by a line break.
 func (s *Service) Error() string {
-	return utils.Errors(s.lastErrs...)
+	return util.Errors(s.lastErrs...)
 }
 
 // Options applies optional arguments to the daemon

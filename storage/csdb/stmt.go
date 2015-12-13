@@ -20,7 +20,7 @@ import (
 
 	"database/sql"
 
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/corestoreio/csfw/util/log"
 	"github.com/juju/errgo"
 )
 

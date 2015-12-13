@@ -19,7 +19,7 @@ import (
 	"os"
 
 	"github.com/corestoreio/csfw/codegen/tableToStruct/tpl"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 )
 
 const PS = string(os.PathSeparator)
@@ -126,7 +126,7 @@ type (
 		// Mage_Eav_Model_Resource_Attribute_Collection::_getEavWebsiteTable()
 		TempAdditionalAttributeTableWebsite string
 
-		AttributeCoreColumns utils.StringSlice
+		AttributeCoreColumns util.StringSlice
 	}
 
 	// AttributeModelDefMap contains data to map the three eav_attribute columns
@@ -330,11 +330,11 @@ var ConfigMaterializationEntityType = TableToStruct{
 var ConfigLocalization = struct {
 	Package       string
 	OutputFile    string
-	EnabledLocale utils.StringSlice
+	EnabledLocale util.StringSlice
 }{
 	Package:       "i18n_test",
 	OutputFile:    BasePath.AppendDir("i18n", "generated_translation_test").String(),
-	EnabledLocale: utils.StringSlice{"en", "fr", "de", "de_CH", "nl", "ca_FR"},
+	EnabledLocale: util.StringSlice{"en", "fr", "de", "de_CH", "nl", "ca_FR"},
 }
 
 var (
@@ -342,7 +342,7 @@ var (
 	// Developers can extend the table eav_attribute with additional columns but these additional
 	// columns with its method receivers must get generated in the attribute materialize function.
 	// These core columns are already defined below.
-	EAVAttributeCoreColumns = utils.StringSlice{
+	EAVAttributeCoreColumns = util.StringSlice{
 		"attribute_id",
 		"entity_type_id",
 		"attribute_code",
@@ -366,7 +366,7 @@ var (
 	// Developers can extend the table customer_eav_attribute with additional columns but these additional
 	// columns with its method receivers must get generated in the attribute materialize function.
 	// These core columns are already defined below.
-	customerAttributeCoreColumns = utils.StringSlice{
+	customerAttributeCoreColumns = util.StringSlice{
 		"is_visible",
 		"input_filter",
 		"multiline_count",
@@ -380,7 +380,7 @@ var (
 	// Developers can extend the table customer_eav_attribute with additional columns but these additional
 	// columns with its method receivers must get generated in the attribute materialize function.
 	// These core columns are already defined below.
-	catalogAttributeCoreColumns = utils.StringSlice{
+	catalogAttributeCoreColumns = util.StringSlice{
 		"frontend_input_renderer",
 		"is_global",
 		"is_visible",

@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/corestoreio/csfw/utils/bufferpool"
+	"github.com/corestoreio/csfw/util/bufferpool"
 )
 
 type expr struct {

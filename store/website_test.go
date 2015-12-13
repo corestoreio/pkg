@@ -21,7 +21,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -86,7 +86,7 @@ func TestNewWebsiteSetGroupsStores(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotNil(t, dg.Stores)
-	assert.EqualValues(t, utils.StringSlice{"de", "at", "ch"}, dg.Stores.Codes())
+	assert.EqualValues(t, util.StringSlice{"de", "at", "ch"}, dg.Stores.Codes())
 
 	for _, st := range dg.Stores {
 		assert.EqualValues(t, "DACH Group", st.Group.Data.Name)
@@ -94,10 +94,10 @@ func TestNewWebsiteSetGroupsStores(t *testing.T) {
 	}
 
 	assert.NotNil(t, w.Stores)
-	assert.EqualValues(t, utils.StringSlice{"de", "uk", "at", "ch"}, w.Stores.Codes())
+	assert.EqualValues(t, util.StringSlice{"de", "uk", "at", "ch"}, w.Stores.Codes())
 
 	assert.NotNil(t, w.Groups)
-	assert.EqualValues(t, utils.Int64Slice{1, 2}, w.Groups.IDs())
+	assert.EqualValues(t, util.Int64Slice{1, 2}, w.Groups.IDs())
 
 	assert.Exactly(t, int64(2), w.StoreID())
 	assert.Exactly(t, int64(1), w.GroupID())

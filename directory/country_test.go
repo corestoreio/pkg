@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/directory"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,7 +43,7 @@ func TestAllowedCountriesFound(t *testing.T) {
 
 	haveCountries, err := directory.AllowedCountries(cr.NewScoped(1, 1, 1))
 	assert.NoError(t, err)
-	assert.Exactly(t, utils.StringSlice{"DE", "AU", "CH", "AT"}, haveCountries)
+	assert.Exactly(t, util.StringSlice{"DE", "AU", "CH", "AT"}, haveCountries)
 }
 
 func TestAllowedCountriesDefault(t *testing.T) {

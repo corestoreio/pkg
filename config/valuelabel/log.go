@@ -14,7 +14,7 @@
 
 package valuelabel
 
-import "github.com/corestoreio/csfw/utils/log"
+import "github.com/corestoreio/csfw/util/log"
 
 // PkgLog global package based logger
 var PkgLog log.Logger = log.PkgLog

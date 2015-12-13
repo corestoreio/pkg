@@ -21,7 +21,7 @@ import (
 	"io/ioutil"
 
 	"github.com/corestoreio/csfw/config/scope"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 )
 
 const hierarchyLevel int = 3 // a/b/c
@@ -174,5 +174,5 @@ func (a arg) scopePath() string {
 var _ error = (*arg)(nil)
 
 func (a arg) Error() string {
-	return utils.Errors(a.lastErrors...)
+	return util.Errors(a.lastErrors...)
 }

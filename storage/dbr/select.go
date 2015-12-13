@@ -3,7 +3,7 @@ package dbr
 import (
 	"fmt"
 
-	"github.com/corestoreio/csfw/utils/bufferpool"
+	"github.com/corestoreio/csfw/util/bufferpool"
 )
 
 // SelectBuilder contains the clauses for a SELECT statement

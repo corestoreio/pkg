@@ -18,7 +18,7 @@ import (
 	std "log"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/corestoreio/csfw/util/log"
 )
 
 var debugLogBuf *log.MutexBuffer

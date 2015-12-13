@@ -20,7 +20,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -124,7 +124,7 @@ func TestNewGroupSetStores(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.NotNil(t, g.Stores)
-	assert.EqualValues(t, utils.StringSlice{"de", "at", "ch"}, g.Stores.Codes())
+	assert.EqualValues(t, util.StringSlice{"de", "at", "ch"}, g.Stores.Codes())
 
 	gDefaultStore, err := g.DefaultStore()
 	assert.NoError(t, err)

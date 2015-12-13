@@ -30,16 +30,16 @@ import (
 	"github.com/corestoreio/csfw/codegen/tableToStruct/tpl"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/utils"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/log"
 )
 
 type generator struct {
 	tts             codegen.TableToStruct
 	dbrConn         *dbr.Connection
 	outfile         *os.File
-	tables          []string          // all available tables for which we should at least generate a type definition
-	whiteListTables utils.StringSlice // table name in this slice is allowed for generic functions
+	tables          []string         // all available tables for which we should at least generate a type definition
+	whiteListTables util.StringSlice // table name in this slice is allowed for generic functions
 	eavValueTables  codegen.TypeCodeValueTable
 	wg              *sync.WaitGroup
 	// existingMethodSets contains all existing method sets from a package for the Table* types
@@ -236,7 +236,7 @@ func (g *generator) runTable() {
 		}
 
 		if data.Columns.PrimaryKeys().Len() > 0 {
-			data.FindByPk = "FindBy" + utils.UnderscoreCamelize(data.Columns.PrimaryKeys().JoinFields("_"))
+			data.FindByPk = "FindBy" + util.UnderscoreCamelize(data.Columns.PrimaryKeys().JoinFields("_"))
 		}
 
 		tplFuncs := template.FuncMap{

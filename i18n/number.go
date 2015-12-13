@@ -26,7 +26,7 @@ import (
 
 	"sync"
 
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
 )
 
@@ -442,7 +442,7 @@ func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
 		fracf = -fracf
 	}
 
-	fracI := int64(utils.Round(fracf*precPow10, 0, usedFmt.precision))
+	fracI := int64(util.Round(fracf*precPow10, 0, usedFmt.precision))
 
 	return no.FmtNumber(w, sign, int64(intgr), intLen(fracI), fracI)
 }

@@ -18,7 +18,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/config/scope"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 )
 
 // CodeFromClaim returns a valid store code from a JSON web token or ErrStoreNotFound.
@@ -82,7 +82,7 @@ func CodeIsValid(c string) error {
 	if false == ((c1 >= 'a' && c1 <= 'z') || (c1 >= 'A' && c1 <= 'Z')) {
 		return ErrStoreCodeInvalid
 	}
-	if false == utils.StrIsAlNum(c) {
+	if false == util.StrIsAlNum(c) {
 		return ErrStoreCodeInvalid
 	}
 	return nil

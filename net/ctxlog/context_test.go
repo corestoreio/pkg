@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/net/ctxlog"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/corestoreio/csfw/util/log"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )

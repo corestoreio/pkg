@@ -24,8 +24,8 @@ import (
 	"github.com/corestoreio/csfw/codegen/tableToStruct/codecgen"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/utils"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/log"
 )
 
 const MethodRecvPrefix = "parent"
@@ -109,7 +109,7 @@ func detectMagentoVersion(dbrSess dbr.SessionRunner) (MageOne, MageTwo bool) {
 	defer log.WhenDone(PkgLog).Info("Stats", "Package", "DetectMagentoVersion")
 	allTables, err := codegen.GetTables(dbrSess)
 	codegen.LogFatal(err)
-	MageOne, MageTwo = utils.MagentoVersion(codegen.TablePrefix, allTables)
+	MageOne, MageTwo = util.MagentoVersion(codegen.TablePrefix, allTables)
 
 	if MageOne == MageTwo {
 		codegen.LogFatal(errors.New("Cannot detect your Magento version"))
@@ -119,7 +119,7 @@ func detectMagentoVersion(dbrSess dbr.SessionRunner) (MageOne, MageTwo bool) {
 
 // findBy is a template function used in runTable()
 func findBy(s string) string {
-	return "FindBy" + utils.UnderscoreCamelize(s)
+	return "FindBy" + util.UnderscoreCamelize(s)
 }
 
 // dbrType is a template function used in runTable()

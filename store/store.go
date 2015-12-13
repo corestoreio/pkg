@@ -29,7 +29,7 @@ import (
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/net/httputil"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 )
 
 const (
@@ -398,11 +398,11 @@ func (ss StoreSlice) Filter(f func(*Store) bool) StoreSlice {
 }
 
 // Codes returns a StringSlice with all store codes
-func (ss StoreSlice) Codes() utils.StringSlice {
+func (ss StoreSlice) Codes() util.StringSlice {
 	if len(ss) == 0 {
 		return nil
 	}
-	var c utils.StringSlice
+	var c util.StringSlice
 	for _, st := range ss {
 		if st != nil {
 			c.Append(st.Data.Code.String)
@@ -412,11 +412,11 @@ func (ss StoreSlice) Codes() utils.StringSlice {
 }
 
 // IDs returns an Int64Slice with all store ids
-func (ss StoreSlice) IDs() utils.Int64Slice {
+func (ss StoreSlice) IDs() util.Int64Slice {
 	if len(ss) == 0 {
 		return nil
 	}
-	var ids utils.Int64Slice
+	var ids util.Int64Slice
 	for _, st := range ss {
 		if st != nil {
 			ids.Append(st.Data.StoreID)

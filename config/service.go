@@ -21,7 +21,7 @@ import (
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/utils/cast"
+	"github.com/corestoreio/csfw/util/cast"
 	"github.com/juju/errgo"
 )
 

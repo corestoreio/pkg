@@ -53,7 +53,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"golang.org/x/net/context"
 	"golang.org/x/net/websocket"
 )
@@ -312,7 +312,7 @@ func (r *Router) ServeFiles(path string, root http.FileSystem) {
 func (r *Router) recv(ctx context.Context, w http.ResponseWriter, req *http.Request) {
 	if rcv := recover(); rcv != nil {
 		if err := r.PanicHandler(WithContextPanic(ctx, rcv), w, req); err != nil {
-			http.Error(w, utils.Errors(err), http.StatusInternalServerError)
+			http.Error(w, util.Errors(err), http.StatusInternalServerError)
 		}
 	}
 }
@@ -351,7 +351,7 @@ func handleError(w http.ResponseWriter, errs ...error) {
 			return
 		}
 	}
-	http.Error(w, utils.Errors(errs...), http.StatusInternalServerError)
+	http.Error(w, util.Errors(errs...), http.StatusInternalServerError)
 }
 
 // ServeHTTPContext makes the router implement the ctxhttp.Handler interface.

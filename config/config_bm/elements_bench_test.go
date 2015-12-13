@@ -17,7 +17,7 @@ package config_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/corestoreio/csfw/util/log"
 )
 
 func init() {

@@ -21,7 +21,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
 )
 
@@ -184,7 +184,7 @@ func (g *Group) addError(err error) {
 // Error implements the error interface. Returns a string where each error has
 // been separated by a line break.
 func (g *Group) Error() string {
-	return utils.Errors(g.lastErrors...)
+	return util.Errors(g.lastErrors...)
 }
 
 // GroupID satisfies interface scope.GroupIDer and returns the group ID.
@@ -240,11 +240,11 @@ func (s GroupSlice) Filter(f func(*Group) bool) GroupSlice {
 }
 
 // IDs returns an Int64Slice with all store ids
-func (s GroupSlice) IDs() utils.Int64Slice {
+func (s GroupSlice) IDs() util.Int64Slice {
 	if len(s) == 0 {
 		return nil
 	}
-	var ids utils.Int64Slice
+	var ids util.Int64Slice
 	for _, g := range s {
 		if g != nil {
 			ids.Append(g.Data.GroupID)

@@ -17,7 +17,7 @@ package ctxhttp
 import (
 	"net/http"
 
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 )
 
 // Error is a HTTP error with a messgae and a status code
@@ -39,12 +39,12 @@ func NewError(code int, msg ...string) *Error {
 }
 
 // NewErrorFromErrors this lovely name describes that it can create
-// a HTTP error from multiple error interfaces. The function utils.Errors()
+// a HTTP error from multiple error interfaces. The function util.Errors()
 // will be used to extract the errgo.Locationer interface.
 func NewErrorFromErrors(code int, errs ...error) *Error {
 	e := &Error{Code: code, Message: http.StatusText(code)}
 	if len(errs) > 0 {
-		e.Message = utils.Errors(errs...)
+		e.Message = util.Errors(errs...)
 	}
 	return e
 }

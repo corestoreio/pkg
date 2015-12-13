@@ -22,7 +22,7 @@ import (
 	"hash/fnv"
 
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
 )
 
@@ -337,38 +337,38 @@ func (c Column) GetGoPrimitive(useNullType bool) string {
 // columnTypes looks ugly but ... refactor later
 var columnTypes = struct { // the slices in this struct are only for reading. no mutex protection required
 	byName struct {
-		bool       utils.StringSlice
-		money      utils.StringSlice
-		moneySW    utils.StringSlice
-		moneyEqual utils.StringSlice
+		bool       util.StringSlice
+		money      util.StringSlice
+		moneySW    util.StringSlice
+		moneyEqual util.StringSlice
 	}
 	byType struct {
-		int     utils.StringSlice
-		string  utils.StringSlice
-		dateSW  utils.StringSlice
-		floatSW utils.StringSlice
+		int     util.StringSlice
+		string  util.StringSlice
+		dateSW  util.StringSlice
+		floatSW util.StringSlice
 	}
 }{
 	struct {
-		bool       utils.StringSlice // contains
-		money      utils.StringSlice // contains
-		moneySW    utils.StringSlice // sw == starts with
-		moneyEqual utils.StringSlice
+		bool       util.StringSlice // contains
+		money      util.StringSlice // contains
+		moneySW    util.StringSlice // sw == starts with
+		moneyEqual util.StringSlice
 	}{
-		utils.StringSlice{"used_", "is_", "has_", "increment_per_store"},
-		utils.StringSlice{"price", "_tax", "tax_", "_amount", "amount_", "total", "adjustment", "discount"},
-		utils.StringSlice{"base_", "grand_"},
-		utils.StringSlice{"value", "price", "cost", "msrp"},
+		util.StringSlice{"used_", "is_", "has_", "increment_per_store"},
+		util.StringSlice{"price", "_tax", "tax_", "_amount", "amount_", "total", "adjustment", "discount"},
+		util.StringSlice{"base_", "grand_"},
+		util.StringSlice{"value", "price", "cost", "msrp"},
 	},
 	struct {
-		int     utils.StringSlice // contains
-		string  utils.StringSlice // contains
-		dateSW  utils.StringSlice // SW starts with
-		floatSW utils.StringSlice // SW starts with
+		int     util.StringSlice // contains
+		string  util.StringSlice // contains
+		dateSW  util.StringSlice // SW starts with
+		floatSW util.StringSlice // SW starts with
 	}{
-		utils.StringSlice{"int"},
-		utils.StringSlice{"char", "text"},
-		utils.StringSlice{"time", "date"},
-		utils.StringSlice{"decimal", "float", "double"},
+		util.StringSlice{"int"},
+		util.StringSlice{"char", "text"},
+		util.StringSlice{"time", "date"},
+		util.StringSlice{"decimal", "float", "double"},
 	},
 }

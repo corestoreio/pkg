@@ -28,7 +28,7 @@ import (
 	"strconv"
 
 	"github.com/corestoreio/csfw/i18n"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
 	"golang.org/x/text/currency"
 )
@@ -422,7 +422,7 @@ func (m Money) Sub(d Money) Money {
 // Mul multiplies two Currency types. Both types must have the same precision.
 func (m Money) Mul(d Money) Money {
 	// @todo c.m*d.m will overflow int64
-	r := utils.Round(float64(m.m*d.m)/m.dpf, .5, 0)
+	r := util.Round(float64(m.m*d.m)/m.dpf, .5, 0)
 	return m.Set(int64(r))
 }
 
@@ -465,13 +465,13 @@ func (m Money) Swedish(opts ...Option) Money {
 	case Interval005:
 		// NL, SG, SA, CH, TR, CL, IE
 		// 5 cent rounding
-		return m.Setf(utils.Round(m.Getf()*20, roundOn, places) / 20) // base 5
+		return m.Setf(util.Round(m.Getf()*20, roundOn, places) / 20) // base 5
 	case Interval010:
 		// New Zealand & Hong Kong
 		// 10 cent rounding
 		// In Sweden between 1985 and 1992, prices were rounded up for sales
 		// ending in 5 öre.
-		return m.Setf(utils.Round(m.Getf()*10, roundOn, places) / 10)
+		return m.Setf(util.Round(m.Getf()*10, roundOn, places) / 10)
 	case Interval015:
 		// 10 cent rounding, special case
 		// Special case: In NZ, it is up to the business to decide if they
@@ -480,10 +480,10 @@ func (m Money) Swedish(opts ...Option) Money {
 		if m.m%5 == 0 {
 			m.m = m.m - 1
 		}
-		return m.Setf(utils.Round(m.Getf()*10, roundOn, places) / 10)
+		return m.Setf(util.Round(m.Getf()*10, roundOn, places) / 10)
 	case Interval025:
 		// round to quarter
-		return m.Setf(utils.Round(m.Getf()*4, roundOn, places) / 4)
+		return m.Setf(util.Round(m.Getf()*4, roundOn, places) / 4)
 	case Interval050:
 		// 50 cent rounding
 		// The system used in Sweden from 1992 to 2010, in Norway from 1993 to 2012,
@@ -492,12 +492,12 @@ func (m Money) Swedish(opts ...Option) Money {
 		// Sales ending in 25–49 öre round up to 50 öre.
 		// Sales ending in 51–74 öre round down to 50 öre.
 		// Sales ending in 75–99 öre round up to the next whole Krone/krona.
-		return m.Setf(utils.Round(m.Getf()*2, roundOn, places) / 2)
+		return m.Setf(util.Round(m.Getf()*2, roundOn, places) / 2)
 	case Interval100:
 		// The system used in Sweden since 30 September 2010 and used in Norway since 1 May 2012.
 		// Sales ending in 1–49 öre/øre round down to 0 öre/øre.
 		// Sales ending in 50–99 öre/øre round up to the next whole krona/krone.
-		return m.Setf(utils.Round(m.Getf()*1, roundOn, places) / 1) // ;-)
+		return m.Setf(util.Round(m.Getf()*1, roundOn, places) / 1) // ;-)
 	}
 	return m
 }

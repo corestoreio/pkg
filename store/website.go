@@ -23,7 +23,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/directory"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
 	"golang.org/x/text/currency"
 )
@@ -155,7 +155,7 @@ func (w *Website) addError(err error) {
 // Error implements the error interface. Returns a string where each error has
 // been separated by a line break.
 func (w *Website) Error() string {
-	return utils.Errors(w.lastErrors...)
+	return util.Errors(w.lastErrors...)
 }
 
 var _ scope.WebsiteIDer = (*Website)(nil)
@@ -263,11 +263,11 @@ func (ws WebsiteSlice) Filter(f func(*Website) bool) WebsiteSlice {
 }
 
 // Codes returns a StringSlice with all website codes
-func (ws WebsiteSlice) Codes() utils.StringSlice {
+func (ws WebsiteSlice) Codes() util.StringSlice {
 	if len(ws) == 0 {
 		return nil
 	}
-	var c utils.StringSlice
+	var c util.StringSlice
 	for _, w := range ws {
 		if w != nil {
 			c.Append(w.Data.Code.String)
@@ -277,11 +277,11 @@ func (ws WebsiteSlice) Codes() utils.StringSlice {
 }
 
 // IDs returns an Int64Slice with all website ids
-func (ws WebsiteSlice) IDs() utils.Int64Slice {
+func (ws WebsiteSlice) IDs() util.Int64Slice {
 	if len(ws) == 0 {
 		return nil
 	}
-	var ids utils.Int64Slice
+	var ids util.Int64Slice
 	for _, w := range ws {
 		if w != nil {
 			ids.Append(w.Data.WebsiteID)

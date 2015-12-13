@@ -21,7 +21,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -86,10 +86,10 @@ func TestStorageWebsite(t *testing.T) {
 	assert.EqualValues(t, "DACH Group", dGroup.Data.Name)
 
 	assert.NotNil(t, w.Groups)
-	assert.EqualValues(t, utils.Int64Slice{1, 2}, w.Groups.IDs())
+	assert.EqualValues(t, util.Int64Slice{1, 2}, w.Groups.IDs())
 
 	assert.NotNil(t, w.Stores)
-	assert.EqualValues(t, utils.StringSlice{"de", "uk", "at", "ch"}, w.Stores.Codes())
+	assert.EqualValues(t, util.StringSlice{"de", "uk", "at", "ch"}, w.Stores.Codes())
 }
 
 var benchmarkStorageWebsite *store.Website
@@ -117,16 +117,16 @@ func BenchmarkStorageWebsiteGetDefaultGroup(b *testing.B) {
 func TestStorageWebsites(t *testing.T) {
 	websites, err := testStorage.Websites()
 	assert.NoError(t, err)
-	assert.EqualValues(t, utils.StringSlice{"admin", "euro", "oz"}, websites.Codes())
-	assert.EqualValues(t, utils.Int64Slice{0, 1, 2}, websites.IDs())
+	assert.EqualValues(t, util.StringSlice{"admin", "euro", "oz"}, websites.Codes())
+	assert.EqualValues(t, util.Int64Slice{0, 1, 2}, websites.IDs())
 
 	var ids = []struct {
-		g utils.Int64Slice
-		s utils.Int64Slice
+		g util.Int64Slice
+		s util.Int64Slice
 	}{
-		{utils.Int64Slice{0}, utils.Int64Slice{0}},             //admin
-		{utils.Int64Slice{1, 2}, utils.Int64Slice{1, 4, 2, 3}}, // dach
-		{utils.Int64Slice{3}, utils.Int64Slice{5, 6}},          // oz
+		{util.Int64Slice{0}, util.Int64Slice{0}},             //admin
+		{util.Int64Slice{1, 2}, util.Int64Slice{1, 4, 2, 3}}, // dach
+		{util.Int64Slice{3}, util.Int64Slice{5, 6}},          // oz
 	}
 
 	for i, w := range websites {
@@ -146,7 +146,7 @@ func TestWebsiteSliceFilter(t *testing.T) {
 	gs := websites.Filter(func(w *store.Website) bool {
 		return w.Data.WebsiteID > 0
 	})
-	assert.EqualValues(t, utils.Int64Slice{1, 2}, gs.IDs())
+	assert.EqualValues(t, util.Int64Slice{1, 2}, gs.IDs())
 }
 
 func TestStorageGroup(t *testing.T) {
@@ -183,7 +183,7 @@ func TestStorageGroup(t *testing.T) {
 	assert.EqualValues(t, "oz", g.Website.Data.Code.String)
 
 	assert.NotNil(t, g.Stores)
-	assert.EqualValues(t, utils.StringSlice{"au", "nz"}, g.Stores.Codes())
+	assert.EqualValues(t, util.StringSlice{"au", "nz"}, g.Stores.Codes())
 }
 
 var benchmarkStorageGroup *store.Group
@@ -211,10 +211,10 @@ func BenchmarkStorageGroupGetDefaultStore(b *testing.B) {
 func TestStorageGroups(t *testing.T) {
 	groups, err := testStorage.Groups()
 	assert.NoError(t, err)
-	assert.EqualValues(t, utils.Int64Slice{3, 1, 0, 2}, groups.IDs())
+	assert.EqualValues(t, util.Int64Slice{3, 1, 0, 2}, groups.IDs())
 	assert.True(t, groups.Len() == 4)
 
-	var ids = []utils.Int64Slice{
+	var ids = []util.Int64Slice{
 		{5, 6},    // oz
 		{1, 2, 3}, // dach
 		{0},       // default
@@ -233,7 +233,7 @@ func TestGroupSliceFilter(t *testing.T) {
 	gs := groups.Filter(func(g *store.Group) bool {
 		return g.Data.GroupID > 0
 	})
-	assert.EqualValues(t, utils.Int64Slice{3, 1, 2}, gs.IDs())
+	assert.EqualValues(t, util.Int64Slice{3, 1, 2}, gs.IDs())
 }
 
 func TestStorageGroupNoWebsite(t *testing.T) {
@@ -325,8 +325,8 @@ func BenchmarkStorageStoreGetWebsite(b *testing.B) {
 func TestStorageStores(t *testing.T) {
 	stores, err := testStorage.Stores()
 	assert.NoError(t, err)
-	assert.EqualValues(t, utils.StringSlice{"admin", "au", "de", "uk", "at", "nz", "ch"}, stores.Codes())
-	assert.EqualValues(t, utils.Int64Slice{0, 5, 1, 4, 2, 6, 3}, stores.IDs())
+	assert.EqualValues(t, util.StringSlice{"admin", "au", "de", "uk", "at", "nz", "ch"}, stores.Codes())
+	assert.EqualValues(t, util.Int64Slice{0, 5, 1, 4, 2, 6, 3}, stores.IDs())
 
 	var ids = []struct {
 		g string

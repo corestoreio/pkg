@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/corestoreio/csfw/util/log"
 )
 
 // PkgLog global package based logger

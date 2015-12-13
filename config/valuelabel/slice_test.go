@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/valuelabel"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,25 +38,25 @@ func TestValueLabelSliceString(t *testing.T) {
 		have      valuelabel.Slice
 		wantValue string
 		wantLabel string
-		order     utils.SortDirection
+		order     util.SortDirection
 	}{
 		{
 			valuelabel.NewByString("kb", "l2", "ka", "l1", "kc", "l3", "kY", "l5", "k0", "l4"),
 			`[{"Value":"k0","Label":"l4"},{"Value":"kY","Label":"l5"},{"Value":"ka","Label":"l1"},{"Value":"kb","Label":"l2"},{"Value":"kc","Label":"l3"}]` + "\n",
 			`[{"Value":"ka","Label":"l1"},{"Value":"kb","Label":"l2"},{"Value":"kc","Label":"l3"},{"Value":"k0","Label":"l4"},{"Value":"kY","Label":"l5"}]` + "\n",
-			utils.SortAsc,
+			util.SortAsc,
 		},
 		{
 			valuelabel.NewByString("x3", "l2", "xg", "l1", "xK", "l3", "x0", "l5", "x-", "l4"),
 			`[{"Value":"xg","Label":"l1"},{"Value":"xK","Label":"l3"},{"Value":"x3","Label":"l2"},{"Value":"x0","Label":"l5"},{"Value":"x-","Label":"l4"}]` + "\n",
 			`[{"Value":"x0","Label":"l5"},{"Value":"x-","Label":"l4"},{"Value":"xK","Label":"l3"},{"Value":"x3","Label":"l2"},{"Value":"xg","Label":"l1"}]` + "\n",
-			utils.SortDesc,
+			util.SortDesc,
 		},
 		{
 			valuelabel.NewByString("x'3", "l\"2", "xög", "l1", "x\"K", "l3", `x"0`, "l5", `™¢´ƒˆ∑`, "¢£•¥ü©∑üƒ"),
 			`[{"Value":"™¢´ƒˆ∑","Label":"¢£•¥ü©∑üƒ"},{"Value":"xög","Label":"l1"},{"Value":"x'3","Label":"l\"2"},{"Value":"x\"K","Label":"l3"},{"Value":"x\"0","Label":"l5"}]` + "\n",
 			`[{"Value":"™¢´ƒˆ∑","Label":"¢£•¥ü©∑üƒ"},{"Value":"x\"0","Label":"l5"},{"Value":"x\"K","Label":"l3"},{"Value":"xög","Label":"l1"},{"Value":"x'3","Label":"l\"2"}]` + "\n",
-			utils.SortDesc,
+			util.SortDesc,
 		},
 	}
 
@@ -78,7 +78,7 @@ func TestValueLabelSliceInt(t *testing.T) {
 		have      valuelabel.Slice
 		wantValue string
 		wantLabel string
-		order     utils.SortDirection
+		order     util.SortDirection
 	}{
 		{
 			valuelabel.NewByInt(valuelabel.Ints{
@@ -89,7 +89,7 @@ func TestValueLabelSliceInt(t *testing.T) {
 			}),
 			`[{"Value":-1,"Label":"gopher"},{"Value":0,"Label":"http"},{"Value":1,"Label":"https"},{"Value":2,"Label":"ftp"}]` + "\n",
 			`[{"Value":2,"Label":"ftp"},{"Value":-1,"Label":"gopher"},{"Value":0,"Label":"http"},{"Value":1,"Label":"https"}]` + "\n",
-			utils.SortAsc,
+			util.SortAsc,
 		},
 		{
 			valuelabel.NewByInt(valuelabel.Ints{
@@ -100,7 +100,7 @@ func TestValueLabelSliceInt(t *testing.T) {
 			}),
 			`[{"Value":2,"Label":"ftp"},{"Value":1,"Label":"https"},{"Value":0,"Label":"http"},{"Value":-1,"Label":"gopher"}]` + "\n",
 			`[{"Value":1,"Label":"https"},{"Value":0,"Label":"http"},{"Value":-1,"Label":"gopher"},{"Value":2,"Label":"ftp"}]` + "\n",
-			utils.SortDesc,
+			util.SortDesc,
 		},
 	}
 
@@ -127,7 +127,7 @@ func TestValueLabelSliceFloat64(t *testing.T) {
 		have      valuelabel.Slice
 		wantValue string
 		wantLabel string
-		order     utils.SortDirection
+		order     util.SortDirection
 	}{
 		{
 			valuelabel.NewByFloat64(valuelabel.F64s{
@@ -141,7 +141,7 @@ func TestValueLabelSliceFloat64(t *testing.T) {
 			}),
 			`[{"Value":0,"Label":"nan"},{"Value":-1.7976931348623157e+308,"Label":"negative inf"},{"Value":-2312.3234,"Label":"gopher"},{"Value":0.0001,"Label":"ftp"},{"Value":33.44,"Label":"http"},{"Value":432.432342,"Label":"https"},{"Value":1.7976931348623157e+308,"Label":"positive inf"}]` + "\n",
 			`[{"Value":0.0001,"Label":"ftp"},{"Value":-2312.3234,"Label":"gopher"},{"Value":33.44,"Label":"http"},{"Value":432.432342,"Label":"https"},{"Value":0,"Label":"nan"},{"Value":-1.7976931348623157e+308,"Label":"negative inf"},{"Value":1.7976931348623157e+308,"Label":"positive inf"}]` + "\n",
-			utils.SortAsc,
+			util.SortAsc,
 		},
 		{
 			valuelabel.NewByFloat64(valuelabel.F64s{
@@ -155,7 +155,7 @@ func TestValueLabelSliceFloat64(t *testing.T) {
 			}),
 			`[{"Value":0,"Label":"nan"},{"Value":1.7976931348623157e+308,"Label":"positive inf"},{"Value":432.432342,"Label":"https"},{"Value":33.44,"Label":"http"},{"Value":0.0001,"Label":"ftp"},{"Value":-2312.3234,"Label":"gopher"},{"Value":-1.7976931348623157e+308,"Label":"negative inf"}]` + "\n",
 			`[{"Value":1.7976931348623157e+308,"Label":"positive inf"},{"Value":-1.7976931348623157e+308,"Label":"negative inf"},{"Value":0,"Label":"nan"},{"Value":432.432342,"Label":"https"},{"Value":33.44,"Label":"http"},{"Value":-2312.3234,"Label":"gopher"},{"Value":0.0001,"Label":"ftp"}]` + "\n",
-			utils.SortDesc,
+			util.SortDesc,
 		},
 	}
 
@@ -185,7 +185,7 @@ func TestValueLabelSliceBool(t *testing.T) {
 		have      valuelabel.Slice
 		wantValue string
 		wantLabel string
-		order     utils.SortDirection
+		order     util.SortDirection
 	}{
 		{
 			valuelabel.NewByBool(valuelabel.Bools{
@@ -196,7 +196,7 @@ func TestValueLabelSliceBool(t *testing.T) {
 			}),
 			`[{"Value":false,"Label":"maybe"},{"Value":false,"Label":"no"},{"Value":false,"Label":"possible"},{"Value":true,"Label":"yes"}]` + "\n",
 			`[{"Value":false,"Label":"maybe"},{"Value":false,"Label":"no"},{"Value":false,"Label":"possible"},{"Value":true,"Label":"yes"}]` + "\n",
-			utils.SortAsc,
+			util.SortAsc,
 		},
 		{
 			valuelabel.NewByBool(valuelabel.Bools{
@@ -207,7 +207,7 @@ func TestValueLabelSliceBool(t *testing.T) {
 			}),
 			`[{"Value":true,"Label":"yes"},{"Value":false,"Label":"possible"},{"Value":false,"Label":"no"},{"Value":false,"Label":"maybe"}]` + "\n",
 			`[{"Value":true,"Label":"yes"},{"Value":false,"Label":"possible"},{"Value":false,"Label":"no"},{"Value":false,"Label":"maybe"}]` + "\n",
-			utils.SortDesc,
+			util.SortDesc,
 		},
 	}
 

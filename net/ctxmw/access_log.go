@@ -22,7 +22,7 @@ import (
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxlog"
 	"github.com/corestoreio/csfw/net/httputil"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/rs/xstats"
 	"github.com/zenazn/goji/web/mutil"
 	"golang.org/x/net/context"
@@ -61,7 +61,7 @@ func WithAccessLog() ctxhttp.Middleware {
 			sts.Histogram("request_size", float64(lw.BytesWritten()), tags...)
 
 			ctxlog.FromContext(ctx).Info("request",
-				"error", utils.Errors(err),
+				"error", util.Errors(err),
 				"method", r.Method,
 				"uri", r.URL.String(),
 				"type", "access",

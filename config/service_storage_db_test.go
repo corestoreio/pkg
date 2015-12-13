@@ -24,7 +24,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -67,7 +67,7 @@ func TestDBStorageOneStmt(t *testing.T) {
 	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), "csdb.ResurrectStmt.stmt.Prepare SQL: \"SELECT `value` FROM"))
 
 	for _, test := range tests {
-		ak := utils.StringSlice(sdb.AllKeys()) // trigger many queries with one statement
+		ak := util.StringSlice(sdb.AllKeys()) // trigger many queries with one statement
 		assert.True(t, ak.Include(test.key), "Missing Key: %s", test.key)
 	}
 	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), fmt.Sprintf("CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`", scope.PS, scope.PS)))
@@ -112,7 +112,7 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		ak := utils.StringSlice(sdb.AllKeys())
+		ak := util.StringSlice(sdb.AllKeys())
 		assert.True(t, ak.Include(test.key), "Missing Key: %s", test.key)
 		if i < 2 {
 			time.Sleep(time.Millisecond * 1500) // trigger ticker to close statements

@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/utils/os"
+	"github.com/corestoreio/csfw/util/os"
 	"github.com/oschwald/geoip2-golang"
 )
 

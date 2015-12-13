@@ -20,7 +20,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/corestoreio/csfw/util/log"
 )
 
 type CorsOption func(*Cors)

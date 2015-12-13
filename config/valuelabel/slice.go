@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"sort"
 
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
 )
 
@@ -30,10 +30,10 @@ type Slice []Pair
 func (s Slice) Options() Slice { return s }
 
 // SortByLabel sorts by label in asc or desc direction
-func (s Slice) SortByLabel(d utils.SortDirection) Slice {
+func (s Slice) SortByLabel(d util.SortDirection) Slice {
 	var si sort.Interface
 	si = vlSortByLabel{s}
-	if d == utils.SortDesc {
+	if d == util.SortDesc {
 		si = sort.Reverse(si)
 	}
 	sort.Sort(si)
@@ -43,10 +43,10 @@ func (s Slice) SortByLabel(d utils.SortDirection) Slice {
 // SortByValue sorts by value in asc or desc direction. The underlying value
 // will be converted to a string. You might expect strange results when sorting
 // integers or other non-strings.
-func (s Slice) SortByValue(d utils.SortDirection) Slice {
+func (s Slice) SortByValue(d util.SortDirection) Slice {
 	var si sort.Interface
 	si = vlSortByValue{s}
-	if d == utils.SortDesc {
+	if d == util.SortDesc {
 		si = sort.Reverse(si)
 	}
 	sort.Sort(si)
@@ -54,10 +54,10 @@ func (s Slice) SortByValue(d utils.SortDirection) Slice {
 }
 
 // SortByInt sorts by field Int in asc or desc direction
-func (s Slice) SortByInt(d utils.SortDirection) Slice {
+func (s Slice) SortByInt(d util.SortDirection) Slice {
 	var si sort.Interface
 	si = vlSortByInt{s}
-	if d == utils.SortDesc {
+	if d == util.SortDesc {
 		si = sort.Reverse(si)
 	}
 	sort.Sort(si)
@@ -65,10 +65,10 @@ func (s Slice) SortByInt(d utils.SortDirection) Slice {
 }
 
 // SortByFloat64 sorts by field Float64 in asc or desc direction
-func (s Slice) SortByFloat64(d utils.SortDirection) Slice {
+func (s Slice) SortByFloat64(d util.SortDirection) Slice {
 	var si sort.Interface
 	si = vlSortByFloat64{s}
-	if d == utils.SortDesc {
+	if d == util.SortDesc {
 		si = sort.Reverse(si)
 	}
 	sort.Sort(si)
@@ -76,10 +76,10 @@ func (s Slice) SortByFloat64(d utils.SortDirection) Slice {
 }
 
 // SortByBool sorts by field Bool in asc or desc direction
-func (s Slice) SortByBool(d utils.SortDirection) Slice {
+func (s Slice) SortByBool(d util.SortDirection) Slice {
 	var si sort.Interface
 	si = vlSortByBool{s}
-	if d == utils.SortDesc {
+	if d == util.SortDesc {
 		si = sort.Reverse(si)
 	}
 	sort.Sort(si)

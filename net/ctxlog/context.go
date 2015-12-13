@@ -15,7 +15,7 @@
 package ctxlog
 
 import (
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/corestoreio/csfw/util/log"
 	"golang.org/x/net/context"
 )
 

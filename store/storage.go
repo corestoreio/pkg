@@ -20,7 +20,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
 )
 
@@ -149,7 +149,7 @@ func MustNewStorage(opts ...StorageOption) *Storage {
 
 // Error returns an error string
 func (st *Storage) Error() string {
-	return utils.Errors(st.lastErrors...)
+	return util.Errors(st.lastErrors...)
 }
 
 // website returns a TableWebsite by using either id or code to find it. If id and code are

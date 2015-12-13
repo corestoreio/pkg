@@ -77,7 +77,7 @@ func (rp *RequestIDService) NewID() string {
 
 // WithRequestID is a middleware that injects a request ID into the response header
 // of each request. Retrieve it using:
-// 		w.Header().Get(httputils.RequestIDHeader)
+// 		w.Header().Get(httputil.RequestIDHeader)
 // If the incoming request has a RequestIDHeader header then that value is used
 // otherwise a random value is generated. You can specify your own generator by
 // providing the RequestPrefixGenerator once or pass no argument to use the default request

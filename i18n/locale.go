@@ -15,7 +15,7 @@
 package i18n
 
 import (
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"golang.org/x/text/display"
 	"golang.org/x/text/language"
 )
@@ -26,10 +26,10 @@ import (
 const LocaleSeparator = "_"
 
 // Available contains all available locales. One should not modify this slice.
-var LocaleAvailable utils.StringSlice
+var LocaleAvailable util.StringSlice
 
 // Supported contains all supported locales by this package. One should not modify this slice.
-var LocaleSupported utils.StringSlice
+var LocaleSupported util.StringSlice
 
 var (
 	// Only import the supported dictionaries here to reduce the amount of

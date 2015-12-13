@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 )
 
 var destDummy interface{}
@@ -46,7 +46,7 @@ func (sess *Session) calculateFieldMap(recordType reflect.Type, columns []string
 				name := fieldStruct.Tag.Get("db")
 				if name != "-" {
 					if name == "" {
-						name = utils.CamelCaseToUnderscore(fieldStruct.Name)
+						name = util.CamelCaseToUnderscore(fieldStruct.Name)
 					}
 					if name == col {
 						fieldMap[i] = append(curIdxs, j)

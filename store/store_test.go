@@ -22,7 +22,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -104,8 +104,8 @@ func TestStoreSlice(t *testing.T) {
 		),
 	}
 	assert.True(t, storeSlice.Len() == 3)
-	assert.EqualValues(t, utils.Int64Slice{1, 5}, storeSlice.IDs())
-	assert.EqualValues(t, utils.StringSlice{"de", "au"}, storeSlice.Codes())
+	assert.EqualValues(t, util.Int64Slice{1, 5}, storeSlice.IDs())
+	assert.EqualValues(t, util.StringSlice{"de", "au"}, storeSlice.Codes())
 	assert.EqualValues(t, 5, storeSlice.LastItem().Data.StoreID)
 	assert.Nil(t, (store.StoreSlice{}).LastItem())
 
@@ -114,8 +114,8 @@ func TestStoreSlice(t *testing.T) {
 	})
 	assert.True(t, storeSlice2.Len() == 1)
 	assert.Equal(t, "au", storeSlice2[0].Data.Code.String)
-	assert.EqualValues(t, utils.Int64Slice{5}, storeSlice2.IDs())
-	assert.EqualValues(t, utils.StringSlice{"au"}, storeSlice2.Codes())
+	assert.EqualValues(t, util.Int64Slice{5}, storeSlice2.IDs())
+	assert.EqualValues(t, util.StringSlice{"au"}, storeSlice2.Codes())
 
 	assert.Nil(t, (store.StoreSlice{}).IDs())
 	assert.Nil(t, (store.StoreSlice{}).Codes())
@@ -202,7 +202,7 @@ func TestTableStoreSliceCodes(t *testing.T) {
 
 	codes := testStores.Extract().Code()
 	assert.NotNil(t, codes)
-	assert.Equal(t, utils.StringSlice{"admin", "au", "de", "uk", "at", "nz", "ch"}, codes)
+	assert.Equal(t, util.StringSlice{"admin", "au", "de", "uk", "at", "nz", "ch"}, codes)
 
 	var ts = store.TableStoreSlice{}
 	assert.Nil(t, ts.Extract().Code())
@@ -214,7 +214,7 @@ func TestTableStoreSliceIDs(t *testing.T) {
 
 	ids := testStores.Extract().StoreID()
 	assert.NotNil(t, ids)
-	assert.Equal(t, utils.Int64Slice{0, 5, 1, 4, 2, 6, 3}, ids)
+	assert.Equal(t, util.Int64Slice{0, 5, 1, 4, 2, 6, 3}, ids)
 
 	var ts = store.TableStoreSlice{}
 	assert.Nil(t, ts.Extract().StoreID())

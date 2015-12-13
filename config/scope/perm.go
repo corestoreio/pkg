@@ -14,7 +14,7 @@
 
 package scope
 
-import "github.com/corestoreio/csfw/utils"
+import "github.com/corestoreio/csfw/util"
 
 // Perm is a bit set and used for permissions, Group is not a part of this bit set.
 // Type Group is a subpart of Perm
@@ -51,8 +51,8 @@ func (bits Perm) Has(s Scope) bool {
 }
 
 // Human readable representation of the permissions
-func (bits Perm) Human() utils.StringSlice {
-	var ret utils.StringSlice
+func (bits Perm) Human() util.StringSlice {
+	var ret util.StringSlice
 	var i uint
 	for i = 0; i < 64; i++ {
 		bit := ((bits & (1 << i)) != 0)

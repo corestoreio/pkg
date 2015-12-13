@@ -10,7 +10,7 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/corestoreio/csfw/utils/bufferpool"
+	"github.com/corestoreio/csfw/util/bufferpool"
 )
 
 func isUint(k reflect.Kind) bool {

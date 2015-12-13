@@ -22,8 +22,8 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/utils"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/log"
 	"github.com/go-gomail/gomail"
 )
 
@@ -87,7 +87,7 @@ var _ error = (*Daemon)(nil)
 // Error implements the error interface. Returns a string where each error has
 // been separated by a line break.
 func (dm *Daemon) Error() string {
-	return utils.Errors(dm.lastErrs...)
+	return util.Errors(dm.lastErrs...)
 }
 
 // Start listens to a channel and sends all incoming messages to a SMTP server.

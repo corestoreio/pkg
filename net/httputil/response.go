@@ -45,7 +45,7 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/corestoreio/csfw/utils/bufferpool"
+	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/juju/errgo"
 )
 

@@ -27,7 +27,7 @@ import (
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
 	"github.com/oschwald/geoip2-golang"
 )
@@ -51,7 +51,7 @@ type Reader interface {
 // IsAllowedFunc checks in middleware WithIsCountryAllowedByIP if the country is
 // allowed to process the request. The StringSlice contains a list of ISO country
 // names fetched from the config.Reader for a specific store view including fallback.
-type IsAllowedFunc func(*store.Store, *IPCountry, utils.StringSlice, *http.Request) bool
+type IsAllowedFunc func(*store.Store, *IPCountry, util.StringSlice, *http.Request) bool
 
 // Service represents a service manager
 type Service struct {
@@ -63,11 +63,11 @@ type Service struct {
 	lastErrors []error
 	// IDs and AltH slices must have both the same length because with the ID found in IDs slice
 	// we take the index key and access the appropriate handler in AltH.
-	websiteIDs  utils.Int64Slice
+	websiteIDs  util.Int64Slice
 	websiteAltH []ctxhttp.HandlerFunc
-	groupIDs    utils.Int64Slice
+	groupIDs    util.Int64Slice
 	groupAltH   []ctxhttp.HandlerFunc
-	storeIDs    utils.Int64Slice
+	storeIDs    util.Int64Slice
 	storeAltH   []ctxhttp.HandlerFunc
 }
 
@@ -93,7 +93,7 @@ var _ error = (*Service)(nil)
 
 // Error returns an error string
 func (s *Service) Error() string {
-	return utils.Errors(s.lastErrors...)
+	return util.Errors(s.lastErrors...)
 }
 
 // GetCountryByIP returns from an IP address the country
@@ -214,7 +214,7 @@ func (s *Service) altHandlerByID(st *store.Store) ctxhttp.HandlerFunc {
 // findHandlerByID returns the Handler for the searchID. If not found
 // or slices have an indifferent length or something is nil it will
 // return the DefaultErrorHandler.
-func findHandlerByID(so scope.Scope, id int64, idsIdx utils.Int64Slice, handlers []ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+func findHandlerByID(so scope.Scope, id int64, idsIdx util.Int64Slice, handlers []ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 
 	if len(idsIdx) != len(handlers) {
 		return DefaultAlternativeHandler
@@ -234,7 +234,7 @@ func findHandlerByID(so scope.Scope, id int64, idsIdx utils.Int64Slice, handlers
 	return prospect
 }
 
-func defaultIsCountryAllowed(_ *store.Store, c *IPCountry, allowedCountries utils.StringSlice, r *http.Request) bool {
+func defaultIsCountryAllowed(_ *store.Store, c *IPCountry, allowedCountries util.StringSlice, r *http.Request) bool {
 	if false == allowedCountries.Include(c.Country.Country.IsoCode) {
 		if PkgLog.IsInfo() {
 			PkgLog.Info("geoip.checkAllow", "IPCountry", c, "allowedCountries", allowedCountries, "request", r)

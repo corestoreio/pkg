@@ -24,7 +24,7 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
 )
 
@@ -80,7 +80,7 @@ func GenerateCode(pkg, tplCode string, data interface{}, addFM template.FuncMap)
 	funcMap := template.FuncMap{
 		"quote":           func(s string) string { return "`" + s + "`" },
 		"prepareVar":      prepareVar(pkg),
-		"camelize":        utils.UnderscoreCamelize,
+		"camelize":        util.UnderscoreCamelize,
 		"toLowerFirst":    toLowerFirst,
 		"prepareVarIndex": func(i int, s string) string { return fmt.Sprintf("%03d%s", i, prepareVar(pkg)(s)) },
 		"sprintf":         fmt.Sprintf,
@@ -122,7 +122,7 @@ func prepareVar(pkg string) func(s string) string {
 			str = str[l:]
 		}
 
-		return utils.UnderscoreCamelize(str)
+		return util.UnderscoreCamelize(str)
 	}
 }
 

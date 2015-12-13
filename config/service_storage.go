@@ -17,7 +17,7 @@ package config
 import (
 	"sync"
 
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 )
 
 // Storager is the underlying data storage for holding the keys and its values.
@@ -62,7 +62,7 @@ func (sp *simpleStorage) AllKeys() []string {
 	sp.Lock()
 	defer sp.Unlock()
 
-	var ret = make(utils.StringSlice, len(sp.data))
+	var ret = make(util.StringSlice, len(sp.data))
 	i := 0
 	for k := range sp.data {
 		ret[i] = k

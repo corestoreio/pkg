@@ -21,7 +21,7 @@ import (
 	"sort"
 
 	"github.com/corestoreio/csfw/config/scope"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
 )
 
@@ -250,7 +250,7 @@ func (ss SectionSlice) Validate() error {
 		return errgo.New("SectionSlice is empty")
 	}
 	// @todo try to pick the right strategy between maps and slice depending on the overall size of a full SectionSlice
-	var pc = make(utils.StringSlice, ss.TotalFields()) // pc path checker
+	var pc = make(util.StringSlice, ss.TotalFields()) // pc path checker
 	i := 0
 	for _, s := range ss {
 		for _, g := range s.Groups {

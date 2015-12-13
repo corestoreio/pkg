@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/corestoreio/csfw/utils/bufferpool"
+	"github.com/corestoreio/csfw/util/bufferpool"
 )
 
 // DeleteBuilder contains the clauses for a DELETE statement

@@ -19,7 +19,7 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/utils"
+	"github.com/corestoreio/csfw/util"
 )
 
 type (
@@ -35,7 +35,7 @@ func DefaultCountry(cr config.ScopedGetter) string {
 // AllowedCountries returns a list of all allowed countries per scope.
 // This function might gets refactored into a SourceModel.
 // May return nil,nil when it's unable to determine any list of countries.
-func AllowedCountries(cr config.ScopedGetter) (utils.StringSlice, error) {
+func AllowedCountries(cr config.ScopedGetter) (util.StringSlice, error) {
 	cStr := cr.String(PathCountryAllowed)
 
 	if cStr == "" {
@@ -50,5 +50,5 @@ func AllowedCountries(cr config.ScopedGetter) (utils.StringSlice, error) {
 			return nil, fmt.Errorf("Cannot type assert field.Default value to string: %#v", field)
 		}
 	}
-	return utils.StringSlice(strings.Split(cStr, `,`)), nil
+	return util.StringSlice(strings.Split(cStr, `,`)), nil
 }

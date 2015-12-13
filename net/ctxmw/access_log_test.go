@@ -30,7 +30,7 @@ import (
 
 	"github.com/corestoreio/csfw/net/ctxlog"
 	"github.com/corestoreio/csfw/net/ctxmw"
-	"github.com/corestoreio/csfw/utils/log"
+	"github.com/corestoreio/csfw/util/log"
 )
 
 type fakeContext struct {
