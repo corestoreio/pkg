@@ -27,7 +27,7 @@ import (
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
-	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	storemock "github.com/corestoreio/csfw/store/mock"
@@ -84,7 +84,7 @@ func TestWithValidateBaseUrl_DeactivatedAndShouldNotRedirectWithGETRequest(t *te
 
 	// no post request but check deactivated
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(httputils.MethodGet, "http://corestore.io/catalog/product/view", nil)
+	req, err := http.NewRequest(httputil.MethodGet, "http://corestore.io/catalog/product/view", nil)
 	assert.NoError(t, err)
 
 	err = store.WithValidateBaseURL(mockReader)(finalHandlerWithValidateBaseURL(t)).ServeHTTPContext(context.Background(), w, req)
@@ -100,7 +100,7 @@ func TestWithValidateBaseUrl_ActivatedAndShouldNotRedirectWithPOSTRequest(t *tes
 	)
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(httputils.MethodGet, "http://corestore.io/catalog/product/view", nil)
+	req, err := http.NewRequest(httputil.MethodGet, "http://corestore.io/catalog/product/view", nil)
 	assert.NoError(t, err)
 
 	mw := store.WithValidateBaseURL(mockReader)(finalHandlerWithValidateBaseURL(t))
@@ -109,7 +109,7 @@ func TestWithValidateBaseUrl_ActivatedAndShouldNotRedirectWithPOSTRequest(t *tes
 	assert.EqualError(t, err, store.ErrContextServiceNotFound.Error())
 
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(httputils.MethodPost, "http://corestore.io/catalog/product/view", strings.NewReader(`{ "k1": "v1",  "k2": { "k3": ["va1"]  }}`))
+	req, err = http.NewRequest(httputil.MethodPost, "http://corestore.io/catalog/product/view", strings.NewReader(`{ "k1": "v1",  "k2": { "k3": ["va1"]  }}`))
 	assert.NoError(t, err)
 
 	err = mw.ServeHTTPContext(context.Background(), w, req)
@@ -120,7 +120,7 @@ func TestWithValidateBaseUrl_ActivatedAndShouldNotRedirectWithPOSTRequest(t *tes
 func TestWithValidateBaseUrl_ActivatedAndShouldRedirectWithGETRequest(t *testing.T) {
 
 	var newReq = func(urlStr string) *http.Request {
-		req, err := http.NewRequest(httputils.MethodGet, urlStr, nil)
+		req, err := http.NewRequest(httputil.MethodGet, urlStr, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -321,7 +321,7 @@ func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) cont
 func TestWithInitStoreByToken(t *testing.T) {
 
 	var newReq = func(i int) *http.Request {
-		req, err := http.NewRequest(httputils.MethodGet, fmt.Sprintf("https://corestore.io/store/list/%d", i), nil)
+		req, err := http.NewRequest(httputil.MethodGet, fmt.Sprintf("https://corestore.io/store/list/%d", i), nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -372,7 +372,7 @@ func TestWithInitStoreByToken_EqualPointers(t *testing.T) {
 
 	ctx := newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "nz")
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest(httputils.MethodGet, "https://corestore.io/store/list", nil)
+	req, err := http.NewRequest(httputil.MethodGet, "https://corestore.io/store/list", nil)
 	if err != nil {
 		t.Fatal(err)
 	}

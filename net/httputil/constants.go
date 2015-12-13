@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httputils
+package httputil
 
 const (
 	// MethodOverrideHeader represents a commonly used http header to override a request method.

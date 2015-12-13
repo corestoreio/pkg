@@ -21,7 +21,7 @@ import (
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxlog"
-	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/utils"
 	"github.com/rs/xstats"
 	"github.com/zenazn/goji/web/mutil"
@@ -69,7 +69,7 @@ func WithAccessLog() ctxhttp.Middleware {
 				"status_code", lw.Status(),
 				"duration", reqDur.Seconds(),
 				"size", lw.BytesWritten(),
-				"remote_addr", httputils.GetRemoteAddr(r).String(),
+				"remote_addr", httputil.GetRemoteAddr(r).String(),
 				"user_agent", r.Header.Get("User-Agent"),
 				"referer", r.Header.Get("Referer"),
 			)

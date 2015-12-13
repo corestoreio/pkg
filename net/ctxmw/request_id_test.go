@@ -21,7 +21,7 @@ import (
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxmw"
-	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -36,7 +36,7 @@ func TestDefaultRequestPrefix(t *testing.T) {
 
 func testWithRequestID(t *testing.T, gen ctxmw.RequestIDGenerator) {
 	finalCH := ctxhttp.Chain(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		id := w.Header().Get(httputils.RequestIDHeader)
+		id := w.Header().Get(httputil.RequestIDHeader)
 		assert.Exactly(t, "-2", id[len(id)-2:])
 		assert.Contains(t, id, "/")
 		return nil
@@ -73,7 +73,7 @@ func TestWithRequestIDCustom(t *testing.T) {
 func BenchmarkWithRequestID(b *testing.B) {
 
 	finalCH := ctxhttp.Chain(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		id := w.Header().Get(httputils.RequestIDHeader)
+		id := w.Header().Get(httputil.RequestIDHeader)
 		if id == "" {
 			b.Fatal("id is empty")
 		}

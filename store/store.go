@@ -28,7 +28,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/directory"
-	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/utils"
 )
 
@@ -302,7 +302,7 @@ func (s *Store) IsFrontURLSecure() bool {
 // include if base URL has been set and if front URL is secure
 // This function might gets executed on every request.
 func (s *Store) IsCurrentlySecure(r *http.Request) bool {
-	if httputils.IsSecure(s.cr, r) {
+	if httputil.IsSecure(s.cr, r) {
 		return true
 	}
 

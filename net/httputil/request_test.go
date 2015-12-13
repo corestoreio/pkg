@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httputils_test
+package httputil_test
 
 import (
 	"net"
 	"net/http"
 	"testing"
 
-	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -55,7 +55,7 @@ func TestGetRemoteAddr(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		haveIP := httputils.GetRemoteAddr(test.r)
+		haveIP := httputil.GetRemoteAddr(test.r)
 		assert.Exactly(t, test.wantIP, haveIP, "Index: %d", i)
 	}
 }

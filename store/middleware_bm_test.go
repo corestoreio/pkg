@@ -22,7 +22,7 @@ import (
 
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/utils/log"
 	"golang.org/x/net/context"
@@ -33,7 +33,7 @@ import (
 func Benchmark_WithValidateBaseUrl(b *testing.B) {
 	// todo: there is room for optimization with disabled debugging. too many allocs
 	store.PkgLog.SetLevel(log.StdLevelInfo)
-	req, err := http.NewRequest(httputils.MethodGet, "https://corestore.io/customer/comments/view?id=1916#tab=ratings", nil)
+	req, err := http.NewRequest(httputil.MethodGet, "https://corestore.io/customer/comments/view?id=1916#tab=ratings", nil)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -82,7 +82,7 @@ func Benchmark_WithInitStoreByToken(b *testing.B) {
 	mw := store.WithInitStoreByToken()(benchValidationHandler(b, wantStoreCode))
 
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest(httputils.MethodGet, "https://corestore.io/store/list/", nil)
+	req, err := http.NewRequest(httputil.MethodGet, "https://corestore.io/store/list/", nil)
 	if err != nil {
 		b.Fatal(err)
 	}
@@ -107,7 +107,7 @@ func Benchmark_WithInitStoreByFormCookie(b *testing.B) {
 	mw := store.WithInitStoreByFormCookie()(benchValidationHandler(b, wantStoreCode))
 
 	rec := httptest.NewRecorder()
-	req, err := http.NewRequest(httputils.MethodGet, "https://corestore.io/store/list/", nil)
+	req, err := http.NewRequest(httputil.MethodGet, "https://corestore.io/store/list/", nil)
 	if err != nil {
 		b.Fatal(err)
 	}

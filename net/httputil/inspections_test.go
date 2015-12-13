@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httputils_test
+package httputil_test
 
 import (
 	"crypto/tls"
@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -46,7 +46,7 @@ func TestCtxIsSecure(t *testing.T) {
 		},
 		{
 			config.WithContextMockGetter(context.Background(), config.WithMockValues(config.MockPV{
-				config.MockPathScopeDefault(httputils.PathOffloaderHeader): "X_FORWARDED_PROTO",
+				config.MockPathScopeDefault(httputil.PathOffloaderHeader): "X_FORWARDED_PROTO",
 			})),
 			func() *http.Request {
 				r, err := http.NewRequest("GET", "/", nil)
@@ -60,7 +60,7 @@ func TestCtxIsSecure(t *testing.T) {
 		},
 		{
 			config.WithContextMockGetter(context.Background(), config.WithMockValues(config.MockPV{
-				config.MockPathScopeDefault(httputils.PathOffloaderHeader): "X_FORWARDED_PROTO",
+				config.MockPathScopeDefault(httputil.PathOffloaderHeader): "X_FORWARDED_PROTO",
 			})),
 			func() *http.Request {
 				r, err := http.NewRequest("GET", "/", nil)
@@ -86,7 +86,7 @@ func TestCtxIsSecure(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		assert.Exactly(t, test.wantIsSecure, httputils.CtxIsSecure(test.ctx, test.req))
+		assert.Exactly(t, test.wantIsSecure, httputil.CtxIsSecure(test.ctx, test.req))
 	}
 }
 
@@ -114,15 +114,15 @@ func TestIsBaseUrlCorrect(t *testing.T) {
 		wantErr     error
 	}{
 		{nr("http://corestore.io/"), pu("http://corestore.io/"), nil},
-		{nr("http://www.corestore.io/"), pu("http://corestore.io/"), httputils.ErrBaseURLDoNotMatch},
-		{nr("http://corestore.io/"), pu("https://corestore.io/"), httputils.ErrBaseURLDoNotMatch},
-		{nr("http://corestore.io/"), pu("http://corestore.io/subpath"), httputils.ErrBaseURLDoNotMatch},
+		{nr("http://www.corestore.io/"), pu("http://corestore.io/"), httputil.ErrBaseURLDoNotMatch},
+		{nr("http://corestore.io/"), pu("https://corestore.io/"), httputil.ErrBaseURLDoNotMatch},
+		{nr("http://corestore.io/"), pu("http://corestore.io/subpath"), httputil.ErrBaseURLDoNotMatch},
 		{nr("http://corestore.io/subpath"), pu("http://corestore.io/subpath"), nil},
 		{nr("http://corestore.io/"), pu("http://corestore.io/"), nil},
 		{nr("http://corestore.io/subpath/catalog/product/list"), pu("http://corestore.io/subpath"), nil},
 	}
 	for i, test := range tests {
-		haveErr := httputils.IsBaseURLCorrect(test.req, test.haveBaseURL)
+		haveErr := httputil.IsBaseURLCorrect(test.req, test.haveBaseURL)
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
 		} else {

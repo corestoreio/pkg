@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httputils
+package httputil
 
 import (
 	"errors"
@@ -50,7 +50,7 @@ func IsSecure(cr config.Getter, r *http.Request) bool {
 	oh, err := cr.String(config.Path(PathOffloaderHeader), config.ScopeDefault())
 	if err != nil {
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("net.httputils.IsSecure.FromContextReader.String", "err", err, "path", PathOffloaderHeader)
+			PkgLog.Debug("net.httputil.IsSecure.FromContextReader.String", "err", err, "path", PathOffloaderHeader)
 		}
 		return false
 	}

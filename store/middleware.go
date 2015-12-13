@@ -21,7 +21,7 @@ import (
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
-	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/juju/errgo"
 	"golang.org/x/net/context"
 )
@@ -66,7 +66,7 @@ func WithValidateBaseURL(cr config.GetterPubSuber) ctxhttp.Middleware {
 					return errgo.Mask(err)
 				}
 
-				if err := httputils.IsBaseURLCorrect(r, &baseURL); err != nil {
+				if err := httputil.IsBaseURLCorrect(r, &baseURL); err != nil {
 					if PkgLog.IsDebug() {
 						PkgLog.Debug("store.WithValidateBaseUrl.IsBaseUrlCorrect.error", "err", err, "baseURL", baseURL, "request", r)
 					}

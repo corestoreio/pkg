@@ -12,9 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httputils
+package httputil
 
-import "github.com/corestoreio/csfw/utils/log"
+import (
+	"net"
+	"net/http"
+)
 
-// PkgLog global package based logger
-var PkgLog log.Logger = log.PkgLog
+// GetRemoteAddr extracts the remote address from a request and takes
+// care of different headers in which an IP address can be stored.
+// Return value can be nil.
+func GetRemoteAddr(req *http.Request) net.IP {
+	addr := req.Header.Get("X-Real-IP")
+	if addr == "" {
+		addr = req.Header.Get("X-Forwarded-For")
+		if addr == "" {
+			addr = req.RemoteAddr
+		}
+	}
+	host, _, err := net.SplitHostPort(addr)
+
+	if err != nil {
+		host = addr
+	}
+	return net.ParseIP(host)
+}

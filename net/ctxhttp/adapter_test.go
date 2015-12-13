@@ -22,7 +22,7 @@ import (
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxmw"
-	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -43,14 +43,14 @@ func TestAdapters(t *testing.T) {
 	)
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(httputils.MethodGet, "http://example.com/foo", nil)
-	req.Header.Set(httputils.MethodOverrideHeader, httputils.MethodPut)
+	req, err := http.NewRequest(httputil.MethodGet, "http://example.com/foo", nil)
+	req.Header.Set(httputil.MethodOverrideHeader, httputil.MethodPut)
 	assert.NoError(t, err)
 
 	a := ctxhttp.NewAdapter(context.Background(), hndlrFunc)
 	a.ServeHTTP(w, req)
 
-	assert.Equal(t, httputils.MethodPut, req.Method)
+	assert.Equal(t, httputil.MethodPut, req.Method)
 	assert.Equal(t, "h1 called", w.Body.String())
 	assert.Equal(t, "Y-Women", w.Header().Get("X-Men"))
 }
@@ -59,7 +59,7 @@ func TestDefaultAdapterErrFunc(t *testing.T) {
 	anErr := errors.New("This error should be returned")
 
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(httputils.MethodGet, "http://example.com/foo?_method=KARATE", nil)
+	req, err := http.NewRequest(httputil.MethodGet, "http://example.com/foo?_method=KARATE", nil)
 	assert.NoError(t, err)
 	ctxhttp.DefaultAdapterErrFunc(w, req, anErr)
 	assert.Exactly(t, http.StatusBadRequest, w.Code)
@@ -71,22 +71,22 @@ func TestHttpMethodOverride(t *testing.T) {
 		h1{}.ServeHTTPContext,
 		ctxmw.WithXHTTPMethodOverride())
 	w := httptest.NewRecorder()
-	req, err := http.NewRequest(httputils.MethodGet, "http://example.com/foo?_method="+httputils.MethodPatch, nil)
+	req, err := http.NewRequest(httputil.MethodGet, "http://example.com/foo?_method="+httputil.MethodPatch, nil)
 	assert.NoError(t, err)
 	assert.NoError(t, hndlr.ServeHTTPContext(context.Background(), w, req))
-	assert.Equal(t, httputils.MethodPatch, req.Method)
+	assert.Equal(t, httputil.MethodPatch, req.Method)
 	assert.Equal(t, "h1 called", w.Body.String())
 
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(httputils.MethodGet, "http://example.com/foo?_method=KARATE", nil)
+	req, err = http.NewRequest(httputil.MethodGet, "http://example.com/foo?_method=KARATE", nil)
 	assert.NoError(t, err)
 	assert.NoError(t, hndlr.ServeHTTPContext(context.Background(), w, req))
-	assert.Equal(t, httputils.MethodGet, req.Method)
+	assert.Equal(t, httputil.MethodGet, req.Method)
 
 	w = httptest.NewRecorder()
-	req, err = http.NewRequest(httputils.MethodGet, "http://example.com/foobar", nil)
+	req, err = http.NewRequest(httputil.MethodGet, "http://example.com/foobar", nil)
 	assert.NoError(t, err)
 	assert.NoError(t, hndlr.ServeHTTPContext(context.Background(), w, req))
-	assert.Equal(t, httputils.MethodGet, req.Method)
+	assert.Equal(t, httputil.MethodGet, req.Method)
 
 }

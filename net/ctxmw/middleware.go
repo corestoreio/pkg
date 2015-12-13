@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/corestoreio/csfw/net/httputil"
 	"golang.org/x/net/context"
 )
 
@@ -45,13 +45,13 @@ func WithHeader(kv ...string) ctxhttp.Middleware {
 func WithXHTTPMethodOverride() ctxhttp.Middleware {
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			mo := r.FormValue(httputils.MethodOverrideFormKey)
+			mo := r.FormValue(httputil.MethodOverrideFormKey)
 			if mo == "" {
-				mo = r.Header.Get(httputils.MethodOverrideHeader)
+				mo = r.Header.Get(httputil.MethodOverrideHeader)
 			}
 			switch mo {
 			case "": // do nothing
-			case httputils.MethodHead, httputils.MethodGet, httputils.MethodPost, httputils.MethodPut, httputils.MethodPatch, httputils.MethodDelete, httputils.MethodTrace, httputils.MethodOptions:
+			case httputil.MethodHead, httputil.MethodGet, httputil.MethodPost, httputil.MethodPut, httputil.MethodPatch, httputil.MethodDelete, httputil.MethodTrace, httputil.MethodOptions:
 				r.Method = mo
 			default:
 				// not sure if an error is here really needed ...

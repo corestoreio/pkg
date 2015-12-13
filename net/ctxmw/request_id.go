@@ -26,7 +26,7 @@ import (
 	"strconv"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/corestoreio/csfw/net/httputil"
 	"golang.org/x/net/context"
 )
 
@@ -93,11 +93,11 @@ func WithRequestID(gen ...RequestIDGenerator) ctxhttp.Middleware {
 
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			id := r.Header.Get(httputils.RequestIDHeader)
+			id := r.Header.Get(httputil.RequestIDHeader)
 			if id == "" {
 				id = pf.NewID()
 			}
-			w.Header().Set(httputils.RequestIDHeader, id)
+			w.Header().Set(httputil.RequestIDHeader, id)
 			return hf(ctx, w, r)
 		}
 	}

@@ -12,26 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httputils_test
-
-import (
-	"testing"
-
-	"github.com/corestoreio/csfw/net/httputils"
-	"github.com/stretchr/testify/assert"
-)
-
-func TestVersionize(t *testing.T) {
-	tests := []struct {
-		have, want string
-	}{
-		{"login", "/V1/login"},
-		{"/login", "/V1/login"},
-		{"", "/V1/"},
-	}
-	for _, test := range tests {
-		h := httputils.APIRoute.Versionize(test.have)
-		assert.Equal(t, test.want, h)
-	}
-	assert.Equal(t, "/V1/", httputils.APIRoute.String())
-}
+// Package httputil provides general functions for http handling
+//
+// TODO(cs) => github.com/streadway/handy
+package httputil

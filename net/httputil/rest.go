@@ -12,28 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package httputils
+package httputil
 
-import (
-	"net"
-	"net/http"
-)
+// todo(CS) http://racksburg.com/choosing-an-http-status-code/
 
-// GetRemoteAddr extracts the remote address from a request and takes
-// care of different headers in which an IP address can be stored.
-// Return value can be nil.
-func GetRemoteAddr(req *http.Request) net.IP {
-	addr := req.Header.Get("X-Real-IP")
-	if addr == "" {
-		addr = req.Header.Get("X-Forwarded-For")
-		if addr == "" {
-			addr = req.RemoteAddr
-		}
+// APIRoute defines the current API version
+const APIRoute apiVersion = "/V1/"
+
+type apiVersion string
+
+// Versionize prepends the API version as defined in constant APIRoute to a route.
+func (a apiVersion) Versionize(r string) string {
+	if len(r) > 0 && r[:1] == "/" {
+		r = r[1:]
 	}
-	host, _, err := net.SplitHostPort(addr)
+	return string(a) + r
+}
 
-	if err != nil {
-		host = addr
-	}
-	return net.ParseIP(host)
+// String returns the current version and not the full route
+func (a apiVersion) String() string {
+	return string(a)
 }

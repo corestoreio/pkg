@@ -24,7 +24,7 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/klauspost/compress/flate"
 	"github.com/klauspost/compress/gzip"
 	"golang.org/x/net/context"
@@ -55,8 +55,8 @@ func (w compressWriter) Header() http.Header {
 	return w.ResponseWriter.Header()
 }
 func (w compressWriter) Write(b []byte) (int, error) {
-	if w.Header().Get(httputils.ContentType) == "" {
-		w.Header().Set(httputils.ContentType, http.DetectContentType(b))
+	if w.Header().Get(httputil.ContentType) == "" {
+		w.Header().Set(httputil.ContentType, http.DetectContentType(b))
 	}
 	return w.Writer.Write(b)
 }
@@ -91,11 +91,11 @@ func WithCompressor() ctxhttp.Middleware {
 
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			enc := r.Header.Get(httputils.AcceptEncoding)
+			enc := r.Header.Get(httputil.AcceptEncoding)
 
-			if strings.Contains(enc, httputils.CompressGZIP) {
-				w.Header().Set(httputils.ContentEncoding, httputils.CompressGZIP)
-				w.Header().Add(httputils.Vary, httputils.AcceptEncoding)
+			if strings.Contains(enc, httputil.CompressGZIP) {
+				w.Header().Set(httputil.ContentEncoding, httputil.CompressGZIP)
+				w.Header().Add(httputil.Vary, httputil.AcceptEncoding)
 
 				zw := gzWriterPool.Get().(*gzip.Writer)
 				zw.Reset(w)
@@ -107,9 +107,9 @@ func WithCompressor() ctxhttp.Middleware {
 				return hf(ctx, cw, r)
 			}
 
-			if strings.Contains(enc, httputils.CompressDeflate) {
-				w.Header().Set(httputils.ContentEncoding, httputils.CompressDeflate)
-				w.Header().Add(httputils.Vary, httputils.AcceptEncoding)
+			if strings.Contains(enc, httputil.CompressDeflate) {
+				w.Header().Set(httputil.ContentEncoding, httputil.CompressDeflate)
+				w.Header().Add(httputil.Vary, httputil.AcceptEncoding)
 
 				zw := defWriterPool.Get().(*flate.Writer)
 				zw.Reset(w)

@@ -25,7 +25,7 @@ import (
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/net/httputils"
+	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/utils"
 	"github.com/juju/errgo"
@@ -109,7 +109,7 @@ func (s *Service) GetCountryByIP(ip net.IP) (*IPCountry, error) {
 // into a new context.
 func (s *Service) newContextCountryByIP(ctx context.Context, r *http.Request) (context.Context, *IPCountry, error) {
 
-	remoteAddr := httputils.GetRemoteAddr(r)
+	remoteAddr := httputil.GetRemoteAddr(r)
 	if remoteAddr == nil {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("geoip.WithCountryByIP.GetRemoteAddr", "err", ErrCannotGetRemoteAddr, "req", r)
