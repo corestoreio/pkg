@@ -18,7 +18,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package ctxmw_test
+package ctxcors_test
 
 import (
 	"net/http"
@@ -28,7 +28,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/net/ctxmw"
+	"github.com/corestoreio/csfw/net/ctxcors"
 	"github.com/corestoreio/csfw/util/log"
 	"golang.org/x/net/context"
 )
@@ -46,8 +46,8 @@ func assertHeaders(t *testing.T, resHeaders http.Header, reqHeaders map[string]s
 	}
 }
 
-func TestCorsNoConfig(t *testing.T) {
-	s := ctxmw.NewCors(nil)
+func TestNoConfig(t *testing.T) {
+	s := ctxcors.New(nil)
 
 	res := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
@@ -65,10 +65,10 @@ func TestCorsNoConfig(t *testing.T) {
 	})
 }
 
-func TestCorsMatchAllOrigin(t *testing.T) {
-	s := ctxmw.NewCors(
-		ctxmw.WithCorsAllowedOrigins("*"),
-		ctxmw.WithCorsLogger(log.NewBlackHole()),
+func TestMatchAllOrigin(t *testing.T) {
+	s := ctxcors.New(
+		ctxcors.WithAllowedOrigins("*"),
+		ctxcors.WithLogger(log.NewBlackHole()),
 	)
 
 	res := httptest.NewRecorder()
@@ -88,10 +88,10 @@ func TestCorsMatchAllOrigin(t *testing.T) {
 	})
 }
 
-func TestCorsAllowedOrigin(t *testing.T) {
-	s := ctxmw.NewCors(
-		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
-		ctxmw.WithCorsLogger(log.NewBlackHole()),
+func TestAllowedOrigin(t *testing.T) {
+	s := ctxcors.New(
+		ctxcors.WithAllowedOrigins("http://foobar.com"),
+		ctxcors.WithLogger(log.NewBlackHole()),
 	)
 
 	res := httptest.NewRecorder()
@@ -111,10 +111,10 @@ func TestCorsAllowedOrigin(t *testing.T) {
 	})
 }
 
-func TestCorsWildcardOrigin(t *testing.T) {
-	s := ctxmw.NewCors(
-		ctxmw.WithCorsAllowedOrigins("http://*.bar.com"),
-		ctxmw.WithCorsLogger(log.NewBlackHole()),
+func TestWildcardOrigin(t *testing.T) {
+	s := ctxcors.New(
+		ctxcors.WithAllowedOrigins("http://*.bar.com"),
+		ctxcors.WithLogger(log.NewBlackHole()),
 	)
 
 	res := httptest.NewRecorder()
@@ -134,10 +134,10 @@ func TestCorsWildcardOrigin(t *testing.T) {
 	})
 }
 
-func TestCorsDisallowedOrigin(t *testing.T) {
-	s := ctxmw.NewCors(
-		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
-		ctxmw.WithCorsLogger(log.NewBlackHole()),
+func TestDisallowedOrigin(t *testing.T) {
+	s := ctxcors.New(
+		ctxcors.WithAllowedOrigins("http://foobar.com"),
+		ctxcors.WithLogger(log.NewBlackHole()),
 	)
 
 	res := httptest.NewRecorder()
@@ -157,10 +157,10 @@ func TestCorsDisallowedOrigin(t *testing.T) {
 	})
 }
 
-func TestCorsDisallowedWildcardOrigin(t *testing.T) {
-	s := ctxmw.NewCors(
-		ctxmw.WithCorsAllowedOrigins("http://*.bar.com"),
-		ctxmw.WithCorsLogger(log.NewBlackHole()),
+func TestDisallowedWildcardOrigin(t *testing.T) {
+	s := ctxcors.New(
+		ctxcors.WithAllowedOrigins("http://*.bar.com"),
+		ctxcors.WithLogger(log.NewBlackHole()),
 	)
 
 	res := httptest.NewRecorder()
@@ -180,11 +180,11 @@ func TestCorsDisallowedWildcardOrigin(t *testing.T) {
 	})
 }
 
-func TestCorsAllowedOriginFunc(t *testing.T) {
+func TestAllowedOriginFunc(t *testing.T) {
 	r, _ := regexp.Compile("^http://foo")
-	s := ctxmw.NewCors(
-		ctxmw.WithCorsLogger(log.NewBlackHole()),
-		ctxmw.WithCorsAllowOriginFunc(func(o string) bool {
+	s := ctxcors.New(
+		ctxcors.WithLogger(log.NewBlackHole()),
+		ctxcors.WithAllowOriginFunc(func(o string) bool {
 			return r.MatchString(o)
 		}),
 	)
@@ -206,11 +206,11 @@ func TestCorsAllowedOriginFunc(t *testing.T) {
 	})
 }
 
-func TestCorsAllowedMethod(t *testing.T) {
-	s := ctxmw.NewCors(
-		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
-		ctxmw.WithCorsAllowedMethods("PUT", "DELETE"),
-		ctxmw.WithCorsLogger(log.NewBlackHole()),
+func TestAllowedMethod(t *testing.T) {
+	s := ctxcors.New(
+		ctxcors.WithAllowedOrigins("http://foobar.com"),
+		ctxcors.WithAllowedMethods("PUT", "DELETE"),
+		ctxcors.WithLogger(log.NewBlackHole()),
 	)
 
 	res := httptest.NewRecorder()
@@ -231,12 +231,12 @@ func TestCorsAllowedMethod(t *testing.T) {
 	})
 }
 
-func TestCorsAllowedMethodPassthrough(t *testing.T) {
-	s := ctxmw.NewCors(
-		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
-		ctxmw.WithCorsAllowedMethods("PUT", "DELETE"),
-		ctxmw.WithCorsLogger(log.NewBlackHole()),
-		ctxmw.WithCorsOptionsPassthrough(),
+func TestAllowedMethodPassthrough(t *testing.T) {
+	s := ctxcors.New(
+		ctxcors.WithAllowedOrigins("http://foobar.com"),
+		ctxcors.WithAllowedMethods("PUT", "DELETE"),
+		ctxcors.WithLogger(log.NewBlackHole()),
+		ctxcors.WithOptionsPassthrough(),
 	)
 
 	res := httptest.NewRecorder()
@@ -257,11 +257,11 @@ func TestCorsAllowedMethodPassthrough(t *testing.T) {
 	})
 }
 
-func TestCorsDisallowedMethod(t *testing.T) {
-	s := ctxmw.NewCors(
-		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
-		ctxmw.WithCorsAllowedMethods("PUT", "DELETE"),
-		ctxmw.WithCorsLogger(log.NewBlackHole()),
+func TestDisallowedMethod(t *testing.T) {
+	s := ctxcors.New(
+		ctxcors.WithAllowedOrigins("http://foobar.com"),
+		ctxcors.WithAllowedMethods("PUT", "DELETE"),
+		ctxcors.WithLogger(log.NewBlackHole()),
 	)
 
 	res := httptest.NewRecorder()
@@ -282,11 +282,11 @@ func TestCorsDisallowedMethod(t *testing.T) {
 	})
 }
 
-func TestCorsAllowedHeader(t *testing.T) {
-	s := ctxmw.NewCors(
-		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
-		ctxmw.WithCorsAllowedHeaders("X-Header-1", "x-header-2"),
-		ctxmw.WithCorsLogger(log.NewBlackHole()),
+func TestAllowedHeader(t *testing.T) {
+	s := ctxcors.New(
+		ctxcors.WithAllowedOrigins("http://foobar.com"),
+		ctxcors.WithAllowedHeaders("X-Header-1", "x-header-2"),
+		ctxcors.WithLogger(log.NewBlackHole()),
 	)
 
 	res := httptest.NewRecorder()
@@ -308,11 +308,11 @@ func TestCorsAllowedHeader(t *testing.T) {
 	})
 }
 
-func TestCorsAllowedWildcardHeader(t *testing.T) {
-	s := ctxmw.NewCors(
-		ctxmw.WithCorsLogger(log.NewBlackHole()),
-		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
-		ctxmw.WithCorsAllowedHeaders("*"),
+func TestAllowedWildcardHeader(t *testing.T) {
+	s := ctxcors.New(
+		ctxcors.WithLogger(log.NewBlackHole()),
+		ctxcors.WithAllowedOrigins("http://foobar.com"),
+		ctxcors.WithAllowedHeaders("*"),
 	)
 
 	res := httptest.NewRecorder()
@@ -334,11 +334,11 @@ func TestCorsAllowedWildcardHeader(t *testing.T) {
 	})
 }
 
-func TestCorsDisallowedHeader(t *testing.T) {
-	s := ctxmw.NewCors(
-		ctxmw.WithCorsLogger(log.NewBlackHole()),
-		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
-		ctxmw.WithCorsAllowedHeaders("X-Header-1", "x-header-2"),
+func TestDisallowedHeader(t *testing.T) {
+	s := ctxcors.New(
+		ctxcors.WithLogger(log.NewBlackHole()),
+		ctxcors.WithAllowedOrigins("http://foobar.com"),
+		ctxcors.WithAllowedHeaders("X-Header-1", "x-header-2"),
 	)
 
 	res := httptest.NewRecorder()
@@ -360,10 +360,10 @@ func TestCorsDisallowedHeader(t *testing.T) {
 	})
 }
 
-func TestCorsOriginHeader(t *testing.T) {
-	s := ctxmw.NewCors(
-		ctxmw.WithCorsLogger(log.NewBlackHole()),
-		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
+func TestOriginHeader(t *testing.T) {
+	s := ctxcors.New(
+		ctxcors.WithLogger(log.NewBlackHole()),
+		ctxcors.WithAllowedOrigins("http://foobar.com"),
 	)
 
 	res := httptest.NewRecorder()
@@ -385,11 +385,11 @@ func TestCorsOriginHeader(t *testing.T) {
 	})
 }
 
-func TestCorsExposedHeader(t *testing.T) {
-	s := ctxmw.NewCors(
-		ctxmw.WithCorsLogger(log.NewBlackHole()),
-		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
-		ctxmw.WithCorsExposedHeaders("X-Header-1", "x-header-2"),
+func TestExposedHeader(t *testing.T) {
+	s := ctxcors.New(
+		ctxcors.WithLogger(log.NewBlackHole()),
+		ctxcors.WithAllowedOrigins("http://foobar.com"),
+		ctxcors.WithExposedHeaders("X-Header-1", "x-header-2"),
 	)
 
 	res := httptest.NewRecorder()
@@ -409,11 +409,11 @@ func TestCorsExposedHeader(t *testing.T) {
 	})
 }
 
-func TestCorsAllowedCredentials(t *testing.T) {
-	s := ctxmw.NewCors(
-		ctxmw.WithCorsLogger(log.NewBlackHole()),
-		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
-		ctxmw.WithCorsAllowCredentials(),
+func TestAllowedCredentials(t *testing.T) {
+	s := ctxcors.New(
+		ctxcors.WithLogger(log.NewBlackHole()),
+		ctxcors.WithAllowedOrigins("http://foobar.com"),
+		ctxcors.WithAllowCredentials(),
 	)
 
 	res := httptest.NewRecorder()
@@ -434,11 +434,11 @@ func TestCorsAllowedCredentials(t *testing.T) {
 	})
 }
 
-func TestCorsMaxAge(t *testing.T) {
-	s := ctxmw.NewCors(
-		ctxmw.WithCorsLogger(log.NewBlackHole()),
-		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
-		ctxmw.WithCorsMaxAge(time.Second*30),
+func TestMaxAge(t *testing.T) {
+	s := ctxcors.New(
+		ctxcors.WithLogger(log.NewBlackHole()),
+		ctxcors.WithAllowedOrigins("http://foobar.com"),
+		ctxcors.WithMaxAge(time.Second*30),
 	)
 
 	res := httptest.NewRecorder()

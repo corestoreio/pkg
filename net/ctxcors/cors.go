@@ -18,13 +18,15 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package ctxmw
+package ctxcors
 
 import (
 	"net/http"
 	"strings"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/ctxhttp"
+	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/util/log"
 	"golang.org/x/net/context"
 )
@@ -38,6 +40,8 @@ import (
 // http://enable-cors.org/server.html
 // http://www.html5rocks.com/en/tutorials/cors/#toc-handling-a-not-so-simple-request
 type Cors struct {
+	config config.Getter
+
 	// Log is a logger mainly for debugging. Default Logger writes to a black hole.
 	Log log.Logger
 	// Set to true when allowed origins contains a "*"
@@ -73,8 +77,8 @@ type Cors struct {
 	OptionsPassthrough bool
 }
 
-// NewCors creates a new Cors handler with the provided options.
-func NewCors(opts ...CorsOption) *Cors {
+// New creates a new Cors handler with the provided options.
+func New(opts ...Option) *Cors {
 	c := &Cors{
 		// Default is spec's "simple" methods
 		allowedMethods: []string{"GET", "POST"},
@@ -85,7 +89,7 @@ func NewCors(opts ...CorsOption) *Cors {
 	return c.applyOpts(opts...)
 }
 
-func (c *Cors) applyOpts(opts ...CorsOption) *Cors {
+func (c *Cors) applyOpts(opts ...Option) *Cors {
 	for _, opt := range opts {
 		if opt != nil {
 			opt(c)
@@ -98,31 +102,71 @@ func (c *Cors) applyOpts(opts ...CorsOption) *Cors {
 // to apply the last time any options. This middleware does not take into account
 // different configurations for different store scopes. The applied configuration
 // is used for the all store scopes.
-func (c *Cors) WithCORS(opts ...CorsOption) ctxhttp.Middleware {
+func (c *Cors) WithCORS(opts ...Option) ctxhttp.Middleware {
 	c.applyOpts(opts...)
+	csc := c.initCache()
+
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+			var cc = c.current(csc, ctx)
+
 			if r.Method == "OPTIONS" {
-				if c.Log.IsDebug() {
-					c.Log.Debug("ctxmw.Cors.WithCORS.handlePreflight", "method", r.Method, "OptionsPassthrough", c.OptionsPassthrough)
+				if cc.Log.IsDebug() {
+					cc.Log.Debug("ctxcors.Cors.WithCORS.handlePreflight", "method", r.Method, "OptionsPassthrough", cc.OptionsPassthrough)
 				}
-				c.handlePreflight(w, r)
+				cc.handlePreflight(w, r)
 				// Preflight requests are standalone and should stop the chain as some other
 				// middleware may not handle OPTIONS requests correctly. One typical example
 				// is authentication middleware ; OPTIONS requests won't carry authentication
 				// headers (see #1)
-				if c.OptionsPassthrough {
+				if cc.OptionsPassthrough {
 					return hf(ctx, w, r)
 				}
 				return nil
 			}
-			if c.Log.IsDebug() {
-				c.Log.Debug("ctxmw.Cors.WithCORS.handleActualRequest", "method", r.Method)
+			if cc.Log.IsDebug() {
+				cc.Log.Debug("ctxcors.Cors.WithCORS.handleActualRequest", "method", r.Method)
 			}
-			c.handleActualRequest(w, r)
+			cc.handleActualRequest(w, r)
 			return hf(ctx, w, r)
 		}
 	}
+}
+
+// current returns a non-nil pointer to a Cors. current is used within a request.
+func (c *Cors) current(csc *corsScopeCache, ctx context.Context) *Cors {
+	if c.config == nil || csc == nil {
+		return c
+	}
+
+	_, st, err := store.FromContextReader(ctx)
+	if err != nil {
+		if c.Log.IsInfo() {
+			c.Log.Info("ctxcors.Cors.current.store.FromContextReader", "err", err)
+		}
+		return c
+	}
+
+	var cc *Cors // cc == current CORS config the current request
+	if cc = csc.get(st.WebsiteID()); cc == nil {
+		cc = csc.insert(st.WebsiteID())
+	}
+	// todo: run a defer or goroutine to check if config changes
+	// and if so delete the entry from the map
+	return cc
+}
+
+// initCache if config.Getter has been set returns an initialized internal
+// cache for different Cors configurations. Returns nil if config.Getter
+// is not in use.
+func (c *Cors) initCache() (cs *corsScopeCache) {
+	if c.config != nil {
+		cs = &corsScopeCache{
+			config:  c.config,
+			storage: make(map[int64]*Cors),
+		}
+	}
+	return
 }
 
 // handlePreflight handles pre-flight CORS requests
@@ -132,7 +176,7 @@ func (c *Cors) handlePreflight(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method != "OPTIONS" {
 		if c.Log.IsDebug() {
-			c.Log.Debug("ctxmw.Cors.handlePreflight.aborted", "method", r.Method)
+			c.Log.Debug("ctxcors.Cors.handlePreflight.aborted", "method", r.Method)
 		}
 		return
 	}
@@ -145,13 +189,13 @@ func (c *Cors) handlePreflight(w http.ResponseWriter, r *http.Request) {
 
 	if origin == "" {
 		if c.Log.IsDebug() {
-			c.Log.Debug("ctxmw.Cors.handlePreflight.aborted.empty.origin", "method", r.Method)
+			c.Log.Debug("ctxcors.Cors.handlePreflight.aborted.empty.origin", "method", r.Method)
 		}
 		return
 	}
 	if false == c.isOriginAllowed(origin) {
 		if c.Log.IsDebug() {
-			c.Log.Debug("ctxmw.Cors.handlePreflight.aborted.notAllowed.origin", "method", r.Method, "origin", origin)
+			c.Log.Debug("ctxcors.Cors.handlePreflight.aborted.notAllowed.origin", "method", r.Method, "origin", origin)
 		}
 		return
 	}
@@ -159,14 +203,14 @@ func (c *Cors) handlePreflight(w http.ResponseWriter, r *http.Request) {
 	reqMethod := r.Header.Get("Access-Control-Request-Method")
 	if false == c.isMethodAllowed(reqMethod) {
 		if c.Log.IsDebug() {
-			c.Log.Debug("ctxmw.Cors.handlePreflight.aborted.notAllowed.reqMethod", "method", r.Method, "reqMethod", reqMethod)
+			c.Log.Debug("ctxcors.Cors.handlePreflight.aborted.notAllowed.reqMethod", "method", r.Method, "reqMethod", reqMethod)
 		}
 		return
 	}
 	reqHeaders := parseHeaderList(r.Header.Get("Access-Control-Request-Headers"))
 	if false == c.areHeadersAllowed(reqHeaders) {
 		if c.Log.IsDebug() {
-			c.Log.Debug("ctxmw.Cors.handlePreflight.aborted.notAllowed.reqHeaders", "method", r.Method, "reqHeaders", reqHeaders)
+			c.Log.Debug("ctxcors.Cors.handlePreflight.aborted.notAllowed.reqHeaders", "method", r.Method, "reqHeaders", reqHeaders)
 		}
 		return
 	}
@@ -187,7 +231,7 @@ func (c *Cors) handlePreflight(w http.ResponseWriter, r *http.Request) {
 		headers.Set("Access-Control-Max-Age", c.maxAge)
 	}
 	if c.Log.IsDebug() {
-		c.Log.Debug("ctxmw.Cors.handlePreflight.response.headers", "method", r.Method, "headers", headers)
+		c.Log.Debug("ctxcors.Cors.handlePreflight.response.headers", "method", r.Method, "headers", headers)
 	}
 }
 
@@ -198,7 +242,7 @@ func (c *Cors) handleActualRequest(w http.ResponseWriter, r *http.Request) {
 
 	if r.Method == "OPTIONS" {
 		if c.Log.IsDebug() {
-			c.Log.Debug("ctxmw.Cors.handleActualRequest.aborted.options", "method", r.Method)
+			c.Log.Debug("ctxcors.Cors.handleActualRequest.aborted.options", "method", r.Method)
 		}
 		return
 	}
@@ -206,13 +250,13 @@ func (c *Cors) handleActualRequest(w http.ResponseWriter, r *http.Request) {
 	headers.Add("Vary", "Origin")
 	if origin == "" {
 		if c.Log.IsDebug() {
-			c.Log.Debug("ctxmw.Cors.handleActualRequest.aborted.empty.origin", "method", r.Method)
+			c.Log.Debug("ctxcors.Cors.handleActualRequest.aborted.empty.origin", "method", r.Method)
 		}
 		return
 	}
 	if !c.isOriginAllowed(origin) {
 		if c.Log.IsDebug() {
-			c.Log.Debug("ctxmw.Cors.handleActualRequest.aborted.notAllowed.origin", "method", r.Method, "origin", origin)
+			c.Log.Debug("ctxcors.Cors.handleActualRequest.aborted.notAllowed.origin", "method", r.Method, "origin", origin)
 		}
 		return
 	}
@@ -223,7 +267,7 @@ func (c *Cors) handleActualRequest(w http.ResponseWriter, r *http.Request) {
 	// We think it's a nice feature to be able to have control on those methods though.
 	if !c.isMethodAllowed(r.Method) {
 		if c.Log.IsDebug() {
-			c.Log.Debug("ctxmw.Cors.handleActualRequest.aborted.notAllowed.method", "method", r.Method)
+			c.Log.Debug("ctxcors.Cors.handleActualRequest.aborted.notAllowed.method", "method", r.Method)
 		}
 		return
 	}
@@ -235,7 +279,7 @@ func (c *Cors) handleActualRequest(w http.ResponseWriter, r *http.Request) {
 		headers.Set("Access-Control-Allow-Credentials", "true")
 	}
 	if c.Log.IsDebug() {
-		c.Log.Debug("ctxmw.Cors.handleActualRequest.response.headers", "headers", headers)
+		c.Log.Debug("ctxcors.Cors.handleActualRequest.response.headers", "headers", headers)
 	}
 }
 

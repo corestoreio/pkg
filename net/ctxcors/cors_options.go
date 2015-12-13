@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxmw
+package ctxcors
 
 import (
 	"fmt"
@@ -20,26 +20,28 @@ import (
 	"strings"
 	"time"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/util/log"
 )
 
-type CorsOption func(*Cors)
+// Option defines a function argument for the Cors type to apply options.
+type Option func(*Cors)
 
-// WithCorsExposedHeaders indicates which headers are safe to expose to the
+// WithExposedHeaders indicates which headers are safe to expose to the
 // API of a CORS API specification.
-func WithCorsExposedHeaders(headers ...string) CorsOption {
+func WithExposedHeaders(headers ...string) Option {
 	return func(c *Cors) {
 		c.exposedHeaders = convert(headers, http.CanonicalHeaderKey)
 	}
 }
 
-// WithCorsAllowedOrigins is a list of origins a cross-domain request can be executed from.
+// WithAllowedOrigins is a list of origins a cross-domain request can be executed from.
 // If the special "*" value is present in the list, all origins will be allowed.
 // An origin may contain a wildcard (*) to replace 0 or more characters
 // (i.e.: http://*.domain.com). Usage of wildcards implies a small performance penality.
 // Only one wildcard can be used per origin.
 // Default value is ["*"]
-func WithCorsAllowedOrigins(domains ...string) CorsOption {
+func WithAllowedOrigins(domains ...string) Option {
 	// Note: for origins and methods matching, the spec requires a case-sensitive matching.
 	// As it may error prone, we chose to ignore the spec here.
 	return func(c *Cors) {
@@ -72,19 +74,19 @@ func WithCorsAllowedOrigins(domains ...string) CorsOption {
 	}
 }
 
-// WithCorsAllowOriginFunc convenient helper function.
+// WithAllowOriginFunc convenient helper function.
 // AllowOriginFunc is a custom function to validate the origin. It take the origin
 // as argument and returns true if allowed or false otherwise. If this option is
 // set, the content of AllowedOrigins is ignored.
-func WithCorsAllowOriginFunc(f func(origin string) bool) CorsOption {
+func WithAllowOriginFunc(f func(origin string) bool) Option {
 	return func(c *Cors) {
 		c.AllowOriginFunc = f
 	}
 }
 
-// WithCorsAllowedMethods is a list of methods the client is allowed to use with
+// WithAllowedMethods is a list of methods the client is allowed to use with
 // cross-domain requests. Default value is simple methods (GET and POST)
-func WithCorsAllowedMethods(methods ...string) CorsOption {
+func WithAllowedMethods(methods ...string) Option {
 	return func(c *Cors) {
 		// Allowed Methods
 		// Note: for origins and methods matching, the spec requires a case-sensitive matching.
@@ -93,11 +95,11 @@ func WithCorsAllowedMethods(methods ...string) CorsOption {
 	}
 }
 
-// WithCorsAllowedHeaders is list of non simple headers the client is allowed to use with
+// WithAllowedHeaders is list of non simple headers the client is allowed to use with
 // cross-domain requests.
 // If the special "*" value is present in the list, all headers will be allowed.
 // Default value is [] but "Origin" is always appended to the list.
-func WithCorsAllowedHeaders(headers ...string) CorsOption {
+func WithAllowedHeaders(headers ...string) Option {
 	return func(c *Cors) {
 		// Origin is always appended as some browsers will always request for this header at preflight
 		c.allowedHeaders = convert(append(headers, "Origin"), http.CanonicalHeaderKey)
@@ -111,18 +113,18 @@ func WithCorsAllowedHeaders(headers ...string) CorsOption {
 	}
 }
 
-// WithCorsAllowCredentials convenient helper function.
+// WithAllowCredentials convenient helper function.
 // AllowCredentials indicates whether the request can include user credentials like
 // cookies, HTTP authentication or client side SSL certificates.
-func WithCorsAllowCredentials() CorsOption {
+func WithAllowCredentials() Option {
 	return func(c *Cors) {
 		c.AllowCredentials = true
 	}
 }
 
-// WithCorsMaxAge indicates how long (in seconds) the results of a preflight request
+// WithMaxAge indicates how long (in seconds) the results of a preflight request
 // can be cached
-func WithCorsMaxAge(seconds time.Duration) CorsOption {
+func WithMaxAge(seconds time.Duration) Option {
 	s := seconds.Seconds()
 	return func(c *Cors) {
 		if s > 0 {
@@ -131,19 +133,29 @@ func WithCorsMaxAge(seconds time.Duration) CorsOption {
 	}
 }
 
-// WithCorsOptionsPassthrough convenient helper function.
+// WithOptionsPassthrough convenient helper function.
 // OptionsPassthrough instructs preflight to let other potential next handlers to
 // process the OPTIONS method. Turn this on if your application handles OPTIONS.
-func WithCorsOptionsPassthrough() CorsOption {
+func WithOptionsPassthrough() Option {
 	return func(c *Cors) {
 		c.OptionsPassthrough = true
 	}
 }
 
-// WithCorsLogger convenient helper function.
+// WithLogger convenient helper function.
 // Mainly used for debugging.
-func WithCorsLogger(l log.Logger) CorsOption {
+func WithLogger(l log.Logger) Option {
 	return func(c *Cors) {
 		c.Log = l
+	}
+}
+
+// WithConfigGetter adding a Getter to the Cors type allows you to run specific
+// Cors configuration for each Website ID (fall back to the default scope).
+// If you add WithLogger all
+// new created Cors types for a Website scope will
+func WithConfigGetter(cg config.Getter) Option {
+	return func(c *Cors) {
+		c.config = cg
 	}
 }

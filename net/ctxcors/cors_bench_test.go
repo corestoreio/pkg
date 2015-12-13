@@ -18,13 +18,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
-package ctxmw_test
+package ctxcors_test
 
 import (
 	"net/http"
 	"testing"
 
-	"github.com/corestoreio/csfw/net/ctxmw"
+	"github.com/corestoreio/csfw/net/ctxcors"
 	"golang.org/x/net/context"
 )
 
@@ -43,7 +43,7 @@ func (r FakeResponse) Write(b []byte) (n int, err error) {
 	return len(b), nil
 }
 
-func BenchmarkCorsWithout(b *testing.B) {
+func BenchmarkWithout(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	ctx := context.Background()
@@ -54,11 +54,11 @@ func BenchmarkCorsWithout(b *testing.B) {
 	}
 }
 
-func BenchmarkCorsDefault(b *testing.B) {
+func BenchmarkDefault(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	req.Header.Add("Origin", "somedomain.com")
-	handler := ctxmw.NewCors().WithCORS()(testHandler)
+	handler := ctxcors.New().WithCORS()(testHandler)
 
 	ctx := context.Background()
 	b.ReportAllocs()
@@ -70,11 +70,11 @@ func BenchmarkCorsDefault(b *testing.B) {
 	}
 }
 
-func BenchmarkCorsAllowedOrigin(b *testing.B) {
+func BenchmarkAllowedOrigin(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	req.Header.Add("Origin", "somedomain.com")
-	handler := ctxmw.NewCors(ctxmw.WithCorsAllowedOrigins("somedomain.com")).WithCORS()(testHandler)
+	handler := ctxcors.New(ctxcors.WithAllowedOrigins("somedomain.com")).WithCORS()(testHandler)
 
 	ctx := context.Background()
 	b.ReportAllocs()
@@ -86,11 +86,11 @@ func BenchmarkCorsAllowedOrigin(b *testing.B) {
 	}
 }
 
-func BenchmarkCorsPreflight(b *testing.B) {
+func BenchmarkPreflight(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
 	req.Header.Add("Access-Control-Request-Method", "GET")
-	handler := ctxmw.NewCors().WithCORS()(testHandler)
+	handler := ctxcors.New().WithCORS()(testHandler)
 
 	ctx := context.Background()
 	b.ReportAllocs()
@@ -102,12 +102,12 @@ func BenchmarkCorsPreflight(b *testing.B) {
 	}
 }
 
-func BenchmarkCorsPreflightHeader(b *testing.B) {
+func BenchmarkPreflightHeader(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
 	req.Header.Add("Access-Control-Request-Method", "GET")
 	req.Header.Add("Access-Control-Request-Headers", "Accept")
-	handler := ctxmw.NewCors().WithCORS()(testHandler)
+	handler := ctxcors.New().WithCORS()(testHandler)
 
 	ctx := context.Background()
 	b.ReportAllocs()
