@@ -23,7 +23,7 @@ var (
 
 // PkgLog global package based logger. This logger gets inherited to other
 // packages. Default BlackHole
-var PkgLog Logger = BlackHole{}
+var PkgLog Logger = NewBlackHole()
 
 // Logger defines the minimum requirements for logging. See doc.go for more details.
 type Logger interface {
