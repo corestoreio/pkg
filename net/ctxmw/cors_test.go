@@ -23,10 +23,13 @@ package ctxmw_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/corestoreio/csfw/net/ctxmw"
+	"github.com/corestoreio/csfw/util/log"
 	"golang.org/x/net/context"
 )
 
@@ -48,9 +51,8 @@ func TestCorsNoConfig(t *testing.T) {
 
 	res := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-	ctx := context.Background()
 
-	s.WithCORS()(testHandler)(ctx, res, req) // yay that looks terrible!
+	s.WithCORS()(testHandler)(context.Background(), res, req) // yay that looks terrible!
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin",
@@ -64,14 +66,16 @@ func TestCorsNoConfig(t *testing.T) {
 }
 
 func TestCorsMatchAllOrigin(t *testing.T) {
-	s := ctxmw.NewCors(ctxmw.WithCorsAllowedOrigins("*"))
+	s := ctxmw.NewCors(
+		ctxmw.WithCorsAllowedOrigins("*"),
+		ctxmw.WithCorsLogger(log.NewBlackHole()),
+	)
 
 	res := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	req.Header.Add("Origin", "http://foobar.com")
-	ctx := context.Background()
 
-	s.WithCORS()(testHandler)(ctx, res, req)
+	s.WithCORS()(testHandler)(context.Background(), res, req)
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin",
@@ -84,309 +88,373 @@ func TestCorsMatchAllOrigin(t *testing.T) {
 	})
 }
 
-//func TestAllowedOrigin(t *testing.T) {
-//	s := ctxmw.New(ctxmw.CorsOptions{
-//		AllowedOrigins: []string{"http://foobar.com"},
-//	})
-//
-//	res := httptest.NewRecorder()
-//	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-//	req.Header.Add("Origin", "http://foobar.com")
-//
-//	s.Handler(testHandler).ServeHTTP(res, req)
-//
-//	assertHeaders(t, res.Header(), map[string]string{
-//		"Vary": "Origin",
-//		"Access-Control-Allow-Origin":      "http://foobar.com",
-//		"Access-Control-Allow-Methods":     "",
-//		"Access-Control-Allow-Headers":     "",
-//		"Access-Control-Allow-Credentials": "",
-//		"Access-Control-Max-Age":           "",
-//		"Access-Control-Expose-Headers":    "",
-//	})
-//}
-//
-//func TestWildcardOrigin(t *testing.T) {
-//	s := ctxmw.New(ctxmw.CorsOptions{
-//		AllowedOrigins: []string{"http://*.bar.com"},
-//	})
-//
-//	res := httptest.NewRecorder()
-//	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-//	req.Header.Add("Origin", "http://foo.bar.com")
-//
-//	s.Handler(testHandler).ServeHTTP(res, req)
-//
-//	assertHeaders(t, res.Header(), map[string]string{
-//		"Vary": "Origin",
-//		"Access-Control-Allow-Origin":      "http://foo.bar.com",
-//		"Access-Control-Allow-Methods":     "",
-//		"Access-Control-Allow-Headers":     "",
-//		"Access-Control-Allow-Credentials": "",
-//		"Access-Control-Max-Age":           "",
-//		"Access-Control-Expose-Headers":    "",
-//	})
-//}
-//
-//func TestDisallowedOrigin(t *testing.T) {
-//	s := ctxmw.New(ctxmw.CorsOptions{
-//		AllowedOrigins: []string{"http://foobar.com"},
-//	})
-//
-//	res := httptest.NewRecorder()
-//	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-//	req.Header.Add("Origin", "http://barbaz.com")
-//
-//	s.Handler(testHandler).ServeHTTP(res, req)
-//
-//	assertHeaders(t, res.Header(), map[string]string{
-//		"Vary": "Origin",
-//		"Access-Control-Allow-Origin":      "",
-//		"Access-Control-Allow-Methods":     "",
-//		"Access-Control-Allow-Headers":     "",
-//		"Access-Control-Allow-Credentials": "",
-//		"Access-Control-Max-Age":           "",
-//		"Access-Control-Expose-Headers":    "",
-//	})
-//}
-//
-//func TestDisallowedWildcardOrigin(t *testing.T) {
-//	s := ctxmw.New(ctxmw.CorsOptions{
-//		AllowedOrigins: []string{"http://*.bar.com"},
-//	})
-//
-//	res := httptest.NewRecorder()
-//	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-//	req.Header.Add("Origin", "http://foo.baz.com")
-//
-//	s.Handler(testHandler).ServeHTTP(res, req)
-//
-//	assertHeaders(t, res.Header(), map[string]string{
-//		"Vary": "Origin",
-//		"Access-Control-Allow-Origin":      "",
-//		"Access-Control-Allow-Methods":     "",
-//		"Access-Control-Allow-Headers":     "",
-//		"Access-Control-Allow-Credentials": "",
-//		"Access-Control-Max-Age":           "",
-//		"Access-Control-Expose-Headers":    "",
-//	})
-//}
-//
-//func TestAllowedOriginFunc(t *testing.T) {
-//	r, _ := regexp.Compile("^http://foo")
-//	s := ctxmw.New(ctxmw.CorsOptions{
-//		AllowOriginFunc: func(o string) bool {
-//			return r.MatchString(o)
-//		},
-//	})
-//
-//	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-//
-//	res := httptest.NewRecorder()
-//	req.Header.Set("Origin", "http://foobar.com")
-//	s.Handler(testHandler).ServeHTTP(res, req)
-//	assertHeaders(t, res.Header(), map[string]string{
-//		"Access-Control-Allow-Origin": "http://foobar.com",
-//	})
-//
-//	res = httptest.NewRecorder()
-//	req.Header.Set("Origin", "http://barfoo.com")
-//	s.Handler(testHandler).ServeHTTP(res, req)
-//	assertHeaders(t, res.Header(), map[string]string{
-//		"Access-Control-Allow-Origin": "",
-//	})
-//}
-//
-//func TestAllowedMethod(t *testing.T) {
-//	s := ctxmw.New(ctxmw.CorsOptions{
-//		AllowedOrigins: []string{"http://foobar.com"},
-//		AllowedMethods: []string{"PUT", "DELETE"},
-//	})
-//
-//	res := httptest.NewRecorder()
-//	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
-//	req.Header.Add("Origin", "http://foobar.com")
-//	req.Header.Add("Access-Control-Request-Method", "PUT")
-//
-//	s.Handler(testHandler).ServeHTTP(res, req)
-//
-//	assertHeaders(t, res.Header(), map[string]string{
-//		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
-//		"Access-Control-Allow-Origin":      "http://foobar.com",
-//		"Access-Control-Allow-Methods":     "PUT",
-//		"Access-Control-Allow-Headers":     "",
-//		"Access-Control-Allow-Credentials": "",
-//		"Access-Control-Max-Age":           "",
-//		"Access-Control-Expose-Headers":    "",
-//	})
-//}
-//
-//func TestDisallowedMethod(t *testing.T) {
-//	s := ctxmw.New(ctxmw.CorsOptions{
-//		AllowedOrigins: []string{"http://foobar.com"},
-//		AllowedMethods: []string{"PUT", "DELETE"},
-//	})
-//
-//	res := httptest.NewRecorder()
-//	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
-//	req.Header.Add("Origin", "http://foobar.com")
-//	req.Header.Add("Access-Control-Request-Method", "PATCH")
-//
-//	s.Handler(testHandler).ServeHTTP(res, req)
-//
-//	assertHeaders(t, res.Header(), map[string]string{
-//		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
-//		"Access-Control-Allow-Origin":      "",
-//		"Access-Control-Allow-Methods":     "",
-//		"Access-Control-Allow-Headers":     "",
-//		"Access-Control-Allow-Credentials": "",
-//		"Access-Control-Max-Age":           "",
-//		"Access-Control-Expose-Headers":    "",
-//	})
-//}
-//
-//func TestAllowedHeader(t *testing.T) {
-//	s := ctxmw.New(ctxmw.CorsOptions{
-//		AllowedOrigins: []string{"http://foobar.com"},
-//		AllowedHeaders: []string{"X-Header-1", "x-header-2"},
-//	})
-//
-//	res := httptest.NewRecorder()
-//	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
-//	req.Header.Add("Origin", "http://foobar.com")
-//	req.Header.Add("Access-Control-Request-Method", "GET")
-//	req.Header.Add("Access-Control-Request-Headers", "X-Header-2, X-HEADER-1")
-//
-//	s.Handler(testHandler).ServeHTTP(res, req)
-//
-//	assertHeaders(t, res.Header(), map[string]string{
-//		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
-//		"Access-Control-Allow-Origin":      "http://foobar.com",
-//		"Access-Control-Allow-Methods":     "GET",
-//		"Access-Control-Allow-Headers":     "X-Header-2, X-Header-1",
-//		"Access-Control-Allow-Credentials": "",
-//		"Access-Control-Max-Age":           "",
-//		"Access-Control-Expose-Headers":    "",
-//	})
-//}
-//
-//func TestAllowedWildcardHeader(t *testing.T) {
-//	s := ctxmw.New(ctxmw.CorsOptions{
-//		AllowedOrigins: []string{"http://foobar.com"},
-//		AllowedHeaders: []string{"*"},
-//	})
-//
-//	res := httptest.NewRecorder()
-//	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
-//	req.Header.Add("Origin", "http://foobar.com")
-//	req.Header.Add("Access-Control-Request-Method", "GET")
-//	req.Header.Add("Access-Control-Request-Headers", "X-Header-2, X-HEADER-1")
-//
-//	s.Handler(testHandler).ServeHTTP(res, req)
-//
-//	assertHeaders(t, res.Header(), map[string]string{
-//		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
-//		"Access-Control-Allow-Origin":      "http://foobar.com",
-//		"Access-Control-Allow-Methods":     "GET",
-//		"Access-Control-Allow-Headers":     "X-Header-2, X-Header-1",
-//		"Access-Control-Allow-Credentials": "",
-//		"Access-Control-Max-Age":           "",
-//		"Access-Control-Expose-Headers":    "",
-//	})
-//}
-//
-//func TestDisallowedHeader(t *testing.T) {
-//	s := ctxmw.New(ctxmw.CorsOptions{
-//		AllowedOrigins: []string{"http://foobar.com"},
-//		AllowedHeaders: []string{"X-Header-1", "x-header-2"},
-//	})
-//
-//	res := httptest.NewRecorder()
-//	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
-//	req.Header.Add("Origin", "http://foobar.com")
-//	req.Header.Add("Access-Control-Request-Method", "GET")
-//	req.Header.Add("Access-Control-Request-Headers", "X-Header-3, X-Header-1")
-//
-//	s.Handler(testHandler).ServeHTTP(res, req)
-//
-//	assertHeaders(t, res.Header(), map[string]string{
-//		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
-//		"Access-Control-Allow-Origin":      "",
-//		"Access-Control-Allow-Methods":     "",
-//		"Access-Control-Allow-Headers":     "",
-//		"Access-Control-Allow-Credentials": "",
-//		"Access-Control-Max-Age":           "",
-//		"Access-Control-Expose-Headers":    "",
-//	})
-//}
-//
-//func TestOriginHeader(t *testing.T) {
-//	s := ctxmw.New(ctxmw.CorsOptions{
-//		AllowedOrigins: []string{"http://foobar.com"},
-//	})
-//
-//	res := httptest.NewRecorder()
-//	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
-//	req.Header.Add("Origin", "http://foobar.com")
-//	req.Header.Add("Access-Control-Request-Method", "GET")
-//	req.Header.Add("Access-Control-Request-Headers", "origin")
-//
-//	s.Handler(testHandler).ServeHTTP(res, req)
-//
-//	assertHeaders(t, res.Header(), map[string]string{
-//		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
-//		"Access-Control-Allow-Origin":      "http://foobar.com",
-//		"Access-Control-Allow-Methods":     "GET",
-//		"Access-Control-Allow-Headers":     "Origin",
-//		"Access-Control-Allow-Credentials": "",
-//		"Access-Control-Max-Age":           "",
-//		"Access-Control-Expose-Headers":    "",
-//	})
-//}
-//
-//func TestExposedHeader(t *testing.T) {
-//	s := ctxmw.New(ctxmw.CorsOptions{
-//		AllowedOrigins: []string{"http://foobar.com"},
-//		ExposedHeaders: []string{"X-Header-1", "x-header-2"},
-//	})
-//
-//	res := httptest.NewRecorder()
-//	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
-//	req.Header.Add("Origin", "http://foobar.com")
-//
-//	s.Handler(testHandler).ServeHTTP(res, req)
-//
-//	assertHeaders(t, res.Header(), map[string]string{
-//		"Vary": "Origin",
-//		"Access-Control-Allow-Origin":      "http://foobar.com",
-//		"Access-Control-Allow-Methods":     "",
-//		"Access-Control-Allow-Headers":     "",
-//		"Access-Control-Allow-Credentials": "",
-//		"Access-Control-Max-Age":           "",
-//		"Access-Control-Expose-Headers":    "X-Header-1, X-Header-2",
-//	})
-//}
-//
-//func TestAllowedCredentials(t *testing.T) {
-//	s := ctxmw.New(ctxmw.CorsOptions{
-//		AllowedOrigins:   []string{"http://foobar.com"},
-//		AllowCredentials: true,
-//	})
-//
-//	res := httptest.NewRecorder()
-//	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
-//	req.Header.Add("Origin", "http://foobar.com")
-//	req.Header.Add("Access-Control-Request-Method", "GET")
-//
-//	s.Handler(testHandler).ServeHTTP(res, req)
-//
-//	assertHeaders(t, res.Header(), map[string]string{
-//		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
-//		"Access-Control-Allow-Origin":      "http://foobar.com",
-//		"Access-Control-Allow-Methods":     "GET",
-//		"Access-Control-Allow-Headers":     "",
-//		"Access-Control-Allow-Credentials": "true",
-//		"Access-Control-Max-Age":           "",
-//		"Access-Control-Expose-Headers":    "",
-//	})
-//}
+func TestCorsAllowedOrigin(t *testing.T) {
+	s := ctxmw.NewCors(
+		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
+		ctxmw.WithCorsLogger(log.NewBlackHole()),
+	)
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	req.Header.Add("Origin", "http://foobar.com")
+
+	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+
+	assertHeaders(t, res.Header(), map[string]string{
+		"Vary": "Origin",
+		"Access-Control-Allow-Origin":      "http://foobar.com",
+		"Access-Control-Allow-Methods":     "",
+		"Access-Control-Allow-Headers":     "",
+		"Access-Control-Allow-Credentials": "",
+		"Access-Control-Max-Age":           "",
+		"Access-Control-Expose-Headers":    "",
+	})
+}
+
+func TestCorsWildcardOrigin(t *testing.T) {
+	s := ctxmw.NewCors(
+		ctxmw.WithCorsAllowedOrigins("http://*.bar.com"),
+		ctxmw.WithCorsLogger(log.NewBlackHole()),
+	)
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	req.Header.Add("Origin", "http://foo.bar.com")
+
+	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+
+	assertHeaders(t, res.Header(), map[string]string{
+		"Vary": "Origin",
+		"Access-Control-Allow-Origin":      "http://foo.bar.com",
+		"Access-Control-Allow-Methods":     "",
+		"Access-Control-Allow-Headers":     "",
+		"Access-Control-Allow-Credentials": "",
+		"Access-Control-Max-Age":           "",
+		"Access-Control-Expose-Headers":    "",
+	})
+}
+
+func TestCorsDisallowedOrigin(t *testing.T) {
+	s := ctxmw.NewCors(
+		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
+		ctxmw.WithCorsLogger(log.NewBlackHole()),
+	)
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	req.Header.Add("Origin", "http://barbaz.com")
+
+	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+
+	assertHeaders(t, res.Header(), map[string]string{
+		"Vary": "Origin",
+		"Access-Control-Allow-Origin":      "",
+		"Access-Control-Allow-Methods":     "",
+		"Access-Control-Allow-Headers":     "",
+		"Access-Control-Allow-Credentials": "",
+		"Access-Control-Max-Age":           "",
+		"Access-Control-Expose-Headers":    "",
+	})
+}
+
+func TestCorsDisallowedWildcardOrigin(t *testing.T) {
+	s := ctxmw.NewCors(
+		ctxmw.WithCorsAllowedOrigins("http://*.bar.com"),
+		ctxmw.WithCorsLogger(log.NewBlackHole()),
+	)
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	req.Header.Add("Origin", "http://foo.baz.com")
+
+	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+
+	assertHeaders(t, res.Header(), map[string]string{
+		"Vary": "Origin",
+		"Access-Control-Allow-Origin":      "",
+		"Access-Control-Allow-Methods":     "",
+		"Access-Control-Allow-Headers":     "",
+		"Access-Control-Allow-Credentials": "",
+		"Access-Control-Max-Age":           "",
+		"Access-Control-Expose-Headers":    "",
+	})
+}
+
+func TestCorsAllowedOriginFunc(t *testing.T) {
+	r, _ := regexp.Compile("^http://foo")
+	s := ctxmw.NewCors(
+		ctxmw.WithCorsLogger(log.NewBlackHole()),
+		ctxmw.WithCorsAllowOriginFunc(func(o string) bool {
+			return r.MatchString(o)
+		}),
+	)
+
+	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+
+	res := httptest.NewRecorder()
+	req.Header.Set("Origin", "http://foobar.com")
+	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assertHeaders(t, res.Header(), map[string]string{
+		"Access-Control-Allow-Origin": "http://foobar.com",
+	})
+
+	res = httptest.NewRecorder()
+	req.Header.Set("Origin", "http://barfoo.com")
+	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assertHeaders(t, res.Header(), map[string]string{
+		"Access-Control-Allow-Origin": "",
+	})
+}
+
+func TestCorsAllowedMethod(t *testing.T) {
+	s := ctxmw.NewCors(
+		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
+		ctxmw.WithCorsAllowedMethods("PUT", "DELETE"),
+		ctxmw.WithCorsLogger(log.NewBlackHole()),
+	)
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req.Header.Add("Origin", "http://foobar.com")
+	req.Header.Add("Access-Control-Request-Method", "PUT")
+
+	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+
+	assertHeaders(t, res.Header(), map[string]string{
+		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+		"Access-Control-Allow-Origin":      "http://foobar.com",
+		"Access-Control-Allow-Methods":     "PUT",
+		"Access-Control-Allow-Headers":     "",
+		"Access-Control-Allow-Credentials": "",
+		"Access-Control-Max-Age":           "",
+		"Access-Control-Expose-Headers":    "",
+	})
+}
+
+func TestCorsAllowedMethodPassthrough(t *testing.T) {
+	s := ctxmw.NewCors(
+		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
+		ctxmw.WithCorsAllowedMethods("PUT", "DELETE"),
+		ctxmw.WithCorsLogger(log.NewBlackHole()),
+		ctxmw.WithCorsOptionsPassthrough(),
+	)
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req.Header.Add("Origin", "http://foobar.com")
+	req.Header.Add("Access-Control-Request-Method", "PUT")
+
+	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+
+	assertHeaders(t, res.Header(), map[string]string{
+		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+		"Access-Control-Allow-Origin":      "http://foobar.com",
+		"Access-Control-Allow-Methods":     "PUT",
+		"Access-Control-Allow-Headers":     "",
+		"Access-Control-Allow-Credentials": "",
+		"Access-Control-Max-Age":           "",
+		"Access-Control-Expose-Headers":    "",
+	})
+}
+
+func TestCorsDisallowedMethod(t *testing.T) {
+	s := ctxmw.NewCors(
+		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
+		ctxmw.WithCorsAllowedMethods("PUT", "DELETE"),
+		ctxmw.WithCorsLogger(log.NewBlackHole()),
+	)
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req.Header.Add("Origin", "http://foobar.com")
+	req.Header.Add("Access-Control-Request-Method", "PATCH")
+
+	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+
+	assertHeaders(t, res.Header(), map[string]string{
+		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+		"Access-Control-Allow-Origin":      "",
+		"Access-Control-Allow-Methods":     "",
+		"Access-Control-Allow-Headers":     "",
+		"Access-Control-Allow-Credentials": "",
+		"Access-Control-Max-Age":           "",
+		"Access-Control-Expose-Headers":    "",
+	})
+}
+
+func TestCorsAllowedHeader(t *testing.T) {
+	s := ctxmw.NewCors(
+		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
+		ctxmw.WithCorsAllowedHeaders("X-Header-1", "x-header-2"),
+		ctxmw.WithCorsLogger(log.NewBlackHole()),
+	)
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req.Header.Add("Origin", "http://foobar.com")
+	req.Header.Add("Access-Control-Request-Method", "GET")
+	req.Header.Add("Access-Control-Request-Headers", "X-Header-2, X-HEADER-1")
+
+	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+
+	assertHeaders(t, res.Header(), map[string]string{
+		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+		"Access-Control-Allow-Origin":      "http://foobar.com",
+		"Access-Control-Allow-Methods":     "GET",
+		"Access-Control-Allow-Headers":     "X-Header-2, X-Header-1",
+		"Access-Control-Allow-Credentials": "",
+		"Access-Control-Max-Age":           "",
+		"Access-Control-Expose-Headers":    "",
+	})
+}
+
+func TestCorsAllowedWildcardHeader(t *testing.T) {
+	s := ctxmw.NewCors(
+		ctxmw.WithCorsLogger(log.NewBlackHole()),
+		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
+		ctxmw.WithCorsAllowedHeaders("*"),
+	)
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req.Header.Add("Origin", "http://foobar.com")
+	req.Header.Add("Access-Control-Request-Method", "GET")
+	req.Header.Add("Access-Control-Request-Headers", "X-Header-2, X-HEADER-1")
+
+	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+
+	assertHeaders(t, res.Header(), map[string]string{
+		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+		"Access-Control-Allow-Origin":      "http://foobar.com",
+		"Access-Control-Allow-Methods":     "GET",
+		"Access-Control-Allow-Headers":     "X-Header-2, X-Header-1",
+		"Access-Control-Allow-Credentials": "",
+		"Access-Control-Max-Age":           "",
+		"Access-Control-Expose-Headers":    "",
+	})
+}
+
+func TestCorsDisallowedHeader(t *testing.T) {
+	s := ctxmw.NewCors(
+		ctxmw.WithCorsLogger(log.NewBlackHole()),
+		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
+		ctxmw.WithCorsAllowedHeaders("X-Header-1", "x-header-2"),
+	)
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req.Header.Add("Origin", "http://foobar.com")
+	req.Header.Add("Access-Control-Request-Method", "GET")
+	req.Header.Add("Access-Control-Request-Headers", "X-Header-3, X-Header-1")
+
+	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+
+	assertHeaders(t, res.Header(), map[string]string{
+		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+		"Access-Control-Allow-Origin":      "",
+		"Access-Control-Allow-Methods":     "",
+		"Access-Control-Allow-Headers":     "",
+		"Access-Control-Allow-Credentials": "",
+		"Access-Control-Max-Age":           "",
+		"Access-Control-Expose-Headers":    "",
+	})
+}
+
+func TestCorsOriginHeader(t *testing.T) {
+	s := ctxmw.NewCors(
+		ctxmw.WithCorsLogger(log.NewBlackHole()),
+		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
+	)
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req.Header.Add("Origin", "http://foobar.com")
+	req.Header.Add("Access-Control-Request-Method", "GET")
+	req.Header.Add("Access-Control-Request-Headers", "origin")
+
+	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+
+	assertHeaders(t, res.Header(), map[string]string{
+		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+		"Access-Control-Allow-Origin":      "http://foobar.com",
+		"Access-Control-Allow-Methods":     "GET",
+		"Access-Control-Allow-Headers":     "Origin",
+		"Access-Control-Allow-Credentials": "",
+		"Access-Control-Max-Age":           "",
+		"Access-Control-Expose-Headers":    "",
+	})
+}
+
+func TestCorsExposedHeader(t *testing.T) {
+	s := ctxmw.NewCors(
+		ctxmw.WithCorsLogger(log.NewBlackHole()),
+		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
+		ctxmw.WithCorsExposedHeaders("X-Header-1", "x-header-2"),
+	)
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
+	req.Header.Add("Origin", "http://foobar.com")
+
+	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+
+	assertHeaders(t, res.Header(), map[string]string{
+		"Vary": "Origin",
+		"Access-Control-Allow-Origin":      "http://foobar.com",
+		"Access-Control-Allow-Methods":     "",
+		"Access-Control-Allow-Headers":     "",
+		"Access-Control-Allow-Credentials": "",
+		"Access-Control-Max-Age":           "",
+		"Access-Control-Expose-Headers":    "X-Header-1, X-Header-2",
+	})
+}
+
+func TestCorsAllowedCredentials(t *testing.T) {
+	s := ctxmw.NewCors(
+		ctxmw.WithCorsLogger(log.NewBlackHole()),
+		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
+		ctxmw.WithCorsAllowCredentials(),
+	)
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req.Header.Add("Origin", "http://foobar.com")
+	req.Header.Add("Access-Control-Request-Method", "GET")
+
+	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+
+	assertHeaders(t, res.Header(), map[string]string{
+		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+		"Access-Control-Allow-Origin":      "http://foobar.com",
+		"Access-Control-Allow-Methods":     "GET",
+		"Access-Control-Allow-Headers":     "",
+		"Access-Control-Allow-Credentials": "true",
+		"Access-Control-Max-Age":           "",
+		"Access-Control-Expose-Headers":    "",
+	})
+}
+
+func TestCorsMaxAge(t *testing.T) {
+	s := ctxmw.NewCors(
+		ctxmw.WithCorsLogger(log.NewBlackHole()),
+		ctxmw.WithCorsAllowedOrigins("http://foobar.com"),
+		ctxmw.WithCorsMaxAge(time.Second*30),
+	)
+
+	res := httptest.NewRecorder()
+	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
+	req.Header.Add("Origin", "http://foobar.com")
+	req.Header.Add("Access-Control-Request-Method", "GET")
+
+	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+
+	assertHeaders(t, res.Header(), map[string]string{
+		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
+		"Access-Control-Allow-Origin":      "http://foobar.com",
+		"Access-Control-Allow-Methods":     "GET",
+		"Access-Control-Allow-Headers":     "",
+		"Access-Control-Allow-Credentials": "",
+		"Access-Control-Max-Age":           "30",
+		"Access-Control-Expose-Headers":    "",
+	})
+}

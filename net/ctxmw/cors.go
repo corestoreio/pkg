@@ -112,6 +112,7 @@ func (c *Cors) WithCORS(opts ...CorsOption) ctxhttp.Middleware {
 				if c.OptionsPassthrough {
 					return hf(ctx, w, r)
 				}
+				return nil
 			}
 			if c.Log.IsDebug() {
 				c.Log.Debug("ctxmw.Cors.WithCORS.handleActualRequest", "method", r.Method)
@@ -120,46 +121,6 @@ func (c *Cors) WithCORS(opts ...CorsOption) ctxhttp.Middleware {
 			return hf(ctx, w, r)
 		}
 	}
-}
-
-// HandlerFunc provides Martini compatible handler
-func (c *Cors) HandlerFunc(w http.ResponseWriter, r *http.Request) {
-	if r.Method == "OPTIONS" {
-		if c.Log.IsDebug() {
-			c.Log.Debug("ctxmw.Cors.HandlerFunc.handlePreflight", "method", r.Method, "OptionsPassthrough", c.OptionsPassthrough)
-		}
-		c.handlePreflight(w, r)
-		return
-	}
-	if c.Log.IsDebug() {
-		c.Log.Debug("ctxmw.Cors.HandlerFunc.handleActualRequest", "method", r.Method)
-	}
-	c.handleActualRequest(w, r)
-}
-
-// ServeHTTP is a Negroni compatible interface
-func (c *Cors) ServeHTTP(w http.ResponseWriter, r *http.Request, next http.HandlerFunc) {
-	if r.Method == "OPTIONS" {
-		if c.Log.IsDebug() {
-			c.Log.Debug("ctxmw.Cors.ServeHTTP.handlePreflight", "method", r.Method, "OptionsPassthrough", c.OptionsPassthrough)
-		}
-
-		c.handlePreflight(w, r)
-		// Preflight requests are standalone and should stop the chain as some other
-		// middleware may not handle OPTIONS requests correctly. One typical example
-		// is authentication middleware ; OPTIONS requests won't carry authentication
-		// headers (see #1)
-		if c.OptionsPassthrough {
-			next(w, r)
-		}
-		return
-	}
-	if c.Log.IsDebug() {
-		c.Log.Debug("ctxmw.Cors.ServeHTTP.handleActualRequest", "method", r.Method)
-	}
-	c.handleActualRequest(w, r)
-	next(w, r)
-
 }
 
 // handlePreflight handles pre-flight CORS requests
