@@ -151,9 +151,9 @@ func WithLogger(l log.Logger) Option {
 }
 
 // WithConfigGetter adding a Getter to the Cors type allows you to run specific
-// Cors configuration for each Website ID (fall back to the default scope).
-// If you add WithLogger all
-// new created Cors types for a Website scope will
+// Cors configuration for each defined scope ID (default, website or store).
+// If you add WithLogger all new created Cors types for a scope will inherit
+// from that logger.
 func WithConfigGetter(cg config.Getter) Option {
 	return func(c *Cors) {
 		c.config = cg

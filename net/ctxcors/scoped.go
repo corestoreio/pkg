@@ -18,43 +18,55 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 )
 
-const (
-	PathCorsExposedHeaders = "web/cors/exposed_headers"
-	PathCorsAllowedOrigins = "web/cors/allowed_origins"
-)
-
-// corsScopeCache
+// corsScopeCache creates a new Cors type for a website configuration. Why are
+// we not using the store view based configuration? because that is too low level
+// and store views are mainly used for languages. but we can change that or
+// make it configurable.
 type corsScopeCache struct {
 	config config.Getter
+	scope  scope.Scope
+	parent *Cors
 
 	// rwmu protects the map
 	rwmu sync.RWMutex
-	// storage key is the website ID and value the current cors config
+	// storage key is the ID and value the current cors config
 	storage map[int64]*Cors
 }
 
-// get uses a read lock to check if a Cors exists for a website ID. returns nil
+func newCorsScopeCache(cg config.Getter, s scope.Scope, parent *Cors) *corsScopeCache {
+	return &corsScopeCache{
+		config:  cg,
+		scope:   s,
+		parent:  parent,
+		storage: make(map[int64]*Cors),
+	}
+}
+
+// get uses a read lock to check if a Cors exists for an ID. returns nil
 // if there is no Cors pointer. aim is: multiple goroutines can read from the
 // map while adding new Cors pointers can only be done by one goroutine.
-func (cs *corsScopeCache) get(websiteID int64) *Cors {
+func (cs *corsScopeCache) get(id int64) *Cors {
 	cs.rwmu.RLock()
 	defer cs.rwmu.RUnlock()
-	if c, ok := cs.storage[websiteID]; ok {
+	if c, ok := cs.storage[id]; ok {
 		return c
 	}
 	return nil
 }
 
 // create creates a new Cors type and returns it.
-func (cs *corsScopeCache) insert(websiteID int64) *Cors {
+func (cs *corsScopeCache) insert(id int64) *Cors {
 	cs.rwmu.Lock()
 	defer cs.rwmu.Unlock()
 
 	// pulls the options from the scoped reader
+	//	headers, _ := cs.config.String(config.Path(PathCorsExposedHeaders), config.Scope(cs.scope, id))
+	//	fields, err := PackageConfiguration.FindFieldByPath(PathCorsExposedHeaders)
 
-	c := New()
-	cs.storage[websiteID] = c
+	c := New(WithLogger(cs.parent.Log)) // inherit more?
+	cs.storage[id] = c
 	return c
 }

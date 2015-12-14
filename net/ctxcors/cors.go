@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/util/log"
@@ -125,7 +126,7 @@ func (c *Cors) WithCORS(opts ...Option) ctxhttp.Middleware {
 				return nil
 			}
 			if cc.Log.IsDebug() {
-				cc.Log.Debug("ctxcors.Cors.WithCORS.handleActualRequest", "method", r.Method)
+				cc.Log.Debug("ctxcors.Cors.WithCORS.handleActualRequest", "method", r.Method, "cors", cc)
 			}
 			cc.handleActualRequest(w, r)
 			return hf(ctx, w, r)
@@ -161,10 +162,7 @@ func (c *Cors) current(csc *corsScopeCache, ctx context.Context) *Cors {
 // is not in use.
 func (c *Cors) initCache() (cs *corsScopeCache) {
 	if c.config != nil {
-		cs = &corsScopeCache{
-			config:  c.config,
-			storage: make(map[int64]*Cors),
-		}
+		cs = newCorsScopeCache(c.config, scope.WebsiteID, c)
 	}
 	return
 }
