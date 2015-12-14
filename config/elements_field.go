@@ -17,41 +17,15 @@ package config
 import (
 	"errors"
 	"sort"
-	"strings"
 
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/juju/errgo"
-)
-
-// Type* defines the type of the front end user input/display form
-const (
-	TypeButton FieldType = iota + 1 // must be + 1 because 0 is not set
-	TypeCustom
-	TypeLabel
-	TypeHidden
-	TypeImage
-	TypeObscure
-	TypeMultiselect
-	TypeSelect
-	TypeText
-	TypeTextarea
-	TypeTime
-	TypeDuration
 )
 
 // ErrFieldNotFound error when a field cannot be found.
 var ErrFieldNotFound = errors.New("Field not found")
 
 type (
-
-	// FieldType used in constants to define the frontend and input type
-	FieldType uint8
-
-	// FieldTyper defines which front end type a configuration value is and generates the HTML for it
-	FieldTyper interface {
-		Type() FieldType
-		ToHTML() []byte // @see \Magento\Framework\Data\Form\Element\AbstractElement
-	}
 
 	// FieldSlice contains a set of Fields. Has several method receivers attached.
 	FieldSlice []*Field
@@ -83,18 +57,6 @@ type (
 	}
 )
 
-var _ FieldTyper = (*FieldType)(nil)
-
-// Type returns the current field type and satisfies the interface of Field.Type
-func (i FieldType) Type() FieldType {
-	return i
-}
-
-// ToHTML noop function to satisfies the interface of Field.Type
-func (i FieldType) ToHTML() []byte {
-	return nil
-}
-
 // FindByID returns a Field pointer or nil if not found
 func (fs FieldSlice) FindByID(id string) (*Field, error) {
 	for _, f := range fs {
@@ -111,7 +73,7 @@ func (fs *FieldSlice) Append(f ...*Field) *FieldSlice {
 	return fs
 }
 
-// Merge copies the data from a Section into this slice. Appends if ID is not found
+// Merge copies the data from a Field into this slice. Appends if ID is not found
 // in this slice otherwise overrides struct fields if not empty.
 func (fs *FieldSlice) Merge(fields ...*Field) error {
 	for _, f := range fields {
@@ -122,6 +84,7 @@ func (fs *FieldSlice) Merge(fields ...*Field) error {
 	return nil
 }
 
+// merge merges field f into the slice. Appends the field if the Id is new.
 func (fs *FieldSlice) merge(f *Field) error {
 	if f == nil {
 		return nil
@@ -179,26 +142,4 @@ func (fs *FieldSlice) Swap(i, j int) {
 
 func (fs *FieldSlice) Less(i, j int) bool {
 	return (*fs)[i].SortOrder < (*fs)[j].SortOrder
-}
-
-const fieldTypeName = "TypeButtonTypeCustomTypeLabelTypeHiddenTypeImageTypeObscureTypeMultiselectTypeSelectTypeTextTypeTextareaTypeTime"
-
-var fieldTypeIndex = [...]uint8{10, 20, 29, 39, 48, 59, 74, 84, 92, 104, 112}
-
-func (i FieldType) String() string {
-	i--
-	if i >= FieldType(len(fieldTypeIndex)) {
-		return "FieldType(?)"
-	}
-	hi := fieldTypeIndex[i]
-	lo := uint8(0)
-	if i > 0 {
-		lo = fieldTypeIndex[i-1]
-	}
-	return fieldTypeName[lo:hi]
-}
-
-// MarshalJSON implements marshaling into a human readable string. @todo UnMarshal
-func (i FieldType) MarshalJSON() ([]byte, error) {
-	return []byte(`"` + strings.ToLower(i.String()[4:]) + `"`), nil
 }

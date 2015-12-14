@@ -35,7 +35,7 @@ type (
 		Defaults() DefaultMap
 	}
 
-	// SectionSlice contains a set of Sections. Some nifty helper functions exists.
+	// SectionSlice contains a set of Sections. Some nifty helper functions exists. Not thread safe.
 	SectionSlice []*Section
 	// Section defines the layout for the configuration section which contains groups and fields.
 	Section struct {
