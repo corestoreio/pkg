@@ -243,3 +243,39 @@ func TestValueLabelSliceNull(t *testing.T) {
 	assert.Equal(t, `[{"Value":"","Label":""},{"Value":"","Label":""}]`+"\n", j)
 
 }
+
+func TestSliceContainsKeyString(t *testing.T) {
+	sl := valuelabel.NewByString("k1", "v1", "k2", "v2")
+	assert.True(t, sl.ContainsKeyString("k1"), "Search for k1 failed")
+	assert.False(t, sl.ContainsKeyString("k0"), "Found k0 despite it is not in the slice")
+}
+
+func TestSliceContainsKeyInt(t *testing.T) {
+	sl := valuelabel.NewByInt(valuelabel.Ints{
+		{1, "v1"},
+		{2, "v2"},
+		{3, "v3"},
+	})
+	assert.True(t, sl.ContainsKeyInt(1), "Search for 1 failed")
+	assert.False(t, sl.ContainsKeyInt(0), "Found 0 despite it is not in the slice")
+}
+
+func TestSliceContainsKeyFloat64(t *testing.T) {
+	sl := valuelabel.NewByFloat64(valuelabel.F64s{
+		{1.0, "v1"},
+		{2.2 * 0.3, "v2"},
+		{0.4 * 3, "v3"},
+	})
+	assert.True(t, sl.ContainsKeyFloat64(0.66), "Search for 0.66 failed")
+	assert.False(t, sl.ContainsKeyFloat64(0.1), "Found 0.1 despite it is not in the slice")
+}
+
+func TestSliceContainsLabel(t *testing.T) {
+	sl := valuelabel.NewByInt(valuelabel.Ints{
+		{1, "v1"},
+		{2, "v2"},
+		{3, "v3"},
+	})
+	assert.True(t, sl.ContainsLabel("v1"), "Search for v1 failed")
+	assert.False(t, sl.ContainsLabel("v0"), "Found v0 despite it is not in the slice")
+}

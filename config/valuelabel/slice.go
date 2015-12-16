@@ -17,10 +17,10 @@ package valuelabel
 import (
 	"bytes"
 	"encoding/json"
-	"sort"
-
 	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
+	"math"
+	"sort"
 )
 
 // Slice type is returned by the SourceModel.Options() interface
@@ -102,6 +102,47 @@ func (s Slice) ToJSON() (string, error) {
 		return "", errgo.Mask(err)
 	}
 	return buf.String(), nil
+}
+
+// ContainsKeyString checks if k has an entry as a key.
+func (s Slice) ContainsKeyString(k string) bool {
+	for _, p := range s {
+		if p.String == k {
+			return true
+		}
+	}
+	return false
+}
+
+// ContainsKeyInt checks if k has an entry as a key.
+func (s Slice) ContainsKeyInt(k int) bool {
+	for _, p := range s {
+		if p.Int == k {
+			return true
+		}
+	}
+	return false
+}
+
+// ContainsKeyFloat64 checks if k has an entry as a key.
+func (s Slice) ContainsKeyFloat64(k float64) bool {
+	for _, p := range s {
+		abs := math.Abs(p.Float64 - k)
+		if abs >= 0 && abs < 0.000001 {
+			return true
+		}
+	}
+	return false
+}
+
+// ContainsLabel checks if k has an entry as a label.
+func (s Slice) ContainsLabel(l string) bool {
+	for _, p := range s {
+		if p.Label() == l {
+			return true
+		}
+	}
+	return false
 }
 
 type (
