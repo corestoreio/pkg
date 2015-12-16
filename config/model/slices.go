@@ -15,49 +15,40 @@
 package model
 
 import (
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/scope"
-	"github.com/corestoreio/csfw/util/cast"
 	"strconv"
 	"strings"
+
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/util/bufferpool"
 )
 
-func lookupString(path string, pkgCfg config.SectionSlice, sg config.ScopedGetter) (v string) {
-	if fields, err := pkgCfg.FindFieldByPath(path); err == nil {
-		v, _ = cast.ToStringE(fields.Default)
-	} else {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("model.StringSlice.SectionSlice.FindFieldByPath", "err", err, "path", path)
-		}
-	}
+// CSVSeparator separates CSV values
+const CSVSeparator = ","
 
-	if val, err := sg.String(path); err == nil {
-		v = val
-	}
-	return
-}
-
-const csvSep = ","
-
+// StringCSV represents a path in config.Getter which will be saved as a
+// CSV string and returned as a string slice. Separator is a comma.
 type StringCSV path
 
+// Get returns a slice from the 1. default field of a config.SectionSlice
+// or 2. from the config.ScopedGetter.
 func (p StringCSV) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) []string {
-	path := string(p)
-	v := lookupString(path, pkgCfg, sg)
-	return strings.Split(v, csvSep)
+	v := path(p).lookupString(pkgCfg, sg)
+	return strings.Split(v, CSVSeparator)
 }
 
+// Set writes a slice with its scope and ID to the writer
 func (p StringCSV) Set(w config.Writer, sl []string, s scope.Scope, id int64) error {
-	path := string(p)
-	return w.Write(config.Path(path), config.Value(strings.Join(sl, csvSep)), config.Scope(s, id))
+	return path(p).set(w, strings.Join(sl, CSVSeparator), s, id)
 }
 
+// Int64CSV represents a path in config.Getter which will be saved as a
+// CSV string and returned as an int64 slice. Separator is a comma.
 type Int64CSV path
 
 func (p Int64CSV) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) []int64 {
-	path := string(p)
-	v := lookupString(path, pkgCfg, sg)
-	csv := strings.Split(v, csvSep)
+	v := path(p).lookupString(pkgCfg, sg)
+	csv := strings.Split(v, CSVSeparator)
 	ret := make([]int64, len(csv))
 
 	for i, line := range csv {
@@ -68,15 +59,14 @@ func (p Int64CSV) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) []int6
 }
 
 func (p Int64CSV) Set(w config.Writer, sl []int64, s scope.Scope, id int64) error {
-	path := string(p)
 
-	var final string // todo use bufferpool
+	val := bufferpool.Get()
+	defer bufferpool.Put(val)
 	for i, v := range sl {
-		final = final + strconv.FormatInt(v, 10)
+		val.WriteString(strconv.FormatInt(v, 10))
 		if i < len(sl)-1 {
-			final = final + csvSep
+			val.WriteString(CSVSeparator)
 		}
 	}
-
-	return w.Write(config.Path(path), config.Value(final), config.Scope(s, id))
+	return path(p).set(w, val.String(), s, id)
 }

@@ -12,6 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package model provides types for getting and setting values of configuration
-// fields aka values with checks to their default values.
 package model
+
+import (
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+)
+
+// URL represents a path in config.Getter handles URLs and internal validation
+type URL path
+
+func (p URL) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v string, err error) {
+	// todo URL checks
+	return path(p).lookupString(pkgCfg, sg), nil
+}
+
+func (p URL) Set(w config.Writer, v string, s scope.Scope, id int64) error {
+	return path(p).set(w, v, s, id)
+}
