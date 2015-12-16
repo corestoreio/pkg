@@ -14,4 +14,19 @@
 
 // Package model provides types for getting and setting values of configuration
 // fields aka values with checks to their default values.
+//
+// The signature of a getter function states in most cases:
+//		Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v string)
+// pkgCfg is the global PackageConfiguration variable which is present in each
+// package. pkgCfg knows the default value of a configuration path.
+// sg is the current config.Getter but bounded to a scope. If sg finds a value
+// then the default value gets overwritten.
+//
+// The Get() function signature may vary between the packages.
+//
+// The signature of the setter function states in most cases:
+// 		Set(w config.Writer, v interface{}, s scope.Scope, id int64) error
+// The interface v gets in the parent type replaced by the correct type and
+// this type gets converted most times to a string or int or float.
+// Sometimes the Set() function signature can differ in packages.
 package model

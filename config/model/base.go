@@ -20,26 +20,38 @@ import (
 	"github.com/corestoreio/csfw/util/cast"
 )
 
-// path defines the path in the core_config_data table like a/b/c. All other
-// types in this package inherits from this path type
-type path string
-
-func (p path) set(w config.Writer, v interface{}, s scope.Scope, id int64) error {
-	return w.Write(config.Path(string(p)), config.Value(v), config.Scope(s, id))
+// Path defines the path in the "core_config_data" table like a/b/c. All other
+// types in this package inherits from this path type.
+type Path struct {
+	string // contains the path
+	//BeforeSave func(path string,v interface{}, s scope.Scope, id int64) think about this ...
+	//AfterSave func(path string,v interface{}, s scope.Scope, id int64) think about this ...
 }
 
-func (p path) lookupString(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v string) {
-	aPath := string(p)
-	if fields, err := pkgCfg.FindFieldByPath(aPath); err == nil {
+// Set writes a value v to the config.Writer
+func (p Path) Set(w config.Writer, v interface{}, s scope.Scope, id int64) error {
+	return w.Write(config.Path(p.string), config.Value(v), config.Scope(s, id))
+}
+
+// LookupString searches in default value in config.SectionSlice and overrides it with
+// a value from ScopedGetter if ScopedGetter is not empty.
+func (p Path) LookupString(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v string) {
+
+	if fields, err := pkgCfg.FindFieldByPath(p.string); err == nil {
 		v, _ = cast.ToStringE(fields.Default)
 	} else {
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("model.StringSlice.SectionSlice.FindFieldByPath", "err", err, "path", aPath)
+			PkgLog.Debug("model.StringSlice.SectionSlice.FindFieldByPath", "err", err, "path", p.string)
 		}
 	}
 
-	if val, err := sg.String(aPath); err == nil {
+	if val, err := sg.String(p.string); err == nil {
 		v = val
 	}
 	return
+}
+
+// String returns the path
+func (p Path) String() string {
+	return p.string
 }

@@ -14,19 +14,7 @@
 
 package configsource
 
-import (
-	"net/http"
-
-	"github.com/corestoreio/csfw/config/valuelabel"
-)
-
-// Redirect defines a slice with different redirect codes
-var Redirect = valuelabel.NewByInt(valuelabel.Ints{
-	{0, "No"},
-	{1, "Yes (302 Found)"},                // old from Magento
-	{http.StatusFound, "Yes (302 Found)"}, // new correct
-	{http.StatusMovedPermanently, "Yes (301 Moved Permanently)"},
-})
+import "github.com/corestoreio/csfw/config/valuelabel"
 
 // Protocol defines a slice with available HTTP protocols
 var Protocol = valuelabel.NewByString(

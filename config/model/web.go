@@ -19,14 +19,21 @@ import (
 	"github.com/corestoreio/csfw/config/scope"
 )
 
-// URL represents a path in config.Getter handles URLs and internal validation
-type URL path
+// BaseURL represents a path in config.Getter handles BaseURLs and internal validation
+type BaseURL struct{ Path }
 
-func (p URL) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v string, err error) {
-	// todo URL checks
-	return path(p).lookupString(pkgCfg, sg), nil
+// NewBaseURL creates a new BaseURL with validation checks when writing values.
+func NewBaseURL(path string) BaseURL {
+	return BaseURL{Path{path}}
 }
 
-func (p URL) Set(w config.Writer, v string, s scope.Scope, id int64) error {
-	return path(p).set(w, v, s, id)
+// Get returns a base URL
+func (p BaseURL) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) string {
+	return p.Path.LookupString(pkgCfg, sg)
+}
+
+// Set writes a new base URL and validates it before saving.
+func (p BaseURL) Set(w config.Writer, v string, s scope.Scope, id int64) error {
+	// todo URL checks app/code/Magento/Config/Model/Config/Backend/Baseurl.php
+	return p.Path.Set(w, v, s, id)
 }

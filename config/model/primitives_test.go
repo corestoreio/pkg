@@ -19,3 +19,15 @@ import "testing"
 func TestBool(t *testing.T) {
 	t.Log("todo")
 }
+
+func TestString(t *testing.T) {
+	t.Log("todo")
+}
+
+func TestInt(t *testing.T) {
+	t.Log("todo")
+}
+
+func TestFloat64(t *testing.T) {
+	t.Log("todo")
+}
