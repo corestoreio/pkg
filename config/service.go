@@ -61,7 +61,8 @@ type (
 
 	// Service main configuration provider
 	Service struct {
-		// Storage is the underlying backing data holding provider.
+		// Storage is the underlying data holding provider. Only access it
+		// if you know exactly what you are doing.
 		Storage Storager
 		*pubSub
 	}
@@ -243,13 +244,6 @@ func (s *Service) DateTime(o ...ArgFunc) (time.Time, error) {
 		return time.Time{}, ErrKeyNotFound
 	}
 	return cast.ToTimeE(vs)
-}
-
-// StringSlice returns a slice of strings with config values.
-// @todo use the backend model of a config value. most/all magento string slices are comma lists.
-func (s *Service) StringSlice(o ...ArgFunc) ([]string, error) {
-	return nil, ErrKeyNotFound
-	//	return m.v.StringSlice(newArg(o...))
 }
 
 // IsSet checks if a key is in the configuration. Returns false on error.

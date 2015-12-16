@@ -31,11 +31,14 @@ var ErrSectionNotFound = errors.New("Section not found")
 type (
 	// Sectioner at the moment only for testing
 	Sectioner interface {
-		// Defaults generates the default configuration from all fields. Key is the path and value the value.
+		// Defaults generates the default configuration from all fields.
+		// Key is the path and value the value.
 		Defaults() DefaultMap
 	}
 
-	// SectionSlice contains a set of Sections. Some nifty helper functions exists. Not thread safe.
+	// SectionSlice contains a set of Sections. Some nifty helper functions
+	// exists. Thread safe for reading. A section slice can be used in many
+	// goroutines. It must remain lock-free.
 	SectionSlice []*Section
 	// Section defines the layout for the configuration section which contains groups and fields.
 	Section struct {

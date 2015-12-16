@@ -45,9 +45,9 @@ type (
 		// Visible used for configuration settings which are not exposed to the user.
 		// In Magento2 they do not have an entry in the system.xml
 		Visible Visible `json:",omitempty"`
-		// SourceModel defines how to retrieve all option values
+		// SourceModel @deprecated defines how to retrieve all option values
 		SourceModel SourceModeller `json:",omitempty"`
-		// BackendModel defines how to save and load? the data
+		// BackendModel @deprecated defines how to save and load? the data
 		BackendModel BackendModeller `json:",omitempty"`
 		// Default can contain any default config value: float64, int64, string, bool
 		Default interface{} `json:",omitempty"`
@@ -113,12 +113,12 @@ func (fs *FieldSlice) merge(f *Field) error {
 	if f.Visible > VisibleAbsent {
 		cf.Visible = f.Visible
 	}
-	if f.SourceModel != nil {
-		cf.SourceModel = f.SourceModel
-	}
-	if f.BackendModel != nil {
-		cf.BackendModel = f.BackendModel
-	}
+	//	if f.SourceModel != nil {
+	//		cf.SourceModel = f.SourceModel
+	//	}
+	//	if f.BackendModel != nil {
+	//		cf.BackendModel = f.BackendModel
+	//	}
 	if f.Default != nil {
 		cf.Default = f.Default
 	}
