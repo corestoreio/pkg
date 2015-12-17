@@ -17,15 +17,25 @@ package model
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/corestoreio/csfw/util/cast"
 )
 
 // Path defines the path in the "core_config_data" table like a/b/c. All other
 // types in this package inherits from this path type.
 type Path struct {
-	string // contains the path
+	string  // contains the path
+	Options valuelabel.Slice
 	//BeforeSave func(path string,v interface{}, s scope.Scope, id int64) think about this ...
 	//AfterSave func(path string,v interface{}, s scope.Scope, id int64) think about this ...
+}
+
+// NewPath creates a new path type optional value label Pair
+func NewPath(path string, vlPairs ...valuelabel.Pair) Path {
+	return Path{
+		string:  path,
+		Options: valuelabel.Slice(vlPairs),
+	}
 }
 
 // Set writes a value v to the config.Writer

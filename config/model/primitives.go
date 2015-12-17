@@ -26,14 +26,12 @@ import (
 // Bool represents a path in config.Getter which handles bool values.
 type Bool struct {
 	Path
-	Options valuelabel.Slice
 }
 
 // NewBool creates a new Bool model with a given path.
 func NewBool(path string, vlPairs ...valuelabel.Pair) Bool {
 	return Bool{
-		Path:    Path{path},
-		Options: valuelabel.Slice(vlPairs),
+		Path: NewPath(path, vlPairs...),
 	}
 }
 
@@ -63,7 +61,9 @@ func (p Bool) Set(w config.Writer, v bool, s scope.Scope, id int64) error {
 type String struct{ Path }
 
 // NewString creates a new String model with a given path.
-func NewString(path string) String { return String{Path{path}} }
+func NewString(path string, vlPairs ...valuelabel.Pair) String {
+	return String{Path: NewPath(path, vlPairs...)}
+}
 
 // Get returns a string value
 func (p String) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v string) {
@@ -79,7 +79,7 @@ func (p String) Set(w config.Writer, v string, s scope.Scope, id int64) error {
 type Int struct{ Path }
 
 // NewInt creates a new Int model with a given path.
-func NewInt(path string) Int { return Int{Path{path}} }
+func NewInt(path string, vlPairs ...valuelabel.Pair) Int { return Int{Path: NewPath(path, vlPairs...)} }
 
 // Get returns an int value.
 func (p Int) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v int) {
@@ -106,7 +106,9 @@ func (p Int) Set(w config.Writer, v int, s scope.Scope, id int64) error {
 type Float64 struct{ Path }
 
 // NewFloat64 creates a new Float64 model with a given path.
-func NewFloat64(path string) Float64 { return Float64{Path{path}} }
+func NewFloat64(path string, vlPairs ...valuelabel.Pair) Float64 {
+	return Float64{Path: NewPath(path, vlPairs...)}
+}
 
 // Get returns a float64 value.
 func (p Float64) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v float64) {

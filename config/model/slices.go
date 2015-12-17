@@ -20,6 +20,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/juju/errgo"
 )
@@ -30,6 +31,11 @@ const CSVSeparator = ","
 // StringCSV represents a path in config.Getter which will be saved as a
 // CSV string and returned as a string slice. Separator is a comma.
 type StringCSV struct{ Path }
+
+// NewStringCSV creates a new CSV string type. Acts as a multiselect.
+func NewStringCSV(path string, vlPairs ...valuelabel.Pair) StringCSV {
+	return StringCSV{Path: NewPath(path, vlPairs...)}
+}
 
 // Get returns a slice from the 1. default field of a config.SectionSlice
 // or 2. from the config.ScopedGetter.
@@ -45,6 +51,11 @@ func (p StringCSV) Set(w config.Writer, sl []string, s scope.Scope, id int64) er
 // Int64CSV represents a path in config.Getter which will be saved as a
 // CSV string and returned as an int64 slice. Separator is a comma.
 type Int64CSV struct{ Path }
+
+// NewInt64CSV creates a new int64 CSV type. Acts as a multiselect.
+func NewInt64CSV(path string, vlPairs ...valuelabel.Pair) Int64CSV {
+	return Int64CSV{Path: NewPath(path, vlPairs...)}
+}
 
 func (p Int64CSV) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) []int64 {
 	v := p.Path.LookupString(pkgCfg, sg)

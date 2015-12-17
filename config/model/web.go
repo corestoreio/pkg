@@ -24,7 +24,7 @@ type BaseURL struct{ Path }
 
 // NewBaseURL creates a new BaseURL with validation checks when writing values.
 func NewBaseURL(path string) BaseURL {
-	return BaseURL{Path{path}}
+	return BaseURL{Path: NewPath(path)}
 }
 
 // Get returns a base URL

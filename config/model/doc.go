@@ -29,4 +29,8 @@
 // The interface v gets in the parent type replaced by the correct type and
 // this type gets converted most times to a string or int or float.
 // Sometimes the Set() function signature can differ in packages.
+//
+// This package stays pointer free because these types will be more often
+// used as global variables, cough cough, through different packages.
+// With non-pointers we reduce the pressure on the GC.
 package model
