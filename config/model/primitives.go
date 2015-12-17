@@ -52,9 +52,9 @@ func (p Bool) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v bool) {
 	return v
 }
 
-// Set writes a bool. Bool gets internally converted to type string.
-func (p Bool) Set(w config.Writer, v bool, s scope.Scope, id int64) error {
-	return p.Path.Set(w, strconv.FormatBool(v), s, id)
+// Write writes a bool. Bool gets internally converted to type string.
+func (p Bool) Write(w config.Writer, v bool, s scope.Scope, id int64) error {
+	return p.Path.Write(w, strconv.FormatBool(v), s, id)
 }
 
 // String represents a path in config.Getter which handles string values.
@@ -70,9 +70,9 @@ func (p String) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v strin
 	return p.LookupString(pkgCfg, sg)
 }
 
-// Set writes a string value
-func (p String) Set(w config.Writer, v string, s scope.Scope, id int64) error {
-	return p.Path.Set(w, v, s, id)
+// Write writes a string value
+func (p String) Write(w config.Writer, v string, s scope.Scope, id int64) error {
+	return p.Path.Write(w, v, s, id)
 }
 
 // Int represents a path in config.Getter which handles int values.
@@ -97,9 +97,9 @@ func (p Int) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v int) {
 	return v
 }
 
-// Set writes an int value as a string.
-func (p Int) Set(w config.Writer, v int, s scope.Scope, id int64) error {
-	return p.Path.Set(w, strconv.Itoa(v), s, id)
+// Write writes an int value as a string.
+func (p Int) Write(w config.Writer, v int, s scope.Scope, id int64) error {
+	return p.Path.Write(w, strconv.Itoa(v), s, id)
 }
 
 // Float64 represents a path in config.Getter which handles int values.
@@ -126,7 +126,7 @@ func (p Float64) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v floa
 	return v
 }
 
-// Set writes a float64 value as a string.
-func (p Float64) Set(w config.Writer, v float64, s scope.Scope, id int64) error {
-	return p.Path.Set(w, strconv.FormatFloat(v, 'f', 14, 64), s, id)
+// Write writes a float64 value as a string.
+func (p Float64) Write(w config.Writer, v float64, s scope.Scope, id int64) error {
+	return p.Path.Write(w, strconv.FormatFloat(v, 'f', 14, 64), s, id)
 }

@@ -32,8 +32,8 @@ func (p BaseURL) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) string 
 	return p.Path.LookupString(pkgCfg, sg)
 }
 
-// Set writes a new base URL and validates it before saving.
-func (p BaseURL) Set(w config.Writer, v string, s scope.Scope, id int64) error {
+// Write writes a new base URL and validates it before saving.
+func (p BaseURL) Write(w config.Writer, v string, s scope.Scope, id int64) error {
 	// todo URL checks app/code/Magento/Config/Model/Config/Backend/Baseurl.php
-	return p.Path.Set(w, v, s, id)
+	return p.Path.Write(w, v, s, id)
 }

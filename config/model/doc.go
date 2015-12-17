@@ -15,6 +15,9 @@
 // Package model provides types for getting and setting values of configuration
 // fields aka values with checks to their default values.
 //
+// The default value gets returned if the Get call to the store configuration
+// value fails.
+//
 // The signature of a getter function states in most cases:
 //		Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v string)
 // pkgCfg is the global PackageConfiguration variable which is present in each
@@ -25,10 +28,10 @@
 // The Get() function signature may vary between the packages.
 //
 // The signature of the setter function states in most cases:
-// 		Set(w config.Writer, v interface{}, s scope.Scope, id int64) error
+// 		Write(w config.Writer, v interface{}, s scope.Scope, id int64) error
 // The interface v gets in the parent type replaced by the correct type and
 // this type gets converted most times to a string or int or float.
-// Sometimes the Set() function signature can differ in packages.
+// Sometimes the Write() function signature can differ in packages.
 //
 // This package stays pointer free because these types will be more often
 // used as global variables, cough cough, through different packages.

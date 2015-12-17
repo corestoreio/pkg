@@ -26,8 +26,6 @@ import (
 type Path struct {
 	string  // contains the path
 	Options valuelabel.Slice
-	//BeforeSave func(path string,v interface{}, s scope.Scope, id int64) think about this ...
-	//AfterSave func(path string,v interface{}, s scope.Scope, id int64) think about this ...
 }
 
 // NewPath creates a new path type optional value label Pair
@@ -38,13 +36,14 @@ func NewPath(path string, vlPairs ...valuelabel.Pair) Path {
 	}
 }
 
-// Set writes a value v to the config.Writer
-func (p Path) Set(w config.Writer, v interface{}, s scope.Scope, id int64) error {
+// Write writes a value v to the config.Writer without checking if the value
+// has changed.
+func (p Path) Write(w config.Writer, v interface{}, s scope.Scope, id int64) error {
 	return w.Write(config.Path(p.string), config.Value(v), config.Scope(s, id))
 }
 
-// LookupString searches in default value in config.SectionSlice and overrides it with
-// a value from ScopedGetter if ScopedGetter is not empty.
+// LookupString searches in default value in config.SectionSlice and overrides
+// it with a value from ScopedGetter if ScopedGetter is not empty.
 func (p Path) LookupString(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v string) {
 
 	if fields, err := pkgCfg.FindFieldByPath(p.string); err == nil {
@@ -64,4 +63,10 @@ func (p Path) LookupString(pkgCfg config.SectionSlice, sg config.ScopedGetter) (
 // String returns the path
 func (p Path) String() string {
 	return p.string
+}
+
+// InScope checks if a field from a path is allowed for current ScopedGetter
+func (p Path) InScope(f *config.Field, sg config.ScopedGetter) bool {
+	s, _ := sg.Scope()
+	return f.Scope.Has(s)
 }

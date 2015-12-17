@@ -43,9 +43,9 @@ func (p StringCSV) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) []str
 	return strings.Split(p.Path.LookupString(pkgCfg, sg), CSVSeparator)
 }
 
-// Set writes a slice with its scope and ID to the writer
-func (p StringCSV) Set(w config.Writer, sl []string, s scope.Scope, id int64) error {
-	return p.Path.Set(w, strings.Join(sl, CSVSeparator), s, id)
+// Write writes a slice with its scope and ID to the writer
+func (p StringCSV) Write(w config.Writer, sl []string, s scope.Scope, id int64) error {
+	return p.Path.Write(w, strings.Join(sl, CSVSeparator), s, id)
 }
 
 // Int64CSV represents a path in config.Getter which will be saved as a
@@ -71,8 +71,8 @@ func (p Int64CSV) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) []int6
 	return ret
 }
 
-// Set writes int64 values as a CSV string
-func (p Int64CSV) Set(w config.Writer, sl []int64, s scope.Scope, id int64) error {
+// Write writes int64 values as a CSV string
+func (p Int64CSV) Write(w config.Writer, sl []int64, s scope.Scope, id int64) error {
 	val := bufferpool.Get()
 	defer bufferpool.Put(val)
 	for i, v := range sl {
@@ -85,5 +85,5 @@ func (p Int64CSV) Set(w config.Writer, sl []int64, s scope.Scope, id int64) erro
 			}
 		}
 	}
-	return p.Path.Set(w, val.String(), s, id)
+	return p.Path.Write(w, val.String(), s, id)
 }
