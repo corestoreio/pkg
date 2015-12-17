@@ -18,6 +18,7 @@ import (
 	"math"
 	"testing"
 
+	"github.com/corestoreio/csfw/config/configsource"
 	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/corestoreio/csfw/util"
 	"github.com/stretchr/testify/assert"
@@ -278,4 +279,11 @@ func TestSliceContainsLabel(t *testing.T) {
 	})
 	assert.True(t, sl.ContainsLabel("v1"), "Search for v1 failed")
 	assert.False(t, sl.ContainsLabel("v0"), "Found v0 despite it is not in the slice")
+}
+
+func TestSliceEquality(t *testing.T) {
+	func(sl valuelabel.Slice, vlPairs ...valuelabel.Pair) {
+		vlsl := valuelabel.Slice(vlPairs)
+		assert.Exactly(t, sl, vlsl)
+	}(configsource.YesNo, configsource.YesNo...)
 }
