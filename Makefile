@@ -16,7 +16,7 @@
 # are under development will break things.
 
 DBTESTS = ./codegen ./config/... ./directory/... ./eav/... ./store/... ./storage/...
-NONDBTESTS = ./utils/... ./net/... ./locale/... ./i18n/...
+NONDBTESTS = ./utils/... ./net/... ./locale/... ./i18n/... ./config/model ./config/scope ./config/valuelabel
 
 test: testnodb test1 test2
 
