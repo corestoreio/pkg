@@ -29,7 +29,27 @@ import (
 )
 
 var _ Getter = (*MockGet)(nil)
+var _ Writer = (*MockWrite)(nil)
 var _ GetterPubSuber = (*MockGet)(nil)
+
+// MockWrite used for testing to testing configuration writing
+type MockWrite struct {
+	// WriteError gets always returned by Write
+	WriteError error
+	// ArgPath will be set after calling write to export the config path.
+	// Values you enter here will be overwritten when calling Write
+	ArgPath string
+}
+
+// Write writes to a black hole, may return an error
+func (w *MockWrite) Write(o ...ArgFunc) error {
+	a, err := newArg(o...)
+	if err != nil {
+		return err
+	}
+	w.ArgPath = a.scopePath()
+	return w.WriteError
+}
 
 // mockOptionFunc to initialize the NewMockGetter
 type mockOptionFunc func(*MockGet)
