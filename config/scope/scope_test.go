@@ -18,10 +18,13 @@ import (
 	"errors"
 	"testing"
 
+	"strconv"
+
 	"github.com/stretchr/testify/assert"
 )
 
 func TestScopeBits(t *testing.T) {
+	t.Parallel()
 	const (
 		scope1 Scope = iota + 1
 		scope2
@@ -55,6 +58,7 @@ func TestScopeBits(t *testing.T) {
 }
 
 func TestFromString(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have string
 		want Scope
@@ -70,6 +74,7 @@ func TestFromString(t *testing.T) {
 }
 
 func TestFromScope(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have Scope
 		want StrScope
@@ -90,6 +95,7 @@ func TestStrScope(t *testing.T) {
 }
 
 func TestStrScopeFQPath(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		str  StrScope
 		id   string
@@ -122,7 +128,30 @@ func BenchmarkStrScopeFQPath(b *testing.B) {
 	}
 }
 
+func benchmarkStrScopeFQPathInt64(scopeID int64, b *testing.B) {
+	want := strWebsites + "/" + strconv.FormatInt(scopeID, 10) + "/system/dev/debug"
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchmarkStrScopeFQPath = StrWebsites.FQPathInt64(scopeID, "system", "dev", "debug")
+	}
+	if benchmarkStrScopeFQPath != want {
+		b.Errorf("Want: %s; Have, %s", want, benchmarkStrScopeFQPath)
+	}
+}
+
+// BenchmarkStrScopeFQPathInt64__Cached-4	 5000000	       383 ns/op	      32 B/op	       1 allocs/op
+func BenchmarkStrScopeFQPathInt64__Cached(b *testing.B) {
+	benchmarkStrScopeFQPathInt64(4, b)
+}
+
+// BenchmarkStrScopeFQPathInt64UnCached-4	 3000000	       438 ns/op	      48 B/op	       2 allocs/op
+func BenchmarkStrScopeFQPathInt64UnCached(b *testing.B) {
+	benchmarkStrScopeFQPathInt64(40, b)
+}
+
 func TestSplitFQPath(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have        string
 		wantScope   string

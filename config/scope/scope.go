@@ -16,9 +16,10 @@ package scope
 
 import (
 	"fmt"
-	"github.com/corestoreio/csfw/util/bufferpool"
 	"strconv"
 	"strings"
+
+	"github.com/corestoreio/csfw/util/bufferpool"
 )
 
 // Scope used in constants where default is the lowest and store the highest.
