@@ -97,7 +97,7 @@ func TestStrScopeFQPath(t *testing.T) {
 		want string
 	}{
 		{StrDefault, "0", []string{"system/dev/debug"}, strDefault + "/0/system/dev/debug"},
-		{StrDefault, "33", []string{"system", "dev", "debug"}, strDefault + "/33/system/dev/debug"},
+		{StrDefault, "33", []string{"system", "dev", "debug"}, strDefault + "/0/system/dev/debug"},
 		{StrWebsites, "0", []string{"system/dev/debug"}, strWebsites + "/0/system/dev/debug"},
 		{StrWebsites, "343", []string{"system", "dev", "debug"}, strWebsites + "/343/system/dev/debug"},
 	}
@@ -110,7 +110,7 @@ func TestStrScopeFQPath(t *testing.T) {
 
 var benchmarkStrScopeFQPath string
 
-// BenchmarkStrScopeFQPath-4	 5000000	       286 ns/op	     144 B/op	       2 allocs/op
+// BenchmarkStrScopeFQPath-4	 5000000	       384 ns/op	      32 B/op	       1 allocs/op
 func BenchmarkStrScopeFQPath(b *testing.B) {
 	want := strWebsites + "/4/system/dev/debug"
 	b.ReportAllocs()

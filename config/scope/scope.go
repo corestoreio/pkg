@@ -16,6 +16,7 @@ package scope
 
 import (
 	"fmt"
+	"github.com/corestoreio/csfw/util/bufferpool"
 	"strconv"
 	"strings"
 )
@@ -100,15 +101,33 @@ const (
 	StrStores   StrScope = strStores
 )
 
-// FQPath returns the fully qualified path. ID is an int string. Paths is either
-// one path (system/smtp/host) including path separators or three
+const strDefaultID = "0"
+
+// FQPath returns the fully qualified path. scopeID is an int string. Paths is
+// either one path (system/smtp/host) including path separators or three
 // parts ("system", "smtp", "host").
 func (s StrScope) FQPath(scopeID string, paths ...string) string {
-	return string(s) + PS + scopeID + PS + PathJoin(paths...)
+	if s == StrDefault && scopeID != strDefaultID {
+		scopeID = strDefaultID // default scope is always 0
+	}
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	buf.WriteString(string(s))
+	buf.WriteString(PS)
+	buf.WriteString(scopeID)
+	buf.WriteString(PS)
+	lp := len(paths) - 1
+	for i, p := range paths {
+		buf.WriteString(p)
+		if i < lp {
+			buf.WriteString(PS)
+		}
+	}
+	return buf.String()
 }
 
 // this "cache" should cover ~80% of all store setups
-var int64Cache = []string{
+var int64Cache = [...]string{
 	"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
 }
 var int64CacheLen = int64(len(int64Cache))
