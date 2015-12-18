@@ -15,11 +15,12 @@
 package model_test
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var packageConfiguration = config.MustNewConfiguration(
@@ -64,7 +65,25 @@ var packageConfiguration = config.MustNewConfiguration(
 						SortOrder: 30,
 						Visible:   config.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Default:   true,
+						Default:   "true",
+					},
+					&config.Field{
+						// Path: `web/cors/int`,
+						ID:        "int",
+						Type:      config.TypeSelect,
+						SortOrder: 30,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Default:   2015,
+					},
+					&config.Field{
+						// Path: `web/cors/float64`,
+						ID:        "float64",
+						Type:      config.TypeSelect,
+						SortOrder: 30,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Default:   2015.1000001,
 					},
 				},
 			},
@@ -77,10 +96,10 @@ func TestPath(t *testing.T) {
 	assert.Exactly(t, "web/cors/exposed_headers", p1.String())
 
 	wantPath := scope.StrWebsites.FQPathInt64(2, "web/cors/exposed_headers")
-	wantWebsiteID := int64(2) // This number 2 is usually stored in core_website table as website_id column
+	wantWebsiteID := int64(2) // This number 2 is usually stored in core_website/store_website table in column website_id
 
 	mw := new(config.MockWrite)
-	p1.Write(mw, 314159, scope.WebsiteID, wantWebsiteID)
+	assert.NoError(t, p1.Write(mw, 314159, scope.WebsiteID, wantWebsiteID))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 
 	sg := config.NewMockGetter().NewScoped(wantWebsiteID, 0, 0)
@@ -92,6 +111,7 @@ func TestPath(t *testing.T) {
 			wantPath: "X-CoreStore-TOKEN",
 		}),
 	).NewScoped(wantWebsiteID, 0, 0)
+
 	customStr := p1.LookupString(packageConfiguration, sg)
 	assert.Exactly(t, "X-CoreStore-TOKEN", customStr)
 
