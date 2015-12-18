@@ -74,7 +74,7 @@ func TestContextReaderSuccess(t *testing.T) {
 func TestWithContextMustService(t *testing.T) {
 	defer func() {
 		if r := recover(); r != nil {
-			t.Log(r.(error))
+			assert.EqualError(t, r.(error), "runtime error: invalid memory address or nil pointer dereference")
 		}
 	}()
 	store.WithContextMustService(scope.Option{}, nil)

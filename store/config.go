@@ -15,42 +15,52 @@
 package store
 
 import (
+	"net/http"
+
+	"github.com/corestoreio/csfw/catalog/catconfig"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/configsource"
+	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 )
 
-// Path constants defines the configuration paths in core_config_data
-const (
-	// PathSingleStoreModeEnabled if true then single store mode enabled
-	// This flag only shows that admin does not want to show certain
-	// UI components in the backend (like store switchers etc)
-	// If there is only one store view but it does not check the store view collection. WTF?
-	PathSingleStoreModeEnabled = "general/single_store_mode/enabled"
-	PathStoreStoreName         = "general/store_information/name"
-	PathStoreStorePhone        = "general/store_information/phone"
-	PathStoreCodeInURL         = "web/url/use_store"
-	PathRedirectToBase         = "web/url/redirect_to_base"
-	PathSecureInFrontend       = "web/secure/use_in_frontend"
+// PathRedirectToBase configuration path to specify redirect codes and
+// if a redirect should happen when a different "domain" has been typed
+// in by the user. TODO: Clarify that.
+// Used in WithValidateBaseURL() middleware.
+var PathRedirectToBase = NewConfigRedirectToBase("web/url/redirect_to_base")
 
-	PathUnsecureBaseURL = "web/unsecure/base_url"
-	PathSecureBaseURL   = "web/secure/base_url"
+// PathSingleStoreModeEnabled if true then single store mode enabled
+// This flag only shows that admin does not want to show certain
+// UI components in the backend (like store switchers etc)
+// If there is only one store view but it does not check the store view collection. WTF?
+var PathSingleStoreModeEnabled = model.NewBool("general/single_store_mode/enabled", configsource.YesNo...)
 
-	//	PathSecureBaseLinkUrl   = "web/secure/base_link_url"
-	//	PathUnsecureBaseLinkUrl = "web/unsecure/base_link_url"
+// PathSecureInFrontend enables or disables secure URLs on the Storefront.
+var PathSecureInFrontend = model.NewBool("web/secure/use_in_frontend", configsource.YesNo...)
 
-	PathSecureBaseStaticURL   = "web/secure/base_static_url"
-	PathUnsecureBaseStaticURL = "web/unsecure/base_static_url"
+// PathStoreCodeInURL if yes the ___store variable will be added to the URL. TODO.
+var PathStoreCodeInURL = model.NewBool("web/url/use_store", configsource.YesNo...)
 
-	PathSecureBaseMediaURL   = "web/secure/base_media_url"
-	PathUnsecureBaseMediaURL = "web/unsecure/base_media_url"
+var PathUnsecureBaseURL = model.NewBaseURL("web/unsecure/base_url")
 
-	// PathPriceScope defines the base currency scope
-	// ("Currency Setup" > "Currency Options" > "Base Currency").
-	// can be 0 = Global or 1 = Website
-	PathPriceScope = "catalog/price/scope"
-)
+var PathSecureBaseURL = model.NewBaseURL("web/secure/base_url")
+
+//	PathSecureBaseLinkUrl   = "web/secure/base_link_url"
+//	PathUnsecureBaseLinkUrl = "web/unsecure/base_link_url"
+
+var PathSecureBaseStaticURL = model.NewBaseURL("web/secure/base_static_url")
+var PathUnsecureBaseStaticURL = model.NewBaseURL("web/unsecure/base_static_url")
+
+var PathSecureBaseMediaURL = model.NewBaseURL("web/secure/base_media_url")
+var PathUnsecureBaseMediaURL = model.NewBaseURL("web/unsecure/base_media_url")
+
+// PathPriceScope defines the base currency scope
+// ("Currency Setup" > "Currency Options" > "Base Currency").
+// can be 0 = Global or 1 = Website
+// See constants PriceScopeGlobal and PriceScopeWebsite.
+var PathPriceScope = catconfig.NewConfigPriceScope("catalog/price/scope")
 
 // Placeholder constants and their values can occur in the table core_config_data.
 // These placeholder must be replaced with the current values.
@@ -84,16 +94,14 @@ func init() {
 					Fields: config.FieldSlice{
 						&config.Field{
 							// Path: `general/single_store_mode/enabled`,
-							ID:           "enabled",
-							Label:        `Enable Single-Store Mode`,
-							Comment:      `This setting will not be taken into account if system has more than one store view.`,
-							Type:         config.TypeSelect,
-							SortOrder:    10,
-							Visible:      config.VisibleYes,
-							Scope:        scope.NewPerm(scope.DefaultID),
-							Default:      nil,
-							BackendModel: nil,
-							SourceModel:  configsource.YesNo, // Magento\Config\Model\Config\Source\Yesno
+							ID:        "enabled",
+							Label:     `Enable Single-Store Mode`,
+							Comment:   `This setting will not be taken into account if system has more than one store view.`,
+							Type:      config.TypeSelect,
+							SortOrder: 10,
+							Visible:   config.VisibleYes,
+							Scope:     scope.NewPerm(scope.DefaultID),
+							Default:   nil,
 						},
 					},
 				},
@@ -173,9 +181,9 @@ func init() {
 							SortOrder:    20,
 							Visible:      config.VisibleYes,
 							Scope:        scope.NewPerm(scope.DefaultID),
-							Default:      nil,
+							Default:      http.StatusMovedPermanently,
 							BackendModel: nil,
-							SourceModel:  configsource.Redirect, // Magento\Config\Model\Config\Source\Web\Redirect
+							SourceModel:  nil, // configsource.Redirect, // Magento\Config\Model\Config\Source\Web\Redirect
 						},
 					},
 				},
@@ -296,30 +304,30 @@ func init() {
 
 						&config.Field{
 							// Path: `web/secure/base_media_url`,
-							ID:           "base_media_url",
-							Label:        `Secure Base URL for User Media Files`,
-							Comment:      `May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`,
-							Type:         config.TypeText,
-							SortOrder:    40,
-							Visible:      config.VisibleYes,
-							Scope:        scope.PermAll,
-							Default:      nil,
-							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-							SourceModel:  nil,
+							ID:        "base_media_url",
+							Label:     `Secure Base URL for User Media Files`,
+							Comment:   `May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`,
+							Type:      config.TypeText,
+							SortOrder: 40,
+							Visible:   config.VisibleYes,
+							Scope:     scope.PermAll,
+							Default:   nil,
+							//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
+							//SourceModel:  nil,
 						},
 
 						&config.Field{
 							// Path: `web/secure/use_in_frontend`,
-							ID:           "use_in_frontend",
-							Label:        `Use Secure URLs on Storefront`,
-							Comment:      `Enter https protocol to use Secure URLs on Storefront.`,
-							Type:         config.TypeSelect,
-							SortOrder:    50,
-							Visible:      config.VisibleYes,
-							Scope:        scope.PermAll,
-							Default:      false,
-							BackendModel: nil,                // Magento\Config\Model\Config\Backend\Secure
-							SourceModel:  configsource.YesNo, // Magento\Config\Model\Config\Source\Yesno
+							ID:        "use_in_frontend",
+							Label:     `Use Secure URLs on Storefront`,
+							Comment:   `Enter https protocol to use Secure URLs on Storefront.`,
+							Type:      config.TypeSelect,
+							SortOrder: 50,
+							Visible:   config.VisibleYes,
+							Scope:     scope.PermAll,
+							Default:   false,
+							//BackendModel: nil,                // Magento\Config\Model\Config\Backend\Secure
+							//SourceModel:  configsource.YesNo, // Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&config.Field{

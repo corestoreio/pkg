@@ -43,10 +43,10 @@ var middlewareCtxStoreService context.Context
 func init() {
 	middlewareConfigReader = config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			config.MockPathScopeDefault(store.PathRedirectToBase):    1,
-			config.MockPathScopeStore(1, store.PathSecureInFrontend): true,
-			config.MockPathScopeStore(1, store.PathUnsecureBaseURL):  "http://www.corestore.io/",
-			config.MockPathScopeStore(1, store.PathSecureBaseURL):    "https://www.corestore.io/",
+			scope.StrDefault.FQPathInt64(0, store.PathRedirectToBase.String()):  1,
+			scope.StrStores.FQPathInt64(1, store.PathSecureInFrontend.String()): true,
+			scope.StrStores.FQPathInt64(1, store.PathUnsecureBaseURL.String()):  "http://www.corestore.io/",
+			scope.StrStores.FQPathInt64(1, store.PathSecureBaseURL.String()):    "https://www.corestore.io/",
 		}),
 	)
 
@@ -58,7 +58,7 @@ func init() {
 					&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
 					&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 					&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
-					store.SetStoreConfig(middlewareConfigReader),
+					store.WithStoreConfig(middlewareConfigReader),
 				)
 			}
 		},
@@ -78,7 +78,7 @@ func TestWithValidateBaseUrl_DeactivatedAndShouldNotRedirectWithGETRequest(t *te
 
 	mockReader := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			config.MockPathScopeDefault(store.PathRedirectToBase): 0,
+			scope.StrDefault.FQPathInt64(0, store.PathRedirectToBase.String()): 0,
 		}),
 	)
 
@@ -95,7 +95,7 @@ func TestWithValidateBaseUrl_ActivatedAndShouldNotRedirectWithPOSTRequest(t *tes
 
 	mockReader := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			config.MockPathScopeDefault(store.PathRedirectToBase): 301,
+			scope.StrDefault.FQPathInt64(0, store.PathRedirectToBase.String()): 301,
 		}),
 	)
 

@@ -98,7 +98,7 @@ func SetWebsiteGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) WebsiteOpt
 				w.addError(fmt.Errorf("Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs))
 				return
 			}
-			w.Stores[i], err = NewStore(s, w.Data, group, SetStoreConfig(w.cr))
+			w.Stores[i], err = NewStore(s, w.Data, group, WithStoreConfig(w.cr))
 			if err != nil {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.SetWebsiteGroupsStores.NewStore", "err", err, "s", s, "w.Data", w.Data, "group", group)
@@ -217,10 +217,10 @@ func (w *Website) DefaultStore() (*Store, error) {
 // BaseCurrencyCode returns the base currency code of a website TODO.
 func (w *Website) BaseCurrencyCode() (currency.Unit, error) {
 	var c string
-	if w.Config.String(PathPriceScope) == PriceScopeGlobal {
+	if PathPriceScope.Get(PackageConfiguration, w.Config) == PriceScopeGlobal {
 		c, _ = w.cr.String(config.Path(directory.PathCurrencyBase)) // TODO check for error
 	} else {
-		c = w.Config.String(directory.PathCurrencyBase)
+		c, _ = w.Config.String(directory.PathCurrencyBase)
 	}
 	return currency.ParseISO(c)
 }

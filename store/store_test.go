@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
@@ -243,9 +244,9 @@ func TestStoreBaseURLandPath(t *testing.T) {
 			config.NewMockGetter(config.WithMockString(
 				func(path string) (string, error) {
 					switch path {
-					case config.MockPathScopeDefault(store.PathSecureBaseURL):
+					case scope.StrDefault.FQPathInt64(0, store.PathSecureBaseURL.String()):
 						return "https://corestore.io", nil
-					case config.MockPathScopeDefault(store.PathUnsecureBaseURL):
+					case scope.StrDefault.FQPathInt64(0, store.PathUnsecureBaseURL.String()):
 						return "http://corestore.io", nil
 					}
 					return "", config.ErrKeyNotFound
@@ -257,9 +258,9 @@ func TestStoreBaseURLandPath(t *testing.T) {
 			config.NewMockGetter(config.WithMockString(
 				func(path string) (string, error) {
 					switch path {
-					case config.MockPathScopeDefault(store.PathSecureBaseURL):
+					case scope.StrDefault.FQPathInt64(0, store.PathSecureBaseURL.String()):
 						return "https://myplatform.io/customer1", nil
-					case config.MockPathScopeDefault(store.PathUnsecureBaseURL):
+					case scope.StrDefault.FQPathInt64(0, store.PathUnsecureBaseURL.String()):
 						return "http://myplatform.io/customer1", nil
 					}
 					return "", config.ErrKeyNotFound
@@ -271,11 +272,11 @@ func TestStoreBaseURLandPath(t *testing.T) {
 			config.NewMockGetter(config.WithMockString(
 				func(path string) (string, error) {
 					switch path {
-					case config.MockPathScopeDefault(store.PathSecureBaseURL):
+					case scope.StrDefault.FQPathInt64(0, store.PathSecureBaseURL.String()):
 						return store.PlaceholderBaseURL, nil
-					case config.MockPathScopeDefault(store.PathUnsecureBaseURL):
+					case scope.StrDefault.FQPathInt64(0, store.PathUnsecureBaseURL.String()):
 						return store.PlaceholderBaseURL, nil
-					case config.MockPathScopeDefault(config.PathCSBaseURL):
+					case scope.StrDefault.FQPathInt64(0, config.PathCSBaseURL):
 						return config.CSBaseURL, nil
 					}
 					return "", config.ErrKeyNotFound
@@ -286,7 +287,7 @@ func TestStoreBaseURLandPath(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		s.ApplyOptions(store.SetStoreConfig(test.haveR))
+		s.ApplyOptions(store.WithStoreConfig(test.haveR))
 		assert.NotNil(t, s.Config, "Index %d", i)
 		baseURL, err := s.BaseURL(test.haveUT, test.haveIsSecure)
 		assert.NoError(t, err)

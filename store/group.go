@@ -111,7 +111,7 @@ func SetGroupStores(tss TableStoreSlice, w *TableWebsite) GroupOption {
 			return
 		}
 		for _, s := range tss.FilterByGroupID(g.Data.GroupID) {
-			ns, err := NewStore(s, w, g.Data, SetStoreConfig(g.cr))
+			ns, err := NewStore(s, w, g.Data, WithStoreConfig(g.cr))
 			if err != nil {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.SetGroupStores.NewStore", "err", err, "s", s, "w", w, "g.Data", g.Data)

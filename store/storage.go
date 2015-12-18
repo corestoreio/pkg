@@ -267,7 +267,7 @@ func (st *Storage) Store(r scope.StoreIDer) (*Store, error) {
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	ns, err := NewStore(s, w, g, SetStoreConfig(st.cr))
+	ns, err := NewStore(s, w, g, WithStoreConfig(st.cr))
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}

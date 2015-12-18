@@ -26,6 +26,7 @@ import (
 	"fmt"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/net/httputil"
@@ -44,9 +45,9 @@ const (
 	// store code.
 	ParamName = `store`
 	// PriceScopeGlobal prices are for all stores and websites the same.
-	PriceScopeGlobal = `0` // must be string
+	PriceScopeGlobal = 0
 	// PriceScopeWebsite prices are in each website different.
-	PriceScopeWebsite = `1` // must be string
+	PriceScopeWebsite = 1
 )
 
 // Store represents the scope in which a shop runs. Everything is bound to a
@@ -54,7 +55,7 @@ const (
 // have its own configuration settings which overrides the default scope and
 // website scope.
 type Store struct {
-	cr config.Getter // internal root config.Reader which can be overriden
+	cr config.Getter // internal root config.Reader which can be overwritten
 	// Config contains a config.Service which takes care of the scope based
 	// configuration values.
 	Config config.ScopedGetter
@@ -91,11 +92,11 @@ var (
 	ErrStoreCodeInvalid      = errors.New("The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter")
 )
 
-// SetStoreConfig sets the config.Reader to the Group. Default reader is
-// config.DefaultManager. You should call this function before calling other
+// WithStoreConfig sets the config.Reader to the Store. Default reader is
+// config.DefaultService. You should call this function before calling other
 // option functions otherwise your preferred config.Reader won't be inherited
 // to a Website or a Group.
-func SetStoreConfig(cr config.Getter) StoreOption { return func(s *Store) { s.cr = cr } }
+func WithStoreConfig(cr config.Getter) StoreOption { return func(s *Store) { s.cr = cr } }
 
 // NewStore creates a new Store. Returns an error if the first three arguments
 // are nil. Returns an error if integrity checks fail. config.Reader will be
@@ -243,7 +244,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 		}
 	}
 
-	var p string
+	var p model.BaseURL
 	switch ut {
 	case config.URLTypeWeb:
 		p = PathUnsecureBaseURL
@@ -271,7 +272,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 		return url.URL{}, fmt.Errorf("Unsupported UrlType: %d", ut)
 	}
 
-	rawURL := s.Config.String(p)
+	rawURL := p.Get(PackageConfiguration, s.Config)
 
 	if strings.Contains(rawURL, PlaceholderBaseURL) {
 		// TODO(cs) replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
@@ -295,7 +296,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 
 // IsFrontURLSecure returns true from the config if the frontend must be secure.
 func (s *Store) IsFrontURLSecure() bool {
-	return s.Config.Bool(PathSecureInFrontend)
+	return PathSecureInFrontend.Get(PackageConfiguration, s.Config)
 }
 
 // IsCurrentlySecure checks if a request for a give store aka. scope is secure. Checks

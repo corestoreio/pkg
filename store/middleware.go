@@ -30,25 +30,26 @@ import (
 // is equal to the one store in the configuration, if not
 // i.e. redirect from http://example.com/store/ to http://www.example.com/store/
 // @see app/code/Magento/Store/App/FrontController/Plugin/RequestPreprocessor.php
-func WithValidateBaseURL(cr config.GetterPubSuber) ctxhttp.Middleware {
+func WithValidateBaseURL(cg config.GetterPubSuber) ctxhttp.Middleware {
 
 	// Having the GetBool command here, means you must restart the app to take
 	// changes in effect. @todo refactor and use pub/sub to automatically change
 	// the isRedirectToBase value.
-	checkBaseURL, err := cr.Bool(config.Path(PathRedirectToBase)) // scope default
-	if config.NotKeyNotFoundError(err) && PkgLog.IsDebug() {
-		PkgLog.Debug("ctxhttp.WithValidateBaseUrl.Bool", "err", err, "path", PathRedirectToBase)
-	}
+
+	// <todo check logic!>
+	cgDefaultScope := cg.NewScoped(0, 0, 0)
+	configRedirectCode := PathRedirectToBase.Get(PackageConfiguration, cgDefaultScope)
 
 	redirectCode := http.StatusMovedPermanently
-	if rc, err := cr.Int(config.Path(PathRedirectToBase)); rc != redirectCode && false == config.NotKeyNotFoundError(err) {
+	if configRedirectCode != redirectCode {
 		redirectCode = http.StatusFound
 	}
+	// </todo check logic>
 
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			if checkBaseURL && r.Method != "POST" {
+			if configRedirectCode > 0 && r.Method != "POST" {
 
 				_, requestedStore, err := FromContextReader(ctx)
 				if err != nil {
