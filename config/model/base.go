@@ -48,6 +48,7 @@ func (p Path) LookupString(pkgCfg config.SectionSlice, sg config.ScopedGetter) (
 
 	if fields, err := pkgCfg.FindFieldByPath(p.string); err == nil {
 		v, _ = cast.ToStringE(fields.Default)
+		// todo check InScope()
 	} else {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("model.StringSlice.SectionSlice.FindFieldByPath", "err", err, "path", p.string)
@@ -57,6 +58,8 @@ func (p Path) LookupString(pkgCfg config.SectionSlice, sg config.ScopedGetter) (
 	if val, err := sg.String(p.string); err == nil {
 		v = val
 	}
+	// todo if Options has been provided check if the returned result in v is contained
+	// in the options. do this for all types wihtin this package.
 	return
 }
 

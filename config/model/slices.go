@@ -48,35 +48,35 @@ func (p StringCSV) Write(w config.Writer, sl []string, s scope.Scope, id int64) 
 	return p.Path.Write(w, strings.Join(sl, CSVSeparator), s, id)
 }
 
-// Int64CSV represents a path in config.Getter which will be saved as a
+// IntCSV represents a path in config.Getter which will be saved as a
 // CSV string and returned as an int64 slice. Separator is a comma.
-type Int64CSV struct{ Path }
+type IntCSV struct{ Path }
 
-// NewInt64CSV creates a new int64 CSV type. Acts as a multiselect.
-func NewInt64CSV(path string, vlPairs ...valuelabel.Pair) Int64CSV {
-	return Int64CSV{Path: NewPath(path, vlPairs...)}
+// NewIntCSV creates a new int CSV type. Acts as a multiselect.
+func NewIntCSV(path string, vlPairs ...valuelabel.Pair) IntCSV {
+	return IntCSV{Path: NewPath(path, vlPairs...)}
 }
 
-func (p Int64CSV) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) []int64 {
+func (p IntCSV) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) []int {
 	v := p.Path.LookupString(pkgCfg, sg)
 	csv := strings.Split(v, CSVSeparator)
-	ret := make([]int64, len(csv))
+	ret := make([]int, len(csv))
 
 	for i, line := range csv {
 		var err error
-		if ret[i], err = strconv.ParseInt(line, 10, 64); err != nil && PkgLog.IsDebug() {
-			PkgLog.Debug("model.Int64CSV.Get.strconv.ParseInt", "err", err, "position", i, "line", line)
+		if ret[i], err = strconv.Atoi(line); err != nil && PkgLog.IsDebug() {
+			PkgLog.Debug("model.IntCSV.Get.strconv.ParseInt", "err", err, "position", i, "line", line)
 		}
 	}
 	return ret
 }
 
-// Write writes int64 values as a CSV string
-func (p Int64CSV) Write(w config.Writer, sl []int64, s scope.Scope, id int64) error {
+// Write writes int values as a CSV string
+func (p IntCSV) Write(w config.Writer, sl []int, s scope.Scope, id int64) error {
 	val := bufferpool.Get()
 	defer bufferpool.Put(val)
 	for i, v := range sl {
-		if _, err := val.WriteString(strconv.FormatInt(v, 10)); err != nil {
+		if _, err := val.WriteString(strconv.Itoa(v)); err != nil {
 			return errgo.Mask(err)
 		}
 		if i < len(sl)-1 {

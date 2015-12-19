@@ -14,8 +14,32 @@
 
 package model_test
 
-import "testing"
+import (
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/config/scope"
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
 
 func TestBaseURL(t *testing.T) {
-	t.Log("todo")
+
+	wantPath := scope.StrStores.FQPathInt64(1, "web/unsecure/base_url")
+	b := model.NewBaseURL("web/unsecure/base_url")
+
+	assert.Empty(t, b.Options)
+
+	assert.Exactly(t, "{{base_url}}", b.Get(packageConfiguration, config.NewMockGetter().NewScoped(0, 0, 1)))
+
+	assert.Exactly(t, "http://cs.io", b.Get(packageConfiguration, config.NewMockGetter(
+		config.WithMockValues(config.MockPV{
+			wantPath: "http://cs.io",
+		}),
+	).NewScoped(0, 0, 1)))
+
+	mw := &config.MockWrite{}
+	assert.NoError(t, b.Write(mw, "dude", scope.StoreID, 1))
+	assert.Exactly(t, wantPath, mw.ArgPath)
+	assert.Exactly(t, "dude", mw.ArgValue.(string))
+
 }

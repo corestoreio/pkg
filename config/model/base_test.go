@@ -70,11 +70,20 @@ var packageConfiguration = config.MustNewConfiguration(
 					&config.Field{
 						// Path: `web/cors/int`,
 						ID:        "int",
-						Type:      config.TypeSelect,
+						Type:      config.TypeText,
 						SortOrder: 30,
 						Visible:   config.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:   2015,
+					},
+					&config.Field{
+						// Path: `web/cors/int_slice`,
+						ID:        "int_slice",
+						Type:      config.TypeSelect,
+						SortOrder: 30,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Default:   "2014,2015,2016",
 					},
 					&config.Field{
 						// Path: `web/cors/float64`,
@@ -84,6 +93,54 @@ var packageConfiguration = config.MustNewConfiguration(
 						Visible:   config.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:   2015.1000001,
+					},
+				},
+			},
+
+			&config.Group{
+				ID:        "unsecure",
+				Label:     `Base URLs`,
+				Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`,
+				SortOrder: 10,
+				Scope:     scope.PermAll,
+				Fields: config.FieldSlice{
+					&config.Field{
+						// Path: `web/unsecure/base_url`,
+						ID:        "base_url",
+						Label:     `Base URL`,
+						Comment:   `Specify URL or {{base_url}} placeholder.`,
+						Type:      config.TypeText,
+						SortOrder: 10,
+						Visible:   config.VisibleYes,
+						Scope:     scope.PermAll,
+						Default:   "{{base_url}}",
+						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
+					},
+
+					&config.Field{
+						// Path: `web/unsecure/base_link_url`,
+						ID:        "base_link_url",
+						Label:     `Base Link URL`,
+						Comment:   `May start with {{unsecure_base_url}} placeholder.`,
+						Type:      config.TypeText,
+						SortOrder: 20,
+						Visible:   config.VisibleYes,
+						Scope:     scope.PermAll,
+						Default:   "{{unsecure_base_url}}",
+						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
+					},
+
+					&config.Field{
+						// Path: `web/unsecure/base_static_url`,
+						ID:        "base_static_url",
+						Label:     `Base URL for Static View Files`,
+						Comment:   `May be empty or start with {{unsecure_base_url}} placeholder.`,
+						Type:      config.TypeText,
+						SortOrder: 25,
+						Visible:   config.VisibleYes,
+						Scope:     scope.PermAll,
+						Default:   nil,
+						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 					},
 				},
 			},
@@ -101,6 +158,7 @@ func TestPath(t *testing.T) {
 	mw := new(config.MockWrite)
 	assert.NoError(t, p1.Write(mw, 314159, scope.WebsiteID, wantWebsiteID))
 	assert.Exactly(t, wantPath, mw.ArgPath)
+	assert.Exactly(t, 314159, mw.ArgValue.(int))
 
 	sg := config.NewMockGetter().NewScoped(wantWebsiteID, 0, 0)
 	defaultStr := p1.LookupString(packageConfiguration, sg)

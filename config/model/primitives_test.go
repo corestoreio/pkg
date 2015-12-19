@@ -42,6 +42,7 @@ func TestBool(t *testing.T) {
 	mw := &config.MockWrite{}
 	assert.NoError(t, b.Write(mw, true, scope.StoreID, 3))
 	assert.Exactly(t, wantPath, mw.ArgPath)
+	assert.Exactly(t, "true", mw.ArgValue.(string))
 }
 
 func TestString(t *testing.T) {
@@ -62,7 +63,7 @@ func TestString(t *testing.T) {
 	mw := &config.MockWrite{}
 	assert.NoError(t, b.Write(mw, "dude", scope.DefaultID, 0))
 	assert.Exactly(t, wantPath, mw.ArgPath)
-
+	assert.Exactly(t, "dude", mw.ArgValue.(string))
 }
 
 func TestInt(t *testing.T) {
@@ -83,7 +84,7 @@ func TestInt(t *testing.T) {
 	mw := &config.MockWrite{}
 	assert.NoError(t, b.Write(mw, 1, scope.WebsiteID, 10))
 	assert.Exactly(t, wantPath, mw.ArgPath)
-
+	assert.Exactly(t, "1", mw.ArgValue.(string))
 }
 
 func TestFloat64(t *testing.T) {
@@ -101,7 +102,7 @@ func TestFloat64(t *testing.T) {
 	).NewScoped(10, 0, 0)))
 
 	mw := &config.MockWrite{}
-	assert.NoError(t, b.Write(mw, 1, scope.WebsiteID, 10))
+	assert.NoError(t, b.Write(mw, 1.123456789, scope.WebsiteID, 10))
 	assert.Exactly(t, wantPath, mw.ArgPath)
-
+	assert.Exactly(t, "1.12345678900000", mw.ArgValue.(string))
 }
