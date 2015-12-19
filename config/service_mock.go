@@ -24,7 +24,6 @@ import (
 
 	"encoding/json"
 
-	"github.com/corestoreio/csfw/config/scope"
 	"golang.org/x/net/context"
 )
 
@@ -39,6 +38,8 @@ type MockWrite struct {
 	// ArgPath will be set after calling write to export the config path.
 	// Values you enter here will be overwritten when calling Write
 	ArgPath string
+	// ArgValue contains the written data
+	ArgValue interface{}
 }
 
 // Write writes to a black hole, may return an error
@@ -48,6 +49,7 @@ func (w *MockWrite) Write(o ...ArgFunc) error {
 		return err
 	}
 	w.ArgPath = a.scopePath()
+	w.ArgValue = a.v
 	return w.WriteError
 }
 
@@ -71,24 +73,6 @@ type MockGet struct {
 // MockPV is a required type for an option function. PV = path => value.
 // This map[string]interface{} is protected by a mutex.
 type MockPV map[string]interface{}
-
-// MockPathScopeDefault creates for testing a fully qualified path for the
-// default scope and a path string (a/b/c)
-func MockPathScopeDefault(path string) string {
-	return scope.StrDefault.FQPathInt64(0, path)
-}
-
-// MockPathScopeWebsite creates for testing a fully qualified path for the
-// website scope from a Scope ID and a path string (a/b/c)
-func MockPathScopeWebsite(id int64, path string) string {
-	return scope.StrWebsites.FQPathInt64(id, path)
-}
-
-// MockPathScopeStore creates for testing a fully qualified path for the
-// store scope from a Scope ID and a path string (a/b/c)
-func MockPathScopeStore(id int64, path string) string {
-	return scope.StrStores.FQPathInt64(id, path)
-}
 
 // WithMockString returns a function which can be used in the NewMockGetter().
 // Your function returns a string value from a given path.

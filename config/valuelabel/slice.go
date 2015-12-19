@@ -17,10 +17,11 @@ package valuelabel
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/corestoreio/csfw/util"
-	"github.com/juju/errgo"
 	"math"
 	"sort"
+
+	"github.com/corestoreio/csfw/util"
+	"github.com/juju/errgo"
 )
 
 // Slice type is returned by the SourceModel.Options() interface

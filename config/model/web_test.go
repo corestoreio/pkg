@@ -15,11 +15,12 @@
 package model_test
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestBaseURL(t *testing.T) {

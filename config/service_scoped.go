@@ -1,8 +1,9 @@
 package config
 
 import (
-	"github.com/corestoreio/csfw/config/scope"
 	"time"
+
+	"github.com/corestoreio/csfw/config/scope"
 )
 
 // ScopedGetter is equal to Getter but the underlying implementation takes
