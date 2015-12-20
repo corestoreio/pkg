@@ -38,10 +38,11 @@ func TestScopeBits(t *testing.T) {
 		want    Scope
 		notWant Scope
 		human   []string
+		string
 	}{
-		{[]Scope{scope1, scope2}, scope2, scope3, []string{"Default", "Website"}},
-		{[]Scope{scope3, scope4}, scope3, scope2, []string{"Group", "Store"}},
-		{[]Scope{scope4, scope5}, scope4, scope2, []string{"Store", "Scope(5)"}},
+		{[]Scope{scope1, scope2}, scope2, scope3, []string{"Default", "Website"}, "Default,Website"},
+		{[]Scope{scope3, scope4}, scope3, scope2, []string{"Group", "Store"}, "Group,Store"},
+		{[]Scope{scope4, scope5}, scope4, scope2, []string{"Store", "Scope(5)"}, "Store,Scope(5)"},
 	}
 
 	for _, test := range tests {
@@ -54,6 +55,7 @@ func TestScopeBits(t *testing.T) {
 			t.Errorf("%d should not contain %d", b, test.notWant)
 		}
 		assert.EqualValues(t, test.human, b.Human())
+		assert.EqualValues(t, test.string, b.String())
 	}
 }
 

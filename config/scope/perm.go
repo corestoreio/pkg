@@ -14,7 +14,10 @@
 
 package scope
 
-import "github.com/corestoreio/csfw/util"
+import (
+	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/bufferpool"
+)
 
 // Perm is a bit set and used for permissions, Group is not a part of this bit set.
 // Type Group is a subpart of Perm
@@ -53,14 +56,29 @@ func (bits Perm) Has(s Scope) bool {
 // Human readable representation of the permissions
 func (bits Perm) Human() util.StringSlice {
 	var ret util.StringSlice
-	var i uint
-	for i = 0; i < 64; i++ {
+	for i := uint(0); i < 64; i++ {
 		bit := ((bits & (1 << i)) != 0)
 		if bit {
 			ret.Append(Scope(i).String())
 		}
 	}
 	return ret
+}
+
+// String readable representation of the permissions
+func (bits Perm) String() string {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+
+	for i := uint(0); i < 64; i++ {
+		if (bits & (1 << i)) != 0 {
+			buf.WriteString(Scope(i).String())
+			buf.WriteByte(',')
+		}
+	}
+	buf.Truncate(buf.Len() - 1) // remove last colon
+	return buf.String()
+
 }
 
 // MarshalJSON implements marshaling into an array or null if no bits are set. @todo UnMarshal
