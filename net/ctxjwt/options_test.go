@@ -20,6 +20,7 @@ import (
 	"bytes"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,7 +29,7 @@ func TestPasswordFromConfig(t *testing.T) {
 
 	cfg := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			config.MockPathScopeDefault(ctxjwt.PathJWTPassword): `Rump3lst!lzch3n`,
+			scope.StrDefault.FQPathInt64(ctxjwt.PathJWTPassword): `Rump3lst!lzch3n`,
 		}),
 	)
 
