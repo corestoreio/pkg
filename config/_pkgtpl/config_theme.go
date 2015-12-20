@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Image\Favicon
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -46,7 +46,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -60,7 +60,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -74,7 +74,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -88,7 +88,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -102,7 +102,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -116,7 +116,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -130,7 +130,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 				},
 			},
@@ -153,7 +153,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `INDEX,FOLLOW`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Design\Robots
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Design\Robots
 					},
 
 					&config.Field{
@@ -167,7 +167,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Admin\Robots
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -181,7 +181,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -204,7 +204,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Image\Logo
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -218,7 +218,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -232,7 +232,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -246,7 +246,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -260,7 +260,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -283,7 +283,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -297,7 +297,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},

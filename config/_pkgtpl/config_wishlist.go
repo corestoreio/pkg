@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `general`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
 					},
 
 					&config.Field{
@@ -46,7 +46,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `wishlist_email_email_template`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
 					},
 
 					&config.Field{
@@ -60,7 +60,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      10,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -74,7 +74,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      255,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -97,7 +97,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 				},
 			},
@@ -120,7 +120,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Wishlist\Model\Config\Source\Summary
+						// SourceModel:  nil, // Magento\Wishlist\Model\Config\Source\Summary
 					},
 				},
 			},
@@ -150,7 +150,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
 					},
 				},
 			},

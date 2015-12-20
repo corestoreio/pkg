@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `admin_emails_reset_password_template`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
 					},
 				},
 			},
@@ -55,7 +55,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      6,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -69,7 +69,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      30,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -83,7 +83,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      90,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -97,7 +97,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      true,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\User\Model\System\Config\Source\Password
+						// SourceModel:  nil, // Magento\User\Model\System\Config\Source\Password
 					},
 				},
 			},

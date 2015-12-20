@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      16,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},

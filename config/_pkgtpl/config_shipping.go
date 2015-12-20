@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `US`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
+						// SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
 					},
 
 					&config.Field{
@@ -46,7 +46,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      12,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -60,7 +60,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      90034,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -74,7 +74,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -88,7 +88,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -102,7 +102,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -125,7 +125,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -139,7 +139,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},

@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Rss\Model\System\Config\Backend\Links
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Enabledisable
 					},
 				},
 			},

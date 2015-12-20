@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(config.IDScopeDefault),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -62,7 +62,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(config.IDScopeDefault),
 						Default:      180,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -76,7 +76,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(config.IDScopeDefault),
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -90,7 +90,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(config.IDScopeDefault),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -104,7 +104,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(config.IDScopeDefault),
 						Default:      `D`,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Log\Cron
-						SourceModel:  nil, // Magento\Cron\Model\Config\Source\Frequency
+						// SourceModel:  nil, // Magento\Cron\Model\Config\Source\Frequency
 					},
 
 					&config.Field{
@@ -118,7 +118,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(config.IDScopeDefault),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -132,7 +132,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(config.IDScopeDefault),
 						Default:      `general`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
 					},
 
 					&config.Field{
@@ -146,7 +146,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(config.IDScopeDefault),
 						Default:      `system_log_error_email_template`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
 					},
 				},
 			},

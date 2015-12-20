@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `website`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Reports\Scope
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Reports\Scope
 					},
 
 					&config.Field{
@@ -46,7 +46,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      5,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -60,7 +60,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      5,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -90,7 +90,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `1,1`,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -104,7 +104,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      true,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},

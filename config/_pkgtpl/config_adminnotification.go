@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -46,7 +46,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      true,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\AdminNotification\Model\Config\Source\Frequency
+						// SourceModel:  nil, // Magento\AdminNotification\Model\Config\Source\Frequency
 					},
 
 					&config.Field{
@@ -60,7 +60,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      0,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},

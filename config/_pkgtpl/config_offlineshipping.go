@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -46,7 +46,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `Fixed`,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -60,7 +60,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      5.00,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -74,7 +74,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `F`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingType
+						// SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingType
 					},
 
 					&config.Field{
@@ -88,7 +88,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -102,7 +102,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -116,7 +116,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `Flat Rate`,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -130,7 +130,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `I`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\OfflineShipping\Model\Config\Source\Flatrate
+						// SourceModel:  nil, // Magento\OfflineShipping\Model\Config\Source\Flatrate
 					},
 
 					&config.Field{
@@ -144,7 +144,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
+						// SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
 					},
 
 					&config.Field{
@@ -158,7 +158,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
+						// SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
 					},
 
 					&config.Field{
@@ -172,7 +172,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -186,7 +186,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `This shipping method is not available. To use this shipping method, please contact us.`,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -209,7 +209,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `F`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingType
+						// SourceModel:  nil, // Magento\Shipping\Model\Source\HandlingType
 					},
 
 					&config.Field{
@@ -223,7 +223,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -237,7 +237,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -251,7 +251,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `package_weight`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\OfflineShipping\Model\Config\Source\Tablerate
+						// SourceModel:  nil, // Magento\OfflineShipping\Model\Config\Source\Tablerate
 					},
 
 					&config.Field{
@@ -265,7 +265,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -279,7 +279,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -293,7 +293,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\OfflineShipping\Model\Config\Backend\Tablerate
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -307,7 +307,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `Table Rate`,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -321,7 +321,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -335,7 +335,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `Best Way`,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -349,7 +349,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
+						// SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
 					},
 
 					&config.Field{
@@ -363,7 +363,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
+						// SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
 					},
 
 					&config.Field{
@@ -377,7 +377,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -391,7 +391,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `This shipping method is not available. To use this shipping method, please contact us.`,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -414,7 +414,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -428,7 +428,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -442,7 +442,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `Free`,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -456,7 +456,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -470,7 +470,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `Free Shipping`,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -484,7 +484,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
+						// SourceModel:  nil, // Magento\Shipping\Model\Config\Source\Allspecificcountries
 					},
 
 					&config.Field{
@@ -498,7 +498,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
+						// SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
 					},
 
 					&config.Field{
@@ -512,7 +512,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -526,7 +526,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `This shipping method is not available. To use this shipping method, please contact us.`,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},

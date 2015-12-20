@@ -41,7 +41,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Logo
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 					&config.Field{
 						// Path: `design/email/logo_alt`,
@@ -54,7 +54,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 					&config.Field{
 						// Path: `design/email/logo_width`,
@@ -67,7 +67,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 					&config.Field{
 						// Path: `design/email/logo_height`,
@@ -80,7 +80,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 					&config.Field{
 						// Path: `design/email/header_template`,
@@ -93,7 +93,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `design_email_header_template`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
 					},
 					&config.Field{
 						// Path: `design/email/footer_template`,
@@ -106,7 +106,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `design_email_footer_template`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
 					},
 				},
 			},
@@ -136,7 +136,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Address => validation for correct mail address
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -150,7 +150,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Sender => validation for a name to use only visible characters & is max 255 long
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -173,7 +173,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Address
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -187,7 +187,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Sender
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -210,7 +210,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Address
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -224,7 +224,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Sender
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -247,7 +247,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Address
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -261,7 +261,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Sender
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -284,7 +284,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Address
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -298,7 +298,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Sender
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -326,7 +326,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -340,7 +340,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -354,7 +354,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{ // CS feature, not available in Magento
@@ -368,7 +368,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{ // CS feature, not available in Magento
@@ -382,7 +382,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // @todo encryption
-						SourceModel:  nil, // @todo encryption
+						// SourceModel:  nil, // @todo encryption
 					},
 
 					&config.Field{
@@ -396,7 +396,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesnocustom
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesnocustom
 					},
 
 					&config.Field{
@@ -410,7 +410,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Address
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},

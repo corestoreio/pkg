@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `home`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Cms\Model\Config\Source\Page
+						// SourceModel:  nil, // Magento\Cms\Model\Config\Source\Page
 					},
 
 					&config.Field{
@@ -46,7 +46,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `no-route`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Cms\Model\Config\Source\Page
+						// SourceModel:  nil, // Magento\Cms\Model\Config\Source\Page
 					},
 
 					&config.Field{
@@ -60,7 +60,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `enable-cookies`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Cms\Model\Config\Source\Page
+						// SourceModel:  nil, // Magento\Cms\Model\Config\Source\Page
 					},
 
 					&config.Field{
@@ -74,7 +74,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 				},
 			},
@@ -97,7 +97,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -111,7 +111,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -125,7 +125,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 				},
 			},
@@ -155,7 +155,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `enabled`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Cms\Model\Config\Source\Wysiwyg\Enabled
+						// SourceModel:  nil, // Magento\Cms\Model\Config\Source\Wysiwyg\Enabled
 					},
 				},
 			},

@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      true,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\PageCache\Model\System\Config\Source\Application
+						// SourceModel:  nil, // Magento\PageCache\Model\System\Config\Source\Application
 					},
 
 					&config.Field{
@@ -46,7 +46,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      86400,
 						BackendModel: nil, // Magento\PageCache\Model\System\Config\Backend\Ttl
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},

@@ -41,7 +41,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil, // Magento\Paypal\Model\System\Config\Backend\MerchantCountry
-						SourceModel:  nil, // Magento\Paypal\Model\System\Config\Source\MerchantCountry
+						// SourceModel:  nil, // Magento\Paypal\Model\System\Config\Source\MerchantCountry
 					},
 				},
 			},

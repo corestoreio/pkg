@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `dictionary`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Translation\Model\Js\Config\Source\Strategy
+						// SourceModel:  nil, // Magento\Translation\Model\Js\Config\Source\Strategy
 					},
 				},
 			},

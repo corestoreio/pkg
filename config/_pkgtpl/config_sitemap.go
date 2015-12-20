@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `daily`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Sitemap\Model\Config\Source\Frequency
+						// SourceModel:  nil, // Magento\Sitemap\Model\Config\Source\Frequency
 					},
 
 					&config.Field{
@@ -46,7 +46,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      0.5,
 						BackendModel: nil, // Magento\Sitemap\Model\Config\Backend\Priority
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -69,7 +69,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `daily`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Sitemap\Model\Config\Source\Frequency
+						// SourceModel:  nil, // Magento\Sitemap\Model\Config\Source\Frequency
 					},
 
 					&config.Field{
@@ -83,7 +83,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      1,
 						BackendModel: nil, // Magento\Sitemap\Model\Config\Backend\Priority
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -97,7 +97,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `all`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Sitemap\Model\Source\Product\Image\IncludeImage
+						// SourceModel:  nil, // Magento\Sitemap\Model\Source\Product\Image\IncludeImage
 					},
 				},
 			},
@@ -120,7 +120,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `daily`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Sitemap\Model\Config\Source\Frequency
+						// SourceModel:  nil, // Magento\Sitemap\Model\Config\Source\Frequency
 					},
 
 					&config.Field{
@@ -134,7 +134,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      0.25,
 						BackendModel: nil, // Magento\Sitemap\Model\Config\Backend\Priority
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -157,7 +157,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -171,7 +171,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -185,7 +185,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `general`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
 					},
 
 					&config.Field{
@@ -199,7 +199,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `sitemap_generate_error_email_template`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
 					},
 
 					&config.Field{
@@ -213,7 +213,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Cron\Model\Config\Backend\Sitemap
-						SourceModel:  nil, // Magento\Cron\Model\Config\Source\Frequency
+						// SourceModel:  nil, // Magento\Cron\Model\Config\Source\Frequency
 					},
 
 					&config.Field{
@@ -227,7 +227,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -250,7 +250,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      50000,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 
 					&config.Field{
@@ -264,7 +264,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      10485760,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -287,7 +287,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 				},
 			},

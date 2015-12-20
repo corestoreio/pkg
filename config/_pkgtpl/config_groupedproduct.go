@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `itself`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Catalog\Model\Config\Source\Product\Thumbnail
+						// SourceModel:  nil, // Magento\Catalog\Model\Config\Source\Product\Thumbnail
 					},
 				},
 			},

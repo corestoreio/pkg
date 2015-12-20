@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      `server_side_compilation`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Developer\Model\Config\Source\WorkflowType
+						// SourceModel:  nil, // Magento\Developer\Model\Config\Source\WorkflowType
 					},
 				},
 			},
@@ -55,7 +55,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      nil,
 						BackendModel: nil, // Magento\Developer\Model\Config\Backend\AllowedIps
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},

@@ -48,7 +48,7 @@ func NewConfigRedirectToBase(path string) ConfigRedirectToBase {
 // Write writes an int value and checks if the int value is within the allowed Options.
 func (p ConfigRedirectToBase) Write(w config.Writer, v int, s scope.Scope, id int64) error {
 
-	if false == p.Options.ContainsKeyInt(v) {
+	if false == p.vl.ContainsKeyInt(v) {
 		return fmt.Errorf("Cannot find %d in list %#v")
 	}
 

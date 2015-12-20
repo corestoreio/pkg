@@ -32,7 +32,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Tax\Model\TaxClass\Source\Product
+						// SourceModel:  nil, // Magento\Tax\Model\TaxClass\Source\Product
 					},
 
 					&config.Field{
@@ -46,7 +46,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      2,
 						BackendModel: nil, // Magento\Tax\Model\Config\TaxClass
-						SourceModel:  nil, // Magento\Tax\Model\TaxClass\Source\Product
+						// SourceModel:  nil, // Magento\Tax\Model\TaxClass\Source\Product
 					},
 
 					&config.Field{
@@ -60,7 +60,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID),
 						Default:      3,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Tax\Model\TaxClass\Source\Customer
+						// SourceModel:  nil, // Magento\Tax\Model\TaxClass\Source\Customer
 					},
 				},
 			},
@@ -83,7 +83,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `TOTAL_BASE_CALCULATION`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Algorithm
+						// SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Algorithm
 					},
 
 					&config.Field{
@@ -97,7 +97,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `shipping`,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
-						SourceModel:  nil, // Magento\Tax\Model\Config\Source\Basedon
+						// SourceModel:  nil, // Magento\Tax\Model\Config\Source\Basedon
 					},
 
 					&config.Field{
@@ -111,7 +111,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil, // Magento\Tax\Model\Config\Price\IncludePrice
-						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\PriceType
+						// SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\PriceType
 					},
 
 					&config.Field{
@@ -125,7 +125,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil, // Magento\Tax\Model\Config\Price\IncludePrice
-						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\PriceType
+						// SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\PriceType
 					},
 
 					&config.Field{
@@ -139,7 +139,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
-						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Apply
+						// SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Apply
 					},
 
 					&config.Field{
@@ -153,7 +153,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      `["0","0"]`,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
-						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\PriceType
+						// SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\PriceType
 					},
 
 					&config.Field{
@@ -167,7 +167,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Tax\Model\Config\Source\Apply\On
+						// SourceModel:  nil, // Magento\Tax\Model\Config\Source\Apply\On
 					},
 
 					&config.Field{
@@ -181,7 +181,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:      nil,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 				},
 			},
@@ -204,7 +204,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `US`,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Country
+						// SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Country
 					},
 
 					&config.Field{
@@ -218,7 +218,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Region
+						// SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Region
 					},
 
 					&config.Field{
@@ -232,7 +232,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      `*`,
 						BackendModel: nil,
-						SourceModel:  nil,
+						// SourceModel:  nil,
 					},
 				},
 			},
@@ -255,7 +255,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
-						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
+						// SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 					},
 
 					&config.Field{
@@ -269,7 +269,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
-						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
+						// SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 					},
 				},
 			},
@@ -292,7 +292,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
-						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
+						// SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 					},
 
 					&config.Field{
@@ -306,7 +306,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
-						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
+						// SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 					},
 
 					&config.Field{
@@ -320,7 +320,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
-						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
+						// SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 					},
 
 					&config.Field{
@@ -334,7 +334,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -348,7 +348,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -362,7 +362,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 				},
 			},
@@ -385,7 +385,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
-						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
+						// SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 					},
 
 					&config.Field{
@@ -399,7 +399,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
-						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
+						// SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 					},
 
 					&config.Field{
@@ -413,7 +413,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      true,
 						BackendModel: nil, // Magento\Tax\Model\Config\Notification
-						SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
+						// SourceModel:  nil, // Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 					},
 
 					&config.Field{
@@ -427,7 +427,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -441,7 +441,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
@@ -455,7 +455,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Scope:        scope.PermAll,
 						Default:      false,
 						BackendModel: nil,
-						SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 					},
 				},
 			},

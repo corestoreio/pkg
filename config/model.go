@@ -14,12 +14,11 @@
 
 package config
 
-import (
-	"github.com/corestoreio/csfw/config/scope"
-	"github.com/corestoreio/csfw/config/valuelabel"
-)
+import "github.com/corestoreio/csfw/config/scope"
 
 type (
+
+	// deprecated
 
 	// ModelConstructor implements different fields/functions which can be differently used
 	// by the FieldSourceModeller or FieldBackendModeller types.
@@ -33,14 +32,6 @@ type (
 		// @todo more fields to be added, depends on the overall requirements of all Magento models.
 	}
 
-	// SourceModeller defines how to retrieve all option values. Mostly used for frontend output.
-	// The Construct() must be used because NOT all fields of ModelConstructor are available during
-	// init process and can of course change during the running app. Also to prevent circular dependencies.
-	SourceModeller interface {
-		// not sure Construct(ModelConstructor) error
-		Options() valuelabel.Slice
-	}
-
 	// BackendModeller defines how to save and load the data @todo rethink AddData
 	// In Magento slang: beforeSave() and afterLoad().
 	// The Construct() must be used because NOT all fields of ModelConstructor are available during
@@ -51,5 +42,3 @@ type (
 		Save() error
 	}
 )
-
-var _ SourceModeller = (*valuelabel.Slice)(nil)

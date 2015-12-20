@@ -124,7 +124,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil,
-							SourceModel:  nil,
+							// SourceModel:  nil,
 						},
 
 						&config.Field{
@@ -138,7 +138,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil,
-							SourceModel:  nil,
+							// SourceModel:  nil,
 						},
 					},
 				},
@@ -168,8 +168,8 @@ func init() {
 							Visible:      config.VisibleYes,
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      nil,
-							BackendModel: nil,                // Magento\Config\Model\Config\Backend\Store
-							SourceModel:  configsource.YesNo, // Magento\Config\Model\Config\Source\Yesno
+							BackendModel: nil, // Magento\Config\Model\Config\Backend\Store
+							// SourceModel:  configsource.YesNo, // Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&config.Field{
@@ -183,7 +183,7 @@ func init() {
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      http.StatusMovedPermanently,
 							BackendModel: nil,
-							SourceModel:  nil, // configsource.Redirect, // Magento\Config\Model\Config\Source\Web\Redirect
+							// SourceModel:  nil, // configsource.Redirect, // Magento\Config\Model\Config\Source\Web\Redirect
 						},
 					},
 				},
@@ -206,7 +206,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-							SourceModel:  nil,
+							// SourceModel:  nil,
 						},
 
 						&config.Field{
@@ -220,7 +220,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-							SourceModel:  nil,
+							// SourceModel:  nil,
 						},
 
 						&config.Field{
@@ -234,7 +234,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-							SourceModel:  nil,
+							// SourceModel:  nil,
 						},
 
 						&config.Field{
@@ -248,7 +248,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-							SourceModel:  nil,
+							// SourceModel:  nil,
 						},
 					},
 				},
@@ -271,7 +271,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-							SourceModel:  nil,
+							// SourceModel:  nil,
 						},
 
 						&config.Field{
@@ -285,7 +285,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-							SourceModel:  nil,
+							// SourceModel:  nil,
 						},
 
 						&config.Field{
@@ -299,7 +299,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-							SourceModel:  nil,
+							// SourceModel:  nil,
 						},
 
 						&config.Field{
@@ -313,7 +313,7 @@ func init() {
 							Scope:     scope.PermAll,
 							Default:   nil,
 							//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-							//SourceModel:  nil,
+							//// SourceModel:  nil,
 						},
 
 						&config.Field{
@@ -327,7 +327,7 @@ func init() {
 							Scope:     scope.PermAll,
 							Default:   false,
 							//BackendModel: nil,                // Magento\Config\Model\Config\Backend\Secure
-							//SourceModel:  configsource.YesNo, // Magento\Config\Model\Config\Source\Yesno
+							//// SourceModel:  configsource.YesNo, // Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&config.Field{
@@ -340,8 +340,8 @@ func init() {
 							Visible:      config.VisibleYes,
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      false,
-							BackendModel: nil,                // Magento\Config\Model\Config\Backend\Secure
-							SourceModel:  configsource.YesNo, // Magento\Config\Model\Config\Source\Yesno
+							BackendModel: nil, // Magento\Config\Model\Config\Backend\Secure
+							// SourceModel:  configsource.YesNo, // Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&config.Field{
@@ -355,7 +355,7 @@ func init() {
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      "SSL_OFFLOADED",
 							BackendModel: nil,
-							SourceModel:  nil,
+							// SourceModel:  nil,
 						},
 					},
 				},
