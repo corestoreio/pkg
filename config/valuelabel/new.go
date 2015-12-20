@@ -23,13 +23,12 @@ var ErrImbalancedPairs = errors.New("Imbalanced value/label pairs")
 // It panics when arguments are imbalanced. Example:
 // 		mySlice := NewValueLabelSlice("http", "HTTP (unsecure)", "https", "HTTPS (TLS)")
 func NewByString(vl ...string) Slice {
-	lkv := len(vl)
-	if lkv%2 != 0 {
+	if len(vl)%2 != 0 {
 		panic(ErrImbalancedPairs)
 	}
-	vls := make(Slice, lkv/2)
+	vls := make(Slice, len(vl)/2)
 	j := 0
-	for i := 0; i < lkv; i = i + 2 {
+	for i := 0; i < len(vl); i = i + 2 {
 		vls[j] = Pair{
 			String:  vl[i],
 			NotNull: NotNullString,
@@ -48,9 +47,8 @@ type Ints []struct {
 
 // NewByInt creates a new slice with integer values
 func NewByInt(vl Ints) Slice {
-	lkv := len(vl)
-	vls := make(Slice, lkv)
-	for i := 0; i < lkv; i++ {
+	vls := make(Slice, len(vl))
+	for i := 0; i < len(vl); i++ {
 		vls[i] = Pair{
 			Int:     vl[i].Value,
 			NotNull: NotNullInt,
@@ -68,9 +66,8 @@ type F64s []struct {
 
 // NewByFloat64 creates a new slice with float64 values
 func NewByFloat64(vl F64s) Slice {
-	lkv := len(vl)
-	vls := make(Slice, lkv)
-	for i := 0; i < lkv; i++ {
+	vls := make(Slice, len(vl))
+	for i := 0; i < len(vl); i++ {
 		vls[i] = Pair{
 			Float64: vl[i].Value,
 			NotNull: NotNullFloat64,
@@ -88,9 +85,8 @@ type Bools []struct {
 
 // NewByBool creates a new slice with bool values
 func NewByBool(vl Bools) Slice {
-	lkv := len(vl)
-	vls := make(Slice, lkv)
-	for i := 0; i < lkv; i++ {
+	vls := make(Slice, len(vl))
+	for i := 0; i < len(vl); i++ {
 		vls[i] = Pair{
 			Bool:    vl[i].Value,
 			NotNull: NotNullBool,

@@ -69,9 +69,8 @@ func Path(paths ...string) ArgFunc {
 		}
 	}
 
-	lp := len(paths)
 	var paSlice []string
-	if lp >= hierarchyLevel {
+	if len(paths) >= hierarchyLevel {
 		paSlice = paths
 	} else {
 		paSlice = scope.PathSplit(paths[0])

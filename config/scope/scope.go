@@ -117,10 +117,9 @@ func (s StrScope) FQPath(scopeID string, paths ...string) string {
 	buf.WriteString(PS)
 	buf.WriteString(scopeID)
 	buf.WriteString(PS)
-	lp := len(paths) - 1
 	for i, p := range paths {
 		buf.WriteString(p)
-		if i < lp {
+		if i < (len(paths) - 1) {
 			buf.WriteString(PS)
 		}
 	}
