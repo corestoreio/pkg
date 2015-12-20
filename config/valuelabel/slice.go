@@ -27,9 +27,6 @@ import (
 // Slice type is returned by the SourceModel.Options() interface
 type Slice []Pair
 
-// Options satisfies the SourceModeller interface
-func (s Slice) Options() Slice { return s }
-
 // SortByLabel sorts by label in asc or desc direction
 func (s Slice) SortByLabel(d util.SortDirection) Slice {
 	var si sort.Interface
