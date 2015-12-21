@@ -12,13 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package model_test
+package model
 
 import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/stretchr/testify/assert"
 )
@@ -46,17 +45,6 @@ var packageConfiguration = config.MustNewConfiguration(
 						Default:   "Content-Type,X-CoreStore-ID",
 					},
 					&config.Field{
-						// Path: `web/cors/allowed_origins`,
-						ID:        "allowed_origins",
-						Label:     `Allowed Origins`,
-						Comment:   `Is a list of origins a cross-domain request can be executed from.`,
-						Type:      config.TypeTextarea,
-						SortOrder: 20,
-						Visible:   config.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Default:   "corestore.io,cs.io",
-					},
-					&config.Field{
 						// Path: `web/cors/allow_credentials`,
 						ID:        "allow_credentials",
 						Label:     `Allowed Credentials`,
@@ -77,15 +65,6 @@ var packageConfiguration = config.MustNewConfiguration(
 						Default:   2015,
 					},
 					&config.Field{
-						// Path: `web/cors/int_slice`,
-						ID:        "int_slice",
-						Type:      config.TypeSelect,
-						SortOrder: 30,
-						Visible:   config.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Default:   "2014,2015,2016",
-					},
-					&config.Field{
 						// Path: `web/cors/float64`,
 						ID:        "float64",
 						Type:      config.TypeSelect,
@@ -96,60 +75,12 @@ var packageConfiguration = config.MustNewConfiguration(
 					},
 				},
 			},
-
-			&config.Group{
-				ID:        "unsecure",
-				Label:     `Base URLs`,
-				Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`,
-				SortOrder: 10,
-				Scope:     scope.PermAll,
-				Fields: config.FieldSlice{
-					&config.Field{
-						// Path: `web/unsecure/base_url`,
-						ID:        "base_url",
-						Label:     `Base URL`,
-						Comment:   `Specify URL or {{base_url}} placeholder.`,
-						Type:      config.TypeText,
-						SortOrder: 10,
-						Visible:   config.VisibleYes,
-						Scope:     scope.PermAll,
-						Default:   "{{base_url}}",
-						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-					},
-
-					&config.Field{
-						// Path: `web/unsecure/base_link_url`,
-						ID:        "base_link_url",
-						Label:     `Base Link URL`,
-						Comment:   `May start with {{unsecure_base_url}} placeholder.`,
-						Type:      config.TypeText,
-						SortOrder: 20,
-						Visible:   config.VisibleYes,
-						Scope:     scope.PermAll,
-						Default:   "{{unsecure_base_url}}",
-						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-					},
-
-					&config.Field{
-						// Path: `web/unsecure/base_static_url`,
-						ID:        "base_static_url",
-						Label:     `Base URL for Static View Files`,
-						Comment:   `May be empty or start with {{unsecure_base_url}} placeholder.`,
-						Type:      config.TypeText,
-						SortOrder: 25,
-						Visible:   config.VisibleYes,
-						Scope:     scope.PermAll,
-						Default:   nil,
-						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
-					},
-				},
-			},
 		},
 	},
 )
 
-func TestPath(t *testing.T) {
-	p1 := model.NewPath("web/cors/exposed_headers")
+func TestBasePathString(t *testing.T) {
+	p1 := NewPath("web/cors/exposed_headers")
 	assert.Exactly(t, "web/cors/exposed_headers", p1.String())
 
 	wantPath := scope.StrWebsites.FQPathInt64(2, "web/cors/exposed_headers")
@@ -161,7 +92,8 @@ func TestPath(t *testing.T) {
 	assert.Exactly(t, 314159, mw.ArgValue.(int))
 
 	sg := config.NewMockGetter().NewScoped(wantWebsiteID, 0, 0)
-	defaultStr := p1.LookupString(packageConfiguration, sg)
+	defaultStr, err := p1.lookupString(packageConfiguration, sg)
+	assert.NoError(t, err)
 	assert.Exactly(t, "Content-Type,X-CoreStore-ID", defaultStr)
 
 	sg = config.NewMockGetter(
@@ -170,14 +102,35 @@ func TestPath(t *testing.T) {
 		}),
 	).NewScoped(wantWebsiteID, 0, 0)
 
-	customStr := p1.LookupString(packageConfiguration, sg)
+	customStr, err := p1.lookupString(packageConfiguration, sg)
+	assert.NoError(t, err)
 	assert.Exactly(t, "X-CoreStore-TOKEN", customStr)
 
-	assert.True(t, p1.InScope(&config.Field{
-		Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-	}, sg))
+}
 
-	assert.False(t, p1.InScope(&config.Field{
-		Scope: scope.NewPerm(scope.StoreID),
-	}, sg))
+func TestBasePathInScope(t *testing.T) {
+
+	tests := []struct {
+		sg      config.ScopedGetter
+		p       scope.Perm
+		wantErr error
+	}{
+		{
+			config.NewMockGetter().NewScoped(0, 0, 0),
+			scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+			nil,
+		},
+	}
+	for _, test := range tests {
+		p1 := NewPath("a/b/c")
+		haveErr := p1.InScope(&config.Field{
+			Scope: test.p,
+		}, test.sg)
+
+		if test.wantErr != nil {
+			assert.EqualError(t, haveErr, test.wantErr.Error())
+		} else {
+			assert.NoError(t, haveErr)
+		}
+	}
 }

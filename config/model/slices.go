@@ -30,49 +30,78 @@ const CSVSeparator = ","
 
 // StringCSV represents a path in config.Getter which will be saved as a
 // CSV string and returned as a string slice. Separator is a comma.
-type StringCSV struct{ Path }
+type StringCSV struct{ Str }
 
 // NewStringCSV creates a new CSV string type. Acts as a multiselect.
 func NewStringCSV(path string, vlPairs ...valuelabel.Pair) StringCSV {
-	return StringCSV{Path: NewPath(path, vlPairs...)}
+	return StringCSV{Str: NewStr(path, vlPairs...)}
 }
 
 // Get returns a slice from the 1. default field of a config.SectionSlice
 // or 2. from the config.ScopedGetter.
 func (p StringCSV) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) []string {
-	return strings.Split(p.Path.LookupString(pkgCfg, sg), CSVSeparator)
+	// todo validate
+	return strings.Split(p.Str.Get(pkgCfg, sg), CSVSeparator)
 }
 
 // Write writes a slice with its scope and ID to the writer
 func (p StringCSV) Write(w config.Writer, sl []string, s scope.Scope, id int64) error {
-	return p.Path.Write(w, strings.Join(sl, CSVSeparator), s, id)
+	// todo validate
+	return p.Str.Write(w, strings.Join(sl, CSVSeparator), s, id)
 }
 
 // IntCSV represents a path in config.Getter which will be saved as a
 // CSV string and returned as an int64 slice. Separator is a comma.
-type IntCSV struct{ Path }
+type IntCSV struct{ basePath }
 
 // NewIntCSV creates a new int CSV type. Acts as a multiselect.
 func NewIntCSV(path string, vlPairs ...valuelabel.Pair) IntCSV {
-	return IntCSV{Path: NewPath(path, vlPairs...)}
+	return IntCSV{basePath: NewPath(path, vlPairs...)}
 }
 
 func (p IntCSV) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) []int {
-	v := p.Path.LookupString(pkgCfg, sg)
-	csv := strings.Split(v, CSVSeparator)
-	ret := make([]int, len(csv))
 
+	var s string
+	var err error
+	if s, err = p.lookupString(pkgCfg, sg); err != nil && PkgLog.IsDebug() {
+		PkgLog.Debug("model.IntCSV.Get.lookupString", "err", err, "path", p.string)
+	}
+
+	if s == "" {
+		return nil
+	}
+
+	csv := strings.Split(s, CSVSeparator)
+	ret := make([]int, 0, len(csv))
 	for i, line := range csv {
 		var err error
-		if ret[i], err = strconv.Atoi(line); err != nil && PkgLog.IsDebug() {
-			PkgLog.Debug("model.IntCSV.Get.strconv.ParseInt", "err", err, "position", i, "line", line)
+
+		v, err := strconv.Atoi(line)
+		if err != nil {
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("model.IntCSV.Get.strconv.ParseInt", "err", err, "position", i, "line", line)
+			}
+			continue
 		}
+
+		if err := p.validateInt(v); err != nil {
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("model.IntCSV.Get.validateInt", "err", err, "position", i, "line", line)
+			}
+			continue
+		}
+
+		ret = append(ret, v)
+
 	}
 	return ret
 }
 
 // Write writes int values as a CSV string
 func (p IntCSV) Write(w config.Writer, sl []int, s scope.Scope, id int64) error {
+
+	// todo validate
+
 	val := bufferpool.Get()
 	defer bufferpool.Put(val)
 	for i, v := range sl {
@@ -85,5 +114,5 @@ func (p IntCSV) Write(w config.Writer, sl []int, s scope.Scope, id int64) error 
 			}
 		}
 	}
-	return p.Path.Write(w, val.String(), s, id)
+	return p.basePath.Write(w, val.String(), s, id)
 }

@@ -28,7 +28,7 @@ func TestBaseURL(t *testing.T) {
 	wantPath := scope.StrStores.FQPathInt64(1, "web/unsecure/base_url")
 	b := model.NewBaseURL("web/unsecure/base_url")
 
-	assert.Empty(t, b.Options)
+	assert.Empty(t, b.Options())
 
 	assert.Exactly(t, "{{base_url}}", b.Get(packageConfiguration, config.NewMockGetter().NewScoped(0, 0, 1)))
 

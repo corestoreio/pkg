@@ -32,7 +32,7 @@ func TestStringCSV(t *testing.T) {
 		valuelabel.NewByString("Content-Type", "Content Type", "X-CoreStore-ID", "CoreStore Microservice ID")...,
 	)
 
-	assert.NotEmpty(t, b.Options)
+	assert.NotEmpty(t, b.Options())
 
 	assert.Exactly(t, []string{"Content-Type", "X-CoreStore-ID"}, b.Get(packageConfiguration, config.NewMockGetter().NewScoped(0, 0, 0)))
 
@@ -49,24 +49,37 @@ func TestStringCSV(t *testing.T) {
 }
 
 func TestIntCSV(t *testing.T) {
+	defer debugLogBuf.Reset()
+	defer infoLogBuf.Reset()
 
-	wantPath := scope.StrStores.FQPathInt64(4, "web/cors/int_slice")
 	b := model.NewIntCSV(
 		"web/cors/int_slice",
 		valuelabel.NewByInt(valuelabel.Ints{
 			{2014, "Year 2014"},
 			{2015, "Year 2015"},
 			{2016, "Year 2016"},
+			{2017, "Year 2017"},
 		})...,
 	)
 
-	assert.Len(t, b.Options, 3)
+	assert.Len(t, b.Options(), 4)
 
 	assert.Exactly(t, []int{2014, 2015, 2016}, b.Get(packageConfiguration, config.NewMockGetter().NewScoped(0, 0, 4)))
+	assert.Exactly(t, "web/cors/int_slice", b.String())
 
-	assert.Exactly(t, []int{3015, 3016}, b.Get(packageConfiguration, config.NewMockGetter(
+	wantPath := scope.StrStores.FQPathInt64(4, "web/cors/int_slice")
+	assert.Exactly(t, []int{}, b.Get(packageConfiguration, config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
 			wantPath: "3015,3016",
+		}),
+	).NewScoped(0, 0, 4)))
+
+	assert.Contains(t, debugLogBuf.String(), "The value '3015' cannot be found within the allowed Options")
+	assert.Contains(t, debugLogBuf.String(), "The value '3016' cannot be found within the allowed Options")
+
+	assert.Exactly(t, []int{2015, 2017}, b.Get(packageConfiguration, config.NewMockGetter(
+		config.WithMockValues(config.MockPV{
+			wantPath: "2015,2017",
 		}),
 	).NewScoped(0, 0, 4)))
 
@@ -74,5 +87,7 @@ func TestIntCSV(t *testing.T) {
 	assert.NoError(t, b.Write(mw, []int{2016, 2017, 2018}, scope.StoreID, 4))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 	assert.Exactly(t, "2016,2017,2018", mw.ArgValue.(string))
+
+	//t.Log("\n", debugLogBuf.String())
 
 }

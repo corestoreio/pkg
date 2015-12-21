@@ -20,113 +20,98 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/config/valuelabel"
-	"github.com/corestoreio/csfw/util/cast"
 )
 
 // Bool represents a path in config.Getter which handles bool values.
 type Bool struct {
-	Path
+	basePath
 }
 
 // NewBool creates a new Bool model with a given path.
 func NewBool(path string, vlPairs ...valuelabel.Pair) Bool {
 	return Bool{
-		Path: NewPath(path, vlPairs...),
+		basePath: NewPath(path, vlPairs...),
 	}
 }
 
 // Get returns a bool value.
 func (p Bool) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v bool) {
-
-	if fields, err := pkgCfg.FindFieldByPath(p.string); err == nil {
-		v, _ = cast.ToBoolE(fields.Default)
-	} else {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("model.Bool.SectionSlice.FindFieldByPath", "err", err, "path", p.string)
-		}
+	var err error
+	if v, err = p.lookupBool(pkgCfg, sg); err != nil && PkgLog.IsDebug() {
+		PkgLog.Debug("model.Bool.Get.lookupBool", "err", err, "path", p.string)
 	}
-
-	if val, err := sg.Bool(p.string); err == nil {
-		v = val
-	}
-	return v
+	return
 }
 
 // Write writes a bool. Bool gets internally converted to type string.
 func (p Bool) Write(w config.Writer, v bool, s scope.Scope, id int64) error {
-	return p.Path.Write(w, strconv.FormatBool(v), s, id)
+	return p.basePath.Write(w, strconv.FormatBool(v), s, id)
 }
 
-// String represents a path in config.Getter which handles string values.
-type String struct{ Path }
+// Str represents a path in config.Getter which handles string values.
+// The name Str has been chosen to avoid conflict with the String() function
+// in the Stringer interface.
+type Str struct{ basePath }
 
-// NewString creates a new String model with a given path.
-func NewString(path string, vlPairs ...valuelabel.Pair) String {
-	return String{Path: NewPath(path, vlPairs...)}
+// NewStr creates a new Str model with a given path.
+func NewStr(path string, vlPairs ...valuelabel.Pair) Str {
+	return Str{basePath: NewPath(path, vlPairs...)}
 }
 
 // Get returns a string value
-func (p String) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v string) {
-	return p.LookupString(pkgCfg, sg)
+func (p Str) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v string) {
+	var err error
+	if v, err = p.lookupString(pkgCfg, sg); err != nil && PkgLog.IsDebug() {
+		PkgLog.Debug("model.Str.Get.lookupString", "err", err, "path", p.string)
+	}
+	return
 }
 
 // Write writes a string value
-func (p String) Write(w config.Writer, v string, s scope.Scope, id int64) error {
-	return p.Path.Write(w, v, s, id)
+func (p Str) Write(w config.Writer, v string, s scope.Scope, id int64) error {
+	return p.basePath.Write(w, v, s, id)
 }
 
 // Int represents a path in config.Getter which handles int values.
-type Int struct{ Path }
+type Int struct{ basePath }
 
 // NewInt creates a new Int model with a given path.
-func NewInt(path string, vlPairs ...valuelabel.Pair) Int { return Int{Path: NewPath(path, vlPairs...)} }
+func NewInt(path string, vlPairs ...valuelabel.Pair) Int {
+	return Int{basePath: NewPath(path, vlPairs...)}
+}
 
 // Get returns an int value.
 func (p Int) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v int) {
-	if fields, err := pkgCfg.FindFieldByPath(p.string); err == nil {
-		v, _ = cast.ToIntE(fields.Default)
-	} else {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("model.Int.SectionSlice.FindFieldByPath", "err", err, "path", p.string)
-		}
+	var err error
+	if v, err = p.lookupInt(pkgCfg, sg); err != nil && PkgLog.IsDebug() {
+		PkgLog.Debug("model.Int.Get.lookupInt", "err", err, "path", p.string)
 	}
-
-	if val, err := sg.Int(p.string); err == nil {
-		v = val
-	}
-	return v
+	return
 }
 
 // Write writes an int value as a string.
 func (p Int) Write(w config.Writer, v int, s scope.Scope, id int64) error {
-	return p.Path.Write(w, strconv.Itoa(v), s, id)
+	return p.basePath.Write(w, strconv.Itoa(v), s, id)
 }
 
 // Float64 represents a path in config.Getter which handles int values.
-type Float64 struct{ Path }
+type Float64 struct{ basePath }
 
 // NewFloat64 creates a new Float64 model with a given path.
 func NewFloat64(path string, vlPairs ...valuelabel.Pair) Float64 {
-	return Float64{Path: NewPath(path, vlPairs...)}
+	return Float64{basePath: NewPath(path, vlPairs...)}
 }
 
 // Get returns a float64 value.
 func (p Float64) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v float64) {
-	if fields, err := pkgCfg.FindFieldByPath(p.string); err == nil {
-		v, _ = cast.ToFloat64E(fields.Default)
-	} else {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("model.Float64.SectionSlice.FindFieldByPath", "err", err, "path", p.string)
-		}
+	var err error
+	if v, err = p.lookupFloat64(pkgCfg, sg); err != nil && PkgLog.IsDebug() {
+		PkgLog.Debug("model.Float64.Get.lookupFloat64", "err", err, "path", p.string)
 	}
-
-	if val, err := sg.Float64(p.string); err == nil {
-		v = val
-	}
-	return v
+	return
 }
 
 // Write writes a float64 value as a string.
 func (p Float64) Write(w config.Writer, v float64, s scope.Scope, id int64) error {
-	return p.Path.Write(w, strconv.FormatFloat(v, 'f', 14, 64), s, id)
+	return p.basePath.Write(w, strconv.FormatFloat(v, 'f', 14, 64), s, id)
 }

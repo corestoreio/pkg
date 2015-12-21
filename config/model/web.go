@@ -20,20 +20,20 @@ import (
 )
 
 // BaseURL represents a path in config.Getter handles BaseURLs and internal validation
-type BaseURL struct{ Path }
+type BaseURL struct{ Str }
 
 // NewBaseURL creates a new BaseURL with validation checks when writing values.
 func NewBaseURL(path string) BaseURL {
-	return BaseURL{Path: NewPath(path)}
+	return BaseURL{Str: NewStr(path)}
 }
 
 // Get returns a base URL
 func (p BaseURL) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) string {
-	return p.Path.LookupString(pkgCfg, sg)
+	return p.Str.Get(pkgCfg, sg)
 }
 
 // Write writes a new base URL and validates it before saving.
 func (p BaseURL) Write(w config.Writer, v string, s scope.Scope, id int64) error {
 	// todo URL checks app/code/Magento/Config/Model/Config/Backend/Baseurl.php
-	return p.Path.Write(w, v, s, id)
+	return p.Str.Write(w, v, s, id)
 }
