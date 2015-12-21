@@ -30,24 +30,35 @@ const CSVSeparator = ","
 
 // StringCSV represents a path in config.Getter which will be saved as a
 // CSV string and returned as a string slice. Separator is a comma.
-type StringCSV struct{ Str }
+type StringCSV struct{ basePath }
 
 // NewStringCSV creates a new CSV string type. Acts as a multiselect.
 func NewStringCSV(path string, vlPairs ...valuelabel.Pair) StringCSV {
-	return StringCSV{Str: NewStr(path, vlPairs...)}
+	return StringCSV{basePath: NewPath(path, vlPairs...)}
 }
 
 // Get returns a slice from the 1. default field of a config.SectionSlice
 // or 2. from the config.ScopedGetter.
 func (p StringCSV) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) []string {
-	// todo validate
-	return strings.Split(p.Str.Get(pkgCfg, sg), CSVSeparator)
+	s, err := p.lookupString(pkgCfg, sg)
+	if err != nil && PkgLog.IsDebug() {
+		PkgLog.Debug("model.StringCSV.Get.lookupString", "err", err, "path", p.string)
+	}
+	if s == "" {
+		return nil
+	}
+	// validate ?
+	return strings.Split(s, CSVSeparator)
 }
 
 // Write writes a slice with its scope and ID to the writer
 func (p StringCSV) Write(w config.Writer, sl []string, s scope.Scope, id int64) error {
-	// todo validate
-	return p.Str.Write(w, strings.Join(sl, CSVSeparator), s, id)
+	for _, v := range sl {
+		if err := p.validateString(v); err != nil {
+			return err
+		}
+	}
+	return p.basePath.Write(w, strings.Join(sl, CSVSeparator), s, id)
 }
 
 // IntCSV represents a path in config.Getter which will be saved as a
@@ -60,13 +71,10 @@ func NewIntCSV(path string, vlPairs ...valuelabel.Pair) IntCSV {
 }
 
 func (p IntCSV) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) []int {
-
-	var s string
-	var err error
-	if s, err = p.lookupString(pkgCfg, sg); err != nil && PkgLog.IsDebug() {
+	s, err := p.lookupString(pkgCfg, sg)
+	if err != nil && PkgLog.IsDebug() {
 		PkgLog.Debug("model.IntCSV.Get.lookupString", "err", err, "path", p.string)
 	}
-
 	if s == "" {
 		return nil
 	}
@@ -100,11 +108,14 @@ func (p IntCSV) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) []int {
 // Write writes int values as a CSV string
 func (p IntCSV) Write(w config.Writer, sl []int, s scope.Scope, id int64) error {
 
-	// todo validate
-
 	val := bufferpool.Get()
 	defer bufferpool.Put(val)
 	for i, v := range sl {
+
+		if err := p.validateInt(v); err != nil {
+			return err
+		}
+
 		if _, err := val.WriteString(strconv.Itoa(v)); err != nil {
 			return errgo.Mask(err)
 		}

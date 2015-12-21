@@ -34,15 +34,18 @@ var _ SourceModeller = (*basePath)(nil)
 type basePath struct {
 	string // contains the path
 
-	// vl are all available options aka SourceModel in Magento slang
-	vl valuelabel.Slice
+	// ValueLabel are all available options aka SourceModel in Magento slang.
+	// This slice is also used for validation to get and write the correct values.
+	// Validation gets triggered only when the slice has been set.
+	// The Options() function will be used to access this slice.
+	ValueLabel valuelabel.Slice
 }
 
 // NewPath creates a new basePath type optional value label Pair
 func NewPath(path string, vlPairs ...valuelabel.Pair) basePath {
 	return basePath{
-		string: path,
-		vl:     valuelabel.Slice(vlPairs),
+		string:     path,
+		ValueLabel: valuelabel.Slice(vlPairs),
 	}
 }
 
@@ -65,18 +68,14 @@ func (p basePath) InScope(f *config.Field, sg config.ScopedGetter) (err error) {
 	return
 }
 
-// InitOptions sets the internal valuelabel slice.
+// Options returns a source model for all available options for a configuration
+// value.
+//
 // Usually this function gets customized in a sub-type. Customization
 // can have different arguments, etc but must always call this function to set
 // valuelabel slice.
-func (p basePath) InitOptions(vl valuelabel.Slice) {
-	p.vl = vl
-}
-
-// Options returns a source model for all available options for a configuration
-// value.
 func (p basePath) Options() valuelabel.Slice {
-	return p.vl
+	return p.ValueLabel
 }
 
 // field searches for the field in a SectionSlice and checks if the scope in
@@ -117,8 +116,8 @@ func (p basePath) lookupString(pkgCfg config.SectionSlice, sg config.ScopedGette
 }
 
 func (p basePath) validateString(v string) (err error) {
-	if len(p.vl) > 0 && false == p.vl.ContainsKeyString(v) {
-		jv, jErr := p.vl.ToJSON()
+	if len(p.ValueLabel) > 0 && false == p.ValueLabel.ContainsValString(v) {
+		jv, jErr := p.ValueLabel.ToJSON()
 		err = errgo.Newf("The value '%s' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
 	}
 	return
@@ -149,8 +148,8 @@ func (p basePath) lookupInt(pkgCfg config.SectionSlice, sg config.ScopedGetter) 
 }
 
 func (p basePath) validateInt(v int) (err error) {
-	if len(p.vl) > 0 && false == p.vl.ContainsKeyInt(v) {
-		jv, jErr := p.vl.ToJSON()
+	if len(p.ValueLabel) > 0 && false == p.ValueLabel.ContainsValInt(v) {
+		jv, jErr := p.ValueLabel.ToJSON()
 		err = errgo.Newf("The value '%d' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
 	}
 	return
@@ -177,10 +176,14 @@ func (p basePath) lookupFloat64(pkgCfg config.SectionSlice, sg config.ScopedGett
 			PkgLog.Debug("model.path.lookupString.ScopedGetter.Float64", "err", errSG, "path", p.string, "previousErr", err)
 		}
 	}
+	return
+}
 
-	//if len(p.vl) > 0 && false == p.vl.ContainsKeyFloat64(v) {
-	//	err = errgo.Newf("The key '%.14f' cannot be found within the allowed Options(): %#v", v, p.vl)
-	//}
+func (p basePath) validateFloat64(v float64) (err error) {
+	if len(p.ValueLabel) > 0 && false == p.ValueLabel.ContainsValFloat64(v) {
+		jv, jErr := p.ValueLabel.ToJSON()
+		err = errgo.Newf("The value '%.14f' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
+	}
 	return
 }
 

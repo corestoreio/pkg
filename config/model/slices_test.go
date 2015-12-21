@@ -43,6 +43,8 @@ func TestStringCSV(t *testing.T) {
 	).NewScoped(0, 0, 0)))
 
 	mw := &config.MockWrite{}
+	b.ValueLabel.Merge(valuelabel.NewByString("a", "a", "b", "b", "c", "c"))
+
 	assert.NoError(t, b.Write(mw, []string{"a", "b", "c"}, scope.DefaultID, 0))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 	assert.Exactly(t, "a,b,c", mw.ArgValue.(string))
@@ -84,6 +86,9 @@ func TestIntCSV(t *testing.T) {
 	).NewScoped(0, 0, 4)))
 
 	mw := &config.MockWrite{}
+	b.ValueLabel.Merge(valuelabel.NewByInt(valuelabel.Ints{
+		{2018, "Year 2018"},
+	}))
 	assert.NoError(t, b.Write(mw, []int{2016, 2017, 2018}, scope.StoreID, 4))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 	assert.Exactly(t, "2016,2017,2018", mw.ArgValue.(string))

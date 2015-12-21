@@ -184,7 +184,7 @@ func (s Slice) IndexLabel(l string) int {
 
 // Merge integrates the argument Slice into the receiver slice and overwrites the
 // existing values of the receiver slice.
-func (s Slice) Merge(sl Slice) Slice {
+func (s *Slice) Merge(sl Slice) Slice {
 
 	for _, p := range sl {
 		var idx = -1
@@ -201,14 +201,14 @@ func (s Slice) Merge(sl Slice) Slice {
 		}
 
 		if idx > -1 {
-			s[idx].label = p.Label()
-			s[idx].NotNull = p.NotNull
+			(*s)[idx].label = p.Label()
+			(*s)[idx].NotNull = p.NotNull
 		} else {
-			s = append(s, p)
+			*s = append(*s, p)
 		}
 
 	}
-	return s
+	return *s
 }
 
 type (
