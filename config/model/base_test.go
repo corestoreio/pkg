@@ -17,6 +17,8 @@ package model
 import (
 	"testing"
 
+	"errors"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/stretchr/testify/assert"
@@ -119,6 +121,16 @@ func TestBasePathInScope(t *testing.T) {
 			config.NewMockGetter().NewScoped(0, 0, 0),
 			scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 			nil,
+		},
+		{
+			config.NewMockGetter().NewScoped(0, 0, 4),
+			scope.NewPerm(scope.StoreID),
+			nil,
+		},
+		{
+			config.NewMockGetter().NewScoped(0, 4, 0),
+			scope.NewPerm(scope.StoreID),
+			errors.New("Scope permission insufficient: Have 'Group'; Want 'Store'"),
 		},
 	}
 	for _, test := range tests {
