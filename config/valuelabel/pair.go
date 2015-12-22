@@ -15,13 +15,15 @@
 package valuelabel
 
 import (
-	"bytes"
 	"encoding/json"
 	"math"
 	"strconv"
+
+	"github.com/corestoreio/csfw/util/bufferpool"
 )
 
 var _ json.Marshaler = (*Pair)(nil)
+var _ json.Unmarshaler = (*Pair)(nil)
 
 // NotNull* are specifying which type has a non null value
 const (
@@ -60,6 +62,16 @@ func (p Pair) Value() string {
 		s = strconv.FormatBool(p.Bool)
 	}
 	return s
+}
+
+// UnmarshalJSON decodes a pair from JSON
+func (p Pair) UnmarshalJSON(data []byte) error {
+	// todo Pair.UnmarshalJSON
+
+	println(string(data))
+
+	return json.Unmarshal(data, &p.String)
+	//return nil
 }
 
 // MarshalJSON encodes a pair into JSON
@@ -103,7 +115,8 @@ func (p Pair) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	var buf bytes.Buffer
+	var buf = bufferpool.Get()
+	defer bufferpool.Put(buf)
 	buf.WriteString(`{"Value":`)
 	if len(data) == 0 {
 		buf.WriteByte('"')

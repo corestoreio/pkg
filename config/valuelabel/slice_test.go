@@ -18,6 +18,8 @@ import (
 	"math"
 	"testing"
 
+	"encoding/json"
+
 	"github.com/corestoreio/csfw/config/configsource"
 	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/stretchr/testify/assert"
@@ -373,5 +375,33 @@ func TestSliceUnique(t *testing.T) {
 		if test.want != have {
 			t.Errorf("\nHave: %sWant: %s\n", have, test.want)
 		}
+	}
+}
+
+func TestSliceUnmarshalJSON(t *testing.T) {
+	t.Parallel()
+	t.Log("Unmarshal for all formats")
+	t.SkipNow()
+
+	tests := []struct {
+		in      []byte
+		want    valuelabel.Slice
+		wantErr error
+	}{
+		{
+			[]byte(`[{"Value":"k2","Label":"v20"},{"Value":"k1","Label":"v1"}]`),
+			valuelabel.NewByString("k2", "v20", "k1", "v1", "k2", "v21"),
+			nil,
+		},
+	}
+	for _, test := range tests {
+		var have valuelabel.Slice
+		err := json.Unmarshal(test.in, &have)
+		if test.wantErr != nil {
+			assert.EqualError(t, err, test.wantErr.Error())
+			continue
+		}
+		assert.NoError(t, err)
+		assert.Exactly(t, test.want, have)
 	}
 }

@@ -15,11 +15,11 @@
 package valuelabel
 
 import (
-	"bytes"
 	"encoding/json"
 	"math"
 	"sort"
 
+	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/juju/errgo"
 )
 
@@ -91,8 +91,9 @@ func (s Slice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 // ToJSON returns a JSON string, convenience function.
 func (s Slice) ToJSON() (string, error) {
-	var buf bytes.Buffer
-	if err := json.NewEncoder(&buf).Encode(s); err != nil {
+	var buf = bufferpool.Get()
+	defer bufferpool.Put(buf)
+	if err := json.NewEncoder(buf).Encode(s); err != nil {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.ValueLabelSlice.ToJSON.Encode", "err", err, "slice", s)
 		}
