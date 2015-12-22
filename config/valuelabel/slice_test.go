@@ -20,6 +20,7 @@ import (
 
 	"encoding/json"
 
+	"errors"
 	"github.com/corestoreio/csfw/config/configsource"
 	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/stretchr/testify/assert"
@@ -380,8 +381,6 @@ func TestSliceUnique(t *testing.T) {
 
 func TestSliceUnmarshalJSON(t *testing.T) {
 	t.Parallel()
-	t.Log("Unmarshal for all formats")
-	t.SkipNow()
 
 	tests := []struct {
 		in      []byte
@@ -390,8 +389,33 @@ func TestSliceUnmarshalJSON(t *testing.T) {
 	}{
 		{
 			[]byte(`[{"Value":"k2","Label":"v20"},{"Value":"k1","Label":"v1"}]`),
-			valuelabel.NewByString("k2", "v20", "k1", "v1", "k2", "v21"),
+			valuelabel.NewByString("k2", "v20", "k1", "v1"),
 			nil,
+		},
+		{
+			[]byte(`[{"Value":1,"Label":"v20"},{"Value":2,"Label":"v1"}]`),
+			valuelabel.NewByInt(valuelabel.Ints{{1, "v20"}, {2, "v1"}}),
+			nil,
+		},
+		{
+			[]byte(`[{"Value":false,"Label":"v1"},{"Value":true,"Label":"v3"}]`),
+			valuelabel.NewByBool(valuelabel.Bools{{false, "v1"}, {true, "v3"}}),
+			nil,
+		},
+		{
+			[]byte(`[{"Value":3.1415678,"Label":"pi"},{"Value":2.718281,"Label":"e"}]`),
+			valuelabel.NewByFloat64(valuelabel.F64s{{3.1415678, "pi"}, {2.718281, "e"}}),
+			nil,
+		},
+		{
+			[]byte(`[{"Value":3.1415678,"Label":"pi"},{"Value":2374652873645287346523465,"Label":"overflow"}]`),
+			valuelabel.NewByFloat64(valuelabel.F64s{{3.1415678, "pi"}, {2.3746528736452872e+24, "overflow"}}),
+			nil,
+		},
+		{
+			[]byte(`[{"Value":3.1415678,"Label":true} ]`),
+			valuelabel.Slice{valuelabel.Pair{}},
+			errors.New("json: cannot unmarshal bool into Go value of type string"),
 		},
 	}
 	for _, test := range tests {

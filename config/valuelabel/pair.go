@@ -20,6 +20,7 @@ import (
 	"strconv"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/juju/errgo"
 )
 
 var _ json.Marshaler = (*Pair)(nil)
@@ -65,13 +66,39 @@ func (p Pair) Value() string {
 }
 
 // UnmarshalJSON decodes a pair from JSON
-func (p Pair) UnmarshalJSON(data []byte) error {
-	// todo Pair.UnmarshalJSON
+func (p *Pair) UnmarshalJSON(data []byte) error {
 
-	println(string(data))
+	var rawPair = struct {
+		Value interface{}
+		Label string
+	}{}
 
-	return json.Unmarshal(data, &p.String)
-	//return nil
+	if err := json.Unmarshal(data, &rawPair); err != nil {
+		return errgo.Mask(err)
+	}
+
+	p.label = rawPair.Label
+
+	switch vt := rawPair.Value.(type) {
+	case string:
+		p.NotNull = NotNullString
+		p.String = vt
+	case float64: // due to the interface{} above int types do not exists
+		if math.Abs(vt) < float64(math.MaxInt32) && vt == float64(int64(vt)) { // is int
+			p.NotNull = NotNullInt
+			p.Int = int(vt)
+		} else { // is float
+			p.NotNull = NotNullFloat64
+			p.Float64 = vt
+		}
+	case bool:
+		p.NotNull = NotNullBool
+		p.Bool = vt
+	default:
+		return errgo.Newf("Cannot detect type for value '%s' in Pair: %#v", rawPair.Value, rawPair)
+	}
+
+	return nil
 }
 
 // MarshalJSON encodes a pair into JSON
