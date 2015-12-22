@@ -24,6 +24,7 @@ import (
 )
 
 func TestValueLabelSliceStringPanic(t *testing.T) {
+	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
 			assert.EqualError(t, r.(error), valuelabel.ErrImbalancedPairs.Error())
@@ -33,6 +34,7 @@ func TestValueLabelSliceStringPanic(t *testing.T) {
 }
 
 func TestValueLabelSliceString(t *testing.T) {
+	t.Parallel()
 	// TODO(cs) go fuzz testing
 	tests := []struct {
 		have      valuelabel.Slice
@@ -74,6 +76,7 @@ func TestValueLabelSliceString(t *testing.T) {
 }
 
 func TestValueLabelSliceInt(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have      valuelabel.Slice
 		wantValue string
@@ -123,6 +126,7 @@ func TestValueLabelSliceInt(t *testing.T) {
 }
 
 func TestValueLabelSliceFloat64(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have      valuelabel.Slice
 		wantValue string
@@ -181,6 +185,7 @@ func TestValueLabelSliceFloat64(t *testing.T) {
 }
 
 func TestValueLabelSliceBool(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have      valuelabel.Slice
 		wantValue string
@@ -233,6 +238,7 @@ func TestValueLabelSliceBool(t *testing.T) {
 }
 
 func TestValueLabelSliceNull(t *testing.T) {
+	t.Parallel()
 	nullSlice := valuelabel.Slice{
 		valuelabel.Pair{},
 		valuelabel.Pair{},
@@ -244,13 +250,15 @@ func TestValueLabelSliceNull(t *testing.T) {
 
 }
 
-func TestSliceContainsKeyString(t *testing.T) {
+func TestSliceContainsValString(t *testing.T) {
+	t.Parallel()
 	sl := valuelabel.NewByString("k1", "v1", "k2", "v2")
 	assert.True(t, sl.ContainsValString("k1"), "Search for k1 failed")
 	assert.False(t, sl.ContainsValString("k0"), "Found k0 despite it is not in the slice")
 }
 
-func TestSliceContainsKeyInt(t *testing.T) {
+func TestSliceContainsValInt(t *testing.T) {
+	t.Parallel()
 	sl := valuelabel.NewByInt(valuelabel.Ints{
 		{1, "v1"},
 		{2, "v2"},
@@ -260,7 +268,8 @@ func TestSliceContainsKeyInt(t *testing.T) {
 	assert.False(t, sl.ContainsValInt(0), "Found 0 despite it is not in the slice")
 }
 
-func TestSliceContainsKeyFloat64(t *testing.T) {
+func TestSliceContainsValFloat64(t *testing.T) {
+	t.Parallel()
 	sl := valuelabel.NewByFloat64(valuelabel.F64s{
 		{1.0, "v1"},
 		{2.2 * 0.3, "v2"},
@@ -270,7 +279,15 @@ func TestSliceContainsKeyFloat64(t *testing.T) {
 	assert.False(t, sl.ContainsValFloat64(0.1), "Found 0.1 despite it is not in the slice")
 }
 
+func TestSliceContainsValBool(t *testing.T) {
+	t.Parallel()
+	sl := valuelabel.NewByBool(valuelabel.Bools{{true, "v1"}})
+	assert.True(t, sl.ContainsValBool(true), "Search for k1 failed")
+	assert.False(t, sl.ContainsValBool(false), "Found k0 despite it is not in the slice")
+}
+
 func TestSliceContainsLabel(t *testing.T) {
+	t.Parallel()
 	sl := valuelabel.NewByInt(valuelabel.Ints{
 		{1, "v1"},
 		{2, "v2"},
@@ -281,14 +298,15 @@ func TestSliceContainsLabel(t *testing.T) {
 }
 
 func TestSliceEquality(t *testing.T) {
+	t.Parallel()
 	func(sl valuelabel.Slice, vlPairs ...valuelabel.Pair) {
 		vlsl := valuelabel.Slice(vlPairs)
 		assert.Exactly(t, sl, vlsl)
 	}(configsource.YesNo, configsource.YesNo...)
 }
 
-func TestSliceMergeString(t *testing.T) {
-
+func TestSliceMerge(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		in    valuelabel.Slice
 		merge valuelabel.Slice
@@ -299,6 +317,21 @@ func TestSliceMergeString(t *testing.T) {
 			valuelabel.NewByString("k0", "v0", "k3", "v3", "k2", "v2a"),
 			`[{"Value":"k0","Label":"v0"},{"Value":"k1","Label":"v1"},{"Value":"k2","Label":"v2a"},{"Value":"k3","Label":"v3"}]` + "\n",
 		},
+		{
+			valuelabel.NewByInt(valuelabel.Ints{{1, "v1"}, {2, "v2"}}),
+			valuelabel.NewByInt(valuelabel.Ints{{0, "v0"}, {3, "v3"}, {2, "v2a"}}),
+			`[{"Value":0,"Label":"v0"},{"Value":1,"Label":"v1"},{"Value":2,"Label":"v2a"},{"Value":3,"Label":"v3"}]` + "\n",
+		},
+		{
+			valuelabel.NewByFloat64(valuelabel.F64s{{1.1, "v1"}, {2.2, "v2"}, {0.3 * 0.2, "v32"}}),
+			valuelabel.NewByFloat64(valuelabel.F64s{{0.0, "v0"}, {3.3, "v3"}, {2.2, "v2a"}, {0.3 * 0.2, "v32a"}}),
+			`[{"Value":0,"Label":"v0"},{"Value":0.06,"Label":"v32a"},{"Value":1.1,"Label":"v1"},{"Value":2.2,"Label":"v2a"},{"Value":3.3,"Label":"v3"}]` + "\n",
+		},
+		{
+			valuelabel.NewByBool(valuelabel.Bools{{false, "v1"}, {false, "v2"}}),
+			valuelabel.NewByBool(valuelabel.Bools{{true, "v0"}, {true, "v3"}, {false, "v2a"}}),
+			`[{"Value":false,"Label":"v2a"},{"Value":false,"Label":"v2"},{"Value":true,"Label":"v3"}]` + "\n",
+		},
 	}
 	for _, test := range tests {
 
@@ -307,6 +340,38 @@ func TestSliceMergeString(t *testing.T) {
 		if test.want != have {
 			t.Errorf("\nHave: %sWant: %s\n", have, test.want)
 		}
+	}
+}
 
+func TestSliceUnique(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		in   valuelabel.Slice
+		want string
+	}{
+		{
+			valuelabel.NewByString("k2", "v20", "k1", "v1", "k2", "v21"),
+			`[{"Value":"k2","Label":"v20"},{"Value":"k1","Label":"v1"}]` + "\n",
+		},
+		{
+			valuelabel.NewByInt(valuelabel.Ints{{1, "v1"}, {2, "v20"}, {2, "v21"}}),
+			`[{"Value":1,"Label":"v1"},{"Value":2,"Label":"v20"}]` + "\n",
+		},
+		{
+			valuelabel.NewByFloat64(valuelabel.F64s{{0.3 * 0.2, "v31"}, {1.1, "v1"}, {2.2, "v2"}, {0.3 * 0.2, "v32"}}),
+			`[{"Value":0.06,"Label":"v31"},{"Value":1.1,"Label":"v1"},{"Value":2.2,"Label":"v2"}]` + "\n",
+		},
+		{
+			valuelabel.NewByBool(valuelabel.Bools{{false, "v1"}, {false, "v2"}, {true, "v3"}}),
+			`[{"Value":false,"Label":"v1"},{"Value":true,"Label":"v3"}]` + "\n",
+		},
+	}
+	for _, test := range tests {
+
+		have, err := test.in.Unique().ToJSON()
+		assert.NoError(t, err)
+		if test.want != have {
+			t.Errorf("\nHave: %sWant: %s\n", have, test.want)
+		}
 	}
 }

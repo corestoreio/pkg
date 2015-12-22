@@ -211,6 +211,33 @@ func (s *Slice) Merge(sl Slice) Slice {
 	return *s
 }
 
+// Unique removes duplicate entries.
+func (s *Slice) Unique() Slice {
+	unique := (*s)[:0]
+	for _, p := range *s {
+
+		found := false
+
+		switch p.NotNull {
+		case NotNullString:
+			found = unique.ContainsValString(p.String)
+		case NotNullInt:
+			found = unique.ContainsValInt(p.Int)
+		case NotNullFloat64:
+			found = unique.ContainsValFloat64(p.Float64)
+		case NotNullBool:
+			found = unique.ContainsValBool(p.Bool)
+		}
+
+		if false == found {
+			unique = append(unique, p)
+		}
+
+	}
+	*s = unique
+	return *s
+}
+
 type (
 	vlSortByLabel struct {
 		Slice
