@@ -18,8 +18,9 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/corestoreio/csfw/directory"
-	"github.com/corestoreio/csfw/util"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,24 +35,30 @@ func TestDefaultCountry(t *testing.T) {
 	t.Log("@todo")
 }
 
-func TestAllowedCountriesFound(t *testing.T) {
+func TestPathCountryAllowed(t *testing.T) {
+
+	directory.PathCountryAllowed.ValueLabel = valuelabel.NewByString("DE", "Germany", "AU", "'Straya", "CH", "Switzerland")
+
 	cr := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			config.MockPathScopeStore(1, directory.PathCountryAllowed): "DE,AU,CH,AT",
+			directory.PathCountryAllowed.FQPathInt64(scope.StrStores, 1): "DE,AU,CH,AT",
 		}),
 	)
 
-	haveCountries, err := directory.AllowedCountries(cr.NewScoped(1, 1, 1))
-	assert.NoError(t, err)
-	assert.Exactly(t, util.StringSlice{"DE", "AU", "CH", "AT"}, haveCountries)
+	haveCountries := directory.PathCountryAllowed.Get(directory.PackageConfiguration, cr.NewScoped(1, 1, 1))
+
+	assert.Exactly(t, []string{"DE", "AU", "CH", "AT"}, haveCountries)
+
+	// todo validation
+
 }
 
-func TestAllowedCountriesDefault(t *testing.T) {
-	cr := config.NewMockGetter(
-		config.WithMockValues(config.MockPV{}),
-	)
-
-	haveCountries, err := directory.AllowedCountries(cr.NewScoped(1, 1, 1))
-	assert.NoError(t, err)
-	assert.True(t, len(haveCountries) > 100)
-}
+//func TestAllowedCountriesDefault(t *testing.T) {
+//	cr := config.NewMockGetter(
+//		config.WithMockValues(config.MockPV{}),
+//	)
+//
+//	haveCountries, err := directory.AllowedCountries(cr.NewScoped(1, 1, 1))
+//	assert.NoError(t, err)
+//	assert.True(t, len(haveCountries) > 100)
+//}

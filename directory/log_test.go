@@ -14,26 +14,23 @@
 
 package directory_test
 
-//func TestSourceCurrencyAll(t *testing.T) {
-//
-//	r := config.NewMockGetter(
-//		config.WithMockString(func(path string) (string, error) {
-//			t.Log(path)
-//			switch path {
-//			case scope.StrStores.FQPathInt64(1, directory.PathDefaultLocale):
-//				return "de_CH", nil
-//			}
-//			return "Not Found", nil
-//		}),
-//	)
-//
-//	var s scope.MockID = 1
-//
-//	sca := directory.NewSourceCurrencyAll(config.ModelConstructor{
-//		Config:     r,
-//		ScopeStore: s,
-//	})
-//
-//	t.Logf("\n%#v\n", sca.Options())
-//
-//}
+import (
+	std "log"
+
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/util/log"
+)
+
+var debugLogBuf *log.MutexBuffer
+var infoLogBuf *log.MutexBuffer
+
+func init() {
+	debugLogBuf = new(log.MutexBuffer)
+	infoLogBuf = new(log.MutexBuffer)
+
+	config.PkgLog = log.NewStdLogger(
+		log.SetStdDebug(debugLogBuf, "testDebug: ", std.Lshortfile),
+		log.SetStdInfo(infoLogBuf, "testInfo: ", std.Lshortfile),
+	)
+	config.PkgLog.SetLevel(log.StdLevelDebug)
+}

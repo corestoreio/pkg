@@ -12,29 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package util
+package directory_test
 
-// Sort indicates the direction for sorting
-const (
-	SortAsc SortDirection = 1 << iota
-	SortDesc
-)
-const (
-	_SortDirectionName0 = "ASC"
-	_SortDirectionName1 = "DESC"
-)
+import "testing"
 
-// SortDirection type which prints via String()
-type SortDirection uint8
-
-// String prints ASC or DESC
-func (i SortDirection) String() string {
-	switch {
-	case i == 1:
-		return _SortDirectionName0
-	case i == 2:
-		return _SortDirectionName1
-	default:
-		return _SortDirectionName0
-	}
+func TestConfigCurrenciesInstalled(t *testing.T) {
+	t.Log("todo")
 }

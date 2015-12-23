@@ -15,40 +15,20 @@
 package directory
 
 import (
-	"fmt"
-	"strings"
-
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/config/valuelabel"
+	"github.com/corestoreio/csfw/storage/dbr"
 )
 
-type (
-	Country struct {
-	}
-)
+var CountryCollection valuelabel.Slice
 
-// DefaultCountry returns the country code. Store argument is optional.
-func DefaultCountry(cr config.ScopedGetter) string {
-	return cr.String(PathDefaultCountry)
-}
+func InitCountryCollection(dbrsess dbr.SessionRunner) error {
+	// CountryCollection
+	// load from database the iso code and as value the names
 
-// AllowedCountries returns a list of all allowed countries per scope.
-// This function might gets refactored into a SourceModel.
-// May return nil,nil when it's unable to determine any list of countries.
-func AllowedCountries(cr config.ScopedGetter) (util.StringSlice, error) {
-	cStr := cr.String(PathCountryAllowed)
+	// apply the list of country codes to
 
-	if cStr == "" {
-		field, err := PackageConfiguration.FindFieldByPath(PathCountryAllowed) // get default value
-		if err != nil {
-			return nil, err
-		}
+	PathDefaultCountry.ValueLabel = CountryCollection
+	PathCountryAllowed.ValueLabel = CountryCollection
 
-		var ok bool
-		cStr, ok = field.Default.(string)
-		if cStr == "" || !ok {
-			return nil, fmt.Errorf("Cannot type assert field.Default value to string: %#v", field)
-		}
-	}
-	return util.StringSlice(strings.Split(cStr, `,`)), nil
+	return nil
 }

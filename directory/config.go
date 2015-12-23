@@ -16,9 +16,16 @@ package directory
 
 import (
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
 )
+
+// PathDefaultCountry returns the store view default configured country code.
+var PathDefaultCountry = model.NewStr("general/country/default")
+
+// PathCountryAllowed per store view allowed list of countries
+var PathCountryAllowed = model.NewStringCSV("general/country/allow")
 
 const (
 	PathSystemCurrencyInstalled = "system/currency/installed"
@@ -28,18 +35,15 @@ const (
 	PathCurrencyDefault = "currency/options/default"
 	PathCurrencyAllow   = "currency/options/allow"
 
-	// PathCountryAllowed per store view allowed countries
-	PathCountryAllowed = "general/country/allow"
-
 	// PathOptionalZipCountries lists ISO2 country codes which have optional Zip/Postal pre-configured
 	PathOptionalZipCountries = "general/country/optional_zip_countries"
 	// PathStatesRequired lists countries, for which state is required. No default values.
 	PathStatesRequired = "general/region/state_required"
 	// PathDisplayAllStates detects whether or not display the state for the country, if it is not required
 	PathDisplayAllStates = "general/region/display_all"
-	PathDefaultCountry   = "general/country/default"
-	PathDefaultLocale    = "general/locale/code"
-	PathDefaultTimezone  = "general/locale/timezone"
+
+	PathDefaultLocale   = "general/locale/code"
+	PathDefaultTimezone = "general/locale/timezone"
 )
 
 // TableCollection handles all tables and its columns. init() in generated Go file will set the value.
@@ -74,7 +78,7 @@ func init() {
 							Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:      `USD`,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Currency\Base
-							SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Currency
+							// SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Currency
 						},
 
 						&config.Field{
@@ -88,7 +92,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      `USD`,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Currency\DefaultCurrency
-							SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Currency
+							// SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Currency
 						},
 
 						&config.Field{
@@ -102,7 +106,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      `USD,EUR`,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Currency\Allow
-							SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Currency
+							// SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Currency
 						},
 					},
 				},
@@ -125,7 +129,7 @@ func init() {
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      100,
 							BackendModel: nil,
-							SourceModel:  nil,
+							// SourceModel:  nil,
 						},
 					},
 				},
@@ -148,7 +152,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      false,
 							BackendModel: nil,
-							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+							// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&config.Field{
@@ -162,7 +166,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil,
-							SourceModel:  nil,
+							// SourceModel:  nil,
 						},
 
 						&config.Field{
@@ -176,7 +180,7 @@ func init() {
 							Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:      `general`,
 							BackendModel: nil,
-							SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
+							// SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&config.Field{
@@ -190,7 +194,7 @@ func init() {
 							Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:      `currency_import_error_email_template`,
 							BackendModel: nil,
-							SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
+							// SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&config.Field{
@@ -204,7 +208,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil,
-							SourceModel:  nil, // Magento\Cron\Model\Config\Source\Frequency
+							// SourceModel:  nil, // Magento\Cron\Model\Config\Source\Frequency
 						},
 
 						&config.Field{
@@ -218,7 +222,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Currency\Cron
-							SourceModel:  nil, // Magento\Directory\Model\Currency\Import\Source\Service
+							// SourceModel:  nil, // Magento\Directory\Model\Currency\Import\Source\Service
 						},
 
 						&config.Field{
@@ -232,7 +236,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil,
-							SourceModel:  nil,
+							// SourceModel:  nil,
 						},
 					},
 				},
@@ -258,8 +262,8 @@ func init() {
 							Visible:      config.VisibleYes,
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      `AZN,AZM,AFN,ALL,DZD,AOA,ARS,AMD,AWG,AUD,BSD,BHD,BDT,BBD,BYR,BZD,BMD,BTN,BOB,BAM,BWP,BRL,GBP,BND,BGN,BUK,BIF,KHR,CAD,CVE,CZK,KYD,CLP,CNY,COP,KMF,CDF,CRC,HRK,CUP,DKK,DJF,DOP,XCD,EGP,SVC,GQE,ERN,EEK,ETB,EUR,FKP,FJD,GMD,GEK,GEL,GHS,GIP,GTQ,GNF,GYD,HTG,HNL,HKD,HUF,ISK,INR,IDR,IRR,IQD,ILS,JMD,JPY,JOD,KZT,KES,KWD,KGS,LAK,LVL,LBP,LSL,LRD,LYD,LTL,MOP,MKD,MGA,MWK,MYR,MVR,LSM,MRO,MUR,MXN,MDL,MNT,MAD,MZN,MMK,NAD,NPR,ANG,TRL,TRY,NZD,NIC,NGN,KPW,NOK,OMR,PKR,PAB,PGK,PYG,PEN,PHP,PLN,QAR,RHD,RON,ROL,RUB,RWF,SHP,STD,SAR,RSD,SCR,SLL,SGD,SKK,SBD,SOS,ZAR,KRW,LKR,SDG,SRD,SZL,SEK,CHF,SYP,TWD,TJS,TZS,THB,TOP,TTD,TND,TMM,USD,UGX,UAH,AED,UYU,UZS,VUV,VEB,VEF,VND,CHE,CHW,XOF,XPF,WST,YER,ZMK,ZWD`,
-							BackendModel: nil,                    // Magento\Config\Model\Config\Backend\Locale
-							SourceModel:  NewSourceCurrencyAll(), // Magento\Config\Model\Config\Source\Locale\Currency\All
+							BackendModel: nil, // Magento\Config\Model\Config\Backend\Locale
+							// SourceModel:  NewSourceCurrencyAll(), // Magento\Config\Model\Config\Source\Locale\Currency\All
 						},
 					},
 				},
@@ -286,7 +290,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      `AF,AL,DZ,AS,AD,AO,AI,AQ,AG,AR,AM,AW,AU,AT,AX,AZ,BS,BH,BD,BB,BY,BE,BZ,BJ,BM,BL,BT,BO,BA,BW,BV,BR,IO,VG,BN,BG,BF,BI,KH,CM,CA,CD,CV,KY,CF,TD,CL,CN,CX,CC,CO,KM,CG,CK,CR,HR,CU,CY,CZ,DK,DJ,DM,DO,EC,EG,SV,GQ,ER,EE,ET,FK,FO,FJ,FI,FR,GF,PF,TF,GA,GM,GE,DE,GG,GH,GI,GR,GL,GD,GP,GU,GT,GN,GW,GY,HT,HM,HN,HK,HU,IS,IM,IN,ID,IR,IQ,IE,IL,IT,CI,JE,JM,JP,JO,KZ,KE,KI,KW,KG,LA,LV,LB,LS,LR,LY,LI,LT,LU,ME,MF,MO,MK,MG,MW,MY,MV,ML,MT,MH,MQ,MR,MU,YT,FX,MX,FM,MD,MC,MN,MS,MA,MZ,MM,NA,NR,NP,NL,AN,NC,NZ,NI,NE,NG,NU,NF,KP,MP,NO,OM,PK,PW,PA,PG,PY,PE,PH,PN,PL,PS,PT,PR,QA,RE,RO,RS,RU,RW,SH,KN,LC,PM,VC,WS,SM,ST,SA,SN,SC,SL,SG,SK,SI,SB,SO,ZA,GS,KR,ES,LK,SD,SR,SJ,SZ,SE,CH,SY,TL,TW,TJ,TZ,TH,TG,TK,TO,TT,TN,TR,TM,TC,TV,VI,UG,UA,AE,GB,US,UM,UY,UZ,VU,VA,VE,VN,WF,EH,YE,ZM,ZW`,
 							BackendModel: nil,
-							SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
+							// SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
 						},
 
 						&config.Field{
@@ -300,7 +304,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      `US`,
 							BackendModel: nil,
-							SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
+							// SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
 						},
 
 						&config.Field{
@@ -314,7 +318,7 @@ func init() {
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      `AT,BE,BG,CY,CZ,DK,EE,FI,FR,DE,GR,HR,HU,IE,IT,LV,LT,LU,MT,NL,PL,PT,RO,SK,SI,ES,SE,GB`,
 							BackendModel: nil,
-							SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
+							// SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
 						},
 
 						&config.Field{
@@ -328,7 +332,7 @@ func init() {
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      nil,
 							BackendModel: nil,
-							SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
+							// SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
 						},
 						&config.Field{
 							// Path: `general/country/optional_zip_countries`,
@@ -341,7 +345,7 @@ func init() {
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      `HK,IE,MO,PA,GB`,
 							BackendModel: nil,
-							SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
+							// SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
 						},
 					},
 				},
@@ -363,7 +367,7 @@ func init() {
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      nil,
 							BackendModel: nil,
-							SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
+							// SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
 						},
 
 						&config.Field{
@@ -377,7 +381,7 @@ func init() {
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      nil,
 							BackendModel: nil,
-							SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+							// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 						},
 					},
 				},
@@ -399,7 +403,7 @@ func init() {
 							Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:      `Europe/Berlin`,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Locale\Timezone
-							SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Timezone
+							// SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Timezone
 						},
 
 						&config.Field{
@@ -413,7 +417,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      `en_US`,
 							BackendModel: nil,
-							SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale
+							// SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale
 						},
 
 						&config.Field{
@@ -427,7 +431,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil,
-							SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Weekdays
+							// SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Weekdays
 						},
 
 						&config.Field{
@@ -441,7 +445,7 @@ func init() {
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil,
-							SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Weekdays
+							// SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Weekdays
 						},
 					},
 				},

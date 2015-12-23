@@ -22,6 +22,6 @@ type (
 )
 
 // ShowNonRequiredState
-func ShowNonRequiredState(cr config.ScopedGetter) bool {
-	return cr.Bool(PathDisplayAllStates)
+func ShowNonRequiredState(cr config.ScopedGetter) (bool, error) {
+	return cr.Bool(PathDisplayAllStates) // todo refactor see config/model package
 }
