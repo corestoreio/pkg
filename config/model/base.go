@@ -78,6 +78,13 @@ func (p basePath) Options() valuelabel.Slice {
 	return p.ValueLabel
 }
 
+// FQPathInt64 generates a fully qualified configuration path.
+// Example: general/country/allow would transform with StrScope scope.StrStores
+// and storeID e.g. 4 into: stores/4/general/country/allow
+func (p basePath) FQPathInt64(strScope scope.StrScope, scopeID int64) string {
+	return strScope.FQPathInt64(scopeID, p.string)
+}
+
 // field searches for the field in a SectionSlice and checks if the scope in
 // ScopedGetter is sufficient.
 func (p basePath) field(pkgCfg config.SectionSlice, sg config.ScopedGetter) (field *config.Field, err error) {

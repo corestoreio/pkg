@@ -146,3 +146,8 @@ func TestBasePathInScope(t *testing.T) {
 		}
 	}
 }
+
+func TestFQPathInt64(t *testing.T) {
+	p := NewPath("a/b/c")
+	assert.Exactly(t, scope.StrStores.FQPathInt64(4, "a/b/c"), p.FQPathInt64(scope.StrStores, 4))
+}
