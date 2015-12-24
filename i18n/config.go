@@ -23,7 +23,7 @@ const (
 	// LocaleDefault is the overall default locale when no website/store setting is available.
 	LocaleDefault = "en_US"
 	// CLDRVersionRequired required version to run this package
-	CLDRVersionRequired = "27.0.1"
+	CLDRVersionRequired = "28"
 )
 
 func init() {

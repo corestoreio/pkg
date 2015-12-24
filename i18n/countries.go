@@ -15,8 +15,8 @@
 package i18n
 
 import (
-	"golang.org/x/text/display"
 	"golang.org/x/text/language"
+	"golang.org/x/text/language/display"
 )
 
 type (

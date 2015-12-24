@@ -16,8 +16,8 @@ package i18n
 
 import (
 	"github.com/corestoreio/csfw/util"
-	"golang.org/x/text/display"
 	"golang.org/x/text/language"
+	"golang.org/x/text/language/display"
 )
 
 // LocaleSeparator defines the underscore because in Magento land we also have

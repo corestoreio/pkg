@@ -17,8 +17,8 @@ package i18n
 import (
 	"fmt"
 
-	"golang.org/x/text/display"
 	"golang.org/x/text/language"
+	"golang.org/x/text/language/display"
 )
 
 // GetLanguages returns a list of languages as a key/value slice. Odd index/key = locale,
