@@ -28,16 +28,17 @@ var _ json.Unmarshaler = (*Pair)(nil)
 
 // NotNull* are specifying which type has a non null value
 const (
-	NotNullString uint = iota + 1
+	NotNullString uint8 = iota + 1
 	NotNullInt
 	NotNullFloat64
 	NotNullBool
 )
 
-// Pair contains a stringyfied value and a label for printing in a browser / JS api.
+// Pair contains a different typed values and a label for printing in a browser.
+// Especially useful for JS API and in total for value validation.
 type Pair struct {
 	// NotNull defines which type is not null
-	NotNull uint
+	NotNull uint8
 	String  string  `json:"-"`
 	Int     int     `json:"-"`
 	Float64 float64 `json:"-"`
@@ -46,8 +47,13 @@ type Pair struct {
 	// TODO(cs) add maybe more types and SQL connection ...
 }
 
-// Label returns the the label. A function for consistency to Value()
-func (p Pair) Label() string { return p.label }
+// Label returns the label and if empty the Value().
+func (p Pair) Label() string {
+	if p.label == "" {
+		return p.Value()
+	}
+	return p.label
+}
 
 // Value returns the underlying value as a string
 func (p Pair) Value() string {
@@ -137,7 +143,7 @@ func (p Pair) MarshalJSON() ([]byte, error) {
 		}
 	}
 
-	labelData, err := json.Marshal(p.label)
+	labelData, err := json.Marshal(p.Label())
 	if err != nil {
 		return nil, err
 	}

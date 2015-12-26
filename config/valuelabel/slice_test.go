@@ -36,8 +36,9 @@ func TestValueLabelSliceStringPanic(t *testing.T) {
 	_ = valuelabel.NewByString("kb", "l2", "ka")
 }
 
-func TestNewBySingleStrings(t *testing.T) {
-	sl := valuelabel.NewBySingleStrings("a", "b", "c")
+func TestNewByStringValue(t *testing.T) {
+	t.Parallel()
+	sl := valuelabel.NewByStringValue("a", "b", "c")
 	j, err := sl.ToJSON()
 	assert.NoError(t, err)
 	assert.Exactly(t, "[{\"Value\":\"a\",\"Label\":\"a\"},{\"Value\":\"b\",\"Label\":\"b\"},{\"Value\":\"c\",\"Label\":\"c\"}]\n", j)
@@ -83,6 +84,14 @@ func TestValueLabelSliceString(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Exactly(t, test.wantLabel, j, "SortByLabel Index %d", i)
 	}
+}
+
+func TestNewByIntValue(t *testing.T) {
+	t.Parallel()
+	sl := valuelabel.NewByIntValue(-1, 0, 5, 3, 2, -1)
+	j, err := sl.ToJSON()
+	assert.NoError(t, err)
+	assert.Exactly(t, "[{\"Value\":-1,\"Label\":\"-1\"},{\"Value\":0,\"Label\":\"0\"},{\"Value\":5,\"Label\":\"5\"},{\"Value\":3,\"Label\":\"3\"},{\"Value\":2,\"Label\":\"2\"},{\"Value\":-1,\"Label\":\"-1\"}]\n", j)
 }
 
 func TestValueLabelSliceInt(t *testing.T) {

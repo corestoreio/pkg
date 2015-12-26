@@ -39,15 +39,13 @@ func NewByString(vl ...string) Slice {
 	return vls
 }
 
-// NewBySingleStrings all passed arguments are values and also copied to the label.
-func NewBySingleStrings(s ...string) Slice {
-	// todo stupid name... should be renamed also all NewBy... to maybe NewStringPair
-	vls := make(Slice, len(s))
-	for i := 0; i < len(s); i++ {
+// NewByStringValue all passed arguments are values.
+func NewByStringValue(values ...string) Slice {
+	vls := make(Slice, len(values))
+	for i := 0; i < len(values); i++ {
 		vls[i] = Pair{
-			String:  s[i],
+			String:  values[i],
 			NotNull: NotNullString,
-			label:   s[i],
 		}
 	}
 	return vls
@@ -67,6 +65,18 @@ func NewByInt(vl Ints) Slice {
 			Int:     vl[i].Value,
 			NotNull: NotNullInt,
 			label:   vl[i].Label,
+		}
+	}
+	return vls
+}
+
+// NewByIntValue all passed arguments are values.
+func NewByIntValue(values ...int) Slice {
+	vls := make(Slice, len(values))
+	for i := 0; i < len(values); i++ {
+		vls[i] = Pair{
+			Int:     values[i],
+			NotNull: NotNullInt,
 		}
 	}
 	return vls
