@@ -36,6 +36,13 @@ func TestValueLabelSliceStringPanic(t *testing.T) {
 	_ = valuelabel.NewByString("kb", "l2", "ka")
 }
 
+func TestNewBySingleStrings(t *testing.T) {
+	sl := valuelabel.NewBySingleStrings("a", "b", "c")
+	j, err := sl.ToJSON()
+	assert.NoError(t, err)
+	assert.Exactly(t, "[{\"Value\":\"a\",\"Label\":\"a\"},{\"Value\":\"b\",\"Label\":\"b\"},{\"Value\":\"c\",\"Label\":\"c\"}]\n", j)
+}
+
 func TestValueLabelSliceString(t *testing.T) {
 	t.Parallel()
 	// TODO(cs) go fuzz testing

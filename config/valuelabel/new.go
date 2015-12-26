@@ -39,6 +39,20 @@ func NewByString(vl ...string) Slice {
 	return vls
 }
 
+// NewBySingleStrings all passed arguments are values and also copied to the label.
+func NewBySingleStrings(s ...string) Slice {
+	// todo stupid name... should be renamed also all NewBy... to maybe NewStringPair
+	vls := make(Slice, len(s))
+	for i := 0; i < len(s); i++ {
+		vls[i] = Pair{
+			String:  s[i],
+			NotNull: NotNullString,
+			label:   s[i],
+		}
+	}
+	return vls
+}
+
 // Ints a slice only used as argument to NewByInt.
 type Ints []struct {
 	Value int
