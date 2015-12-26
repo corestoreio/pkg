@@ -15,27 +15,31 @@
 # all packages tested here must pass the tests. packages not listed here
 # are under development will break things.
 
+GOTEST=GO15VENDOREXPERIMENT=1 go test -race -v -cover
+GORUN=GO15VENDOREXPERIMENT=1 go run -v
 DBTESTS = ./codegen ./config/... ./directory/... ./eav/... ./store/... ./storage/...
-NONDBTESTS = ./utils/... ./net/... ./locale/... ./i18n/... ./config/model ./config/scope ./config/valuelabel
+NONDBTESTS = ./utils/... ./net/... ./locale/... ./i18n/... \
+./config/model ./config/scope ./config/valuelabel \
+./vendor/golang.org/x/text/...
 
 test: testnodb test1 test2
 
 testnodb: clean
-	go test -race -cover -v $(NONDBTESTS)
+	$(GOTEST) $(NONDBTESTS)
 
 test1: clean
 	@echo "Running tests for Mage1 database schema"
 	@export CS_DSN_TEST='magento-1-9:magento-1-9@tcp(localhost:3306)/magento-1-9' && \
 	export CS_DSN='magento-1-9:magento-1-9@tcp(localhost:3306)/magento-1-9' && \
 	go run codegen/tableToStruct/*.go && \
-	go test -v -race -cover -tags mage1 $(DBTESTS)
+	$(GOTEST) -tags mage1 $(DBTESTS)
 
 test2: clean
 	@echo "Running tests for Mage2 database schema"
 	@export CS_DSN_TEST='magento2:magento2@tcp(localhost:3306)/magento2' && \
 	export CS_DSN='magento2:magento2@tcp(localhost:3306)/magento2' && \
 	go run codegen/tableToStruct/*.go && \
-	go test -v -race -cover -tags mage2 $(DBTESTS)
+	$(GOTEST) -tags mage2 $(DBTESTS)
 
 clean:
 	find . -name tables_generated.go -delete
@@ -43,8 +47,14 @@ clean:
 
 tts: clean
 	@echo "Generating go source from MySQL tables"
-	go run -v codegen/tableToStruct/*.go
+	$(GORUN) codegen/tableToStruct/*.go
 
 depgraph:
 	# http://talks.golang.org/2015/tricks.slide#51
 	find . -type d -not -iwholename '*.git*' -exec sh -c "godepgraph -horizontal {} | dot -Tsvg -o {}/godepgraph.svg" \;
+
+magento1:
+	@echo "Installing Magento 1 TODO"
+
+magento2:
+	@echo "Installing Magento 2 TODO"
