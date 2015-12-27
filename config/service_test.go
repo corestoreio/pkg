@@ -39,20 +39,20 @@ func TestScopeApplyDefaults(t *testing.T) {
 	pkgCfg := config.MustNewConfiguration(
 		&config.Section{
 			ID: "contact",
-			Groups: config.GroupSlice{
+			Groups: config.NewGroupSlice(
 				&config.Group{
 					ID: "contact",
-					Fields: config.FieldSlice{
+					Fields: config.NewFieldSlice(
 						&config.Field{
 							// Path: `contact/contact/enabled`,
 							ID:      "enabled",
 							Default: true,
 						},
-					},
+					),
 				},
 				&config.Group{
 					ID: "email",
-					Fields: config.FieldSlice{
+					Fields: config.NewFieldSlice(
 						&config.Field{
 							// Path: `contact/email/recipient_email`,
 							ID:      "recipient_email",
@@ -68,9 +68,9 @@ func TestScopeApplyDefaults(t *testing.T) {
 							ID:      "email_template",
 							Default: 4711,
 						},
-					},
+					),
 				},
-			},
+			),
 		},
 	)
 	s := config.NewService()

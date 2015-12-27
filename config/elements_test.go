@@ -36,21 +36,21 @@ func TestNewConfiguration(t *testing.T) {
 			have: []*config.Section{
 				{
 					ID: "web",
-					Groups: config.GroupSlice{
+					Groups: config.NewGroupSlice(
 						&config.Group{
 							ID:     "default",
 							Fields: config.FieldSlice{&config.Field{ID: "front"}, &config.Field{ID: "no_route"}},
 						},
-					},
+					),
 				},
 				{
 					ID: "system",
-					Groups: config.GroupSlice{
+					Groups: config.NewGroupSlice(
 						&config.Group{
 							ID:     "media_storage_configuration",
 							Fields: config.FieldSlice{&config.Field{ID: "allowed_resources"}},
 						},
-					},
+					),
 				},
 			},
 			wantErr: "",
@@ -68,12 +68,12 @@ func TestNewConfiguration(t *testing.T) {
 			have: []*config.Section{
 				{
 					ID: "a",
-					Groups: config.GroupSlice{
+					Groups: config.NewGroupSlice(
 						&config.Group{
 							ID:     "b",
 							Fields: config.FieldSlice{&config.Field{ID: "c"}, &config.Field{ID: "c"}},
 						},
-					},
+					),
 				},
 			},
 			wantErr: "Duplicate entry for path default/0/a/b/c",
@@ -110,20 +110,20 @@ func TestSectionSliceDefaults(t *testing.T) {
 	pkgCfg := config.MustNewConfiguration(
 		&config.Section{
 			ID: "contact",
-			Groups: config.GroupSlice{
+			Groups: config.NewGroupSlice(
 				&config.Group{
 					ID: "contact",
-					Fields: config.FieldSlice{
+					Fields: config.NewFieldSlice(
 						&config.Field{
 							// Path: `contact/contact/enabled`,
 							ID:      "enabled",
 							Default: true,
 						},
-					},
+					),
 				},
 				&config.Group{
 					ID: "email",
-					Fields: config.FieldSlice{
+					Fields: config.NewFieldSlice(
 						&config.Field{
 							// Path: `contact/email/recipient_email`,
 							ID:      "recipient_email",
@@ -139,9 +139,9 @@ func TestSectionSliceDefaults(t *testing.T) {
 							ID:      "email_template",
 							Default: 4711,
 						},
-					},
+					),
 				},
-			},
+			),
 		},
 	)
 
@@ -170,21 +170,21 @@ func TestSectionSliceMerge(t *testing.T) {
 					nil,
 					&config.Section{
 						ID: "a",
-						Groups: config.GroupSlice{
+						Groups: config.NewGroupSlice(
 							nil,
 							&config.Group{
 								ID: "b",
-								Fields: config.FieldSlice{
+								Fields: config.NewFieldSlice(
 									&config.Field{ID: "c", Default: `c`},
-								},
+								),
 							},
 							&config.Group{
 								ID: "b",
-								Fields: config.FieldSlice{
+								Fields: config.NewFieldSlice(
 									&config.Field{ID: "d", Default: `d`},
-								},
+								),
 							},
-						},
+						),
 					},
 				},
 				{
@@ -201,33 +201,33 @@ func TestSectionSliceMerge(t *testing.T) {
 					&config.Section{
 						ID:    "a",
 						Label: "SectionLabelA",
-						Groups: config.GroupSlice{
+						Groups: config.NewGroupSlice(
 							&config.Group{
 								ID:    "b",
 								Scope: scope.NewPerm(scope.DefaultID),
-								Fields: config.FieldSlice{
+								Fields: config.NewFieldSlice(
 									&config.Field{ID: "c", Default: `c`},
-								},
+								),
 							},
 							nil,
-						},
+						),
 					},
 				},
 				{
 					&config.Section{
 						ID:    "a",
 						Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Groups: config.GroupSlice{
+						Groups: config.NewGroupSlice(
 							&config.Group{ID: "b", Label: "GroupLabelB1"},
 							nil,
 							&config.Group{ID: "b", Label: "GroupLabelB2"},
 							&config.Group{
 								ID: "b2",
-								Fields: config.FieldSlice{
+								Fields: config.NewFieldSlice(
 									&config.Field{ID: "d", Default: `d`},
-								},
+								),
 							},
-						},
+						),
 					},
 				},
 			},
@@ -253,14 +253,14 @@ func TestSectionSliceMerge(t *testing.T) {
 					&config.Section{
 						ID:    "a",
 						Label: "SectionLabelA",
-						Groups: config.GroupSlice{
+						Groups: config.NewGroupSlice(
 							&config.Group{
 								ID:      "b",
 								Label:   "SectionAGroupB",
 								Comment: "SectionAGroupBComment",
 								Scope:   scope.NewPerm(scope.DefaultID),
 							},
-						},
+						),
 					},
 				},
 				{
@@ -268,11 +268,11 @@ func TestSectionSliceMerge(t *testing.T) {
 						ID:        "a",
 						SortOrder: 1000,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Groups: config.GroupSlice{
+						Groups: config.NewGroupSlice(
 							&config.Group{ID: "b", Label: "GroupLabelB1", Scope: scope.PermAll},
 							&config.Group{ID: "b", Label: "GroupLabelB2", Comment: "Section2AGroup3BComment", SortOrder: 100},
 							&config.Group{ID: "b2"},
-						},
+						),
 					},
 				},
 			},
@@ -284,39 +284,39 @@ func TestSectionSliceMerge(t *testing.T) {
 				{
 					&config.Section{
 						ID: "a",
-						Groups: config.GroupSlice{
+						Groups: config.NewGroupSlice(
 							&config.Group{
 								ID:    "b",
 								Label: "b1",
-								Fields: config.FieldSlice{
+								Fields: config.NewFieldSlice(
 									&config.Field{ID: "c", Default: `c`, Type: config.TypeMultiselect, SortOrder: 1001},
-								},
+								),
 							},
 							&config.Group{
 								ID:    "b",
 								Label: "b2",
-								Fields: config.FieldSlice{
+								Fields: config.NewFieldSlice(
 									nil,
 									&config.Field{ID: "d", Default: `d`, Comment: "Ring of fire", Type: config.TypeObscure},
 									&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect, Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID)},
-								},
+								),
 							},
-						},
+						),
 					},
 				},
 				{
 					&config.Section{
 						ID: "a",
-						Groups: config.GroupSlice{
+						Groups: config.NewGroupSlice(
 							&config.Group{
 								ID:    "b",
 								Label: "b3",
-								Fields: config.FieldSlice{
+								Fields: config.NewFieldSlice(
 									&config.Field{ID: "d", Default: `overriddenD`, Label: "Sect2Group2Label4", Comment: "LOTR"},
 									&config.Field{ID: "c", Default: `overriddenHaha`, Type: config.TypeHidden},
-								},
+								),
 							},
-						},
+						),
 					},
 				},
 			},
@@ -329,28 +329,28 @@ func TestSectionSliceMerge(t *testing.T) {
 				{
 					&config.Section{
 						ID: "a",
-						Groups: config.GroupSlice{
+						Groups: config.NewGroupSlice(
 							&config.Group{
 								ID: "b",
-								Fields: config.FieldSlice{
+								Fields: config.NewFieldSlice(
 									&config.Field{
 										ID:      "c",
 										Default: `c`,
 										Type:    config.TypeMultiselect,
 									},
-								},
+								),
 							},
-						},
+						),
 					},
 				},
 				{
 					nil,
 					&config.Section{
 						ID: "a",
-						Groups: config.GroupSlice{
+						Groups: config.NewGroupSlice(
 							&config.Group{
 								ID: "b",
-								Fields: config.FieldSlice{
+								Fields: config.NewFieldSlice(
 									nil,
 									&config.Field{
 										ID:        "c",
@@ -361,9 +361,9 @@ func TestSectionSliceMerge(t *testing.T) {
 										SortOrder: 100,
 										Visible:   config.VisibleYes,
 									},
-								},
+								),
 							},
-						},
+						),
 					},
 				},
 			},
@@ -407,23 +407,23 @@ func TestGroupSliceMerge(t *testing.T) {
 			have: []*config.Group{
 				{
 					ID: "b",
-					Fields: config.FieldSlice{
+					Fields: config.NewFieldSlice(
 						&config.Field{ID: "c", Default: `c`, Type: config.TypeMultiselect},
-					},
+					),
 				},
 				{
 					ID: "b",
-					Fields: config.FieldSlice{
+					Fields: config.NewFieldSlice(
 						&config.Field{ID: "d", Default: `d`, Comment: "Ring of fire", Type: config.TypeObscure},
 						&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect, Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID)},
-					},
+					),
 				},
 				{
 					ID: "b",
-					Fields: config.FieldSlice{
+					Fields: config.NewFieldSlice(
 						&config.Field{ID: "d", Default: `overriddenD`, Label: "Sect2Group2Label4", Comment: "LOTR"},
 						&config.Field{ID: "c", Default: `overriddenHaha`, Type: config.TypeHidden},
-					},
+					),
 				},
 			},
 			wantErr: nil,
@@ -461,13 +461,13 @@ func TestSectionSliceFindGroupByPath(t *testing.T) {
 		wantErr   error
 	}{
 		0: {
-			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b"}, &config.Group{ID: "bb"}}}},
+			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.NewGroupSlice(&config.Group{ID: "b"}, &config.Group{ID: "bb"})}},
 			havePath:  []string{"a/b"},
 			wantGID:   "b",
 			wantErr:   nil,
 		},
 		1: {
-			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b"}, &config.Group{ID: "bb"}}}},
+			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.NewGroupSlice(&config.Group{ID: "b"}, &config.Group{ID: "bb"})}},
 			havePath:  []string{"a/bc"},
 			wantGID:   "b",
 			wantErr:   config.ErrGroupNotFound,
@@ -614,12 +614,12 @@ func TestSectionSliceSort(t *testing.T) {
 func TestSectionSliceSortAll(t *testing.T) {
 	want := `[{"ID":"b","SortOrder":-10,"Groups":null},{"ID":"e","SortOrder":1,"Groups":null},{"ID":"c","SortOrder":10,"Groups":null},{"ID":"a","SortOrder":20,"Groups":[{"ID":"b","SortOrder":-10,"Fields":[{"ID":"b","SortOrder":-10},{"ID":"e","SortOrder":1},{"ID":"c","SortOrder":10},{"ID":"d","SortOrder":11},{"ID":"a","SortOrder":20}]},{"ID":"e","SortOrder":1,"Fields":null},{"ID":"d","SortOrder":11,"Fields":[{"ID":"b","SortOrder":-10},{"ID":"e","SortOrder":1},{"ID":"c","SortOrder":10},{"ID":"d","SortOrder":11},{"ID":"a","SortOrder":20}]},{"ID":"a","SortOrder":20,"Fields":[{"ID":"b","SortOrder":-10},{"ID":"e","SortOrder":1},{"ID":"c","SortOrder":10},{"ID":"d","SortOrder":11},{"ID":"a","SortOrder":20}]}]}]` + "\n"
 	ss := config.SectionSlice{
-		&config.Section{ID: "a", SortOrder: 20, Groups: config.GroupSlice{
+		&config.Section{ID: "a", SortOrder: 20, Groups: config.NewGroupSlice(
 			&config.Group{ID: "a", SortOrder: 20, Fields: config.FieldSlice{&config.Field{ID: "a", SortOrder: 20}, &config.Field{ID: "b", SortOrder: -10}, &config.Field{ID: "c", SortOrder: 10}, &config.Field{ID: "d", SortOrder: 11}, &config.Field{ID: "e", SortOrder: 1}}},
 			&config.Group{ID: "b", SortOrder: -10, Fields: config.FieldSlice{&config.Field{ID: "a", SortOrder: 20}, &config.Field{ID: "b", SortOrder: -10}, &config.Field{ID: "c", SortOrder: 10}, &config.Field{ID: "d", SortOrder: 11}, &config.Field{ID: "e", SortOrder: 1}}},
 			&config.Group{ID: "d", SortOrder: 11, Fields: config.FieldSlice{&config.Field{ID: "a", SortOrder: 20}, &config.Field{ID: "b", SortOrder: -10}, &config.Field{ID: "c", SortOrder: 10}, &config.Field{ID: "d", SortOrder: 11}, &config.Field{ID: "e", SortOrder: 1}}},
 			&config.Group{ID: "e", SortOrder: 1},
-		}},
+		)},
 		&config.Section{ID: "b", SortOrder: -10},
 		&config.Section{ID: "c", SortOrder: 10},
 		&config.Section{ID: "e", SortOrder: 1},

@@ -56,6 +56,11 @@ type (
 	}
 )
 
+// NewFieldSlice wrapper to create a new FieldSlice
+func NewFieldSlice(fs ...*Field) FieldSlice {
+	return FieldSlice(fs)
+}
+
 // FindByID returns a Field pointer or nil if not found
 func (fs FieldSlice) FindByID(id string) (*Field, error) {
 	for _, f := range fs {

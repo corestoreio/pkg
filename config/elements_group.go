@@ -45,6 +45,11 @@ type (
 	}
 )
 
+// NewGroupSlice wrapper function, for now.
+func NewGroupSlice(gs ...*Group) GroupSlice {
+	return GroupSlice(gs)
+}
+
 // FindByID returns a Group pointer or nil if not found
 func (gs GroupSlice) FindByID(id string) (*Group, error) {
 	for _, g := range gs {
