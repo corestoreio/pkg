@@ -6,8 +6,8 @@ package currency
 
 import "testing"
 
-func TestAllCurrencies(t *testing.T) {
-	all := AllCurrencies()
+func TestAll(t *testing.T) {
+	all := All()
 	if c := all[0]; c != "ADP" {
 		t.Errorf("first was %c; want ADP", c)
 	}

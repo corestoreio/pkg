@@ -10,8 +10,8 @@
 // change without notice.
 package currency // import "golang.org/x/text/currency"
 
-// AllCurrencies returns all available currencies on this planet.
-func AllCurrencies() []string {
+// All returns all available currencies on this planet.
+func All() []string {
 	all := make([]string, numCurrencies)
 	for i := 0; i < numCurrencies; i++ {
 		all[i] = currency.Elem(i + 1)[:3]
