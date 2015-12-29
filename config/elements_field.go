@@ -46,8 +46,9 @@ type (
 		// In Magento2 they do not have an entry in the system.xml
 		Visible Visible `json:",omitempty"`
 
-		// BackendModel @deprecated defines how to save and load? the data
-		BackendModel BackendModeller `json:",omitempty"`
+		// CanBeEmpty only used in HTML forms for multiselect fields
+		// Use case: lib/internal/Magento/Framework/Data/Form/Element/Multiselect.php::getElementHtml()
+		CanBeEmpty bool `json:",omitempty"`
 		// Default can contain any default config value: float64, int64, string, bool
 		Default interface{} `json:",omitempty"`
 

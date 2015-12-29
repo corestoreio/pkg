@@ -238,10 +238,10 @@ func TestSectionSliceMerge(t *testing.T) {
 		2: {
 			have: []config.SectionSlice{
 				{
-					&config.Section{ID: "a", Label: "SectionLabelA", SortOrder: 20, Permission: 22},
+					&config.Section{ID: "a", Label: "SectionLabelA", SortOrder: 20, Resource: 22},
 				},
 				{
-					&config.Section{ID: "a", Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID), SortOrder: 10, Permission: 3},
+					&config.Section{ID: "a", Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID), SortOrder: 10, Resource: 3},
 				},
 			},
 			wantErr: "",

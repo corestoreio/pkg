@@ -48,9 +48,9 @@ type (
 		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
 		Scope     scope.Perm `json:",omitempty"`
 		SortOrder int        `json:",omitempty"`
-		// Permission some kind of ACL if someone is allowed for no,read or write access @todo
-		Permission uint `json:",omitempty"`
-		Groups     GroupSlice
+		// Resource some kind of ACL if someone is allowed for no,read or write access @todo
+		Resource uint `json:",omitempty"`
+		Groups   GroupSlice
 	}
 )
 
@@ -181,8 +181,8 @@ func (ss *SectionSlice) merge(s *Section) error {
 	if s.SortOrder != 0 {
 		cs.SortOrder = s.SortOrder
 	}
-	if s.Permission > 0 {
-		cs.Permission = s.Permission
+	if s.Resource > 0 {
+		cs.Resource = s.Resource
 	}
 	return cs.Groups.Merge(s.Groups...)
 }
