@@ -15,33 +15,37 @@
 package directory
 
 import (
-	"fmt"
-
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/config/valuelabel"
+	"github.com/juju/errgo"
+	"golang.org/x/text/currency"
 )
 
-type ConfigCurrenciesInstalled struct {
-	model.StringCSV
+// ConfigCurrency currency type for the configuration based on text/currency pkg.
+type ConfigCurrency struct {
+	model.Str
 }
 
-func NewConfigCurrenciesInstalled(path string) ConfigCurrenciesInstalled {
-	return ConfigCurrenciesInstalled{
-		StringCSV: model.NewStringCSV(
-			path,
-		),
+// NewConfigCurrency creates a new currency configuration type.
+func NewConfigCurrency(path string, vlPairs ...valuelabel.Pair) ConfigCurrency {
+	return ConfigCurrency{
+		Str: model.NewStr(path, vlPairs...),
 	}
 }
 
-// Write writes an int value and checks if the int value is within the allowed Options.
-func (p ConfigCurrenciesInstalled) Write(w config.Writer, v []string, s scope.Scope, id int64) error {
-
-	for _, cur := range v {
-		if len(cur) != 3 {
-			return fmt.Errorf("Incorrect currency %s. Length must the 3 characters.", cur)
-		}
+// Get tries to retrieve a currency
+func (p ConfigCurrency) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (Currency, error) {
+	cur := p.Str.Get(pkgCfg, sg)
+	u, err := currency.ParseISO(cur)
+	if err != nil {
+		return Currency{}, errgo.Mask(err)
 	}
+	return Currency{Unit: u}, nil
+}
 
-	return p.StringCSV.Write(w, v, s, id)
+// Writes a currency to the configuration storage.
+func (p ConfigCurrency) Write(w config.Writer, v Currency, s scope.Scope, id int64) error {
+	return p.Str.Write(w, v.String(), s, id)
 }

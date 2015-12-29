@@ -16,6 +16,6 @@ package directory_test
 
 import "testing"
 
-func TestConfigCurrenciesInstalled(t *testing.T) {
+func TestTODO(t *testing.T) {
 	t.Log("todo")
 }

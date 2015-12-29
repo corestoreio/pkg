@@ -15,32 +15,25 @@
 package directory
 
 import (
-	"strings"
-
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/valuelabel"
 	"golang.org/x/text/currency"
 )
 
+// CurrencyCollection static representation of all currencies available
+var CurrencyCollection valuelabel.Slice
+
+// InitCurrencyCollection sets the Options() on all PathCurrency* configuration
+// global variables.
+func InitCurrencyCollection() error {
+
+	CurrencyCollection = valuelabel.NewByStringValue(currency.All()...)
+
+	PathSystemCurrencyInstalled.ValueLabel = CurrencyCollection
+	PathCurrencyBase.ValueLabel = CurrencyCollection
+	return nil
+}
+
+// Currency represents a corestore currency type which may add more features.
 type Currency struct {
-	// https://godoc.org/golang.org/x/text/language
 	currency.Unit
-}
-
-// BaseCurrencyCode retrieves application base currency code
-func BaseCurrencyCode(cr config.Getter) (currency.Unit, error) {
-	base, err := cr.String(config.Path(PathCurrencyBase))
-	if config.NotKeyNotFoundError(err) {
-		return currency.Unit{}, err
-	}
-	return currency.ParseISO(base)
-}
-
-// AllowedCurrencies returns all installed currencies from global scope.
-func AllowedCurrencies(cr config.Getter) ([]string, error) {
-	installedCur, err := cr.String(config.Path(PathSystemCurrencyInstalled))
-	if config.NotKeyNotFoundError(err) {
-		return nil, err
-	}
-	// TODO use internal model of PathSystemCurrencyInstalled defined in package directory
-	return strings.Split(installedCur, ","), nil
 }

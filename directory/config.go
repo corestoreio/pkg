@@ -27,13 +27,21 @@ var PathDefaultCountry = model.NewStr("general/country/default")
 // PathCountryAllowed per store view allowed list of countries
 var PathCountryAllowed = model.NewStringCSV("general/country/allow")
 
-const (
-	PathSystemCurrencyInstalled = "system/currency/installed"
+// PathSystemCurrencyInstalled defines all installed and available currencies.
+// Global Scope
+var PathSystemCurrencyInstalled = model.NewStringCSV("system/currency/installed")
 
-	// PathCurrencyBase defines the app base currency code
-	PathCurrencyBase    = "currency/options/base"
-	PathCurrencyDefault = "currency/options/default"
-	PathCurrencyAllow   = "currency/options/allow"
+// PathCurrencyBase Base currency is used for all online payment transactions.
+// If you have more than one store view, the base currency scope is defined
+// by the catalog price scope ("Catalog" > "Price" > "Catalog Price Scope").
+// Website Scope is the default.
+var PathCurrencyBase = NewConfigCurrency("currency/options/base")
+
+// PathCurrencyDefault defines the default front end display currency
+var PathCurrencyDefault = NewConfigCurrency("currency/options/default")
+
+const (
+	PathCurrencyAllow = "currency/options/allow"
 
 	// PathOptionalZipCountries lists ISO2 country codes which have optional Zip/Postal pre-configured
 	PathOptionalZipCountries = "general/country/optional_zip_countries"
@@ -59,19 +67,21 @@ func init() {
 			Label:     "Currency Setup",
 			SortOrder: 60,
 			Scope:     scope.PermAll,
-			Groups: config.GroupSlice{
+			Groups: config.NewGroupSlice(
 				&config.Group{
 					ID:        "options",
 					Label:     `Currency Options`,
 					Comment:   ``,
 					SortOrder: 30,
 					Scope:     scope.PermAll,
-					Fields: config.FieldSlice{
+					Fields: config.NewFieldSlice(
 						&config.Field{
 							// Path: `currency/options/base`,
-							ID:           "base",
-							Label:        `Base Currency`,
-							Comment:      `Base currency is used for all online payment transactions. If you have more than one store view, the base currency scope is defined by the catalog price scope ("Catalog" > "Price" > "Catalog Price Scope").`,
+							ID:    "base",
+							Label: `Base Currency`,
+							Comment: `Base currency is used for all online payment transactions. If you have more
+							than one store view, the base currency scope is defined by the catalog price scope
+							("Catalog" > "Price" > "Catalog Price Scope").`,
 							Type:         config.TypeSelect,
 							SortOrder:    1,
 							Visible:      config.VisibleYes,
@@ -108,7 +118,7 @@ func init() {
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Currency\Allow
 							// SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Currency
 						},
-					},
+					),
 				},
 
 				&config.Group{
@@ -117,7 +127,7 @@ func init() {
 					Comment:   ``,
 					SortOrder: 40,
 					Scope:     scope.NewPerm(scope.DefaultID),
-					Fields: config.FieldSlice{
+					Fields: config.NewFieldSlice(
 						&config.Field{
 							// Path: `currency/webservicex/timeout`,
 							ID:           "timeout",
@@ -131,7 +141,7 @@ func init() {
 							BackendModel: nil,
 							// SourceModel:  nil,
 						},
-					},
+					),
 				},
 
 				&config.Group{
@@ -140,7 +150,7 @@ func init() {
 					Comment:   ``,
 					SortOrder: 50,
 					Scope:     scope.NewPerm(scope.DefaultID),
-					Fields: config.FieldSlice{
+					Fields: config.NewFieldSlice(
 						&config.Field{
 							// Path: `currency/import/enabled`,
 							ID:           "enabled",
@@ -238,20 +248,20 @@ func init() {
 							BackendModel: nil,
 							// SourceModel:  nil,
 						},
-					},
+					),
 				},
-			},
+			),
 		},
 		&config.Section{
 			ID: "system",
-			Groups: config.GroupSlice{
+			Groups: config.NewGroupSlice(
 				&config.Group{
 					ID:        "currency",
 					Label:     `Currency`,
 					Comment:   ``,
 					SortOrder: 50,
 					Scope:     scope.NewPerm(scope.DefaultID),
-					Fields: config.FieldSlice{
+					Fields: config.NewFieldSlice(
 						&config.Field{
 							// Path: `system/currency/installed`,
 							ID:           "installed",
@@ -265,20 +275,20 @@ func init() {
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Locale
 							// SourceModel:  NewSourceCurrencyAll(), // Magento\Config\Model\Config\Source\Locale\Currency\All
 						},
-					},
+					),
 				},
-			},
+			),
 		},
 		&config.Section{
 			ID: "general",
-			Groups: config.GroupSlice{
+			Groups: config.NewGroupSlice(
 				&config.Group{
 					ID:        "country",
 					Label:     `Country Options`,
 					Comment:   ``,
 					SortOrder: 1,
 					Scope:     scope.PermAll,
-					Fields: config.FieldSlice{
+					Fields: config.NewFieldSlice(
 						&config.Field{
 							// Path: `general/country/allow`,
 							ID:           "allow",
@@ -347,7 +357,7 @@ func init() {
 							BackendModel: nil,
 							// SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
 						},
-					},
+					),
 				},
 				&config.Group{
 					ID:        "region",
@@ -355,7 +365,7 @@ func init() {
 					Comment:   ``,
 					SortOrder: 4,
 					Scope:     scope.NewPerm(scope.DefaultID),
-					Fields: config.FieldSlice{
+					Fields: config.NewFieldSlice(
 						&config.Field{
 							// Path: `general/region/state_required`,
 							ID:           "state_required",
@@ -383,7 +393,7 @@ func init() {
 							BackendModel: nil,
 							// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
 						},
-					},
+					),
 				},
 				&config.Group{
 					ID:        "locale",
@@ -391,7 +401,7 @@ func init() {
 					Comment:   ``,
 					SortOrder: 8,
 					Scope:     scope.PermAll,
-					Fields: config.FieldSlice{
+					Fields: config.NewFieldSlice(
 						&config.Field{
 							// Path: `general/locale/timezone`,
 							ID:           "timezone",
@@ -447,19 +457,18 @@ func init() {
 							BackendModel: nil,
 							// SourceModel:  nil, // Magento\Config\Model\Config\Source\Locale\Weekdays
 						},
-					},
+					),
 				},
-			},
+			),
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
 		&config.Section{
 			ID: "general",
-			Groups: config.GroupSlice{
-
+			Groups: config.NewGroupSlice(
 				&config.Group{
 					ID: "locale",
-					Fields: config.FieldSlice{
+					Fields: config.NewFieldSlice(
 						&config.Field{
 							// Path: `general/locale/datetime_format_long`,
 							ID:      "datetime_format_long",
@@ -522,9 +531,9 @@ func init() {
 							Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 							Default: `en`,
 						},
-					},
+					),
 				},
-			},
+			),
 		},
 	)
 }
