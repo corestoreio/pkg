@@ -15,8 +15,8 @@
 package mock
 
 import (
-	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/store/scope"
 )
 
 // NullService does nothing and returns only errors.

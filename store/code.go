@@ -17,7 +17,7 @@ package store
 import (
 	"net/http"
 
-	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
 )
 

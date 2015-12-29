@@ -20,7 +20,7 @@ import (
 	"errors"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 

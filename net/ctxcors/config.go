@@ -16,7 +16,7 @@ package ctxcors
 
 import (
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/store/scope"
 )
 
 // Path constants defines the configuration paths in core_config_data

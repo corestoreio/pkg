@@ -17,7 +17,7 @@ package store
 import (
 	"errors"
 
-	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/store/scope"
 	"golang.org/x/net/context"
 )
 

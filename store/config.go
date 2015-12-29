@@ -21,8 +21,8 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/configsource"
 	"github.com/corestoreio/csfw/config/model"
-	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/store/scope"
 )
 
 // PathRedirectToBase configuration path to specify redirect codes and

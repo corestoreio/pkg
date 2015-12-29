@@ -18,7 +18,7 @@ import (
 	"errors"
 	"sort"
 
-	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/juju/errgo"
 )
 

@@ -20,10 +20,10 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/log"
 	"golang.org/x/net/context"
 )

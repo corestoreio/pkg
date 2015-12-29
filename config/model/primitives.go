@@ -18,8 +18,8 @@ import (
 	"strconv"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/config/valuelabel"
+	"github.com/corestoreio/csfw/store/scope"
 )
 
 // Bool represents a path in config.Getter which handles bool values.

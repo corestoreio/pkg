@@ -14,7 +14,7 @@
 
 package config
 
-import "github.com/corestoreio/csfw/config/scope"
+import "github.com/corestoreio/csfw/store/scope"
 
 type (
 

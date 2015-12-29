@@ -22,11 +22,11 @@ import (
 	"errors"
 	"net"
 
-	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
 	"github.com/oschwald/geoip2-golang"

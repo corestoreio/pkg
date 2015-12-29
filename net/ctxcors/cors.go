@@ -25,9 +25,9 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/log"
 	"golang.org/x/net/context"
 )

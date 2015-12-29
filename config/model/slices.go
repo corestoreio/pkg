@@ -19,8 +19,8 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/config/valuelabel"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/juju/errgo"
 )

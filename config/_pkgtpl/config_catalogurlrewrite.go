@@ -4,7 +4,7 @@ package catalogurlrewrite
 
 import (
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/store/scope"
 )
 
 var PackageConfiguration = config.MustNewConfiguration(

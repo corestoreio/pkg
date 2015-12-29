@@ -18,10 +18,10 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/net/httputil"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/juju/errgo"
 	"golang.org/x/net/context"
 )

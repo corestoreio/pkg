@@ -17,8 +17,8 @@ package directory
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/model"
-	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/store/scope"
 )
 
 // PathDefaultCountry returns the store view default configured country code.

@@ -17,8 +17,8 @@ package geoip
 import (
 	"fmt"
 
-	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/net/ctxhttp"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/os"
 	"github.com/oschwald/geoip2-golang"
 )

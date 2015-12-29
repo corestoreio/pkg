@@ -21,8 +21,8 @@ import (
 	"sort"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/scope"
 	"github.com/corestoreio/csfw/directory"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
 	"golang.org/x/text/currency"

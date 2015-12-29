@@ -16,7 +16,7 @@ package model
 
 import (
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/store/scope"
 )
 
 // BaseURL represents a path in config.Getter handles BaseURLs and internal validation

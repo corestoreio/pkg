@@ -18,7 +18,7 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/scope"
+	"github.com/corestoreio/csfw/store/scope"
 )
 
 // corsScopeCache creates a new Cors type for a website configuration. Why are

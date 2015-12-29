@@ -17,9 +17,11 @@
 
 GOTEST=GO15VENDOREXPERIMENT=1 go test -race -v -cover
 GORUN=GO15VENDOREXPERIMENT=1 go run -v
+
 DBTESTS = ./codegen ./config/... ./directory/... ./eav/... ./store/... ./storage/...
+
 NONDBTESTS = ./utils/... ./net/... ./locale/... ./i18n/... \
-./config/model ./config/scope ./config/valuelabel \
+./config/model ./config/valuelabel ./store/scope \
 ./vendor/golang.org/x/text/...
 
 test: testnodb test1 test2
