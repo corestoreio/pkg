@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package element
 
-// DefaultMap contains the default aka global configuration of a package
-type DefaultMap map[string]interface{}
+import "github.com/corestoreio/csfw/util/log"
+
+// PkgLog global package based logger
+var PkgLog log.Logger = log.PkgLog

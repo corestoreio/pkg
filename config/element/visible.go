@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package element
 
 // Visible* defines yes/no/null values if a configuration field should be visible.
 // If null then the field is a candidate for merging.

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package element
 
 import (
 	"bytes"
@@ -29,13 +29,6 @@ import (
 var ErrSectionNotFound = errors.New("Section not found")
 
 type (
-	// Sectioner at the moment only for testing
-	Sectioner interface {
-		// Defaults generates the default configuration from all fields.
-		// Key is the path and value the value.
-		Defaults() DefaultMap
-	}
-
 	// SectionSlice contains a set of Sections. Some nifty helper functions
 	// exists. Thread safe for reading. A section slice can be used in many
 	// goroutines. It must remain lock-free.
@@ -80,7 +73,7 @@ func MustNewConfiguration(sections ...*Section) SectionSlice {
 
 // NewConfigurationMerge creates a new validated SectionSlice with a three level configuration.
 // Before validation, slices are all merged together. Panics if a path is redundant.
-// Only use this function if your package configuration really has duplicated entries.
+// Only use this function if your package elementuration really has duplicated entries.
 func NewConfigurationMerge(sections ...*Section) (SectionSlice, error) {
 	var ss SectionSlice
 	if err := ss.Merge(sections...); err != nil {
@@ -114,11 +107,7 @@ func (ss SectionSlice) Defaults() DefaultMap {
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
-				a, err := newArg(Path(s.ID, g.ID, f.ID))
-				if err != nil {
-					PkgLog.Debug("config.SectionSlice.Defaults.newArg", "err", err, "s", s, "g", g, "f", f)
-				}
-				dm[a.scopePath()] = f.Default
+				dm[f.FQPathDefault(s.ID, g.ID)] = f.Default
 			}
 		}
 	}
@@ -258,12 +247,7 @@ func (ss SectionSlice) Validate() error {
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
-				a, err := newArg(Path(s.ID, g.ID, f.ID))
-				if err != nil {
-					PkgLog.Debug("config.SectionSlice.Validate.newArg", "err", err, "s", s, "g", g, "f", f)
-					return errgo.Mask(err)
-				}
-				p := a.scopePath()
+				p := f.FQPathDefault(s.ID, g.ID)
 				if pc.Include(p) {
 					return errgo.Newf("Duplicate entry for path %s :: %s", p, ss.ToJSON())
 				}

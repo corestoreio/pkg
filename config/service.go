@@ -18,6 +18,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
@@ -124,7 +125,7 @@ func (s *Service) NewScoped(websiteID, groupID, storeID int64) ScopedGetter {
 
 // ApplyDefaults reads slice Sectioner and applies the keys and values to the
 // default configuration. Overwrites existing values.
-func (s *Service) ApplyDefaults(ss Sectioner) *Service {
+func (s *Service) ApplyDefaults(ss element.Sectioner) *Service {
 	for k, v := range ss.Defaults() {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.Service.ApplyDefaults", k, v)

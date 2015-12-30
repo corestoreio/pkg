@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package element
 
 import (
 	"bytes"
@@ -35,16 +35,16 @@ type (
 	Group struct {
 		// ID unique ID and merged with others. 2nd part of the path.
 		ID      string
-		Label   string `json:",omitempty"`
-		Comment string `json:",omitempty"`
+		Label   string   `json:",omitempty"`
+		Comment LongText `json:",omitempty"`
 		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
 		Scope     scope.Perm `json:",omitempty"`
 		SortOrder int        `json:",omitempty"`
 
-		HelpURL               string
-		MoreURL               string
-		DemoLink              string
-		HideInSingleStoreMode bool
+		HelpURL               LongText `json:",omitempty"`
+		MoreURL               LongText `json:",omitempty"`
+		DemoLink              LongText `json:",omitempty"`
+		HideInSingleStoreMode bool     `json:",omitempty"`
 
 		Fields FieldSlice
 		// Groups     GroupSlice @todo see recursive options <xs:element name="group"> in app/code/Magento/Config/etc/system_file.xsd
@@ -96,8 +96,8 @@ func (gs *GroupSlice) merge(g *Group) error {
 	if g.Label != "" {
 		cg.Label = g.Label
 	}
-	if g.Comment != "" {
-		cg.Comment = g.Comment
+	if !g.Comment.IsEmpty() {
+		cg.Comment = g.Comment.Copy()
 	}
 	if g.Scope > 0 {
 		cg.Scope = g.Scope

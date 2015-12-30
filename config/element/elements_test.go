@@ -12,43 +12,43 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config_test
+package element_test
 
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewConfiguration(t *testing.T) {
 	tests := []struct {
-		have    []*config.Section
+		have    []*element.Section
 		wantErr string
 		wantLen int
 	}{
 		0: {
-			have:    []*config.Section{},
+			have:    []*element.Section{},
 			wantErr: "SectionSlice is empty",
 		},
 		1: {
-			have: []*config.Section{
+			have: []*element.Section{
 				{
 					ID: "web",
-					Groups: config.NewGroupSlice(
-						&config.Group{
+					Groups: element.NewGroupSlice(
+						&element.Group{
 							ID:     "default",
-							Fields: config.FieldSlice{&config.Field{ID: "front"}, &config.Field{ID: "no_route"}},
+							Fields: element.FieldSlice{&element.Field{ID: "front"}, &element.Field{ID: "no_route"}},
 						},
 					),
 				},
 				{
 					ID: "system",
-					Groups: config.NewGroupSlice(
-						&config.Group{
+					Groups: element.NewGroupSlice(
+						&element.Group{
 							ID:     "media_storage_configuration",
-							Fields: config.FieldSlice{&config.Field{ID: "allowed_resources"}},
+							Fields: element.FieldSlice{&element.Field{ID: "allowed_resources"}},
 						},
 					),
 				},
@@ -57,21 +57,21 @@ func TestNewConfiguration(t *testing.T) {
 			wantLen: 3,
 		},
 		2: {
-			have:    []*config.Section{{ID: "a", Groups: config.GroupSlice{}}},
+			have:    []*element.Section{{ID: "a", Groups: element.GroupSlice{}}},
 			wantErr: "",
 		},
 		3: {
-			have:    []*config.Section{{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b", Fields: nil}}}},
+			have:    []*element.Section{{ID: "a", Groups: element.GroupSlice{&element.Group{ID: "b", Fields: nil}}}},
 			wantErr: "",
 		},
 		4: {
-			have: []*config.Section{
+			have: []*element.Section{
 				{
 					ID: "a",
-					Groups: config.NewGroupSlice(
-						&config.Group{
+					Groups: element.NewGroupSlice(
+						&element.Group{
 							ID:     "b",
-							Fields: config.FieldSlice{&config.Field{ID: "c"}, &config.Field{ID: "c"}},
+							Fields: element.FieldSlice{&element.Field{ID: "c"}, &element.Field{ID: "c"}},
 						},
 					),
 				},
@@ -81,7 +81,7 @@ func TestNewConfiguration(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		func(t *testing.T, have []*config.Section, wantErr string) {
+		func(t *testing.T, have []*element.Section, wantErr string) {
 			defer func() {
 				if r := recover(); r != nil {
 					if err, ok := r.(error); ok {
@@ -94,7 +94,7 @@ func TestNewConfiguration(t *testing.T) {
 				}
 			}()
 
-			haveSlice := config.MustNewConfiguration(have...)
+			haveSlice := element.MustNewConfiguration(have...)
 			if wantErr != "" {
 				assert.Nil(t, haveSlice, "Index %d", i)
 			} else {
@@ -107,34 +107,34 @@ func TestNewConfiguration(t *testing.T) {
 }
 
 func TestSectionSliceDefaults(t *testing.T) {
-	pkgCfg := config.MustNewConfiguration(
-		&config.Section{
+	pkgCfg := element.MustNewConfiguration(
+		&element.Section{
 			ID: "contact",
-			Groups: config.NewGroupSlice(
-				&config.Group{
+			Groups: element.NewGroupSlice(
+				&element.Group{
 					ID: "contact",
-					Fields: config.NewFieldSlice(
-						&config.Field{
+					Fields: element.NewFieldSlice(
+						&element.Field{
 							// Path: `contact/contact/enabled`,
 							ID:      "enabled",
 							Default: true,
 						},
 					),
 				},
-				&config.Group{
+				&element.Group{
 					ID: "email",
-					Fields: config.NewFieldSlice(
-						&config.Field{
+					Fields: element.NewFieldSlice(
+						&element.Field{
 							// Path: `contact/email/recipient_email`,
 							ID:      "recipient_email",
 							Default: `hello@example.com`,
 						},
-						&config.Field{
+						&element.Field{
 							// Path: `contact/email/sender_email_identity`,
 							ID:      "sender_email_identity",
 							Default: 2.7182818284590452353602874713527,
 						},
-						&config.Field{
+						&element.Field{
 							// Path: `contact/email/email_template`,
 							ID:      "email_template",
 							Default: 4711,
@@ -147,7 +147,7 @@ func TestSectionSliceDefaults(t *testing.T) {
 
 	assert.Exactly(
 		t,
-		config.DefaultMap{"default/0/contact/email/sender_email_identity": 2.718281828459045, "default/0/contact/email/email_template": 4711, "default/0/contact/contact/enabled": true, "default/0/contact/email/recipient_email": "hello@example.com"},
+		element.DefaultMap{"default/0/contact/email/sender_email_identity": 2.718281828459045, "default/0/contact/email/email_template": 4711, "default/0/contact/contact/enabled": true, "default/0/contact/email/recipient_email": "hello@example.com"},
 		pkgCfg.Defaults(),
 	)
 }
@@ -158,37 +158,37 @@ func TestSectionSliceMerge(t *testing.T) {
 	// Use a Webservice to compare the JSON output!
 
 	tests := []struct {
-		have    []config.SectionSlice
+		have    []element.SectionSlice
 		wantErr string
 		want    string
 		wantLen int
 	}{
 		0: {
-			have: []config.SectionSlice{
+			have: []element.SectionSlice{
 				nil,
 				{
 					nil,
-					&config.Section{
+					&element.Section{
 						ID: "a",
-						Groups: config.NewGroupSlice(
+						Groups: element.NewGroupSlice(
 							nil,
-							&config.Group{
+							&element.Group{
 								ID: "b",
-								Fields: config.NewFieldSlice(
-									&config.Field{ID: "c", Default: `c`},
+								Fields: element.NewFieldSlice(
+									&element.Field{ID: "c", Default: `c`},
 								),
 							},
-							&config.Group{
+							&element.Group{
 								ID: "b",
-								Fields: config.NewFieldSlice(
-									&config.Field{ID: "d", Default: `d`},
+								Fields: element.NewFieldSlice(
+									&element.Field{ID: "d", Default: `d`},
 								),
 							},
 						),
 					},
 				},
 				{
-					&config.Section{ID: "a", Label: "LabelA", Groups: nil},
+					&element.Section{ID: "a", Label: "LabelA", Groups: nil},
 				},
 			},
 			wantErr: "",
@@ -196,17 +196,17 @@ func TestSectionSliceMerge(t *testing.T) {
 			wantLen: 2,
 		},
 		1: {
-			have: []config.SectionSlice{
+			have: []element.SectionSlice{
 				{
-					&config.Section{
+					&element.Section{
 						ID:    "a",
 						Label: "SectionLabelA",
-						Groups: config.NewGroupSlice(
-							&config.Group{
+						Groups: element.NewGroupSlice(
+							&element.Group{
 								ID:    "b",
 								Scope: scope.NewPerm(scope.DefaultID),
-								Fields: config.NewFieldSlice(
-									&config.Field{ID: "c", Default: `c`},
+								Fields: element.NewFieldSlice(
+									&element.Field{ID: "c", Default: `c`},
 								),
 							},
 							nil,
@@ -214,17 +214,17 @@ func TestSectionSliceMerge(t *testing.T) {
 					},
 				},
 				{
-					&config.Section{
+					&element.Section{
 						ID:    "a",
 						Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Groups: config.NewGroupSlice(
-							&config.Group{ID: "b", Label: "GroupLabelB1"},
+						Groups: element.NewGroupSlice(
+							&element.Group{ID: "b", Label: "GroupLabelB1"},
 							nil,
-							&config.Group{ID: "b", Label: "GroupLabelB2"},
-							&config.Group{
+							&element.Group{ID: "b", Label: "GroupLabelB2"},
+							&element.Group{
 								ID: "b2",
-								Fields: config.NewFieldSlice(
-									&config.Field{ID: "d", Default: `d`},
+								Fields: element.NewFieldSlice(
+									&element.Field{ID: "d", Default: `d`},
 								),
 							},
 						),
@@ -236,42 +236,42 @@ func TestSectionSliceMerge(t *testing.T) {
 			wantLen: 2,
 		},
 		2: {
-			have: []config.SectionSlice{
+			have: []element.SectionSlice{
 				{
-					&config.Section{ID: "a", Label: "SectionLabelA", SortOrder: 20, Resource: 22},
+					&element.Section{ID: "a", Label: "SectionLabelA", SortOrder: 20, Resource: 22},
 				},
 				{
-					&config.Section{ID: "a", Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID), SortOrder: 10, Resource: 3},
+					&element.Section{ID: "a", Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID), SortOrder: 10, Resource: 3},
 				},
 			},
 			wantErr: "",
-			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["Default","Website"],"SortOrder":10,"Permission":3,"Groups":null}]` + "\n",
+			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["Default","Website"],"SortOrder":10,"Resource":3,"Groups":null}]` + "\n",
 		},
 		3: {
-			have: []config.SectionSlice{
+			have: []element.SectionSlice{
 				{
-					&config.Section{
+					&element.Section{
 						ID:    "a",
 						Label: "SectionLabelA",
-						Groups: config.NewGroupSlice(
-							&config.Group{
+						Groups: element.NewGroupSlice(
+							&element.Group{
 								ID:      "b",
 								Label:   "SectionAGroupB",
-								Comment: "SectionAGroupBComment",
+								Comment: element.LongText("SectionAGroupBComment"),
 								Scope:   scope.NewPerm(scope.DefaultID),
 							},
 						),
 					},
 				},
 				{
-					&config.Section{
+					&element.Section{
 						ID:        "a",
 						SortOrder: 1000,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Groups: config.NewGroupSlice(
-							&config.Group{ID: "b", Label: "GroupLabelB1", Scope: scope.PermAll},
-							&config.Group{ID: "b", Label: "GroupLabelB2", Comment: "Section2AGroup3BComment", SortOrder: 100},
-							&config.Group{ID: "b2"},
+						Groups: element.NewGroupSlice(
+							&element.Group{ID: "b", Label: "GroupLabelB1", Scope: scope.PermAll},
+							&element.Group{ID: "b", Label: "GroupLabelB2", Comment: element.LongText("Section2AGroup3BComment"), SortOrder: 100},
+							&element.Group{ID: "b2"},
 						),
 					},
 				},
@@ -280,40 +280,40 @@ func TestSectionSliceMerge(t *testing.T) {
 			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["Default","Website"],"SortOrder":1000,"Groups":[{"ID":"b","Label":"GroupLabelB2","Comment":"Section2AGroup3BComment","Scope":["Default","Website","Store"],"SortOrder":100,"Fields":null},{"ID":"b2","Fields":null}]}]` + "\n",
 		},
 		4: {
-			have: []config.SectionSlice{
+			have: []element.SectionSlice{
 				{
-					&config.Section{
+					&element.Section{
 						ID: "a",
-						Groups: config.NewGroupSlice(
-							&config.Group{
+						Groups: element.NewGroupSlice(
+							&element.Group{
 								ID:    "b",
 								Label: "b1",
-								Fields: config.NewFieldSlice(
-									&config.Field{ID: "c", Default: `c`, Type: config.TypeMultiselect, SortOrder: 1001},
+								Fields: element.NewFieldSlice(
+									&element.Field{ID: "c", Default: `c`, Type: element.TypeMultiselect, SortOrder: 1001},
 								),
 							},
-							&config.Group{
+							&element.Group{
 								ID:    "b",
 								Label: "b2",
-								Fields: config.NewFieldSlice(
+								Fields: element.NewFieldSlice(
 									nil,
-									&config.Field{ID: "d", Default: `d`, Comment: "Ring of fire", Type: config.TypeObscure},
-									&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect, Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID)},
+									&element.Field{ID: "d", Default: `d`, Comment: element.LongText("Ring of fire"), Type: element.TypeObscure},
+									&element.Field{ID: "c", Default: `haha`, Type: element.TypeSelect, Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID)},
 								),
 							},
 						),
 					},
 				},
 				{
-					&config.Section{
+					&element.Section{
 						ID: "a",
-						Groups: config.NewGroupSlice(
-							&config.Group{
+						Groups: element.NewGroupSlice(
+							&element.Group{
 								ID:    "b",
 								Label: "b3",
-								Fields: config.NewFieldSlice(
-									&config.Field{ID: "d", Default: `overriddenD`, Label: "Sect2Group2Label4", Comment: "LOTR"},
-									&config.Field{ID: "c", Default: `overriddenHaha`, Type: config.TypeHidden},
+								Fields: element.NewFieldSlice(
+									&element.Field{ID: "d", Default: `overriddenD`, Label: "Sect2Group2Label4", Comment: element.LongText("LOTR")},
+									&element.Field{ID: "c", Default: `overriddenHaha`, Type: element.TypeHidden},
 								),
 							},
 						),
@@ -325,18 +325,18 @@ func TestSectionSliceMerge(t *testing.T) {
 			wantLen: 2,
 		},
 		5: {
-			have: []config.SectionSlice{
+			have: []element.SectionSlice{
 				{
-					&config.Section{
+					&element.Section{
 						ID: "a",
-						Groups: config.NewGroupSlice(
-							&config.Group{
+						Groups: element.NewGroupSlice(
+							&element.Group{
 								ID: "b",
-								Fields: config.NewFieldSlice(
-									&config.Field{
+								Fields: element.NewFieldSlice(
+									&element.Field{
 										ID:      "c",
 										Default: `c`,
-										Type:    config.TypeMultiselect,
+										Type:    element.TypeMultiselect,
 									},
 								),
 							},
@@ -345,21 +345,21 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 				{
 					nil,
-					&config.Section{
+					&element.Section{
 						ID: "a",
-						Groups: config.NewGroupSlice(
-							&config.Group{
+						Groups: element.NewGroupSlice(
+							&element.Group{
 								ID: "b",
-								Fields: config.NewFieldSlice(
+								Fields: element.NewFieldSlice(
 									nil,
-									&config.Field{
+									&element.Field{
 										ID:        "c",
 										Default:   `overridenC`,
-										Type:      config.TypeSelect,
+										Type:      element.TypeSelect,
 										Label:     "Sect2Group2Label4",
-										Comment:   "LOTR",
+										Comment:   element.LongText("LOTR"),
 										SortOrder: 100,
-										Visible:   config.VisibleYes,
+										Visible:   element.VisibleYes,
 									},
 								),
 							},
@@ -379,7 +379,7 @@ func TestSectionSliceMerge(t *testing.T) {
 			test.want = "null\n"
 		}
 
-		var baseSl config.SectionSlice
+		var baseSl element.SectionSlice
 		haveErr := baseSl.MergeMultiple(test.have...)
 		if test.wantErr != "" {
 			assert.Len(t, baseSl, 0)
@@ -399,30 +399,30 @@ func TestSectionSliceMerge(t *testing.T) {
 func TestGroupSliceMerge(t *testing.T) {
 
 	tests := []struct {
-		have    []*config.Group
+		have    []*element.Group
 		wantErr error
 		want    string
 	}{
 		{
-			have: []*config.Group{
+			have: []*element.Group{
 				{
 					ID: "b",
-					Fields: config.NewFieldSlice(
-						&config.Field{ID: "c", Default: `c`, Type: config.TypeMultiselect},
+					Fields: element.NewFieldSlice(
+						&element.Field{ID: "c", Default: `c`, Type: element.TypeMultiselect},
 					),
 				},
 				{
 					ID: "b",
-					Fields: config.NewFieldSlice(
-						&config.Field{ID: "d", Default: `d`, Comment: "Ring of fire", Type: config.TypeObscure},
-						&config.Field{ID: "c", Default: `haha`, Type: config.TypeSelect, Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID)},
+					Fields: element.NewFieldSlice(
+						&element.Field{ID: "d", Default: `d`, Comment: element.LongText("Ring of fire"), Type: element.TypeObscure},
+						&element.Field{ID: "c", Default: `haha`, Type: element.TypeSelect, Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID)},
 					),
 				},
 				{
 					ID: "b",
-					Fields: config.NewFieldSlice(
-						&config.Field{ID: "d", Default: `overriddenD`, Label: "Sect2Group2Label4", Comment: "LOTR"},
-						&config.Field{ID: "c", Default: `overriddenHaha`, Type: config.TypeHidden},
+					Fields: element.NewFieldSlice(
+						&element.Field{ID: "d", Default: `overriddenD`, Label: "Sect2Group2Label4", Comment: element.LongText("LOTR")},
+						&element.Field{ID: "c", Default: `overriddenHaha`, Type: element.TypeHidden},
 					),
 				},
 			},
@@ -437,7 +437,7 @@ func TestGroupSliceMerge(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		var baseGsl config.GroupSlice
+		var baseGsl element.GroupSlice
 		haveErr := baseGsl.Merge(test.have...)
 		if test.wantErr != nil {
 			assert.Len(t, baseGsl, 0)
@@ -455,40 +455,40 @@ func TestGroupSliceMerge(t *testing.T) {
 
 func TestSectionSliceFindGroupByPath(t *testing.T) {
 	tests := []struct {
-		haveSlice config.SectionSlice
+		haveSlice element.SectionSlice
 		havePath  []string
 		wantGID   string
 		wantErr   error
 	}{
 		0: {
-			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.NewGroupSlice(&config.Group{ID: "b"}, &config.Group{ID: "bb"})}},
+			haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.NewGroupSlice(&element.Group{ID: "b"}, &element.Group{ID: "bb"})}},
 			havePath:  []string{"a/b"},
 			wantGID:   "b",
 			wantErr:   nil,
 		},
 		1: {
-			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.NewGroupSlice(&config.Group{ID: "b"}, &config.Group{ID: "bb"})}},
+			haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.NewGroupSlice(&element.Group{ID: "b"}, &element.Group{ID: "bb"})}},
 			havePath:  []string{"a/bc"},
 			wantGID:   "b",
-			wantErr:   config.ErrGroupNotFound,
+			wantErr:   element.ErrGroupNotFound,
 		},
 		2: {
-			haveSlice: config.SectionSlice{},
+			haveSlice: element.SectionSlice{},
 			havePath:  nil,
 			wantGID:   "b",
-			wantErr:   config.ErrGroupNotFound,
+			wantErr:   element.ErrGroupNotFound,
 		},
 		3: {
-			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b"}, &config.Group{ID: "bb"}}}},
+			haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.GroupSlice{&element.Group{ID: "b"}, &element.Group{ID: "bb"}}}},
 			havePath:  []string{"a", "bb", "cc"},
 			wantGID:   "bb",
 			wantErr:   nil,
 		},
 		4: {
-			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b"}, &config.Group{ID: "bb"}}}},
+			haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.GroupSlice{&element.Group{ID: "b"}, &element.Group{ID: "bb"}}}},
 			havePath:  []string{"xa", "bb", "cc"},
 			wantGID:   "",
-			wantErr:   config.ErrSectionNotFound,
+			wantErr:   element.ErrSectionNotFound,
 		},
 	}
 
@@ -509,44 +509,44 @@ func TestSectionSliceFindGroupByPath(t *testing.T) {
 func TestSectionSliceFindFieldByPath(t *testing.T) {
 
 	tests := []struct {
-		haveSlice config.SectionSlice
+		haveSlice element.SectionSlice
 		havePath  []string
 		wantFID   string
 		wantErr   error
 	}{
 		0: {
-			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b"}, &config.Group{ID: "bb"}}}},
+			haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.GroupSlice{&element.Group{ID: "b"}, &element.Group{ID: "bb"}}}},
 			havePath:  []string{"a/b"},
 			wantFID:   "b",
-			wantErr:   config.ErrFieldNotFound,
+			wantErr:   element.ErrFieldNotFound,
 		},
 		1: {
-			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b"}, &config.Group{ID: "bb"}}}},
+			haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.GroupSlice{&element.Group{ID: "b"}, &element.Group{ID: "bb"}}}},
 			havePath:  []string{"a/bc"},
 			wantFID:   "b",
-			wantErr:   config.ErrFieldNotFound,
+			wantErr:   element.ErrFieldNotFound,
 		},
 		2: {
-			haveSlice: config.SectionSlice{nil},
+			haveSlice: element.SectionSlice{nil},
 			havePath:  nil,
 			wantFID:   "b",
-			wantErr:   config.ErrFieldNotFound,
+			wantErr:   element.ErrFieldNotFound,
 		},
 		3: {
-			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{nil, &config.Group{ID: "b"}, &config.Group{ID: "bb"}}}},
+			haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.GroupSlice{nil, &element.Group{ID: "b"}, &element.Group{ID: "bb"}}}},
 			havePath:  []string{"a", "bb", "cc"},
 			wantFID:   "bb",
-			wantErr:   config.ErrFieldNotFound,
+			wantErr:   element.ErrFieldNotFound,
 		},
 		4: {
-			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b"}, &config.Group{ID: "bb"}}}},
+			haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.GroupSlice{&element.Group{ID: "b"}, &element.Group{ID: "bb"}}}},
 			havePath:  []string{"xa", "bb", "cc"},
 			wantFID:   "",
-			wantErr:   config.ErrSectionNotFound,
+			wantErr:   element.ErrSectionNotFound,
 		},
 		5: {
-			haveSlice: config.SectionSlice{&config.Section{ID: "a", Groups: config.GroupSlice{&config.Group{ID: "b", Fields: config.FieldSlice{
-				&config.Field{ID: "c"}, nil,
+			haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.GroupSlice{&element.Group{ID: "b", Fields: element.FieldSlice{
+				&element.Field{ID: "c"}, nil,
 			}}}}},
 			havePath: []string{"a", "b", "c"},
 			wantFID:  "c",
@@ -570,12 +570,12 @@ func TestSectionSliceFindFieldByPath(t *testing.T) {
 
 func TestFieldSliceSort(t *testing.T) {
 	want := []int{-10, 1, 10, 11, 20}
-	fs := config.FieldSlice{
-		&config.Field{ID: "a", SortOrder: 20},
-		&config.Field{ID: "b", SortOrder: -10},
-		&config.Field{ID: "c", SortOrder: 10},
-		&config.Field{ID: "d", SortOrder: 11},
-		&config.Field{ID: "e", SortOrder: 1},
+	fs := element.FieldSlice{
+		&element.Field{ID: "a", SortOrder: 20},
+		&element.Field{ID: "b", SortOrder: -10},
+		&element.Field{ID: "c", SortOrder: 10},
+		&element.Field{ID: "d", SortOrder: 11},
+		&element.Field{ID: "e", SortOrder: 1},
 	}
 
 	for i, f := range *(fs.Sort()) {
@@ -585,12 +585,12 @@ func TestFieldSliceSort(t *testing.T) {
 
 func TestGroupSliceSort(t *testing.T) {
 	want := []int{-10, 1, 10, 11, 20}
-	gs := config.GroupSlice{
-		&config.Group{ID: "a", SortOrder: 20},
-		&config.Group{ID: "b", SortOrder: -10},
-		&config.Group{ID: "c", SortOrder: 10},
-		&config.Group{ID: "d", SortOrder: 11},
-		&config.Group{ID: "e", SortOrder: 1},
+	gs := element.GroupSlice{
+		&element.Group{ID: "a", SortOrder: 20},
+		&element.Group{ID: "b", SortOrder: -10},
+		&element.Group{ID: "c", SortOrder: 10},
+		&element.Group{ID: "d", SortOrder: 11},
+		&element.Group{ID: "e", SortOrder: 1},
 	}
 	for i, f := range *(gs.Sort()) {
 		assert.EqualValues(t, want[i], f.SortOrder)
@@ -598,12 +598,12 @@ func TestGroupSliceSort(t *testing.T) {
 }
 func TestSectionSliceSort(t *testing.T) {
 	want := []int{-10, 1, 10, 11, 20}
-	ss := config.SectionSlice{
-		&config.Section{ID: "a", SortOrder: 20},
-		&config.Section{ID: "b", SortOrder: -10},
-		&config.Section{ID: "c", SortOrder: 10},
-		&config.Section{ID: "d", SortOrder: 11},
-		&config.Section{ID: "e", SortOrder: 1},
+	ss := element.SectionSlice{
+		&element.Section{ID: "a", SortOrder: 20},
+		&element.Section{ID: "b", SortOrder: -10},
+		&element.Section{ID: "c", SortOrder: 10},
+		&element.Section{ID: "d", SortOrder: 11},
+		&element.Section{ID: "e", SortOrder: 1},
 	}
 	for i, f := range *(ss.Sort()) {
 		assert.EqualValues(t, want[i], f.SortOrder)
@@ -613,16 +613,16 @@ func TestSectionSliceSort(t *testing.T) {
 
 func TestSectionSliceSortAll(t *testing.T) {
 	want := `[{"ID":"b","SortOrder":-10,"Groups":null},{"ID":"e","SortOrder":1,"Groups":null},{"ID":"c","SortOrder":10,"Groups":null},{"ID":"a","SortOrder":20,"Groups":[{"ID":"b","SortOrder":-10,"Fields":[{"ID":"b","SortOrder":-10},{"ID":"e","SortOrder":1},{"ID":"c","SortOrder":10},{"ID":"d","SortOrder":11},{"ID":"a","SortOrder":20}]},{"ID":"e","SortOrder":1,"Fields":null},{"ID":"d","SortOrder":11,"Fields":[{"ID":"b","SortOrder":-10},{"ID":"e","SortOrder":1},{"ID":"c","SortOrder":10},{"ID":"d","SortOrder":11},{"ID":"a","SortOrder":20}]},{"ID":"a","SortOrder":20,"Fields":[{"ID":"b","SortOrder":-10},{"ID":"e","SortOrder":1},{"ID":"c","SortOrder":10},{"ID":"d","SortOrder":11},{"ID":"a","SortOrder":20}]}]}]` + "\n"
-	ss := config.SectionSlice{
-		&config.Section{ID: "a", SortOrder: 20, Groups: config.NewGroupSlice(
-			&config.Group{ID: "a", SortOrder: 20, Fields: config.FieldSlice{&config.Field{ID: "a", SortOrder: 20}, &config.Field{ID: "b", SortOrder: -10}, &config.Field{ID: "c", SortOrder: 10}, &config.Field{ID: "d", SortOrder: 11}, &config.Field{ID: "e", SortOrder: 1}}},
-			&config.Group{ID: "b", SortOrder: -10, Fields: config.FieldSlice{&config.Field{ID: "a", SortOrder: 20}, &config.Field{ID: "b", SortOrder: -10}, &config.Field{ID: "c", SortOrder: 10}, &config.Field{ID: "d", SortOrder: 11}, &config.Field{ID: "e", SortOrder: 1}}},
-			&config.Group{ID: "d", SortOrder: 11, Fields: config.FieldSlice{&config.Field{ID: "a", SortOrder: 20}, &config.Field{ID: "b", SortOrder: -10}, &config.Field{ID: "c", SortOrder: 10}, &config.Field{ID: "d", SortOrder: 11}, &config.Field{ID: "e", SortOrder: 1}}},
-			&config.Group{ID: "e", SortOrder: 1},
+	ss := element.SectionSlice{
+		&element.Section{ID: "a", SortOrder: 20, Groups: element.NewGroupSlice(
+			&element.Group{ID: "a", SortOrder: 20, Fields: element.FieldSlice{&element.Field{ID: "a", SortOrder: 20}, &element.Field{ID: "b", SortOrder: -10}, &element.Field{ID: "c", SortOrder: 10}, &element.Field{ID: "d", SortOrder: 11}, &element.Field{ID: "e", SortOrder: 1}}},
+			&element.Group{ID: "b", SortOrder: -10, Fields: element.FieldSlice{&element.Field{ID: "a", SortOrder: 20}, &element.Field{ID: "b", SortOrder: -10}, &element.Field{ID: "c", SortOrder: 10}, &element.Field{ID: "d", SortOrder: 11}, &element.Field{ID: "e", SortOrder: 1}}},
+			&element.Group{ID: "d", SortOrder: 11, Fields: element.FieldSlice{&element.Field{ID: "a", SortOrder: 20}, &element.Field{ID: "b", SortOrder: -10}, &element.Field{ID: "c", SortOrder: 10}, &element.Field{ID: "d", SortOrder: 11}, &element.Field{ID: "e", SortOrder: 1}}},
+			&element.Group{ID: "e", SortOrder: 1},
 		)},
-		&config.Section{ID: "b", SortOrder: -10},
-		&config.Section{ID: "c", SortOrder: 10},
-		&config.Section{ID: "e", SortOrder: 1},
+		&element.Section{ID: "b", SortOrder: -10},
+		&element.Section{ID: "c", SortOrder: 10},
+		&element.Section{ID: "e", SortOrder: 1},
 	}
 	ss.SortAll()
 	have := ss.ToJSON()

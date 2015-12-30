@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package element
 
 import (
 	"errors"
@@ -35,13 +35,21 @@ type (
 	Field struct {
 		// ID unique ID and NOT merged with others. 3rd and final part of the path.
 		ID string
+		// ConfigPath if provided defines the storage path and overwrites the path from
+		// section.id + group.id + field.id
+		ConfigPath string `json:",omitempty"`
 		// Type is used for the front end on how to display a Field
-		Type    FieldTyper `json:",omitempty"`
-		Label   string     `json:",omitempty"`
-		Comment string     `json:",omitempty"`
+		Type FieldTyper `json:",omitempty"`
+		// Label a short label of the field
+		Label string `json:",omitempty"`
+		// Comment can contain HTML
+		Comment LongText `json:",omitempty"`
+		// Tooltip used for frontend and can contain HTML
+		Tooltip LongText `json:",omitempty"`
 		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
-		Scope     scope.Perm `json:",omitempty"`
-		SortOrder int        `json:",omitempty"`
+		Scope scope.Perm `json:",omitempty"`
+		// SortOrder in ascending order
+		SortOrder int `json:",omitempty"`
 		// Visible used for configuration settings which are not exposed to the user.
 		// In Magento2 they do not have an entry in the system.xml
 		Visible Visible `json:",omitempty"`
@@ -51,9 +59,6 @@ type (
 		CanBeEmpty bool `json:",omitempty"`
 		// Default can contain any default config value: float64, int64, string, bool
 		Default interface{} `json:",omitempty"`
-
-		// ConfigPath    string  @todo see typeConfigPath in app/code/Magento/Config/etc/system_file.xsd
-
 	}
 )
 
@@ -106,8 +111,8 @@ func (fs *FieldSlice) merge(f *Field) error {
 	if f.Label != "" {
 		cf.Label = f.Label
 	}
-	if f.Comment != "" {
-		cf.Comment = f.Comment
+	if !f.Comment.IsEmpty() {
+		cf.Comment = f.Comment.Copy()
 	}
 	if f.Scope > 0 {
 		cf.Scope = f.Scope
@@ -118,12 +123,6 @@ func (fs *FieldSlice) merge(f *Field) error {
 	if f.Visible > VisibleAbsent {
 		cf.Visible = f.Visible
 	}
-	//	if f.SourceModel != nil {
-	//		cf.SourceModel = f.SourceModel
-	//	}
-	//	if f.BackendModel != nil {
-	//		cf.BackendModel = f.BackendModel
-	//	}
 	if f.Default != nil {
 		cf.Default = f.Default
 	}
@@ -147,4 +146,13 @@ func (fs *FieldSlice) Swap(i, j int) {
 
 func (fs *FieldSlice) Less(i, j int) bool {
 	return (*fs)[i].SortOrder < (*fs)[j].SortOrder
+}
+
+// FQPathDefault returns the default fully qualified path of either
+// Section.ID + Group.ID + Field.ID OR Field.ConfgPath if set.
+func (f *Field) FQPathDefault(prePaths ...string) string {
+	if f.ConfigPath != "" {
+		return scope.StrDefault.FQPath("0", f.ConfigPath)
+	}
+	return scope.StrDefault.FQPath("0", append(prePaths, f.ID)...)
 }

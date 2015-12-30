@@ -15,12 +15,11 @@
 package valuelabel_test
 
 import (
+	"encoding/json"
+	"errors"
 	"math"
 	"testing"
 
-	"encoding/json"
-
-	"errors"
 	"github.com/corestoreio/csfw/config/configsource"
 	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/stretchr/testify/assert"
