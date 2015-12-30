@@ -29,7 +29,9 @@ func InitCurrencyCollection() error {
 	CurrencyCollection = valuelabel.NewByStringValue(currency.All()...)
 
 	PathSystemCurrencyInstalled.ValueLabel = CurrencyCollection
-	PathCurrencyBase.ValueLabel = CurrencyCollection
+	PathCurrencyOptionsBase.ValueLabel = CurrencyCollection
+	PathCurrencyOptionsAllow.ValueLabel = CurrencyCollection
+	PathCurrencyOptionsDefault.ValueLabel = CurrencyCollection
 	return nil
 }
 

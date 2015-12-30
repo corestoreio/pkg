@@ -154,39 +154,6 @@ var PathDevImageDefaultAdapter = model.NewStr(`dev/image/default_adapter`)
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 var PathDevStaticSign = model.NewBool(`dev/static/sign`)
 
-// PathGeneralCountryAllow => Allow Countries.
-// SourceModel: Otnegam\Directory\Model\Config\Source\Country
-var PathGeneralCountryAllow = model.NewStringCSV(`general/country/allow`)
-
-// PathGeneralCountryDefault => Default Country.
-// SourceModel: Otnegam\Directory\Model\Config\Source\Country
-var PathGeneralCountryDefault = model.NewStr(`general/country/default`)
-
-// PathGeneralCountryEuCountries => European Union Countries.
-// SourceModel: Otnegam\Directory\Model\Config\Source\Country
-var PathGeneralCountryEuCountries = model.NewStringCSV(`general/country/eu_countries`)
-
-// PathGeneralCountryDestinations => Top destinations.
-// SourceModel: Otnegam\Directory\Model\Config\Source\Country
-var PathGeneralCountryDestinations = model.NewStringCSV(`general/country/destinations`)
-
-// PathGeneralLocaleTimezone => Timezone.
-// BackendModel: Otnegam\Config\Model\Config\Backend\Locale\Timezone
-// SourceModel: Otnegam\Config\Model\Config\Source\Locale\Timezone
-var PathGeneralLocaleTimezone = model.NewStr(`general/locale/timezone`)
-
-// PathGeneralLocaleCode => Locale.
-// SourceModel: Otnegam\Config\Model\Config\Source\Locale
-var PathGeneralLocaleCode = model.NewStr(`general/locale/code`)
-
-// PathGeneralLocaleFirstday => First Day of Week.
-// SourceModel: Otnegam\Config\Model\Config\Source\Locale\Weekdays
-var PathGeneralLocaleFirstday = model.NewStr(`general/locale/firstday`)
-
-// PathGeneralLocaleWeekend => Weekend Days.
-// SourceModel: Otnegam\Config\Model\Config\Source\Locale\Weekdays
-var PathGeneralLocaleWeekend = model.NewStringCSV(`general/locale/weekend`)
-
 // PathGeneralStoreInformationName => Store Name.
 var PathGeneralStoreInformationName = model.NewStr(`general/store_information/name`)
 

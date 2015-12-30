@@ -16,6 +16,7 @@ package directory
 
 import (
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/corestoreio/csfw/store/scope"
@@ -36,7 +37,7 @@ func NewConfigCurrency(path string, vlPairs ...valuelabel.Pair) ConfigCurrency {
 }
 
 // Get tries to retrieve a currency
-func (p ConfigCurrency) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (Currency, error) {
+func (p ConfigCurrency) Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) (Currency, error) {
 	cur := p.Str.Get(pkgCfg, sg)
 	u, err := currency.ParseISO(cur)
 	if err != nil {

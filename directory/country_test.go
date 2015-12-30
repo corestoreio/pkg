@@ -37,15 +37,15 @@ func TestDefaultCountry(t *testing.T) {
 
 func TestPathCountryAllowed(t *testing.T) {
 
-	directory.PathCountryAllowed.ValueLabel = valuelabel.NewByString("DE", "Germany", "AU", "'Straya", "CH", "Switzerland")
+	directory.PathGeneralCountryAllow.ValueLabel = valuelabel.NewByString("DE", "Germany", "AU", "'Straya", "CH", "Switzerland")
 
 	cr := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			directory.PathCountryAllowed.FQPathInt64(scope.StrStores, 1): "DE,AU,CH,AT",
+			directory.PathGeneralCountryAllow.FQPathInt64(scope.StrStores, 1): "DE,AU,CH,AT",
 		}),
 	)
 
-	haveCountries := directory.PathCountryAllowed.Get(directory.PackageConfiguration, cr.NewScoped(1, 1, 1))
+	haveCountries := directory.PathGeneralCountryAllow.Get(directory.PackageConfiguration, cr.NewScoped(1, 1, 1))
 
 	assert.Exactly(t, []string{"DE", "AU", "CH", "AT"}, haveCountries)
 

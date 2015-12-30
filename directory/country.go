@@ -27,8 +27,10 @@ func InitCountryCollection(dbrsess dbr.SessionRunner) error {
 
 	// apply the list of country codes to
 
-	PathDefaultCountry.ValueLabel = CountryCollection
-	PathCountryAllowed.ValueLabel = CountryCollection
-
+	PathGeneralCountryDefault.ValueLabel = CountryCollection
+	PathGeneralCountryAllow.ValueLabel = CountryCollection
+	PathGeneralCountryOptionalZipCountries.ValueLabel = CountryCollection
+	PathGeneralCountryEuCountries.ValueLabel = CountryCollection
+	PathGeneralCountryDestinations.ValueLabel = CountryCollection
 	return nil
 }

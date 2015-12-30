@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package directory provides features for currencies, currency rates,
-// conversion of prices to a specified currency format, countries and regions.
 package directory
+
+import "github.com/corestoreio/csfw/storage/csdb"
+
+// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
+var TableCollection csdb.Manager
