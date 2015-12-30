@@ -3,74 +3,74 @@
 package backup
 
 import (
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
 // PackageConfiguration global configuration options for this package. Used in
 // Frontend and Backend.
-var PackageConfiguration = config.NewConfiguration(
-	&config.Section{
+var PackageConfiguration = element.MustNewConfiguration(
+	&element.Section{
 		ID: "system",
-		Groups: config.NewGroupSlice(
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID:        "backup",
 				Label:     `Scheduled Backup Settings`,
 				SortOrder: 500,
 				Scope:     scope.NewPerm(scope.DefaultID),
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: system/backup/enabled
 						ID:        "enabled",
 						Label:     `Enable Scheduled Backup`,
-						Type:      config.TypeSelect,
+						Type:      element.TypeSelect,
 						SortOrder: 10,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID),
 						// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: system/backup/type
 						ID:        "type",
 						Label:     `Backup Type`,
-						Type:      config.TypeSelect,
+						Type:      element.TypeSelect,
 						SortOrder: 20,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID),
 						// SourceModel: Otnegam\Backup\Model\Config\Source\Type
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: system/backup/time
 						ID:        "time",
 						Label:     `Start Time`,
-						Type:      config.TypeTime,
+						Type:      element.TypeTime,
 						SortOrder: 30,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID),
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: system/backup/frequency
 						ID:        "frequency",
 						Label:     `Frequency`,
-						Type:      config.TypeSelect,
+						Type:      element.TypeSelect,
 						SortOrder: 40,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID),
 						// BackendModel: Otnegam\Backup\Model\Config\Backend\Cron
 						// SourceModel: Otnegam\Cron\Model\Config\Source\Frequency
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: system/backup/maintenance
 						ID:        "maintenance",
 						Label:     `Maintenance Mode`,
 						Comment:   element.LongText(`Please put your store into maintenance mode during backup.`),
-						Type:      config.TypeSelect,
+						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID),
 						// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 					},

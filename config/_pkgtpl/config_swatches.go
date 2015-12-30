@@ -3,30 +3,30 @@
 package swatches
 
 import (
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
 // PackageConfiguration global configuration options for this package. Used in
 // Frontend and Backend.
-var PackageConfiguration = config.NewConfiguration(
-	&config.Section{
+var PackageConfiguration = element.MustNewConfiguration(
+	&element.Section{
 		ID:        "catalog",
 		SortOrder: 40,
 		Scope:     scope.PermAll,
-		Groups: config.NewGroupSlice(
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID:        "frontend",
 				SortOrder: 100,
 				Scope:     scope.PermAll,
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: catalog/frontend/swatches_per_product
 						ID:        "swatches_per_product",
 						Label:     `Swatches per Product`,
-						Type:      config.TypeText,
+						Type:      element.TypeText,
 						SortOrder: 300,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.PermAll,
 						Default:   16,
 					},
@@ -36,17 +36,17 @@ var PackageConfiguration = config.NewConfiguration(
 	},
 
 	// Hidden Configuration, may be visible somewhere else ...
-	&config.Section{
+	&element.Section{
 		ID: "general",
-		Groups: config.NewGroupSlice(
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID: "validator_data",
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: general/validator_data/input_types
 						ID:      `input_types`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: `{"swatch_visual":"swatch_visual","swatch_text":"swatch_text"}`,
 					},
 				),

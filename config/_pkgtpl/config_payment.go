@@ -3,103 +3,103 @@
 package payment
 
 import (
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
 // PackageConfiguration global configuration options for this package. Used in
 // Frontend and Backend.
-var PackageConfiguration = config.NewConfiguration(
-	&config.Section{
+var PackageConfiguration = element.MustNewConfiguration(
+	&element.Section{
 		ID:        "payment",
 		Label:     `Payment Methods`,
 		SortOrder: 400,
 		Scope:     scope.PermAll,
 		Resource:  0, // Otnegam_Payment::payment
-		Groups:    config.NewGroupSlice(),
+		Groups:    element.NewGroupSlice(),
 	},
 
 	// Hidden Configuration, may be visible somewhere else ...
-	&config.Section{
+	&element.Section{
 		ID: "payment",
-		Groups: config.NewGroupSlice(
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID: "free",
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: payment/free/active
 						ID:      `active`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: true,
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: payment/free/model
 						ID:      `model`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: `Otnegam\Payment\Model\Method\Free`,
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: payment/free/order_status
 						ID:      `order_status`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: `pending`,
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: payment/free/title
 						ID:      `title`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: `No Payment Information Required`,
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: payment/free/allowspecific
 						ID:      `allowspecific`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: false,
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: payment/free/sort_order
 						ID:      `sort_order`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: true,
 					},
 				),
 			},
 
-			&config.Group{
+			&element.Group{
 				ID: "substitution",
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: payment/substitution/active
 						ID:      `active`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: false,
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: payment/substitution/model
 						ID:      `model`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: `Otnegam\Payment\Model\Method\Substitution`,
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: payment/substitution/allowspecific
 						ID:      `allowspecific`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: false,
 					},
 				),

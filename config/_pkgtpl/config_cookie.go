@@ -3,76 +3,76 @@
 package cookie
 
 import (
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
 // PackageConfiguration global configuration options for this package. Used in
 // Frontend and Backend.
-var PackageConfiguration = config.NewConfiguration(
-	&config.Section{
+var PackageConfiguration = element.MustNewConfiguration(
+	&element.Section{
 		ID: "web",
-		Groups: config.NewGroupSlice(
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID:        "cookie",
 				Label:     `Default Cookie Settings`,
 				SortOrder: 50,
 				Scope:     scope.PermAll,
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: web/cookie/cookie_lifetime
 						ID:        "cookie_lifetime",
 						Label:     `Cookie Lifetime`,
-						Type:      config.TypeText,
+						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.PermAll,
 						Default:   3600,
 						// BackendModel: Otnegam\Cookie\Model\Config\Backend\Lifetime
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: web/cookie/cookie_path
 						ID:        "cookie_path",
 						Label:     `Cookie Path`,
-						Type:      config.TypeText,
+						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.PermAll,
 						// BackendModel: Otnegam\Cookie\Model\Config\Backend\Path
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: web/cookie/cookie_domain
 						ID:        "cookie_domain",
 						Label:     `Cookie Domain`,
-						Type:      config.TypeText,
+						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.PermAll,
 						// BackendModel: Otnegam\Cookie\Model\Config\Backend\Domain
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: web/cookie/cookie_httponly
 						ID:        "cookie_httponly",
 						Label:     `Use HTTP Only`,
 						Comment:   element.LongText(`<strong style="color:red">Warning</strong>: Do not set to "No". User security could be compromised.`),
-						Type:      config.TypeSelect,
+						Type:      element.TypeSelect,
 						SortOrder: 40,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.PermAll,
 						Default:   true,
 						// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: web/cookie/cookie_restriction
 						ID:        "cookie_restriction",
 						Label:     `Cookie Restriction Mode`,
-						Type:      config.TypeSelect,
+						Type:      element.TypeSelect,
 						SortOrder: 50,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:   false,
 						// BackendModel: Otnegam\Cookie\Model\Config\Backend\Cookie
@@ -84,17 +84,17 @@ var PackageConfiguration = config.NewConfiguration(
 	},
 
 	// Hidden Configuration, may be visible somewhere else ...
-	&config.Section{
+	&element.Section{
 		ID: "web",
-		Groups: config.NewGroupSlice(
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID: "cookie",
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: web/cookie/cookie_restriction_lifetime
 						ID:      `cookie_restriction_lifetime`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: 31536000,
 					},
 				),

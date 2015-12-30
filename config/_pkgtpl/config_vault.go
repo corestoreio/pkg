@@ -3,29 +3,29 @@
 package vault
 
 import (
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
 // PackageConfiguration global configuration options for this package. Used in
 // Frontend and Backend.
-var PackageConfiguration = config.NewConfiguration(
-	&config.Section{
+var PackageConfiguration = element.MustNewConfiguration(
+	&element.Section{
 		ID: "payment",
-		Groups: config.NewGroupSlice(
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID:        "vault",
 				Label:     `Vault Provider`,
 				SortOrder: 2,
 				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: payment/vault/vault_payment
 						ID:      "vault_payment",
 						Label:   `Vault Provider`,
 						Comment: element.LongText(`Specified provider should be enabled.`),
-						Type:    config.TypeSelect,
-						Visible: config.VisibleYes,
+						Type:    element.TypeSelect,
+						Visible: element.VisibleYes,
 						Scope:   scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						// SourceModel: Otnegam\Vault\Model\Adminhtml\Source\VaultProvidersMap
 					},
@@ -35,25 +35,25 @@ var PackageConfiguration = config.NewConfiguration(
 	},
 
 	// Hidden Configuration, may be visible somewhere else ...
-	&config.Section{
+	&element.Section{
 		ID: "payment",
-		Groups: config.NewGroupSlice(
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID: "vault",
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: payment/vault/debug
 						ID:      `debug`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: true,
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: payment/vault/model
 						ID:      `model`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: `Otnegam\Vault\Model\VaultPaymentInterface`,
 					},
 				),

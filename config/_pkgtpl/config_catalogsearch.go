@@ -3,26 +3,26 @@
 package catalogsearch
 
 import (
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
 // PackageConfiguration global configuration options for this package. Used in
 // Frontend and Backend.
-var PackageConfiguration = config.NewConfiguration(
-	&config.Section{
+var PackageConfiguration = element.MustNewConfiguration(
+	&element.Section{
 		ID: "catalog",
-		Groups: config.NewGroupSlice(
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID: "seo",
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: catalog/seo/search_terms
 						ID:        "search_terms",
 						Label:     `Popular Search Terms`,
-						Type:      config.TypeSelect,
+						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.PermAll,
 						Default:   true,
 						// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
@@ -30,39 +30,39 @@ var PackageConfiguration = config.NewConfiguration(
 				),
 			},
 
-			&config.Group{
+			&element.Group{
 				ID:        "search",
 				Label:     `Catalog Search`,
 				SortOrder: 500,
 				Scope:     scope.PermAll,
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: catalog/search/engine
 						ID:      "engine",
-						Type:    config.Type,
-						Visible: config.VisibleYes,
+						Type:    element.Type,
+						Visible: element.VisibleYes,
 						Default: `mysql`,
 						// BackendModel: Otnegam\CatalogSearch\Model\Adminhtml\System\Config\Backend\Engine
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: catalog/search/min_query_length
 						ID:        "min_query_length",
 						Label:     `Minimal Query Length`,
-						Type:      config.TypeText,
+						Type:      element.TypeText,
 						SortOrder: 5,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.PermAll,
 						Default:   1,
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: catalog/search/max_query_length
 						ID:        "max_query_length",
 						Label:     `Maximum Query Length`,
-						Type:      config.TypeText,
+						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.PermAll,
 						Default:   128,
 					},

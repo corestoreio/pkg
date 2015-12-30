@@ -3,30 +3,30 @@
 package developer
 
 import (
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
 // PackageConfiguration global configuration options for this package. Used in
 // Frontend and Backend.
-var PackageConfiguration = config.NewConfiguration(
-	&config.Section{
+var PackageConfiguration = element.MustNewConfiguration(
+	&element.Section{
 		ID: "dev",
-		Groups: config.NewGroupSlice(
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID:        "front_end_development_workflow",
 				Label:     `Frontend Development Workflow`,
 				SortOrder: 8,
 				Scope:     scope.PermAll,
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: dev/front_end_development_workflow/type
 						ID:        "type",
 						Label:     `Workflow type`,
 						Comment:   element.LongText(`Not available in production mode`),
-						Type:      config.TypeSelect,
+						Type:      element.TypeSelect,
 						SortOrder: 1,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID),
 						Default:   `server_side_compilation`,
 						// SourceModel: Otnegam\Developer\Model\Config\Source\WorkflowType
@@ -34,20 +34,20 @@ var PackageConfiguration = config.NewConfiguration(
 				),
 			},
 
-			&config.Group{
+			&element.Group{
 				ID:        "restrict",
 				Label:     `Developer Client Restrictions`,
 				SortOrder: 10,
 				Scope:     scope.PermAll,
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: dev/restrict/allow_ips
 						ID:        "allow_ips",
 						Label:     `Allowed IPs (comma separated)`,
 						Comment:   element.LongText(`Leave empty for access from any location.`),
-						Type:      config.TypeText,
+						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.PermAll,
 						// BackendModel: Otnegam\Developer\Model\Config\Backend\AllowedIps
 					},
@@ -57,17 +57,17 @@ var PackageConfiguration = config.NewConfiguration(
 	},
 
 	// Hidden Configuration, may be visible somewhere else ...
-	&config.Section{
+	&element.Section{
 		ID: "dev",
-		Groups: config.NewGroupSlice(
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID: "restrict",
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: dev/restrict/allow_ips
 						ID:      `allow_ips`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 					},
 				),
 			},

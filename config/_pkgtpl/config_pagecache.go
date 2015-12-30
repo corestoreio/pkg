@@ -3,41 +3,41 @@
 package pagecache
 
 import (
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
 // PackageConfiguration global configuration options for this package. Used in
 // Frontend and Backend.
-var PackageConfiguration = config.NewConfiguration(
-	&config.Section{
+var PackageConfiguration = element.MustNewConfiguration(
+	&element.Section{
 		ID: "system",
-		Groups: config.NewGroupSlice(
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID:        "full_page_cache",
 				Label:     `Full Page Cache`,
 				SortOrder: 600,
 				Scope:     scope.NewPerm(scope.DefaultID),
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: system/full_page_cache/caching_application
 						ID:      "caching_application",
 						Label:   `Caching Application`,
-						Type:    config.TypeSelect,
-						Visible: config.VisibleYes,
+						Type:    element.TypeSelect,
+						Visible: element.VisibleYes,
 						Scope:   scope.NewPerm(scope.DefaultID),
 						Default: true,
 						// SourceModel: Otnegam\PageCache\Model\System\Config\Source\Application
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: system/full_page_cache/ttl
 						ID:        "ttl",
 						Label:     `TTL for public content`,
 						Comment:   element.LongText(`Public content cache lifetime in seconds. If field is empty default value 86400 will be saved.`),
-						Type:      config.TypeText,
+						Type:      element.TypeText,
 						SortOrder: 5,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID),
 						Default:   86400,
 						// BackendModel: Otnegam\PageCache\Model\System\Config\Backend\Ttl
@@ -48,33 +48,33 @@ var PackageConfiguration = config.NewConfiguration(
 	},
 
 	// Hidden Configuration, may be visible somewhere else ...
-	&config.Section{
+	&element.Section{
 		ID: "system",
-		Groups: config.NewGroupSlice(
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID: "full_page_cache",
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: system/full_page_cache/varnish3
 						ID:      `varnish3`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: `{"path":"varnish3.vcl"}`,
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: system/full_page_cache/varnish4
 						ID:      `varnish4`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: `{"path":"varnish4.vcl"}`,
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: system/full_page_cache/default
 						ID:      `default`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: `{"access_list":"localhost","backend_host":"localhost","backend_port":"8080","ttl":"86400"}`,
 					},
 				),

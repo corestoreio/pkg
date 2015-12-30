@@ -3,27 +3,27 @@
 package translation
 
 import (
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
 // PackageConfiguration global configuration options for this package. Used in
 // Frontend and Backend.
-var PackageConfiguration = config.NewConfiguration(
-	&config.Section{
+var PackageConfiguration = element.MustNewConfiguration(
+	&element.Section{
 		ID: "dev",
-		Groups: config.NewGroupSlice(
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID: "js",
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: dev/js/translate_strategy
 						ID:        "translate_strategy",
 						Label:     `Translation Strategy`,
 						Comment:   element.LongText(`Please put your store into maintenance mode and redeploy static files after changing strategy`),
-						Type:      config.TypeSelect,
+						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID),
 						Default:   `dictionary`,
 						// SourceModel: Otnegam\Translation\Model\Js\Config\Source\Strategy
@@ -34,33 +34,33 @@ var PackageConfiguration = config.NewConfiguration(
 	},
 
 	// Hidden Configuration, may be visible somewhere else ...
-	&config.Section{
+	&element.Section{
 		ID: "dev",
-		Groups: config.NewGroupSlice(
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID: "translate_inline",
-				Fields: config.NewFieldSlice(
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: dev/translate_inline/active
 						ID:      `active`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: false,
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: dev/translate_inline/active_admin
 						ID:      `active_admin`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: false,
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: dev/translate_inline/invalid_caches
 						ID:      `invalid_caches`,
-						Type:    config.TypeHidden,
-						Visible: config.VisibleNo,
+						Type:    element.TypeHidden,
+						Visible: element.VisibleNo,
 						Default: `{"block_html":null}`,
 					},
 				),
