@@ -19,133 +19,132 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/configsource"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
-var packageConfiguration = config.MustNewConfiguration(
-	&config.Section{
+var packageConfiguration = element.MustNewConfiguration(
+	&element.Section{
 		ID: "web",
-		Groups: config.GroupSlice{
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID:        "cors",
 				Label:     `CORS Cross Origin Resource Sharing`,
-				Comment:   ``,
 				SortOrder: 150,
 				Scope:     scope.NewPerm(scope.DefaultID),
-				Fields: config.FieldSlice{
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: `web/cors/exposed_headers`,
 						ID:        "exposed_headers",
 						Label:     `Exposed Headers`,
-						Comment:   `Indicates which headers are safe to expose to the API of a CORS API specification. Separate via line break`,
-						Type:      config.TypeTextarea,
+						Comment:   element.LongText(`Indicates which headers are safe to expose to the API of a CORS API specification. Separate via line break`),
+						Type:      element.TypeTextarea,
 						SortOrder: 10,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:   "Content-Type,X-CoreStore-ID",
 					},
-					&config.Field{
+					&element.Field{
 						// Path: `web/cors/allowed_origins`,
 						ID:        "allowed_origins",
 						Label:     `Allowed Origins`,
-						Comment:   `Is a list of origins a cross-domain request can be executed from.`,
-						Type:      config.TypeTextarea,
+						Comment:   element.LongText(`Is a list of origins a cross-domain request can be executed from.`),
+						Type:      element.TypeTextarea,
 						SortOrder: 20,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:   "corestore.io,cs.io",
 					},
-					&config.Field{
+					&element.Field{
 						// Path: `web/cors/allow_credentials`,
 						ID:        "allow_credentials",
 						Label:     `Allowed Credentials`,
-						Comment:   ``,
-						Type:      config.TypeSelect,
+						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:   "true",
 					},
-					&config.Field{
+					&element.Field{
 						// Path: `web/cors/int`,
 						ID:        "int",
-						Type:      config.TypeText,
+						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:   2015,
 					},
-					&config.Field{
+					&element.Field{
 						// Path: `web/cors/int_slice`,
 						ID:        "int_slice",
-						Type:      config.TypeSelect,
+						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.PermAll,
 						Default:   "2014,2015,2016",
 					},
-					&config.Field{
+					&element.Field{
 						// Path: `web/cors/float64`,
 						ID:        "float64",
-						Type:      config.TypeSelect,
+						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:   2015.1000001,
 					},
-				},
+				),
 			},
 
-			&config.Group{
+			&element.Group{
 				ID:        "unsecure",
 				Label:     `Base URLs`,
-				Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`,
+				Comment:   element.LongText(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
 				SortOrder: 10,
 				Scope:     scope.PermAll,
-				Fields: config.FieldSlice{
-					&config.Field{
+				Fields: element.NewFieldSlice(
+					&element.Field{
 						// Path: `web/unsecure/base_url`,
 						ID:        "base_url",
 						Label:     `Base URL`,
-						Comment:   `Specify URL or {{base_url}} placeholder.`,
-						Type:      config.TypeText,
+						Comment:   element.LongText(`Specify URL or {{base_url}} placeholder.`),
+						Type:      element.TypeText,
 						SortOrder: 10,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.PermAll,
 						Default:   "{{base_url}}",
 						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: `web/unsecure/base_link_url`,
 						ID:        "base_link_url",
 						Label:     `Base Link URL`,
-						Comment:   `May start with {{unsecure_base_url}} placeholder.`,
-						Type:      config.TypeText,
+						Comment:   element.LongText(`May start with {{unsecure_base_url}} placeholder.`),
+						Type:      element.TypeText,
 						SortOrder: 20,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.PermAll,
 						Default:   "{{unsecure_base_url}}",
 						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 					},
 
-					&config.Field{
+					&element.Field{
 						// Path: `web/unsecure/base_static_url`,
 						ID:        "base_static_url",
 						Label:     `Base URL for Static View Files`,
-						Comment:   `May be empty or start with {{unsecure_base_url}} placeholder.`,
-						Type:      config.TypeText,
+						Comment:   element.LongText(`May be empty or start with {{unsecure_base_url}} placeholder.`),
+						Type:      element.TypeText,
 						SortOrder: 25,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.PermAll,
 						Default:   nil,
 						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 					},
-				},
+				),
 			},
-		},
+		),
 	},
 )
 

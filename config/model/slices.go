@@ -19,6 +19,7 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/bufferpool"
@@ -37,9 +38,9 @@ func NewStringCSV(path string, vlPairs ...valuelabel.Pair) StringCSV {
 	return StringCSV{basePath: NewPath(path, vlPairs...)}
 }
 
-// Get returns a slice from the 1. default field of a config.SectionSlice
+// Get returns a slice from the 1. default field of a element.SectionSlice
 // or 2. from the config.ScopedGetter.
-func (p StringCSV) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) []string {
+func (p StringCSV) Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) []string {
 	s, err := p.lookupString(pkgCfg, sg)
 	if err != nil && PkgLog.IsDebug() {
 		PkgLog.Debug("model.StringCSV.Get.lookupString", "err", err, "path", p.string)
@@ -70,7 +71,7 @@ func NewIntCSV(path string, vlPairs ...valuelabel.Pair) IntCSV {
 	return IntCSV{basePath: NewPath(path, vlPairs...)}
 }
 
-func (p IntCSV) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) []int {
+func (p IntCSV) Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) []int {
 	s, err := p.lookupString(pkgCfg, sg)
 	if err != nil && PkgLog.IsDebug() {
 		PkgLog.Debug("model.IntCSV.Get.lookupString", "err", err, "path", p.string)

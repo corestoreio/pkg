@@ -20,64 +20,63 @@ import (
 	"errors"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
-var packageConfiguration = config.MustNewConfiguration(
-	&config.Section{
+var packageConfiguration = element.MustNewConfiguration(
+	&element.Section{
 		ID: "web",
-		Groups: config.GroupSlice{
-			&config.Group{
+		Groups: element.NewGroupSlice(
+			&element.Group{
 				ID:        "cors",
 				Label:     `CORS Cross Origin Resource Sharing`,
-				Comment:   ``,
 				SortOrder: 150,
 				Scope:     scope.NewPerm(scope.DefaultID),
-				Fields: config.FieldSlice{
-					&config.Field{
+				Fields: element.FieldSlice{
+					&element.Field{
 						// Path: `web/cors/exposed_headers`,
 						ID:        "exposed_headers",
 						Label:     `Exposed Headers`,
-						Comment:   `Indicates which headers are safe to expose to the API of a CORS API specification. Separate via line break`,
-						Type:      config.TypeTextarea,
+						Comment:   element.LongText(`Indicates which headers are safe to expose to the API of a CORS API specification. Separate via line break`),
+						Type:      element.TypeTextarea,
 						SortOrder: 10,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:   "Content-Type,X-CoreStore-ID",
 					},
-					&config.Field{
+					&element.Field{
 						// Path: `web/cors/allow_credentials`,
 						ID:        "allow_credentials",
 						Label:     `Allowed Credentials`,
-						Comment:   ``,
-						Type:      config.TypeSelect,
+						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:   "true",
 					},
-					&config.Field{
+					&element.Field{
 						// Path: `web/cors/int`,
 						ID:        "int",
-						Type:      config.TypeText,
+						Type:      element.TypeText,
 						SortOrder: 30,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:   2015,
 					},
-					&config.Field{
+					&element.Field{
 						// Path: `web/cors/float64`,
 						ID:        "float64",
-						Type:      config.TypeSelect,
+						Type:      element.TypeSelect,
 						SortOrder: 30,
-						Visible:   config.VisibleYes,
+						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:   2015.1000001,
 					},
 				},
 			},
-		},
+		),
 	},
 )
 
@@ -135,7 +134,7 @@ func TestBasePathInScope(t *testing.T) {
 	}
 	for _, test := range tests {
 		p1 := NewPath("a/b/c")
-		haveErr := p1.InScope(&config.Field{
+		haveErr := p1.InScope(&element.Field{
 			Scope: test.p,
 		}, test.sg)
 

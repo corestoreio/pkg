@@ -16,6 +16,7 @@ package model
 
 import (
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
@@ -28,7 +29,7 @@ func NewBaseURL(path string) BaseURL {
 }
 
 // Get returns a base URL
-func (p BaseURL) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) string {
+func (p BaseURL) Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) string {
 	return p.Str.Get(pkgCfg, sg)
 }
 

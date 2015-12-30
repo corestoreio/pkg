@@ -19,7 +19,7 @@
 // value fails.
 //
 // The signature of a getter function states in most cases:
-//		Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v string)
+//		Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v string)
 // pkgCfg is the global PackageConfiguration variable which is present in each
 // package. pkgCfg knows the default value of a configuration path.
 // sg is the current config.Getter but bounded to a scope. If sg finds a value

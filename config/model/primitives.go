@@ -18,6 +18,7 @@ import (
 	"strconv"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/corestoreio/csfw/store/scope"
 )
@@ -35,7 +36,7 @@ func NewBool(path string, vlPairs ...valuelabel.Pair) Bool {
 }
 
 // Get returns a bool value.
-func (p Bool) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v bool) {
+func (p Bool) Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v bool) {
 	var err error
 	if v, err = p.lookupBool(pkgCfg, sg); err != nil && PkgLog.IsDebug() {
 		PkgLog.Debug("model.Bool.Get.lookupBool", "err", err, "path", p.string)
@@ -59,7 +60,7 @@ func NewStr(path string, vlPairs ...valuelabel.Pair) Str {
 }
 
 // Get returns a string value
-func (p Str) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v string) {
+func (p Str) Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v string) {
 	var err error
 	if v, err = p.lookupString(pkgCfg, sg); err != nil && PkgLog.IsDebug() {
 		PkgLog.Debug("model.Str.Get.lookupString", "err", err, "path", p.string)
@@ -81,7 +82,7 @@ func NewInt(path string, vlPairs ...valuelabel.Pair) Int {
 }
 
 // Get returns an int value.
-func (p Int) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v int) {
+func (p Int) Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v int) {
 	var err error
 	if v, err = p.lookupInt(pkgCfg, sg); err != nil && PkgLog.IsDebug() {
 		PkgLog.Debug("model.Int.Get.lookupInt", "err", err, "path", p.string)
@@ -103,7 +104,7 @@ func NewFloat64(path string, vlPairs ...valuelabel.Pair) Float64 {
 }
 
 // Get returns a float64 value.
-func (p Float64) Get(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v float64) {
+func (p Float64) Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v float64) {
 	var err error
 	if v, err = p.lookupFloat64(pkgCfg, sg); err != nil && PkgLog.IsDebug() {
 		PkgLog.Debug("model.Float64.Get.lookupFloat64", "err", err, "path", p.string)

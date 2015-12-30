@@ -16,6 +16,7 @@ package model
 
 import (
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cast"
@@ -61,7 +62,7 @@ func (p basePath) String() string {
 }
 
 // InScope checks if a field from a path is allowed for current ScopedGetter.
-func (p basePath) InScope(f *config.Field, sg config.ScopedGetter) (err error) {
+func (p basePath) InScope(f *element.Field, sg config.ScopedGetter) (err error) {
 	if s, _ := sg.Scope(); false == f.Scope.Has(s) {
 		err = errgo.Newf("Scope permission insufficient: Have '%s'; Want '%s'", s, f.Scope)
 	}
@@ -87,7 +88,7 @@ func (p basePath) FQPathInt64(strScope scope.StrScope, scopeID int64) string {
 
 // field searches for the field in a SectionSlice and checks if the scope in
 // ScopedGetter is sufficient.
-func (p basePath) field(pkgCfg config.SectionSlice, sg config.ScopedGetter) (field *config.Field, err error) {
+func (p basePath) field(pkgCfg element.SectionSlice, sg config.ScopedGetter) (field *element.Field, err error) {
 	if field, err = pkgCfg.FindFieldByPath(p.string); err != nil {
 		return
 	}
@@ -95,12 +96,12 @@ func (p basePath) field(pkgCfg config.SectionSlice, sg config.ScopedGetter) (fie
 	return
 }
 
-// lookupString searches the default value in config.SectionSlice and overwrites
+// lookupString searches the default value in element.SectionSlice and overwrites
 // it with a value from ScopedGetter if ScopedGetter is not empty.
 // validator can be nil which triggers the default validation method.
-func (p basePath) lookupString(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v string, err error) {
+func (p basePath) lookupString(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v string, err error) {
 
-	var f *config.Field
+	var f *element.Field
 	if f, err = p.field(pkgCfg, sg); err != nil {
 		return
 	}
@@ -130,9 +131,9 @@ func (p basePath) validateString(v string) (err error) {
 	return
 }
 
-func (p basePath) lookupInt(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v int, err error) {
+func (p basePath) lookupInt(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v int, err error) {
 
-	var f *config.Field
+	var f *element.Field
 	if f, err = p.field(pkgCfg, sg); err != nil {
 		return
 	}
@@ -162,9 +163,9 @@ func (p basePath) validateInt(v int) (err error) {
 	return
 }
 
-func (p basePath) lookupFloat64(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v float64, err error) {
+func (p basePath) lookupFloat64(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v float64, err error) {
 
-	var f *config.Field
+	var f *element.Field
 	if f, err = p.field(pkgCfg, sg); err != nil {
 		return
 	}
@@ -194,9 +195,9 @@ func (p basePath) validateFloat64(v float64) (err error) {
 	return
 }
 
-func (p basePath) lookupBool(pkgCfg config.SectionSlice, sg config.ScopedGetter) (v bool, err error) {
+func (p basePath) lookupBool(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v bool, err error) {
 
-	var f *config.Field
+	var f *element.Field
 	if f, err = p.field(pkgCfg, sg); err != nil {
 		return
 	}
