@@ -26,8 +26,7 @@ func init() {
 
 // BenchmarkSectionSliceValidate	    1000	   1791239 ns/op	  158400 B/op	    4016 allocs/op => Go 1.4.2
 // BenchmarkSectionSliceValidate   	    1000	   1636547 ns/op	  158400 B/op	    3213 allocs/op => Go 1.5.0
-// BenchmarkSectionSliceValidate	    1000	   1807597 ns/op	  248336 B/op	    4016 allocs/op => WTF?
-// BenchmarkSectionSliceValidate   	    1000	   1846581 ns/op	  239744 B/op	    4819 allocs/op
+// BenchmarkSectionSliceValidate   	    1000	   1766386 ns/op	  102783 B/op	    1607 allocs/op => Go 1.5.2
 func BenchmarkSectionSliceValidate(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -41,7 +40,7 @@ var bsstj string
 
 // BenchmarkSectionSliceToJson	     300	   4336829 ns/op	  973188 B/op	   17254 allocs/op => Go 1.4.2
 // BenchmarkSectionSliceToJson 	     500	   3609676 ns/op	  914083 B/op	   14943 allocs/op => Go 1.5.0
-// BenchmarkSectionSliceToJson 	     500	   3536716 ns/op	  809988 B/op	   14482 allocs/op
+// BenchmarkSectionSliceToJson 	     500	   3580314 ns/op	  895303 B/op	   14620 allocs/op => Go 1.5.2
 func BenchmarkSectionSliceToJson(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -53,6 +52,7 @@ func BenchmarkSectionSliceToJson(b *testing.B) {
 
 // BenchmarkSectionSliceFindFieldByPath1	20000000	       92.9 ns/op	       0 B/op	       0 allocs/op => Go 1.4.2
 // BenchmarkSectionSliceFindFieldByPath1	20000000	       84.1 ns/op	       0 B/op	       0 allocs/op => Go 1.5.0
+// BenchmarkSectionSliceFindFieldByPath1	20000000	        86.6 ns/op	       0 B/op	       0 allocs/op => Go 1.5.2
 func BenchmarkSectionSliceFindFieldByPath1(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -64,6 +64,7 @@ func BenchmarkSectionSliceFindFieldByPath1(b *testing.B) {
 
 // BenchmarkSectionSliceFindFieldByPath5	 2000000	       587 ns/op	       0 B/op	       0 allocs/op => Go 1.4.2
 // BenchmarkSectionSliceFindFieldByPath5	 3000000	       565 ns/op	       0 B/op	       0 allocs/op => Go 1.5.0
+// BenchmarkSectionSliceFindFieldByPath5	 3000000	       564 ns/op	       0 B/op	       0 allocs/op => Go 1.5.2
 func BenchmarkSectionSliceFindFieldByPath5(b *testing.B) {
 	var paths = [][]string{
 		{"carriers", "usps", "gateway_url"},
