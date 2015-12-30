@@ -7,78 +7,82 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-// PackageConfiguration global configuration options for this package. Used in
-// Frontend and Backend.
-var PackageConfiguration = element.MustNewConfiguration(
-	&element.Section{
-		ID: "system",
-		Groups: element.NewGroupSlice(
-			&element.Group{
-				ID:        "full_page_cache",
-				Label:     `Full Page Cache`,
-				SortOrder: 600,
-				Scope:     scope.NewPerm(scope.DefaultID),
-				Fields: element.NewFieldSlice(
-					&element.Field{
-						// Path: system/full_page_cache/caching_application
-						ID:      "caching_application",
-						Label:   `Caching Application`,
-						Type:    element.TypeSelect,
-						Visible: element.VisibleYes,
-						Scope:   scope.NewPerm(scope.DefaultID),
-						Default: true,
-						// SourceModel: Otnegam\PageCache\Model\System\Config\Source\Application
-					},
+// PackageConfiguration global configuration options for this package.
+// Used in frontend and backend. See init() for details.
+var PackageConfiguration element.SectionSlice
 
-					&element.Field{
-						// Path: system/full_page_cache/ttl
-						ID:        "ttl",
-						Label:     `TTL for public content`,
-						Comment:   element.LongText(`Public content cache lifetime in seconds. If field is empty default value 86400 will be saved.`),
-						Type:      element.TypeText,
-						SortOrder: 5,
-						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
-						Default:   86400,
-						// BackendModel: Otnegam\PageCache\Model\System\Config\Backend\Ttl
-					},
-				),
-			},
-		),
-	},
+func init() {
+	PackageConfiguration = element.MustNewConfiguration(
+		&element.Section{
+			ID: "system",
+			Groups: element.NewGroupSlice(
+				&element.Group{
+					ID:        "full_page_cache",
+					Label:     `Full Page Cache`,
+					SortOrder: 600,
+					Scope:     scope.NewPerm(scope.DefaultID),
+					Fields: element.NewFieldSlice(
+						&element.Field{
+							// Path: system/full_page_cache/caching_application
+							ID:      "caching_application",
+							Label:   `Caching Application`,
+							Type:    element.TypeSelect,
+							Visible: element.VisibleYes,
+							Scope:   scope.NewPerm(scope.DefaultID),
+							Default: true,
+							// SourceModel: Otnegam\PageCache\Model\System\Config\Source\Application
+						},
 
-	// Hidden Configuration, may be visible somewhere else ...
-	&element.Section{
-		ID: "system",
-		Groups: element.NewGroupSlice(
-			&element.Group{
-				ID: "full_page_cache",
-				Fields: element.NewFieldSlice(
-					&element.Field{
-						// Path: system/full_page_cache/varnish3
-						ID:      `varnish3`,
-						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
-						Default: `{"path":"varnish3.vcl"}`,
-					},
+						&element.Field{
+							// Path: system/full_page_cache/ttl
+							ID:        "ttl",
+							Label:     `TTL for public content`,
+							Comment:   element.LongText(`Public content cache lifetime in seconds. If field is empty default value 86400 will be saved.`),
+							Type:      element.TypeText,
+							SortOrder: 5,
+							Visible:   element.VisibleYes,
+							Scope:     scope.NewPerm(scope.DefaultID),
+							Default:   86400,
+							// BackendModel: Otnegam\PageCache\Model\System\Config\Backend\Ttl
+						},
+					),
+				},
+			),
+		},
 
-					&element.Field{
-						// Path: system/full_page_cache/varnish4
-						ID:      `varnish4`,
-						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
-						Default: `{"path":"varnish4.vcl"}`,
-					},
+		// Hidden Configuration, may be visible somewhere else ...
+		&element.Section{
+			ID: "system",
+			Groups: element.NewGroupSlice(
+				&element.Group{
+					ID: "full_page_cache",
+					Fields: element.NewFieldSlice(
+						&element.Field{
+							// Path: system/full_page_cache/varnish3
+							ID:      `varnish3`,
+							Type:    element.TypeHidden,
+							Visible: element.VisibleNo,
+							Default: `{"path":"varnish3.vcl"}`,
+						},
 
-					&element.Field{
-						// Path: system/full_page_cache/default
-						ID:      `default`,
-						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
-						Default: `{"access_list":"localhost","backend_host":"localhost","backend_port":"8080","ttl":"86400"}`,
-					},
-				),
-			},
-		),
-	},
-)
+						&element.Field{
+							// Path: system/full_page_cache/varnish4
+							ID:      `varnish4`,
+							Type:    element.TypeHidden,
+							Visible: element.VisibleNo,
+							Default: `{"path":"varnish4.vcl"}`,
+						},
+
+						&element.Field{
+							// Path: system/full_page_cache/default
+							ID:      `default`,
+							Type:    element.TypeHidden,
+							Visible: element.VisibleNo,
+							Default: `{"access_list":"localhost","backend_host":"localhost","backend_port":"8080","ttl":"86400"}`,
+						},
+					),
+				},
+			),
+		},
+	)
+}

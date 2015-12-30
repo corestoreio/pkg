@@ -7,64 +7,68 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-// PackageConfiguration global configuration options for this package. Used in
-// Frontend and Backend.
-var PackageConfiguration = element.MustNewConfiguration(
-	&element.Section{
-		ID: "dev",
-		Groups: element.NewGroupSlice(
-			&element.Group{
-				ID: "js",
-				Fields: element.NewFieldSlice(
-					&element.Field{
-						// Path: dev/js/translate_strategy
-						ID:        "translate_strategy",
-						Label:     `Translation Strategy`,
-						Comment:   element.LongText(`Please put your store into maintenance mode and redeploy static files after changing strategy`),
-						Type:      element.TypeSelect,
-						SortOrder: 30,
-						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
-						Default:   `dictionary`,
-						// SourceModel: Otnegam\Translation\Model\Js\Config\Source\Strategy
-					},
-				),
-			},
-		),
-	},
+// PackageConfiguration global configuration options for this package.
+// Used in frontend and backend. See init() for details.
+var PackageConfiguration element.SectionSlice
 
-	// Hidden Configuration, may be visible somewhere else ...
-	&element.Section{
-		ID: "dev",
-		Groups: element.NewGroupSlice(
-			&element.Group{
-				ID: "translate_inline",
-				Fields: element.NewFieldSlice(
-					&element.Field{
-						// Path: dev/translate_inline/active
-						ID:      `active`,
-						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
-						Default: false,
-					},
+func init() {
+	PackageConfiguration = element.MustNewConfiguration(
+		&element.Section{
+			ID: "dev",
+			Groups: element.NewGroupSlice(
+				&element.Group{
+					ID: "js",
+					Fields: element.NewFieldSlice(
+						&element.Field{
+							// Path: dev/js/translate_strategy
+							ID:        "translate_strategy",
+							Label:     `Translation Strategy`,
+							Comment:   element.LongText(`Please put your store into maintenance mode and redeploy static files after changing strategy`),
+							Type:      element.TypeSelect,
+							SortOrder: 30,
+							Visible:   element.VisibleYes,
+							Scope:     scope.NewPerm(scope.DefaultID),
+							Default:   `dictionary`,
+							// SourceModel: Otnegam\Translation\Model\Js\Config\Source\Strategy
+						},
+					),
+				},
+			),
+		},
 
-					&element.Field{
-						// Path: dev/translate_inline/active_admin
-						ID:      `active_admin`,
-						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
-						Default: false,
-					},
+		// Hidden Configuration, may be visible somewhere else ...
+		&element.Section{
+			ID: "dev",
+			Groups: element.NewGroupSlice(
+				&element.Group{
+					ID: "translate_inline",
+					Fields: element.NewFieldSlice(
+						&element.Field{
+							// Path: dev/translate_inline/active
+							ID:      `active`,
+							Type:    element.TypeHidden,
+							Visible: element.VisibleNo,
+							Default: false,
+						},
 
-					&element.Field{
-						// Path: dev/translate_inline/invalid_caches
-						ID:      `invalid_caches`,
-						Type:    element.TypeHidden,
-						Visible: element.VisibleNo,
-						Default: `{"block_html":null}`,
-					},
-				),
-			},
-		),
-	},
-)
+						&element.Field{
+							// Path: dev/translate_inline/active_admin
+							ID:      `active_admin`,
+							Type:    element.TypeHidden,
+							Visible: element.VisibleNo,
+							Default: false,
+						},
+
+						&element.Field{
+							// Path: dev/translate_inline/invalid_caches
+							ID:      `invalid_caches`,
+							Type:    element.TypeHidden,
+							Visible: element.VisibleNo,
+							Default: `{"block_html":null}`,
+						},
+					),
+				},
+			),
+		},
+	)
+}
