@@ -7,35 +7,32 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-var PackageConfiguration = config.MustNewConfiguration(
+// PackageConfiguration global configuration options for this package. Used in
+// Frontend and Backend.
+var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "checkout",
-		Label:     "",
 		SortOrder: 305,
 		Scope:     scope.PermAll,
-		Groups: config.GroupSlice{
+		Groups: config.NewGroupSlice(
 			&config.Group{
 				ID:        "cart",
-				Label:     ``,
-				Comment:   ``,
 				SortOrder: 2,
 				Scope:     scope.PermAll,
-				Fields: config.FieldSlice{
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `checkout/cart/grouped_product_image`,
-						ID:           "grouped_product_image",
-						Label:        `Grouped Product Image`,
-						Comment:      ``,
-						Type:         config.TypeSelect,
-						SortOrder:    3,
-						Visible:      config.VisibleYes,
-						Scope:        scope.PermAll,
-						Default:      `itself`,
-						BackendModel: nil,
-						// SourceModel:  nil, // Magento\Catalog\Model\Config\Source\Product\Thumbnail
+						// Path: checkout/cart/grouped_product_image
+						ID:        "grouped_product_image",
+						Label:     `Grouped Product Image`,
+						Type:      config.TypeSelect,
+						SortOrder: 3,
+						Visible:   config.VisibleYes,
+						Scope:     scope.PermAll,
+						Default:   `itself`,
+						// SourceModel: Otnegam\Catalog\Model\Config\Source\Product\Thumbnail
 					},
-				},
+				),
 			},
-		},
+		),
 	},
 )

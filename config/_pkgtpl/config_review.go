@@ -7,35 +7,31 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-var PackageConfiguration = config.MustNewConfiguration(
+// PackageConfiguration global configuration options for this package. Used in
+// Frontend and Backend.
+var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
-		ID:        "catalog",
-		Label:     "",
-		SortOrder: 0,
-		Scope:     nil,
-		Groups: config.GroupSlice{
+		ID: "catalog",
+		Groups: config.NewGroupSlice(
 			&config.Group{
 				ID:        "review",
 				Label:     `Product Reviews`,
-				Comment:   ``,
 				SortOrder: 100,
 				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-				Fields: config.FieldSlice{
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `catalog/review/allow_guest`,
-						ID:           "allow_guest",
-						Label:        `Allow Guests to Write Reviews`,
-						Comment:      ``,
-						Type:         config.TypeSelect,
-						SortOrder:    1,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Default:      true,
-						BackendModel: nil,
-						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// Path: catalog/review/allow_guest
+						ID:        "allow_guest",
+						Label:     `Allow Guests to Write Reviews`,
+						Type:      config.TypeSelect,
+						SortOrder: 1,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Default:   true,
+						// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 					},
-				},
+				),
 			},
-		},
+		),
 	},
 )

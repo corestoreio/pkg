@@ -7,109 +7,103 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-var PackageConfiguration = config.MustNewConfiguration(
+// PackageConfiguration global configuration options for this package. Used in
+// Frontend and Backend.
+var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "payment",
-		Label:     "Payment Methods",
+		Label:     `Payment Methods`,
 		SortOrder: 400,
 		Scope:     scope.PermAll,
-		Groups:    config.GroupSlice{},
+		Resource:  0, // Otnegam_Payment::payment
+		Groups:    config.NewGroupSlice(),
 	},
 
 	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "payment",
-		Groups: config.GroupSlice{
+		Groups: config.NewGroupSlice(
 			&config.Group{
 				ID: "free",
-				Fields: config.FieldSlice{
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `payment/free/active`,
-						ID:      "active",
+						// Path: payment/free/active
+						ID:      `active`,
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
 
 					&config.Field{
-						// Path: `payment/free/model`,
-						ID:      "model",
+						// Path: payment/free/model
+						ID:      `model`,
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
-						Default: `Magento\Payment\Model\Method\Free`,
+						Default: `Otnegam\Payment\Model\Method\Free`,
 					},
 
 					&config.Field{
-						// Path: `payment/free/order_status`,
-						ID:      "order_status",
+						// Path: payment/free/order_status
+						ID:      `order_status`,
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `pending`,
 					},
 
 					&config.Field{
-						// Path: `payment/free/title`,
-						ID:      "title",
+						// Path: payment/free/title
+						ID:      `title`,
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `No Payment Information Required`,
 					},
 
 					&config.Field{
-						// Path: `payment/free/allowspecific`,
-						ID:      "allowspecific",
+						// Path: payment/free/allowspecific
+						ID:      `allowspecific`,
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: false,
 					},
 
 					&config.Field{
-						// Path: `payment/free/sort_order`,
-						ID:      "sort_order",
+						// Path: payment/free/sort_order
+						ID:      `sort_order`,
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: true,
 					},
-				},
+				),
 			},
 
 			&config.Group{
 				ID: "substitution",
-				Fields: config.FieldSlice{
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `payment/substitution/active`,
-						ID:      "active",
+						// Path: payment/substitution/active
+						ID:      `active`,
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: false,
 					},
 
 					&config.Field{
-						// Path: `payment/substitution/model`,
-						ID:      "model",
+						// Path: payment/substitution/model
+						ID:      `model`,
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
-						Default: `Magento\Payment\Model\Method\Substitution`,
+						Default: `Otnegam\Payment\Model\Method\Substitution`,
 					},
 
 					&config.Field{
-						// Path: `payment/substitution/allowspecific`,
-						ID:      "allowspecific",
+						// Path: payment/substitution/allowspecific
+						ID:      `allowspecific`,
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: false,
 					},
-				},
+				),
 			},
-		},
+		),
 	},
 )

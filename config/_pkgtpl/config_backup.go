@@ -7,91 +7,75 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-var PackageConfiguration = config.MustNewConfiguration(
+// PackageConfiguration global configuration options for this package. Used in
+// Frontend and Backend.
+var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
-		ID:        "system",
-		Label:     "",
-		SortOrder: 0,
-		Scope:     nil,
-		Groups: config.GroupSlice{
+		ID: "system",
+		Groups: config.NewGroupSlice(
 			&config.Group{
 				ID:        "backup",
 				Label:     `Scheduled Backup Settings`,
-				Comment:   ``,
 				SortOrder: 500,
 				Scope:     scope.NewPerm(scope.DefaultID),
-				Fields: config.FieldSlice{
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `system/backup/enabled`,
-						ID:           "enabled",
-						Label:        `Enable Scheduled Backup`,
-						Comment:      ``,
-						Type:         config.TypeSelect,
-						SortOrder:    10,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID),
-						Default:      nil,
-						BackendModel: nil,
-						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// Path: system/backup/enabled
+						ID:        "enabled",
+						Label:     `Enable Scheduled Backup`,
+						Type:      config.TypeSelect,
+						SortOrder: 10,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID),
+						// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
-						// Path: `system/backup/type`,
-						ID:           "type",
-						Label:        `Backup Type`,
-						Comment:      ``,
-						Type:         config.TypeSelect,
-						SortOrder:    20,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID),
-						Default:      nil,
-						BackendModel: nil,
-						// SourceModel:  nil, // Magento\Backup\Model\Config\Source\Type
+						// Path: system/backup/type
+						ID:        "type",
+						Label:     `Backup Type`,
+						Type:      config.TypeSelect,
+						SortOrder: 20,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID),
+						// SourceModel: Otnegam\Backup\Model\Config\Source\Type
 					},
 
 					&config.Field{
-						// Path: `system/backup/time`,
-						ID:           "time",
-						Label:        `Start Time`,
-						Comment:      ``,
-						Type:         config.TypeTime,
-						SortOrder:    30,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID),
-						Default:      nil,
-						BackendModel: nil,
-						// SourceModel:  nil,
+						// Path: system/backup/time
+						ID:        "time",
+						Label:     `Start Time`,
+						Type:      config.TypeTime,
+						SortOrder: 30,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID),
 					},
 
 					&config.Field{
-						// Path: `system/backup/frequency`,
-						ID:           "frequency",
-						Label:        `Frequency`,
-						Comment:      ``,
-						Type:         config.TypeSelect,
-						SortOrder:    40,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID),
-						Default:      nil,
-						BackendModel: nil, // Magento\Backup\Model\Config\Backend\Cron
-						// SourceModel:  nil, // Magento\Cron\Model\Config\Source\Frequency
+						// Path: system/backup/frequency
+						ID:        "frequency",
+						Label:     `Frequency`,
+						Type:      config.TypeSelect,
+						SortOrder: 40,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID),
+						// BackendModel: Otnegam\Backup\Model\Config\Backend\Cron
+						// SourceModel: Otnegam\Cron\Model\Config\Source\Frequency
 					},
 
 					&config.Field{
-						// Path: `system/backup/maintenance`,
-						ID:           "maintenance",
-						Label:        `Maintenance Mode`,
-						Comment:      `Please put your store into maintenance mode during backup.`,
-						Type:         config.TypeSelect,
-						SortOrder:    50,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID),
-						Default:      nil,
-						BackendModel: nil,
-						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// Path: system/backup/maintenance
+						ID:        "maintenance",
+						Label:     `Maintenance Mode`,
+						Comment:   element.LongText(`Please put your store into maintenance mode during backup.`),
+						Type:      config.TypeSelect,
+						SortOrder: 50,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID),
+						// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 					},
-				},
+				),
 			},
-		},
+		),
 	},
 )

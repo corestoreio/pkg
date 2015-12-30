@@ -7,63 +7,34 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-var PackageConfiguration = config.MustNewConfiguration(
+// PackageConfiguration global configuration options for this package. Used in
+// Frontend and Backend.
+var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
-		ID:        "catalog",
-		Label:     "",
-		SortOrder: 0,
-		Scope:     nil,
-		Groups: config.GroupSlice{
+		ID: "catalog",
+		Groups: config.NewGroupSlice(
 			&config.Group{
-				ID:        "search",
-				Label:     ``,
-				Comment:   ``,
-				SortOrder: 0,
-				Scope:     nil,
-				Fields: config.FieldSlice{
+				ID: "search",
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `catalog/search/engine`,
-						ID:           "engine",
-						Label:        `Search Engine`,
-						Comment:      ``,
-						Type:         config.TypeSelect,
-						SortOrder:    19,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID),
-						Default:      nil,
-						BackendModel: nil,
-						// SourceModel:  nil, // Magento\Search\Model\Adminhtml\System\Config\Source\Engine
+						// Path: catalog/search/engine
+						ID:        "engine",
+						Label:     `Search Engine`,
+						Type:      config.TypeSelect,
+						SortOrder: 19,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID),
+						// SourceModel: Otnegam\Search\Model\Adminhtml\System\Config\Source\Engine
 					},
 
 					&config.Field{
-						// Path: `catalog/search/search_type`,
-						ID:           "search_type",
-						Label:        ``,
-						Comment:      ``,
-						Type:         config.Type,
-						SortOrder:    0,
-						Visible:      config.VisibleYes,
-						Scope:        nil,
-						Default:      nil,
-						BackendModel: nil,
-						// SourceModel:  nil,
+						// Path: catalog/search/search_type
+						ID:      "search_type",
+						Type:    config.Type,
+						Visible: config.VisibleYes,
 					},
-
-					&config.Field{
-						// Path: `catalog/search/use_layered_navigation_count`,
-						ID:           "use_layered_navigation_count",
-						Label:        ``,
-						Comment:      ``,
-						Type:         config.Type,
-						SortOrder:    0,
-						Visible:      config.VisibleYes,
-						Scope:        nil,
-						Default:      nil,
-						BackendModel: nil,
-						// SourceModel:  nil,
-					},
-				},
+				),
 			},
-		},
+		),
 	},
 )

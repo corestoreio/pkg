@@ -7,73 +7,64 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-var PackageConfiguration = config.MustNewConfiguration(
+// PackageConfiguration global configuration options for this package. Used in
+// Frontend and Backend.
+var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
-		ID:        "dev",
-		Label:     "",
-		SortOrder: 0,
-		Scope:     nil,
-		Groups: config.GroupSlice{
+		ID: "dev",
+		Groups: config.NewGroupSlice(
 			&config.Group{
-				ID:        "js",
-				Label:     ``,
-				Comment:   ``,
-				SortOrder: 0,
-				Scope:     nil,
-				Fields: config.FieldSlice{
+				ID: "js",
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `dev/js/translate_strategy`,
-						ID:           "translate_strategy",
-						Label:        `Translation Strategy`,
-						Comment:      `Please put your store into maintenance mode and redeploy static files after changing strategy`,
-						Type:         config.TypeSelect,
-						SortOrder:    30,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID),
-						Default:      `dictionary`,
-						BackendModel: nil,
-						// SourceModel:  nil, // Magento\Translation\Model\Js\Config\Source\Strategy
+						// Path: dev/js/translate_strategy
+						ID:        "translate_strategy",
+						Label:     `Translation Strategy`,
+						Comment:   element.LongText(`Please put your store into maintenance mode and redeploy static files after changing strategy`),
+						Type:      config.TypeSelect,
+						SortOrder: 30,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID),
+						Default:   `dictionary`,
+						// SourceModel: Otnegam\Translation\Model\Js\Config\Source\Strategy
 					},
-				},
+				),
 			},
-		},
+		),
 	},
 
 	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "dev",
-		Groups: config.GroupSlice{
+		Groups: config.NewGroupSlice(
 			&config.Group{
 				ID: "translate_inline",
-				Fields: config.FieldSlice{
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `dev/translate_inline/active`,
-						ID:      "active",
+						// Path: dev/translate_inline/active
+						ID:      `active`,
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: false,
 					},
 
 					&config.Field{
-						// Path: `dev/translate_inline/active_admin`,
-						ID:      "active_admin",
+						// Path: dev/translate_inline/active_admin
+						ID:      `active_admin`,
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: false,
 					},
 
 					&config.Field{
-						// Path: `dev/translate_inline/invalid_caches`,
-						ID:      "invalid_caches",
+						// Path: dev/translate_inline/invalid_caches
+						ID:      `invalid_caches`,
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: `{"block_html":null}`,
 					},
-				},
+				),
 			},
-		},
+		),
 	},
 )

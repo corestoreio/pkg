@@ -7,78 +7,70 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-var PackageConfiguration = config.MustNewConfiguration(
+// PackageConfiguration global configuration options for this package. Used in
+// Frontend and Backend.
+var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
-		ID:        "dev",
-		Label:     "",
-		SortOrder: 0,
-		Scope:     nil,
-		Groups: config.GroupSlice{
+		ID: "dev",
+		Groups: config.NewGroupSlice(
 			&config.Group{
 				ID:        "front_end_development_workflow",
-				Label:     `Front-end development workflow`,
-				Comment:   ``,
+				Label:     `Frontend Development Workflow`,
 				SortOrder: 8,
 				Scope:     scope.PermAll,
-				Fields: config.FieldSlice{
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `dev/front_end_development_workflow/type`,
-						ID:           "type",
-						Label:        `Workflow type`,
-						Comment:      `Not available in production mode`,
-						Type:         config.TypeSelect,
-						SortOrder:    1,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID),
-						Default:      `server_side_compilation`,
-						BackendModel: nil,
-						// SourceModel:  nil, // Magento\Developer\Model\Config\Source\WorkflowType
+						// Path: dev/front_end_development_workflow/type
+						ID:        "type",
+						Label:     `Workflow type`,
+						Comment:   element.LongText(`Not available in production mode`),
+						Type:      config.TypeSelect,
+						SortOrder: 1,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID),
+						Default:   `server_side_compilation`,
+						// SourceModel: Otnegam\Developer\Model\Config\Source\WorkflowType
 					},
-				},
+				),
 			},
 
 			&config.Group{
 				ID:        "restrict",
 				Label:     `Developer Client Restrictions`,
-				Comment:   ``,
 				SortOrder: 10,
 				Scope:     scope.PermAll,
-				Fields: config.FieldSlice{
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `dev/restrict/allow_ips`,
-						ID:           "allow_ips",
-						Label:        `Allowed IPs (comma separated)`,
-						Comment:      `Leave empty for access from any location.`,
-						Type:         config.TypeText,
-						SortOrder:    20,
-						Visible:      config.VisibleYes,
-						Scope:        scope.PermAll,
-						Default:      nil,
-						BackendModel: nil, // Magento\Developer\Model\Config\Backend\AllowedIps
-						// SourceModel:  nil,
+						// Path: dev/restrict/allow_ips
+						ID:        "allow_ips",
+						Label:     `Allowed IPs (comma separated)`,
+						Comment:   element.LongText(`Leave empty for access from any location.`),
+						Type:      config.TypeText,
+						SortOrder: 20,
+						Visible:   config.VisibleYes,
+						Scope:     scope.PermAll,
+						// BackendModel: Otnegam\Developer\Model\Config\Backend\AllowedIps
 					},
-				},
+				),
 			},
-		},
+		),
 	},
 
 	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "dev",
-		Groups: config.GroupSlice{
+		Groups: config.NewGroupSlice(
 			&config.Group{
 				ID: "restrict",
-				Fields: config.FieldSlice{
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `dev/restrict/allow_ips`,
-						ID:      "allow_ips",
+						// Path: dev/restrict/allow_ips
+						ID:      `allow_ips`,
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
-						Default: nil,
 					},
-				},
+				),
 			},
-		},
+		),
 	},
 )

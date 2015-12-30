@@ -7,52 +7,46 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-var PackageConfiguration = config.MustNewConfiguration(
+// PackageConfiguration global configuration options for this package. Used in
+// Frontend and Backend.
+var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID: "google",
-		Groups: config.GroupSlice{
+		Groups: config.NewGroupSlice(
 			&config.Group{
-				ID:        "analytics",
-				Label:     ``,
-				Comment:   ``,
-				SortOrder: 0,
-				Scope:     nil,
-				Fields: config.FieldSlice{
+				ID: "analytics",
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `google/analytics/experiments`,
-						ID:           "experiments",
-						Label:        `Enable Content Experiments`,
-						Comment:      ``,
-						Type:         config.TypeSelect,
-						SortOrder:    30,
-						Visible:      config.VisibleYes,
-						Scope:        scope.PermAll,
-						Default:      nil,
-						BackendModel: nil,
-						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// Path: google/analytics/experiments
+						ID:        "experiments",
+						Label:     `Enable Content Experiments`,
+						Type:      config.TypeSelect,
+						SortOrder: 30,
+						Visible:   config.VisibleYes,
+						Scope:     scope.PermAll,
+						// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 					},
-				},
+				),
 			},
-		},
+		),
 	},
 
 	// Hidden Configuration, may be visible somewhere else ...
 	&config.Section{
 		ID: "google",
-		Groups: config.GroupSlice{
+		Groups: config.NewGroupSlice(
 			&config.Group{
 				ID: "optimizer",
-				Fields: config.FieldSlice{
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `google/optimizer/active`,
-						ID:      "active",
+						// Path: google/optimizer/active
+						ID:      `active`,
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID), // @todo search for that
 						Default: false,
 					},
-				},
+				),
 			},
-		},
+		),
 	},
 )

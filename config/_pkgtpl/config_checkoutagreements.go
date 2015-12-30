@@ -7,35 +7,27 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-var PackageConfiguration = config.MustNewConfiguration(
+// PackageConfiguration global configuration options for this package. Used in
+// Frontend and Backend.
+var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
-		ID:        "checkout",
-		Label:     "",
-		SortOrder: 0,
-		Scope:     nil,
-		Groups: config.GroupSlice{
+		ID: "checkout",
+		Groups: config.NewGroupSlice(
 			&config.Group{
-				ID:        "options",
-				Label:     ``,
-				Comment:   ``,
-				SortOrder: 0,
-				Scope:     nil,
-				Fields: config.FieldSlice{
+				ID: "options",
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `checkout/options/enable_agreements`,
-						ID:           "enable_agreements",
-						Label:        `Enable Terms and Conditions`,
-						Comment:      ``,
-						Type:         config.TypeSelect,
-						SortOrder:    20,
-						Visible:      config.VisibleYes,
-						Scope:        scope.PermAll,
-						Default:      nil,
-						BackendModel: nil,
-						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// Path: checkout/options/enable_agreements
+						ID:        "enable_agreements",
+						Label:     `Enable Terms and Conditions`,
+						Type:      config.TypeSelect,
+						SortOrder: 20,
+						Visible:   config.VisibleYes,
+						Scope:     scope.PermAll,
+						// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 					},
-				},
+				),
 			},
-		},
+		),
 	},
 )

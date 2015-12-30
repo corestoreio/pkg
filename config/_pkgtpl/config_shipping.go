@@ -7,149 +7,124 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-var PackageConfiguration = config.MustNewConfiguration(
+// PackageConfiguration global configuration options for this package. Used in
+// Frontend and Backend.
+var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "shipping",
-		Label:     "Shipping Settings",
+		Label:     `Shipping Settings`,
 		SortOrder: 310,
 		Scope:     scope.PermAll,
-		Groups: config.GroupSlice{
+		Resource:  0, // Otnegam_Shipping::config_shipping
+		Groups: config.NewGroupSlice(
 			&config.Group{
 				ID:        "origin",
 				Label:     `Origin`,
-				Comment:   ``,
 				SortOrder: 1,
 				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-				Fields: config.FieldSlice{
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `shipping/origin/country_id`,
-						ID:           "country_id",
-						Label:        `Country`,
-						Comment:      ``,
-						Type:         config.TypeSelect,
-						SortOrder:    10,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Default:      `US`,
-						BackendModel: nil,
-						// SourceModel:  nil, // Magento\Directory\Model\Config\Source\Country
+						// Path: shipping/origin/country_id
+						ID:        "country_id",
+						Label:     `Country`,
+						Type:      config.TypeSelect,
+						SortOrder: 10,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Default:   `US`,
+						// SourceModel: Otnegam\Directory\Model\Config\Source\Country
 					},
 
 					&config.Field{
-						// Path: `shipping/origin/region_id`,
-						ID:           "region_id",
-						Label:        `Region/State`,
-						Comment:      ``,
-						Type:         config.TypeText,
-						SortOrder:    20,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Default:      12,
-						BackendModel: nil,
-						// SourceModel:  nil,
+						// Path: shipping/origin/region_id
+						ID:        "region_id",
+						Label:     `Region/State`,
+						Type:      config.TypeText,
+						SortOrder: 20,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Default:   12,
 					},
 
 					&config.Field{
-						// Path: `shipping/origin/postcode`,
-						ID:           "postcode",
-						Label:        `ZIP/Postal Code`,
-						Comment:      ``,
-						Type:         config.TypeText,
-						SortOrder:    30,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Default:      90034,
-						BackendModel: nil,
-						// SourceModel:  nil,
+						// Path: shipping/origin/postcode
+						ID:        "postcode",
+						Label:     `ZIP/Postal Code`,
+						Type:      config.TypeText,
+						SortOrder: 30,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Default:   90034,
 					},
 
 					&config.Field{
-						// Path: `shipping/origin/city`,
-						ID:           "city",
-						Label:        `City`,
-						Comment:      ``,
-						Type:         config.TypeText,
-						SortOrder:    40,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Default:      nil,
-						BackendModel: nil,
-						// SourceModel:  nil,
+						// Path: shipping/origin/city
+						ID:        "city",
+						Label:     `City`,
+						Type:      config.TypeText,
+						SortOrder: 40,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 					},
 
 					&config.Field{
-						// Path: `shipping/origin/street_line1`,
-						ID:           "street_line1",
-						Label:        `Street Address`,
-						Comment:      ``,
-						Type:         config.TypeText,
-						SortOrder:    50,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Default:      nil,
-						BackendModel: nil,
-						// SourceModel:  nil,
+						// Path: shipping/origin/street_line1
+						ID:        "street_line1",
+						Label:     `Street Address`,
+						Type:      config.TypeText,
+						SortOrder: 50,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 					},
 
 					&config.Field{
-						// Path: `shipping/origin/street_line2`,
-						ID:           "street_line2",
-						Label:        `Street Address Line 2`,
-						Comment:      ``,
-						Type:         config.TypeText,
-						SortOrder:    60,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Default:      nil,
-						BackendModel: nil,
-						// SourceModel:  nil,
+						// Path: shipping/origin/street_line2
+						ID:        "street_line2",
+						Label:     `Street Address Line 2`,
+						Type:      config.TypeText,
+						SortOrder: 60,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 					},
-				},
+				),
 			},
 
 			&config.Group{
 				ID:        "shipping_policy",
 				Label:     `Shipping Policy Parameters`,
-				Comment:   ``,
 				SortOrder: 120,
 				Scope:     scope.PermAll,
-				Fields: config.FieldSlice{
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `shipping/shipping_policy/enable_shipping_policy`,
-						ID:           "enable_shipping_policy",
-						Label:        `Apply custom Shipping Policy`,
-						Comment:      ``,
-						Type:         config.TypeSelect,
-						SortOrder:    1,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Default:      nil,
-						BackendModel: nil,
-						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// Path: shipping/shipping_policy/enable_shipping_policy
+						ID:        "enable_shipping_policy",
+						Label:     `Apply custom Shipping Policy`,
+						Type:      config.TypeSelect,
+						SortOrder: 1,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
-						// Path: `shipping/shipping_policy/shipping_policy_content`,
-						ID:           "shipping_policy_content",
-						Label:        `Shipping Policy`,
-						Comment:      ``,
-						Type:         config.TypeTextarea,
-						SortOrder:    2,
-						Visible:      config.VisibleYes,
-						Scope:        scope.PermAll,
-						Default:      nil,
-						BackendModel: nil,
-						// SourceModel:  nil,
+						// Path: shipping/shipping_policy/shipping_policy_content
+						ID:        "shipping_policy_content",
+						Label:     `Shipping Policy`,
+						Type:      config.TypeTextarea,
+						SortOrder: 2,
+						Visible:   config.VisibleYes,
+						Scope:     scope.PermAll,
 					},
-				},
+				),
 			},
-		},
+		),
 	},
 	&config.Section{
 		ID:        "carriers",
-		Label:     "Shipping Methods",
+		Label:     `Shipping Methods`,
 		SortOrder: 320,
 		Scope:     scope.PermAll,
-		Groups:    config.GroupSlice{},
+		Resource:  0, // Otnegam_Shipping::carriers
+		Groups:    config.NewGroupSlice(),
 	},
 )

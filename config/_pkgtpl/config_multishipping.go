@@ -7,49 +7,46 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-var PackageConfiguration = config.MustNewConfiguration(
+// PackageConfiguration global configuration options for this package. Used in
+// Frontend and Backend.
+var PackageConfiguration = config.NewConfiguration(
 	&config.Section{
 		ID:        "multishipping",
-		Label:     "Multishipping Settings",
+		Label:     `Multishipping Settings`,
 		SortOrder: 311,
 		Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-		Groups: config.GroupSlice{
+		Resource:  0, // Otnegam_Multishipping::config_multishipping
+		Groups: config.NewGroupSlice(
 			&config.Group{
 				ID:        "options",
 				Label:     `Options`,
-				Comment:   ``,
 				SortOrder: 2,
 				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-				Fields: config.FieldSlice{
+				Fields: config.NewFieldSlice(
 					&config.Field{
-						// Path: `multishipping/options/checkout_multiple`,
-						ID:           "checkout_multiple",
-						Label:        `Allow Shipping to Multiple Addresses`,
-						Comment:      ``,
-						Type:         config.TypeSelect,
-						SortOrder:    1,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Default:      true,
-						BackendModel: nil,
-						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
+						// Path: multishipping/options/checkout_multiple
+						ID:        "checkout_multiple",
+						Label:     `Allow Shipping to Multiple Addresses`,
+						Type:      config.TypeSelect,
+						SortOrder: 1,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Default:   true,
+						// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 					},
 
 					&config.Field{
-						// Path: `multishipping/options/checkout_multiple_maximum_qty`,
-						ID:           "checkout_multiple_maximum_qty",
-						Label:        `Maximum Qty Allowed for Shipping to Multiple Addresses`,
-						Comment:      ``,
-						Type:         config.TypeText,
-						SortOrder:    2,
-						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-						Default:      100,
-						BackendModel: nil,
-						// SourceModel:  nil,
+						// Path: multishipping/options/checkout_multiple_maximum_qty
+						ID:        "checkout_multiple_maximum_qty",
+						Label:     `Maximum Qty Allowed for Shipping to Multiple Addresses`,
+						Type:      config.TypeText,
+						SortOrder: 2,
+						Visible:   config.VisibleYes,
+						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Default:   100,
 					},
-				},
+				),
 			},
-		},
+		),
 	},
 )
