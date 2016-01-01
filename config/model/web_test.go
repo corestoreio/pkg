@@ -26,7 +26,7 @@ import (
 func TestBaseURL(t *testing.T) {
 
 	wantPath := scope.StrStores.FQPathInt64(1, "web/unsecure/base_url")
-	b := model.NewBaseURL("web/unsecure/base_url", model.WithPkgcfg(packageConfiguration))
+	b := model.NewBaseURL("web/unsecure/base_url", model.WithPkgCfg(packageConfiguration))
 
 	assert.Empty(t, b.Options())
 

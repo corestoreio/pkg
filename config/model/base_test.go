@@ -82,7 +82,7 @@ var packageConfiguration = element.MustNewConfiguration(
 
 func TestBasePathString(t *testing.T) {
 	const path = "web/cors/exposed_headers"
-	p1 := NewPath(path, WithPkgcfg(packageConfiguration))
+	p1 := NewPath(path, WithPkgCfg(packageConfiguration))
 	assert.Exactly(t, path, p1.String())
 
 	wantPath := scope.StrWebsites.FQPathInt64(2, "web/cors/exposed_headers")

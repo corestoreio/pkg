@@ -33,9 +33,9 @@ var _ SourceModeller = (*basePath)(nil)
 // Option as an optional argument for the New*() functions.
 type Option func(*basePath)
 
-// WithPkgcfg sets the global PackageConfiguration for retrieving the default
+// WithPkgCfg sets a global PackageConfiguration for retrieving the default
 // value of a underlying type and for scope permission checking.
-func WithPkgcfg(pkgcfg element.SectionSlice) Option {
+func WithPkgCfg(pkgcfg element.SectionSlice) Option {
 	return func(b *basePath) {
 		b.PkgCfg = pkgcfg
 	}

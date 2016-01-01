@@ -151,7 +151,7 @@ var packageConfiguration = element.MustNewConfiguration(
 func TestBool(t *testing.T) {
 
 	wantPath := scope.StrWebsites.FQPathInt64(3, "web/cors/allow_credentials")
-	b := model.NewBool("web/cors/allow_credentials", model.WithPkgcfg(packageConfiguration), model.WithValueLabel(configsource.YesNo))
+	b := model.NewBool("web/cors/allow_credentials", model.WithPkgCfg(packageConfiguration), model.WithValueLabel(configsource.YesNo))
 
 	assert.Exactly(t, configsource.YesNo, b.Options())
 	// because default value in packageConfiguration is "true"
@@ -173,7 +173,7 @@ func TestBool(t *testing.T) {
 func TestStr(t *testing.T) {
 
 	wantPath := scope.StrDefault.FQPathInt64(0, "web/cors/exposed_headers")
-	b := model.NewStr("web/cors/exposed_headers", model.WithPkgcfg(packageConfiguration))
+	b := model.NewStr("web/cors/exposed_headers", model.WithPkgCfg(packageConfiguration))
 
 	assert.Empty(t, b.Options())
 
@@ -194,7 +194,7 @@ func TestStr(t *testing.T) {
 func TestInt(t *testing.T) {
 
 	wantPath := scope.StrWebsites.FQPathInt64(10, "web/cors/int")
-	b := model.NewInt("web/cors/int", model.WithPkgcfg(packageConfiguration))
+	b := model.NewInt("web/cors/int", model.WithPkgCfg(packageConfiguration))
 
 	assert.Empty(t, b.Options())
 
@@ -214,7 +214,7 @@ func TestInt(t *testing.T) {
 
 func TestFloat64(t *testing.T) {
 	wantPath := scope.StrWebsites.FQPathInt64(10, "web/cors/float64")
-	b := model.NewFloat64("web/cors/float64", model.WithPkgcfg(packageConfiguration))
+	b := model.NewFloat64("web/cors/float64", model.WithPkgCfg(packageConfiguration))
 
 	assert.Empty(t, b.Options())
 

@@ -29,7 +29,7 @@ func TestStringCSV(t *testing.T) {
 	wantPath := scope.StrDefault.FQPathInt64(0, "web/cors/exposed_headers")
 	b := model.NewStringCSV(
 		"web/cors/exposed_headers",
-		model.WithPkgcfg(packageConfiguration),
+		model.WithPkgCfg(packageConfiguration),
 		model.WithValueLabelByString(
 			"Content-Type", "Content Type", "X-CoreStore-ID", "CoreStore Microservice ID",
 		),
@@ -59,7 +59,7 @@ func TestIntCSV(t *testing.T) {
 
 	b := model.NewIntCSV(
 		"web/cors/int_slice",
-		model.WithPkgcfg(packageConfiguration),
+		model.WithPkgCfg(packageConfiguration),
 		model.WithValueLabelByInt(valuelabel.Ints{
 			{2014, "Year 2014"},
 			{2015, "Year 2015"},
