@@ -15,6 +15,7 @@
 package backend
 
 import (
+	"github.com/corestoreio/csfw/config/configsource"
 	"github.com/corestoreio/csfw/config/model"
 )
 
@@ -92,57 +93,57 @@ var PathDesignPaginationAnchorTextForNext = model.NewStr(`design/pagination/anch
 
 // PathDevDebugTemplateHintsStorefront => Enabled Template Path Hints for Storefront.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathDevDebugTemplateHintsStorefront = model.NewBool(`dev/debug/template_hints_storefront`)
+var PathDevDebugTemplateHintsStorefront = model.NewBool(`dev/debug/template_hints_storefront`, configsource.YesNo...)
 
 // PathDevDebugTemplateHintsAdmin => Enabled Template Path Hints for Admin.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathDevDebugTemplateHintsAdmin = model.NewBool(`dev/debug/template_hints_admin`)
+var PathDevDebugTemplateHintsAdmin = model.NewBool(`dev/debug/template_hints_admin`, configsource.YesNo...)
 
 // PathDevDebugTemplateHintsBlocks => Add Block Names to Hints.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathDevDebugTemplateHintsBlocks = model.NewBool(`dev/debug/template_hints_blocks`)
+var PathDevDebugTemplateHintsBlocks = model.NewBool(`dev/debug/template_hints_blocks`, configsource.YesNo...)
 
 // PathDevTemplateAllowSymlink => Allow Symlinks.
 // Warning! Enabling this feature is not recommended on production
 // environments because it represents a potential security risk.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathDevTemplateAllowSymlink = model.NewBool(`dev/template/allow_symlink`)
+var PathDevTemplateAllowSymlink = model.NewBool(`dev/template/allow_symlink`, configsource.YesNo...)
 
 // PathDevTemplateMinifyHtml => Minify Html.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathDevTemplateMinifyHtml = model.NewBool(`dev/template/minify_html`)
+var PathDevTemplateMinifyHtml = model.NewBool(`dev/template/minify_html`, configsource.YesNo...)
 
 // PathDevTranslateInlineActive => Enabled for Storefront.
 // BackendModel: Otnegam\Config\Model\Config\Backend\Translate
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathDevTranslateInlineActive = model.NewBool(`dev/translate_inline/active`)
+var PathDevTranslateInlineActive = model.NewBool(`dev/translate_inline/active`, configsource.YesNo...)
 
 // PathDevTranslateInlineActiveAdmin => Enabled for Admin.
 // Translate, blocks and other output caches should be disabled for both
 // Storefront and Admin inline translations.
 // BackendModel: Otnegam\Config\Model\Config\Backend\Translate
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathDevTranslateInlineActiveAdmin = model.NewBool(`dev/translate_inline/active_admin`)
+var PathDevTranslateInlineActiveAdmin = model.NewBool(`dev/translate_inline/active_admin`, configsource.YesNo...)
 
 // PathDevJsMergeFiles => Merge JavaScript Files.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathDevJsMergeFiles = model.NewBool(`dev/js/merge_files`)
+var PathDevJsMergeFiles = model.NewBool(`dev/js/merge_files`, configsource.YesNo...)
 
 // PathDevJsEnableJsBundling => Enable JavaScript Bundling.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathDevJsEnableJsBundling = model.NewBool(`dev/js/enable_js_bundling`)
+var PathDevJsEnableJsBundling = model.NewBool(`dev/js/enable_js_bundling`, configsource.YesNo...)
 
 // PathDevJsMinifyFiles => Minify JavaScript Files.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathDevJsMinifyFiles = model.NewBool(`dev/js/minify_files`)
+var PathDevJsMinifyFiles = model.NewBool(`dev/js/minify_files`, configsource.YesNo...)
 
 // PathDevCssMergeCssFiles => Merge CSS Files.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathDevCssMergeCssFiles = model.NewBool(`dev/css/merge_css_files`)
+var PathDevCssMergeCssFiles = model.NewBool(`dev/css/merge_css_files`, configsource.YesNo...)
 
 // PathDevCssMinifyFiles => Minify CSS Files.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathDevCssMinifyFiles = model.NewBool(`dev/css/minify_files`)
+var PathDevCssMinifyFiles = model.NewBool(`dev/css/minify_files`, configsource.YesNo...)
 
 // PathDevImageDefaultAdapter => Image Adapter.
 // When the adapter was changed, please flush Catalog Images Cache.
@@ -152,7 +153,7 @@ var PathDevImageDefaultAdapter = model.NewStr(`dev/image/default_adapter`)
 
 // PathDevStaticSign => Sign Static Files.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathDevStaticSign = model.NewBool(`dev/static/sign`)
+var PathDevStaticSign = model.NewBool(`dev/static/sign`, configsource.YesNo...)
 
 // PathGeneralStoreInformationName => Store Name.
 var PathGeneralStoreInformationName = model.NewStr(`general/store_information/name`)
@@ -188,12 +189,15 @@ var PathGeneralStoreInformationMerchantVatNumber = model.NewStr(`general/store_i
 // PathGeneralSingleStoreModeEnabled => Enable Single-Store Mode.
 // This setting will not be taken into account if system has more than one
 // store view.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathGeneralSingleStoreModeEnabled = model.NewBool(`general/single_store_mode/enabled`)
+// PathSingleStoreModeEnabled if true then single store mode enabled
+// This flag only shows that admin does not want to show certain
+// UI components in the backend (like store switchers etc)
+// If there is only one store view but it does not check the store view collection. WTF?
+var PathGeneralSingleStoreModeEnabled = model.NewBool(`general/single_store_mode/enabled`, configsource.YesNo...)
 
 // PathSystemSmtpDisable => Disable Email Communications.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathSystemSmtpDisable = model.NewBool(`system/smtp/disable`)
+var PathSystemSmtpDisable = model.NewBool(`system/smtp/disable`, configsource.YesNo...)
 
 // PathSystemSmtpHost => Host.
 // For Windows server only.
@@ -205,7 +209,7 @@ var PathSystemSmtpPort = model.NewStr(`system/smtp/port`)
 
 // PathSystemSmtpSetReturnPath => Set Return-Path.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesnocustom
-var PathSystemSmtpSetReturnPath = model.NewBool(`system/smtp/set_return_path`)
+var PathSystemSmtpSetReturnPath = model.NewBool(`system/smtp/set_return_path`, configsource.YesNo...)
 
 // PathSystemSmtpReturnPathEmail => Return-Path Email.
 // BackendModel: Otnegam\Config\Model\Config\Backend\Email\Address
@@ -233,7 +237,7 @@ var PathAdminStartupMenuItemId = model.NewStr(`admin/startup/menu_item_id`)
 // PathAdminUrlUseCustom => Use Custom Admin URL.
 // BackendModel: Otnegam\Config\Model\Config\Backend\Admin\Usecustom
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathAdminUrlUseCustom = model.NewBool(`admin/url/use_custom`)
+var PathAdminUrlUseCustom = model.NewBool(`admin/url/use_custom`, configsource.YesNo...)
 
 // PathAdminUrlCustom => Custom Admin URL.
 // Make sure that base URL ends with '/' (slash), e.g.
@@ -244,7 +248,7 @@ var PathAdminUrlCustom = model.NewStr(`admin/url/custom`)
 // PathAdminUrlUseCustomPath => Use Custom Admin Path.
 // BackendModel: Otnegam\Config\Model\Config\Backend\Admin\Custompath
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathAdminUrlUseCustomPath = model.NewBool(`admin/url/use_custom_path`)
+var PathAdminUrlUseCustomPath = model.NewBool(`admin/url/use_custom_path`, configsource.YesNo...)
 
 // PathAdminUrlCustomPath => Custom Admin Path.
 // You will have to sign in after you save your custom admin path.
@@ -254,11 +258,11 @@ var PathAdminUrlCustomPath = model.NewStr(`admin/url/custom_path`)
 // PathAdminSecurityUseFormKey => Add Secret Key to URLs.
 // BackendModel: Otnegam\Config\Model\Config\Backend\Admin\Usesecretkey
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathAdminSecurityUseFormKey = model.NewBool(`admin/security/use_form_key`)
+var PathAdminSecurityUseFormKey = model.NewBool(`admin/security/use_form_key`, configsource.YesNo...)
 
 // PathAdminSecurityUseCaseSensitiveLogin => Login is Case Sensitive.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathAdminSecurityUseCaseSensitiveLogin = model.NewBool(`admin/security/use_case_sensitive_login`)
+var PathAdminSecurityUseCaseSensitiveLogin = model.NewBool(`admin/security/use_case_sensitive_login`, configsource.YesNo...)
 
 // PathAdminSecuritySessionLifetime => Admin Session Lifetime (seconds).
 // Values less than 60 are ignored.
@@ -266,7 +270,7 @@ var PathAdminSecuritySessionLifetime = model.NewStr(`admin/security/session_life
 
 // PathAdminDashboardEnableCharts => Enable Charts.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathAdminDashboardEnableCharts = model.NewBool(`admin/dashboard/enable_charts`)
+var PathAdminDashboardEnableCharts = model.NewBool(`admin/dashboard/enable_charts`, configsource.YesNo...)
 
 // PathWebUrlUseStore => Add Store Code to Urls.
 // Warning! When using Store Code in URLs, in some cases system may not work
@@ -274,17 +278,21 @@ var PathAdminDashboardEnableCharts = model.NewBool(`admin/dashboard/enable_chart
 // services (e.g. PayPal etc.).
 // BackendModel: Otnegam\Config\Model\Config\Backend\Store
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathWebUrlUseStore = model.NewBool(`web/url/use_store`)
+var PathWebUrlUseStore = model.NewBool(`web/url/use_store`, configsource.YesNo...)
 
 // PathWebUrlRedirectToBase => Auto-redirect to Base URL.
 // I.e. redirect from http://example.com/store/ to
 // http://www.example.com/store/
+// PathRedirectToBase configuration path to specify redirect codes and
+// if a redirect should happen when a different "domain" has been typed
+// in by the user. TODO: Clarify that.
+// Used in store.WithValidateBaseURL() middleware.
 // SourceModel: Otnegam\Config\Model\Config\Source\Web\Redirect
-var PathWebUrlRedirectToBase = model.NewStr(`web/url/redirect_to_base`)
+var PathWebUrlRedirectToBase = NewConfigRedirectToBase("web/url/redirect_to_base")
 
 // PathWebSeoUseRewrites => Use Web Server Rewrites.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathWebSeoUseRewrites = model.NewBool(`web/seo/use_rewrites`)
+var PathWebSeoUseRewrites = model.NewBool(`web/seo/use_rewrites`, configsource.YesNo...)
 
 // PathWebUnsecureBaseUrl => Base URL.
 // Specify URL or {{base_url}} placeholder.
@@ -332,25 +340,25 @@ var PathWebSecureBaseMediaUrl = model.NewStr(`web/secure/base_media_url`)
 // Enter https protocol to use Secure URLs on Storefront.
 // BackendModel: Otnegam\Config\Model\Config\Backend\Secure
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathWebSecureUseInFrontend = model.NewBool(`web/secure/use_in_frontend`)
+var PathWebSecureUseInFrontend = model.NewBool(`web/secure/use_in_frontend`, configsource.YesNo...)
 
 // PathWebSecureUseInAdminhtml => Use Secure URLs in Admin.
 // Enter https protocol to use Secure URLs in Admin.
 // BackendModel: Otnegam\Config\Model\Config\Backend\Secure
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathWebSecureUseInAdminhtml = model.NewBool(`web/secure/use_in_adminhtml`)
+var PathWebSecureUseInAdminhtml = model.NewBool(`web/secure/use_in_adminhtml`, configsource.YesNo...)
 
 // PathWebSecureEnableHsts => Enable HTTP Strict Transport Security (HSTS).
 // See HTTP Strict Transport Security page for details.
 // BackendModel: Otnegam\Config\Model\Config\Backend\Secure
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathWebSecureEnableHsts = model.NewBool(`web/secure/enable_hsts`)
+var PathWebSecureEnableHsts = model.NewBool(`web/secure/enable_hsts`, configsource.YesNo...)
 
 // PathWebSecureEnableUpgradeInsecure => Upgrade Insecure Requests.
 // See Upgrade Insecure Requests page for details.
 // BackendModel: Otnegam\Config\Model\Config\Backend\Secure
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathWebSecureEnableUpgradeInsecure = model.NewBool(`web/secure/enable_upgrade_insecure`)
+var PathWebSecureEnableUpgradeInsecure = model.NewBool(`web/secure/enable_upgrade_insecure`, configsource.YesNo...)
 
 // PathWebSecureOffloaderHeader => Offloader header.
 var PathWebSecureOffloaderHeader = model.NewStr(`web/secure/offloader_header`)
@@ -363,21 +371,21 @@ var PathWebDefaultNoRoute = model.NewStr(`web/default/no_route`)
 
 // PathWebSessionUseRemoteAddr => Validate REMOTE_ADDR.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathWebSessionUseRemoteAddr = model.NewBool(`web/session/use_remote_addr`)
+var PathWebSessionUseRemoteAddr = model.NewBool(`web/session/use_remote_addr`, configsource.YesNo...)
 
 // PathWebSessionUseHttpVia => Validate HTTP_VIA.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathWebSessionUseHttpVia = model.NewBool(`web/session/use_http_via`)
+var PathWebSessionUseHttpVia = model.NewBool(`web/session/use_http_via`, configsource.YesNo...)
 
 // PathWebSessionUseHttpXForwardedFor => Validate HTTP_X_FORWARDED_FOR.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathWebSessionUseHttpXForwardedFor = model.NewBool(`web/session/use_http_x_forwarded_for`)
+var PathWebSessionUseHttpXForwardedFor = model.NewBool(`web/session/use_http_x_forwarded_for`, configsource.YesNo...)
 
 // PathWebSessionUseHttpUserAgent => Validate HTTP_USER_AGENT.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathWebSessionUseHttpUserAgent = model.NewBool(`web/session/use_http_user_agent`)
+var PathWebSessionUseHttpUserAgent = model.NewBool(`web/session/use_http_user_agent`, configsource.YesNo...)
 
 // PathWebSessionUseFrontendSid => Use SID on Storefront.
 // Allows customers to stay logged in when switching between different stores.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathWebSessionUseFrontendSid = model.NewBool(`web/session/use_frontend_sid`)
+var PathWebSessionUseFrontendSid = model.NewBool(`web/session/use_frontend_sid`, configsource.YesNo...)

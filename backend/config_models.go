@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store
+package backend
 
 import (
 	"fmt"
@@ -31,16 +31,17 @@ type ConfigRedirectToBase struct {
 }
 
 // NewConfigRedirectToBase creates a new type.
-func NewConfigRedirectToBase(path string) ConfigRedirectToBase {
+func NewConfigRedirectToBase(path string, opts ...model.Option) ConfigRedirectToBase {
 	return ConfigRedirectToBase{
 		Int: model.NewInt(
 			path,
-			valuelabel.NewByInt(valuelabel.Ints{
+			model.WithValueLabelByInt(valuelabel.Ints{
 				{0, "No"},
 				{1, "Yes (302 Found)"},                // old from Magento
 				{http.StatusFound, "Yes (302 Found)"}, // new correct
 				{http.StatusMovedPermanently, "Yes (301 Moved Permanently)"},
-			})...,
+			}),
+			opts...,
 		),
 	}
 }
@@ -48,8 +49,8 @@ func NewConfigRedirectToBase(path string) ConfigRedirectToBase {
 // Write writes an int value and checks if the int value is within the allowed Options.
 func (p ConfigRedirectToBase) Write(w config.Writer, v int, s scope.Scope, id int64) error {
 
-	if false == p.vl.ContainsKeyInt(v) {
-		return fmt.Errorf("Cannot find %d in list %#v")
+	if false == p.ValueLabel.ContainsValInt(v) {
+		return fmt.Errorf("Cannot find %d in list %#v", v, p.ValueLabel)
 	}
 
 	return p.Int.Write(w, v, s, id)
