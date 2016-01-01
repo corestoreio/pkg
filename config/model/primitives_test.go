@@ -150,21 +150,22 @@ var packageConfiguration = element.MustNewConfiguration(
 
 func TestBool(t *testing.T) {
 
-	wantPath := scope.StrStores.FQPathInt64(3, "web/cors/allow_credentials")
-	b := model.NewBool("web/cors/allow_credentials", configsource.YesNo...)
+	wantPath := scope.StrWebsites.FQPathInt64(3, "web/cors/allow_credentials")
+	b := model.NewBool("web/cors/allow_credentials", model.WithPkgcfg(packageConfiguration), model.WithValueLabel(configsource.YesNo))
 
 	assert.Exactly(t, configsource.YesNo, b.Options())
 	// because default value in packageConfiguration is "true"
-	assert.True(t, b.Get(packageConfiguration, config.NewMockGetter().NewScoped(0, 0, 0)))
+	assert.True(t, b.Get(config.NewMockGetter().NewScoped(0, 0, 0)))
 
-	assert.False(t, b.Get(packageConfiguration, config.NewMockGetter(
+	assert.False(t, b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
 			wantPath: 0,
 		}),
 	).NewScoped(0, 0, 3)))
 
 	mw := &config.MockWrite{}
-	assert.NoError(t, b.Write(mw, true, scope.StoreID, 3))
+	assert.EqualError(t, b.Write(mw, true, scope.StoreID, 3), "Scope permission insufficient: Have 'Store'; Want 'Default,Website'")
+	assert.NoError(t, b.Write(mw, true, scope.WebsiteID, 3))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 	assert.Exactly(t, "true", mw.ArgValue.(string))
 }
@@ -172,13 +173,13 @@ func TestBool(t *testing.T) {
 func TestStr(t *testing.T) {
 
 	wantPath := scope.StrDefault.FQPathInt64(0, "web/cors/exposed_headers")
-	b := model.NewStr("web/cors/exposed_headers")
+	b := model.NewStr("web/cors/exposed_headers", model.WithPkgcfg(packageConfiguration))
 
 	assert.Empty(t, b.Options())
 
-	assert.Exactly(t, "Content-Type,X-CoreStore-ID", b.Get(packageConfiguration, config.NewMockGetter().NewScoped(0, 0, 0)))
+	assert.Exactly(t, "Content-Type,X-CoreStore-ID", b.Get(config.NewMockGetter().NewScoped(0, 0, 0)))
 
-	assert.Exactly(t, "X-Gopher", b.Get(packageConfiguration, config.NewMockGetter(
+	assert.Exactly(t, "X-Gopher", b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
 			wantPath: "X-Gopher",
 		}),
@@ -193,13 +194,13 @@ func TestStr(t *testing.T) {
 func TestInt(t *testing.T) {
 
 	wantPath := scope.StrWebsites.FQPathInt64(10, "web/cors/int")
-	b := model.NewInt("web/cors/int")
+	b := model.NewInt("web/cors/int", model.WithPkgcfg(packageConfiguration))
 
 	assert.Empty(t, b.Options())
 
-	assert.Exactly(t, 2015, b.Get(packageConfiguration, config.NewMockGetter().NewScoped(0, 0, 0)))
+	assert.Exactly(t, 2015, b.Get(config.NewMockGetter().NewScoped(0, 0, 0)))
 
-	assert.Exactly(t, 2016, b.Get(packageConfiguration, config.NewMockGetter(
+	assert.Exactly(t, 2016, b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
 			wantPath: 2016,
 		}),
@@ -213,13 +214,13 @@ func TestInt(t *testing.T) {
 
 func TestFloat64(t *testing.T) {
 	wantPath := scope.StrWebsites.FQPathInt64(10, "web/cors/float64")
-	b := model.NewFloat64("web/cors/float64")
+	b := model.NewFloat64("web/cors/float64", model.WithPkgcfg(packageConfiguration))
 
 	assert.Empty(t, b.Options())
 
-	assert.Exactly(t, 2015.1000001, b.Get(packageConfiguration, config.NewMockGetter().NewScoped(0, 0, 0)))
+	assert.Exactly(t, 2015.1000001, b.Get(config.NewMockGetter().NewScoped(0, 0, 0)))
 
-	assert.Exactly(t, 2016.1000001, b.Get(packageConfiguration, config.NewMockGetter(
+	assert.Exactly(t, 2016.1000001, b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
 			wantPath: 2016.1000001,
 		}),

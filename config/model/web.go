@@ -16,7 +16,6 @@ package model
 
 import (
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
@@ -24,16 +23,16 @@ import (
 type BaseURL struct{ Str }
 
 // NewBaseURL creates a new BaseURL with validation checks when writing values.
-func NewBaseURL(path string) BaseURL {
-	return BaseURL{Str: NewStr(path)}
+func NewBaseURL(path string, opts ...Option) BaseURL {
+	return BaseURL{Str: NewStr(path, opts...)}
 }
 
 // Get returns a base URL
-func (p BaseURL) Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) string {
-	return p.Str.Get(pkgCfg, sg)
+func (p BaseURL) Get(sg config.ScopedGetter) string {
+	return p.Str.Get(sg)
 }
 
-// Write writes a new base URL and validates it before saving.
+// Write writes a new base URL and validates it before saving. @TODO
 func (p BaseURL) Write(w config.Writer, v string, s scope.Scope, id int64) error {
 	// todo URL checks app/code/Magento/Config/Model/Config/Backend/Baseurl.php
 	return p.Str.Write(w, v, s, id)

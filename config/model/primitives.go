@@ -18,8 +18,6 @@ import (
 	"strconv"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
@@ -29,16 +27,16 @@ type Bool struct {
 }
 
 // NewBool creates a new Bool model with a given path.
-func NewBool(path string, vlPairs ...valuelabel.Pair) Bool {
+func NewBool(path string, opts ...Option) Bool {
 	return Bool{
-		basePath: NewPath(path, vlPairs...),
+		basePath: NewPath(path, opts...),
 	}
 }
 
 // Get returns a bool value.
-func (p Bool) Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v bool) {
+func (p Bool) Get(sg config.ScopedGetter) (v bool) {
 	var err error
-	if v, err = p.lookupBool(pkgCfg, sg); err != nil && PkgLog.IsDebug() {
+	if v, err = p.lookupBool(sg); err != nil && PkgLog.IsDebug() {
 		PkgLog.Debug("model.Bool.Get.lookupBool", "err", err, "path", p.string)
 	}
 	return
@@ -55,14 +53,14 @@ func (p Bool) Write(w config.Writer, v bool, s scope.Scope, id int64) error {
 type Str struct{ basePath }
 
 // NewStr creates a new Str model with a given path.
-func NewStr(path string, vlPairs ...valuelabel.Pair) Str {
-	return Str{basePath: NewPath(path, vlPairs...)}
+func NewStr(path string, opts ...Option) Str {
+	return Str{basePath: NewPath(path, opts...)}
 }
 
 // Get returns a string value
-func (p Str) Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v string) {
+func (p Str) Get(sg config.ScopedGetter) (v string) {
 	var err error
-	if v, err = p.lookupString(pkgCfg, sg); err != nil && PkgLog.IsDebug() {
+	if v, err = p.lookupString(sg); err != nil && PkgLog.IsDebug() {
 		PkgLog.Debug("model.Str.Get.lookupString", "err", err, "path", p.string)
 	}
 	return
@@ -77,14 +75,14 @@ func (p Str) Write(w config.Writer, v string, s scope.Scope, id int64) error {
 type Int struct{ basePath }
 
 // NewInt creates a new Int model with a given path.
-func NewInt(path string, vlPairs ...valuelabel.Pair) Int {
-	return Int{basePath: NewPath(path, vlPairs...)}
+func NewInt(path string, opts ...Option) Int {
+	return Int{basePath: NewPath(path, opts...)}
 }
 
 // Get returns an int value.
-func (p Int) Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v int) {
+func (p Int) Get(sg config.ScopedGetter) (v int) {
 	var err error
-	if v, err = p.lookupInt(pkgCfg, sg); err != nil && PkgLog.IsDebug() {
+	if v, err = p.lookupInt(sg); err != nil && PkgLog.IsDebug() {
 		PkgLog.Debug("model.Int.Get.lookupInt", "err", err, "path", p.string)
 	}
 	return
@@ -99,14 +97,14 @@ func (p Int) Write(w config.Writer, v int, s scope.Scope, id int64) error {
 type Float64 struct{ basePath }
 
 // NewFloat64 creates a new Float64 model with a given path.
-func NewFloat64(path string, vlPairs ...valuelabel.Pair) Float64 {
-	return Float64{basePath: NewPath(path, vlPairs...)}
+func NewFloat64(path string, opts ...Option) Float64 {
+	return Float64{basePath: NewPath(path, opts...)}
 }
 
 // Get returns a float64 value.
-func (p Float64) Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v float64) {
+func (p Float64) Get(sg config.ScopedGetter) (v float64) {
 	var err error
-	if v, err = p.lookupFloat64(pkgCfg, sg); err != nil && PkgLog.IsDebug() {
+	if v, err = p.lookupFloat64(sg); err != nil && PkgLog.IsDebug() {
 		PkgLog.Debug("model.Float64.Get.lookupFloat64", "err", err, "path", p.string)
 	}
 	return

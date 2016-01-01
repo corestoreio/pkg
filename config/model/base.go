@@ -30,10 +30,68 @@ type SourceModeller interface {
 
 var _ SourceModeller = (*basePath)(nil)
 
+// Option as an optional argument for the New*() functions.
+type Option func(*basePath)
+
+// WithPkgcfg sets the global PackageConfiguration for retrieving the default
+// value of a underlying type and for scope permission checking.
+func WithPkgcfg(pkgcfg element.SectionSlice) Option {
+	return func(b *basePath) {
+		b.PkgCfg = pkgcfg
+	}
+}
+
+// WithField creates a new SectionSlice and GroupSlice containing this one field.
+// The field.ID gets overwritten by the 3rd path parts to match the path.
+func WithField(f *element.Field) Option {
+	return func(b *basePath) {
+		pp := scope.PathSplit(b.string)
+		f.ID = pp[2]
+		b.PkgCfg = element.MustNewConfiguration(
+			&element.Section{
+				ID: pp[0],
+				Groups: element.NewGroupSlice(
+					&element.Group{
+						ID:     pp[1],
+						Fields: element.NewFieldSlice(f),
+					},
+				),
+			},
+		)
+	}
+}
+
+// WithValueLabel sets a valuelabel slice for Options() and validation.
+func WithValueLabel(vl valuelabel.Slice) Option {
+	return func(b *basePath) {
+		b.ValueLabel = vl
+	}
+}
+
+// WithValueLabelByString sets a valuelabel slice for Options() and validation.
+// Wrapper for valuelabel.NewByString
+func WithValueLabelByString(pairs ...string) Option {
+	return func(b *basePath) {
+		b.ValueLabel = valuelabel.NewByString(pairs...)
+	}
+}
+
+// WithValueLabelByInt sets a valuelabel slice for Options() and validation.
+// Wrapper for valuelabel.NewByInt
+func WithValueLabelByInt(vli valuelabel.Ints) Option {
+	return func(b *basePath) {
+		b.ValueLabel = valuelabel.NewByInt(vli)
+	}
+}
+
 // basePath defines the path in the "core_config_data" table like a/b/c. All other
 // types in this package inherits from this path type.
 type basePath struct {
 	string // contains the path
+
+	// PkgCfg as in Package Configuration which is used for scope permission
+	// checks and retrieving the default value. A nil PkgCfg gets ignored.
+	PkgCfg element.SectionSlice
 
 	// ValueLabel are all available options aka SourceModel in Magento slang.
 	// This slice is also used for validation to get and write the correct values.
@@ -42,17 +100,29 @@ type basePath struct {
 	ValueLabel valuelabel.Slice
 }
 
-// NewPath creates a new basePath type optional value label Pair
-func NewPath(path string, vlPairs ...valuelabel.Pair) basePath {
-	return basePath{
-		string:     path,
-		ValueLabel: valuelabel.Slice(vlPairs),
+// NewPath creates a new basePath type
+func NewPath(path string, opts ...Option) basePath {
+	b := basePath{
+		string: path,
 	}
+	for _, o := range opts {
+		o(&b)
+	}
+	return b
 }
 
 // Write writes a value v to the config.Writer without checking if the value
-// has changed.
+// has changed. Checks if the Scope matches as defined in the non-nil PkgCfg.
 func (p basePath) Write(w config.Writer, v interface{}, s scope.Scope, id int64) error {
+	if p.PkgCfg != nil {
+		f, err := p.PkgCfg.FindFieldByPath(p.string)
+		if err != nil {
+			return errgo.Mask(err)
+		}
+		if false == f.Scope.Has(s) {
+			return errgo.Newf("Scope permission insufficient: Have '%s'; Want '%s'", s, f.Scope)
+		}
+	}
 	return w.Write(config.Path(p.string), config.Value(v), config.Scope(s, id))
 }
 
@@ -61,11 +131,10 @@ func (p basePath) String() string {
 	return p.string
 }
 
-// InScope checks if a field from a path is allowed for current ScopedGetter.
-func (p basePath) InScope(f *element.Field, sg config.ScopedGetter) (err error) {
-	if s, _ := sg.Scope(); false == f.Scope.Has(s) {
-		err = errgo.Newf("Scope permission insufficient: Have '%s'; Want '%s'", s, f.Scope)
-	}
+// InScope checks if a field from a path is allowed for current scope.
+// Returns nil on success.
+func (p basePath) InScope(sg scope.Scoper) (err error) {
+	_, err = p.field(sg)
 	return
 }
 
@@ -88,21 +157,25 @@ func (p basePath) FQPathInt64(strScope scope.StrScope, scopeID int64) string {
 
 // field searches for the field in a SectionSlice and checks if the scope in
 // ScopedGetter is sufficient.
-func (p basePath) field(pkgCfg element.SectionSlice, sg config.ScopedGetter) (field *element.Field, err error) {
-	if field, err = pkgCfg.FindFieldByPath(p.string); err != nil {
-		return
+func (p basePath) field(sg scope.Scoper) (f *element.Field, err error) {
+	f, err = p.PkgCfg.FindFieldByPath(p.string)
+	if err != nil {
+		return nil, errgo.Mask(err)
 	}
-	err = p.InScope(field, sg)
+	s, _ := sg.Scope()
+	if false == f.Scope.Has(s) {
+		return nil, errgo.Newf("Scope permission insufficient: Have '%s'; Want '%s'", s, f.Scope)
+	}
 	return
 }
 
 // lookupString searches the default value in element.SectionSlice and overwrites
 // it with a value from ScopedGetter if ScopedGetter is not empty.
 // validator can be nil which triggers the default validation method.
-func (p basePath) lookupString(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v string, err error) {
+func (p basePath) lookupString(sg config.ScopedGetter) (v string, err error) {
 
 	var f *element.Field
-	if f, err = p.field(pkgCfg, sg); err != nil {
+	if f, err = p.field(sg); err != nil {
 		return
 	}
 
@@ -124,17 +197,17 @@ func (p basePath) lookupString(pkgCfg element.SectionSlice, sg config.ScopedGett
 }
 
 func (p basePath) validateString(v string) (err error) {
-	if len(p.ValueLabel) > 0 && false == p.ValueLabel.ContainsValString(v) {
+	if p.ValueLabel != nil && false == p.ValueLabel.ContainsValString(v) {
 		jv, jErr := p.ValueLabel.ToJSON()
 		err = errgo.Newf("The value '%s' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
 	}
 	return
 }
 
-func (p basePath) lookupInt(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v int, err error) {
+func (p basePath) lookupInt(sg config.ScopedGetter) (v int, err error) {
 
 	var f *element.Field
-	if f, err = p.field(pkgCfg, sg); err != nil {
+	if f, err = p.field(sg); err != nil {
 		return
 	}
 
@@ -156,17 +229,17 @@ func (p basePath) lookupInt(pkgCfg element.SectionSlice, sg config.ScopedGetter)
 }
 
 func (p basePath) validateInt(v int) (err error) {
-	if len(p.ValueLabel) > 0 && false == p.ValueLabel.ContainsValInt(v) {
+	if p.ValueLabel != nil && false == p.ValueLabel.ContainsValInt(v) {
 		jv, jErr := p.ValueLabel.ToJSON()
 		err = errgo.Newf("The value '%d' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
 	}
 	return
 }
 
-func (p basePath) lookupFloat64(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v float64, err error) {
+func (p basePath) lookupFloat64(sg config.ScopedGetter) (v float64, err error) {
 
 	var f *element.Field
-	if f, err = p.field(pkgCfg, sg); err != nil {
+	if f, err = p.field(sg); err != nil {
 		return
 	}
 
@@ -188,17 +261,17 @@ func (p basePath) lookupFloat64(pkgCfg element.SectionSlice, sg config.ScopedGet
 }
 
 func (p basePath) validateFloat64(v float64) (err error) {
-	if len(p.ValueLabel) > 0 && false == p.ValueLabel.ContainsValFloat64(v) {
+	if p.ValueLabel != nil && false == p.ValueLabel.ContainsValFloat64(v) {
 		jv, jErr := p.ValueLabel.ToJSON()
 		err = errgo.Newf("The value '%.14f' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
 	}
 	return
 }
 
-func (p basePath) lookupBool(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v bool, err error) {
+func (p basePath) lookupBool(sg config.ScopedGetter) (v bool, err error) {
 
 	var f *element.Field
-	if f, err = p.field(pkgCfg, sg); err != nil {
+	if f, err = p.field(sg); err != nil {
 		return
 	}
 

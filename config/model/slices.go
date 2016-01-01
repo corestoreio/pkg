@@ -19,8 +19,6 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/juju/errgo"
@@ -34,14 +32,13 @@ const CSVSeparator = ","
 type StringCSV struct{ basePath }
 
 // NewStringCSV creates a new CSV string type. Acts as a multiselect.
-func NewStringCSV(path string, vlPairs ...valuelabel.Pair) StringCSV {
-	return StringCSV{basePath: NewPath(path, vlPairs...)}
+func NewStringCSV(path string, opts ...Option) StringCSV {
+	return StringCSV{basePath: NewPath(path, opts...)}
 }
 
-// Get returns a slice from the 1. default field of a element.SectionSlice
-// or 2. from the config.ScopedGetter.
-func (p StringCSV) Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) []string {
-	s, err := p.lookupString(pkgCfg, sg)
+// Get returns a string slice
+func (p StringCSV) Get(sg config.ScopedGetter) []string {
+	s, err := p.lookupString(sg)
 	if err != nil && PkgLog.IsDebug() {
 		PkgLog.Debug("model.StringCSV.Get.lookupString", "err", err, "path", p.string)
 	}
@@ -67,12 +64,12 @@ func (p StringCSV) Write(w config.Writer, sl []string, s scope.Scope, id int64) 
 type IntCSV struct{ basePath }
 
 // NewIntCSV creates a new int CSV type. Acts as a multiselect.
-func NewIntCSV(path string, vlPairs ...valuelabel.Pair) IntCSV {
-	return IntCSV{basePath: NewPath(path, vlPairs...)}
+func NewIntCSV(path string, opts ...Option) IntCSV {
+	return IntCSV{basePath: NewPath(path, opts...)}
 }
 
-func (p IntCSV) Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) []int {
-	s, err := p.lookupString(pkgCfg, sg)
+func (p IntCSV) Get(sg config.ScopedGetter) []int {
+	s, err := p.lookupString(sg)
 	if err != nil && PkgLog.IsDebug() {
 		PkgLog.Debug("model.IntCSV.Get.lookupString", "err", err, "path", p.string)
 	}

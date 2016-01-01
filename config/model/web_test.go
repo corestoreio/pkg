@@ -26,13 +26,13 @@ import (
 func TestBaseURL(t *testing.T) {
 
 	wantPath := scope.StrStores.FQPathInt64(1, "web/unsecure/base_url")
-	b := model.NewBaseURL("web/unsecure/base_url")
+	b := model.NewBaseURL("web/unsecure/base_url", model.WithPkgcfg(packageConfiguration))
 
 	assert.Empty(t, b.Options())
 
-	assert.Exactly(t, "{{base_url}}", b.Get(packageConfiguration, config.NewMockGetter().NewScoped(0, 0, 1)))
+	assert.Exactly(t, "{{base_url}}", b.Get(config.NewMockGetter().NewScoped(0, 0, 1)))
 
-	assert.Exactly(t, "http://cs.io", b.Get(packageConfiguration, config.NewMockGetter(
+	assert.Exactly(t, "http://cs.io", b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
 			wantPath: "http://cs.io",
 		}),

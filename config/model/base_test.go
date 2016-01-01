@@ -81,8 +81,9 @@ var packageConfiguration = element.MustNewConfiguration(
 )
 
 func TestBasePathString(t *testing.T) {
-	p1 := NewPath("web/cors/exposed_headers")
-	assert.Exactly(t, "web/cors/exposed_headers", p1.String())
+	const path = "web/cors/exposed_headers"
+	p1 := NewPath(path, WithPkgcfg(packageConfiguration))
+	assert.Exactly(t, path, p1.String())
 
 	wantPath := scope.StrWebsites.FQPathInt64(2, "web/cors/exposed_headers")
 	wantWebsiteID := int64(2) // This number 2 is usually stored in core_website/store_website table in column website_id
@@ -93,7 +94,7 @@ func TestBasePathString(t *testing.T) {
 	assert.Exactly(t, 314159, mw.ArgValue.(int))
 
 	sg := config.NewMockGetter().NewScoped(wantWebsiteID, 0, 0)
-	defaultStr, err := p1.lookupString(packageConfiguration, sg)
+	defaultStr, err := p1.lookupString(sg)
 	assert.NoError(t, err)
 	assert.Exactly(t, "Content-Type,X-CoreStore-ID", defaultStr)
 
@@ -103,10 +104,18 @@ func TestBasePathString(t *testing.T) {
 		}),
 	).NewScoped(wantWebsiteID, 0, 0)
 
-	customStr, err := p1.lookupString(packageConfiguration, sg)
+	customStr, err := p1.lookupString(sg)
 	assert.NoError(t, err)
 	assert.Exactly(t, "X-CoreStore-TOKEN", customStr)
 
+	// now change a default value in the packageConfiguration and see it reflects to p1
+	f, err := packageConfiguration.FindFieldByPath(path)
+	assert.NoError(t, err)
+	f.Default = "Content-Size,Y-CoreStore-ID"
+
+	ws, err := p1.lookupString(config.NewMockGetter().NewScoped(wantWebsiteID, 0, 0))
+	assert.NoError(t, err)
+	assert.Exactly(t, "Content-Size,Y-CoreStore-ID", ws)
 }
 
 func TestBasePathInScope(t *testing.T) {
@@ -133,10 +142,10 @@ func TestBasePathInScope(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		p1 := NewPath("a/b/c")
-		haveErr := p1.InScope(&element.Field{
+		p1 := NewPath("a/b/c", WithField(&element.Field{
 			Scope: test.p,
-		}, test.sg)
+		}))
+		haveErr := p1.InScope(test.sg)
 
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error())

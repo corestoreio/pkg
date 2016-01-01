@@ -29,14 +29,17 @@ func TestStringCSV(t *testing.T) {
 	wantPath := scope.StrDefault.FQPathInt64(0, "web/cors/exposed_headers")
 	b := model.NewStringCSV(
 		"web/cors/exposed_headers",
-		valuelabel.NewByString("Content-Type", "Content Type", "X-CoreStore-ID", "CoreStore Microservice ID")...,
+		model.WithPkgcfg(packageConfiguration),
+		model.WithValueLabelByString(
+			"Content-Type", "Content Type", "X-CoreStore-ID", "CoreStore Microservice ID",
+		),
 	)
 
 	assert.NotEmpty(t, b.Options())
 
-	assert.Exactly(t, []string{"Content-Type", "X-CoreStore-ID"}, b.Get(packageConfiguration, config.NewMockGetter().NewScoped(0, 0, 0)))
+	assert.Exactly(t, []string{"Content-Type", "X-CoreStore-ID"}, b.Get(config.NewMockGetter().NewScoped(0, 0, 0)))
 
-	assert.Exactly(t, []string{"Content-Application", "X-Gopher"}, b.Get(packageConfiguration, config.NewMockGetter(
+	assert.Exactly(t, []string{"Content-Application", "X-Gopher"}, b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
 			wantPath: "Content-Application,X-Gopher",
 		}),
@@ -56,21 +59,22 @@ func TestIntCSV(t *testing.T) {
 
 	b := model.NewIntCSV(
 		"web/cors/int_slice",
-		valuelabel.NewByInt(valuelabel.Ints{
+		model.WithPkgcfg(packageConfiguration),
+		model.WithValueLabelByInt(valuelabel.Ints{
 			{2014, "Year 2014"},
 			{2015, "Year 2015"},
 			{2016, "Year 2016"},
 			{2017, "Year 2017"},
-		})...,
+		}),
 	)
 
 	assert.Len(t, b.Options(), 4)
 
-	assert.Exactly(t, []int{2014, 2015, 2016}, b.Get(packageConfiguration, config.NewMockGetter().NewScoped(0, 0, 4)))
+	assert.Exactly(t, []int{2014, 2015, 2016}, b.Get(config.NewMockGetter().NewScoped(0, 0, 4)))
 	assert.Exactly(t, "web/cors/int_slice", b.String())
 
 	wantPath := scope.StrStores.FQPathInt64(4, "web/cors/int_slice")
-	assert.Exactly(t, []int{}, b.Get(packageConfiguration, config.NewMockGetter(
+	assert.Exactly(t, []int{}, b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
 			wantPath: "3015,3016",
 		}),
@@ -79,7 +83,7 @@ func TestIntCSV(t *testing.T) {
 	assert.Contains(t, debugLogBuf.String(), "The value '3015' cannot be found within the allowed Options")
 	assert.Contains(t, debugLogBuf.String(), "The value '3016' cannot be found within the allowed Options")
 
-	assert.Exactly(t, []int{2015, 2017}, b.Get(packageConfiguration, config.NewMockGetter(
+	assert.Exactly(t, []int{2015, 2017}, b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
 			wantPath: "2015,2017",
 		}),
