@@ -31,20 +31,25 @@ type SourceModeller interface {
 var _ SourceModeller = (*basePath)(nil)
 
 // Option as an optional argument for the New*() functions.
-type Option func(*basePath)
+// To read more about the recursion pattern:
+// http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
+type Option func(*basePath) Option
 
 // WithPkgCfg sets a global PackageConfiguration for retrieving the default
 // value of a underlying type and for scope permission checking.
 func WithPkgCfg(pkgcfg element.SectionSlice) Option {
-	return func(b *basePath) {
+	return func(b *basePath) Option {
+		prev := b.PkgCfg
 		b.PkgCfg = pkgcfg
+		return WithPkgCfg(prev)
 	}
 }
 
 // WithField creates a new SectionSlice and GroupSlice containing this one field.
 // The field.ID gets overwritten by the 3rd path parts to match the path.
 func WithField(f *element.Field) Option {
-	return func(b *basePath) {
+	return func(b *basePath) Option {
+		prev := b.PkgCfg
 		pp := scope.PathSplit(b.string)
 		f.ID = pp[2]
 		b.PkgCfg = element.MustNewConfiguration(
@@ -58,29 +63,36 @@ func WithField(f *element.Field) Option {
 				),
 			},
 		)
+		return WithPkgCfg(prev)
 	}
 }
 
 // WithValueLabel sets a valuelabel slice for Options() and validation.
 func WithValueLabel(vl valuelabel.Slice) Option {
-	return func(b *basePath) {
+	return func(b *basePath) Option {
+		prev := b.ValueLabel
 		b.ValueLabel = vl
+		return WithValueLabel(prev)
 	}
 }
 
 // WithValueLabelByString sets a valuelabel slice for Options() and validation.
 // Wrapper for valuelabel.NewByString
 func WithValueLabelByString(pairs ...string) Option {
-	return func(b *basePath) {
+	return func(b *basePath) Option {
+		prev := b.ValueLabel
 		b.ValueLabel = valuelabel.NewByString(pairs...)
+		return WithValueLabel(prev)
 	}
 }
 
 // WithValueLabelByInt sets a valuelabel slice for Options() and validation.
 // Wrapper for valuelabel.NewByInt
 func WithValueLabelByInt(vli valuelabel.Ints) Option {
-	return func(b *basePath) {
+	return func(b *basePath) Option {
+		prev := b.ValueLabel
 		b.ValueLabel = valuelabel.NewByInt(vli)
+		return WithValueLabel(prev)
 	}
 }
 
@@ -105,10 +117,16 @@ func NewPath(path string, opts ...Option) basePath {
 	b := basePath{
 		string: path,
 	}
-	for _, o := range opts {
-		o(&b)
-	}
+	(&b).Option(opts...)
 	return b
+}
+
+// Option sets the options and returns the last set previous option
+func (p *basePath) Option(opts ...Option) (previous Option) {
+	for _, o := range opts {
+		previous = o(p)
+	}
+	return
 }
 
 // Write writes a value v to the config.Writer without checking if the value
