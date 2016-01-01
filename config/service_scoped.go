@@ -16,8 +16,7 @@ import (
 // or it can consists of 3 path parts like "a", "b", "c". All other arguments
 // are invalid. Returned error is mostly of ErrKeyNotFound.
 type ScopedGetter interface {
-	// Scope tells you the current underlying scope and its website, group or store ID
-	Scope() (scope.Scope, int64)
+	scope.Scoper
 	String(paths ...string) (string, error)
 	Bool(paths ...string) (bool, error)
 	Float64(paths ...string) (float64, error)
