@@ -36,6 +36,13 @@ const (
 	StoreID
 )
 
+// Scoper specifies how to return the scope to which an ID belongs to.
+// ID is one of a website, group or store ID as definied in their database tables.
+// config.ScopedGetter implements Scoper.
+type Scoper interface {
+	Scope() (Scope, int64)
+}
+
 // Interfaces for different scopes. Note that WebsiteIDer may have an underlying
 // WebsiteCoder interface
 type (
