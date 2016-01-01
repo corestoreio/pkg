@@ -27,29 +27,29 @@ import (
 // ErrGroupNotFound error when a group cannot be found
 var ErrGroupNotFound = errors.New("Group not found")
 
-type (
+// GroupSlice contains a set of Groups.
+//  Thread safe for reading but not for modifying.
+type GroupSlice []*Group
 
-	// GroupSlice contains a set of Groups
-	GroupSlice []*Group
-	// Group defines the layout of a group containing multiple Fields
-	Group struct {
-		// ID unique ID and merged with others. 2nd part of the path.
-		ID      string
-		Label   string   `json:",omitempty"`
-		Comment LongText `json:",omitempty"`
-		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
-		Scope     scope.Perm `json:",omitempty"`
-		SortOrder int        `json:",omitempty"`
+// Group defines the layout of a group containing multiple Fields
+//  Thread safe for reading but not for modifying.
+type Group struct {
+	// ID unique ID and merged with others. 2nd part of the path.
+	ID      string
+	Label   string   `json:",omitempty"`
+	Comment LongText `json:",omitempty"`
+	// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
+	Scope     scope.Perm `json:",omitempty"`
+	SortOrder int        `json:",omitempty"`
 
-		HelpURL               LongText `json:",omitempty"`
-		MoreURL               LongText `json:",omitempty"`
-		DemoLink              LongText `json:",omitempty"`
-		HideInSingleStoreMode bool     `json:",omitempty"`
+	HelpURL               LongText `json:",omitempty"`
+	MoreURL               LongText `json:",omitempty"`
+	DemoLink              LongText `json:",omitempty"`
+	HideInSingleStoreMode bool     `json:",omitempty"`
 
-		Fields FieldSlice
-		// Groups     GroupSlice @todo see recursive options <xs:element name="group"> in app/code/Magento/Config/etc/system_file.xsd
-	}
-)
+	Fields FieldSlice
+	// Groups     GroupSlice @todo see recursive options <xs:element name="group"> in app/code/Magento/Config/etc/system_file.xsd
+}
 
 // NewGroupSlice wrapper function, for now.
 func NewGroupSlice(gs ...*Group) GroupSlice {
@@ -66,14 +66,14 @@ func (gs GroupSlice) FindByID(id string) (*Group, error) {
 	return nil, ErrGroupNotFound
 }
 
-// Append adds *Group (variadic) to the GroupSlice
+// Append adds *Group (variadic) to the GroupSlice. Not thread safe.
 func (gs *GroupSlice) Append(g ...*Group) *GroupSlice {
 	*gs = append(*gs, g...)
 	return gs
 }
 
 // Merge copies the data from a groups into this slice. Appends if ID is not found
-// in this slice otherwise overrides struct fields if not empty.
+// in this slice otherwise overrides struct fields if not empty. Not thread safe.
 func (gs *GroupSlice) Merge(groups ...*Group) error {
 	for _, g := range groups {
 		if err := (*gs).merge(g); err != nil {
@@ -118,7 +118,7 @@ func (gs GroupSlice) ToJSON() string {
 	return buf.String()
 }
 
-// Sort convenience helper
+// Sort convenience helper. Not thread safe.
 func (gs *GroupSlice) Sort() *GroupSlice {
 	sort.Sort(gs)
 	return gs

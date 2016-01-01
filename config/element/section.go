@@ -28,24 +28,24 @@ import (
 // ErrSectionNotFound error when a section cannot be found.
 var ErrSectionNotFound = errors.New("Section not found")
 
-type (
-	// SectionSlice contains a set of Sections. Some nifty helper functions
-	// exists. Thread safe for reading. A section slice can be used in many
-	// goroutines. It must remain lock-free.
-	SectionSlice []*Section
-	// Section defines the layout for the configuration section which contains groups and fields.
-	Section struct {
-		// ID unique ID and merged with others. 1st part of the path.
-		ID    string
-		Label string `json:",omitempty"`
-		// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
-		Scope     scope.Perm `json:",omitempty"`
-		SortOrder int        `json:",omitempty"`
-		// Resource some kind of ACL if someone is allowed for no,read or write access @todo
-		Resource uint `json:",omitempty"`
-		Groups   GroupSlice
-	}
-)
+// SectionSlice contains a set of Sections. Some nifty helper functions
+// exists. Thread safe for reading. A section slice can be used in many
+// goroutines. It must remain lock-free.
+type SectionSlice []*Section
+
+// Section defines the layout for the configuration section which contains
+// groups and fields. Thread safe for reading but not for modifying.
+type Section struct {
+	// ID unique ID and merged with others. 1st part of the path.
+	ID    string
+	Label string `json:",omitempty"`
+	// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
+	Scope     scope.Perm `json:",omitempty"`
+	SortOrder int        `json:",omitempty"`
+	// Resource some kind of ACL if someone is allowed for no,read or write access @todo
+	Resource uint `json:",omitempty"`
+	Groups   GroupSlice
+}
 
 var _ Sectioner = (*SectionSlice)(nil)
 
@@ -127,7 +127,8 @@ func (ss SectionSlice) TotalFields() int {
 	return -^+^-fs
 }
 
-// MergeMultiple merges n SectionSlices into the current slice. Behaviour for duplicates: Last item wins.
+// MergeMultiple merges n SectionSlices into the current slice. Behaviour for
+// duplicates: Last item wins. Not thread safe.
 func (ss *SectionSlice) MergeMultiple(sSlices ...SectionSlice) error {
 	for _, sl := range sSlices {
 		if err := (*ss).Merge(sl...); err != nil {
@@ -137,7 +138,8 @@ func (ss *SectionSlice) MergeMultiple(sSlices ...SectionSlice) error {
 	return nil
 }
 
-// Merge merges n Sections into the current slice. Behaviour for duplicates: Last item wins.
+// Merge merges n Sections into the current slice. Behaviour for duplicates:
+// Last item wins. Not thread safe.
 func (ss *SectionSlice) Merge(sections ...*Section) error {
 	for _, s := range sections {
 		if s != nil {
@@ -150,7 +152,7 @@ func (ss *SectionSlice) Merge(sections ...*Section) error {
 }
 
 // Merge copies the data from a Section into this slice. Appends if ID is not found
-// in this slice otherwise overrides struct fields if not empty.
+// in this slice otherwise overrides struct fields if not empty. Not thread safe.
 func (ss *SectionSlice) merge(s *Section) error {
 	if s == nil {
 		return nil
@@ -220,14 +222,14 @@ func (ss SectionSlice) FindFieldByPath(paths ...string) (*Field, error) {
 	return cg.Fields.FindByID(paths[2])
 }
 
-// Append adds 0..n *Section
+// Append adds 0..n *Section. Not thread safe.
 func (ss *SectionSlice) Append(s ...*Section) *SectionSlice {
 	*ss = append(*ss, s...)
 	return ss
 }
 
 // AppendFields adds 0..n *Fields. Path must have at least two path parts like a/b
-// more path parts gets ignored.
+// more path parts gets ignored. Not thread safe.
 func (ss SectionSlice) AppendFields(path string, fs ...*Field) error {
 	g, err := ss.FindGroupByPath(path)
 	if err != nil {
@@ -270,7 +272,7 @@ func (ss SectionSlice) Validate() error {
 	return nil
 }
 
-// SortAll recursively sorts all slices
+// SortAll recursively sorts all slices. Not thread safe.
 func (ss *SectionSlice) SortAll() *SectionSlice {
 	for _, s := range *ss {
 		for _, g := range s.Groups {
@@ -281,7 +283,7 @@ func (ss *SectionSlice) SortAll() *SectionSlice {
 	return ss.Sort()
 }
 
-// Sort convenience helper
+// Sort convenience helper. Not thread safe.
 func (ss *SectionSlice) Sort() *SectionSlice {
 	sort.Sort(ss)
 	return ss
