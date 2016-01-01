@@ -25,6 +25,7 @@ import (
 
 	"fmt"
 
+	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/directory"
@@ -296,7 +297,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 
 // IsFrontURLSecure returns true from the config if the frontend must be secure.
 func (s *Store) IsFrontURLSecure() bool {
-	return PathSecureInFrontend.Get(PackageConfiguration, s.Config)
+	return backend.PathWebSecureUseInFrontend.Get(PackageConfiguration, s.Config)
 }
 
 // IsCurrentlySecure checks if a request for a give store aka. scope is secure. Checks

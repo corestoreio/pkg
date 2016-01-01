@@ -23,6 +23,7 @@ import (
 
 	"reflect"
 
+	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
@@ -43,10 +44,10 @@ var middlewareCtxStoreService context.Context
 func init() {
 	middlewareConfigReader = config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			scope.StrDefault.FQPathInt64(0, store.PathRedirectToBase.String()):  1,
-			scope.StrStores.FQPathInt64(1, store.PathSecureInFrontend.String()): true,
-			scope.StrStores.FQPathInt64(1, store.PathUnsecureBaseURL.String()):  "http://www.corestore.io/",
-			scope.StrStores.FQPathInt64(1, store.PathSecureBaseURL.String()):    "https://www.corestore.io/",
+			scope.StrDefault.FQPathInt64(0, backend.PathWebUrlRedirectToBase.String()):  1,
+			scope.StrStores.FQPathInt64(1, backend.PathWebSecureUseInFrontend.String()): true,
+			scope.StrStores.FQPathInt64(1, store.PathUnsecureBaseURL.String()):          "http://www.corestore.io/",
+			scope.StrStores.FQPathInt64(1, store.PathSecureBaseURL.String()):            "https://www.corestore.io/",
 		}),
 	)
 

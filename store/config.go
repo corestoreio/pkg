@@ -20,28 +20,14 @@ import (
 	"github.com/corestoreio/csfw/catalog/catconfig"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/configsource"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-// PathRedirectToBase configuration path to specify redirect codes and
-// if a redirect should happen when a different "domain" has been typed
-// in by the user. TODO: Clarify that.
-// Used in WithValidateBaseURL() middleware.
-var PathRedirectToBase = NewConfigRedirectToBase("web/url/redirect_to_base")
-
-// PathSingleStoreModeEnabled if true then single store mode enabled
-// This flag only shows that admin does not want to show certain
-// UI components in the backend (like store switchers etc)
-// If there is only one store view but it does not check the store view collection. WTF?
-var PathSingleStoreModeEnabled = model.NewBool("general/single_store_mode/enabled", configsource.YesNo...)
-
-// PathSecureInFrontend enables or disables secure URLs on the Storefront.
-var PathSecureInFrontend = model.NewBool("web/secure/use_in_frontend", configsource.YesNo...)
-
 // PathStoreCodeInURL if yes the ___store variable will be added to the URL. TODO.
-var PathStoreCodeInURL = model.NewBool("web/url/use_store", configsource.YesNo...)
+//var PathStoreCodeInURL = model.NewBool("web/url/use_store", )
 
 var PathUnsecureBaseURL = model.NewBaseURL("web/unsecure/base_url")
 
@@ -74,177 +60,97 @@ const (
 var TableCollection csdb.Manager
 
 // PackageConfiguration contains the main configuration
-var PackageConfiguration config.SectionSlice
+var PackageConfiguration element.SectionSlice
 
 func init() {
-	PackageConfiguration = config.MustNewConfiguration(
-		&config.Section{
-			ID:        "general",
-			Label:     "General",
-			SortOrder: 10,
-			Scope:     scope.PermAll,
+	PackageConfiguration = element.MustNewConfiguration(
 
-			Groups: config.GroupSlice{
-				&config.Group{
-					ID:        "single_store_mode",
-					Label:     `Single-Store Mode`,
-					Comment:   ``,
-					SortOrder: 150,
-					Scope:     scope.NewPerm(scope.DefaultID),
-					Fields: config.FieldSlice{
-						&config.Field{
-							// Path: `general/single_store_mode/enabled`,
-							ID:        "enabled",
-							Label:     `Enable Single-Store Mode`,
-							Comment:   `This setting will not be taken into account if system has more than one store view.`,
-							Type:      config.TypeSelect,
-							SortOrder: 10,
-							Visible:   config.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
-							Default:   nil,
-						},
-					},
-				},
-
-				&config.Group{
-					ID:        "store_information",
-					Label:     `Store Information`,
-					Comment:   ``,
-					SortOrder: 100,
-					Scope:     scope.PermAll,
-					Fields: config.FieldSlice{
-						&config.Field{
-							// Path: `general/store_information/name`,
-							ID:           "name",
-							Label:        `Store Name`,
-							Comment:      ``,
-							Type:         config.TypeText,
-							SortOrder:    10,
-							Visible:      config.VisibleYes,
-							Scope:        scope.PermAll,
-							Default:      nil,
-							BackendModel: nil,
-							// SourceModel:  nil,
-						},
-
-						&config.Field{
-							// Path: `general/store_information/phone`,
-							ID:           "phone",
-							Label:        `Store Phone Number`,
-							Comment:      ``,
-							Type:         config.TypeText,
-							SortOrder:    20,
-							Visible:      config.VisibleYes,
-							Scope:        scope.PermAll,
-							Default:      nil,
-							BackendModel: nil,
-							// SourceModel:  nil,
-						},
-					},
-				},
-			},
-		},
-
-		&config.Section{
+		&element.Section{
 			ID:        "web",
 			Label:     "Web",
 			SortOrder: 20,
 			Scope:     scope.PermAll,
-			Groups: config.GroupSlice{
-				&config.Group{
+			Groups: element.GroupSlice{
+				&element.Group{
 					ID:        "url",
 					Label:     `Url Options`,
 					Comment:   ``,
 					SortOrder: 3,
 					Scope:     scope.NewPerm(scope.DefaultID),
-					Fields: config.FieldSlice{
-						&config.Field{
+					Fields: element.FieldSlice{
+						&element.Field{
 							// Path: `web/url/use_store`,
 							ID:           "use_store",
 							Label:        `Add Store Code to Urls`,
 							Comment:      `<strong style="color:red">Warning!</strong> When using Store Code in URLs, in some cases system may not work properly if URLs without Store Codes are specified in the third party services (e.g. PayPal etc.).`,
-							Type:         config.TypeSelect,
+							Type:         element.TypeSelect,
 							SortOrder:    10,
-							Visible:      config.VisibleYes,
+							Visible:      element.VisibleYes,
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Store
 							// SourceModel:  configsource.YesNo, // Magento\Config\Model\Config\Source\Yesno
 						},
-
-						&config.Field{
-							// Path: `web/url/redirect_to_base`,
-							ID:           "redirect_to_base",
-							Label:        `Auto-redirect to Base URL`,
-							Comment:      `I.e. redirect from http://example.com/store/ to http://www.example.com/store/`,
-							Type:         config.TypeSelect,
-							SortOrder:    20,
-							Visible:      config.VisibleYes,
-							Scope:        scope.NewPerm(scope.DefaultID),
-							Default:      http.StatusMovedPermanently,
-							BackendModel: nil,
-							// SourceModel:  nil, // configsource.Redirect, // Magento\Config\Model\Config\Source\Web\Redirect
-						},
 					},
 				},
 
-				&config.Group{
+				&element.Group{
 					ID:        "unsecure",
 					Label:     `Base URLs`,
 					Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`,
 					SortOrder: 10,
 					Scope:     scope.PermAll,
-					Fields: config.FieldSlice{
-						&config.Field{
+					Fields: element.FieldSlice{
+						&element.Field{
 							// Path: `web/unsecure/base_url`,
 							ID:           "base_url",
 							Label:        `Base URL`,
 							Comment:      `Specify URL or {{base_url}} placeholder.`,
-							Type:         config.TypeText,
+							Type:         element.TypeText,
 							SortOrder:    10,
-							Visible:      config.VisibleYes,
+							Visible:      element.VisibleYes,
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 							// SourceModel:  nil,
 						},
 
-						&config.Field{
+						&element.Field{
 							// Path: `web/unsecure/base_link_url`,
 							ID:           "base_link_url",
 							Label:        `Base Link URL`,
 							Comment:      `May start with {{unsecure_base_url}} placeholder.`,
-							Type:         config.TypeText,
+							Type:         element.TypeText,
 							SortOrder:    20,
-							Visible:      config.VisibleYes,
+							Visible:      element.VisibleYes,
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 							// SourceModel:  nil,
 						},
 
-						&config.Field{
+						&element.Field{
 							// Path: `web/unsecure/base_static_url`,
 							ID:           "base_static_url",
 							Label:        `Base URL for Static View Files`,
 							Comment:      `May be empty or start with {{unsecure_base_url}} placeholder.`,
-							Type:         config.TypeText,
+							Type:         element.TypeText,
 							SortOrder:    25,
-							Visible:      config.VisibleYes,
+							Visible:      element.VisibleYes,
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 							// SourceModel:  nil,
 						},
 
-						&config.Field{
+						&element.Field{
 							// Path: `web/unsecure/base_media_url`,
 							ID:           "base_media_url",
 							Label:        `Base URL for User Media Files`,
 							Comment:      `May be empty or start with {{unsecure_base_url}} placeholder.`,
-							Type:         config.TypeText,
+							Type:         element.TypeText,
 							SortOrder:    40,
-							Visible:      config.VisibleYes,
+							Visible:      element.VisibleYes,
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
@@ -253,105 +159,91 @@ func init() {
 					},
 				},
 
-				&config.Group{
+				&element.Group{
 					ID:        "secure",
 					Label:     `Base URLs (Secure)`,
 					Comment:   `Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`,
 					SortOrder: 20,
 					Scope:     scope.PermAll,
-					Fields: config.FieldSlice{
-						&config.Field{
+					Fields: element.FieldSlice{
+						&element.Field{
 							// Path: `web/secure/base_url`,
 							ID:           "base_url",
 							Label:        `Secure Base URL`,
 							Comment:      `Specify URL or {{base_url}}, or {{unsecure_base_url}} placeholder.`,
-							Type:         config.TypeText,
+							Type:         element.TypeText,
 							SortOrder:    10,
-							Visible:      config.VisibleYes,
+							Visible:      element.VisibleYes,
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 							// SourceModel:  nil,
 						},
 
-						&config.Field{
+						&element.Field{
 							// Path: `web/secure/base_link_url`,
 							ID:           "base_link_url",
 							Label:        `Secure Base Link URL`,
 							Comment:      `May start with {{secure_base_url}} or {{unsecure_base_url}} placeholder.`,
-							Type:         config.TypeText,
+							Type:         element.TypeText,
 							SortOrder:    20,
-							Visible:      config.VisibleYes,
+							Visible:      element.VisibleYes,
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 							// SourceModel:  nil,
 						},
 
-						&config.Field{
+						&element.Field{
 							// Path: `web/secure/base_static_url`,
 							ID:           "base_static_url",
 							Label:        `Secure Base URL for Static View Files`,
 							Comment:      `May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`,
-							Type:         config.TypeText,
+							Type:         element.TypeText,
 							SortOrder:    25,
-							Visible:      config.VisibleYes,
+							Visible:      element.VisibleYes,
 							Scope:        scope.PermAll,
 							Default:      nil,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 							// SourceModel:  nil,
 						},
 
-						&config.Field{
+						&element.Field{
 							// Path: `web/secure/base_media_url`,
 							ID:        "base_media_url",
 							Label:     `Secure Base URL for User Media Files`,
 							Comment:   `May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`,
-							Type:      config.TypeText,
+							Type:      element.TypeText,
 							SortOrder: 40,
-							Visible:   config.VisibleYes,
+							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   nil,
 							//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 							//// SourceModel:  nil,
 						},
 
-						&config.Field{
-							// Path: `web/secure/use_in_frontend`,
-							ID:        "use_in_frontend",
-							Label:     `Use Secure URLs on Storefront`,
-							Comment:   `Enter https protocol to use Secure URLs on Storefront.`,
-							Type:      config.TypeSelect,
-							SortOrder: 50,
-							Visible:   config.VisibleYes,
-							Scope:     scope.PermAll,
-							Default:   false,
-							//BackendModel: nil,                // Magento\Config\Model\Config\Backend\Secure
-							//// SourceModel:  configsource.YesNo, // Magento\Config\Model\Config\Source\Yesno
-						},
-
-						&config.Field{
+						&element.Field{
 							// Path: `web/secure/use_in_adminhtml`,
 							ID:           "use_in_adminhtml",
 							Label:        `Use Secure URLs in Admin`,
 							Comment:      `Enter https protocol to use Secure URLs in Admin.`,
-							Type:         config.TypeSelect,
+							Type:         element.TypeSelect,
 							SortOrder:    60,
-							Visible:      config.VisibleYes,
+							Visible:      element.VisibleYes,
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      false,
 							BackendModel: nil, // Magento\Config\Model\Config\Backend\Secure
 							// SourceModel:  configsource.YesNo, // Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&config.Field{
+						&element.Field{
 							// Path: `web/secure/offloader_header`,
 							ID:           "offloader_header",
 							Label:        `Offloader header`,
 							Comment:      ``,
-							Type:         config.TypeText,
+							Type:         element.TypeText,
 							SortOrder:    70,
-							Visible:      config.VisibleYes,
+							Visible:      element.VisibleYes,
 							Scope:        scope.NewPerm(scope.DefaultID),
 							Default:      "SSL_OFFLOADED",
 							BackendModel: nil,
@@ -361,13 +253,13 @@ func init() {
 				},
 			},
 		},
-		&config.Section{
+		&element.Section{
 			ID: "catalog",
-			Groups: config.GroupSlice{
-				&config.Group{
+			Groups: element.GroupSlice{
+				&element.Group{
 					ID: "price",
-					Fields: config.FieldSlice{
-						&config.Field{
+					Fields: element.FieldSlice{
+						&element.Field{
 							// Path: `catalog/price/scope`,
 							ID:      "scope",
 							Default: PriceScopeGlobal,

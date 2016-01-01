@@ -17,6 +17,7 @@ package store
 import (
 	"net/http"
 
+	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
@@ -38,7 +39,7 @@ func WithValidateBaseURL(cg config.GetterPubSuber) ctxhttp.Middleware {
 
 	// <todo check logic!>
 	cgDefaultScope := cg.NewScoped(0, 0, 0)
-	configRedirectCode := PathRedirectToBase.Get(PackageConfiguration, cgDefaultScope)
+	configRedirectCode := backend.PathWebUrlRedirectToBase.Get(backend.PackageConfiguration, cgDefaultScope)
 
 	redirectCode := http.StatusMovedPermanently
 	if configRedirectCode != redirectCode {
