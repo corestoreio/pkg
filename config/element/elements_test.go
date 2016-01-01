@@ -613,7 +613,7 @@ func TestSectionSliceSort(t *testing.T) {
 
 func TestSectionSliceSortAll(t *testing.T) {
 	want := `[{"ID":"b","SortOrder":-10,"Groups":null},{"ID":"e","SortOrder":1,"Groups":null},{"ID":"c","SortOrder":10,"Groups":null},{"ID":"a","SortOrder":20,"Groups":[{"ID":"b","SortOrder":-10,"Fields":[{"ID":"b","SortOrder":-10},{"ID":"e","SortOrder":1},{"ID":"c","SortOrder":10},{"ID":"d","SortOrder":11},{"ID":"a","SortOrder":20}]},{"ID":"e","SortOrder":1,"Fields":null},{"ID":"d","SortOrder":11,"Fields":[{"ID":"b","SortOrder":-10},{"ID":"e","SortOrder":1},{"ID":"c","SortOrder":10},{"ID":"d","SortOrder":11},{"ID":"a","SortOrder":20}]},{"ID":"a","SortOrder":20,"Fields":[{"ID":"b","SortOrder":-10},{"ID":"e","SortOrder":1},{"ID":"c","SortOrder":10},{"ID":"d","SortOrder":11},{"ID":"a","SortOrder":20}]}]}]` + "\n"
-	ss := element.SectionSlice{
+	ss := element.MustNewConfiguration(
 		&element.Section{ID: "a", SortOrder: 20, Groups: element.NewGroupSlice(
 			&element.Group{ID: "a", SortOrder: 20, Fields: element.FieldSlice{&element.Field{ID: "a", SortOrder: 20}, &element.Field{ID: "b", SortOrder: -10}, &element.Field{ID: "c", SortOrder: 10}, &element.Field{ID: "d", SortOrder: 11}, &element.Field{ID: "e", SortOrder: 1}}},
 			&element.Group{ID: "b", SortOrder: -10, Fields: element.FieldSlice{&element.Field{ID: "a", SortOrder: 20}, &element.Field{ID: "b", SortOrder: -10}, &element.Field{ID: "c", SortOrder: 10}, &element.Field{ID: "d", SortOrder: 11}, &element.Field{ID: "e", SortOrder: 1}}},
@@ -623,8 +623,31 @@ func TestSectionSliceSortAll(t *testing.T) {
 		&element.Section{ID: "b", SortOrder: -10},
 		&element.Section{ID: "c", SortOrder: 10},
 		&element.Section{ID: "e", SortOrder: 1},
-	}
+	)
 	ss.SortAll()
+	have := ss.ToJSON()
+	if want != have {
+		t.Errorf("\nWant: %s\nHave: %s\n", want, have)
+	}
+}
+
+func TestSectionSliceAppendFields(t *testing.T) {
+	want := `[{"ID":"a","Groups":[{"ID":"a","Fields":[{"ID":"a"},{"ID":"b"},{"ID":"c"}]}]}]` + "\n"
+	ss := element.MustNewConfiguration(
+		&element.Section{
+			ID: "a",
+			Groups: element.NewGroupSlice(
+				&element.Group{ID: "a",
+					Fields: element.NewFieldSlice(
+						&element.Field{ID: "a"},
+						&element.Field{ID: "b"},
+					),
+				},
+			)},
+	)
+	assert.EqualError(t, ss.AppendFields("a/XX"), element.ErrGroupNotFound.Error())
+
+	assert.NoError(t, ss.AppendFields("a/a", &element.Field{ID: "c"}))
 	have := ss.ToJSON()
 	if want != have {
 		t.Errorf("\nWant: %s\nHave: %s\n", want, have)

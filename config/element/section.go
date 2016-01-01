@@ -226,6 +226,17 @@ func (ss *SectionSlice) Append(s ...*Section) *SectionSlice {
 	return ss
 }
 
+// AppendFields adds 0..n *Fields. Path must have at least two path parts like a/b
+// more path parts gets ignored.
+func (ss SectionSlice) AppendFields(path string, fs ...*Field) error {
+	g, err := ss.FindGroupByPath(path)
+	if err != nil {
+		return errgo.Mask(err)
+	}
+	g.Fields.Append(fs...)
+	return nil
+}
+
 // ToJSON transforms the whole slice into JSON
 func (ss SectionSlice) ToJSON() string {
 	var buf bytes.Buffer
