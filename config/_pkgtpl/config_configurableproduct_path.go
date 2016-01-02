@@ -8,4 +8,4 @@ import (
 
 // PathCheckoutCartConfigurableProductImage => Configurable Product Image.
 // SourceModel: Otnegam\Catalog\Model\Config\Source\Product\Thumbnail
-var PathCheckoutCartConfigurableProductImage = model.NewStr(`checkout/cart/configurable_product_image`)
+var PathCheckoutCartConfigurableProductImage = model.NewStr(`checkout/cart/configurable_product_image`, model.WithPkgCfg(PackageConfiguration))

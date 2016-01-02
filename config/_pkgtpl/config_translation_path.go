@@ -10,4 +10,4 @@ import (
 // Please put your store into maintenance mode and redeploy static files after
 // changing strategy
 // SourceModel: Otnegam\Translation\Model\Js\Config\Source\Strategy
-var PathDevJsTranslateStrategy = model.NewStr(`dev/js/translate_strategy`)
+var PathDevJsTranslateStrategy = model.NewStr(`dev/js/translate_strategy`, model.WithPkgCfg(PackageConfiguration))

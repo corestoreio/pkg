@@ -9,4 +9,4 @@ import (
 // PathPaymentVaultVaultPayment => Vault Provider.
 // Specified provider should be enabled.
 // SourceModel: Otnegam\Vault\Model\Adminhtml\Source\VaultProvidersMap
-var PathPaymentVaultVaultPayment = model.NewStr(`payment/vault/vault_payment`)
+var PathPaymentVaultVaultPayment = model.NewStr(`payment/vault/vault_payment`, model.WithPkgCfg(PackageConfiguration))

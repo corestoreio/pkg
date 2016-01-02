@@ -8,4 +8,4 @@ import (
 
 // PathCatalogReviewAllowGuest => Allow Guests to Write Reviews.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCatalogReviewAllowGuest = model.NewBool(`catalog/review/allow_guest`)
+var PathCatalogReviewAllowGuest = model.NewBool(`catalog/review/allow_guest`, model.WithPkgCfg(PackageConfiguration))

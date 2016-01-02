@@ -8,38 +8,38 @@ import (
 
 // PathNewsletterSubscriptionAllowGuestSubscribe => Allow Guest Subscription.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathNewsletterSubscriptionAllowGuestSubscribe = model.NewBool(`newsletter/subscription/allow_guest_subscribe`)
+var PathNewsletterSubscriptionAllowGuestSubscribe = model.NewBool(`newsletter/subscription/allow_guest_subscribe`, model.WithPkgCfg(PackageConfiguration))
 
 // PathNewsletterSubscriptionConfirm => Need to Confirm.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathNewsletterSubscriptionConfirm = model.NewBool(`newsletter/subscription/confirm`)
+var PathNewsletterSubscriptionConfirm = model.NewBool(`newsletter/subscription/confirm`, model.WithPkgCfg(PackageConfiguration))
 
 // PathNewsletterSubscriptionConfirmEmailIdentity => Confirmation Email Sender.
 // SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
-var PathNewsletterSubscriptionConfirmEmailIdentity = model.NewStr(`newsletter/subscription/confirm_email_identity`)
+var PathNewsletterSubscriptionConfirmEmailIdentity = model.NewStr(`newsletter/subscription/confirm_email_identity`, model.WithPkgCfg(PackageConfiguration))
 
 // PathNewsletterSubscriptionConfirmEmailTemplate => Confirmation Email Template.
 // Email template chosen based on theme fallback when "Default" option is
 // selected.
 // SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
-var PathNewsletterSubscriptionConfirmEmailTemplate = model.NewStr(`newsletter/subscription/confirm_email_template`)
+var PathNewsletterSubscriptionConfirmEmailTemplate = model.NewStr(`newsletter/subscription/confirm_email_template`, model.WithPkgCfg(PackageConfiguration))
 
 // PathNewsletterSubscriptionSuccessEmailIdentity => Success Email Sender.
 // SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
-var PathNewsletterSubscriptionSuccessEmailIdentity = model.NewStr(`newsletter/subscription/success_email_identity`)
+var PathNewsletterSubscriptionSuccessEmailIdentity = model.NewStr(`newsletter/subscription/success_email_identity`, model.WithPkgCfg(PackageConfiguration))
 
 // PathNewsletterSubscriptionSuccessEmailTemplate => Success Email Template.
 // Email template chosen based on theme fallback when "Default" option is
 // selected.
 // SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
-var PathNewsletterSubscriptionSuccessEmailTemplate = model.NewStr(`newsletter/subscription/success_email_template`)
+var PathNewsletterSubscriptionSuccessEmailTemplate = model.NewStr(`newsletter/subscription/success_email_template`, model.WithPkgCfg(PackageConfiguration))
 
 // PathNewsletterSubscriptionUnEmailIdentity => Unsubscription Email Sender.
 // SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
-var PathNewsletterSubscriptionUnEmailIdentity = model.NewStr(`newsletter/subscription/un_email_identity`)
+var PathNewsletterSubscriptionUnEmailIdentity = model.NewStr(`newsletter/subscription/un_email_identity`, model.WithPkgCfg(PackageConfiguration))
 
 // PathNewsletterSubscriptionUnEmailTemplate => Unsubscription Email Template.
 // Email template chosen based on theme fallback when "Default" option is
 // selected.
 // SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
-var PathNewsletterSubscriptionUnEmailTemplate = model.NewStr(`newsletter/subscription/un_email_template`)
+var PathNewsletterSubscriptionUnEmailTemplate = model.NewStr(`newsletter/subscription/un_email_template`, model.WithPkgCfg(PackageConfiguration))

@@ -8,4 +8,4 @@ import (
 
 // PathGoogleAnalyticsExperiments => Enable Content Experiments.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathGoogleAnalyticsExperiments = model.NewBool(`google/analytics/experiments`)
+var PathGoogleAnalyticsExperiments = model.NewBool(`google/analytics/experiments`, model.WithPkgCfg(PackageConfiguration))

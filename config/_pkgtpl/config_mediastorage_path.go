@@ -8,18 +8,18 @@ import (
 
 // PathSystemMediaStorageConfigurationMediaStorage => Media Storage.
 // SourceModel: Otnegam\MediaStorage\Model\Config\Source\Storage\Media\Storage
-var PathSystemMediaStorageConfigurationMediaStorage = model.NewStr(`system/media_storage_configuration/media_storage`)
+var PathSystemMediaStorageConfigurationMediaStorage = model.NewStr(`system/media_storage_configuration/media_storage`, model.WithPkgCfg(PackageConfiguration))
 
 // PathSystemMediaStorageConfigurationMediaDatabase => Select Media Database.
 // BackendModel: Otnegam\MediaStorage\Model\Config\Backend\Storage\Media\Database
 // SourceModel: Otnegam\MediaStorage\Model\Config\Source\Storage\Media\Database
-var PathSystemMediaStorageConfigurationMediaDatabase = model.NewStr(`system/media_storage_configuration/media_database`)
+var PathSystemMediaStorageConfigurationMediaDatabase = model.NewStr(`system/media_storage_configuration/media_database`, model.WithPkgCfg(PackageConfiguration))
 
 // PathSystemMediaStorageConfigurationSynchronize => .
 // After selecting a new media storage location, press the Synchronize button
 // to transfer all media to that location. Media will not be available in the
 // new location until the synchronization process is complete.
-var PathSystemMediaStorageConfigurationSynchronize = model.NewStr(`system/media_storage_configuration/synchronize`)
+var PathSystemMediaStorageConfigurationSynchronize = model.NewStr(`system/media_storage_configuration/synchronize`, model.WithPkgCfg(PackageConfiguration))
 
 // PathSystemMediaStorageConfigurationConfigurationUpdateTime => Environment Update Time.
-var PathSystemMediaStorageConfigurationConfigurationUpdateTime = model.NewStr(`system/media_storage_configuration/configuration_update_time`)
+var PathSystemMediaStorageConfigurationConfigurationUpdateTime = model.NewStr(`system/media_storage_configuration/configuration_update_time`, model.WithPkgCfg(PackageConfiguration))

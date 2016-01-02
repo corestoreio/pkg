@@ -9,17 +9,17 @@ import (
 // PathCatalogSeoCategoryUrlSuffix => Category URL Suffix.
 // You need to refresh the cache.
 // BackendModel: Otnegam\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
-var PathCatalogSeoCategoryUrlSuffix = model.NewStr(`catalog/seo/category_url_suffix`)
+var PathCatalogSeoCategoryUrlSuffix = model.NewStr(`catalog/seo/category_url_suffix`, model.WithPkgCfg(PackageConfiguration))
 
 // PathCatalogSeoProductUrlSuffix => Product URL Suffix.
 // You need to refresh the cache.
 // BackendModel: Otnegam\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
-var PathCatalogSeoProductUrlSuffix = model.NewStr(`catalog/seo/product_url_suffix`)
+var PathCatalogSeoProductUrlSuffix = model.NewStr(`catalog/seo/product_url_suffix`, model.WithPkgCfg(PackageConfiguration))
 
 // PathCatalogSeoProductUseCategories => Use Categories Path for Product URLs.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCatalogSeoProductUseCategories = model.NewBool(`catalog/seo/product_use_categories`)
+var PathCatalogSeoProductUseCategories = model.NewBool(`catalog/seo/product_use_categories`, model.WithPkgCfg(PackageConfiguration))
 
 // PathCatalogSeoSaveRewritesHistory => Create Permanent Redirect for URLs if URL Key Changed.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCatalogSeoSaveRewritesHistory = model.NewBool(`catalog/seo/save_rewrites_history`)
+var PathCatalogSeoSaveRewritesHistory = model.NewBool(`catalog/seo/save_rewrites_history`, model.WithPkgCfg(PackageConfiguration))

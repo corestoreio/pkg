@@ -8,4 +8,4 @@ import (
 
 // PathWebapiSoapCharset => Default Response Charset.
 // If empty, UTF-8 will be used.
-var PathWebapiSoapCharset = model.NewStr(`webapi/soap/charset`)
+var PathWebapiSoapCharset = model.NewStr(`webapi/soap/charset`, model.WithPkgCfg(PackageConfiguration))

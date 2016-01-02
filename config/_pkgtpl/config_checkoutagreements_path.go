@@ -8,4 +8,4 @@ import (
 
 // PathCheckoutOptionsEnableAgreements => Enable Terms and Conditions.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCheckoutOptionsEnableAgreements = model.NewBool(`checkout/options/enable_agreements`)
+var PathCheckoutOptionsEnableAgreements = model.NewBool(`checkout/options/enable_agreements`, model.WithPkgCfg(PackageConfiguration))

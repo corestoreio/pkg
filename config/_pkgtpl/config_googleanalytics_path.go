@@ -8,7 +8,7 @@ import (
 
 // PathGoogleAnalyticsActive => Enable.
 // SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathGoogleAnalyticsActive = model.NewBool(`google/analytics/active`)
+var PathGoogleAnalyticsActive = model.NewBool(`google/analytics/active`, model.WithPkgCfg(PackageConfiguration))
 
 // PathGoogleAnalyticsAccount => Account Number.
-var PathGoogleAnalyticsAccount = model.NewStr(`google/analytics/account`)
+var PathGoogleAnalyticsAccount = model.NewStr(`google/analytics/account`, model.WithPkgCfg(PackageConfiguration))
