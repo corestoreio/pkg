@@ -21,6 +21,7 @@ import (
 	"github.com/corestoreio/csfw/config/configsource"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
@@ -230,4 +231,22 @@ func TestFloat64(t *testing.T) {
 	assert.NoError(t, b.Write(mw, 1.123456789, scope.WebsiteID, 10))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 	assert.Exactly(t, "1.12345678900000", mw.ArgValue.(string))
+}
+
+func TestRecursiveOption(t *testing.T) {
+	b := model.NewInt(
+		"web/cors/int",
+		model.WithPkgCfg(packageConfiguration),
+		model.WithValueLabelByString("a", "A", "b", "b"),
+	)
+
+	assert.Exactly(t, valuelabel.NewByString("a", "A", "b", "b"), b.ValueLabel)
+
+	previous := b.Option(model.WithValueLabelByString(
+		"1", "One", "2", "Two",
+	))
+	assert.Exactly(t, valuelabel.NewByString("1", "One", "2", "Two"), b.ValueLabel)
+
+	b.Option(previous)
+	assert.Exactly(t, valuelabel.NewByString("a", "A", "b", "b"), b.ValueLabel)
 }
