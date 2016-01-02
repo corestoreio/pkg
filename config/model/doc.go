@@ -13,17 +13,19 @@
 // limitations under the License.
 
 // Package model provides types for getting and setting values of configuration
-// fields aka values with checks to their default values.
+// fields/values with validation and their default value handling.
 //
 // The default value gets returned if the Get call to the store configuration
-// value fails.
+// value fails or value is not set.
 //
 // The signature of a getter function states in most cases:
-//		Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) (v string)
-// pkgCfg is the global PackageConfiguration variable which is present in each
-// package. pkgCfg knows the default value of a configuration path.
-// sg is the current config.Getter but bounded to a scope. If sg finds a value
-// then the default value gets overwritten.
+//		Get(sg config.ScopedGetter) (v <T>)
+// The global PackageConfiguration variable which is present in each
+// package gets set to the Path* variables during init process and then
+// shall not change. PackageConfiguration knows the default value of a
+// configuration path.
+// sg config.ScopedGetter is the current config.Getter but bounded to a
+// scope. If sg finds not a value then the default value gets returned.
 //
 // The Get() function signature may vary between the packages.
 //
