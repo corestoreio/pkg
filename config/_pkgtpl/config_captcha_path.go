@@ -3,81 +3,138 @@
 package captcha
 
 import (
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// PathAdminCaptchaEnable => Enable CAPTCHA in Admin.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathAdminCaptchaEnable = model.NewBool(`admin/captcha/enable`, model.WithPkgCfg(PackageConfiguration))
+// Path will be initialized in the init() function together with PackageConfiguration.
+var Path *PkgPath
 
-// PathAdminCaptchaFont => Font.
-// SourceModel: Otnegam\Captcha\Model\Config\Font
-var PathAdminCaptchaFont = model.NewStr(`admin/captcha/font`, model.WithPkgCfg(PackageConfiguration))
+// PkgPath global configuration struct containing paths and how to retrieve
+// their values and options.
+type PkgPath struct {
+	model.PkgPath
+	// AdminCaptchaEnable => Enable CAPTCHA in Admin.
+	// Path: admin/captcha/enable
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	AdminCaptchaEnable model.Bool
 
-// PathAdminCaptchaForms => Forms.
-// SourceModel: Otnegam\Captcha\Model\Config\Form\Backend
-var PathAdminCaptchaForms = model.NewStringCSV(`admin/captcha/forms`, model.WithPkgCfg(PackageConfiguration))
+	// AdminCaptchaFont => Font.
+	// Path: admin/captcha/font
+	// SourceModel: Otnegam\Captcha\Model\Config\Font
+	AdminCaptchaFont model.Str
 
-// PathAdminCaptchaMode => Displaying Mode.
-// SourceModel: Otnegam\Captcha\Model\Config\Mode
-var PathAdminCaptchaMode = model.NewStr(`admin/captcha/mode`, model.WithPkgCfg(PackageConfiguration))
+	// AdminCaptchaForms => Forms.
+	// Path: admin/captcha/forms
+	// SourceModel: Otnegam\Captcha\Model\Config\Form\Backend
+	AdminCaptchaForms model.StringCSV
 
-// PathAdminCaptchaFailedAttemptsLogin => Number of Unsuccessful Attempts to Login.
-// If 0 is specified, CAPTCHA on the Login form will be always available.
-var PathAdminCaptchaFailedAttemptsLogin = model.NewStr(`admin/captcha/failed_attempts_login`, model.WithPkgCfg(PackageConfiguration))
+	// AdminCaptchaMode => Displaying Mode.
+	// Path: admin/captcha/mode
+	// SourceModel: Otnegam\Captcha\Model\Config\Mode
+	AdminCaptchaMode model.Str
 
-// PathAdminCaptchaTimeout => CAPTCHA Timeout (minutes).
-var PathAdminCaptchaTimeout = model.NewStr(`admin/captcha/timeout`, model.WithPkgCfg(PackageConfiguration))
+	// AdminCaptchaFailedAttemptsLogin => Number of Unsuccessful Attempts to Login.
+	// If 0 is specified, CAPTCHA on the Login form will be always available.
+	// Path: admin/captcha/failed_attempts_login
+	AdminCaptchaFailedAttemptsLogin model.Str
 
-// PathAdminCaptchaLength => Number of Symbols.
-// Please specify 8 symbols at the most. Range allowed (e.g. 3-5)
-var PathAdminCaptchaLength = model.NewStr(`admin/captcha/length`, model.WithPkgCfg(PackageConfiguration))
+	// AdminCaptchaTimeout => CAPTCHA Timeout (minutes).
+	// Path: admin/captcha/timeout
+	AdminCaptchaTimeout model.Str
 
-// PathAdminCaptchaSymbols => Symbols Used in CAPTCHA.
-// Please use only letters (a-z or A-Z) or numbers (0-9) in this field. No
-// spaces or other characters are allowed.Similar looking characters (e.g.
-// "i", "l", "1") decrease chance of correct recognition by customer.
-var PathAdminCaptchaSymbols = model.NewStr(`admin/captcha/symbols`, model.WithPkgCfg(PackageConfiguration))
+	// AdminCaptchaLength => Number of Symbols.
+	// Please specify 8 symbols at the most. Range allowed (e.g. 3-5)
+	// Path: admin/captcha/length
+	AdminCaptchaLength model.Str
 
-// PathAdminCaptchaCaseSensitive => Case Sensitive.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathAdminCaptchaCaseSensitive = model.NewBool(`admin/captcha/case_sensitive`, model.WithPkgCfg(PackageConfiguration))
+	// AdminCaptchaSymbols => Symbols Used in CAPTCHA.
+	// Please use only letters (a-z or A-Z) or numbers (0-9) in this field. No
+	// spaces or other characters are allowed.Similar looking characters (e.g.
+	// "i", "l", "1") decrease chance of correct recognition by customer.
+	// Path: admin/captcha/symbols
+	AdminCaptchaSymbols model.Str
 
-// PathCustomerCaptchaEnable => Enable CAPTCHA on Storefront.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCustomerCaptchaEnable = model.NewBool(`customer/captcha/enable`, model.WithPkgCfg(PackageConfiguration))
+	// AdminCaptchaCaseSensitive => Case Sensitive.
+	// Path: admin/captcha/case_sensitive
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	AdminCaptchaCaseSensitive model.Bool
 
-// PathCustomerCaptchaFont => Font.
-// SourceModel: Otnegam\Captcha\Model\Config\Font
-var PathCustomerCaptchaFont = model.NewStr(`customer/captcha/font`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCaptchaEnable => Enable CAPTCHA on Storefront.
+	// Path: customer/captcha/enable
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CustomerCaptchaEnable model.Bool
 
-// PathCustomerCaptchaForms => Forms.
-// CAPTCHA for "Create user" and "Forgot password" forms is always enabled if
-// chosen.
-// SourceModel: Otnegam\Captcha\Model\Config\Form\Frontend
-var PathCustomerCaptchaForms = model.NewStringCSV(`customer/captcha/forms`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCaptchaFont => Font.
+	// Path: customer/captcha/font
+	// SourceModel: Otnegam\Captcha\Model\Config\Font
+	CustomerCaptchaFont model.Str
 
-// PathCustomerCaptchaMode => Displaying Mode.
-// SourceModel: Otnegam\Captcha\Model\Config\Mode
-var PathCustomerCaptchaMode = model.NewStr(`customer/captcha/mode`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCaptchaForms => Forms.
+	// CAPTCHA for "Create user" and "Forgot password" forms is always enabled if
+	// chosen.
+	// Path: customer/captcha/forms
+	// SourceModel: Otnegam\Captcha\Model\Config\Form\Frontend
+	CustomerCaptchaForms model.StringCSV
 
-// PathCustomerCaptchaFailedAttemptsLogin => Number of Unsuccessful Attempts to Login.
-// If 0 is specified, CAPTCHA on the Login form will be always available.
-var PathCustomerCaptchaFailedAttemptsLogin = model.NewStr(`customer/captcha/failed_attempts_login`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCaptchaMode => Displaying Mode.
+	// Path: customer/captcha/mode
+	// SourceModel: Otnegam\Captcha\Model\Config\Mode
+	CustomerCaptchaMode model.Str
 
-// PathCustomerCaptchaTimeout => CAPTCHA Timeout (minutes).
-var PathCustomerCaptchaTimeout = model.NewStr(`customer/captcha/timeout`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCaptchaFailedAttemptsLogin => Number of Unsuccessful Attempts to Login.
+	// If 0 is specified, CAPTCHA on the Login form will be always available.
+	// Path: customer/captcha/failed_attempts_login
+	CustomerCaptchaFailedAttemptsLogin model.Str
 
-// PathCustomerCaptchaLength => Number of Symbols.
-// Please specify 8 symbols at the most. Range allowed (e.g. 3-5)
-var PathCustomerCaptchaLength = model.NewStr(`customer/captcha/length`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCaptchaTimeout => CAPTCHA Timeout (minutes).
+	// Path: customer/captcha/timeout
+	CustomerCaptchaTimeout model.Str
 
-// PathCustomerCaptchaSymbols => Symbols Used in CAPTCHA.
-// Please use only letters (a-z or A-Z) or numbers (0-9) in this field. No
-// spaces or other characters are allowed.Similar looking characters (e.g.
-// "i", "l", "1") decrease chance of correct recognition by customer.
-var PathCustomerCaptchaSymbols = model.NewStr(`customer/captcha/symbols`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCaptchaLength => Number of Symbols.
+	// Please specify 8 symbols at the most. Range allowed (e.g. 3-5)
+	// Path: customer/captcha/length
+	CustomerCaptchaLength model.Str
 
-// PathCustomerCaptchaCaseSensitive => Case Sensitive.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCustomerCaptchaCaseSensitive = model.NewBool(`customer/captcha/case_sensitive`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCaptchaSymbols => Symbols Used in CAPTCHA.
+	// Please use only letters (a-z or A-Z) or numbers (0-9) in this field. No
+	// spaces or other characters are allowed.Similar looking characters (e.g.
+	// "i", "l", "1") decrease chance of correct recognition by customer.
+	// Path: customer/captcha/symbols
+	CustomerCaptchaSymbols model.Str
+
+	// CustomerCaptchaCaseSensitive => Case Sensitive.
+	// Path: customer/captcha/case_sensitive
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CustomerCaptchaCaseSensitive model.Bool
+}
+
+// NewPath initializes the global Path variable. See init()
+func NewPath(pkgCfg element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(pkgCfg)
+}
+
+func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+	pp.Lock()
+	defer pp.Unlock()
+	pp.AdminCaptchaEnable = model.NewBool(`admin/captcha/enable`, model.WithPkgCfg(pkgCfg))
+	pp.AdminCaptchaFont = model.NewStr(`admin/captcha/font`, model.WithPkgCfg(pkgCfg))
+	pp.AdminCaptchaForms = model.NewStringCSV(`admin/captcha/forms`, model.WithPkgCfg(pkgCfg))
+	pp.AdminCaptchaMode = model.NewStr(`admin/captcha/mode`, model.WithPkgCfg(pkgCfg))
+	pp.AdminCaptchaFailedAttemptsLogin = model.NewStr(`admin/captcha/failed_attempts_login`, model.WithPkgCfg(pkgCfg))
+	pp.AdminCaptchaTimeout = model.NewStr(`admin/captcha/timeout`, model.WithPkgCfg(pkgCfg))
+	pp.AdminCaptchaLength = model.NewStr(`admin/captcha/length`, model.WithPkgCfg(pkgCfg))
+	pp.AdminCaptchaSymbols = model.NewStr(`admin/captcha/symbols`, model.WithPkgCfg(pkgCfg))
+	pp.AdminCaptchaCaseSensitive = model.NewBool(`admin/captcha/case_sensitive`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCaptchaEnable = model.NewBool(`customer/captcha/enable`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCaptchaFont = model.NewStr(`customer/captcha/font`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCaptchaForms = model.NewStringCSV(`customer/captcha/forms`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCaptchaMode = model.NewStr(`customer/captcha/mode`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCaptchaFailedAttemptsLogin = model.NewStr(`customer/captcha/failed_attempts_login`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCaptchaTimeout = model.NewStr(`customer/captcha/timeout`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCaptchaLength = model.NewStr(`customer/captcha/length`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCaptchaSymbols = model.NewStr(`customer/captcha/symbols`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCaptchaCaseSensitive = model.NewBool(`customer/captcha/case_sensitive`, model.WithPkgCfg(pkgCfg))
+
+	return pp
+}

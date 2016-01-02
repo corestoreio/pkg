@@ -131,4 +131,5 @@ func init() {
 			Groups:    element.NewGroupSlice(),
 		},
 	)
+	Path = NewPath(PackageConfiguration)
 }

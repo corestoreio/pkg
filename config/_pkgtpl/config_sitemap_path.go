@@ -3,72 +3,125 @@
 package sitemap
 
 import (
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// PathSitemapCategoryChangefreq => Frequency.
-// SourceModel: Otnegam\Sitemap\Model\Config\Source\Frequency
-var PathSitemapCategoryChangefreq = model.NewStr(`sitemap/category/changefreq`, model.WithPkgCfg(PackageConfiguration))
+// Path will be initialized in the init() function together with PackageConfiguration.
+var Path *PkgPath
 
-// PathSitemapCategoryPriority => Priority.
-// Valid values range from 0.0 to 1.0.
-// BackendModel: Otnegam\Sitemap\Model\Config\Backend\Priority
-var PathSitemapCategoryPriority = model.NewStr(`sitemap/category/priority`, model.WithPkgCfg(PackageConfiguration))
+// PkgPath global configuration struct containing paths and how to retrieve
+// their values and options.
+type PkgPath struct {
+	model.PkgPath
+	// SitemapCategoryChangefreq => Frequency.
+	// Path: sitemap/category/changefreq
+	// SourceModel: Otnegam\Sitemap\Model\Config\Source\Frequency
+	SitemapCategoryChangefreq model.Str
 
-// PathSitemapProductChangefreq => Frequency.
-// SourceModel: Otnegam\Sitemap\Model\Config\Source\Frequency
-var PathSitemapProductChangefreq = model.NewStr(`sitemap/product/changefreq`, model.WithPkgCfg(PackageConfiguration))
+	// SitemapCategoryPriority => Priority.
+	// Valid values range from 0.0 to 1.0.
+	// Path: sitemap/category/priority
+	// BackendModel: Otnegam\Sitemap\Model\Config\Backend\Priority
+	SitemapCategoryPriority model.Str
 
-// PathSitemapProductPriority => Priority.
-// Valid values range from 0.0 to 1.0.
-// BackendModel: Otnegam\Sitemap\Model\Config\Backend\Priority
-var PathSitemapProductPriority = model.NewStr(`sitemap/product/priority`, model.WithPkgCfg(PackageConfiguration))
+	// SitemapProductChangefreq => Frequency.
+	// Path: sitemap/product/changefreq
+	// SourceModel: Otnegam\Sitemap\Model\Config\Source\Frequency
+	SitemapProductChangefreq model.Str
 
-// PathSitemapProductImageInclude => Add Images into Sitemap.
-// SourceModel: Otnegam\Sitemap\Model\Source\Product\Image\IncludeImage
-var PathSitemapProductImageInclude = model.NewStr(`sitemap/product/image_include`, model.WithPkgCfg(PackageConfiguration))
+	// SitemapProductPriority => Priority.
+	// Valid values range from 0.0 to 1.0.
+	// Path: sitemap/product/priority
+	// BackendModel: Otnegam\Sitemap\Model\Config\Backend\Priority
+	SitemapProductPriority model.Str
 
-// PathSitemapPageChangefreq => Frequency.
-// SourceModel: Otnegam\Sitemap\Model\Config\Source\Frequency
-var PathSitemapPageChangefreq = model.NewStr(`sitemap/page/changefreq`, model.WithPkgCfg(PackageConfiguration))
+	// SitemapProductImageInclude => Add Images into Sitemap.
+	// Path: sitemap/product/image_include
+	// SourceModel: Otnegam\Sitemap\Model\Source\Product\Image\IncludeImage
+	SitemapProductImageInclude model.Str
 
-// PathSitemapPagePriority => Priority.
-// Valid values range from 0.0 to 1.0.
-// BackendModel: Otnegam\Sitemap\Model\Config\Backend\Priority
-var PathSitemapPagePriority = model.NewStr(`sitemap/page/priority`, model.WithPkgCfg(PackageConfiguration))
+	// SitemapPageChangefreq => Frequency.
+	// Path: sitemap/page/changefreq
+	// SourceModel: Otnegam\Sitemap\Model\Config\Source\Frequency
+	SitemapPageChangefreq model.Str
 
-// PathSitemapGenerateEnabled => Enabled.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathSitemapGenerateEnabled = model.NewBool(`sitemap/generate/enabled`, model.WithPkgCfg(PackageConfiguration))
+	// SitemapPagePriority => Priority.
+	// Valid values range from 0.0 to 1.0.
+	// Path: sitemap/page/priority
+	// BackendModel: Otnegam\Sitemap\Model\Config\Backend\Priority
+	SitemapPagePriority model.Str
 
-// PathSitemapGenerateErrorEmail => Error Email Recipient.
-var PathSitemapGenerateErrorEmail = model.NewStr(`sitemap/generate/error_email`, model.WithPkgCfg(PackageConfiguration))
+	// SitemapGenerateEnabled => Enabled.
+	// Path: sitemap/generate/enabled
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	SitemapGenerateEnabled model.Bool
 
-// PathSitemapGenerateErrorEmailIdentity => Error Email Sender.
-// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
-var PathSitemapGenerateErrorEmailIdentity = model.NewStr(`sitemap/generate/error_email_identity`, model.WithPkgCfg(PackageConfiguration))
+	// SitemapGenerateErrorEmail => Error Email Recipient.
+	// Path: sitemap/generate/error_email
+	SitemapGenerateErrorEmail model.Str
 
-// PathSitemapGenerateErrorEmailTemplate => Error Email Template.
-// Email template chosen based on theme fallback when "Default" option is
-// selected.
-// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
-var PathSitemapGenerateErrorEmailTemplate = model.NewStr(`sitemap/generate/error_email_template`, model.WithPkgCfg(PackageConfiguration))
+	// SitemapGenerateErrorEmailIdentity => Error Email Sender.
+	// Path: sitemap/generate/error_email_identity
+	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	SitemapGenerateErrorEmailIdentity model.Str
 
-// PathSitemapGenerateFrequency => Frequency.
-// BackendModel: Otnegam\Cron\Model\Config\Backend\Sitemap
-// SourceModel: Otnegam\Cron\Model\Config\Source\Frequency
-var PathSitemapGenerateFrequency = model.NewStr(`sitemap/generate/frequency`, model.WithPkgCfg(PackageConfiguration))
+	// SitemapGenerateErrorEmailTemplate => Error Email Template.
+	// Email template chosen based on theme fallback when "Default" option is
+	// selected.
+	// Path: sitemap/generate/error_email_template
+	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	SitemapGenerateErrorEmailTemplate model.Str
 
-// PathSitemapGenerateTime => Start Time.
-var PathSitemapGenerateTime = model.NewStr(`sitemap/generate/time`, model.WithPkgCfg(PackageConfiguration))
+	// SitemapGenerateFrequency => Frequency.
+	// Path: sitemap/generate/frequency
+	// BackendModel: Otnegam\Cron\Model\Config\Backend\Sitemap
+	// SourceModel: Otnegam\Cron\Model\Config\Source\Frequency
+	SitemapGenerateFrequency model.Str
 
-// PathSitemapLimitMaxLines => Maximum No of URLs Per File.
-var PathSitemapLimitMaxLines = model.NewStr(`sitemap/limit/max_lines`, model.WithPkgCfg(PackageConfiguration))
+	// SitemapGenerateTime => Start Time.
+	// Path: sitemap/generate/time
+	SitemapGenerateTime model.Str
 
-// PathSitemapLimitMaxFileSize => Maximum File Size.
-// File size in bytes.
-var PathSitemapLimitMaxFileSize = model.NewStr(`sitemap/limit/max_file_size`, model.WithPkgCfg(PackageConfiguration))
+	// SitemapLimitMaxLines => Maximum No of URLs Per File.
+	// Path: sitemap/limit/max_lines
+	SitemapLimitMaxLines model.Str
 
-// PathSitemapSearchEnginesSubmissionRobots => Enable Submission to Robots.txt.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathSitemapSearchEnginesSubmissionRobots = model.NewBool(`sitemap/search_engines/submission_robots`, model.WithPkgCfg(PackageConfiguration))
+	// SitemapLimitMaxFileSize => Maximum File Size.
+	// File size in bytes.
+	// Path: sitemap/limit/max_file_size
+	SitemapLimitMaxFileSize model.Str
+
+	// SitemapSearchEnginesSubmissionRobots => Enable Submission to Robots.txt.
+	// Path: sitemap/search_engines/submission_robots
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	SitemapSearchEnginesSubmissionRobots model.Bool
+}
+
+// NewPath initializes the global Path variable. See init()
+func NewPath(pkgCfg element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(pkgCfg)
+}
+
+func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+	pp.Lock()
+	defer pp.Unlock()
+	pp.SitemapCategoryChangefreq = model.NewStr(`sitemap/category/changefreq`, model.WithPkgCfg(pkgCfg))
+	pp.SitemapCategoryPriority = model.NewStr(`sitemap/category/priority`, model.WithPkgCfg(pkgCfg))
+	pp.SitemapProductChangefreq = model.NewStr(`sitemap/product/changefreq`, model.WithPkgCfg(pkgCfg))
+	pp.SitemapProductPriority = model.NewStr(`sitemap/product/priority`, model.WithPkgCfg(pkgCfg))
+	pp.SitemapProductImageInclude = model.NewStr(`sitemap/product/image_include`, model.WithPkgCfg(pkgCfg))
+	pp.SitemapPageChangefreq = model.NewStr(`sitemap/page/changefreq`, model.WithPkgCfg(pkgCfg))
+	pp.SitemapPagePriority = model.NewStr(`sitemap/page/priority`, model.WithPkgCfg(pkgCfg))
+	pp.SitemapGenerateEnabled = model.NewBool(`sitemap/generate/enabled`, model.WithPkgCfg(pkgCfg))
+	pp.SitemapGenerateErrorEmail = model.NewStr(`sitemap/generate/error_email`, model.WithPkgCfg(pkgCfg))
+	pp.SitemapGenerateErrorEmailIdentity = model.NewStr(`sitemap/generate/error_email_identity`, model.WithPkgCfg(pkgCfg))
+	pp.SitemapGenerateErrorEmailTemplate = model.NewStr(`sitemap/generate/error_email_template`, model.WithPkgCfg(pkgCfg))
+	pp.SitemapGenerateFrequency = model.NewStr(`sitemap/generate/frequency`, model.WithPkgCfg(pkgCfg))
+	pp.SitemapGenerateTime = model.NewStr(`sitemap/generate/time`, model.WithPkgCfg(pkgCfg))
+	pp.SitemapLimitMaxLines = model.NewStr(`sitemap/limit/max_lines`, model.WithPkgCfg(pkgCfg))
+	pp.SitemapLimitMaxFileSize = model.NewStr(`sitemap/limit/max_file_size`, model.WithPkgCfg(pkgCfg))
+	pp.SitemapSearchEnginesSubmissionRobots = model.NewBool(`sitemap/search_engines/submission_robots`, model.WithPkgCfg(pkgCfg))
+
+	return pp
+}

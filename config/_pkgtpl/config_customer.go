@@ -688,4 +688,5 @@ T: {{var telephone}}
 			),
 		},
 	)
+	Path = NewPath(PackageConfiguration)
 }

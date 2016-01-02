@@ -3,197 +3,300 @@
 package customer
 
 import (
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// PathCustomerAccountShareScope => Share Customer Accounts.
-// BackendModel: Otnegam\Customer\Model\Config\Share
-// SourceModel: Otnegam\Customer\Model\Config\Share
-var PathCustomerAccountShareScope = model.NewStr(`customer/account_share/scope`, model.WithPkgCfg(PackageConfiguration))
+// Path will be initialized in the init() function together with PackageConfiguration.
+var Path *PkgPath
 
-// PathCustomerCreateAccountAutoGroupAssign => Enable Automatic Assignment to Customer Group.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCustomerCreateAccountAutoGroupAssign = model.NewBool(`customer/create_account/auto_group_assign`, model.WithPkgCfg(PackageConfiguration))
+// PkgPath global configuration struct containing paths and how to retrieve
+// their values and options.
+type PkgPath struct {
+	model.PkgPath
+	// CustomerAccountShareScope => Share Customer Accounts.
+	// Path: customer/account_share/scope
+	// BackendModel: Otnegam\Customer\Model\Config\Share
+	// SourceModel: Otnegam\Customer\Model\Config\Share
+	CustomerAccountShareScope model.Str
 
-// PathCustomerCreateAccountTaxCalculationAddressType => Tax Calculation Based On.
-// SourceModel: Otnegam\Customer\Model\Config\Source\Address\Type
-var PathCustomerCreateAccountTaxCalculationAddressType = model.NewStr(`customer/create_account/tax_calculation_address_type`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountAutoGroupAssign => Enable Automatic Assignment to Customer Group.
+	// Path: customer/create_account/auto_group_assign
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CustomerCreateAccountAutoGroupAssign model.Bool
 
-// PathCustomerCreateAccountDefaultGroup => Default Group.
-// SourceModel: Otnegam\Customer\Model\Config\Source\Group
-var PathCustomerCreateAccountDefaultGroup = model.NewStr(`customer/create_account/default_group`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountTaxCalculationAddressType => Tax Calculation Based On.
+	// Path: customer/create_account/tax_calculation_address_type
+	// SourceModel: Otnegam\Customer\Model\Config\Source\Address\Type
+	CustomerCreateAccountTaxCalculationAddressType model.Str
 
-// PathCustomerCreateAccountVivDomesticGroup => Group for Valid VAT ID - Domestic.
-// SourceModel: Otnegam\Customer\Model\Config\Source\Group
-var PathCustomerCreateAccountVivDomesticGroup = model.NewStr(`customer/create_account/viv_domestic_group`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountDefaultGroup => Default Group.
+	// Path: customer/create_account/default_group
+	// SourceModel: Otnegam\Customer\Model\Config\Source\Group
+	CustomerCreateAccountDefaultGroup model.Str
 
-// PathCustomerCreateAccountVivIntraUnionGroup => Group for Valid VAT ID - Intra-Union.
-// SourceModel: Otnegam\Customer\Model\Config\Source\Group
-var PathCustomerCreateAccountVivIntraUnionGroup = model.NewStr(`customer/create_account/viv_intra_union_group`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountVivDomesticGroup => Group for Valid VAT ID - Domestic.
+	// Path: customer/create_account/viv_domestic_group
+	// SourceModel: Otnegam\Customer\Model\Config\Source\Group
+	CustomerCreateAccountVivDomesticGroup model.Str
 
-// PathCustomerCreateAccountVivInvalidGroup => Group for Invalid VAT ID.
-// SourceModel: Otnegam\Customer\Model\Config\Source\Group
-var PathCustomerCreateAccountVivInvalidGroup = model.NewStr(`customer/create_account/viv_invalid_group`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountVivIntraUnionGroup => Group for Valid VAT ID - Intra-Union.
+	// Path: customer/create_account/viv_intra_union_group
+	// SourceModel: Otnegam\Customer\Model\Config\Source\Group
+	CustomerCreateAccountVivIntraUnionGroup model.Str
 
-// PathCustomerCreateAccountVivErrorGroup => Validation Error Group.
-// SourceModel: Otnegam\Customer\Model\Config\Source\Group
-var PathCustomerCreateAccountVivErrorGroup = model.NewStr(`customer/create_account/viv_error_group`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountVivInvalidGroup => Group for Invalid VAT ID.
+	// Path: customer/create_account/viv_invalid_group
+	// SourceModel: Otnegam\Customer\Model\Config\Source\Group
+	CustomerCreateAccountVivInvalidGroup model.Str
 
-// PathCustomerCreateAccountVivOnEachTransaction => Validate on Each Transaction.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCustomerCreateAccountVivOnEachTransaction = model.NewBool(`customer/create_account/viv_on_each_transaction`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountVivErrorGroup => Validation Error Group.
+	// Path: customer/create_account/viv_error_group
+	// SourceModel: Otnegam\Customer\Model\Config\Source\Group
+	CustomerCreateAccountVivErrorGroup model.Str
 
-// PathCustomerCreateAccountVivDisableAutoGroupAssignDefault => Default Value for Disable Automatic Group Changes Based on VAT ID.
-// BackendModel: Otnegam\Customer\Model\Config\Backend\CreateAccount\DisableAutoGroupAssignDefault
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCustomerCreateAccountVivDisableAutoGroupAssignDefault = model.NewBool(`customer/create_account/viv_disable_auto_group_assign_default`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountVivOnEachTransaction => Validate on Each Transaction.
+	// Path: customer/create_account/viv_on_each_transaction
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CustomerCreateAccountVivOnEachTransaction model.Bool
 
-// PathCustomerCreateAccountVatFrontendVisibility => Show VAT Number on Storefront.
-// To show VAT number on Storefront, set Show VAT Number on Storefront option
-// to Yes.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCustomerCreateAccountVatFrontendVisibility = model.NewBool(`customer/create_account/vat_frontend_visibility`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountVivDisableAutoGroupAssignDefault => Default Value for Disable Automatic Group Changes Based on VAT ID.
+	// Path: customer/create_account/viv_disable_auto_group_assign_default
+	// BackendModel: Otnegam\Customer\Model\Config\Backend\CreateAccount\DisableAutoGroupAssignDefault
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CustomerCreateAccountVivDisableAutoGroupAssignDefault model.Bool
 
-// PathCustomerCreateAccountEmailDomain => Default Email Domain.
-var PathCustomerCreateAccountEmailDomain = model.NewStr(`customer/create_account/email_domain`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountVatFrontendVisibility => Show VAT Number on Storefront.
+	// To show VAT number on Storefront, set Show VAT Number on Storefront option
+	// to Yes.
+	// Path: customer/create_account/vat_frontend_visibility
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CustomerCreateAccountVatFrontendVisibility model.Bool
 
-// PathCustomerCreateAccountEmailTemplate => Default Welcome Email.
-// Email template chosen based on theme fallback when "Default" option is
-// selected.
-// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
-var PathCustomerCreateAccountEmailTemplate = model.NewStr(`customer/create_account/email_template`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountEmailDomain => Default Email Domain.
+	// Path: customer/create_account/email_domain
+	CustomerCreateAccountEmailDomain model.Str
 
-// PathCustomerCreateAccountEmailNoPasswordTemplate => Default Welcome Email Without Password.
-// This email will be sent instead of the Default Welcome Email, if a customer
-// was created without password.  Email template chosen based on theme
-// fallback when "Default" option is selected.
-// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
-var PathCustomerCreateAccountEmailNoPasswordTemplate = model.NewStr(`customer/create_account/email_no_password_template`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountEmailTemplate => Default Welcome Email.
+	// Email template chosen based on theme fallback when "Default" option is
+	// selected.
+	// Path: customer/create_account/email_template
+	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	CustomerCreateAccountEmailTemplate model.Str
 
-// PathCustomerCreateAccountEmailIdentity => Email Sender.
-// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
-var PathCustomerCreateAccountEmailIdentity = model.NewStr(`customer/create_account/email_identity`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountEmailNoPasswordTemplate => Default Welcome Email Without Password.
+	// This email will be sent instead of the Default Welcome Email, if a customer
+	// was created without password.  Email template chosen based on theme
+	// fallback when "Default" option is selected.
+	// Path: customer/create_account/email_no_password_template
+	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	CustomerCreateAccountEmailNoPasswordTemplate model.Str
 
-// PathCustomerCreateAccountConfirm => Require Emails Confirmation.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCustomerCreateAccountConfirm = model.NewBool(`customer/create_account/confirm`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountEmailIdentity => Email Sender.
+	// Path: customer/create_account/email_identity
+	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	CustomerCreateAccountEmailIdentity model.Str
 
-// PathCustomerCreateAccountEmailConfirmationTemplate => Confirmation Link Email.
-// Email template chosen based on theme fallback when "Default" option is
-// selected.
-// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
-var PathCustomerCreateAccountEmailConfirmationTemplate = model.NewStr(`customer/create_account/email_confirmation_template`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountConfirm => Require Emails Confirmation.
+	// Path: customer/create_account/confirm
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CustomerCreateAccountConfirm model.Bool
 
-// PathCustomerCreateAccountEmailConfirmedTemplate => Welcome Email.
-// This email will be sent instead of the Default Welcome Email, after account
-// confirmation.  Email template chosen based on theme fallback when "Default"
-// option is selected.
-// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
-var PathCustomerCreateAccountEmailConfirmedTemplate = model.NewStr(`customer/create_account/email_confirmed_template`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountEmailConfirmationTemplate => Confirmation Link Email.
+	// Email template chosen based on theme fallback when "Default" option is
+	// selected.
+	// Path: customer/create_account/email_confirmation_template
+	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	CustomerCreateAccountEmailConfirmationTemplate model.Str
 
-// PathCustomerCreateAccountGenerateHumanFriendlyId => Generate Human-Friendly Customer ID.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCustomerCreateAccountGenerateHumanFriendlyId = model.NewBool(`customer/create_account/generate_human_friendly_id`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountEmailConfirmedTemplate => Welcome Email.
+	// This email will be sent instead of the Default Welcome Email, after account
+	// confirmation.  Email template chosen based on theme fallback when "Default"
+	// option is selected.
+	// Path: customer/create_account/email_confirmed_template
+	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	CustomerCreateAccountEmailConfirmedTemplate model.Str
 
-// PathCustomerPasswordForgotEmailTemplate => Forgot Email Template.
-// Email template chosen based on theme fallback when "Default" option is
-// selected.
-// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
-var PathCustomerPasswordForgotEmailTemplate = model.NewStr(`customer/password/forgot_email_template`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerCreateAccountGenerateHumanFriendlyId => Generate Human-Friendly Customer ID.
+	// Path: customer/create_account/generate_human_friendly_id
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CustomerCreateAccountGenerateHumanFriendlyId model.Bool
 
-// PathCustomerPasswordRemindEmailTemplate => Remind Email Template.
-// Email template chosen based on theme fallback when "Default" option is
-// selected.
-// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
-var PathCustomerPasswordRemindEmailTemplate = model.NewStr(`customer/password/remind_email_template`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerPasswordForgotEmailTemplate => Forgot Email Template.
+	// Email template chosen based on theme fallback when "Default" option is
+	// selected.
+	// Path: customer/password/forgot_email_template
+	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	CustomerPasswordForgotEmailTemplate model.Str
 
-// PathCustomerPasswordResetPasswordTemplate => Reset Password Template.
-// Email template chosen based on theme fallback when "Default" option is
-// selected.
-// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
-var PathCustomerPasswordResetPasswordTemplate = model.NewStr(`customer/password/reset_password_template`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerPasswordRemindEmailTemplate => Remind Email Template.
+	// Email template chosen based on theme fallback when "Default" option is
+	// selected.
+	// Path: customer/password/remind_email_template
+	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	CustomerPasswordRemindEmailTemplate model.Str
 
-// PathCustomerPasswordForgotEmailIdentity => Password Template Email Sender.
-// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
-var PathCustomerPasswordForgotEmailIdentity = model.NewStr(`customer/password/forgot_email_identity`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerPasswordResetPasswordTemplate => Reset Password Template.
+	// Email template chosen based on theme fallback when "Default" option is
+	// selected.
+	// Path: customer/password/reset_password_template
+	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	CustomerPasswordResetPasswordTemplate model.Str
 
-// PathCustomerPasswordResetLinkExpirationPeriod => Recovery Link Expiration Period (days).
-// Please enter a number 1 or greater in this field.
-// BackendModel: Otnegam\Customer\Model\Config\Backend\Password\Link\Expirationperiod
-var PathCustomerPasswordResetLinkExpirationPeriod = model.NewStr(`customer/password/reset_link_expiration_period`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerPasswordForgotEmailIdentity => Password Template Email Sender.
+	// Path: customer/password/forgot_email_identity
+	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	CustomerPasswordForgotEmailIdentity model.Str
 
-// PathCustomerAddressStreetLines => Number of Lines in a Street Address.
-// Leave empty for default (2). Valid range: 1-4
-// BackendModel: Otnegam\Customer\Model\Config\Backend\Address\Street
-var PathCustomerAddressStreetLines = model.NewStr(`customer/address/street_lines`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerPasswordResetLinkExpirationPeriod => Recovery Link Expiration Period (days).
+	// Please enter a number 1 or greater in this field.
+	// Path: customer/password/reset_link_expiration_period
+	// BackendModel: Otnegam\Customer\Model\Config\Backend\Password\Link\Expirationperiod
+	CustomerPasswordResetLinkExpirationPeriod model.Str
 
-// PathCustomerAddressPrefixShow => Show Prefix.
-// The title that goes before name (Mr., Mrs., etc.)
-// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Address
-// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
-var PathCustomerAddressPrefixShow = model.NewStr(`customer/address/prefix_show`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerAddressStreetLines => Number of Lines in a Street Address.
+	// Leave empty for default (2). Valid range: 1-4
+	// Path: customer/address/street_lines
+	// BackendModel: Otnegam\Customer\Model\Config\Backend\Address\Street
+	CustomerAddressStreetLines model.Str
 
-// PathCustomerAddressPrefixOptions => Prefix Dropdown Options.
-// Semicolon (;) separated values.Put semicolon in the beginning for empty
-// first option.Leave empty for open text field.
-var PathCustomerAddressPrefixOptions = model.NewStr(`customer/address/prefix_options`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerAddressPrefixShow => Show Prefix.
+	// The title that goes before name (Mr., Mrs., etc.)
+	// Path: customer/address/prefix_show
+	// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Address
+	// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
+	CustomerAddressPrefixShow model.Str
 
-// PathCustomerAddressMiddlenameShow => Show Middle Name (initial).
-// Always optional.
-// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Address
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCustomerAddressMiddlenameShow = model.NewBool(`customer/address/middlename_show`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerAddressPrefixOptions => Prefix Dropdown Options.
+	// Semicolon (;) separated values.Put semicolon in the beginning for empty
+	// first option.Leave empty for open text field.
+	// Path: customer/address/prefix_options
+	CustomerAddressPrefixOptions model.Str
 
-// PathCustomerAddressSuffixShow => Show Suffix.
-// The suffix that goes after name (Jr., Sr., etc.)
-// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Address
-// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
-var PathCustomerAddressSuffixShow = model.NewStr(`customer/address/suffix_show`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerAddressMiddlenameShow => Show Middle Name (initial).
+	// Always optional.
+	// Path: customer/address/middlename_show
+	// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Address
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CustomerAddressMiddlenameShow model.Bool
 
-// PathCustomerAddressSuffixOptions => Suffix Dropdown Options.
-// Semicolon (;) separated values.Put semicolon in the beginning for empty
-// first option.Leave empty for open text field.
-var PathCustomerAddressSuffixOptions = model.NewStr(`customer/address/suffix_options`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerAddressSuffixShow => Show Suffix.
+	// The suffix that goes after name (Jr., Sr., etc.)
+	// Path: customer/address/suffix_show
+	// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Address
+	// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
+	CustomerAddressSuffixShow model.Str
 
-// PathCustomerAddressDobShow => Show Date of Birth.
-// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Customer
-// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
-var PathCustomerAddressDobShow = model.NewStr(`customer/address/dob_show`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerAddressSuffixOptions => Suffix Dropdown Options.
+	// Semicolon (;) separated values.Put semicolon in the beginning for empty
+	// first option.Leave empty for open text field.
+	// Path: customer/address/suffix_options
+	CustomerAddressSuffixOptions model.Str
 
-// PathCustomerAddressTaxvatShow => Show Tax/VAT Number.
-// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Customer
-// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
-var PathCustomerAddressTaxvatShow = model.NewStr(`customer/address/taxvat_show`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerAddressDobShow => Show Date of Birth.
+	// Path: customer/address/dob_show
+	// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Customer
+	// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
+	CustomerAddressDobShow model.Str
 
-// PathCustomerAddressGenderShow => Show Gender.
-// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Customer
-// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
-var PathCustomerAddressGenderShow = model.NewStr(`customer/address/gender_show`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerAddressTaxvatShow => Show Tax/VAT Number.
+	// Path: customer/address/taxvat_show
+	// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Customer
+	// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
+	CustomerAddressTaxvatShow model.Str
 
-// PathCustomerStartupRedirectDashboard => Redirect Customer to Account Dashboard after Logging in.
-// Customer will stay on the current page if "No" is selected.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCustomerStartupRedirectDashboard = model.NewBool(`customer/startup/redirect_dashboard`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerAddressGenderShow => Show Gender.
+	// Path: customer/address/gender_show
+	// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Customer
+	// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
+	CustomerAddressGenderShow model.Str
 
-// PathCustomerAddressTemplatesText => Text.
-var PathCustomerAddressTemplatesText = model.NewStr(`customer/address_templates/text`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerStartupRedirectDashboard => Redirect Customer to Account Dashboard after Logging in.
+	// Customer will stay on the current page if "No" is selected.
+	// Path: customer/startup/redirect_dashboard
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CustomerStartupRedirectDashboard model.Bool
 
-// PathCustomerAddressTemplatesOneline => Text One Line.
-var PathCustomerAddressTemplatesOneline = model.NewStr(`customer/address_templates/oneline`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerAddressTemplatesText => Text.
+	// Path: customer/address_templates/text
+	CustomerAddressTemplatesText model.Str
 
-// PathCustomerAddressTemplatesHtml => HTML.
-var PathCustomerAddressTemplatesHtml = model.NewStr(`customer/address_templates/html`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerAddressTemplatesOneline => Text One Line.
+	// Path: customer/address_templates/oneline
+	CustomerAddressTemplatesOneline model.Str
 
-// PathCustomerAddressTemplatesPdf => PDF.
-var PathCustomerAddressTemplatesPdf = model.NewStr(`customer/address_templates/pdf`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerAddressTemplatesHtml => HTML.
+	// Path: customer/address_templates/html
+	CustomerAddressTemplatesHtml model.Str
 
-// PathCustomerOnlineCustomersOnlineMinutesInterval => Online Minutes Interval.
-// Leave empty for default (15 minutes).
-var PathCustomerOnlineCustomersOnlineMinutesInterval = model.NewStr(`customer/online_customers/online_minutes_interval`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerAddressTemplatesPdf => PDF.
+	// Path: customer/address_templates/pdf
+	CustomerAddressTemplatesPdf model.Str
 
-// PathGeneralStoreInformationValidateVatNumber => .
-var PathGeneralStoreInformationValidateVatNumber = model.NewStr(`general/store_information/validate_vat_number`, model.WithPkgCfg(PackageConfiguration))
+	// CustomerOnlineCustomersOnlineMinutesInterval => Online Minutes Interval.
+	// Leave empty for default (15 minutes).
+	// Path: customer/online_customers/online_minutes_interval
+	CustomerOnlineCustomersOnlineMinutesInterval model.Str
 
-// PathGeneralRestrictionAutocompleteOnStorefront => Enable Autocomplete on login/forgot password forms.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathGeneralRestrictionAutocompleteOnStorefront = model.NewBool(`general/restriction/autocomplete_on_storefront`, model.WithPkgCfg(PackageConfiguration))
+	// GeneralStoreInformationValidateVatNumber => .
+	// Path: general/store_information/validate_vat_number
+	GeneralStoreInformationValidateVatNumber model.Str
+
+	// GeneralRestrictionAutocompleteOnStorefront => Enable Autocomplete on login/forgot password forms.
+	// Path: general/restriction/autocomplete_on_storefront
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	GeneralRestrictionAutocompleteOnStorefront model.Bool
+}
+
+// NewPath initializes the global Path variable. See init()
+func NewPath(pkgCfg element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(pkgCfg)
+}
+
+func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+	pp.Lock()
+	defer pp.Unlock()
+	pp.CustomerAccountShareScope = model.NewStr(`customer/account_share/scope`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountAutoGroupAssign = model.NewBool(`customer/create_account/auto_group_assign`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountTaxCalculationAddressType = model.NewStr(`customer/create_account/tax_calculation_address_type`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountDefaultGroup = model.NewStr(`customer/create_account/default_group`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountVivDomesticGroup = model.NewStr(`customer/create_account/viv_domestic_group`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountVivIntraUnionGroup = model.NewStr(`customer/create_account/viv_intra_union_group`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountVivInvalidGroup = model.NewStr(`customer/create_account/viv_invalid_group`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountVivErrorGroup = model.NewStr(`customer/create_account/viv_error_group`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountVivOnEachTransaction = model.NewBool(`customer/create_account/viv_on_each_transaction`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountVivDisableAutoGroupAssignDefault = model.NewBool(`customer/create_account/viv_disable_auto_group_assign_default`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountVatFrontendVisibility = model.NewBool(`customer/create_account/vat_frontend_visibility`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountEmailDomain = model.NewStr(`customer/create_account/email_domain`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountEmailTemplate = model.NewStr(`customer/create_account/email_template`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountEmailNoPasswordTemplate = model.NewStr(`customer/create_account/email_no_password_template`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountEmailIdentity = model.NewStr(`customer/create_account/email_identity`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountConfirm = model.NewBool(`customer/create_account/confirm`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountEmailConfirmationTemplate = model.NewStr(`customer/create_account/email_confirmation_template`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountEmailConfirmedTemplate = model.NewStr(`customer/create_account/email_confirmed_template`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerCreateAccountGenerateHumanFriendlyId = model.NewBool(`customer/create_account/generate_human_friendly_id`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerPasswordForgotEmailTemplate = model.NewStr(`customer/password/forgot_email_template`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerPasswordRemindEmailTemplate = model.NewStr(`customer/password/remind_email_template`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerPasswordResetPasswordTemplate = model.NewStr(`customer/password/reset_password_template`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerPasswordForgotEmailIdentity = model.NewStr(`customer/password/forgot_email_identity`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerPasswordResetLinkExpirationPeriod = model.NewStr(`customer/password/reset_link_expiration_period`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerAddressStreetLines = model.NewStr(`customer/address/street_lines`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerAddressPrefixShow = model.NewStr(`customer/address/prefix_show`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerAddressPrefixOptions = model.NewStr(`customer/address/prefix_options`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerAddressMiddlenameShow = model.NewBool(`customer/address/middlename_show`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerAddressSuffixShow = model.NewStr(`customer/address/suffix_show`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerAddressSuffixOptions = model.NewStr(`customer/address/suffix_options`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerAddressDobShow = model.NewStr(`customer/address/dob_show`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerAddressTaxvatShow = model.NewStr(`customer/address/taxvat_show`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerAddressGenderShow = model.NewStr(`customer/address/gender_show`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerStartupRedirectDashboard = model.NewBool(`customer/startup/redirect_dashboard`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerAddressTemplatesText = model.NewStr(`customer/address_templates/text`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerAddressTemplatesOneline = model.NewStr(`customer/address_templates/oneline`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerAddressTemplatesHtml = model.NewStr(`customer/address_templates/html`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerAddressTemplatesPdf = model.NewStr(`customer/address_templates/pdf`, model.WithPkgCfg(pkgCfg))
+	pp.CustomerOnlineCustomersOnlineMinutesInterval = model.NewStr(`customer/online_customers/online_minutes_interval`, model.WithPkgCfg(pkgCfg))
+	pp.GeneralStoreInformationValidateVatNumber = model.NewStr(`general/store_information/validate_vat_number`, model.WithPkgCfg(pkgCfg))
+	pp.GeneralRestrictionAutocompleteOnStorefront = model.NewBool(`general/restriction/autocomplete_on_storefront`, model.WithPkgCfg(pkgCfg))
+
+	return pp
+}

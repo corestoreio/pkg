@@ -3,31 +3,68 @@
 package shipping
 
 import (
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// PathShippingOriginCountryId => Country.
-// SourceModel: Otnegam\Directory\Model\Config\Source\Country
-var PathShippingOriginCountryId = model.NewStr(`shipping/origin/country_id`, model.WithPkgCfg(PackageConfiguration))
+// Path will be initialized in the init() function together with PackageConfiguration.
+var Path *PkgPath
 
-// PathShippingOriginRegionId => Region/State.
-var PathShippingOriginRegionId = model.NewStr(`shipping/origin/region_id`, model.WithPkgCfg(PackageConfiguration))
+// PkgPath global configuration struct containing paths and how to retrieve
+// their values and options.
+type PkgPath struct {
+	model.PkgPath
+	// ShippingOriginCountryId => Country.
+	// Path: shipping/origin/country_id
+	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	ShippingOriginCountryId model.Str
 
-// PathShippingOriginPostcode => ZIP/Postal Code.
-var PathShippingOriginPostcode = model.NewStr(`shipping/origin/postcode`, model.WithPkgCfg(PackageConfiguration))
+	// ShippingOriginRegionId => Region/State.
+	// Path: shipping/origin/region_id
+	ShippingOriginRegionId model.Str
 
-// PathShippingOriginCity => City.
-var PathShippingOriginCity = model.NewStr(`shipping/origin/city`, model.WithPkgCfg(PackageConfiguration))
+	// ShippingOriginPostcode => ZIP/Postal Code.
+	// Path: shipping/origin/postcode
+	ShippingOriginPostcode model.Str
 
-// PathShippingOriginStreetLine1 => Street Address.
-var PathShippingOriginStreetLine1 = model.NewStr(`shipping/origin/street_line1`, model.WithPkgCfg(PackageConfiguration))
+	// ShippingOriginCity => City.
+	// Path: shipping/origin/city
+	ShippingOriginCity model.Str
 
-// PathShippingOriginStreetLine2 => Street Address Line 2.
-var PathShippingOriginStreetLine2 = model.NewStr(`shipping/origin/street_line2`, model.WithPkgCfg(PackageConfiguration))
+	// ShippingOriginStreetLine1 => Street Address.
+	// Path: shipping/origin/street_line1
+	ShippingOriginStreetLine1 model.Str
 
-// PathShippingShippingPolicyEnableShippingPolicy => Apply custom Shipping Policy.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathShippingShippingPolicyEnableShippingPolicy = model.NewBool(`shipping/shipping_policy/enable_shipping_policy`, model.WithPkgCfg(PackageConfiguration))
+	// ShippingOriginStreetLine2 => Street Address Line 2.
+	// Path: shipping/origin/street_line2
+	ShippingOriginStreetLine2 model.Str
 
-// PathShippingShippingPolicyShippingPolicyContent => Shipping Policy.
-var PathShippingShippingPolicyShippingPolicyContent = model.NewStr(`shipping/shipping_policy/shipping_policy_content`, model.WithPkgCfg(PackageConfiguration))
+	// ShippingShippingPolicyEnableShippingPolicy => Apply custom Shipping Policy.
+	// Path: shipping/shipping_policy/enable_shipping_policy
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	ShippingShippingPolicyEnableShippingPolicy model.Bool
+
+	// ShippingShippingPolicyShippingPolicyContent => Shipping Policy.
+	// Path: shipping/shipping_policy/shipping_policy_content
+	ShippingShippingPolicyShippingPolicyContent model.Str
+}
+
+// NewPath initializes the global Path variable. See init()
+func NewPath(pkgCfg element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(pkgCfg)
+}
+
+func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+	pp.Lock()
+	defer pp.Unlock()
+	pp.ShippingOriginCountryId = model.NewStr(`shipping/origin/country_id`, model.WithPkgCfg(pkgCfg))
+	pp.ShippingOriginRegionId = model.NewStr(`shipping/origin/region_id`, model.WithPkgCfg(pkgCfg))
+	pp.ShippingOriginPostcode = model.NewStr(`shipping/origin/postcode`, model.WithPkgCfg(pkgCfg))
+	pp.ShippingOriginCity = model.NewStr(`shipping/origin/city`, model.WithPkgCfg(pkgCfg))
+	pp.ShippingOriginStreetLine1 = model.NewStr(`shipping/origin/street_line1`, model.WithPkgCfg(pkgCfg))
+	pp.ShippingOriginStreetLine2 = model.NewStr(`shipping/origin/street_line2`, model.WithPkgCfg(pkgCfg))
+	pp.ShippingShippingPolicyEnableShippingPolicy = model.NewBool(`shipping/shipping_policy/enable_shipping_policy`, model.WithPkgCfg(pkgCfg))
+	pp.ShippingShippingPolicyShippingPolicyContent = model.NewStr(`shipping/shipping_policy/shipping_policy_content`, model.WithPkgCfg(pkgCfg))
+
+	return pp
+}

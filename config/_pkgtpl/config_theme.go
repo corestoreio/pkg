@@ -400,4 +400,5 @@ Disallow: /*SID=
 			),
 		},
 	)
+	Path = NewPath(PackageConfiguration)
 }

@@ -110,4 +110,5 @@ func init() {
 			),
 		},
 	)
+	Path = NewPath(PackageConfiguration)
 }

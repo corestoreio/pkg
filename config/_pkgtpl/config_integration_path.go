@@ -3,27 +3,58 @@
 package integration
 
 import (
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// PathOauthCleanupCleanupProbability => Cleanup Probability.
-// Integer. Launch cleanup in X OAuth requests. 0 (not recommended) - to
-// disable cleanup
-var PathOauthCleanupCleanupProbability = model.NewStr(`oauth/cleanup/cleanup_probability`, model.WithPkgCfg(PackageConfiguration))
+// Path will be initialized in the init() function together with PackageConfiguration.
+var Path *PkgPath
 
-// PathOauthCleanupExpirationPeriod => Expiration Period.
-// Cleanup entries older than X minutes.
-var PathOauthCleanupExpirationPeriod = model.NewStr(`oauth/cleanup/expiration_period`, model.WithPkgCfg(PackageConfiguration))
+// PkgPath global configuration struct containing paths and how to retrieve
+// their values and options.
+type PkgPath struct {
+	model.PkgPath
+	// OauthCleanupCleanupProbability => Cleanup Probability.
+	// Integer. Launch cleanup in X OAuth requests. 0 (not recommended) - to
+	// disable cleanup
+	// Path: oauth/cleanup/cleanup_probability
+	OauthCleanupCleanupProbability model.Str
 
-// PathOauthConsumerExpirationPeriod => Expiration Period.
-// Consumer key/secret will expire if not used within X seconds after Oauth
-// token exchange starts.
-var PathOauthConsumerExpirationPeriod = model.NewStr(`oauth/consumer/expiration_period`, model.WithPkgCfg(PackageConfiguration))
+	// OauthCleanupExpirationPeriod => Expiration Period.
+	// Cleanup entries older than X minutes.
+	// Path: oauth/cleanup/expiration_period
+	OauthCleanupExpirationPeriod model.Str
 
-// PathOauthConsumerPostMaxredirects => OAuth consumer credentials HTTP Post maxredirects.
-// Number of maximum redirects for OAuth consumer credentials Post request.
-var PathOauthConsumerPostMaxredirects = model.NewStr(`oauth/consumer/post_maxredirects`, model.WithPkgCfg(PackageConfiguration))
+	// OauthConsumerExpirationPeriod => Expiration Period.
+	// Consumer key/secret will expire if not used within X seconds after Oauth
+	// token exchange starts.
+	// Path: oauth/consumer/expiration_period
+	OauthConsumerExpirationPeriod model.Str
 
-// PathOauthConsumerPostTimeout => OAuth consumer credentials HTTP Post timeout.
-// Timeout for OAuth consumer credentials Post request within X seconds.
-var PathOauthConsumerPostTimeout = model.NewStr(`oauth/consumer/post_timeout`, model.WithPkgCfg(PackageConfiguration))
+	// OauthConsumerPostMaxredirects => OAuth consumer credentials HTTP Post maxredirects.
+	// Number of maximum redirects for OAuth consumer credentials Post request.
+	// Path: oauth/consumer/post_maxredirects
+	OauthConsumerPostMaxredirects model.Str
+
+	// OauthConsumerPostTimeout => OAuth consumer credentials HTTP Post timeout.
+	// Timeout for OAuth consumer credentials Post request within X seconds.
+	// Path: oauth/consumer/post_timeout
+	OauthConsumerPostTimeout model.Str
+}
+
+// NewPath initializes the global Path variable. See init()
+func NewPath(pkgCfg element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(pkgCfg)
+}
+
+func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+	pp.Lock()
+	defer pp.Unlock()
+	pp.OauthCleanupCleanupProbability = model.NewStr(`oauth/cleanup/cleanup_probability`, model.WithPkgCfg(pkgCfg))
+	pp.OauthCleanupExpirationPeriod = model.NewStr(`oauth/cleanup/expiration_period`, model.WithPkgCfg(pkgCfg))
+	pp.OauthConsumerExpirationPeriod = model.NewStr(`oauth/consumer/expiration_period`, model.WithPkgCfg(pkgCfg))
+	pp.OauthConsumerPostMaxredirects = model.NewStr(`oauth/consumer/post_maxredirects`, model.WithPkgCfg(pkgCfg))
+	pp.OauthConsumerPostTimeout = model.NewStr(`oauth/consumer/post_timeout`, model.WithPkgCfg(pkgCfg))
+
+	return pp
+}

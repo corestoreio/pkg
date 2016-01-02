@@ -3,64 +3,113 @@
 package cataloginventory
 
 import (
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// PathCataloginventoryOptionsCanSubtract => Decrease Stock When Order is Placed.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCataloginventoryOptionsCanSubtract = model.NewBool(`cataloginventory/options/can_subtract`, model.WithPkgCfg(PackageConfiguration))
+// Path will be initialized in the init() function together with PackageConfiguration.
+var Path *PkgPath
 
-// PathCataloginventoryOptionsCanBackInStock => Set Items' Status to be In Stock When Order is Cancelled.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCataloginventoryOptionsCanBackInStock = model.NewBool(`cataloginventory/options/can_back_in_stock`, model.WithPkgCfg(PackageConfiguration))
+// PkgPath global configuration struct containing paths and how to retrieve
+// their values and options.
+type PkgPath struct {
+	model.PkgPath
+	// CataloginventoryOptionsCanSubtract => Decrease Stock When Order is Placed.
+	// Path: cataloginventory/options/can_subtract
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CataloginventoryOptionsCanSubtract model.Bool
 
-// PathCataloginventoryOptionsShowOutOfStock => Display Out of Stock Products.
-// Products will still be shown by direct product URLs.
-// BackendModel: Otnegam\CatalogInventory\Model\Config\Backend\ShowOutOfStock
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCataloginventoryOptionsShowOutOfStock = model.NewBool(`cataloginventory/options/show_out_of_stock`, model.WithPkgCfg(PackageConfiguration))
+	// CataloginventoryOptionsCanBackInStock => Set Items' Status to be In Stock When Order is Cancelled.
+	// Path: cataloginventory/options/can_back_in_stock
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CataloginventoryOptionsCanBackInStock model.Bool
 
-// PathCataloginventoryOptionsStockThresholdQty => Only X left Threshold.
-var PathCataloginventoryOptionsStockThresholdQty = model.NewStr(`cataloginventory/options/stock_threshold_qty`, model.WithPkgCfg(PackageConfiguration))
+	// CataloginventoryOptionsShowOutOfStock => Display Out of Stock Products.
+	// Products will still be shown by direct product URLs.
+	// Path: cataloginventory/options/show_out_of_stock
+	// BackendModel: Otnegam\CatalogInventory\Model\Config\Backend\ShowOutOfStock
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CataloginventoryOptionsShowOutOfStock model.Bool
 
-// PathCataloginventoryOptionsDisplayProductStockStatus => Display Products Availability in Stock on Storefront.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCataloginventoryOptionsDisplayProductStockStatus = model.NewBool(`cataloginventory/options/display_product_stock_status`, model.WithPkgCfg(PackageConfiguration))
+	// CataloginventoryOptionsStockThresholdQty => Only X left Threshold.
+	// Path: cataloginventory/options/stock_threshold_qty
+	CataloginventoryOptionsStockThresholdQty model.Str
 
-// PathCataloginventoryItemOptionsManageStock => Manage Stock.
-// Changing can take some time due to processing whole catalog.
-// BackendModel: Otnegam\CatalogInventory\Model\Config\Backend\Managestock
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCataloginventoryItemOptionsManageStock = model.NewBool(`cataloginventory/item_options/manage_stock`, model.WithPkgCfg(PackageConfiguration))
+	// CataloginventoryOptionsDisplayProductStockStatus => Display Products Availability in Stock on Storefront.
+	// Path: cataloginventory/options/display_product_stock_status
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CataloginventoryOptionsDisplayProductStockStatus model.Bool
 
-// PathCataloginventoryItemOptionsBackorders => Backorders.
-// Changing can take some time due to processing whole catalog.
-// BackendModel: Otnegam\CatalogInventory\Model\Config\Backend\Backorders
-// SourceModel: Otnegam\CatalogInventory\Model\Source\Backorders
-var PathCataloginventoryItemOptionsBackorders = model.NewStr(`cataloginventory/item_options/backorders`, model.WithPkgCfg(PackageConfiguration))
+	// CataloginventoryItemOptionsManageStock => Manage Stock.
+	// Changing can take some time due to processing whole catalog.
+	// Path: cataloginventory/item_options/manage_stock
+	// BackendModel: Otnegam\CatalogInventory\Model\Config\Backend\Managestock
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CataloginventoryItemOptionsManageStock model.Bool
 
-// PathCataloginventoryItemOptionsMaxSaleQty => Maximum Qty Allowed in Shopping Cart.
-var PathCataloginventoryItemOptionsMaxSaleQty = model.NewStr(`cataloginventory/item_options/max_sale_qty`, model.WithPkgCfg(PackageConfiguration))
+	// CataloginventoryItemOptionsBackorders => Backorders.
+	// Changing can take some time due to processing whole catalog.
+	// Path: cataloginventory/item_options/backorders
+	// BackendModel: Otnegam\CatalogInventory\Model\Config\Backend\Backorders
+	// SourceModel: Otnegam\CatalogInventory\Model\Source\Backorders
+	CataloginventoryItemOptionsBackorders model.Str
 
-// PathCataloginventoryItemOptionsMinQty => Out-of-Stock Threshold.
-// BackendModel: Otnegam\CatalogInventory\Model\System\Config\Backend\Minqty
-var PathCataloginventoryItemOptionsMinQty = model.NewStr(`cataloginventory/item_options/min_qty`, model.WithPkgCfg(PackageConfiguration))
+	// CataloginventoryItemOptionsMaxSaleQty => Maximum Qty Allowed in Shopping Cart.
+	// Path: cataloginventory/item_options/max_sale_qty
+	CataloginventoryItemOptionsMaxSaleQty model.Str
 
-// PathCataloginventoryItemOptionsMinSaleQty => Minimum Qty Allowed in Shopping Cart.
-// BackendModel: Otnegam\CatalogInventory\Model\System\Config\Backend\Minsaleqty
-var PathCataloginventoryItemOptionsMinSaleQty = model.NewStr(`cataloginventory/item_options/min_sale_qty`, model.WithPkgCfg(PackageConfiguration))
+	// CataloginventoryItemOptionsMinQty => Out-of-Stock Threshold.
+	// Path: cataloginventory/item_options/min_qty
+	// BackendModel: Otnegam\CatalogInventory\Model\System\Config\Backend\Minqty
+	CataloginventoryItemOptionsMinQty model.Str
 
-// PathCataloginventoryItemOptionsNotifyStockQty => Notify for Quantity Below.
-var PathCataloginventoryItemOptionsNotifyStockQty = model.NewStr(`cataloginventory/item_options/notify_stock_qty`, model.WithPkgCfg(PackageConfiguration))
+	// CataloginventoryItemOptionsMinSaleQty => Minimum Qty Allowed in Shopping Cart.
+	// Path: cataloginventory/item_options/min_sale_qty
+	// BackendModel: Otnegam\CatalogInventory\Model\System\Config\Backend\Minsaleqty
+	CataloginventoryItemOptionsMinSaleQty model.Str
 
-// PathCataloginventoryItemOptionsAutoReturn => Automatically Return Credit Memo Item to Stock.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCataloginventoryItemOptionsAutoReturn = model.NewBool(`cataloginventory/item_options/auto_return`, model.WithPkgCfg(PackageConfiguration))
+	// CataloginventoryItemOptionsNotifyStockQty => Notify for Quantity Below.
+	// Path: cataloginventory/item_options/notify_stock_qty
+	CataloginventoryItemOptionsNotifyStockQty model.Str
 
-// PathCataloginventoryItemOptionsEnableQtyIncrements => Enable Qty Increments.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCataloginventoryItemOptionsEnableQtyIncrements = model.NewBool(`cataloginventory/item_options/enable_qty_increments`, model.WithPkgCfg(PackageConfiguration))
+	// CataloginventoryItemOptionsAutoReturn => Automatically Return Credit Memo Item to Stock.
+	// Path: cataloginventory/item_options/auto_return
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CataloginventoryItemOptionsAutoReturn model.Bool
 
-// PathCataloginventoryItemOptionsQtyIncrements => Qty Increments.
-// BackendModel: Otnegam\CatalogInventory\Model\System\Config\Backend\Qtyincrements
-var PathCataloginventoryItemOptionsQtyIncrements = model.NewStr(`cataloginventory/item_options/qty_increments`, model.WithPkgCfg(PackageConfiguration))
+	// CataloginventoryItemOptionsEnableQtyIncrements => Enable Qty Increments.
+	// Path: cataloginventory/item_options/enable_qty_increments
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CataloginventoryItemOptionsEnableQtyIncrements model.Bool
+
+	// CataloginventoryItemOptionsQtyIncrements => Qty Increments.
+	// Path: cataloginventory/item_options/qty_increments
+	// BackendModel: Otnegam\CatalogInventory\Model\System\Config\Backend\Qtyincrements
+	CataloginventoryItemOptionsQtyIncrements model.Str
+}
+
+// NewPath initializes the global Path variable. See init()
+func NewPath(pkgCfg element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(pkgCfg)
+}
+
+func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+	pp.Lock()
+	defer pp.Unlock()
+	pp.CataloginventoryOptionsCanSubtract = model.NewBool(`cataloginventory/options/can_subtract`, model.WithPkgCfg(pkgCfg))
+	pp.CataloginventoryOptionsCanBackInStock = model.NewBool(`cataloginventory/options/can_back_in_stock`, model.WithPkgCfg(pkgCfg))
+	pp.CataloginventoryOptionsShowOutOfStock = model.NewBool(`cataloginventory/options/show_out_of_stock`, model.WithPkgCfg(pkgCfg))
+	pp.CataloginventoryOptionsStockThresholdQty = model.NewStr(`cataloginventory/options/stock_threshold_qty`, model.WithPkgCfg(pkgCfg))
+	pp.CataloginventoryOptionsDisplayProductStockStatus = model.NewBool(`cataloginventory/options/display_product_stock_status`, model.WithPkgCfg(pkgCfg))
+	pp.CataloginventoryItemOptionsManageStock = model.NewBool(`cataloginventory/item_options/manage_stock`, model.WithPkgCfg(pkgCfg))
+	pp.CataloginventoryItemOptionsBackorders = model.NewStr(`cataloginventory/item_options/backorders`, model.WithPkgCfg(pkgCfg))
+	pp.CataloginventoryItemOptionsMaxSaleQty = model.NewStr(`cataloginventory/item_options/max_sale_qty`, model.WithPkgCfg(pkgCfg))
+	pp.CataloginventoryItemOptionsMinQty = model.NewStr(`cataloginventory/item_options/min_qty`, model.WithPkgCfg(pkgCfg))
+	pp.CataloginventoryItemOptionsMinSaleQty = model.NewStr(`cataloginventory/item_options/min_sale_qty`, model.WithPkgCfg(pkgCfg))
+	pp.CataloginventoryItemOptionsNotifyStockQty = model.NewStr(`cataloginventory/item_options/notify_stock_qty`, model.WithPkgCfg(pkgCfg))
+	pp.CataloginventoryItemOptionsAutoReturn = model.NewBool(`cataloginventory/item_options/auto_return`, model.WithPkgCfg(pkgCfg))
+	pp.CataloginventoryItemOptionsEnableQtyIncrements = model.NewBool(`cataloginventory/item_options/enable_qty_increments`, model.WithPkgCfg(pkgCfg))
+	pp.CataloginventoryItemOptionsQtyIncrements = model.NewStr(`cataloginventory/item_options/qty_increments`, model.WithPkgCfg(pkgCfg))
+
+	return pp
+}

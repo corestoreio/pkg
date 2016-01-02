@@ -3,128 +3,219 @@
 package offlineshipping
 
 import (
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// PathCarriersFlatrateActive => Enabled.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCarriersFlatrateActive = model.NewBool(`carriers/flatrate/active`, model.WithPkgCfg(PackageConfiguration))
+// Path will be initialized in the init() function together with PackageConfiguration.
+var Path *PkgPath
 
-// PathCarriersFlatrateName => Method Name.
-var PathCarriersFlatrateName = model.NewStr(`carriers/flatrate/name`, model.WithPkgCfg(PackageConfiguration))
+// PkgPath global configuration struct containing paths and how to retrieve
+// their values and options.
+type PkgPath struct {
+	model.PkgPath
+	// CarriersFlatrateActive => Enabled.
+	// Path: carriers/flatrate/active
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CarriersFlatrateActive model.Bool
 
-// PathCarriersFlatratePrice => Price.
-var PathCarriersFlatratePrice = model.NewStr(`carriers/flatrate/price`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFlatrateName => Method Name.
+	// Path: carriers/flatrate/name
+	CarriersFlatrateName model.Str
 
-// PathCarriersFlatrateHandlingType => Calculate Handling Fee.
-// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
-var PathCarriersFlatrateHandlingType = model.NewStr(`carriers/flatrate/handling_type`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFlatratePrice => Price.
+	// Path: carriers/flatrate/price
+	CarriersFlatratePrice model.Str
 
-// PathCarriersFlatrateHandlingFee => Handling Fee.
-var PathCarriersFlatrateHandlingFee = model.NewStr(`carriers/flatrate/handling_fee`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFlatrateHandlingType => Calculate Handling Fee.
+	// Path: carriers/flatrate/handling_type
+	// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
+	CarriersFlatrateHandlingType model.Str
 
-// PathCarriersFlatrateSortOrder => Sort Order.
-var PathCarriersFlatrateSortOrder = model.NewStr(`carriers/flatrate/sort_order`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFlatrateHandlingFee => Handling Fee.
+	// Path: carriers/flatrate/handling_fee
+	CarriersFlatrateHandlingFee model.Str
 
-// PathCarriersFlatrateTitle => Title.
-var PathCarriersFlatrateTitle = model.NewStr(`carriers/flatrate/title`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFlatrateSortOrder => Sort Order.
+	// Path: carriers/flatrate/sort_order
+	CarriersFlatrateSortOrder model.Str
 
-// PathCarriersFlatrateType => Type.
-// SourceModel: Otnegam\OfflineShipping\Model\Config\Source\Flatrate
-var PathCarriersFlatrateType = model.NewStr(`carriers/flatrate/type`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFlatrateTitle => Title.
+	// Path: carriers/flatrate/title
+	CarriersFlatrateTitle model.Str
 
-// PathCarriersFlatrateSallowspecific => Ship to Applicable Countries.
-// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
-var PathCarriersFlatrateSallowspecific = model.NewStr(`carriers/flatrate/sallowspecific`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFlatrateType => Type.
+	// Path: carriers/flatrate/type
+	// SourceModel: Otnegam\OfflineShipping\Model\Config\Source\Flatrate
+	CarriersFlatrateType model.Str
 
-// PathCarriersFlatrateSpecificcountry => Ship to Specific Countries.
-// SourceModel: Otnegam\Directory\Model\Config\Source\Country
-var PathCarriersFlatrateSpecificcountry = model.NewStringCSV(`carriers/flatrate/specificcountry`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFlatrateSallowspecific => Ship to Applicable Countries.
+	// Path: carriers/flatrate/sallowspecific
+	// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+	CarriersFlatrateSallowspecific model.Str
 
-// PathCarriersFlatrateShowmethod => Show Method if Not Applicable.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCarriersFlatrateShowmethod = model.NewBool(`carriers/flatrate/showmethod`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFlatrateSpecificcountry => Ship to Specific Countries.
+	// Path: carriers/flatrate/specificcountry
+	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	CarriersFlatrateSpecificcountry model.StringCSV
 
-// PathCarriersFlatrateSpecificerrmsg => Displayed Error Message.
-var PathCarriersFlatrateSpecificerrmsg = model.NewStr(`carriers/flatrate/specificerrmsg`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFlatrateShowmethod => Show Method if Not Applicable.
+	// Path: carriers/flatrate/showmethod
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CarriersFlatrateShowmethod model.Bool
 
-// PathCarriersTablerateHandlingType => Calculate Handling Fee.
-// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
-var PathCarriersTablerateHandlingType = model.NewStr(`carriers/tablerate/handling_type`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFlatrateSpecificerrmsg => Displayed Error Message.
+	// Path: carriers/flatrate/specificerrmsg
+	CarriersFlatrateSpecificerrmsg model.Str
 
-// PathCarriersTablerateHandlingFee => Handling Fee.
-var PathCarriersTablerateHandlingFee = model.NewStr(`carriers/tablerate/handling_fee`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersTablerateHandlingType => Calculate Handling Fee.
+	// Path: carriers/tablerate/handling_type
+	// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
+	CarriersTablerateHandlingType model.Str
 
-// PathCarriersTablerateActive => Enabled.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCarriersTablerateActive = model.NewBool(`carriers/tablerate/active`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersTablerateHandlingFee => Handling Fee.
+	// Path: carriers/tablerate/handling_fee
+	CarriersTablerateHandlingFee model.Str
 
-// PathCarriersTablerateConditionName => Condition.
-// SourceModel: Otnegam\OfflineShipping\Model\Config\Source\Tablerate
-var PathCarriersTablerateConditionName = model.NewStr(`carriers/tablerate/condition_name`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersTablerateActive => Enabled.
+	// Path: carriers/tablerate/active
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CarriersTablerateActive model.Bool
 
-// PathCarriersTablerateIncludeVirtualPrice => Include Virtual Products in Price Calculation.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCarriersTablerateIncludeVirtualPrice = model.NewBool(`carriers/tablerate/include_virtual_price`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersTablerateConditionName => Condition.
+	// Path: carriers/tablerate/condition_name
+	// SourceModel: Otnegam\OfflineShipping\Model\Config\Source\Tablerate
+	CarriersTablerateConditionName model.Str
 
-// PathCarriersTablerateExport => Export.
-var PathCarriersTablerateExport = model.NewStr(`carriers/tablerate/export`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersTablerateIncludeVirtualPrice => Include Virtual Products in Price Calculation.
+	// Path: carriers/tablerate/include_virtual_price
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CarriersTablerateIncludeVirtualPrice model.Bool
 
-// PathCarriersTablerateImport => Import.
-// BackendModel: Otnegam\OfflineShipping\Model\Config\Backend\Tablerate
-var PathCarriersTablerateImport = model.NewStr(`carriers/tablerate/import`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersTablerateExport => Export.
+	// Path: carriers/tablerate/export
+	CarriersTablerateExport model.Str
 
-// PathCarriersTablerateName => Method Name.
-var PathCarriersTablerateName = model.NewStr(`carriers/tablerate/name`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersTablerateImport => Import.
+	// Path: carriers/tablerate/import
+	// BackendModel: Otnegam\OfflineShipping\Model\Config\Backend\Tablerate
+	CarriersTablerateImport model.Str
 
-// PathCarriersTablerateSortOrder => Sort Order.
-var PathCarriersTablerateSortOrder = model.NewStr(`carriers/tablerate/sort_order`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersTablerateName => Method Name.
+	// Path: carriers/tablerate/name
+	CarriersTablerateName model.Str
 
-// PathCarriersTablerateTitle => Title.
-var PathCarriersTablerateTitle = model.NewStr(`carriers/tablerate/title`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersTablerateSortOrder => Sort Order.
+	// Path: carriers/tablerate/sort_order
+	CarriersTablerateSortOrder model.Str
 
-// PathCarriersTablerateSallowspecific => Ship to Applicable Countries.
-// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
-var PathCarriersTablerateSallowspecific = model.NewStr(`carriers/tablerate/sallowspecific`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersTablerateTitle => Title.
+	// Path: carriers/tablerate/title
+	CarriersTablerateTitle model.Str
 
-// PathCarriersTablerateSpecificcountry => Ship to Specific Countries.
-// SourceModel: Otnegam\Directory\Model\Config\Source\Country
-var PathCarriersTablerateSpecificcountry = model.NewStringCSV(`carriers/tablerate/specificcountry`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersTablerateSallowspecific => Ship to Applicable Countries.
+	// Path: carriers/tablerate/sallowspecific
+	// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+	CarriersTablerateSallowspecific model.Str
 
-// PathCarriersTablerateShowmethod => Show Method if Not Applicable.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCarriersTablerateShowmethod = model.NewBool(`carriers/tablerate/showmethod`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersTablerateSpecificcountry => Ship to Specific Countries.
+	// Path: carriers/tablerate/specificcountry
+	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	CarriersTablerateSpecificcountry model.StringCSV
 
-// PathCarriersTablerateSpecificerrmsg => Displayed Error Message.
-var PathCarriersTablerateSpecificerrmsg = model.NewStr(`carriers/tablerate/specificerrmsg`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersTablerateShowmethod => Show Method if Not Applicable.
+	// Path: carriers/tablerate/showmethod
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CarriersTablerateShowmethod model.Bool
 
-// PathCarriersFreeshippingActive => Enabled.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCarriersFreeshippingActive = model.NewBool(`carriers/freeshipping/active`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersTablerateSpecificerrmsg => Displayed Error Message.
+	// Path: carriers/tablerate/specificerrmsg
+	CarriersTablerateSpecificerrmsg model.Str
 
-// PathCarriersFreeshippingFreeShippingSubtotal => Minimum Order Amount.
-var PathCarriersFreeshippingFreeShippingSubtotal = model.NewStr(`carriers/freeshipping/free_shipping_subtotal`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFreeshippingActive => Enabled.
+	// Path: carriers/freeshipping/active
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CarriersFreeshippingActive model.Bool
 
-// PathCarriersFreeshippingName => Method Name.
-var PathCarriersFreeshippingName = model.NewStr(`carriers/freeshipping/name`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFreeshippingFreeShippingSubtotal => Minimum Order Amount.
+	// Path: carriers/freeshipping/free_shipping_subtotal
+	CarriersFreeshippingFreeShippingSubtotal model.Str
 
-// PathCarriersFreeshippingSortOrder => Sort Order.
-var PathCarriersFreeshippingSortOrder = model.NewStr(`carriers/freeshipping/sort_order`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFreeshippingName => Method Name.
+	// Path: carriers/freeshipping/name
+	CarriersFreeshippingName model.Str
 
-// PathCarriersFreeshippingTitle => Title.
-var PathCarriersFreeshippingTitle = model.NewStr(`carriers/freeshipping/title`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFreeshippingSortOrder => Sort Order.
+	// Path: carriers/freeshipping/sort_order
+	CarriersFreeshippingSortOrder model.Str
 
-// PathCarriersFreeshippingSallowspecific => Ship to Applicable Countries.
-// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
-var PathCarriersFreeshippingSallowspecific = model.NewStr(`carriers/freeshipping/sallowspecific`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFreeshippingTitle => Title.
+	// Path: carriers/freeshipping/title
+	CarriersFreeshippingTitle model.Str
 
-// PathCarriersFreeshippingSpecificcountry => Ship to Specific Countries.
-// SourceModel: Otnegam\Directory\Model\Config\Source\Country
-var PathCarriersFreeshippingSpecificcountry = model.NewStringCSV(`carriers/freeshipping/specificcountry`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFreeshippingSallowspecific => Ship to Applicable Countries.
+	// Path: carriers/freeshipping/sallowspecific
+	// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+	CarriersFreeshippingSallowspecific model.Str
 
-// PathCarriersFreeshippingShowmethod => Show Method if Not Applicable.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCarriersFreeshippingShowmethod = model.NewBool(`carriers/freeshipping/showmethod`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFreeshippingSpecificcountry => Ship to Specific Countries.
+	// Path: carriers/freeshipping/specificcountry
+	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	CarriersFreeshippingSpecificcountry model.StringCSV
 
-// PathCarriersFreeshippingSpecificerrmsg => Displayed Error Message.
-var PathCarriersFreeshippingSpecificerrmsg = model.NewStr(`carriers/freeshipping/specificerrmsg`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersFreeshippingShowmethod => Show Method if Not Applicable.
+	// Path: carriers/freeshipping/showmethod
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CarriersFreeshippingShowmethod model.Bool
+
+	// CarriersFreeshippingSpecificerrmsg => Displayed Error Message.
+	// Path: carriers/freeshipping/specificerrmsg
+	CarriersFreeshippingSpecificerrmsg model.Str
+}
+
+// NewPath initializes the global Path variable. See init()
+func NewPath(pkgCfg element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(pkgCfg)
+}
+
+func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+	pp.Lock()
+	defer pp.Unlock()
+	pp.CarriersFlatrateActive = model.NewBool(`carriers/flatrate/active`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFlatrateName = model.NewStr(`carriers/flatrate/name`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFlatratePrice = model.NewStr(`carriers/flatrate/price`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFlatrateHandlingType = model.NewStr(`carriers/flatrate/handling_type`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFlatrateHandlingFee = model.NewStr(`carriers/flatrate/handling_fee`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFlatrateSortOrder = model.NewStr(`carriers/flatrate/sort_order`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFlatrateTitle = model.NewStr(`carriers/flatrate/title`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFlatrateType = model.NewStr(`carriers/flatrate/type`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFlatrateSallowspecific = model.NewStr(`carriers/flatrate/sallowspecific`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFlatrateSpecificcountry = model.NewStringCSV(`carriers/flatrate/specificcountry`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFlatrateShowmethod = model.NewBool(`carriers/flatrate/showmethod`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFlatrateSpecificerrmsg = model.NewStr(`carriers/flatrate/specificerrmsg`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersTablerateHandlingType = model.NewStr(`carriers/tablerate/handling_type`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersTablerateHandlingFee = model.NewStr(`carriers/tablerate/handling_fee`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersTablerateActive = model.NewBool(`carriers/tablerate/active`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersTablerateConditionName = model.NewStr(`carriers/tablerate/condition_name`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersTablerateIncludeVirtualPrice = model.NewBool(`carriers/tablerate/include_virtual_price`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersTablerateExport = model.NewStr(`carriers/tablerate/export`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersTablerateImport = model.NewStr(`carriers/tablerate/import`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersTablerateName = model.NewStr(`carriers/tablerate/name`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersTablerateSortOrder = model.NewStr(`carriers/tablerate/sort_order`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersTablerateTitle = model.NewStr(`carriers/tablerate/title`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersTablerateSallowspecific = model.NewStr(`carriers/tablerate/sallowspecific`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersTablerateSpecificcountry = model.NewStringCSV(`carriers/tablerate/specificcountry`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersTablerateShowmethod = model.NewBool(`carriers/tablerate/showmethod`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersTablerateSpecificerrmsg = model.NewStr(`carriers/tablerate/specificerrmsg`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFreeshippingActive = model.NewBool(`carriers/freeshipping/active`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFreeshippingFreeShippingSubtotal = model.NewStr(`carriers/freeshipping/free_shipping_subtotal`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFreeshippingName = model.NewStr(`carriers/freeshipping/name`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFreeshippingSortOrder = model.NewStr(`carriers/freeshipping/sort_order`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFreeshippingTitle = model.NewStr(`carriers/freeshipping/title`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFreeshippingSallowspecific = model.NewStr(`carriers/freeshipping/sallowspecific`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFreeshippingSpecificcountry = model.NewStringCSV(`carriers/freeshipping/specificcountry`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFreeshippingShowmethod = model.NewBool(`carriers/freeshipping/showmethod`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFreeshippingSpecificerrmsg = model.NewStr(`carriers/freeshipping/specificerrmsg`, model.WithPkgCfg(pkgCfg))
+
+	return pp
+}

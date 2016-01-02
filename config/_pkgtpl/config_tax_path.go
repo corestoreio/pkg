@@ -3,137 +3,214 @@
 package tax
 
 import (
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// PathTaxClassesShippingTaxClass => Tax Class for Shipping.
-// SourceModel: Otnegam\Tax\Model\TaxClass\Source\Product
-var PathTaxClassesShippingTaxClass = model.NewStr(`tax/classes/shipping_tax_class`, model.WithPkgCfg(PackageConfiguration))
+// Path will be initialized in the init() function together with PackageConfiguration.
+var Path *PkgPath
 
-// PathTaxClassesDefaultProductTaxClass => Default Tax Class for Product.
-// BackendModel: Otnegam\Tax\Model\Config\TaxClass
-// SourceModel: Otnegam\Tax\Model\TaxClass\Source\Product
-var PathTaxClassesDefaultProductTaxClass = model.NewStr(`tax/classes/default_product_tax_class`, model.WithPkgCfg(PackageConfiguration))
+// PkgPath global configuration struct containing paths and how to retrieve
+// their values and options.
+type PkgPath struct {
+	model.PkgPath
+	// TaxClassesShippingTaxClass => Tax Class for Shipping.
+	// Path: tax/classes/shipping_tax_class
+	// SourceModel: Otnegam\Tax\Model\TaxClass\Source\Product
+	TaxClassesShippingTaxClass model.Str
 
-// PathTaxClassesDefaultCustomerTaxClass => Default Tax Class for Customer.
-// SourceModel: Otnegam\Tax\Model\TaxClass\Source\Customer
-var PathTaxClassesDefaultCustomerTaxClass = model.NewStr(`tax/classes/default_customer_tax_class`, model.WithPkgCfg(PackageConfiguration))
+	// TaxClassesDefaultProductTaxClass => Default Tax Class for Product.
+	// Path: tax/classes/default_product_tax_class
+	// BackendModel: Otnegam\Tax\Model\Config\TaxClass
+	// SourceModel: Otnegam\Tax\Model\TaxClass\Source\Product
+	TaxClassesDefaultProductTaxClass model.Str
 
-// PathTaxCalculationAlgorithm => Tax Calculation Method Based On.
-// SourceModel: Otnegam\Tax\Model\System\Config\Source\Algorithm
-var PathTaxCalculationAlgorithm = model.NewStr(`tax/calculation/algorithm`, model.WithPkgCfg(PackageConfiguration))
+	// TaxClassesDefaultCustomerTaxClass => Default Tax Class for Customer.
+	// Path: tax/classes/default_customer_tax_class
+	// SourceModel: Otnegam\Tax\Model\TaxClass\Source\Customer
+	TaxClassesDefaultCustomerTaxClass model.Str
 
-// PathTaxCalculationBasedOn => Tax Calculation Based On.
-// BackendModel: Otnegam\Tax\Model\Config\Notification
-// SourceModel: Otnegam\Tax\Model\Config\Source\Basedon
-var PathTaxCalculationBasedOn = model.NewStr(`tax/calculation/based_on`, model.WithPkgCfg(PackageConfiguration))
+	// TaxCalculationAlgorithm => Tax Calculation Method Based On.
+	// Path: tax/calculation/algorithm
+	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Algorithm
+	TaxCalculationAlgorithm model.Str
 
-// PathTaxCalculationPriceIncludesTax => Catalog Prices.
-// This sets whether catalog prices entered from Otnegam Admin include tax.
-// BackendModel: Otnegam\Tax\Model\Config\Price\IncludePrice
-// SourceModel: Otnegam\Tax\Model\System\Config\Source\PriceType
-var PathTaxCalculationPriceIncludesTax = model.NewStr(`tax/calculation/price_includes_tax`, model.WithPkgCfg(PackageConfiguration))
+	// TaxCalculationBasedOn => Tax Calculation Based On.
+	// Path: tax/calculation/based_on
+	// BackendModel: Otnegam\Tax\Model\Config\Notification
+	// SourceModel: Otnegam\Tax\Model\Config\Source\Basedon
+	TaxCalculationBasedOn model.Str
 
-// PathTaxCalculationShippingIncludesTax => Shipping Prices.
-// This sets whether shipping amounts entered from Otnegam Admin or obtained
-// from gateways include tax.
-// BackendModel: Otnegam\Tax\Model\Config\Price\IncludePrice
-// SourceModel: Otnegam\Tax\Model\System\Config\Source\PriceType
-var PathTaxCalculationShippingIncludesTax = model.NewStr(`tax/calculation/shipping_includes_tax`, model.WithPkgCfg(PackageConfiguration))
+	// TaxCalculationPriceIncludesTax => Catalog Prices.
+	// This sets whether catalog prices entered from Otnegam Admin include tax.
+	// Path: tax/calculation/price_includes_tax
+	// BackendModel: Otnegam\Tax\Model\Config\Price\IncludePrice
+	// SourceModel: Otnegam\Tax\Model\System\Config\Source\PriceType
+	TaxCalculationPriceIncludesTax model.Str
 
-// PathTaxCalculationApplyAfterDiscount => Apply Customer Tax.
-// BackendModel: Otnegam\Tax\Model\Config\Notification
-// SourceModel: Otnegam\Tax\Model\System\Config\Source\Apply
-var PathTaxCalculationApplyAfterDiscount = model.NewStr(`tax/calculation/apply_after_discount`, model.WithPkgCfg(PackageConfiguration))
+	// TaxCalculationShippingIncludesTax => Shipping Prices.
+	// This sets whether shipping amounts entered from Otnegam Admin or obtained
+	// from gateways include tax.
+	// Path: tax/calculation/shipping_includes_tax
+	// BackendModel: Otnegam\Tax\Model\Config\Price\IncludePrice
+	// SourceModel: Otnegam\Tax\Model\System\Config\Source\PriceType
+	TaxCalculationShippingIncludesTax model.Str
 
-// PathTaxCalculationDiscountTax => Apply Discount On Prices.
-// Apply discount on price including tax is calculated based on store tax if
-// "Apply Tax after Discount" is selected.
-// BackendModel: Otnegam\Tax\Model\Config\Notification
-// SourceModel: Otnegam\Tax\Model\System\Config\Source\PriceType
-var PathTaxCalculationDiscountTax = model.NewStr(`tax/calculation/discount_tax`, model.WithPkgCfg(PackageConfiguration))
+	// TaxCalculationApplyAfterDiscount => Apply Customer Tax.
+	// Path: tax/calculation/apply_after_discount
+	// BackendModel: Otnegam\Tax\Model\Config\Notification
+	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Apply
+	TaxCalculationApplyAfterDiscount model.Str
 
-// PathTaxCalculationApplyTaxOn => Apply Tax On.
-// SourceModel: Otnegam\Tax\Model\Config\Source\Apply\On
-var PathTaxCalculationApplyTaxOn = model.NewStr(`tax/calculation/apply_tax_on`, model.WithPkgCfg(PackageConfiguration))
+	// TaxCalculationDiscountTax => Apply Discount On Prices.
+	// Apply discount on price including tax is calculated based on store tax if
+	// "Apply Tax after Discount" is selected.
+	// Path: tax/calculation/discount_tax
+	// BackendModel: Otnegam\Tax\Model\Config\Notification
+	// SourceModel: Otnegam\Tax\Model\System\Config\Source\PriceType
+	TaxCalculationDiscountTax model.Str
 
-// PathTaxCalculationCrossBorderTradeEnabled => Enable Cross Border Trade.
-// When catalog price includes tax, enable this setting to fix the price no
-// matter what the customer's tax rate.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathTaxCalculationCrossBorderTradeEnabled = model.NewBool(`tax/calculation/cross_border_trade_enabled`, model.WithPkgCfg(PackageConfiguration))
+	// TaxCalculationApplyTaxOn => Apply Tax On.
+	// Path: tax/calculation/apply_tax_on
+	// SourceModel: Otnegam\Tax\Model\Config\Source\Apply\On
+	TaxCalculationApplyTaxOn model.Str
 
-// PathTaxDefaultsCountry => Default Country.
-// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Country
-var PathTaxDefaultsCountry = model.NewStr(`tax/defaults/country`, model.WithPkgCfg(PackageConfiguration))
+	// TaxCalculationCrossBorderTradeEnabled => Enable Cross Border Trade.
+	// When catalog price includes tax, enable this setting to fix the price no
+	// matter what the customer's tax rate.
+	// Path: tax/calculation/cross_border_trade_enabled
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	TaxCalculationCrossBorderTradeEnabled model.Bool
 
-// PathTaxDefaultsRegion => Default State.
-// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Region
-var PathTaxDefaultsRegion = model.NewStr(`tax/defaults/region`, model.WithPkgCfg(PackageConfiguration))
+	// TaxDefaultsCountry => Default Country.
+	// Path: tax/defaults/country
+	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Country
+	TaxDefaultsCountry model.Str
 
-// PathTaxDefaultsPostcode => Default Post Code.
-var PathTaxDefaultsPostcode = model.NewStr(`tax/defaults/postcode`, model.WithPkgCfg(PackageConfiguration))
+	// TaxDefaultsRegion => Default State.
+	// Path: tax/defaults/region
+	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Region
+	TaxDefaultsRegion model.Str
 
-// PathTaxDisplayType => Display Product Prices In Catalog.
-// BackendModel: Otnegam\Tax\Model\Config\Notification
-// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
-var PathTaxDisplayType = model.NewStr(`tax/display/type`, model.WithPkgCfg(PackageConfiguration))
+	// TaxDefaultsPostcode => Default Post Code.
+	// Path: tax/defaults/postcode
+	TaxDefaultsPostcode model.Str
 
-// PathTaxDisplayShipping => Display Shipping Prices.
-// BackendModel: Otnegam\Tax\Model\Config\Notification
-// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
-var PathTaxDisplayShipping = model.NewStr(`tax/display/shipping`, model.WithPkgCfg(PackageConfiguration))
+	// TaxDisplayType => Display Product Prices In Catalog.
+	// Path: tax/display/type
+	// BackendModel: Otnegam\Tax\Model\Config\Notification
+	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+	TaxDisplayType model.Str
 
-// PathTaxCartDisplayPrice => Display Prices.
-// BackendModel: Otnegam\Tax\Model\Config\Notification
-// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
-var PathTaxCartDisplayPrice = model.NewStr(`tax/cart_display/price`, model.WithPkgCfg(PackageConfiguration))
+	// TaxDisplayShipping => Display Shipping Prices.
+	// Path: tax/display/shipping
+	// BackendModel: Otnegam\Tax\Model\Config\Notification
+	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+	TaxDisplayShipping model.Str
 
-// PathTaxCartDisplaySubtotal => Display Subtotal.
-// BackendModel: Otnegam\Tax\Model\Config\Notification
-// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
-var PathTaxCartDisplaySubtotal = model.NewStr(`tax/cart_display/subtotal`, model.WithPkgCfg(PackageConfiguration))
+	// TaxCartDisplayPrice => Display Prices.
+	// Path: tax/cart_display/price
+	// BackendModel: Otnegam\Tax\Model\Config\Notification
+	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+	TaxCartDisplayPrice model.Str
 
-// PathTaxCartDisplayShipping => Display Shipping Amount.
-// BackendModel: Otnegam\Tax\Model\Config\Notification
-// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
-var PathTaxCartDisplayShipping = model.NewStr(`tax/cart_display/shipping`, model.WithPkgCfg(PackageConfiguration))
+	// TaxCartDisplaySubtotal => Display Subtotal.
+	// Path: tax/cart_display/subtotal
+	// BackendModel: Otnegam\Tax\Model\Config\Notification
+	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+	TaxCartDisplaySubtotal model.Str
 
-// PathTaxCartDisplayGrandtotal => Include Tax In Order Total.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathTaxCartDisplayGrandtotal = model.NewBool(`tax/cart_display/grandtotal`, model.WithPkgCfg(PackageConfiguration))
+	// TaxCartDisplayShipping => Display Shipping Amount.
+	// Path: tax/cart_display/shipping
+	// BackendModel: Otnegam\Tax\Model\Config\Notification
+	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+	TaxCartDisplayShipping model.Str
 
-// PathTaxCartDisplayFullSummary => Display Full Tax Summary.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathTaxCartDisplayFullSummary = model.NewBool(`tax/cart_display/full_summary`, model.WithPkgCfg(PackageConfiguration))
+	// TaxCartDisplayGrandtotal => Include Tax In Order Total.
+	// Path: tax/cart_display/grandtotal
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	TaxCartDisplayGrandtotal model.Bool
 
-// PathTaxCartDisplayZeroTax => Display Zero Tax Subtotal.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathTaxCartDisplayZeroTax = model.NewBool(`tax/cart_display/zero_tax`, model.WithPkgCfg(PackageConfiguration))
+	// TaxCartDisplayFullSummary => Display Full Tax Summary.
+	// Path: tax/cart_display/full_summary
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	TaxCartDisplayFullSummary model.Bool
 
-// PathTaxSalesDisplayPrice => Display Prices.
-// BackendModel: Otnegam\Tax\Model\Config\Notification
-// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
-var PathTaxSalesDisplayPrice = model.NewStr(`tax/sales_display/price`, model.WithPkgCfg(PackageConfiguration))
+	// TaxCartDisplayZeroTax => Display Zero Tax Subtotal.
+	// Path: tax/cart_display/zero_tax
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	TaxCartDisplayZeroTax model.Bool
 
-// PathTaxSalesDisplaySubtotal => Display Subtotal.
-// BackendModel: Otnegam\Tax\Model\Config\Notification
-// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
-var PathTaxSalesDisplaySubtotal = model.NewStr(`tax/sales_display/subtotal`, model.WithPkgCfg(PackageConfiguration))
+	// TaxSalesDisplayPrice => Display Prices.
+	// Path: tax/sales_display/price
+	// BackendModel: Otnegam\Tax\Model\Config\Notification
+	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+	TaxSalesDisplayPrice model.Str
 
-// PathTaxSalesDisplayShipping => Display Shipping Amount.
-// BackendModel: Otnegam\Tax\Model\Config\Notification
-// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
-var PathTaxSalesDisplayShipping = model.NewStr(`tax/sales_display/shipping`, model.WithPkgCfg(PackageConfiguration))
+	// TaxSalesDisplaySubtotal => Display Subtotal.
+	// Path: tax/sales_display/subtotal
+	// BackendModel: Otnegam\Tax\Model\Config\Notification
+	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+	TaxSalesDisplaySubtotal model.Str
 
-// PathTaxSalesDisplayGrandtotal => Include Tax In Order Total.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathTaxSalesDisplayGrandtotal = model.NewBool(`tax/sales_display/grandtotal`, model.WithPkgCfg(PackageConfiguration))
+	// TaxSalesDisplayShipping => Display Shipping Amount.
+	// Path: tax/sales_display/shipping
+	// BackendModel: Otnegam\Tax\Model\Config\Notification
+	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+	TaxSalesDisplayShipping model.Str
 
-// PathTaxSalesDisplayFullSummary => Display Full Tax Summary.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathTaxSalesDisplayFullSummary = model.NewBool(`tax/sales_display/full_summary`, model.WithPkgCfg(PackageConfiguration))
+	// TaxSalesDisplayGrandtotal => Include Tax In Order Total.
+	// Path: tax/sales_display/grandtotal
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	TaxSalesDisplayGrandtotal model.Bool
 
-// PathTaxSalesDisplayZeroTax => Display Zero Tax Subtotal.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathTaxSalesDisplayZeroTax = model.NewBool(`tax/sales_display/zero_tax`, model.WithPkgCfg(PackageConfiguration))
+	// TaxSalesDisplayFullSummary => Display Full Tax Summary.
+	// Path: tax/sales_display/full_summary
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	TaxSalesDisplayFullSummary model.Bool
+
+	// TaxSalesDisplayZeroTax => Display Zero Tax Subtotal.
+	// Path: tax/sales_display/zero_tax
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	TaxSalesDisplayZeroTax model.Bool
+}
+
+// NewPath initializes the global Path variable. See init()
+func NewPath(pkgCfg element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(pkgCfg)
+}
+
+func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+	pp.Lock()
+	defer pp.Unlock()
+	pp.TaxClassesShippingTaxClass = model.NewStr(`tax/classes/shipping_tax_class`, model.WithPkgCfg(pkgCfg))
+	pp.TaxClassesDefaultProductTaxClass = model.NewStr(`tax/classes/default_product_tax_class`, model.WithPkgCfg(pkgCfg))
+	pp.TaxClassesDefaultCustomerTaxClass = model.NewStr(`tax/classes/default_customer_tax_class`, model.WithPkgCfg(pkgCfg))
+	pp.TaxCalculationAlgorithm = model.NewStr(`tax/calculation/algorithm`, model.WithPkgCfg(pkgCfg))
+	pp.TaxCalculationBasedOn = model.NewStr(`tax/calculation/based_on`, model.WithPkgCfg(pkgCfg))
+	pp.TaxCalculationPriceIncludesTax = model.NewStr(`tax/calculation/price_includes_tax`, model.WithPkgCfg(pkgCfg))
+	pp.TaxCalculationShippingIncludesTax = model.NewStr(`tax/calculation/shipping_includes_tax`, model.WithPkgCfg(pkgCfg))
+	pp.TaxCalculationApplyAfterDiscount = model.NewStr(`tax/calculation/apply_after_discount`, model.WithPkgCfg(pkgCfg))
+	pp.TaxCalculationDiscountTax = model.NewStr(`tax/calculation/discount_tax`, model.WithPkgCfg(pkgCfg))
+	pp.TaxCalculationApplyTaxOn = model.NewStr(`tax/calculation/apply_tax_on`, model.WithPkgCfg(pkgCfg))
+	pp.TaxCalculationCrossBorderTradeEnabled = model.NewBool(`tax/calculation/cross_border_trade_enabled`, model.WithPkgCfg(pkgCfg))
+	pp.TaxDefaultsCountry = model.NewStr(`tax/defaults/country`, model.WithPkgCfg(pkgCfg))
+	pp.TaxDefaultsRegion = model.NewStr(`tax/defaults/region`, model.WithPkgCfg(pkgCfg))
+	pp.TaxDefaultsPostcode = model.NewStr(`tax/defaults/postcode`, model.WithPkgCfg(pkgCfg))
+	pp.TaxDisplayType = model.NewStr(`tax/display/type`, model.WithPkgCfg(pkgCfg))
+	pp.TaxDisplayShipping = model.NewStr(`tax/display/shipping`, model.WithPkgCfg(pkgCfg))
+	pp.TaxCartDisplayPrice = model.NewStr(`tax/cart_display/price`, model.WithPkgCfg(pkgCfg))
+	pp.TaxCartDisplaySubtotal = model.NewStr(`tax/cart_display/subtotal`, model.WithPkgCfg(pkgCfg))
+	pp.TaxCartDisplayShipping = model.NewStr(`tax/cart_display/shipping`, model.WithPkgCfg(pkgCfg))
+	pp.TaxCartDisplayGrandtotal = model.NewBool(`tax/cart_display/grandtotal`, model.WithPkgCfg(pkgCfg))
+	pp.TaxCartDisplayFullSummary = model.NewBool(`tax/cart_display/full_summary`, model.WithPkgCfg(pkgCfg))
+	pp.TaxCartDisplayZeroTax = model.NewBool(`tax/cart_display/zero_tax`, model.WithPkgCfg(pkgCfg))
+	pp.TaxSalesDisplayPrice = model.NewStr(`tax/sales_display/price`, model.WithPkgCfg(pkgCfg))
+	pp.TaxSalesDisplaySubtotal = model.NewStr(`tax/sales_display/subtotal`, model.WithPkgCfg(pkgCfg))
+	pp.TaxSalesDisplayShipping = model.NewStr(`tax/sales_display/shipping`, model.WithPkgCfg(pkgCfg))
+	pp.TaxSalesDisplayGrandtotal = model.NewBool(`tax/sales_display/grandtotal`, model.WithPkgCfg(pkgCfg))
+	pp.TaxSalesDisplayFullSummary = model.NewBool(`tax/sales_display/full_summary`, model.WithPkgCfg(pkgCfg))
+	pp.TaxSalesDisplayZeroTax = model.NewBool(`tax/sales_display/zero_tax`, model.WithPkgCfg(pkgCfg))
+
+	return pp
+}

@@ -3,10 +3,33 @@
 package rss
 
 import (
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// PathRssConfigActive => Enable RSS.
-// BackendModel: Otnegam\Rss\Model\System\Config\Backend\Links
-// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
-var PathRssConfigActive = model.NewBool(`rss/config/active`, model.WithPkgCfg(PackageConfiguration))
+// Path will be initialized in the init() function together with PackageConfiguration.
+var Path *PkgPath
+
+// PkgPath global configuration struct containing paths and how to retrieve
+// their values and options.
+type PkgPath struct {
+	model.PkgPath
+	// RssConfigActive => Enable RSS.
+	// Path: rss/config/active
+	// BackendModel: Otnegam\Rss\Model\System\Config\Backend\Links
+	// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+	RssConfigActive model.Bool
+}
+
+// NewPath initializes the global Path variable. See init()
+func NewPath(pkgCfg element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(pkgCfg)
+}
+
+func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+	pp.Lock()
+	defer pp.Unlock()
+	pp.RssConfigActive = model.NewBool(`rss/config/active`, model.WithPkgCfg(pkgCfg))
+
+	return pp
+}

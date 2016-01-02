@@ -3,113 +3,194 @@
 package usps
 
 import (
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// PathCarriersUspsActive => Enabled for Checkout.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCarriersUspsActive = model.NewBool(`carriers/usps/active`, model.WithPkgCfg(PackageConfiguration))
+// Path will be initialized in the init() function together with PackageConfiguration.
+var Path *PkgPath
 
-// PathCarriersUspsActiveRma => Enabled for RMA.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCarriersUspsActiveRma = model.NewBool(`carriers/usps/active_rma`, model.WithPkgCfg(PackageConfiguration))
+// PkgPath global configuration struct containing paths and how to retrieve
+// their values and options.
+type PkgPath struct {
+	model.PkgPath
+	// CarriersUspsActive => Enabled for Checkout.
+	// Path: carriers/usps/active
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CarriersUspsActive model.Bool
 
-// PathCarriersUspsGatewayUrl => Gateway URL.
-var PathCarriersUspsGatewayUrl = model.NewStr(`carriers/usps/gateway_url`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsActiveRma => Enabled for RMA.
+	// Path: carriers/usps/active_rma
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CarriersUspsActiveRma model.Bool
 
-// PathCarriersUspsGatewaySecureUrl => Secure Gateway URL.
-var PathCarriersUspsGatewaySecureUrl = model.NewStr(`carriers/usps/gateway_secure_url`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsGatewayUrl => Gateway URL.
+	// Path: carriers/usps/gateway_url
+	CarriersUspsGatewayUrl model.Str
 
-// PathCarriersUspsTitle => Title.
-var PathCarriersUspsTitle = model.NewStr(`carriers/usps/title`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsGatewaySecureUrl => Secure Gateway URL.
+	// Path: carriers/usps/gateway_secure_url
+	CarriersUspsGatewaySecureUrl model.Str
 
-// PathCarriersUspsUserid => User ID.
-// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
-var PathCarriersUspsUserid = model.NewStr(`carriers/usps/userid`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsTitle => Title.
+	// Path: carriers/usps/title
+	CarriersUspsTitle model.Str
 
-// PathCarriersUspsPassword => Password.
-// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
-var PathCarriersUspsPassword = model.NewStr(`carriers/usps/password`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsUserid => User ID.
+	// Path: carriers/usps/userid
+	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	CarriersUspsUserid model.Str
 
-// PathCarriersUspsMode => Mode.
-// SourceModel: Otnegam\Shipping\Model\Config\Source\Online\Mode
-var PathCarriersUspsMode = model.NewStr(`carriers/usps/mode`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsPassword => Password.
+	// Path: carriers/usps/password
+	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	CarriersUspsPassword model.Str
 
-// PathCarriersUspsShipmentRequesttype => Packages Request Type.
-// SourceModel: Otnegam\Shipping\Model\Config\Source\Online\Requesttype
-var PathCarriersUspsShipmentRequesttype = model.NewStr(`carriers/usps/shipment_requesttype`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsMode => Mode.
+	// Path: carriers/usps/mode
+	// SourceModel: Otnegam\Shipping\Model\Config\Source\Online\Mode
+	CarriersUspsMode model.Str
 
-// PathCarriersUspsContainer => Container.
-// SourceModel: Otnegam\Usps\Model\Source\Container
-var PathCarriersUspsContainer = model.NewStr(`carriers/usps/container`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsShipmentRequesttype => Packages Request Type.
+	// Path: carriers/usps/shipment_requesttype
+	// SourceModel: Otnegam\Shipping\Model\Config\Source\Online\Requesttype
+	CarriersUspsShipmentRequesttype model.Str
 
-// PathCarriersUspsSize => Size.
-// SourceModel: Otnegam\Usps\Model\Source\Size
-var PathCarriersUspsSize = model.NewStr(`carriers/usps/size`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsContainer => Container.
+	// Path: carriers/usps/container
+	// SourceModel: Otnegam\Usps\Model\Source\Container
+	CarriersUspsContainer model.Str
 
-// PathCarriersUspsWidth => Width.
-var PathCarriersUspsWidth = model.NewStr(`carriers/usps/width`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsSize => Size.
+	// Path: carriers/usps/size
+	// SourceModel: Otnegam\Usps\Model\Source\Size
+	CarriersUspsSize model.Str
 
-// PathCarriersUspsLength => Length.
-var PathCarriersUspsLength = model.NewStr(`carriers/usps/length`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsWidth => Width.
+	// Path: carriers/usps/width
+	CarriersUspsWidth model.Str
 
-// PathCarriersUspsHeight => Height.
-var PathCarriersUspsHeight = model.NewStr(`carriers/usps/height`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsLength => Length.
+	// Path: carriers/usps/length
+	CarriersUspsLength model.Str
 
-// PathCarriersUspsGirth => Girth.
-var PathCarriersUspsGirth = model.NewStr(`carriers/usps/girth`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsHeight => Height.
+	// Path: carriers/usps/height
+	CarriersUspsHeight model.Str
 
-// PathCarriersUspsMachinable => Machinable.
-// SourceModel: Otnegam\Usps\Model\Source\Machinable
-var PathCarriersUspsMachinable = model.NewStr(`carriers/usps/machinable`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsGirth => Girth.
+	// Path: carriers/usps/girth
+	CarriersUspsGirth model.Str
 
-// PathCarriersUspsMaxPackageWeight => Maximum Package Weight (Please consult your shipping carrier for maximum supported shipping weight).
-var PathCarriersUspsMaxPackageWeight = model.NewStr(`carriers/usps/max_package_weight`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsMachinable => Machinable.
+	// Path: carriers/usps/machinable
+	// SourceModel: Otnegam\Usps\Model\Source\Machinable
+	CarriersUspsMachinable model.Str
 
-// PathCarriersUspsHandlingType => Calculate Handling Fee.
-// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
-var PathCarriersUspsHandlingType = model.NewStr(`carriers/usps/handling_type`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsMaxPackageWeight => Maximum Package Weight (Please consult your shipping carrier for maximum supported shipping weight).
+	// Path: carriers/usps/max_package_weight
+	CarriersUspsMaxPackageWeight model.Str
 
-// PathCarriersUspsHandlingAction => Handling Applied.
-// SourceModel: Otnegam\Shipping\Model\Source\HandlingAction
-var PathCarriersUspsHandlingAction = model.NewStr(`carriers/usps/handling_action`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsHandlingType => Calculate Handling Fee.
+	// Path: carriers/usps/handling_type
+	// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
+	CarriersUspsHandlingType model.Str
 
-// PathCarriersUspsHandlingFee => Handling Fee.
-var PathCarriersUspsHandlingFee = model.NewStr(`carriers/usps/handling_fee`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsHandlingAction => Handling Applied.
+	// Path: carriers/usps/handling_action
+	// SourceModel: Otnegam\Shipping\Model\Source\HandlingAction
+	CarriersUspsHandlingAction model.Str
 
-// PathCarriersUspsAllowedMethods => Allowed Methods.
-// SourceModel: Otnegam\Usps\Model\Source\Method
-var PathCarriersUspsAllowedMethods = model.NewStringCSV(`carriers/usps/allowed_methods`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsHandlingFee => Handling Fee.
+	// Path: carriers/usps/handling_fee
+	CarriersUspsHandlingFee model.Str
 
-// PathCarriersUspsFreeMethod => Free Method.
-// SourceModel: Otnegam\Usps\Model\Source\Freemethod
-var PathCarriersUspsFreeMethod = model.NewStr(`carriers/usps/free_method`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsAllowedMethods => Allowed Methods.
+	// Path: carriers/usps/allowed_methods
+	// SourceModel: Otnegam\Usps\Model\Source\Method
+	CarriersUspsAllowedMethods model.StringCSV
 
-// PathCarriersUspsFreeShippingEnable => Free Shipping Amount Threshold.
-// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
-var PathCarriersUspsFreeShippingEnable = model.NewBool(`carriers/usps/free_shipping_enable`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsFreeMethod => Free Method.
+	// Path: carriers/usps/free_method
+	// SourceModel: Otnegam\Usps\Model\Source\Freemethod
+	CarriersUspsFreeMethod model.Str
 
-// PathCarriersUspsFreeShippingSubtotal => Free Shipping Amount Threshold.
-var PathCarriersUspsFreeShippingSubtotal = model.NewStr(`carriers/usps/free_shipping_subtotal`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsFreeShippingEnable => Free Shipping Amount Threshold.
+	// Path: carriers/usps/free_shipping_enable
+	// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+	CarriersUspsFreeShippingEnable model.Bool
 
-// PathCarriersUspsSpecificerrmsg => Displayed Error Message.
-var PathCarriersUspsSpecificerrmsg = model.NewStr(`carriers/usps/specificerrmsg`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsFreeShippingSubtotal => Free Shipping Amount Threshold.
+	// Path: carriers/usps/free_shipping_subtotal
+	CarriersUspsFreeShippingSubtotal model.Str
 
-// PathCarriersUspsSallowspecific => Ship to Applicable Countries.
-// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
-var PathCarriersUspsSallowspecific = model.NewStr(`carriers/usps/sallowspecific`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsSpecificerrmsg => Displayed Error Message.
+	// Path: carriers/usps/specificerrmsg
+	CarriersUspsSpecificerrmsg model.Str
 
-// PathCarriersUspsSpecificcountry => Ship to Specific Countries.
-// SourceModel: Otnegam\Directory\Model\Config\Source\Country
-var PathCarriersUspsSpecificcountry = model.NewStringCSV(`carriers/usps/specificcountry`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsSallowspecific => Ship to Applicable Countries.
+	// Path: carriers/usps/sallowspecific
+	// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+	CarriersUspsSallowspecific model.Str
 
-// PathCarriersUspsDebug => Debug.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCarriersUspsDebug = model.NewBool(`carriers/usps/debug`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsSpecificcountry => Ship to Specific Countries.
+	// Path: carriers/usps/specificcountry
+	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	CarriersUspsSpecificcountry model.StringCSV
 
-// PathCarriersUspsShowmethod => Show Method if Not Applicable.
-// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-var PathCarriersUspsShowmethod = model.NewBool(`carriers/usps/showmethod`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsDebug => Debug.
+	// Path: carriers/usps/debug
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CarriersUspsDebug model.Bool
 
-// PathCarriersUspsSortOrder => Sort Order.
-var PathCarriersUspsSortOrder = model.NewStr(`carriers/usps/sort_order`, model.WithPkgCfg(PackageConfiguration))
+	// CarriersUspsShowmethod => Show Method if Not Applicable.
+	// Path: carriers/usps/showmethod
+	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	CarriersUspsShowmethod model.Bool
+
+	// CarriersUspsSortOrder => Sort Order.
+	// Path: carriers/usps/sort_order
+	CarriersUspsSortOrder model.Str
+}
+
+// NewPath initializes the global Path variable. See init()
+func NewPath(pkgCfg element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(pkgCfg)
+}
+
+func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+	pp.Lock()
+	defer pp.Unlock()
+	pp.CarriersUspsActive = model.NewBool(`carriers/usps/active`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsActiveRma = model.NewBool(`carriers/usps/active_rma`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsGatewayUrl = model.NewStr(`carriers/usps/gateway_url`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsGatewaySecureUrl = model.NewStr(`carriers/usps/gateway_secure_url`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsTitle = model.NewStr(`carriers/usps/title`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsUserid = model.NewStr(`carriers/usps/userid`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsPassword = model.NewStr(`carriers/usps/password`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsMode = model.NewStr(`carriers/usps/mode`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsShipmentRequesttype = model.NewStr(`carriers/usps/shipment_requesttype`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsContainer = model.NewStr(`carriers/usps/container`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsSize = model.NewStr(`carriers/usps/size`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsWidth = model.NewStr(`carriers/usps/width`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsLength = model.NewStr(`carriers/usps/length`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsHeight = model.NewStr(`carriers/usps/height`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsGirth = model.NewStr(`carriers/usps/girth`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsMachinable = model.NewStr(`carriers/usps/machinable`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsMaxPackageWeight = model.NewStr(`carriers/usps/max_package_weight`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsHandlingType = model.NewStr(`carriers/usps/handling_type`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsHandlingAction = model.NewStr(`carriers/usps/handling_action`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsHandlingFee = model.NewStr(`carriers/usps/handling_fee`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsAllowedMethods = model.NewStringCSV(`carriers/usps/allowed_methods`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsFreeMethod = model.NewStr(`carriers/usps/free_method`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsFreeShippingEnable = model.NewBool(`carriers/usps/free_shipping_enable`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsFreeShippingSubtotal = model.NewStr(`carriers/usps/free_shipping_subtotal`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsSpecificerrmsg = model.NewStr(`carriers/usps/specificerrmsg`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsSallowspecific = model.NewStr(`carriers/usps/sallowspecific`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsSpecificcountry = model.NewStringCSV(`carriers/usps/specificcountry`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsDebug = model.NewBool(`carriers/usps/debug`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsShowmethod = model.NewBool(`carriers/usps/showmethod`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsSortOrder = model.NewStr(`carriers/usps/sort_order`, model.WithPkgCfg(pkgCfg))
+
+	return pp
+}
