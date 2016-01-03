@@ -24,12 +24,13 @@ import (
 )
 
 func TestNewConfigCurrencyGet(t *testing.T) {
-	cc := directory.NewConfigCurrency(directory.Path.CurrencyOptionsBase.String())
+	t.Parallel()
+	cc := directory.NewConfigCurrency(directory.Backend.CurrencyOptionsBase.String())
 
 	cr := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			directory.Path.CurrencyOptionsBase.FQPathInt64(scope.StrStores, 1): "EUR",
-			directory.Path.CurrencyOptionsBase.FQPathInt64(scope.StrStores, 2): "WIR", // Special Swiss currency
+			directory.Backend.CurrencyOptionsBase.FQPathInt64(scope.StrStores, 1): "EUR",
+			directory.Backend.CurrencyOptionsBase.FQPathInt64(scope.StrStores, 2): "WIR", // Special Swiss currency
 		}),
 	)
 
@@ -43,13 +44,14 @@ func TestNewConfigCurrencyGet(t *testing.T) {
 }
 
 func TestNewConfigCurrencyWrite(t *testing.T) {
-	cc := directory.NewConfigCurrency(directory.Path.CurrencyOptionsBase.String())
+	t.Parallel()
+	cc := directory.NewConfigCurrency(directory.Backend.CurrencyOptionsBase.String())
 	c := directory.MustNewCurrencyISO("EUR")
 
 	w := new(config.MockWrite)
 
 	assert.NoError(t, cc.Write(w, c, scope.WebsiteID, 33))
 
-	assert.Exactly(t, directory.Path.CurrencyOptionsBase.FQPathInt64(scope.StrWebsites, 33), w.ArgPath)
+	assert.Exactly(t, directory.Backend.CurrencyOptionsBase.FQPathInt64(scope.StrWebsites, 33), w.ArgPath)
 	assert.Exactly(t, "EUR", w.ArgValue)
 }

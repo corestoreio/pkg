@@ -19,12 +19,14 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
-var Path *PkgPath
+// Backend will be initialized in the init() function together with ConfigStructure.
+var Backend *PkgBackend
 
-// PkgPath global configuration struct
-type PkgPath struct {
-	model.PkgPath
+// PkgBackend just exported for the sake of documentation. See fields
+// for more information. The PkgBackend handles the reading and writing
+// of configuration values within this package.
+type PkgBackend struct {
+	model.PkgBackend
 
 	// CurrencyOptionsBase => Base Currency.
 	// Base currency is used for all online payment transactions. If you have more
@@ -95,7 +97,7 @@ type PkgPath struct {
 	//
 	// TODO:
 	//	// SourceCurrencyAll used in Path: `system/currency/installed`,
-	//func (sca *SourceCurrencyAll) Options() valuelabel.Slice {
+	//func (sca *SourceCurrencyAll) Options() source.Slice {
 	//	// Magento\Framework\Locale\Resolver
 	//	// 1. get all allowed currencies from the config
 	//	// 2. get slice of currency code and currency name and filter out all not-allowed currencies
@@ -162,38 +164,38 @@ type PkgPath struct {
 	GeneralLocaleWeightUnit model.Str
 }
 
-// NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+// NewBackend initializes the global Path variable. See init()
+func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
+	return (&PkgBackend{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CurrencyOptionsBase = NewConfigCurrency(`currency/options/base`, model.WithPkgCfg(pkgCfg))
-	pp.CurrencyOptionsDefault = NewConfigCurrency(`currency/options/default`, model.WithPkgCfg(pkgCfg))
-	pp.CurrencyOptionsAllow = model.NewStringCSV(`currency/options/allow`, model.WithPkgCfg(pkgCfg))
-	pp.CurrencyWebservicexTimeout = model.NewStr(`currency/webservicex/timeout`, model.WithPkgCfg(pkgCfg))
-	pp.CurrencyImportEnabled = model.NewBool(`currency/import/enabled`, model.WithPkgCfg(pkgCfg))
-	pp.CurrencyImportErrorEmail = model.NewStr(`currency/import/error_email`, model.WithPkgCfg(pkgCfg))
-	pp.CurrencyImportErrorEmailIdentity = model.NewStr(`currency/import/error_email_identity`, model.WithPkgCfg(pkgCfg))
-	pp.CurrencyImportErrorEmailTemplate = model.NewStr(`currency/import/error_email_template`, model.WithPkgCfg(pkgCfg))
-	pp.CurrencyImportFrequency = model.NewStr(`currency/import/frequency`, model.WithPkgCfg(pkgCfg))
-	pp.CurrencyImportService = model.NewStr(`currency/import/service`, model.WithPkgCfg(pkgCfg))
-	pp.CurrencyImportTime = model.NewStr(`currency/import/time`, model.WithPkgCfg(pkgCfg))
-	pp.SystemCurrencyInstalled = model.NewStringCSV(`system/currency/installed`, model.WithPkgCfg(pkgCfg))
-	pp.GeneralCountryOptionalZipCountries = model.NewStringCSV(`general/country/optional_zip_countries`, model.WithPkgCfg(pkgCfg))
-	pp.GeneralCountryAllow = model.NewStringCSV(`general/country/allow`, model.WithPkgCfg(pkgCfg))
-	pp.GeneralCountryDefault = model.NewStr(`general/country/default`, model.WithPkgCfg(pkgCfg))
-	pp.GeneralCountryEuCountries = model.NewStringCSV(`general/country/eu_countries`, model.WithPkgCfg(pkgCfg))
-	pp.GeneralCountryDestinations = model.NewStringCSV(`general/country/destinations`, model.WithPkgCfg(pkgCfg))
-	pp.GeneralLocaleTimezone = model.NewStr(`general/locale/timezone`, model.WithPkgCfg(pkgCfg))
-	pp.GeneralLocaleCode = model.NewStr(`general/locale/code`, model.WithPkgCfg(pkgCfg))
-	pp.GeneralLocaleFirstday = model.NewStr(`general/locale/firstday`, model.WithPkgCfg(pkgCfg))
-	pp.GeneralLocaleWeekend = model.NewStringCSV(`general/locale/weekend`, model.WithPkgCfg(pkgCfg))
-	pp.GeneralRegionStateRequired = model.NewStringCSV(`general/region/state_required`, model.WithPkgCfg(pkgCfg))
-	pp.GeneralRegionDisplayAll = model.NewBool(`general/region/display_all`, model.WithPkgCfg(pkgCfg))
-	pp.GeneralLocaleWeightUnit = model.NewStr(`general/locale/weight_unit`, model.WithPkgCfg(pkgCfg))
+	pp.CurrencyOptionsBase = NewConfigCurrency(`currency/options/base`, model.WithConfigStructure(cfgStruct))
+	pp.CurrencyOptionsDefault = NewConfigCurrency(`currency/options/default`, model.WithConfigStructure(cfgStruct))
+	pp.CurrencyOptionsAllow = model.NewStringCSV(`currency/options/allow`, model.WithConfigStructure(cfgStruct))
+	pp.CurrencyWebservicexTimeout = model.NewStr(`currency/webservicex/timeout`, model.WithConfigStructure(cfgStruct))
+	pp.CurrencyImportEnabled = model.NewBool(`currency/import/enabled`, model.WithConfigStructure(cfgStruct))
+	pp.CurrencyImportErrorEmail = model.NewStr(`currency/import/error_email`, model.WithConfigStructure(cfgStruct))
+	pp.CurrencyImportErrorEmailIdentity = model.NewStr(`currency/import/error_email_identity`, model.WithConfigStructure(cfgStruct))
+	pp.CurrencyImportErrorEmailTemplate = model.NewStr(`currency/import/error_email_template`, model.WithConfigStructure(cfgStruct))
+	pp.CurrencyImportFrequency = model.NewStr(`currency/import/frequency`, model.WithConfigStructure(cfgStruct))
+	pp.CurrencyImportService = model.NewStr(`currency/import/service`, model.WithConfigStructure(cfgStruct))
+	pp.CurrencyImportTime = model.NewStr(`currency/import/time`, model.WithConfigStructure(cfgStruct))
+	pp.SystemCurrencyInstalled = model.NewStringCSV(`system/currency/installed`, model.WithConfigStructure(cfgStruct))
+	pp.GeneralCountryOptionalZipCountries = model.NewStringCSV(`general/country/optional_zip_countries`, model.WithConfigStructure(cfgStruct))
+	pp.GeneralCountryAllow = model.NewStringCSV(`general/country/allow`, model.WithConfigStructure(cfgStruct))
+	pp.GeneralCountryDefault = model.NewStr(`general/country/default`, model.WithConfigStructure(cfgStruct))
+	pp.GeneralCountryEuCountries = model.NewStringCSV(`general/country/eu_countries`, model.WithConfigStructure(cfgStruct))
+	pp.GeneralCountryDestinations = model.NewStringCSV(`general/country/destinations`, model.WithConfigStructure(cfgStruct))
+	pp.GeneralLocaleTimezone = model.NewStr(`general/locale/timezone`, model.WithConfigStructure(cfgStruct))
+	pp.GeneralLocaleCode = model.NewStr(`general/locale/code`, model.WithConfigStructure(cfgStruct))
+	pp.GeneralLocaleFirstday = model.NewStr(`general/locale/firstday`, model.WithConfigStructure(cfgStruct))
+	pp.GeneralLocaleWeekend = model.NewStringCSV(`general/locale/weekend`, model.WithConfigStructure(cfgStruct))
+	pp.GeneralRegionStateRequired = model.NewStringCSV(`general/region/state_required`, model.WithConfigStructure(cfgStruct))
+	pp.GeneralRegionDisplayAll = model.NewBool(`general/region/display_all`, model.WithConfigStructure(cfgStruct))
+	pp.GeneralLocaleWeightUnit = model.NewStr(`general/locale/weight_unit`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }
