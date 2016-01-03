@@ -109,6 +109,15 @@ func (s Slice) ToJSON() (string, error) {
 	return buf.String(), nil
 }
 
+// String converts the slice to JSON or returns an error string
+func (s Slice) String() string {
+	str, err := s.ToJSON()
+	if err != nil {
+		return err.Error()
+	}
+	return str
+}
+
 // ContainsValString checks if value k exists.
 func (s Slice) ContainsValString(k string) bool {
 	return s.IndexValString(k) > -1
