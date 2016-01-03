@@ -42,5 +42,5 @@ func init() {
 			),
 		},
 	)
-	Path = NewPath(ConfigStructure)
+	Backend = NewBackend(ConfigStructure)
 }

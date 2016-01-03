@@ -400,5 +400,5 @@ Disallow: /*SID=
 			),
 		},
 	)
-	Path = NewPath(ConfigStructure)
+	Backend = NewBackend(ConfigStructure)
 }

@@ -688,5 +688,5 @@ T: {{var telephone}}
 			),
 		},
 	)
-	Path = NewPath(ConfigStructure)
+	Backend = NewBackend(ConfigStructure)
 }

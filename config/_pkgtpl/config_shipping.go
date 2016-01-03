@@ -131,5 +131,5 @@ func init() {
 			Groups:    element.NewGroupSlice(),
 		},
 	)
-	Path = NewPath(ConfigStructure)
+	Backend = NewBackend(ConfigStructure)
 }
