@@ -17,7 +17,7 @@ package directory_test
 import (
 	std "log"
 
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/util/log"
 )
 
@@ -28,9 +28,9 @@ func init() {
 	debugLogBuf = new(log.MutexBuffer)
 	infoLogBuf = new(log.MutexBuffer)
 
-	config.PkgLog = log.NewStdLogger(
+	directory.PkgLog = log.NewStdLogger(
 		log.SetStdDebug(debugLogBuf, "testDebug: ", std.Lshortfile),
 		log.SetStdInfo(infoLogBuf, "testInfo: ", std.Lshortfile),
 	)
-	config.PkgLog.SetLevel(log.StdLevelDebug)
+	directory.PkgLog.SetLevel(log.StdLevelDebug)
 }

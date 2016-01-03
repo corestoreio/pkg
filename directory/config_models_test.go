@@ -14,8 +14,42 @@
 
 package directory_test
 
-import "testing"
+import (
+	"testing"
 
-func TestTODO(t *testing.T) {
-	t.Log("todo")
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/directory"
+	"github.com/corestoreio/csfw/store/scope"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewConfigCurrencyGet(t *testing.T) {
+	cc := directory.NewConfigCurrency(directory.Path.CurrencyOptionsBase.String())
+
+	cr := config.NewMockGetter(
+		config.WithMockValues(config.MockPV{
+			directory.Path.CurrencyOptionsBase.FQPathInt64(scope.StrStores, 1): "EUR",
+			directory.Path.CurrencyOptionsBase.FQPathInt64(scope.StrStores, 2): "WIR", // Special Swiss currency
+		}),
+	)
+
+	cur, err := cc.Get(cr.NewScoped(1, 1, 1))
+	assert.NoError(t, err)
+	assert.Exactly(t, directory.MustNewCurrencyISO("EUR"), cur)
+
+	cur, err = cc.Get(cr.NewScoped(1, 1, 2))
+	assert.EqualError(t, err, "currency: tag is not a recognized currency")
+	assert.Exactly(t, directory.Currency{}, cur)
+}
+
+func TestNewConfigCurrencyWrite(t *testing.T) {
+	cc := directory.NewConfigCurrency(directory.Path.CurrencyOptionsBase.String())
+	c := directory.MustNewCurrencyISO("EUR")
+
+	w := new(config.MockWrite)
+
+	assert.NoError(t, cc.Write(w, c, scope.WebsiteID, 33))
+
+	assert.Exactly(t, directory.Path.CurrencyOptionsBase.FQPathInt64(scope.StrWebsites, 33), w.ArgPath)
+	assert.Exactly(t, "EUR", w.ArgValue)
 }

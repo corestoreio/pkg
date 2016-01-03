@@ -13,24 +13,3 @@
 // limitations under the License.
 
 package directory
-
-import (
-	"github.com/corestoreio/csfw/config/valuelabel"
-	"github.com/corestoreio/csfw/storage/dbr"
-)
-
-var CountryCollection valuelabel.Slice
-
-func InitCountryCollection(dbrsess dbr.SessionRunner) error {
-	// CountryCollection
-	// load from database the iso code and as value the names
-
-	// apply the list of country codes to
-
-	PathGeneralCountryDefault.ValueLabel = CountryCollection
-	PathGeneralCountryAllow.ValueLabel = CountryCollection
-	PathGeneralCountryOptionalZipCountries.ValueLabel = CountryCollection
-	PathGeneralCountryEuCountries.ValueLabel = CountryCollection
-	PathGeneralCountryDestinations.ValueLabel = CountryCollection
-	return nil
-}

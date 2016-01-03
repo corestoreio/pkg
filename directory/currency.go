@@ -14,28 +14,28 @@
 
 package directory
 
-import (
-	"github.com/corestoreio/csfw/config/valuelabel"
-	"golang.org/x/text/currency"
-)
-
-// CurrencyCollection static representation of all currencies available
-var CurrencyCollection valuelabel.Slice
-
-// InitCurrencyCollection sets the Options() on all PathCurrency* configuration
-// global variables.
-func InitCurrencyCollection() error {
-
-	CurrencyCollection = valuelabel.NewByStringValue(currency.All()...)
-
-	PathSystemCurrencyInstalled.ValueLabel = CurrencyCollection
-	PathCurrencyOptionsBase.ValueLabel = CurrencyCollection
-	PathCurrencyOptionsAllow.ValueLabel = CurrencyCollection
-	PathCurrencyOptionsDefault.ValueLabel = CurrencyCollection
-	return nil
-}
+import "golang.org/x/text/currency"
 
 // Currency represents a corestore currency type which may add more features.
 type Currency struct {
 	currency.Unit
+}
+
+// NewCurrencyISO creates a new Currency by parsing a 3-letter ISO 4217 currency
+// code. It returns an error if s is not well-formed or not a recognized
+// currency code.
+func NewCurrencyISO(iso string) (c Currency, err error) {
+	var u currency.Unit
+	u, err = currency.ParseISO(iso)
+	c.Unit = u
+	return
+}
+
+// MustNewCurrencyISO same as NewCurrencyISO() but panics on error.
+func MustNewCurrencyISO(iso string) Currency {
+	c, err := NewCurrencyISO(iso)
+	if err != nil {
+		panic(err)
+	}
+	return c
 }

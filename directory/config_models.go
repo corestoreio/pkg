@@ -16,9 +16,7 @@ package directory
 
 import (
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
-	"github.com/corestoreio/csfw/config/valuelabel"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/juju/errgo"
 	"golang.org/x/text/currency"
@@ -30,15 +28,15 @@ type ConfigCurrency struct {
 }
 
 // NewConfigCurrency creates a new currency configuration type.
-func NewConfigCurrency(path string, vlPairs ...valuelabel.Pair) ConfigCurrency {
+func NewConfigCurrency(path string, opts ...model.Option) ConfigCurrency {
 	return ConfigCurrency{
-		Str: model.NewStr(path, vlPairs...),
+		Str: model.NewStr(path, opts...),
 	}
 }
 
 // Get tries to retrieve a currency
-func (p ConfigCurrency) Get(pkgCfg element.SectionSlice, sg config.ScopedGetter) (Currency, error) {
-	cur := p.Str.Get(pkgCfg, sg)
+func (p ConfigCurrency) Get(sg config.ScopedGetter) (Currency, error) {
+	cur := p.Str.Get(sg)
 	u, err := currency.ParseISO(cur)
 	if err != nil {
 		return Currency{}, errgo.Mask(err)

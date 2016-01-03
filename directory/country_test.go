@@ -18,47 +18,49 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/valuelabel"
+	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
-//func TestCountry(t *testing.T) {
-//	ch := language.MustParseRegion("CH")
-//	tld, err := ch.Canonicalize().TLD()
-//	assert.NoError(t, err)
-//	t.Logf("\n%#v\n", tld.String())
-//}
+func init() {
 
-func TestDefaultCountry(t *testing.T) {
-	t.Log("@todo")
+	directory.InitOptions(nil)
+
 }
 
-func TestPathCountryAllowed(t *testing.T) {
+func TestPathCountryAllowedCustom(t *testing.T) {
+	defer debugLogBuf.Reset()
 
-	directory.PathGeneralCountryAllow.ValueLabel = valuelabel.NewByString("DE", "Germany", "AU", "'Straya", "CH", "Switzerland")
+	previous := directory.Path.GeneralCountryAllow.Option(model.WithValueLabelByString(
+		"DE", "Germany", "AU", "'Straya", "CH", "Switzerland",
+	))
+	defer directory.Path.GeneralCountryAllow.Option(previous)
 
 	cr := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			directory.PathGeneralCountryAllow.FQPathInt64(scope.StrStores, 1): "DE,AU,CH,AT",
+			directory.Path.GeneralCountryAllow.FQPathInt64(scope.StrStores, 1): "DE,AU,CH,AT",
 		}),
 	)
 
-	haveCountries := directory.PathGeneralCountryAllow.Get(directory.PackageConfiguration, cr.NewScoped(1, 1, 1))
+	haveCountries := directory.Path.GeneralCountryAllow.Get(cr.NewScoped(1, 1, 1))
 
 	assert.Exactly(t, []string{"DE", "AU", "CH", "AT"}, haveCountries)
-
 	// todo validation
-
 }
 
-//func TestAllowedCountriesDefault(t *testing.T) {
-//	cr := config.NewMockGetter(
-//		config.WithMockValues(config.MockPV{}),
-//	)
-//
-//	haveCountries, err := directory.AllowedCountries(cr.NewScoped(1, 1, 1))
-//	assert.NoError(t, err)
-//	assert.True(t, len(haveCountries) > 100)
-//}
+func TestPathGeneralCountryAllowDefault(t *testing.T) {
+	defer debugLogBuf.Reset()
+
+	cr := config.NewMockGetter(
+		config.WithMockValues(config.MockPV{}),
+	)
+
+	haveCountries := directory.Path.GeneralCountryAllow.Get(cr.NewScoped(1, 1, 1))
+
+	assert.Exactly(t,
+		[]string{"AF", "AL", "DZ", "AS", "AD", "AO", "AI", "AQ", "AG", "AR", "AM", "AW", "AU", "AT", "AX", "AZ", "BS", "BH", "BD", "BB", "BY", "BE", "BZ", "BJ", "BM", "BL", "BT", "BO", "BA", "BW", "BV", "BR", "IO", "VG", "BN", "BG", "BF", "BI", "KH", "CM", "CA", "CD", "CV", "KY", "CF", "TD", "CL", "CN", "CX", "CC", "CO", "KM", "CG", "CK", "CR", "HR", "CU", "CY", "CZ", "DK", "DJ", "DM", "DO", "EC", "EG", "SV", "GQ", "ER", "EE", "ET", "FK", "FO", "FJ", "FI", "FR", "GF", "PF", "TF", "GA", "GM", "GE", "DE", "GG", "GH", "GI", "GR", "GL", "GD", "GP", "GU", "GT", "GN", "GW", "GY", "HT", "HM", "HN", "HK", "HU", "IS", "IM", "IN", "ID", "IR", "IQ", "IE", "IL", "IT", "CI", "JE", "JM", "JP", "JO", "KZ", "KE", "KI", "KW", "KG", "LA", "LV", "LB", "LS", "LR", "LY", "LI", "LT", "LU", "ME", "MF", "MO", "MK", "MG", "MW", "MY", "MV", "ML", "MT", "MH", "MQ", "MR", "MU", "YT", "FX", "MX", "FM", "MD", "MC", "MN", "MS", "MA", "MZ", "MM", "NA", "NR", "NP", "NL", "AN", "NC", "NZ", "NI", "NE", "NG", "NU", "NF", "KP", "MP", "NO", "OM", "PK", "PW", "PA", "PG", "PY", "PE", "PH", "PN", "PL", "PS", "PT", "PR", "QA", "RE", "RO", "RS", "RU", "RW", "SH", "KN", "LC", "PM", "VC", "WS", "SM", "ST", "SA", "SN", "SC", "SL", "SG", "SK", "SI", "SB", "SO", "ZA", "GS", "KR", "ES", "LK", "SD", "SR", "SJ", "SZ", "SE", "CH", "SY", "TL", "TW", "TJ", "TZ", "TH", "TG", "TK", "TO", "TT", "TN", "TR", "TM", "TC", "TV", "VI", "UG", "UA", "AE", "GB", "US", "UM", "UY", "UZ", "VU", "VA", "VE", "VN", "WF", "EH", "YE", "ZM", "ZW"},
+		haveCountries,
+	)
+}
