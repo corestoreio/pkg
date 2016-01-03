@@ -15,14 +15,13 @@
 package config
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"reflect"
 	"sync"
 	"time"
-
-	"encoding/json"
 
 	"golang.org/x/net/context"
 )
@@ -31,7 +30,7 @@ var _ Getter = (*MockGet)(nil)
 var _ Writer = (*MockWrite)(nil)
 var _ GetterPubSuber = (*MockGet)(nil)
 
-// MockWrite used for testing to testing configuration writing
+// MockWrite used for testing when writing configuration values.
 type MockWrite struct {
 	// WriteError gets always returned by Write
 	WriteError error
