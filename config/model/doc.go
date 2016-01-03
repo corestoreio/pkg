@@ -15,6 +15,8 @@
 // Package model provides types for getting and setting values of configuration
 // fields/values with validation and their default value handling.
 //
+// In Mage world this would be called BackendModel.
+//
 // The default value gets returned if the Get call to the store configuration
 // value fails or value is not set.
 //

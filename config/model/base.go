@@ -15,13 +15,14 @@
 package model
 
 import (
+	"sync"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/valuelabel"
+	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cast"
 	"github.com/juju/errgo"
-	"sync"
 )
 
 // PkgPath used for embedding in the PkgPath type in each package.
@@ -30,25 +31,20 @@ type PkgPath struct {
 	sync.Mutex
 }
 
-// SourceModeller defines how to retrieve all option values. Mostly used for frontend output.
-type SourceModeller interface {
-	Options() valuelabel.Slice
-}
-
-var _ SourceModeller = (*basePath)(nil)
+var _ source.Optioner = (*basePath)(nil)
 
 // Option as an optional argument for the New*() functions.
 // To read more about the recursion pattern:
 // http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
 type Option func(*basePath) Option
 
-// WithPkgCfg sets a global PackageConfiguration for retrieving the default
-// value of a underlying type and for scope permission checking.
-func WithPkgCfg(pkgcfg element.SectionSlice) Option {
+// WithConfigStructure sets a global PackageConfiguration for retrieving the
+// default value of a underlying type and for scope permission checking.
+func WithConfigStructure(cfgStruct element.SectionSlice) Option {
 	return func(b *basePath) Option {
-		prev := b.PkgCfg
-		b.PkgCfg = pkgcfg
-		return WithPkgCfg(prev)
+		prev := b.ConfigStructure
+		b.ConfigStructure = cfgStruct
+		return WithConfigStructure(prev)
 	}
 }
 
@@ -56,10 +52,10 @@ func WithPkgCfg(pkgcfg element.SectionSlice) Option {
 // The field.ID gets overwritten by the 3rd path parts to match the path.
 func WithField(f *element.Field) Option {
 	return func(b *basePath) Option {
-		prev := b.PkgCfg
+		prev := b.ConfigStructure
 		pp := scope.PathSplit(b.string)
 		f.ID = pp[2]
-		b.PkgCfg = element.MustNewConfiguration(
+		b.ConfigStructure = element.MustNewConfiguration(
 			&element.Section{
 				ID: pp[0],
 				Groups: element.NewGroupSlice(
@@ -70,36 +66,36 @@ func WithField(f *element.Field) Option {
 				),
 			},
 		)
-		return WithPkgCfg(prev)
+		return WithConfigStructure(prev)
 	}
 }
 
-// WithValueLabel sets a valuelabel slice for Options() and validation.
-func WithValueLabel(vl valuelabel.Slice) Option {
+// WithSource sets a source slice for Options() and validation.
+func WithSource(vl source.Slice) Option {
 	return func(b *basePath) Option {
-		prev := b.ValueLabel
-		b.ValueLabel = vl
-		return WithValueLabel(prev)
+		prev := b.Source
+		b.Source = vl
+		return WithSource(prev)
 	}
 }
 
-// WithValueLabelByString sets a valuelabel slice for Options() and validation.
-// Wrapper for valuelabel.NewByString
-func WithValueLabelByString(pairs ...string) Option {
+// WithSourceByString sets a source slice for Options() and validation.
+// Wrapper for source.NewByString
+func WithSourceByString(pairs ...string) Option {
 	return func(b *basePath) Option {
-		prev := b.ValueLabel
-		b.ValueLabel = valuelabel.NewByString(pairs...)
-		return WithValueLabel(prev)
+		prev := b.Source
+		b.Source = source.NewByString(pairs...)
+		return WithSource(prev)
 	}
 }
 
-// WithValueLabelByInt sets a valuelabel slice for Options() and validation.
-// Wrapper for valuelabel.NewByInt
-func WithValueLabelByInt(vli valuelabel.Ints) Option {
+// WithSourceByInt sets a source slice for Options() and validation.
+// Wrapper for source.NewByInt
+func WithSourceByInt(vli source.Ints) Option {
 	return func(b *basePath) Option {
-		prev := b.ValueLabel
-		b.ValueLabel = valuelabel.NewByInt(vli)
-		return WithValueLabel(prev)
+		prev := b.Source
+		b.Source = source.NewByInt(vli)
+		return WithSource(prev)
 	}
 }
 
@@ -108,15 +104,16 @@ func WithValueLabelByInt(vli valuelabel.Ints) Option {
 type basePath struct {
 	string // contains the path
 
-	// PkgCfg as in Package Configuration which is used for scope permission
-	// checks and retrieving the default value. A nil PkgCfg gets ignored.
-	PkgCfg element.SectionSlice
+	// ConfigStructure contains the whole package configuration which is used
+	// for scope permission checks and retrieving the default value. A nil
+	// ConfigStructure gets ignored.
+	ConfigStructure element.SectionSlice
 
-	// ValueLabel are all available options aka SourceModel in Magento slang.
+	// Source are all available options aka SourceModel in Mage slang.
 	// This slice is also used for validation to get and write the correct values.
 	// Validation gets triggered only when the slice has been set.
 	// The Options() function will be used to access this slice.
-	ValueLabel valuelabel.Slice
+	Source source.Slice
 }
 
 // NewPath creates a new basePath type
@@ -137,10 +134,10 @@ func (p *basePath) Option(opts ...Option) (previous Option) {
 }
 
 // Write writes a value v to the config.Writer without checking if the value
-// has changed. Checks if the Scope matches as defined in the non-nil PkgCfg.
+// has changed. Checks if the Scope matches as defined in the non-nil ConfigStructure.
 func (p basePath) Write(w config.Writer, v interface{}, s scope.Scope, id int64) error {
-	if p.PkgCfg != nil {
-		f, err := p.PkgCfg.FindFieldByPath(p.string)
+	if p.ConfigStructure != nil {
+		f, err := p.ConfigStructure.FindFieldByPath(p.string)
 		if err != nil {
 			return errgo.Mask(err)
 		}
@@ -168,9 +165,9 @@ func (p basePath) InScope(sg scope.Scoper) (err error) {
 //
 // Usually this function gets customized in a sub-type. Customization
 // can have different arguments, etc but must always call this function to set
-// valuelabel slice.
-func (p basePath) Options() valuelabel.Slice {
-	return p.ValueLabel
+// source slice.
+func (p basePath) Options() source.Slice {
+	return p.Source
 }
 
 // FQPathInt64 generates a fully qualified configuration path.
@@ -183,7 +180,7 @@ func (p basePath) FQPathInt64(strScope scope.StrScope, scopeID int64) string {
 // field searches for the field in a SectionSlice and checks if the scope in
 // ScopedGetter is sufficient.
 func (p basePath) field(sg scope.Scoper) (f *element.Field, err error) {
-	f, err = p.PkgCfg.FindFieldByPath(p.string)
+	f, err = p.ConfigStructure.FindFieldByPath(p.string)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
@@ -215,8 +212,8 @@ func (p basePath) lookupString(sg config.ScopedGetter) (v string, err error) {
 }
 
 func (p basePath) validateString(v string) (err error) {
-	if p.ValueLabel != nil && false == p.ValueLabel.ContainsValString(v) {
-		jv, jErr := p.ValueLabel.ToJSON()
+	if p.Source != nil && false == p.Source.ContainsValString(v) {
+		jv, jErr := p.Source.ToJSON()
 		err = errgo.Newf("The value '%s' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
 	}
 	return
@@ -247,8 +244,8 @@ func (p basePath) lookupInt(sg config.ScopedGetter) (v int, err error) {
 }
 
 func (p basePath) validateInt(v int) (err error) {
-	if p.ValueLabel != nil && false == p.ValueLabel.ContainsValInt(v) {
-		jv, jErr := p.ValueLabel.ToJSON()
+	if p.Source != nil && false == p.Source.ContainsValInt(v) {
+		jv, jErr := p.Source.ToJSON()
 		err = errgo.Newf("The value '%d' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
 	}
 	return
@@ -279,8 +276,8 @@ func (p basePath) lookupFloat64(sg config.ScopedGetter) (v float64, err error) {
 }
 
 func (p basePath) validateFloat64(v float64) (err error) {
-	if p.ValueLabel != nil && false == p.ValueLabel.ContainsValFloat64(v) {
-		jv, jErr := p.ValueLabel.ToJSON()
+	if p.Source != nil && false == p.Source.ContainsValFloat64(v) {
+		jv, jErr := p.Source.ToJSON()
 		err = errgo.Newf("The value '%.14f' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
 	}
 	return

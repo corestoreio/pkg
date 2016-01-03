@@ -18,15 +18,16 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/configsource"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
-	"github.com/corestoreio/csfw/config/valuelabel"
+	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
-var packageConfiguration = element.MustNewConfiguration(
+// configStructure might be a duplicate of base_test but note that the
+// test package names are different.
+var configStructure = element.MustNewConfiguration(
 	&element.Section{
 		ID: "web",
 		Groups: element.NewGroupSlice(
@@ -150,11 +151,11 @@ var packageConfiguration = element.MustNewConfiguration(
 )
 
 func TestBool(t *testing.T) {
-
+	t.Parallel()
 	wantPath := scope.StrWebsites.FQPathInt64(3, "web/cors/allow_credentials")
-	b := model.NewBool("web/cors/allow_credentials", model.WithPkgCfg(packageConfiguration), model.WithValueLabel(configsource.YesNo))
+	b := model.NewBool("web/cors/allow_credentials", model.WithConfigStructure(configStructure), model.WithSource(source.YesNo))
 
-	assert.Exactly(t, configsource.YesNo, b.Options())
+	assert.Exactly(t, source.YesNo, b.Options())
 	// because default value in packageConfiguration is "true"
 	assert.True(t, b.Get(config.NewMockGetter().NewScoped(0, 0, 0)))
 
@@ -172,9 +173,9 @@ func TestBool(t *testing.T) {
 }
 
 func TestStr(t *testing.T) {
-
+	t.Parallel()
 	wantPath := scope.StrDefault.FQPathInt64(0, "web/cors/exposed_headers")
-	b := model.NewStr("web/cors/exposed_headers", model.WithPkgCfg(packageConfiguration))
+	b := model.NewStr("web/cors/exposed_headers", model.WithConfigStructure(configStructure))
 
 	assert.Empty(t, b.Options())
 
@@ -193,9 +194,9 @@ func TestStr(t *testing.T) {
 }
 
 func TestInt(t *testing.T) {
-
+	t.Parallel()
 	wantPath := scope.StrWebsites.FQPathInt64(10, "web/cors/int")
-	b := model.NewInt("web/cors/int", model.WithPkgCfg(packageConfiguration))
+	b := model.NewInt("web/cors/int", model.WithConfigStructure(configStructure))
 
 	assert.Empty(t, b.Options())
 
@@ -214,8 +215,9 @@ func TestInt(t *testing.T) {
 }
 
 func TestFloat64(t *testing.T) {
+	t.Parallel()
 	wantPath := scope.StrWebsites.FQPathInt64(10, "web/cors/float64")
-	b := model.NewFloat64("web/cors/float64", model.WithPkgCfg(packageConfiguration))
+	b := model.NewFloat64("web/cors/float64", model.WithConfigStructure(configStructure))
 
 	assert.Empty(t, b.Options())
 
@@ -234,19 +236,20 @@ func TestFloat64(t *testing.T) {
 }
 
 func TestRecursiveOption(t *testing.T) {
+	t.Parallel()
 	b := model.NewInt(
 		"web/cors/int",
-		model.WithPkgCfg(packageConfiguration),
-		model.WithValueLabelByString("a", "A", "b", "b"),
+		model.WithConfigStructure(configStructure),
+		model.WithSourceByString("a", "A", "b", "b"),
 	)
 
-	assert.Exactly(t, valuelabel.NewByString("a", "A", "b", "b"), b.ValueLabel)
+	assert.Exactly(t, source.NewByString("a", "A", "b", "b"), b.Source)
 
-	previous := b.Option(model.WithValueLabelByString(
+	previous := b.Option(model.WithSourceByString(
 		"1", "One", "2", "Two",
 	))
-	assert.Exactly(t, valuelabel.NewByString("1", "One", "2", "Two"), b.ValueLabel)
+	assert.Exactly(t, source.NewByString("1", "One", "2", "Two"), b.Source)
 
 	b.Option(previous)
-	assert.Exactly(t, valuelabel.NewByString("a", "A", "b", "b"), b.ValueLabel)
+	assert.Exactly(t, source.NewByString("a", "A", "b", "b"), b.Source)
 }

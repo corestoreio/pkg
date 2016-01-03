@@ -25,7 +25,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var packageConfiguration = element.MustNewConfiguration(
+// configStructure might be a duplicate of primitives_test but note that the
+// test package names are different.
+var configStructure = element.MustNewConfiguration(
 	&element.Section{
 		ID: "web",
 		Groups: element.NewGroupSlice(
@@ -34,7 +36,7 @@ var packageConfiguration = element.MustNewConfiguration(
 				Label:     `CORS Cross Origin Resource Sharing`,
 				SortOrder: 150,
 				Scope:     scope.NewPerm(scope.DefaultID),
-				Fields: element.FieldSlice{
+				Fields: element.NewFieldSlice(
 					&element.Field{
 						// Path: `web/cors/exposed_headers`,
 						ID:        "exposed_headers",
@@ -74,15 +76,16 @@ var packageConfiguration = element.MustNewConfiguration(
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:   2015.1000001,
 					},
-				},
+				),
 			},
 		),
 	},
 )
 
 func TestBasePathString(t *testing.T) {
+	t.Parallel()
 	const path = "web/cors/exposed_headers"
-	p1 := NewPath(path, WithPkgCfg(packageConfiguration))
+	p1 := NewPath(path, WithConfigStructure(configStructure))
 	assert.Exactly(t, path, p1.String())
 
 	wantPath := scope.StrWebsites.FQPathInt64(2, "web/cors/exposed_headers")
@@ -109,7 +112,7 @@ func TestBasePathString(t *testing.T) {
 	assert.Exactly(t, "X-CoreStore-TOKEN", customStr)
 
 	// now change a default value in the packageConfiguration and see it reflects to p1
-	f, err := packageConfiguration.FindFieldByPath(path)
+	f, err := configStructure.FindFieldByPath(path)
 	assert.NoError(t, err)
 	f.Default = "Content-Size,Y-CoreStore-ID"
 
@@ -119,7 +122,7 @@ func TestBasePathString(t *testing.T) {
 }
 
 func TestBasePathInScope(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		sg      config.ScopedGetter
 		p       scope.Perm
@@ -156,6 +159,7 @@ func TestBasePathInScope(t *testing.T) {
 }
 
 func TestFQPathInt64(t *testing.T) {
+	t.Parallel()
 	p := NewPath("a/b/c")
 	assert.Exactly(t, scope.StrStores.FQPathInt64(4, "a/b/c"), p.FQPathInt64(scope.StrStores, 4))
 }

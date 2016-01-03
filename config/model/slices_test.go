@@ -19,18 +19,18 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/model"
-	"github.com/corestoreio/csfw/config/valuelabel"
+	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestStringCSV(t *testing.T) {
-
+	t.Parallel()
 	wantPath := scope.StrDefault.FQPathInt64(0, "web/cors/exposed_headers")
 	b := model.NewStringCSV(
 		"web/cors/exposed_headers",
-		model.WithPkgCfg(packageConfiguration),
-		model.WithValueLabelByString(
+		model.WithConfigStructure(configStructure),
+		model.WithSourceByString(
 			"Content-Type", "Content Type", "X-CoreStore-ID", "CoreStore Microservice ID",
 		),
 	)
@@ -46,7 +46,7 @@ func TestStringCSV(t *testing.T) {
 	).NewScoped(0, 0, 0)))
 
 	mw := &config.MockWrite{}
-	b.ValueLabel.Merge(valuelabel.NewByString("a", "a", "b", "b", "c", "c"))
+	b.Source.Merge(source.NewByString("a", "a", "b", "b", "c", "c"))
 
 	assert.NoError(t, b.Write(mw, []string{"a", "b", "c"}, scope.DefaultID, 0))
 	assert.Exactly(t, wantPath, mw.ArgPath)
@@ -54,13 +54,14 @@ func TestStringCSV(t *testing.T) {
 }
 
 func TestIntCSV(t *testing.T) {
+	t.Parallel()
 	defer debugLogBuf.Reset()
 	defer infoLogBuf.Reset()
 
 	b := model.NewIntCSV(
 		"web/cors/int_slice",
-		model.WithPkgCfg(packageConfiguration),
-		model.WithValueLabelByInt(valuelabel.Ints{
+		model.WithConfigStructure(configStructure),
+		model.WithSourceByInt(source.Ints{
 			{2014, "Year 2014"},
 			{2015, "Year 2015"},
 			{2016, "Year 2016"},
@@ -90,7 +91,7 @@ func TestIntCSV(t *testing.T) {
 	).NewScoped(0, 0, 4)))
 
 	mw := &config.MockWrite{}
-	b.ValueLabel.Merge(valuelabel.NewByInt(valuelabel.Ints{
+	b.Source.Merge(source.NewByInt(source.Ints{
 		{2018, "Year 2018"},
 	}))
 	assert.NoError(t, b.Write(mw, []int{2016, 2017, 2018}, scope.StoreID, 4))
