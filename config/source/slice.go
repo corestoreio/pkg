@@ -23,6 +23,13 @@ import (
 	"github.com/juju/errgo"
 )
 
+// Optioner defines how to retrieve all Options values. Mostly used for
+// frontend output.
+// @see site/lib/internal/Magento/Framework/Data/OptionSourceInterface.php
+type Optioner interface {
+	Options() Slice
+}
+
 // Slice type is returned by the SourceModel.Options() interface
 type Slice []Pair
 
