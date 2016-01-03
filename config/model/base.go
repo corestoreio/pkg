@@ -25,9 +25,9 @@ import (
 	"github.com/juju/errgo"
 )
 
-// PkgPath used for embedding in the PkgPath type in each package.
+// PkgBackend used for embedding in the PkgBackend type in each package.
 // The mutex protects the init process.
-type PkgPath struct {
+type PkgBackend struct {
 	sync.Mutex
 }
 
