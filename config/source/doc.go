@@ -12,18 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package configsource
-
-import "github.com/corestoreio/csfw/config/valuelabel"
-
-// YesNo defines a slice with yes and no options.
-var YesNo = valuelabel.NewByBool(valuelabel.Bools{
-	{false, "No"},
-	{true, "Yes"},
-})
-
-// EnableDisable defines a slice with enable and disable options.
-var EnableDisable = valuelabel.NewByBool(valuelabel.Bools{
-	{false, "Disable"},
-	{true, "Enable"},
-})
+// Package source provides a slice type for handling config sources to be
+// used in config/models.
+//
+// In Mage world this is called ToOptionArray() or ToOptionHash().
+package source

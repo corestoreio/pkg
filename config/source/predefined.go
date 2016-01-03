@@ -12,5 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package configsource provides predefined valuelabel slices to be used in configuration elements.
-package configsource
+package source
+
+// YesNo defines an immutable slice with yes and no options.
+var YesNo = NewByBool(Bools{
+	{false, "No"},
+	{true, "Yes"},
+})
+
+// EnableDisable defines an immutable slice with enable and disable options.
+var EnableDisable = NewByBool(Bools{
+	{false, "Disable"},
+	{true, "Enable"},
+})
+
+// Protocol defines an immutable slice with available HTTP protocols
+var Protocol = NewByString(
+	"", "",
+	"http", "HTTP (unsecure)",
+	"https", "HTTP (TLS)",
+)

@@ -12,9 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package valuelabel
+package source_test
 
-import "github.com/corestoreio/csfw/util/log"
+import (
+	std "log"
 
-// PkgLog global package based logger
-var PkgLog log.Logger = log.PkgLog
+	"github.com/corestoreio/csfw/config/source"
+	"github.com/corestoreio/csfw/util/log"
+)
+
+var debugLogBuf *log.MutexBuffer
+var infoLogBuf *log.MutexBuffer
+
+func init() {
+	debugLogBuf = new(log.MutexBuffer)
+	infoLogBuf = new(log.MutexBuffer)
+
+	source.PkgLog = log.NewStdLogger(
+		log.SetStdDebug(debugLogBuf, "testDebug: ", std.Lshortfile),
+		log.SetStdInfo(infoLogBuf, "testInfo: ", std.Lshortfile),
+		log.SetStdDisableStackTrace(),
+	)
+	source.PkgLog.SetLevel(log.StdLevelDebug)
+}
