@@ -21,7 +21,14 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cast"
 	"github.com/juju/errgo"
+	"sync"
 )
+
+// PkgPath used for embedding in the PkgPath type in each package.
+// The mutex protects the init process.
+type PkgPath struct {
+	sync.Mutex
+}
 
 // SourceModeller defines how to retrieve all option values. Mostly used for frontend output.
 type SourceModeller interface {
@@ -192,24 +199,17 @@ func (p basePath) field(sg scope.Scoper) (f *element.Field, err error) {
 // validator can be nil which triggers the default validation method.
 func (p basePath) lookupString(sg config.ScopedGetter) (v string, err error) {
 
-	var f *element.Field
-	if f, err = p.field(sg); err != nil {
-		return
-	}
-
-	v, err = cast.ToStringE(f.Default)
-	if err != nil {
-		err = errgo.Mask(err)
-		return
+	if f, errF := p.field(sg); errF == nil {
+		v, err = cast.ToStringE(f.Default)
+	} else if PkgLog.IsDebug() {
+		PkgLog.Debug("model.basePath.lookupString.field", "err", errF, "path", p.string)
 	}
 
 	if val, errSG := sg.String(p.string); errSG == nil {
 		v = val
-	} else {
+	} else if PkgLog.IsDebug() {
 		// errSG is usually a key not found error, but that one is uninteresting
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("model.basePath.lookupString.ScopedGetter.String", "err", errSG, "path", p.string, "previousErr", err)
-		}
+		PkgLog.Debug("model.basePath.lookupString.ScopedGetter.String", "err", errSG, "path", p.string, "previousErr", err)
 	}
 	return
 }
