@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -114,34 +114,34 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.PaymentAuthorizenetDirectpostActive = model.NewBool(`payment/authorizenet_directpost/active`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostPaymentAction = model.NewStr(`payment/authorizenet_directpost/payment_action`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostTitle = model.NewStr(`payment/authorizenet_directpost/title`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostLogin = model.NewStr(`payment/authorizenet_directpost/login`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostTransKey = model.NewStr(`payment/authorizenet_directpost/trans_key`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostTransMd5 = model.NewStr(`payment/authorizenet_directpost/trans_md5`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostOrderStatus = model.NewStr(`payment/authorizenet_directpost/order_status`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostTest = model.NewBool(`payment/authorizenet_directpost/test`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostCgiUrl = model.NewStr(`payment/authorizenet_directpost/cgi_url`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostCgiUrlTd = model.NewStr(`payment/authorizenet_directpost/cgi_url_td`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostCurrency = model.NewStr(`payment/authorizenet_directpost/currency`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostDebug = model.NewBool(`payment/authorizenet_directpost/debug`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostEmailCustomer = model.NewBool(`payment/authorizenet_directpost/email_customer`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostMerchantEmail = model.NewStr(`payment/authorizenet_directpost/merchant_email`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostCctypes = model.NewStringCSV(`payment/authorizenet_directpost/cctypes`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostUseccv = model.NewBool(`payment/authorizenet_directpost/useccv`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostAllowspecific = model.NewStr(`payment/authorizenet_directpost/allowspecific`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostSpecificcountry = model.NewStringCSV(`payment/authorizenet_directpost/specificcountry`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostMinOrderTotal = model.NewStr(`payment/authorizenet_directpost/min_order_total`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostMaxOrderTotal = model.NewStr(`payment/authorizenet_directpost/max_order_total`, model.WithPkgCfg(pkgCfg))
-	pp.PaymentAuthorizenetDirectpostSortOrder = model.NewStr(`payment/authorizenet_directpost/sort_order`, model.WithPkgCfg(pkgCfg))
+	pp.PaymentAuthorizenetDirectpostActive = model.NewBool(`payment/authorizenet_directpost/active`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostPaymentAction = model.NewStr(`payment/authorizenet_directpost/payment_action`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostTitle = model.NewStr(`payment/authorizenet_directpost/title`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostLogin = model.NewStr(`payment/authorizenet_directpost/login`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostTransKey = model.NewStr(`payment/authorizenet_directpost/trans_key`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostTransMd5 = model.NewStr(`payment/authorizenet_directpost/trans_md5`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostOrderStatus = model.NewStr(`payment/authorizenet_directpost/order_status`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostTest = model.NewBool(`payment/authorizenet_directpost/test`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostCgiUrl = model.NewStr(`payment/authorizenet_directpost/cgi_url`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostCgiUrlTd = model.NewStr(`payment/authorizenet_directpost/cgi_url_td`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostCurrency = model.NewStr(`payment/authorizenet_directpost/currency`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostDebug = model.NewBool(`payment/authorizenet_directpost/debug`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostEmailCustomer = model.NewBool(`payment/authorizenet_directpost/email_customer`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostMerchantEmail = model.NewStr(`payment/authorizenet_directpost/merchant_email`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostCctypes = model.NewStringCSV(`payment/authorizenet_directpost/cctypes`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostUseccv = model.NewBool(`payment/authorizenet_directpost/useccv`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostAllowspecific = model.NewStr(`payment/authorizenet_directpost/allowspecific`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostSpecificcountry = model.NewStringCSV(`payment/authorizenet_directpost/specificcountry`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostMinOrderTotal = model.NewStr(`payment/authorizenet_directpost/min_order_total`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostMaxOrderTotal = model.NewStr(`payment/authorizenet_directpost/max_order_total`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostSortOrder = model.NewStr(`payment/authorizenet_directpost/sort_order`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

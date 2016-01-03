@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -182,48 +182,48 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CarriersUpsAccessLicenseNumber = model.NewStr(`carriers/ups/access_license_number`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsActive = model.NewBool(`carriers/ups/active`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsActiveRma = model.NewBool(`carriers/ups/active_rma`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsAllowedMethods = model.NewStringCSV(`carriers/ups/allowed_methods`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsShipmentRequesttype = model.NewStr(`carriers/ups/shipment_requesttype`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsContainer = model.NewStr(`carriers/ups/container`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsFreeShippingEnable = model.NewBool(`carriers/ups/free_shipping_enable`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsFreeShippingSubtotal = model.NewStr(`carriers/ups/free_shipping_subtotal`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsDestType = model.NewStr(`carriers/ups/dest_type`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsFreeMethod = model.NewStr(`carriers/ups/free_method`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsGatewayUrl = model.NewStr(`carriers/ups/gateway_url`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsGatewayXmlUrl = model.NewStr(`carriers/ups/gateway_xml_url`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsHandlingType = model.NewStr(`carriers/ups/handling_type`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsHandlingAction = model.NewStr(`carriers/ups/handling_action`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsHandlingFee = model.NewStr(`carriers/ups/handling_fee`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsMaxPackageWeight = model.NewStr(`carriers/ups/max_package_weight`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsMinPackageWeight = model.NewStr(`carriers/ups/min_package_weight`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsOriginShipment = model.NewStr(`carriers/ups/origin_shipment`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsPassword = model.NewStr(`carriers/ups/password`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsPickup = model.NewStr(`carriers/ups/pickup`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsSortOrder = model.NewStr(`carriers/ups/sort_order`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsTitle = model.NewStr(`carriers/ups/title`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsTrackingXmlUrl = model.NewStr(`carriers/ups/tracking_xml_url`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsType = model.NewStr(`carriers/ups/type`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsIsAccountLive = model.NewBool(`carriers/ups/is_account_live`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsUnitOfMeasure = model.NewStr(`carriers/ups/unit_of_measure`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsUsername = model.NewStr(`carriers/ups/username`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsNegotiatedActive = model.NewBool(`carriers/ups/negotiated_active`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsShipperNumber = model.NewStr(`carriers/ups/shipper_number`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsSallowspecific = model.NewStr(`carriers/ups/sallowspecific`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsSpecificcountry = model.NewStringCSV(`carriers/ups/specificcountry`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsShowmethod = model.NewBool(`carriers/ups/showmethod`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsSpecificerrmsg = model.NewStr(`carriers/ups/specificerrmsg`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsModeXml = model.NewStr(`carriers/ups/mode_xml`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUpsDebug = model.NewBool(`carriers/ups/debug`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUpsAccessLicenseNumber = model.NewStr(`carriers/ups/access_license_number`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsActive = model.NewBool(`carriers/ups/active`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsActiveRma = model.NewBool(`carriers/ups/active_rma`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsAllowedMethods = model.NewStringCSV(`carriers/ups/allowed_methods`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsShipmentRequesttype = model.NewStr(`carriers/ups/shipment_requesttype`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsContainer = model.NewStr(`carriers/ups/container`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsFreeShippingEnable = model.NewBool(`carriers/ups/free_shipping_enable`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsFreeShippingSubtotal = model.NewStr(`carriers/ups/free_shipping_subtotal`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsDestType = model.NewStr(`carriers/ups/dest_type`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsFreeMethod = model.NewStr(`carriers/ups/free_method`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsGatewayUrl = model.NewStr(`carriers/ups/gateway_url`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsGatewayXmlUrl = model.NewStr(`carriers/ups/gateway_xml_url`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsHandlingType = model.NewStr(`carriers/ups/handling_type`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsHandlingAction = model.NewStr(`carriers/ups/handling_action`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsHandlingFee = model.NewStr(`carriers/ups/handling_fee`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsMaxPackageWeight = model.NewStr(`carriers/ups/max_package_weight`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsMinPackageWeight = model.NewStr(`carriers/ups/min_package_weight`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsOriginShipment = model.NewStr(`carriers/ups/origin_shipment`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsPassword = model.NewStr(`carriers/ups/password`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsPickup = model.NewStr(`carriers/ups/pickup`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsSortOrder = model.NewStr(`carriers/ups/sort_order`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsTitle = model.NewStr(`carriers/ups/title`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsTrackingXmlUrl = model.NewStr(`carriers/ups/tracking_xml_url`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsType = model.NewStr(`carriers/ups/type`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsIsAccountLive = model.NewBool(`carriers/ups/is_account_live`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsUnitOfMeasure = model.NewStr(`carriers/ups/unit_of_measure`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsUsername = model.NewStr(`carriers/ups/username`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsNegotiatedActive = model.NewBool(`carriers/ups/negotiated_active`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsShipperNumber = model.NewStr(`carriers/ups/shipper_number`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsSallowspecific = model.NewStr(`carriers/ups/sallowspecific`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsSpecificcountry = model.NewStringCSV(`carriers/ups/specificcountry`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsShowmethod = model.NewBool(`carriers/ups/showmethod`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsSpecificerrmsg = model.NewStr(`carriers/ups/specificerrmsg`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsModeXml = model.NewStr(`carriers/ups/mode_xml`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUpsDebug = model.NewBool(`carriers/ups/debug`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

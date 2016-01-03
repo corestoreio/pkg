@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -55,21 +55,21 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.TaxWeeeEnable = model.NewBool(`tax/weee/enable`, model.WithPkgCfg(pkgCfg))
-	pp.TaxWeeeDisplayList = model.NewStr(`tax/weee/display_list`, model.WithPkgCfg(pkgCfg))
-	pp.TaxWeeeDisplay = model.NewStr(`tax/weee/display`, model.WithPkgCfg(pkgCfg))
-	pp.TaxWeeeDisplaySales = model.NewStr(`tax/weee/display_sales`, model.WithPkgCfg(pkgCfg))
-	pp.TaxWeeeDisplayEmail = model.NewStr(`tax/weee/display_email`, model.WithPkgCfg(pkgCfg))
-	pp.TaxWeeeApplyVat = model.NewBool(`tax/weee/apply_vat`, model.WithPkgCfg(pkgCfg))
-	pp.TaxWeeeIncludeInSubtotal = model.NewBool(`tax/weee/include_in_subtotal`, model.WithPkgCfg(pkgCfg))
-	pp.SalesTotalsSortWeee = model.NewStr(`sales/totals_sort/weee`, model.WithPkgCfg(pkgCfg))
+	pp.TaxWeeeEnable = model.NewBool(`tax/weee/enable`, model.WithConfigStructure(cfgStruct))
+	pp.TaxWeeeDisplayList = model.NewStr(`tax/weee/display_list`, model.WithConfigStructure(cfgStruct))
+	pp.TaxWeeeDisplay = model.NewStr(`tax/weee/display`, model.WithConfigStructure(cfgStruct))
+	pp.TaxWeeeDisplaySales = model.NewStr(`tax/weee/display_sales`, model.WithConfigStructure(cfgStruct))
+	pp.TaxWeeeDisplayEmail = model.NewStr(`tax/weee/display_email`, model.WithConfigStructure(cfgStruct))
+	pp.TaxWeeeApplyVat = model.NewBool(`tax/weee/apply_vat`, model.WithConfigStructure(cfgStruct))
+	pp.TaxWeeeIncludeInSubtotal = model.NewBool(`tax/weee/include_in_subtotal`, model.WithConfigStructure(cfgStruct))
+	pp.SalesTotalsSortWeee = model.NewStr(`sales/totals_sort/weee`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

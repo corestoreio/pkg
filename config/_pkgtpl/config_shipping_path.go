@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -50,21 +50,21 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.ShippingOriginCountryId = model.NewStr(`shipping/origin/country_id`, model.WithPkgCfg(pkgCfg))
-	pp.ShippingOriginRegionId = model.NewStr(`shipping/origin/region_id`, model.WithPkgCfg(pkgCfg))
-	pp.ShippingOriginPostcode = model.NewStr(`shipping/origin/postcode`, model.WithPkgCfg(pkgCfg))
-	pp.ShippingOriginCity = model.NewStr(`shipping/origin/city`, model.WithPkgCfg(pkgCfg))
-	pp.ShippingOriginStreetLine1 = model.NewStr(`shipping/origin/street_line1`, model.WithPkgCfg(pkgCfg))
-	pp.ShippingOriginStreetLine2 = model.NewStr(`shipping/origin/street_line2`, model.WithPkgCfg(pkgCfg))
-	pp.ShippingShippingPolicyEnableShippingPolicy = model.NewBool(`shipping/shipping_policy/enable_shipping_policy`, model.WithPkgCfg(pkgCfg))
-	pp.ShippingShippingPolicyShippingPolicyContent = model.NewStr(`shipping/shipping_policy/shipping_policy_content`, model.WithPkgCfg(pkgCfg))
+	pp.ShippingOriginCountryId = model.NewStr(`shipping/origin/country_id`, model.WithConfigStructure(cfgStruct))
+	pp.ShippingOriginRegionId = model.NewStr(`shipping/origin/region_id`, model.WithConfigStructure(cfgStruct))
+	pp.ShippingOriginPostcode = model.NewStr(`shipping/origin/postcode`, model.WithConfigStructure(cfgStruct))
+	pp.ShippingOriginCity = model.NewStr(`shipping/origin/city`, model.WithConfigStructure(cfgStruct))
+	pp.ShippingOriginStreetLine1 = model.NewStr(`shipping/origin/street_line1`, model.WithConfigStructure(cfgStruct))
+	pp.ShippingOriginStreetLine2 = model.NewStr(`shipping/origin/street_line2`, model.WithConfigStructure(cfgStruct))
+	pp.ShippingShippingPolicyEnableShippingPolicy = model.NewBool(`shipping/shipping_policy/enable_shipping_policy`, model.WithConfigStructure(cfgStruct))
+	pp.ShippingShippingPolicyShippingPolicyContent = model.NewStr(`shipping/shipping_policy/shipping_policy_content`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

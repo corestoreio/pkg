@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -185,45 +185,45 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogFieldsMasksSku = model.NewStr(`catalog/fields_masks/sku`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogFieldsMasksMetaTitle = model.NewStr(`catalog/fields_masks/meta_title`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogFieldsMasksMetaKeyword = model.NewStr(`catalog/fields_masks/meta_keyword`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogFieldsMasksMetaDescription = model.NewStr(`catalog/fields_masks/meta_description`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogFrontendListMode = model.NewStr(`catalog/frontend/list_mode`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogFrontendGridPerPageValues = model.NewStr(`catalog/frontend/grid_per_page_values`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogFrontendGridPerPage = model.NewStr(`catalog/frontend/grid_per_page`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogFrontendListPerPageValues = model.NewStr(`catalog/frontend/list_per_page_values`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogFrontendListPerPage = model.NewStr(`catalog/frontend/list_per_page`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogFrontendFlatCatalogCategory = model.NewBool(`catalog/frontend/flat_catalog_category`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogFrontendFlatCatalogProduct = model.NewBool(`catalog/frontend/flat_catalog_product`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogFrontendDefaultSortBy = model.NewStr(`catalog/frontend/default_sort_by`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogFrontendListAllowAll = model.NewBool(`catalog/frontend/list_allow_all`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogFrontendParseUrlDirectives = model.NewBool(`catalog/frontend/parse_url_directives`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogPlaceholderPlaceholder = model.NewStr(`catalog/placeholder/placeholder`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogSeoTitleSeparator = model.NewStr(`catalog/seo/title_separator`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogSeoCategoryCanonicalTag = model.NewBool(`catalog/seo/category_canonical_tag`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogSeoProductCanonicalTag = model.NewBool(`catalog/seo/product_canonical_tag`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogPriceScope = model.NewStr(`catalog/price/scope`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogNavigationMaxDepth = model.NewStr(`catalog/navigation/max_depth`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogCustomOptionsUseCalendar = model.NewBool(`catalog/custom_options/use_calendar`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogCustomOptionsDateFieldsOrder = model.NewStr(`catalog/custom_options/date_fields_order`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogCustomOptionsTimeFormat = model.NewStr(`catalog/custom_options/time_format`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogCustomOptionsYearRange = model.NewStr(`catalog/custom_options/year_range`, model.WithPkgCfg(pkgCfg))
-	pp.DesignWatermarkSize = model.NewStr(`design/watermark/size`, model.WithPkgCfg(pkgCfg))
-	pp.DesignWatermarkImageOpacity = model.NewStr(`design/watermark/imageOpacity`, model.WithPkgCfg(pkgCfg))
-	pp.DesignWatermarkImage = model.NewStr(`design/watermark/image`, model.WithPkgCfg(pkgCfg))
-	pp.DesignWatermarkPosition = model.NewStr(`design/watermark/position`, model.WithPkgCfg(pkgCfg))
-	pp.CmsWysiwygUseStaticUrlsInCatalog = model.NewBool(`cms/wysiwyg/use_static_urls_in_catalog`, model.WithPkgCfg(pkgCfg))
-	pp.RssCatalogNew = model.NewBool(`rss/catalog/new`, model.WithPkgCfg(pkgCfg))
-	pp.RssCatalogSpecial = model.NewBool(`rss/catalog/special`, model.WithPkgCfg(pkgCfg))
-	pp.RssCatalogCategory = model.NewBool(`rss/catalog/category`, model.WithPkgCfg(pkgCfg))
+	pp.CatalogFieldsMasksSku = model.NewStr(`catalog/fields_masks/sku`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogFieldsMasksMetaTitle = model.NewStr(`catalog/fields_masks/meta_title`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogFieldsMasksMetaKeyword = model.NewStr(`catalog/fields_masks/meta_keyword`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogFieldsMasksMetaDescription = model.NewStr(`catalog/fields_masks/meta_description`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogFrontendListMode = model.NewStr(`catalog/frontend/list_mode`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogFrontendGridPerPageValues = model.NewStr(`catalog/frontend/grid_per_page_values`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogFrontendGridPerPage = model.NewStr(`catalog/frontend/grid_per_page`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogFrontendListPerPageValues = model.NewStr(`catalog/frontend/list_per_page_values`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogFrontendListPerPage = model.NewStr(`catalog/frontend/list_per_page`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogFrontendFlatCatalogCategory = model.NewBool(`catalog/frontend/flat_catalog_category`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogFrontendFlatCatalogProduct = model.NewBool(`catalog/frontend/flat_catalog_product`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogFrontendDefaultSortBy = model.NewStr(`catalog/frontend/default_sort_by`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogFrontendListAllowAll = model.NewBool(`catalog/frontend/list_allow_all`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogFrontendParseUrlDirectives = model.NewBool(`catalog/frontend/parse_url_directives`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogPlaceholderPlaceholder = model.NewStr(`catalog/placeholder/placeholder`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogSeoTitleSeparator = model.NewStr(`catalog/seo/title_separator`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogSeoCategoryCanonicalTag = model.NewBool(`catalog/seo/category_canonical_tag`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogSeoProductCanonicalTag = model.NewBool(`catalog/seo/product_canonical_tag`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogPriceScope = model.NewStr(`catalog/price/scope`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogNavigationMaxDepth = model.NewStr(`catalog/navigation/max_depth`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogCustomOptionsUseCalendar = model.NewBool(`catalog/custom_options/use_calendar`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogCustomOptionsDateFieldsOrder = model.NewStr(`catalog/custom_options/date_fields_order`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogCustomOptionsTimeFormat = model.NewStr(`catalog/custom_options/time_format`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogCustomOptionsYearRange = model.NewStr(`catalog/custom_options/year_range`, model.WithConfigStructure(cfgStruct))
+	pp.DesignWatermarkSize = model.NewStr(`design/watermark/size`, model.WithConfigStructure(cfgStruct))
+	pp.DesignWatermarkImageOpacity = model.NewStr(`design/watermark/imageOpacity`, model.WithConfigStructure(cfgStruct))
+	pp.DesignWatermarkImage = model.NewStr(`design/watermark/image`, model.WithConfigStructure(cfgStruct))
+	pp.DesignWatermarkPosition = model.NewStr(`design/watermark/position`, model.WithConfigStructure(cfgStruct))
+	pp.CmsWysiwygUseStaticUrlsInCatalog = model.NewBool(`cms/wysiwyg/use_static_urls_in_catalog`, model.WithConfigStructure(cfgStruct))
+	pp.RssCatalogNew = model.NewBool(`rss/catalog/new`, model.WithConfigStructure(cfgStruct))
+	pp.RssCatalogSpecial = model.NewBool(`rss/catalog/special`, model.WithConfigStructure(cfgStruct))
+	pp.RssCatalogCategory = model.NewBool(`rss/catalog/category`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

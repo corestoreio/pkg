@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -42,18 +42,18 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.SystemBackupEnabled = model.NewBool(`system/backup/enabled`, model.WithPkgCfg(pkgCfg))
-	pp.SystemBackupType = model.NewStr(`system/backup/type`, model.WithPkgCfg(pkgCfg))
-	pp.SystemBackupTime = model.NewStr(`system/backup/time`, model.WithPkgCfg(pkgCfg))
-	pp.SystemBackupFrequency = model.NewStr(`system/backup/frequency`, model.WithPkgCfg(pkgCfg))
-	pp.SystemBackupMaintenance = model.NewBool(`system/backup/maintenance`, model.WithPkgCfg(pkgCfg))
+	pp.SystemBackupEnabled = model.NewBool(`system/backup/enabled`, model.WithConfigStructure(cfgStruct))
+	pp.SystemBackupType = model.NewStr(`system/backup/type`, model.WithConfigStructure(cfgStruct))
+	pp.SystemBackupTime = model.NewStr(`system/backup/time`, model.WithConfigStructure(cfgStruct))
+	pp.SystemBackupFrequency = model.NewStr(`system/backup/frequency`, model.WithConfigStructure(cfgStruct))
+	pp.SystemBackupMaintenance = model.NewBool(`system/backup/maintenance`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

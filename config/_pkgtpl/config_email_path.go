@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -54,19 +54,19 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.DesignEmailLogo = model.NewStr(`design/email/logo`, model.WithPkgCfg(pkgCfg))
-	pp.DesignEmailLogoAlt = model.NewStr(`design/email/logo_alt`, model.WithPkgCfg(pkgCfg))
-	pp.DesignEmailLogoWidth = model.NewStr(`design/email/logo_width`, model.WithPkgCfg(pkgCfg))
-	pp.DesignEmailLogoHeight = model.NewStr(`design/email/logo_height`, model.WithPkgCfg(pkgCfg))
-	pp.DesignEmailHeaderTemplate = model.NewStr(`design/email/header_template`, model.WithPkgCfg(pkgCfg))
-	pp.DesignEmailFooterTemplate = model.NewStr(`design/email/footer_template`, model.WithPkgCfg(pkgCfg))
+	pp.DesignEmailLogo = model.NewStr(`design/email/logo`, model.WithConfigStructure(cfgStruct))
+	pp.DesignEmailLogoAlt = model.NewStr(`design/email/logo_alt`, model.WithConfigStructure(cfgStruct))
+	pp.DesignEmailLogoWidth = model.NewStr(`design/email/logo_width`, model.WithConfigStructure(cfgStruct))
+	pp.DesignEmailLogoHeight = model.NewStr(`design/email/logo_height`, model.WithConfigStructure(cfgStruct))
+	pp.DesignEmailHeaderTemplate = model.NewStr(`design/email/header_template`, model.WithConfigStructure(cfgStruct))
+	pp.DesignEmailFooterTemplate = model.NewStr(`design/email/footer_template`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

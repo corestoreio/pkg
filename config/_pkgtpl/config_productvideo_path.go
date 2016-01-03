@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -35,17 +35,17 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogProductVideoYoutubeApiKey = model.NewStr(`catalog/product_video/youtube_api_key`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogProductVideoPlayIfBase = model.NewBool(`catalog/product_video/play_if_base`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogProductVideoShowRelated = model.NewBool(`catalog/product_video/show_related`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogProductVideoVideoAutoRestart = model.NewBool(`catalog/product_video/video_auto_restart`, model.WithPkgCfg(pkgCfg))
+	pp.CatalogProductVideoYoutubeApiKey = model.NewStr(`catalog/product_video/youtube_api_key`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogProductVideoPlayIfBase = model.NewBool(`catalog/product_video/play_if_base`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogProductVideoShowRelated = model.NewBool(`catalog/product_video/show_related`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogProductVideoVideoAutoRestart = model.NewBool(`catalog/product_video/video_auto_restart`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -46,19 +46,19 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.SendfriendEmailEnabled = model.NewBool(`sendfriend/email/enabled`, model.WithPkgCfg(pkgCfg))
-	pp.SendfriendEmailTemplate = model.NewStr(`sendfriend/email/template`, model.WithPkgCfg(pkgCfg))
-	pp.SendfriendEmailAllowGuest = model.NewBool(`sendfriend/email/allow_guest`, model.WithPkgCfg(pkgCfg))
-	pp.SendfriendEmailMaxRecipients = model.NewStr(`sendfriend/email/max_recipients`, model.WithPkgCfg(pkgCfg))
-	pp.SendfriendEmailMaxPerHour = model.NewStr(`sendfriend/email/max_per_hour`, model.WithPkgCfg(pkgCfg))
-	pp.SendfriendEmailCheckBy = model.NewStr(`sendfriend/email/check_by`, model.WithPkgCfg(pkgCfg))
+	pp.SendfriendEmailEnabled = model.NewBool(`sendfriend/email/enabled`, model.WithConfigStructure(cfgStruct))
+	pp.SendfriendEmailTemplate = model.NewStr(`sendfriend/email/template`, model.WithConfigStructure(cfgStruct))
+	pp.SendfriendEmailAllowGuest = model.NewBool(`sendfriend/email/allow_guest`, model.WithConfigStructure(cfgStruct))
+	pp.SendfriendEmailMaxRecipients = model.NewStr(`sendfriend/email/max_recipients`, model.WithConfigStructure(cfgStruct))
+	pp.SendfriendEmailMaxPerHour = model.NewStr(`sendfriend/email/max_per_hour`, model.WithConfigStructure(cfgStruct))
+	pp.SendfriendEmailCheckBy = model.NewStr(`sendfriend/email/check_by`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

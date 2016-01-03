@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -99,29 +99,29 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.SitemapCategoryChangefreq = model.NewStr(`sitemap/category/changefreq`, model.WithPkgCfg(pkgCfg))
-	pp.SitemapCategoryPriority = model.NewStr(`sitemap/category/priority`, model.WithPkgCfg(pkgCfg))
-	pp.SitemapProductChangefreq = model.NewStr(`sitemap/product/changefreq`, model.WithPkgCfg(pkgCfg))
-	pp.SitemapProductPriority = model.NewStr(`sitemap/product/priority`, model.WithPkgCfg(pkgCfg))
-	pp.SitemapProductImageInclude = model.NewStr(`sitemap/product/image_include`, model.WithPkgCfg(pkgCfg))
-	pp.SitemapPageChangefreq = model.NewStr(`sitemap/page/changefreq`, model.WithPkgCfg(pkgCfg))
-	pp.SitemapPagePriority = model.NewStr(`sitemap/page/priority`, model.WithPkgCfg(pkgCfg))
-	pp.SitemapGenerateEnabled = model.NewBool(`sitemap/generate/enabled`, model.WithPkgCfg(pkgCfg))
-	pp.SitemapGenerateErrorEmail = model.NewStr(`sitemap/generate/error_email`, model.WithPkgCfg(pkgCfg))
-	pp.SitemapGenerateErrorEmailIdentity = model.NewStr(`sitemap/generate/error_email_identity`, model.WithPkgCfg(pkgCfg))
-	pp.SitemapGenerateErrorEmailTemplate = model.NewStr(`sitemap/generate/error_email_template`, model.WithPkgCfg(pkgCfg))
-	pp.SitemapGenerateFrequency = model.NewStr(`sitemap/generate/frequency`, model.WithPkgCfg(pkgCfg))
-	pp.SitemapGenerateTime = model.NewStr(`sitemap/generate/time`, model.WithPkgCfg(pkgCfg))
-	pp.SitemapLimitMaxLines = model.NewStr(`sitemap/limit/max_lines`, model.WithPkgCfg(pkgCfg))
-	pp.SitemapLimitMaxFileSize = model.NewStr(`sitemap/limit/max_file_size`, model.WithPkgCfg(pkgCfg))
-	pp.SitemapSearchEnginesSubmissionRobots = model.NewBool(`sitemap/search_engines/submission_robots`, model.WithPkgCfg(pkgCfg))
+	pp.SitemapCategoryChangefreq = model.NewStr(`sitemap/category/changefreq`, model.WithConfigStructure(cfgStruct))
+	pp.SitemapCategoryPriority = model.NewStr(`sitemap/category/priority`, model.WithConfigStructure(cfgStruct))
+	pp.SitemapProductChangefreq = model.NewStr(`sitemap/product/changefreq`, model.WithConfigStructure(cfgStruct))
+	pp.SitemapProductPriority = model.NewStr(`sitemap/product/priority`, model.WithConfigStructure(cfgStruct))
+	pp.SitemapProductImageInclude = model.NewStr(`sitemap/product/image_include`, model.WithConfigStructure(cfgStruct))
+	pp.SitemapPageChangefreq = model.NewStr(`sitemap/page/changefreq`, model.WithConfigStructure(cfgStruct))
+	pp.SitemapPagePriority = model.NewStr(`sitemap/page/priority`, model.WithConfigStructure(cfgStruct))
+	pp.SitemapGenerateEnabled = model.NewBool(`sitemap/generate/enabled`, model.WithConfigStructure(cfgStruct))
+	pp.SitemapGenerateErrorEmail = model.NewStr(`sitemap/generate/error_email`, model.WithConfigStructure(cfgStruct))
+	pp.SitemapGenerateErrorEmailIdentity = model.NewStr(`sitemap/generate/error_email_identity`, model.WithConfigStructure(cfgStruct))
+	pp.SitemapGenerateErrorEmailTemplate = model.NewStr(`sitemap/generate/error_email_template`, model.WithConfigStructure(cfgStruct))
+	pp.SitemapGenerateFrequency = model.NewStr(`sitemap/generate/frequency`, model.WithConfigStructure(cfgStruct))
+	pp.SitemapGenerateTime = model.NewStr(`sitemap/generate/time`, model.WithConfigStructure(cfgStruct))
+	pp.SitemapLimitMaxLines = model.NewStr(`sitemap/limit/max_lines`, model.WithConfigStructure(cfgStruct))
+	pp.SitemapLimitMaxFileSize = model.NewStr(`sitemap/limit/max_file_size`, model.WithConfigStructure(cfgStruct))
+	pp.SitemapSearchEnginesSubmissionRobots = model.NewBool(`sitemap/search_engines/submission_robots`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

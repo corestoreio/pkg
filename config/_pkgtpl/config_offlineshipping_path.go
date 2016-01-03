@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -174,48 +174,48 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CarriersFlatrateActive = model.NewBool(`carriers/flatrate/active`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFlatrateName = model.NewStr(`carriers/flatrate/name`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFlatratePrice = model.NewStr(`carriers/flatrate/price`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFlatrateHandlingType = model.NewStr(`carriers/flatrate/handling_type`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFlatrateHandlingFee = model.NewStr(`carriers/flatrate/handling_fee`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFlatrateSortOrder = model.NewStr(`carriers/flatrate/sort_order`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFlatrateTitle = model.NewStr(`carriers/flatrate/title`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFlatrateType = model.NewStr(`carriers/flatrate/type`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFlatrateSallowspecific = model.NewStr(`carriers/flatrate/sallowspecific`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFlatrateSpecificcountry = model.NewStringCSV(`carriers/flatrate/specificcountry`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFlatrateShowmethod = model.NewBool(`carriers/flatrate/showmethod`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFlatrateSpecificerrmsg = model.NewStr(`carriers/flatrate/specificerrmsg`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersTablerateHandlingType = model.NewStr(`carriers/tablerate/handling_type`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersTablerateHandlingFee = model.NewStr(`carriers/tablerate/handling_fee`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersTablerateActive = model.NewBool(`carriers/tablerate/active`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersTablerateConditionName = model.NewStr(`carriers/tablerate/condition_name`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersTablerateIncludeVirtualPrice = model.NewBool(`carriers/tablerate/include_virtual_price`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersTablerateExport = model.NewStr(`carriers/tablerate/export`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersTablerateImport = model.NewStr(`carriers/tablerate/import`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersTablerateName = model.NewStr(`carriers/tablerate/name`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersTablerateSortOrder = model.NewStr(`carriers/tablerate/sort_order`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersTablerateTitle = model.NewStr(`carriers/tablerate/title`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersTablerateSallowspecific = model.NewStr(`carriers/tablerate/sallowspecific`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersTablerateSpecificcountry = model.NewStringCSV(`carriers/tablerate/specificcountry`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersTablerateShowmethod = model.NewBool(`carriers/tablerate/showmethod`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersTablerateSpecificerrmsg = model.NewStr(`carriers/tablerate/specificerrmsg`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFreeshippingActive = model.NewBool(`carriers/freeshipping/active`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFreeshippingFreeShippingSubtotal = model.NewStr(`carriers/freeshipping/free_shipping_subtotal`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFreeshippingName = model.NewStr(`carriers/freeshipping/name`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFreeshippingSortOrder = model.NewStr(`carriers/freeshipping/sort_order`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFreeshippingTitle = model.NewStr(`carriers/freeshipping/title`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFreeshippingSallowspecific = model.NewStr(`carriers/freeshipping/sallowspecific`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFreeshippingSpecificcountry = model.NewStringCSV(`carriers/freeshipping/specificcountry`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFreeshippingShowmethod = model.NewBool(`carriers/freeshipping/showmethod`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersFreeshippingSpecificerrmsg = model.NewStr(`carriers/freeshipping/specificerrmsg`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersFlatrateActive = model.NewBool(`carriers/flatrate/active`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFlatrateName = model.NewStr(`carriers/flatrate/name`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFlatratePrice = model.NewStr(`carriers/flatrate/price`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFlatrateHandlingType = model.NewStr(`carriers/flatrate/handling_type`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFlatrateHandlingFee = model.NewStr(`carriers/flatrate/handling_fee`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFlatrateSortOrder = model.NewStr(`carriers/flatrate/sort_order`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFlatrateTitle = model.NewStr(`carriers/flatrate/title`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFlatrateType = model.NewStr(`carriers/flatrate/type`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFlatrateSallowspecific = model.NewStr(`carriers/flatrate/sallowspecific`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFlatrateSpecificcountry = model.NewStringCSV(`carriers/flatrate/specificcountry`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFlatrateShowmethod = model.NewBool(`carriers/flatrate/showmethod`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFlatrateSpecificerrmsg = model.NewStr(`carriers/flatrate/specificerrmsg`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersTablerateHandlingType = model.NewStr(`carriers/tablerate/handling_type`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersTablerateHandlingFee = model.NewStr(`carriers/tablerate/handling_fee`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersTablerateActive = model.NewBool(`carriers/tablerate/active`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersTablerateConditionName = model.NewStr(`carriers/tablerate/condition_name`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersTablerateIncludeVirtualPrice = model.NewBool(`carriers/tablerate/include_virtual_price`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersTablerateExport = model.NewStr(`carriers/tablerate/export`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersTablerateImport = model.NewStr(`carriers/tablerate/import`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersTablerateName = model.NewStr(`carriers/tablerate/name`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersTablerateSortOrder = model.NewStr(`carriers/tablerate/sort_order`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersTablerateTitle = model.NewStr(`carriers/tablerate/title`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersTablerateSallowspecific = model.NewStr(`carriers/tablerate/sallowspecific`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersTablerateSpecificcountry = model.NewStringCSV(`carriers/tablerate/specificcountry`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersTablerateShowmethod = model.NewBool(`carriers/tablerate/showmethod`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersTablerateSpecificerrmsg = model.NewStr(`carriers/tablerate/specificerrmsg`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFreeshippingActive = model.NewBool(`carriers/freeshipping/active`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFreeshippingFreeShippingSubtotal = model.NewStr(`carriers/freeshipping/free_shipping_subtotal`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFreeshippingName = model.NewStr(`carriers/freeshipping/name`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFreeshippingSortOrder = model.NewStr(`carriers/freeshipping/sort_order`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFreeshippingTitle = model.NewStr(`carriers/freeshipping/title`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFreeshippingSallowspecific = model.NewStr(`carriers/freeshipping/sallowspecific`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFreeshippingSpecificcountry = model.NewStringCSV(`carriers/freeshipping/specificcountry`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFreeshippingShowmethod = model.NewBool(`carriers/freeshipping/showmethod`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersFreeshippingSpecificerrmsg = model.NewStr(`carriers/freeshipping/specificerrmsg`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

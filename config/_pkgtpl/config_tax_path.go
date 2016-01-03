@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -176,41 +176,41 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.TaxClassesShippingTaxClass = model.NewStr(`tax/classes/shipping_tax_class`, model.WithPkgCfg(pkgCfg))
-	pp.TaxClassesDefaultProductTaxClass = model.NewStr(`tax/classes/default_product_tax_class`, model.WithPkgCfg(pkgCfg))
-	pp.TaxClassesDefaultCustomerTaxClass = model.NewStr(`tax/classes/default_customer_tax_class`, model.WithPkgCfg(pkgCfg))
-	pp.TaxCalculationAlgorithm = model.NewStr(`tax/calculation/algorithm`, model.WithPkgCfg(pkgCfg))
-	pp.TaxCalculationBasedOn = model.NewStr(`tax/calculation/based_on`, model.WithPkgCfg(pkgCfg))
-	pp.TaxCalculationPriceIncludesTax = model.NewStr(`tax/calculation/price_includes_tax`, model.WithPkgCfg(pkgCfg))
-	pp.TaxCalculationShippingIncludesTax = model.NewStr(`tax/calculation/shipping_includes_tax`, model.WithPkgCfg(pkgCfg))
-	pp.TaxCalculationApplyAfterDiscount = model.NewStr(`tax/calculation/apply_after_discount`, model.WithPkgCfg(pkgCfg))
-	pp.TaxCalculationDiscountTax = model.NewStr(`tax/calculation/discount_tax`, model.WithPkgCfg(pkgCfg))
-	pp.TaxCalculationApplyTaxOn = model.NewStr(`tax/calculation/apply_tax_on`, model.WithPkgCfg(pkgCfg))
-	pp.TaxCalculationCrossBorderTradeEnabled = model.NewBool(`tax/calculation/cross_border_trade_enabled`, model.WithPkgCfg(pkgCfg))
-	pp.TaxDefaultsCountry = model.NewStr(`tax/defaults/country`, model.WithPkgCfg(pkgCfg))
-	pp.TaxDefaultsRegion = model.NewStr(`tax/defaults/region`, model.WithPkgCfg(pkgCfg))
-	pp.TaxDefaultsPostcode = model.NewStr(`tax/defaults/postcode`, model.WithPkgCfg(pkgCfg))
-	pp.TaxDisplayType = model.NewStr(`tax/display/type`, model.WithPkgCfg(pkgCfg))
-	pp.TaxDisplayShipping = model.NewStr(`tax/display/shipping`, model.WithPkgCfg(pkgCfg))
-	pp.TaxCartDisplayPrice = model.NewStr(`tax/cart_display/price`, model.WithPkgCfg(pkgCfg))
-	pp.TaxCartDisplaySubtotal = model.NewStr(`tax/cart_display/subtotal`, model.WithPkgCfg(pkgCfg))
-	pp.TaxCartDisplayShipping = model.NewStr(`tax/cart_display/shipping`, model.WithPkgCfg(pkgCfg))
-	pp.TaxCartDisplayGrandtotal = model.NewBool(`tax/cart_display/grandtotal`, model.WithPkgCfg(pkgCfg))
-	pp.TaxCartDisplayFullSummary = model.NewBool(`tax/cart_display/full_summary`, model.WithPkgCfg(pkgCfg))
-	pp.TaxCartDisplayZeroTax = model.NewBool(`tax/cart_display/zero_tax`, model.WithPkgCfg(pkgCfg))
-	pp.TaxSalesDisplayPrice = model.NewStr(`tax/sales_display/price`, model.WithPkgCfg(pkgCfg))
-	pp.TaxSalesDisplaySubtotal = model.NewStr(`tax/sales_display/subtotal`, model.WithPkgCfg(pkgCfg))
-	pp.TaxSalesDisplayShipping = model.NewStr(`tax/sales_display/shipping`, model.WithPkgCfg(pkgCfg))
-	pp.TaxSalesDisplayGrandtotal = model.NewBool(`tax/sales_display/grandtotal`, model.WithPkgCfg(pkgCfg))
-	pp.TaxSalesDisplayFullSummary = model.NewBool(`tax/sales_display/full_summary`, model.WithPkgCfg(pkgCfg))
-	pp.TaxSalesDisplayZeroTax = model.NewBool(`tax/sales_display/zero_tax`, model.WithPkgCfg(pkgCfg))
+	pp.TaxClassesShippingTaxClass = model.NewStr(`tax/classes/shipping_tax_class`, model.WithConfigStructure(cfgStruct))
+	pp.TaxClassesDefaultProductTaxClass = model.NewStr(`tax/classes/default_product_tax_class`, model.WithConfigStructure(cfgStruct))
+	pp.TaxClassesDefaultCustomerTaxClass = model.NewStr(`tax/classes/default_customer_tax_class`, model.WithConfigStructure(cfgStruct))
+	pp.TaxCalculationAlgorithm = model.NewStr(`tax/calculation/algorithm`, model.WithConfigStructure(cfgStruct))
+	pp.TaxCalculationBasedOn = model.NewStr(`tax/calculation/based_on`, model.WithConfigStructure(cfgStruct))
+	pp.TaxCalculationPriceIncludesTax = model.NewStr(`tax/calculation/price_includes_tax`, model.WithConfigStructure(cfgStruct))
+	pp.TaxCalculationShippingIncludesTax = model.NewStr(`tax/calculation/shipping_includes_tax`, model.WithConfigStructure(cfgStruct))
+	pp.TaxCalculationApplyAfterDiscount = model.NewStr(`tax/calculation/apply_after_discount`, model.WithConfigStructure(cfgStruct))
+	pp.TaxCalculationDiscountTax = model.NewStr(`tax/calculation/discount_tax`, model.WithConfigStructure(cfgStruct))
+	pp.TaxCalculationApplyTaxOn = model.NewStr(`tax/calculation/apply_tax_on`, model.WithConfigStructure(cfgStruct))
+	pp.TaxCalculationCrossBorderTradeEnabled = model.NewBool(`tax/calculation/cross_border_trade_enabled`, model.WithConfigStructure(cfgStruct))
+	pp.TaxDefaultsCountry = model.NewStr(`tax/defaults/country`, model.WithConfigStructure(cfgStruct))
+	pp.TaxDefaultsRegion = model.NewStr(`tax/defaults/region`, model.WithConfigStructure(cfgStruct))
+	pp.TaxDefaultsPostcode = model.NewStr(`tax/defaults/postcode`, model.WithConfigStructure(cfgStruct))
+	pp.TaxDisplayType = model.NewStr(`tax/display/type`, model.WithConfigStructure(cfgStruct))
+	pp.TaxDisplayShipping = model.NewStr(`tax/display/shipping`, model.WithConfigStructure(cfgStruct))
+	pp.TaxCartDisplayPrice = model.NewStr(`tax/cart_display/price`, model.WithConfigStructure(cfgStruct))
+	pp.TaxCartDisplaySubtotal = model.NewStr(`tax/cart_display/subtotal`, model.WithConfigStructure(cfgStruct))
+	pp.TaxCartDisplayShipping = model.NewStr(`tax/cart_display/shipping`, model.WithConfigStructure(cfgStruct))
+	pp.TaxCartDisplayGrandtotal = model.NewBool(`tax/cart_display/grandtotal`, model.WithConfigStructure(cfgStruct))
+	pp.TaxCartDisplayFullSummary = model.NewBool(`tax/cart_display/full_summary`, model.WithConfigStructure(cfgStruct))
+	pp.TaxCartDisplayZeroTax = model.NewBool(`tax/cart_display/zero_tax`, model.WithConfigStructure(cfgStruct))
+	pp.TaxSalesDisplayPrice = model.NewStr(`tax/sales_display/price`, model.WithConfigStructure(cfgStruct))
+	pp.TaxSalesDisplaySubtotal = model.NewStr(`tax/sales_display/subtotal`, model.WithConfigStructure(cfgStruct))
+	pp.TaxSalesDisplayShipping = model.NewStr(`tax/sales_display/shipping`, model.WithConfigStructure(cfgStruct))
+	pp.TaxSalesDisplayGrandtotal = model.NewBool(`tax/sales_display/grandtotal`, model.WithConfigStructure(cfgStruct))
+	pp.TaxSalesDisplayFullSummary = model.NewBool(`tax/sales_display/full_summary`, model.WithConfigStructure(cfgStruct))
+	pp.TaxSalesDisplayZeroTax = model.NewBool(`tax/sales_display/zero_tax`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

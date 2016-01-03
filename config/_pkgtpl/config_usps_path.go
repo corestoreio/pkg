@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -154,43 +154,43 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CarriersUspsActive = model.NewBool(`carriers/usps/active`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsActiveRma = model.NewBool(`carriers/usps/active_rma`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsGatewayUrl = model.NewStr(`carriers/usps/gateway_url`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsGatewaySecureUrl = model.NewStr(`carriers/usps/gateway_secure_url`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsTitle = model.NewStr(`carriers/usps/title`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsUserid = model.NewStr(`carriers/usps/userid`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsPassword = model.NewStr(`carriers/usps/password`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsMode = model.NewStr(`carriers/usps/mode`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsShipmentRequesttype = model.NewStr(`carriers/usps/shipment_requesttype`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsContainer = model.NewStr(`carriers/usps/container`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsSize = model.NewStr(`carriers/usps/size`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsWidth = model.NewStr(`carriers/usps/width`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsLength = model.NewStr(`carriers/usps/length`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsHeight = model.NewStr(`carriers/usps/height`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsGirth = model.NewStr(`carriers/usps/girth`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsMachinable = model.NewStr(`carriers/usps/machinable`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsMaxPackageWeight = model.NewStr(`carriers/usps/max_package_weight`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsHandlingType = model.NewStr(`carriers/usps/handling_type`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsHandlingAction = model.NewStr(`carriers/usps/handling_action`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsHandlingFee = model.NewStr(`carriers/usps/handling_fee`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsAllowedMethods = model.NewStringCSV(`carriers/usps/allowed_methods`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsFreeMethod = model.NewStr(`carriers/usps/free_method`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsFreeShippingEnable = model.NewBool(`carriers/usps/free_shipping_enable`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsFreeShippingSubtotal = model.NewStr(`carriers/usps/free_shipping_subtotal`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsSpecificerrmsg = model.NewStr(`carriers/usps/specificerrmsg`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsSallowspecific = model.NewStr(`carriers/usps/sallowspecific`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsSpecificcountry = model.NewStringCSV(`carriers/usps/specificcountry`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsDebug = model.NewBool(`carriers/usps/debug`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsShowmethod = model.NewBool(`carriers/usps/showmethod`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersUspsSortOrder = model.NewStr(`carriers/usps/sort_order`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersUspsActive = model.NewBool(`carriers/usps/active`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsActiveRma = model.NewBool(`carriers/usps/active_rma`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsGatewayUrl = model.NewStr(`carriers/usps/gateway_url`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsGatewaySecureUrl = model.NewStr(`carriers/usps/gateway_secure_url`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsTitle = model.NewStr(`carriers/usps/title`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsUserid = model.NewStr(`carriers/usps/userid`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsPassword = model.NewStr(`carriers/usps/password`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsMode = model.NewStr(`carriers/usps/mode`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsShipmentRequesttype = model.NewStr(`carriers/usps/shipment_requesttype`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsContainer = model.NewStr(`carriers/usps/container`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsSize = model.NewStr(`carriers/usps/size`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsWidth = model.NewStr(`carriers/usps/width`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsLength = model.NewStr(`carriers/usps/length`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsHeight = model.NewStr(`carriers/usps/height`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsGirth = model.NewStr(`carriers/usps/girth`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsMachinable = model.NewStr(`carriers/usps/machinable`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsMaxPackageWeight = model.NewStr(`carriers/usps/max_package_weight`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsHandlingType = model.NewStr(`carriers/usps/handling_type`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsHandlingAction = model.NewStr(`carriers/usps/handling_action`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsHandlingFee = model.NewStr(`carriers/usps/handling_fee`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsAllowedMethods = model.NewStringCSV(`carriers/usps/allowed_methods`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsFreeMethod = model.NewStr(`carriers/usps/free_method`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsFreeShippingEnable = model.NewBool(`carriers/usps/free_shipping_enable`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsFreeShippingSubtotal = model.NewStr(`carriers/usps/free_shipping_subtotal`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsSpecificerrmsg = model.NewStr(`carriers/usps/specificerrmsg`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsSallowspecific = model.NewStr(`carriers/usps/sallowspecific`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsSpecificcountry = model.NewStringCSV(`carriers/usps/specificcountry`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsDebug = model.NewBool(`carriers/usps/debug`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsShowmethod = model.NewBool(`carriers/usps/showmethod`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersUspsSortOrder = model.NewStr(`carriers/usps/sort_order`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

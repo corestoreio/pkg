@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -56,21 +56,21 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.WebDefaultCmsHomePage = model.NewStr(`web/default/cms_home_page`, model.WithPkgCfg(pkgCfg))
-	pp.WebDefaultCmsNoRoute = model.NewStr(`web/default/cms_no_route`, model.WithPkgCfg(pkgCfg))
-	pp.WebDefaultCmsNoCookies = model.NewStr(`web/default/cms_no_cookies`, model.WithPkgCfg(pkgCfg))
-	pp.WebDefaultShowCmsBreadcrumbs = model.NewBool(`web/default/show_cms_breadcrumbs`, model.WithPkgCfg(pkgCfg))
-	pp.WebBrowserCapabilitiesCookies = model.NewBool(`web/browser_capabilities/cookies`, model.WithPkgCfg(pkgCfg))
-	pp.WebBrowserCapabilitiesJavascript = model.NewBool(`web/browser_capabilities/javascript`, model.WithPkgCfg(pkgCfg))
-	pp.WebBrowserCapabilitiesLocalStorage = model.NewBool(`web/browser_capabilities/local_storage`, model.WithPkgCfg(pkgCfg))
-	pp.CmsWysiwygEnabled = model.NewStr(`cms/wysiwyg/enabled`, model.WithPkgCfg(pkgCfg))
+	pp.WebDefaultCmsHomePage = model.NewStr(`web/default/cms_home_page`, model.WithConfigStructure(cfgStruct))
+	pp.WebDefaultCmsNoRoute = model.NewStr(`web/default/cms_no_route`, model.WithConfigStructure(cfgStruct))
+	pp.WebDefaultCmsNoCookies = model.NewStr(`web/default/cms_no_cookies`, model.WithConfigStructure(cfgStruct))
+	pp.WebDefaultShowCmsBreadcrumbs = model.NewBool(`web/default/show_cms_breadcrumbs`, model.WithConfigStructure(cfgStruct))
+	pp.WebBrowserCapabilitiesCookies = model.NewBool(`web/browser_capabilities/cookies`, model.WithConfigStructure(cfgStruct))
+	pp.WebBrowserCapabilitiesJavascript = model.NewBool(`web/browser_capabilities/javascript`, model.WithConfigStructure(cfgStruct))
+	pp.WebBrowserCapabilitiesLocalStorage = model.NewBool(`web/browser_capabilities/local_storage`, model.WithConfigStructure(cfgStruct))
+	pp.CmsWysiwygEnabled = model.NewStr(`cms/wysiwyg/enabled`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

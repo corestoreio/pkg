@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -34,17 +34,17 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogSeoSearchTerms = model.NewBool(`catalog/seo/search_terms`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogSearchEngine = model.NewStr(`catalog/search/engine`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogSearchMinQueryLength = model.NewStr(`catalog/search/min_query_length`, model.WithPkgCfg(pkgCfg))
-	pp.CatalogSearchMaxQueryLength = model.NewStr(`catalog/search/max_query_length`, model.WithPkgCfg(pkgCfg))
+	pp.CatalogSeoSearchTerms = model.NewBool(`catalog/seo/search_terms`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogSearchEngine = model.NewStr(`catalog/search/engine`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogSearchMinQueryLength = model.NewStr(`catalog/search/min_query_length`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogSearchMaxQueryLength = model.NewStr(`catalog/search/max_query_length`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -53,21 +53,21 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.GoogleAdwordsActive = model.NewBool(`google/adwords/active`, model.WithPkgCfg(pkgCfg))
-	pp.GoogleAdwordsConversionId = model.NewStr(`google/adwords/conversion_id`, model.WithPkgCfg(pkgCfg))
-	pp.GoogleAdwordsConversionLanguage = model.NewStr(`google/adwords/conversion_language`, model.WithPkgCfg(pkgCfg))
-	pp.GoogleAdwordsConversionFormat = model.NewStr(`google/adwords/conversion_format`, model.WithPkgCfg(pkgCfg))
-	pp.GoogleAdwordsConversionColor = model.NewStr(`google/adwords/conversion_color`, model.WithPkgCfg(pkgCfg))
-	pp.GoogleAdwordsConversionLabel = model.NewStr(`google/adwords/conversion_label`, model.WithPkgCfg(pkgCfg))
-	pp.GoogleAdwordsConversionValueType = model.NewStr(`google/adwords/conversion_value_type`, model.WithPkgCfg(pkgCfg))
-	pp.GoogleAdwordsConversionValue = model.NewStr(`google/adwords/conversion_value`, model.WithPkgCfg(pkgCfg))
+	pp.GoogleAdwordsActive = model.NewBool(`google/adwords/active`, model.WithConfigStructure(cfgStruct))
+	pp.GoogleAdwordsConversionId = model.NewStr(`google/adwords/conversion_id`, model.WithConfigStructure(cfgStruct))
+	pp.GoogleAdwordsConversionLanguage = model.NewStr(`google/adwords/conversion_language`, model.WithConfigStructure(cfgStruct))
+	pp.GoogleAdwordsConversionFormat = model.NewStr(`google/adwords/conversion_format`, model.WithConfigStructure(cfgStruct))
+	pp.GoogleAdwordsConversionColor = model.NewStr(`google/adwords/conversion_color`, model.WithConfigStructure(cfgStruct))
+	pp.GoogleAdwordsConversionLabel = model.NewStr(`google/adwords/conversion_label`, model.WithConfigStructure(cfgStruct))
+	pp.GoogleAdwordsConversionValueType = model.NewStr(`google/adwords/conversion_value_type`, model.WithConfigStructure(cfgStruct))
+	pp.GoogleAdwordsConversionValue = model.NewStr(`google/adwords/conversion_value`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

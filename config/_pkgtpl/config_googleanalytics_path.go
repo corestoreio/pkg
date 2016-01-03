@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -25,15 +25,15 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.GoogleAnalyticsActive = model.NewBool(`google/analytics/active`, model.WithPkgCfg(pkgCfg))
-	pp.GoogleAnalyticsAccount = model.NewStr(`google/analytics/account`, model.WithPkgCfg(pkgCfg))
+	pp.GoogleAnalyticsActive = model.NewBool(`google/analytics/active`, model.WithConfigStructure(cfgStruct))
+	pp.GoogleAnalyticsAccount = model.NewStr(`google/analytics/account`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

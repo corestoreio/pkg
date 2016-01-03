@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -101,31 +101,31 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.DesignHeadShortcutIcon = model.NewStr(`design/head/shortcut_icon`, model.WithPkgCfg(pkgCfg))
-	pp.DesignHeadDefaultTitle = model.NewStr(`design/head/default_title`, model.WithPkgCfg(pkgCfg))
-	pp.DesignHeadTitlePrefix = model.NewStr(`design/head/title_prefix`, model.WithPkgCfg(pkgCfg))
-	pp.DesignHeadTitleSuffix = model.NewStr(`design/head/title_suffix`, model.WithPkgCfg(pkgCfg))
-	pp.DesignHeadDefaultDescription = model.NewStr(`design/head/default_description`, model.WithPkgCfg(pkgCfg))
-	pp.DesignHeadDefaultKeywords = model.NewStr(`design/head/default_keywords`, model.WithPkgCfg(pkgCfg))
-	pp.DesignHeadIncludes = model.NewStr(`design/head/includes`, model.WithPkgCfg(pkgCfg))
-	pp.DesignHeadDemonotice = model.NewBool(`design/head/demonotice`, model.WithPkgCfg(pkgCfg))
-	pp.DesignSearchEngineRobotsDefaultRobots = model.NewStr(`design/search_engine_robots/default_robots`, model.WithPkgCfg(pkgCfg))
-	pp.DesignSearchEngineRobotsCustomInstructions = model.NewStr(`design/search_engine_robots/custom_instructions`, model.WithPkgCfg(pkgCfg))
-	pp.DesignSearchEngineRobotsResetToDefaults = model.NewStr(`design/search_engine_robots/reset_to_defaults`, model.WithPkgCfg(pkgCfg))
-	pp.DesignHeaderLogoSrc = model.NewStr(`design/header/logo_src`, model.WithPkgCfg(pkgCfg))
-	pp.DesignHeaderLogoWidth = model.NewStr(`design/header/logo_width`, model.WithPkgCfg(pkgCfg))
-	pp.DesignHeaderLogoHeight = model.NewStr(`design/header/logo_height`, model.WithPkgCfg(pkgCfg))
-	pp.DesignHeaderLogoAlt = model.NewStr(`design/header/logo_alt`, model.WithPkgCfg(pkgCfg))
-	pp.DesignHeaderWelcome = model.NewStr(`design/header/welcome`, model.WithPkgCfg(pkgCfg))
-	pp.DesignFooterCopyright = model.NewStr(`design/footer/copyright`, model.WithPkgCfg(pkgCfg))
-	pp.DesignFooterAbsoluteFooter = model.NewStr(`design/footer/absolute_footer`, model.WithPkgCfg(pkgCfg))
+	pp.DesignHeadShortcutIcon = model.NewStr(`design/head/shortcut_icon`, model.WithConfigStructure(cfgStruct))
+	pp.DesignHeadDefaultTitle = model.NewStr(`design/head/default_title`, model.WithConfigStructure(cfgStruct))
+	pp.DesignHeadTitlePrefix = model.NewStr(`design/head/title_prefix`, model.WithConfigStructure(cfgStruct))
+	pp.DesignHeadTitleSuffix = model.NewStr(`design/head/title_suffix`, model.WithConfigStructure(cfgStruct))
+	pp.DesignHeadDefaultDescription = model.NewStr(`design/head/default_description`, model.WithConfigStructure(cfgStruct))
+	pp.DesignHeadDefaultKeywords = model.NewStr(`design/head/default_keywords`, model.WithConfigStructure(cfgStruct))
+	pp.DesignHeadIncludes = model.NewStr(`design/head/includes`, model.WithConfigStructure(cfgStruct))
+	pp.DesignHeadDemonotice = model.NewBool(`design/head/demonotice`, model.WithConfigStructure(cfgStruct))
+	pp.DesignSearchEngineRobotsDefaultRobots = model.NewStr(`design/search_engine_robots/default_robots`, model.WithConfigStructure(cfgStruct))
+	pp.DesignSearchEngineRobotsCustomInstructions = model.NewStr(`design/search_engine_robots/custom_instructions`, model.WithConfigStructure(cfgStruct))
+	pp.DesignSearchEngineRobotsResetToDefaults = model.NewStr(`design/search_engine_robots/reset_to_defaults`, model.WithConfigStructure(cfgStruct))
+	pp.DesignHeaderLogoSrc = model.NewStr(`design/header/logo_src`, model.WithConfigStructure(cfgStruct))
+	pp.DesignHeaderLogoWidth = model.NewStr(`design/header/logo_width`, model.WithConfigStructure(cfgStruct))
+	pp.DesignHeaderLogoHeight = model.NewStr(`design/header/logo_height`, model.WithConfigStructure(cfgStruct))
+	pp.DesignHeaderLogoAlt = model.NewStr(`design/header/logo_alt`, model.WithConfigStructure(cfgStruct))
+	pp.DesignHeaderWelcome = model.NewStr(`design/header/welcome`, model.WithConfigStructure(cfgStruct))
+	pp.DesignFooterCopyright = model.NewStr(`design/footer/copyright`, model.WithConfigStructure(cfgStruct))
+	pp.DesignFooterAbsoluteFooter = model.NewStr(`design/footer/absolute_footer`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

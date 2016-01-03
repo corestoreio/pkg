@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -160,43 +160,43 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CarriersDhlActive = model.NewBool(`carriers/dhl/active`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlActiveRma = model.NewBool(`carriers/dhl/active_rma`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlGatewayUrl = model.NewStr(`carriers/dhl/gateway_url`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlTitle = model.NewStr(`carriers/dhl/title`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlId = model.NewStr(`carriers/dhl/id`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlPassword = model.NewStr(`carriers/dhl/password`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlAccount = model.NewStr(`carriers/dhl/account`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlContentType = model.NewStr(`carriers/dhl/content_type`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlHandlingType = model.NewStr(`carriers/dhl/handling_type`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlHandlingAction = model.NewStr(`carriers/dhl/handling_action`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlHandlingFee = model.NewStr(`carriers/dhl/handling_fee`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlDivideOrderWeight = model.NewBool(`carriers/dhl/divide_order_weight`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlUnitOfMeasure = model.NewStr(`carriers/dhl/unit_of_measure`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlSize = model.NewStr(`carriers/dhl/size`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlHeight = model.NewStr(`carriers/dhl/height`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlDepth = model.NewStr(`carriers/dhl/depth`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlWidth = model.NewStr(`carriers/dhl/width`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlDocMethods = model.NewStringCSV(`carriers/dhl/doc_methods`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlNondocMethods = model.NewStringCSV(`carriers/dhl/nondoc_methods`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlReadyTime = model.NewStr(`carriers/dhl/ready_time`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlSpecificerrmsg = model.NewStr(`carriers/dhl/specificerrmsg`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlFreeMethodDoc = model.NewStr(`carriers/dhl/free_method_doc`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlFreeMethodNondoc = model.NewStr(`carriers/dhl/free_method_nondoc`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlFreeShippingEnable = model.NewBool(`carriers/dhl/free_shipping_enable`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlFreeShippingSubtotal = model.NewStr(`carriers/dhl/free_shipping_subtotal`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlSallowspecific = model.NewStr(`carriers/dhl/sallowspecific`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlSpecificcountry = model.NewStringCSV(`carriers/dhl/specificcountry`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlShowmethod = model.NewBool(`carriers/dhl/showmethod`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlSortOrder = model.NewStr(`carriers/dhl/sort_order`, model.WithPkgCfg(pkgCfg))
-	pp.CarriersDhlDebug = model.NewBool(`carriers/dhl/debug`, model.WithPkgCfg(pkgCfg))
+	pp.CarriersDhlActive = model.NewBool(`carriers/dhl/active`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlActiveRma = model.NewBool(`carriers/dhl/active_rma`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlGatewayUrl = model.NewStr(`carriers/dhl/gateway_url`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlTitle = model.NewStr(`carriers/dhl/title`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlId = model.NewStr(`carriers/dhl/id`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlPassword = model.NewStr(`carriers/dhl/password`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlAccount = model.NewStr(`carriers/dhl/account`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlContentType = model.NewStr(`carriers/dhl/content_type`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlHandlingType = model.NewStr(`carriers/dhl/handling_type`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlHandlingAction = model.NewStr(`carriers/dhl/handling_action`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlHandlingFee = model.NewStr(`carriers/dhl/handling_fee`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlDivideOrderWeight = model.NewBool(`carriers/dhl/divide_order_weight`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlUnitOfMeasure = model.NewStr(`carriers/dhl/unit_of_measure`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlSize = model.NewStr(`carriers/dhl/size`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlHeight = model.NewStr(`carriers/dhl/height`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlDepth = model.NewStr(`carriers/dhl/depth`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlWidth = model.NewStr(`carriers/dhl/width`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlDocMethods = model.NewStringCSV(`carriers/dhl/doc_methods`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlNondocMethods = model.NewStringCSV(`carriers/dhl/nondoc_methods`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlReadyTime = model.NewStr(`carriers/dhl/ready_time`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlSpecificerrmsg = model.NewStr(`carriers/dhl/specificerrmsg`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlFreeMethodDoc = model.NewStr(`carriers/dhl/free_method_doc`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlFreeMethodNondoc = model.NewStr(`carriers/dhl/free_method_nondoc`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlFreeShippingEnable = model.NewBool(`carriers/dhl/free_shipping_enable`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlFreeShippingSubtotal = model.NewStr(`carriers/dhl/free_shipping_subtotal`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlSallowspecific = model.NewStr(`carriers/dhl/sallowspecific`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlSpecificcountry = model.NewStringCSV(`carriers/dhl/specificcountry`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlShowmethod = model.NewBool(`carriers/dhl/showmethod`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlSortOrder = model.NewStr(`carriers/dhl/sort_order`, model.WithConfigStructure(cfgStruct))
+	pp.CarriersDhlDebug = model.NewBool(`carriers/dhl/debug`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

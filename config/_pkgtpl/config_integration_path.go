@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -43,18 +43,18 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.OauthCleanupCleanupProbability = model.NewStr(`oauth/cleanup/cleanup_probability`, model.WithPkgCfg(pkgCfg))
-	pp.OauthCleanupExpirationPeriod = model.NewStr(`oauth/cleanup/expiration_period`, model.WithPkgCfg(pkgCfg))
-	pp.OauthConsumerExpirationPeriod = model.NewStr(`oauth/consumer/expiration_period`, model.WithPkgCfg(pkgCfg))
-	pp.OauthConsumerPostMaxredirects = model.NewStr(`oauth/consumer/post_maxredirects`, model.WithPkgCfg(pkgCfg))
-	pp.OauthConsumerPostTimeout = model.NewStr(`oauth/consumer/post_timeout`, model.WithPkgCfg(pkgCfg))
+	pp.OauthCleanupCleanupProbability = model.NewStr(`oauth/cleanup/cleanup_probability`, model.WithConfigStructure(cfgStruct))
+	pp.OauthCleanupExpirationPeriod = model.NewStr(`oauth/cleanup/expiration_period`, model.WithConfigStructure(cfgStruct))
+	pp.OauthConsumerExpirationPeriod = model.NewStr(`oauth/consumer/expiration_period`, model.WithConfigStructure(cfgStruct))
+	pp.OauthConsumerPostMaxredirects = model.NewStr(`oauth/consumer/post_maxredirects`, model.WithConfigStructure(cfgStruct))
+	pp.OauthConsumerPostTimeout = model.NewStr(`oauth/consumer/post_timeout`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

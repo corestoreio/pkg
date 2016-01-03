@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -64,22 +64,22 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.NewrelicreportingGeneralEnable = model.NewBool(`newrelicreporting/general/enable`, model.WithPkgCfg(pkgCfg))
-	pp.NewrelicreportingGeneralApiUrl = model.NewStr(`newrelicreporting/general/api_url`, model.WithPkgCfg(pkgCfg))
-	pp.NewrelicreportingGeneralInsightsApiUrl = model.NewStr(`newrelicreporting/general/insights_api_url`, model.WithPkgCfg(pkgCfg))
-	pp.NewrelicreportingGeneralAccountId = model.NewStr(`newrelicreporting/general/account_id`, model.WithPkgCfg(pkgCfg))
-	pp.NewrelicreportingGeneralAppId = model.NewStr(`newrelicreporting/general/app_id`, model.WithPkgCfg(pkgCfg))
-	pp.NewrelicreportingGeneralApi = model.NewStr(`newrelicreporting/general/api`, model.WithPkgCfg(pkgCfg))
-	pp.NewrelicreportingGeneralInsightsInsertKey = model.NewStr(`newrelicreporting/general/insights_insert_key`, model.WithPkgCfg(pkgCfg))
-	pp.NewrelicreportingGeneralAppName = model.NewStr(`newrelicreporting/general/app_name`, model.WithPkgCfg(pkgCfg))
-	pp.NewrelicreportingCronEnableCron = model.NewBool(`newrelicreporting/cron/enable_cron`, model.WithPkgCfg(pkgCfg))
+	pp.NewrelicreportingGeneralEnable = model.NewBool(`newrelicreporting/general/enable`, model.WithConfigStructure(cfgStruct))
+	pp.NewrelicreportingGeneralApiUrl = model.NewStr(`newrelicreporting/general/api_url`, model.WithConfigStructure(cfgStruct))
+	pp.NewrelicreportingGeneralInsightsApiUrl = model.NewStr(`newrelicreporting/general/insights_api_url`, model.WithConfigStructure(cfgStruct))
+	pp.NewrelicreportingGeneralAccountId = model.NewStr(`newrelicreporting/general/account_id`, model.WithConfigStructure(cfgStruct))
+	pp.NewrelicreportingGeneralAppId = model.NewStr(`newrelicreporting/general/app_id`, model.WithConfigStructure(cfgStruct))
+	pp.NewrelicreportingGeneralApi = model.NewStr(`newrelicreporting/general/api`, model.WithConfigStructure(cfgStruct))
+	pp.NewrelicreportingGeneralInsightsInsertKey = model.NewStr(`newrelicreporting/general/insights_insert_key`, model.WithConfigStructure(cfgStruct))
+	pp.NewrelicreportingGeneralAppName = model.NewStr(`newrelicreporting/general/app_name`, model.WithConfigStructure(cfgStruct))
+	pp.NewrelicreportingCronEnableCron = model.NewBool(`newrelicreporting/cron/enable_cron`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

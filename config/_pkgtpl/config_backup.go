@@ -7,12 +7,12 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-// PackageConfiguration global configuration options for this package.
+// ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var PackageConfiguration element.SectionSlice
+var ConfigStructure element.SectionSlice
 
 func init() {
-	PackageConfiguration = element.MustNewConfiguration(
+	ConfigStructure = element.MustNewConfiguration(
 		&element.Section{
 			ID: "system",
 			Groups: element.NewGroupSlice(
@@ -82,5 +82,5 @@ func init() {
 			),
 		},
 	)
-	Path = NewPath(PackageConfiguration)
+	Path = NewPath(ConfigStructure)
 }

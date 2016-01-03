@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -76,25 +76,25 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CheckoutOptionsOnepageCheckoutEnabled = model.NewBool(`checkout/options/onepage_checkout_enabled`, model.WithPkgCfg(pkgCfg))
-	pp.CheckoutOptionsGuestCheckout = model.NewBool(`checkout/options/guest_checkout`, model.WithPkgCfg(pkgCfg))
-	pp.CheckoutCartDeleteQuoteAfter = model.NewStr(`checkout/cart/delete_quote_after`, model.WithPkgCfg(pkgCfg))
-	pp.CheckoutCartRedirectToCart = model.NewBool(`checkout/cart/redirect_to_cart`, model.WithPkgCfg(pkgCfg))
-	pp.CheckoutCartLinkUseQty = model.NewStr(`checkout/cart_link/use_qty`, model.WithPkgCfg(pkgCfg))
-	pp.CheckoutSidebarDisplay = model.NewBool(`checkout/sidebar/display`, model.WithPkgCfg(pkgCfg))
-	pp.CheckoutSidebarCount = model.NewStr(`checkout/sidebar/count`, model.WithPkgCfg(pkgCfg))
-	pp.CheckoutPaymentFailedIdentity = model.NewStr(`checkout/payment_failed/identity`, model.WithPkgCfg(pkgCfg))
-	pp.CheckoutPaymentFailedReceiver = model.NewStr(`checkout/payment_failed/receiver`, model.WithPkgCfg(pkgCfg))
-	pp.CheckoutPaymentFailedTemplate = model.NewStr(`checkout/payment_failed/template`, model.WithPkgCfg(pkgCfg))
-	pp.CheckoutPaymentFailedCopyTo = model.NewStr(`checkout/payment_failed/copy_to`, model.WithPkgCfg(pkgCfg))
-	pp.CheckoutPaymentFailedCopyMethod = model.NewStr(`checkout/payment_failed/copy_method`, model.WithPkgCfg(pkgCfg))
+	pp.CheckoutOptionsOnepageCheckoutEnabled = model.NewBool(`checkout/options/onepage_checkout_enabled`, model.WithConfigStructure(cfgStruct))
+	pp.CheckoutOptionsGuestCheckout = model.NewBool(`checkout/options/guest_checkout`, model.WithConfigStructure(cfgStruct))
+	pp.CheckoutCartDeleteQuoteAfter = model.NewStr(`checkout/cart/delete_quote_after`, model.WithConfigStructure(cfgStruct))
+	pp.CheckoutCartRedirectToCart = model.NewBool(`checkout/cart/redirect_to_cart`, model.WithConfigStructure(cfgStruct))
+	pp.CheckoutCartLinkUseQty = model.NewStr(`checkout/cart_link/use_qty`, model.WithConfigStructure(cfgStruct))
+	pp.CheckoutSidebarDisplay = model.NewBool(`checkout/sidebar/display`, model.WithConfigStructure(cfgStruct))
+	pp.CheckoutSidebarCount = model.NewStr(`checkout/sidebar/count`, model.WithConfigStructure(cfgStruct))
+	pp.CheckoutPaymentFailedIdentity = model.NewStr(`checkout/payment_failed/identity`, model.WithConfigStructure(cfgStruct))
+	pp.CheckoutPaymentFailedReceiver = model.NewStr(`checkout/payment_failed/receiver`, model.WithConfigStructure(cfgStruct))
+	pp.CheckoutPaymentFailedTemplate = model.NewStr(`checkout/payment_failed/template`, model.WithConfigStructure(cfgStruct))
+	pp.CheckoutPaymentFailedCopyTo = model.NewStr(`checkout/payment_failed/copy_to`, model.WithConfigStructure(cfgStruct))
+	pp.CheckoutPaymentFailedCopyMethod = model.NewStr(`checkout/payment_failed/copy_method`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

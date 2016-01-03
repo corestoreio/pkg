@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -62,21 +62,21 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.NewsletterSubscriptionAllowGuestSubscribe = model.NewBool(`newsletter/subscription/allow_guest_subscribe`, model.WithPkgCfg(pkgCfg))
-	pp.NewsletterSubscriptionConfirm = model.NewBool(`newsletter/subscription/confirm`, model.WithPkgCfg(pkgCfg))
-	pp.NewsletterSubscriptionConfirmEmailIdentity = model.NewStr(`newsletter/subscription/confirm_email_identity`, model.WithPkgCfg(pkgCfg))
-	pp.NewsletterSubscriptionConfirmEmailTemplate = model.NewStr(`newsletter/subscription/confirm_email_template`, model.WithPkgCfg(pkgCfg))
-	pp.NewsletterSubscriptionSuccessEmailIdentity = model.NewStr(`newsletter/subscription/success_email_identity`, model.WithPkgCfg(pkgCfg))
-	pp.NewsletterSubscriptionSuccessEmailTemplate = model.NewStr(`newsletter/subscription/success_email_template`, model.WithPkgCfg(pkgCfg))
-	pp.NewsletterSubscriptionUnEmailIdentity = model.NewStr(`newsletter/subscription/un_email_identity`, model.WithPkgCfg(pkgCfg))
-	pp.NewsletterSubscriptionUnEmailTemplate = model.NewStr(`newsletter/subscription/un_email_template`, model.WithPkgCfg(pkgCfg))
+	pp.NewsletterSubscriptionAllowGuestSubscribe = model.NewBool(`newsletter/subscription/allow_guest_subscribe`, model.WithConfigStructure(cfgStruct))
+	pp.NewsletterSubscriptionConfirm = model.NewBool(`newsletter/subscription/confirm`, model.WithConfigStructure(cfgStruct))
+	pp.NewsletterSubscriptionConfirmEmailIdentity = model.NewStr(`newsletter/subscription/confirm_email_identity`, model.WithConfigStructure(cfgStruct))
+	pp.NewsletterSubscriptionConfirmEmailTemplate = model.NewStr(`newsletter/subscription/confirm_email_template`, model.WithConfigStructure(cfgStruct))
+	pp.NewsletterSubscriptionSuccessEmailIdentity = model.NewStr(`newsletter/subscription/success_email_identity`, model.WithConfigStructure(cfgStruct))
+	pp.NewsletterSubscriptionSuccessEmailTemplate = model.NewStr(`newsletter/subscription/success_email_template`, model.WithConfigStructure(cfgStruct))
+	pp.NewsletterSubscriptionUnEmailIdentity = model.NewStr(`newsletter/subscription/un_email_identity`, model.WithConfigStructure(cfgStruct))
+	pp.NewsletterSubscriptionUnEmailTemplate = model.NewStr(`newsletter/subscription/un_email_template`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

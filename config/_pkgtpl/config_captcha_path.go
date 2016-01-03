@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -110,31 +110,31 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.AdminCaptchaEnable = model.NewBool(`admin/captcha/enable`, model.WithPkgCfg(pkgCfg))
-	pp.AdminCaptchaFont = model.NewStr(`admin/captcha/font`, model.WithPkgCfg(pkgCfg))
-	pp.AdminCaptchaForms = model.NewStringCSV(`admin/captcha/forms`, model.WithPkgCfg(pkgCfg))
-	pp.AdminCaptchaMode = model.NewStr(`admin/captcha/mode`, model.WithPkgCfg(pkgCfg))
-	pp.AdminCaptchaFailedAttemptsLogin = model.NewStr(`admin/captcha/failed_attempts_login`, model.WithPkgCfg(pkgCfg))
-	pp.AdminCaptchaTimeout = model.NewStr(`admin/captcha/timeout`, model.WithPkgCfg(pkgCfg))
-	pp.AdminCaptchaLength = model.NewStr(`admin/captcha/length`, model.WithPkgCfg(pkgCfg))
-	pp.AdminCaptchaSymbols = model.NewStr(`admin/captcha/symbols`, model.WithPkgCfg(pkgCfg))
-	pp.AdminCaptchaCaseSensitive = model.NewBool(`admin/captcha/case_sensitive`, model.WithPkgCfg(pkgCfg))
-	pp.CustomerCaptchaEnable = model.NewBool(`customer/captcha/enable`, model.WithPkgCfg(pkgCfg))
-	pp.CustomerCaptchaFont = model.NewStr(`customer/captcha/font`, model.WithPkgCfg(pkgCfg))
-	pp.CustomerCaptchaForms = model.NewStringCSV(`customer/captcha/forms`, model.WithPkgCfg(pkgCfg))
-	pp.CustomerCaptchaMode = model.NewStr(`customer/captcha/mode`, model.WithPkgCfg(pkgCfg))
-	pp.CustomerCaptchaFailedAttemptsLogin = model.NewStr(`customer/captcha/failed_attempts_login`, model.WithPkgCfg(pkgCfg))
-	pp.CustomerCaptchaTimeout = model.NewStr(`customer/captcha/timeout`, model.WithPkgCfg(pkgCfg))
-	pp.CustomerCaptchaLength = model.NewStr(`customer/captcha/length`, model.WithPkgCfg(pkgCfg))
-	pp.CustomerCaptchaSymbols = model.NewStr(`customer/captcha/symbols`, model.WithPkgCfg(pkgCfg))
-	pp.CustomerCaptchaCaseSensitive = model.NewBool(`customer/captcha/case_sensitive`, model.WithPkgCfg(pkgCfg))
+	pp.AdminCaptchaEnable = model.NewBool(`admin/captcha/enable`, model.WithConfigStructure(cfgStruct))
+	pp.AdminCaptchaFont = model.NewStr(`admin/captcha/font`, model.WithConfigStructure(cfgStruct))
+	pp.AdminCaptchaForms = model.NewStringCSV(`admin/captcha/forms`, model.WithConfigStructure(cfgStruct))
+	pp.AdminCaptchaMode = model.NewStr(`admin/captcha/mode`, model.WithConfigStructure(cfgStruct))
+	pp.AdminCaptchaFailedAttemptsLogin = model.NewStr(`admin/captcha/failed_attempts_login`, model.WithConfigStructure(cfgStruct))
+	pp.AdminCaptchaTimeout = model.NewStr(`admin/captcha/timeout`, model.WithConfigStructure(cfgStruct))
+	pp.AdminCaptchaLength = model.NewStr(`admin/captcha/length`, model.WithConfigStructure(cfgStruct))
+	pp.AdminCaptchaSymbols = model.NewStr(`admin/captcha/symbols`, model.WithConfigStructure(cfgStruct))
+	pp.AdminCaptchaCaseSensitive = model.NewBool(`admin/captcha/case_sensitive`, model.WithConfigStructure(cfgStruct))
+	pp.CustomerCaptchaEnable = model.NewBool(`customer/captcha/enable`, model.WithConfigStructure(cfgStruct))
+	pp.CustomerCaptchaFont = model.NewStr(`customer/captcha/font`, model.WithConfigStructure(cfgStruct))
+	pp.CustomerCaptchaForms = model.NewStringCSV(`customer/captcha/forms`, model.WithConfigStructure(cfgStruct))
+	pp.CustomerCaptchaMode = model.NewStr(`customer/captcha/mode`, model.WithConfigStructure(cfgStruct))
+	pp.CustomerCaptchaFailedAttemptsLogin = model.NewStr(`customer/captcha/failed_attempts_login`, model.WithConfigStructure(cfgStruct))
+	pp.CustomerCaptchaTimeout = model.NewStr(`customer/captcha/timeout`, model.WithConfigStructure(cfgStruct))
+	pp.CustomerCaptchaLength = model.NewStr(`customer/captcha/length`, model.WithConfigStructure(cfgStruct))
+	pp.CustomerCaptchaSymbols = model.NewStr(`customer/captcha/symbols`, model.WithConfigStructure(cfgStruct))
+	pp.CustomerCaptchaCaseSensitive = model.NewBool(`customer/captcha/case_sensitive`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }

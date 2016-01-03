@@ -7,7 +7,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 )
 
-// Path will be initialized in the init() function together with PackageConfiguration.
+// Path will be initialized in the init() function together with ConfigStructure.
 var Path *PkgPath
 
 // PkgPath global configuration struct containing paths and how to retrieve
@@ -45,19 +45,19 @@ type PkgPath struct {
 }
 
 // NewPath initializes the global Path variable. See init()
-func NewPath(pkgCfg element.SectionSlice) *PkgPath {
-	return (&PkgPath{}).init(pkgCfg)
+func NewPath(cfgStruct element.SectionSlice) *PkgPath {
+	return (&PkgPath{}).init(cfgStruct)
 }
 
-func (pp *PkgPath) init(pkgCfg element.SectionSlice) *PkgPath {
+func (pp *PkgPath) init(cfgStruct element.SectionSlice) *PkgPath {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.PersistentOptionsEnabled = model.NewBool(`persistent/options/enabled`, model.WithPkgCfg(pkgCfg))
-	pp.PersistentOptionsLifetime = model.NewStr(`persistent/options/lifetime`, model.WithPkgCfg(pkgCfg))
-	pp.PersistentOptionsRememberEnabled = model.NewBool(`persistent/options/remember_enabled`, model.WithPkgCfg(pkgCfg))
-	pp.PersistentOptionsRememberDefault = model.NewBool(`persistent/options/remember_default`, model.WithPkgCfg(pkgCfg))
-	pp.PersistentOptionsLogoutClear = model.NewBool(`persistent/options/logout_clear`, model.WithPkgCfg(pkgCfg))
-	pp.PersistentOptionsShoppingCart = model.NewBool(`persistent/options/shopping_cart`, model.WithPkgCfg(pkgCfg))
+	pp.PersistentOptionsEnabled = model.NewBool(`persistent/options/enabled`, model.WithConfigStructure(cfgStruct))
+	pp.PersistentOptionsLifetime = model.NewStr(`persistent/options/lifetime`, model.WithConfigStructure(cfgStruct))
+	pp.PersistentOptionsRememberEnabled = model.NewBool(`persistent/options/remember_enabled`, model.WithConfigStructure(cfgStruct))
+	pp.PersistentOptionsRememberDefault = model.NewBool(`persistent/options/remember_default`, model.WithConfigStructure(cfgStruct))
+	pp.PersistentOptionsLogoutClear = model.NewBool(`persistent/options/logout_clear`, model.WithConfigStructure(cfgStruct))
+	pp.PersistentOptionsShoppingCart = model.NewBool(`persistent/options/shopping_cart`, model.WithConfigStructure(cfgStruct))
 
 	return pp
 }
