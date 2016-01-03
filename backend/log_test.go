@@ -12,4 +12,28 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backend
+package backend_test
+
+import (
+	std "log"
+
+	"github.com/corestoreio/csfw/backend"
+	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/util/log"
+)
+
+var debugLogBuf *log.MutexBuffer
+var infoLogBuf *log.MutexBuffer
+
+func init() {
+	debugLogBuf = new(log.MutexBuffer)
+	infoLogBuf = new(log.MutexBuffer)
+
+	backend.PkgLog = log.NewStdLogger(
+		log.SetStdDebug(debugLogBuf, "testDebug: ", std.Lshortfile),
+		log.SetStdInfo(infoLogBuf, "testInfo: ", std.Lshortfile),
+	)
+	backend.PkgLog.SetLevel(log.StdLevelDebug)
+
+	model.PkgLog = backend.PkgLog
+}

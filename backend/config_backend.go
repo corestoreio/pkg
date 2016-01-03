@@ -19,12 +19,12 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-// PackageConfiguration global configuration options for this package.
+// ConfigStructure global configuration structure for this package.
 // Used in frontend and backend. See init() for details.
-var PackageConfiguration element.SectionSlice
+var ConfigStructure element.SectionSlice
 
 func init() {
-	PackageConfiguration = element.MustNewConfiguration(
+	ConfigStructure = element.MustNewConfiguration(
 		&element.Section{
 			ID:        "advanced",
 			Label:     `Advanced`,
@@ -937,6 +937,7 @@ func init() {
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
+							Default:   false,
 							// BackendModel: Otnegam\Config\Model\Config\Backend\Store
 							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 						},
@@ -950,6 +951,7 @@ func init() {
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
+							Default:   1,
 							// SourceModel: Otnegam\Config\Model\Config\Source\Web\Redirect
 						},
 					),
@@ -1315,4 +1317,5 @@ func init() {
 			),
 		},
 	)
+	Backend = NewBackend(ConfigStructure)
 }

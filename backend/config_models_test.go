@@ -14,8 +14,41 @@
 
 package backend_test
 
-import "testing"
+import (
+	"github.com/corestoreio/csfw/backend"
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/store/scope"
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
 
 func TestConfigRedirectToBase(t *testing.T) {
-	t.Log("todo")
+	defer debugLogBuf.Reset()
+	t.Parallel()
+
+	r := backend.NewConfigRedirectToBase(
+		backend.Backend.WebUrlRedirectToBase.String(),
+		model.WithConfigStructure(backend.ConfigStructure),
+	)
+
+	cr := config.NewMockGetter(
+		config.WithMockValues(config.MockPV{
+			backend.Backend.WebUrlRedirectToBase.FQPathInt64(scope.StrDefault, 0): 2,
+		}),
+	)
+
+	code := r.Get(cr.NewScoped(0, 0, 0))
+	assert.Exactly(t, 2, code)
+	code = r.Get(cr.NewScoped(1, 1, 2))
+	assert.Exactly(t, 0, code)
+
+	// that is crap we should return an error
+	assert.Contains(t, debugLogBuf.String(), "Scope permission insufficient: Have 'Store'; Want 'Default'")
+
+	mw := new(config.MockWrite)
+	assert.EqualError(t, r.Write(mw, 200, scope.DefaultID, 0),
+		"Cannot find 200 in list: [{\"Value\":0,\"Label\":\"No\"},{\"Value\":1,\"Label\":\"Yes (302 Found)\"},{\"Value\":302,\"Label\":\"Yes (302 Found)\"},{\"Value\":301,\"Label\":\"Yes (301 Moved Permanently)\"}]\n",
+	) // 200 not allowed
+
 }

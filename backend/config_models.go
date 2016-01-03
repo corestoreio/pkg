@@ -20,7 +20,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/model"
-	"github.com/corestoreio/csfw/config/valuelabel"
+	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
@@ -35,13 +35,12 @@ func NewConfigRedirectToBase(path string, opts ...model.Option) ConfigRedirectTo
 	return ConfigRedirectToBase{
 		Int: model.NewInt(
 			path,
-			model.WithValueLabelByInt(valuelabel.Ints{
-				{0, "No"},
-				{1, "Yes (302 Found)"},                // old from Magento
-				{http.StatusFound, "Yes (302 Found)"}, // new correct
-				{http.StatusMovedPermanently, "Yes (301 Moved Permanently)"},
-			}),
-			opts...,
+			append(opts, model.WithSourceByInt(source.Ints{
+				0: {0, "No"},
+				1: {1, "Yes (302 Found)"},                // old from Magento
+				2: {http.StatusFound, "Yes (302 Found)"}, // new correct
+				3: {http.StatusMovedPermanently, "Yes (301 Moved Permanently)"},
+			}))...,
 		),
 	}
 }
@@ -49,8 +48,8 @@ func NewConfigRedirectToBase(path string, opts ...model.Option) ConfigRedirectTo
 // Write writes an int value and checks if the int value is within the allowed Options.
 func (p ConfigRedirectToBase) Write(w config.Writer, v int, s scope.Scope, id int64) error {
 
-	if false == p.ValueLabel.ContainsValInt(v) {
-		return fmt.Errorf("Cannot find %d in list %#v", v, p.ValueLabel)
+	if false == p.Source.ContainsValInt(v) {
+		return fmt.Errorf("Cannot find %d in list: %s", v, p.Source)
 	}
 
 	return p.Int.Write(w, v, s, id)
