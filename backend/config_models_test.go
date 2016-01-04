@@ -28,13 +28,13 @@ func TestConfigRedirectToBase(t *testing.T) {
 	t.Parallel()
 
 	r := backend.NewConfigRedirectToBase(
-		backend.Backend.WebUrlRedirectToBase.String(),
+		backend.Backend.WebURLRedirectToBase.String(),
 		model.WithConfigStructure(backend.ConfigStructure),
 	)
 
 	cr := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			backend.Backend.WebUrlRedirectToBase.FQPathInt64(scope.StrDefault, 0): 2,
+			backend.Backend.WebURLRedirectToBase.FQPathInt64(scope.StrDefault, 0): 2,
 		}),
 	)
 

@@ -22,6 +22,8 @@ import (
 // Backend will be initialized in the init() function together with ConfigStructure.
 var Backend *PkgBackend
 
+// TODO: during development move each of this config stuff into its own package.
+
 // PkgBackend just exported for the sake of documentation. See fields
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
@@ -77,13 +79,13 @@ type PkgBackend struct {
 	// BackendModel: Otnegam\Config\Model\Config\Backend\Email\Sender
 	TransEmailIdentSupportName model.Str
 
-	// DesignThemeThemeId => Design Theme.
+	// DesignThemeThemeID => Design Theme.
 	// If no value is specified, the system default will be used. The system
 	// default may be modified by third party extensions.
 	// Path: design/theme/theme_id
 	// BackendModel: Otnegam\Theme\Model\Design\Backend\Theme
 	// SourceModel: Otnegam\Framework\View\Design\Theme\Label::getLabelsCollectionForSystemConfiguration
-	DesignThemeThemeId model.Str
+	DesignThemeThemeID model.Str
 
 	// DesignThemeUaRegexp => User-Agent Exceptions.
 	// Search strings are either normal strings or regular exceptions (PCRE). They
@@ -137,10 +139,10 @@ type PkgBackend struct {
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 	DevTemplateAllowSymlink model.Bool
 
-	// DevTemplateMinifyHtml => Minify Html.
+	// DevTemplateMinifyHTML => Minify HTML.
 	// Path: dev/template/minify_html
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-	DevTemplateMinifyHtml model.Bool
+	DevTemplateMinifyHTML model.Bool
 
 	// DevTranslateInlineActive => Enabled for Storefront.
 	// Path: dev/translate_inline/active
@@ -171,15 +173,15 @@ type PkgBackend struct {
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 	DevJsMinifyFiles model.Bool
 
-	// DevCssMergeCssFiles => Merge CSS Files.
+	// DevCSSMergeCSSFiles => Merge CSS Files.
 	// Path: dev/css/merge_css_files
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-	DevCssMergeCssFiles model.Bool
+	DevCSSMergeCSSFiles model.Bool
 
-	// DevCssMinifyFiles => Minify CSS Files.
+	// DevCSSMinifyFiles => Minify CSS Files.
 	// Path: dev/css/minify_files
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-	DevCssMinifyFiles model.Bool
+	DevCSSMinifyFiles model.Bool
 
 	// DevImageDefaultAdapter => Image Adapter.
 	// When the adapter was changed, please flush Catalog Images Cache.
@@ -205,14 +207,14 @@ type PkgBackend struct {
 	// Path: general/store_information/hours
 	GeneralStoreInformationHours model.Str
 
-	// GeneralStoreInformationCountryId => Country.
+	// GeneralStoreInformationCountryID => Country.
 	// Path: general/store_information/country_id
 	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
-	GeneralStoreInformationCountryId model.Str
+	GeneralStoreInformationCountryID model.Str
 
-	// GeneralStoreInformationRegionId => Region/State.
+	// GeneralStoreInformationRegionID => Region/State.
 	// Path: general/store_information/region_id
-	GeneralStoreInformationRegionId model.Str
+	GeneralStoreInformationRegionID model.Str
 
 	// GeneralStoreInformationPostcode => ZIP/Postal Code.
 	// Path: general/store_information/postcode
@@ -241,30 +243,30 @@ type PkgBackend struct {
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 	GeneralSingleStoreModeEnabled model.Bool
 
-	// SystemSmtpDisable => Disable Email Communications.
+	// SystemSMTPDisable => Disable Email Communications.
 	// Path: system/smtp/disable
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-	SystemSmtpDisable model.Bool
+	SystemSMTPDisable model.Bool
 
-	// SystemSmtpHost => Host.
+	// SystemSMTPHost => Host.
 	// For Windows server only.
 	// Path: system/smtp/host
-	SystemSmtpHost model.Str
+	SystemSMTPHost model.Str
 
-	// SystemSmtpPort => Port (25).
+	// SystemSMTPPort => Port (25).
 	// For Windows server only.
 	// Path: system/smtp/port
-	SystemSmtpPort model.Str
+	SystemSMTPPort model.Str
 
-	// SystemSmtpSetReturnPath => Set Return-Path.
+	// SystemSMTPSetReturnPath => Set Return-Path.
 	// Path: system/smtp/set_return_path
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesnocustom
-	SystemSmtpSetReturnPath model.Bool
+	SystemSMTPSetReturnPath model.Bool
 
-	// SystemSmtpReturnPathEmail => Return-Path Email.
+	// SystemSMTPReturnPathEmail => Return-Path Email.
 	// Path: system/smtp/return_path_email
 	// BackendModel: Otnegam\Config\Model\Config\Backend\Email\Address
-	SystemSmtpReturnPathEmail model.Str
+	SystemSMTPReturnPathEmail model.Str
 
 	// AdminEmailsForgotEmailTemplate => Forgot Password Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
@@ -284,35 +286,35 @@ type PkgBackend struct {
 	// BackendModel: Otnegam\Config\Model\Config\Backend\Admin\Password\Link\Expirationperiod
 	AdminEmailsPasswordResetLinkExpirationPeriod model.Str
 
-	// AdminStartupMenuItemId => Startup Page.
+	// AdminStartupMenuItemID => Startup Page.
 	// Path: admin/startup/menu_item_id
 	// SourceModel: Otnegam\Config\Model\Config\Source\Admin\Page
-	AdminStartupMenuItemId model.Str
+	AdminStartupMenuItemID model.Str
 
-	// AdminUrlUseCustom => Use Custom Admin URL.
+	// AdminURLUseCustom => Use Custom Admin URL.
 	// Path: admin/url/use_custom
 	// BackendModel: Otnegam\Config\Model\Config\Backend\Admin\Usecustom
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-	AdminUrlUseCustom model.Bool
+	AdminURLUseCustom model.Bool
 
-	// AdminUrlCustom => Custom Admin URL.
+	// AdminURLCustom => Custom Admin URL.
 	// Make sure that base URL ends with '/' (slash), e.g.
 	// http://yourdomain/magento/
 	// Path: admin/url/custom
 	// BackendModel: Otnegam\Config\Model\Config\Backend\Admin\Custom
-	AdminUrlCustom model.Str
+	AdminURLCustom model.Str
 
-	// AdminUrlUseCustomPath => Use Custom Admin Path.
+	// AdminURLUseCustomPath => Use Custom Admin Path.
 	// Path: admin/url/use_custom_path
 	// BackendModel: Otnegam\Config\Model\Config\Backend\Admin\Custompath
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-	AdminUrlUseCustomPath model.Bool
+	AdminURLUseCustomPath model.Bool
 
-	// AdminUrlCustomPath => Custom Admin Path.
+	// AdminURLCustomPath => Custom Admin Path.
 	// You will have to sign in after you save your custom admin path.
 	// Path: admin/url/custom_path
 	// BackendModel: Otnegam\Config\Model\Config\Backend\Admin\Custompath
-	AdminUrlCustomPath model.Str
+	AdminURLCustomPath model.Str
 
 	// AdminSecurityUseFormKey => Add Secret Key to URLs.
 	// Path: admin/security/use_form_key
@@ -335,76 +337,76 @@ type PkgBackend struct {
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 	AdminDashboardEnableCharts model.Bool
 
-	// WebUrlUseStore => Add Store Code to Urls.
+	// WebURLUseStore => Add Store Code to URLs.
 	// Warning! When using Store Code in URLs, in some cases system may not work
 	// properly if URLs without Store Codes are specified in the third party
 	// services (e.g. PayPal etc.).
 	// Path: web/url/use_store
 	// BackendModel: Otnegam\Config\Model\Config\Backend\Store
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-	WebUrlUseStore model.Bool
+	WebURLUseStore model.Bool
 
-	// WebUrlRedirectToBase => Auto-redirect to Base URL.
+	// WebURLRedirectToBase => Auto-redirect to Base URL.
 	// I.e. redirect from http://example.com/store/ to
 	// http://www.example.com/store/
 	// Path: web/url/redirect_to_base
 	// SourceModel: Otnegam\Config\Model\Config\Source\Web\Redirect
-	WebUrlRedirectToBase ConfigRedirectToBase
+	WebURLRedirectToBase ConfigRedirectToBase
 
 	// WebSeoUseRewrites => Use Web Server Rewrites.
 	// Path: web/seo/use_rewrites
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 	WebSeoUseRewrites model.Bool
 
-	// WebUnsecureBaseUrl => Base URL.
+	// WebUnsecureBaseURL => Base URL.
 	// Specify URL or {{base_url}} placeholder.
 	// Path: web/unsecure/base_url
 	// BackendModel: Otnegam\Config\Model\Config\Backend\Baseurl
-	WebUnsecureBaseUrl model.Str
+	WebUnsecureBaseURL model.BaseURL
 
-	// WebUnsecureBaseLinkUrl => Base Link URL.
+	// WebUnsecureBaseLinkURL => Base Link URL.
 	// May start with {{unsecure_base_url}} placeholder.
 	// Path: web/unsecure/base_link_url
 	// BackendModel: Otnegam\Config\Model\Config\Backend\Baseurl
-	WebUnsecureBaseLinkUrl model.Str
+	WebUnsecureBaseLinkURL model.BaseURL
 
-	// WebUnsecureBaseStaticUrl => Base URL for Static View Files.
+	// WebUnsecureBaseStaticURL => Base URL for Static View Files.
 	// May be empty or start with {{unsecure_base_url}} placeholder.
 	// Path: web/unsecure/base_static_url
 	// BackendModel: Otnegam\Config\Model\Config\Backend\Baseurl
-	WebUnsecureBaseStaticUrl model.Str
+	WebUnsecureBaseStaticURL model.BaseURL
 
-	// WebUnsecureBaseMediaUrl => Base URL for User Media Files.
+	// WebUnsecureBaseMediaURL => Base URL for User Media Files.
 	// May be empty or start with {{unsecure_base_url}} placeholder.
 	// Path: web/unsecure/base_media_url
 	// BackendModel: Otnegam\Config\Model\Config\Backend\Baseurl
-	WebUnsecureBaseMediaUrl model.Str
+	WebUnsecureBaseMediaURL model.BaseURL
 
-	// WebSecureBaseUrl => Secure Base URL.
+	// WebSecureBaseURL => Secure Base URL.
 	// Specify URL or {{base_url}}, or {{unsecure_base_url}} placeholder.
 	// Path: web/secure/base_url
 	// BackendModel: Otnegam\Config\Model\Config\Backend\Baseurl
-	WebSecureBaseUrl model.Str
+	WebSecureBaseURL model.BaseURL
 
-	// WebSecureBaseLinkUrl => Secure Base Link URL.
+	// WebSecureBaseLinkURL => Secure Base Link URL.
 	// May start with {{secure_base_url}} or {{unsecure_base_url}} placeholder.
 	// Path: web/secure/base_link_url
 	// BackendModel: Otnegam\Config\Model\Config\Backend\Baseurl
-	WebSecureBaseLinkUrl model.Str
+	WebSecureBaseLinkURL model.BaseURL
 
-	// WebSecureBaseStaticUrl => Secure Base URL for Static View Files.
+	// WebSecureBaseStaticURL => Secure Base URL for Static View Files.
 	// May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}}
 	// placeholder.
 	// Path: web/secure/base_static_url
 	// BackendModel: Otnegam\Config\Model\Config\Backend\Baseurl
-	WebSecureBaseStaticUrl model.Str
+	WebSecureBaseStaticURL model.BaseURL
 
-	// WebSecureBaseMediaUrl => Secure Base URL for User Media Files.
+	// WebSecureBaseMediaURL => Secure Base URL for User Media Files.
 	// May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}}
 	// placeholder.
 	// Path: web/secure/base_media_url
 	// BackendModel: Otnegam\Config\Model\Config\Backend\Baseurl
-	WebSecureBaseMediaUrl model.Str
+	WebSecureBaseMediaURL model.BaseURL
 
 	// WebSecureUseInFrontend => Use Secure URLs on Storefront.
 	// Enter https protocol to use Secure URLs on Storefront.
@@ -451,20 +453,20 @@ type PkgBackend struct {
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
 	WebSessionUseRemoteAddr model.Bool
 
-	// WebSessionUseHttpVia => Validate HTTP_VIA.
+	// WebSessionUseHTTPVia => Validate HTTP_VIA.
 	// Path: web/session/use_http_via
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-	WebSessionUseHttpVia model.Bool
+	WebSessionUseHTTPVia model.Bool
 
-	// WebSessionUseHttpXForwardedFor => Validate HTTP_X_FORWARDED_FOR.
+	// WebSessionUseHTTPXForwardedFor => Validate HTTP_X_FORWARDED_FOR.
 	// Path: web/session/use_http_x_forwarded_for
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-	WebSessionUseHttpXForwardedFor model.Bool
+	WebSessionUseHTTPXForwardedFor model.Bool
 
-	// WebSessionUseHttpUserAgent => Validate HTTP_USER_AGENT.
+	// WebSessionUseHTTPUserAgent => Validate HTTP_USER_AGENT.
 	// Path: web/session/use_http_user_agent
 	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
-	WebSessionUseHttpUserAgent model.Bool
+	WebSessionUseHTTPUserAgent model.Bool
 
 	// WebSessionUseFrontendSid => Use SID on Storefront.
 	// Allows customers to stay logged in when switching between different stores.
@@ -491,7 +493,7 @@ func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.TransEmailIdentSalesName = model.NewStr(`trans_email/ident_sales/name`, model.WithConfigStructure(cfgStruct))
 	pp.TransEmailIdentSupportEmail = model.NewStr(`trans_email/ident_support/email`, model.WithConfigStructure(cfgStruct))
 	pp.TransEmailIdentSupportName = model.NewStr(`trans_email/ident_support/name`, model.WithConfigStructure(cfgStruct))
-	pp.DesignThemeThemeId = model.NewStr(`design/theme/theme_id`, model.WithConfigStructure(cfgStruct))
+	pp.DesignThemeThemeID = model.NewStr(`design/theme/theme_id`, model.WithConfigStructure(cfgStruct))
 	pp.DesignThemeUaRegexp = model.NewStr(`design/theme/ua_regexp`, model.WithConfigStructure(cfgStruct))
 	pp.DesignPaginationPaginationFrame = model.NewStr(`design/pagination/pagination_frame`, model.WithConfigStructure(cfgStruct))
 	pp.DesignPaginationPaginationFrameSkip = model.NewStr(`design/pagination/pagination_frame_skip`, model.WithConfigStructure(cfgStruct))
@@ -501,55 +503,55 @@ func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.DevDebugTemplateHintsAdmin = model.NewBool(`dev/debug/template_hints_admin`, model.WithConfigStructure(cfgStruct))
 	pp.DevDebugTemplateHintsBlocks = model.NewBool(`dev/debug/template_hints_blocks`, model.WithConfigStructure(cfgStruct))
 	pp.DevTemplateAllowSymlink = model.NewBool(`dev/template/allow_symlink`, model.WithConfigStructure(cfgStruct))
-	pp.DevTemplateMinifyHtml = model.NewBool(`dev/template/minify_html`, model.WithConfigStructure(cfgStruct))
+	pp.DevTemplateMinifyHTML = model.NewBool(`dev/template/minify_html`, model.WithConfigStructure(cfgStruct))
 	pp.DevTranslateInlineActive = model.NewBool(`dev/translate_inline/active`, model.WithConfigStructure(cfgStruct))
 	pp.DevTranslateInlineActiveAdmin = model.NewBool(`dev/translate_inline/active_admin`, model.WithConfigStructure(cfgStruct))
 	pp.DevJsMergeFiles = model.NewBool(`dev/js/merge_files`, model.WithConfigStructure(cfgStruct))
 	pp.DevJsEnableJsBundling = model.NewBool(`dev/js/enable_js_bundling`, model.WithConfigStructure(cfgStruct))
 	pp.DevJsMinifyFiles = model.NewBool(`dev/js/minify_files`, model.WithConfigStructure(cfgStruct))
-	pp.DevCssMergeCssFiles = model.NewBool(`dev/css/merge_css_files`, model.WithConfigStructure(cfgStruct))
-	pp.DevCssMinifyFiles = model.NewBool(`dev/css/minify_files`, model.WithConfigStructure(cfgStruct))
+	pp.DevCSSMergeCSSFiles = model.NewBool(`dev/css/merge_css_files`, model.WithConfigStructure(cfgStruct))
+	pp.DevCSSMinifyFiles = model.NewBool(`dev/css/minify_files`, model.WithConfigStructure(cfgStruct))
 	pp.DevImageDefaultAdapter = model.NewStr(`dev/image/default_adapter`, model.WithConfigStructure(cfgStruct))
 	pp.DevStaticSign = model.NewBool(`dev/static/sign`, model.WithConfigStructure(cfgStruct))
 	pp.GeneralStoreInformationName = model.NewStr(`general/store_information/name`, model.WithConfigStructure(cfgStruct))
 	pp.GeneralStoreInformationPhone = model.NewStr(`general/store_information/phone`, model.WithConfigStructure(cfgStruct))
 	pp.GeneralStoreInformationHours = model.NewStr(`general/store_information/hours`, model.WithConfigStructure(cfgStruct))
-	pp.GeneralStoreInformationCountryId = model.NewStr(`general/store_information/country_id`, model.WithConfigStructure(cfgStruct))
-	pp.GeneralStoreInformationRegionId = model.NewStr(`general/store_information/region_id`, model.WithConfigStructure(cfgStruct))
+	pp.GeneralStoreInformationCountryID = model.NewStr(`general/store_information/country_id`, model.WithConfigStructure(cfgStruct))
+	pp.GeneralStoreInformationRegionID = model.NewStr(`general/store_information/region_id`, model.WithConfigStructure(cfgStruct))
 	pp.GeneralStoreInformationPostcode = model.NewStr(`general/store_information/postcode`, model.WithConfigStructure(cfgStruct))
 	pp.GeneralStoreInformationCity = model.NewStr(`general/store_information/city`, model.WithConfigStructure(cfgStruct))
 	pp.GeneralStoreInformationStreetLine1 = model.NewStr(`general/store_information/street_line1`, model.WithConfigStructure(cfgStruct))
 	pp.GeneralStoreInformationStreetLine2 = model.NewStr(`general/store_information/street_line2`, model.WithConfigStructure(cfgStruct))
 	pp.GeneralStoreInformationMerchantVatNumber = model.NewStr(`general/store_information/merchant_vat_number`, model.WithConfigStructure(cfgStruct))
 	pp.GeneralSingleStoreModeEnabled = model.NewBool(`general/single_store_mode/enabled`, model.WithConfigStructure(cfgStruct))
-	pp.SystemSmtpDisable = model.NewBool(`system/smtp/disable`, model.WithConfigStructure(cfgStruct))
-	pp.SystemSmtpHost = model.NewStr(`system/smtp/host`, model.WithConfigStructure(cfgStruct))
-	pp.SystemSmtpPort = model.NewStr(`system/smtp/port`, model.WithConfigStructure(cfgStruct))
-	pp.SystemSmtpSetReturnPath = model.NewBool(`system/smtp/set_return_path`, model.WithConfigStructure(cfgStruct))
-	pp.SystemSmtpReturnPathEmail = model.NewStr(`system/smtp/return_path_email`, model.WithConfigStructure(cfgStruct))
+	pp.SystemSMTPDisable = model.NewBool(`system/smtp/disable`, model.WithConfigStructure(cfgStruct))
+	pp.SystemSMTPHost = model.NewStr(`system/smtp/host`, model.WithConfigStructure(cfgStruct))
+	pp.SystemSMTPPort = model.NewStr(`system/smtp/port`, model.WithConfigStructure(cfgStruct))
+	pp.SystemSMTPSetReturnPath = model.NewBool(`system/smtp/set_return_path`, model.WithConfigStructure(cfgStruct))
+	pp.SystemSMTPReturnPathEmail = model.NewStr(`system/smtp/return_path_email`, model.WithConfigStructure(cfgStruct))
 	pp.AdminEmailsForgotEmailTemplate = model.NewStr(`admin/emails/forgot_email_template`, model.WithConfigStructure(cfgStruct))
 	pp.AdminEmailsForgotEmailIdentity = model.NewStr(`admin/emails/forgot_email_identity`, model.WithConfigStructure(cfgStruct))
 	pp.AdminEmailsPasswordResetLinkExpirationPeriod = model.NewStr(`admin/emails/password_reset_link_expiration_period`, model.WithConfigStructure(cfgStruct))
-	pp.AdminStartupMenuItemId = model.NewStr(`admin/startup/menu_item_id`, model.WithConfigStructure(cfgStruct))
-	pp.AdminUrlUseCustom = model.NewBool(`admin/url/use_custom`, model.WithConfigStructure(cfgStruct))
-	pp.AdminUrlCustom = model.NewStr(`admin/url/custom`, model.WithConfigStructure(cfgStruct))
-	pp.AdminUrlUseCustomPath = model.NewBool(`admin/url/use_custom_path`, model.WithConfigStructure(cfgStruct))
-	pp.AdminUrlCustomPath = model.NewStr(`admin/url/custom_path`, model.WithConfigStructure(cfgStruct))
+	pp.AdminStartupMenuItemID = model.NewStr(`admin/startup/menu_item_id`, model.WithConfigStructure(cfgStruct))
+	pp.AdminURLUseCustom = model.NewBool(`admin/url/use_custom`, model.WithConfigStructure(cfgStruct))
+	pp.AdminURLCustom = model.NewStr(`admin/url/custom`, model.WithConfigStructure(cfgStruct))
+	pp.AdminURLUseCustomPath = model.NewBool(`admin/url/use_custom_path`, model.WithConfigStructure(cfgStruct))
+	pp.AdminURLCustomPath = model.NewStr(`admin/url/custom_path`, model.WithConfigStructure(cfgStruct))
 	pp.AdminSecurityUseFormKey = model.NewBool(`admin/security/use_form_key`, model.WithConfigStructure(cfgStruct))
 	pp.AdminSecurityUseCaseSensitiveLogin = model.NewBool(`admin/security/use_case_sensitive_login`, model.WithConfigStructure(cfgStruct))
 	pp.AdminSecuritySessionLifetime = model.NewStr(`admin/security/session_lifetime`, model.WithConfigStructure(cfgStruct))
 	pp.AdminDashboardEnableCharts = model.NewBool(`admin/dashboard/enable_charts`, model.WithConfigStructure(cfgStruct))
-	pp.WebUrlUseStore = model.NewBool(`web/url/use_store`, model.WithConfigStructure(cfgStruct))
-	pp.WebUrlRedirectToBase = NewConfigRedirectToBase(`web/url/redirect_to_base`, model.WithConfigStructure(cfgStruct))
+	pp.WebURLUseStore = model.NewBool(`web/url/use_store`, model.WithConfigStructure(cfgStruct))
+	pp.WebURLRedirectToBase = NewConfigRedirectToBase(`web/url/redirect_to_base`, model.WithConfigStructure(cfgStruct))
 	pp.WebSeoUseRewrites = model.NewBool(`web/seo/use_rewrites`, model.WithConfigStructure(cfgStruct))
-	pp.WebUnsecureBaseUrl = model.NewStr(`web/unsecure/base_url`, model.WithConfigStructure(cfgStruct))
-	pp.WebUnsecureBaseLinkUrl = model.NewStr(`web/unsecure/base_link_url`, model.WithConfigStructure(cfgStruct))
-	pp.WebUnsecureBaseStaticUrl = model.NewStr(`web/unsecure/base_static_url`, model.WithConfigStructure(cfgStruct))
-	pp.WebUnsecureBaseMediaUrl = model.NewStr(`web/unsecure/base_media_url`, model.WithConfigStructure(cfgStruct))
-	pp.WebSecureBaseUrl = model.NewStr(`web/secure/base_url`, model.WithConfigStructure(cfgStruct))
-	pp.WebSecureBaseLinkUrl = model.NewStr(`web/secure/base_link_url`, model.WithConfigStructure(cfgStruct))
-	pp.WebSecureBaseStaticUrl = model.NewStr(`web/secure/base_static_url`, model.WithConfigStructure(cfgStruct))
-	pp.WebSecureBaseMediaUrl = model.NewStr(`web/secure/base_media_url`, model.WithConfigStructure(cfgStruct))
+	pp.WebUnsecureBaseURL = model.NewBaseURL(`web/unsecure/base_url`, model.WithConfigStructure(cfgStruct))
+	pp.WebUnsecureBaseLinkURL = model.NewBaseURL(`web/unsecure/base_link_url`, model.WithConfigStructure(cfgStruct))
+	pp.WebUnsecureBaseStaticURL = model.NewBaseURL(`web/unsecure/base_static_url`, model.WithConfigStructure(cfgStruct))
+	pp.WebUnsecureBaseMediaURL = model.NewBaseURL(`web/unsecure/base_media_url`, model.WithConfigStructure(cfgStruct))
+	pp.WebSecureBaseURL = model.NewBaseURL(`web/secure/base_url`, model.WithConfigStructure(cfgStruct))
+	pp.WebSecureBaseLinkURL = model.NewBaseURL(`web/secure/base_link_url`, model.WithConfigStructure(cfgStruct))
+	pp.WebSecureBaseStaticURL = model.NewBaseURL(`web/secure/base_static_url`, model.WithConfigStructure(cfgStruct))
+	pp.WebSecureBaseMediaURL = model.NewBaseURL(`web/secure/base_media_url`, model.WithConfigStructure(cfgStruct))
 	pp.WebSecureUseInFrontend = model.NewBool(`web/secure/use_in_frontend`, model.WithConfigStructure(cfgStruct))
 	pp.WebSecureUseInAdminhtml = model.NewBool(`web/secure/use_in_adminhtml`, model.WithConfigStructure(cfgStruct))
 	pp.WebSecureEnableHsts = model.NewBool(`web/secure/enable_hsts`, model.WithConfigStructure(cfgStruct))
@@ -558,9 +560,9 @@ func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.WebDefaultFront = model.NewStr(`web/default/front`, model.WithConfigStructure(cfgStruct))
 	pp.WebDefaultNoRoute = model.NewStr(`web/default/no_route`, model.WithConfigStructure(cfgStruct))
 	pp.WebSessionUseRemoteAddr = model.NewBool(`web/session/use_remote_addr`, model.WithConfigStructure(cfgStruct))
-	pp.WebSessionUseHttpVia = model.NewBool(`web/session/use_http_via`, model.WithConfigStructure(cfgStruct))
-	pp.WebSessionUseHttpXForwardedFor = model.NewBool(`web/session/use_http_x_forwarded_for`, model.WithConfigStructure(cfgStruct))
-	pp.WebSessionUseHttpUserAgent = model.NewBool(`web/session/use_http_user_agent`, model.WithConfigStructure(cfgStruct))
+	pp.WebSessionUseHTTPVia = model.NewBool(`web/session/use_http_via`, model.WithConfigStructure(cfgStruct))
+	pp.WebSessionUseHTTPXForwardedFor = model.NewBool(`web/session/use_http_x_forwarded_for`, model.WithConfigStructure(cfgStruct))
+	pp.WebSessionUseHTTPUserAgent = model.NewBool(`web/session/use_http_user_agent`, model.WithConfigStructure(cfgStruct))
 	pp.WebSessionUseFrontendSid = model.NewBool(`web/session/use_frontend_sid`, model.WithConfigStructure(cfgStruct))
 
 	return pp

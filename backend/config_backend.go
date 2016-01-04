@@ -23,6 +23,8 @@ import (
 // Used in frontend and backend. See init() for details.
 var ConfigStructure element.SectionSlice
 
+// TODO: during development move each of this config stuff into its own package.
+
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
 		&element.Section{
