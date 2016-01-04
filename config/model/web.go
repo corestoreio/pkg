@@ -19,6 +19,14 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
+// Placeholder constants and their values can occur in the table core_config_data.
+// These placeholder must be replaced with the current values.
+const (
+	PlaceholderBaseURL         = config.LeftDelim + "base_url" + config.RightDelim
+	PlaceholderBaseURLSecure   = config.LeftDelim + "secure_base_url" + config.RightDelim
+	PlaceholderBaseURLUnSecure = config.LeftDelim + "unsecure_base_url" + config.RightDelim
+)
+
 // BaseURL represents a path in config.Getter handles BaseURLs and internal validation
 type BaseURL struct{ Str }
 
