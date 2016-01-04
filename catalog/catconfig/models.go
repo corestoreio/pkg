@@ -17,23 +17,43 @@ package catconfig
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/juju/errgo"
 )
 
-type ConfigPriceScope struct {
+const (
+	// PriceScopeGlobal prices are for all stores and websites the same.
+	PriceScopeGlobal int = 0
+	// PriceScopeWebsite prices are in each website different.
+	PriceScopeWebsite int = 1
+)
+
+type configPriceScope struct {
 	model.Int
 }
 
-func NewConfigPriceScope(path string) ConfigPriceScope {
-	return ConfigPriceScope{
-		Int: model.NewInt(path),
+// NewConfigPriceScope defines the base currency scope
+// ("Currency Setup" > "Currency Options" > "Base Currency").
+// can be 0 = Global or 1 = Website
+// See constants PriceScopeGlobal and PriceScopeWebsite.
+func NewConfigPriceScope(path string, opts ...model.Option) configPriceScope {
+	return configPriceScope{
+		Int: model.NewInt(path, append(opts, model.WithSourceByInt(source.Ints{
+			0: {PriceScopeGlobal, "Global Scope"},
+			1: {PriceScopeWebsite, "Website Scope"},
+		}))...),
 	}
 
 	//<source_model>Magento\Catalog\Model\Config\Source\Price\Scope</source_model>
 }
 
-func (p ConfigPriceScope) Write(w config.Writer, v int, s scope.Scope, id int64, idx interface {
+// IsGlobal true if global scope for base currency
+func (p configPriceScope) IsGlobal(sg config.ScopedGetter) bool {
+	return p.Get(sg) == PriceScopeGlobal
+}
+
+func (p configPriceScope) Write(w config.Writer, v int, s scope.Scope, id int64, idx interface {
 	Invalidate()
 }) error {
 

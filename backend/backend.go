@@ -13,10 +13,3 @@
 // limitations under the License.
 
 package backend
-
-const (
-	// PriceScopeGlobal prices are for all stores and websites the same.
-	PriceScopeGlobal = 0
-	// PriceScopeWebsite prices are in each website different.
-	PriceScopeWebsite = 1
-)
