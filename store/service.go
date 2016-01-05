@@ -247,7 +247,7 @@ func (sm *Service) RequestedStore(so scope.Option) (activeStore *Store, err erro
 // This flag only shows that admin does not want to show certain UI components at backend (like store switchers etc)
 // if Magento has only one store view but it does not check the store view collection.
 func (sm *Service) IsSingleStoreMode() bool {
-	return sm.HasSingleStore() && backend.PathGeneralSingleStoreModeEnabled.Get(backend.PackageConfiguration, sm.cr.NewScoped(0, 0, 0)) // default scope
+	return sm.HasSingleStore() && backend.Backend.GeneralSingleStoreModeEnabled.Get(sm.cr.NewScoped(0, 0, 0)) // default scope
 }
 
 // HasSingleStore checks if we only have one store view besides the admin store view.

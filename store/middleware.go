@@ -39,7 +39,7 @@ func WithValidateBaseURL(cg config.GetterPubSuber) ctxhttp.Middleware {
 
 	// <todo check logic!>
 	cgDefaultScope := cg.NewScoped(0, 0, 0)
-	configRedirectCode := backend.PathWebUrlRedirectToBase.Get(backend.PackageConfiguration, cgDefaultScope)
+	configRedirectCode := backend.Backend.WebURLRedirectToBase.Get(cgDefaultScope)
 
 	redirectCode := http.StatusMovedPermanently
 	if configRedirectCode != redirectCode {

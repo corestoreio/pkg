@@ -18,7 +18,9 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
@@ -30,7 +32,7 @@ import (
 const TODO_Better_Test_Data = "@todo implement better test data which is equal for each Magento version"
 
 func TestNewStore(t *testing.T) {
-
+	defer debugLogBuf.Reset()
 	tests := []struct {
 		w *store.TableWebsite
 		g *store.TableGroup
@@ -90,7 +92,7 @@ func TestNewStoreErrorIncorrectWebsite(t *testing.T) {
 }
 
 func TestStoreSlice(t *testing.T) {
-
+	defer debugLogBuf.Reset()
 	storeSlice := store.StoreSlice{
 		store.MustNewStore(
 			&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
@@ -135,6 +137,7 @@ var testStores = store.TableStoreSlice{
 }
 
 func TestTableStoreSliceLoad(t *testing.T) {
+	defer debugLogBuf.Reset()
 	dbc := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
 	dbrSess := dbc.NewSession()
@@ -222,6 +225,7 @@ func TestTableStoreSliceIDs(t *testing.T) {
 }
 
 func TestStoreBaseURLandPath(t *testing.T) {
+	defer debugLogBuf.Reset()
 
 	s, err := store.NewStore(
 		&store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 1, Name: "Germany", SortOrder: 10, IsActive: true},
@@ -243,10 +247,12 @@ func TestStoreBaseURLandPath(t *testing.T) {
 		{
 			config.NewMockGetter(config.WithMockString(
 				func(path string) (string, error) {
+
 					switch path {
-					case scope.StrDefault.FQPathInt64(0, store.PathSecureBaseURL.String()):
+					// scope is here store but config.ScopedGetter must fall back to default
+					case backend.Backend.WebSecureBaseURL.FQPathInt64(scope.StrDefault, 0):
 						return "https://corestore.io", nil
-					case scope.StrDefault.FQPathInt64(0, store.PathUnsecureBaseURL.String()):
+					case backend.Backend.WebUnsecureBaseURL.FQPathInt64(scope.StrDefault, 0):
 						return "http://corestore.io", nil
 					}
 					return "", config.ErrKeyNotFound
@@ -258,9 +264,9 @@ func TestStoreBaseURLandPath(t *testing.T) {
 			config.NewMockGetter(config.WithMockString(
 				func(path string) (string, error) {
 					switch path {
-					case scope.StrDefault.FQPathInt64(0, store.PathSecureBaseURL.String()):
+					case backend.Backend.WebSecureBaseURL.FQPathInt64(scope.StrDefault, 0):
 						return "https://myplatform.io/customer1", nil
-					case scope.StrDefault.FQPathInt64(0, store.PathUnsecureBaseURL.String()):
+					case backend.Backend.WebUnsecureBaseURL.FQPathInt64(scope.StrDefault, 0):
 						return "http://myplatform.io/customer1", nil
 					}
 					return "", config.ErrKeyNotFound
@@ -272,10 +278,10 @@ func TestStoreBaseURLandPath(t *testing.T) {
 			config.NewMockGetter(config.WithMockString(
 				func(path string) (string, error) {
 					switch path {
-					case scope.StrDefault.FQPathInt64(0, store.PathSecureBaseURL.String()):
-						return store.PlaceholderBaseURL, nil
-					case scope.StrDefault.FQPathInt64(0, store.PathUnsecureBaseURL.String()):
-						return store.PlaceholderBaseURL, nil
+					case backend.Backend.WebSecureBaseURL.FQPathInt64(scope.StrDefault, 0):
+						return model.PlaceholderBaseURL, nil
+					case backend.Backend.WebUnsecureBaseURL.FQPathInt64(scope.StrDefault, 0):
+						return model.PlaceholderBaseURL, nil
 					case scope.StrDefault.FQPathInt64(0, config.PathCSBaseURL):
 						return config.CSBaseURL, nil
 					}
@@ -297,6 +303,7 @@ func TestStoreBaseURLandPath(t *testing.T) {
 		_, err = s.BaseURL(config.URLTypeAbsent, false)
 		assert.EqualError(t, err, config.ErrURLCacheCleared.Error())
 	}
+	t.Log(debugLogBuf.String()) // bug in config ScopedGetter
 }
 
 func TestMarshalJSON(t *testing.T) {

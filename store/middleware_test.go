@@ -44,10 +44,10 @@ var middlewareCtxStoreService context.Context
 func init() {
 	middlewareConfigReader = config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			scope.StrDefault.FQPathInt64(0, backend.PathWebUrlRedirectToBase.String()):  1,
-			scope.StrStores.FQPathInt64(1, backend.PathWebSecureUseInFrontend.String()): true,
-			scope.StrStores.FQPathInt64(1, store.PathUnsecureBaseURL.String()):          "http://www.corestore.io/",
-			scope.StrStores.FQPathInt64(1, store.PathSecureBaseURL.String()):            "https://www.corestore.io/",
+			scope.StrDefault.FQPathInt64(0, backend.Backend.WebURLRedirectToBase.String()):  1,
+			scope.StrStores.FQPathInt64(1, backend.Backend.WebSecureUseInFrontend.String()): true,
+			scope.StrStores.FQPathInt64(1, backend.Backend.WebUnsecureBaseURL.String()):     "http://www.corestore.io/",
+			scope.StrStores.FQPathInt64(1, backend.Backend.WebSecureBaseURL.String()):       "https://www.corestore.io/",
 		}),
 	)
 
@@ -79,7 +79,7 @@ func TestWithValidateBaseUrl_DeactivatedAndShouldNotRedirectWithGETRequest(t *te
 
 	mockReader := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			scope.StrDefault.FQPathInt64(0, store.PathRedirectToBase.String()): 0,
+			scope.StrDefault.FQPathInt64(0, backend.Backend.WebURLRedirectToBase.String()): 0,
 		}),
 	)
 
@@ -96,7 +96,7 @@ func TestWithValidateBaseUrl_ActivatedAndShouldNotRedirectWithPOSTRequest(t *tes
 
 	mockReader := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			scope.StrDefault.FQPathInt64(0, store.PathRedirectToBase.String()): 301,
+			scope.StrDefault.FQPathInt64(0, backend.Backend.WebURLRedirectToBase.String()): 301,
 		}),
 	)
 

@@ -105,6 +105,7 @@ func TestNewWebsiteSetGroupsStores(t *testing.T) {
 }
 
 func TestNewWebsiteStoreIDError(t *testing.T) {
+	t.Parallel()
 	w, err := store.NewWebsite(
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 	)
@@ -113,6 +114,7 @@ func TestNewWebsiteStoreIDError(t *testing.T) {
 }
 
 func TestNewWebsiteSetGroupsStoresError1(t *testing.T) {
+	t.Parallel()
 	w, err := store.NewWebsite(
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 		store.SetWebsiteGroupsStores(
@@ -133,7 +135,13 @@ func TestNewWebsiteSetGroupsStoresError1(t *testing.T) {
 	assert.Contains(t, err.Error(), "Integrity error")
 }
 
+func TestWebsiteBaseCurrency(t *testing.T) {
+	t.Parallel()
+	t.Fatal("@TOOD")
+}
+
 func TestTableWebsiteSlice(t *testing.T) {
+	t.Parallel()
 	websites := store.TableWebsiteSlice{
 		&store.TableWebsite{WebsiteID: 0, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},

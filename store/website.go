@@ -20,12 +20,12 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/corestoreio/csfw/catalog/catconfig"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
-	"golang.org/x/text/currency"
 )
 
 const (
@@ -38,6 +38,8 @@ const (
 // settings which overrides the default scope but get itself overridden by the Store scope.
 type Website struct {
 	cr config.Getter // internal root config.Reader which can be overridden
+	// crDefault w.cr.NewScoped(0, 0, 0)
+	crDefault config.ScopedGetter
 	// Config contains the scope based configuration reader.
 	Config config.ScopedGetter
 	// Data raw website data from DB table.
@@ -67,7 +69,12 @@ var (
 // config.DefaultManager. You should call this function before calling other
 // option functions otherwise your preferred config.Reader won't be inherited
 // to a Group or Store.
-func SetWebsiteConfig(cr config.Getter) WebsiteOption { return func(w *Website) { w.cr = cr } }
+func SetWebsiteConfig(cr config.Getter) WebsiteOption {
+	return func(w *Website) {
+		w.cr = cr
+		w.crDefault = cr.NewScoped(0, 0, 0)
+	}
+}
 
 // SetWebsiteGroupsStores uses a group slice and a table slice to set the groups associated
 // to this website and the stores associated to this website. It returns an error if
@@ -116,8 +123,9 @@ func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) (*Website, error) {
 		return nil, ErrArgumentCannotBeNil
 	}
 	w := &Website{
-		cr:   config.DefaultService,
-		Data: tw,
+		cr:        config.DefaultService,
+		crDefault: config.DefaultService.NewScoped(0, 0, 0),
+		Data:      tw,
 	}
 	return w.ApplyOptions(opts...)
 }
@@ -214,20 +222,12 @@ func (w *Website) DefaultStore() (*Store, error) {
 	return g.DefaultStore()
 }
 
-// BaseCurrencyCode returns the base currency code of a website TODO.
-func (w *Website) BaseCurrencyCode() (currency.Unit, error) {
-	var c string
-	if PathPriceScope.Get(PackageConfiguration, w.Config) == PriceScopeGlobal {
-		c, _ = w.cr.String(config.Path(directory.PathCurrencyBase)) // TODO check for error
-	} else {
-		c, _ = w.Config.String(directory.PathCurrencyBase)
+// BaseCurrency returns the base currency code of a website.
+func (w *Website) BaseCurrency() (directory.Currency, error) {
+	if catconfig.Backend.CatalogPriceScope.IsGlobal(w.crDefault) {
+		return directory.Backend.CurrencyOptionsBase.Get(w.crDefault)
 	}
-	return currency.ParseISO(c)
-}
-
-// BaseCurrency returns the base currency type. TODO.
-func (w *Website) BaseCurrency() directory.Currency {
-	return directory.Currency{}
+	return directory.Backend.CurrencyOptionsBase.Get(w.Config)
 }
 
 /*

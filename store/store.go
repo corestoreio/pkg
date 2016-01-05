@@ -45,10 +45,6 @@ const (
 	// key value in a token to permanently save the new selected
 	// store code.
 	ParamName = `store`
-	// PriceScopeGlobal prices are for all stores and websites the same.
-	PriceScopeGlobal = 0
-	// PriceScopeWebsite prices are in each website different.
-	PriceScopeWebsite = 1
 )
 
 // Store represents the scope in which a shop runs. Everything is bound to a
@@ -248,24 +244,24 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 	var p model.BaseURL
 	switch ut {
 	case config.URLTypeWeb:
-		p = PathUnsecureBaseURL
+		p = backend.Backend.WebUnsecureBaseURL
 		if isSecure {
-			p = PathSecureBaseURL
+			p = backend.Backend.WebSecureBaseURL
 		}
 		break
 	case config.URLTypeStatic:
-		p = PathUnsecureBaseStaticURL
+		p = backend.Backend.WebUnsecureBaseStaticURL
 		if isSecure {
-			p = PathSecureBaseStaticURL
+			p = backend.Backend.WebSecureBaseStaticURL
 		}
 		break
 	case config.URLTypeMedia:
-		p = PathUnsecureBaseMediaURL
+		p = backend.Backend.WebUnsecureBaseMediaURL
 		if isSecure {
-			p = PathSecureBaseMediaURL
+			p = backend.Backend.WebSecureBaseMediaURL
 		}
 		break
-	case config.URLTypeAbsent: // hack to clear the cache
+	case config.URLTypeAbsent: // hack to clear the cache :-( refactor that
 		_ = s.urlcache.unsecure.Clear()
 		return url.URL{}, s.urlcache.secure.Clear()
 	// TODO(cs) rethink that here and maybe add the other paths if needed.
@@ -273,9 +269,9 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 		return url.URL{}, fmt.Errorf("Unsupported UrlType: %d", ut)
 	}
 
-	rawURL := p.Get(PackageConfiguration, s.Config)
+	rawURL := p.Get(s.Config)
 
-	if strings.Contains(rawURL, PlaceholderBaseURL) {
+	if strings.Contains(rawURL, model.PlaceholderBaseURL) {
 		// TODO(cs) replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
 		// getDistroBaseUrl will be generated from the $_SERVER variable,
 		base, err := s.cr.String(config.Path(config.PathCSBaseURL))
@@ -283,7 +279,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 			PkgLog.Debug("store.Store.BaseURL.String", "err", err, "path", config.PathCSBaseURL)
 			base = config.CSBaseURL
 		}
-		rawURL = strings.Replace(rawURL, PlaceholderBaseURL, base, 1)
+		rawURL = strings.Replace(rawURL, model.PlaceholderBaseURL, base, 1)
 	}
 	rawURL = strings.TrimRight(rawURL, "/") + "/"
 
@@ -297,7 +293,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 
 // IsFrontURLSecure returns true from the config if the frontend must be secure.
 func (s *Store) IsFrontURLSecure() bool {
-	return backend.PathWebSecureUseInFrontend.Get(PackageConfiguration, s.Config)
+	return backend.Backend.WebSecureUseInFrontend.Get(s.Config)
 }
 
 // IsCurrentlySecure checks if a request for a give store aka. scope is secure. Checks
