@@ -192,7 +192,12 @@ func (mr *MockGet) valString(path string) (string, error) {
 
 // String returns a string value
 func (mr *MockGet) String(opts ...ArgFunc) (string, error) {
-	path := mustNewArg(opts...).scopePath()
+	a, err := newArg(opts...)
+	if err != nil {
+		return "", err
+	}
+	path := a.scopePath()
+
 	switch {
 	case mr.hasVal(path):
 		return mr.valString(path)
@@ -221,7 +226,11 @@ func (mr *MockGet) valBool(path string) (bool, error) {
 
 // Bool returns a bool value
 func (mr *MockGet) Bool(opts ...ArgFunc) (bool, error) {
-	path := mustNewArg(opts...).scopePath()
+	a, err := newArg(opts...)
+	if err != nil {
+		return false, err
+	}
+	path := a.scopePath()
 	switch {
 	case mr.hasVal(path):
 		return mr.valBool(path)
@@ -245,7 +254,11 @@ func (mr *MockGet) valFloat64(path string) (float64, error) {
 
 // Float64 returns a float64 value
 func (mr *MockGet) Float64(opts ...ArgFunc) (float64, error) {
-	path := mustNewArg(opts...).scopePath()
+	a, err := newArg(opts...)
+	if err != nil {
+		return 0, err
+	}
+	path := a.scopePath()
 	switch {
 	case mr.hasVal(path):
 		return mr.valFloat64(path)
@@ -269,7 +282,11 @@ func (mr *MockGet) valInt(path string) (int, error) {
 
 // Int returns an integer value
 func (mr *MockGet) Int(opts ...ArgFunc) (int, error) {
-	path := mustNewArg(opts...).scopePath()
+	a, err := newArg(opts...)
+	if err != nil {
+		return 0, err
+	}
+	path := a.scopePath()
 	switch {
 	case mr.hasVal(path):
 		return mr.valInt(path)
@@ -291,7 +308,11 @@ func (mr *MockGet) valDateTime(path string) (time.Time, error) {
 
 // DateTime returns a time value
 func (mr *MockGet) DateTime(opts ...ArgFunc) (time.Time, error) {
-	path := mustNewArg(opts...).scopePath()
+	a, err := newArg(opts...)
+	if err != nil {
+		return time.Time{}, err
+	}
+	path := a.scopePath()
 	switch {
 	case mr.hasVal(path):
 		return mr.valDateTime(path)

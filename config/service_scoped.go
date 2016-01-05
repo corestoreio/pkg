@@ -1,3 +1,17 @@
+// Copyright 2015-2016, Cyrill @ Schumacher.fm and the CoreStore contributors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package config
 
 import (
@@ -57,8 +71,30 @@ func (ss scopedService) Scope() (scope.Scope, int64) {
 }
 
 // String returns a string. Enable debug logging to see possible errors.
-func (ss scopedService) String(paths ...string) (string, error) {
-	return ss.root.String(Scope(ss.Scope()), Path(paths...))
+func (ss scopedService) String(paths ...string) (v string, err error) {
+	// fallback to next parent scope if value does not exists
+	switch {
+	case ss.storeID > 0:
+		v, err = ss.root.String(Scope(scope.StoreID, ss.storeID), Path(paths...))
+		if NotKeyNotFoundError(err) || err == nil {
+			return
+		}
+		fallthrough
+	case ss.groupID > 0:
+		v, err = ss.root.String(Scope(scope.GroupID, ss.groupID), Path(paths...))
+		if NotKeyNotFoundError(err) || err == nil {
+			return
+		}
+		fallthrough
+	case ss.websiteID > 0:
+		v, err = ss.root.String(Scope(scope.WebsiteID, ss.websiteID), Path(paths...))
+		if NotKeyNotFoundError(err) || err == nil {
+			return
+		}
+		fallthrough
+	default:
+		return ss.root.String(Scope(scope.DefaultID, 0), Path(paths...))
+	}
 }
 
 // Bool returns a bool value. Enable debug logging to see possible errors.
