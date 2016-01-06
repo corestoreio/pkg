@@ -19,9 +19,31 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"time"
 )
 
-func TestScopedServiceString(t *testing.T) {
+func TestScopedServiceScope(t *testing.T) {
+	tests := []struct {
+		websiteID, groupID, storeID int64
+		wantScope                   scope.Scope
+		wantID                      int64
+	}{
+		{0, 0, 0, scope.DefaultID, 0},
+		{1, 0, 0, scope.WebsiteID, 1},
+		{1, 2, 0, scope.GroupID, 2},
+		{1, 2, 3, scope.StoreID, 3},
+		{0, 0, 3, scope.StoreID, 3},
+		{0, 2, 0, scope.GroupID, 2},
+	}
+	for i, test := range tests {
+		sg := config.NewMockGetter().NewScoped(test.websiteID, test.groupID, test.storeID)
+		haveScope, haveID := sg.Scope()
+		assert.Exactly(t, test.wantScope, haveScope, "Index %d", i)
+		assert.Exactly(t, test.wantID, haveID, "Index %d", i)
+	}
+}
+
+func TestScopedService(t *testing.T) {
 	tests := []struct {
 		desc                        string
 		fqpath                      string
@@ -42,39 +64,72 @@ func TestScopedServiceString(t *testing.T) {
 			scope.StrWebsites.FQPath("10", "a/b/c"), []string{"a/b/c"}, 10, 12, 0, nil,
 		},
 		{
+			"Website ID 10 + Group ID 12 + Store 22 ScopedGetter should fall back to website 10 scope",
+			scope.StrWebsites.FQPath("10", "a/b/c"), []string{"a/b/c"}, 10, 12, 22, nil,
+		},
+		{
+			"Website ID 10 + Group ID 12 + Store 22 ScopedGetter should return Store 22 scope",
+			scope.StrStores.FQPath("22", "a/b/c"), []string{"a/b/c"}, 10, 12, 22, nil,
+		},
+		{
+			"Website ID 10 + Group ID 12 + Store 42 ScopedGetter should return nothing",
+			scope.StrStores.FQPath("22", "a/b/c"), []string{"a/b/c"}, 10, 12, 42, config.ErrKeyNotFound,
+		},
+		{
 			"Path consists of only two elements which is incorrect",
 			scope.StrDefault.FQPath("0", "a/b/c"), []string{"a", "b"}, 0, 0, 0, config.ErrPathEmpty,
 		},
 	}
-	for _, test := range tests {
 
-		cg := config.NewMockGetter(config.WithMockValues(config.MockPV{
-			test.fqpath: "Gopher",
-		}))
+	vals := []interface{}{"Gopher", true, float64(3.14159), int(2016), time.Now()}
 
-		sg := cg.NewScoped(test.websiteID, test.groupID, test.storeID)
-		s, err := sg.String(test.path...)
+	for vi, val := range vals {
+		for _, test := range tests {
 
-		if test.err != nil {
-			assert.Empty(t, s, test.desc)
-			assert.EqualError(t, err, test.err.Error(), test.desc)
-			continue
+			cg := config.NewMockGetter(config.WithMockValues(config.MockPV{
+				test.fqpath: val,
+			}))
+
+			sg := cg.NewScoped(test.websiteID, test.groupID, test.storeID)
+
+			switch val.(type) {
+			case string:
+				s, err := sg.String(test.path...)
+				testScopedService(t, s, test.desc, err, test.err)
+			default:
+				t.Fatalf("Unsupported type: %#v in index %d", val, vi)
+			}
 		}
-		assert.NoError(t, err, test.desc)
-		assert.Exactly(t, "Gopher", s, test.desc)
 	}
 }
 
-func TestScopedServiceBool(t *testing.T) {
-	t.Log("TODO")
+func testScopedService(t *testing.T, have, desc string, err, wantErr error) {
+	if wantErr != nil {
+		assert.Empty(t, have, desc)
+		assert.EqualError(t, err, wantErr.Error(), desc)
+		return
+	}
+	assert.NoError(t, err, desc)
+	assert.Exactly(t, "Gopher", have, desc)
 }
 
-func TestScopedServiceFloat64(t *testing.T) {
-	t.Log("TODO")
+func BenchmarkScopedServiceStringDefault(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+
+	}
 }
-func TestScopedServiceInt(t *testing.T) {
-	t.Log("TODO")
+func BenchmarkScopedServiceStringWebsite(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+
+	}
 }
-func TestScopedServiceDateTime(t *testing.T) {
-	t.Log("TODO")
+func BenchmarkScopedServiceStringGroup(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+
+	}
+}
+func BenchmarkScopedServiceStringStore(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+
+	}
 }
