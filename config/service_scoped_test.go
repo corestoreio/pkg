@@ -81,36 +81,49 @@ func TestScopedService(t *testing.T) {
 		},
 	}
 
+	// vals stores all possible types for which we have functions in config.ScopedGetter
 	vals := []interface{}{"Gopher", true, float64(3.14159), int(2016), time.Now()}
 
-	for vi, val := range vals {
+	for vi, wantVal := range vals {
 		for _, test := range tests {
 
 			cg := config.NewMockGetter(config.WithMockValues(config.MockPV{
-				test.fqpath: val,
+				test.fqpath: wantVal,
 			}))
 
 			sg := cg.NewScoped(test.websiteID, test.groupID, test.storeID)
 
-			switch val.(type) {
+			var haveVal interface{}
+			var haveErr error
+			switch wantVal.(type) {
 			case string:
-				s, err := sg.String(test.path...)
-				testScopedService(t, s, test.desc, err, test.err)
+				haveVal, haveErr = sg.String(test.path...)
+			case bool:
+				haveVal, haveErr = sg.Bool(test.path...)
+			case float64:
+				haveVal, haveErr = sg.Float64(test.path...)
+			case int:
+				haveVal, haveErr = sg.Int(test.path...)
+			case time.Time:
+				haveVal, haveErr = sg.DateTime(test.path...)
 			default:
-				t.Fatalf("Unsupported type: %#v in index %d", val, vi)
+				t.Fatalf("Unsupported type: %#v in vals index %d", wantVal, vi)
 			}
+			testScopedService(t, wantVal, haveVal, test.desc, test.err, haveErr)
 		}
 	}
 }
 
-func testScopedService(t *testing.T, have, desc string, err, wantErr error) {
+func testScopedService(t *testing.T, want, have interface{}, desc string, wantErr, err error) {
 	if wantErr != nil {
+		// if this fails for time.Time{} then my PR to assert pkg has not yet been merged :-(
+		// https://github.com/stretchr/testify/pull/259
 		assert.Empty(t, have, desc)
 		assert.EqualError(t, err, wantErr.Error(), desc)
 		return
 	}
 	assert.NoError(t, err, desc)
-	assert.Exactly(t, "Gopher", have, desc)
+	assert.Exactly(t, want, have, desc)
 }
 
 func BenchmarkScopedServiceStringDefault(b *testing.B) {

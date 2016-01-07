@@ -70,49 +70,144 @@ func (ss scopedService) Scope() (scope.Scope, int64) {
 	}
 }
 
-// String returns a string. Enable debug logging to see possible errors.
+// String traverses through the scopes store->group->website->default to find
+// a matching string value.
 func (ss scopedService) String(paths ...string) (v string, err error) {
 	// fallback to next parent scope if value does not exists
 	switch {
 	case ss.storeID > 0:
 		v, err = ss.root.String(Scope(scope.StoreID, ss.storeID), Path(paths...))
 		if NotKeyNotFoundError(err) || err == nil {
-			return
+			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough
+		fallthrough // if not found in store scope go to group scope
 	case ss.groupID > 0:
 		v, err = ss.root.String(Scope(scope.GroupID, ss.groupID), Path(paths...))
 		if NotKeyNotFoundError(err) || err == nil {
-			return
+			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough
+		fallthrough // if not found in group scope go to website scope
 	case ss.websiteID > 0:
 		v, err = ss.root.String(Scope(scope.WebsiteID, ss.websiteID), Path(paths...))
 		if NotKeyNotFoundError(err) || err == nil {
-			return
+			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough
+		fallthrough // if not found in website scope go to default scope
 	default:
 		return ss.root.String(Scope(scope.DefaultID, 0), Path(paths...))
 	}
 }
 
-// Bool returns a bool value. Enable debug logging to see possible errors.
-func (ss scopedService) Bool(paths ...string) (bool, error) {
-	return ss.root.Bool(Scope(ss.Scope()), Path(paths...))
+// Bool traverses through the scopes store->group->website->default to find
+// a matching bool value.
+func (ss scopedService) Bool(paths ...string) (v bool, err error) {
+	// fallback to next parent scope if value does not exists
+	switch {
+	case ss.storeID > 0:
+		v, err = ss.root.Bool(Scope(scope.StoreID, ss.storeID), Path(paths...))
+		if NotKeyNotFoundError(err) || err == nil {
+			return // value found or err is not a KeyNotFound error
+		}
+		fallthrough // if not found in store scope go to group scope
+	case ss.groupID > 0:
+		v, err = ss.root.Bool(Scope(scope.GroupID, ss.groupID), Path(paths...))
+		if NotKeyNotFoundError(err) || err == nil {
+			return // value found or err is not a KeyNotFound error
+		}
+		fallthrough // if not found in group scope go to website scope
+	case ss.websiteID > 0:
+		v, err = ss.root.Bool(Scope(scope.WebsiteID, ss.websiteID), Path(paths...))
+		if NotKeyNotFoundError(err) || err == nil {
+			return // value found or err is not a KeyNotFound error
+		}
+		fallthrough // if not found in website scope go to default scope
+	default:
+		return ss.root.Bool(Scope(scope.DefaultID, 0), Path(paths...))
+	}
 }
 
-// Float64 returns a float number. Enable debug logging for possible errors.
-func (ss scopedService) Float64(paths ...string) (float64, error) {
-	return ss.root.Float64(Scope(ss.Scope()), Path(paths...))
+// Float64 traverses through the scopes store->group->website->default to find
+// a matching float64 value.
+func (ss scopedService) Float64(paths ...string) (v float64, err error) {
+	// fallback to next parent scope if value does not exists
+	switch {
+	case ss.storeID > 0:
+		v, err = ss.root.Float64(Scope(scope.StoreID, ss.storeID), Path(paths...))
+		if NotKeyNotFoundError(err) || err == nil {
+			return // value found or err is not a KeyNotFound error
+		}
+		fallthrough // if not found in store scope go to group scope
+	case ss.groupID > 0:
+		v, err = ss.root.Float64(Scope(scope.GroupID, ss.groupID), Path(paths...))
+		if NotKeyNotFoundError(err) || err == nil {
+			return // value found or err is not a KeyNotFound error
+		}
+		fallthrough // if not found in group scope go to website scope
+	case ss.websiteID > 0:
+		v, err = ss.root.Float64(Scope(scope.WebsiteID, ss.websiteID), Path(paths...))
+		if NotKeyNotFoundError(err) || err == nil {
+			return // value found or err is not a KeyNotFound error
+		}
+		fallthrough // if not found in website scope go to default scope
+	default:
+		return ss.root.Float64(Scope(scope.DefaultID, 0), Path(paths...))
+	}
+
 }
 
-// Int returns an int. Enable debug logging for possible errors.
-func (ss scopedService) Int(paths ...string) (int, error) {
-	return ss.root.Int(Scope(ss.Scope()), Path(paths...))
+// Int traverses through the scopes store->group->website->default to find
+// a matching int value.
+func (ss scopedService) Int(paths ...string) (v int, err error) {
+	// fallback to next parent scope if value does not exists
+	switch {
+	case ss.storeID > 0:
+		v, err = ss.root.Int(Scope(scope.StoreID, ss.storeID), Path(paths...))
+		if NotKeyNotFoundError(err) || err == nil {
+			return // value found or err is not a KeyNotFound error
+		}
+		fallthrough // if not found in store scope go to group scope
+	case ss.groupID > 0:
+		v, err = ss.root.Int(Scope(scope.GroupID, ss.groupID), Path(paths...))
+		if NotKeyNotFoundError(err) || err == nil {
+			return // value found or err is not a KeyNotFound error
+		}
+		fallthrough // if not found in group scope go to website scope
+	case ss.websiteID > 0:
+		v, err = ss.root.Int(Scope(scope.WebsiteID, ss.websiteID), Path(paths...))
+		if NotKeyNotFoundError(err) || err == nil {
+			return // value found or err is not a KeyNotFound error
+		}
+		fallthrough // if not found in website scope go to default scope
+	default:
+		return ss.root.Int(Scope(scope.DefaultID, 0), Path(paths...))
+	}
+
 }
 
-// DateTime returns a time. Enable debug logging for possible errors.
-func (ss scopedService) DateTime(paths ...string) (time.Time, error) {
-	return ss.root.DateTime(Scope(ss.Scope()), Path(paths...))
+// DateTime traverses through the scopes store->group->website->default to find
+// a matching time.Time value.
+func (ss scopedService) DateTime(paths ...string) (v time.Time, err error) {
+	// fallback to next parent scope if value does not exists
+	switch {
+	case ss.storeID > 0:
+		v, err = ss.root.DateTime(Scope(scope.StoreID, ss.storeID), Path(paths...))
+		if NotKeyNotFoundError(err) || err == nil {
+			return // value found or err is not a KeyNotFound error
+		}
+		fallthrough // if not found in store scope go to group scope
+	case ss.groupID > 0:
+		v, err = ss.root.DateTime(Scope(scope.GroupID, ss.groupID), Path(paths...))
+		if NotKeyNotFoundError(err) || err == nil {
+			return // value found or err is not a KeyNotFound error
+		}
+		fallthrough // if not found in group scope go to website scope
+	case ss.websiteID > 0:
+		v, err = ss.root.DateTime(Scope(scope.WebsiteID, ss.websiteID), Path(paths...))
+		if NotKeyNotFoundError(err) || err == nil {
+			return // value found or err is not a KeyNotFound error
+		}
+		fallthrough // if not found in website scope go to default scope
+	default:
+		return ss.root.DateTime(Scope(scope.DefaultID, 0), Path(paths...))
+	}
 }
