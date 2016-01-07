@@ -126,23 +126,24 @@ func testScopedService(t *testing.T, want, have interface{}, desc string, wantEr
 	assert.Exactly(t, want, have, desc)
 }
 
-func BenchmarkScopedServiceStringDefault(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-
-	}
-}
-func BenchmarkScopedServiceStringWebsite(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-
-	}
-}
-func BenchmarkScopedServiceStringGroup(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-
-	}
-}
+// BenchmarkScopedServiceStringStore-4	 1000000	      2398 ns/op	     464 B/op	      13 allocs/op => Go 1.5.2
+// BenchmarkScopedServiceStringStore-4	 1000000	      2119 ns/op	     384 B/op	      11 allocs/op
 func BenchmarkScopedServiceStringStore(b *testing.B) {
-	for i := 0; i < b.N; i++ {
 
+	const want = "Gopher"
+	sg := config.NewMockGetter(config.WithMockValues(config.MockPV{
+		scope.StrDefault.FQPath("0", "a/b/c"): want,
+	})).NewScoped(1, 1, 1)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		v, err := sg.String("a/b/c")
+		if err != nil {
+			b.Error(err)
+		}
+		if v != want {
+			b.Errorf("Want %s Have %s", want, v)
+		}
 	}
 }
