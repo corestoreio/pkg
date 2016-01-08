@@ -126,8 +126,7 @@ func testScopedService(t *testing.T, want, have interface{}, desc string, wantEr
 	assert.Exactly(t, want, have, desc)
 }
 
-// BenchmarkScopedServiceStringStore-4	 1000000	      2398 ns/op	     464 B/op	      13 allocs/op => Go 1.5.2
-// BenchmarkScopedServiceStringStore-4	 1000000	      2119 ns/op	     384 B/op	      11 allocs/op
+// BenchmarkScopedServiceStringStore-4	 1000000	      2119 ns/op	     384 B/op	      11 allocs/op => Go 1.5.2
 func BenchmarkScopedServiceStringStore(b *testing.B) {
 
 	const want = "Gopher"

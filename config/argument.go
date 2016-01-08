@@ -128,16 +128,8 @@ type arg struct {
 
 // newArg creates an argument container which requires different options depending on the use case.
 func newArg(opts ...ArgFunc) (arg, error) {
-	var a = arg{}
-	for _, opt := range opts {
-		if opt != nil {
-			opt(&a)
-		}
-	}
-	if len(a.lastErrors) > 0 {
-		return arg{}, a
-	}
-	return a, nil
+	a := arg{}
+	return a.option(opts...)
 }
 
 // mustNewArg panics on error. useful for initialization process
@@ -147,6 +139,19 @@ func mustNewArg(opts ...ArgFunc) arg {
 		panic(err)
 	}
 	return a
+}
+
+func (a arg) option(opts ...ArgFunc) (arg, error) {
+	for _, opt := range opts {
+		if opt != nil {
+			opt(&a)
+		}
+	}
+	if len(a.lastErrors) > 0 {
+		a.v = nil // discard value on error
+		return a, a
+	}
+	return a, nil
 }
 
 func (a arg) isValidPath() bool    { return isValidPath(a.pathSlice...) }

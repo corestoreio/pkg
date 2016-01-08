@@ -38,6 +38,17 @@ type ScopedGetter interface {
 	DateTime(paths ...string) (time.Time, error)
 }
 
+// think about that segregation
+//type ScopedStringer interface {
+//	scope.Scoper
+//	String(paths ...string) (string, error)
+//}
+//
+//type ScopedBooler interface {
+//	scope.Scoper
+//	Bool(paths ...string) (bool, error)
+//}
+
 type scopedService struct {
 	root      Getter
 	websiteID int64
@@ -74,27 +85,28 @@ func (ss scopedService) Scope() (scope.Scope, int64) {
 // a matching string value.
 func (ss scopedService) String(paths ...string) (v string, err error) {
 	// fallback to next parent scope if value does not exists
+	args := Path(paths...)
 	switch {
 	case ss.storeID > 0:
-		v, err = ss.root.String(Scope(scope.StoreID, ss.storeID), Path(paths...))
+		v, err = ss.root.String(ScopeStore(ss.storeID), args)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in store scope go to group scope
 	case ss.groupID > 0:
-		v, err = ss.root.String(Scope(scope.GroupID, ss.groupID), Path(paths...))
+		v, err = ss.root.String(ScopeGroup(ss.groupID), args)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in group scope go to website scope
 	case ss.websiteID > 0:
-		v, err = ss.root.String(Scope(scope.WebsiteID, ss.websiteID), Path(paths...))
+		v, err = ss.root.String(ScopeWebsite(ss.websiteID), args)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in website scope go to default scope
 	default:
-		return ss.root.String(Scope(scope.DefaultID, 0), Path(paths...))
+		return ss.root.String(ScopeDefault(), args)
 	}
 }
 
@@ -102,27 +114,28 @@ func (ss scopedService) String(paths ...string) (v string, err error) {
 // a matching bool value.
 func (ss scopedService) Bool(paths ...string) (v bool, err error) {
 	// fallback to next parent scope if value does not exists
+	args := Path(paths...)
 	switch {
 	case ss.storeID > 0:
-		v, err = ss.root.Bool(Scope(scope.StoreID, ss.storeID), Path(paths...))
+		v, err = ss.root.Bool(ScopeStore(ss.storeID), args)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in store scope go to group scope
 	case ss.groupID > 0:
-		v, err = ss.root.Bool(Scope(scope.GroupID, ss.groupID), Path(paths...))
+		v, err = ss.root.Bool(ScopeGroup(ss.groupID), args)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in group scope go to website scope
 	case ss.websiteID > 0:
-		v, err = ss.root.Bool(Scope(scope.WebsiteID, ss.websiteID), Path(paths...))
+		v, err = ss.root.Bool(ScopeWebsite(ss.websiteID), args)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in website scope go to default scope
 	default:
-		return ss.root.Bool(Scope(scope.DefaultID, 0), Path(paths...))
+		return ss.root.Bool(ScopeDefault(), args)
 	}
 }
 
@@ -130,27 +143,28 @@ func (ss scopedService) Bool(paths ...string) (v bool, err error) {
 // a matching float64 value.
 func (ss scopedService) Float64(paths ...string) (v float64, err error) {
 	// fallback to next parent scope if value does not exists
+	args := Path(paths...)
 	switch {
 	case ss.storeID > 0:
-		v, err = ss.root.Float64(Scope(scope.StoreID, ss.storeID), Path(paths...))
+		v, err = ss.root.Float64(ScopeStore(ss.storeID), args)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in store scope go to group scope
 	case ss.groupID > 0:
-		v, err = ss.root.Float64(Scope(scope.GroupID, ss.groupID), Path(paths...))
+		v, err = ss.root.Float64(ScopeGroup(ss.groupID), args)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in group scope go to website scope
 	case ss.websiteID > 0:
-		v, err = ss.root.Float64(Scope(scope.WebsiteID, ss.websiteID), Path(paths...))
+		v, err = ss.root.Float64(ScopeWebsite(ss.websiteID), args)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in website scope go to default scope
 	default:
-		return ss.root.Float64(Scope(scope.DefaultID, 0), Path(paths...))
+		return ss.root.Float64(ScopeDefault(), args)
 	}
 
 }
@@ -159,27 +173,28 @@ func (ss scopedService) Float64(paths ...string) (v float64, err error) {
 // a matching int value.
 func (ss scopedService) Int(paths ...string) (v int, err error) {
 	// fallback to next parent scope if value does not exists
+	args := Path(paths...)
 	switch {
 	case ss.storeID > 0:
-		v, err = ss.root.Int(Scope(scope.StoreID, ss.storeID), Path(paths...))
+		v, err = ss.root.Int(ScopeStore(ss.storeID), args)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in store scope go to group scope
 	case ss.groupID > 0:
-		v, err = ss.root.Int(Scope(scope.GroupID, ss.groupID), Path(paths...))
+		v, err = ss.root.Int(ScopeGroup(ss.groupID), args)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in group scope go to website scope
 	case ss.websiteID > 0:
-		v, err = ss.root.Int(Scope(scope.WebsiteID, ss.websiteID), Path(paths...))
+		v, err = ss.root.Int(ScopeWebsite(ss.websiteID), args)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in website scope go to default scope
 	default:
-		return ss.root.Int(Scope(scope.DefaultID, 0), Path(paths...))
+		return ss.root.Int(ScopeDefault(), args)
 	}
 
 }
@@ -188,26 +203,27 @@ func (ss scopedService) Int(paths ...string) (v int, err error) {
 // a matching time.Time value.
 func (ss scopedService) DateTime(paths ...string) (v time.Time, err error) {
 	// fallback to next parent scope if value does not exists
+	args := Path(paths...)
 	switch {
 	case ss.storeID > 0:
-		v, err = ss.root.DateTime(Scope(scope.StoreID, ss.storeID), Path(paths...))
+		v, err = ss.root.DateTime(ScopeStore(ss.storeID), args)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in store scope go to group scope
 	case ss.groupID > 0:
-		v, err = ss.root.DateTime(Scope(scope.GroupID, ss.groupID), Path(paths...))
+		v, err = ss.root.DateTime(ScopeGroup(ss.groupID), args)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in group scope go to website scope
 	case ss.websiteID > 0:
-		v, err = ss.root.DateTime(Scope(scope.WebsiteID, ss.websiteID), Path(paths...))
+		v, err = ss.root.DateTime(ScopeWebsite(ss.websiteID), args)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in website scope go to default scope
 	default:
-		return ss.root.DateTime(Scope(scope.DefaultID, 0), Path(paths...))
+		return ss.root.DateTime(ScopeDefault(), args)
 	}
 }

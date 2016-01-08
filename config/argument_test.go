@@ -86,18 +86,18 @@ func TestScopeKeyValue(t *testing.T) {
 		wantErr error
 	}{
 		{[]ArgFunc{Value(1), Path("a/b/c")}, scope.StrDefault.FQPath("0", "a/b/c"), nil},
-		{[]ArgFunc{Value("1"), Path("")}, "", ErrPathEmpty},
-		{[]ArgFunc{Value(1.1), Path()}, "", ErrPathEmpty},
+		{[]ArgFunc{Value("123"), Path("")}, "", ErrPathEmpty},
+		{[]ArgFunc{Value(1.321), Path()}, "", ErrPathEmpty},
 		{[]ArgFunc{Value(1), Scope(scope.DefaultID, -9)}, "", nil},
 		{[]ArgFunc{Value(1), Scope(scope.WebsiteID, 0)}, "", nil},
 		{[]ArgFunc{Value(1), Scope(scope.StoreID, 0)}, "", nil},
 		{[]ArgFunc{Value(1), Path("a/b/c"), Scope(scope.WebsiteID, 0)}, scope.StrDefault.FQPath("0", "a/b/c"), nil},
 		{[]ArgFunc{Value(1), Path("a/b/c"), Scope(scope.WebsiteID, 2)}, scope.StrWebsites.FQPath("2", "a/b/c"), nil},
-		{[]ArgFunc{Value(1), Path("a", "b", "c"), Scope(scope.WebsiteID, 200)}, scope.StrWebsites.FQPath("200", "a/b/c"), nil},
-		{[]ArgFunc{Value(1), Path("a", "b", "c"), Scope(scope.StoreID, 4)}, scope.StrStores.FQPath("4", "a/b/c"), nil},
-		{[]ArgFunc{Value(1), Path("a", "b"), Scope(scope.StoreID, 4)}, "", ErrPathEmpty},
-		{[]ArgFunc{Value(1), Path("a/b"), Scope(scope.StoreID, 4)}, "", errors.New("Incorrect number of paths elements: want 3, have 2, Path: [a/b]")},
-		{[]ArgFunc{Value(1), nil, Scope(scope.StoreID, 4)}, "", nil},
+		{[]ArgFunc{Value(8), Path("a", "b", "c"), Scope(scope.WebsiteID, 200)}, scope.StrWebsites.FQPath("200", "a/b/c"), nil},
+		{[]ArgFunc{Value(9), Path("a", "b", "c"), Scope(scope.StoreID, 4)}, scope.StrStores.FQPath("4", "a/b/c"), nil},
+		{[]ArgFunc{Value(10), Path("a", "b"), Scope(scope.StoreID, 4)}, "", ErrPathEmpty},
+		{[]ArgFunc{Value(11), Path("a/b"), Scope(scope.StoreID, 4)}, "", errors.New("Incorrect number of paths elements: want 3, have 2, Path: [a/b]")},
+		{[]ArgFunc{Value(12), nil, Scope(scope.StoreID, 4)}, "", nil},
 		{[]ArgFunc{Value(1), Path("a", "b", "c"), ScopeStore(5)}, scope.StrStores.FQPath("5", "a/b/c"), nil},
 		{[]ArgFunc{Value(1.2), Path("a", "b", "c"), ScopeStore(-1)}, scope.StrDefault.FQPath("0", "a/b/c"), nil},
 		{[]ArgFunc{Value(1.3), Path("a", "b", "c"), ScopeWebsite(50)}, scope.StrWebsites.FQPath("50", "a/b/c"), nil},
@@ -141,7 +141,6 @@ func (testMultiErrorReader) Read(p []byte) (n int, err error) {
 }
 
 func TestMultiError(t *testing.T) {
-
 	a, err := newArg(Path("a/b"), ValueReader(testMultiErrorReader{}))
 	assert.NotNil(t, a)
 	assert.EqualError(t, err, "Incorrect number of paths elements: want 3, have 2, Path: [a/b]\nValueReader error testMultiErrorReader error")
