@@ -15,8 +15,12 @@
 package store_test
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/corestoreio/csfw/catalog/catconfig"
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
@@ -119,7 +123,7 @@ func TestNewWebsiteSetGroupsStoresError1(t *testing.T) {
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
 		store.SetWebsiteGroupsStores(
 			store.TableGroupSlice{
-				&store.TableGroup{GroupID: 0, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
+				0: &store.TableGroup{GroupID: 0, WebsiteID: 0, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 			},
 			store.TableStoreSlice{
 				&store.TableStore{StoreID: 5, Code: dbr.NewNullString("au"), WebsiteID: 2, GroupID: 3, Name: "Australia", SortOrder: 10, IsActive: true},
@@ -135,18 +139,73 @@ func TestNewWebsiteSetGroupsStoresError1(t *testing.T) {
 	assert.Contains(t, err.Error(), "Integrity error")
 }
 
+func getWebsiteBaseCurrency(priceScope int, curGlobal, curWebsite string) (*store.Website, error) {
+	return store.NewWebsite(
+		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+		store.SetWebsiteGroupsStores(
+			store.TableGroupSlice{
+				0: &store.TableGroup{GroupID: 0, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 1},
+			},
+			store.TableStoreSlice{
+				0: &store.TableStore{StoreID: 0, Code: dbr.NewNullString("Admin"), WebsiteID: 1, GroupID: 0, Name: "Admin", SortOrder: 0, IsActive: true},
+				1: &store.TableStore{StoreID: 1, Code: dbr.NewNullString("de"), WebsiteID: 1, GroupID: 0, Name: "Germany", SortOrder: 10, IsActive: true},
+			},
+		),
+		store.SetWebsiteConfig(
+			config.NewMockGetter(config.WithMockValues(config.MockPV{
+				catconfig.Backend.CatalogPriceScope.FQPathInt64(scope.StrDefault, 0):    priceScope,
+				directory.Backend.CurrencyOptionsBase.FQPathInt64(scope.StrDefault, 0):  curGlobal,
+				directory.Backend.CurrencyOptionsBase.FQPathInt64(scope.StrWebsites, 1): curWebsite,
+			})),
+		),
+	)
+}
+
 func TestWebsiteBaseCurrency(t *testing.T) {
 	t.Parallel()
-	t.Fatal("@TOOD")
+	tests := []struct {
+		priceScope int
+		curGlobal  string
+		curWebsite string
+		curWant    string
+		wantErr    error
+	}{
+		{catconfig.PriceScopeGlobal, "USD", "EUR", "USD", nil},
+		{catconfig.PriceScopeGlobal, "ZZ", "EUR", "XXX", errors.New("currency: tag is not well-formed")},
+		{catconfig.PriceScopeWebsite, "USD", "EUR", "EUR", nil},
+		{catconfig.PriceScopeWebsite, "USD", "YYY", "XXX", errors.New("currency: tag is not a recognized currency")},
+	}
+
+	for _, test := range tests {
+		w, err := getWebsiteBaseCurrency(test.priceScope, test.curGlobal, test.curWebsite)
+		assert.NoError(t, err)
+		if false == assert.NotNil(t, w) {
+			t.Fatal("website is nil")
+		}
+
+		haveCur, haveErr := w.BaseCurrency()
+
+		if test.wantErr != nil {
+			assert.EqualError(t, haveErr, test.wantErr.Error())
+			assert.Exactly(t, test.curWant, haveCur.Unit.String())
+			continue
+		}
+
+		assert.NoError(t, haveErr)
+
+		wantCur, err := directory.NewCurrencyISO(test.curWant)
+		assert.NoError(t, err)
+		assert.Exactly(t, wantCur, haveCur)
+	}
 }
 
 func TestTableWebsiteSlice(t *testing.T) {
 	t.Parallel()
 	websites := store.TableWebsiteSlice{
-		&store.TableWebsite{WebsiteID: 0, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
-		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
-		nil,
-		&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
+		0: &store.TableWebsite{WebsiteID: 0, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
+		1: &store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("euro"), Name: dbr.NewNullString("Europe"), SortOrder: 0, DefaultGroupID: 1, IsDefault: dbr.NewNullBool(true)},
+		2: nil,
+		3: &store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)},
 	}
 	assert.True(t, websites.Len() == 4)
 

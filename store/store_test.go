@@ -303,7 +303,6 @@ func TestStoreBaseURLandPath(t *testing.T) {
 		_, err = s.BaseURL(config.URLTypeAbsent, false)
 		assert.EqualError(t, err, config.ErrURLCacheCleared.Error())
 	}
-	t.Log(debugLogBuf.String()) // bug in config ScopedGetter
 }
 
 func TestMarshalJSON(t *testing.T) {
