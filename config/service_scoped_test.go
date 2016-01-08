@@ -15,11 +15,13 @@
 package config_test
 
 import (
+	"strings"
+	"testing"
+	"time"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
 
 func TestScopedServiceScope(t *testing.T) {
@@ -126,10 +128,10 @@ func testScopedService(t *testing.T, want, have interface{}, desc string, wantEr
 	assert.Exactly(t, want, have, desc)
 }
 
-// BenchmarkScopedServiceStringStore-4	 1000000	      2119 ns/op	     384 B/op	      11 allocs/op => Go 1.5.2
+// BenchmarkScopedServiceStringStore-4	 1000000	      2218 ns/op	     320 B/op	       9 allocs/op => Go 1.5.2
 func BenchmarkScopedServiceStringStore(b *testing.B) {
 
-	const want = "Gopher"
+	var want = strings.Repeat("Gopher", 100)
 	sg := config.NewMockGetter(config.WithMockValues(config.MockPV{
 		scope.StrDefault.FQPath("0", "a/b/c"): want,
 	})).NewScoped(1, 1, 1)

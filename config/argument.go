@@ -24,7 +24,9 @@ import (
 	"github.com/corestoreio/csfw/util"
 )
 
-const hierarchyLevel int = 3 // a/b/c
+// HierarchyLevel defines how many elements are in a path.
+// Like a/b/c for 3 elements.
+const HierarchyLevel int = 3
 
 // ErrPathEmpty when you provide an empty path in the function Path()
 var ErrPathEmpty = errors.New("Path cannot be empty")
@@ -32,9 +34,12 @@ var ErrPathEmpty = errors.New("Path cannot be empty")
 // ArgFunc Argument function to be used as variadic argument in ScopeKey() and ScopeKeyValue()
 type ArgFunc func(*arg)
 
+// scopeDefaultArg cached default scope argument function
+var scopeDefaultArg = Scope(scope.DefaultID, 0)
+
 // ScopeDefault wrapper helper function. See Scope(). Mainly used to show humans
 // than a config value can only be set for a global scope.
-func ScopeDefault() ArgFunc { return Scope(scope.DefaultID, 0) }
+func ScopeDefault() ArgFunc { return scopeDefaultArg }
 
 // ScopeWebsite wrapper helper function. See Scope()
 func ScopeWebsite(id int64) ArgFunc { return Scope(scope.WebsiteID, id) }
@@ -70,13 +75,13 @@ func Path(paths ...string) ArgFunc {
 	}
 
 	var paSlice []string
-	if len(paths) >= hierarchyLevel {
+	if len(paths) >= HierarchyLevel {
 		paSlice = paths
 	} else {
 		paSlice = scope.PathSplit(paths[0])
-		if len(paSlice) < hierarchyLevel {
+		if len(paSlice) < HierarchyLevel {
 			return func(a *arg) {
-				a.lastErrors = append(a.lastErrors, fmt.Errorf("Incorrect number of paths elements: want %d, have %d, Path: %v", hierarchyLevel, len(paSlice), paths))
+				a.lastErrors = append(a.lastErrors, fmt.Errorf("Incorrect number of paths elements: want %d, have %d, Path: %v", HierarchyLevel, len(paSlice), paths))
 			}
 		}
 	}
@@ -113,7 +118,7 @@ func ValueReader(r io.Reader) ArgFunc {
 // or at least 3 path parts.
 func isValidPath(paths ...string) bool {
 	return (len(paths) == 1 && paths[0] != "") ||
-		(len(paths) >= hierarchyLevel && paths[0] != "" && paths[1] != "" && paths[2] != "")
+		(len(paths) >= HierarchyLevel && paths[0] != "" && paths[1] != "" && paths[2] != "")
 }
 
 // arg responsible for the correct scope key e.g.: stores/2/system/currency/installed => scope/scope_id/path
