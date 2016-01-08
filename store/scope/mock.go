@@ -63,3 +63,16 @@ func (c MockCode) StoreCode() string { return string(c) }
 
 // GroupID is convenience helper to satisfy the interface GroupIDer. Returns -1.
 func (c MockCode) GroupID() int64 { return UnavailableStoreID }
+
+var _ Scoper = (*Mock)(nil)
+
+// Mock implements Scoper interface
+type Mock struct {
+	Scp Scope
+	ID  int64
+}
+
+// Scope to satisfy Scoper interface
+func (m Mock) Scope() (Scope, int64) {
+	return m.Scp, m.ID
+}

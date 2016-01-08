@@ -81,10 +81,15 @@ func (bits Perm) String() string {
 
 }
 
-// MarshalJSON implements marshaling into an array or null if no bits are set. @todo UnMarshal
+var nullByte = []byte("null")
+
+// MarshalJSON implements marshaling into an array or null if no bits are set.
+// Returns null when Perm is empty aka zero. null and 0 are considered the
+// same for a later unmarshalling.
+// @todo UnMarshal
 func (bits Perm) MarshalJSON() ([]byte, error) {
 	if bits == 0 {
-		return []byte("null"), nil
+		return nullByte, nil
 	}
 	return []byte(`["` + bits.Human().Join(`","`) + `"]`), nil
 }

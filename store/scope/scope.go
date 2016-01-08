@@ -14,13 +14,7 @@
 
 package scope
 
-import (
-	"fmt"
-	"strconv"
-	"strings"
-
-	"github.com/corestoreio/csfw/util/bufferpool"
-)
+import "fmt"
 
 // Scope used in constants where default is the lowest and store the highest.
 // Func String() attached. Part of type Perm.
@@ -86,9 +80,6 @@ func (i Scope) String() string {
 	return _ScopeName[_ScopeIndex[i]:_ScopeIndex[i+1]]
 }
 
-// PS path separator used in the database table core_config_data and in config.Service
-const PS = "/"
-
 // StrScope represents a string scope from table core_config_data column scope with
 // special functions attached, mainly for path generation
 type StrScope string
@@ -109,52 +100,20 @@ const (
 	StrStores   StrScope = strStores
 )
 
-const strDefaultID = "0"
-
-// FQPath returns the fully qualified path. scopeID is an int string. Paths is
-// either one path (system/smtp/host) including path separators or three
-// parts ("system", "smtp", "host").
-func (s StrScope) FQPath(scopeID string, paths ...string) string {
-	if s == StrDefault && scopeID != strDefaultID {
-		scopeID = strDefaultID // default scope is always 0
-	}
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-	buf.WriteString(string(s))
-	buf.WriteString(PS)
-	buf.WriteString(scopeID)
-	buf.WriteString(PS)
-	for i, p := range paths {
-		buf.WriteString(p)
-		if i < (len(paths) - 1) {
-			buf.WriteString(PS)
-		}
-	}
-	return buf.String()
-}
-
-// this "cache" should cover ~80% of all store setups
-var int64Cache = [...]string{
-	"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
-}
-var int64CacheLen = int64(len(int64Cache))
-
-// FQPathInt64 same as FQPath() but for int64 scope IDs.
-func (s StrScope) FQPathInt64(scopeID int64, paths ...string) string {
-	scopeStr := "0"
-	if scopeID > 0 {
-		if scopeID <= int64CacheLen {
-			scopeStr = int64Cache[scopeID]
-		} else {
-			scopeStr = strconv.FormatInt(scopeID, 10)
-		}
-	}
-	return s.FQPath(scopeStr, paths...)
-}
-
 // String returns the scope as string
 func (s StrScope) String() string {
 	return string(s)
+}
+
+// Scope returns the underlying scope
+func (s StrScope) Scope() Scope {
+	switch s {
+	case StrWebsites:
+		return WebsiteID
+	case StrStores:
+		return StoreID
+	}
+	return DefaultID
 }
 
 // FromString returns the scope ID from a string: default, websites or stores.
@@ -180,52 +139,13 @@ func FromScope(scopeID Scope) StrScope {
 	return StrDefault
 }
 
-// ValidScope checks if s is a valid string of either
-// StrDefault, StrWebsites or StrStores.
-func ValidScope(s string) bool {
+// Valid checks if s is a valid StrScope of either
+// StrDefault, StrWebsites or StrStores. Case-sensitive.
+// Input should all be lowercase.
+func Valid(s string) bool {
 	switch s {
 	case strWebsites, strStores, strDefault:
 		return true
 	}
 	return false
-}
-
-// PathSplit splits a configuration path by the path separator PS.
-func PathSplit(path string) []string {
-	return strings.Split(path, PS)
-}
-
-// PathJoin joins configuration path parts by the path separator PS.
-func PathJoin(path ...string) string {
-	return strings.Join(path, PS)
-}
-
-// SplitFQPath takes a fully qualified path and splits it into its parts.
-// 	Input: stores/5/catalog/frontend/list_allow_all
-//	=>
-//		scope: 		stores
-//		scopeID: 	5
-//		path: 		catalog/frontend/list_allow_all
-// Zero allocations to memory. Err may contain an ErrUnsupportedScope or
-// failed to parse a string into an int64 or invalid fqPath.
-func SplitFQPath(fqPath string) (scope string, scopeID int64, path string, err error) {
-	if strings.Count(fqPath, PS) < 4 {
-		err = fmt.Errorf("Incorrect fully qualified path: %q", fqPath)
-		return
-	}
-
-	fi := strings.Index(fqPath, PS)
-	scope = fqPath[:fi]
-
-	if false == ValidScope(scope) {
-		err = ErrUnsupportedScope
-		return
-	}
-
-	fqPath = fqPath[fi+1:]
-
-	fi = strings.Index(fqPath, PS)
-	scopeID, err = strconv.ParseInt(fqPath[:fi], 10, 64)
-	path = fqPath[fi+1:]
-	return
 }

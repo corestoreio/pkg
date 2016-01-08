@@ -36,3 +36,25 @@ func TestMockCode(t *testing.T) {
 	assert.Equal(t, i, scope.MockCode("Waverly").GroupID())
 	assert.Equal(t, i, scope.MockCode("Waverly").StoreID())
 }
+
+func TestMock(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		s  scope.Scope
+		id int64
+	}{
+		{scope.DefaultID, 0},
+		{scope.WebsiteID, 1},
+		{scope.GroupID, 20},
+		{scope.StoreID, 30},
+	}
+	for _, test := range tests {
+		m := scope.Mock{
+			Scp: test.s,
+			ID:  test.id,
+		}
+		haveS, haveID := m.Scope()
+		assert.Exactly(t, test.s, haveS)
+		assert.Exactly(t, test.id, haveID)
+	}
+}

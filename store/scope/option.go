@@ -20,7 +20,7 @@ import (
 
 // ErrUnsupportedScope gets returned when a string does not match
 // StrDefault, StrWebsites or StrStores constants.
-var ErrUnsupportedScope = errors.New("Unsupported Scope")
+var ErrUnsupportedScope = errors.New("Unsupported StrScope type")
 
 // ErrUnsupportedScopeID whenever a not valid scope ID will be provided.
 // Neither a WebsiteID nor a GroupID nor a StoreID.
