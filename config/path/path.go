@@ -15,6 +15,7 @@
 package path
 
 import (
+	"bytes"
 	"fmt"
 	"strconv"
 	"strings"
@@ -22,6 +23,10 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/bufferpool"
 )
+
+// HierarchyLevel defines how many elements are in a path.
+// Like a/b/c for 3 elements.
+const HierarchyLevel int = 3
 
 // PS path separator used in the database table core_config_data and in config.Service
 const PS = "/"
@@ -44,12 +49,7 @@ func FQ(s scope.StrScope, scopeID string, paths ...string) (string, error) {
 	buf.WriteString(PS)
 	buf.WriteString(scopeID)
 	buf.WriteString(PS)
-	for i, p := range paths {
-		buf.WriteString(p)
-		if i < (len(paths) - 1) {
-			buf.WriteString(PS)
-		}
-	}
+	join(buf, paths)
 	return buf.String(), nil
 }
 
@@ -90,14 +90,35 @@ func MustFQInt64(s scope.StrScope, scopeID int64, paths ...string) string {
 	return p
 }
 
-// plit splits a configuration path by the path separator PS.
+// Split splits a configuration path by the path separator PS. If the path
+// contains less than HierarchyLevel separators it returns nil = error.
 func Split(path string) []string {
+	if strings.Count(path, PS)+1 < HierarchyLevel {
+		return nil
+	}
+	if path[:1] == PS {
+		path = path[1:] // trim first PS
+	}
 	return strings.Split(path, PS)
 }
 
-// Join joins configuration path parts by the path separator PS.
-func Join(path ...string) string {
-	return strings.Join(path, PS)
+func join(buf *bytes.Buffer, paths []string) {
+	for i, p := range paths {
+		buf.WriteString(p)
+		if i < (len(paths) - 1) {
+			buf.WriteString(PS)
+		}
+	}
+}
+
+// Join joins a configuration path parts by the path separator PS.
+// Arguments "a","b","c" will become a/b/c.
+func Join(paths ...string) string {
+	buf := bufferpool.Get()
+	join(buf, paths)
+	s := buf.String()
+	bufferpool.Put(buf)
+	return s
 }
 
 // SplitFQPath takes a fully qualified path and splits it into its parts.

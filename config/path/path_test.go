@@ -19,6 +19,8 @@ import (
 	"strconv"
 	"testing"
 
+	"reflect"
+
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
@@ -96,7 +98,7 @@ func BenchmarkStrScopeFQPath(b *testing.B) {
 	}
 }
 
-func benchmarkStrScopeFQPathInt64(scopeID int64, b *testing.B) {
+func benchmarkFQInt64(scopeID int64, b *testing.B) {
 	want := scope.StrWebsites.String() + "/" + strconv.FormatInt(scopeID, 10) + "/system/dev/debug"
 	b.ReportAllocs()
 	b.ResetTimer()
@@ -108,14 +110,14 @@ func benchmarkStrScopeFQPathInt64(scopeID int64, b *testing.B) {
 	}
 }
 
-// BenchmarkStrScopeFQPathInt64__Cached-4	 5000000	       383 ns/op	      32 B/op	       1 allocs/op
-func BenchmarkStrScopeFQPathInt64__Cached(b *testing.B) {
-	benchmarkStrScopeFQPathInt64(4, b)
+// BenchmarkFQInt64__Cached-4	 3000000	       427 ns/op	      32 B/op	       1 allocs/op
+func BenchmarkFQInt64__Cached(b *testing.B) {
+	benchmarkFQInt64(4, b)
 }
 
-// BenchmarkStrScopeFQPathInt64UnCached-4	 3000000	       438 ns/op	      48 B/op	       2 allocs/op
-func BenchmarkStrScopeFQPathInt64UnCached(b *testing.B) {
-	benchmarkStrScopeFQPathInt64(40, b)
+// BenchmarkFQInt64UnCached-4	 3000000	       513 ns/op	      48 B/op	       2 allocs/op
+func BenchmarkFQInt64UnCached(b *testing.B) {
+	benchmarkFQInt64(40, b)
 }
 
 func TestSplitFQPath(t *testing.T) {
@@ -182,15 +184,53 @@ func TestJoin(t *testing.T) {
 	}
 }
 
+var benchmarkJoin string
+
+// BenchmarkJoin-4           	10000000	       238 ns/op	      16 B/op	       1 allocs/op => G 1.5.2
+func BenchmarkJoin(b *testing.B) {
+	have := []string{"system", "dev", "debug"}
+	want := "system/dev/debug"
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchmarkJoin = path.Join(have...)
+	}
+	if benchmarkJoin != want {
+		b.Errorf("Want: %s; Have, %s", want, benchmarkJoin)
+	}
+}
+
 func TestSplit(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		have string
 		want []string
 	}{
+		{"system/dev/debug", []string{"system", "dev", "debug"}},
 		{"a/b/c", []string{"a", "b", "c"}},
+		{"/a/b/c", []string{"a", "b", "c"}},
+		{"a/b/c/d/e", []string{"a", "b", "c", "d", "e"}},
+		{"a/b", nil},
 	}
 	for i, test := range tests {
 		assert.Exactly(t, test.want, path.Split(test.have), "Index %d", i)
+	}
+}
+
+var benchmarkSplit []string
+
+// BenchmarkSplit-4          	 5000000	       290 ns/op	      48 B/op	       1 allocs/op => G 1.5.2
+func BenchmarkSplit(b *testing.B) {
+	want := []string{"system", "dev", "debug"}
+	have := "system/dev/debug"
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchmarkSplit = path.Split(have)
+	}
+	if false == reflect.DeepEqual(benchmarkSplit, want) {
+		b.Errorf("Want: %s; Have, %s", want, benchmarkJoin)
 	}
 }
