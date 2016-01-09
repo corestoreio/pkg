@@ -50,11 +50,34 @@ type Path struct {
 	NoValidation bool
 }
 
+// New creates a new validated Path. Argument can either be a path like
+// a/b/c or path parts like "a","b","c".
 func New(paths ...string) (Path, error) {
 	p := Path{
 		Parts: paths,
 		Scope: scope.DefaultID,
 	}
+	if false == p.IsValid() {
+		return Path{}, ErrIncorrect
+	}
+	return p, nil
+}
+
+// NewSplit takes a path argument like a/b/c or path parts like "a","b","c".
+// If a path have been provided it gets split into its parts.
+func NewSplit(paths ...string) (Path, error) {
+	p := Path{
+		Scope: scope.DefaultID,
+	}
+	switch {
+	case len(paths) >= Levels:
+		p.Parts = paths
+	case len(paths) == 1:
+		p.Parts = Split(paths[0])
+	default:
+		return Path{}, fmt.Errorf("Incorrect number of paths elements: want %d, have %d, Path: %v", Levels, len(paths), paths)
+	}
+
 	if false == p.IsValid() {
 		return Path{}, ErrIncorrect
 	}
@@ -156,12 +179,17 @@ func join(buf *bytes.Buffer, paths []string) {
 	}
 }
 
-// Short joins a configuration path parts by the path separator PS.
-// Arguments "a","b","c" will become a/b/c. Does not generate a fully
-// qualified path.
-func (p Path) Short() string {
+// Level joins a configuration path parts by the path separator PS.
+// The level argument defines the depth of the path parts to join.
+// Level 1 will return the first part like "a", Level 2 returns "a/b"
+// Level 3 returns "a/b/c" and so on. Level -1 joins all available path parts.
+// Does not generate a fully qualified path.
+func (p Path) Level(level int) string {
+	if lp := len(p.Parts); level <= 0 || level >= lp {
+		level = lp
+	}
 	buf := bufferpool.Get()
-	join(buf, p.Parts)
+	join(buf, p.Parts[:level])
 	s := buf.String()
 	bufferpool.Put(buf)
 	return s

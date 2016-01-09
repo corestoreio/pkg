@@ -25,6 +25,28 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestPathSplit(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		parts   []string
+		want    string
+		wantErr error
+	}{
+		{[]string{"general", "single_store_mode", "enabled"}, "general/single_store_mode/enabled", nil},
+		{[]string{"general", "single_store_mode"}, "general/single_store_mode/enabled", errors.New("Incorrect number of paths elements: want 3, have 2, Path: [general single_store_mode]")},
+		{[]string{"general/single_store_mode/enabled"}, "general/single_store_mode/enabled", nil},
+		{[]string{"general/singlestore_mode/enabled"}, "general/single_store_mode/enabled", path.ErrIncorrect},
+	}
+	for i, test := range tests {
+		haveP, haveErr := path.NewSplit(test.parts...)
+		if test.wantErr != nil {
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+			continue
+		}
+		assert.Exactly(t, test.want, haveP.Level(0), "Index %d", i)
+	}
+}
+
 func TestPath(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -183,7 +205,7 @@ func TestSplitFQPath(t *testing.T) {
 		}
 		assert.Exactly(t, test.wantScope, havePath.StrScope(), "Test %v", test)
 		assert.Exactly(t, test.wantScopeID, havePath.ID, "Test %v", test)
-		assert.Exactly(t, test.wantPath, havePath.Short(), "Test %v", test)
+		assert.Exactly(t, test.wantPath, havePath.Level(-1), "Test %v", test)
 	}
 }
 
@@ -201,34 +223,41 @@ func BenchmarkReverseFQPath(b *testing.B) {
 	}
 }
 
-func TestShort(t *testing.T) {
+func TestLevel(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		have []string
-		want string
+		have  []string
+		level int
+		want  string
 	}{
-		{[]string{"general", "single_store_mode", "enabled"}, "general/single_store_mode/enabled"},
-		{[]string{"general/single_store_mode/enabled"}, "general/single_store_mode/enabled"},
+		{[]string{"general", "single_store_mode", "enabled"}, -1, "general/single_store_mode/enabled"},
+		{[]string{"general", "single_store_mode", "enabled"}, 0, "general/single_store_mode/enabled"},
+		{[]string{"general", "single_store_mode", "enabled"}, 5, "general/single_store_mode/enabled"},
+		{[]string{"general", "single_store_mode", "enabled"}, 4, "general/single_store_mode/enabled"},
+		{[]string{"general", "single_store_mode", "enabled"}, 3, "general/single_store_mode/enabled"},
+		{[]string{"general", "single_store_mode", "enabled"}, 2, "general/single_store_mode"},
+		{[]string{"general", "single_store_mode", "enabled"}, 1, "general"},
+		{[]string{"general/single_store_mode/enabled"}, -1, "general/single_store_mode/enabled"},
 	}
 	for i, test := range tests {
-		assert.Exactly(t, test.want, path.MustNew(test.have...).Short(), "Index %d", i)
+		assert.Exactly(t, test.want, path.MustNew(test.have...).Level(test.level), "Index %d", i)
 	}
 }
 
-var benchmarkJoin string
+var benchmarkLevel string
 
-// BenchmarkJoin-4           	10000000	       238 ns/op	      16 B/op	       1 allocs/op => Go 1.5.2
-func BenchmarkJoin(b *testing.B) {
+// BenchmarkLevel-4           	10000000	       238 ns/op	      16 B/op	       1 allocs/op => Go 1.5.2
+func BenchmarkLevel(b *testing.B) {
 	have := []string{"system", "dev", "debug"}
 	want := "system/dev/debug"
 
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		benchmarkJoin = path.MustNew(have...).Short()
+		benchmarkLevel = path.MustNew(have...).Level(-1)
 	}
-	if benchmarkJoin != want {
-		b.Errorf("Want: %s; Have, %s", want, benchmarkJoin)
+	if benchmarkLevel != want {
+		b.Errorf("Want: %s; Have, %s", want, benchmarkLevel)
 	}
 }
 
@@ -262,7 +291,7 @@ func BenchmarkSplit(b *testing.B) {
 		benchmarkSplit = path.Split(have)
 	}
 	if false == reflect.DeepEqual(benchmarkSplit, want) {
-		b.Errorf("Want: %s; Have, %s", want, benchmarkJoin)
+		b.Errorf("Want: %s; Have, %s", want, benchmarkLevel)
 	}
 }
 
