@@ -41,9 +41,13 @@ const strDefaultID = "0"
 
 // Path represents a configuration path.
 type Path struct {
+	// Parts either one short path or three path parts
 	Parts []string
 	Scope scope.Scope
-	ID    int64
+	// ID represents a website, group or store ID
+	ID int64
+	// NoValidation disables validation in FQ() function
+	NoValidation bool
 }
 
 func New(paths ...string) (Path, error) {
@@ -102,7 +106,7 @@ func (p Path) String() string {
 // parts ("system", "smtp", "host"). See String() for returning FQ with error
 // return value.
 func (p Path) FQ() (string, error) {
-	if false == p.IsValid() {
+	if !p.NoValidation && false == p.IsValid() {
 		return "", ErrIncorrect
 	}
 
