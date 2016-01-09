@@ -12,14 +12,26 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package path handles the configuration paths.
-//
-// A path can either be a short one like a/b/c or a fully qualified path
-// like stores/3/a/b/c. The prefix "stores" gets handle by the package store/scope
-// and the number 3 represents a Store with ID 3.
-// Configuration paths are mainly used in table core_config_data.
-// Configuration path attribute can have only three groups of [a-zA-Z0-9_] characters split by '/'.
-// Minimal length per part 2 characters. Case sensitive.
-//
-// Path parts are used as an ID in section, group and field types.
-package path
+package path_test
+
+import (
+	std "log"
+
+	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/util/log"
+)
+
+var debugLogBuf *log.MutexBuffer
+var infoLogBuf *log.MutexBuffer
+
+func init() {
+	debugLogBuf = new(log.MutexBuffer)
+	infoLogBuf = new(log.MutexBuffer)
+
+	path.PkgLog = log.NewStdLogger(
+		log.SetStdDebug(debugLogBuf, "testDebug: ", std.Lshortfile),
+		log.SetStdInfo(infoLogBuf, "testInfo: ", std.Lshortfile),
+		log.SetStdDisableStackTrace(),
+	)
+	path.PkgLog.SetLevel(log.StdLevelDebug)
+}

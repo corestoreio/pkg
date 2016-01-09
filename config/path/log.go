@@ -12,7 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
-Package valuelabel provides a slice for handling value label slices with different types.
-*/
-package valuelabel
+package path
+
+import "github.com/corestoreio/csfw/util/log"
+
+// PkgLog global package based logger
+var PkgLog log.Logger = log.PkgLog

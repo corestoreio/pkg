@@ -16,37 +16,67 @@ package path_test
 
 import (
 	"errors"
+	"reflect"
 	"strconv"
 	"testing"
-
-	"reflect"
 
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
+func TestPath(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		parts      []string
+		s          scope.Scope
+		id         int64
+		wantFQ     string
+		wantNewErr error
+	}{
+		{[]string{"ab/ba/cd"}, scope.WebsiteID, 3, "websites/3/ab/ba/cd", nil},
+		{[]string{"ad/ba/ca/sd"}, scope.WebsiteID, 3, "websites/3/a/b/c/d", path.ErrIncorrect},
+		{[]string{"as/sb"}, scope.WebsiteID, 3, "websites/3/a/b/c/d", path.ErrIncorrect},
+	}
+	for i, test := range tests {
+		haveP, haveErr := path.New(test.parts...)
+		haveP = haveP.Bind(test.s, test.id)
+		if test.wantNewErr != nil {
+			assert.EqualError(t, haveErr, test.wantNewErr.Error(), "Index %d", i)
+			continue
+		}
+		fq, fqErr := haveP.FQ()
+		assert.NoError(t, fqErr, "Index %d", i)
+		assert.Exactly(t, test.wantFQ, fq, "Index %d", i)
+	}
+}
+
 func TestFQ(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		str     scope.StrScope
-		id      string
+		id      int64
 		path    []string
 		want    string
 		wantErr error
 	}{
-		{scope.StrDefault, "0", nil, "", path.ErrIncorrect},
-		{scope.StrDefault, "0", []string{}, "", path.ErrIncorrect},
-		{scope.StrDefault, "0", []string{""}, "", path.ErrIncorrect},
-		{scope.StrDefault, "0", []string{"system/dev/debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
-		{scope.StrDefault, "33", []string{"system", "dev", "debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
-		{scope.StrWebsites, "0", []string{"system/dev/debug"}, scope.StrWebsites.String() + "/0/system/dev/debug", nil},
-		{scope.StrWebsites, "343", []string{"system", "dev", "debug"}, scope.StrWebsites.String() + "/343/system/dev/debug", nil},
-		{scope.StrScope("hello"), "343", []string{"system", "dev", "debug"}, scope.StrWebsites.String() + "/343/system/dev/debug", scope.ErrUnsupportedScope},
+		{scope.StrDefault, 0, nil, "", path.ErrIncorrect},
+		{scope.StrDefault, 0, []string{}, "", path.ErrIncorrect},
+		{scope.StrDefault, 0, []string{""}, "", path.ErrIncorrect},
+		{scope.StrDefault, 0, []string{"system/dev/debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
+		{scope.StrDefault, 33, []string{"system", "dev", "debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
+		{scope.StrWebsites, 0, []string{"system/dev/debug"}, scope.StrWebsites.String() + "/0/system/dev/debug", nil},
+		{scope.StrWebsites, 343, []string{"system", "dev", "debug"}, scope.StrWebsites.String() + "/343/system/dev/debug", nil},
+		{scope.StrScope("hello"), 343, []string{"system", "dev", "debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
 	}
 	for i, test := range tests {
-		have, haveErr := path.FQ(test.str, test.id, test.path...)
+		p, pErr := path.New(test.path...)
+		p = p.BindStr(test.str, test.id)
+		have, haveErr := p.FQ()
 		if test.wantErr != nil {
+			if pErr != nil {
+				assert.EqualError(t, pErr, test.wantErr.Error(), "Index %d", i)
+			}
 			assert.Empty(t, have, "Index %d", i)
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
 			continue
@@ -54,43 +84,35 @@ func TestFQ(t *testing.T) {
 		assert.NoError(t, haveErr, "Index %d", i)
 		assert.Equal(t, test.want, have, "Index %d", i)
 	}
-	assert.Equal(t, "stores/7475/catalog/frontend/list_allow_all", path.MustFQInt64(scope.StrStores, 7475, "catalog", "frontend", "list_allow_all"))
-	assert.Equal(t, "stores/5/catalog/frontend/list_allow_all", path.MustFQInt64(scope.StrStores, 5, "catalog", "frontend", "list_allow_all"))
+	assert.Equal(t, "stores/7475/catalog/frontend/list_allow_all", path.MustNew("catalog", "frontend", "list_allow_all").BindStr(scope.StrStores, 7475).String())
+	assert.Equal(t, "stores/5/catalog/frontend/list_allow_all", path.MustNew("catalog", "frontend", "list_allow_all").BindStr(scope.StrStores, 5).String())
 }
 
-func TestMustFQInt64_01(t *testing.T) {
+func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
 	t.Parallel()
-	assert.Exactly(t, "stores/345/x/y/z", path.MustFQInt64(scope.StrStores, 345, "x", "y", "z"))
+	assert.Exactly(t, "stores/345/xxxxx/yyyyy/zzzzz", path.MustNew("xxxxx", "yyyyy", "zzzzz").BindStr(scope.StrStores, 345).String())
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), scope.ErrUnsupportedScope.Error())
+			t.Fatal("Did not expect a panic")
 		}
 	}()
-	_ = path.MustFQInt64(scope.StrScope("invalid"), 345, "x", "y", "z")
+	_ = path.MustNew("xxxxx", "yyyyy", "zzzzz").BindStr(scope.StrScope("invalid"), 345)
 }
 
-func TestMustFQ_01(t *testing.T) {
+func TestShouldPanicIncorrectPath(t *testing.T) {
 	t.Parallel()
-	assert.Exactly(t, "stores/345/x/y/z", path.MustFQ(scope.StrStores, "345", "x", "y", "z"))
-	defer func() {
-		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), scope.ErrUnsupportedScope.Error())
-		}
-	}()
-	_ = path.MustFQ(scope.StrScope("invalid"), "345", "x", "y", "z")
-}
-
-func TestMustFQ_02(t *testing.T) {
-	t.Parallel()
-	assert.Exactly(t, "default/0/x/y/z", path.MustFQ(scope.StrDefault, "345", "x", "y", "z"))
+	//assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", path.MustNew("xxxxx", "yyyyy", "zzzzz").BindStr(scope.StrDefault, 345).String())
 	defer func() {
 		if r := recover(); r != nil {
 			assert.EqualError(t, r.(error), path.ErrIncorrect.Error())
+		} else {
+			t.Fatal("Expecting a panic")
 		}
 	}()
-	assert.Exactly(t, "websites/345/x/y", path.MustFQ(scope.StrWebsites, "345", "x", "y"))
+	assert.Exactly(t, "websites/345/xxxxx/yyyyy", path.MustNew("xxxxx", "yyyyy").BindStr(scope.StrWebsites, 345).String())
 }
 
+//
 var benchmarkStrScopeFQPath string
 
 // BenchmarkStrScopeFQPath-4	 5000000	       384 ns/op	      32 B/op	       1 allocs/op
@@ -98,7 +120,11 @@ func BenchmarkStrScopeFQPath(b *testing.B) {
 	want := scope.StrWebsites.String() + "/4/system/dev/debug"
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		benchmarkStrScopeFQPath, _ = path.FQ(scope.StrWebsites, "4", "system", "dev", "debug")
+		var err error
+		benchmarkStrScopeFQPath, err = path.MustNew("system", "dev", "debug").BindStr(scope.StrWebsites, 4).FQ()
+		if err != nil {
+			b.Error(err)
+		}
 	}
 	if benchmarkStrScopeFQPath != want {
 		b.Errorf("Want: %s; Have, %s", want, benchmarkStrScopeFQPath)
@@ -110,7 +136,11 @@ func benchmarkFQInt64(scopeID int64, b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		benchmarkStrScopeFQPath, _ = path.FQInt64(scope.StrWebsites, scopeID, "system", "dev", "debug")
+		var err error
+		benchmarkStrScopeFQPath, err = path.MustNew("system", "dev", "debug").BindStr(scope.StrWebsites, scopeID).FQ()
+		if err != nil {
+			b.Error(err)
+		}
 	}
 	if benchmarkStrScopeFQPath != want {
 		b.Errorf("Want: %s; Have, %s", want, benchmarkStrScopeFQPath)
@@ -136,58 +166,52 @@ func TestSplitFQPath(t *testing.T) {
 		wantPath    string
 		wantErr     error
 	}{
-		{"groups/1/catalog/frontend/list_allow_all", "groups", 0, "", scope.ErrUnsupportedScope},
+		{"groups/1/catalog/frontend/list_allow_all", "default", 0, "", scope.ErrUnsupportedScope},
 		{"stores/7475/catalog/frontend/list_allow_all", scope.StrStores.String(), 7475, "catalog/frontend/list_allow_all", nil},
 		{"websites/1/catalog/frontend/list_allow_all", scope.StrWebsites.String(), 1, "catalog/frontend/list_allow_all", nil},
 		{"default/0/catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", nil},
 		{"default//catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", errors.New("strconv.ParseInt: parsing \"\\uf8ff\": invalid syntax")},
-		{"stores/123/catalog/index", "", 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\"")},
+		{"stores/123/catalog/index", "default", 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\"")},
 	}
 	for _, test := range tests {
-		haveScope, haveScopeID, havePath, haveErr := path.SplitFQ(test.have)
+		havePath, haveErr := path.SplitFQ(test.have)
 
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Test %v", test)
 		} else {
 			assert.NoError(t, haveErr, "Test %v", test)
 		}
-		assert.Exactly(t, test.wantScope, haveScope, "Test %v", test)
-		assert.Exactly(t, test.wantScopeID, haveScopeID, "Test %v", test)
-		assert.Exactly(t, test.wantPath, havePath, "Test %v", test)
+		assert.Exactly(t, test.wantScope, havePath.StrScope(), "Test %v", test)
+		assert.Exactly(t, test.wantScopeID, havePath.ID, "Test %v", test)
+		assert.Exactly(t, test.wantPath, havePath.Short(), "Test %v", test)
 	}
 }
 
-var benchmarkReverseFQPath = struct {
-	scope   string
-	scopeID int64
-	path    string
-	err     error
-}{}
+var benchmarkReverseFQPath path.Path
 
 // BenchmarkReverseFQPath-4 	10000000	       121 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkReverseFQPath(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		benchmarkReverseFQPath.scope, benchmarkReverseFQPath.scopeID, benchmarkReverseFQPath.path, benchmarkReverseFQPath.err = path.SplitFQ("stores/7475/catalog/frontend/list_allow_all")
-		if benchmarkReverseFQPath.err != nil {
-			b.Error(benchmarkReverseFQPath.err)
+		var err error
+		benchmarkReverseFQPath, err = path.SplitFQ("stores/7475/catalog/frontend/list_allow_all")
+		if err != nil {
+			b.Error(err)
 		}
 	}
 }
 
-func TestJoin(t *testing.T) {
+func TestShort(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		have []string
 		want string
 	}{
-		{[]string{"a", "b", "c"}, "a/b/c"},
-		{[]string{"a/b", "c"}, "a/b/c"},
-		{[]string{"a", "b/c"}, "a/b/c"},
-		{[]string{"a/b/c"}, "a/b/c"},
+		{[]string{"general", "single_store_mode", "enabled"}, "general/single_store_mode/enabled"},
+		{[]string{"general/single_store_mode/enabled"}, "general/single_store_mode/enabled"},
 	}
 	for i, test := range tests {
-		assert.Exactly(t, test.want, path.Join(test.have...), "Index %d", i)
+		assert.Exactly(t, test.want, path.MustNew(test.have...).Short(), "Index %d", i)
 	}
 }
 
@@ -201,7 +225,7 @@ func BenchmarkJoin(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		benchmarkJoin = path.Join(have...)
+		benchmarkJoin = path.MustNew(have...).Short()
 	}
 	if benchmarkJoin != want {
 		b.Errorf("Want: %s; Have, %s", want, benchmarkJoin)
@@ -215,10 +239,10 @@ func TestSplit(t *testing.T) {
 		want []string
 	}{
 		{"system/dev/debug", []string{"system", "dev", "debug"}},
+		{"a/b", []string{"a", "b"}},
 		{"a/b/c", []string{"a", "b", "c"}},
 		{"/a/b/c", []string{"a", "b", "c"}},
 		{"a/b/c/d/e", []string{"a", "b", "c", "d", "e"}},
-		{"a/b", nil},
 	}
 	for i, test := range tests {
 		assert.Exactly(t, test.want, path.Split(test.have), "Index %d", i)
@@ -247,17 +271,22 @@ func TestIsValid(t *testing.T) {
 		have []string
 		want bool
 	}{
-		{[]string{"//"}, true}, // :-(
+		{[]string{"//"}, false}, // :-(
 		{[]string{"general/store_information/city"}, true},
 		{[]string{"", "", ""}, false},
 		{[]string{"general", "store_information", "name"}, true},
 		{[]string{"general", "store_information"}, false},
-		{[]string{path.MustFQInt64(scope.StrWebsites, 22, "system", "dev", "debug")}, true},
-		{[]string{"groups/33/general/store_information/street"}, true},
+		{[]string{path.MustNew("system", "dev", "debug").Bind(scope.WebsiteID, 22).String()}, false},
+		{[]string{"groups/33/general/store_information/street"}, false},
 		{[]string{"groups/33"}, false},
+		{[]string{"system/dEv/inv˚lid"}, false},
+		{[]string{"syst3m/dEv/invalid"}, true},
 		{nil, false},
 	}
 	for i, test := range tests {
-		assert.Exactly(t, test.want, path.IsValid(test.have...), "Index %d", i)
+		p := path.Path{
+			Parts: test.have,
+		}
+		assert.Exactly(t, test.want, p.IsValid(), "Index %d", i)
 	}
 }
