@@ -16,6 +16,7 @@ package path
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -23,6 +24,10 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/bufferpool"
 )
+
+// ErrIncorrect gets returned whenever the path consists of less than
+// HierarchyLevel elements.
+var ErrIncorrect = errors.New("Incorrect Path. Expecting at least three path elements like a/b/c")
 
 // HierarchyLevel defines how many elements are in a path.
 // Like a/b/c for 3 elements.
@@ -37,6 +42,9 @@ const strDefaultID = "0"
 // either one path (system/smtp/host) including path separators or three
 // parts ("system", "smtp", "host").
 func FQ(s scope.StrScope, scopeID string, paths ...string) (string, error) {
+	if false == IsValid(paths...) {
+		return "", ErrIncorrect
+	}
 	if false == scope.Valid(s.String()) {
 		return "", scope.ErrUnsupportedScope
 	}
@@ -130,7 +138,7 @@ func Join(paths ...string) string {
 // Zero allocations to memory. Err may contain an ErrUnsupportedScope or
 // failed to parse a string into an int64 or invalid fqPath.
 func SplitFQ(fqPath string) (scopeStr string, scopeID int64, path string, err error) {
-	if strings.Count(fqPath, PS) < 4 {
+	if false == isFQ(fqPath) {
 		err = fmt.Errorf("Incorrect fully qualified path: %q", fqPath)
 		return
 	}
@@ -149,4 +157,22 @@ func SplitFQ(fqPath string) (scopeStr string, scopeID int64, path string, err er
 	scopeID, err = strconv.ParseInt(fqPath[:fi], 10, 64)
 	path = fqPath[fi+1:]
 	return
+}
+
+func isFQ(fqPath string) bool {
+	return strings.Count(fqPath, PS) >= HierarchyLevel+1 // like stores/1/a/b/c
+}
+
+// IsValid checks for valid configuration path. Either a fully qualified
+// path like websites/1/catalog/price/scope or a path like general/country/allow
+// or at least 3 path parts.
+func IsValid(paths ...string) bool {
+	if len(paths) == 0 {
+		return false
+	}
+	isBase0 := strings.Count(paths[0], PS) == HierarchyLevel-1 // like a/b/c
+	isFQ0 := isFQ(paths[0])
+	isBaseAll := len(paths) == HierarchyLevel && paths[0] != "" && paths[1] != "" && paths[2] != ""
+	isFQAll := len(paths) >= HierarchyLevel+2 && paths[0] != "" && paths[1] != "" && paths[2] != "" && paths[3] != "" && paths[4] != ""
+	return (len(paths) == 1 && paths[0] != "" && (isBase0 || isFQ0)) || isBaseAll || isFQAll
 }

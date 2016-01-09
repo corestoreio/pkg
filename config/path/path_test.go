@@ -35,6 +35,9 @@ func TestFQ(t *testing.T) {
 		want    string
 		wantErr error
 	}{
+		{scope.StrDefault, "0", nil, "", path.ErrIncorrect},
+		{scope.StrDefault, "0", []string{}, "", path.ErrIncorrect},
+		{scope.StrDefault, "0", []string{""}, "", path.ErrIncorrect},
 		{scope.StrDefault, "0", []string{"system/dev/debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
 		{scope.StrDefault, "33", []string{"system", "dev", "debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
 		{scope.StrWebsites, "0", []string{"system/dev/debug"}, scope.StrWebsites.String() + "/0/system/dev/debug", nil},
@@ -80,7 +83,11 @@ func TestMustFQ_01(t *testing.T) {
 func TestMustFQ_02(t *testing.T) {
 	t.Parallel()
 	assert.Exactly(t, "default/0/x/y/z", path.MustFQ(scope.StrDefault, "345", "x", "y", "z"))
-	// the next assertion may can get adjusted because invalid path parts
+	defer func() {
+		if r := recover(); r != nil {
+			assert.EqualError(t, r.(error), path.ErrIncorrect.Error())
+		}
+	}()
 	assert.Exactly(t, "websites/345/x/y", path.MustFQ(scope.StrWebsites, "345", "x", "y"))
 }
 
@@ -186,7 +193,7 @@ func TestJoin(t *testing.T) {
 
 var benchmarkJoin string
 
-// BenchmarkJoin-4           	10000000	       238 ns/op	      16 B/op	       1 allocs/op => G 1.5.2
+// BenchmarkJoin-4           	10000000	       238 ns/op	      16 B/op	       1 allocs/op => Go 1.5.2
 func BenchmarkJoin(b *testing.B) {
 	have := []string{"system", "dev", "debug"}
 	want := "system/dev/debug"
@@ -220,7 +227,7 @@ func TestSplit(t *testing.T) {
 
 var benchmarkSplit []string
 
-// BenchmarkSplit-4          	 5000000	       290 ns/op	      48 B/op	       1 allocs/op => G 1.5.2
+// BenchmarkSplit-4          	 5000000	       290 ns/op	      48 B/op	       1 allocs/op => Go 1.5.2
 func BenchmarkSplit(b *testing.B) {
 	want := []string{"system", "dev", "debug"}
 	have := "system/dev/debug"
@@ -232,5 +239,25 @@ func BenchmarkSplit(b *testing.B) {
 	}
 	if false == reflect.DeepEqual(benchmarkSplit, want) {
 		b.Errorf("Want: %s; Have, %s", want, benchmarkJoin)
+	}
+}
+
+func TestIsValid(t *testing.T) {
+	tests := []struct {
+		have []string
+		want bool
+	}{
+		{[]string{"//"}, true}, // :-(
+		{[]string{"general/store_information/city"}, true},
+		{[]string{"", "", ""}, false},
+		{[]string{"general", "store_information", "name"}, true},
+		{[]string{"general", "store_information"}, false},
+		{[]string{path.MustFQInt64(scope.StrWebsites, 22, "system", "dev", "debug")}, true},
+		{[]string{"groups/33/general/store_information/street"}, true},
+		{[]string{"groups/33"}, false},
+		{nil, false},
+	}
+	for i, test := range tests {
+		assert.Exactly(t, test.want, path.IsValid(test.have...), "Index %d", i)
 	}
 }
