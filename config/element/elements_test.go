@@ -57,26 +57,26 @@ func TestNewConfiguration(t *testing.T) {
 			wantLen: 3,
 		},
 		2: {
-			have:    []*element.Section{{ID: "a", Groups: element.GroupSlice{}}},
+			have:    []*element.Section{{ID: "aa", Groups: element.GroupSlice{}}},
 			wantErr: "",
 		},
 		3: {
-			have:    []*element.Section{{ID: "a", Groups: element.GroupSlice{&element.Group{ID: "b", Fields: nil}}}},
+			have:    []*element.Section{{ID: "aa", Groups: element.GroupSlice{&element.Group{ID: "bb", Fields: nil}}}},
 			wantErr: "",
 		},
 		4: {
 			have: []*element.Section{
 				{
-					ID: "a",
+					ID: "aa",
 					Groups: element.NewGroupSlice(
 						&element.Group{
-							ID:     "b",
-							Fields: element.FieldSlice{&element.Field{ID: "c"}, &element.Field{ID: "c"}},
+							ID:     "bb",
+							Fields: element.FieldSlice{&element.Field{ID: "cc"}, &element.Field{ID: "cc"}},
 						},
 					),
 				},
 			},
-			wantErr: "Duplicate entry for path default/0/a/b/c",
+			wantErr: `Duplicate entry for path default/0/aa/bb/cc :: [{"ID":"aa","Groups":[{"ID":"bb","Fields":[{"ID":"cc"},{"ID":"cc"}]}]}]`,
 		},
 	}
 
@@ -85,7 +85,7 @@ func TestNewConfiguration(t *testing.T) {
 			defer func() {
 				if r := recover(); r != nil {
 					if err, ok := r.(error); ok {
-						assert.Contains(t, err.Error(), wantErr)
+						assert.Contains(t, err.Error(), wantErr, "Index %d", i)
 					} else {
 						t.Errorf("Failed to convert to type error: %#v", err)
 					}
@@ -466,30 +466,30 @@ func TestSectionSliceFindGroupByPath(t *testing.T) {
 			wantGID:   "b",
 			wantErr:   nil,
 		},
-		1: {
-			haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.NewGroupSlice(&element.Group{ID: "b"}, &element.Group{ID: "bb"})}},
-			havePath:  []string{"a/bc"},
-			wantGID:   "b",
-			wantErr:   element.ErrGroupNotFound,
-		},
-		2: {
-			haveSlice: element.SectionSlice{},
-			havePath:  nil,
-			wantGID:   "b",
-			wantErr:   element.ErrGroupNotFound,
-		},
-		3: {
-			haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.GroupSlice{&element.Group{ID: "b"}, &element.Group{ID: "bb"}}}},
-			havePath:  []string{"a", "bb", "cc"},
-			wantGID:   "bb",
-			wantErr:   nil,
-		},
-		4: {
-			haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.GroupSlice{&element.Group{ID: "b"}, &element.Group{ID: "bb"}}}},
-			havePath:  []string{"xa", "bb", "cc"},
-			wantGID:   "",
-			wantErr:   element.ErrSectionNotFound,
-		},
+		//1: {
+		//	haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.NewGroupSlice(&element.Group{ID: "b"}, &element.Group{ID: "bb"})}},
+		//	havePath:  []string{"a/bc"},
+		//	wantGID:   "b",
+		//	wantErr:   element.ErrGroupNotFound,
+		//},
+		//2: {
+		//	haveSlice: element.SectionSlice{},
+		//	havePath:  nil,
+		//	wantGID:   "b",
+		//	wantErr:   element.ErrGroupNotFound,
+		//},
+		//3: {
+		//	haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.GroupSlice{&element.Group{ID: "b"}, &element.Group{ID: "bb"}}}},
+		//	havePath:  []string{"a", "bb", "cc"},
+		//	wantGID:   "bb",
+		//	wantErr:   nil,
+		//},
+		//4: {
+		//	haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.GroupSlice{&element.Group{ID: "b"}, &element.Group{ID: "bb"}}}},
+		//	havePath:  []string{"xa", "bb", "cc"},
+		//	wantGID:   "",
+		//	wantErr:   element.ErrSectionNotFound,
+		//},
 	}
 
 	for i, test := range tests {

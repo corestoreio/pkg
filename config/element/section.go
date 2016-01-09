@@ -20,6 +20,7 @@ import (
 	"errors"
 	"sort"
 
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
@@ -193,7 +194,7 @@ func (ss SectionSlice) FindByID(id string) (*Section, error) {
 // If two or more arguments are given then each argument will be treated as a path part.
 func (ss SectionSlice) FindGroupByPath(paths ...string) (*Group, error) {
 	if len(paths) == 1 {
-		paths = scope.PathSplit(paths[0])
+		paths = path.Split(paths[0])
 	}
 	if len(paths) < 2 {
 		return nil, ErrGroupNotFound
@@ -210,7 +211,7 @@ func (ss SectionSlice) FindGroupByPath(paths ...string) (*Group, error) {
 // If three arguments are given then each argument will be treated as a path part.
 func (ss SectionSlice) FindFieldByPath(paths ...string) (*Field, error) {
 	if len(paths) == 1 {
-		paths = scope.PathSplit(paths[0])
+		paths = path.Split(paths[0])
 	}
 	if len(paths) < 3 {
 		return nil, ErrFieldNotFound

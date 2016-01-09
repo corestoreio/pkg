@@ -18,6 +18,7 @@ import (
 	"errors"
 	"sort"
 
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/juju/errgo"
 )
@@ -153,9 +154,17 @@ func (fs *FieldSlice) Less(i, j int) bool {
 
 // FQPathDefault returns the default fully qualified path of either
 // Section.ID + Group.ID + Field.ID OR Field.ConfgPath if set.
+// Function may panic.
 func (f *Field) FQPathDefault(prePaths ...string) string {
-	if f.ConfigPath != "" {
-		return scope.StrDefault.FQPath("0", f.ConfigPath)
+	p := path.Path{
+		Scope:        scope.DefaultID,
+		NoValidation: true,
 	}
-	return scope.StrDefault.FQPath("0", append(prePaths, f.ID)...)
+	if f.ConfigPath != "" {
+		p.Parts = []string{f.ConfigPath}
+	} else {
+		p.Parts = append(prePaths, f.ID)
+	}
+	return p.String()
+
 }
