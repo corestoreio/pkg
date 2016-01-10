@@ -177,9 +177,14 @@ func join(buf *bytes.Buffer, paths []string) {
 // Level 3 returns "a/b/c" and so on. Level -1 joins all available path parts.
 // Does not generate a fully qualified path.
 func (p Path) Level(level int) string {
-	if lp := len(p.Parts); level <= 0 || level >= lp {
+	lp := len(p.Parts)
+	if level <= 0 || level >= lp {
 		level = lp
 	}
+	if lp == 1 {
+		return p.Parts[0]
+	}
+
 	buf := bufferpool.Get()
 	join(buf, p.Parts[:level])
 	s := buf.String()

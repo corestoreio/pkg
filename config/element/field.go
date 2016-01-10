@@ -157,8 +157,7 @@ func (fs *FieldSlice) Less(i, j int) bool {
 // Function may panic.
 func (f *Field) FQPathDefault(prePaths ...string) string {
 	p := path.Path{
-		Scope:        scope.DefaultID,
-		NoValidation: true,
+		Scope: scope.DefaultID,
 	}
 	if f.ConfigPath != "" {
 		p.Parts = []string{f.ConfigPath}
