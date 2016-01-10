@@ -57,8 +57,8 @@ func TestPath(t *testing.T) {
 		wantNewErr error
 	}{
 		{[]string{"ab/ba/cd"}, scope.WebsiteID, 3, "websites/3/ab/ba/cd", nil},
-		{[]string{"ad/ba/ca/sd"}, scope.WebsiteID, 3, "websites/3/a/b/c/d", errors.New("Incorrect Parts: []string{\"ad/ba/ca/sd\"}. Either to short or missing path separator.")},
-		{[]string{"as/sb"}, scope.WebsiteID, 3, "websites/3/a/b/c/d", errors.New("Incorrect Parts: []string{\"as/sb\"}. Either to short or missing path separator.")},
+		{[]string{"ad/ba/ca/sd"}, scope.WebsiteID, 3, "websites/3/a/b/c/d", path.ErrIncorrectPath},
+		{[]string{"as/sb"}, scope.WebsiteID, 3, "websites/3/a/b/c/d", path.ErrIncorrectPath},
 	}
 	for i, test := range tests {
 		haveP, haveErr := path.New(test.parts...)
@@ -84,7 +84,7 @@ func TestFQ(t *testing.T) {
 	}{
 		{scope.StrDefault, 0, nil, "", errors.New("Parts are empty")},
 		{scope.StrDefault, 0, []string{}, "", errors.New("Parts are empty")},
-		{scope.StrDefault, 0, []string{""}, "", errors.New("Incorrect Parts: []string{\"\"}. Either to short or missing path separator.")},
+		{scope.StrDefault, 0, []string{""}, "", path.ErrIncorrectPath},
 		{scope.StrDefault, 0, []string{"system/dev/debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
 		{scope.StrDefault, 33, []string{"system", "dev", "debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
 		{scope.StrWebsites, 0, []string{"system/dev/debug"}, scope.StrWebsites.String() + "/0/system/dev/debug", nil},
@@ -139,11 +139,12 @@ var benchmarkStrScopeFQPath string
 
 func benchmarkFQ(scopeID int64, b *testing.B) {
 	want := scope.StrWebsites.String() + "/" + strconv.FormatInt(scopeID, 10) + "/system/dev/debug"
+	p := []string{"system/dev/debug"}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStrScopeFQPath, err = path.MustNew("system/dev/debug").BindStr(scope.StrWebsites, scopeID).FQ()
+		benchmarkStrScopeFQPath, err = path.MustNew(p...).BindStr(scope.StrWebsites, scopeID).FQ()
 		if err != nil {
 			b.Error(err)
 		}
@@ -284,14 +285,14 @@ func TestIsValid(t *testing.T) {
 		have []string
 		want error
 	}{
-		{[]string{"//"}, errors.New("Incorrect Parts: []string{\"//\"}. Either to short or missing path separator.")}, // :-(
+		{[]string{"//"}, path.ErrIncorrectPath},
 		{[]string{"general/store_information/city"}, nil},
 		{[]string{"", "", ""}, errors.New("This path part \"\" is too short. Parts: []string{\"\", \"\", \"\"}")},
 		{[]string{"general", "store_information", "name"}, nil},
 		{[]string{"general", "store_information"}, errors.New("All arguments must be valid! Min want: 3. Have: 2. Parts []string{\"general\", \"store_information\"}")},
-		{[]string{path.MustNew("system", "dev", "debug").Bind(scope.WebsiteID, 22).String()}, errors.New("Incorrect Parts: []string{\"websites/22/system/dev/debug\"}. Either to short or missing path separator.")},
-		{[]string{"groups/33/general/store_information/street"}, errors.New("Incorrect Parts: []string{\"groups/33/general/store_information/street\"}. Either to short or missing path separator.")},
-		{[]string{"groups/33"}, errors.New("Incorrect Parts: []string{\"groups/33\"}. Either to short or missing path separator.")},
+		{[]string{path.MustNew("system", "dev", "debug").Bind(scope.WebsiteID, 22).String()}, path.ErrIncorrectPath},
+		{[]string{"groups/33/general/store_information/street"}, path.ErrIncorrectPath},
+		{[]string{"groups/33"}, path.ErrIncorrectPath},
 		{[]string{"system/dEv/inv˚lid"}, errors.New("This character \"˚\" is not allowed in Parts []string{\"system/dEv/inv˚lid\"}")},
 		{[]string{"syst3m/dEv/invalid"}, nil},
 		{nil, errors.New("Parts are empty")},

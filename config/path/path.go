@@ -16,6 +16,8 @@ package path
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -231,24 +233,32 @@ func isFQ(fqPath string) bool {
 	return strings.Count(fqPath, PS) >= Levels+1 // like stores/1/a/b/c
 }
 
+// ErrPartsEmpty path parts are empty
+var ErrPartsEmpty = errors.New("Parts are empty")
+
+// ErrIncorrectPath a path is missing a path separator or is too short
+var ErrIncorrectPath = errors.New("Incorrect Path. Either to short or missing path separator.")
+
 // IsValid checks for valid configuration path. Returns nil on success.
 // Configuration path attribute can have only three groups of [a-zA-Z0-9_] characters split by '/'.
 // Minimal length per part 2 characters. Case sensitive.
+//
+// IsValid can return ErrPartsEmpty or ErrIncorrectPath or a custom error.
 func (p Path) IsValid() error {
 	lp := len(p.Parts)
 	if lp < 1 {
-		return errgo.New("Parts are empty")
+		return ErrPartsEmpty
 	}
 
 	// first argument only without a slash
 	if lp == 1 && (strings.Count(p.Parts[0], PS) != Levels-1 || len(p.Parts[0]) < 8) { // must contain at least two slashes
-		return errgo.Newf("Incorrect Parts: %#v. Either to short or missing path separator.", p.Parts)
+		return ErrIncorrectPath
 	}
 
 	valid := 0
 	for _, part := range p.Parts {
 		if len(part) < 2 {
-			return errgo.Newf("This path part %q is too short. Parts: %#v", part, p.Parts)
+			return fmt.Errorf("This path part %q is too short. Parts: %#v", part, p.Parts)
 		}
 
 		for _, r := range part {
@@ -264,14 +274,14 @@ func (p Path) IsValid() error {
 				ok = true
 			}
 			if !ok {
-				return errgo.Newf("This character %q is not allowed in Parts %#v", string(r), p.Parts)
+				return fmt.Errorf("This character %q is not allowed in Parts %#v", string(r), p.Parts)
 			}
 		}
 		valid++
 	}
 
 	if lp > 1 && valid < Levels { // if more than one arg has been provided all 3 must be valid
-		return errgo.Newf("All arguments must be valid! Min want: %d. Have: %d. Parts %#v", Levels, valid, p.Parts)
+		return fmt.Errorf("All arguments must be valid! Min want: %d. Have: %d. Parts %#v", Levels, valid, p.Parts)
 	}
 
 	return nil
