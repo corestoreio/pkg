@@ -16,7 +16,6 @@ package path
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -25,10 +24,6 @@ import (
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/juju/errgo"
 )
-
-// ErrIncorrect gets returned whenever the path consists of less than
-// Levels parts.
-var ErrIncorrect = errors.New("Incorrect Path. Expecting at least three path parts like a/b/c")
 
 // Levels defines how many parts are at least in a path.
 // Like a/b/c for 3 parts. And 5 for a fully qualified path.

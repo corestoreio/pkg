@@ -35,7 +35,7 @@ func TestPathSplit(t *testing.T) {
 		{[]string{"general", "single_store_mode", "enabled"}, "general/single_store_mode/enabled", nil},
 		{[]string{"general", "single_store_mode"}, "general/single_store_mode/enabled", errors.New("Incorrect number of paths elements: want 3, have 2, Path: [general single_store_mode]")},
 		{[]string{"general/single_store_mode/enabled"}, "general/single_store_mode/enabled", nil},
-		{[]string{"general/singlestore_mode/enabled"}, "general/single_store_mode/enabled", path.ErrIncorrect},
+		{[]string{"general/singlestore_mode/enabled"}, "general/single_store_mode/enabled", errors.New("This character \"\\uf8ff\" is not allowed in Parts []string{\"general\", \"single\\uf8ffstore_mode\", \"enabled\"}")},
 	}
 	for i, test := range tests {
 		haveP, haveErr := path.NewSplit(test.parts...)
@@ -57,8 +57,8 @@ func TestPath(t *testing.T) {
 		wantNewErr error
 	}{
 		{[]string{"ab/ba/cd"}, scope.WebsiteID, 3, "websites/3/ab/ba/cd", nil},
-		{[]string{"ad/ba/ca/sd"}, scope.WebsiteID, 3, "websites/3/a/b/c/d", path.ErrIncorrect},
-		{[]string{"as/sb"}, scope.WebsiteID, 3, "websites/3/a/b/c/d", path.ErrIncorrect},
+		{[]string{"ad/ba/ca/sd"}, scope.WebsiteID, 3, "websites/3/a/b/c/d", errors.New("Incorrect Parts: []string{\"ad/ba/ca/sd\"}. Either to short or missing path separator.")},
+		{[]string{"as/sb"}, scope.WebsiteID, 3, "websites/3/a/b/c/d", errors.New("Incorrect Parts: []string{\"as/sb\"}. Either to short or missing path separator.")},
 	}
 	for i, test := range tests {
 		haveP, haveErr := path.New(test.parts...)
@@ -82,9 +82,9 @@ func TestFQ(t *testing.T) {
 		want    string
 		wantErr error
 	}{
-		{scope.StrDefault, 0, nil, "", path.ErrIncorrect},
-		{scope.StrDefault, 0, []string{}, "", path.ErrIncorrect},
-		{scope.StrDefault, 0, []string{""}, "", path.ErrIncorrect},
+		{scope.StrDefault, 0, nil, "", errors.New("Parts are empty")},
+		{scope.StrDefault, 0, []string{}, "", errors.New("Parts are empty")},
+		{scope.StrDefault, 0, []string{""}, "", errors.New("Incorrect Parts: []string{\"\"}. Either to short or missing path separator.")},
 		{scope.StrDefault, 0, []string{"system/dev/debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
 		{scope.StrDefault, 33, []string{"system", "dev", "debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
 		{scope.StrWebsites, 0, []string{"system/dev/debug"}, scope.StrWebsites.String() + "/0/system/dev/debug", nil},
@@ -96,10 +96,11 @@ func TestFQ(t *testing.T) {
 		p = p.BindStr(test.str, test.id)
 		have, haveErr := p.FQ()
 		if test.wantErr != nil {
+			assert.Empty(t, have, "Index %d", i)
 			if pErr != nil {
 				assert.EqualError(t, pErr, test.wantErr.Error(), "Index %d", i)
+				continue
 			}
-			assert.Empty(t, have, "Index %d", i)
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
 			continue
 		}
@@ -123,10 +124,10 @@ func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
 
 func TestShouldPanicIncorrectPath(t *testing.T) {
 	t.Parallel()
-	//assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", path.MustNew("xxxxx", "yyyyy", "zzzzz").BindStr(scope.StrDefault, 345).String())
+	assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", path.MustNew("xxxxx", "yyyyy", "zzzzz").BindStr(scope.StrDefault, 345).String())
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), path.ErrIncorrect.Error())
+			assert.EqualError(t, r.(error), "All arguments must be valid! Min want: 3. Have: 2. Parts []string{\"xxxxx\", \"yyyyy\"}")
 		} else {
 			t.Fatal("Expecting a panic")
 		}
@@ -141,6 +142,7 @@ var benchmarkStrScopeFQPath string
 func BenchmarkStrScopeFQPath(b *testing.B) {
 	want := scope.StrWebsites.String() + "/4/system/dev/debug"
 	b.ReportAllocs()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
 		benchmarkStrScopeFQPath, err = path.MustNew("system", "dev", "debug").BindStr(scope.StrWebsites, 4).FQ()
