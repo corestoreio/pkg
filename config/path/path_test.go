@@ -134,16 +134,17 @@ func TestShouldPanicIncorrectPath(t *testing.T) {
 	assert.Exactly(t, "websites/345/xxxxx/yyyyy", path.MustNew("xxxxx", "yyyyy").BindStr(scope.StrWebsites, 345).String())
 }
 
-//
 var benchmarkStrScopeFQPath string
 
-// BenchmarkStrScopeFQPath-4	 5000000	       384 ns/op	      32 B/op	       1 allocs/op
+// BenchmarkStrScopeFQPath-4 	 3000000	       442 ns/op	      32 B/op	       1 allocs/op
 func BenchmarkStrScopeFQPath(b *testing.B) {
-	want := scope.StrWebsites.String() + "/4/system/dev/debug"
+	const want = "websites/4/system/dev/debug"
+	path := path.MustNew("system", "dev", "debug").BindStr(scope.StrWebsites, 4)
 	b.ReportAllocs()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStrScopeFQPath, err = path.MustNew("system", "dev", "debug").BindStr(scope.StrWebsites, 4).FQ()
+		benchmarkStrScopeFQPath, err = path.FQ()
 		if err != nil {
 			b.Error(err)
 		}
@@ -155,11 +156,12 @@ func BenchmarkStrScopeFQPath(b *testing.B) {
 
 func benchmarkFQInt64(scopeID int64, b *testing.B) {
 	want := scope.StrWebsites.String() + "/" + strconv.FormatInt(scopeID, 10) + "/system/dev/debug"
+	path := path.MustNew("system", "dev", "debug").BindStr(scope.StrWebsites, scopeID)
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStrScopeFQPath, err = path.MustNew("system", "dev", "debug").BindStr(scope.StrWebsites, scopeID).FQ()
+		benchmarkStrScopeFQPath, err = path.FQ()
 		if err != nil {
 			b.Error(err)
 		}
