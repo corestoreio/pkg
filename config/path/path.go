@@ -23,6 +23,7 @@ import (
 
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/juju/errgo"
 )
 
 // ErrIncorrect gets returned whenever the path consists of less than
@@ -57,8 +58,8 @@ func New(paths ...string) (Path, error) {
 		Parts: paths,
 		Scope: scope.DefaultID,
 	}
-	if false == p.IsValid() {
-		return Path{}, ErrIncorrect
+	if err := p.IsValid(); err != nil {
+		return Path{}, err
 	}
 	return p, nil
 }
@@ -78,8 +79,8 @@ func NewSplit(paths ...string) (Path, error) {
 		return Path{}, fmt.Errorf("Incorrect number of paths elements: want %d, have %d, Path: %v", Levels, len(paths), paths)
 	}
 
-	if false == p.IsValid() {
-		return Path{}, ErrIncorrect
+	if err := p.IsValid(); err != nil {
+		return Path{}, err
 	}
 	return p, nil
 }
@@ -124,13 +125,11 @@ func (p Path) String() string {
 	return s
 }
 
-// FQ returns the fully qualified path. scopeID is an int string. Paths is
-// either one path (system/smtp/host) including path separators or three
-// parts ("system", "smtp", "host"). See String() for returning FQ with error
-// return value.
+// FQ returns the fully qualified path. Validation can be disabled by setting
+// NoValidation to true.
 func (p Path) FQ() (string, error) {
-	if !p.NoValidation && false == p.IsValid() {
-		return "", ErrIncorrect
+	if err := p.IsValid(); err != nil {
+		return "", err
 	}
 
 	idStr := "0"
@@ -231,24 +230,24 @@ func isFQ(fqPath string) bool {
 	return strings.Count(fqPath, PS) >= Levels+1 // like stores/1/a/b/c
 }
 
-// IsValid checks for valid configuration path.
+// IsValid checks for valid configuration path. Returns nil on success.
 // Configuration path attribute can have only three groups of [a-zA-Z0-9_] characters split by '/'.
 // Minimal length per part 2 characters. Case sensitive.
-func (p Path) IsValid() bool {
+func (p Path) IsValid() error {
 	lp := len(p.Parts)
 	if lp < 1 {
-		return false
+		return errgo.New("Parts are empty")
 	}
 
 	// first argument only without a slash
 	if lp == 1 && (strings.Count(p.Parts[0], PS) != Levels-1 || len(p.Parts[0]) < 8) { // must contain at least two slashes
-		return false
+		return errgo.Newf("Incorrect Parts: %#v. Either to short or missing path separator.", p.Parts)
 	}
 
 	valid := 0
 	for _, part := range p.Parts {
 		if len(part) < 2 {
-			return false
+			return errgo.Newf("This path part %q is too short. Parts: %#v", part, p.Parts)
 		}
 
 		for _, r := range part {
@@ -264,15 +263,15 @@ func (p Path) IsValid() bool {
 				ok = true
 			}
 			if !ok {
-				return false
+				return errgo.Newf("This character %q is not allowed in Parts %#v", string(r), p.Parts)
 			}
 		}
 		valid++
 	}
 
-	if lp > 1 && valid != Levels { // if more than one arg has been provided all 3 must be valid
-		return false
+	if lp > 1 && valid < Levels { // if more than one arg has been provided all 3 must be valid
+		return errgo.Newf("All arguments must be valid! Min want: %d. Have: %d. Parts %#v", Levels, valid, p.Parts)
 	}
 
-	return true
+	return nil
 }

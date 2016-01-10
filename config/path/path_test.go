@@ -298,24 +298,49 @@ func BenchmarkSplit(b *testing.B) {
 func TestIsValid(t *testing.T) {
 	tests := []struct {
 		have []string
-		want bool
+		want error
 	}{
-		{[]string{"//"}, false}, // :-(
-		{[]string{"general/store_information/city"}, true},
-		{[]string{"", "", ""}, false},
-		{[]string{"general", "store_information", "name"}, true},
-		{[]string{"general", "store_information"}, false},
-		{[]string{path.MustNew("system", "dev", "debug").Bind(scope.WebsiteID, 22).String()}, false},
-		{[]string{"groups/33/general/store_information/street"}, false},
-		{[]string{"groups/33"}, false},
-		{[]string{"system/dEv/inv˚lid"}, false},
-		{[]string{"syst3m/dEv/invalid"}, true},
-		{nil, false},
+		{[]string{"//"}, errors.New("Incorrect Parts: []string{\"//\"}. Either to short or missing path separator.")}, // :-(
+		{[]string{"general/store_information/city"}, nil},
+		{[]string{"", "", ""}, errors.New("This path part \"\" is too short. Parts: []string{\"\", \"\", \"\"}")},
+		{[]string{"general", "store_information", "name"}, nil},
+		{[]string{"general", "store_information"}, errors.New("All arguments must be valid! Min want: 3. Have: 2. Parts []string{\"general\", \"store_information\"}")},
+		{[]string{path.MustNew("system", "dev", "debug").Bind(scope.WebsiteID, 22).String()}, errors.New("Incorrect Parts: []string{\"websites/22/system/dev/debug\"}. Either to short or missing path separator.")},
+		{[]string{"groups/33/general/store_information/street"}, errors.New("Incorrect Parts: []string{\"groups/33/general/store_information/street\"}. Either to short or missing path separator.")},
+		{[]string{"groups/33"}, errors.New("Incorrect Parts: []string{\"groups/33\"}. Either to short or missing path separator.")},
+		{[]string{"system/dEv/inv˚lid"}, errors.New("This character \"˚\" is not allowed in Parts []string{\"system/dEv/inv˚lid\"}")},
+		{[]string{"syst3m/dEv/invalid"}, nil},
+		{nil, errors.New("Parts are empty")},
 	}
 	for i, test := range tests {
 		p := path.Path{
 			Parts: test.have,
 		}
-		assert.Exactly(t, test.want, p.IsValid(), "Index %d", i)
+		haveErr := p.IsValid()
+		if test.want != nil {
+			assert.EqualError(t, haveErr, test.want.Error(), "Index %d", i)
+		} else {
+			assert.NoError(t, haveErr, "Index %d", i)
+		}
+	}
+}
+
+var benchmarkIsValid error
+
+// BenchmarkIsValid-4        	20000000	       116 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkIsValid(b *testing.B) {
+	have := []string{"system", "dEv", "d3bug"}
+	want := "system/dev/debug"
+
+	p := path.Path{
+		Parts: have,
+	}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchmarkIsValid = p.IsValid()
+		if nil != benchmarkIsValid {
+			b.Errorf("Want: %s; Have: %v", want, p.Parts)
+		}
 	}
 }
