@@ -154,7 +154,7 @@ func benchmarkFQ(scopeID int64, b *testing.B) {
 	}
 }
 
-// BenchmarkFQ__Cached-4	 3000000	       427 ns/op	      32 B/op	       1 allocs/op
+// BenchmarkFQ__Cached-4   	 3000000	       572 ns/op	      32 B/op	       1 allocs/op
 func BenchmarkFQ__Cached(b *testing.B) {
 	benchmarkFQ(4, b)
 }

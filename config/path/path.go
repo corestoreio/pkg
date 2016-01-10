@@ -43,17 +43,10 @@ type Path struct {
 	Scope scope.Scope
 	// ID represents a website, group or store ID
 	ID int64
-	// NoValidation disables validation in FQ() function
-	NoValidation bool
 }
 
 // New creates a new validated Path. Argument can either be a path like
 // a/b/c or path parts like "a","b","c".
-//
-//
-//
-//
-// ...
 func New(paths ...string) (Path, error) {
 	p := Path{
 		Parts: paths,
@@ -126,10 +119,7 @@ func (p Path) String() string {
 	return s
 }
 
-// FQ returns the fully qualified path. Validation can be disabled by setting
-// NoValidation to true.
-// line
-// line
+// FQ returns the fully qualified path.
 func (p Path) FQ() (string, error) {
 	if err := p.IsValid(); err != nil {
 		return "", err
