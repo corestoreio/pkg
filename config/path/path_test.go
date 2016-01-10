@@ -136,32 +136,13 @@ func TestShouldPanicIncorrectPath(t *testing.T) {
 
 var benchmarkStrScopeFQPath string
 
-// BenchmarkStrScopeFQPath-4 	 3000000	       442 ns/op	      32 B/op	       1 allocs/op
-func BenchmarkStrScopeFQPath(b *testing.B) {
-	const want = "websites/4/system/dev/debug"
-	path := path.MustNew("system", "dev", "debug").BindStr(scope.StrWebsites, 4)
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		var err error
-		benchmarkStrScopeFQPath, err = path.FQ()
-		if err != nil {
-			b.Error(err)
-		}
-	}
-	if benchmarkStrScopeFQPath != want {
-		b.Errorf("Want: %s; Have, %s", want, benchmarkStrScopeFQPath)
-	}
-}
-
-func benchmarkFQInt64(scopeID int64, b *testing.B) {
+func benchmarkFQ(scopeID int64, b *testing.B) {
 	want := scope.StrWebsites.String() + "/" + strconv.FormatInt(scopeID, 10) + "/system/dev/debug"
-	path := path.MustNew("system", "dev", "debug").BindStr(scope.StrWebsites, scopeID)
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStrScopeFQPath, err = path.FQ()
+		benchmarkStrScopeFQPath, err = path.MustNew("system/dev/debug").BindStr(scope.StrWebsites, scopeID).FQ()
 		if err != nil {
 			b.Error(err)
 		}
@@ -171,14 +152,14 @@ func benchmarkFQInt64(scopeID int64, b *testing.B) {
 	}
 }
 
-// BenchmarkFQInt64__Cached-4	 3000000	       427 ns/op	      32 B/op	       1 allocs/op
-func BenchmarkFQInt64__Cached(b *testing.B) {
-	benchmarkFQInt64(4, b)
+// BenchmarkFQ__Cached-4   	 3000000	       577 ns/op	      32 B/op	       1 allocs/op
+func BenchmarkFQ__Cached(b *testing.B) {
+	benchmarkFQ(4, b)
 }
 
-// BenchmarkFQInt64UnCached-4	 3000000	       513 ns/op	      48 B/op	       2 allocs/op
-func BenchmarkFQInt64UnCached(b *testing.B) {
-	benchmarkFQInt64(40, b)
+// BenchmarkFQUnCached-4   	 2000000	       631 ns/op	      48 B/op	       2 allocs/op
+func BenchmarkFQUnCached(b *testing.B) {
+	benchmarkFQ(40, b)
 }
 
 func TestSplitFQPath(t *testing.T) {
@@ -213,7 +194,7 @@ func TestSplitFQPath(t *testing.T) {
 
 var benchmarkReverseFQPath path.Path
 
-// BenchmarkReverseFQPath-4 	10000000	       121 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkReverseFQPath-4	10000000	       175 ns/op	      16 B/op	       1 allocs/op
 func BenchmarkReverseFQPath(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -248,7 +229,7 @@ func TestLevel(t *testing.T) {
 
 var benchmarkLevel string
 
-// BenchmarkLevel-4           	10000000	       238 ns/op	      16 B/op	       1 allocs/op => Go 1.5.2
+// BenchmarkLevel-4        	 5000000	       297 ns/op	      16 B/op	       1 allocs/op
 func BenchmarkLevel(b *testing.B) {
 	have := []string{"system", "dev", "debug"}
 	want := "system/dev/debug"
@@ -282,7 +263,7 @@ func TestSplit(t *testing.T) {
 
 var benchmarkSplit []string
 
-// BenchmarkSplit-4          	 5000000	       290 ns/op	      48 B/op	       1 allocs/op => Go 1.5.2
+// BenchmarkSplit-4        	10000000	       196 ns/op	      48 B/op	       1 allocs/op
 func BenchmarkSplit(b *testing.B) {
 	want := []string{"system", "dev", "debug"}
 	have := "system/dev/debug"

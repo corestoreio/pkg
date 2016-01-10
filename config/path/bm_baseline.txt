@@ -1,8 +1,7 @@
 PASS
-BenchmarkStrScopeFQPath-4 	 3000000	       568 ns/op	      32 B/op	       1 allocs/op
-BenchmarkFQInt64__Cached-4	 3000000	       582 ns/op	      32 B/op	       1 allocs/op
-BenchmarkFQInt64UnCached-4	 2000000	       684 ns/op	      48 B/op	       2 allocs/op
-BenchmarkReverseFQPath-4  	10000000	       181 ns/op	      16 B/op	       1 allocs/op
-BenchmarkLevel-4           	 5000000	       291 ns/op	      16 B/op	       1 allocs/op
-BenchmarkSplit-4          	10000000	       205 ns/op	      48 B/op	       1 allocs/op
-ok  	github.com/corestoreio/csfw/config/path	12.733s
+BenchmarkFQ__Cached-4   	 3000000	       560 ns/op	      32 B/op	       1 allocs/op
+BenchmarkFQUnCached-4   	 2000000	       630 ns/op	      48 B/op	       2 allocs/op
+BenchmarkReverseFQPath-4	10000000	       173 ns/op	      16 B/op	       1 allocs/op
+BenchmarkLevel-4        	 5000000	       283 ns/op	      16 B/op	       1 allocs/op
+BenchmarkSplit-4        	10000000	       191 ns/op	      48 B/op	       1 allocs/op
+ok  	github.com/corestoreio/csfw/config/path	9.916s
