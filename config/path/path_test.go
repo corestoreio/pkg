@@ -135,33 +135,15 @@ func TestShouldPanicIncorrectPath(t *testing.T) {
 	assert.Exactly(t, "websites/345/xxxxx/yyyyy", path.MustNew("xxxxx", "yyyyy").BindStr(scope.StrWebsites, 345).String())
 }
 
-//
 var benchmarkStrScopeFQPath string
 
-// BenchmarkStrScopeFQPath-4	 5000000	       384 ns/op	      32 B/op	       1 allocs/op
-func BenchmarkStrScopeFQPath(b *testing.B) {
-	want := scope.StrWebsites.String() + "/4/system/dev/debug"
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		var err error
-		benchmarkStrScopeFQPath, err = path.MustNew("system", "dev", "debug").BindStr(scope.StrWebsites, 4).FQ()
-		if err != nil {
-			b.Error(err)
-		}
-	}
-	if benchmarkStrScopeFQPath != want {
-		b.Errorf("Want: %s; Have, %s", want, benchmarkStrScopeFQPath)
-	}
-}
-
-func benchmarkFQInt64(scopeID int64, b *testing.B) {
+func benchmarkFQ(scopeID int64, b *testing.B) {
 	want := scope.StrWebsites.String() + "/" + strconv.FormatInt(scopeID, 10) + "/system/dev/debug"
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStrScopeFQPath, err = path.MustNew("system", "dev", "debug").BindStr(scope.StrWebsites, scopeID).FQ()
+		benchmarkStrScopeFQPath, err = path.MustNew("system/dev/debug").BindStr(scope.StrWebsites, scopeID).FQ()
 		if err != nil {
 			b.Error(err)
 		}
@@ -171,14 +153,14 @@ func benchmarkFQInt64(scopeID int64, b *testing.B) {
 	}
 }
 
-// BenchmarkFQInt64__Cached-4	 3000000	       427 ns/op	      32 B/op	       1 allocs/op
-func BenchmarkFQInt64__Cached(b *testing.B) {
-	benchmarkFQInt64(4, b)
+// BenchmarkFQ__Cached-4	 3000000	       427 ns/op	      32 B/op	       1 allocs/op
+func BenchmarkFQ__Cached(b *testing.B) {
+	benchmarkFQ(4, b)
 }
 
-// BenchmarkFQInt64UnCached-4	 3000000	       513 ns/op	      48 B/op	       2 allocs/op
-func BenchmarkFQInt64UnCached(b *testing.B) {
-	benchmarkFQInt64(40, b)
+// BenchmarkFQUnCached-4	 3000000	       513 ns/op	      48 B/op	       2 allocs/op
+func BenchmarkFQUnCached(b *testing.B) {
+	benchmarkFQ(40, b)
 }
 
 func TestSplitFQPath(t *testing.T) {

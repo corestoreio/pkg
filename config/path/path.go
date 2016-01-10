@@ -16,7 +16,6 @@ package path
 
 import (
 	"bytes"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -48,6 +47,11 @@ type Path struct {
 
 // New creates a new validated Path. Argument can either be a path like
 // a/b/c or path parts like "a","b","c".
+//
+//
+//
+//
+// ...
 func New(paths ...string) (Path, error) {
 	p := Path{
 		Parts: paths,
@@ -71,7 +75,7 @@ func NewSplit(paths ...string) (Path, error) {
 	case len(paths) == 1:
 		p.Parts = Split(paths[0])
 	default:
-		return Path{}, fmt.Errorf("Incorrect number of paths elements: want %d, have %d, Path: %v", Levels, len(paths), paths)
+		return Path{}, errgo.Newf("Incorrect number of paths elements: want %d, have %d, Path: %v", Levels, len(paths), paths)
 	}
 
 	if err := p.IsValid(); err != nil {
@@ -122,6 +126,8 @@ func (p Path) String() string {
 
 // FQ returns the fully qualified path. Validation can be disabled by setting
 // NoValidation to true.
+// line
+// line
 func (p Path) FQ() (string, error) {
 	if err := p.IsValid(); err != nil {
 		return "", err
@@ -199,7 +205,7 @@ func (p Path) Level(level int) string {
 // failed to parse a string into an int64 or invalid fqPath.
 func SplitFQ(fqPath string) (Path, error) {
 	if false == isFQ(fqPath) {
-		return Path{}, fmt.Errorf("Incorrect fully qualified path: %q", fqPath)
+		return Path{}, errgo.Newf("Incorrect fully qualified path: %q", fqPath)
 	}
 
 	fi := strings.Index(fqPath, PS)
