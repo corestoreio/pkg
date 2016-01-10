@@ -114,7 +114,7 @@ func NewService(opts ...ServiceOption) *Service {
 		s.Storage = newSimpleStorage()
 	}
 	go s.publish()
-	s.Storage.Set(mustNewArg(Path(PathCSBaseURL)).scopePath(), CSBaseURL)
+	s.Storage.Set(PathCSBaseURL, CSBaseURL)
 	return s
 }
 
@@ -177,11 +177,12 @@ func (s *Service) Write(o ...ArgFunc) error {
 		return errgo.Mask(err)
 	}
 
+	path := a.String()
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("config.Service.Write", "path", a.scopePath(), "val", a.v)
+		PkgLog.Debug("config.Service.Write", "path", path, "val", a.v)
 	}
 
-	s.Storage.Set(a.scopePath(), a.v)
+	s.Storage.Set(path, a.v)
 	s.sendMsg(a)
 	return nil
 }
@@ -195,13 +196,15 @@ func (s *Service) get(o ...ArgFunc) interface{} {
 		}
 		return errgo.Mask(err)
 	}
-
-	return s.Storage.Get(a.scopePath())
+	return s.Storage.Get(a.String())
 }
 
 // String returns a string from the Service. Example usage:
+//
 // Default value: String(config.Path("general/locale/timezone"))
+//
 // Website value: String(config.Path("general/locale/timezone"), config.ScopeWebsite(w))
+//
 // Store   value: String(config.Path("general/locale/timezone"), config.ScopeStore(s))
 func (s *Service) String(o ...ArgFunc) (string, error) {
 	vs := s.get(o...)
@@ -256,7 +259,7 @@ func (s *Service) IsSet(o ...ArgFunc) bool {
 		}
 		return false
 	}
-	return s.Storage.Get(a.scopePath()) != nil
+	return s.Storage.Get(a.String()) != nil
 }
 
 // NotKeyNotFoundError returns true if err is not nil and not of type Key Not Found.

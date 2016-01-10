@@ -47,7 +47,7 @@ func (w *MockWrite) Write(o ...ArgFunc) error {
 	if err != nil {
 		return err
 	}
-	w.ArgPath = a.scopePath()
+	w.ArgPath = a.String()
 	w.ArgValue = a.v
 	return w.WriteError
 }
@@ -196,7 +196,7 @@ func (mr *MockGet) String(opts ...ArgFunc) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	path := a.scopePath()
+	path := a.String()
 
 	switch {
 	case mr.hasVal(path):
@@ -230,7 +230,7 @@ func (mr *MockGet) Bool(opts ...ArgFunc) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	path := a.scopePath()
+	path := a.String()
 	switch {
 	case mr.hasVal(path):
 		return mr.valBool(path)
@@ -258,7 +258,7 @@ func (mr *MockGet) Float64(opts ...ArgFunc) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	path := a.scopePath()
+	path := a.String()
 	switch {
 	case mr.hasVal(path):
 		return mr.valFloat64(path)
@@ -286,7 +286,7 @@ func (mr *MockGet) Int(opts ...ArgFunc) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	path := a.scopePath()
+	path := a.String()
 	switch {
 	case mr.hasVal(path):
 		return mr.valInt(path)
@@ -312,7 +312,7 @@ func (mr *MockGet) DateTime(opts ...ArgFunc) (time.Time, error) {
 	if err != nil {
 		return time.Time{}, err
 	}
-	path := a.scopePath()
+	path := a.String()
 	switch {
 	case mr.hasVal(path):
 		return mr.valDateTime(path)

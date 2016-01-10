@@ -23,7 +23,7 @@ import (
 
 // PathCSBaseURL main CoreStore base URL, used if no configuration on a store level can be found.
 const (
-	PathCSBaseURL = "web/corestore/base_url"
+	PathCSBaseURL = "default/0/web/corestore/base_url"
 	CSBaseURL     = "http://localhost:9500/"
 )
 

@@ -15,21 +15,14 @@
 package config
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
 )
-
-// HierarchyLevel defines how many elements are in a path.
-// Like a/b/c for 3 elements.
-const HierarchyLevel int = 3
-
-// ErrPathEmpty when you provide an empty path in the function Path()
-var ErrPathEmpty = errors.New("Path cannot be empty")
 
 // ArgFunc Argument function to be used as variadic argument in ScopeKey() and ScopeKeyValue()
 type ArgFunc func(*arg)
@@ -59,34 +52,20 @@ func Scope(s scope.Scope, id int64) ArgFunc {
 		id = 0
 		s = scope.DefaultID
 	}
-	return func(a *arg) { a.scope = s; a.scopeID = id }
+	return func(a *arg) { a.Scope = s; a.ID = id }
 }
 
 // Path option function to specify the configuration path. If one argument has been
 // provided then it must be a full valid path. If more than one argument has been provided
 // then the arguments will be joined together. Panics if nil arguments will be provided.
 func Path(paths ...string) ArgFunc {
-	// TODO(cs) validation of the path see typeConfigPath in app/code/Magento/Config/etc/system_file.xsd
-
-	if false == isValidPath(paths...) {
-		return func(a *arg) {
-			a.lastErrors = append(a.lastErrors, ErrPathEmpty)
-		}
-	}
-
-	var paSlice []string
-	if len(paths) >= HierarchyLevel {
-		paSlice = paths
-	} else {
-		paSlice = scope.PathSplit(paths[0])
-		if len(paSlice) < HierarchyLevel {
-			return func(a *arg) {
-				a.lastErrors = append(a.lastErrors, fmt.Errorf("Incorrect number of paths elements: want %d, have %d, Path: %v", HierarchyLevel, len(paSlice), paths))
-			}
-		}
-	}
+	p, err := path.NewSplit(paths...)
 	return func(a *arg) {
-		a.pathSlice = paSlice
+		p.NoValidation = true // validation done in NewSplit() and no chance to change
+		a.Path = p
+		if err != nil {
+			a.lastErrors = append(a.lastErrors, err)
+		}
 	}
 }
 
@@ -114,19 +93,10 @@ func ValueReader(r io.Reader) ArgFunc {
 	}
 }
 
-// isValidPath checks for valid config path. Either full path like general/country/allow
-// or at least 3 path parts.
-func isValidPath(paths ...string) bool {
-	return (len(paths) == 1 && paths[0] != "") ||
-		(len(paths) >= HierarchyLevel && paths[0] != "" && paths[1] != "" && paths[2] != "")
-}
-
 // arg responsible for the correct scope key e.g.: stores/2/system/currency/installed => scope/scope_id/path
 // which is used by the underlying configuration Service to fetch or store a value
 type arg struct {
-	pathSlice  []string // pa is the three level path e.g. a/b/c split by slash
-	scope      scope.Scope
-	scopeID    int64       // scope ID
+	path.Path
 	v          interface{} // value use for saving
 	lastErrors []error
 }
@@ -159,21 +129,7 @@ func (a arg) option(opts ...ArgFunc) (arg, error) {
 	return a, nil
 }
 
-func (a arg) isValidPath() bool    { return isValidPath(a.pathSlice...) }
-func (a arg) isDefault() bool      { return a.scope == scope.DefaultID || a.scope == scope.AbsentID }
-func (a arg) pathLevel1() string   { return a.pathSlice[0] }
-func (a arg) pathLevel2() string   { return scope.PathJoin(a.pathSlice[:2]...) }
-func (a arg) pathLevelAll() string { return scope.PathJoin(a.pathSlice...) }
-
-func (a arg) scopePath() string {
-	// first part of the path is called scope in Magento and in CoreStore ScopeRange
-	// e.g.: stores/2/system/currency/installed => scope/scope_id/path
-	// e.g.: websites/1/system/currency/installed => scope/scope_id/path
-	if false == a.isValidPath() {
-		return ""
-	}
-	return scope.FromScope(a.scope).FQPathInt64(a.scopeID, a.pathSlice...)
-}
+func (a arg) isDefault() bool { return a.Scope == scope.DefaultID || a.Scope == scope.AbsentID }
 
 // scopePathDefault returns a path prefixed by default StrScope
 // e.g.: default/0/system/currency/installed
