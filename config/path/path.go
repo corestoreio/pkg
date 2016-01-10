@@ -23,11 +23,8 @@ import (
 
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/juju/errgo"
 )
-
-// ErrIncorrect gets returned whenever the path consists of less than
-// Levels parts.
-var ErrIncorrect = errors.New("Incorrect Path. Expecting at least three path parts like a/b/c")
 
 // Levels defines how many parts are at least in a path.
 // Like a/b/c for 3 parts. And 5 for a fully qualified path.
@@ -52,13 +49,18 @@ type Path struct {
 
 // New creates a new validated Path. Argument can either be a path like
 // a/b/c or path parts like "a","b","c".
+//
+//
+//
+//
+// ...
 func New(paths ...string) (Path, error) {
 	p := Path{
 		Parts: paths,
 		Scope: scope.DefaultID,
 	}
-	if false == p.IsValid() {
-		return Path{}, ErrIncorrect
+	if err := p.IsValid(); err != nil {
+		return Path{}, err
 	}
 	return p, nil
 }
@@ -75,11 +77,11 @@ func NewSplit(paths ...string) (Path, error) {
 	case len(paths) == 1:
 		p.Parts = Split(paths[0])
 	default:
-		return Path{}, fmt.Errorf("Incorrect number of paths elements: want %d, have %d, Path: %v", Levels, len(paths), paths)
+		return Path{}, errgo.Newf("Incorrect number of paths elements: want %d, have %d, Path: %v", Levels, len(paths), paths)
 	}
 
-	if false == p.IsValid() {
-		return Path{}, ErrIncorrect
+	if err := p.IsValid(); err != nil {
+		return Path{}, err
 	}
 	return p, nil
 }
@@ -124,13 +126,13 @@ func (p Path) String() string {
 	return s
 }
 
-// FQ returns the fully qualified path. scopeID is an int string. Paths is
-// either one path (system/smtp/host) including path separators or three
-// parts ("system", "smtp", "host"). See String() for returning FQ with error
-// return value.
+// FQ returns the fully qualified path. Validation can be disabled by setting
+// NoValidation to true.
+// line
+// line
 func (p Path) FQ() (string, error) {
-	if !p.NoValidation && false == p.IsValid() {
-		return "", ErrIncorrect
+	if err := p.IsValid(); err != nil {
+		return "", err
 	}
 
 	idStr := "0"
@@ -205,7 +207,7 @@ func (p Path) Level(level int) string {
 // failed to parse a string into an int64 or invalid fqPath.
 func SplitFQ(fqPath string) (Path, error) {
 	if false == isFQ(fqPath) {
-		return Path{}, fmt.Errorf("Incorrect fully qualified path: %q", fqPath)
+		return Path{}, errgo.Newf("Incorrect fully qualified path: %q", fqPath)
 	}
 
 	fi := strings.Index(fqPath, PS)
@@ -231,24 +233,32 @@ func isFQ(fqPath string) bool {
 	return strings.Count(fqPath, PS) >= Levels+1 // like stores/1/a/b/c
 }
 
-// IsValid checks for valid configuration path.
+// ErrPartsEmpty path parts are empty
+var ErrPartsEmpty = errors.New("Parts are empty")
+
+// ErrIncorrectPath a path is missing a path separator or is too short
+var ErrIncorrectPath = errors.New("Incorrect Path. Either to short or missing path separator.")
+
+// IsValid checks for valid configuration path. Returns nil on success.
 // Configuration path attribute can have only three groups of [a-zA-Z0-9_] characters split by '/'.
 // Minimal length per part 2 characters. Case sensitive.
-func (p Path) IsValid() bool {
+//
+// IsValid can return ErrPartsEmpty or ErrIncorrectPath or a custom error.
+func (p Path) IsValid() error {
 	lp := len(p.Parts)
 	if lp < 1 {
-		return false
+		return ErrPartsEmpty
 	}
 
 	// first argument only without a slash
 	if lp == 1 && (strings.Count(p.Parts[0], PS) != Levels-1 || len(p.Parts[0]) < 8) { // must contain at least two slashes
-		return false
+		return ErrIncorrectPath
 	}
 
 	valid := 0
 	for _, part := range p.Parts {
 		if len(part) < 2 {
-			return false
+			return fmt.Errorf("This path part %q is too short. Parts: %#v", part, p.Parts)
 		}
 
 		for _, r := range part {
@@ -264,15 +274,15 @@ func (p Path) IsValid() bool {
 				ok = true
 			}
 			if !ok {
-				return false
+				return fmt.Errorf("This character %q is not allowed in Parts %#v", string(r), p.Parts)
 			}
 		}
 		valid++
 	}
 
-	if lp > 1 && valid != Levels { // if more than one arg has been provided all 3 must be valid
-		return false
+	if lp > 1 && valid < Levels { // if more than one arg has been provided all 3 must be valid
+		return fmt.Errorf("All arguments must be valid! Min want: %d. Have: %d. Parts %#v", Levels, valid, p.Parts)
 	}
 
-	return true
+	return nil
 }
