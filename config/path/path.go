@@ -23,7 +23,6 @@ import (
 
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/juju/errgo"
 )
 
 // Levels defines how many parts are at least in a path.
@@ -36,6 +35,12 @@ const Separator = "/"
 
 const rSeparator = '/'
 const strDefaultID = "0"
+
+// ErrPartsEmpty path parts are empty
+var ErrPartsEmpty = errors.New("Parts are empty")
+
+// ErrIncorrectPath a path is missing a path separator or is too short
+var ErrIncorrectPath = errors.New("Incorrect Path. Either to short or missing path separator.")
 
 // Path represents a configuration path.
 type Path struct {
@@ -72,7 +77,7 @@ func NewSplit(paths ...string) (Path, error) {
 	case len(paths) == 1 && paths[0] != "":
 		p.Parts = Split(paths[0])
 	default:
-		return Path{}, errgo.Newf("Incorrect number of paths elements: want %d, have %d, Path: %v", Levels, len(paths), paths)
+		return Path{}, fmt.Errorf("Incorrect number of paths elements: want %d, have %d, Path: %v", Levels, len(paths), paths)
 	}
 
 	if err := p.IsValid(); err != nil {
@@ -204,7 +209,7 @@ func (p Path) Level(level int) string {
 // failed to parse a string into an int64 or invalid fqPath.
 func SplitFQ(fqPath string) (Path, error) {
 	if false == isFQ(fqPath) {
-		return Path{}, errgo.Newf("Incorrect fully qualified path: %q", fqPath)
+		return Path{}, fmt.Errorf("Incorrect fully qualified path: %q", fqPath)
 	}
 
 	fi := strings.Index(fqPath, Separator)
@@ -229,12 +234,6 @@ func SplitFQ(fqPath string) (Path, error) {
 func isFQ(fqPath string) bool {
 	return strings.Count(fqPath, Separator) >= Levels+1 // like stores/1/a/b/c
 }
-
-// ErrPartsEmpty path parts are empty
-var ErrPartsEmpty = errors.New("Parts are empty")
-
-// ErrIncorrectPath a path is missing a path separator or is too short
-var ErrIncorrectPath = errors.New("Incorrect Path. Either to short or missing path separator.")
 
 // IsValid checks for valid configuration path. Returns nil on success.
 // Configuration path attribute can have only three groups of [a-zA-Z0-9_] characters split by '/'.
