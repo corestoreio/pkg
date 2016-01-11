@@ -16,6 +16,7 @@ package path_test
 
 import (
 	"fmt"
+
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 )

@@ -30,10 +30,11 @@ import (
 // Like a/b/c for 3 parts. And 5 for a fully qualified path.
 const Levels int = 3
 
-// PS path separator used in the database table core_config_data and in config.Service
-const PS = "/"
+// Separator used in the database table core_config_data and in config.Service
+// to separate the path parts.
+const Separator = "/"
 
-const rPS = '/'
+const rSeparator = '/'
 const strDefaultID = "0"
 
 // Path represents a configuration path.
@@ -46,7 +47,7 @@ type Path struct {
 }
 
 // New creates a new validated Path. Argument can either be a path like
-// a/b/c or path parts like "a","b","c".
+// a/b/c or path parts like "a","b","c". Scope is assigned to Default.
 func New(paths ...string) (Path, error) {
 	p := Path{
 		Parts: paths,
@@ -59,7 +60,8 @@ func New(paths ...string) (Path, error) {
 }
 
 // NewSplit takes a path argument like a/b/c or path parts like "a","b","c".
-// If a path have been provided it gets split into its parts.
+// If a path has been provided it gets split into its parts.
+// Scope is assigned to Default.
 func NewSplit(paths ...string) (Path, error) {
 	p := Path{
 		Scope: scope.DefaultID,
@@ -141,9 +143,9 @@ func (p Path) FQ() (string, error) {
 	buf := bufferpool.Get()
 	defer bufferpool.Put(buf)
 	buf.WriteString(scopeStr.String())
-	buf.WriteString(PS)
+	buf.WriteString(Separator)
 	buf.WriteString(idStr)
-	buf.WriteString(PS)
+	buf.WriteString(Separator)
 	join(buf, p.Parts)
 	return buf.String(), nil
 }
@@ -156,17 +158,17 @@ var int64CacheLen = int64(len(int64Cache))
 
 // Split splits a configuration path by the path separator PS.
 func Split(path string) []string {
-	if path[:1] == PS {
+	if path[:1] == Separator {
 		path = path[1:] // trim first PS
 	}
-	return strings.Split(path, PS)
+	return strings.Split(path, Separator)
 }
 
 func join(buf *bytes.Buffer, paths []string) {
 	for i, p := range paths {
 		buf.WriteString(p)
 		if i < (len(paths) - 1) {
-			buf.WriteString(PS)
+			buf.WriteString(Separator)
 		}
 	}
 }
@@ -205,7 +207,7 @@ func SplitFQ(fqPath string) (Path, error) {
 		return Path{}, errgo.Newf("Incorrect fully qualified path: %q", fqPath)
 	}
 
-	fi := strings.Index(fqPath, PS)
+	fi := strings.Index(fqPath, Separator)
 	scopeStr := fqPath[:fi]
 
 	if false == scope.Valid(scopeStr) {
@@ -214,7 +216,7 @@ func SplitFQ(fqPath string) (Path, error) {
 
 	fqPath = fqPath[fi+1:]
 
-	fi = strings.Index(fqPath, PS)
+	fi = strings.Index(fqPath, Separator)
 	scopeID, err := strconv.ParseInt(fqPath[:fi], 10, 64)
 	path := fqPath[fi+1:]
 	return Path{
@@ -225,7 +227,7 @@ func SplitFQ(fqPath string) (Path, error) {
 }
 
 func isFQ(fqPath string) bool {
-	return strings.Count(fqPath, PS) >= Levels+1 // like stores/1/a/b/c
+	return strings.Count(fqPath, Separator) >= Levels+1 // like stores/1/a/b/c
 }
 
 // ErrPartsEmpty path parts are empty
@@ -246,7 +248,7 @@ func (p Path) IsValid() error {
 	}
 
 	// first argument only without a slash
-	if lp == 1 && (strings.Count(p.Parts[0], PS) != Levels-1 || len(p.Parts[0]) < 8) { // must contain at least two slashes
+	if lp == 1 && (strings.Count(p.Parts[0], Separator) != Levels-1 || len(p.Parts[0]) < 8) { // must contain at least two slashes
 		return ErrIncorrectPath
 	}
 
@@ -265,7 +267,7 @@ func (p Path) IsValid() error {
 				ok = true
 			case 'A' <= r && r <= 'Z':
 				ok = true
-			case r == '_', r == rPS:
+			case r == '_', r == rSeparator:
 				ok = true
 			}
 			if !ok {
