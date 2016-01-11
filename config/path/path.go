@@ -69,7 +69,7 @@ func NewSplit(paths ...string) (Path, error) {
 	switch {
 	case len(paths) >= Levels:
 		p.Parts = paths
-	case len(paths) == 1:
+	case len(paths) == 1 && paths[0] != "":
 		p.Parts = Split(paths[0])
 	default:
 		return Path{}, errgo.Newf("Incorrect number of paths elements: want %d, have %d, Path: %v", Levels, len(paths), paths)
@@ -158,7 +158,7 @@ var int64CacheLen = int64(len(int64Cache))
 
 // Split splits a configuration path by the path separator PS.
 func Split(path string) []string {
-	if path[:1] == Separator {
+	if len(path) > 0 && path[:1] == Separator {
 		path = path[1:] // trim first PS
 	}
 	return strings.Split(path, Separator)

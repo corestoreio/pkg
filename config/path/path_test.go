@@ -257,6 +257,7 @@ func TestSplit(t *testing.T) {
 		{"a/b/c", []string{"a", "b", "c"}},
 		{"/a/b/c", []string{"a", "b", "c"}},
 		{"a/b/c/d/e", []string{"a", "b", "c", "d", "e"}},
+		{"", []string{""}},
 	}
 	for i, test := range tests {
 		assert.Exactly(t, test.want, path.Split(test.have), "Index %d", i)
