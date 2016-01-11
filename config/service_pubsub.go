@@ -18,6 +18,7 @@ import (
 	"errors"
 	"sync"
 
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/juju/errgo"
 )
@@ -84,19 +85,19 @@ func (s *pubSub) Close() error {
 
 // Subscribe adds a Subscriber to be called when a write event happens.
 // See interface Subscriber for a detailed description.
-func (s *pubSub) Subscribe(path string, mr MessageReceiver) (subscriptionID int, err error) {
-	if path == "" {
-		return 0, ErrPathEmpty
+func (s *pubSub) Subscribe(sPath string, mr MessageReceiver) (subscriptionID int, err error) {
+	if sPath == "" {
+		return 0, path.ErrIncorrectPath
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.subAutoInc++
 	subscriptionID = s.subAutoInc
 
-	if _, ok := s.subMap[path]; !ok {
-		s.subMap[path] = make(map[int]MessageReceiver)
+	if _, ok := s.subMap[sPath]; !ok {
+		s.subMap[sPath] = make(map[int]MessageReceiver)
 	}
-	s.subMap[path][subscriptionID] = mr
+	s.subMap[sPath][subscriptionID] = mr
 
 	return
 }
@@ -148,13 +149,13 @@ func (s *pubSub) publish() {
 			s.mu.RLock()
 			var evict []int
 
-			if subs, ok := s.subMap[a.pathLevel1()]; ok { // e.g.: system
+			if subs, ok := s.subMap[a.Level(1)]; ok { // e.g.: system
 				evict = append(evict, sendMessages(subs, a)...)
 			}
-			if subs, ok := s.subMap[a.pathLevel2()]; ok { // e.g.: system/smtp
+			if subs, ok := s.subMap[a.Level(2)]; ok { // e.g.: system/smtp
 				evict = append(evict, sendMessages(subs, a)...)
 			}
-			if subs, ok := s.subMap[a.pathLevelAll()]; ok { // e.g.: system/smtp/host
+			if subs, ok := s.subMap[a.Level(-1)]; ok { // e.g.: system/smtp/host/etc/pp
 				evict = append(evict, sendMessages(subs, a)...)
 			}
 			s.mu.RUnlock()
@@ -197,7 +198,7 @@ func sendMsgRecoverable(id int, sl MessageReceiver, a arg) (err error) {
 			// and therefore will overwrite the returned nil value!
 		}
 	}()
-	err = sl.MessageConfig(a.pathLevelAll(), a.scope, a.scopeID)
+	err = sl.MessageConfig(a.Level(-1), a.Scope, a.ID)
 	return
 }
 

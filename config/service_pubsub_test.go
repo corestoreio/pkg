@@ -22,6 +22,7 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
@@ -39,12 +40,12 @@ func (ts *testSubscriber) MessageConfig(path string, sg scope.Scope, id int64) e
 
 func TestPubSubBubbling(t *testing.T) {
 	defer debugLogBuf.Reset()
-	testPath := "a/b/c"
+	testPath := "aa/bb/cc"
 
 	s := config.NewService()
 
 	_, err := s.Subscribe("", nil)
-	assert.EqualError(t, err, config.ErrPathEmpty.Error())
+	assert.EqualError(t, err, path.ErrIncorrectPath.Error())
 
 	subID, err := s.Subscribe(testPath, &testSubscriber{
 		f: func(path string, sg scope.Scope, id int64) error {

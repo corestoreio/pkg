@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
@@ -55,31 +56,31 @@ func TestScopedService(t *testing.T) {
 	}{
 		{
 			"Default ScopedGetter should return default scope",
-			scope.StrDefault.FQPath("0", "a/b/c"), []string{"a/b/c"}, 0, 0, 0, nil,
+			path.MustNew("aa/bb/cc").String(), []string{"aa/bb/cc"}, 0, 0, 0, nil,
 		},
 		{
 			"Website ID 1 ScopedGetter should fall back to default scope",
-			scope.StrDefault.FQPath("0", "a/b/c"), []string{"a/b/c"}, 1, 0, 0, nil,
+			path.MustNew("aa/bb/cc").String(), []string{"aa/bb/cc"}, 1, 0, 0, nil,
 		},
 		{
 			"Website ID 10 + Group ID 12 ScopedGetter should fall back to website 10 scope",
-			scope.StrWebsites.FQPath("10", "a/b/c"), []string{"a/b/c"}, 10, 12, 0, nil,
+			path.MustNew("aa/bb/cc").Bind(scope.WebsiteID, 10).String(), []string{"aa/bb/cc"}, 10, 12, 0, nil,
 		},
 		{
 			"Website ID 10 + Group ID 12 + Store 22 ScopedGetter should fall back to website 10 scope",
-			scope.StrWebsites.FQPath("10", "a/b/c"), []string{"a/b/c"}, 10, 12, 22, nil,
+			path.MustNew("aa/bb/cc").Bind(scope.WebsiteID, 10).String(), []string{"aa/bb/cc"}, 10, 12, 22, nil,
 		},
 		{
 			"Website ID 10 + Group ID 12 + Store 22 ScopedGetter should return Store 22 scope",
-			scope.StrStores.FQPath("22", "a/b/c"), []string{"a/b/c"}, 10, 12, 22, nil,
+			path.MustNew("aa/bb/cc").Bind(scope.StoreID, 22).String(), []string{"aa/bb/cc"}, 10, 12, 22, nil,
 		},
 		{
 			"Website ID 10 + Group ID 12 + Store 42 ScopedGetter should return nothing",
-			scope.StrStores.FQPath("22", "a/b/c"), []string{"a/b/c"}, 10, 12, 42, config.ErrKeyNotFound,
+			path.MustNew("aa/bb/cc").Bind(scope.StoreID, 22).String(), []string{"aa/bb/cc"}, 10, 12, 42, config.ErrKeyNotFound,
 		},
 		{
 			"Path consists of only two elements which is incorrect",
-			scope.StrDefault.FQPath("0", "a/b/c"), []string{"a", "b"}, 0, 0, 0, config.ErrPathEmpty,
+			path.MustNew("aa/bb/cc").String(), []string{"a", "b"}, 0, 0, 0, path.ErrIncorrectPath,
 		},
 	}
 
@@ -133,13 +134,13 @@ func BenchmarkScopedServiceStringStore(b *testing.B) {
 
 	var want = strings.Repeat("Gopher", 100)
 	sg := config.NewMockGetter(config.WithMockValues(config.MockPV{
-		scope.StrDefault.FQPath("0", "a/b/c"): want,
+		path.MustNew("aa/bb/cc").String(): want,
 	})).NewScoped(1, 1, 1)
 
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		v, err := sg.String("a/b/c")
+		v, err := sg.String("aa/bb/cc")
 		if err != nil {
 			b.Error(err)
 		}

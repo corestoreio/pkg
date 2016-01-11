@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cast"
 )
 
@@ -49,8 +49,8 @@ func NewDBStorage(p csdb.Preparer) (*DBStorage, error) {
 	dbs := &DBStorage{
 		All: csdb.NewResurrectStmt(p, fmt.Sprintf(
 			"SELECT CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath` FROM `%s` ORDER BY scope,scope_id,path",
-			scope.PS,
-			scope.PS,
+			path.Separator,
+			path.Separator,
 			TableCollection.Name(TableIndexCoreConfigData),
 		)),
 		Read: csdb.NewResurrectStmt(p, fmt.Sprintf(
@@ -126,13 +126,13 @@ func (dbs *DBStorage) Set(key string, value interface{}) {
 		return
 	}
 
-	scope, scopeID, path, err := scope.SplitFQPath(key)
+	p, err := path.SplitFQ(key)
 	if err != nil {
 		PkgLog.Info("config.DBStorage.Set.ReverseFQPath", "err", err, "key", key)
 		return
 	}
 
-	result, err := stmt.Exec(scope, scopeID, path, valStr, valStr)
+	result, err := stmt.Exec(p.Scope, p.ID, p.Level(-1), valStr, valStr)
 	if err != nil {
 		PkgLog.Info("config.DBStorage.Set.Write.Exec", "err", err, "SQL", dbs.Write.SQL, "key", key, "value", value)
 		return
@@ -160,14 +160,14 @@ func (dbs *DBStorage) Get(key string) interface{} {
 		return nil
 	}
 
-	scope, scopeID, path, err := scope.SplitFQPath(key)
+	p, err := path.SplitFQ(key)
 	if err != nil {
 		PkgLog.Info("config.DBStorage.Get.ReverseFQPath", "err", err, "key", key)
 		return nil
 	}
 
 	var data dbr.NullString
-	err = stmt.QueryRow(scope, scopeID, path).Scan(&data)
+	err = stmt.QueryRow(p.Scope, p.ID, p.Level(-1)).Scan(&data)
 	if err != nil {
 		PkgLog.Info("config.DBStorage.Get.QueryRow", "err", err, "key", key)
 		return nil

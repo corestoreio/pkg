@@ -22,8 +22,8 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -70,7 +70,7 @@ func TestDBStorageOneStmt(t *testing.T) {
 		ak := util.StringSlice(sdb.AllKeys()) // trigger many queries with one statement
 		assert.True(t, ak.Include(test.key), "Missing Key: %s", test.key)
 	}
-	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), fmt.Sprintf("CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`", scope.PS, scope.PS)))
+	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), fmt.Sprintf("CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`", path.Separator, path.Separator)))
 }
 
 func TestDBStorageMultipleStmt(t *testing.T) {
@@ -130,5 +130,5 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 	//println("\n", logStr, "\n")
 
 	// 6 is: open close for iteration 0+1, open in iteration 2 and close in iteration 4
-	assert.Exactly(t, 6, strings.Count(logStr, fmt.Sprintf("CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`", scope.PS, scope.PS)))
+	assert.Exactly(t, 6, strings.Count(logStr, fmt.Sprintf("CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`", path.Separator, path.Separator)))
 }

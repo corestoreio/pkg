@@ -61,7 +61,6 @@ func Scope(s scope.Scope, id int64) ArgFunc {
 func Path(paths ...string) ArgFunc {
 	p, err := path.NewSplit(paths...)
 	return func(a *arg) {
-		p.NoValidation = true // validation done in NewSplit() and no chance to change
 		a.Path = p
 		if err != nil {
 			a.lastErrors = append(a.lastErrors, err)
