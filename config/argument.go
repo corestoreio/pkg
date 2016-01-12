@@ -61,7 +61,8 @@ func Scope(s scope.Scope, id int64) ArgFunc {
 func Path(paths ...string) ArgFunc {
 	p, err := path.NewSplit(paths...)
 	return func(a *arg) {
-		a.Path = p
+		// only copy Parts, do not overwrite Scope and ID
+		a.Path.Parts = p.Parts
 		if err != nil {
 			a.lastErrors = append(a.lastErrors, err)
 		}

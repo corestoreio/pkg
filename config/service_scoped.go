@@ -135,19 +135,19 @@ func (ss scopedService) Bool(paths ...string) (v bool, err error) {
 	pArg := Path(paths...)
 	switch {
 	case ss.storeID > 0:
-		v, err = ss.root.Bool(ss.storeArg, pArg)
+		v, err = ss.root.Bool(pArg, ss.storeArg)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in store scope go to group scope
 	case ss.groupID > 0:
-		v, err = ss.root.Bool(ss.groupArg, pArg)
+		v, err = ss.root.Bool(pArg, ss.groupArg)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in group scope go to website scope
 	case ss.websiteID > 0:
-		v, err = ss.root.Bool(ss.websiteArg, pArg)
+		v, err = ss.root.Bool(pArg, ss.websiteArg)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
@@ -194,19 +194,19 @@ func (ss scopedService) Int(paths ...string) (v int, err error) {
 	pArg := Path(paths...)
 	switch {
 	case ss.storeID > 0:
-		v, err = ss.root.Int(ss.storeArg, pArg)
+		v, err = ss.root.Int(pArg, ss.storeArg)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in store scope go to group scope
 	case ss.groupID > 0:
-		v, err = ss.root.Int(ss.groupArg, pArg)
+		v, err = ss.root.Int(pArg, ss.groupArg)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 		fallthrough // if not found in group scope go to website scope
 	case ss.websiteID > 0:
-		v, err = ss.root.Int(ss.websiteArg, pArg)
+		v, err = ss.root.Int(pArg, ss.websiteArg)
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}

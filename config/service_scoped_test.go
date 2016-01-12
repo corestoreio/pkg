@@ -15,6 +15,7 @@
 package config_test
 
 import (
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -46,7 +47,7 @@ func TestScopedServiceScope(t *testing.T) {
 	}
 }
 
-func TestScopedService(t *testing.T) {
+func TestScopedServicePath(t *testing.T) {
 	tests := []struct {
 		desc                        string
 		fqpath                      string
@@ -80,7 +81,7 @@ func TestScopedService(t *testing.T) {
 		},
 		{
 			"Path consists of only two elements which is incorrect",
-			path.MustNew("aa/bb/cc").String(), []string{"a", "b"}, 0, 0, 0, path.ErrIncorrectPath,
+			path.MustNew("aa/bb/cc").String(), []string{"aa", "bb"}, 0, 0, 0, errors.New("Incorrect number of paths elements: want 3, have 2, Path: [aa bb]"),
 		},
 	}
 
