@@ -1,0 +1,6 @@
+PASS
+BenchmarkScopeKey____InMap-4       	 1000000	      1120 ns/op	     400 B/op	       9 allocs/op
+BenchmarkScopeKey_NotInMap-4       	 1000000	      1190 ns/op	     416 B/op	      10 allocs/op
+BenchmarkScopeKey____InMapNoJoin-4 	 1000000	      1291 ns/op	     416 B/op	      10 allocs/op
+BenchmarkScopedServiceStringStore-4	  500000	      2892 ns/op	     672 B/op	      17 allocs/op
+ok  	github.com/corestoreio/csfw/config	5.142s

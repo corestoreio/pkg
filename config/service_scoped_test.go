@@ -131,6 +131,7 @@ func testScopedService(t *testing.T, want, have interface{}, desc string, wantEr
 }
 
 // BenchmarkScopedServiceStringStore-4	 1000000	      2218 ns/op	     320 B/op	       9 allocs/op => Go 1.5.2
+// BenchmarkScopedServiceStringStore-4	  500000	      2939 ns/op	     672 B/op	      17 allocs/op
 func BenchmarkScopedServiceStringStore(b *testing.B) {
 
 	var want = strings.Repeat("Gopher", 100)

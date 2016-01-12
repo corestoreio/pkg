@@ -148,6 +148,7 @@ func TestMultiError(t *testing.T) {
 var benchmarkScopeKey string
 
 // BenchmarkScopeKey____InMap-4      	 2000000	       622 ns/op	     336 B/op	       6 allocs/op
+// BenchmarkScopeKey____InMap-4       	 1000000	      1139 ns/op	     400 B/op	       9 allocs/op
 func BenchmarkScopeKey____InMap(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -157,6 +158,7 @@ func BenchmarkScopeKey____InMap(b *testing.B) {
 }
 
 // BenchmarkScopeKey_NotInMap-4      	 2000000	       687 ns/op	     368 B/op	       7 allocs/op
+// BenchmarkScopeKey_NotInMap-4       	 1000000	      1241 ns/op	     416 B/op	      10 allocs/op
 func BenchmarkScopeKey_NotInMap(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -166,6 +168,7 @@ func BenchmarkScopeKey_NotInMap(b *testing.B) {
 }
 
 // BenchmarkScopeKey____InMapNoJoin-4	 2000000	       768 ns/op	     352 B/op	       7 allocs/op
+// BenchmarkScopeKey____InMapNoJoin-4 	 1000000	      1337 ns/op	     416 B/op	      10 allocs/op
 func BenchmarkScopeKey____InMapNoJoin(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
