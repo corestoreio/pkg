@@ -250,9 +250,9 @@ func TestStoreBaseURLandPath(t *testing.T) {
 
 					switch path {
 					// scope is here store but config.ScopedGetter must fall back to default
-					case backend.Backend.WebSecureBaseURL.FQPathInt64(scope.StrDefault, 0):
+					case backend.Backend.WebSecureBaseURL.MustFQPathInt64(scope.StrDefault, 0):
 						return "https://corestore.io", nil
-					case backend.Backend.WebUnsecureBaseURL.FQPathInt64(scope.StrDefault, 0):
+					case backend.Backend.WebUnsecureBaseURL.MustFQPathInt64(scope.StrDefault, 0):
 						return "http://corestore.io", nil
 					}
 					return "", config.ErrKeyNotFound
@@ -264,9 +264,9 @@ func TestStoreBaseURLandPath(t *testing.T) {
 			config.NewMockGetter(config.WithMockString(
 				func(path string) (string, error) {
 					switch path {
-					case backend.Backend.WebSecureBaseURL.FQPathInt64(scope.StrDefault, 0):
+					case backend.Backend.WebSecureBaseURL.MustFQPathInt64(scope.StrDefault, 0):
 						return "https://myplatform.io/customer1", nil
-					case backend.Backend.WebUnsecureBaseURL.FQPathInt64(scope.StrDefault, 0):
+					case backend.Backend.WebUnsecureBaseURL.MustFQPathInt64(scope.StrDefault, 0):
 						return "http://myplatform.io/customer1", nil
 					}
 					return "", config.ErrKeyNotFound
@@ -278,9 +278,9 @@ func TestStoreBaseURLandPath(t *testing.T) {
 			config.NewMockGetter(config.WithMockString(
 				func(path string) (string, error) {
 					switch path {
-					case backend.Backend.WebSecureBaseURL.FQPathInt64(scope.StrDefault, 0):
+					case backend.Backend.WebSecureBaseURL.MustFQPathInt64(scope.StrDefault, 0):
 						return model.PlaceholderBaseURL, nil
-					case backend.Backend.WebUnsecureBaseURL.FQPathInt64(scope.StrDefault, 0):
+					case backend.Backend.WebUnsecureBaseURL.MustFQPathInt64(scope.StrDefault, 0):
 						return model.PlaceholderBaseURL, nil
 					case scope.StrDefault.FQPathInt64(0, config.PathCSBaseURL):
 						return config.CSBaseURL, nil

@@ -34,7 +34,7 @@ func TestConfigRedirectToBase(t *testing.T) {
 
 	cr := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			backend.Backend.WebURLRedirectToBase.FQPathInt64(scope.StrDefault, 0): 2,
+			backend.Backend.WebURLRedirectToBase.MustFQPathInt64(scope.StrDefault, 0): 2,
 		}),
 	)
 

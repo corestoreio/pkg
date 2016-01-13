@@ -41,7 +41,7 @@ func TestPathCountryAllowedCustom(t *testing.T) {
 
 	cr := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			directory.Backend.GeneralCountryAllow.FQPathInt64(scope.StrStores, 1): "DE,AU,CH,AT",
+			directory.Backend.GeneralCountryAllow.MustFQPathInt64(scope.StrStores, 1): "DE,AU,CH,AT",
 		}),
 	)
 
