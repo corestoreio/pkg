@@ -21,6 +21,8 @@ import (
 	"strconv"
 	"strings"
 
+	"unicode/utf8"
+
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/bufferpool"
 )
@@ -31,31 +33,28 @@ const Levels int = 3
 
 // Separator used in the database table core_config_data and in config.Service
 // to separate the path parts.
-const Separator = "/"
+var Separator = []byte("/")
 
 const rSeparator = '/'
-const strDefaultID = "0"
 
-// ErrPartsEmpty path parts are empty
-var ErrPartsEmpty = errors.New("Parts are empty")
+// ErrRouteEmpty path parts are empty
+var ErrRouteEmpty = errors.New("Route is empty")
 
 // ErrIncorrectPath a path is missing a path separator or is too short
 var ErrIncorrectPath = errors.New("Incorrect Path. Either to short or missing path separator.")
 
-// Path represents a configuration path.
+// Path represents a configuration path bound to a scope.
 type Path struct {
-	// Parts either one short path or three path parts
-	Parts []string
+	Route
 	Scope scope.Scope
 	// ID represents a website, group or store ID
 	ID int64
 }
 
-// New creates a new validated Path. Argument can either be a path like
-// a/b/c or path parts like "a","b","c". Scope is assigned to Default.
-func New(paths ...string) (Path, error) {
+// New creates a new validated Path. Scope is assigned to Default.
+func New(r Route) (Path, error) {
 	p := Path{
-		Parts: paths,
+		Route: r,
 		Scope: scope.DefaultID,
 	}
 	if err := p.IsValid(); err != nil {
@@ -64,31 +63,31 @@ func New(paths ...string) (Path, error) {
 	return p, nil
 }
 
-// NewSplit takes a path argument like a/b/c or path parts like "a","b","c".
-// If a path has been provided it gets split into its parts.
-// Scope is assigned to Default.
-func NewSplit(paths ...string) (Path, error) {
-	p := Path{
-		Scope: scope.DefaultID,
-	}
-	switch {
-	case len(paths) >= Levels:
-		p.Parts = paths
-	case len(paths) == 1 && paths[0] != "":
-		p.Parts = Split(paths[0])
-	default:
-		return Path{}, fmt.Errorf("Incorrect number of paths elements: want %d, have %d, Path: %v", Levels, len(paths), paths)
-	}
-
-	if err := p.IsValid(); err != nil {
-		return Path{}, err
-	}
-	return p, nil
-}
+//// NewSplit takes a path argument like a/b/c or path parts like "a","b","c".
+//// If a path has been provided it gets split into its parts.
+//// Scope is assigned to Default.
+//func NewSplit(paths ...string) (Path, error) {
+//	p := Path{
+//		Scope: scope.DefaultID,
+//	}
+//	switch {
+//	case len(paths) >= Levels:
+//		p.Route = paths
+//	case len(paths) == 1 && paths[0] != "":
+//		p.Route = Split(paths[0])
+//	default:
+//		return Path{}, fmt.Errorf("Incorrect number of paths elements: want %d, have %d, Path: %v", Levels, len(paths), paths)
+//	}
+//
+//	if err := p.IsValid(); err != nil {
+//		return Path{}, err
+//	}
+//	return p, nil
+//}
 
 // MustNew same as New but panics on error.
-func MustNew(paths ...string) Path {
-	p, err := New(paths...)
+func MustNew(r Route) Path {
+	p, err := New(r)
 	if err != nil {
 		panic(err)
 	}
@@ -123,14 +122,17 @@ func (p Path) String() string {
 	if PkgLog.IsDebug() {
 		PkgLog.Debug("path.Path.FQ.String", "err", err, "path", p)
 	}
-	return s
+	return string(s)
 }
 
 // FQ returns the fully qualified path.
-func (p Path) FQ() (string, error) {
+func (p Path) FQ() ([]byte, error) {
 	if err := p.IsValid(); err != nil {
-		return "", err
+		return nil, err
 	}
+
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
 
 	idStr := "0"
 	if p.ID > 0 {
@@ -139,19 +141,17 @@ func (p Path) FQ() (string, error) {
 		} else {
 			idStr = strconv.FormatInt(p.ID, 10)
 		}
+	} else {
+		buf.WriteRune('0')
 	}
 
 	scopeStr := scope.FromScope(p.Scope)
-	if scopeStr == scope.StrDefault && idStr != strDefaultID {
-		idStr = strDefaultID // default scope is always 0
-	}
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
+
 	buf.WriteString(scopeStr.String())
-	buf.WriteString(Separator)
+	buf.WriteByte(rSeparator)
 	buf.WriteString(idStr)
-	buf.WriteString(Separator)
-	join(buf, p.Parts)
+	buf.WriteByte(rSeparator)
+	buf.Write(p.Route)
 	return buf.String(), nil
 }
 
@@ -184,16 +184,16 @@ func join(buf *bytes.Buffer, paths []string) {
 // Level 3 returns "a/b/c" and so on. Level -1 joins all available path parts.
 // Does not generate a fully qualified path.
 func (p Path) Level(level int) string {
-	lp := len(p.Parts)
+	lp := len(p.Route)
 	if level <= 0 || level >= lp {
 		level = lp
 	}
 	if lp == 1 {
-		return p.Parts[0]
+		return p.Route[0]
 	}
 
 	buf := bufferpool.Get()
-	join(buf, p.Parts[:level])
+	join(buf, p.Route[:level])
 	s := buf.String()
 	bufferpool.Put(buf)
 	return s
@@ -225,7 +225,7 @@ func SplitFQ(fqPath string) (Path, error) {
 	scopeID, err := strconv.ParseInt(fqPath[:fi], 10, 64)
 	path := fqPath[fi+1:]
 	return Path{
-		Parts: []string{path},
+		Route: []string{path},
 		Scope: scope.FromString(scopeStr),
 		ID:    scopeID,
 	}, err
@@ -239,45 +239,60 @@ func isFQ(fqPath string) bool {
 // Configuration path attribute can have only three groups of [a-zA-Z0-9_] characters split by '/'.
 // Minimal length per part 2 characters. Case sensitive.
 //
-// IsValid can return ErrPartsEmpty or ErrIncorrectPath or a custom error.
+// IsValid can return ErrRouteEmpty or ErrIncorrectPath or a custom error.
 func (p Path) IsValid() error {
-	lp := len(p.Parts)
-	if lp < 1 {
-		return ErrPartsEmpty
+	if p.Route.IsEmpty() {
+		return ErrRouteEmpty
+	}
+
+	if false == utf8.Valid(p.Route) {
+		return ErrRouteInvalidBytes
+	}
+
+	if p.Scope == scope.DefaultID && p.ID != 0 {
+		return fmt.Errorf("Default Scope can only have an ID of 0. Yours is: %d", p.ID)
 	}
 
 	// first argument only without a slash
-	if lp == 1 && (strings.Count(p.Parts[0], Separator) != Levels-1 || len(p.Parts[0]) < 8) { // must contain at least two slashes
+	sepCount := bytes.Count(p.Route, Separator)
+	if sepCount != Levels-1 || len(p.Route) < 8 { // must contain at least two slashes
 		return ErrIncorrectPath
 	}
-
-	valid := 0
-	for _, part := range p.Parts {
-		if len(part) < 2 {
-			return fmt.Errorf("This path part %q is too short. Parts: %#v", part, p.Parts)
-		}
-
-		for _, r := range part {
-			ok := false
-			switch {
-			case '0' <= r && r <= '9':
-				ok = true
-			case 'a' <= r && r <= 'z':
-				ok = true
-			case 'A' <= r && r <= 'Z':
-				ok = true
-			case r == '_', r == rSeparator:
-				ok = true
-			}
-			if !ok {
-				return fmt.Errorf("This character %q is not allowed in Parts %#v", string(r), p.Parts)
-			}
-		}
-		valid++
+	if sepCount < (utf8.RuneCount(p.Route) - (2 * len(rSeparator))) {
+		return fmt.Errorf("Route is too short: %s", p.Route)
 	}
 
-	if lp > 1 && valid < Levels { // if more than one arg has been provided all 3 must be valid
-		return fmt.Errorf("All arguments must be valid! Min want: %d. Have: %d. Parts %#v", Levels, valid, p.Parts)
+	i := 0
+	for i < len(p.Route) {
+		var r rune
+		if p.Route[i] < utf8.RuneSelf {
+			r = rune(p.Route[i])
+			i++
+		} else {
+			var size int
+			r, size = utf8.DecodeRune(p.Route[i:])
+			if size == 1 {
+				// All valid runes of size 1 (those
+				// below RuneSelf) were handled above.
+				// This must be a RuneError.
+				return ErrRouteInvalidBytes
+			}
+			i += size
+		}
+		ok := false
+		switch {
+		case '0' <= r && r <= '9':
+			ok = true
+		case 'a' <= r && r <= 'z':
+			ok = true
+		case 'A' <= r && r <= 'Z':
+			ok = true
+		case r == '_', r == rSeparator:
+			ok = true
+		}
+		if !ok {
+			return fmt.Errorf("This character %q is not allowed in Route %s", string(r), p.Route)
+		}
 	}
 
 	return nil

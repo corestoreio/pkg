@@ -16,7 +16,6 @@ package path_test
 
 import (
 	"errors"
-	"reflect"
 	"strconv"
 	"testing"
 
@@ -25,27 +24,27 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPathSplit(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		parts   []string
-		want    string
-		wantErr error
-	}{
-		{[]string{"general", "single_store_mode", "enabled"}, "general/single_store_mode/enabled", nil},
-		{[]string{"general", "single_store_mode"}, "general/single_store_mode/enabled", errors.New("Incorrect number of paths elements: want 3, have 2, Path: [general single_store_mode]")},
-		{[]string{"general/single_store_mode/enabled"}, "general/single_store_mode/enabled", nil},
-		{[]string{"general/singlestore_mode/enabled"}, "general/single_store_mode/enabled", errors.New("This character \"\\uf8ff\" is not allowed in Parts []string{\"general\", \"single\\uf8ffstore_mode\", \"enabled\"}")},
-	}
-	for i, test := range tests {
-		haveP, haveErr := path.NewSplit(test.parts...)
-		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
-			continue
-		}
-		assert.Exactly(t, test.want, haveP.Level(0), "Index %d", i)
-	}
-}
+//func TestPathSplit(t *testing.T) {
+//	t.Parallel()
+//	tests := []struct {
+//		parts   []string
+//		want    string
+//		wantErr error
+//	}{
+//		{[]string{"general", "single_store_mode", "enabled"}, "general/single_store_mode/enabled", nil},
+//		{[]string{"general", "single_store_mode"}, "general/single_store_mode/enabled", errors.New("Incorrect number of paths elements: want 3, have 2, Path: [general single_store_mode]")},
+//		{[]string{"general/single_store_mode/enabled"}, "general/single_store_mode/enabled", nil},
+//		{[]string{"general/singlestore_mode/enabled"}, "general/single_store_mode/enabled", errors.New("This character \"\\uf8ff\" is not allowed in Route []string{\"general\", \"single\\uf8ffstore_mode\", \"enabled\"}")},
+//	}
+//	for i, test := range tests {
+//		haveP, haveErr := path.NewSplit(test.parts...)
+//		if test.wantErr != nil {
+//			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+//			continue
+//		}
+//		assert.Exactly(t, test.want, haveP.Level(0), "Index %d", i)
+//	}
+//}
 
 func TestPath(t *testing.T) {
 	t.Parallel()
@@ -82,8 +81,8 @@ func TestFQ(t *testing.T) {
 		want    string
 		wantErr error
 	}{
-		{scope.StrDefault, 0, nil, "", errors.New("Parts are empty")},
-		{scope.StrDefault, 0, []string{}, "", errors.New("Parts are empty")},
+		{scope.StrDefault, 0, nil, "", errors.New("Route are empty")},
+		{scope.StrDefault, 0, []string{}, "", errors.New("Route are empty")},
 		{scope.StrDefault, 0, []string{""}, "", path.ErrIncorrectPath},
 		{scope.StrDefault, 0, []string{"system/dev/debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
 		{scope.StrDefault, 33, []string{"system", "dev", "debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
@@ -127,7 +126,7 @@ func TestShouldPanicIncorrectPath(t *testing.T) {
 	assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", path.MustNew("xxxxx", "yyyyy", "zzzzz").BindStr(scope.StrDefault, 345).String())
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), "All arguments must be valid! Min want: 3. Have: 2. Parts []string{\"xxxxx\", \"yyyyy\"}")
+			assert.EqualError(t, r.(error), "All arguments must be valid! Min want: 3. Have: 2. Route []string{\"xxxxx\", \"yyyyy\"}")
 		} else {
 			t.Fatal("Expecting a panic")
 		}
@@ -246,40 +245,40 @@ func BenchmarkLevel(b *testing.B) {
 	}
 }
 
-func TestSplit(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		have string
-		want []string
-	}{
-		{"system/dev/debug", []string{"system", "dev", "debug"}},
-		{"a/b", []string{"a", "b"}},
-		{"a/b/c", []string{"a", "b", "c"}},
-		{"/a/b/c", []string{"a", "b", "c"}},
-		{"a/b/c/d/e", []string{"a", "b", "c", "d", "e"}},
-		{"", []string{""}},
-	}
-	for i, test := range tests {
-		assert.Exactly(t, test.want, path.Split(test.have), "Index %d", i)
-	}
-}
-
-var benchmarkSplit []string
-
-// BenchmarkSplit-4          	 5000000	       290 ns/op	      48 B/op	       1 allocs/op => Go 1.5.2
-func BenchmarkSplit(b *testing.B) {
-	want := []string{"system", "dev", "debug"}
-	have := "system/dev/debug"
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		benchmarkSplit = path.Split(have)
-	}
-	if false == reflect.DeepEqual(benchmarkSplit, want) {
-		b.Errorf("Want: %s; Have, %s", want, benchmarkLevel)
-	}
-}
+//func TestSplit(t *testing.T) {
+//	t.Parallel()
+//	tests := []struct {
+//		have string
+//		want []string
+//	}{
+//		{"system/dev/debug", []string{"system", "dev", "debug"}},
+//		{"a/b", []string{"a", "b"}},
+//		{"a/b/c", []string{"a", "b", "c"}},
+//		{"/a/b/c", []string{"a", "b", "c"}},
+//		{"a/b/c/d/e", []string{"a", "b", "c", "d", "e"}},
+//		{"", []string{""}},
+//	}
+//	for i, test := range tests {
+//		assert.Exactly(t, test.want, path.Split(test.have), "Index %d", i)
+//	}
+//}
+//
+//var benchmarkSplit []string
+//
+//// BenchmarkSplit-4          	 5000000	       290 ns/op	      48 B/op	       1 allocs/op => Go 1.5.2
+//func BenchmarkSplit(b *testing.B) {
+//	want := []string{"system", "dev", "debug"}
+//	have := "system/dev/debug"
+//
+//	b.ReportAllocs()
+//	b.ResetTimer()
+//	for i := 0; i < b.N; i++ {
+//		benchmarkSplit = path.Split(have)
+//	}
+//	if false == reflect.DeepEqual(benchmarkSplit, want) {
+//		b.Errorf("Want: %s; Have, %s", want, benchmarkLevel)
+//	}
+//}
 
 func TestIsValid(t *testing.T) {
 	tests := []struct {
@@ -288,19 +287,19 @@ func TestIsValid(t *testing.T) {
 	}{
 		{[]string{"//"}, path.ErrIncorrectPath},
 		{[]string{"general/store_information/city"}, nil},
-		{[]string{"", "", ""}, errors.New("This path part \"\" is too short. Parts: []string{\"\", \"\", \"\"}")},
+		{[]string{"", "", ""}, errors.New("This path part \"\" is too short. Route: []string{\"\", \"\", \"\"}")},
 		{[]string{"general", "store_information", "name"}, nil},
-		{[]string{"general", "store_information"}, errors.New("All arguments must be valid! Min want: 3. Have: 2. Parts []string{\"general\", \"store_information\"}")},
+		{[]string{"general", "store_information"}, errors.New("All arguments must be valid! Min want: 3. Have: 2. Route []string{\"general\", \"store_information\"}")},
 		{[]string{path.MustNew("system", "dev", "debug").Bind(scope.WebsiteID, 22).String()}, path.ErrIncorrectPath},
 		{[]string{"groups/33/general/store_information/street"}, path.ErrIncorrectPath},
 		{[]string{"groups/33"}, path.ErrIncorrectPath},
-		{[]string{"system/dEv/inv˚lid"}, errors.New("This character \"˚\" is not allowed in Parts []string{\"system/dEv/inv˚lid\"}")},
+		{[]string{"system/dEv/inv˚lid"}, errors.New("This character \"˚\" is not allowed in Route []string{\"system/dEv/inv˚lid\"}")},
 		{[]string{"syst3m/dEv/invalid"}, nil},
-		{nil, errors.New("Parts are empty")},
+		{nil, errors.New("Route are empty")},
 	}
 	for i, test := range tests {
 		p := path.Path{
-			Parts: test.have,
+			Route: test.have,
 		}
 		haveErr := p.IsValid()
 		if test.want != nil {
@@ -319,14 +318,14 @@ func BenchmarkIsValid(b *testing.B) {
 	want := "system/dev/debug"
 
 	p := path.Path{
-		Parts: have,
+		Route: have,
 	}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		benchmarkIsValid = p.IsValid()
 		if nil != benchmarkIsValid {
-			b.Errorf("Want: %s; Have: %v", want, p.Parts)
+			b.Errorf("Want: %s; Have: %v", want, p.Route)
 		}
 	}
 }
