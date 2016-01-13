@@ -15,12 +15,10 @@
 package path_test
 
 import (
-	"errors"
-	"strconv"
 	"testing"
 
+	"errors"
 	"github.com/corestoreio/csfw/config/path"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,204 +44,204 @@ import (
 //	}
 //}
 
-func TestPath(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		parts      []string
-		s          scope.Scope
-		id         int64
-		wantFQ     string
-		wantNewErr error
-	}{
-		{[]string{"ab/ba/cd"}, scope.WebsiteID, 3, "websites/3/ab/ba/cd", nil},
-		{[]string{"ad/ba/ca/sd"}, scope.WebsiteID, 3, "websites/3/a/b/c/d", path.ErrIncorrectPath},
-		{[]string{"as/sb"}, scope.WebsiteID, 3, "websites/3/a/b/c/d", path.ErrIncorrectPath},
-	}
-	for i, test := range tests {
-		haveP, haveErr := path.New(test.parts...)
-		haveP = haveP.Bind(test.s, test.id)
-		if test.wantNewErr != nil {
-			assert.EqualError(t, haveErr, test.wantNewErr.Error(), "Index %d", i)
-			continue
-		}
-		fq, fqErr := haveP.FQ()
-		assert.NoError(t, fqErr, "Index %d", i)
-		assert.Exactly(t, test.wantFQ, fq, "Index %d", i)
-	}
-}
-
-func TestFQ(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		str     scope.StrScope
-		id      int64
-		path    []string
-		want    string
-		wantErr error
-	}{
-		{scope.StrDefault, 0, nil, "", errors.New("Route are empty")},
-		{scope.StrDefault, 0, []string{}, "", errors.New("Route are empty")},
-		{scope.StrDefault, 0, []string{""}, "", path.ErrIncorrectPath},
-		{scope.StrDefault, 0, []string{"system/dev/debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
-		{scope.StrDefault, 33, []string{"system", "dev", "debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
-		{scope.StrWebsites, 0, []string{"system/dev/debug"}, scope.StrWebsites.String() + "/0/system/dev/debug", nil},
-		{scope.StrWebsites, 343, []string{"system", "dev", "debug"}, scope.StrWebsites.String() + "/343/system/dev/debug", nil},
-		{scope.StrScope("hello"), 343, []string{"system", "dev", "debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
-	}
-	for i, test := range tests {
-		p, pErr := path.New(test.path...)
-		p = p.BindStr(test.str, test.id)
-		have, haveErr := p.FQ()
-		if test.wantErr != nil {
-			assert.Empty(t, have, "Index %d", i)
-			if pErr != nil {
-				assert.EqualError(t, pErr, test.wantErr.Error(), "Index %d", i)
-				continue
-			}
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
-			continue
-		}
-		assert.NoError(t, haveErr, "Index %d", i)
-		assert.Equal(t, test.want, have, "Index %d", i)
-	}
-	assert.Equal(t, "stores/7475/catalog/frontend/list_allow_all", path.MustNew("catalog", "frontend", "list_allow_all").BindStr(scope.StrStores, 7475).String())
-	assert.Equal(t, "stores/5/catalog/frontend/list_allow_all", path.MustNew("catalog", "frontend", "list_allow_all").BindStr(scope.StrStores, 5).String())
-}
-
-func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
-	t.Parallel()
-	assert.Exactly(t, "stores/345/xxxxx/yyyyy/zzzzz", path.MustNew("xxxxx", "yyyyy", "zzzzz").BindStr(scope.StrStores, 345).String())
-	defer func() {
-		if r := recover(); r != nil {
-			t.Fatal("Did not expect a panic")
-		}
-	}()
-	_ = path.MustNew("xxxxx", "yyyyy", "zzzzz").BindStr(scope.StrScope("invalid"), 345)
-}
-
-func TestShouldPanicIncorrectPath(t *testing.T) {
-	t.Parallel()
-	assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", path.MustNew("xxxxx", "yyyyy", "zzzzz").BindStr(scope.StrDefault, 345).String())
-	defer func() {
-		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), "All arguments must be valid! Min want: 3. Have: 2. Route []string{\"xxxxx\", \"yyyyy\"}")
-		} else {
-			t.Fatal("Expecting a panic")
-		}
-	}()
-	assert.Exactly(t, "websites/345/xxxxx/yyyyy", path.MustNew("xxxxx", "yyyyy").BindStr(scope.StrWebsites, 345).String())
-}
-
-var benchmarkStrScopeFQPath string
-
-func benchmarkFQ(scopeID int64, b *testing.B) {
-	want := scope.StrWebsites.String() + "/" + strconv.FormatInt(scopeID, 10) + "/system/dev/debug"
-	p := []string{"system/dev/debug"}
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		var err error
-		benchmarkStrScopeFQPath, err = path.MustNew(p...).BindStr(scope.StrWebsites, scopeID).FQ()
-		if err != nil {
-			b.Error(err)
-		}
-	}
-	if benchmarkStrScopeFQPath != want {
-		b.Errorf("Want: %s; Have, %s", want, benchmarkStrScopeFQPath)
-	}
-}
-
-// BenchmarkFQ__Cached-4   	 3000000	       572 ns/op	      32 B/op	       1 allocs/op
-func BenchmarkFQ__Cached(b *testing.B) {
-	benchmarkFQ(4, b)
-}
-
-// BenchmarkFQUnCached-4	 3000000	       513 ns/op	      48 B/op	       2 allocs/op
-func BenchmarkFQUnCached(b *testing.B) {
-	benchmarkFQ(40, b)
-}
-
-func TestSplitFQPath(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		have        string
-		wantScope   string
-		wantScopeID int64
-		wantPath    string
-		wantErr     error
-	}{
-		{"groups/1/catalog/frontend/list_allow_all", "default", 0, "", scope.ErrUnsupportedScope},
-		{"stores/7475/catalog/frontend/list_allow_all", scope.StrStores.String(), 7475, "catalog/frontend/list_allow_all", nil},
-		{"websites/1/catalog/frontend/list_allow_all", scope.StrWebsites.String(), 1, "catalog/frontend/list_allow_all", nil},
-		{"default/0/catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", nil},
-		{"default//catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", errors.New("strconv.ParseInt: parsing \"\\uf8ff\": invalid syntax")},
-		{"stores/123/catalog/index", "default", 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\"")},
-	}
-	for _, test := range tests {
-		havePath, haveErr := path.SplitFQ(test.have)
-
-		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Test %v", test)
-		} else {
-			assert.NoError(t, haveErr, "Test %v", test)
-		}
-		assert.Exactly(t, test.wantScope, havePath.StrScope(), "Test %v", test)
-		assert.Exactly(t, test.wantScopeID, havePath.ID, "Test %v", test)
-		assert.Exactly(t, test.wantPath, havePath.Level(-1), "Test %v", test)
-	}
-}
-
-var benchmarkReverseFQPath path.Path
-
-// BenchmarkReverseFQPath-4	10000000	       175 ns/op	      16 B/op	       1 allocs/op
-func BenchmarkReverseFQPath(b *testing.B) {
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		var err error
-		benchmarkReverseFQPath, err = path.SplitFQ("stores/7475/catalog/frontend/list_allow_all")
-		if err != nil {
-			b.Error(err)
-		}
-	}
-}
-
-func TestLevel(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		have  []string
-		level int
-		want  string
-	}{
-		{[]string{"general", "single_store_mode", "enabled"}, -1, "general/single_store_mode/enabled"},
-		{[]string{"general", "single_store_mode", "enabled"}, 0, "general/single_store_mode/enabled"},
-		{[]string{"general", "single_store_mode", "enabled"}, 5, "general/single_store_mode/enabled"},
-		{[]string{"general", "single_store_mode", "enabled"}, 4, "general/single_store_mode/enabled"},
-		{[]string{"general", "single_store_mode", "enabled"}, 3, "general/single_store_mode/enabled"},
-		{[]string{"general", "single_store_mode", "enabled"}, 2, "general/single_store_mode"},
-		{[]string{"general", "single_store_mode", "enabled"}, 1, "general"},
-		{[]string{"general/single_store_mode/enabled"}, -1, "general/single_store_mode/enabled"},
-	}
-	for i, test := range tests {
-		assert.Exactly(t, test.want, path.MustNew(test.have...).Level(test.level), "Index %d", i)
-	}
-}
-
-var benchmarkLevel string
-
-// BenchmarkLevel-4           	10000000	       238 ns/op	      16 B/op	       1 allocs/op => Go 1.5.2
-func BenchmarkLevel(b *testing.B) {
-	have := []string{"system", "dev", "debug"}
-	want := "system/dev/debug"
-
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		benchmarkLevel = path.MustNew(have...).Level(-1)
-	}
-	if benchmarkLevel != want {
-		b.Errorf("Want: %s; Have, %s", want, benchmarkLevel)
-	}
-}
+//func TestPath(t *testing.T) {
+//	t.Parallel()
+//	tests := []struct {
+//		parts      []string
+//		s          scope.Scope
+//		id         int64
+//		wantFQ     string
+//		wantNewErr error
+//	}{
+//		{[]string{"ab/ba/cd"}, scope.WebsiteID, 3, "websites/3/ab/ba/cd", nil},
+//		{[]string{"ad/ba/ca/sd"}, scope.WebsiteID, 3, "websites/3/a/b/c/d", path.ErrIncorrectPath},
+//		{[]string{"as/sb"}, scope.WebsiteID, 3, "websites/3/a/b/c/d", path.ErrIncorrectPath},
+//	}
+//	for i, test := range tests {
+//		haveP, haveErr := path.New(test.parts...)
+//		haveP = haveP.Bind(test.s, test.id)
+//		if test.wantNewErr != nil {
+//			assert.EqualError(t, haveErr, test.wantNewErr.Error(), "Index %d", i)
+//			continue
+//		}
+//		fq, fqErr := haveP.FQ()
+//		assert.NoError(t, fqErr, "Index %d", i)
+//		assert.Exactly(t, test.wantFQ, fq, "Index %d", i)
+//	}
+//}
+//
+//func TestFQ(t *testing.T) {
+//	t.Parallel()
+//	tests := []struct {
+//		str     scope.StrScope
+//		id      int64
+//		path    []string
+//		want    string
+//		wantErr error
+//	}{
+//		{scope.StrDefault, 0, nil, "", errors.New("Route are empty")},
+//		{scope.StrDefault, 0, []string{}, "", errors.New("Route are empty")},
+//		{scope.StrDefault, 0, []string{""}, "", path.ErrIncorrectPath},
+//		{scope.StrDefault, 0, []string{"system/dev/debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
+//		{scope.StrDefault, 33, []string{"system", "dev", "debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
+//		{scope.StrWebsites, 0, []string{"system/dev/debug"}, scope.StrWebsites.String() + "/0/system/dev/debug", nil},
+//		{scope.StrWebsites, 343, []string{"system", "dev", "debug"}, scope.StrWebsites.String() + "/343/system/dev/debug", nil},
+//		{scope.StrScope("hello"), 343, []string{"system", "dev", "debug"}, scope.StrDefault.String() + "/0/system/dev/debug", nil},
+//	}
+//	for i, test := range tests {
+//		p, pErr := path.New(test.path...)
+//		p = p.BindStr(test.str, test.id)
+//		have, haveErr := p.FQ()
+//		if test.wantErr != nil {
+//			assert.Empty(t, have, "Index %d", i)
+//			if pErr != nil {
+//				assert.EqualError(t, pErr, test.wantErr.Error(), "Index %d", i)
+//				continue
+//			}
+//			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+//			continue
+//		}
+//		assert.NoError(t, haveErr, "Index %d", i)
+//		assert.Equal(t, test.want, have, "Index %d", i)
+//	}
+//	assert.Equal(t, "stores/7475/catalog/frontend/list_allow_all", path.MustNew("catalog", "frontend", "list_allow_all").BindStr(scope.StrStores, 7475).String())
+//	assert.Equal(t, "stores/5/catalog/frontend/list_allow_all", path.MustNew("catalog", "frontend", "list_allow_all").BindStr(scope.StrStores, 5).String())
+//}
+//
+//func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
+//	t.Parallel()
+//	assert.Exactly(t, "stores/345/xxxxx/yyyyy/zzzzz", path.MustNew("xxxxx", "yyyyy", "zzzzz").BindStr(scope.StrStores, 345).String())
+//	defer func() {
+//		if r := recover(); r != nil {
+//			t.Fatal("Did not expect a panic")
+//		}
+//	}()
+//	_ = path.MustNew("xxxxx", "yyyyy", "zzzzz").BindStr(scope.StrScope("invalid"), 345)
+//}
+//
+//func TestShouldPanicIncorrectPath(t *testing.T) {
+//	t.Parallel()
+//	assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", path.MustNew("xxxxx", "yyyyy", "zzzzz").BindStr(scope.StrDefault, 345).String())
+//	defer func() {
+//		if r := recover(); r != nil {
+//			assert.EqualError(t, r.(error), "All arguments must be valid! Min want: 3. Have: 2. Route []string{\"xxxxx\", \"yyyyy\"}")
+//		} else {
+//			t.Fatal("Expecting a panic")
+//		}
+//	}()
+//	assert.Exactly(t, "websites/345/xxxxx/yyyyy", path.MustNew("xxxxx", "yyyyy").BindStr(scope.StrWebsites, 345).String())
+//}
+//
+//var benchmarkStrScopeFQPath string
+//
+//func benchmarkFQ(scopeID int64, b *testing.B) {
+//	want := scope.StrWebsites.String() + "/" + strconv.FormatInt(scopeID, 10) + "/system/dev/debug"
+//	p := []string{"system/dev/debug"}
+//	b.ReportAllocs()
+//	b.ResetTimer()
+//	for i := 0; i < b.N; i++ {
+//		var err error
+//		benchmarkStrScopeFQPath, err = path.MustNew(p...).BindStr(scope.StrWebsites, scopeID).FQ()
+//		if err != nil {
+//			b.Error(err)
+//		}
+//	}
+//	if benchmarkStrScopeFQPath != want {
+//		b.Errorf("Want: %s; Have, %s", want, benchmarkStrScopeFQPath)
+//	}
+//}
+//
+//// BenchmarkFQ__Cached-4   	 3000000	       572 ns/op	      32 B/op	       1 allocs/op
+//func BenchmarkFQ__Cached(b *testing.B) {
+//	benchmarkFQ(4, b)
+//}
+//
+//// BenchmarkFQUnCached-4	 3000000	       513 ns/op	      48 B/op	       2 allocs/op
+//func BenchmarkFQUnCached(b *testing.B) {
+//	benchmarkFQ(40, b)
+//}
+//
+//func TestSplitFQPath(t *testing.T) {
+//	t.Parallel()
+//	tests := []struct {
+//		have        string
+//		wantScope   string
+//		wantScopeID int64
+//		wantPath    string
+//		wantErr     error
+//	}{
+//		{"groups/1/catalog/frontend/list_allow_all", "default", 0, "", scope.ErrUnsupportedScope},
+//		{"stores/7475/catalog/frontend/list_allow_all", scope.StrStores.String(), 7475, "catalog/frontend/list_allow_all", nil},
+//		{"websites/1/catalog/frontend/list_allow_all", scope.StrWebsites.String(), 1, "catalog/frontend/list_allow_all", nil},
+//		{"default/0/catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", nil},
+//		{"default//catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", errors.New("strconv.ParseInt: parsing \"\\uf8ff\": invalid syntax")},
+//		{"stores/123/catalog/index", "default", 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\"")},
+//	}
+//	for _, test := range tests {
+//		havePath, haveErr := path.SplitFQ(test.have)
+//
+//		if test.wantErr != nil {
+//			assert.EqualError(t, haveErr, test.wantErr.Error(), "Test %v", test)
+//		} else {
+//			assert.NoError(t, haveErr, "Test %v", test)
+//		}
+//		assert.Exactly(t, test.wantScope, havePath.StrScope(), "Test %v", test)
+//		assert.Exactly(t, test.wantScopeID, havePath.ID, "Test %v", test)
+//		assert.Exactly(t, test.wantPath, havePath.Level(-1), "Test %v", test)
+//	}
+//}
+//
+//var benchmarkReverseFQPath path.Path
+//
+//// BenchmarkReverseFQPath-4	10000000	       175 ns/op	      16 B/op	       1 allocs/op
+//func BenchmarkReverseFQPath(b *testing.B) {
+//	b.ReportAllocs()
+//	for i := 0; i < b.N; i++ {
+//		var err error
+//		benchmarkReverseFQPath, err = path.SplitFQ("stores/7475/catalog/frontend/list_allow_all")
+//		if err != nil {
+//			b.Error(err)
+//		}
+//	}
+//}
+//
+//func TestLevel(t *testing.T) {
+//	t.Parallel()
+//	tests := []struct {
+//		have  []string
+//		level int
+//		want  string
+//	}{
+//		{[]string{"general", "single_store_mode", "enabled"}, -1, "general/single_store_mode/enabled"},
+//		{[]string{"general", "single_store_mode", "enabled"}, 0, "general/single_store_mode/enabled"},
+//		{[]string{"general", "single_store_mode", "enabled"}, 5, "general/single_store_mode/enabled"},
+//		{[]string{"general", "single_store_mode", "enabled"}, 4, "general/single_store_mode/enabled"},
+//		{[]string{"general", "single_store_mode", "enabled"}, 3, "general/single_store_mode/enabled"},
+//		{[]string{"general", "single_store_mode", "enabled"}, 2, "general/single_store_mode"},
+//		{[]string{"general", "single_store_mode", "enabled"}, 1, "general"},
+//		{[]string{"general/single_store_mode/enabled"}, -1, "general/single_store_mode/enabled"},
+//	}
+//	for i, test := range tests {
+//		assert.Exactly(t, test.want, path.MustNew(test.have...).Level(test.level), "Index %d", i)
+//	}
+//}
+//
+//var benchmarkLevel string
+//
+//// BenchmarkLevel-4           	10000000	       238 ns/op	      16 B/op	       1 allocs/op => Go 1.5.2
+//func BenchmarkLevel(b *testing.B) {
+//	have := []string{"system", "dev", "debug"}
+//	want := "system/dev/debug"
+//
+//	b.ReportAllocs()
+//	b.ResetTimer()
+//	for i := 0; i < b.N; i++ {
+//		benchmarkLevel = path.MustNew(have...).Level(-1)
+//	}
+//	if benchmarkLevel != want {
+//		b.Errorf("Want: %s; Have, %s", want, benchmarkLevel)
+//	}
+//}
 
 //func TestSplit(t *testing.T) {
 //	t.Parallel()
@@ -282,20 +280,20 @@ func BenchmarkLevel(b *testing.B) {
 
 func TestIsValid(t *testing.T) {
 	tests := []struct {
-		have []string
+		have path.Route
 		want error
 	}{
-		{[]string{"//"}, path.ErrIncorrectPath},
-		{[]string{"general/store_information/city"}, nil},
-		{[]string{"", "", ""}, errors.New("This path part \"\" is too short. Route: []string{\"\", \"\", \"\"}")},
-		{[]string{"general", "store_information", "name"}, nil},
-		{[]string{"general", "store_information"}, errors.New("All arguments must be valid! Min want: 3. Have: 2. Route []string{\"general\", \"store_information\"}")},
-		{[]string{path.MustNew("system", "dev", "debug").Bind(scope.WebsiteID, 22).String()}, path.ErrIncorrectPath},
-		{[]string{"groups/33/general/store_information/street"}, path.ErrIncorrectPath},
-		{[]string{"groups/33"}, path.ErrIncorrectPath},
-		{[]string{"system/dEv/inv˚lid"}, errors.New("This character \"˚\" is not allowed in Route []string{\"system/dEv/inv˚lid\"}")},
-		{[]string{"syst3m/dEv/invalid"}, nil},
-		{nil, errors.New("Route are empty")},
+		{path.Route("//"), path.ErrIncorrectPath},
+		{path.Route("general/store_information/city"), nil},
+		{path.Route(""), path.ErrRouteEmpty},
+		{path.Route("general/store_information"), path.ErrIncorrectPath},
+		////{path.Route(path.MustNew("system/dev/debug").Bind(scope.WebsiteID, 22).String()), path.ErrIncorrectPath},
+		{path.Route("groups/33/general/store_information/street"), path.ErrIncorrectPath},
+		{path.Route("groups/33"), path.ErrIncorrectPath},
+		{path.Route("system/dEv/inv˚lid"), errors.New("This character \"˚\" is not allowed in Route system/dEv/inv˚lid")},
+		{path.Route("system/dEv/inv'lid"), errors.New("This character \"'\" is not allowed in Route system/dEv/inv'lid")},
+		{path.Route("syst3m/dEv/invalid"), nil},
+		{nil, path.ErrRouteEmpty},
 	}
 	for i, test := range tests {
 		p := path.Path{
@@ -312,9 +310,10 @@ func TestIsValid(t *testing.T) {
 
 var benchmarkIsValid error
 
-// BenchmarkIsValid-4        	20000000	       116 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkIsValid-4   20000000	       116 ns/op	       0 B/op	       0 allocs/op with strings
+// BenchmarkIsValid-4	20000000	        76.8 ns/op	       0 B/op	       0 allocs/op with bytes
 func BenchmarkIsValid(b *testing.B) {
-	have := []string{"system", "dEv", "d3bug"}
+	have := path.Route("system/dEv/d3bug")
 	want := "system/dev/debug"
 
 	p := path.Path{

@@ -35,6 +35,7 @@ const Levels int = 3
 // to separate the path parts.
 var Separator = []byte("/")
 
+const sSeparator = "s"
 const rSeparator = '/'
 
 // ErrRouteEmpty path parts are empty
@@ -152,7 +153,7 @@ func (p Path) FQ() ([]byte, error) {
 	buf.WriteString(idStr)
 	buf.WriteByte(rSeparator)
 	buf.Write(p.Route)
-	return buf.String(), nil
+	return buf.Bytes(), nil // can be a bug because of defer and put back
 }
 
 // this "cache" should cover ~80% of all store setups
@@ -161,42 +162,26 @@ var int64Cache = [...]string{
 }
 var int64CacheLen = int64(len(int64Cache))
 
-// Split splits a configuration path by the path separator PS.
-func Split(path string) []string {
-	if len(path) > 0 && path[:1] == Separator {
-		path = path[1:] // trim first PS
-	}
-	return strings.Split(path, Separator)
-}
-
-func join(buf *bytes.Buffer, paths []string) {
-	for i, p := range paths {
-		buf.WriteString(p)
-		if i < (len(paths) - 1) {
-			buf.WriteString(Separator)
-		}
-	}
-}
-
 // Level joins a configuration path parts by the path separator PS.
 // The level argument defines the depth of the path parts to join.
 // Level 1 will return the first part like "a", Level 2 returns "a/b"
 // Level 3 returns "a/b/c" and so on. Level -1 joins all available path parts.
 // Does not generate a fully qualified path.
-func (p Path) Level(level int) string {
+func (p Path) Level(level int) Route {
 	lp := len(p.Route)
 	if level <= 0 || level >= lp {
 		level = lp
 	}
-	if lp == 1 {
-		return p.Route[0]
-	}
 
-	buf := bufferpool.Get()
-	join(buf, p.Route[:level])
-	s := buf.String()
-	bufferpool.Put(buf)
-	return s
+	sc := bytes.Count(p.Route, Separator)
+	idx := 0
+	for i := 0; i < sc; i++ {
+		idx += bytes.IndexRune(p.Route[idx:], rSeparator)
+		if level <= i {
+			return Route(p.Route[idx:])
+		}
+	}
+	return p.Route
 }
 
 // SplitFQPath takes a fully qualified path and splits it into its parts.
@@ -212,7 +197,7 @@ func SplitFQ(fqPath string) (Path, error) {
 		return Path{}, fmt.Errorf("Incorrect fully qualified path: %q", fqPath)
 	}
 
-	fi := strings.Index(fqPath, Separator)
+	fi := strings.Index(fqPath, sSeparator)
 	scopeStr := fqPath[:fi]
 
 	if false == scope.Valid(scopeStr) {
@@ -221,18 +206,18 @@ func SplitFQ(fqPath string) (Path, error) {
 
 	fqPath = fqPath[fi+1:]
 
-	fi = strings.Index(fqPath, Separator)
+	fi = strings.Index(fqPath, sSeparator)
 	scopeID, err := strconv.ParseInt(fqPath[:fi], 10, 64)
 	path := fqPath[fi+1:]
 	return Path{
-		Route: []string{path},
+		Route: Route(path),
 		Scope: scope.FromString(scopeStr),
 		ID:    scopeID,
 	}, err
 }
 
 func isFQ(fqPath string) bool {
-	return strings.Count(fqPath, Separator) >= Levels+1 // like stores/1/a/b/c
+	return strings.Count(fqPath, sSeparator) >= Levels+1 // like stores/1/a/b/c
 }
 
 // IsValid checks for valid configuration path. Returns nil on success.
@@ -253,15 +238,7 @@ func (p Path) IsValid() error {
 		return fmt.Errorf("Default Scope can only have an ID of 0. Yours is: %d", p.ID)
 	}
 
-	// first argument only without a slash
-	sepCount := bytes.Count(p.Route, Separator)
-	if sepCount != Levels-1 || len(p.Route) < 8 { // must contain at least two slashes
-		return ErrIncorrectPath
-	}
-	if sepCount < (utf8.RuneCount(p.Route) - (2 * len(rSeparator))) {
-		return fmt.Errorf("Route is too short: %s", p.Route)
-	}
-
+	var sepCount, length int
 	i := 0
 	for i < len(p.Route) {
 		var r rune
@@ -269,15 +246,8 @@ func (p Path) IsValid() error {
 			r = rune(p.Route[i])
 			i++
 		} else {
-			var size int
-			r, size = utf8.DecodeRune(p.Route[i:])
-			if size == 1 {
-				// All valid runes of size 1 (those
-				// below RuneSelf) were handled above.
-				// This must be a RuneError.
-				return ErrRouteInvalidBytes
-			}
-			i += size
+			dr, _ := utf8.DecodeRune(p.Route[i:])
+			return fmt.Errorf("This character %q is not allowed in Route %s", string(dr), p.Route)
 		}
 		ok := false
 		switch {
@@ -287,12 +257,19 @@ func (p Path) IsValid() error {
 			ok = true
 		case 'A' <= r && r <= 'Z':
 			ok = true
-		case r == '_', r == rSeparator:
+		case r == '_':
+			ok = true
+		case r == rSeparator:
+			sepCount++
 			ok = true
 		}
 		if !ok {
 			return fmt.Errorf("This character %q is not allowed in Route %s", string(r), p.Route)
 		}
+		length++
+	}
+	if sepCount != Levels-1 || length < 8 {
+		return ErrIncorrectPath
 	}
 
 	return nil
