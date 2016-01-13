@@ -24,7 +24,7 @@ var ErrRouteInvalidBytes = errors.New("Route contains invalid bytes which are no
 
 // Route consists of at least three parts each of them separated by a slash
 // (See constant Separator). A route can be seen as a tree.
-// Route example: catalog/product/scope
+// Route example: catalog/product/scope or websites/1/catalog/product/scope
 type Route []byte
 
 func (r Route) String() string {

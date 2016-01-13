@@ -1,6 +1,5 @@
 PASS
-BenchmarkFQ__Cached-4   	 1000000	      1127 ns/op	      32 B/op	       1 allocs/op
-BenchmarkFQUnCached-4   	 1000000	      1234 ns/op	      48 B/op	       2 allocs/op
+BenchmarkFQ-4   	 1000000	      1127 ns/op	      32 B/op	       1 allocs/op
 BenchmarkReverseFQPath-4	 3000000	       374 ns/op	      16 B/op	       1 allocs/op
 BenchmarkLevel-4        	 3000000	       459 ns/op	      16 B/op	       1 allocs/op
 BenchmarkSplit-4        	 5000000	       291 ns/op	      48 B/op	       1 allocs/op

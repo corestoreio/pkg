@@ -24,7 +24,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/bufferpool"
+	"github.com/juju/errgo"
 )
 
 // Levels defines how many parts are at least in a path.
@@ -126,62 +126,74 @@ func (p Path) String() string {
 	return string(s)
 }
 
-// FQ returns the fully qualified path.
-func (p Path) FQ() ([]byte, error) {
+// FQ returns the fully qualified route. Safe for further processing of the
+// returned byte slice. If scope is equal to scope.DefaultID and ID is not
+// zero then ID gets set to zero.
+func (p Path) FQ() (Route, error) {
 	if err := p.IsValid(); err != nil {
 		return nil, err
 	}
 
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-
-	idStr := "0"
-	if p.ID > 0 {
-		if p.ID <= int64CacheLen {
-			idStr = int64Cache[p.ID]
-		} else {
-			idStr = strconv.FormatInt(p.ID, 10)
-		}
-	} else {
-		buf.WriteRune('0')
+	if p.Scope == scope.DefaultID && p.ID > 0 {
+		p.ID = 0
 	}
 
-	scopeStr := scope.FromScope(p.Scope)
-
-	buf.WriteString(scopeStr.String())
-	buf.WriteByte(rSeparator)
-	buf.WriteString(idStr)
-	buf.WriteByte(rSeparator)
-	buf.Write(p.Route)
-	return buf.Bytes(), nil // can be a bug because of defer and put back
+	var buf bytes.Buffer
+	if _, err := buf.WriteString(p.StrScope()); err != nil {
+		return nil, errgo.Mask(err)
+	}
+	if err := buf.WriteByte(rSeparator); err != nil {
+		return nil, errgo.Mask(err)
+	}
+	bufRaw := buf.Bytes()
+	bufRaw = strconv.AppendInt(bufRaw, p.ID, 10)
+	buf.Reset()
+	if _, err := buf.Write(bufRaw); err != nil {
+		return nil, errgo.Mask(err)
+	}
+	if err := buf.WriteByte(rSeparator); err != nil {
+		return nil, errgo.Mask(err)
+	}
+	if _, err := buf.Write(p.Route); err != nil {
+		return nil, errgo.Mask(err)
+	}
+	return buf.Bytes(), nil
 }
-
-// this "cache" should cover ~80% of all store setups
-var int64Cache = [...]string{
-	"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20",
-}
-var int64CacheLen = int64(len(int64Cache))
 
 // Level joins a configuration path parts by the path separator PS.
 // The level argument defines the depth of the path parts to join.
 // Level 1 will return the first part like "a", Level 2 returns "a/b"
 // Level 3 returns "a/b/c" and so on. Level -1 joins all available path parts.
 // Does not generate a fully qualified path.
-func (p Path) Level(level int) Route {
+func (p Path) Level(level int) (Route, error) {
+	if err := p.IsValid(); err != nil {
+		return nil, err
+	}
+
 	lp := len(p.Route)
-	if level <= 0 || level >= lp {
+	if level < 0 || level >= lp {
 		level = lp
 	}
 
-	sc := bytes.Count(p.Route, Separator)
-	idx := 0
-	for i := 0; i < sc; i++ {
-		idx += bytes.IndexRune(p.Route[idx:], rSeparator)
-		if level <= i {
-			return Route(p.Route[idx:])
-		}
+	if level == 0 {
+		return Route(``), nil
 	}
-	return p.Route
+
+	pos := 0
+	i := 1
+	for pos <= len(p.Route) {
+		sc := bytes.IndexRune(p.Route[pos:], rSeparator)
+		if sc == -1 {
+			break
+		}
+		pos += sc + 1
+
+		if i == level {
+			return p.Route[:pos-1].Copy(), nil
+		}
+		i++
+	}
+	return p.Route.Copy(), nil
 }
 
 // SplitFQPath takes a fully qualified path and splits it into its parts.
@@ -232,10 +244,6 @@ func (p Path) IsValid() error {
 
 	if false == utf8.Valid(p.Route) {
 		return ErrRouteInvalidBytes
-	}
-
-	if p.Scope == scope.DefaultID && p.ID != 0 {
-		return fmt.Errorf("Default Scope can only have an ID of 0. Yours is: %d", p.ID)
 	}
 
 	var sepCount, length int
