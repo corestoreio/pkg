@@ -35,7 +35,7 @@ const Levels int = 3
 // to separate the path parts.
 var Separator = []byte("/")
 
-const sSeparator = "s"
+const sSeparator = "/"
 const rSeparator = '/'
 
 // ErrRouteEmpty path parts are empty
@@ -63,28 +63,6 @@ func New(r Route) (Path, error) {
 	}
 	return p, nil
 }
-
-//// NewSplit takes a path argument like a/b/c or path parts like "a","b","c".
-//// If a path has been provided it gets split into its parts.
-//// Scope is assigned to Default.
-//func NewSplit(paths ...string) (Path, error) {
-//	p := Path{
-//		Scope: scope.DefaultID,
-//	}
-//	switch {
-//	case len(paths) >= Levels:
-//		p.Route = paths
-//	case len(paths) == 1 && paths[0] != "":
-//		p.Route = Split(paths[0])
-//	default:
-//		return Path{}, fmt.Errorf("Incorrect number of paths elements: want %d, have %d, Path: %v", Levels, len(paths), paths)
-//	}
-//
-//	if err := p.IsValid(); err != nil {
-//		return Path{}, err
-//	}
-//	return p, nil
-//}
 
 // MustNew same as New but panics on error.
 func MustNew(r Route) Path {
@@ -172,7 +150,7 @@ func (p Path) Level(level int) (Route, error) {
 
 	lp := len(p.Route)
 	if level < 0 || level >= lp {
-		level = lp
+		return p.Route.Copy(), nil
 	}
 
 	if level == 0 {
@@ -242,7 +220,7 @@ func (p Path) IsValid() error {
 		return ErrRouteEmpty
 	}
 
-	if false == utf8.Valid(p.Route) {
+	if false == p.Route.Valid() {
 		return ErrRouteInvalidBytes
 	}
 

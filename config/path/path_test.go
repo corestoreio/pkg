@@ -25,28 +25,6 @@ import (
 	"strconv"
 )
 
-//func TestPathSplit(t *testing.T) {
-//	t.Parallel()
-//	tests := []struct {
-//		parts   []string
-//		want    string
-//		wantErr error
-//	}{
-//		{path.Route("general/single_store_mode/enabled"), "general/single_store_mode/enabled", nil},
-//		{path.Route("general/single_store_mode"), "general/single_store_mode/enabled", errors.New("Incorrect number of paths elements: want 3, have 2, Path: [general single_store_mode]")},
-//		{path.Route("general/single_store_mode/enabled"), "general/single_store_mode/enabled", nil},
-//		{path.Route("general/singlestore_mode/enabled"), "general/single_store_mode/enabled", errors.New("This character \"\\uf8ff\" is not allowed in Route path.Route(\"general\", \"single\\uf8ffstore_mode\", \"enabled\")")},
-//	}
-//	for i, test := range tests {
-//		haveP, haveErr := path.NewSplit(test.parts...)
-//		if test.wantErr != nil {
-//			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
-//			continue
-//		}
-//		assert.Exactly(t, test.want, haveP.Level(0), "Index %d", i)
-//	}
-//}
-
 func TestPathNew(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -161,49 +139,51 @@ func BenchmarkFQ(b *testing.B) {
 	benchmarkFQ(11, b)
 }
 
-//func TestSplitFQPath(t *testing.T) {
-//	t.Parallel()
-//	tests := []struct {
-//		have        string
-//		wantScope   string
-//		wantScopeID int64
-//		wantPath    string
-//		wantErr     error
-//	}{
-//		{"groups/1/catalog/frontend/list_allow_all", "default", 0, "", scope.ErrUnsupportedScope},
-//		{"stores/7475/catalog/frontend/list_allow_all", scope.StrStores.String(), 7475, "catalog/frontend/list_allow_all", nil},
-//		{"websites/1/catalog/frontend/list_allow_all", scope.StrWebsites.String(), 1, "catalog/frontend/list_allow_all", nil},
-//		{"default/0/catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", nil},
-//		{"default//catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", errors.New("strconv.ParseInt: parsing \"\\uf8ff\": invalid syntax")},
-//		{"stores/123/catalog/index", "default", 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\"")},
-//	}
-//	for _, test := range tests {
-//		havePath, haveErr := path.SplitFQ(test.have)
-//
-//		if test.wantErr != nil {
-//			assert.EqualError(t, haveErr, test.wantErr.Error(), "Test %v", test)
-//		} else {
-//			assert.NoError(t, haveErr, "Test %v", test)
-//		}
-//		assert.Exactly(t, test.wantScope, havePath.StrScope(), "Test %v", test)
-//		assert.Exactly(t, test.wantScopeID, havePath.ID, "Test %v", test)
-//		assert.Exactly(t, test.wantPath, havePath.Level(-1), "Test %v", test)
-//	}
-//}
-//
-//var benchmarkReverseFQPath path.Path
-//
-//// BenchmarkReverseFQPath-4	10000000	       175 ns/op	      16 B/op	       1 allocs/op
-//func BenchmarkReverseFQPath(b *testing.B) {
-//	b.ReportAllocs()
-//	for i := 0; i < b.N; i++ {
-//		var err error
-//		benchmarkReverseFQPath, err = path.SplitFQ("stores/7475/catalog/frontend/list_allow_all")
-//		if err != nil {
-//			b.Error(err)
-//		}
-//	}
-//}
+func TestSplitFQ(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		have        string
+		wantScope   string
+		wantScopeID int64
+		wantPath    string
+		wantErr     error
+	}{
+		{"groups/1/catalog/frontend/list_allow_all", "default", 0, "", scope.ErrUnsupportedScope},
+		{"stores/7475/catalog/frontend/list_allow_all", scope.StrStores.String(), 7475, "catalog/frontend/list_allow_all", nil},
+		{"websites/1/catalog/frontend/list_allow_all", scope.StrWebsites.String(), 1, "catalog/frontend/list_allow_all", nil},
+		{"default/0/catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", nil},
+		{"default//catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", errors.New("strconv.ParseInt: parsing \"\\uf8ff\": invalid syntax")},
+		{"stores/123/catalog/index", "default", 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\"")},
+	}
+	for _, test := range tests {
+		havePath, haveErr := path.SplitFQ(test.have)
+
+		if test.wantErr != nil {
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "Test %v", test)
+		} else {
+			assert.NoError(t, haveErr, "Test %v", test)
+		}
+		assert.Exactly(t, test.wantScope, havePath.StrScope(), "Test %v", test)
+		assert.Exactly(t, test.wantScopeID, havePath.ID, "Test %v", test)
+		l, _ := havePath.Level(-1)
+		assert.Exactly(t, test.wantPath, l.String(), "Test %v", test)
+	}
+}
+
+var benchmarkSplitFQ path.Path
+
+// BenchmarkSplitFQ-4	10000000	       175 ns/op	      16 B/op	       1 allocs/op strings
+// BenchmarkSplitFQ-4  	10000000	       186 ns/op	      32 B/op	       1 allocs/op strings
+func BenchmarkSplitFQ(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		var err error
+		benchmarkSplitFQ, err = path.SplitFQ("stores/7475/catalog/frontend/list_allow_all")
+		if err != nil {
+			b.Error(err)
+		}
+	}
+}
 
 func TestLevel(t *testing.T) {
 	t.Parallel()
@@ -258,41 +238,6 @@ func benchmarkLevelRun(b *testing.B, level int, have, want path.Route) {
 		b.Errorf("Want: %s; Have, %s", want, benchmarkLevel)
 	}
 }
-
-//func TestSplit(t *testing.T) {
-//	t.Parallel()
-//	tests := []struct {
-//		have string
-//		want []string
-//	}{
-//		{"system/dev/debug", path.Route("system/dev/debug")},
-//		{"a/b", path.Route("a/b")},
-//		{"a/b/c", path.Route("a/b/c")},
-//		{"/a/b/c", path.Route("a/b/c")},
-//		{"a/b/c/d/e", path.Route("a/b/c/d/e")},
-//		{"", path.Route("")},
-//	}
-//	for i, test := range tests {
-//		assert.Exactly(t, test.want, path.Split(test.have), "Index %d", i)
-//	}
-//}
-//
-//var benchmarkSplit []string
-//
-//// BenchmarkSplit-4          	 5000000	       290 ns/op	      48 B/op	       1 allocs/op => Go 1.5.2
-//func BenchmarkSplit(b *testing.B) {
-//	want := path.Route("system/dev/debug")
-//	have := "system/dev/debug"
-//
-//	b.ReportAllocs()
-//	b.ResetTimer()
-//	for i := 0; i < b.N; i++ {
-//		benchmarkSplit = path.Split(have)
-//	}
-//	if false == reflect.DeepEqual(benchmarkSplit, want) {
-//		b.Errorf("Want: %s; Have, %s", want, benchmarkLevel)
-//	}
-//}
 
 func TestIsValid(t *testing.T) {
 	tests := []struct {

@@ -17,6 +17,7 @@ package path
 import (
 	"encoding"
 	"errors"
+	"unicode/utf8"
 )
 
 // ErrRouteInvalidBytes whenever a non-rune is detected.
@@ -29,6 +30,11 @@ type Route []byte
 
 func (r Route) String() string {
 	return string(r)
+}
+
+// Valid checks if the route contains valid runes and is not empty.
+func (r Route) Valid() bool {
+	return utf8.Valid(r) && false == r.IsEmpty()
 }
 
 func (r Route) IsEmpty() bool {
