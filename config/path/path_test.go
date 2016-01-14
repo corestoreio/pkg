@@ -15,14 +15,14 @@
 package path_test
 
 import (
+	"bytes"
 	"errors"
+	"strconv"
 	"testing"
 
-	"bytes"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
-	"strconv"
 )
 
 func TestPathNew(t *testing.T) {
@@ -156,7 +156,7 @@ func TestSplitFQ(t *testing.T) {
 		{"stores/123/catalog/index", "default", 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\"")},
 	}
 	for _, test := range tests {
-		havePath, haveErr := path.SplitFQ(test.have)
+		havePath, haveErr := path.SplitFQ(path.Route(test.have))
 
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Test %v", test)
@@ -174,11 +174,14 @@ var benchmarkSplitFQ path.Path
 
 // BenchmarkSplitFQ-4	10000000	       175 ns/op	      16 B/op	       1 allocs/op strings
 // BenchmarkSplitFQ-4  	10000000	       186 ns/op	      32 B/op	       1 allocs/op strings
+// BenchmarkSplitFQ-4  	 5000000	       364 ns/op	      16 B/op	       1 allocs/op bytes
 func BenchmarkSplitFQ(b *testing.B) {
+	r := path.Route("stores/7475/catalog/frontend/list_allow_all")
 	b.ReportAllocs()
+	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkSplitFQ, err = path.SplitFQ("stores/7475/catalog/frontend/list_allow_all")
+		benchmarkSplitFQ, err = path.SplitFQ(r)
 		if err != nil {
 			b.Error(err)
 		}

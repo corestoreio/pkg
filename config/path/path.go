@@ -19,7 +19,6 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-	"strings"
 
 	"unicode/utf8"
 
@@ -182,32 +181,35 @@ func (p Path) Level(level int) (Route, error) {
 //		path: 		catalog/frontend/list_allow_all
 // Zero allocations to memory. Err may contain an ErrUnsupportedScope or
 // failed to parse a string into an int64 or invalid fqPath.
-func SplitFQ(fqPath string) (Path, error) {
-	if false == isFQ(fqPath) {
+func SplitFQ(fqPath Route) (Path, error) {
+	if false == isFQ(fqPath) || false == fqPath.Valid() {
 		return Path{}, fmt.Errorf("Incorrect fully qualified path: %q", fqPath)
 	}
 
-	fi := strings.Index(fqPath, sSeparator)
-	scopeStr := fqPath[:fi]
+	fi := bytes.IndexRune(fqPath, rSeparator)
+	scopeBytes := fqPath[:fi]
 
-	if false == scope.Valid(scopeStr) {
+	if false == scope.ValidBytes(scopeBytes) {
 		return Path{}, scope.ErrUnsupportedScope
 	}
 
-	fqPath = fqPath[fi+1:]
+	fqPath = fqPath[fi+1:]                   // remove scope string
+	fi = bytes.IndexRune(fqPath, rSeparator) // find scope id
 
-	fi = strings.Index(fqPath, sSeparator)
-	scopeID, err := strconv.ParseInt(fqPath[:fi], 10, 64)
+	// println(fqPath[:fi], string(fqPath[:fi]))
+	// string(fqPath[:fi]) how can i extract an int64 out of a byte slice?
+
+	scopeID, err := strconv.ParseInt(string(fqPath[:fi]), 10, 64)
 	path := fqPath[fi+1:]
 	return Path{
 		Route: Route(path),
-		Scope: scope.FromString(scopeStr),
+		Scope: scope.FromBytes(scopeBytes),
 		ID:    scopeID,
 	}, err
 }
 
-func isFQ(fqPath string) bool {
-	return strings.Count(fqPath, sSeparator) >= Levels+1 // like stores/1/a/b/c
+func isFQ(fqPath Route) bool {
+	return bytes.Count(fqPath, Separator) >= Levels+1 // like stores/1/a/b/c
 }
 
 // IsValid checks for valid configuration path. Returns nil on success.
