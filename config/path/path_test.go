@@ -25,6 +25,52 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestNewByParts(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		parts   []string
+		want    string
+		wantErr error
+	}{
+		{[]string{"aa/bb/cc"}, "aa/bb/cc", nil},
+		{[]string{"aa/bb", "cc"}, "aa/bb/cc", nil},
+		{[]string{"aa", "bb", "cc"}, "aa/bb/cc", nil},
+		{[]string{"aa", "bb", "c"}, "aa/bb/cc", path.ErrIncorrectPath},
+		{nil, "", path.ErrRouteEmpty},
+		{[]string{""}, "", path.ErrRouteEmpty},
+	}
+	for i, test := range tests {
+		haveP, haveErr := path.NewByParts(test.parts...)
+		if test.wantErr != nil {
+			assert.Nil(t, haveP.Route, "Index %d", i)
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+			continue
+		}
+		l, err := haveP.Level(-1)
+		assert.NoError(t, err, "Index %d", i)
+		assert.Exactly(t, test.want, l.String(), "Index %d", i)
+	}
+}
+
+var benchmarkNewByParts path.Path
+
+// BenchmarkNewByParts-4	 5000000	       297 ns/op	      48 B/op	       1 allocs/op
+func BenchmarkNewByParts(b *testing.B) {
+	want := path.Route("general/single_store_mode/enabled")
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var err error
+		benchmarkNewByParts, err = path.NewByParts("general", "single_store_mode", "enabled")
+		if err != nil {
+			b.Error(err)
+		}
+	}
+	if bytes.Equal(benchmarkNewByParts.Route, want) == false {
+		b.Errorf("Want: %s; Have, %s", want, benchmarkNewByParts.Route)
+	}
+}
+
 func TestPathNew(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -89,7 +135,9 @@ func TestFQ(t *testing.T) {
 
 	r := path.Route("catalog/frontend/list_allow_all")
 	assert.Exactly(t, "stores/7475/catalog/frontend/list_allow_all", path.MustNew(r).BindStr(scope.StrStores, 7475).String())
-	assert.Exactly(t, "stores/5/catalog/frontend/list_allow_all", path.MustNew(r).BindStr(scope.StrStores, 5).String())
+	p := path.MustNew(r).BindStr(scope.StrStores, 5)
+	assert.Exactly(t, "stores/5/catalog/frontend/list_allow_all", p.String())
+	assert.Exactly(t, "path.Route(`catalog/frontend/list_allow_all`)", p.GoString())
 }
 
 func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
@@ -130,7 +178,7 @@ func benchmarkFQ(scopeID int64, b *testing.B) {
 			b.Error(err)
 		}
 	}
-	if bytes.Compare(benchmarkStrScopeFQPath, want) != 0 {
+	if bytes.Equal(benchmarkStrScopeFQPath, want) == false {
 		b.Errorf("Want: %s; Have, %s", want, benchmarkStrScopeFQPath)
 	}
 }
@@ -238,7 +286,7 @@ func benchmarkLevelRun(b *testing.B, level int, have, want path.Route) {
 	if err != nil {
 		b.Error(err)
 	}
-	if bytes.Compare(benchmarkLevel, want) != 0 {
+	if bytes.Equal(benchmarkLevel, want) == false {
 		b.Errorf("Want: %s; Have, %s", want, benchmarkLevel)
 	}
 }

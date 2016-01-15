@@ -63,6 +63,17 @@ func New(r Route) (Path, error) {
 	return p, nil
 }
 
+// NewByParts creates a new route from path part strings.
+// Parts gets merged via Separator.
+//		p := NewByParts("catalog","product",")
+func NewByParts(parts ...string) (Path, error) {
+	r, err := newRoute(parts...)
+	if err != nil {
+		return Path{}, err
+	}
+	return New(r)
+}
+
 // MustNew same as New but panics on error.
 func MustNew(r Route) Path {
 	p, err := New(r)

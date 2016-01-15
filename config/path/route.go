@@ -17,6 +17,7 @@ package path
 import (
 	"encoding"
 	"errors"
+	"fmt"
 	"unicode/utf8"
 )
 
@@ -28,8 +29,36 @@ var ErrRouteInvalidBytes = errors.New("Route contains invalid bytes which are no
 // Route example: catalog/product/scope or websites/1/catalog/product/scope
 type Route []byte
 
+// newRoute creates a new rout from sub paths resp. path parts.
+// Parts gets merged via Separator
+func newRoute(parts ...string) (Route, error) {
+	l := 0
+	for _, p := range parts {
+		l += len(p)
+		l += 1 // len(sSeparator)
+	}
+	l -= 1 // remove last slash
+	if l < 1 {
+		return nil, ErrRouteEmpty
+	}
+
+	r := make(Route, l)
+	pos := 0
+	for i, p := range parts {
+		pos += copy(r[pos:pos+len(p)], p)
+		if i < len(parts)-1 {
+			pos += copy(r[pos:pos+1], sSeparator)
+		}
+	}
+	return r, nil
+}
+
 func (r Route) String() string {
 	return string(r)
+}
+
+func (r Route) GoString() string {
+	return fmt.Sprintf("path.Route(`%s`)", r)
 }
 
 // Valid checks if the route contains valid runes and is not empty.
