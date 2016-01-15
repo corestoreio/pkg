@@ -83,7 +83,7 @@ func TestFromScope(t *testing.T) {
 		{StoreID, StrStores},
 	}
 	for _, test := range tests {
-		assert.Equal(t, test.want, FromScope(test.have))
+		assert.Exactly(t, test.want, FromScope(test.have))
 	}
 }
 
@@ -112,5 +112,38 @@ func TestValid(t *testing.T) {
 	}
 	for i, test := range tests {
 		assert.Exactly(t, test.want, Valid(test.have), "Index %d", i)
+	}
+}
+
+func TestFromBytes(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		have []byte
+		want Scope
+	}{
+		{[]byte("asdasd"), DefaultID},
+		{[]byte(strDefault), DefaultID},
+		{[]byte(strWebsites), WebsiteID},
+		{[]byte(strStores), StoreID},
+	}
+	for _, test := range tests {
+		assert.Exactly(t, test.want, FromBytes(test.have))
+	}
+}
+
+func TestValidBytes(t *testing.T) {
+	tests := []struct {
+		have []byte
+		want bool
+	}{
+		{[]byte("Rust"), false},
+		{[]byte("default"), true},
+		{[]byte("website"), false},
+		{[]byte("websites"), true},
+		{[]byte("stores"), true},
+		{[]byte("Stores"), false},
+	}
+	for i, test := range tests {
+		assert.Exactly(t, test.want, ValidBytes(test.have), "Index %d", i)
 	}
 }

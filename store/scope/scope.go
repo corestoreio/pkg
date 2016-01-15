@@ -14,7 +14,10 @@
 
 package scope
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+)
 
 // Scope used in constants where default is the lowest and store the highest.
 // Func String() attached. Part of type Perm.
@@ -90,6 +93,12 @@ const (
 	strStores   = "stores"
 )
 
+var (
+	bDefault  = []byte("default")
+	bWebsites = []byte("websites")
+	bStores   = []byte("stores")
+)
+
 // Str* constants are used in the database table core_config_data.
 // StrDefault defines the global scope.
 // StrWebsites defines the website scope which has default as parent and stores as child.
@@ -148,4 +157,22 @@ func Valid(s string) bool {
 		return true
 	}
 	return false
+}
+
+// FromBytes returns the scope ID from a byte slice: default, websites or stores.
+// Opposite of FromScope
+func FromBytes(b []byte) Scope {
+	switch {
+	case bytes.Compare(bWebsites, b) == 0:
+		return WebsiteID
+	case bytes.Compare(bStores, b) == 0:
+		return StoreID
+	}
+	return DefaultID
+}
+
+// ValidBytes checks if b is a valid byte Scope of either
+// StrDefault, StrWebsites or StrStores. Case-sensitive.
+func ValidBytes(b []byte) bool {
+	return bytes.Compare(bDefault, b) == 0 || bytes.Compare(bWebsites, b) == 0 || bytes.Compare(bStores, b) == 0
 }
