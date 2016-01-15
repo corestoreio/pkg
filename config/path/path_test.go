@@ -34,6 +34,7 @@ func TestPathNew(t *testing.T) {
 		wantFQ     path.Route
 		wantNewErr error
 	}{
+		{path.Route("ab/b\x80/cd"), scope.WebsiteID, 3, path.Route("websites/3/ab/ba/cd"), path.ErrRouteInvalidBytes},
 		{path.Route("ab/ba/cd"), scope.WebsiteID, 3, path.Route("websites/3/ab/ba/cd"), nil},
 		{path.Route("ad/ba/ca/sd"), scope.WebsiteID, 3, path.Route("websites/3/a/b/c/d"), path.ErrIncorrectPath},
 		{path.Route("as/sb"), scope.WebsiteID, 3, path.Route("websites/3/a/b/c/d"), path.ErrIncorrectPath},
@@ -149,11 +150,11 @@ func TestSplitFQ(t *testing.T) {
 		wantErr     error
 	}{
 		{"groups/1/catalog/frontend/list_allow_all", "default", 0, "", scope.ErrUnsupportedScope},
-		{"stores/7475/catalog/frontend/list_allow_all", scope.StrStores.String(), 7475, "catalog/frontend/list_allow_all", nil},
+		{"stores/45678/catalog/frontend/list_allow_all", scope.StrStores.String(), 45678, "catalog/frontend/list_allow_all", nil},
 		{"websites/1/catalog/frontend/list_allow_all", scope.StrWebsites.String(), 1, "catalog/frontend/list_allow_all", nil},
 		{"default/0/catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", nil},
-		{"default//catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", errors.New("strconv.ParseInt: parsing \"\\uf8ff\": invalid syntax")},
-		{"stores/123/catalog/index", "default", 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\"")},
+		{"default//catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "", path.ErrInvalidScopeID},
+		{"stores/123/catalog/index", scope.StrDefault.String(), 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\"")},
 	}
 	for _, test := range tests {
 		havePath, haveErr := path.SplitFQ(path.Route(test.have))
@@ -175,6 +176,7 @@ var benchmarkSplitFQ path.Path
 // BenchmarkSplitFQ-4	10000000	       175 ns/op	      16 B/op	       1 allocs/op strings
 // BenchmarkSplitFQ-4  	10000000	       186 ns/op	      32 B/op	       1 allocs/op strings
 // BenchmarkSplitFQ-4  	 5000000	       364 ns/op	      16 B/op	       1 allocs/op bytes
+// BenchmarkSplitFQ-4  	 3000000	       417 ns/op	      32 B/op	       1 allocs/op
 func BenchmarkSplitFQ(b *testing.B) {
 	r := path.Route("stores/7475/catalog/frontend/list_allow_all")
 	b.ReportAllocs()
