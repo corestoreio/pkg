@@ -16,9 +16,10 @@ package path_test
 
 import (
 	"encoding/json"
+	"testing"
+
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestRouteAppend(t *testing.T) {

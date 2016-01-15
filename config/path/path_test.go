@@ -84,6 +84,8 @@ func TestPathNew(t *testing.T) {
 		{path.Route("ab/ba/cd"), scope.WebsiteID, 3, path.Route("websites/3/ab/ba/cd"), nil},
 		{path.Route("ad/ba/ca/sd"), scope.WebsiteID, 3, path.Route("websites/3/a/b/c/d"), path.ErrIncorrectPath},
 		{path.Route("as/sb"), scope.WebsiteID, 3, path.Route("websites/3/a/b/c/d"), path.ErrIncorrectPath},
+		{path.Route("aa/bb/cc"), scope.GroupID, 3, path.Route("default/0/aa/bb/cc"), nil},
+		{path.Route("aa/bb/cc"), scope.StoreID, 3, path.Route("stores/3/aa/bb/cc"), nil},
 	}
 	for i, test := range tests {
 		haveP, haveErr := path.New(test.route)

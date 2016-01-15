@@ -14,24 +14,38 @@
 
 package path_test
 
-//func Example() {
-//
-//	fmt.Println(path.MustNew("system/smtp/host").String())
-//	fmt.Println(path.MustNew("system/smtp/host").Bind(scope.WebsiteID, 1).String())
-//	// alternative way
-//	fmt.Println(path.MustNew("system/smtp/host").BindStr(scope.StrWebsites, 1).String())
-//
-//	fmt.Println(path.MustNew("system/smtp/host").Bind(scope.StoreID, 3).String())
-//	// alternative way
-//	fmt.Println(path.MustNew("system/smtp/host").BindStr(scope.StrStores, 3).String())
-//	// Group is not supported and falls back to default
-//	fmt.Println(path.MustNew("system/smtp/host").Bind(scope.GroupID, 4).String())
-//
-//	// Output:
-//	// default/0/system/smtp/host
-//	// websites/1/system/smtp/host
-//	// websites/1/system/smtp/host
-//	// stores/3/system/smtp/host
-//	// stores/3/system/smtp/host
-//	// default/0/system/smtp/host
-//}
+import (
+	"fmt"
+
+	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/store/scope"
+)
+
+func Example() {
+
+	fmt.Println(path.MustNew(path.Route("system/smtp/host")).String())
+	fmt.Println(path.MustNew(path.Route("system/smtp/host")).Bind(scope.WebsiteID, 1).String())
+	// alternative way
+	fmt.Println(path.MustNew(path.Route("system/smtp/host")).BindStr(scope.StrWebsites, 1).String())
+
+	fmt.Println(path.MustNew(path.Route("system/smtp/host")).Bind(scope.StoreID, 3).String())
+	// alternative way
+	fmt.Println(path.MustNew(path.Route("system/smtp/host")).BindStr(scope.StrStores, 3).String())
+	// Group is not supported and falls back to default
+	fmt.Println(path.MustNew(path.Route("system/smtp/host")).Bind(scope.GroupID, 4).String())
+
+	p, err := path.NewByParts("system", "smtp", "host")
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+	fmt.Println(p.String())
+
+	// Output:
+	//default/0/system/smtp/host
+	//websites/1/system/smtp/host
+	//websites/1/system/smtp/host
+	//stores/3/system/smtp/host
+	//stores/3/system/smtp/host
+	//default/0/system/smtp/host
+	//default/0/system/smtp/host
+}

@@ -122,7 +122,8 @@ func (p Path) FQ() (Route, error) {
 		return nil, err
 	}
 
-	if p.Scope == scope.DefaultID && p.ID > 0 {
+	if (p.Scope == scope.DefaultID || p.Scope == scope.GroupID) && p.ID > 0 {
+		p.Scope = scope.DefaultID
 		p.ID = 0
 	}
 
