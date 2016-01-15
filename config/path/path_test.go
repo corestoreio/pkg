@@ -244,6 +244,7 @@ func benchmarkLevelRun(b *testing.B, level int, have, want path.Route) {
 }
 
 func TestIsValid(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		s    scope.Scope
 		id   int64

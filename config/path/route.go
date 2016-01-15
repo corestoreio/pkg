@@ -47,6 +47,25 @@ func (r Route) Copy() []byte {
 	return n
 }
 
+// Append adds another partial route with a Separator between. After the partial
+// route has been added a validation check will be done.
+//
+//		a := path.Route(`catalog/product`)
+//		b := path.Route(`enable_flat_tables`)
+//		if err := a.Append(b); err != nil {
+//			panic(err)
+//		}
+//		println(a.String())
+//		// Should print: catalog/product/enable_flat_tables
+func (r *Route) Append(a Route) error {
+	*r = append(*r, Separator...)
+	*r = append(*r, a...)
+	if !r.Valid() {
+		return ErrRouteInvalidBytes
+	}
+	return nil
+}
+
 var _ encoding.TextMarshaler = (*Route)(nil)
 var _ encoding.TextUnmarshaler = (*Route)(nil)
 
@@ -58,5 +77,8 @@ func (r Route) MarshalText() (text []byte, err error) {
 
 func (r *Route) UnmarshalText(text []byte) error {
 	*r = append(*r, text...)
+	if !r.Valid() {
+		return ErrRouteInvalidBytes
+	}
 	return nil
 }
