@@ -19,7 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
-
+	"strings"
 	"unicode/utf8"
 
 	"github.com/corestoreio/csfw/store/scope"
@@ -42,9 +42,6 @@ var ErrRouteEmpty = errors.New("Route is empty")
 
 // ErrIncorrectPath a path is missing a path separator or is too short
 var ErrIncorrectPath = errors.New("Incorrect Path. Either to short or missing path separator.")
-
-// ErrInvalidScopeID when parsing the scope ID fails.
-var ErrInvalidScopeID = errors.New("Scope ID contains invalid bytes. Cannot extract an integer value.")
 
 // Path represents a configuration path bound to a scope.
 type Path struct {
@@ -184,89 +181,103 @@ func (p Path) Level(level int) (Route, error) {
 //		path: 		catalog/frontend/list_allow_all
 // Zero allocations to memory. Err may contain an ErrUnsupportedScope or
 // failed to parse a string into an int64 or invalid fqPath.
-func SplitFQ(fqPath Route) (p Path, err error) {
-	if false == isFQ(fqPath) || false == fqPath.Valid() {
-		err = fmt.Errorf("Incorrect fully qualified path: %q", fqPath)
-		return
+func SplitFQ(fqPath string) (Path, error) {
+	// this is the most fast version I come up with.
+	// moving from strings to bytes was even slower despite inline
+	// th parse int64 function
+	if false == (strings.Count(fqPath, sSeparator) >= Levels+1) {
+		return Path{}, fmt.Errorf("Incorrect fully qualified path: %q", fqPath)
 	}
 
-	fi := bytes.IndexRune(fqPath, rSeparator)
-	scopeBytes := fqPath[:fi]
+	fi := strings.Index(fqPath, sSeparator)
+	scopeStr := fqPath[:fi]
 
-	if false == scope.ValidBytes(scopeBytes) {
-		err = scope.ErrUnsupportedScope
-		return
+	if false == scope.Valid(scopeStr) {
+		return Path{}, scope.ErrUnsupportedScope
 	}
 
-	fqPath = fqPath[fi+1:]                   // remove scope string
-	fi = bytes.IndexRune(fqPath, rSeparator) // find scope id
+	fqPath = fqPath[fi+1:]
+	fi = strings.Index(fqPath, sSeparator)
+	scopeID, err := strconv.ParseInt(fqPath[:fi], 10, 64)
 
-	scopeIDBytes := fqPath[:fi]
-	if len(scopeIDBytes) > 5 { // i have never seen more than 10k stores, websites or groups
-		err = ErrInvalidScopeID
-		return
-	}
-
-	//println(string(fqPath[:fi]), len(fqPath[:fi]), string(fqPath[:fi][0]), rune(fqPath[:fi][1]))
-	// println(fqPath[:fi], string(fqPath[:fi]))
-	// string(fqPath[:fi]) how can i extract an int64 out of a byte slice?
-	//scopeID, err := strconv.ParseInt(string(fqPath[:fi]), 10, 64)
-
-	const maxUint64 = (1<<64 - 1)
-	const cutoff = maxUint64/10 + 1
-	var n uint64
-	base := 10
-	for i := 0; i < len(scopeIDBytes); i++ {
-		var v byte
-		d := scopeIDBytes[i]
-		switch {
-		case '0' <= d && d <= '9':
-			v = d - '0'
-		case 'a' <= d && d <= 'z':
-			v = d - 'a' + 10
-		case 'A' <= d && d <= 'Z':
-			v = d - 'A' + 10
-		default:
-			n = 0
-			err = ErrInvalidScopeID
-			return
-		}
-		if v >= byte(base) {
-			n = 0
-			err = ErrInvalidScopeID
-			return
-		}
-
-		if n >= cutoff {
-			// n*base overflows
-			n = maxUint64
-			err = ErrInvalidScopeID
-			return
-		}
-		n *= uint64(base)
-
-		n1 := n + uint64(v)
-		if n1 < n || n1 > (1<<uint(64)-1) { // 64 bits
-			// n+v overflows
-			n = maxUint64
-			err = ErrInvalidScopeID
-			return
-		}
-		n = n1
-	}
-
-	p = Path{
+	return Path{
 		Route: Route(fqPath[fi+1:]),
-		Scope: scope.FromBytes(scopeBytes),
-		ID:    int64(n),
-	}
-	return
-
+		Scope: scope.FromString(scopeStr),
+		ID:    scopeID,
+	}, err
 }
 
-func isFQ(fqPath Route) bool {
-	return bytes.Count(fqPath, Separator) >= Levels+1 // like stores/1/a/b/c
-}
+// BenchmarkSplitFQ-4  	 2000000	       761 ns/op	      32 B/op	       1 allocs/op
+// slower than the string version above. this commented out will be kept for historical
+// reasons. maybe some one can speed it more up than the above string version.
+//
+// ErrInvalidScopeID when parsing the scope ID fails.
+// var ErrInvalidScopeID = errors.New("Scope ID contains invalid bytes. Cannot extract an integer value.")
+//func SplitFQ(fqPath Route) (Path, error) {
+//	if false == (bytes.Count(fqPath, Separator) >= Levels+1) || false == fqPath.Valid() {
+//		return Path{}, fmt.Errorf("Incorrect fully qualified path: %q", fqPath)
+//	}
+//
+//	fi := bytes.IndexRune(fqPath, rSeparator)
+//	scopeBytes := fqPath[:fi]
+//
+//	if false == scope.ValidBytes(scopeBytes) {
+//		return Path{}, scope.ErrUnsupportedScope
+//	}
+//
+//	fqPath = fqPath[fi+1:]                   // remove scope string
+//	fi = bytes.IndexRune(fqPath, rSeparator) // find scope id
+//
+//	scopeIDBytes := fqPath[:fi]
+//	if len(scopeIDBytes) > 5 { // i have never seen more than 10k stores, websites or groups
+//		return Path{}, ErrInvalidScopeID
+//	}
+//
+//	const maxUint64 = (1<<64 - 1)
+//	const cutoff = maxUint64/10 + 1
+//	var n uint64
+//	base := 10
+//	for i := 0; i < len(scopeIDBytes); i++ {
+//		var v byte
+//		d := scopeIDBytes[i]
+//		switch {
+//		case '0' <= d && d <= '9':
+//			v = d - '0'
+//		case 'a' <= d && d <= 'z':
+//			v = d - 'a' + 10
+//		case 'A' <= d && d <= 'Z':
+//			v = d - 'A' + 10
+//		default:
+//			n = 0
+//			return Path{}, ErrInvalidScopeID
+//		}
+//		if v >= byte(base) {
+//			n = 0
+//			return Path{}, ErrInvalidScopeID
+//		}
+//
+//		if n >= cutoff {
+//			// n*base overflows
+//			n = maxUint64
+//			return Path{}, ErrInvalidScopeID
+//		}
+//		n *= uint64(base)
+//
+//		n1 := n + uint64(v)
+//		if n1 < n || n1 > (1<<uint(64)-1) { // 64 bits
+//			// n+v overflows
+//			n = maxUint64
+//			return Path{}, ErrInvalidScopeID
+//		}
+//		n = n1
+//	}
+//
+//	return Path{
+//		Route: Route(fqPath[fi+1:].Copy()),
+//		Scope: scope.FromBytes(scopeBytes),
+//		ID:    int64(n),
+//	}, nil
+//}
 
 // IsValid checks for valid configuration path. Returns nil on success.
 // Configuration path attribute can have only three groups of [a-zA-Z0-9_] characters split by '/'.

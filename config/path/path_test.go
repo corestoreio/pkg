@@ -150,14 +150,14 @@ func TestSplitFQ(t *testing.T) {
 		wantErr     error
 	}{
 		{"groups/1/catalog/frontend/list_allow_all", "default", 0, "", scope.ErrUnsupportedScope},
-		{"stores/45678/catalog/frontend/list_allow_all", scope.StrStores.String(), 45678, "catalog/frontend/list_allow_all", nil},
+		{"stores/7475/catalog/frontend/list_allow_all", scope.StrStores.String(), 7475, "catalog/frontend/list_allow_all", nil},
 		{"websites/1/catalog/frontend/list_allow_all", scope.StrWebsites.String(), 1, "catalog/frontend/list_allow_all", nil},
 		{"default/0/catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", nil},
-		{"default//catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "", path.ErrInvalidScopeID},
-		{"stores/123/catalog/index", scope.StrDefault.String(), 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\"")},
+		{"default//catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", errors.New("strconv.ParseInt: parsing \"\\uf8ff\": invalid syntax")},
+		{"stores/123/catalog/index", "default", 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\"")},
 	}
 	for _, test := range tests {
-		havePath, haveErr := path.SplitFQ(path.Route(test.have))
+		havePath, haveErr := path.SplitFQ(test.have)
 
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Test %v", test)
@@ -171,22 +171,21 @@ func TestSplitFQ(t *testing.T) {
 	}
 }
 
-var benchmarkSplitFQ path.Path
+var benchmarkReverseFQPath path.Path
 
-// BenchmarkSplitFQ-4	10000000	       175 ns/op	      16 B/op	       1 allocs/op strings
-// BenchmarkSplitFQ-4  	10000000	       186 ns/op	      32 B/op	       1 allocs/op strings
-// BenchmarkSplitFQ-4  	 5000000	       364 ns/op	      16 B/op	       1 allocs/op bytes
-// BenchmarkSplitFQ-4  	 3000000	       417 ns/op	      32 B/op	       1 allocs/op
+// BenchmarkSplitFQ-4  	10000000	       199 ns/op	      32 B/op	       1 allocs/op
 func BenchmarkSplitFQ(b *testing.B) {
-	r := path.Route("stores/7475/catalog/frontend/list_allow_all")
 	b.ReportAllocs()
-	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkSplitFQ, err = path.SplitFQ(r)
+		benchmarkReverseFQPath, err = path.SplitFQ("stores/7475/catalog/frontend/list_allow_all")
 		if err != nil {
 			b.Error(err)
 		}
+	}
+	l, _ := benchmarkReverseFQPath.Level(-1)
+	if l.String() != "catalog/frontend/list_allow_all" {
+		b.Error("catalog/frontend/list_allow_all not found in Level()")
 	}
 }
 
