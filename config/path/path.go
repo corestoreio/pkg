@@ -32,7 +32,7 @@ const Levels int = 3
 
 // Separator used in the database table core_config_data and in config.Service
 // to separate the path parts.
-var Separator = []byte("/")
+const Separator byte = '/'
 
 const sSeparator = "/"
 const rSeparator = '/'
@@ -114,13 +114,18 @@ func (p Path) StrScope() string {
 }
 
 // String returns a fully qualified path. Errors get logged if debug mode
-// is enabled.
+// is enabled. String is empty on error.
 func (p Path) String() string {
 	s, err := p.FQ()
 	if PkgLog.IsDebug() {
 		PkgLog.Debug("path.Path.FQ.String", "err", err, "path", p)
 	}
 	return string(s)
+}
+
+// GoString returns the internal representation of Path
+func (p Path) GoString() string {
+	return fmt.Sprintf("path.Path{ Route:path.Route(`%s`), Scope: %d, ID: %d }", p.Route, p.Scope, p.ID)
 }
 
 // FQ returns the fully qualified route. Safe for further processing of the
@@ -163,35 +168,88 @@ func (p Path) FQ() (Route, error) {
 // Level 1 will return the first part like "a", Level 2 returns "a/b"
 // Level 3 returns "a/b/c" and so on. Level -1 joins all available path parts.
 // Does not generate a fully qualified path.
+// The returned slice is owned by this type.
 func (p Path) Level(level int) (Route, error) {
 	if err := p.IsValid(); err != nil {
 		return nil, err
 	}
 
 	lp := len(p.Route)
-	if level < 0 || level >= lp {
-		return p.Route.Copy(), nil
-	}
-
-	if level == 0 {
-		return Route(``), nil
+	switch {
+	case level < 0:
+		return p.Route, nil
+	case level == 0:
+		return p.Route[:0], nil
+	case level >= lp:
+		return p.Route, nil
 	}
 
 	pos := 0
 	i := 1
-	for pos <= len(p.Route) {
-		sc := bytes.IndexRune(p.Route[pos:], rSeparator)
+	for pos <= lp {
+		sc := bytes.IndexByte(p.Route[pos:], Separator)
 		if sc == -1 {
-			break
+			return p.Route, nil
 		}
 		pos += sc + 1
 
 		if i == level {
-			return p.Route[:pos-1].Copy(), nil
+			return p.Route[:pos-1], nil
 		}
 		i++
 	}
-	return p.Route.Copy(), nil
+	return p.Route, nil // unreachable?
+}
+
+// Hash same as Level() but returns a fnv64a value or an error if the route is
+// invalid.
+func (p Path) Hash(level int) (uint64, error) {
+	r, err := p.Level(level)
+	if err != nil {
+		return 0, err
+	}
+	var hash uint64 = 14695981039346656037
+	for _, c := range r {
+		hash ^= uint64(c)
+		hash *= 1099511628211
+	}
+	return hash
+}
+
+func (p Path) Part(pos int) Route {
+	if err := p.IsValid(); err != nil {
+		return nil
+	}
+
+	lp := len(p.Route)
+	switch {
+	case pos < 0, pos == 0, pos > lp:
+		return nil
+	}
+
+	var start, end, i int
+	i = 1
+	for start <= lp {
+		if i == 1 {
+			end = bytes.IndexByte(p.Route, Separator)
+			if end == -1 {
+				return nil
+			}
+		}
+
+		sc := bytes.IndexRune(p.Route[start:], rSeparator)
+		if sc == -1 {
+			return nil
+		}
+		start += sc + 1
+
+		if i == pos {
+			return p.Route[:start-1], nil
+		}
+		i++
+	}
+	return p.Route, nil // unreachable?
+
 }
 
 // SplitFQPath takes a fully qualified path and splits it into its parts.
