@@ -74,6 +74,15 @@ func NewByParts(parts ...string) (Path, error) {
 	return New(r)
 }
 
+// MustNewByParts same as NewByParts but panics on error.
+func MustNewByParts(parts ...string) Path {
+	p, err := NewByParts(parts...)
+	if err != nil {
+		panic(err)
+	}
+	return p
+}
+
 // MustNew same as New but panics on error.
 func MustNew(r Route) Path {
 	p, err := New(r)

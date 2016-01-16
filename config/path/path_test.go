@@ -52,6 +52,18 @@ func TestNewByParts(t *testing.T) {
 	}
 }
 
+func TestMustNewByParts(t *testing.T) {
+	t.Parallel()
+	defer func() {
+		if r := recover(); r != nil {
+			assert.EqualError(t, r.(error), path.ErrRouteInvalidBytes.Error())
+		} else {
+			t.Fatal("Expecting a panic")
+		}
+	}()
+	_ = path.MustNewByParts("a/\x80/c")
+}
+
 var benchmarkNewByParts path.Path
 
 // BenchmarkNewByParts-4	 5000000	       297 ns/op	      48 B/op	       1 allocs/op
