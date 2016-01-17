@@ -54,10 +54,19 @@ func newRoute(parts ...string) (Route, error) {
 	return r, nil
 }
 
+// Equal returns true if r2 is equal to current Route. Does not consider
+// utf8 EqualFold.
+func (r Route) Equal(r2 Route) bool {
+	// What is the use case for EqualFold?
+	return bytes.Equal(r, r2)
+}
+
+// String human readable format
 func (r Route) String() string {
 	return string(r)
 }
 
+// GoString returns the Go type of the Route including the underlying bytes.
 func (r Route) GoString() string {
 	return fmt.Sprintf("path.Route(`%s`)", r)
 }

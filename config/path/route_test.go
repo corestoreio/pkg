@@ -27,6 +27,22 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestRouteEqual(t *testing.T) {
+	tests := []struct {
+		a    path.Route
+		b    path.Route
+		want bool
+	}{
+		{nil, nil, true},
+		{path.Route("a"), path.Route("a"), true},
+		{path.Route("a"), path.Route("b"), false},
+		{path.Route("a\x80"), path.Route("a"), false},
+	}
+	for i, test := range tests {
+		assert.Exactly(t, test.want, test.a.Equal(test.b), "Index %d", i)
+	}
+}
+
 func TestRouteAppend(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
