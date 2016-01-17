@@ -43,6 +43,10 @@ var ErrRouteEmpty = errors.New("Route is empty")
 // ErrIncorrectPath a path is missing a path separator or is too short
 var ErrIncorrectPath = errors.New("Incorrect Path. Either to short or missing path separator.")
 
+// ErrIncorrectPosition returned by function Part() whenever an invalid input
+// position has been applied.
+var ErrIncorrectPosition = errors.New("Position does not exists")
+
 // Path represents a configuration path bound to a scope.
 type Path struct {
 	Route
@@ -131,6 +135,8 @@ func (p Path) GoString() string {
 // FQ returns the fully qualified route. Safe for further processing of the
 // returned byte slice. If scope is equal to scope.DefaultID and ID is not
 // zero then ID gets set to zero.
+// The returned Route slice is owned by Path. For further modifications you must
+// copy it via Route.Copy().
 func (p Path) FQ() (Route, error) {
 	if err := p.IsValid(); err != nil {
 		return nil, err
@@ -168,7 +174,8 @@ func (p Path) FQ() (Route, error) {
 // Level 1 will return the first part like "a", Level 2 returns "a/b"
 // Level 3 returns "a/b/c" and so on. Level -1 joins all available path parts.
 // Does not generate a fully qualified path.
-// The returned slice is owned by this type.
+// The returned Route slice is owned by Path. For further modifications you must
+// copy it via Route.Copy().
 func (p Path) Level(level int) (Route, error) {
 	if err := p.IsValid(); err != nil {
 		return nil, err
@@ -201,54 +208,87 @@ func (p Path) Level(level int) (Route, error) {
 	return p.Route, nil // unreachable?
 }
 
+const (
+	offset64 = 14695981039346656037
+	prime64  = 1099511628211
+)
+
 // Hash same as Level() but returns a fnv64a value or an error if the route is
 // invalid.
+//
+// Copyright 2011 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+//
+// Hash implements FNV-1 and FNV-1a, non-cryptographic hash functions
+// created by Glenn Fowler, Landon Curt Noll, and Phong Vo.
+// See
+// http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function.
 func (p Path) Hash(level int) (uint64, error) {
 	r, err := p.Level(level)
 	if err != nil {
 		return 0, err
 	}
-	var hash uint64 = 14695981039346656037
+	var hash uint64 = offset64
 	for _, c := range r {
 		hash ^= uint64(c)
-		hash *= 1099511628211
+		hash *= prime64
 	}
-	return hash
+	return hash, nil
 }
 
-func (p Path) Part(pos int) Route {
+// Part returns the route part on the desired position. The Route gets validated
+// before extracting the part.
+//		Have Route: general/single_store_mode/enabled
+//		Pos<1 => ErrIncorrectPosition
+//		Pos=1 => general
+//		Pos=2 => single_store_mode
+//		Pos=3 => enabled
+//		Pos>3 => ErrIncorrectPosition
+// The returned Route slice is owned by Path. For further modifications you must
+// copy it via Route.Copy().
+func (p Path) Part(pos int) (Route, error) {
 	if err := p.IsValid(); err != nil {
-		return nil
+		return nil, err
 	}
 
-	lp := len(p.Route)
-	switch {
-	case pos < 0, pos == 0, pos > lp:
-		return nil
+	if pos < 1 {
+		return nil, ErrIncorrectPosition
 	}
 
-	var start, end, i int
-	i = 1
-	for start <= lp {
-		if i == 1 {
-			end = bytes.IndexByte(p.Route, Separator)
-			if end == -1 {
-				return nil
-			}
+	var sepCount int
+	for _, b := range p.Route {
+		if b == Separator {
+			sepCount++ // number of separators we have
 		}
+	}
 
-		sc := bytes.IndexRune(p.Route[start:], rSeparator)
-		if sc == -1 {
-			return nil
+	if sepCount < 1 { // no separator found
+		return p.Route, nil
+	}
+	if pos > sepCount+1 {
+		return nil, ErrIncorrectPosition
+	}
+
+	var sepPos [Levels]int
+	sp := 0
+	for i, b := range p.Route {
+		if b == Separator {
+			sepPos[sp] = i + 1 // positions of the separators in the slice
+			sp++
 		}
-		start += sc + 1
+	}
 
+	pos -= 1
+	min := 0
+	for i := 0; i < sepCount; i++ {
+		max := sepPos[i]
 		if i == pos {
-			return p.Route[:start-1], nil
+			return p.Route[min : max-1], nil
 		}
-		i++
+		min = max
 	}
-	return p.Route, nil // unreachable?
+	return p.Route[min:], nil
 
 }
 

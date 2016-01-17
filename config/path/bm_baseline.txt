@@ -1,9 +1,11 @@
 PASS
-BenchmarkNewByParts-4	 5000000	       297 ns/op	      48 B/op	       1 allocs/op
-BenchmarkFQ-4        	 5000000	       385 ns/op	     112 B/op	       1 allocs/op
-BenchmarkSplitFQ-4   	10000000	       187 ns/op	      32 B/op	       1 allocs/op
-BenchmarkLevel_One-4 	 5000000	       299 ns/op	      16 B/op	       1 allocs/op
-BenchmarkLevel_Two-4 	 5000000	       334 ns/op	      16 B/op	       1 allocs/op
-BenchmarkLevel_All-4 	 5000000	       246 ns/op	      16 B/op	       1 allocs/op
-BenchmarkIsValid-4   	20000000	        79.0 ns/op	       0 B/op	       0 allocs/op
-ok  	github.com/corestoreio/csfw/config/path	13.133s
+BenchmarkNewByParts-4  	 5000000	       313 ns/op	      48 B/op	       1 allocs/op
+BenchmarkFQ-4          	 5000000	       399 ns/op	     112 B/op	       1 allocs/op
+BenchmarkSplitFQ-4     	10000000	       189 ns/op	      32 B/op	       1 allocs/op
+BenchmarkLevel_One-4   	10000000	       187 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLevel_Two-4   	10000000	       214 ns/op	       0 B/op	       0 allocs/op
+BenchmarkLevel_All-4   	10000000	       178 ns/op	       0 B/op	       0 allocs/op
+BenchmarkIsValid-4     	20000000	        81.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkHash-4        	 5000000	       285 ns/op	       0 B/op	       0 allocs/op
+BenchmarkPartPosition-4	10000000	       240 ns/op	       0 B/op	       0 allocs/op
+ok  	github.com/corestoreio/csfw/config/path	18.884s

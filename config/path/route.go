@@ -87,7 +87,7 @@ func (r Route) Copy() []byte {
 //		println(a.String())
 //		// Should print: catalog/product/enable_flat_tables
 func (r *Route) Append(a Route) error {
-	*r = append(*r, Separator...)
+	*r = append(*r, Separator)
 	*r = append(*r, a...)
 	if !r.Valid() {
 		return ErrRouteInvalidBytes

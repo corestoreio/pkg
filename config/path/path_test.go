@@ -23,6 +23,7 @@ import (
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
+	"hash/fnv"
 )
 
 func TestNewByParts(t *testing.T) {
@@ -151,7 +152,7 @@ func TestFQ(t *testing.T) {
 	assert.Exactly(t, "stores/7475/catalog/frontend/list_allow_all", path.MustNew(r).BindStr(scope.StrStores, 7475).String())
 	p := path.MustNew(r).BindStr(scope.StrStores, 5)
 	assert.Exactly(t, "stores/5/catalog/frontend/list_allow_all", p.String())
-	assert.Exactly(t, "path.Route(`catalog/frontend/list_allow_all`)", p.GoString())
+	assert.Exactly(t, "path.Path{ Route:path.Route(`catalog/frontend/list_allow_all`), Scope: 4, ID: 5 }", p.GoString())
 }
 
 func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
@@ -358,5 +359,128 @@ func BenchmarkIsValid(b *testing.B) {
 		if nil != benchmarkIsValid {
 			b.Errorf("Want: %s; Have: %v", want, p.Route)
 		}
+	}
+}
+
+func TestHash(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		have      path.Route
+		level     int
+		wantHash  uint64
+		wantErr   error
+		wantLevel string
+	}{
+		{path.Route("general/single_\x80store_mode/enabled"), 0, 0, path.ErrRouteInvalidBytes, ""},
+		{path.Route("general/single_store_mode/enabled"), 0, 14695981039346656037, nil, ""},
+		{path.Route("general/single_store_mode/enabled"), 1, 11396173686539659531, nil, "general"},
+		{path.Route("general/single_store_mode/enabled"), 2, 12184827311064960716, nil, "general/single_store_mode"},
+		{path.Route("general/single_store_mode/enabled"), 3, 8238786573751400402, nil, "general/single_store_mode/enabled"},
+		{path.Route("general/single_store_mode/enabled"), -1, 8238786573751400402, nil, "general/single_store_mode/enabled"},
+		{path.Route("general/single_store_mode/enabled"), 5, 8238786573751400402, nil, "general/single_store_mode/enabled"},
+		{path.Route("general/single_store_mode/enabled"), 4, 8238786573751400402, nil, "general/single_store_mode/enabled"},
+	}
+	for i, test := range tests {
+		p := path.Path{
+			Route: test.have,
+		}
+		hv, err := p.Hash(test.level)
+		if test.wantErr != nil {
+			assert.EqualError(t, err, test.wantErr.Error(), "Index %d", i)
+			assert.Empty(t, hv, "Index %d", i)
+			continue
+		}
+		assert.NoError(t, err, "Index %d", i)
+
+		check := fnv.New64a()
+		_, cErr := check.Write([]byte(test.wantLevel))
+		assert.NoError(t, cErr)
+		assert.Exactly(t, check.Sum64(), hv, "Index %d", i)
+
+		l, err := p.Level(test.level)
+		assert.Exactly(t, test.wantLevel, l.String(), "Index %d", i)
+		assert.Exactly(t, test.wantHash, hv, "Index %d", i)
+	}
+}
+
+var benchmarkHash uint64
+
+// BenchmarkHash-4	 5000000	       288 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkHash(b *testing.B) {
+	have := path.Route("general/single_store_mode/enabled")
+	want := uint64(8238786573751400402)
+
+	p := path.Path{
+		Route: have,
+	}
+	var err error
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchmarkHash, err = p.Hash(3)
+		if err != nil {
+			b.Error(err)
+		}
+		if want != benchmarkHash {
+			b.Errorf("Want: %d; Have: %d", want, benchmarkHash)
+		}
+	}
+}
+
+func TestPartPosition(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		have     path.Route
+		level    int
+		wantPart string
+		wantErr  error
+	}{
+		{path.Route("general/single_\x80store_mode/enabled"), 0, "", path.ErrRouteInvalidBytes},
+		{path.Route("general/single_store_mode/enabled"), 0, "", path.ErrIncorrectPosition},
+		{path.Route("general/single_store_mode/enabled"), 1, "general", nil},
+		{path.Route("general/single_store_mode/enabled"), 2, "single_store_mode", nil},
+		{path.Route("general/single_store_mode/enabled"), 3, "enabled", nil},
+		{path.Route("general/single_store_mode/enabled"), -1, "", path.ErrIncorrectPosition},
+		{path.Route("general/single_store_mode/enabled"), 5, "", path.ErrIncorrectPosition},
+		{path.Route("general/single/store/website/group/mode/enabled/disabled/default"), 5, "", path.ErrIncorrectPath}, // too long not valid
+	}
+	for i, test := range tests {
+		p := path.Path{
+			Route: test.have,
+		}
+		part, haveErr := p.Part(test.level)
+		if test.wantErr != nil {
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+			assert.Nil(t, part, "Index %d", i)
+			continue
+		}
+		assert.Exactly(t, test.wantPart, part.String(), "Index %d", i)
+	}
+}
+
+var benchmarkPartPosition path.Route
+
+// BenchmarkPartPosition-4	 5000000	       240 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkPartPosition(b *testing.B) {
+	have := path.Route("general/single_store_mode/enabled")
+	want := "enabled"
+
+	p := path.Path{
+		Route: have,
+	}
+	var err error
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchmarkPartPosition, err = p.Part(3)
+		if err != nil {
+			b.Error(err)
+		}
+		if benchmarkPartPosition == nil {
+			b.Error("benchmarkPartPosition is nil! Unexpected")
+		}
+	}
+	if want != benchmarkPartPosition.String() {
+		b.Errorf("Want: %d; Have: %d", want, benchmarkPartPosition.String())
 	}
 }
