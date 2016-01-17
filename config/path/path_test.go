@@ -342,6 +342,23 @@ func TestIsValid(t *testing.T) {
 	}
 }
 
+func TestRouteIsValid(t *testing.T) {
+	p := path.Path{
+		Scope: scope.StoreID,
+		ID:    2,
+		Route: path.Route(`general/store_information`),
+	}
+	assert.EqualError(t, p.IsValid(), path.ErrIncorrectPath.Error())
+
+	p = path.Path{
+		Scope:        scope.StoreID,
+		ID:           2,
+		Route:        path.Route(`general/store_information`),
+		RouteIsValid: true,
+	}
+	assert.NoError(t, p.IsValid())
+}
+
 var benchmarkIsValid error
 
 // BenchmarkIsValid-4	20000000	        83.5 ns/op	       0 B/op	       0 allocs/op

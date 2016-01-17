@@ -53,6 +53,9 @@ type Path struct {
 	Scope scope.Scope
 	// ID represents a website, group or store ID
 	ID int64
+	// RouteIsValid allows to bypass validation of separators in a Route
+	// in cases where only a partial Route has been provided.
+	RouteIsValid bool
 }
 
 // New creates a new validated Path. Scope is assigned to Default.
@@ -442,7 +445,7 @@ func (p Path) IsValid() error {
 		}
 		length++
 	}
-	if sepCount != Levels-1 || length < 8 {
+	if !p.RouteIsValid && (sepCount != Levels-1 || length < 8) {
 		return ErrIncorrectPath
 	}
 
