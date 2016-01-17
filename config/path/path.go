@@ -36,6 +36,8 @@ const Separator byte = '/'
 
 const sSeparator = "/"
 
+var bSeparator = []byte(sSeparator)
+
 // ErrRouteEmpty path parts are empty
 var ErrRouteEmpty = errors.New("Route is empty")
 
@@ -60,15 +62,28 @@ type Path struct {
 }
 
 // New creates a new validated Path. Scope is assigned to Default.
-func New(r Route) (Path, error) {
+func New(rs ...Route) (Path, error) {
 	p := Path{
-		Route: r,
 		Scope: scope.DefaultID,
+	}
+	if len(rs) == 1 {
+		p.Route = rs[0]
+	} else {
+		p.Route.Append(rs...)
 	}
 	if err := p.IsValid(); err != nil {
 		return Path{}, err
 	}
 	return p, nil
+}
+
+// MustNew same as New but panics on error.
+func MustNew(rs ...Route) Path {
+	p, err := New(rs...)
+	if err != nil {
+		panic(err)
+	}
+	return p
 }
 
 // NewByParts creates a new route from path part strings.
@@ -85,15 +100,6 @@ func NewByParts(parts ...string) (Path, error) {
 // MustNewByParts same as NewByParts but panics on error.
 func MustNewByParts(parts ...string) Path {
 	p, err := NewByParts(parts...)
-	if err != nil {
-		panic(err)
-	}
-	return p
-}
-
-// MustNew same as New but panics on error.
-func MustNew(r Route) Path {
-	p, err := New(r)
 	if err != nil {
 		panic(err)
 	}

@@ -54,6 +54,9 @@ func TestRouteAppend(t *testing.T) {
 		{path.Route("aa"), path.Route("bb/cc"), "aa/bb/cc", nil},
 		{path.Route("aa"), path.Route("bbcc"), "aa/bbcc", nil},
 		{path.Route("aa"), path.Route("bb\x80cc"), "", path.ErrRouteInvalidBytes},
+		{path.Route("aa/"), path.Route("bbcc"), "aa/bbcc", nil},
+		{path.Route("aa"), path.Route("/bbcc"), "aa/bbcc", nil},
+		{path.Route("aa"), path.Route("/bb\x00cc"), "aa/bb", nil},
 	}
 	for i, test := range tests {
 		haveErr := test.a.Append(test.b)
@@ -66,7 +69,34 @@ func TestRouteAppend(t *testing.T) {
 	}
 }
 
+func TestRouteVariadicAppend(t *testing.T) {
+	t.Parallel()
+	p := path.Route("aa")
+	assert.NoError(t, p.Append(path.Route("bb"), path.Route("cc"), path.Route("dd")))
+	assert.Exactly(t, "aa/bb/cc/dd", p.String())
+}
+
+var benchmarkRouteAppendWant = path.Route("general/single_store_mode/enabled")
+
+// BenchmarkRouteAppend-4   	 5000000	       376 ns/op	      64 B/op	       2 allocs/op
+func BenchmarkRouteAppend(b *testing.B) {
+	havePartials := []path.Route{path.Route("single_store_mode"), path.Route("enabled")}
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var have = path.Route("general/")
+		err := have.Append(havePartials...)
+		if err != nil {
+			b.Error(err)
+		}
+		if benchmarkRouteAppendWant.Equal(have) == false {
+			b.Errorf("Want: %s; Have: %s", benchmarkRouteAppendWant, have)
+		}
+	}
+}
+
 func TestRouteTextMarshal(t *testing.T) {
+	t.Parallel()
 	r := path.Route("admin/security/password_lifetime")
 	j, err := json.Marshal(r)
 	assert.NoError(t, err)
@@ -74,6 +104,7 @@ func TestRouteTextMarshal(t *testing.T) {
 }
 
 func TestRouteUnmarshalTextOk(t *testing.T) {
+	t.Parallel()
 	var r path.Route
 	err := json.Unmarshal([]byte(`"admin/security/password_lifetime"`), &r)
 	assert.NoError(t, err)

@@ -131,8 +131,8 @@ func (r Route) Copy() []byte {
 	return n
 }
 
-// Append adds another partial route with a Separator between. After the partial
-// route has been added a validation check will be done.
+// Append adds other partial routes with a Separator between. After the partial
+// routes have been added a validation check will be done.
 //
 //		a := path.Route(`catalog/product`)
 //		b := path.Route(`enable_flat_tables`)
@@ -141,9 +141,40 @@ func (r Route) Copy() []byte {
 //		}
 //		println(a.String())
 //		// Should print: catalog/product/enable_flat_tables
-func (r *Route) Append(a Route) error {
-	*r = append(*r, Separator)
-	*r = append(*r, a...)
+func (r *Route) Append(routes ...Route) error {
+	if bytes.LastIndexByte(*r, Separator) == len(*r)-1 {
+		*r = (*r)[:len(*r)-1] // strip last Separator
+	}
+
+	// calculate new buffer size
+	size := len(*r)
+	for i, route := range routes {
+		if i == 0 {
+			size++ // Separator
+		}
+		size += len(route)
+		if i < len(routes)-1 {
+			size++ // Separator
+		}
+	}
+	var buf = make([]byte, size, size)
+	var pos int
+	pos += copy(buf[pos:], *r)
+
+	for i, route := range routes {
+		if i == 0 && route[0] != Separator {
+			pos += copy(buf[pos:], bSeparator)
+		}
+
+		pos += copy(buf[pos:], route)
+		if i < len(routes)-1 {
+			pos += copy(buf[pos:], bSeparator)
+		}
+	}
+	if pos := bytes.IndexByte(buf, 0x00); pos > 1 {
+		buf = buf[:pos] // strip everything after the null byte
+	}
+	*r = buf
 	if err := r.Validate(); err != nil {
 		return err
 	}
