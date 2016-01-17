@@ -35,7 +35,6 @@ const Levels int = 3
 const Separator byte = '/'
 
 const sSeparator = "/"
-const rSeparator = '/'
 
 // ErrRouteEmpty path parts are empty
 var ErrRouteEmpty = errors.New("Route is empty")
@@ -53,9 +52,11 @@ type Path struct {
 	Scope scope.Scope
 	// ID represents a website, group or store ID
 	ID int64
-	// RouteIsValid allows to bypass validation of separators in a Route
+	// RouteLevelValid allows to bypass validation of separators in a Route
 	// in cases where only a partial Route has been provided.
-	RouteIsValid bool
+	RouteLevelValid bool
+	// routeValidated internal flag to avoid running twice the route valid process
+	routeValidated bool
 }
 
 // New creates a new validated Path. Scope is assigned to Default.
@@ -154,7 +155,7 @@ func (p Path) FQ() (Route, error) {
 	if _, err := buf.WriteString(p.StrScope()); err != nil {
 		return nil, errgo.Mask(err)
 	}
-	if err := buf.WriteByte(rSeparator); err != nil {
+	if err := buf.WriteByte(Separator); err != nil {
 		return nil, errgo.Mask(err)
 	}
 	bufRaw := buf.Bytes()
@@ -163,7 +164,7 @@ func (p Path) FQ() (Route, error) {
 	if _, err := buf.Write(bufRaw); err != nil {
 		return nil, errgo.Mask(err)
 	}
-	if err := buf.WriteByte(rSeparator); err != nil {
+	if err := buf.WriteByte(Separator); err != nil {
 		return nil, errgo.Mask(err)
 	}
 	if _, err := buf.Write(p.Route); err != nil {
@@ -180,41 +181,12 @@ func (p Path) FQ() (Route, error) {
 // The returned Route slice is owned by Path. For further modifications you must
 // copy it via Route.Copy().
 func (p Path) Level(level int) (Route, error) {
+	p.routeValidated = true
 	if err := p.IsValid(); err != nil {
 		return nil, err
 	}
-
-	lp := len(p.Route)
-	switch {
-	case level < 0:
-		return p.Route, nil
-	case level == 0:
-		return p.Route[:0], nil
-	case level >= lp:
-		return p.Route, nil
-	}
-
-	pos := 0
-	i := 1
-	for pos <= lp {
-		sc := bytes.IndexByte(p.Route[pos:], Separator)
-		if sc == -1 {
-			return p.Route, nil
-		}
-		pos += sc + 1
-
-		if i == level {
-			return p.Route[:pos-1], nil
-		}
-		i++
-	}
-	return p.Route, nil // unreachable?
+	return p.Route.Level(level)
 }
-
-const (
-	offset64 = 14695981039346656037
-	prime64  = 1099511628211
-)
 
 // Hash same as Level() but returns a fnv64a value or an error if the route is
 // invalid.
@@ -228,16 +200,11 @@ const (
 // See
 // http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function.
 func (p Path) Hash(level int) (uint64, error) {
-	r, err := p.Level(level)
-	if err != nil {
+	p.routeValidated = true
+	if err := p.IsValid(); err != nil {
 		return 0, err
 	}
-	var hash uint64 = offset64
-	for _, c := range r {
-		hash ^= uint64(c)
-		hash *= prime64
-	}
-	return hash, nil
+	return p.Route.Hash(level)
 }
 
 // Part returns the route part on the desired position. The Route gets validated
@@ -251,48 +218,11 @@ func (p Path) Hash(level int) (uint64, error) {
 // The returned Route slice is owned by Path. For further modifications you must
 // copy it via Route.Copy().
 func (p Path) Part(pos int) (Route, error) {
+	p.routeValidated = true
 	if err := p.IsValid(); err != nil {
 		return nil, err
 	}
-
-	if pos < 1 {
-		return nil, ErrIncorrectPosition
-	}
-
-	var sepCount int
-	for _, b := range p.Route {
-		if b == Separator {
-			sepCount++ // number of separators we have
-		}
-	}
-
-	if sepCount < 1 { // no separator found
-		return p.Route, nil
-	}
-	if pos > sepCount+1 {
-		return nil, ErrIncorrectPosition
-	}
-
-	var sepPos [Levels]int
-	sp := 0
-	for i, b := range p.Route {
-		if b == Separator {
-			sepPos[sp] = i + 1 // positions of the separators in the slice
-			sp++
-		}
-	}
-
-	pos -= 1
-	min := 0
-	for i := 0; i < sepCount; i++ {
-		max := sepPos[i]
-		if i == pos {
-			return p.Route[min : max-1], nil
-		}
-		min = max
-	}
-	return p.Route[min:], nil
-
+	return p.Route.Part(pos)
 }
 
 // SplitFQPath takes a fully qualified path and splits it into its parts.
@@ -407,47 +337,17 @@ func SplitFQ(fqPath string) (Path, error) {
 //
 // IsValid can return ErrRouteEmpty or ErrIncorrectPath or a custom error.
 func (p Path) IsValid() error {
-	if p.Route.IsEmpty() {
-		return ErrRouteEmpty
-	}
-
-	if false == p.Route.Valid() {
-		return ErrRouteInvalidBytes
-	}
-
-	var sepCount, length int
-	i := 0
-	for i < len(p.Route) {
-		var r rune
-		if p.Route[i] < utf8.RuneSelf {
-			r = rune(p.Route[i])
-			i++
-		} else {
-			dr, _ := utf8.DecodeRune(p.Route[i:])
-			return fmt.Errorf("This character %q is not allowed in Route %s", string(dr), p.Route)
+	if !p.routeValidated {
+		// only validate the route when it has not yet been done
+		if err := p.Route.Validate(); err != nil {
+			return err
 		}
-		ok := false
-		switch {
-		case '0' <= r && r <= '9':
-			ok = true
-		case 'a' <= r && r <= 'z':
-			ok = true
-		case 'A' <= r && r <= 'Z':
-			ok = true
-		case r == '_':
-			ok = true
-		case r == rSeparator:
-			sepCount++
-			ok = true
-		}
-		if !ok {
-			return fmt.Errorf("This character %q is not allowed in Route %s", string(r), p.Route)
-		}
-		length++
 	}
-	if !p.RouteIsValid && (sepCount != Levels-1 || length < 8) {
+	if p.RouteLevelValid {
+		return nil
+	}
+	if p.Route.Separators() != Levels-1 || utf8.RuneCount(p.Route) < 8 /*aa/bb/cc*/ {
 		return ErrIncorrectPath
 	}
-
 	return nil
 }

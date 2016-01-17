@@ -15,6 +15,7 @@
 package path
 
 import (
+	"bytes"
 	"encoding"
 	"errors"
 	"fmt"
@@ -61,9 +62,54 @@ func (r Route) GoString() string {
 	return fmt.Sprintf("path.Route(`%s`)", r)
 }
 
-// Valid checks if the route contains valid runes and is not empty.
-func (r Route) Valid() bool {
-	return utf8.Valid(r) && false == r.IsEmpty()
+const rSeparator = rune(Separator)
+
+// Validate checks if the route contains valid runes and is not empty.
+func (r Route) Validate() error {
+
+	if r.IsEmpty() {
+		return ErrRouteEmpty
+	}
+
+	if r.Separators() == len(r) {
+		return ErrIncorrectPath
+	}
+
+	if false == utf8.Valid(r) {
+		return ErrRouteInvalidBytes
+	}
+
+	var sepCount, length int
+	i := 0
+	for i < len(r) {
+		var ru rune
+		if r[i] < utf8.RuneSelf {
+			ru = rune(r[i])
+			i++
+		} else {
+			dr, _ := utf8.DecodeRune(r[i:])
+			return fmt.Errorf("This character %q is not allowed in Route %s", string(dr), r)
+		}
+		ok := false
+		switch {
+		case '0' <= ru && ru <= '9':
+			ok = true
+		case 'a' <= ru && ru <= 'z':
+			ok = true
+		case 'A' <= ru && ru <= 'Z':
+			ok = true
+		case ru == '_':
+			ok = true
+		case ru == rSeparator:
+			sepCount++
+			ok = true
+		}
+		if !ok {
+			return fmt.Errorf("This character %q is not allowed in Route %s", string(ru), r)
+		}
+		length++
+	}
+	return nil
 }
 
 func (r Route) IsEmpty() bool {
@@ -89,8 +135,8 @@ func (r Route) Copy() []byte {
 func (r *Route) Append(a Route) error {
 	*r = append(*r, Separator)
 	*r = append(*r, a...)
-	if !r.Valid() {
-		return ErrRouteInvalidBytes
+	if err := r.Validate(); err != nil {
+		return err
 	}
 	return nil
 }
@@ -104,10 +150,140 @@ func (r Route) MarshalText() (text []byte, err error) {
 	return r, nil
 }
 
+// UnmarshalText transforms the text into a route with performed validation
+// checks.
 func (r *Route) UnmarshalText(text []byte) error {
 	*r = append(*r, text...)
-	if !r.Valid() {
-		return ErrRouteInvalidBytes
+	if err := r.Validate(); err != nil {
+		return err
 	}
 	return nil
+}
+
+// Level joins a configuration path parts by the path separator PS.
+// The level argument defines the depth of the path parts to join.
+// Level 1 will return the first part like "a", Level 2 returns "a/b"
+// Level 3 returns "a/b/c" and so on. Level -1 joins all available path parts.
+// Does not generate a fully qualified path.
+// The returned Route slice is owned by Path. For further modifications you must
+// copy it via Route.Copy().
+func (r Route) Level(level int) (Route, error) {
+	if err := r.Validate(); err != nil {
+		return nil, err
+	}
+
+	lp := len(r)
+	switch {
+	case level < 0:
+		return r, nil
+	case level == 0:
+		return r[:0], nil
+	case level >= lp:
+		return r, nil
+	}
+
+	pos := 0
+	i := 1
+	for pos <= lp {
+		sc := bytes.IndexByte(r[pos:], Separator)
+		if sc == -1 {
+			return r, nil
+		}
+		pos += sc + 1
+
+		if i == level {
+			return r[:pos-1], nil
+		}
+		i++
+	}
+	return r, nil
+}
+
+const (
+	offset64 = 14695981039346656037
+	prime64  = 1099511628211
+)
+
+// Hash same as Level() but returns a fnv64a value or an error if the route is
+// invalid.
+//
+// Copyright 2011 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+//
+// Hash implements FNV-1 and FNV-1a, non-cryptographic hash functions
+// created by Glenn Fowler, Landon Curt Noll, and Phong Vo.
+// See
+// http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function.
+func (r Route) Hash(level int) (uint64, error) {
+	r, err := r.Level(level)
+	if err != nil {
+		return 0, err
+	}
+	var hash uint64 = offset64
+	for _, c := range r {
+		hash ^= uint64(c)
+		hash *= prime64
+	}
+	return hash, nil
+}
+
+// Separators returns the number of separators
+func (r Route) Separators() (count int) {
+	for _, b := range r {
+		if b == Separator {
+			count++
+		}
+	}
+	return
+}
+
+// Part returns the route part on the desired position. The Route gets validated
+// before extracting the part.
+//		Have Route: general/single_store_mode/enabled
+//		Pos<1 => ErrIncorrectPosition
+//		Pos=1 => general
+//		Pos=2 => single_store_mode
+//		Pos=3 => enabled
+//		Pos>3 => ErrIncorrectPosition
+// The returned Route slice is owned by Path. For further modifications you must
+// copy it via Route.Copy().
+func (r Route) Part(pos int) (Route, error) {
+
+	if err := r.Validate(); err != nil {
+		return nil, err
+	}
+
+	if pos < 1 {
+		return nil, ErrIncorrectPosition
+	}
+
+	sepCount := r.Separators()
+	if sepCount < 1 { // no separator found
+		return r, nil
+	}
+	if pos > sepCount+1 {
+		return nil, ErrIncorrectPosition
+	}
+
+	const realLevels = Levels - 1
+	var sepPos [realLevels]int
+	sp := 0
+	for i, b := range r {
+		if b == Separator && sp < realLevels {
+			sepPos[sp] = i + 1 // positions of the separators in the slice
+			sp++
+		}
+	}
+
+	pos -= 1
+	min := 0
+	for i := 0; i < realLevels; i++ {
+		max := sepPos[i]
+		if i == pos {
+			return r[min : max-1], nil
+		}
+		min = max
+	}
+	return r[min:], nil
 }

@@ -17,13 +17,13 @@ package path_test
 import (
 	"bytes"
 	"errors"
+	"hash/fnv"
 	"strconv"
 	"testing"
 
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
-	"hash/fnv"
 )
 
 func TestNewByParts(t *testing.T) {
@@ -53,7 +53,7 @@ func TestNewByParts(t *testing.T) {
 	}
 }
 
-func TestMustNewByParts(t *testing.T) {
+func TestMustNewByPartsPanic(t *testing.T) {
 	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
@@ -63,6 +63,19 @@ func TestMustNewByParts(t *testing.T) {
 		}
 	}()
 	_ = path.MustNewByParts("a/\x80/c")
+}
+
+func TestMustNewByPartsNoPanic(t *testing.T) {
+	t.Parallel()
+	defer func() {
+		if r := recover(); r != nil {
+			assert.NotNil(t, r, "Did not expect a panic")
+		} else {
+			assert.Nil(t, r, "Why is here a panic")
+		}
+	}()
+	p := path.MustNewByParts("aa", "bb", "cc")
+	assert.Exactly(t, p.String(), "default/0/aa/bb/cc")
 }
 
 var benchmarkNewByParts path.Path
@@ -252,61 +265,7 @@ func BenchmarkSplitFQ(b *testing.B) {
 	}
 }
 
-func TestLevel(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		have  path.Route
-		level int
-		want  string
-	}{
-		{path.Route("general/single_store_mode/enabled"), 0, ""},
-		{path.Route("general/single_store_mode/enabled"), 1, "general"},
-		{path.Route("general/single_store_mode/enabled"), 2, "general/single_store_mode"},
-		{path.Route("general/single_store_mode/enabled"), 3, "general/single_store_mode/enabled"},
-		{path.Route("general/single_store_mode/enabled"), -1, "general/single_store_mode/enabled"},
-		{path.Route("general/single_store_mode/enabled"), 5, "general/single_store_mode/enabled"},
-		{path.Route("general/single_store_mode/enabled"), 4, "general/single_store_mode/enabled"},
-	}
-	for i, test := range tests {
-		r, err := path.MustNew(test.have).Level(test.level)
-		assert.NoError(t, err)
-		assert.Exactly(t, test.want, r.String(), "Index %d", i)
-	}
-}
-
-var benchmarkLevel path.Route
-
-// BenchmarkLevel_One-4	 5000000	       297 ns/op	      16 B/op	       1 allocs/op
-func BenchmarkLevel_One(b *testing.B) {
-	benchmarkLevelRun(b, 1, path.Route("system/dev/debug"), path.Route("system"))
-}
-
-// BenchmarkLevel_Two-4	 5000000	       332 ns/op	      16 B/op	       1 allocs/op
-func BenchmarkLevel_Two(b *testing.B) {
-	benchmarkLevelRun(b, 2, path.Route("system/dev/debug"), path.Route("system/dev"))
-}
-
-// BenchmarkLevel_All-4	 5000000	       379 ns/op	      16 B/op	       1 allocs/op
-func BenchmarkLevel_All(b *testing.B) {
-	benchmarkLevelRun(b, -1, path.Route("system/dev/debug"), path.Route("system/dev/debug"))
-}
-
-func benchmarkLevelRun(b *testing.B, level int, have, want path.Route) {
-	b.ReportAllocs()
-	b.ResetTimer()
-	var err error
-	for i := 0; i < b.N; i++ {
-		benchmarkLevel, err = path.MustNew(have).Level(level)
-	}
-	if err != nil {
-		b.Error(err)
-	}
-	if bytes.Equal(benchmarkLevel, want) == false {
-		b.Errorf("Want: %s; Have, %s", want, benchmarkLevel)
-	}
-}
-
-func TestIsValid(t *testing.T) {
+func TestPathIsValid(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		s    scope.Scope
@@ -342,7 +301,7 @@ func TestIsValid(t *testing.T) {
 	}
 }
 
-func TestRouteIsValid(t *testing.T) {
+func TestPathRouteIsValid(t *testing.T) {
 	p := path.Path{
 		Scope: scope.StoreID,
 		ID:    2,
@@ -351,35 +310,15 @@ func TestRouteIsValid(t *testing.T) {
 	assert.EqualError(t, p.IsValid(), path.ErrIncorrectPath.Error())
 
 	p = path.Path{
-		Scope:        scope.StoreID,
-		ID:           2,
-		Route:        path.Route(`general/store_information`),
-		RouteIsValid: true,
+		Scope:           scope.StoreID,
+		ID:              2,
+		Route:           path.Route(`general/store_information`),
+		RouteLevelValid: true,
 	}
 	assert.NoError(t, p.IsValid())
 }
 
-var benchmarkIsValid error
-
-// BenchmarkIsValid-4	20000000	        83.5 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkIsValid(b *testing.B) {
-	have := path.Route("system/dEv/d3bug")
-	want := "system/dev/debug"
-
-	p := path.Path{
-		Route: have,
-	}
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		benchmarkIsValid = p.IsValid()
-		if nil != benchmarkIsValid {
-			b.Errorf("Want: %s; Have: %v", want, p.Route)
-		}
-	}
-}
-
-func TestHash(t *testing.T) {
+func TestPathHash(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		have      path.Route
@@ -420,31 +359,7 @@ func TestHash(t *testing.T) {
 	}
 }
 
-var benchmarkHash uint64
-
-// BenchmarkHash-4	 5000000	       288 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkHash(b *testing.B) {
-	have := path.Route("general/single_store_mode/enabled")
-	want := uint64(8238786573751400402)
-
-	p := path.Path{
-		Route: have,
-	}
-	var err error
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		benchmarkHash, err = p.Hash(3)
-		if err != nil {
-			b.Error(err)
-		}
-		if want != benchmarkHash {
-			b.Errorf("Want: %d; Have: %d", want, benchmarkHash)
-		}
-	}
-}
-
-func TestPartPosition(t *testing.T) {
+func TestPathPartPosition(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		have     path.Route
@@ -472,32 +387,5 @@ func TestPartPosition(t *testing.T) {
 			continue
 		}
 		assert.Exactly(t, test.wantPart, part.String(), "Index %d", i)
-	}
-}
-
-var benchmarkPartPosition path.Route
-
-// BenchmarkPartPosition-4	 5000000	       240 ns/op	       0 B/op	       0 allocs/op
-func BenchmarkPartPosition(b *testing.B) {
-	have := path.Route("general/single_store_mode/enabled")
-	want := "enabled"
-
-	p := path.Path{
-		Route: have,
-	}
-	var err error
-	b.ReportAllocs()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		benchmarkPartPosition, err = p.Part(3)
-		if err != nil {
-			b.Error(err)
-		}
-		if benchmarkPartPosition == nil {
-			b.Error("benchmarkPartPosition is nil! Unexpected")
-		}
-	}
-	if want != benchmarkPartPosition.String() {
-		b.Errorf("Want: %d; Have: %d", want, benchmarkPartPosition.String())
 	}
 }
