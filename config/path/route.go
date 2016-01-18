@@ -16,6 +16,7 @@ package path
 
 import (
 	"bytes"
+	"database/sql/driver"
 	"encoding"
 	"errors"
 	"fmt"
@@ -326,4 +327,30 @@ func (r Route) Part(pos int) (Route, error) {
 		min = max
 	}
 	return r[min:], nil
+}
+
+// Scan implements the Scanner interface.
+func (ns *Route) Scan(value interface{}) error {
+	*ns = nil
+	if value == nil {
+		return nil
+	}
+	if b, ok := value.([]byte); ok {
+		buf := make([]byte, len(b), len(b))
+		copy(buf, b)
+		*ns = buf
+	} else {
+		// just for testing. maybe use in the future a type switch above. also for *[]byte and so on
+		return fmt.Errorf("Cannot convert value %#v to []byte", value)
+	}
+	return ns.Validate()
+
+}
+
+// Value implements the driver Valuer interface.
+func (ns Route) Value() (driver.Value, error) {
+	if ns == nil {
+		return nil, nil
+	}
+	return ns, nil
 }
