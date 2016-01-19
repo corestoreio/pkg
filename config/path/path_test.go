@@ -15,7 +15,6 @@
 package path_test
 
 import (
-	"bytes"
 	"errors"
 	"hash/fnv"
 	"strconv"
@@ -43,7 +42,7 @@ func TestNewByParts(t *testing.T) {
 	for i, test := range tests {
 		haveP, haveErr := path.NewByParts(test.parts...)
 		if test.wantErr != nil {
-			assert.Nil(t, haveP.Route, "Index %d", i)
+			assert.Nil(t, haveP.Route.Chars, "Index %d", i)
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
 			continue
 		}
@@ -82,7 +81,7 @@ var benchmarkNewByParts path.Path
 
 // BenchmarkNewByParts-4	 5000000	       297 ns/op	      48 B/op	       1 allocs/op
 func BenchmarkNewByParts(b *testing.B) {
-	want := path.Route("general/single_store_mode/enabled")
+	want := path.NewRoute("general/single_store_mode/enabled")
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -92,7 +91,7 @@ func BenchmarkNewByParts(b *testing.B) {
 			b.Error(err)
 		}
 	}
-	if bytes.Equal(benchmarkNewByParts.Route, want) == false {
+	if benchmarkNewByParts.Route.Equal(want.Chars) == false {
 		b.Errorf("Want: %s; Have, %s", want, benchmarkNewByParts.Route)
 	}
 }
@@ -106,12 +105,12 @@ func TestPathNew(t *testing.T) {
 		wantFQ     path.Route
 		wantNewErr error
 	}{
-		{path.Route("ab/b\x80/cd"), scope.WebsiteID, 3, path.Route("websites/3/ab/ba/cd"), path.ErrRouteInvalidBytes},
-		{path.Route("ab/ba/cd"), scope.WebsiteID, 3, path.Route("websites/3/ab/ba/cd"), nil},
-		{path.Route("ad/ba/ca/sd"), scope.WebsiteID, 3, path.Route("websites/3/a/b/c/d"), path.ErrIncorrectPath},
-		{path.Route("as/sb"), scope.WebsiteID, 3, path.Route("websites/3/a/b/c/d"), path.ErrIncorrectPath},
-		{path.Route("aa/bb/cc"), scope.GroupID, 3, path.Route("default/0/aa/bb/cc"), nil},
-		{path.Route("aa/bb/cc"), scope.StoreID, 3, path.Route("stores/3/aa/bb/cc"), nil},
+		{path.NewRoute("ab/b\x80/cd"), scope.WebsiteID, 3, path.NewRoute("websites/3/ab/ba/cd"), path.ErrRouteInvalidBytes},
+		{path.NewRoute("ab/ba/cd"), scope.WebsiteID, 3, path.NewRoute("websites/3/ab/ba/cd"), nil},
+		{path.NewRoute("ad/ba/ca/sd"), scope.WebsiteID, 3, path.NewRoute("websites/3/a/b/c/d"), path.ErrIncorrectPath},
+		{path.NewRoute("as/sb"), scope.WebsiteID, 3, path.NewRoute("websites/3/a/b/c/d"), path.ErrIncorrectPath},
+		{path.NewRoute("aa/bb/cc"), scope.GroupID, 3, path.NewRoute("default/0/aa/bb/cc"), nil},
+		{path.NewRoute("aa/bb/cc"), scope.StoreID, 3, path.NewRoute("stores/3/aa/bb/cc"), nil},
 	}
 	for i, test := range tests {
 		haveP, haveErr := path.New(test.route)
@@ -135,21 +134,21 @@ func TestFQ(t *testing.T) {
 		want    string
 		wantErr error
 	}{
-		{scope.StrDefault, 0, nil, "", path.ErrRouteEmpty},
-		{scope.StrDefault, 0, path.Route(""), "", path.ErrRouteEmpty},
-		{scope.StrDefault, 0, path.Route("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
-		{scope.StrDefault, 44, path.Route("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
-		{scope.StrWebsites, 0, path.Route("system/dev/debug"), scope.StrWebsites.String() + "/0/system/dev/debug", nil},
-		{scope.StrWebsites, 343, path.Route("system/dev/debug"), scope.StrWebsites.String() + "/343/system/dev/debug", nil},
-		{scope.StrScope("hello"), 0, path.Route("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
-		{scope.StrScope("hello"), 343, path.Route("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
+		{scope.StrDefault, 0, path.Route{}, "", path.ErrRouteEmpty},
+		{scope.StrDefault, 0, path.NewRoute(""), "", path.ErrRouteEmpty},
+		{scope.StrDefault, 0, path.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
+		{scope.StrDefault, 44, path.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
+		{scope.StrWebsites, 0, path.NewRoute("system/dev/debug"), scope.StrWebsites.String() + "/0/system/dev/debug", nil},
+		{scope.StrWebsites, 343, path.NewRoute("system/dev/debug"), scope.StrWebsites.String() + "/343/system/dev/debug", nil},
+		{scope.StrScope("hello"), 0, path.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
+		{scope.StrScope("hello"), 343, path.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
 	}
 	for i, test := range tests {
 		p, pErr := path.New(test.route)
 		p = p.BindStr(test.str, test.id)
 		have, haveErr := p.FQ()
 		if test.wantErr != nil {
-			assert.Empty(t, have, "Index %d", i)
+			assert.Empty(t, have.Chars, "Index %d", i)
 			if pErr != nil {
 				assert.EqualError(t, pErr, test.wantErr.Error(), "Index %d", i)
 				continue
@@ -161,27 +160,27 @@ func TestFQ(t *testing.T) {
 		assert.Exactly(t, test.want, have.String(), "Index %d", i)
 	}
 
-	r := path.Route("catalog/frontend/list_allow_all")
+	r := path.NewRoute("catalog/frontend/list_allow_all")
 	assert.Exactly(t, "stores/7475/catalog/frontend/list_allow_all", path.MustNew(r).BindStr(scope.StrStores, 7475).String())
 	p := path.MustNew(r).BindStr(scope.StrStores, 5)
 	assert.Exactly(t, "stores/5/catalog/frontend/list_allow_all", p.String())
-	assert.Exactly(t, "path.Path{ Route:path.Route(`catalog/frontend/list_allow_all`), Scope: 4, ID: 5 }", p.GoString())
+	assert.Exactly(t, "path.Path{ Route:path.NewRoute(`catalog/frontend/list_allow_all`), Scope: 4, ID: 5 }", p.GoString())
 }
 
 func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
 	t.Parallel()
-	assert.Exactly(t, "stores/345/xxxxx/yyyyy/zzzzz", path.MustNew(path.Route("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrStores, 345).String())
+	assert.Exactly(t, "stores/345/xxxxx/yyyyy/zzzzz", path.MustNew(path.NewRoute("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrStores, 345).String())
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatal("Did not expect a panic")
 		}
 	}()
-	_ = path.MustNew(path.Route("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrScope("invalid"), 345)
+	_ = path.MustNew(path.NewRoute("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrScope("invalid"), 345)
 }
 
 func TestShouldPanicIncorrectPath(t *testing.T) {
 	t.Parallel()
-	assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", path.MustNew(path.Route("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrDefault, 345).String())
+	assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", path.MustNew(path.NewRoute("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrDefault, 345).String())
 	defer func() {
 		if r := recover(); r != nil {
 			assert.EqualError(t, r.(error), path.ErrIncorrectPath.Error())
@@ -189,14 +188,14 @@ func TestShouldPanicIncorrectPath(t *testing.T) {
 			t.Fatal("Expecting a panic")
 		}
 	}()
-	assert.Exactly(t, "websites/345/xxxxx/yyyyy", path.MustNew(path.Route("xxxxx/yyyyy")).BindStr(scope.StrWebsites, 345).String())
+	assert.Exactly(t, "websites/345/xxxxx/yyyyy", path.MustNew(path.NewRoute("xxxxx/yyyyy")).BindStr(scope.StrWebsites, 345).String())
 }
 
 var benchmarkStrScopeFQPath path.Route
 
 func benchmarkFQ(scopeID int64, b *testing.B) {
-	want := path.Route(scope.StrWebsites.String() + "/" + strconv.FormatInt(scopeID, 10) + "/system/dev/debug")
-	p := path.Route("system/dev/debug")
+	want := path.NewRoute(scope.StrWebsites.String() + "/" + strconv.FormatInt(scopeID, 10) + "/system/dev/debug")
+	p := path.NewRoute("system/dev/debug")
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -206,7 +205,7 @@ func benchmarkFQ(scopeID int64, b *testing.B) {
 			b.Error(err)
 		}
 	}
-	if bytes.Equal(benchmarkStrScopeFQPath, want) == false {
+	if benchmarkStrScopeFQPath.Equal(want.Chars) == false {
 		b.Errorf("Want: %s; Have, %s", want, benchmarkStrScopeFQPath)
 	}
 }
@@ -273,18 +272,18 @@ func TestPathIsValid(t *testing.T) {
 		have path.Route
 		want error
 	}{
-		{scope.DefaultID, 0, path.Route("//"), path.ErrIncorrectPath},
-		{scope.DefaultID, 0, path.Route("general/store_information/city"), nil},
-		{scope.DefaultID, 33, path.Route("general/store_information/city"), nil},
-		{scope.DefaultID, 0, path.Route(""), path.ErrRouteEmpty},
-		{scope.DefaultID, 0, path.Route("general/store_information"), path.ErrIncorrectPath},
-		////{path.Route(path.MustNew("system/dev/debug").Bind(scope.WebsiteID, 22).String()), path.ErrIncorrectPath},
-		{scope.DefaultID, 0, path.Route("groups/33/general/store_information/street"), path.ErrIncorrectPath},
-		{scope.DefaultID, 0, path.Route("groups/33"), path.ErrIncorrectPath},
-		{scope.DefaultID, 0, path.Route("system/dEv/inv˚lid"), errors.New("This character \"˚\" is not allowed in Route system/dEv/inv˚lid")},
-		{scope.DefaultID, 0, path.Route("system/dEv/inv'lid"), errors.New("This character \"'\" is not allowed in Route system/dEv/inv'lid")},
-		{scope.DefaultID, 0, path.Route("syst3m/dEv/invalid"), nil},
-		{scope.DefaultID, 0, nil, path.ErrRouteEmpty},
+		{scope.DefaultID, 0, path.NewRoute("//"), path.ErrIncorrectPath},
+		{scope.DefaultID, 0, path.NewRoute("general/store_information/city"), nil},
+		{scope.DefaultID, 33, path.NewRoute("general/store_information/city"), nil},
+		{scope.DefaultID, 0, path.NewRoute(""), path.ErrRouteEmpty},
+		{scope.DefaultID, 0, path.NewRoute("general/store_information"), path.ErrIncorrectPath},
+		////{path.NewRoute(path.MustNew("system/dev/debug").Bind(scope.WebsiteID, 22).String()), path.ErrIncorrectPath},
+		{scope.DefaultID, 0, path.NewRoute("groups/33/general/store_information/street"), path.ErrIncorrectPath},
+		{scope.DefaultID, 0, path.NewRoute("groups/33"), path.ErrIncorrectPath},
+		{scope.DefaultID, 0, path.NewRoute("system/dEv/inv˚lid"), errors.New("This character \"˚\" is not allowed in Route system/dEv/inv˚lid")},
+		{scope.DefaultID, 0, path.NewRoute("system/dEv/inv'lid"), errors.New("This character \"'\" is not allowed in Route system/dEv/inv'lid")},
+		{scope.DefaultID, 0, path.NewRoute("syst3m/dEv/invalid"), nil},
+		{scope.DefaultID, 0, path.Route{}, path.ErrRouteEmpty},
 	}
 	for i, test := range tests {
 		p := path.Path{
@@ -305,14 +304,14 @@ func TestPathRouteIsValid(t *testing.T) {
 	p := path.Path{
 		Scope: scope.StoreID,
 		ID:    2,
-		Route: path.Route(`general/store_information`),
+		Route: path.NewRoute(`general/store_information`),
 	}
 	assert.EqualError(t, p.IsValid(), path.ErrIncorrectPath.Error())
 
 	p = path.Path{
 		Scope:           scope.StoreID,
 		ID:              2,
-		Route:           path.Route(`general/store_information`),
+		Route:           path.NewRoute(`general/store_information`),
 		RouteLevelValid: true,
 	}
 	assert.NoError(t, p.IsValid())
@@ -327,14 +326,14 @@ func TestPathHash(t *testing.T) {
 		wantErr   error
 		wantLevel string
 	}{
-		{path.Route("general/single_\x80store_mode/enabled"), 0, 0, path.ErrRouteInvalidBytes, ""},
-		{path.Route("general/single_store_mode/enabled"), 0, 14695981039346656037, nil, ""},
-		{path.Route("general/single_store_mode/enabled"), 1, 11396173686539659531, nil, "general"},
-		{path.Route("general/single_store_mode/enabled"), 2, 12184827311064960716, nil, "general/single_store_mode"},
-		{path.Route("general/single_store_mode/enabled"), 3, 8238786573751400402, nil, "general/single_store_mode/enabled"},
-		{path.Route("general/single_store_mode/enabled"), -1, 8238786573751400402, nil, "general/single_store_mode/enabled"},
-		{path.Route("general/single_store_mode/enabled"), 5, 8238786573751400402, nil, "general/single_store_mode/enabled"},
-		{path.Route("general/single_store_mode/enabled"), 4, 8238786573751400402, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_\x80store_mode/enabled"), 0, 0, path.ErrRouteInvalidBytes, ""},
+		{path.NewRoute("general/single_store_mode/enabled"), 0, 14695981039346656037, nil, ""},
+		{path.NewRoute("general/single_store_mode/enabled"), 1, 11396173686539659531, nil, "general"},
+		{path.NewRoute("general/single_store_mode/enabled"), 2, 12184827311064960716, nil, "general/single_store_mode"},
+		{path.NewRoute("general/single_store_mode/enabled"), 3, 8238786573751400402, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), -1, 8238786573751400402, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), 5, 8238786573751400402, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), 4, 8238786573751400402, nil, "general/single_store_mode/enabled"},
 	}
 	for i, test := range tests {
 		p := path.Path{
@@ -367,14 +366,14 @@ func TestPathPartPosition(t *testing.T) {
 		wantPart string
 		wantErr  error
 	}{
-		{path.Route("general/single_\x80store_mode/enabled"), 0, "", path.ErrRouteInvalidBytes},
-		{path.Route("general/single_store_mode/enabled"), 0, "", path.ErrIncorrectPosition},
-		{path.Route("general/single_store_mode/enabled"), 1, "general", nil},
-		{path.Route("general/single_store_mode/enabled"), 2, "single_store_mode", nil},
-		{path.Route("general/single_store_mode/enabled"), 3, "enabled", nil},
-		{path.Route("general/single_store_mode/enabled"), -1, "", path.ErrIncorrectPosition},
-		{path.Route("general/single_store_mode/enabled"), 5, "", path.ErrIncorrectPosition},
-		{path.Route("general/single/store/website/group/mode/enabled/disabled/default"), 5, "", path.ErrIncorrectPath}, // too long not valid
+		{path.NewRoute("general/single_\x80store_mode/enabled"), 0, "", path.ErrRouteInvalidBytes},
+		{path.NewRoute("general/single_store_mode/enabled"), 0, "", path.ErrIncorrectPosition},
+		{path.NewRoute("general/single_store_mode/enabled"), 1, "general", nil},
+		{path.NewRoute("general/single_store_mode/enabled"), 2, "single_store_mode", nil},
+		{path.NewRoute("general/single_store_mode/enabled"), 3, "enabled", nil},
+		{path.NewRoute("general/single_store_mode/enabled"), -1, "", path.ErrIncorrectPosition},
+		{path.NewRoute("general/single_store_mode/enabled"), 5, "", path.ErrIncorrectPosition},
+		{path.NewRoute("general/single/store/website/group/mode/enabled/disabled/default"), 5, "", path.ErrIncorrectPath}, // too long not valid
 	}
 	for i, test := range tests {
 		p := path.Path{
@@ -383,7 +382,7 @@ func TestPathPartPosition(t *testing.T) {
 		part, haveErr := p.Part(test.level)
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
-			assert.Nil(t, part, "Index %d", i)
+			assert.Nil(t, part.Chars, "Index %d", i)
 			continue
 		}
 		assert.Exactly(t, test.wantPart, part.String(), "Index %d", i)

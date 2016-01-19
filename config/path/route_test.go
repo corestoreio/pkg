@@ -15,7 +15,6 @@
 package path_test
 
 import (
-	"bytes"
 	"database/sql"
 	"database/sql/driver"
 	"encoding"
@@ -25,7 +24,6 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/path"
-	"github.com/corestoreio/csfw/storage/text"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,13 +41,13 @@ func TestRouteEqual(t *testing.T) {
 		b    path.Route
 		want bool
 	}{
-		{nil, nil, true},
-		{path.Route("a"), path.Route("a"), true},
-		{path.Route("a"), path.Route("b"), false},
-		{path.Route("a\x80"), path.Route("a"), false},
+		{path.Route{}, path.Route{}, true},
+		{path.NewRoute("a"), path.NewRoute("a"), true},
+		{path.NewRoute("a"), path.NewRoute("b"), false},
+		{path.NewRoute("a\x80"), path.NewRoute("a"), false},
 	}
 	for i, test := range tests {
-		assert.Exactly(t, test.want, test.a.Equal(test.b), "Index %d", i)
+		assert.Exactly(t, test.want, test.a.Equal(test.b.Chars), "Index %d", i)
 	}
 }
 
@@ -61,12 +59,12 @@ func TestRouteAppend(t *testing.T) {
 		want    string
 		wantErr error
 	}{
-		{path.Route("aa"), path.Route("bb/cc"), "aa/bb/cc", nil},
-		{path.Route("aa"), path.Route("bbcc"), "aa/bbcc", nil},
-		{path.Route("aa"), path.Route("bb\x80cc"), "", path.ErrRouteInvalidBytes},
-		{path.Route("aa/"), path.Route("bbcc"), "aa/bbcc", nil},
-		{path.Route("aa"), path.Route("/bbcc"), "aa/bbcc", nil},
-		{path.Route("aa"), path.Route("/bb\x00cc"), "aa/bb", nil},
+		{path.NewRoute("aa"), path.NewRoute("bb/cc"), "aa/bb/cc", nil},
+		{path.NewRoute("aa"), path.NewRoute("bbcc"), "aa/bbcc", nil},
+		{path.NewRoute("aa"), path.NewRoute("bb\x80cc"), "", path.ErrRouteInvalidBytes},
+		{path.NewRoute("aa/"), path.NewRoute("bbcc"), "aa/bbcc", nil},
+		{path.NewRoute("aa"), path.NewRoute("/bbcc"), "aa/bbcc", nil},
+		{path.NewRoute("aa"), path.NewRoute("/bb\x00cc"), "aa/bb", nil},
 	}
 	for i, test := range tests {
 		haveErr := test.a.Append(test.b)
@@ -81,25 +79,25 @@ func TestRouteAppend(t *testing.T) {
 
 func TestRouteVariadicAppend(t *testing.T) {
 	t.Parallel()
-	p := path.Route("aa")
-	assert.NoError(t, p.Append(path.Route("bb"), path.Route("cc"), path.Route("dd")))
+	p := path.NewRoute("aa")
+	assert.NoError(t, p.Append(path.NewRoute("bb"), path.NewRoute("cc"), path.NewRoute("dd")))
 	assert.Exactly(t, "aa/bb/cc/dd", p.String())
 }
 
-var benchmarkRouteAppendWant = path.Route("general/single_store_mode/enabled")
+var benchmarkRouteAppendWant = path.NewRoute("general/single_store_mode/enabled")
 
 // BenchmarkRouteAppend-4   	 5000000	       376 ns/op	      64 B/op	       2 allocs/op
 func BenchmarkRouteAppend(b *testing.B) {
-	havePartials := []path.Route{path.Route("single_store_mode"), path.Route("enabled")}
+	havePartials := []path.Route{path.NewRoute("single_store_mode"), path.NewRoute("enabled")}
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		var have = path.Route("general/")
+		var have = path.NewRoute("general/")
 		err := have.Append(havePartials...)
 		if err != nil {
 			b.Error(err)
 		}
-		if benchmarkRouteAppendWant.Equal(have) == false {
+		if benchmarkRouteAppendWant.Equal(have.Chars) == false {
 			b.Errorf("Want: %s; Have: %s", benchmarkRouteAppendWant, have)
 		}
 	}
@@ -107,7 +105,7 @@ func BenchmarkRouteAppend(b *testing.B) {
 
 func TestRouteTextMarshal(t *testing.T) {
 	t.Parallel()
-	r := path.Route("admin/security/password_lifetime")
+	r := path.NewRoute("admin/security/password_lifetime")
 	j, err := json.Marshal(r)
 	assert.NoError(t, err)
 	assert.Exactly(t, "\"admin/security/password_lifetime\"", string(j))
@@ -128,13 +126,13 @@ func TestRouteLevel(t *testing.T) {
 		level int
 		want  string
 	}{
-		{path.Route("general/single_store_mode/enabled"), 0, ""},
-		{path.Route("general/single_store_mode/enabled"), 1, "general"},
-		{path.Route("general/single_store_mode/enabled"), 2, "general/single_store_mode"},
-		{path.Route("general/single_store_mode/enabled"), 3, "general/single_store_mode/enabled"},
-		{path.Route("general/single_store_mode/enabled"), -1, "general/single_store_mode/enabled"},
-		{path.Route("general/single_store_mode/enabled"), 5, "general/single_store_mode/enabled"},
-		{path.Route("general/single_store_mode/enabled"), 4, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), 0, ""},
+		{path.NewRoute("general/single_store_mode/enabled"), 1, "general"},
+		{path.NewRoute("general/single_store_mode/enabled"), 2, "general/single_store_mode"},
+		{path.NewRoute("general/single_store_mode/enabled"), 3, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), -1, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), 5, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), 4, "general/single_store_mode/enabled"},
 	}
 	for i, test := range tests {
 		r, err := test.have.Level(test.level)
@@ -147,17 +145,17 @@ var benchmarkRouteLevel path.Route
 
 // BenchmarkRouteLevel_One-4	 5000000	       297 ns/op	      16 B/op	       1 allocs/op
 func BenchmarkRouteLevel_One(b *testing.B) {
-	benchmarkRouteLevelRun(b, 1, path.Route("system/dev/debug"), path.Route("system"))
+	benchmarkRouteLevelRun(b, 1, path.NewRoute("system/dev/debug"), path.NewRoute("system"))
 }
 
 // BenchmarkRouteLevel_Two-4	 5000000	       332 ns/op	      16 B/op	       1 allocs/op
 func BenchmarkRouteLevel_Two(b *testing.B) {
-	benchmarkRouteLevelRun(b, 2, path.Route("system/dev/debug"), path.Route("system/dev"))
+	benchmarkRouteLevelRun(b, 2, path.NewRoute("system/dev/debug"), path.NewRoute("system/dev"))
 }
 
 // BenchmarkRouteLevel_All-4	 5000000	       379 ns/op	      16 B/op	       1 allocs/op
 func BenchmarkRouteLevel_All(b *testing.B) {
-	benchmarkRouteLevelRun(b, -1, path.Route("system/dev/debug"), path.Route("system/dev/debug"))
+	benchmarkRouteLevelRun(b, -1, path.NewRoute("system/dev/debug"), path.NewRoute("system/dev/debug"))
 }
 
 func benchmarkRouteLevelRun(b *testing.B, level int, have, want path.Route) {
@@ -170,7 +168,7 @@ func benchmarkRouteLevelRun(b *testing.B, level int, have, want path.Route) {
 	if err != nil {
 		b.Error(err)
 	}
-	if bytes.Equal(benchmarkRouteLevel, want) == false {
+	if benchmarkRouteLevel.Equal(want.Chars) == false {
 		b.Errorf("Want: %s; Have, %s", want, benchmarkRouteLevel)
 	}
 }
@@ -184,14 +182,14 @@ func TestRouteHash(t *testing.T) {
 		wantErr   error
 		wantLevel string
 	}{
-		{path.Route("general/single_\x80store_mode/enabled"), 0, 0, path.ErrRouteInvalidBytes, ""},
-		{path.Route("general/single_store_mode/enabled"), 0, 14695981039346656037, nil, ""},
-		{path.Route("general/single_store_mode/enabled"), 1, 11396173686539659531, nil, "general"},
-		{path.Route("general/single_store_mode/enabled"), 2, 12184827311064960716, nil, "general/single_store_mode"},
-		{path.Route("general/single_store_mode/enabled"), 3, 8238786573751400402, nil, "general/single_store_mode/enabled"},
-		{path.Route("general/single_store_mode/enabled"), -1, 8238786573751400402, nil, "general/single_store_mode/enabled"},
-		{path.Route("general/single_store_mode/enabled"), 5, 8238786573751400402, nil, "general/single_store_mode/enabled"},
-		{path.Route("general/single_store_mode/enabled"), 4, 8238786573751400402, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_\x80store_mode/enabled"), 0, 0, path.ErrRouteInvalidBytes, ""},
+		{path.NewRoute("general/single_store_mode/enabled"), 0, 14695981039346656037, nil, ""},
+		{path.NewRoute("general/single_store_mode/enabled"), 1, 11396173686539659531, nil, "general"},
+		{path.NewRoute("general/single_store_mode/enabled"), 2, 12184827311064960716, nil, "general/single_store_mode"},
+		{path.NewRoute("general/single_store_mode/enabled"), 3, 8238786573751400402, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), -1, 8238786573751400402, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), 5, 8238786573751400402, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), 4, 8238786573751400402, nil, "general/single_store_mode/enabled"},
 	}
 	for i, test := range tests {
 
@@ -218,7 +216,7 @@ var benchmarkRouteHash uint64
 
 // BenchmarkRouteHash-4	 5000000	       288 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkRouteHash(b *testing.B) {
-	have := path.Route("general/single_store_mode/enabled")
+	have := path.NewRoute("general/single_store_mode/enabled")
 	want := uint64(8238786573751400402)
 
 	var err error
@@ -243,20 +241,20 @@ func TestRoutePartPosition(t *testing.T) {
 		wantPart string
 		wantErr  error
 	}{
-		{path.Route("general/single_\x80store_mode/enabled"), 0, "", path.ErrRouteInvalidBytes},
-		{path.Route("general/single_store_mode/enabled"), 0, "", path.ErrIncorrectPosition},
-		{path.Route("general/single_store_mode/enabled"), 1, "general", nil},
-		{path.Route("general/single_store_mode/enabled"), 2, "single_store_mode", nil},
-		{path.Route("general/single_store_mode/enabled"), 3, "enabled", nil},
-		{path.Route("general/single_store_mode/enabled"), -1, "", path.ErrIncorrectPosition},
-		{path.Route("general/single_store_mode/enabled"), 5, "", path.ErrIncorrectPosition},
-		{path.Route("general/single/store/website/group/mode/enabled/disabled/default"), 5, "store/website/group/mode/enabled/disabled/default", nil},
+		{path.NewRoute("general/single_\x80store_mode/enabled"), 0, "", path.ErrRouteInvalidBytes},
+		{path.NewRoute("general/single_store_mode/enabled"), 0, "", path.ErrIncorrectPosition},
+		{path.NewRoute("general/single_store_mode/enabled"), 1, "general", nil},
+		{path.NewRoute("general/single_store_mode/enabled"), 2, "single_store_mode", nil},
+		{path.NewRoute("general/single_store_mode/enabled"), 3, "enabled", nil},
+		{path.NewRoute("general/single_store_mode/enabled"), -1, "", path.ErrIncorrectPosition},
+		{path.NewRoute("general/single_store_mode/enabled"), 5, "", path.ErrIncorrectPosition},
+		{path.NewRoute("general/single/store/website/group/mode/enabled/disabled/default"), 5, "store/website/group/mode/enabled/disabled/default", nil},
 	}
 	for i, test := range tests {
 		part, haveErr := test.have.Part(test.level)
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
-			assert.Nil(t, part, "Index %d", i)
+			assert.Nil(t, part.Chars, "Index %d", i)
 			continue
 		}
 		assert.Exactly(t, test.wantPart, part.String(), "Index %d", i)
@@ -267,7 +265,7 @@ var benchmarkRoutePart path.Route
 
 // BenchmarkRoutePart-4	 5000000	       240 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkRoutePart(b *testing.B) {
-	have := path.Route("general/single_store_mode/enabled")
+	have := path.NewRoute("general/single_store_mode/enabled")
 	want := "enabled"
 
 	var err error
@@ -278,7 +276,7 @@ func BenchmarkRoutePart(b *testing.B) {
 		if err != nil {
 			b.Error(err)
 		}
-		if benchmarkRoutePart == nil {
+		if benchmarkRoutePart.Chars == nil {
 			b.Error("benchmarkRoutePart is nil! Unexpected")
 		}
 	}
@@ -293,18 +291,18 @@ func TestRouteValidate(t *testing.T) {
 		have path.Route
 		want error
 	}{
-		{path.Route("//"), path.ErrIncorrectPath},
-		{path.Route("general/store_information/city"), nil},
-		{path.Route("general/store_information/city"), nil},
-		{path.Route(""), path.ErrRouteEmpty},
-		{path.Route("general/store_information"), nil},
-		////{path.Route(path.MustNew("system/dev/debug").Bind(scope.WebsiteID, 22).String()), path.ErrIncorrectPath},
-		{path.Route("groups/33/general/store_information/street"), nil},
-		{path.Route("groups/33"), nil},
-		{path.Route("system/dEv/inv˚lid"), errors.New("This character \"˚\" is not allowed in Route system/dEv/inv˚lid")},
-		{path.Route("system/dEv/inv'lid"), errors.New("This character \"'\" is not allowed in Route system/dEv/inv'lid")},
-		{path.Route("syst3m/dEv/invalid"), nil},
-		{nil, path.ErrRouteEmpty},
+		{path.NewRoute("//"), path.ErrIncorrectPath},
+		{path.NewRoute("general/store_information/city"), nil},
+		{path.NewRoute("general/store_information/city"), nil},
+		{path.NewRoute(""), path.ErrRouteEmpty},
+		{path.NewRoute("general/store_information"), nil},
+		////{path.NewRoute(path.MustNew("system/dev/debug").Bind(scope.WebsiteID, 22).String()), path.ErrIncorrectPath},
+		{path.NewRoute("groups/33/general/store_information/street"), nil},
+		{path.NewRoute("groups/33"), nil},
+		{path.NewRoute("system/dEv/inv˚lid"), errors.New("This character \"˚\" is not allowed in Route system/dEv/inv˚lid")},
+		{path.NewRoute("system/dEv/inv'lid"), errors.New("This character \"'\" is not allowed in Route system/dEv/inv'lid")},
+		{path.NewRoute("syst3m/dEv/invalid"), nil},
+		{path.Route{}, path.ErrRouteEmpty},
 	}
 	for i, test := range tests {
 		haveErr := test.have.Validate()
@@ -320,7 +318,7 @@ var benchmarkRouteValidate error
 
 // BenchmarkRouteValidate-4	20000000	        83.5 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkRouteValidate(b *testing.B) {
-	have := path.Route("system/dEv/d3bug")
+	have := path.NewRoute("system/dEv/d3bug")
 	want := "system/dev/debug"
 
 	b.ReportAllocs()

@@ -16,7 +16,6 @@ package path
 
 import (
 	"bytes"
-	"database/sql/driver"
 	"errors"
 	"fmt"
 	"unicode/utf8"
@@ -30,35 +29,37 @@ var ErrRouteInvalidBytes = errors.New("Route contains invalid bytes which are no
 // Route consists of at least three parts each of them separated by a slash
 // (See constant Separator). A route can be seen as a tree.
 // Route example: catalog/product/scope or websites/1/catalog/product/scope
-type Route text.Long
+type Route struct{ text.Chars }
 
-// newRoute creates a new rout from sub paths resp. path parts.
+// NewRoute creates a new rout from sub paths resp. path parts.
 // Parts gets merged via Separator
-func newRoute(parts ...string) (Route, error) {
+func NewRoute(parts ...string) Route {
 	l := 0
 	for _, p := range parts {
 		l += len(p)
 		l += 1 // len(sSeparator)
 	}
 	l -= 1 // remove last slash
+
+	r := Route{}
 	if l < 1 {
-		return nil, ErrRouteEmpty
+		return r
 	}
 
-	r := make(Route, l)
+	r.Chars = make(text.Chars, l, l)
 	pos := 0
 	for i, p := range parts {
-		pos += copy(r[pos:pos+len(p)], p)
+		pos += copy(r.Chars[pos:pos+len(p)], p)
 		if i < len(parts)-1 {
-			pos += copy(r[pos:pos+1], sSeparator)
+			pos += copy(r.Chars[pos:pos+1], sSeparator)
 		}
 	}
-	return r, nil
+	return r
 }
 
 // GoString returns the Go type of the Route including the underlying bytes.
 func (r Route) GoString() string {
-	return fmt.Sprintf("path.Route(`%s`)", r)
+	return fmt.Sprintf("path.Route{Chars:[]byte(`%s`)}", r)
 }
 
 const rSeparator = rune(Separator)
@@ -70,23 +71,23 @@ func (r Route) Validate() error {
 		return ErrRouteEmpty
 	}
 
-	if r.Separators() == len(r) {
+	if r.Separators() == len(r.Chars) {
 		return ErrIncorrectPath
 	}
 
-	if false == utf8.Valid(r) {
+	if false == utf8.Valid(r.Chars) {
 		return ErrRouteInvalidBytes
 	}
 
 	var sepCount, length int
 	i := 0
-	for i < len(r) {
+	for i < len(r.Chars) {
 		var ru rune
-		if r[i] < utf8.RuneSelf {
-			ru = rune(r[i])
+		if r.Chars[i] < utf8.RuneSelf {
+			ru = rune(r.Chars[i])
 			i++
 		} else {
-			dr, _ := utf8.DecodeRune(r[i:])
+			dr, _ := utf8.DecodeRune(r.Chars[i:])
 			return fmt.Errorf("This character %q is not allowed in Route %s", string(dr), r)
 		}
 		ok := false
@@ -112,9 +113,7 @@ func (r Route) Validate() error {
 }
 
 func (r Route) Copy() Route {
-	n := make([]byte, len(r))
-	copy(n, r)
-	return n
+	return Route{Chars: r.Chars.Copy()}
 }
 
 // Append adds other partial routes with a Separator between. After the partial
@@ -128,31 +127,31 @@ func (r Route) Copy() Route {
 //		println(a.String())
 //		// Should print: catalog/product/enable_flat_tables
 func (r *Route) Append(routes ...Route) error {
-	if bytes.LastIndexByte(*r, Separator) == len(*r)-1 {
-		*r = (*r)[:len(*r)-1] // strip last Separator
+	if bytes.LastIndexByte((*r).Chars, Separator) == len((*r).Chars)-1 {
+		(*r).Chars = (*r).Chars[:len((*r).Chars)-1] // strip last Separator
 	}
 
 	// calculate new buffer size
-	size := len(*r)
+	size := len((*r).Chars)
 	for i, route := range routes {
 		if i == 0 {
 			size++ // Separator
 		}
-		size += len(route)
+		size += len(route.Chars)
 		if i < len(routes)-1 {
 			size++ // Separator
 		}
 	}
 	var buf = make([]byte, size, size)
 	var pos int
-	pos += copy(buf[pos:], *r)
+	pos += copy(buf[pos:], (*r).Chars)
 
 	for i, route := range routes {
-		if i == 0 && route[0] != Separator {
+		if i == 0 && route.Chars[0] != Separator {
 			pos += copy(buf[pos:], bSeparator)
 		}
 
-		pos += copy(buf[pos:], route)
+		pos += copy(buf[pos:], route.Chars)
 		if i < len(routes)-1 {
 			pos += copy(buf[pos:], bSeparator)
 		}
@@ -160,7 +159,7 @@ func (r *Route) Append(routes ...Route) error {
 	if pos := bytes.IndexByte(buf, 0x00); pos > 1 {
 		buf = buf[:pos] // strip everything after the null byte
 	}
-	*r = buf
+	(*r).Chars = buf
 	if err := r.Validate(); err != nil {
 		return err
 	}
@@ -170,8 +169,9 @@ func (r *Route) Append(routes ...Route) error {
 // UnmarshalText transforms the text into a route with performed validation
 // checks.
 func (r *Route) UnmarshalText(text []byte) error {
-
-	*r = append(*r, text...)
+	if err := (*r).Chars.UnmarshalText(text); err != nil {
+		return err
+	}
 	if err := r.Validate(); err != nil {
 		return err
 	}
@@ -185,17 +185,17 @@ func (r *Route) UnmarshalText(text []byte) error {
 // Does not generate a fully qualified path.
 // The returned Route slice is owned by Path. For further modifications you must
 // copy it via Route.Copy().
-func (r Route) Level(level int) (Route, error) {
-	if err := r.Validate(); err != nil {
-		return nil, err
+func (r Route) Level(level int) (ret Route, err error) {
+	if err = r.Validate(); err != nil {
+		return
 	}
 
-	lp := len(r)
+	lp := len(r.Chars)
 	switch {
 	case level < 0:
 		return r, nil
 	case level == 0:
-		return r[:0], nil
+		return
 	case level >= lp:
 		return r, nil
 	}
@@ -203,24 +203,20 @@ func (r Route) Level(level int) (Route, error) {
 	pos := 0
 	i := 1
 	for pos <= lp {
-		sc := bytes.IndexByte(r[pos:], Separator)
+		sc := bytes.IndexByte(r.Chars[pos:], Separator)
 		if sc == -1 {
 			return r, nil
 		}
 		pos += sc + 1
 
 		if i == level {
-			return r[:pos-1], nil
+			ret.Chars = r.Chars[:pos-1]
+			return
 		}
 		i++
 	}
 	return r, nil
 }
-
-const (
-	offset64 = 14695981039346656037
-	prime64  = 1099511628211
-)
 
 // Hash same as Level() but returns a fnv64a value or an error if the route is
 // invalid.
@@ -234,21 +230,16 @@ const (
 // See
 // http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function.
 func (r Route) Hash(level int) (uint64, error) {
-	r, err := r.Level(level)
+	r2, err := r.Level(level)
 	if err != nil {
 		return 0, err
 	}
-	var hash uint64 = offset64
-	for _, c := range r {
-		hash ^= uint64(c)
-		hash *= prime64
-	}
-	return hash, nil
+	return r2.Chars.Hash(), nil
 }
 
 // Separators returns the number of separators
 func (r Route) Separators() (count int) {
-	for _, b := range r {
+	for _, b := range r.Chars {
 		if b == Separator {
 			count++
 		}
@@ -266,14 +257,15 @@ func (r Route) Separators() (count int) {
 //		Pos>3 => ErrIncorrectPosition
 // The returned Route slice is owned by Path. For further modifications you must
 // copy it via Route.Copy().
-func (r Route) Part(pos int) (Route, error) {
+func (r Route) Part(pos int) (ret Route, err error) {
 
-	if err := r.Validate(); err != nil {
-		return nil, err
+	if err = r.Validate(); err != nil {
+		return
 	}
 
 	if pos < 1 {
-		return nil, ErrIncorrectPosition
+		err = ErrIncorrectPosition
+		return
 	}
 
 	sepCount := r.Separators()
@@ -281,13 +273,14 @@ func (r Route) Part(pos int) (Route, error) {
 		return r, nil
 	}
 	if pos > sepCount+1 {
-		return nil, ErrIncorrectPosition
+		err = ErrIncorrectPosition
+		return
 	}
 
 	const realLevels = Levels - 1
 	var sepPos [realLevels]int
 	sp := 0
-	for i, b := range r {
+	for i, b := range r.Chars {
 		if b == Separator && sp < realLevels {
 			sepPos[sp] = i + 1 // positions of the separators in the slice
 			sp++
@@ -299,35 +292,11 @@ func (r Route) Part(pos int) (Route, error) {
 	for i := 0; i < realLevels; i++ {
 		max := sepPos[i]
 		if i == pos {
-			return r[min : max-1], nil
+			ret.Chars = r.Chars[min : max-1]
+			return
 		}
 		min = max
 	}
-	return r[min:], nil
-}
-
-// Scan implements the Scanner interface.
-func (ns *Route) Scan(value interface{}) error {
-	*ns = nil
-	if value == nil {
-		return nil
-	}
-	if b, ok := value.([]byte); ok {
-		buf := make([]byte, len(b), len(b))
-		copy(buf, b)
-		*ns = buf
-	} else {
-		// just for testing. maybe use in the future a type switch above. also for *[]byte and so on
-		return fmt.Errorf("Cannot convert value %#v to []byte", value)
-	}
-	return ns.Validate()
-
-}
-
-// Value implements the driver Valuer interface.
-func (ns Route) Value() (driver.Value, error) {
-	if ns == nil {
-		return nil, nil
-	}
-	return ns, nil
+	ret.Chars = r.Chars[min:]
+	return
 }

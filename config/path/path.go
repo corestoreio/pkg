@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/juju/errgo"
@@ -86,15 +85,11 @@ func MustNew(rs ...Route) Path {
 	return p
 }
 
-// NewByParts creates a new route from path part strings.
+// NewByParts creates a new Path from path part strings.
 // Parts gets merged via Separator.
 //		p := NewByParts("catalog","product",")
 func NewByParts(parts ...string) (Path, error) {
-	r, err := newRoute(parts...)
-	if err != nil {
-		return Path{}, err
-	}
-	return New(r)
+	return New(NewRoute(parts...))
 }
 
 // MustNewByParts same as NewByParts but panics on error.
@@ -134,12 +129,12 @@ func (p Path) String() string {
 	if PkgLog.IsDebug() {
 		PkgLog.Debug("path.Path.FQ.String", "err", err, "path", p)
 	}
-	return string(s)
+	return s.String()
 }
 
 // GoString returns the internal representation of Path
 func (p Path) GoString() string {
-	return fmt.Sprintf("path.Path{ Route:path.Route(`%s`), Scope: %d, ID: %d }", p.Route, p.Scope, p.ID)
+	return fmt.Sprintf("path.Path{ Route:path.NewRoute(`%s`), Scope: %d, ID: %d }", p.Route, p.Scope, p.ID)
 }
 
 // FQ returns the fully qualified route. Safe for further processing of the
@@ -147,9 +142,9 @@ func (p Path) GoString() string {
 // zero then ID gets set to zero.
 // The returned Route slice is owned by Path. For further modifications you must
 // copy it via Route.Copy().
-func (p Path) FQ() (Route, error) {
-	if err := p.IsValid(); err != nil {
-		return nil, err
+func (p Path) FQ() (r Route, err error) {
+	if err = p.IsValid(); err != nil {
+		return
 	}
 
 	if (p.Scope == scope.DefaultID || p.Scope == scope.GroupID) && p.ID > 0 {
@@ -158,25 +153,31 @@ func (p Path) FQ() (Route, error) {
 	}
 
 	var buf bytes.Buffer
-	if _, err := buf.WriteString(p.StrScope()); err != nil {
-		return nil, errgo.Mask(err)
+	if _, err = buf.WriteString(p.StrScope()); err != nil {
+		err = errgo.Mask(err)
+		return
 	}
-	if err := buf.WriteByte(Separator); err != nil {
-		return nil, errgo.Mask(err)
+	if err = buf.WriteByte(Separator); err != nil {
+		err = errgo.Mask(err)
+		return
 	}
 	bufRaw := buf.Bytes()
 	bufRaw = strconv.AppendInt(bufRaw, p.ID, 10)
 	buf.Reset()
-	if _, err := buf.Write(bufRaw); err != nil {
-		return nil, errgo.Mask(err)
+	if _, err = buf.Write(bufRaw); err != nil {
+		err = errgo.Mask(err)
+		return
 	}
-	if err := buf.WriteByte(Separator); err != nil {
-		return nil, errgo.Mask(err)
+	if err = buf.WriteByte(Separator); err != nil {
+		err = errgo.Mask(err)
+		return
 	}
-	if _, err := buf.Write(p.Route); err != nil {
-		return nil, errgo.Mask(err)
+	if _, err = buf.Write(p.Route.Chars); err != nil {
+		err = errgo.Mask(err)
+		return
 	}
-	return buf.Bytes(), nil
+	r.Chars = buf.Bytes()
+	return
 }
 
 // Level joins a configuration path parts by the path separator PS.
@@ -186,10 +187,10 @@ func (p Path) FQ() (Route, error) {
 // Does not generate a fully qualified path.
 // The returned Route slice is owned by Path. For further modifications you must
 // copy it via Route.Copy().
-func (p Path) Level(level int) (Route, error) {
+func (p Path) Level(level int) (r Route, err error) {
 	p.routeValidated = true
-	if err := p.IsValid(); err != nil {
-		return nil, err
+	if err = p.IsValid(); err != nil {
+		return
 	}
 	return p.Route.Level(level)
 }
@@ -223,10 +224,10 @@ func (p Path) Hash(level int) (uint64, error) {
 //		Pos>3 => ErrIncorrectPosition
 // The returned Route slice is owned by Path. For further modifications you must
 // copy it via Route.Copy().
-func (p Path) Part(pos int) (Route, error) {
+func (p Path) Part(pos int) (r Route, err error) {
 	p.routeValidated = true
-	if err := p.IsValid(); err != nil {
-		return nil, err
+	if err = p.IsValid(); err != nil {
+		return
 	}
 	return p.Route.Part(pos)
 }
@@ -259,7 +260,7 @@ func SplitFQ(fqPath string) (Path, error) {
 	scopeID, err := strconv.ParseInt(fqPath[:fi], 10, 64)
 
 	return Path{
-		Route: Route(fqPath[fi+1:]),
+		Route: Route{Chars: []byte(fqPath[fi+1:])},
 		Scope: scope.FromString(scopeStr),
 		ID:    scopeID,
 	}, err
@@ -352,7 +353,7 @@ func (p Path) IsValid() error {
 	if p.RouteLevelValid {
 		return nil
 	}
-	if p.Route.Separators() != Levels-1 || utf8.RuneCount(p.Route) < 8 /*aa/bb/cc*/ {
+	if p.Route.Separators() != Levels-1 || p.Route.RuneCount() < 8 /*aa/bb/cc*/ {
 		return ErrIncorrectPath
 	}
 	return nil
