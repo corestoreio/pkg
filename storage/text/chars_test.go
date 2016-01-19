@@ -19,9 +19,11 @@ import (
 	"database/sql/driver"
 	"encoding"
 	"encoding/json"
+	"hash/fnv"
 	"testing"
 
 	"errors"
+
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/stretchr/testify/assert"
 )
@@ -128,4 +130,47 @@ func TestRuneCount(t *testing.T) {
 	l1 := text.Chars(have)
 	assert.Exactly(t, 20, l1.RuneCount())
 	assert.Exactly(t, 24, len(l1))
+}
+
+func TestHash(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		have     text.Chars
+		wantHash uint64
+	}{
+		{text.Chars("general/single_\x80store_mode/enabled"), 0},
+		{text.Chars("general/single_store_mode/enabled"), 14695981039346656037},
+		{text.Chars("general/single_store_mode/enabled"), 11396173686539659531},
+		{text.Chars("general/single_store_mode/enabled"), 12184827311064960716},
+		{text.Chars("general/single_store_mode/enabled"), 8238786573751400402},
+		{text.Chars("general/single_store_mode/enabled"), 8238786573751400402},
+		{text.Chars("general/single_store_mode/enabled"), 8238786573751400402},
+		{text.Chars("general/single_store_mode/enabled"), 8238786573751400402},
+	}
+	for i, test := range tests {
+
+		hv := test.have.Hash()
+
+		check := fnv.New64a()
+		_, cErr := check.Write(test.have)
+		assert.NoError(t, cErr)
+		assert.Exactly(t, check.Sum64(), hv, "Index %d", i)
+	}
+}
+
+var benchmarkRouteHash uint64
+
+// BenchmarkHash-4	50000000	        40.1 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkHash(b *testing.B) {
+	have := text.Chars("general/single_store_mode/enabled")
+	want := uint64(8238786573751400402)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchmarkRouteHash = have.Hash()
+		if want != benchmarkRouteHash {
+			b.Errorf("Want: %d; Have: %d", want, benchmarkRouteHash)
+		}
+	}
 }

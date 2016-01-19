@@ -29,7 +29,6 @@ import (
 // away if you want to modify it.
 type Chars []byte
 
-// String returns a string.
 func (c Chars) String() string {
 	return string(c)
 }
@@ -41,13 +40,10 @@ func (c Chars) Equal(b []byte) bool {
 	return bytes.Equal(c, b)
 }
 
-// IsEmpty returns true if the slice is nil or has zero length.
 func (c Chars) IsEmpty() bool {
 	return c == nil || len(c) == 0
 }
 
-// Copy allocates a new byte slice and copies the existing long data into the
-// new buffer.
 func (c Chars) Copy() Chars {
 	n := make([]byte, len(c), len(c))
 	copy(n, c)
@@ -76,7 +72,7 @@ func (c *Chars) UnmarshalText(text []byte) error {
 	return nil
 }
 
-// Scan implements the Scanner interface.
+// Scan implements the sql.Scanner interface.
 func (c *Chars) Scan(value interface{}) error {
 	*c = nil
 	if value == nil {
@@ -99,10 +95,34 @@ func (c *Chars) Scan(value interface{}) error {
 
 }
 
-// Value implements the driver Valuer interface.
+// Value implements the driver.Valuer interface.
 func (c Chars) Value() (driver.Value, error) {
 	if c == nil {
 		return nil, nil
 	}
 	return c, nil
+}
+
+const (
+	offset64 = 14695981039346656037
+	prime64  = 1099511628211
+)
+
+// Hash returns a new 64-bit FNV-1a hash.
+//
+// Copyright 2011 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+//
+// Hash implements FNV-1 and FNV-1a, non-cryptographic hash functions
+// created by Glenn Fowler, Landon Curt Noll, and Phong Vo.
+// See
+// http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function.
+func (r Chars) Hash() uint64 {
+	var hash uint64 = offset64
+	for _, c := range r {
+		hash ^= uint64(c)
+		hash *= prime64
+	}
+	return hash
 }
