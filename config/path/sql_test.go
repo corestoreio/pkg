@@ -19,10 +19,11 @@ import (
 	"database/sql/driver"
 	"testing"
 
+	"time"
+
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 var _ sql.Scanner = (*path.Route)(nil)

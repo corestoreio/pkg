@@ -17,10 +17,11 @@ package path
 import (
 	"bytes"
 	"database/sql/driver"
-	"encoding"
 	"errors"
 	"fmt"
 	"unicode/utf8"
+
+	"github.com/corestoreio/csfw/storage/text"
 )
 
 // ErrRouteInvalidBytes whenever a non-rune is detected.
@@ -29,7 +30,7 @@ var ErrRouteInvalidBytes = errors.New("Route contains invalid bytes which are no
 // Route consists of at least three parts each of them separated by a slash
 // (See constant Separator). A route can be seen as a tree.
 // Route example: catalog/product/scope or websites/1/catalog/product/scope
-type Route []byte
+type Route text.Long
 
 // newRoute creates a new rout from sub paths resp. path parts.
 // Parts gets merged via Separator
@@ -53,18 +54,6 @@ func newRoute(parts ...string) (Route, error) {
 		}
 	}
 	return r, nil
-}
-
-// Equal returns true if r2 is equal to current Route. Does not consider
-// utf8 EqualFold.
-func (r Route) Equal(r2 Route) bool {
-	// What is the use case for EqualFold?
-	return bytes.Equal(r, r2)
-}
-
-// String human readable format
-func (r Route) String() string {
-	return string(r)
 }
 
 // GoString returns the Go type of the Route including the underlying bytes.
@@ -122,11 +111,7 @@ func (r Route) Validate() error {
 	return nil
 }
 
-func (r Route) IsEmpty() bool {
-	return r == nil || len(r) == 0
-}
-
-func (r Route) Copy() []byte {
+func (r Route) Copy() Route {
 	n := make([]byte, len(r))
 	copy(n, r)
 	return n
@@ -182,18 +167,10 @@ func (r *Route) Append(routes ...Route) error {
 	return nil
 }
 
-var _ encoding.TextMarshaler = (*Route)(nil)
-var _ encoding.TextUnmarshaler = (*Route)(nil)
-
-// MarshalText transforms the byte slice into a text slice.
-func (r Route) MarshalText() (text []byte, err error) {
-	// this is magic in combination with json.Marshal ;-)
-	return r, nil
-}
-
 // UnmarshalText transforms the text into a route with performed validation
 // checks.
 func (r *Route) UnmarshalText(text []byte) error {
+
 	*r = append(*r, text...)
 	if err := r.Validate(); err != nil {
 		return err

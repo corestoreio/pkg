@@ -60,7 +60,7 @@ func init() {
 							// Path: web/cookie/cookie_httponly
 							ID:        "cookie_httponly",
 							Label:     `Use HTTP Only`,
-							Comment:   element.LongText(`<strong style="color:red">Warning</strong>: Do not set to "No". User security could be compromised.`),
+							Comment:   text.Long(`<strong style="color:red">Warning</strong>: Do not set to "No". User security could be compromised.`),
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,

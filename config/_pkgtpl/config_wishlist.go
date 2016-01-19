@@ -42,7 +42,7 @@ func init() {
 							// Path: wishlist/email/email_template
 							ID:        "email_template",
 							Label:     `Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -55,7 +55,7 @@ func init() {
 							// Path: wishlist/email/number_limit
 							ID:        "number_limit",
 							Label:     `Max Emails Allowed to be Sent`,
-							Comment:   element.LongText(`10 by default. Max - 10000`),
+							Comment:   text.Long(`10 by default. Max - 10000`),
 							Type:      element.TypeText,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
@@ -67,7 +67,7 @@ func init() {
 							// Path: wishlist/email/text_limit
 							ID:        "text_limit",
 							Label:     `Email Text Length Limit`,
-							Comment:   element.LongText(`255 by default`),
+							Comment:   text.Long(`255 by default`),
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,

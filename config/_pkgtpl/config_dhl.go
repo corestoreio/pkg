@@ -130,7 +130,7 @@ func init() {
 							// Path: carriers/dhl/handling_action
 							ID:        "handling_action",
 							Label:     `Handling Applied`,
-							Comment:   element.LongText(`"Per Order" allows a single handling fee for the entire order. "Per Package" allows an individual handling fee for each package.`),
+							Comment:   text.Long(`"Per Order" allows a single handling fee for the entire order. "Per Package" allows an individual handling fee for each package.`),
 							Type:      element.TypeSelect,
 							SortOrder: 110,
 							Visible:   element.VisibleYes,
@@ -153,7 +153,7 @@ func init() {
 							// Path: carriers/dhl/divide_order_weight
 							ID:        "divide_order_weight",
 							Label:     `Divide Order Weight`,
-							Comment:   element.LongText(`Select this to allow DHL to optimize shipping charges by splitting the order if it exceeds 70 kg.`),
+							Comment:   text.Long(`Select this to allow DHL to optimize shipping charges by splitting the order if it exceeds 70 kg.`),
 							Type:      element.TypeSelect,
 							SortOrder: 130,
 							Visible:   element.VisibleYes,
@@ -244,7 +244,7 @@ func init() {
 							// Path: carriers/dhl/ready_time
 							ID:        "ready_time",
 							Label:     `Ready time`,
-							Comment:   element.LongText(`Package ready time after order submission (in hours)`),
+							Comment:   text.Long(`Package ready time after order submission (in hours)`),
 							Type:      element.TypeText,
 							SortOrder: 180,
 							Visible:   element.VisibleYes,

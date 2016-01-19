@@ -54,7 +54,7 @@ func init() {
 							// Path: cataloginventory/options/show_out_of_stock
 							ID:        "show_out_of_stock",
 							Label:     `Display Out of Stock Products`,
-							Comment:   element.LongText(`Products will still be shown by direct product URLs.`),
+							Comment:   text.Long(`Products will still be shown by direct product URLs.`),
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
@@ -91,7 +91,7 @@ func init() {
 				&element.Group{
 					ID:        "item_options",
 					Label:     `Product Stock Options`,
-					Comment:   element.LongText(`Please note that these settings apply to individual items in the cart, not to the entire cart.`),
+					Comment:   text.Long(`Please note that these settings apply to individual items in the cart, not to the entire cart.`),
 					SortOrder: 10,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
@@ -99,7 +99,7 @@ func init() {
 							// Path: cataloginventory/item_options/manage_stock
 							ID:        "manage_stock",
 							Label:     `Manage Stock`,
-							Comment:   element.LongText(`Changing can take some time due to processing whole catalog.`),
+							Comment:   text.Long(`Changing can take some time due to processing whole catalog.`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -113,7 +113,7 @@ func init() {
 							// Path: cataloginventory/item_options/backorders
 							ID:        "backorders",
 							Label:     `Backorders`,
-							Comment:   element.LongText(`Changing can take some time due to processing whole catalog.`),
+							Comment:   text.Long(`Changing can take some time due to processing whole catalog.`),
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,

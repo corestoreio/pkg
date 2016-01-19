@@ -30,7 +30,7 @@ func init() {
 							// Path: sales/general/hide_customer_ip
 							ID:      "hide_customer_ip",
 							Label:   `Hide Customer IP`,
-							Comment: element.LongText(`Choose whether a customer IP is shown in orders, invoices, shipments, and credit memos.`),
+							Comment: text.Long(`Choose whether a customer IP is shown in orders, invoices, shipments, and credit memos.`),
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
 							Scope:   scope.PermAll,
@@ -132,7 +132,7 @@ func init() {
 							// Path: sales/identity/logo
 							ID:        "logo",
 							Label:     `Logo for PDF Print-outs (200x50)`,
-							Comment:   element.LongText(`Your default logo will be used in PDF and HTML documents.<br />(jpeg, tiff, png) If your pdf image is distorted, try to use larger file-size image.`),
+							Comment:   text.Long(`Your default logo will be used in PDF and HTML documents.<br />(jpeg, tiff, png) If your pdf image is distorted, try to use larger file-size image.`),
 							Type:      element.TypeImage,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
@@ -144,7 +144,7 @@ func init() {
 							// Path: sales/identity/logo_html
 							ID:        "logo_html",
 							Label:     `Logo for HTML Print View`,
-							Comment:   element.LongText(`Logo for HTML documents only. If empty, default will be used.<br />(jpeg, gif, png)`),
+							Comment:   text.Long(`Logo for HTML documents only. If empty, default will be used.<br />(jpeg, gif, png)`),
 							Type:      element.TypeImage,
 							SortOrder: 150,
 							Visible:   element.VisibleYes,
@@ -185,7 +185,7 @@ func init() {
 							// Path: sales/minimum_order/amount
 							ID:        "amount",
 							Label:     `Minimum Amount`,
-							Comment:   element.LongText(`Subtotal after discount`),
+							Comment:   text.Long(`Subtotal after discount`),
 							Type:      element.Type,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -208,7 +208,7 @@ func init() {
 							// Path: sales/minimum_order/description
 							ID:        "description",
 							Label:     `Description Message`,
-							Comment:   element.LongText(`This message will be shown in the shopping cart when the subtotal (after discount) is lower than the minimum allowed amount.`),
+							Comment:   text.Long(`This message will be shown in the shopping cart when the subtotal (after discount) is lower than the minimum allowed amount.`),
 							Type:      element.TypeTextarea,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -240,7 +240,7 @@ func init() {
 							// Path: sales/minimum_order/multi_address_description
 							ID:        "multi_address_description",
 							Label:     `Multi-address Description Message`,
-							Comment:   element.LongText(`We'll use the default description above if you leave this empty.`),
+							Comment:   text.Long(`We'll use the default description above if you leave this empty.`),
 							Type:      element.TypeTextarea,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
@@ -251,7 +251,7 @@ func init() {
 							// Path: sales/minimum_order/multi_address_error_message
 							ID:        "multi_address_error_message",
 							Label:     `Multi-address Error to Show in Shopping Cart`,
-							Comment:   element.LongText(`We'll use the default error above if you leave this empty.`),
+							Comment:   text.Long(`We'll use the default error above if you leave this empty.`),
 							Type:      element.TypeTextarea,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
@@ -270,7 +270,7 @@ func init() {
 							// Path: sales/dashboard/use_aggregated_data
 							ID:        "use_aggregated_data",
 							Label:     `Use Aggregated Data (beta)`,
-							Comment:   element.LongText(`Improves dashboard performance but provides non-realtime data.`),
+							Comment:   text.Long(`Improves dashboard performance but provides non-realtime data.`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -360,7 +360,7 @@ func init() {
 							// Path: sales_email/order/template
 							ID:        "template",
 							Label:     `New Order Confirmation Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -373,7 +373,7 @@ func init() {
 							// Path: sales_email/order/guest_template
 							ID:        "guest_template",
 							Label:     `New Order Confirmation Template for Guest`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
@@ -386,7 +386,7 @@ func init() {
 							// Path: sales_email/order/copy_to
 							ID:        "copy_to",
 							Label:     `Send Order Email Copy To`,
-							Comment:   element.LongText(`Comma-separated`),
+							Comment:   text.Long(`Comma-separated`),
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
@@ -440,7 +440,7 @@ func init() {
 							// Path: sales_email/order_comment/template
 							ID:        "template",
 							Label:     `Order Comment Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -453,7 +453,7 @@ func init() {
 							// Path: sales_email/order_comment/guest_template
 							ID:        "guest_template",
 							Label:     `Order Comment Email Template for Guest`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
@@ -466,7 +466,7 @@ func init() {
 							// Path: sales_email/order_comment/copy_to
 							ID:        "copy_to",
 							Label:     `Send Order Comment Email Copy To`,
-							Comment:   element.LongText(`Comma-separated`),
+							Comment:   text.Long(`Comma-separated`),
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
@@ -520,7 +520,7 @@ func init() {
 							// Path: sales_email/invoice/template
 							ID:        "template",
 							Label:     `Invoice Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -533,7 +533,7 @@ func init() {
 							// Path: sales_email/invoice/guest_template
 							ID:        "guest_template",
 							Label:     `Invoice Email Template for Guest`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
@@ -546,7 +546,7 @@ func init() {
 							// Path: sales_email/invoice/copy_to
 							ID:        "copy_to",
 							Label:     `Send Invoice Email Copy To`,
-							Comment:   element.LongText(`Comma-separated`),
+							Comment:   text.Long(`Comma-separated`),
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
@@ -600,7 +600,7 @@ func init() {
 							// Path: sales_email/invoice_comment/template
 							ID:        "template",
 							Label:     `Invoice Comment Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -613,7 +613,7 @@ func init() {
 							// Path: sales_email/invoice_comment/guest_template
 							ID:        "guest_template",
 							Label:     `Invoice Comment Email Template for Guest`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
@@ -626,7 +626,7 @@ func init() {
 							// Path: sales_email/invoice_comment/copy_to
 							ID:        "copy_to",
 							Label:     `Send Invoice Comment Email Copy To`,
-							Comment:   element.LongText(`Comma-separated`),
+							Comment:   text.Long(`Comma-separated`),
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
@@ -680,7 +680,7 @@ func init() {
 							// Path: sales_email/shipment/template
 							ID:        "template",
 							Label:     `Shipment Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -693,7 +693,7 @@ func init() {
 							// Path: sales_email/shipment/guest_template
 							ID:        "guest_template",
 							Label:     `Shipment Email Template for Guest`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
@@ -706,7 +706,7 @@ func init() {
 							// Path: sales_email/shipment/copy_to
 							ID:        "copy_to",
 							Label:     `Send Shipment Email Copy To`,
-							Comment:   element.LongText(`Comma-separated`),
+							Comment:   text.Long(`Comma-separated`),
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
@@ -760,7 +760,7 @@ func init() {
 							// Path: sales_email/shipment_comment/template
 							ID:        "template",
 							Label:     `Shipment Comment Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -773,7 +773,7 @@ func init() {
 							// Path: sales_email/shipment_comment/guest_template
 							ID:        "guest_template",
 							Label:     `Shipment Comment Email Template for Guest`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
@@ -786,7 +786,7 @@ func init() {
 							// Path: sales_email/shipment_comment/copy_to
 							ID:        "copy_to",
 							Label:     `Send Shipment Comment Email Copy To`,
-							Comment:   element.LongText(`Comma-separated`),
+							Comment:   text.Long(`Comma-separated`),
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
@@ -840,7 +840,7 @@ func init() {
 							// Path: sales_email/creditmemo/template
 							ID:        "template",
 							Label:     `Credit Memo Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -853,7 +853,7 @@ func init() {
 							// Path: sales_email/creditmemo/guest_template
 							ID:        "guest_template",
 							Label:     `Credit Memo Email Template for Guest`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
@@ -866,7 +866,7 @@ func init() {
 							// Path: sales_email/creditmemo/copy_to
 							ID:        "copy_to",
 							Label:     `Send Credit Memo Email Copy To`,
-							Comment:   element.LongText(`Comma-separated`),
+							Comment:   text.Long(`Comma-separated`),
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
@@ -920,7 +920,7 @@ func init() {
 							// Path: sales_email/creditmemo_comment/template
 							ID:        "template",
 							Label:     `Credit Memo Comment Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -933,7 +933,7 @@ func init() {
 							// Path: sales_email/creditmemo_comment/guest_template
 							ID:        "guest_template",
 							Label:     `Credit Memo Comment Email Template for Guest`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
@@ -946,7 +946,7 @@ func init() {
 							// Path: sales_email/creditmemo_comment/copy_to
 							ID:        "copy_to",
 							Label:     `Send Credit Memo Comment Email Copy To`,
-							Comment:   element.LongText(`Comma-separated`),
+							Comment:   text.Long(`Comma-separated`),
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,

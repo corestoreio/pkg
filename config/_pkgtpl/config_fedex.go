@@ -61,7 +61,7 @@ func init() {
 							// Path: carriers/fedex/account
 							ID:        "account",
 							Label:     `Account ID`,
-							Comment:   element.LongText(`Please make sure to use only digits here. No dashes are allowed.`),
+							Comment:   text.Long(`Please make sure to use only digits here. No dashes are allowed.`),
 							Type:      element.TypeObscure,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
@@ -261,7 +261,7 @@ func init() {
 							// Path: carriers/fedex/smartpost_hubid
 							ID:        "smartpost_hubid",
 							Label:     `Hub ID`,
-							Comment:   element.LongText(`The field is applicable if the Smart Post method is selected.`),
+							Comment:   text.Long(`The field is applicable if the Smart Post method is selected.`),
 							Type:      element.TypeText,
 							SortOrder: 200,
 							Visible:   element.VisibleYes,

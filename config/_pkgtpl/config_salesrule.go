@@ -30,7 +30,7 @@ func init() {
 							// Path: promo/auto_generated_coupon_codes/length
 							ID:        "length",
 							Label:     `Code Length`,
-							Comment:   element.LongText(`Excluding prefix, suffix and separators.`),
+							Comment:   text.Long(`Excluding prefix, suffix and separators.`),
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -74,7 +74,7 @@ func init() {
 							// Path: promo/auto_generated_coupon_codes/dash
 							ID:        "dash",
 							Label:     `Dash Every X Characters`,
-							Comment:   element.LongText(`If empty no separation.`),
+							Comment:   text.Long(`If empty no separation.`),
 							Type:      element.TypeText,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,

@@ -42,7 +42,7 @@ func init() {
 							// Path: sendfriend/email/template
 							ID:        "template",
 							Label:     `Select Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,

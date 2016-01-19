@@ -105,7 +105,7 @@ func init() {
 							// Path: catalog/downloadable/disable_guest_checkout
 							ID:        "disable_guest_checkout",
 							Label:     `Disable Guest Checkout if Cart Contains Downloadable Items`,
-							Comment:   element.LongText(`Guest checkout will only work with shareable.`),
+							Comment:   text.Long(`Guest checkout will only work with shareable.`),
 							Type:      element.TypeSelect,
 							SortOrder: 800,
 							Visible:   element.VisibleYes,

@@ -15,17 +15,27 @@
 package path_test
 
 import (
+	"bytes"
+	"database/sql"
+	"database/sql/driver"
+	"encoding"
 	"encoding/json"
+	"errors"
+	"hash/fnv"
 	"testing"
 
-	"bytes"
-	"hash/fnv"
-
-	"errors"
-
 	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/storage/text"
 	"github.com/stretchr/testify/assert"
 )
+
+// These checks if a type implements an interface belong into the test package
+// and not into its "main" package. Otherwise you would also compile each time
+// al the package with their interfaces.
+var _ encoding.TextMarshaler = (*path.Route)(nil)
+var _ encoding.TextUnmarshaler = (*path.Route)(nil)
+var _ sql.Scanner = (*path.Route)(nil)
+var _ driver.Valuer = (*path.Route)(nil)
 
 func TestRouteEqual(t *testing.T) {
 	tests := []struct {

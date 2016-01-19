@@ -26,7 +26,7 @@ func init() {
 							// Path: sales/msrp/enabled
 							ID:        "enabled",
 							Label:     `Enable MAP`,
-							Comment:   element.LongText(`<strong style="color:red">Warning!</strong> Enabling MAP by default will hide all product prices on Storefront.`),
+							Comment:   text.Long(`<strong style="color:red">Warning!</strong> Enabling MAP by default will hide all product prices on Storefront.`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,

@@ -30,7 +30,7 @@ func init() {
 							// Path: oauth/cleanup/cleanup_probability
 							ID:        "cleanup_probability",
 							Label:     `Cleanup Probability`,
-							Comment:   element.LongText(`Integer. Launch cleanup in X OAuth requests. 0 (not recommended) - to disable cleanup`),
+							Comment:   text.Long(`Integer. Launch cleanup in X OAuth requests. 0 (not recommended) - to disable cleanup`),
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -42,7 +42,7 @@ func init() {
 							// Path: oauth/cleanup/expiration_period
 							ID:        "expiration_period",
 							Label:     `Expiration Period`,
-							Comment:   element.LongText(`Cleanup entries older than X minutes.`),
+							Comment:   text.Long(`Cleanup entries older than X minutes.`),
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -62,7 +62,7 @@ func init() {
 							// Path: oauth/consumer/expiration_period
 							ID:        "expiration_period",
 							Label:     `Expiration Period`,
-							Comment:   element.LongText(`Consumer key/secret will expire if not used within X seconds after Oauth token exchange starts.`),
+							Comment:   text.Long(`Consumer key/secret will expire if not used within X seconds after Oauth token exchange starts.`),
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
@@ -74,7 +74,7 @@ func init() {
 							// Path: oauth/consumer/post_maxredirects
 							ID:        "post_maxredirects",
 							Label:     `OAuth consumer credentials HTTP Post maxredirects`,
-							Comment:   element.LongText(`Number of maximum redirects for OAuth consumer credentials Post request.`),
+							Comment:   text.Long(`Number of maximum redirects for OAuth consumer credentials Post request.`),
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
@@ -85,7 +85,7 @@ func init() {
 							// Path: oauth/consumer/post_timeout
 							ID:        "post_timeout",
 							Label:     `OAuth consumer credentials HTTP Post timeout`,
-							Comment:   element.LongText(`Timeout for OAuth consumer credentials Post request within X seconds.`),
+							Comment:   text.Long(`Timeout for OAuth consumer credentials Post request within X seconds.`),
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,

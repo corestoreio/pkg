@@ -63,7 +63,7 @@ func init() {
 							// Path: catalog/layered_navigation/price_range_max_intervals
 							ID:        "price_range_max_intervals",
 							Label:     `Maximum Number of Price Intervals`,
-							Comment:   element.LongText(`Maximum number of price intervals is 100`),
+							Comment:   text.Long(`Maximum number of price intervals is 100`),
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -75,7 +75,7 @@ func init() {
 							// Path: catalog/layered_navigation/one_price_interval
 							ID:        "one_price_interval",
 							Label:     `Display Price Interval as One Price`,
-							Comment:   element.LongText(`This setting will be applied when all prices in the specific price interval are equal.`),
+							Comment:   text.Long(`This setting will be applied when all prices in the specific price interval are equal.`),
 							Type:      element.TypeSelect,
 							SortOrder: 15,
 							Visible:   element.VisibleYes,
@@ -88,7 +88,7 @@ func init() {
 							// Path: catalog/layered_navigation/interval_division_limit
 							ID:        "interval_division_limit",
 							Label:     `Interval Division Limit`,
-							Comment:   element.LongText(`Please specify the number of products, that will not be divided into subintervals.`),
+							Comment:   text.Long(`Please specify the number of products, that will not be divided into subintervals.`),
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,

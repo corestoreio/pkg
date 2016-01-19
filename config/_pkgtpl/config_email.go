@@ -26,7 +26,7 @@ func init() {
 							// Path: design/email/logo
 							ID:        "logo",
 							Label:     `Logo Image`,
-							Comment:   element.LongText(`Allowed file types: jpg, jpeg, gif, png. To optimize logo for high-resolution displays, upload an image that is 3x normal size and then specify 1x dimensions in width/height fields below.`),
+							Comment:   text.Long(`Allowed file types: jpg, jpeg, gif, png. To optimize logo for high-resolution displays, upload an image that is 3x normal size and then specify 1x dimensions in width/height fields below.`),
 							Type:      element.TypeImage,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -48,7 +48,7 @@ func init() {
 							// Path: design/email/logo_width
 							ID:        "logo_width",
 							Label:     `Logo Width`,
-							Comment:   element.LongText(`Only necessary if image has been uploaded above. Enter number of pixels, without appending "px".`),
+							Comment:   text.Long(`Only necessary if image has been uploaded above. Enter number of pixels, without appending "px".`),
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
@@ -59,7 +59,7 @@ func init() {
 							// Path: design/email/logo_height
 							ID:        "logo_height",
 							Label:     `Logo Height`,
-							Comment:   element.LongText(`Only necessary if image has been uploaded above. Enter number of pixels, without appending "px".`),
+							Comment:   text.Long(`Only necessary if image has been uploaded above. Enter number of pixels, without appending "px".`),
 							Type:      element.TypeText,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
@@ -70,7 +70,7 @@ func init() {
 							// Path: design/email/header_template
 							ID:        "header_template",
 							Label:     `Header Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
@@ -83,7 +83,7 @@ func init() {
 							// Path: design/email/footer_template
 							ID:        "footer_template",
 							Label:     `Footer Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,

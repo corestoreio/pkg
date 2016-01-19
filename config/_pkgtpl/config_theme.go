@@ -26,7 +26,7 @@ func init() {
 							// Path: design/head/shortcut_icon
 							ID:        "shortcut_icon",
 							Label:     `Favicon Icon`,
-							Comment:   element.LongText(`Allowed file types: ICO, PNG, GIF, JPG, JPEG, APNG, SVG. Not all browsers support all these formats!`),
+							Comment:   text.Long(`Allowed file types: ICO, PNG, GIF, JPG, JPEG, APNG, SVG. Not all browsers support all these formats!`),
 							Type:      element.TypeImage,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
@@ -88,7 +88,7 @@ func init() {
 							// Path: design/head/includes
 							ID:        "includes",
 							Label:     `Miscellaneous Scripts`,
-							Comment:   element.LongText(`This will be included before head closing tag in page HTML.`),
+							Comment:   text.Long(`This will be included before head closing tag in page HTML.`),
 							Type:      element.TypeTextarea,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
@@ -118,7 +118,7 @@ func init() {
 							// Path: design/search_engine_robots/default_robots
 							ID:        "default_robots",
 							Label:     `Default Robots`,
-							Comment:   element.LongText(`This will be included before head closing tag in page HTML.`),
+							Comment:   text.Long(`This will be included before head closing tag in page HTML.`),
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
@@ -142,7 +142,7 @@ func init() {
 							// Path: design/search_engine_robots/reset_to_defaults
 							ID:        "reset_to_defaults",
 							Label:     `Reset to Defaults`,
-							Comment:   element.LongText(`This action will delete your custom instructions and reset robots.txt file to system's default settings.`),
+							Comment:   text.Long(`This action will delete your custom instructions and reset robots.txt file to system's default settings.`),
 							Type:      element.TypeButton,
 							SortOrder: 80,
 							Visible:   element.VisibleYes,
@@ -161,7 +161,7 @@ func init() {
 							// Path: design/header/logo_src
 							ID:        "logo_src",
 							Label:     `Logo Image`,
-							Comment:   element.LongText(`Allowed file types:PNG, GIF, JPG, JPEG, SVG.`),
+							Comment:   text.Long(`Allowed file types:PNG, GIF, JPG, JPEG, SVG.`),
 							Type:      element.TypeImage,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -231,7 +231,7 @@ func init() {
 							// Path: design/footer/absolute_footer
 							ID:        "absolute_footer",
 							Label:     `Miscellaneous HTML`,
-							Comment:   element.LongText(`This will be displayed just before body closing tag.`),
+							Comment:   text.Long(`This will be displayed just before body closing tag.`),
 							Type:      element.TypeTextarea,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,

@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
@@ -257,7 +258,7 @@ func TestSectionSliceMerge(t *testing.T) {
 							&element.Group{
 								ID:      "b",
 								Label:   "SectionAGroupB",
-								Comment: element.LongText("SectionAGroupBComment"),
+								Comment: text.Long("SectionAGroupBComment"),
 								Scope:   scope.NewPerm(scope.DefaultID),
 							},
 						),
@@ -270,7 +271,7 @@ func TestSectionSliceMerge(t *testing.T) {
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Groups: element.NewGroupSlice(
 							&element.Group{ID: "b", Label: "GroupLabelB1", Scope: scope.PermAll},
-							&element.Group{ID: "b", Label: "GroupLabelB2", Comment: element.LongText("Section2AGroup3BComment"), SortOrder: 100},
+							&element.Group{ID: "b", Label: "GroupLabelB2", Comment: text.Long("Section2AGroup3BComment"), SortOrder: 100},
 							&element.Group{ID: "b2"},
 						),
 					},
@@ -297,7 +298,7 @@ func TestSectionSliceMerge(t *testing.T) {
 								Label: "b2",
 								Fields: element.NewFieldSlice(
 									nil,
-									&element.Field{ID: "d", Default: `d`, Comment: element.LongText("Ring of fire"), Type: element.TypeObscure},
+									&element.Field{ID: "d", Default: `d`, Comment: text.Long("Ring of fire"), Type: element.TypeObscure},
 									&element.Field{ID: "c", Default: `haha`, Type: element.TypeSelect, Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID)},
 								),
 							},
@@ -312,7 +313,7 @@ func TestSectionSliceMerge(t *testing.T) {
 								ID:    "b",
 								Label: "b3",
 								Fields: element.NewFieldSlice(
-									&element.Field{ID: "d", Default: `overriddenD`, Label: "Sect2Group2Label4", Comment: element.LongText("LOTR")},
+									&element.Field{ID: "d", Default: `overriddenD`, Label: "Sect2Group2Label4", Comment: text.Long("LOTR")},
 									&element.Field{ID: "c", Default: `overriddenHaha`, Type: element.TypeHidden},
 								),
 							},
@@ -357,7 +358,7 @@ func TestSectionSliceMerge(t *testing.T) {
 										Default:   `overridenC`,
 										Type:      element.TypeSelect,
 										Label:     "Sect2Group2Label4",
-										Comment:   element.LongText("LOTR"),
+										Comment:   text.Long("LOTR"),
 										SortOrder: 100,
 										Visible:   element.VisibleYes,
 									},
@@ -414,14 +415,14 @@ func TestGroupSliceMerge(t *testing.T) {
 				{
 					ID: "b",
 					Fields: element.NewFieldSlice(
-						&element.Field{ID: "d", Default: `d`, Comment: element.LongText("Ring of fire"), Type: element.TypeObscure},
+						&element.Field{ID: "d", Default: `d`, Comment: text.Long("Ring of fire"), Type: element.TypeObscure},
 						&element.Field{ID: "c", Default: `haha`, Type: element.TypeSelect, Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID)},
 					),
 				},
 				{
 					ID: "b",
 					Fields: element.NewFieldSlice(
-						&element.Field{ID: "d", Default: `overriddenD`, Label: "Sect2Group2Label4", Comment: element.LongText("LOTR")},
+						&element.Field{ID: "d", Default: `overriddenD`, Label: "Sect2Group2Label4", Comment: text.Long("LOTR")},
 						&element.Field{ID: "c", Default: `overriddenHaha`, Type: element.TypeHidden},
 					),
 				},
@@ -466,30 +467,30 @@ func TestSectionSliceFindGroupByPath(t *testing.T) {
 			wantGID:   "b",
 			wantErr:   nil,
 		},
-		//1: {
-		//	haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.NewGroupSlice(&element.Group{ID: "b"}, &element.Group{ID: "bb"})}},
-		//	havePath:  []string{"a/bc"},
-		//	wantGID:   "b",
-		//	wantErr:   element.ErrGroupNotFound,
-		//},
-		//2: {
-		//	haveSlice: element.SectionSlice{},
-		//	havePath:  nil,
-		//	wantGID:   "b",
-		//	wantErr:   element.ErrGroupNotFound,
-		//},
-		//3: {
-		//	haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.GroupSlice{&element.Group{ID: "b"}, &element.Group{ID: "bb"}}}},
-		//	havePath:  []string{"a", "bb", "cc"},
-		//	wantGID:   "bb",
-		//	wantErr:   nil,
-		//},
-		//4: {
-		//	haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.GroupSlice{&element.Group{ID: "b"}, &element.Group{ID: "bb"}}}},
-		//	havePath:  []string{"xa", "bb", "cc"},
-		//	wantGID:   "",
-		//	wantErr:   element.ErrSectionNotFound,
-		//},
+		1: {
+			haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.NewGroupSlice(&element.Group{ID: "b"}, &element.Group{ID: "bb"})}},
+			havePath:  []string{"a/bc"},
+			wantGID:   "b",
+			wantErr:   element.ErrGroupNotFound,
+		},
+		2: {
+			haveSlice: element.SectionSlice{},
+			havePath:  nil,
+			wantGID:   "b",
+			wantErr:   element.ErrGroupNotFound,
+		},
+		3: {
+			haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.GroupSlice{&element.Group{ID: "b"}, &element.Group{ID: "bb"}}}},
+			havePath:  []string{"a", "bb", "cc"},
+			wantGID:   "bb",
+			wantErr:   nil,
+		},
+		4: {
+			haveSlice: element.SectionSlice{&element.Section{ID: "a", Groups: element.GroupSlice{&element.Group{ID: "b"}, &element.Group{ID: "bb"}}}},
+			havePath:  []string{"xa", "bb", "cc"},
+			wantGID:   "",
+			wantErr:   element.ErrSectionNotFound,
+		},
 	}
 
 	for i, test := range tests {

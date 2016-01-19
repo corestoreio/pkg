@@ -23,7 +23,7 @@ func init() {
 							// Path: dev/js/translate_strategy
 							ID:        "translate_strategy",
 							Label:     `Translation Strategy`,
-							Comment:   element.LongText(`Please put your store into maintenance mode and redeploy static files after changing strategy`),
+							Comment:   text.Long(`Please put your store into maintenance mode and redeploy static files after changing strategy`),
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,

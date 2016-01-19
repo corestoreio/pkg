@@ -23,7 +23,7 @@ func init() {
 							// Path: admin/emails/reset_password_template
 							ID:        "reset_password_template",
 							Label:     `Reset Password Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
@@ -41,7 +41,7 @@ func init() {
 							// Path: admin/security/lockout_failures
 							ID:        "lockout_failures",
 							Label:     `Maximum Login Failures to Lockout Account`,
-							Comment:   element.LongText(`We will disable this feature if the value is empty.`),
+							Comment:   text.Long(`We will disable this feature if the value is empty.`),
 							Type:      element.Type,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
@@ -64,7 +64,7 @@ func init() {
 							// Path: admin/security/password_lifetime
 							ID:        "password_lifetime",
 							Label:     `Password Lifetime (days)`,
-							Comment:   element.LongText(`We will disable this feature if the value is empty.`),
+							Comment:   text.Long(`We will disable this feature if the value is empty.`),
 							Type:      element.Type,
 							SortOrder: 120,
 							Visible:   element.VisibleYes,

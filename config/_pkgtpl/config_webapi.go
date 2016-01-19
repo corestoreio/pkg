@@ -30,7 +30,7 @@ func init() {
 							// Path: webapi/soap/charset
 							ID:        "charset",
 							Label:     `Default Response Charset`,
-							Comment:   element.LongText(`If empty, UTF-8 will be used.`),
+							Comment:   text.Long(`If empty, UTF-8 will be used.`),
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,

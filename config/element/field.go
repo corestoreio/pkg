@@ -19,6 +19,7 @@ import (
 	"sort"
 
 	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/juju/errgo"
 )
@@ -35,18 +36,18 @@ type FieldSlice []*Field
 // @see magento2/app/code/Magento/Config/etc/system_file.xsd
 type Field struct {
 	// ID unique ID and NOT merged with others. 3rd and final part of the path.
-	ID string
+	ID path.Route
 	// ConfigPath if provided defines the storage path and overwrites the path from
 	// section.id + group.id + field.id
-	ConfigPath string `json:",omitempty"`
+	ConfigPath path.Route `json:",omitempty"`
 	// Type is used for the front end on how to display a Field
 	Type FieldTyper `json:",omitempty"`
 	// Label a short label of the field
-	Label string `json:",omitempty"`
+	Label text.Long `json:",omitempty"`
 	// Comment can contain HTML
-	Comment LongText `json:",omitempty"`
+	Comment text.Long `json:",omitempty"`
 	// Tooltip used for frontend and can contain HTML
-	Tooltip LongText `json:",omitempty"`
+	Tooltip text.Long `json:",omitempty"`
 	// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
 	Scope scope.Perm `json:",omitempty"`
 	// SortOrder in ascending order
@@ -68,9 +69,9 @@ func NewFieldSlice(fs ...*Field) FieldSlice {
 }
 
 // FindByID returns a Field pointer or nil if not found
-func (fs FieldSlice) FindByID(id string) (*Field, error) {
+func (fs FieldSlice) FindByID(id path.Route) (*Field, error) {
 	for _, f := range fs {
-		if f != nil && f.ID == id {
+		if f != nil && f.ID.Equal(id) {
 			return f, nil
 		}
 	}
@@ -108,8 +109,8 @@ func (fs *FieldSlice) merge(f *Field) error {
 	if f.Type != nil {
 		cf.Type = f.Type
 	}
-	if f.Label != "" {
-		cf.Label = f.Label
+	if !f.Label.IsEmpty() {
+		cf.Label = f.Label.Copy()
 	}
 	if !f.Comment.IsEmpty() {
 		cf.Comment = f.Comment.Copy()
@@ -154,16 +155,17 @@ func (fs *FieldSlice) Less(i, j int) bool {
 
 // FQPathDefault returns the default fully qualified path of either
 // Section.ID + Group.ID + Field.ID OR Field.ConfgPath if set.
-// Function may panic.
-func (f *Field) FQPathDefault(prePaths ...string) string {
-	p := path.Path{
-		Scope: scope.DefaultID,
-	}
-	if f.ConfigPath != "" {
-		p.Parts = []string{f.ConfigPath}
+// Errors gets logged at DebugLevel.
+func (f *Field) FQPathDefault(preRoutes ...path.Route) string {
+	var p path.Path
+	var err error
+	if !f.ConfigPath.IsEmpty() {
+		p, err = path.New(f.ConfigPath.Copy())
 	} else {
-		p.Parts = append(prePaths, f.ID)
+		p, err = path.New(append(preRoutes, f.ID)...)
+	}
+	if PkgLog.IsDebug() {
+		PkgLog.Debug("element.Field.FQPathDefault.path.New", "err", err, "field", f, "preRoutes", preRoutes)
 	}
 	return p.String()
-
 }

@@ -19,7 +19,7 @@ func init() {
 				&element.Group{
 					ID:        "braintreetwo_section",
 					Label:     `BraintreeTwo`,
-					Comment:   element.LongText(`Accept credit/debit cards and PayPal in your Otnegam store. No setup or monthly fees and your customers never leave your store to complete the purchase.`),
+					Comment:   text.Long(`Accept credit/debit cards and PayPal in your Otnegam store. No setup or monthly fees and your customers never leave your store to complete the purchase.`),
 					SortOrder: 2,
 					Scope:     scope.PermAll,
 					Fields:    element.NewFieldSlice(),

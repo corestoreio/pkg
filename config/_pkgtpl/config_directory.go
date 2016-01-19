@@ -30,7 +30,7 @@ func init() {
 							// Path: currency/options/base
 							ID:        "base",
 							Label:     `Base Currency`,
-							Comment:   element.LongText(`Base currency is used for all online payment transactions. If you have more than one store view, the base currency scope is defined by the catalog price scope ("Catalog" > "Price" > "Catalog Price Scope").`),
+							Comment:   text.Long(`Base currency is used for all online payment transactions. If you have more than one store view, the base currency scope is defined by the catalog price scope ("Catalog" > "Price" > "Catalog Price Scope").`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -131,7 +131,7 @@ func init() {
 							// Path: currency/import/error_email_template
 							ID:        "error_email_template",
 							Label:     `Error Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,

@@ -74,7 +74,7 @@ func init() {
 							// Path: admin/captcha/failed_attempts_login
 							ID:        "failed_attempts_login",
 							Label:     `Number of Unsuccessful Attempts to Login`,
-							Comment:   element.LongText(`If 0 is specified, CAPTCHA on the Login form will be always available.`),
+							Comment:   text.Long(`If 0 is specified, CAPTCHA on the Login form will be always available.`),
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
@@ -97,7 +97,7 @@ func init() {
 							// Path: admin/captcha/length
 							ID:        "length",
 							Label:     `Number of Symbols`,
-							Comment:   element.LongText(`Please specify 8 symbols at the most. Range allowed (e.g. 3-5)`),
+							Comment:   text.Long(`Please specify 8 symbols at the most. Range allowed (e.g. 3-5)`),
 							Type:      element.TypeText,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
@@ -109,7 +109,7 @@ func init() {
 							// Path: admin/captcha/symbols
 							ID:        "symbols",
 							Label:     `Symbols Used in CAPTCHA`,
-							Comment:   element.LongText(`Please use only letters (a-z or A-Z) or numbers (0-9) in this field. No spaces or other characters are allowed.<br />Similar looking characters (e.g. "i", "l", "1") decrease chance of correct recognition by customer.`),
+							Comment:   text.Long(`Please use only letters (a-z or A-Z) or numbers (0-9) in this field. No spaces or other characters are allowed.<br />Similar looking characters (e.g. "i", "l", "1") decrease chance of correct recognition by customer.`),
 							Type:      element.TypeText,
 							SortOrder: 8,
 							Visible:   element.VisibleYes,
@@ -169,7 +169,7 @@ func init() {
 							// Path: customer/captcha/forms
 							ID:        "forms",
 							Label:     `Forms`,
-							Comment:   element.LongText(`CAPTCHA for "Create user" and "Forgot password" forms is always enabled if chosen.`),
+							Comment:   text.Long(`CAPTCHA for "Create user" and "Forgot password" forms is always enabled if chosen.`),
 							Type:      element.TypeMultiselect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
@@ -194,7 +194,7 @@ func init() {
 							// Path: customer/captcha/failed_attempts_login
 							ID:        "failed_attempts_login",
 							Label:     `Number of Unsuccessful Attempts to Login`,
-							Comment:   element.LongText(`If 0 is specified, CAPTCHA on the Login form will be always available.`),
+							Comment:   text.Long(`If 0 is specified, CAPTCHA on the Login form will be always available.`),
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
@@ -217,7 +217,7 @@ func init() {
 							// Path: customer/captcha/length
 							ID:        "length",
 							Label:     `Number of Symbols`,
-							Comment:   element.LongText(`Please specify 8 symbols at the most. Range allowed (e.g. 3-5)`),
+							Comment:   text.Long(`Please specify 8 symbols at the most. Range allowed (e.g. 3-5)`),
 							Type:      element.TypeText,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
@@ -229,7 +229,7 @@ func init() {
 							// Path: customer/captcha/symbols
 							ID:        "symbols",
 							Label:     `Symbols Used in CAPTCHA`,
-							Comment:   element.LongText(`Please use only letters (a-z or A-Z) or numbers (0-9) in this field. No spaces or other characters are allowed.<br />Similar looking characters (e.g. "i", "l", "1") decrease chance of correct recognition by customer.`),
+							Comment:   text.Long(`Please use only letters (a-z or A-Z) or numbers (0-9) in this field. No spaces or other characters are allowed.<br />Similar looking characters (e.g. "i", "l", "1") decrease chance of correct recognition by customer.`),
 							Type:      element.TypeText,
 							SortOrder: 8,
 							Visible:   element.VisibleYes,

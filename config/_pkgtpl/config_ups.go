@@ -350,7 +350,7 @@ func init() {
 							// Path: carriers/ups/shipper_number
 							ID:        "shipper_number",
 							Label:     `Shipper Number`,
-							Comment:   element.LongText(`Required for negotiated rates; 6-character UPS`),
+							Comment:   text.Long(`Required for negotiated rates; 6-character UPS`),
 							Type:      element.TypeText,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
@@ -407,7 +407,7 @@ func init() {
 							// Path: carriers/ups/mode_xml
 							ID:        "mode_xml",
 							Label:     `Mode`,
-							Comment:   element.LongText(`This enables or disables SSL verification of the Otnegam server by UPS.`),
+							Comment:   text.Long(`This enables or disables SSL verification of the Otnegam server by UPS.`),
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,

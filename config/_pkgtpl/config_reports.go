@@ -87,7 +87,7 @@ func init() {
 							// Path: reports/dashboard/mtd_start
 							ID:        "mtd_start",
 							Label:     `Current Month Starts`,
-							Comment:   element.LongText(`Select day of the month.`),
+							Comment:   text.Long(`Select day of the month.`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,

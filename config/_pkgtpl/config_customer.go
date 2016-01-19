@@ -154,7 +154,7 @@ func init() {
 							// Path: customer/create_account/vat_frontend_visibility
 							ID:        "vat_frontend_visibility",
 							Label:     `Show VAT Number on Storefront`,
-							Comment:   element.LongText(`To show VAT number on Storefront, set Show VAT Number on Storefront option to Yes.`),
+							Comment:   text.Long(`To show VAT number on Storefront, set Show VAT Number on Storefront option to Yes.`),
 							Type:      element.TypeSelect,
 							SortOrder: 58,
 							Visible:   element.VisibleYes,
@@ -178,7 +178,7 @@ func init() {
 							// Path: customer/create_account/email_template
 							ID:        "email_template",
 							Label:     `Default Welcome Email`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
@@ -191,7 +191,7 @@ func init() {
 							// Path: customer/create_account/email_no_password_template
 							ID:        "email_no_password_template",
 							Label:     `Default Welcome Email Without Password`,
-							Comment:   element.LongText(`This email will be sent instead of the Default Welcome Email, if a customer was created without password. <br /><br /> Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`This email will be sent instead of the Default Welcome Email, if a customer was created without password. <br /><br /> Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 75,
 							Visible:   element.VisibleYes,
@@ -228,7 +228,7 @@ func init() {
 							// Path: customer/create_account/email_confirmation_template
 							ID:        "email_confirmation_template",
 							Label:     `Confirmation Link Email`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
@@ -241,7 +241,7 @@ func init() {
 							// Path: customer/create_account/email_confirmed_template
 							ID:        "email_confirmed_template",
 							Label:     `Welcome Email`,
-							Comment:   element.LongText(`This email will be sent instead of the Default Welcome Email, after account confirmation. <br /><br /> Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`This email will be sent instead of the Default Welcome Email, after account confirmation. <br /><br /> Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 110,
 							Visible:   element.VisibleYes,
@@ -273,7 +273,7 @@ func init() {
 							// Path: customer/password/forgot_email_template
 							ID:        "forgot_email_template",
 							Label:     `Forgot Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -286,7 +286,7 @@ func init() {
 							// Path: customer/password/remind_email_template
 							ID:        "remind_email_template",
 							Label:     `Remind Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -299,7 +299,7 @@ func init() {
 							// Path: customer/password/reset_password_template
 							ID:        "reset_password_template",
 							Label:     `Reset Password Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
@@ -324,7 +324,7 @@ func init() {
 							// Path: customer/password/reset_link_expiration_period
 							ID:        "reset_link_expiration_period",
 							Label:     `Recovery Link Expiration Period (days)`,
-							Comment:   element.LongText(`Please enter a number 1 or greater in this field.`),
+							Comment:   text.Long(`Please enter a number 1 or greater in this field.`),
 							Type:      element.TypeText,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
@@ -345,7 +345,7 @@ func init() {
 							// Path: customer/address/street_lines
 							ID:        "street_lines",
 							Label:     `Number of Lines in a Street Address`,
-							Comment:   element.LongText(`Leave empty for default (2). Valid range: 1-4`),
+							Comment:   text.Long(`Leave empty for default (2). Valid range: 1-4`),
 							Type:      element.Type,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -358,7 +358,7 @@ func init() {
 							// Path: customer/address/prefix_show
 							ID:        "prefix_show",
 							Label:     `Show Prefix`,
-							Comment:   element.LongText(`The title that goes before name (Mr., Mrs., etc.)`),
+							Comment:   text.Long(`The title that goes before name (Mr., Mrs., etc.)`),
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -371,7 +371,7 @@ func init() {
 							// Path: customer/address/prefix_options
 							ID:        "prefix_options",
 							Label:     `Prefix Dropdown Options`,
-							Comment:   element.LongText(`Semicolon (;) separated values.<br/>Put semicolon in the beginning for empty first option.<br/>Leave empty for open text field.`),
+							Comment:   text.Long(`Semicolon (;) separated values.<br/>Put semicolon in the beginning for empty first option.<br/>Leave empty for open text field.`),
 							Type:      element.Type,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
@@ -382,7 +382,7 @@ func init() {
 							// Path: customer/address/middlename_show
 							ID:        "middlename_show",
 							Label:     `Show Middle Name (initial)`,
-							Comment:   element.LongText(`Always optional.`),
+							Comment:   text.Long(`Always optional.`),
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
@@ -395,7 +395,7 @@ func init() {
 							// Path: customer/address/suffix_show
 							ID:        "suffix_show",
 							Label:     `Show Suffix`,
-							Comment:   element.LongText(`The suffix that goes after name (Jr., Sr., etc.)`),
+							Comment:   text.Long(`The suffix that goes after name (Jr., Sr., etc.)`),
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
@@ -408,7 +408,7 @@ func init() {
 							// Path: customer/address/suffix_options
 							ID:        "suffix_options",
 							Label:     `Suffix Dropdown Options`,
-							Comment:   element.LongText(`Semicolon (;) separated values.<br/>Put semicolon in the beginning for empty first option.<br/>Leave empty for open text field.`),
+							Comment:   text.Long(`Semicolon (;) separated values.<br/>Put semicolon in the beginning for empty first option.<br/>Leave empty for open text field.`),
 							Type:      element.Type,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
@@ -463,7 +463,7 @@ func init() {
 							// Path: customer/startup/redirect_dashboard
 							ID:        "redirect_dashboard",
 							Label:     `Redirect Customer to Account Dashboard after Logging in`,
-							Comment:   element.LongText(`Customer will stay on the current page if "No" is selected.`),
+							Comment:   text.Long(`Customer will stay on the current page if "No" is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -569,7 +569,7 @@ T: {{var telephone}}
 							// Path: customer/online_customers/online_minutes_interval
 							ID:        "online_minutes_interval",
 							Label:     `Online Minutes Interval`,
-							Comment:   element.LongText(`Leave empty for default (15 minutes).`),
+							Comment:   text.Long(`Leave empty for default (15 minutes).`),
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,

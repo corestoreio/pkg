@@ -21,6 +21,7 @@ import (
 	"sort"
 
 	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
@@ -38,8 +39,8 @@ type SectionSlice []*Section
 // groups and fields. Thread safe for reading but not for modifying.
 type Section struct {
 	// ID unique ID and merged with others. 1st part of the path.
-	ID    string
-	Label string `json:",omitempty"`
+	ID    path.Route
+	Label text.Long `json:",omitempty"`
 	// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
 	Scope     scope.Perm `json:",omitempty"`
 	SortOrder int        `json:",omitempty"`
@@ -164,8 +165,8 @@ func (ss *SectionSlice) merge(s *Section) error {
 		(*ss).Append(cs)
 	}
 
-	if s.Label != "" {
-		cs.Label = s.Label
+	if s.Label.IsEmpty() == false {
+		cs.Label = s.Label.Copy()
 	}
 	if s.Scope > 0 {
 		cs.Scope = s.Scope
@@ -180,9 +181,9 @@ func (ss *SectionSlice) merge(s *Section) error {
 }
 
 // FindByID returns a Section pointer or nil if not found. Please check for nil and do not a
-func (ss SectionSlice) FindByID(id string) (*Section, error) {
+func (ss SectionSlice) FindByID(id path.Route) (*Section, error) {
 	for _, s := range ss {
-		if s != nil && s.ID == id {
+		if s != nil && s.ID.Equal(id) {
 			return s, nil
 		}
 	}
@@ -192,35 +193,35 @@ func (ss SectionSlice) FindByID(id string) (*Section, error) {
 // FindGroupByPath searches for a group using the first two path segments.
 // If one argument is given then considered as the full path e.g. a/b/c
 // If two or more arguments are given then each argument will be treated as a path part.
-func (ss SectionSlice) FindGroupByPath(paths ...string) (*Group, error) {
-	if len(paths) == 1 {
-		paths = path.Split(paths[0])
-	}
-	if len(paths) < 2 {
+func (ss SectionSlice) FindGroupByPath(r path.Route) (*Group, error) {
+
+	l1, err := r.Level(1)
+	if err != nil {
+		// debug log?
 		return nil, ErrGroupNotFound
 	}
-	cs, err := ss.FindByID(paths[0])
+	cs, err := ss.FindByID(l1)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	return cs.Groups.FindByID(paths[1])
+	l2, err := r.Level(2)
+	if err != nil {
+		// debug log?
+		return nil, ErrGroupNotFound
+	}
+
+	return cs.Groups.FindByID(l2)
 }
 
 // FindFieldByPath searches for a field using all three path segments.
 // If one argument is given then considered as the full path e.g. a/b/c
 // If three arguments are given then each argument will be treated as a path part.
-func (ss SectionSlice) FindFieldByPath(paths ...string) (*Field, error) {
-	if len(paths) == 1 {
-		paths = path.Split(paths[0])
-	}
-	if len(paths) < 3 {
-		return nil, ErrFieldNotFound
-	}
-	cg, err := ss.FindGroupByPath(paths...)
+func (ss SectionSlice) FindFieldByPath(r path.Route) (*Field, error) {
+	cg, err := ss.FindGroupByPath(r)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	return cg.Fields.FindByID(paths[2])
+	return cg.Fields.FindByID(r)
 }
 
 // Append adds 0..n *Section. Not thread safe.
@@ -231,8 +232,8 @@ func (ss *SectionSlice) Append(s ...*Section) *SectionSlice {
 
 // AppendFields adds 0..n *Fields. Path must have at least two path parts like a/b
 // more path parts gets ignored. Not thread safe.
-func (ss SectionSlice) AppendFields(path string, fs ...*Field) error {
-	g, err := ss.FindGroupByPath(path)
+func (ss SectionSlice) AppendFields(r path.Route, fs ...*Field) error {
+	g, err := ss.FindGroupByPath(r)
 	if err != nil {
 		return errgo.Mask(err)
 	}

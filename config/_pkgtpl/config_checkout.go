@@ -168,7 +168,7 @@ func init() {
 							// Path: checkout/payment_failed/template
 							ID:        "template",
 							Label:     `Payment Failed Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -181,7 +181,7 @@ func init() {
 							// Path: checkout/payment_failed/copy_to
 							ID:        "copy_to",
 							Label:     `Send Payment Failed Email Copy To`,
-							Comment:   element.LongText(`Separate by ",".`),
+							Comment:   text.Long(`Separate by ",".`),
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,

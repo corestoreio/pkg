@@ -26,7 +26,7 @@ func init() {
 							// Path: dev/front_end_development_workflow/type
 							ID:        "type",
 							Label:     `Workflow type`,
-							Comment:   element.LongText(`Not available in production mode`),
+							Comment:   text.Long(`Not available in production mode`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -47,7 +47,7 @@ func init() {
 							// Path: dev/restrict/allow_ips
 							ID:        "allow_ips",
 							Label:     `Allowed IPs (comma separated)`,
-							Comment:   element.LongText(`Leave empty for access from any location.`),
+							Comment:   text.Long(`Leave empty for access from any location.`),
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,

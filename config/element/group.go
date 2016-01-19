@@ -20,6 +20,8 @@ import (
 	"errors"
 	"sort"
 
+	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/juju/errgo"
 )
@@ -35,17 +37,17 @@ type GroupSlice []*Group
 //  Thread safe for reading but not for modifying.
 type Group struct {
 	// ID unique ID and merged with others. 2nd part of the path.
-	ID      string
-	Label   string   `json:",omitempty"`
-	Comment LongText `json:",omitempty"`
+	ID      path.Route
+	Label   text.Long `json:",omitempty"`
+	Comment text.Long `json:",omitempty"`
 	// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
 	Scope     scope.Perm `json:",omitempty"`
 	SortOrder int        `json:",omitempty"`
 
-	HelpURL               LongText `json:",omitempty"`
-	MoreURL               LongText `json:",omitempty"`
-	DemoLink              LongText `json:",omitempty"`
-	HideInSingleStoreMode bool     `json:",omitempty"`
+	HelpURL               text.Long `json:",omitempty"`
+	MoreURL               text.Long `json:",omitempty"`
+	DemoLink              text.Long `json:",omitempty"`
+	HideInSingleStoreMode bool      `json:",omitempty"`
 
 	Fields FieldSlice
 	// Groups     GroupSlice @todo see recursive options <xs:element name="group"> in app/code/Magento/Config/etc/system_file.xsd
@@ -57,9 +59,9 @@ func NewGroupSlice(gs ...*Group) GroupSlice {
 }
 
 // FindByID returns a Group pointer or nil if not found
-func (gs GroupSlice) FindByID(id string) (*Group, error) {
+func (gs GroupSlice) FindByID(id path.Route) (*Group, error) {
 	for _, g := range gs {
-		if g != nil && g.ID == id {
+		if g != nil && g.ID.Equal(id) {
 			return g, nil
 		}
 	}
@@ -93,8 +95,8 @@ func (gs *GroupSlice) merge(g *Group) error {
 		(*gs).Append(cg)
 	}
 
-	if g.Label != "" {
-		cg.Label = g.Label
+	if !g.Label.IsEmpty() {
+		cg.Label = g.Label.Copy()
 	}
 	if !g.Comment.IsEmpty() {
 		cg.Comment = g.Comment.Copy()

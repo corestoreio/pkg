@@ -19,7 +19,7 @@ func init() {
 				&element.Group{
 					ID:        "cron",
 					Label:     `Cron (Scheduled Tasks) - all the times are in minutes`,
-					Comment:   element.LongText(`For correct URLs generated during cron runs please make sure that Web > Secure and Unsecure Base URLs are explicitly set.`),
+					Comment:   text.Long(`For correct URLs generated during cron runs please make sure that Web > Secure and Unsecure Base URLs are explicitly set.`),
 					SortOrder: 15,
 					Scope:     scope.NewPerm(scope.DefaultID),
 					Fields:    element.NewFieldSlice(),

@@ -70,7 +70,7 @@ func init() {
 							// Path: system/backup/maintenance
 							ID:        "maintenance",
 							Label:     `Maintenance Mode`,
-							Comment:   element.LongText(`Please put your store into maintenance mode during backup.`),
+							Comment:   text.Long(`Please put your store into maintenance mode during backup.`),
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,

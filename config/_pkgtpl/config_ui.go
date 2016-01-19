@@ -23,7 +23,7 @@ func init() {
 							// Path: dev/js/session_storage_logging
 							ID:        "session_storage_logging",
 							Label:     `Log JS Errors to Session Storage`,
-							Comment:   element.LongText(`If enabled, can be used by functional tests for extended reporting`),
+							Comment:   text.Long(`If enabled, can be used by functional tests for extended reporting`),
 							Type:      element.TypeSelect,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
@@ -36,7 +36,7 @@ func init() {
 							// Path: dev/js/session_storage_key
 							ID:        "session_storage_key",
 							Label:     `Log JS Errors to Session Storage Key`,
-							Comment:   element.LongText(`Use this key to retrieve collected js errors`),
+							Comment:   text.Long(`Use this key to retrieve collected js errors`),
 							Type:      element.TypeText,
 							SortOrder: 110,
 							Visible:   element.VisibleYes,

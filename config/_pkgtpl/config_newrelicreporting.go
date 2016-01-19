@@ -53,7 +53,7 @@ func init() {
 							// Path: newrelicreporting/general/insights_api_url
 							ID:        "insights_api_url",
 							Label:     `Insights API URL`,
-							Comment:   element.LongText(`Use %s to replace the account ID in the URL`),
+							Comment:   text.Long(`Use %s to replace the account ID in the URL`),
 							Type:      element.TypeText,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
@@ -65,7 +65,7 @@ func init() {
 							// Path: newrelicreporting/general/account_id
 							ID:        "account_id",
 							Label:     `New Relic Account ID`,
-							Comment:   element.LongText(`"Need a New Relic account? <a href="http://www.newrelic.com/magento" target="_blank">Click here to get one`),
+							Comment:   text.Long(`"Need a New Relic account? <a href="http://www.newrelic.com/magento" target="_blank">Click here to get one`),
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
@@ -76,7 +76,7 @@ func init() {
 							// Path: newrelicreporting/general/app_id
 							ID:        "app_id",
 							Label:     `New Relic Application ID`,
-							Comment:   element.LongText(`This can commonly be found at the end of the URL when viewing the APM after "/applications/"`),
+							Comment:   text.Long(`This can commonly be found at the end of the URL when viewing the APM after "/applications/"`),
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
@@ -87,7 +87,7 @@ func init() {
 							// Path: newrelicreporting/general/api
 							ID:        "api",
 							Label:     `New Relic API Key`,
-							Comment:   element.LongText(`This is located by navigating to Events -> Deployments from the New Relic APM website`),
+							Comment:   text.Long(`This is located by navigating to Events -> Deployments from the New Relic APM website`),
 							Type:      element.TypeObscure,
 							SortOrder: 6,
 							Visible:   element.VisibleYes,
@@ -99,7 +99,7 @@ func init() {
 							// Path: newrelicreporting/general/insights_insert_key
 							ID:        "insights_insert_key",
 							Label:     `Insights API Key`,
-							Comment:   element.LongText(`Generated under Insights in Manage data -> API Keys -> Insert Keys`),
+							Comment:   text.Long(`Generated under Insights in Manage data -> API Keys -> Insert Keys`),
 							Type:      element.TypeObscure,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
@@ -111,7 +111,7 @@ func init() {
 							// Path: newrelicreporting/general/app_name
 							ID:        "app_name",
 							Label:     `New Relic Application Name`,
-							Comment:   element.LongText(`This is located by navigating to Settings from the New Relic APM website`),
+							Comment:   text.Long(`This is located by navigating to Settings from the New Relic APM website`),
 							Type:      element.TypeText,
 							SortOrder: 8,
 							Visible:   element.VisibleYes,

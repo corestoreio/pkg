@@ -66,7 +66,7 @@ func init() {
 							// Path: newsletter/subscription/confirm_email_template
 							ID:        "confirm_email_template",
 							Label:     `Confirmation Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -91,7 +91,7 @@ func init() {
 							// Path: newsletter/subscription/success_email_template
 							ID:        "success_email_template",
 							Label:     `Success Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -116,7 +116,7 @@ func init() {
 							// Path: newsletter/subscription/un_email_template
 							ID:        "un_email_template",
 							Label:     `Unsubscription Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,

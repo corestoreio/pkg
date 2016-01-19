@@ -24,7 +24,7 @@ func init() {
 							// Path: catalog/seo/category_url_suffix
 							ID:        "category_url_suffix",
 							Label:     `Category URL Suffix`,
-							Comment:   element.LongText(`You need to refresh the cache.`),
+							Comment:   text.Long(`You need to refresh the cache.`),
 							Type:      element.TypeText,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
@@ -36,7 +36,7 @@ func init() {
 							// Path: catalog/seo/product_url_suffix
 							ID:        "product_url_suffix",
 							Label:     `Product URL Suffix`,
-							Comment:   element.LongText(`You need to refresh the cache.`),
+							Comment:   text.Long(`You need to refresh the cache.`),
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,

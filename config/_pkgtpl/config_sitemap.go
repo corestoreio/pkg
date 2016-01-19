@@ -42,7 +42,7 @@ func init() {
 							// Path: sitemap/category/priority
 							ID:        "priority",
 							Label:     `Priority`,
-							Comment:   element.LongText(`Valid values range from 0.0 to 1.0.`),
+							Comment:   text.Long(`Valid values range from 0.0 to 1.0.`),
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -75,7 +75,7 @@ func init() {
 							// Path: sitemap/product/priority
 							ID:        "priority",
 							Label:     `Priority`,
-							Comment:   element.LongText(`Valid values range from 0.0 to 1.0.`),
+							Comment:   text.Long(`Valid values range from 0.0 to 1.0.`),
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -120,7 +120,7 @@ func init() {
 							// Path: sitemap/page/priority
 							ID:        "priority",
 							Label:     `Priority`,
-							Comment:   element.LongText(`Valid values range from 0.0 to 1.0.`),
+							Comment:   text.Long(`Valid values range from 0.0 to 1.0.`),
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -175,7 +175,7 @@ func init() {
 							// Path: sitemap/generate/error_email_template
 							ID:        "error_email_template",
 							Label:     `Error Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
@@ -229,7 +229,7 @@ func init() {
 							// Path: sitemap/limit/max_file_size
 							ID:        "max_file_size",
 							Label:     `Maximum File Size`,
-							Comment:   element.LongText(`File size in bytes.`),
+							Comment:   text.Long(`File size in bytes.`),
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,

@@ -26,7 +26,7 @@ func init() {
 							// Path: payment/vault/vault_payment
 							ID:      "vault_payment",
 							Label:   `Vault Provider`,
-							Comment: element.LongText(`Specified provider should be enabled.`),
+							Comment: text.Long(`Specified provider should be enabled.`),
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
 							Scope:   scope.NewPerm(scope.DefaultID, scope.WebsiteID),

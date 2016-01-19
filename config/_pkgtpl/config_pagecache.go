@@ -37,7 +37,7 @@ func init() {
 							// Path: system/full_page_cache/ttl
 							ID:        "ttl",
 							Label:     `TTL for public content`,
-							Comment:   element.LongText(`Public content cache lifetime in seconds. If field is empty default value 86400 will be saved.`),
+							Comment:   text.Long(`Public content cache lifetime in seconds. If field is empty default value 86400 will be saved.`),
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,

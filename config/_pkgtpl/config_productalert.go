@@ -50,7 +50,7 @@ func init() {
 							// Path: catalog/productalert/email_price_template
 							ID:        "email_price_template",
 							Label:     `Price Alert Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -63,7 +63,7 @@ func init() {
 							// Path: catalog/productalert/email_stock_template
 							ID:        "email_stock_template",
 							Label:     `Stock Alert Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
@@ -140,7 +140,7 @@ func init() {
 							// Path: catalog/productalert_cron/error_email_template
 							ID:        "error_email_template",
 							Label:     `Error Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							Comment:   text.Long(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,

@@ -50,7 +50,7 @@ func init() {
 						&element.Field{
 							// Path: system/media_storage_configuration/synchronize
 							ID:        "synchronize",
-							Comment:   element.LongText(`After selecting a new media storage location, press the Synchronize button to transfer all media to that location. Media will not be available in the new location until the synchronization process is complete.`),
+							Comment:   text.Long(`After selecting a new media storage location, press the Synchronize button to transfer all media to that location. Media will not be available in the new location until the synchronization process is complete.`),
 							Type:      element.TypeButton,
 							SortOrder: 300,
 							Visible:   element.VisibleYes,

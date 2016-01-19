@@ -100,7 +100,7 @@ func init() {
 							// Path: tax/calculation/price_includes_tax
 							ID:        "price_includes_tax",
 							Label:     `Catalog Prices`,
-							Comment:   element.LongText(`This sets whether catalog prices entered from Otnegam Admin include tax.`),
+							Comment:   text.Long(`This sets whether catalog prices entered from Otnegam Admin include tax.`),
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -114,7 +114,7 @@ func init() {
 							// Path: tax/calculation/shipping_includes_tax
 							ID:        "shipping_includes_tax",
 							Label:     `Shipping Prices`,
-							Comment:   element.LongText(`This sets whether shipping amounts entered from Otnegam Admin or obtained from gateways include tax.`),
+							Comment:   text.Long(`This sets whether shipping amounts entered from Otnegam Admin or obtained from gateways include tax.`),
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
@@ -141,7 +141,7 @@ func init() {
 							// Path: tax/calculation/discount_tax
 							ID:        "discount_tax",
 							Label:     `Apply Discount On Prices`,
-							Comment:   element.LongText(`Apply discount on price including tax is calculated based on store tax if "Apply Tax after Discount" is selected.`),
+							Comment:   text.Long(`Apply discount on price including tax is calculated based on store tax if "Apply Tax after Discount" is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
@@ -167,7 +167,7 @@ func init() {
 							// Path: tax/calculation/cross_border_trade_enabled
 							ID:        "cross_border_trade_enabled",
 							Label:     `Enable Cross Border Trade`,
-							Comment:   element.LongText(`When catalog price includes tax, enable this setting to fix the price no matter what the customer's tax rate.`),
+							Comment:   text.Long(`When catalog price includes tax, enable this setting to fix the price no matter what the customer's tax rate.`),
 							Type:      element.TypeSelect,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
