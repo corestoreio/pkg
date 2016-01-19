@@ -29,32 +29,32 @@ import (
 // These checks if a type implements an interface belong into the test package
 // and not into its "main" package. Otherwise you would also compile each time
 // al the package with their interfaces.
-var _ encoding.TextMarshaler = (*text.Long)(nil)
-var _ encoding.TextUnmarshaler = (*text.Long)(nil)
-var _ sql.Scanner = (*text.Long)(nil)
-var _ driver.Valuer = (*text.Long)(nil)
+var _ encoding.TextMarshaler = (*text.Chars)(nil)
+var _ encoding.TextUnmarshaler = (*text.Chars)(nil)
+var _ sql.Scanner = (*text.Chars)(nil)
+var _ driver.Valuer = (*text.Chars)(nil)
 
 func TestEqual(t *testing.T) {
 	tests := []struct {
-		a    text.Long
-		b    text.Long
+		a    text.Chars
+		b    text.Chars
 		want bool
 	}{
 		{nil, nil, true},
-		{text.Long("a"), text.Long("a"), true},
-		{text.Long("a"), text.Long("b"), false},
-		{text.Long("a\x80"), text.Long("a"), false},
+		{text.Chars("a"), text.Chars("a"), true},
+		{text.Chars("a"), text.Chars("b"), false},
+		{text.Chars("a\x80"), text.Chars("a"), false},
 	}
 	for i, test := range tests {
 		assert.Exactly(t, test.want, test.a.Equal(test.b), "Index %d", i)
 	}
 }
 
-func TestLong(t *testing.T) {
+func TestChars(t *testing.T) {
 	t.Parallel()
 	const have string = `Hello fellow Gpher's`
-	l := text.Long(have)
-	var l1 text.Long
+	l := text.Chars(have)
+	var l1 text.Chars
 	assert.True(t, l1.IsEmpty())
 	assert.False(t, l.IsEmpty())
 	assert.Exactly(t, have, l.String())
@@ -69,7 +69,7 @@ func TestLong(t *testing.T) {
 func TestTextMarshal(t *testing.T) {
 	const have = `admin/security/passwrd_lifetime`
 	t.Parallel()
-	r := text.Long(have)
+	r := text.Chars(have)
 	j, err := json.Marshal(r)
 	assert.NoError(t, err)
 	assert.Exactly(t, `"`+have+`"`, string(j))
@@ -78,7 +78,7 @@ func TestTextMarshal(t *testing.T) {
 func TestUnmarshalTextOk(t *testing.T) {
 	t.Parallel()
 	const have = `admin/security/passwörd_lif‹time`
-	var r text.Long
+	var r text.Chars
 	err := json.Unmarshal([]byte(`"`+have+`"`), &r)
 	assert.NoError(t, err)
 	assert.Exactly(t, have, r.String())
@@ -96,7 +96,7 @@ func TestScan(t *testing.T) {
 		{"", 8, errors.New("Cannot convert value 8 to []byte")},
 	}
 	for i, test := range tests {
-		var l text.Long
+		var l text.Chars
 		haveErr := l.Scan(test.val)
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
@@ -110,15 +110,22 @@ func TestScan(t *testing.T) {
 
 func TestValue(t *testing.T) {
 	t.Parallel()
-	l1 := text.Long(`x`)
+	l1 := text.Chars(`x`)
 	v, err := l1.Value()
 	assert.NoError(t, err)
 	assert.NotNil(t, v)
-	assert.Exactly(t, l1, v.(text.Long))
+	assert.Exactly(t, l1, v.(text.Chars))
 
-	var l2 text.Long
+	var l2 text.Chars
 	v, err = l2.Value()
 	assert.NoError(t, err)
 	assert.Nil(t, v)
+}
 
+func TestRuneCount(t *testing.T) {
+	t.Parallel()
+	const have string = "Hello F€llow Gphers"
+	l1 := text.Chars(have)
+	assert.Exactly(t, 20, l1.RuneCount())
+	assert.Exactly(t, 24, len(l1))
 }

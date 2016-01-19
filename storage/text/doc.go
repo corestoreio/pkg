@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package text represents a []byte type for storing long text strings.
+// Package text represents a []byte type for storing long text strings (Chars).
 //
 // Implements Marshaller, Unmarshaller, sql.Scanner and driver.Valuer interfaces.
 package text

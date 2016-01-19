@@ -18,54 +18,67 @@ import (
 	"bytes"
 	"database/sql/driver"
 	"fmt"
+	"unicode/utf8"
 )
 
-// LongText avoids storing long string values in Labels, Comments, Hints ...
-// in Section, Group or Field elements. A LongText can contain HTML.
+// Chars avoids storing long string values in Labels, Comments, Hints ...
+// in Section, Group or Field elements. A Chars can contain HTML.
 // The byte slice should reduce copying long strings because we're only
-// copying the slice header.
-type Long []byte
+// copying the slice header. Danger! Other function may modify this
+// slice and we cannot prevent it. Use it wisely and also copy the data
+// away if you want to modify it.
+type Chars []byte
 
-func (l Long) String() string {
-	return string(l)
+// String returns a string.
+func (c Chars) String() string {
+	return string(c)
 }
 
 // Equal returns true if r2 is equal to current Route. Does not consider
 // utf8 EqualFold.
-func (l Long) Equal(b []byte) bool {
+func (c Chars) Equal(b []byte) bool {
 	// What is the use case for EqualFold?
-	return bytes.Equal(l, b)
+	return bytes.Equal(c, b)
 }
 
-func (l Long) IsEmpty() bool {
-	return l == nil || len(l) == 0
+// IsEmpty returns true if the slice is nil or has zero length.
+func (c Chars) IsEmpty() bool {
+	return c == nil || len(c) == 0
 }
 
-func (l Long) Copy() Long {
-	n := make([]byte, len(l), len(l))
-	copy(n, l)
+// Copy allocates a new byte slice and copies the existing long data into the
+// new buffer.
+func (c Chars) Copy() Chars {
+	n := make([]byte, len(c), len(c))
+	copy(n, c)
 	return n
+}
+
+// RuneCount counts the number of runes in this byte slice.
+// len(Chars) and RuneCount can return different results.
+func (c Chars) RuneCount() int {
+	return utf8.RuneCount(c)
 }
 
 // MarshalText transforms the byte slice into a text slice.
 // E.g. used in json.Marshal
-func (l Long) MarshalText() (text []byte, err error) {
+func (c Chars) MarshalText() (text []byte, err error) {
 	// this is magic in combination with json.Marshal ;-)
-	return l, nil
+	return c, nil
 }
 
-// UnmarshalText copies the data from text into the Long type.
+// UnmarshalText copies the data from text into the Chars type.
 // E.g. used in json.Unmarshal
-func (l *Long) UnmarshalText(text []byte) error {
+func (c *Chars) UnmarshalText(text []byte) error {
 	buf := make([]byte, len(text), len(text))
 	copy(buf, text)
-	*l = buf
+	*c = buf
 	return nil
 }
 
 // Scan implements the Scanner interface.
-func (l *Long) Scan(value interface{}) error {
-	*l = nil
+func (c *Chars) Scan(value interface{}) error {
+	*c = nil
 	if value == nil {
 		return nil
 	}
@@ -80,16 +93,16 @@ func (l *Long) Scan(value interface{}) error {
 	default:
 		return fmt.Errorf("Cannot convert value %#v to []byte", value)
 	}
-	*l = buf
+	*c = buf
 
 	return nil
 
 }
 
 // Value implements the driver Valuer interface.
-func (l Long) Value() (driver.Value, error) {
-	if l == nil {
+func (c Chars) Value() (driver.Value, error) {
+	if c == nil {
 		return nil, nil
 	}
-	return l, nil
+	return c, nil
 }
