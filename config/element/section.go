@@ -40,7 +40,7 @@ type SectionSlice []*Section
 type Section struct {
 	// ID unique ID and merged with others. 1st part of the path.
 	ID    path.Route
-	Label text.Long `json:",omitempty"`
+	Label text.Chars `json:",omitempty"`
 	// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
 	Scope     scope.Perm `json:",omitempty"`
 	SortOrder int        `json:",omitempty"`
@@ -183,7 +183,7 @@ func (ss *SectionSlice) merge(s *Section) error {
 // FindByID returns a Section pointer or nil if not found. Please check for nil and do not a
 func (ss SectionSlice) FindByID(id path.Route) (*Section, error) {
 	for _, s := range ss {
-		if s != nil && s.ID.Equal(id) {
+		if s != nil && s.ID.Equal(id.Chars) {
 			return s, nil
 		}
 	}

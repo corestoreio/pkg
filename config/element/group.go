@@ -38,16 +38,16 @@ type GroupSlice []*Group
 type Group struct {
 	// ID unique ID and merged with others. 2nd part of the path.
 	ID      path.Route
-	Label   text.Long `json:",omitempty"`
-	Comment text.Long `json:",omitempty"`
+	Label   text.Chars `json:",omitempty"`
+	Comment text.Chars `json:",omitempty"`
 	// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
 	Scope     scope.Perm `json:",omitempty"`
 	SortOrder int        `json:",omitempty"`
 
-	HelpURL               text.Long `json:",omitempty"`
-	MoreURL               text.Long `json:",omitempty"`
-	DemoLink              text.Long `json:",omitempty"`
-	HideInSingleStoreMode bool      `json:",omitempty"`
+	HelpURL               text.Chars `json:",omitempty"`
+	MoreURL               text.Chars `json:",omitempty"`
+	DemoLink              text.Chars `json:",omitempty"`
+	HideInSingleStoreMode bool       `json:",omitempty"`
 
 	Fields FieldSlice
 	// Groups     GroupSlice @todo see recursive options <xs:element name="group"> in app/code/Magento/Config/etc/system_file.xsd
@@ -61,7 +61,7 @@ func NewGroupSlice(gs ...*Group) GroupSlice {
 // FindByID returns a Group pointer or nil if not found
 func (gs GroupSlice) FindByID(id path.Route) (*Group, error) {
 	for _, g := range gs {
-		if g != nil && g.ID.Equal(id) {
+		if g != nil && g.ID.Equal(id.Chars) {
 			return g, nil
 		}
 	}

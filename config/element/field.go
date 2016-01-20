@@ -43,11 +43,11 @@ type Field struct {
 	// Type is used for the front end on how to display a Field
 	Type FieldTyper `json:",omitempty"`
 	// Label a short label of the field
-	Label text.Long `json:",omitempty"`
+	Label text.Chars `json:",omitempty"`
 	// Comment can contain HTML
-	Comment text.Long `json:",omitempty"`
+	Comment text.Chars `json:",omitempty"`
 	// Tooltip used for frontend and can contain HTML
-	Tooltip text.Long `json:",omitempty"`
+	Tooltip text.Chars `json:",omitempty"`
 	// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
 	Scope scope.Perm `json:",omitempty"`
 	// SortOrder in ascending order
@@ -71,7 +71,7 @@ func NewFieldSlice(fs ...*Field) FieldSlice {
 // FindByID returns a Field pointer or nil if not found
 func (fs FieldSlice) FindByID(id path.Route) (*Field, error) {
 	for _, f := range fs {
-		if f != nil && f.ID.Equal(id) {
+		if f != nil && f.ID.Equal(id.Chars) {
 			return f, nil
 		}
 	}
