@@ -90,7 +90,7 @@ func (r Route) Validate() error {
 		return ErrRouteInvalidBytes
 	}
 
-	var sepCount, length int
+	var sepCount int
 	i := 0
 	for i < len(r.Chars) {
 		var ru rune
@@ -118,7 +118,6 @@ func (r Route) Validate() error {
 		if !ok {
 			return fmt.Errorf("This character %q is not allowed in Route %s", string(ru), r)
 		}
-		length++
 	}
 	return nil
 }
@@ -288,11 +287,10 @@ func (r Route) Part(pos int) (ret Route, err error) {
 		return
 	}
 
-	const realLevels = Levels - 1
-	var sepPos [realLevels]int
+	var sepPos [maxLevels]int
 	sp := 0
 	for i, b := range r.Chars {
-		if b == Separator && sp < realLevels {
+		if b == Separator && sp < maxLevels {
 			sepPos[sp] = i + 1 // positions of the separators in the slice
 			sp++
 		}
@@ -300,7 +298,11 @@ func (r Route) Part(pos int) (ret Route, err error) {
 
 	pos -= 1
 	min := 0
-	for i := 0; i < realLevels; i++ {
+	for i := 0; i < maxLevels; i++ {
+		if sepPos[i] == 0 { // no more separators found
+			ret.Chars = r.Chars[min:]
+			return
+		}
 		max := sepPos[i]
 		if i == pos {
 			ret.Chars = r.Chars[min : max-1]

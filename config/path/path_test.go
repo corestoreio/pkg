@@ -107,7 +107,7 @@ func TestPathNew(t *testing.T) {
 	}{
 		{path.NewRoute("ab/b\x80/cd"), scope.WebsiteID, 3, path.NewRoute("websites/3/ab/ba/cd"), path.ErrRouteInvalidBytes},
 		{path.NewRoute("ab/ba/cd"), scope.WebsiteID, 3, path.NewRoute("websites/3/ab/ba/cd"), nil},
-		{path.NewRoute("ad/ba/ca/sd"), scope.WebsiteID, 3, path.NewRoute("websites/3/a/b/c/d"), path.ErrIncorrectPath},
+		{path.NewRoute("ad/ba/ca/sd"), scope.WebsiteID, 3, path.NewRoute("websites/3/ad/ba/ca/sd"), nil},
 		{path.NewRoute("as/sb"), scope.WebsiteID, 3, path.NewRoute("websites/3/a/b/c/d"), path.ErrIncorrectPath},
 		{path.NewRoute("aa/bb/cc"), scope.GroupID, 3, path.NewRoute("default/0/aa/bb/cc"), nil},
 		{path.NewRoute("aa/bb/cc"), scope.StoreID, 3, path.NewRoute("stores/3/aa/bb/cc"), nil},
@@ -226,6 +226,7 @@ func TestSplitFQ(t *testing.T) {
 	}{
 		{"groups/1/catalog/frontend/list_allow_all", "default", 0, "", scope.ErrUnsupportedScope},
 		{"stores/7475/catalog/frontend/list_allow_all", scope.StrStores.String(), 7475, "catalog/frontend/list_allow_all", nil},
+		{"stores/4/system/full_page_cache/varnish/backend_port", scope.StrStores.String(), 4, "system/full_page_cache/varnish/backend_port", nil},
 		{"websites/1/catalog/frontend/list_allow_all", scope.StrWebsites.String(), 1, "catalog/frontend/list_allow_all", nil},
 		{"default/0/catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", nil},
 		{"default//catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", errors.New("strconv.ParseInt: parsing \"\\uf8ff\": invalid syntax")},
@@ -275,10 +276,11 @@ func TestPathIsValid(t *testing.T) {
 		{scope.DefaultID, 0, path.NewRoute("//"), path.ErrIncorrectPath},
 		{scope.DefaultID, 0, path.NewRoute("general/store_information/city"), nil},
 		{scope.DefaultID, 33, path.NewRoute("general/store_information/city"), nil},
+		{scope.WebsiteID, 33, path.NewRoute("system/full_page_cache/varnish/backend_port"), nil},
 		{scope.DefaultID, 0, path.NewRoute(""), path.ErrRouteEmpty},
 		{scope.DefaultID, 0, path.NewRoute("general/store_information"), path.ErrIncorrectPath},
 		////{path.NewRoute(path.MustNew("system/dev/debug").Bind(scope.WebsiteID, 22).String()), path.ErrIncorrectPath},
-		{scope.DefaultID, 0, path.NewRoute("groups/33/general/store_information/street"), path.ErrIncorrectPath},
+		{scope.DefaultID, 0, path.NewRoute("groups/33/general/store_information/street"), nil},
 		{scope.DefaultID, 0, path.NewRoute("groups/33"), path.ErrIncorrectPath},
 		{scope.DefaultID, 0, path.NewRoute("system/dEv/inv˚lid"), errors.New("This character \"˚\" is not allowed in Route system/dEv/inv˚lid")},
 		{scope.DefaultID, 0, path.NewRoute("system/dEv/inv'lid"), errors.New("This character \"'\" is not allowed in Route system/dEv/inv'lid")},
@@ -301,6 +303,7 @@ func TestPathIsValid(t *testing.T) {
 }
 
 func TestPathRouteIsValid(t *testing.T) {
+	t.Parallel()
 	p := path.Path{
 		Scope: scope.StoreID,
 		ID:    2,
@@ -373,7 +376,9 @@ func TestPathPartPosition(t *testing.T) {
 		{path.NewRoute("general/single_store_mode/enabled"), 3, "enabled", nil},
 		{path.NewRoute("general/single_store_mode/enabled"), -1, "", path.ErrIncorrectPosition},
 		{path.NewRoute("general/single_store_mode/enabled"), 5, "", path.ErrIncorrectPosition},
-		{path.NewRoute("general/single/store/website/group/mode/enabled/disabled/default"), 5, "", path.ErrIncorrectPath}, // too long not valid
+		{path.NewRoute("general/single/store/website/group/mode/enabled/disabled/default"), 5, "group", nil},
+		{path.NewRoute("system/full_page_cache/varnish/backend_port"), 3, "varnish", nil},
+		{path.NewRoute("system/full_page_cache/varnish/backend_port"), 4, "backend_port", nil},
 	}
 	for i, test := range tests {
 		p := path.Path{

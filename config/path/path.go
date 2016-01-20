@@ -29,6 +29,9 @@ import (
 // Like a/b/c for 3 parts. And 5 for a fully qualified path.
 const Levels int = 3
 
+// realLevels maximum numbers of supported separators. used as array initializer.
+const maxLevels int = 8 // up to 8. just a guess
+
 // Separator used in the database table core_config_data and in config.Service
 // to separate the path parts.
 const Separator byte = '/'
@@ -353,7 +356,7 @@ func (p Path) IsValid() error {
 	if p.RouteLevelValid {
 		return nil
 	}
-	if p.Route.Separators() != Levels-1 || p.Route.RuneCount() < 8 /*aa/bb/cc*/ {
+	if p.Route.Separators() < Levels-1 || p.Route.RuneCount() < 8 /*aa/bb/cc*/ {
 		return ErrIncorrectPath
 	}
 	return nil

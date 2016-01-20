@@ -36,6 +36,7 @@ var _ sql.Scanner = (*path.Route)(nil)
 var _ driver.Valuer = (*path.Route)(nil)
 
 func TestRouteEqual(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		a    path.Route
 		b    path.Route
@@ -133,6 +134,7 @@ func TestRouteLevel(t *testing.T) {
 		{path.NewRoute("general/single_store_mode/enabled"), -1, "general/single_store_mode/enabled"},
 		{path.NewRoute("general/single_store_mode/enabled"), 5, "general/single_store_mode/enabled"},
 		{path.NewRoute("general/single_store_mode/enabled"), 4, "general/single_store_mode/enabled"},
+		{path.NewRoute("system/full_page_cache/varnish/backend_port"), 3, "system/full_page_cache/varnish"},
 	}
 	for i, test := range tests {
 		r, err := test.have.Level(test.level)
@@ -246,9 +248,10 @@ func TestRoutePartPosition(t *testing.T) {
 		{path.NewRoute("general/single_store_mode/enabled"), 1, "general", nil},
 		{path.NewRoute("general/single_store_mode/enabled"), 2, "single_store_mode", nil},
 		{path.NewRoute("general/single_store_mode/enabled"), 3, "enabled", nil},
+		{path.NewRoute("system/full_page_cache/varnish/backend_port"), 4, "backend_port", nil},
 		{path.NewRoute("general/single_store_mode/enabled"), -1, "", path.ErrIncorrectPosition},
 		{path.NewRoute("general/single_store_mode/enabled"), 5, "", path.ErrIncorrectPosition},
-		{path.NewRoute("general/single/store/website/group/mode/enabled/disabled/default"), 5, "store/website/group/mode/enabled/disabled/default", nil},
+		{path.NewRoute("general/single/store/website/group/mode/enabled/disabled/default"), 5, "group", nil},
 	}
 	for i, test := range tests {
 		part, haveErr := test.have.Part(test.level)
@@ -294,6 +297,7 @@ func TestRouteValidate(t *testing.T) {
 		{path.NewRoute("//"), path.ErrIncorrectPath},
 		{path.NewRoute("general/store_information/city"), nil},
 		{path.NewRoute("general/store_information/city"), nil},
+		{path.NewRoute("system/full_page_cache/varnish/backend_port"), nil},
 		{path.NewRoute(""), path.ErrRouteEmpty},
 		{path.NewRoute("general/store_information"), nil},
 		////{path.NewRoute(path.MustNew("system/dev/debug").Bind(scope.WebsiteID, 22).String()), path.ErrIncorrectPath},
