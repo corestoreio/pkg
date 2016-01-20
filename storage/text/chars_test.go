@@ -36,7 +36,15 @@ var _ encoding.TextUnmarshaler = (*text.Chars)(nil)
 var _ sql.Scanner = (*text.Chars)(nil)
 var _ driver.Valuer = (*text.Chars)(nil)
 
+func TestBytes(t *testing.T) {
+	t.Parallel()
+	data := []byte(`D€ar eCömmerce World`)
+	txt := text.Chars(data)
+	assert.Exactly(t, data, txt.Bytes())
+}
+
 func TestEqual(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		a    text.Chars
 		b    text.Chars
@@ -87,6 +95,7 @@ func TestUnmarshalTextOk(t *testing.T) {
 }
 
 func TestScan(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		want    string
 		val     interface{}
@@ -116,7 +125,7 @@ func TestValue(t *testing.T) {
 	v, err := l1.Value()
 	assert.NoError(t, err)
 	assert.NotNil(t, v)
-	assert.Exactly(t, l1, v.(text.Chars))
+	assert.Exactly(t, l1.Bytes(), v.([]byte))
 
 	var l2 text.Chars
 	v, err = l2.Value()

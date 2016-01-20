@@ -22,15 +22,20 @@ import (
 )
 
 // Chars avoids storing long string values in Labels, Comments, Hints ...
-// in Section, Group or Field elements. A Chars can contain HTML.
+// in Section, Group, Field elements or etc. A Chars can contain HTML.
 // The byte slice should reduce copying long strings because we're only
 // copying the slice header. Danger! Other function may modify this
-// slice and we cannot prevent it. Use it wisely and also copy the data
+// slice and we cannot yet prevent it. Use it wisely and also copy the data
 // away if you want to modify it.
 type Chars []byte
 
 func (c Chars) String() string {
 	return string(c)
+}
+
+// Bytes converts the Chars to a byte slice ;-)
+func (c Chars) Bytes() []byte {
+	return c
 }
 
 // Equal returns true if r2 is equal to current Route. Does not consider
@@ -100,7 +105,7 @@ func (c Chars) Value() (driver.Value, error) {
 	if c == nil {
 		return nil, nil
 	}
-	return c, nil
+	return c.Bytes(), nil
 }
 
 const (
