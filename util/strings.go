@@ -15,7 +15,9 @@
 package util
 
 import (
+	"math/rand"
 	"strings"
+	"time"
 	"unicode"
 )
 
@@ -100,6 +102,19 @@ func CamelCaseToUnderscore(str string) string {
 	}
 
 	return string(newstr)
+}
+
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
+
+// RandAlnum returns a random string with a defined length n of alpha numerical characters.
+// This function does not use the global rand variable from math/rand package.
+func RandAlnum(n int) string {
+	rnd := rand.New(rand.NewSource(time.Now().UTC().UnixNano()))
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letters[rnd.Intn(len(letters))]
+	}
+	return string(b)
 }
 
 // Copyright (c) 2013 The Go Authors. All rights reserved.

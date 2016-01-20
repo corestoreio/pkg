@@ -1,0 +1,13 @@
+PASS
+BenchmarkMagentoVersionTrue-4       	   30000	     50483 ns/op	       0 B/op	       0 allocs/op
+BenchmarkMagentoVersionFalse-4      	   30000	     49047 ns/op	       0 B/op	       0 allocs/op
+BenchmarkStringSliceReduceContains-4	 1000000	      1243 ns/op	      64 B/op	       1 allocs/op
+BenchmarkStringSliceUnique-4        	10000000	       176 ns/op	     128 B/op	       1 allocs/op
+BenchmarkStringSliceSplitStringer8-4	 2000000	       663 ns/op	     240 B/op	       4 allocs/op
+BenchmarkStrIsAlNum-4               	20000000	       101 ns/op	       0 B/op	       0 allocs/op
+BenchmarkUnderscoreToCamelCase-4    	 1000000	      1428 ns/op	     192 B/op	       6 allocs/op
+BenchmarkCamelCaseToUnderscore-4    	 2000000	       791 ns/op	     288 B/op	       6 allocs/op
+BenchmarkCamelize-4                 	  500000	      2771 ns/op	     368 B/op	      15 allocs/op
+BenchmarkLintName-4                 	 1000000	      1429 ns/op	     144 B/op	       9 allocs/op
+BenchmarkRandAlnum_18-4             	  100000	     13222 ns/op	    5488 B/op	       3 allocs/op
+ok  	github.com/corestoreio/csfw/util	19.472s

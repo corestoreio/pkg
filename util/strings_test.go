@@ -21,7 +21,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// StrIsAlNum returns true if a string consists of characters a-zA-Z0-9_
 func TestStrIsAlNum(t *testing.T) {
 	tests := []struct {
 		have string
@@ -177,5 +176,17 @@ func BenchmarkLintName(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		benchCases = util.LintName("____ApiProxyId")
+	}
+}
+
+func TestRandAlnum(t *testing.T) {
+	s := util.RandAlnum(18)
+	assert.Len(t, s, 18)
+}
+
+func BenchmarkRandAlnum_18(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchCases = util.RandAlnum(18)
 	}
 }
