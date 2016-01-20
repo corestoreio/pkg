@@ -26,10 +26,17 @@ import (
 // ErrRouteInvalidBytes whenever a non-rune is detected.
 var ErrRouteInvalidBytes = errors.New("Route contains invalid bytes which are not runes.")
 
+// TODO(cs) immutable: maybe implement this
+// var ErrRouteChanged = errors.New("Route bytes changed")
+
 // Route consists of at least three parts each of them separated by a slash
 // (See constant Separator). A route can be seen as a tree.
 // Route example: catalog/product/scope or websites/1/catalog/product/scope
-type Route struct{ text.Chars }
+type Route struct {
+	// TODO(cs) immutable: maybe implement this
+	// org uint64 // fnv hash to check if the byte slice has changed
+	text.Chars
+}
 
 // NewRoute creates a new rout from sub paths resp. path parts.
 // Parts gets merged via Separator
@@ -54,6 +61,8 @@ func NewRoute(parts ...string) Route {
 			pos += copy(r.Chars[pos:pos+1], sSeparator)
 		}
 	}
+	// TODO(cs) immutable: maybe implement this
+	// r.org = r.Chars.Hash()
 	return r
 }
 
@@ -66,11 +75,13 @@ const rSeparator = rune(Separator)
 
 // Validate checks if the route contains valid runes and is not empty.
 func (r Route) Validate() error {
-
 	if r.IsEmpty() {
 		return ErrRouteEmpty
 	}
-
+	// TODO(cs) immutable: maybe implement this
+	//if r.org != r.Chars.Hash() {
+	//	return ErrRouteChanged
+	//}
 	if r.Separators() == len(r.Chars) {
 		return ErrIncorrectPath
 	}
