@@ -17,54 +17,63 @@ package path_test
 import (
 	"database/sql"
 	"database/sql/driver"
+	"strconv"
 	"testing"
 	"time"
 
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/util"
 	"github.com/stretchr/testify/assert"
 )
 
 var _ sql.Scanner = (*path.Route)(nil)
 var _ driver.Valuer = (*path.Route)(nil)
 
-func TestSQLType(t *testing.T) {
-	if false == testing.Short() {
-		t.Skip("Only run in short test mode ...")
+func TestIntegrationSQLType(t *testing.T) {
+	if _, err := csdb.GetDSNTest(); err == csdb.ErrDSNTestNotFound {
+		t.Skip(err)
 	}
-
 	dbCon := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbCon.Close()) }()
 
 	assert.NoError(t, tableCollection.Init(dbCon.NewSession()))
 
-	const testPath = `system/full_page_cache/varnish/backend_port`
-	var rTestPath = path.NewRoute(testPath)
+	var testPath = `system/full_page_cache/varnish/` + util.RandAlnum(5)
+	var insPath = path.NewRoute(testPath)
+	var insVal = time.Now().Unix()
 
-	var insertVal = time.Now().Unix()
-	ib := dbCon.NewSession().InsertInto(tableCollection.Name(tableIndexCoreConfigData))
-	ib.Pair("path", rTestPath)
-	ib.Pair("value", insertVal)
-
-	res, err := ib.Exec()
-
+	// just for testing !
+	stmt, err := dbCon.DB.Prepare("INSERT INTO `" + tableCollection.Name(tableIndexCoreConfigData) + "` (path,value) values (?,?)")
 	if false == assert.NoError(t, err) {
 		t.Fatal("Stopping ...")
 	}
+
+	// yay! writing bytes instead of boring slow strings!
+	res, err := stmt.Exec(insPath.Bytes(), insVal)
+	if false == assert.NoError(t, err) {
+		t.Fatal("Stopping ...")
+	}
+
 	id, err := res.LastInsertId()
 	assert.NoError(t, err)
 	assert.NotEmpty(t, id)
 
 	var ccds TableCoreConfigDataSlice
-
-	rows, err := csdb.LoadSlice(dbCon.NewSession(), tableCollection, tableIndexCoreConfigData, &ccds)
+	rows, err := csdb.LoadSlice(dbCon.NewSession(), tableCollection, tableIndexCoreConfigData, &ccds, func(sb *dbr.SelectBuilder) *dbr.SelectBuilder {
+		sb.Where(dbr.ConditionRaw("config_id=?", id))
+		return sb
+	})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, rows)
 
-	// test 1. write data 2. select this single row
-
-	for _, ccd := range ccds {
-
-		t.Logf("%#v", ccd)
+	if false == assert.Exactly(t, int(1), rows) {
+		t.Fatal("No rows loaded from the database!")
 	}
+
+	assert.Exactly(t, testPath, ccds[0].Path.String())
+	haveI64, err := strconv.ParseInt(ccds[0].Value.String, 10, 64)
+	assert.NoError(t, err)
+	assert.Exactly(t, insVal, haveI64)
 }
