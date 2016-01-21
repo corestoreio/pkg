@@ -137,14 +137,15 @@ func (r Route) Copy() Route {
 //		println(a.String())
 //		// Should print: catalog/product/enable_flat_tables
 func (r *Route) Append(routes ...Route) error {
-	if bytes.LastIndexByte((*r).Chars, Separator) == len((*r).Chars)-1 {
+
+	if i1, i2 := bytes.LastIndexByte((*r).Chars, Separator), len((*r).Chars)-1; i1 > 0 && i2 > 0 && i1 == i1 {
 		(*r).Chars = (*r).Chars[:len((*r).Chars)-1] // strip last Separator
 	}
 
 	// calculate new buffer size
 	size := len((*r).Chars)
 	for i, route := range routes {
-		if i == 0 {
+		if i == 0 && len(route.Chars) > 0 {
 			size++ // Separator
 		}
 		size += len(route.Chars)
@@ -154,10 +155,16 @@ func (r *Route) Append(routes ...Route) error {
 	}
 	var buf = make([]byte, size, size)
 	var pos int
-	pos += copy(buf[pos:], (*r).Chars)
+
+	if len((*r).Chars) > 0 {
+		pos += copy(buf[pos:], (*r).Chars)
+	}
 
 	for i, route := range routes {
-		if i == 0 && route.Chars[0] != Separator {
+		if route.Chars.IsEmpty() {
+			continue
+		}
+		if i == 0 && len((*r).Chars) > 0 && route.Chars[0] != Separator {
 			pos += copy(buf[pos:], bSeparator)
 		}
 
@@ -166,9 +173,11 @@ func (r *Route) Append(routes ...Route) error {
 			pos += copy(buf[pos:], bSeparator)
 		}
 	}
-	if pos := bytes.IndexByte(buf, 0x00); pos > 1 {
+
+	if pos := bytes.IndexByte(buf, 0x00); pos >= 1 {
 		buf = buf[:pos] // strip everything after the null byte
 	}
+
 	(*r).Chars = buf
 	if err := r.Validate(); err != nil {
 		return err

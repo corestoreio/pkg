@@ -66,6 +66,11 @@ func TestRouteAppend(t *testing.T) {
 		{path.NewRoute("aa/"), path.NewRoute("bbcc"), "aa/bbcc", nil},
 		{path.NewRoute("aa"), path.NewRoute("/bbcc"), "aa/bbcc", nil},
 		{path.NewRoute("aa"), path.NewRoute("/bb\x00cc"), "aa/bb", nil},
+		{path.NewRoute("ag"), path.NewRoute("b"), "ag/b", nil},
+		{path.NewRoute("c/"), path.NewRoute("/b"), "c/b", nil},
+		{path.NewRoute("d/"), path.NewRoute(""), "d", nil},
+		{path.NewRoute("e"), path.NewRoute(""), "e", nil},
+		{path.NewRoute(""), path.NewRoute("f"), "f", nil},
 	}
 	for i, test := range tests {
 		haveErr := test.a.Append(test.b)
