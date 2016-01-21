@@ -20,6 +20,7 @@ import (
 	"encoding"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"hash/fnv"
 	"testing"
 
@@ -27,13 +28,37 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// These checks if a type implements an interface belong into the test package
+// These checks, if a type implements an interface, belong into the test package
 // and not into its "main" package. Otherwise you would also compile each time
-// al the package with their interfaces.
+// all the packages with their interfaces, etc.
 var _ encoding.TextMarshaler = (*path.Route)(nil)
 var _ encoding.TextUnmarshaler = (*path.Route)(nil)
 var _ sql.Scanner = (*path.Route)(nil)
 var _ driver.Valuer = (*path.Route)(nil)
+var _ fmt.GoStringer = (*path.Route)(nil)
+var _ fmt.Stringer = (*path.Route)(nil)
+var _ path.Router = (*path.Route)(nil)
+
+func TestRouteRouter(t *testing.T) {
+	t.Parallel()
+	r := path.NewRoute("a/b/c")
+	assert.Exactly(t, r, r.Route())
+}
+
+func TestRouteGoString(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		have path.Route
+		want string
+	}{
+		{path.NewRoute("a"), "path.Route{Chars:[]byte(`a`)}"},
+		{path.NewRoute(""), "path.Route{}"},
+		{path.Route{}, "path.Route{}"},
+	}
+	for i, test := range tests {
+		assert.Exactly(t, test.want, test.have.GoString(), "Index %d", i)
+	}
+}
 
 func TestRouteEqual(t *testing.T) {
 	t.Parallel()

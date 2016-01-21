@@ -38,6 +38,13 @@ type Route struct {
 	text.Chars
 }
 
+// Router represents a crappy work around because of omitempty in json.Marshal
+// does not work with empty non-pointer structs.
+// See isEmptyValue() in encoding/json/encode.go around line 278.
+type Router interface {
+	Route() Route
+}
+
 // NewRoute creates a new rout from sub paths resp. path parts.
 // Parts gets merged via Separator
 func NewRoute(parts ...string) Route {
@@ -66,8 +73,16 @@ func NewRoute(parts ...string) Route {
 	return r
 }
 
+// Route implements the Router interface. See description of the Router iface.
+func (r Route) Route() Route {
+	return r
+}
+
 // GoString returns the Go type of the Route including the underlying bytes.
 func (r Route) GoString() string {
+	if r.IsEmpty() {
+		return "path.Route{}"
+	}
 	return fmt.Sprintf("path.Route{Chars:[]byte(`%s`)}", r)
 }
 
