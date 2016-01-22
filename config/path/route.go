@@ -32,7 +32,7 @@ var ErrRouteInvalidBytes = errors.New("Route contains invalid bytes which are no
 type Route struct {
 	// Sum32 is a fnv 32a hash for comparison and maybe later integrity checks.
 	// Sum32 will be automatically updated when using New*() functions.
-	// If you set yourself Chars then update Sum32 on your own.
+	// If you set yourself Chars then update Sum32 on your own with Hash32().
 	Sum32 uint32
 	text.Chars
 }
@@ -54,20 +54,26 @@ func NewRoute(parts ...string) Route {
 	}
 	l -= 1 // remove last slash
 
-	r := Route{}
 	if l < 1 {
-		return r
+		return Route{}
 	}
 
-	r.Chars = make(text.Chars, l, l)
+	c := make(text.Chars, l, l)
 	pos := 0
 	for i, p := range parts {
-		pos += copy(r.Chars[pos:pos+len(p)], p)
+		pos += copy(c[pos:pos+len(p)], p)
 		if i < len(parts)-1 {
-			pos += copy(r.Chars[pos:pos+1], sSeparator)
+			pos += copy(c[pos:pos+1], sSeparator)
 		}
 	}
-	r.updateSum32()
+	return newRoute(c)
+}
+
+func newRoute(b []byte) Route {
+	r := Route{
+		Chars: b,
+	}
+	r.Sum32 = r.Hash32()
 	return r
 }
 
@@ -142,11 +148,7 @@ func (r Route) Equal(b Route) bool {
 }
 
 func (r Route) Copy() Route {
-	nr := Route{
-		Chars: r.Chars.Copy(),
-	}
-	nr.updateSum32()
-	return nr
+	return newRoute(r.Chars.Copy())
 }
 
 // Append adds other partial routes with a Separator between. After the partial
@@ -210,21 +212,21 @@ func (r *Route) Append(routes ...Route) error {
 		buf = buf[:pos] // strip everything after the null byte
 	}
 
-	(*r).Chars = buf
+	(*r) = newRoute(buf)
 	if err := r.Validate(); err != nil {
 		return err
 	}
-	r.updateSum32()
 	return nil
 }
 
 // UnmarshalText transforms the text into a route with performed validation
 // checks.
-func (r *Route) UnmarshalText(text []byte) error {
-	if err := (*r).Chars.UnmarshalText(text); err != nil {
+func (r *Route) UnmarshalText(txt []byte) error {
+	var c text.Chars
+	if err := c.UnmarshalText(txt); err != nil {
 		return err
 	}
-	r.updateSum32()
+	(*r) = newRoute(c)
 	if err := r.Validate(); err != nil {
 		return err
 	}
@@ -263,11 +265,7 @@ func (r Route) Level(level int) (Route, error) {
 		pos += sc + 1
 
 		if i == level {
-			nr := Route{
-				Chars: r.Chars[:pos-1],
-			}
-			nr.updateSum32()
-			return nr, nil
+			return newRoute(r.Chars[:pos-1]), nil
 		}
 		i++
 	}
@@ -324,10 +322,6 @@ func (r Route) Hash32() uint32 {
 	return hash
 }
 
-func (r *Route) updateSum32() {
-	(*r).Sum32 = r.Hash32()
-}
-
 // Separators returns the number of separators
 func (r Route) Separators() (count int) {
 	for _, b := range r.Chars {
@@ -348,15 +342,14 @@ func (r Route) Separators() (count int) {
 //		Pos>3 => ErrIncorrectPosition
 // The returned Route slice is owned by Path. For further modifications you must
 // copy it via Route.Copy().
-func (r Route) Part(pos int) (ret Route, err error) {
+func (r Route) Part(pos int) (Route, error) {
 
-	if err = r.Validate(); err != nil {
-		return
+	if err := r.Validate(); err != nil {
+		return Route{}, err
 	}
 
 	if pos < 1 {
-		err = ErrIncorrectPosition
-		return
+		return Route{}, ErrIncorrectPosition
 	}
 
 	sepCount := r.Separators()
@@ -364,8 +357,7 @@ func (r Route) Part(pos int) (ret Route, err error) {
 		return r, nil
 	}
 	if pos > sepCount+1 {
-		err = ErrIncorrectPosition
-		return
+		return Route{}, ErrIncorrectPosition
 	}
 
 	var sepPos [maxLevels]int
@@ -381,17 +373,13 @@ func (r Route) Part(pos int) (ret Route, err error) {
 	min := 0
 	for i := 0; i < maxLevels; i++ {
 		if sepPos[i] == 0 { // no more separators found
-			ret.Chars = r.Chars[min:]
-			return
+			return newRoute(r.Chars[min:]), nil
 		}
 		max := sepPos[i]
 		if i == pos {
-			ret.Chars = r.Chars[min : max-1]
-			return
+			return newRoute(r.Chars[min : max-1]), nil
 		}
 		min = max
 	}
-	ret.Chars = r.Chars[min:]
-	ret.updateSum32()
-	return
+	return newRoute(r.Chars[min:]), nil
 }

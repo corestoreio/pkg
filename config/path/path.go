@@ -145,9 +145,9 @@ func (p Path) GoString() string {
 // zero then ID gets set to zero.
 // The returned Route slice is owned by Path. For further modifications you must
 // copy it via Route.Copy().
-func (p Path) FQ() (r Route, err error) {
-	if err = p.IsValid(); err != nil {
-		return
+func (p Path) FQ() (Route, error) {
+	if err := p.IsValid(); err != nil {
+		return Route{}, err
 	}
 
 	if (p.Scope == scope.DefaultID || p.Scope == scope.GroupID) && p.ID > 0 {
@@ -156,32 +156,25 @@ func (p Path) FQ() (r Route, err error) {
 	}
 
 	var buf bytes.Buffer
-	if _, err = buf.WriteString(p.StrScope()); err != nil {
-		err = errgo.Mask(err)
-		return
+	if _, err := buf.WriteString(p.StrScope()); err != nil {
+		return Route{}, errgo.Mask(err)
 	}
-	if err = buf.WriteByte(Separator); err != nil {
-		err = errgo.Mask(err)
-		return
+	if err := buf.WriteByte(Separator); err != nil {
+		return Route{}, errgo.Mask(err)
 	}
 	bufRaw := buf.Bytes()
 	bufRaw = strconv.AppendInt(bufRaw, p.ID, 10)
 	buf.Reset()
-	if _, err = buf.Write(bufRaw); err != nil {
-		err = errgo.Mask(err)
-		return
+	if _, err := buf.Write(bufRaw); err != nil {
+		return Route{}, errgo.Mask(err)
 	}
-	if err = buf.WriteByte(Separator); err != nil {
-		err = errgo.Mask(err)
-		return
+	if err := buf.WriteByte(Separator); err != nil {
+		return Route{}, errgo.Mask(err)
 	}
-	if _, err = buf.Write(p.Route.Chars); err != nil {
-		err = errgo.Mask(err)
-		return
+	if _, err := buf.Write(p.Route.Chars); err != nil {
+		return Route{}, errgo.Mask(err)
 	}
-	r.Chars = buf.Bytes()
-	r.updateSum32()
-	return
+	return newRoute(buf.Bytes()), nil
 }
 
 // Level joins a configuration path parts by the path separator PS.
