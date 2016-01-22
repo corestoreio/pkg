@@ -526,13 +526,13 @@ func TestSectionSliceFindFieldByPath(t *testing.T) {
 			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.GroupSlice{&element.Group{ID: path.NewRoute(`b`)}, &element.Group{ID: path.NewRoute(`bb`)}}}},
 			haveRoute: path.Route{},
 			wantFID:   "",
-			wantErr:   element.ErrGroupNotFound,
+			wantErr:   path.ErrRouteEmpty,
 		},
 		{
 			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.GroupSlice{&element.Group{ID: path.NewRoute(`b`)}, &element.Group{ID: path.NewRoute(`bb`)}}}},
 			haveRoute: path.NewRoute("a/b"),
 			wantFID:   "b",
-			wantErr:   path.ErrIncorrectPosition,
+			wantErr:   element.ErrFieldNotFound,
 		},
 		{
 			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.GroupSlice{&element.Group{ID: path.NewRoute(`b`)}, &element.Group{ID: path.NewRoute(`bb`)}}}},
@@ -544,7 +544,7 @@ func TestSectionSliceFindFieldByPath(t *testing.T) {
 			haveSlice: element.SectionSlice{nil},
 			haveRoute: path.Route{},
 			wantFID:   "b",
-			wantErr:   element.ErrGroupNotFound,
+			wantErr:   path.ErrRouteEmpty,
 		},
 		{
 			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.GroupSlice{nil, &element.Group{ID: path.NewRoute(`b`)}, &element.Group{ID: path.NewRoute(`bb`)}}}},

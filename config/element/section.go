@@ -196,38 +196,35 @@ func (ss SectionSlice) FindByID(id path.Route) (*Section, error) {
 // If two or more arguments are given then each argument will be treated as a path part.
 func (ss SectionSlice) FindGroupByPath(r path.Route) (*Group, error) {
 
-	l1, err := r.Part(1)
+	spl, err := r.Split()
 	if err != nil {
 		// debug log?
 		return nil, ErrGroupNotFound
 	}
-	cs, err := ss.FindByID(l1)
+	cs, err := ss.FindByID(spl[0])
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	l2, err := r.Part(2)
-	if err != nil {
-		// debug log?
-		return nil, ErrGroupNotFound
-	}
-
-	return cs.Groups.FindByID(l2)
+	return cs.Groups.FindByID(spl[1])
 }
 
 // FindFieldByPath searches for a field using all three path segments.
 // If one argument is given then considered as the full path e.g. a/b/c
 // If three arguments are given then each argument will be treated as a path part.
 func (ss SectionSlice) FindFieldByPath(r path.Route) (*Field, error) {
-	cg, err := ss.FindGroupByPath(r)
+	spl, err := r.Split()
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-
-	fID, err := r.Part(3)
+	sec, err := ss.FindByID(spl[0])
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	return cg.Fields.FindByID(fID)
+	cg, err := sec.Groups.FindByID(spl[1])
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	return cg.Fields.FindByID(spl[2])
 }
 
 // Append adds 0..n *Section. Not thread safe.
