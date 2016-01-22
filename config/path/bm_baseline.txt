@@ -1,13 +1,14 @@
 PASS
-BenchmarkNewByParts-4    	 3000000	       470 ns/op	      48 B/op	       1 allocs/op
-BenchmarkFQ-4            	 3000000	       575 ns/op	     112 B/op	       1 allocs/op
-BenchmarkSplitFQ-4       	10000000	       195 ns/op	      32 B/op	       1 allocs/op
-BenchmarkRouteAppend-4   	 3000000	       517 ns/op	      64 B/op	       2 allocs/op
-BenchmarkRouteLevel_One-4	20000000	       115 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteLevel_Two-4	10000000	       150 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteLevel_All-4	20000000	        96.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteHash-4     	 5000000	       291 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteHash32-4   	50000000	        38.8 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRoutePart-4     	 5000000	       275 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteValidate-4 	20000000	        92.8 ns/op	       0 B/op	       0 allocs/op
-ok  	github.com/corestoreio/csfw/config/path	21.904s
+BenchmarkNewByParts-4    	 3000000	       463 ns/op	      48 B/op	       1 allocs/op
+BenchmarkFQ-4            	 3000000	       574 ns/op	     112 B/op	       1 allocs/op
+BenchmarkSplitFQ-4       	 5000000	       271 ns/op	      32 B/op	       1 allocs/op
+BenchmarkRouteAppend-4   	 3000000	       476 ns/op	      64 B/op	       2 allocs/op
+BenchmarkRouteLevel_One-4	20000000	       114 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteLevel_Two-4	10000000	       146 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteLevel_All-4	20000000	        93.1 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteHash-4     	 5000000	       289 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteHash32-4   	50000000	        37.7 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRoutePart-4     	 5000000	       268 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteValidate-4 	20000000	        90.3 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteSplit-4    	 5000000	       289 ns/op	       0 B/op	       0 allocs/op
+ok  	github.com/corestoreio/csfw/config/path	22.645s

@@ -427,23 +427,47 @@ func BenchmarkRouteValidate(b *testing.B) {
 	}
 }
 
-//
-//var benchmarkRouteEqual bool
-//
-//func BenchmarkRouteEqualTrue(b *testing.B) {
-//	have := path.NewRoute("general/single_store_mode/enabled")
-//	want := uint32(1644245266)
-//
-//	var err error
-//	b.ReportAllocs()
-//	b.ResetTimer()
-//	for i := 0; i < b.N; i++ {
-//		benchmarkRouteHash, err = have.Hash(3)
-//		if err != nil {
-//			b.Error(err)
-//		}
-//		if want != benchmarkRouteHash {
-//			b.Errorf("Want: %d; Have: %d", want, benchmarkRouteHash)
-//		}
-//	}
-//}
+func TestRouteSplit(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		have     path.Route
+		wantPart []string
+		wantErr  error
+	}{
+		{path.NewRoute("general/single_\x80store_mode"), nil, path.ErrRouteInvalidBytes},
+		{path.NewRoute("general"), nil, path.ErrIncorrectPath},
+		{path.NewRoute("general/single_store_mode/enabled"), []string{"general", "single_store_mode", "enabled"}, nil},
+		{path.NewRoute("system/full_page_cache/varnish/backend_port"), []string{"system", "full_page_cache", "varnish/backend_port"}, nil},
+	}
+	for i, test := range tests {
+		sps, haveErr := test.have.Split()
+		if test.wantErr != nil {
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+			assert.Nil(t, sps[0].Chars, "Index %d", i)
+			assert.Nil(t, sps[1].Chars, "Index %d", i)
+			continue
+		}
+		for i, wantPart := range test.wantPart {
+			assert.Exactly(t, wantPart, sps[i].String(), "Index %d", i)
+		}
+	}
+}
+
+var benchmarkRouteSplit [path.Levels]path.Route
+
+// BenchmarkRouteSplit-4    	 5000000	       286 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkRouteSplit(b *testing.B) {
+	have := path.NewRoute("general/single_store_mode/enabled")
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var err error
+		benchmarkRouteSplit, err = have.Split()
+		if err != nil {
+			b.Error(err)
+		}
+		if benchmarkRouteSplit[1].Chars == nil {
+			b.Error("benchmarkRouteSplit[1] is nil! Unexpected")
+		}
+	}
+}

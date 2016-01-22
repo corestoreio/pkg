@@ -257,7 +257,7 @@ func SplitFQ(fqPath string) (Path, error) {
 	scopeID, err := strconv.ParseInt(fqPath[:fi], 10, 64)
 
 	return Path{
-		Route: Route{Chars: []byte(fqPath[fi+1:])},
+		Route: NewRoute(fqPath[fi+1:]),
 		Scope: scope.FromString(scopeStr),
 		ID:    scopeID,
 	}, err

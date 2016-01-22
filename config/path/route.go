@@ -383,3 +383,36 @@ func (r Route) Part(pos int) (Route, error) {
 	}
 	return newRoute(r.Chars[min:]), nil
 }
+
+// Split splits the route into its three parts
+func (r Route) Split() (ret [Levels]Route, err error) {
+	if err = r.Validate(); err != nil {
+		return
+	}
+	const sepCount = Levels - 1 // only two separators supported
+	var sepPos [sepCount]int
+	sp := 0
+	for i, b := range r.Chars {
+		if b == Separator && sp < sepCount {
+			sepPos[sp] = i // positions of the separators in the slice
+			sp++
+		}
+	}
+	if sp < 1 {
+		err = ErrIncorrectPath
+		return
+	}
+
+	min := 0
+	for i := 0; i < Levels; i++ {
+		var max int
+		if i < sepCount {
+			max = sepPos[i]
+		} else {
+			max = len(r.Chars)
+		}
+		ret[i] = newRoute(r.Chars[min:max])
+		min = max + 1
+	}
+	return
+}
