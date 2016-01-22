@@ -184,7 +184,7 @@ func (ss *SectionSlice) merge(s *Section) error {
 // FindByID returns a Section pointer or nil if not found. Please check for nil and do not a
 func (ss SectionSlice) FindByID(id path.Route) (*Section, error) {
 	for _, s := range ss {
-		if s != nil && s.ID.Equal(id.Chars) {
+		if s != nil && s.ID.Sum32 == id.Sum32 {
 			return s, nil
 		}
 	}

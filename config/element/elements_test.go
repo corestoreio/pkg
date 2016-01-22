@@ -467,31 +467,31 @@ func TestSectionSliceFindGroupByPath(t *testing.T) {
 		wantGID   string
 		wantErr   error
 	}{
-		0: {
+		{
 			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.NewGroupSlice(&element.Group{ID: path.NewRoute(`b`)}, &element.Group{ID: path.NewRoute(`bb`)})}},
 			haveRoute: path.NewRoute("a/b"),
 			wantGID:   "b",
 			wantErr:   nil,
 		},
-		1: {
+		{
 			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.NewGroupSlice(&element.Group{ID: path.NewRoute(`b`)}, &element.Group{ID: path.NewRoute(`bb`)})}},
 			haveRoute: path.NewRoute("a/bc"),
 			wantGID:   "b",
 			wantErr:   element.ErrGroupNotFound,
 		},
-		2: {
+		{
 			haveSlice: element.SectionSlice{},
 			haveRoute: path.Route{},
 			wantGID:   "b",
 			wantErr:   element.ErrGroupNotFound,
 		},
-		3: {
+		{
 			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.GroupSlice{&element.Group{ID: path.NewRoute(`b`)}, &element.Group{ID: path.NewRoute(`bb`)}}}},
 			haveRoute: path.NewRoute("a", "bb", "cc"),
 			wantGID:   "bb",
 			wantErr:   nil,
 		},
-		4: {
+		{
 			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.GroupSlice{&element.Group{ID: path.NewRoute(`b`)}, &element.Group{ID: path.NewRoute(`bb`)}}}},
 			haveRoute: path.NewRoute("xa", "bb", "cc"),
 			wantGID:   "",

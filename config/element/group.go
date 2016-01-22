@@ -61,7 +61,7 @@ func NewGroupSlice(gs ...*Group) GroupSlice {
 // FindByID returns a Group pointer or nil if not found
 func (gs GroupSlice) FindByID(id path.Route) (*Group, error) {
 	for _, g := range gs {
-		if g != nil && g.ID.Equal(id.Chars) {
+		if g != nil && g.ID.Sum32 == id.Sum32 {
 			return g, nil
 		}
 	}

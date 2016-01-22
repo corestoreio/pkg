@@ -30,6 +30,7 @@ func init() {
 // BenchmarkSectionSliceValidate   	    1000	   1636547 ns/op	  158400 B/op	    3213 allocs/op => Go 1.5.0
 // BenchmarkSectionSliceValidate   	    1000	   1766386 ns/op	  102783 B/op	    1607 allocs/op => Go 1.5.2
 // BenchmarkSectionSliceValidate   	    2000	   1092104 ns/op	  152864 B/op	    2410 allocs/op => path.Routes
+// BenchmarkSectionSliceValidate   	    2000	   1123606 ns/op	  191408 B/op	    2410 allocs/op => path.Routes with Sum32
 func BenchmarkSectionSliceValidate(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -45,6 +46,7 @@ var bsstj string
 // BenchmarkSectionSliceToJson 	     500	   3609676 ns/op	  914083 B/op	   14943 allocs/op => Go 1.5.0
 // BenchmarkSectionSliceToJson 	     500	   3580314 ns/op	  895303 B/op	   14620 allocs/op => Go 1.5.2
 // BenchmarkSectionSliceToJson	     500	   3844865 ns/op	  874724 B/op	   16505 allocs/op => path.Routes
+// BenchmarkSectionSliceToJson 	     500	   3728585 ns/op	  875460 B/op	   16505 allocs/op
 func BenchmarkSectionSliceToJson(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -60,6 +62,7 @@ var sectionSliceFindFieldByPath1 *element.Field
 // BenchmarkSectionSliceFindFieldByPath1	20000000	       84.1 ns/op	       0 B/op	       0 allocs/op => Go 1.5.0
 // BenchmarkSectionSliceFindFieldByPath1	20000000	        86.6 ns/op	       0 B/op	       0 allocs/op => Go 1.5.2
 // BenchmarkSectionSliceFindFieldByPath1	 2000000	       890 ns/op	       0 B/op	       0 allocs/op => path.Routes
+// BenchmarkSectionSliceFindFieldByPath1-4	 2000000	       751 ns/op	       0 B/op	       0 allocs/op => path.Routes with Sum32
 func BenchmarkSectionSliceFindFieldByPath1(b *testing.B) {
 	r := path.NewRoute("carriers", "usps", "gateway_url")
 	b.ReportAllocs()
@@ -77,7 +80,8 @@ func BenchmarkSectionSliceFindFieldByPath1(b *testing.B) {
 // BenchmarkSectionSliceFindFieldByPath5	 2000000	       587 ns/op	       0 B/op	       0 allocs/op => Go 1.4.2
 // BenchmarkSectionSliceFindFieldByPath5	 3000000	       565 ns/op	       0 B/op	       0 allocs/op => Go 1.5.0
 // BenchmarkSectionSliceFindFieldByPath5	 3000000	       564 ns/op	       0 B/op	       0 allocs/op => Go 1.5.2
-// BenchmarkSectionSliceFindFieldByPath5	  300000	      6077 ns/op	       0 B/op	       0 allocs/op
+// BenchmarkSectionSliceFindFieldByPath5	  300000	      6077 ns/op	       0 B/op	       0 allocs/op => path.Routes
+// BenchmarkSectionSliceFindFieldByPath5-4	  300000	      4580 ns/op	       0 B/op	       0 allocs/op => path.Routes with Sum32
 func BenchmarkSectionSliceFindFieldByPath5(b *testing.B) {
 	var routePaths = []path.Route{
 		path.NewRoute("carriers", "usps", "gateway_url"),
