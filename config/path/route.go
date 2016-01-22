@@ -333,7 +333,7 @@ func (r Route) Separators() (count int) {
 }
 
 // Part returns the route part on the desired position. The Route gets validated
-// before extracting the part.
+// before extracting the part. Does not run Validate()
 //		Have Route: general/single_store_mode/enabled
 //		Pos<1 => ErrIncorrectPosition
 //		Pos=1 => general
@@ -343,10 +343,6 @@ func (r Route) Separators() (count int) {
 // The returned Route slice is owned by Path. For further modifications you must
 // copy it via Route.Copy().
 func (r Route) Part(pos int) (Route, error) {
-
-	if err := r.Validate(); err != nil {
-		return Route{}, err
-	}
 
 	if pos < 1 {
 		return Route{}, ErrIncorrectPosition
@@ -384,11 +380,14 @@ func (r Route) Part(pos int) (Route, error) {
 	return newRoute(r.Chars[min:]), nil
 }
 
-// Split splits the route into its three parts
+// Split splits the route into its three parts. Does not run Validate()
+// Example:
+// 		routes := path.NewRoute("aa/bb/cc")
+//		routes[0].String() == "aa"
+//		routes[1].String() == "bb"
+//		routes[2].String() == "cc"
 func (r Route) Split() (ret [Levels]Route, err error) {
-	if err = r.Validate(); err != nil {
-		return
-	}
+
 	const sepCount = Levels - 1 // only two separators supported
 	var sepPos [sepCount]int
 	sp := 0
@@ -406,12 +405,15 @@ func (r Route) Split() (ret [Levels]Route, err error) {
 	min := 0
 	for i := 0; i < Levels; i++ {
 		var max int
-		if i < sepCount {
+		if i < sepCount && sepPos[i] > 0 {
 			max = sepPos[i]
 		} else {
 			max = len(r.Chars)
 		}
 		ret[i] = newRoute(r.Chars[min:max])
+		if i < sepCount && sepPos[i] == 0 {
+			return
+		}
 		min = max + 1
 	}
 	return

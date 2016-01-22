@@ -370,7 +370,7 @@ func TestPathPartPosition(t *testing.T) {
 		wantPart string
 		wantErr  error
 	}{
-		{path.NewRoute("general/single_\x80store_mode/enabled"), 0, "", path.ErrRouteInvalidBytes},
+		{path.NewRoute("general/single_\x80store_mode/enabled"), 0, "", path.ErrIncorrectPosition},
 		{path.NewRoute("general/single_store_mode/enabled"), 0, "", path.ErrIncorrectPosition},
 		{path.NewRoute("general/single_store_mode/enabled"), 1, "general", nil},
 		{path.NewRoute("general/single_store_mode/enabled"), 2, "single_store_mode", nil},
