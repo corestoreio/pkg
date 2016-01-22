@@ -41,7 +41,7 @@ var configStructure = element.MustNewConfiguration(
 						// Path: `web/cors/exposed_headers`,
 						ID:        "exposed_headers",
 						Label:     `Exposed Headers`,
-						Comment:   element.LongText(`Indicates which headers are safe to expose to the API of a CORS API specification. Separate via line break`),
+						Comment:   text.Long(`Indicates which headers are safe to expose to the API of a CORS API specification. Separate via line break`),
 						Type:      element.TypeTextarea,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
@@ -161,5 +161,5 @@ func TestBasePathInScope(t *testing.T) {
 func TestFQPathInt64(t *testing.T) {
 	t.Parallel()
 	p := NewPath("a/b/c")
-	assert.Exactly(t, scope.StrStores.FQPathInt64(4, "a/b/c"), p.FQPathInt64(scope.StrStores, 4))
+	assert.Exactly(t, scope.StrStores.FQPathInt64(4, "a/b/c"), p.FQ(scope.StrStores, 4))
 }

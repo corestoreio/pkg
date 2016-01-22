@@ -19,6 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cast"
@@ -102,7 +103,7 @@ func WithSourceByInt(vli source.Ints) Option {
 // basePath defines the path in the "core_config_data" table like a/b/c. All other
 // types in this package inherits from this path type.
 type basePath struct {
-	string // contains the path
+	r path.Route // contains the path like web/cors/exposed_headers
 
 	// ConfigStructure contains the whole package configuration which is used
 	// for scope permission checks and retrieving the default value. A nil
@@ -117,9 +118,9 @@ type basePath struct {
 }
 
 // NewPath creates a new basePath type
-func NewPath(path string, opts ...Option) basePath {
+func NewPath(p string, opts ...Option) basePath {
 	b := basePath{
-		string: path,
+		r: path.Route(p),
 	}
 	(&b).Option(opts...)
 	return b
@@ -137,7 +138,7 @@ func (p *basePath) Option(opts ...Option) (previous Option) {
 // has changed. Checks if the Scope matches as defined in the non-nil ConfigStructure.
 func (p basePath) Write(w config.Writer, v interface{}, s scope.Scope, id int64) error {
 	if p.ConfigStructure != nil {
-		f, err := p.ConfigStructure.FindFieldByPath(p.string)
+		f, err := p.ConfigStructure.FindFieldByPath(p.r)
 		if err != nil {
 			return errgo.Mask(err)
 		}
@@ -145,12 +146,21 @@ func (p basePath) Write(w config.Writer, v interface{}, s scope.Scope, id int64)
 			return errgo.Newf("Scope permission insufficient: Have '%s'; Want '%s'", s, f.Scope)
 		}
 	}
-	return w.Write(config.Path(p.string), config.Value(v), config.Scope(s, id))
+	pp, err := path.New(p.r)
+	if err != nil {
+		return errgo.Mask(err)
+	}
+	return w.Write(config.Path(pp.Bind(s, id)), config.Value(v))
 }
 
 // String returns the path
 func (p basePath) String() string {
-	return p.string
+	return p.r.String()
+}
+
+// Route returns a copy of the underlying route.
+func (p basePath) Route() path.Route {
+	return p.r.Copy()
 }
 
 // InScope checks if a field from a path is allowed for current scope.
@@ -170,17 +180,17 @@ func (p basePath) Options() source.Slice {
 	return p.Source
 }
 
-// FQPathInt64 generates a fully qualified configuration path.
+// FQ generates a fully qualified configuration path.
 // Example: general/country/allow would transform with StrScope scope.StrStores
 // and storeID e.g. 4 into: stores/4/general/country/allow
-func (p basePath) FQPathInt64(strScope scope.StrScope, scopeID int64) string {
-	return strScope.FQPathInt64(scopeID, p.string)
+func (p basePath) FQ(strScope scope.StrScope, scopeID int64) string {
+	return path.MustNew(p.r).BindStr(strScope, scopeID).String()
 }
 
 // field searches for the field in a SectionSlice and checks if the scope in
 // ScopedGetter is sufficient.
 func (p basePath) field(sg scope.Scoper) (f *element.Field, err error) {
-	f, err = p.ConfigStructure.FindFieldByPath(p.string)
+	f, err = p.ConfigStructure.FindFieldByPath(p.r)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
@@ -199,14 +209,14 @@ func (p basePath) lookupString(sg config.ScopedGetter) (v string, err error) {
 	if f, errF := p.field(sg); errF == nil {
 		v, err = cast.ToStringE(f.Default)
 	} else if PkgLog.IsDebug() {
-		PkgLog.Debug("model.basePath.lookupString.field", "err", errF, "path", p.string)
+		PkgLog.Debug("model.basePath.lookupString.field", "err", errF, "path", p.r.String())
 	}
 
-	if val, errSG := sg.String(p.string); errSG == nil {
+	if val, errSG := sg.String(p.r); errSG == nil {
 		v = val
 	} else if PkgLog.IsDebug() {
 		// errSG is usually a key not found error, but that one is uninteresting
-		PkgLog.Debug("model.basePath.lookupString.ScopedGetter.String", "err", errSG, "path", p.string, "previousErr", err)
+		PkgLog.Debug("model.basePath.lookupString.ScopedGetter.String", "err", errSG, "path", p.r.String(), "previousErr", err)
 	}
 	return
 }
@@ -232,12 +242,12 @@ func (p basePath) lookupInt(sg config.ScopedGetter) (v int, err error) {
 		return
 	}
 
-	if val, errSG := sg.Int(p.string); errSG == nil {
+	if val, errSG := sg.Int(p.r); errSG == nil {
 		v = val
 	} else {
 		// errSG is usually a key not found error, but that one is uninteresting
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("model.path.lookupString.ScopedGetter.Int", "err", errSG, "path", p.string, "previousErr", err)
+			PkgLog.Debug("model.path.lookupString.ScopedGetter.Int", "err", errSG, "path", p.r.String(), "previousErr", err)
 		}
 	}
 	return
@@ -264,12 +274,12 @@ func (p basePath) lookupFloat64(sg config.ScopedGetter) (v float64, err error) {
 		return
 	}
 
-	if val, errSG := sg.Float64(p.string); errSG == nil {
+	if val, errSG := sg.Float64(p.r); errSG == nil {
 		v = val
 	} else {
 		// errSG is usually a key not found error, but that one is uninteresting
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("model.path.lookupString.ScopedGetter.Float64", "err", errSG, "path", p.string, "previousErr", err)
+			PkgLog.Debug("model.path.lookupString.ScopedGetter.Float64", "err", errSG, "path", p.r.String(), "previousErr", err)
 		}
 	}
 	return
@@ -296,12 +306,12 @@ func (p basePath) lookupBool(sg config.ScopedGetter) (v bool, err error) {
 		return
 	}
 
-	if val, errSG := sg.Bool(p.string); errSG == nil {
+	if val, errSG := sg.Bool(p.r); errSG == nil {
 		v = val
 	} else {
 		// errSG is usually a key not found error, but that one is uninteresting
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("model.path.lookupString.ScopedGetter.Bool", "err", errSG, "path", p.string, "previousErr", err)
+			PkgLog.Debug("model.path.lookupString.ScopedGetter.Bool", "err", errSG, "path", p.r.String(), "previousErr", err)
 		}
 	}
 
