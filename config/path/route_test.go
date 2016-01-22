@@ -110,9 +110,28 @@ func TestRouteAppend(t *testing.T) {
 
 func TestRouteVariadicAppend(t *testing.T) {
 	t.Parallel()
-	p := path.NewRoute("aa")
-	assert.NoError(t, p.Append(path.NewRoute("bb"), path.NewRoute("cc"), path.NewRoute("dd")))
-	assert.Exactly(t, "aa/bb/cc/dd", p.String())
+
+	tests := []struct {
+		a       path.Route
+		routes  []path.Route
+		want    string
+		wantErr error
+	}{
+		{path.NewRoute("aa"), []path.Route{path.NewRoute("bb"), path.NewRoute("cc"), path.NewRoute("dd")}, "aa/bb/cc/dd", nil},
+		{path.NewRoute("aa"), []path.Route{{}, {}, {Chars: []byte(`cb`)}}, "aa/cb", nil},
+		{path.Route{}, []path.Route{{}, {}, {Chars: []byte(`cb`)}}, "cb", nil},
+		{path.Route{}, []path.Route{{}, {}, {}}, "", path.ErrRouteEmpty},
+	}
+	for i, test := range tests {
+		haveErr := test.a.Append(test.routes...)
+		if test.wantErr != nil {
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+			continue
+		}
+		assert.NoError(t, haveErr, "Index %d", i)
+		assert.Exactly(t, test.want, test.a.String(), "Index %d", i)
+	}
+
 }
 
 var benchmarkRouteAppendWant = path.NewRoute("general/single_store_mode/enabled")

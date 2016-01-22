@@ -159,34 +159,43 @@ func (r *Route) Append(routes ...Route) error {
 
 	// calculate new buffer size
 	size := len((*r).Chars)
-	for i, route := range routes {
-		if i == 0 && len(route.Chars) > 0 {
+
+	rsLen := len(routes) - 1
+	i := 0
+	for _, route := range routes {
+		if route.Chars.IsEmpty() {
+			rsLen -= 1
+			continue
+		}
+		if i == 0 {
 			size++ // Separator
 		}
 		size += len(route.Chars)
-		if i < len(routes)-1 {
+		if len(route.Chars) > 0 && i < len(routes)-1 {
 			size++ // Separator
 		}
+		i++
 	}
+
 	var buf = make([]byte, size, size)
 	var pos int
-
 	if len((*r).Chars) > 0 {
 		pos += copy(buf[pos:], (*r).Chars)
 	}
 
-	for i, route := range routes {
+	i = 0
+	for _, route := range routes {
 		if route.Chars.IsEmpty() {
 			continue
 		}
 		if i == 0 && len((*r).Chars) > 0 && route.Chars[0] != Separator {
 			pos += copy(buf[pos:], bSeparator)
 		}
-
 		pos += copy(buf[pos:], route.Chars)
-		if i < len(routes)-1 {
+		if i < rsLen {
 			pos += copy(buf[pos:], bSeparator)
 		}
+		i++
 	}
 
 	if pos := bytes.IndexByte(buf, 0x00); pos >= 1 {
