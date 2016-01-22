@@ -12,15 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package element
+package element_test
 
-// Sectioner at the moment only for testing
-type Sectioner interface {
-	// Defaults generates the default configuration from all fields.
-	// Key is the path and value the value.
-	Defaults() (DefaultMap, error)
-}
+import "github.com/corestoreio/csfw/config/element"
 
-// DefaultMap contains the default aka global configuration of a package.
-// string is the fully qualified configuration path of scope default.
-type DefaultMap map[string]interface{}
+var _ error = (*element.FieldError)(nil)
+var _ element.FieldTyper = (*element.FieldType)(nil)

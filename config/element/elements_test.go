@@ -25,6 +25,7 @@ import (
 )
 
 func TestNewConfiguration(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have    []*element.Section
 		wantErr string
@@ -109,6 +110,7 @@ func TestNewConfiguration(t *testing.T) {
 }
 
 func TestSectionSliceDefaults(t *testing.T) {
+	t.Parallel()
 	pkgCfg := element.MustNewConfiguration(
 		&element.Section{
 			ID: path.NewRoute(`contact`),
@@ -147,15 +149,17 @@ func TestSectionSliceDefaults(t *testing.T) {
 		},
 	)
 
+	dm, err := pkgCfg.Defaults()
+	assert.NoError(t, err)
 	assert.Exactly(
 		t,
 		element.DefaultMap{"default/0/contact/email/sender_email_identity": 2.718281828459045, "default/0/contact/email/email_template": 4711, "default/0/contact/contact/enabled": true, "default/0/contact/email/recipient_email": "hello@example.com"},
-		pkgCfg.Defaults(),
+		dm,
 	)
 }
 
 func TestSectionSliceMerge(t *testing.T) {
-
+	t.Parallel()
 	// Got stuck in comparing JSON?
 	// Use a Webservice to compare the JSON output!
 
@@ -399,7 +403,7 @@ func TestSectionSliceMerge(t *testing.T) {
 }
 
 func TestGroupSliceMerge(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		have    []*element.Group
 		wantErr error
@@ -456,6 +460,7 @@ func TestGroupSliceMerge(t *testing.T) {
 }
 
 func TestSectionSliceFindGroupByPath(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		haveSlice element.SectionSlice
 		haveRoute path.Route
@@ -500,58 +505,65 @@ func TestSectionSliceFindGroupByPath(t *testing.T) {
 			assert.Error(t, haveErr, "Index %d", i)
 			assert.Nil(t, haveGroup)
 			assert.EqualError(t, haveErr, test.wantErr.Error())
-		} else {
-			assert.NoError(t, haveErr, "Index %d", i)
-			assert.NotNil(t, haveGroup, "Index %d", i)
-			assert.Exactly(t, test.wantGID, haveGroup.ID)
+			continue
 		}
+
+		assert.NoError(t, haveErr, "Index %d", i)
+		assert.NotNil(t, haveGroup, "Index %d", i)
+		assert.Exactly(t, test.wantGID, haveGroup.ID.String())
 	}
 }
 
 func TestSectionSliceFindFieldByPath(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		haveSlice element.SectionSlice
 		haveRoute path.Route
 		wantFID   string
 		wantErr   error
 	}{
-		0: {
+		{
+			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.GroupSlice{&element.Group{ID: path.NewRoute(`b`)}, &element.Group{ID: path.NewRoute(`bb`)}}}},
+			haveRoute: path.Route{},
+			wantFID:   "",
+			wantErr:   element.ErrGroupNotFound,
+		},
+		{
 			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.GroupSlice{&element.Group{ID: path.NewRoute(`b`)}, &element.Group{ID: path.NewRoute(`bb`)}}}},
 			haveRoute: path.NewRoute("a/b"),
 			wantFID:   "b",
-			wantErr:   element.ErrFieldNotFound,
+			wantErr:   path.ErrIncorrectPosition,
 		},
-		1: {
+		{
 			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.GroupSlice{&element.Group{ID: path.NewRoute(`b`)}, &element.Group{ID: path.NewRoute(`bb`)}}}},
 			haveRoute: path.NewRoute("a/bc"),
 			wantFID:   "b",
-			wantErr:   element.ErrFieldNotFound,
+			wantErr:   element.ErrGroupNotFound,
 		},
-		2: {
+		{
 			haveSlice: element.SectionSlice{nil},
 			haveRoute: path.Route{},
 			wantFID:   "b",
-			wantErr:   element.ErrFieldNotFound,
+			wantErr:   element.ErrGroupNotFound,
 		},
-		3: {
+		{
 			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.GroupSlice{nil, &element.Group{ID: path.NewRoute(`b`)}, &element.Group{ID: path.NewRoute(`bb`)}}}},
 			haveRoute: path.NewRoute("a", "bb", "cc"),
 			wantFID:   "bb",
 			wantErr:   element.ErrFieldNotFound,
 		},
-		4: {
+		{
 			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.GroupSlice{&element.Group{ID: path.NewRoute(`b`)}, &element.Group{ID: path.NewRoute(`bb`)}}}},
 			haveRoute: path.NewRoute("xa", "bb", "cc"),
 			wantFID:   "",
 			wantErr:   element.ErrSectionNotFound,
 		},
-		5: {
-			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.GroupSlice{&element.Group{ID: path.NewRoute(`b`), Fields: element.FieldSlice{
-				&element.Field{ID: path.NewRoute(`c`)}, nil,
+		{
+			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a1`), Groups: element.GroupSlice{&element.Group{ID: path.NewRoute(`b1`), Fields: element.FieldSlice{
+				&element.Field{ID: path.NewRoute(`c1`)}, nil,
 			}}}}},
-			haveRoute: path.NewRoute("a", "b", "c"),
-			wantFID:   "c",
+			haveRoute: path.NewRoute("a1", "b1", "c1"),
+			wantFID:   "c1",
 			wantErr:   nil,
 		},
 	}
@@ -562,22 +574,23 @@ func TestSectionSliceFindFieldByPath(t *testing.T) {
 			assert.Error(t, haveErr, "Index %d", i)
 			assert.Nil(t, haveGroup, "Index %d", i)
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
-		} else {
-			assert.NoError(t, haveErr, "Index %d", i)
-			assert.NotNil(t, haveGroup, "Index %d", i)
-			assert.Exactly(t, test.wantFID, haveGroup.ID, "Index %d", i)
+			continue
 		}
+		assert.NoError(t, haveErr, "Index %d", i)
+		assert.NotNil(t, haveGroup, "Index %d", i)
+		assert.Exactly(t, test.wantFID, haveGroup.ID.String(), "Index %d", i)
 	}
 }
 
 func TestFieldSliceSort(t *testing.T) {
+	t.Parallel()
 	want := []int{-10, 1, 10, 11, 20}
 	fs := element.FieldSlice{
-		&element.Field{ID: path.NewRoute(`a`), SortOrder: 20},
-		&element.Field{ID: path.NewRoute(`b`), SortOrder: -10},
-		&element.Field{ID: path.NewRoute(`c`), SortOrder: 10},
-		&element.Field{ID: path.NewRoute(`d`), SortOrder: 11},
-		&element.Field{ID: path.NewRoute(`e`), SortOrder: 1},
+		&element.Field{ID: path.NewRoute(`aa`), SortOrder: 20},
+		&element.Field{ID: path.NewRoute(`bb`), SortOrder: -10},
+		&element.Field{ID: path.NewRoute(`cc`), SortOrder: 10},
+		&element.Field{ID: path.NewRoute(`dd`), SortOrder: 11},
+		&element.Field{ID: path.NewRoute(`ee`), SortOrder: 1},
 	}
 
 	for i, f := range *(fs.Sort()) {
@@ -586,26 +599,28 @@ func TestFieldSliceSort(t *testing.T) {
 }
 
 func TestGroupSliceSort(t *testing.T) {
+	t.Parallel()
 	want := []int{-10, 1, 10, 11, 20}
 	gs := element.GroupSlice{
-		&element.Group{ID: path.NewRoute(`a`), SortOrder: 20},
-		&element.Group{ID: path.NewRoute(`b`), SortOrder: -10},
-		&element.Group{ID: path.NewRoute(`c`), SortOrder: 10},
-		&element.Group{ID: path.NewRoute(`d`), SortOrder: 11},
-		&element.Group{ID: path.NewRoute(`e`), SortOrder: 1},
+		&element.Group{ID: path.NewRoute(`aa`), SortOrder: 20},
+		&element.Group{ID: path.NewRoute(`bb`), SortOrder: -10},
+		&element.Group{ID: path.NewRoute(`cc`), SortOrder: 10},
+		&element.Group{ID: path.NewRoute(`dd`), SortOrder: 11},
+		&element.Group{ID: path.NewRoute(`ee`), SortOrder: 1},
 	}
 	for i, f := range *(gs.Sort()) {
 		assert.EqualValues(t, want[i], f.SortOrder)
 	}
 }
 func TestSectionSliceSort(t *testing.T) {
+	t.Parallel()
 	want := []int{-10, 1, 10, 11, 20}
 	ss := element.SectionSlice{
-		&element.Section{ID: path.NewRoute(`a`), SortOrder: 20},
-		&element.Section{ID: path.NewRoute(`b`), SortOrder: -10},
-		&element.Section{ID: path.NewRoute(`c`), SortOrder: 10},
-		&element.Section{ID: path.NewRoute(`d`), SortOrder: 11},
-		&element.Section{ID: path.NewRoute(`e`), SortOrder: 1},
+		&element.Section{ID: path.NewRoute(`aa`), SortOrder: 20},
+		&element.Section{ID: path.NewRoute(`bb`), SortOrder: -10},
+		&element.Section{ID: path.NewRoute(`cc`), SortOrder: 10},
+		&element.Section{ID: path.NewRoute(`dd`), SortOrder: 11},
+		&element.Section{ID: path.NewRoute(`ee`), SortOrder: 1},
 	}
 	for i, f := range *(ss.Sort()) {
 		assert.EqualValues(t, want[i], f.SortOrder)
@@ -614,18 +629,50 @@ func TestSectionSliceSort(t *testing.T) {
 }
 
 func TestSectionSliceSortAll(t *testing.T) {
-	want := `[{"ID":"b","SortOrder":-10,"Groups":null},{"ID":"e","SortOrder":1,"Groups":null},{"ID":"c","SortOrder":10,"Groups":null},{"ID":"a","SortOrder":20,"Groups":[{"ID":"b","SortOrder":-10,"Fields":[{"ID":"b","SortOrder":-10},{"ID":"e","SortOrder":1},{"ID":"c","SortOrder":10},{"ID":"d","SortOrder":11},{"ID":"a","SortOrder":20}]},{"ID":"e","SortOrder":1,"Fields":null},{"ID":"d","SortOrder":11,"Fields":[{"ID":"b","SortOrder":-10},{"ID":"e","SortOrder":1},{"ID":"c","SortOrder":10},{"ID":"d","SortOrder":11},{"ID":"a","SortOrder":20}]},{"ID":"a","SortOrder":20,"Fields":[{"ID":"b","SortOrder":-10},{"ID":"e","SortOrder":1},{"ID":"c","SortOrder":10},{"ID":"d","SortOrder":11},{"ID":"a","SortOrder":20}]}]}]` + "\n"
+	t.Parallel()
+	want := `[{"ID":"bb","SortOrder":-10,"Groups":null},{"ID":"ee","SortOrder":1,"Groups":null},{"ID":"cc","SortOrder":10,"Groups":null},{"ID":"aa","SortOrder":20,"Groups":[{"ID":"bb","SortOrder":-10,"Fields":[{"ID":"bb","SortOrder":-10},{"ID":"ee","SortOrder":1},{"ID":"cc","SortOrder":10},{"ID":"dd","SortOrder":11},{"ID":"aa","SortOrder":20}]},{"ID":"ee","SortOrder":1,"Fields":null},{"ID":"dd","SortOrder":11,"Fields":[{"ID":"bb","SortOrder":-10},{"ID":"ee","SortOrder":1},{"ID":"cc","SortOrder":10},{"ID":"dd","SortOrder":11},{"ID":"aa","SortOrder":20}]},{"ID":"aa","SortOrder":20,"Fields":[{"ID":"bb","SortOrder":-10},{"ID":"ee","SortOrder":1},{"ID":"cc","SortOrder":10},{"ID":"dd","SortOrder":11},{"ID":"aa","SortOrder":20}]}]}]` + "\n"
 	ss := element.MustNewConfiguration(
-		&element.Section{ID: path.NewRoute(`a`), SortOrder: 20, Groups: element.NewGroupSlice(
-			&element.Group{ID: path.NewRoute(`a`), SortOrder: 20, Fields: element.FieldSlice{&element.Field{ID: path.NewRoute(`a`), SortOrder: 20}, &element.Field{ID: path.NewRoute(`b`), SortOrder: -10}, &element.Field{ID: path.NewRoute(`c`), SortOrder: 10}, &element.Field{ID: path.NewRoute(`d`), SortOrder: 11}, &element.Field{ID: path.NewRoute(`e`), SortOrder: 1}}},
-			&element.Group{ID: path.NewRoute(`b`), SortOrder: -10, Fields: element.FieldSlice{&element.Field{ID: path.NewRoute(`a`), SortOrder: 20}, &element.Field{ID: path.NewRoute(`b`), SortOrder: -10}, &element.Field{ID: path.NewRoute(`c`), SortOrder: 10}, &element.Field{ID: path.NewRoute(`d`), SortOrder: 11}, &element.Field{ID: path.NewRoute(`e`), SortOrder: 1}}},
-			&element.Group{ID: path.NewRoute(`d`), SortOrder: 11, Fields: element.FieldSlice{&element.Field{ID: path.NewRoute(`a`), SortOrder: 20}, &element.Field{ID: path.NewRoute(`b`), SortOrder: -10}, &element.Field{ID: path.NewRoute(`c`), SortOrder: 10}, &element.Field{ID: path.NewRoute(`d`), SortOrder: 11}, &element.Field{ID: path.NewRoute(`e`), SortOrder: 1}}},
-			&element.Group{ID: path.NewRoute(`e`), SortOrder: 1},
+		&element.Section{ID: path.NewRoute(`aa`), SortOrder: 20, Groups: element.NewGroupSlice(
+			&element.Group{
+				ID:        path.NewRoute(`aa`),
+				SortOrder: 20,
+				Fields: element.NewFieldSlice(
+					&element.Field{ID: path.NewRoute(`aa`), SortOrder: 20},
+					&element.Field{ID: path.NewRoute(`bb`), SortOrder: -10},
+					&element.Field{ID: path.NewRoute(`cc`), SortOrder: 10},
+					&element.Field{ID: path.NewRoute(`dd`), SortOrder: 11},
+					&element.Field{ID: path.NewRoute(`ee`), SortOrder: 1},
+				),
+			},
+			&element.Group{
+				ID:        path.NewRoute(`bb`),
+				SortOrder: -10,
+				Fields: element.NewFieldSlice(
+					&element.Field{ID: path.NewRoute(`aa`), SortOrder: 20},
+					&element.Field{ID: path.NewRoute(`bb`), SortOrder: -10},
+					&element.Field{ID: path.NewRoute(`cc`), SortOrder: 10},
+					&element.Field{ID: path.NewRoute(`dd`), SortOrder: 11},
+					&element.Field{ID: path.NewRoute(`ee`), SortOrder: 1},
+				),
+			},
+			&element.Group{
+				ID:        path.NewRoute(`dd`),
+				SortOrder: 11,
+				Fields: element.NewFieldSlice(
+					&element.Field{ID: path.NewRoute(`aa`), SortOrder: 20},
+					&element.Field{ID: path.NewRoute(`bb`), SortOrder: -10},
+					&element.Field{ID: path.NewRoute(`cc`), SortOrder: 10},
+					&element.Field{ID: path.NewRoute(`dd`), SortOrder: 11},
+					&element.Field{ID: path.NewRoute(`ee`), SortOrder: 1},
+				),
+			},
+			&element.Group{ID: path.NewRoute(`ee`), SortOrder: 1},
 		)},
-		&element.Section{ID: path.NewRoute(`b`), SortOrder: -10},
-		&element.Section{ID: path.NewRoute(`c`), SortOrder: 10},
-		&element.Section{ID: path.NewRoute(`e`), SortOrder: 1},
+		&element.Section{ID: path.NewRoute(`bb`), SortOrder: -10},
+		&element.Section{ID: path.NewRoute(`cc`), SortOrder: 10},
+		&element.Section{ID: path.NewRoute(`ee`), SortOrder: 1},
 	)
+	assert.Exactly(t, 15, ss.TotalFields())
 	ss.SortAll()
 	have := ss.ToJSON()
 	if want != have {
@@ -634,22 +681,23 @@ func TestSectionSliceSortAll(t *testing.T) {
 }
 
 func TestSectionSliceAppendFields(t *testing.T) {
-	want := `[{"ID":"a","Groups":[{"ID":"a","Fields":[{"ID":"a"},{"ID":"b"},{"ID":"c"}]}]}]` + "\n"
+	t.Parallel()
+	want := `[{"ID":"aa","Groups":[{"ID":"aa","Fields":[{"ID":"aa"},{"ID":"bb"},{"ID":"cc"}]}]}]` + "\n"
 	ss := element.MustNewConfiguration(
 		&element.Section{
-			ID: path.NewRoute(`a`),
+			ID: path.NewRoute(`aa`),
 			Groups: element.NewGroupSlice(
-				&element.Group{ID: path.NewRoute(`a`),
+				&element.Group{ID: path.NewRoute(`aa`),
 					Fields: element.NewFieldSlice(
-						&element.Field{ID: path.NewRoute(`a`)},
-						&element.Field{ID: path.NewRoute(`b`)},
+						&element.Field{ID: path.NewRoute(`aa`)},
+						&element.Field{ID: path.NewRoute(`bb`)},
 					),
 				},
 			)},
 	)
-	assert.EqualError(t, ss.AppendFields(path.NewRoute("a/XX")), element.ErrGroupNotFound.Error())
+	assert.EqualError(t, ss.AppendFields(path.NewRoute("aa/XX")), element.ErrGroupNotFound.Error())
 
-	assert.NoError(t, ss.AppendFields(path.NewRoute("a/a"), &element.Field{ID: path.NewRoute(`c`)}))
+	assert.NoError(t, ss.AppendFields(path.NewRoute("aa/aa"), &element.Field{ID: path.NewRoute(`cc`)}))
 	have := ss.ToJSON()
 	if want != have {
 		t.Errorf("\nWant: %s\nHave: %s\n", want, have)

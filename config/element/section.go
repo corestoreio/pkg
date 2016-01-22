@@ -49,8 +49,6 @@ type Section struct {
 	Groups   GroupSlice
 }
 
-var _ Sectioner = (*SectionSlice)(nil)
-
 // NewConfiguration creates a new validated SectionSlice with a three level configuration.
 // Panics if a path is redundant.
 func NewConfiguration(sections ...*Section) (SectionSlice, error) {
@@ -104,16 +102,20 @@ func MustNewConfigurationMerge(sections ...*Section) SectionSlice {
 
 // Defaults iterates over all slices, creates a path and uses the default value
 // to return a map.
-func (ss SectionSlice) Defaults() DefaultMap {
+func (ss SectionSlice) Defaults() (DefaultMap, error) {
 	var dm = make(DefaultMap)
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
-				dm[f.FQPathDefault(s.ID, g.ID)] = f.Default
+				fqp, err := f.FQPathDefault(s.ID, g.ID)
+				if err != nil {
+					return nil, err
+				}
+				dm[fqp] = f.Default
 			}
 		}
 	}
-	return dm
+	return dm, nil
 }
 
 // TotalFields calculates the total amount of all fields
@@ -195,7 +197,7 @@ func (ss SectionSlice) FindByID(id path.Route) (*Section, error) {
 // If two or more arguments are given then each argument will be treated as a path part.
 func (ss SectionSlice) FindGroupByPath(r path.Route) (*Group, error) {
 
-	l1, err := r.Level(1)
+	l1, err := r.Part(1)
 	if err != nil {
 		// debug log?
 		return nil, ErrGroupNotFound
@@ -204,7 +206,7 @@ func (ss SectionSlice) FindGroupByPath(r path.Route) (*Group, error) {
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	l2, err := r.Level(2)
+	l2, err := r.Part(2)
 	if err != nil {
 		// debug log?
 		return nil, ErrGroupNotFound
@@ -221,7 +223,12 @@ func (ss SectionSlice) FindFieldByPath(r path.Route) (*Field, error) {
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
-	return cg.Fields.FindByID(r)
+
+	fID, err := r.Part(3)
+	if err != nil {
+		return nil, errgo.Mask(err)
+	}
+	return cg.Fields.FindByID(fID)
 }
 
 // Append adds 0..n *Section. Not thread safe.
@@ -246,7 +253,7 @@ func (ss SectionSlice) ToJSON() string {
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(ss); err != nil {
 		PkgLog.Debug("config.SectionSlice.ToJSON.Encode", "err", err)
-		return ""
+		return err.Error()
 	}
 	return buf.String()
 }
@@ -258,11 +265,15 @@ func (ss SectionSlice) Validate() error {
 	}
 	// @todo try to pick the right strategy between maps and slice depending on the overall size of a full SectionSlice
 	var pc = make(util.StringSlice, ss.TotalFields()) // pc path checker
+
 	i := 0
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
-				p := f.FQPathDefault(s.ID, g.ID)
+				p, err := f.FQPathDefault(s.ID, g.ID)
+				if err != nil {
+					return err
+				}
 				if pc.Include(p) {
 					return errgo.Newf("Duplicate entry for path %s :: %s", p, ss.ToJSON())
 				}

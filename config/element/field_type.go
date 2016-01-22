@@ -30,6 +30,7 @@ const (
 	TypeTextarea
 	TypeTime
 	TypeDuration
+	TypeZMaximum
 )
 
 type (
@@ -43,8 +44,6 @@ type (
 		ToHTML() []byte // @see \Magento\Framework\Data\Form\Element\AbstractElement
 	}
 )
-
-var _ FieldTyper = (*FieldType)(nil)
 
 // Type returns the current field type and satisfies the interface of Field.Type
 func (i FieldType) Type() FieldType {

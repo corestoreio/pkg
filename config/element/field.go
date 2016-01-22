@@ -38,8 +38,8 @@ type Field struct {
 	// ID unique ID and NOT merged with others. 3rd and final part of the path.
 	ID path.Route
 	// ConfigPath if provided defines the storage path and overwrites the path from
-	// section.id + group.id + field.id
-	ConfigPath path.Route `json:",omitempty"`
+	// section.id + group.id + field.id. ConfigPath can be nil.
+	ConfigPath path.Router `json:",omitempty"` // omitempty does not yet work on non-pointer structs that is reason for the interface
 	// Type is used for the front end on how to display a Field
 	Type FieldTyper `json:",omitempty"`
 	// Label a short label of the field
@@ -61,6 +61,25 @@ type Field struct {
 	CanBeEmpty bool `json:",omitempty"`
 	// Default can contain any default config value: float64, int64, string, bool
 	Default interface{} `json:",omitempty"`
+}
+
+// FieldError shows detailed information about an error when calling FQPathDefault()
+type FieldError struct {
+	Err       error        // Main error
+	*Field                 // Affected field
+	PreRoutes []path.Route // prepended routes
+}
+
+// Error implements the error interface
+func (fe *FieldError) Error() string {
+	return fe.Err.Error()
+}
+
+// RenderRoutes merges the PreRoute fields into a string
+func (fe *FieldError) RenderRoutes() string {
+	var r path.Route
+	r.Append(fe.PreRoutes...)
+	return r.String()
 }
 
 // NewFieldSlice wrapper to create a new FieldSlice
@@ -156,16 +175,16 @@ func (fs *FieldSlice) Less(i, j int) bool {
 // FQPathDefault returns the default fully qualified path of either
 // Section.ID + Group.ID + Field.ID OR Field.ConfgPath if set.
 // Errors gets logged at DebugLevel.
-func (f *Field) FQPathDefault(preRoutes ...path.Route) string {
+func (f *Field) FQPathDefault(preRoutes ...path.Route) (string, error) {
 	var p path.Path
 	var err error
-	if !f.ConfigPath.IsEmpty() {
-		p, err = path.New(f.ConfigPath.Copy())
+	if nil != f.ConfigPath && !f.ConfigPath.Route().IsEmpty() {
+		p, err = path.New(f.ConfigPath.Route().Copy())
 	} else {
 		p, err = path.New(append(preRoutes, f.ID)...)
 	}
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("element.Field.FQPathDefault.path.New", "err", err, "field", f, "preRoutes", preRoutes)
+	if err != nil {
+		return "", &FieldError{Err: errgo.Mask(err), Field: f, PreRoutes: preRoutes}
 	}
-	return p.String()
+	return p.String(), nil
 }
