@@ -91,7 +91,7 @@ func BenchmarkNewByParts(b *testing.B) {
 			b.Error(err)
 		}
 	}
-	if benchmarkNewByParts.Route.Equal(want.Chars) == false {
+	if benchmarkNewByParts.Route.Equal(want) == false {
 		b.Errorf("Want: %s; Have, %s", want, benchmarkNewByParts.Route)
 	}
 }
@@ -205,7 +205,7 @@ func benchmarkFQ(scopeID int64, b *testing.B) {
 			b.Error(err)
 		}
 	}
-	if benchmarkStrScopeFQPath.Equal(want.Chars) == false {
+	if benchmarkStrScopeFQPath.Equal(want) == false {
 		b.Errorf("Want: %s; Have, %s", want, benchmarkStrScopeFQPath)
 	}
 }
@@ -325,23 +325,24 @@ func TestPathHash(t *testing.T) {
 	tests := []struct {
 		have      path.Route
 		level     int
-		wantHash  uint64
+		wantHash  uint32
 		wantErr   error
 		wantLevel string
 	}{
 		{path.NewRoute("general/single_\x80store_mode/enabled"), 0, 0, path.ErrRouteInvalidBytes, ""},
-		{path.NewRoute("general/single_store_mode/enabled"), 0, 14695981039346656037, nil, ""},
-		{path.NewRoute("general/single_store_mode/enabled"), 1, 11396173686539659531, nil, "general"},
-		{path.NewRoute("general/single_store_mode/enabled"), 2, 12184827311064960716, nil, "general/single_store_mode"},
-		{path.NewRoute("general/single_store_mode/enabled"), 3, 8238786573751400402, nil, "general/single_store_mode/enabled"},
-		{path.NewRoute("general/single_store_mode/enabled"), -1, 8238786573751400402, nil, "general/single_store_mode/enabled"},
-		{path.NewRoute("general/single_store_mode/enabled"), 5, 8238786573751400402, nil, "general/single_store_mode/enabled"},
-		{path.NewRoute("general/single_store_mode/enabled"), 4, 8238786573751400402, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), 0, 2166136261, nil, ""},
+		{path.NewRoute("general/single_store_mode/enabled"), 1, 616112491, nil, "general"},
+		{path.NewRoute("general/single_store_mode/enabled"), 2, 2274889228, nil, "general/single_store_mode"},
+		{path.NewRoute("general/single_store_mode/enabled"), 3, 1644245266, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), -1, 1644245266, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), 5, 1644245266, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), 4, 1644245266, nil, "general/single_store_mode/enabled"},
 	}
 	for i, test := range tests {
 		p := path.Path{
 			Route: test.have,
 		}
+
 		hv, err := p.Hash(test.level)
 		if test.wantErr != nil {
 			assert.EqualError(t, err, test.wantErr.Error(), "Index %d", i)
@@ -350,14 +351,14 @@ func TestPathHash(t *testing.T) {
 		}
 		assert.NoError(t, err, "Index %d", i)
 
-		check := fnv.New64a()
+		check := fnv.New32a()
 		_, cErr := check.Write([]byte(test.wantLevel))
 		assert.NoError(t, cErr)
-		assert.Exactly(t, check.Sum64(), hv, "Index %d", i)
+		assert.Exactly(t, check.Sum32(), hv, "Index %d", i)
 
 		l, err := p.Level(test.level)
 		assert.Exactly(t, test.wantLevel, l.String(), "Index %d", i)
-		assert.Exactly(t, test.wantHash, hv, "Index %d", i)
+		assert.Exactly(t, test.wantHash, hv, "Want %d Have %d Index %d", test.wantHash, hv, i)
 	}
 }
 

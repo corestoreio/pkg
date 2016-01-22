@@ -71,9 +71,13 @@ func TestRouteEqual(t *testing.T) {
 		{path.NewRoute("a"), path.NewRoute("a"), true},
 		{path.NewRoute("a"), path.NewRoute("b"), false},
 		{path.NewRoute("a\x80"), path.NewRoute("a"), false},
+		{path.NewRoute("general/single_\x80store_mode/enabled"), path.NewRoute("general/single_store_mode/enabled"), false},
+		{path.NewRoute("general/single_store_mode/enabled"), path.NewRoute("general/single_store_mode/enabled"), true},
+		{path.NewRoute(""), path.NewRoute(""), true},
+		{path.NewRoute(""), path.NewRoute(), true},
 	}
 	for i, test := range tests {
-		assert.Exactly(t, test.want, test.a.Equal(test.b.Chars), "Index %d", i)
+		assert.Exactly(t, test.want, test.a.Equal(test.b), "Index %d", i)
 	}
 }
 
@@ -147,7 +151,7 @@ func BenchmarkRouteAppend(b *testing.B) {
 		if err != nil {
 			b.Error(err)
 		}
-		if benchmarkRouteAppendWant.Equal(have.Chars) == false {
+		if benchmarkRouteAppendWant.Equal(have) == false {
 			b.Errorf("Want: %s; Have: %s", benchmarkRouteAppendWant, have)
 		}
 	}
@@ -219,7 +223,7 @@ func benchmarkRouteLevelRun(b *testing.B, level int, have, want path.Route) {
 	if err != nil {
 		b.Error(err)
 	}
-	if benchmarkRouteLevel.Equal(want.Chars) == false {
+	if benchmarkRouteLevel.Equal(want) == false {
 		b.Errorf("Want: %s; Have, %s", want, benchmarkRouteLevel)
 	}
 }
@@ -229,18 +233,18 @@ func TestRouteHash(t *testing.T) {
 	tests := []struct {
 		have      path.Route
 		level     int
-		wantHash  uint64
+		wantHash  uint32
 		wantErr   error
 		wantLevel string
 	}{
 		{path.NewRoute("general/single_\x80store_mode/enabled"), 0, 0, path.ErrRouteInvalidBytes, ""},
-		{path.NewRoute("general/single_store_mode/enabled"), 0, 14695981039346656037, nil, ""},
-		{path.NewRoute("general/single_store_mode/enabled"), 1, 11396173686539659531, nil, "general"},
-		{path.NewRoute("general/single_store_mode/enabled"), 2, 12184827311064960716, nil, "general/single_store_mode"},
-		{path.NewRoute("general/single_store_mode/enabled"), 3, 8238786573751400402, nil, "general/single_store_mode/enabled"},
-		{path.NewRoute("general/single_store_mode/enabled"), -1, 8238786573751400402, nil, "general/single_store_mode/enabled"},
-		{path.NewRoute("general/single_store_mode/enabled"), 5, 8238786573751400402, nil, "general/single_store_mode/enabled"},
-		{path.NewRoute("general/single_store_mode/enabled"), 4, 8238786573751400402, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), 0, 2166136261, nil, ""},
+		{path.NewRoute("general/single_store_mode/enabled"), 1, 616112491, nil, "general"},
+		{path.NewRoute("general/single_store_mode/enabled"), 2, 2274889228, nil, "general/single_store_mode"},
+		{path.NewRoute("general/single_store_mode/enabled"), 3, 1644245266, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), -1, 1644245266, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), 5, 1644245266, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), 4, 1644245266, nil, "general/single_store_mode/enabled"},
 	}
 	for i, test := range tests {
 
@@ -252,23 +256,47 @@ func TestRouteHash(t *testing.T) {
 		}
 		assert.NoError(t, err, "Index %d", i)
 
-		check := fnv.New64a()
+		check := fnv.New32a()
 		_, cErr := check.Write([]byte(test.wantLevel))
 		assert.NoError(t, cErr)
-		assert.Exactly(t, check.Sum64(), hv, "Index %d", i)
+		assert.Exactly(t, check.Sum32(), hv, "Have %d Want %d Index %d", check.Sum32(), hv, i)
 
 		l, err := test.have.Level(test.level)
 		assert.Exactly(t, test.wantLevel, l.String(), "Index %d", i)
-		assert.Exactly(t, test.wantHash, hv, "Index %d", i)
+		assert.Exactly(t, test.wantHash, hv, "Have %d Want %d Index %d", test.wantHash, hv, i)
 	}
 }
 
-var benchmarkRouteHash uint64
+func TestRouteHash32(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		have     path.Route
+		wantHash uint32
+	}{
+		{path.NewRoute("general/single_\x80store_mode/enabled"), 1310908924},
+		{path.NewRoute("general/single_store_mode/enabled"), 1644245266},
+		{path.NewRoute(""), 2166136261},
+		{path.Route{}, 2166136261},
+	}
+	for i, test := range tests {
+		if test.have.Sum32 > 0 {
+			assert.Exactly(t, test.wantHash, test.have.Sum32, "Want %d Have %d Index %d => %s", test.wantHash, test.have.Sum32, i, test.have)
+		}
+		hv := test.have.Hash32()
+		check := fnv.New32a()
+		_, cErr := check.Write(test.have.Bytes())
+		assert.NoError(t, cErr)
+		assert.Exactly(t, check.Sum32(), hv, "Have %d Want %d Index %d", check.Sum32(), hv, i)
+		assert.Exactly(t, test.wantHash, hv, "Have %d Want %d Index %d", test.wantHash, hv, i)
+	}
+}
 
-// BenchmarkRouteHash-4	 5000000	       288 ns/op	       0 B/op	       0 allocs/op
+var benchmarkRouteHash uint32
+
+// BenchmarkRouteHash-4     	 5000000	       287 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkRouteHash(b *testing.B) {
 	have := path.NewRoute("general/single_store_mode/enabled")
-	want := uint64(8238786573751400402)
+	want := uint32(1644245266)
 
 	var err error
 	b.ReportAllocs()
@@ -278,6 +306,21 @@ func BenchmarkRouteHash(b *testing.B) {
 		if err != nil {
 			b.Error(err)
 		}
+		if want != benchmarkRouteHash {
+			b.Errorf("Want: %d; Have: %d", want, benchmarkRouteHash)
+		}
+	}
+}
+
+// BenchmarkRouteHash32-4   	50000000	        37.7 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkRouteHash32(b *testing.B) {
+	have := path.NewRoute("general/single_store_mode/enabled")
+	want := uint32(1644245266)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchmarkRouteHash = have.Hash32()
 		if want != benchmarkRouteHash {
 			b.Errorf("Want: %d; Have: %d", want, benchmarkRouteHash)
 		}
@@ -383,3 +426,24 @@ func BenchmarkRouteValidate(b *testing.B) {
 		}
 	}
 }
+
+//
+//var benchmarkRouteEqual bool
+//
+//func BenchmarkRouteEqualTrue(b *testing.B) {
+//	have := path.NewRoute("general/single_store_mode/enabled")
+//	want := uint32(1644245266)
+//
+//	var err error
+//	b.ReportAllocs()
+//	b.ResetTimer()
+//	for i := 0; i < b.N; i++ {
+//		benchmarkRouteHash, err = have.Hash(3)
+//		if err != nil {
+//			b.Error(err)
+//		}
+//		if want != benchmarkRouteHash {
+//			b.Errorf("Want: %d; Have: %d", want, benchmarkRouteHash)
+//		}
+//	}
+//}

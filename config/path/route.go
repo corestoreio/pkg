@@ -26,15 +26,14 @@ import (
 // ErrRouteInvalidBytes whenever a non-rune is detected.
 var ErrRouteInvalidBytes = errors.New("Route contains invalid bytes which are not runes.")
 
-// TODO(cs) immutable: maybe implement this
-// var ErrRouteChanged = errors.New("Route bytes changed")
-
 // Route consists of at least three parts each of them separated by a slash
 // (See constant Separator). A route can be seen as a tree.
 // Route example: catalog/product/scope or websites/1/catalog/product/scope
 type Route struct {
-	// TODO(cs) immutable: maybe implement this
-	// org uint64 // fnv hash to check if the byte slice has changed
+	// Sum32 is a fnv 32a hash for comparison and maybe later integrity checks.
+	// Sum32 will be automatically updated when using New*() functions.
+	// If you set yourself Chars then update Sum32 on your own.
+	Sum32 uint32
 	text.Chars
 }
 
@@ -68,8 +67,7 @@ func NewRoute(parts ...string) Route {
 			pos += copy(r.Chars[pos:pos+1], sSeparator)
 		}
 	}
-	// TODO(cs) immutable: maybe implement this
-	// r.org = r.Chars.Hash()
+	r.updateSum32()
 	return r
 }
 
@@ -93,10 +91,7 @@ func (r Route) Validate() error {
 	if r.IsEmpty() {
 		return ErrRouteEmpty
 	}
-	// TODO(cs) immutable: maybe implement this
-	//if r.org != r.Chars.Hash() {
-	//	return ErrRouteChanged
-	//}
+
 	if r.Separators() == len(r.Chars) {
 		return ErrIncorrectPath
 	}
@@ -137,8 +132,21 @@ func (r Route) Validate() error {
 	return nil
 }
 
+// Equal compares the Sum32 of both routes
+func (r Route) Equal(b Route) bool {
+	return r.Sum32 == b.Sum32
+	//if r.Sum32 == b.Sum32 {
+	//	return true
+	//}
+	//return r.Chars.Equal(b.Chars) // takes longer
+}
+
 func (r Route) Copy() Route {
-	return Route{Chars: r.Chars.Copy()}
+	nr := Route{
+		Chars: r.Chars.Copy(),
+	}
+	nr.updateSum32()
+	return nr
 }
 
 // Append adds other partial routes with a Separator between. After the partial
@@ -206,6 +214,7 @@ func (r *Route) Append(routes ...Route) error {
 	if err := r.Validate(); err != nil {
 		return err
 	}
+	r.updateSum32()
 	return nil
 }
 
@@ -215,6 +224,7 @@ func (r *Route) UnmarshalText(text []byte) error {
 	if err := (*r).Chars.UnmarshalText(text); err != nil {
 		return err
 	}
+	r.updateSum32()
 	if err := r.Validate(); err != nil {
 		return err
 	}
@@ -228,9 +238,9 @@ func (r *Route) UnmarshalText(text []byte) error {
 // Does not generate a fully qualified path.
 // The returned Route slice is owned by Path. For further modifications you must
 // copy it via Route.Copy().
-func (r Route) Level(level int) (ret Route, err error) {
-	if err = r.Validate(); err != nil {
-		return
+func (r Route) Level(level int) (Route, error) {
+	if err := r.Validate(); err != nil {
+		return Route{}, err
 	}
 
 	lp := len(r.Chars)
@@ -238,7 +248,7 @@ func (r Route) Level(level int) (ret Route, err error) {
 	case level < 0:
 		return r, nil
 	case level == 0:
-		return
+		return Route{}, nil
 	case level >= lp:
 		return r, nil
 	}
@@ -253,16 +263,25 @@ func (r Route) Level(level int) (ret Route, err error) {
 		pos += sc + 1
 
 		if i == level {
-			ret.Chars = r.Chars[:pos-1]
-			return
+			nr := Route{
+				Chars: r.Chars[:pos-1],
+			}
+			nr.updateSum32()
+			return nr, nil
 		}
 		i++
 	}
 	return r, nil
 }
 
-// Hash same as Level() but returns a fnv64a value or an error if the route is
-// invalid.
+const (
+	offset32 = 2166136261
+	prime32  = 16777619
+)
+
+// Hash same as Level() but returns a fnv32a value or an error if the route is
+// invalid. 32 has been chosen because routes consume not that much space as
+// a text.Chars.
 //
 // Copyright 2011 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
@@ -272,12 +291,41 @@ func (r Route) Level(level int) (ret Route, err error) {
 // created by Glenn Fowler, Landon Curt Noll, and Phong Vo.
 // See
 // http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function.
-func (r Route) Hash(level int) (uint64, error) {
+func (r Route) Hash(level int) (uint32, error) {
 	r2, err := r.Level(level)
 	if err != nil {
 		return 0, err
 	}
-	return r2.Chars.Hash(), nil
+	var hash uint32 = offset32
+	for _, c := range r2.Chars {
+		hash ^= uint32(c)
+		hash *= prime32
+	}
+	return hash, nil
+}
+
+// Hash32 returns a fnv32a value of the route. 32 has been chosen because
+// routes consume not that much space as a text.Chars.
+//
+// Copyright 2011 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+//
+// Hash implements FNV-1 and FNV-1a, non-cryptographic hash functions
+// created by Glenn Fowler, Landon Curt Noll, and Phong Vo.
+// See
+// http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function.
+func (r Route) Hash32() uint32 {
+	var hash uint32 = offset32
+	for _, c := range r.Chars {
+		hash ^= uint32(c)
+		hash *= prime32
+	}
+	return hash
+}
+
+func (r *Route) updateSum32() {
+	(*r).Sum32 = r.Hash32()
 }
 
 // Separators returns the number of separators
@@ -344,5 +392,6 @@ func (r Route) Part(pos int) (ret Route, err error) {
 		min = max
 	}
 	ret.Chars = r.Chars[min:]
+	ret.updateSum32()
 	return
 }

@@ -180,6 +180,7 @@ func (p Path) FQ() (r Route, err error) {
 		return
 	}
 	r.Chars = buf.Bytes()
+	r.updateSum32()
 	return
 }
 
@@ -198,7 +199,7 @@ func (p Path) Level(level int) (r Route, err error) {
 	return p.Route.Level(level)
 }
 
-// Hash same as Level() but returns a fnv64a value or an error if the route is
+// Hash same as Level() but returns a fnv32a value or an error if the route is
 // invalid.
 //
 // Copyright 2011 The Go Authors. All rights reserved.
@@ -209,7 +210,7 @@ func (p Path) Level(level int) (r Route, err error) {
 // created by Glenn Fowler, Landon Curt Noll, and Phong Vo.
 // See
 // http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function.
-func (p Path) Hash(level int) (uint64, error) {
+func (p Path) Hash(level int) (uint32, error) {
 	p.routeValidated = true
 	if err := p.IsValid(); err != nil {
 		return 0, err
