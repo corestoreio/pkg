@@ -52,18 +52,38 @@ func Scope(s scope.Scope, id int64) ArgFunc {
 		id = 0
 		s = scope.DefaultID
 	}
-	return func(a *arg) { a.Scope = s; a.ID = id }
+	return func(a *arg) {
+		a.Scope = s
+		a.ID = id
+		a.scopeSet = true
+	}
 }
 
-// Path option function to specify the configuration path. If one argument has been
-// provided then it must be a full valid path. If more than one argument has been provided
-// then the arguments will be joined together. Panics if nil arguments will be provided.
-func Path(paths ...string) ArgFunc {
-	p, err := path.NewSplit(paths...)
+// Path option function to specify the configuration Path. If the Scope*()
+// option functions have not been applied the scope and scope ID from the
+// Path will be taken. You can then overwrite those two settings with the
+// Scope*() functions. The other way round does not work. Once the Scope*()
+// functions have been applied the Scope and ID from Path won't be applied.
+func Path(p path.Path) ArgFunc {
+	return func(a *arg) {
+		if a.scopeSet { // only copy Route, do not overwrite Scope and ID
+			a.Path.Route = p.Route
+		} else {
+			a.Path = p
+		}
+		if err := a.IsValid(); err != nil {
+			a.lastErrors = append(a.lastErrors, err)
+		}
+	}
+}
+
+// Route option function to specify the configuration path without any scope
+// or scope ID applied. You must call the Scope*() functions also.
+func Route(r path.Route) ArgFunc {
 	return func(a *arg) {
 		// only copy Parts, do not overwrite Scope and ID
-		a.Path.Parts = p.Parts
-		if err != nil {
+		a.Route = r
+		if err := a.IsValid(); err != nil {
 			a.lastErrors = append(a.lastErrors, err)
 		}
 	}
@@ -97,6 +117,7 @@ func ValueReader(r io.Reader) ArgFunc {
 // which is used by the underlying configuration Service to fetch or store a value
 type arg struct {
 	path.Path
+	scopeSet   bool        // true if the Scope*() functions have been used
 	v          interface{} // value use for saving
 	lastErrors []error
 }
@@ -130,11 +151,6 @@ func (a arg) option(opts ...ArgFunc) (arg, error) {
 }
 
 func (a arg) isDefault() bool { return a.Scope == scope.DefaultID || a.Scope == scope.AbsentID }
-
-// scopePathDefault returns a path prefixed by default StrScope
-// e.g.: default/0/system/currency/installed
-// 		 scope/scope_id/path...
-//func (a arg) scopePathDefault() string { return scope.StrDefault.FQPath("0", a.pathSlice...) }
 
 var _ error = (*arg)(nil)
 

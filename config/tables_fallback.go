@@ -55,9 +55,10 @@ type TableCoreConfigDataSlice []*TableCoreConfigData
 // TableCoreConfigData represents a type for DB table core_config_data
 // Generated via tableToStruct.
 type TableCoreConfigData struct {
-	ConfigID int64          `db:"config_id" json:",omitempty"` // config_id int(10) unsigned NOT NULL PRI  auto_increment
-	Scope    string         `db:"scope" json:",omitempty"`     // scope varchar(8) NOT NULL MUL DEFAULT 'default'
-	ScopeID  int64          `db:"scope_id" json:",omitempty"`  // scope_id int(11) NOT NULL  DEFAULT '0'
-	Path     string         `db:"path" json:",omitempty"`      // path varchar(255) NOT NULL  DEFAULT 'general'
-	Value    dbr.NullString `db:"value" json:",omitempty"`     // value text NULL
+	ConfigID int64  `db:"config_id" json:",omitempty"` // config_id int(10) unsigned NOT NULL PRI  auto_increment
+	Scope    string `db:"scope" json:",omitempty"`     // scope varchar(8) NOT NULL MUL DEFAULT 'default'
+	ScopeID  int64  `db:"scope_id" json:",omitempty"`  // scope_id int(11) NOT NULL  DEFAULT '0'
+	// TODO: change table2Struct program to allow for a table column a custom type. in this case path.Route
+	Path  string         `db:"path" json:",omitempty"`  // path varchar(255) NOT NULL  DEFAULT 'general'
+	Value dbr.NullString `db:"value" json:",omitempty"` // value text NULL
 }

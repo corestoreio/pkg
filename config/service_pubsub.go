@@ -51,15 +51,15 @@ type Subscriber interface {
 	// for all paths beginning with "system". A path is equal to a topic in a PubSub system.
 	// Path cannot be empty means you cannot listen to all changes.
 	// Returns a unique identifier for the Subscriber for later removal, or an error.
-	Subscribe(path string, s MessageReceiver) (subscriptionID int, err error)
+	Subscribe(path.Route, MessageReceiver) (subscriptionID int, err error)
 }
 
 // pubSub embedded pointer struct into the Service
 type pubSub struct {
 	// subMap, subscribed writers are getting called when a write event
-	// will happen. String is the path (aka topic) and int the Subscriber ID for later
+	// will happen. uint64 is the path/route (aka topic) and int the Subscriber ID for later
 	// removal.
-	subMap     map[string]map[int]MessageReceiver
+	subMap     map[uint64]map[int]MessageReceiver
 	subAutoInc int // subAutoInc increased whenever a Subscriber has been added
 	mu         sync.RWMutex
 	publishArg chan arg
@@ -85,8 +85,9 @@ func (s *pubSub) Close() error {
 
 // Subscribe adds a Subscriber to be called when a write event happens.
 // See interface Subscriber for a detailed description.
-func (s *pubSub) Subscribe(sPath string, mr MessageReceiver) (subscriptionID int, err error) {
-	if sPath == "" {
+// Route can be any kind of level. a or a/b or a/b/c.
+func (s *pubSub) Subscribe(r path.Route, mr MessageReceiver) (subscriptionID int, err error) {
+	if r == nil {
 		return 0, path.ErrIncorrectPath
 	}
 	s.mu.Lock()
@@ -94,10 +95,20 @@ func (s *pubSub) Subscribe(sPath string, mr MessageReceiver) (subscriptionID int
 	s.subAutoInc++
 	subscriptionID = s.subAutoInc
 
-	if _, ok := s.subMap[sPath]; !ok {
-		s.subMap[sPath] = make(map[int]MessageReceiver)
+	p := path.Path{
+		Route:           r,
+		RouteLevelValid: true,
 	}
-	s.subMap[sPath][subscriptionID] = mr
+	hashPath, err := p.Hash(-1)
+	if err != nil {
+		err = errgo.Mask(err)
+		return
+	}
+
+	if _, ok := s.subMap[hashPath]; !ok {
+		s.subMap[hashPath] = make(map[int]MessageReceiver)
+	}
+	s.subMap[hashPath][subscriptionID] = mr
 
 	return
 }
@@ -149,13 +160,28 @@ func (s *pubSub) publish() {
 			s.mu.RLock()
 			var evict []int
 
-			if subs, ok := s.subMap[a.Level(1)]; ok { // e.g.: system
+			// TODO: extract a function and keep DRY
+			hp1, err := a.Hash(1)
+			if err != nil && PkgLog.IsDebug() {
+				PkgLog.Debug("config.pubSub.publish.arg.Hash.err1", "err", err, "arg", a)
+			}
+			if subs, ok := s.subMap[hp1]; ok { // e.g.: system
 				evict = append(evict, sendMessages(subs, a)...)
 			}
-			if subs, ok := s.subMap[a.Level(2)]; ok { // e.g.: system/smtp
+
+			hp2, err := a.Hash(2)
+			if err != nil && PkgLog.IsDebug() {
+				PkgLog.Debug("config.pubSub.publish.arg.Hash.err2", "err", err, "arg", a)
+			}
+			if subs, ok := s.subMap[hp2]; ok { // e.g.: system/smtp
 				evict = append(evict, sendMessages(subs, a)...)
 			}
-			if subs, ok := s.subMap[a.Level(-1)]; ok { // e.g.: system/smtp/host/etc/pp
+
+			hpN, err := a.Hash(-1)
+			if err != nil && PkgLog.IsDebug() {
+				PkgLog.Debug("config.pubSub.publish.arg.Hash.errN", "err", err, "arg", a)
+			}
+			if subs, ok := s.subMap[hpN]; ok { // e.g.: system/smtp/host/etc/pp
 				evict = append(evict, sendMessages(subs, a)...)
 			}
 			s.mu.RUnlock()

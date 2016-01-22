@@ -23,6 +23,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/corestoreio/csfw/config/path"
 	"golang.org/x/net/context"
 )
 
@@ -325,7 +326,7 @@ func (mr *MockGet) DateTime(opts ...ArgFunc) (time.Time, error) {
 
 // Subscribe returns the before applied SubscriptionID and SubscriptionErr
 // Does not start any underlying Goroutines.
-func (mr *MockGet) Subscribe(path string, s MessageReceiver) (subscriptionID int, err error) {
+func (mr *MockGet) Subscribe(_ path.Route, s MessageReceiver) (subscriptionID int, err error) {
 	return mr.SubscriptionID, mr.SubscriptionErr
 }
 
