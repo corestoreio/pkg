@@ -69,6 +69,9 @@ func BenchmarkSectionSliceFindFieldByPath1(b *testing.B) {
 			b.Error(err)
 		}
 	}
+	if sectionSliceFindFieldByPath1.ID.String() != "gateway_url" {
+		b.Error("Field ID must be gateway_url")
+	}
 }
 
 // BenchmarkSectionSliceFindFieldByPath5	 2000000	       587 ns/op	       0 B/op	       0 allocs/op => Go 1.4.2
