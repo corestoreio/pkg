@@ -17,6 +17,8 @@ package config_test
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/util/log"
 )
 
@@ -27,6 +29,7 @@ func init() {
 // BenchmarkSectionSliceValidate	    1000	   1791239 ns/op	  158400 B/op	    4016 allocs/op => Go 1.4.2
 // BenchmarkSectionSliceValidate   	    1000	   1636547 ns/op	  158400 B/op	    3213 allocs/op => Go 1.5.0
 // BenchmarkSectionSliceValidate   	    1000	   1766386 ns/op	  102783 B/op	    1607 allocs/op => Go 1.5.2
+// BenchmarkSectionSliceValidate   	    2000	   1092104 ns/op	  152864 B/op	    2410 allocs/op => path.Routes
 func BenchmarkSectionSliceValidate(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -41,6 +44,7 @@ var bsstj string
 // BenchmarkSectionSliceToJson	     300	   4336829 ns/op	  973188 B/op	   17254 allocs/op => Go 1.4.2
 // BenchmarkSectionSliceToJson 	     500	   3609676 ns/op	  914083 B/op	   14943 allocs/op => Go 1.5.0
 // BenchmarkSectionSliceToJson 	     500	   3580314 ns/op	  895303 B/op	   14620 allocs/op => Go 1.5.2
+// BenchmarkSectionSliceToJson	     500	   3844865 ns/op	  874724 B/op	   16505 allocs/op => path.Routes
 func BenchmarkSectionSliceToJson(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -50,13 +54,18 @@ func BenchmarkSectionSliceToJson(b *testing.B) {
 	}
 }
 
+var sectionSliceFindFieldByPath1 *element.Field
+
 // BenchmarkSectionSliceFindFieldByPath1	20000000	       92.9 ns/op	       0 B/op	       0 allocs/op => Go 1.4.2
 // BenchmarkSectionSliceFindFieldByPath1	20000000	       84.1 ns/op	       0 B/op	       0 allocs/op => Go 1.5.0
 // BenchmarkSectionSliceFindFieldByPath1	20000000	        86.6 ns/op	       0 B/op	       0 allocs/op => Go 1.5.2
+// BenchmarkSectionSliceFindFieldByPath1	 2000000	       890 ns/op	       0 B/op	       0 allocs/op => path.Routes
 func BenchmarkSectionSliceFindFieldByPath1(b *testing.B) {
+	r := path.NewRoute("carriers", "usps", "gateway_url")
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		if _, err := packageAllConfiguration.FindFieldByPath("carriers", "usps", "gateway_url"); err != nil {
+		var err error
+		if sectionSliceFindFieldByPath1, err = packageAllConfiguration.FindFieldByPath(r); err != nil {
 			b.Error(err)
 		}
 	}
@@ -65,19 +74,22 @@ func BenchmarkSectionSliceFindFieldByPath1(b *testing.B) {
 // BenchmarkSectionSliceFindFieldByPath5	 2000000	       587 ns/op	       0 B/op	       0 allocs/op => Go 1.4.2
 // BenchmarkSectionSliceFindFieldByPath5	 3000000	       565 ns/op	       0 B/op	       0 allocs/op => Go 1.5.0
 // BenchmarkSectionSliceFindFieldByPath5	 3000000	       564 ns/op	       0 B/op	       0 allocs/op => Go 1.5.2
+// BenchmarkSectionSliceFindFieldByPath5	  300000	      6077 ns/op	       0 B/op	       0 allocs/op
 func BenchmarkSectionSliceFindFieldByPath5(b *testing.B) {
-	var paths = [][]string{
-		{"carriers", "usps", "gateway_url"},
-		{"wishlist", "email", "number_limit"},
-		{"tax", "calculation", "apply_tax_on"},
-		{"sitemap", "generate", "frequency"},
-		{"sales_email", "creditmemo_comment", "guest_template"},
+	var routePaths = []path.Route{
+		path.NewRoute("carriers", "usps", "gateway_url"),
+		path.NewRoute("wishlist", "email", "number_limit"),
+		path.NewRoute("tax", "calculation", "apply_tax_on"),
+		path.NewRoute("sitemap", "generate", "frequency"),
+		path.NewRoute("sales_email", "creditmemo_comment", "guest_template"),
 	}
+
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		for _, path := range paths {
-			if _, err := packageAllConfiguration.FindFieldByPath(path...); err != nil {
+		for _, r := range routePaths {
+			var err error
+			if sectionSliceFindFieldByPath1, err = packageAllConfiguration.FindFieldByPath(r); err != nil {
 				b.Error(err)
 			}
 		}
