@@ -32,8 +32,11 @@ func TestSectionValidateDuplicate(t *testing.T) {
 			ID: path.NewRoute(`aa`),
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:     path.NewRoute(`bb`),
-					Fields: element.FieldSlice{&element.Field{ID: path.NewRoute(`cc`)}, &element.Field{ID: path.NewRoute(`cc`)}},
+					ID: path.NewRoute(`bb`),
+					Fields: element.FieldSlice{
+						&element.Field{ID: path.NewRoute(`cc`)},
+						&element.Field{ID: path.NewRoute(`cc`)},
+					},
 				},
 			),
 		},
@@ -46,22 +49,26 @@ func TestSectionValidateShortPath(t *testing.T) {
 	t.Parallel()
 	ss := element.SectionSlice{
 		0: &element.Section{
-			ID: path.NewRoute(`aa`),
+			//ID: path.NewRoute(`aa`),
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:     path.NewRoute(`b`),
-					Fields: element.FieldSlice{&element.Field{ID: path.NewRoute(`ca`)}, &element.Field{ID: path.NewRoute(`cb`)}},
+					//ID: path.NewRoute(`b`),
+					Fields: element.FieldSlice{
+						&element.Field{ID: path.NewRoute(`ca`)},
+						&element.Field{ID: path.NewRoute(`cb`)},
+						&element.Field{},
+					},
 				},
 			),
 		},
 	}
 
 	err := ss.Validate()
-	assert.EqualError(t, err, path.ErrIncorrectPath.Error())
+	assert.EqualError(t, err, path.ErrRouteEmpty.Error())
 
 	if e2, ok := err.(*element.FieldError); ok {
-		assert.Exactly(t, "ca", e2.Field.ID.String())
-		assert.Exactly(t, "aa/b", e2.RenderRoutes())
+		assert.Exactly(t, "", e2.Field.ID.String())
+		assert.Exactly(t, "", e2.RenderRoutes())
 	} else {
 		t.Fatal("Cannot type assert to *element.FieldError in err variable")
 	}

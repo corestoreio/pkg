@@ -23,7 +23,6 @@ import (
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
 )
 
@@ -259,25 +258,34 @@ func (ss SectionSlice) ToJSON() string {
 }
 
 // Validate checks for duplicated configuration paths in all three hierarchy levels.
+// On error returns *FieldError or duplicate entry error or slice empty error.
 func (ss SectionSlice) Validate() error {
 	if len(ss) == 0 {
 		return errgo.New("SectionSlice is empty")
 	}
-	// @todo try to pick the right strategy between maps and slice depending on the overall size of a full SectionSlice
-	var pc = make(util.StringSlice, ss.TotalFields()) // pc path checker
+
+	var hashes = make([]uint64, ss.TotalFields(), ss.TotalFields()) // pc path checker
 
 	i := 0
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
-				p, err := f.FQPathDefault(s.ID, g.ID)
+
+				fnv1a, err := f.RouteHash(s.ID, g.ID)
 				if err != nil {
 					return err
 				}
-				if pc.Include(p) {
-					return errgo.Newf("Duplicate entry for path %s :: %s", p, ss.ToJSON())
+
+				for _, h := range hashes {
+					if h == fnv1a {
+						p, err := f.FQPathDefault(s.ID, g.ID)
+						if err != nil {
+							return err
+						}
+						return errgo.Newf("Duplicate entry for path %s :: %s", p, ss.ToJSON())
+					}
 				}
-				pc[i] = p
+				hashes[i] = fnv1a
 				i++
 			}
 		}

@@ -174,7 +174,7 @@ func (fs *FieldSlice) Less(i, j int) bool {
 
 // FQPathDefault returns the default fully qualified path of either
 // Section.ID + Group.ID + Field.ID OR Field.ConfgPath if set.
-// Errors gets logged at DebugLevel.
+// Returns on error *FieldError
 func (f *Field) FQPathDefault(preRoutes ...path.Route) (string, error) {
 	var p path.Path
 	var err error
@@ -187,4 +187,20 @@ func (f *Field) FQPathDefault(preRoutes ...path.Route) (string, error) {
 		return "", &FieldError{Err: errgo.Mask(err), Field: f, PreRoutes: preRoutes}
 	}
 	return p.String(), nil
+}
+
+// RouteHash returns the 64-bit FNV-1a hash of either
+// Section.ID + Group.ID + Field.ID OR Field.ConfgPath if set.
+// Returns on error *FieldError
+func (f *Field) RouteHash(preRoutes ...path.Route) (uint64, error) {
+	var r path.Route
+
+	if nil != f.ConfigPath && false == f.ConfigPath.Route().IsEmpty() {
+		r = f.ConfigPath.Route()
+	} else {
+		if err := r.Append(append(preRoutes, f.ID)...); err != nil {
+			return 0, &FieldError{Err: errgo.Mask(err), Field: f, PreRoutes: preRoutes}
+		}
+	}
+	return r.Chars.Hash(), nil
 }
