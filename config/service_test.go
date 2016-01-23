@@ -23,6 +23,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+var (
+	_ config.Getter     = (*config.Service)(nil)
+	_ config.Writer     = (*config.Service)(nil)
+	_ config.Subscriber = (*config.Service)(nil)
+)
+
 func init() {
 	dbc := csdb.MustConnectTest()
 	if err := config.TableCollection.Init(dbc.NewSession()); err != nil {

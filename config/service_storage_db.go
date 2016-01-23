@@ -107,7 +107,7 @@ func (dbs *DBStorage) Stop() error {
 
 // Set sets a value with its key. Database errors get logged as Info message.
 // Enabled debug level logs the insert ID or rows affected.
-func (dbs *DBStorage) Set(key string, value interface{}) {
+func (dbs *DBStorage) Set(key string, value interface{}) error {
 	// update lastUsed at the end because there might be the slight chance
 	// that a statement gets closed despite we're waiting for the result
 	// from the server.
@@ -116,32 +116,41 @@ func (dbs *DBStorage) Set(key string, value interface{}) {
 
 	valStr, err := cast.ToStringE(value)
 	if err != nil {
-		PkgLog.Info("config.DBStorage.Set.ToString", "err", err, "SQL", dbs.Write.SQL, "value", value)
-		return
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.DBStorage.Set.ToString", "err", err, "SQL", dbs.Write.SQL, "value", value)
+		}
+		return err
 	}
 
 	stmt, err := dbs.Write.Stmt()
 	if err != nil {
-		PkgLog.Info("config.DBStorage.Set.Write.getStmt", "err", err, "SQL", dbs.Write.SQL)
-		return
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.DBStorage.Set.Write.getStmt", "err", err, "SQL", dbs.Write.SQL)
+		}
+		return err
 	}
 
 	p, err := path.SplitFQ(key)
 	if err != nil {
-		PkgLog.Info("config.DBStorage.Set.ReverseFQPath", "err", err, "key", key)
-		return
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.DBStorage.Set.ReverseFQPath", "err", err, "key", key)
+		}
+		return err
 	}
 
 	result, err := stmt.Exec(p.Scope, p.ID, p.Level(-1), valStr, valStr)
 	if err != nil {
-		PkgLog.Info("config.DBStorage.Set.Write.Exec", "err", err, "SQL", dbs.Write.SQL, "key", key, "value", value)
-		return
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.DBStorage.Set.Write.Exec", "err", err, "SQL", dbs.Write.SQL, "key", key, "value", value)
+		}
+		return err
 	}
 	if PkgLog.IsDebug() {
 		li, err1 := result.LastInsertId()
 		ra, err2 := result.RowsAffected()
 		PkgLog.Debug("config.DBStorage.Set.Write.Result", "lastInsertID", li, "lastInsertIDErr", err1, "rowsAffected", ra, "rowsAffectedErr", err2, "SQL", dbs.Write.SQL, "key", key, "value", value)
 	}
+	return nil
 }
 
 // Get returns a value from the database by its key. It is guaranteed that the

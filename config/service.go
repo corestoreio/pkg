@@ -69,12 +69,6 @@ type (
 	}
 )
 
-var (
-	_ Getter     = (*Service)(nil)
-	_ Writer     = (*Service)(nil)
-	_ Subscriber = (*Service)(nil)
-)
-
 // TableCollection handles all tables and its columns. init() in generated Go file will set the value.
 var TableCollection csdb.Manager
 
@@ -125,14 +119,19 @@ func (s *Service) NewScoped(websiteID, groupID, storeID int64) ScopedGetter {
 
 // ApplyDefaults reads slice Sectioner and applies the keys and values to the
 // default configuration. Overwrites existing values.
-func (s *Service) ApplyDefaults(ss element.Sectioner) *Service {
-	for k, v := range ss.Defaults() {
+func (s *Service) ApplyDefaults(ss element.Sectioner) (count int, err error) {
+	def, err := ss.Defaults()
+	if err != nil {
+		return
+	}
+	for k, v := range def {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.Service.ApplyDefaults", k, v)
 		}
 		s.Storage.Set(k, v)
+		count++
 	}
-	return s
+	return
 }
 
 // ApplyCoreConfigData reads the table core_config_data into the Service and overrides
