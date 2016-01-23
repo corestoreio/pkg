@@ -26,7 +26,7 @@ import (
 // ProTip: If you use MySQL as Storager don't execute function
 // ApplyCoreConfigData()
 type Storager interface {
-	Set(key string, value interface{})
+	Set(key string, value interface{}) error
 	Get(key string) interface{}
 	AllKeys() []string
 }
@@ -44,10 +44,11 @@ func newSimpleStorage() *simpleStorage {
 	}
 }
 
-func (sp *simpleStorage) Set(key string, value interface{}) {
+func (sp *simpleStorage) Set(key string, value interface{}) error {
 	sp.Lock()
 	sp.data[key] = value
 	sp.Unlock()
+	return nil
 }
 
 func (sp *simpleStorage) Get(key string) interface{} {
