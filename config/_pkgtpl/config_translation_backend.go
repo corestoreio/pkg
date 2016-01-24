@@ -19,7 +19,7 @@ type PkgBackend struct {
 	// Please put your store into maintenance mode and redeploy static files after
 	// changing strategy
 	// Path: dev/js/translate_strategy
-	// SourceModel: Otnegam\Translation\Model\Js\Config\Source\Strategy
+	// SourceModel: Magento\Translation\Model\Js\Config\Source\Strategy
 	DevJsTranslateStrategy model.Str
 }
 

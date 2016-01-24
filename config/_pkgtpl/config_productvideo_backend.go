@@ -21,17 +21,17 @@ type PkgBackend struct {
 
 	// CatalogProductVideoPlayIfBase => Autostart base video.
 	// Path: catalog/product_video/play_if_base
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogProductVideoPlayIfBase model.Bool
 
 	// CatalogProductVideoShowRelated => Show related video.
 	// Path: catalog/product_video/show_related
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogProductVideoShowRelated model.Bool
 
 	// CatalogProductVideoVideoAutoRestart => Auto restart video.
 	// Path: catalog/product_video/video_auto_restart
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogProductVideoVideoAutoRestart model.Bool
 }
 

@@ -31,7 +31,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -43,7 +43,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -88,7 +88,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   nil,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted @todo Otnegam\Config\Model\Config\Backend\Encrypted
+							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
 						&element.Field{
@@ -100,7 +100,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   nil,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted @todo Otnegam\Config\Model\Config\Backend\Encrypted
+							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
 						&element.Field{
@@ -111,7 +111,7 @@ func init() {
 							SortOrder: 54,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Shipping\Model\Config\Source\Online\Mode
+							// SourceModel: Magento\Shipping\Model\Config\Source\Online\Mode
 						},
 
 						&element.Field{
@@ -123,7 +123,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Shipping\Model\Config\Source\Online\Requesttype
+							// SourceModel: Magento\Shipping\Model\Config\Source\Online\Requesttype
 						},
 
 						&element.Field{
@@ -135,7 +135,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `VARIABLE`,
-							// SourceModel: Otnegam\Usps\Model\Source\Container
+							// SourceModel: Magento\Usps\Model\Source\Container
 						},
 
 						&element.Field{
@@ -147,7 +147,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `REGULAR`,
-							// SourceModel: Otnegam\Usps\Model\Source\Size
+							// SourceModel: Magento\Usps\Model\Source\Size
 						},
 
 						&element.Field{
@@ -199,7 +199,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `true`,
-							// SourceModel: Otnegam\Usps\Model\Source\Machinable
+							// SourceModel: Magento\Usps\Model\Source\Machinable
 						},
 
 						&element.Field{
@@ -222,7 +222,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `F`,
-							// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
+							// SourceModel: Magento\Shipping\Model\Source\HandlingType
 						},
 
 						&element.Field{
@@ -234,7 +234,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `O`,
-							// SourceModel: Otnegam\Shipping\Model\Source\HandlingAction
+							// SourceModel: Magento\Shipping\Model\Source\HandlingAction
 						},
 
 						&element.Field{
@@ -257,7 +257,7 @@ func init() {
 							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							CanBeEmpty: true,
 							Default:    `0_FCLE,0_FCL,0_FCP,1,2,3,4,6,7,13,16,17,22,23,25,27,28,33,34,35,36,37,42,43,53,55,56,57,61,INT_1,INT_2,INT_4,INT_6,INT_7,INT_8,INT_9,INT_10,INT_11,INT_12,INT_13,INT_14,INT_15,INT_16,INT_20,INT_26`,
-							// SourceModel: Otnegam\Usps\Model\Source\Method
+							// SourceModel: Magento\Usps\Model\Source\Method
 						},
 
 						&element.Field{
@@ -268,7 +268,7 @@ func init() {
 							SortOrder: 140,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Usps\Model\Source\Freemethod
+							// SourceModel: Magento\Usps\Model\Source\Freemethod
 						},
 
 						&element.Field{
@@ -279,7 +279,7 @@ func init() {
 							SortOrder: 1500,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 
 						&element.Field{
@@ -312,7 +312,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+							// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 						},
 
 						&element.Field{
@@ -324,7 +324,7 @@ func init() {
 							Visible:    element.VisibleYes,
 							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							CanBeEmpty: true,
-							// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
 						&element.Field{
@@ -335,7 +335,7 @@ func init() {
 							SortOrder: 200,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -346,7 +346,7 @@ func init() {
 							SortOrder: 210,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -403,7 +403,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Usps\Model\Carrier`,
+							Default: `Magento\Usps\Model\Carrier`,
 						},
 
 						&element.Field{

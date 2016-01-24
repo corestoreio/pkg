@@ -18,7 +18,7 @@ func init() {
 			Label:     `OAuth`,
 			SortOrder: 300,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Integration::config_oauth
+			Resource:  0, // Magento_Integration::config_oauth
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "cleanup",

@@ -18,8 +18,8 @@ type PkgBackend struct {
 	// PaypalGeneralMerchantCountry => Merchant Country.
 	// If not specified, Default Country from General Config will be used
 	// Path: paypal/general/merchant_country
-	// BackendModel: Otnegam\Paypal\Model\System\Config\Backend\MerchantCountry
-	// SourceModel: Otnegam\Paypal\Model\System\Config\Source\MerchantCountry
+	// BackendModel: Magento\Paypal\Model\System\Config\Backend\MerchantCountry
+	// SourceModel: Magento\Paypal\Model\System\Config\Source\MerchantCountry
 	PaypalGeneralMerchantCountry model.Str
 }
 

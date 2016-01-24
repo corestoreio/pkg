@@ -31,7 +31,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -43,7 +43,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   `linlibertine`,
-							// SourceModel: Otnegam\Captcha\Model\Config\Font
+							// SourceModel: Magento\Captcha\Model\Config\Font
 						},
 
 						&element.Field{
@@ -55,7 +55,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   `backend_forgotpassword`,
-							// SourceModel: Otnegam\Captcha\Model\Config\Form\Backend
+							// SourceModel: Magento\Captcha\Model\Config\Form\Backend
 						},
 
 						&element.Field{
@@ -67,7 +67,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   `after_fail`,
-							// SourceModel: Otnegam\Captcha\Model\Config\Mode
+							// SourceModel: Magento\Captcha\Model\Config\Mode
 						},
 
 						&element.Field{
@@ -126,7 +126,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -150,7 +150,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -162,7 +162,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `linlibertine`,
-							// SourceModel: Otnegam\Captcha\Model\Config\Font
+							// SourceModel: Magento\Captcha\Model\Config\Font
 						},
 
 						&element.Field{
@@ -175,7 +175,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `user_forgotpassword`,
-							// SourceModel: Otnegam\Captcha\Model\Config\Form\Frontend
+							// SourceModel: Magento\Captcha\Model\Config\Form\Frontend
 						},
 
 						&element.Field{
@@ -187,7 +187,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `after_fail`,
-							// SourceModel: Otnegam\Captcha\Model\Config\Mode
+							// SourceModel: Magento\Captcha\Model\Config\Mode
 						},
 
 						&element.Field{
@@ -246,7 +246,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},

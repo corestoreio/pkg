@@ -17,12 +17,12 @@ type PkgBackend struct {
 	model.PkgBackend
 	// CheckoutOptionsOnepageCheckoutEnabled => Enable Onepage Checkout.
 	// Path: checkout/options/onepage_checkout_enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CheckoutOptionsOnepageCheckoutEnabled model.Bool
 
 	// CheckoutOptionsGuestCheckout => Allow Guest Checkout.
 	// Path: checkout/options/guest_checkout
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CheckoutOptionsGuestCheckout model.Bool
 
 	// CheckoutCartDeleteQuoteAfter => Quote Lifetime (days).
@@ -31,17 +31,17 @@ type PkgBackend struct {
 
 	// CheckoutCartRedirectToCart => After Adding a Product Redirect to Shopping Cart.
 	// Path: checkout/cart/redirect_to_cart
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CheckoutCartRedirectToCart model.Bool
 
 	// CheckoutCartLinkUseQty => Display Cart Summary.
 	// Path: checkout/cart_link/use_qty
-	// SourceModel: Otnegam\Checkout\Model\Config\Source\Cart\Summary
+	// SourceModel: Magento\Checkout\Model\Config\Source\Cart\Summary
 	CheckoutCartLinkUseQty model.Str
 
 	// CheckoutSidebarDisplay => Display Shopping Cart Sidebar.
 	// Path: checkout/sidebar/display
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CheckoutSidebarDisplay model.Bool
 
 	// CheckoutSidebarCount => Maximum Display Recently Added Item(s).
@@ -50,19 +50,19 @@ type PkgBackend struct {
 
 	// CheckoutPaymentFailedIdentity => Payment Failed Email Sender.
 	// Path: checkout/payment_failed/identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	CheckoutPaymentFailedIdentity model.Str
 
 	// CheckoutPaymentFailedReceiver => Payment Failed Email Receiver.
 	// Path: checkout/payment_failed/receiver
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	CheckoutPaymentFailedReceiver model.Str
 
 	// CheckoutPaymentFailedTemplate => Payment Failed Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: checkout/payment_failed/template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	CheckoutPaymentFailedTemplate model.Str
 
 	// CheckoutPaymentFailedCopyTo => Send Payment Failed Email Copy To.
@@ -72,7 +72,7 @@ type PkgBackend struct {
 
 	// CheckoutPaymentFailedCopyMethod => Send Payment Failed Email Copy Method.
 	// Path: checkout/payment_failed/copy_method
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 	CheckoutPaymentFailedCopyMethod model.Str
 }
 

@@ -17,13 +17,13 @@ type PkgBackend struct {
 	model.PkgBackend
 	// SystemMediaStorageConfigurationMediaStorage => Media Storage.
 	// Path: system/media_storage_configuration/media_storage
-	// SourceModel: Otnegam\MediaStorage\Model\Config\Source\Storage\Media\Storage
+	// SourceModel: Magento\MediaStorage\Model\Config\Source\Storage\Media\Storage
 	SystemMediaStorageConfigurationMediaStorage model.Str
 
 	// SystemMediaStorageConfigurationMediaDatabase => Select Media Database.
 	// Path: system/media_storage_configuration/media_database
-	// BackendModel: Otnegam\MediaStorage\Model\Config\Backend\Storage\Media\Database
-	// SourceModel: Otnegam\MediaStorage\Model\Config\Source\Storage\Media\Database
+	// BackendModel: Magento\MediaStorage\Model\Config\Backend\Storage\Media\Database
+	// SourceModel: Magento\MediaStorage\Model\Config\Source\Storage\Media\Database
 	SystemMediaStorageConfigurationMediaDatabase model.Str
 
 	// SystemMediaStorageConfigurationSynchronize => .

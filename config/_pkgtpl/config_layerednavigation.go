@@ -33,7 +33,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -45,7 +45,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `auto`,
-							// SourceModel: Otnegam\Catalog\Model\Config\Source\Price\Step
+							// SourceModel: Magento\Catalog\Model\Config\Source\Price\Step
 						},
 
 						&element.Field{
@@ -81,7 +81,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{

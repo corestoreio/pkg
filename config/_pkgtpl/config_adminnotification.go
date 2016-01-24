@@ -31,7 +31,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -43,7 +43,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   true,
-							// SourceModel: Otnegam\AdminNotification\Model\Config\Source\Frequency
+							// SourceModel: Magento\AdminNotification\Model\Config\Source\Frequency
 						},
 
 						&element.Field{

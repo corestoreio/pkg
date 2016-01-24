@@ -18,23 +18,23 @@ type PkgBackend struct {
 	// CatalogSeoCategoryUrlSuffix => Category URL Suffix.
 	// You need to refresh the cache.
 	// Path: catalog/seo/category_url_suffix
-	// BackendModel: Otnegam\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
+	// BackendModel: Magento\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
 	CatalogSeoCategoryUrlSuffix model.Str
 
 	// CatalogSeoProductUrlSuffix => Product URL Suffix.
 	// You need to refresh the cache.
 	// Path: catalog/seo/product_url_suffix
-	// BackendModel: Otnegam\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
+	// BackendModel: Magento\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
 	CatalogSeoProductUrlSuffix model.Str
 
 	// CatalogSeoProductUseCategories => Use Categories Path for Product URLs.
 	// Path: catalog/seo/product_use_categories
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogSeoProductUseCategories model.Bool
 
 	// CatalogSeoSaveRewritesHistory => Create Permanent Redirect for URLs if URL Key Changed.
 	// Path: catalog/seo/save_rewrites_history
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogSeoSaveRewritesHistory model.Bool
 }
 

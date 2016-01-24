@@ -18,7 +18,7 @@ func init() {
 			Label:     `Checkout`,
 			SortOrder: 305,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Checkout::checkout
+			Resource:  0, // Magento_Checkout::checkout
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "options",
@@ -35,7 +35,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -47,7 +47,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -78,7 +78,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -98,7 +98,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   true,
-							// SourceModel: Otnegam\Checkout\Model\Config\Source\Cart\Summary
+							// SourceModel: Magento\Checkout\Model\Config\Source\Cart\Summary
 						},
 					),
 				},
@@ -118,7 +118,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -149,7 +149,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `general`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -161,7 +161,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `general`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -174,7 +174,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `checkout_payment_failed_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -196,7 +196,7 @@ func init() {
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
 					),
 				},

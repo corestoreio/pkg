@@ -18,7 +18,7 @@ func init() {
 			Label:     `XML Sitemap`,
 			SortOrder: 70,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Sitemap::config_sitemap
+			Resource:  0, // Magento_Sitemap::config_sitemap
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "category",
@@ -35,7 +35,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `daily`,
-							// SourceModel: Otnegam\Sitemap\Model\Config\Source\Frequency
+							// SourceModel: Magento\Sitemap\Model\Config\Source\Frequency
 						},
 
 						&element.Field{
@@ -48,7 +48,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   0.5,
-							// BackendModel: Otnegam\Sitemap\Model\Config\Backend\Priority
+							// BackendModel: Magento\Sitemap\Model\Config\Backend\Priority
 						},
 					),
 				},
@@ -68,7 +68,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `daily`,
-							// SourceModel: Otnegam\Sitemap\Model\Config\Source\Frequency
+							// SourceModel: Magento\Sitemap\Model\Config\Source\Frequency
 						},
 
 						&element.Field{
@@ -81,7 +81,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   1,
-							// BackendModel: Otnegam\Sitemap\Model\Config\Backend\Priority
+							// BackendModel: Magento\Sitemap\Model\Config\Backend\Priority
 						},
 
 						&element.Field{
@@ -93,7 +93,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `all`,
-							// SourceModel: Otnegam\Sitemap\Model\Source\Product\Image\IncludeImage
+							// SourceModel: Magento\Sitemap\Model\Source\Product\Image\IncludeImage
 						},
 					),
 				},
@@ -113,7 +113,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `daily`,
-							// SourceModel: Otnegam\Sitemap\Model\Config\Source\Frequency
+							// SourceModel: Magento\Sitemap\Model\Config\Source\Frequency
 						},
 
 						&element.Field{
@@ -126,7 +126,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   0.25,
-							// BackendModel: Otnegam\Sitemap\Model\Config\Backend\Priority
+							// BackendModel: Magento\Sitemap\Model\Config\Backend\Priority
 						},
 					),
 				},
@@ -146,7 +146,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -168,7 +168,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `general`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -181,7 +181,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `sitemap_generate_error_email_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -192,8 +192,8 @@ func init() {
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\Cron\Model\Config\Backend\Sitemap
-							// SourceModel: Otnegam\Cron\Model\Config\Source\Frequency
+							// BackendModel: Magento\Cron\Model\Config\Backend\Sitemap
+							// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 						},
 
 						&element.Field{
@@ -254,7 +254,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},

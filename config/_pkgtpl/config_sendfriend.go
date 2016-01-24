@@ -18,7 +18,7 @@ func init() {
 			Label:     `Email to a Friend`,
 			SortOrder: 120,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Backend::sendfriend
+			Resource:  0, // Magento_Backend::sendfriend
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "email",
@@ -35,7 +35,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -48,7 +48,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sendfriend_email_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -60,7 +60,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -94,7 +94,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\SendFriend\Model\Source\Checktype
+							// SourceModel: Magento\SendFriend\Model\Source\Checktype
 						},
 					),
 				},

@@ -31,7 +31,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -43,7 +43,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -77,7 +77,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   nil,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted @todo Otnegam\Config\Model\Config\Backend\Encrypted
+							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
 						&element.Field{
@@ -89,7 +89,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   nil,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted @todo Otnegam\Config\Model\Config\Backend\Encrypted
+							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
 						&element.Field{
@@ -111,7 +111,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `N`,
-							// SourceModel: Otnegam\Dhl\Model\Source\Contenttype
+							// SourceModel: Magento\Dhl\Model\Source\Contenttype
 						},
 
 						&element.Field{
@@ -123,7 +123,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `F`,
-							// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
+							// SourceModel: Magento\Shipping\Model\Source\HandlingType
 						},
 
 						&element.Field{
@@ -136,7 +136,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `O`,
-							// SourceModel: Otnegam\Shipping\Model\Source\HandlingAction
+							// SourceModel: Magento\Shipping\Model\Source\HandlingAction
 						},
 
 						&element.Field{
@@ -159,7 +159,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -171,7 +171,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `K`,
-							// SourceModel: Otnegam\Dhl\Model\Source\Method\Unitofmeasure
+							// SourceModel: Magento\Dhl\Model\Source\Method\Unitofmeasure
 						},
 
 						&element.Field{
@@ -183,7 +183,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `R`,
-							// SourceModel: Otnegam\Dhl\Model\Source\Method\Size
+							// SourceModel: Magento\Dhl\Model\Source\Method\Size
 						},
 
 						&element.Field{
@@ -225,7 +225,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `2,5,6,7,9,B,C,D,U,K,L,G,W,I,N,O,R,S,T,X`,
-							// SourceModel: Otnegam\Dhl\Model\Source\Method\Doc
+							// SourceModel: Magento\Dhl\Model\Source\Method\Doc
 						},
 
 						&element.Field{
@@ -237,7 +237,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `1,3,4,8,P,Q,E,F,H,J,M,V,Y`,
-							// SourceModel: Otnegam\Dhl\Model\Source\Method\Nondoc
+							// SourceModel: Magento\Dhl\Model\Source\Method\Nondoc
 						},
 
 						&element.Field{
@@ -270,7 +270,7 @@ func init() {
 							SortOrder: 1200,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Dhl\Model\Source\Method\Freedoc
+							// SourceModel: Magento\Dhl\Model\Source\Method\Freedoc
 						},
 
 						&element.Field{
@@ -281,7 +281,7 @@ func init() {
 							SortOrder: 1200,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Dhl\Model\Source\Method\Freenondoc
+							// SourceModel: Magento\Dhl\Model\Source\Method\Freenondoc
 						},
 
 						&element.Field{
@@ -292,7 +292,7 @@ func init() {
 							SortOrder: 1210,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 
 						&element.Field{
@@ -314,7 +314,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+							// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 						},
 
 						&element.Field{
@@ -326,7 +326,7 @@ func init() {
 							Visible:    element.VisibleYes,
 							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							CanBeEmpty: true,
-							// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
 						&element.Field{
@@ -337,7 +337,7 @@ func init() {
 							SortOrder: 1940,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -358,7 +358,7 @@ func init() {
 							SortOrder: 1950,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -394,7 +394,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Dhl\Model\Carrier`,
+							Default: `Magento\Dhl\Model\Carrier`,
 						},
 
 						&element.Field{

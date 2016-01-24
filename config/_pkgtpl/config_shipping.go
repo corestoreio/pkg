@@ -18,7 +18,7 @@ func init() {
 			Label:     `Shipping Settings`,
 			SortOrder: 310,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Shipping::config_shipping
+			Resource:  0, // Magento_Shipping::config_shipping
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "origin",
@@ -35,7 +35,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `US`,
-							// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
 						&element.Field{
@@ -106,7 +106,7 @@ func init() {
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -127,7 +127,7 @@ func init() {
 			Label:     `Shipping Methods`,
 			SortOrder: 320,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Shipping::carriers
+			Resource:  0, // Magento_Shipping::carriers
 			Groups:    element.NewGroupSlice(),
 		},
 	)

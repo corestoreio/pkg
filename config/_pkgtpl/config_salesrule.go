@@ -18,7 +18,7 @@ func init() {
 			Label:     `Promotions`,
 			SortOrder: 400,
 			Scope:     scope.NewPerm(scope.DefaultID),
-			Resource:  0, // Otnegam_SalesRule::config_promo
+			Resource:  0, // Magento_SalesRule::config_promo
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "auto_generated_coupon_codes",
@@ -47,7 +47,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   true,
-							// SourceModel: Otnegam\SalesRule\Model\System\Config\Source\Coupon\Format
+							// SourceModel: Magento\SalesRule\Model\System\Config\Source\Coupon\Format
 						},
 
 						&element.Field{
@@ -98,7 +98,7 @@ func init() {
 							SortOrder: 12,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 					),
 				},

@@ -18,7 +18,7 @@ func init() {
 			Label:     `Contacts`,
 			SortOrder: 100,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Contact::contact
+			Resource:  0, // Magento_Contact::contact
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "contact",
@@ -35,8 +35,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// BackendModel: Otnegam\Contact\Model\System\Config\Backend\Links
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// BackendModel: Magento\Contact\Model\System\Config\Backend\Links
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -67,7 +67,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `custom2`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -80,7 +80,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `contact_email_email_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 					),
 				},

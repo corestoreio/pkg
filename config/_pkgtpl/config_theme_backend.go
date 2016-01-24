@@ -19,7 +19,7 @@ type PkgBackend struct {
 	// Allowed file types: ICO, PNG, GIF, JPG, JPEG, APNG, SVG. Not all browsers
 	// support all these formats!
 	// Path: design/head/shortcut_icon
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Image\Favicon
+	// BackendModel: Magento\Config\Model\Config\Backend\Image\Favicon
 	DesignHeadShortcutIcon model.Str
 
 	// DesignHeadDefaultTitle => Default Title.
@@ -49,18 +49,18 @@ type PkgBackend struct {
 
 	// DesignHeadDemonotice => Display Demo Store Notice.
 	// Path: design/head/demonotice
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	DesignHeadDemonotice model.Bool
 
 	// DesignSearchEngineRobotsDefaultRobots => Default Robots.
 	// This will be included before head closing tag in page HTML.
 	// Path: design/search_engine_robots/default_robots
-	// SourceModel: Otnegam\Config\Model\Config\Source\Design\Robots
+	// SourceModel: Magento\Config\Model\Config\Source\Design\Robots
 	DesignSearchEngineRobotsDefaultRobots model.Str
 
 	// DesignSearchEngineRobotsCustomInstructions => Edit custom instruction of robots.txt File.
 	// Path: design/search_engine_robots/custom_instructions
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Admin\Robots
+	// BackendModel: Magento\Config\Model\Config\Backend\Admin\Robots
 	DesignSearchEngineRobotsCustomInstructions model.Str
 
 	// DesignSearchEngineRobotsResetToDefaults => Reset to Defaults.
@@ -72,7 +72,7 @@ type PkgBackend struct {
 	// DesignHeaderLogoSrc => Logo Image.
 	// Allowed file types:PNG, GIF, JPG, JPEG, SVG.
 	// Path: design/header/logo_src
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Image\Logo
+	// BackendModel: Magento\Config\Model\Config\Backend\Image\Logo
 	DesignHeaderLogoSrc model.Str
 
 	// DesignHeaderLogoWidth => Logo Image Width.

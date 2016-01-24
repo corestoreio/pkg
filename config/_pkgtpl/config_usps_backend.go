@@ -17,12 +17,12 @@ type PkgBackend struct {
 	model.PkgBackend
 	// CarriersUspsActive => Enabled for Checkout.
 	// Path: carriers/usps/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersUspsActive model.Bool
 
 	// CarriersUspsActiveRma => Enabled for RMA.
 	// Path: carriers/usps/active_rma
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersUspsActiveRma model.Bool
 
 	// CarriersUspsGatewayUrl => Gateway URL.
@@ -39,32 +39,32 @@ type PkgBackend struct {
 
 	// CarriersUspsUserid => User ID.
 	// Path: carriers/usps/userid
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 	CarriersUspsUserid model.Str
 
 	// CarriersUspsPassword => Password.
 	// Path: carriers/usps/password
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 	CarriersUspsPassword model.Str
 
 	// CarriersUspsMode => Mode.
 	// Path: carriers/usps/mode
-	// SourceModel: Otnegam\Shipping\Model\Config\Source\Online\Mode
+	// SourceModel: Magento\Shipping\Model\Config\Source\Online\Mode
 	CarriersUspsMode model.Str
 
 	// CarriersUspsShipmentRequesttype => Packages Request Type.
 	// Path: carriers/usps/shipment_requesttype
-	// SourceModel: Otnegam\Shipping\Model\Config\Source\Online\Requesttype
+	// SourceModel: Magento\Shipping\Model\Config\Source\Online\Requesttype
 	CarriersUspsShipmentRequesttype model.Str
 
 	// CarriersUspsContainer => Container.
 	// Path: carriers/usps/container
-	// SourceModel: Otnegam\Usps\Model\Source\Container
+	// SourceModel: Magento\Usps\Model\Source\Container
 	CarriersUspsContainer model.Str
 
 	// CarriersUspsSize => Size.
 	// Path: carriers/usps/size
-	// SourceModel: Otnegam\Usps\Model\Source\Size
+	// SourceModel: Magento\Usps\Model\Source\Size
 	CarriersUspsSize model.Str
 
 	// CarriersUspsWidth => Width.
@@ -85,7 +85,7 @@ type PkgBackend struct {
 
 	// CarriersUspsMachinable => Machinable.
 	// Path: carriers/usps/machinable
-	// SourceModel: Otnegam\Usps\Model\Source\Machinable
+	// SourceModel: Magento\Usps\Model\Source\Machinable
 	CarriersUspsMachinable model.Str
 
 	// CarriersUspsMaxPackageWeight => Maximum Package Weight (Please consult your shipping carrier for maximum supported shipping weight).
@@ -94,12 +94,12 @@ type PkgBackend struct {
 
 	// CarriersUspsHandlingType => Calculate Handling Fee.
 	// Path: carriers/usps/handling_type
-	// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
+	// SourceModel: Magento\Shipping\Model\Source\HandlingType
 	CarriersUspsHandlingType model.Str
 
 	// CarriersUspsHandlingAction => Handling Applied.
 	// Path: carriers/usps/handling_action
-	// SourceModel: Otnegam\Shipping\Model\Source\HandlingAction
+	// SourceModel: Magento\Shipping\Model\Source\HandlingAction
 	CarriersUspsHandlingAction model.Str
 
 	// CarriersUspsHandlingFee => Handling Fee.
@@ -108,17 +108,17 @@ type PkgBackend struct {
 
 	// CarriersUspsAllowedMethods => Allowed Methods.
 	// Path: carriers/usps/allowed_methods
-	// SourceModel: Otnegam\Usps\Model\Source\Method
+	// SourceModel: Magento\Usps\Model\Source\Method
 	CarriersUspsAllowedMethods model.StringCSV
 
 	// CarriersUspsFreeMethod => Free Method.
 	// Path: carriers/usps/free_method
-	// SourceModel: Otnegam\Usps\Model\Source\Freemethod
+	// SourceModel: Magento\Usps\Model\Source\Freemethod
 	CarriersUspsFreeMethod model.Str
 
 	// CarriersUspsFreeShippingEnable => Free Shipping Amount Threshold.
 	// Path: carriers/usps/free_shipping_enable
-	// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 	CarriersUspsFreeShippingEnable model.Bool
 
 	// CarriersUspsFreeShippingSubtotal => Free Shipping Amount Threshold.
@@ -131,22 +131,22 @@ type PkgBackend struct {
 
 	// CarriersUspsSallowspecific => Ship to Applicable Countries.
 	// Path: carriers/usps/sallowspecific
-	// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+	// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 	CarriersUspsSallowspecific model.Str
 
 	// CarriersUspsSpecificcountry => Ship to Specific Countries.
 	// Path: carriers/usps/specificcountry
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	CarriersUspsSpecificcountry model.StringCSV
 
 	// CarriersUspsDebug => Debug.
 	// Path: carriers/usps/debug
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersUspsDebug model.Bool
 
 	// CarriersUspsShowmethod => Show Method if Not Applicable.
 	// Path: carriers/usps/showmethod
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersUspsShowmethod model.Bool
 
 	// CarriersUspsSortOrder => Sort Order.

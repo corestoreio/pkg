@@ -17,80 +17,80 @@ type PkgBackend struct {
 	model.PkgBackend
 	// TaxClassesShippingTaxClass => Tax Class for Shipping.
 	// Path: tax/classes/shipping_tax_class
-	// SourceModel: Otnegam\Tax\Model\TaxClass\Source\Product
+	// SourceModel: Magento\Tax\Model\TaxClass\Source\Product
 	TaxClassesShippingTaxClass model.Str
 
 	// TaxClassesDefaultProductTaxClass => Default Tax Class for Product.
 	// Path: tax/classes/default_product_tax_class
-	// BackendModel: Otnegam\Tax\Model\Config\TaxClass
-	// SourceModel: Otnegam\Tax\Model\TaxClass\Source\Product
+	// BackendModel: Magento\Tax\Model\Config\TaxClass
+	// SourceModel: Magento\Tax\Model\TaxClass\Source\Product
 	TaxClassesDefaultProductTaxClass model.Str
 
 	// TaxClassesDefaultCustomerTaxClass => Default Tax Class for Customer.
 	// Path: tax/classes/default_customer_tax_class
-	// SourceModel: Otnegam\Tax\Model\TaxClass\Source\Customer
+	// SourceModel: Magento\Tax\Model\TaxClass\Source\Customer
 	TaxClassesDefaultCustomerTaxClass model.Str
 
 	// TaxCalculationAlgorithm => Tax Calculation Method Based On.
 	// Path: tax/calculation/algorithm
-	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Algorithm
+	// SourceModel: Magento\Tax\Model\System\Config\Source\Algorithm
 	TaxCalculationAlgorithm model.Str
 
 	// TaxCalculationBasedOn => Tax Calculation Based On.
 	// Path: tax/calculation/based_on
-	// BackendModel: Otnegam\Tax\Model\Config\Notification
-	// SourceModel: Otnegam\Tax\Model\Config\Source\Basedon
+	// BackendModel: Magento\Tax\Model\Config\Notification
+	// SourceModel: Magento\Tax\Model\Config\Source\Basedon
 	TaxCalculationBasedOn model.Str
 
 	// TaxCalculationPriceIncludesTax => Catalog Prices.
-	// This sets whether catalog prices entered from Otnegam Admin include tax.
+	// This sets whether catalog prices entered from Magento Admin include tax.
 	// Path: tax/calculation/price_includes_tax
-	// BackendModel: Otnegam\Tax\Model\Config\Price\IncludePrice
-	// SourceModel: Otnegam\Tax\Model\System\Config\Source\PriceType
+	// BackendModel: Magento\Tax\Model\Config\Price\IncludePrice
+	// SourceModel: Magento\Tax\Model\System\Config\Source\PriceType
 	TaxCalculationPriceIncludesTax model.Str
 
 	// TaxCalculationShippingIncludesTax => Shipping Prices.
-	// This sets whether shipping amounts entered from Otnegam Admin or obtained
+	// This sets whether shipping amounts entered from Magento Admin or obtained
 	// from gateways include tax.
 	// Path: tax/calculation/shipping_includes_tax
-	// BackendModel: Otnegam\Tax\Model\Config\Price\IncludePrice
-	// SourceModel: Otnegam\Tax\Model\System\Config\Source\PriceType
+	// BackendModel: Magento\Tax\Model\Config\Price\IncludePrice
+	// SourceModel: Magento\Tax\Model\System\Config\Source\PriceType
 	TaxCalculationShippingIncludesTax model.Str
 
 	// TaxCalculationApplyAfterDiscount => Apply Customer Tax.
 	// Path: tax/calculation/apply_after_discount
-	// BackendModel: Otnegam\Tax\Model\Config\Notification
-	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Apply
+	// BackendModel: Magento\Tax\Model\Config\Notification
+	// SourceModel: Magento\Tax\Model\System\Config\Source\Apply
 	TaxCalculationApplyAfterDiscount model.Str
 
 	// TaxCalculationDiscountTax => Apply Discount On Prices.
 	// Apply discount on price including tax is calculated based on store tax if
 	// "Apply Tax after Discount" is selected.
 	// Path: tax/calculation/discount_tax
-	// BackendModel: Otnegam\Tax\Model\Config\Notification
-	// SourceModel: Otnegam\Tax\Model\System\Config\Source\PriceType
+	// BackendModel: Magento\Tax\Model\Config\Notification
+	// SourceModel: Magento\Tax\Model\System\Config\Source\PriceType
 	TaxCalculationDiscountTax model.Str
 
 	// TaxCalculationApplyTaxOn => Apply Tax On.
 	// Path: tax/calculation/apply_tax_on
-	// SourceModel: Otnegam\Tax\Model\Config\Source\Apply\On
+	// SourceModel: Magento\Tax\Model\Config\Source\Apply\On
 	TaxCalculationApplyTaxOn model.Str
 
 	// TaxCalculationCrossBorderTradeEnabled => Enable Cross Border Trade.
 	// When catalog price includes tax, enable this setting to fix the price no
 	// matter what the customer's tax rate.
 	// Path: tax/calculation/cross_border_trade_enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	TaxCalculationCrossBorderTradeEnabled model.Bool
 
 	// TaxDefaultsCountry => Default Country.
 	// Path: tax/defaults/country
-	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Country
+	// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Country
 	TaxDefaultsCountry model.Str
 
 	// TaxDefaultsRegion => Default State.
 	// Path: tax/defaults/region
-	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Region
+	// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Region
 	TaxDefaultsRegion model.Str
 
 	// TaxDefaultsPostcode => Default Post Code.
@@ -99,80 +99,80 @@ type PkgBackend struct {
 
 	// TaxDisplayType => Display Product Prices In Catalog.
 	// Path: tax/display/type
-	// BackendModel: Otnegam\Tax\Model\Config\Notification
-	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+	// BackendModel: Magento\Tax\Model\Config\Notification
+	// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 	TaxDisplayType model.Str
 
 	// TaxDisplayShipping => Display Shipping Prices.
 	// Path: tax/display/shipping
-	// BackendModel: Otnegam\Tax\Model\Config\Notification
-	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+	// BackendModel: Magento\Tax\Model\Config\Notification
+	// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 	TaxDisplayShipping model.Str
 
 	// TaxCartDisplayPrice => Display Prices.
 	// Path: tax/cart_display/price
-	// BackendModel: Otnegam\Tax\Model\Config\Notification
-	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+	// BackendModel: Magento\Tax\Model\Config\Notification
+	// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 	TaxCartDisplayPrice model.Str
 
 	// TaxCartDisplaySubtotal => Display Subtotal.
 	// Path: tax/cart_display/subtotal
-	// BackendModel: Otnegam\Tax\Model\Config\Notification
-	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+	// BackendModel: Magento\Tax\Model\Config\Notification
+	// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 	TaxCartDisplaySubtotal model.Str
 
 	// TaxCartDisplayShipping => Display Shipping Amount.
 	// Path: tax/cart_display/shipping
-	// BackendModel: Otnegam\Tax\Model\Config\Notification
-	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+	// BackendModel: Magento\Tax\Model\Config\Notification
+	// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 	TaxCartDisplayShipping model.Str
 
 	// TaxCartDisplayGrandtotal => Include Tax In Order Total.
 	// Path: tax/cart_display/grandtotal
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	TaxCartDisplayGrandtotal model.Bool
 
 	// TaxCartDisplayFullSummary => Display Full Tax Summary.
 	// Path: tax/cart_display/full_summary
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	TaxCartDisplayFullSummary model.Bool
 
 	// TaxCartDisplayZeroTax => Display Zero Tax Subtotal.
 	// Path: tax/cart_display/zero_tax
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	TaxCartDisplayZeroTax model.Bool
 
 	// TaxSalesDisplayPrice => Display Prices.
 	// Path: tax/sales_display/price
-	// BackendModel: Otnegam\Tax\Model\Config\Notification
-	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+	// BackendModel: Magento\Tax\Model\Config\Notification
+	// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 	TaxSalesDisplayPrice model.Str
 
 	// TaxSalesDisplaySubtotal => Display Subtotal.
 	// Path: tax/sales_display/subtotal
-	// BackendModel: Otnegam\Tax\Model\Config\Notification
-	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+	// BackendModel: Magento\Tax\Model\Config\Notification
+	// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 	TaxSalesDisplaySubtotal model.Str
 
 	// TaxSalesDisplayShipping => Display Shipping Amount.
 	// Path: tax/sales_display/shipping
-	// BackendModel: Otnegam\Tax\Model\Config\Notification
-	// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+	// BackendModel: Magento\Tax\Model\Config\Notification
+	// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 	TaxSalesDisplayShipping model.Str
 
 	// TaxSalesDisplayGrandtotal => Include Tax In Order Total.
 	// Path: tax/sales_display/grandtotal
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	TaxSalesDisplayGrandtotal model.Bool
 
 	// TaxSalesDisplayFullSummary => Display Full Tax Summary.
 	// Path: tax/sales_display/full_summary
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	TaxSalesDisplayFullSummary model.Bool
 
 	// TaxSalesDisplayZeroTax => Display Zero Tax Subtotal.
 	// Path: tax/sales_display/zero_tax
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	TaxSalesDisplayZeroTax model.Bool
 }
 

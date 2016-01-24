@@ -17,12 +17,12 @@ type PkgBackend struct {
 	model.PkgBackend
 	// CatalogLayeredNavigationDisplayProductCount => Display Product Count.
 	// Path: catalog/layered_navigation/display_product_count
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogLayeredNavigationDisplayProductCount model.Bool
 
 	// CatalogLayeredNavigationPriceRangeCalculation => Price Navigation Step Calculation.
 	// Path: catalog/layered_navigation/price_range_calculation
-	// SourceModel: Otnegam\Catalog\Model\Config\Source\Price\Step
+	// SourceModel: Magento\Catalog\Model\Config\Source\Price\Step
 	CatalogLayeredNavigationPriceRangeCalculation model.Str
 
 	// CatalogLayeredNavigationPriceRangeStep => Default Price Navigation Step.
@@ -38,7 +38,7 @@ type PkgBackend struct {
 	// This setting will be applied when all prices in the specific price interval
 	// are equal.
 	// Path: catalog/layered_navigation/one_price_interval
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogLayeredNavigationOnePriceInterval model.Bool
 
 	// CatalogLayeredNavigationIntervalDivisionLimit => Interval Division Limit.

@@ -17,37 +17,37 @@ type PkgBackend struct {
 	model.PkgBackend
 	// CatalogProductalertAllowPrice => Allow Alert When Product Price Changes.
 	// Path: catalog/productalert/allow_price
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogProductalertAllowPrice model.Bool
 
 	// CatalogProductalertAllowStock => Allow Alert When Product Comes Back in Stock.
 	// Path: catalog/productalert/allow_stock
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogProductalertAllowStock model.Bool
 
 	// CatalogProductalertEmailPriceTemplate => Price Alert Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: catalog/productalert/email_price_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	CatalogProductalertEmailPriceTemplate model.Str
 
 	// CatalogProductalertEmailStockTemplate => Stock Alert Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: catalog/productalert/email_stock_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	CatalogProductalertEmailStockTemplate model.Str
 
 	// CatalogProductalertEmailIdentity => Alert Email Sender.
 	// Path: catalog/productalert/email_identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	CatalogProductalertEmailIdentity model.Str
 
 	// CatalogProductalertCronFrequency => Frequency.
 	// Path: catalog/productalert_cron/frequency
-	// BackendModel: Otnegam\Cron\Model\Config\Backend\Product\Alert
-	// SourceModel: Otnegam\Cron\Model\Config\Source\Frequency
+	// BackendModel: Magento\Cron\Model\Config\Backend\Product\Alert
+	// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 	CatalogProductalertCronFrequency model.Str
 
 	// CatalogProductalertCronTime => Start Time.
@@ -60,14 +60,14 @@ type PkgBackend struct {
 
 	// CatalogProductalertCronErrorEmailIdentity => Error Email Sender.
 	// Path: catalog/productalert_cron/error_email_identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	CatalogProductalertCronErrorEmailIdentity model.Str
 
 	// CatalogProductalertCronErrorEmailTemplate => Error Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: catalog/productalert_cron/error_email_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	CatalogProductalertCronErrorEmailTemplate model.Str
 }
 

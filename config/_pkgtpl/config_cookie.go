@@ -31,7 +31,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   3600,
-							// BackendModel: Otnegam\Cookie\Model\Config\Backend\Lifetime
+							// BackendModel: Magento\Cookie\Model\Config\Backend\Lifetime
 						},
 
 						&element.Field{
@@ -42,7 +42,7 @@ func init() {
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\Cookie\Model\Config\Backend\Path
+							// BackendModel: Magento\Cookie\Model\Config\Backend\Path
 						},
 
 						&element.Field{
@@ -53,7 +53,7 @@ func init() {
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\Cookie\Model\Config\Backend\Domain
+							// BackendModel: Magento\Cookie\Model\Config\Backend\Domain
 						},
 
 						&element.Field{
@@ -66,7 +66,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -78,8 +78,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// BackendModel: Otnegam\Cookie\Model\Config\Backend\Cookie
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// BackendModel: Magento\Cookie\Model\Config\Backend\Cookie
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},

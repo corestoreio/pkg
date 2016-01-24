@@ -31,7 +31,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   nil,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted @todo Otnegam\Config\Model\Config\Backend\Encrypted
+							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
 						&element.Field{
@@ -43,7 +43,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -55,7 +55,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -68,7 +68,7 @@ func init() {
 							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							CanBeEmpty: true,
 							Default:    `1DM,1DML,1DA,1DAL,1DAPI,1DP,1DPL,2DM,2DML,2DA,2DAL,3DS,GND,GNDCOM,GNDRES,STD,XPR,WXS,XPRL,XDM,XDML,XPD,01,02,03,07,08,11,12,14,54,59,65`,
-							// SourceModel: Otnegam\Ups\Model\Config\Source\Method
+							// SourceModel: Magento\Ups\Model\Config\Source\Method
 						},
 
 						&element.Field{
@@ -80,7 +80,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Shipping\Model\Config\Source\Online\Requesttype
+							// SourceModel: Magento\Shipping\Model\Config\Source\Online\Requesttype
 						},
 
 						&element.Field{
@@ -92,7 +92,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `CP`,
-							// SourceModel: Otnegam\Ups\Model\Config\Source\Container
+							// SourceModel: Magento\Ups\Model\Config\Source\Container
 						},
 
 						&element.Field{
@@ -103,7 +103,7 @@ func init() {
 							SortOrder: 210,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 
 						&element.Field{
@@ -125,7 +125,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `RES`,
-							// SourceModel: Otnegam\Ups\Model\Config\Source\DestType
+							// SourceModel: Magento\Ups\Model\Config\Source\DestType
 						},
 
 						&element.Field{
@@ -137,7 +137,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `GND`,
-							// SourceModel: Otnegam\Ups\Model\Config\Source\Freemethod
+							// SourceModel: Magento\Ups\Model\Config\Source\Freemethod
 						},
 
 						&element.Field{
@@ -171,7 +171,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `F`,
-							// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
+							// SourceModel: Magento\Shipping\Model\Source\HandlingType
 						},
 
 						&element.Field{
@@ -183,7 +183,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `O`,
-							// SourceModel: Otnegam\Shipping\Model\Source\HandlingAction
+							// SourceModel: Magento\Shipping\Model\Source\HandlingAction
 						},
 
 						&element.Field{
@@ -227,7 +227,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `Shipments Originating in United States`,
-							// SourceModel: Otnegam\Ups\Model\Config\Source\OriginShipment
+							// SourceModel: Magento\Ups\Model\Config\Source\OriginShipment
 						},
 
 						&element.Field{
@@ -239,7 +239,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   nil,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted @todo Otnegam\Config\Model\Config\Backend\Encrypted
+							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
 						&element.Field{
@@ -251,7 +251,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `CC`,
-							// SourceModel: Otnegam\Ups\Model\Config\Source\Pickup
+							// SourceModel: Magento\Ups\Model\Config\Source\Pickup
 						},
 
 						&element.Field{
@@ -295,7 +295,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `UPS`,
-							// SourceModel: Otnegam\Ups\Model\Config\Source\Type
+							// SourceModel: Magento\Ups\Model\Config\Source\Type
 						},
 
 						&element.Field{
@@ -307,7 +307,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -319,7 +319,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `LBS`,
-							// SourceModel: Otnegam\Ups\Model\Config\Source\Unitofmeasure
+							// SourceModel: Magento\Ups\Model\Config\Source\Unitofmeasure
 						},
 
 						&element.Field{
@@ -331,7 +331,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   nil,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted @todo Otnegam\Config\Model\Config\Backend\Encrypted
+							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
 						&element.Field{
@@ -343,7 +343,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -366,7 +366,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+							// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 						},
 
 						&element.Field{
@@ -378,7 +378,7 @@ func init() {
 							Visible:    element.VisibleYes,
 							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							CanBeEmpty: true,
-							// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
 						&element.Field{
@@ -389,7 +389,7 @@ func init() {
 							SortOrder: 920,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -407,13 +407,13 @@ func init() {
 							// Path: carriers/ups/mode_xml
 							ID:        "mode_xml",
 							Label:     `Mode`,
-							Comment:   text.Long(`This enables or disables SSL verification of the Otnegam server by UPS.`),
+							Comment:   text.Long(`This enables or disables SSL verification of the Magento server by UPS.`),
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   true,
-							// SourceModel: Otnegam\Shipping\Model\Config\Source\Online\Mode
+							// SourceModel: Magento\Shipping\Model\Config\Source\Online\Mode
 						},
 
 						&element.Field{
@@ -424,7 +424,7 @@ func init() {
 							SortOrder: 920,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -458,7 +458,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Ups\Model\Carrier`,
+							Default: `Magento\Ups\Model\Carrier`,
 						},
 
 						&element.Field{

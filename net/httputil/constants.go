@@ -23,7 +23,7 @@ const (
 	RequestIDHeader = "X-Request-Id"
 )
 
-// Method* defines the available methods which this framework supports
+// Method* defines the available methods which this library supports
 const (
 	MethodHead    = `HEAD`
 	MethodGet     = "GET"

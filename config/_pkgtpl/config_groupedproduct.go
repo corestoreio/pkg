@@ -32,7 +32,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `itself`,
-							// SourceModel: Otnegam\Catalog\Model\Config\Source\Product\Thumbnail
+							// SourceModel: Magento\Catalog\Model\Config\Source\Product\Thumbnail
 						},
 					),
 				},

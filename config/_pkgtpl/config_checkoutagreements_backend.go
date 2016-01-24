@@ -17,7 +17,7 @@ type PkgBackend struct {
 	model.PkgBackend
 	// CheckoutOptionsEnableAgreements => Enable Terms and Conditions.
 	// Path: checkout/options/enable_agreements
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CheckoutOptionsEnableAgreements model.Bool
 }
 

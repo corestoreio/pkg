@@ -20,7 +20,7 @@ type PkgBackend struct {
 	// high-resolution displays, upload an image that is 3x normal size and then
 	// specify 1x dimensions in width/height fields below.
 	// Path: design/email/logo
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Email\Logo
+	// BackendModel: Magento\Config\Model\Config\Backend\Email\Logo
 	DesignEmailLogo model.Str
 
 	// DesignEmailLogoAlt => Logo Image Alt.
@@ -43,14 +43,14 @@ type PkgBackend struct {
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: design/email/header_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	DesignEmailHeaderTemplate model.Str
 
 	// DesignEmailFooterTemplate => Footer Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: design/email/footer_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	DesignEmailFooterTemplate model.Str
 }
 

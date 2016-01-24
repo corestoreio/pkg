@@ -17,19 +17,19 @@ type PkgBackend struct {
 	model.PkgBackend
 	// SendfriendEmailEnabled => Enabled.
 	// Path: sendfriend/email/enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SendfriendEmailEnabled model.Bool
 
 	// SendfriendEmailTemplate => Select Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sendfriend/email/template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SendfriendEmailTemplate model.Str
 
 	// SendfriendEmailAllowGuest => Allow for Guests.
 	// Path: sendfriend/email/allow_guest
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SendfriendEmailAllowGuest model.Bool
 
 	// SendfriendEmailMaxRecipients => Max Recipients.
@@ -42,7 +42,7 @@ type PkgBackend struct {
 
 	// SendfriendEmailCheckBy => Limit Sending By.
 	// Path: sendfriend/email/check_by
-	// SourceModel: Otnegam\SendFriend\Model\Source\Checktype
+	// SourceModel: Magento\SendFriend\Model\Source\Checktype
 	SendfriendEmailCheckBy model.Str
 }
 

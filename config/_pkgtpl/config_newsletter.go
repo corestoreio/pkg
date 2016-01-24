@@ -18,7 +18,7 @@ func init() {
 			Label:     `Newsletter`,
 			SortOrder: 110,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Newsletter::newsletter
+			Resource:  0, // Magento_Newsletter::newsletter
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "subscription",
@@ -35,7 +35,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -47,7 +47,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -59,7 +59,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `support`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -72,7 +72,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `newsletter_subscription_confirm_email_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -84,7 +84,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `general`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -97,7 +97,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `newsletter_subscription_success_email_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -109,7 +109,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `support`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -122,7 +122,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `newsletter_subscription_un_email_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 					),
 				},

@@ -18,7 +18,7 @@ func init() {
 			Label:     `Tax`,
 			SortOrder: 303,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Tax::config_tax
+			Resource:  0, // Magento_Tax::config_tax
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "classes",
@@ -35,7 +35,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Tax\Model\TaxClass\Source\Product
+							// SourceModel: Magento\Tax\Model\TaxClass\Source\Product
 						},
 
 						&element.Field{
@@ -47,8 +47,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   2,
-							// BackendModel: Otnegam\Tax\Model\Config\TaxClass
-							// SourceModel: Otnegam\Tax\Model\TaxClass\Source\Product
+							// BackendModel: Magento\Tax\Model\Config\TaxClass
+							// SourceModel: Magento\Tax\Model\TaxClass\Source\Product
 						},
 
 						&element.Field{
@@ -60,7 +60,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   3,
-							// SourceModel: Otnegam\Tax\Model\TaxClass\Source\Customer
+							// SourceModel: Magento\Tax\Model\TaxClass\Source\Customer
 						},
 					),
 				},
@@ -80,7 +80,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `TOTAL_BASE_CALCULATION`,
-							// SourceModel: Otnegam\Tax\Model\System\Config\Source\Algorithm
+							// SourceModel: Magento\Tax\Model\System\Config\Source\Algorithm
 						},
 
 						&element.Field{
@@ -92,36 +92,36 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `shipping`,
-							// BackendModel: Otnegam\Tax\Model\Config\Notification
-							// SourceModel: Otnegam\Tax\Model\Config\Source\Basedon
+							// BackendModel: Magento\Tax\Model\Config\Notification
+							// SourceModel: Magento\Tax\Model\Config\Source\Basedon
 						},
 
 						&element.Field{
 							// Path: tax/calculation/price_includes_tax
 							ID:        "price_includes_tax",
 							Label:     `Catalog Prices`,
-							Comment:   text.Long(`This sets whether catalog prices entered from Otnegam Admin include tax.`),
+							Comment:   text.Long(`This sets whether catalog prices entered from Magento Admin include tax.`),
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// BackendModel: Otnegam\Tax\Model\Config\Price\IncludePrice
-							// SourceModel: Otnegam\Tax\Model\System\Config\Source\PriceType
+							// BackendModel: Magento\Tax\Model\Config\Price\IncludePrice
+							// SourceModel: Magento\Tax\Model\System\Config\Source\PriceType
 						},
 
 						&element.Field{
 							// Path: tax/calculation/shipping_includes_tax
 							ID:        "shipping_includes_tax",
 							Label:     `Shipping Prices`,
-							Comment:   text.Long(`This sets whether shipping amounts entered from Otnegam Admin or obtained from gateways include tax.`),
+							Comment:   text.Long(`This sets whether shipping amounts entered from Magento Admin or obtained from gateways include tax.`),
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// BackendModel: Otnegam\Tax\Model\Config\Price\IncludePrice
-							// SourceModel: Otnegam\Tax\Model\System\Config\Source\PriceType
+							// BackendModel: Magento\Tax\Model\Config\Price\IncludePrice
+							// SourceModel: Magento\Tax\Model\System\Config\Source\PriceType
 						},
 
 						&element.Field{
@@ -133,8 +133,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   true,
-							// BackendModel: Otnegam\Tax\Model\Config\Notification
-							// SourceModel: Otnegam\Tax\Model\System\Config\Source\Apply
+							// BackendModel: Magento\Tax\Model\Config\Notification
+							// SourceModel: Magento\Tax\Model\System\Config\Source\Apply
 						},
 
 						&element.Field{
@@ -147,8 +147,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `["0","0"]`,
-							// BackendModel: Otnegam\Tax\Model\Config\Notification
-							// SourceModel: Otnegam\Tax\Model\System\Config\Source\PriceType
+							// BackendModel: Magento\Tax\Model\Config\Notification
+							// SourceModel: Magento\Tax\Model\System\Config\Source\PriceType
 						},
 
 						&element.Field{
@@ -160,7 +160,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Tax\Model\Config\Source\Apply\On
+							// SourceModel: Magento\Tax\Model\Config\Source\Apply\On
 						},
 
 						&element.Field{
@@ -172,7 +172,7 @@ func init() {
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -192,7 +192,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `US`,
-							// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Country
+							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Country
 						},
 
 						&element.Field{
@@ -204,7 +204,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Region
+							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Region
 						},
 
 						&element.Field{
@@ -234,8 +234,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// BackendModel: Otnegam\Tax\Model\Config\Notification
-							// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+							// BackendModel: Magento\Tax\Model\Config\Notification
+							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 						},
 
 						&element.Field{
@@ -247,8 +247,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// BackendModel: Otnegam\Tax\Model\Config\Notification
-							// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+							// BackendModel: Magento\Tax\Model\Config\Notification
+							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 						},
 					),
 				},
@@ -268,8 +268,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// BackendModel: Otnegam\Tax\Model\Config\Notification
-							// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+							// BackendModel: Magento\Tax\Model\Config\Notification
+							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 						},
 
 						&element.Field{
@@ -281,8 +281,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// BackendModel: Otnegam\Tax\Model\Config\Notification
-							// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+							// BackendModel: Magento\Tax\Model\Config\Notification
+							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 						},
 
 						&element.Field{
@@ -294,8 +294,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// BackendModel: Otnegam\Tax\Model\Config\Notification
-							// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+							// BackendModel: Magento\Tax\Model\Config\Notification
+							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 						},
 
 						&element.Field{
@@ -307,7 +307,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -319,7 +319,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -331,7 +331,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -351,8 +351,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// BackendModel: Otnegam\Tax\Model\Config\Notification
-							// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+							// BackendModel: Magento\Tax\Model\Config\Notification
+							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 						},
 
 						&element.Field{
@@ -364,8 +364,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// BackendModel: Otnegam\Tax\Model\Config\Notification
-							// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+							// BackendModel: Magento\Tax\Model\Config\Notification
+							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 						},
 
 						&element.Field{
@@ -377,8 +377,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// BackendModel: Otnegam\Tax\Model\Config\Notification
-							// SourceModel: Otnegam\Tax\Model\System\Config\Source\Tax\Display\Type
+							// BackendModel: Magento\Tax\Model\Config\Notification
+							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 						},
 
 						&element.Field{
@@ -390,7 +390,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -402,7 +402,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -414,7 +414,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},

@@ -31,7 +31,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -43,7 +43,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -67,7 +67,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   nil,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted @todo Otnegam\Config\Model\Config\Backend\Encrypted
+							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
 						&element.Field{
@@ -79,7 +79,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   nil,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted @todo Otnegam\Config\Model\Config\Backend\Encrypted
+							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
 						&element.Field{
@@ -91,7 +91,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   nil,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted @todo Otnegam\Config\Model\Config\Backend\Encrypted
+							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
 						&element.Field{
@@ -103,7 +103,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   nil,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted @todo Otnegam\Config\Model\Config\Backend\Encrypted
+							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
 						&element.Field{
@@ -115,7 +115,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -149,7 +149,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Shipping\Model\Config\Source\Online\Requesttype
+							// SourceModel: Magento\Shipping\Model\Config\Source\Online\Requesttype
 						},
 
 						&element.Field{
@@ -161,7 +161,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `YOUR_PACKAGING`,
-							// SourceModel: Otnegam\Fedex\Model\Source\Packaging
+							// SourceModel: Magento\Fedex\Model\Source\Packaging
 						},
 
 						&element.Field{
@@ -173,7 +173,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `REGULAR_PICKUP`,
-							// SourceModel: Otnegam\Fedex\Model\Source\Dropoff
+							// SourceModel: Magento\Fedex\Model\Source\Dropoff
 						},
 
 						&element.Field{
@@ -185,7 +185,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `LB`,
-							// SourceModel: Otnegam\Fedex\Model\Source\Unitofmeasure
+							// SourceModel: Magento\Fedex\Model\Source\Unitofmeasure
 						},
 
 						&element.Field{
@@ -208,7 +208,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `F`,
-							// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
+							// SourceModel: Magento\Shipping\Model\Source\HandlingType
 						},
 
 						&element.Field{
@@ -220,7 +220,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `O`,
-							// SourceModel: Otnegam\Shipping\Model\Source\HandlingAction
+							// SourceModel: Magento\Shipping\Model\Source\HandlingAction
 						},
 
 						&element.Field{
@@ -241,7 +241,7 @@ func init() {
 							SortOrder: 180,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -254,7 +254,7 @@ func init() {
 							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							CanBeEmpty: true,
 							Default:    `EUROPE_FIRST_INTERNATIONAL_PRIORITY,FEDEX_1_DAY_FREIGHT,FEDEX_2_DAY_FREIGHT,FEDEX_2_DAY,FEDEX_2_DAY_AM,FEDEX_3_DAY_FREIGHT,FEDEX_EXPRESS_SAVER,FEDEX_GROUND,FIRST_OVERNIGHT,GROUND_HOME_DELIVERY,INTERNATIONAL_ECONOMY,INTERNATIONAL_ECONOMY_FREIGHT,INTERNATIONAL_FIRST,INTERNATIONAL_GROUND,INTERNATIONAL_PRIORITY,INTERNATIONAL_PRIORITY_FREIGHT,PRIORITY_OVERNIGHT,SMART_POST,STANDARD_OVERNIGHT,FEDEX_FREIGHT,FEDEX_NATIONAL_FREIGHT`,
-							// SourceModel: Otnegam\Fedex\Model\Source\Method
+							// SourceModel: Magento\Fedex\Model\Source\Method
 						},
 
 						&element.Field{
@@ -277,7 +277,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `FEDEX_GROUND`,
-							// SourceModel: Otnegam\Fedex\Model\Source\Freemethod
+							// SourceModel: Magento\Fedex\Model\Source\Freemethod
 						},
 
 						&element.Field{
@@ -288,7 +288,7 @@ func init() {
 							SortOrder: 220,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 
 						&element.Field{
@@ -321,7 +321,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+							// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 						},
 
 						&element.Field{
@@ -333,7 +333,7 @@ func init() {
 							Visible:    element.VisibleYes,
 							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							CanBeEmpty: true,
-							// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
 						&element.Field{
@@ -344,7 +344,7 @@ func init() {
 							SortOrder: 270,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -355,7 +355,7 @@ func init() {
 							SortOrder: 280,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -399,7 +399,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Fedex\Model\Carrier`,
+							Default: `Magento\Fedex\Model\Carrier`,
 						},
 
 						&element.Field{

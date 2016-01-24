@@ -17,7 +17,7 @@ type PkgBackend struct {
 	model.PkgBackend
 	// CatalogSearchEngine => Search Engine.
 	// Path: catalog/search/engine
-	// SourceModel: Otnegam\Search\Model\Adminhtml\System\Config\Source\Engine
+	// SourceModel: Magento\Search\Model\Adminhtml\System\Config\Source\Engine
 	CatalogSearchEngine model.Str
 
 	// CatalogSearchSearchType => .

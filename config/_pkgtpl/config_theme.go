@@ -31,7 +31,7 @@ func init() {
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Image\Favicon
+							// BackendModel: Magento\Config\Model\Config\Backend\Image\Favicon
 						},
 
 						&element.Field{
@@ -103,7 +103,7 @@ func init() {
 							SortOrder: 80,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -124,7 +124,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `INDEX,FOLLOW`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Design\Robots
+							// SourceModel: Magento\Config\Model\Config\Source\Design\Robots
 						},
 
 						&element.Field{
@@ -135,7 +135,7 @@ func init() {
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Admin\Robots
+							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Robots
 						},
 
 						&element.Field{
@@ -166,7 +166,7 @@ func init() {
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Image\Logo
+							// BackendModel: Magento\Config\Model\Config\Backend\Image\Logo
 						},
 
 						&element.Field{
@@ -280,7 +280,7 @@ func init() {
 							ID:      `_value`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"default_title":"Otnegam Commerce","default_description":"Default Description","default_keywords":"Otnegam, Varien, E-commerce","default_media_type":"text\/html","default_charset":"utf-8"}`,
+							Default: `{"default_title":"Magento Commerce","default_description":"Default Description","default_keywords":"Magento, Varien, E-commerce","default_media_type":"text\/html","default_charset":"utf-8"}`,
 						},
 
 						&element.Field{
@@ -330,7 +330,7 @@ Disallow: /*SID=
 							ID:      `_value`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"logo_alt":"Otnegam Commerce","welcome":"Default welcome msg!"}`,
+							Default: `{"logo_alt":"Magento Commerce","welcome":"Default welcome msg!"}`,
 						},
 
 						&element.Field{
@@ -351,7 +351,7 @@ Disallow: /*SID=
 							ID:      `_value`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"copyright":"Copyright \u00a9 2015 Otnegam. All rights reserved."}`,
+							Default: `{"copyright":"Copyright \u00a9 2015 Magento. All rights reserved."}`,
 						},
 
 						&element.Field{
@@ -376,7 +376,7 @@ Disallow: /*SID=
 							ID:      `custom_css`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Theme\Model\Theme\Customization\File\CustomCss`,
+							Default: `Magento\Theme\Model\Theme\Customization\File\CustomCss`,
 						},
 					),
 				},

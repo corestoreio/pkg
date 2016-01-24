@@ -31,7 +31,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   9,
-							// SourceModel: Otnegam\Downloadable\Model\System\Config\Source\Orderitemstatus
+							// SourceModel: Magento\Downloadable\Model\System\Config\Source\Orderitemstatus
 						},
 
 						&element.Field{
@@ -52,7 +52,7 @@ func init() {
 							SortOrder: 300,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -86,7 +86,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -98,7 +98,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `inline`,
-							// SourceModel: Otnegam\Downloadable\Model\System\Config\Source\Contentdisposition
+							// SourceModel: Magento\Downloadable\Model\System\Config\Source\Contentdisposition
 						},
 
 						&element.Field{
@@ -111,7 +111,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},

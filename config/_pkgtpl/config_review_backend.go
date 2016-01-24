@@ -17,7 +17,7 @@ type PkgBackend struct {
 	model.PkgBackend
 	// CatalogReviewAllowGuest => Allow Guests to Write Reviews.
 	// Path: catalog/review/allow_guest
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogReviewAllowGuest model.Bool
 }
 

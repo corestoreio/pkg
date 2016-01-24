@@ -33,7 +33,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -67,7 +67,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `F`,
-							// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
+							// SourceModel: Magento\Shipping\Model\Source\HandlingType
 						},
 
 						&element.Field{
@@ -110,7 +110,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `I`,
-							// SourceModel: Otnegam\OfflineShipping\Model\Config\Source\Flatrate
+							// SourceModel: Magento\OfflineShipping\Model\Config\Source\Flatrate
 						},
 
 						&element.Field{
@@ -122,7 +122,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+							// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 						},
 
 						&element.Field{
@@ -134,7 +134,7 @@ func init() {
 							Visible:    element.VisibleYes,
 							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							CanBeEmpty: true,
-							// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
 						&element.Field{
@@ -145,7 +145,7 @@ func init() {
 							SortOrder: 92,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -176,7 +176,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `F`,
-							// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
+							// SourceModel: Magento\Shipping\Model\Source\HandlingType
 						},
 
 						&element.Field{
@@ -198,7 +198,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -210,7 +210,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `package_weight`,
-							// SourceModel: Otnegam\OfflineShipping\Model\Config\Source\Tablerate
+							// SourceModel: Magento\OfflineShipping\Model\Config\Source\Tablerate
 						},
 
 						&element.Field{
@@ -222,14 +222,14 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
 							// Path: carriers/tablerate/export
 							ID:        "export",
 							Label:     `Export`,
-							Type:      element.TypeCustom, // @todo: Otnegam\OfflineShipping\Block\Adminhtml\Form\Field\Export,
+							Type:      element.TypeCustom, // @todo: Magento\OfflineShipping\Block\Adminhtml\Form\Field\Export,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.WebsiteID),
@@ -239,11 +239,11 @@ func init() {
 							// Path: carriers/tablerate/import
 							ID:        "import",
 							Label:     `Import`,
-							Type:      element.TypeCustom, // @todo: Otnegam\OfflineShipping\Block\Adminhtml\Form\Field\Import,
+							Type:      element.TypeCustom, // @todo: Magento\OfflineShipping\Block\Adminhtml\Form\Field\Import,
 							SortOrder: 6,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.WebsiteID),
-							// BackendModel: Otnegam\OfflineShipping\Model\Config\Backend\Tablerate
+							// BackendModel: Magento\OfflineShipping\Model\Config\Backend\Tablerate
 						},
 
 						&element.Field{
@@ -287,7 +287,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+							// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 						},
 
 						&element.Field{
@@ -299,7 +299,7 @@ func init() {
 							Visible:    element.VisibleYes,
 							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							CanBeEmpty: true,
-							// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
 						&element.Field{
@@ -310,7 +310,7 @@ func init() {
 							SortOrder: 92,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -341,7 +341,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -395,7 +395,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+							// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 						},
 
 						&element.Field{
@@ -407,7 +407,7 @@ func init() {
 							Visible:    element.VisibleYes,
 							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							CanBeEmpty: true,
-							// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
 						&element.Field{
@@ -418,7 +418,7 @@ func init() {
 							SortOrder: 92,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -448,7 +448,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\OfflineShipping\Model\Carrier\Flatrate`,
+							Default: `Magento\OfflineShipping\Model\Carrier\Flatrate`,
 						},
 					),
 				},
@@ -461,7 +461,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\OfflineShipping\Model\Carrier\Tablerate`,
+							Default: `Magento\OfflineShipping\Model\Carrier\Tablerate`,
 						},
 					),
 				},
@@ -482,7 +482,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\OfflineShipping\Model\Carrier\Freeshipping`,
+							Default: `Magento\OfflineShipping\Model\Carrier\Freeshipping`,
 						},
 					),
 				},

@@ -17,14 +17,14 @@ type PkgBackend struct {
 	model.PkgBackend
 	// WishlistEmailEmailIdentity => Email Sender.
 	// Path: wishlist/email/email_identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	WishlistEmailEmailIdentity model.Str
 
 	// WishlistEmailEmailTemplate => Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: wishlist/email/email_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	WishlistEmailEmailTemplate model.Str
 
 	// WishlistEmailNumberLimit => Max Emails Allowed to be Sent.
@@ -39,17 +39,17 @@ type PkgBackend struct {
 
 	// WishlistGeneralActive => Enabled.
 	// Path: wishlist/general/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	WishlistGeneralActive model.Bool
 
 	// WishlistWishlistLinkUseQty => Display Wish List Summary.
 	// Path: wishlist/wishlist_link/use_qty
-	// SourceModel: Otnegam\Wishlist\Model\Config\Source\Summary
+	// SourceModel: Magento\Wishlist\Model\Config\Source\Summary
 	WishlistWishlistLinkUseQty model.Str
 
 	// RssWishlistActive => Enable RSS.
 	// Path: rss/wishlist/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 	RssWishlistActive model.Bool
 }
 

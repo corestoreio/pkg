@@ -17,7 +17,7 @@ type PkgBackend struct {
 	model.PkgBackend
 	// GoogleAnalyticsExperiments => Enable Content Experiments.
 	// Path: google/analytics/experiments
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	GoogleAnalyticsExperiments model.Bool
 }
 

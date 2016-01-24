@@ -17,12 +17,12 @@ type PkgBackend struct {
 	model.PkgBackend
 	// SalesGiftOptionsAllowOrder => Allow Gift Messages on Order Level.
 	// Path: sales/gift_options/allow_order
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesGiftOptionsAllowOrder model.Bool
 
 	// SalesGiftOptionsAllowItems => Allow Gift Messages for Order Items.
 	// Path: sales/gift_options/allow_items
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesGiftOptionsAllowItems model.Bool
 }
 

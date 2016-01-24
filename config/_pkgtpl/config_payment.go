@@ -18,7 +18,7 @@ func init() {
 			Label:     `Payment Methods`,
 			SortOrder: 400,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Payment::payment
+			Resource:  0, // Magento_Payment::payment
 			Groups:    element.NewGroupSlice(),
 		},
 
@@ -42,7 +42,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Payment\Model\Method\Free`,
+							Default: `Magento\Payment\Model\Method\Free`,
 						},
 
 						&element.Field{
@@ -95,7 +95,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Payment\Model\Method\Substitution`,
+							Default: `Magento\Payment\Model\Method\Substitution`,
 						},
 
 						&element.Field{

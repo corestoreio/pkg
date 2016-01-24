@@ -17,7 +17,7 @@ type PkgBackend struct {
 	model.PkgBackend
 	// CarriersFlatrateActive => Enabled.
 	// Path: carriers/flatrate/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersFlatrateActive model.Bool
 
 	// CarriersFlatrateName => Method Name.
@@ -30,7 +30,7 @@ type PkgBackend struct {
 
 	// CarriersFlatrateHandlingType => Calculate Handling Fee.
 	// Path: carriers/flatrate/handling_type
-	// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
+	// SourceModel: Magento\Shipping\Model\Source\HandlingType
 	CarriersFlatrateHandlingType model.Str
 
 	// CarriersFlatrateHandlingFee => Handling Fee.
@@ -47,22 +47,22 @@ type PkgBackend struct {
 
 	// CarriersFlatrateType => Type.
 	// Path: carriers/flatrate/type
-	// SourceModel: Otnegam\OfflineShipping\Model\Config\Source\Flatrate
+	// SourceModel: Magento\OfflineShipping\Model\Config\Source\Flatrate
 	CarriersFlatrateType model.Str
 
 	// CarriersFlatrateSallowspecific => Ship to Applicable Countries.
 	// Path: carriers/flatrate/sallowspecific
-	// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+	// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 	CarriersFlatrateSallowspecific model.Str
 
 	// CarriersFlatrateSpecificcountry => Ship to Specific Countries.
 	// Path: carriers/flatrate/specificcountry
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	CarriersFlatrateSpecificcountry model.StringCSV
 
 	// CarriersFlatrateShowmethod => Show Method if Not Applicable.
 	// Path: carriers/flatrate/showmethod
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersFlatrateShowmethod model.Bool
 
 	// CarriersFlatrateSpecificerrmsg => Displayed Error Message.
@@ -71,7 +71,7 @@ type PkgBackend struct {
 
 	// CarriersTablerateHandlingType => Calculate Handling Fee.
 	// Path: carriers/tablerate/handling_type
-	// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
+	// SourceModel: Magento\Shipping\Model\Source\HandlingType
 	CarriersTablerateHandlingType model.Str
 
 	// CarriersTablerateHandlingFee => Handling Fee.
@@ -80,17 +80,17 @@ type PkgBackend struct {
 
 	// CarriersTablerateActive => Enabled.
 	// Path: carriers/tablerate/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersTablerateActive model.Bool
 
 	// CarriersTablerateConditionName => Condition.
 	// Path: carriers/tablerate/condition_name
-	// SourceModel: Otnegam\OfflineShipping\Model\Config\Source\Tablerate
+	// SourceModel: Magento\OfflineShipping\Model\Config\Source\Tablerate
 	CarriersTablerateConditionName model.Str
 
 	// CarriersTablerateIncludeVirtualPrice => Include Virtual Products in Price Calculation.
 	// Path: carriers/tablerate/include_virtual_price
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersTablerateIncludeVirtualPrice model.Bool
 
 	// CarriersTablerateExport => Export.
@@ -99,7 +99,7 @@ type PkgBackend struct {
 
 	// CarriersTablerateImport => Import.
 	// Path: carriers/tablerate/import
-	// BackendModel: Otnegam\OfflineShipping\Model\Config\Backend\Tablerate
+	// BackendModel: Magento\OfflineShipping\Model\Config\Backend\Tablerate
 	CarriersTablerateImport model.Str
 
 	// CarriersTablerateName => Method Name.
@@ -116,17 +116,17 @@ type PkgBackend struct {
 
 	// CarriersTablerateSallowspecific => Ship to Applicable Countries.
 	// Path: carriers/tablerate/sallowspecific
-	// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+	// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 	CarriersTablerateSallowspecific model.Str
 
 	// CarriersTablerateSpecificcountry => Ship to Specific Countries.
 	// Path: carriers/tablerate/specificcountry
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	CarriersTablerateSpecificcountry model.StringCSV
 
 	// CarriersTablerateShowmethod => Show Method if Not Applicable.
 	// Path: carriers/tablerate/showmethod
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersTablerateShowmethod model.Bool
 
 	// CarriersTablerateSpecificerrmsg => Displayed Error Message.
@@ -135,7 +135,7 @@ type PkgBackend struct {
 
 	// CarriersFreeshippingActive => Enabled.
 	// Path: carriers/freeshipping/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersFreeshippingActive model.Bool
 
 	// CarriersFreeshippingFreeShippingSubtotal => Minimum Order Amount.
@@ -156,17 +156,17 @@ type PkgBackend struct {
 
 	// CarriersFreeshippingSallowspecific => Ship to Applicable Countries.
 	// Path: carriers/freeshipping/sallowspecific
-	// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+	// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 	CarriersFreeshippingSallowspecific model.Str
 
 	// CarriersFreeshippingSpecificcountry => Ship to Specific Countries.
 	// Path: carriers/freeshipping/specificcountry
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	CarriersFreeshippingSpecificcountry model.StringCSV
 
 	// CarriersFreeshippingShowmethod => Show Method if Not Applicable.
 	// Path: carriers/freeshipping/showmethod
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersFreeshippingShowmethod model.Bool
 
 	// CarriersFreeshippingSpecificerrmsg => Displayed Error Message.

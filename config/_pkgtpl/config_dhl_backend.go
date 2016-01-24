@@ -17,12 +17,12 @@ type PkgBackend struct {
 	model.PkgBackend
 	// CarriersDhlActive => Enabled for Checkout.
 	// Path: carriers/dhl/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersDhlActive model.Bool
 
 	// CarriersDhlActiveRma => Enabled for RMA.
 	// Path: carriers/dhl/active_rma
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersDhlActiveRma model.Bool
 
 	// CarriersDhlGatewayUrl => Gateway URL.
@@ -35,12 +35,12 @@ type PkgBackend struct {
 
 	// CarriersDhlId => Access ID.
 	// Path: carriers/dhl/id
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 	CarriersDhlId model.Str
 
 	// CarriersDhlPassword => Password.
 	// Path: carriers/dhl/password
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 	CarriersDhlPassword model.Str
 
 	// CarriersDhlAccount => Account Number.
@@ -49,19 +49,19 @@ type PkgBackend struct {
 
 	// CarriersDhlContentType => Content Type.
 	// Path: carriers/dhl/content_type
-	// SourceModel: Otnegam\Dhl\Model\Source\Contenttype
+	// SourceModel: Magento\Dhl\Model\Source\Contenttype
 	CarriersDhlContentType model.Str
 
 	// CarriersDhlHandlingType => Calculate Handling Fee.
 	// Path: carriers/dhl/handling_type
-	// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
+	// SourceModel: Magento\Shipping\Model\Source\HandlingType
 	CarriersDhlHandlingType model.Str
 
 	// CarriersDhlHandlingAction => Handling Applied.
 	// "Per Order" allows a single handling fee for the entire order. "Per
 	// Package" allows an individual handling fee for each package.
 	// Path: carriers/dhl/handling_action
-	// SourceModel: Otnegam\Shipping\Model\Source\HandlingAction
+	// SourceModel: Magento\Shipping\Model\Source\HandlingAction
 	CarriersDhlHandlingAction model.Str
 
 	// CarriersDhlHandlingFee => Handling Fee.
@@ -72,17 +72,17 @@ type PkgBackend struct {
 	// Select this to allow DHL to optimize shipping charges by splitting the
 	// order if it exceeds 70 kg.
 	// Path: carriers/dhl/divide_order_weight
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersDhlDivideOrderWeight model.Bool
 
 	// CarriersDhlUnitOfMeasure => Weight Unit.
 	// Path: carriers/dhl/unit_of_measure
-	// SourceModel: Otnegam\Dhl\Model\Source\Method\Unitofmeasure
+	// SourceModel: Magento\Dhl\Model\Source\Method\Unitofmeasure
 	CarriersDhlUnitOfMeasure model.Str
 
 	// CarriersDhlSize => Size.
 	// Path: carriers/dhl/size
-	// SourceModel: Otnegam\Dhl\Model\Source\Method\Size
+	// SourceModel: Magento\Dhl\Model\Source\Method\Size
 	CarriersDhlSize model.Str
 
 	// CarriersDhlHeight => Height.
@@ -99,12 +99,12 @@ type PkgBackend struct {
 
 	// CarriersDhlDocMethods => Allowed Methods.
 	// Path: carriers/dhl/doc_methods
-	// SourceModel: Otnegam\Dhl\Model\Source\Method\Doc
+	// SourceModel: Magento\Dhl\Model\Source\Method\Doc
 	CarriersDhlDocMethods model.StringCSV
 
 	// CarriersDhlNondocMethods => Allowed Methods.
 	// Path: carriers/dhl/nondoc_methods
-	// SourceModel: Otnegam\Dhl\Model\Source\Method\Nondoc
+	// SourceModel: Magento\Dhl\Model\Source\Method\Nondoc
 	CarriersDhlNondocMethods model.StringCSV
 
 	// CarriersDhlReadyTime => Ready time.
@@ -118,17 +118,17 @@ type PkgBackend struct {
 
 	// CarriersDhlFreeMethodDoc => Free Method.
 	// Path: carriers/dhl/free_method_doc
-	// SourceModel: Otnegam\Dhl\Model\Source\Method\Freedoc
+	// SourceModel: Magento\Dhl\Model\Source\Method\Freedoc
 	CarriersDhlFreeMethodDoc model.Str
 
 	// CarriersDhlFreeMethodNondoc => Free Method.
 	// Path: carriers/dhl/free_method_nondoc
-	// SourceModel: Otnegam\Dhl\Model\Source\Method\Freenondoc
+	// SourceModel: Magento\Dhl\Model\Source\Method\Freenondoc
 	CarriersDhlFreeMethodNondoc model.Str
 
 	// CarriersDhlFreeShippingEnable => Free Shipping Amount Threshold.
 	// Path: carriers/dhl/free_shipping_enable
-	// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 	CarriersDhlFreeShippingEnable model.Bool
 
 	// CarriersDhlFreeShippingSubtotal => Free Shipping Amount Threshold.
@@ -137,17 +137,17 @@ type PkgBackend struct {
 
 	// CarriersDhlSallowspecific => Ship to Applicable Countries.
 	// Path: carriers/dhl/sallowspecific
-	// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+	// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 	CarriersDhlSallowspecific model.Str
 
 	// CarriersDhlSpecificcountry => Ship to Specific Countries.
 	// Path: carriers/dhl/specificcountry
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	CarriersDhlSpecificcountry model.StringCSV
 
 	// CarriersDhlShowmethod => Show Method if Not Applicable.
 	// Path: carriers/dhl/showmethod
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersDhlShowmethod model.Bool
 
 	// CarriersDhlSortOrder => Sort Order.
@@ -156,7 +156,7 @@ type PkgBackend struct {
 
 	// CarriersDhlDebug => Debug.
 	// Path: carriers/dhl/debug
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersDhlDebug model.Bool
 }
 

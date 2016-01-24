@@ -50,7 +50,7 @@ type PkgBackend struct {
 
 	// CatalogFrontendListMode => List Mode.
 	// Path: catalog/frontend/list_mode
-	// SourceModel: Otnegam\Catalog\Model\Config\Source\ListMode
+	// SourceModel: Magento\Catalog\Model\Config\Source\ListMode
 	CatalogFrontendListMode model.Str
 
 	// CatalogFrontendGridPerPageValues => Products per Page on Grid Allowed Values.
@@ -75,37 +75,37 @@ type PkgBackend struct {
 
 	// CatalogFrontendFlatCatalogCategory => Use Flat Catalog Category.
 	// Path: catalog/frontend/flat_catalog_category
-	// BackendModel: Otnegam\Catalog\Model\Indexer\Category\Flat\System\Config\Mode
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// BackendModel: Magento\Catalog\Model\Indexer\Category\Flat\System\Config\Mode
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogFrontendFlatCatalogCategory model.Bool
 
 	// CatalogFrontendFlatCatalogProduct => Use Flat Catalog Product.
 	// Path: catalog/frontend/flat_catalog_product
-	// BackendModel: Otnegam\Catalog\Model\Indexer\Product\Flat\System\Config\Mode
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// BackendModel: Magento\Catalog\Model\Indexer\Product\Flat\System\Config\Mode
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogFrontendFlatCatalogProduct model.Bool
 
 	// CatalogFrontendDefaultSortBy => Product Listing Sort by.
 	// Path: catalog/frontend/default_sort_by
-	// SourceModel: Otnegam\Catalog\Model\Config\Source\ListSort
+	// SourceModel: Magento\Catalog\Model\Config\Source\ListSort
 	CatalogFrontendDefaultSortBy model.Str
 
 	// CatalogFrontendListAllowAll => Allow All Products per Page.
 	// Whether to show "All" option in the "Show X Per Page" dropdown
 	// Path: catalog/frontend/list_allow_all
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogFrontendListAllowAll model.Bool
 
 	// CatalogFrontendParseUrlDirectives => Allow Dynamic Media URLs in Products and Categories.
 	// E.g. {{media url="path/to/image.jpg"}} {{skin url="path/to/picture.gif"}}.
 	// Dynamic directives parsing impacts catalog performance.
 	// Path: catalog/frontend/parse_url_directives
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogFrontendParseUrlDirectives model.Bool
 
 	// CatalogPlaceholderPlaceholder => .
 	// Path: catalog/placeholder/placeholder
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Image
+	// BackendModel: Magento\Config\Model\Config\Backend\Image
 	CatalogPlaceholderPlaceholder model.Str
 
 	// CatalogSeoTitleSeparator => Page Title Separator.
@@ -114,20 +114,20 @@ type PkgBackend struct {
 
 	// CatalogSeoCategoryCanonicalTag => Use Canonical Link Meta Tag For Categories.
 	// Path: catalog/seo/category_canonical_tag
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogSeoCategoryCanonicalTag model.Bool
 
 	// CatalogSeoProductCanonicalTag => Use Canonical Link Meta Tag For Products.
 	// Path: catalog/seo/product_canonical_tag
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogSeoProductCanonicalTag model.Bool
 
 	// CatalogPriceScope => Catalog Price Scope.
 	// This defines the base currency scope ("Currency Setup" > "Currency Options"
 	// > "Base Currency").
 	// Path: catalog/price/scope
-	// BackendModel: Otnegam\Catalog\Model\Indexer\Product\Price\System\Config\PriceScope
-	// SourceModel: Otnegam\Catalog\Model\Config\Source\Price\Scope
+	// BackendModel: Magento\Catalog\Model\Indexer\Product\Price\System\Config\PriceScope
+	// SourceModel: Magento\Catalog\Model\Config\Source\Price\Scope
 	CatalogPriceScope configPriceScope
 
 	// CatalogNavigationMaxDepth => Maximal Depth.
@@ -136,7 +136,7 @@ type PkgBackend struct {
 
 	// CatalogCustomOptionsUseCalendar => Use JavaScript Calendar.
 	// Path: catalog/custom_options/use_calendar
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CatalogCustomOptionsUseCalendar model.Bool
 
 	// CatalogCustomOptionsDateFieldsOrder => Date Fields Order.
@@ -145,7 +145,7 @@ type PkgBackend struct {
 
 	// CatalogCustomOptionsTimeFormat => Time Format.
 	// Path: catalog/custom_options/time_format
-	// SourceModel: Otnegam\Catalog\Model\Config\Source\TimeFormat
+	// SourceModel: Magento\Catalog\Model\Config\Source\TimeFormat
 	CatalogCustomOptionsTimeFormat model.Str
 
 	// CatalogCustomOptionsYearRange => Year Range.
@@ -165,12 +165,12 @@ type PkgBackend struct {
 	// DesignWatermarkImage => Watermark.
 	// Allowed file types: jpeg, gif, png.
 	// Path: design/watermark/image
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Image
+	// BackendModel: Magento\Config\Model\Config\Backend\Image
 	DesignWatermarkImage model.Str
 
 	// DesignWatermarkPosition => Watermark Position.
 	// Path: design/watermark/position
-	// SourceModel: Otnegam\Catalog\Model\Config\Source\Watermark\Position
+	// SourceModel: Magento\Catalog\Model\Config\Source\Watermark\Position
 	DesignWatermarkPosition model.Str
 
 	// CmsWysiwygUseStaticUrlsInCatalog => Use Static URLs for Media Content in WYSIWYG for Catalog.
@@ -178,22 +178,22 @@ type PkgBackend struct {
 	// inserted into the editor as a static URL. Media content is not updated if
 	// the system configuration base URL changes.
 	// Path: cms/wysiwyg/use_static_urls_in_catalog
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CmsWysiwygUseStaticUrlsInCatalog model.Bool
 
 	// RssCatalogNew => New Products.
 	// Path: rss/catalog/new
-	// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 	RssCatalogNew model.Bool
 
 	// RssCatalogSpecial => Special Products.
 	// Path: rss/catalog/special
-	// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 	RssCatalogSpecial model.Bool
 
 	// RssCatalogCategory => Top Level Category.
 	// Path: rss/catalog/category
-	// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 	RssCatalogCategory model.Bool
 }
 

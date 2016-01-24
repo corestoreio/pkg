@@ -31,7 +31,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `website`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Reports\Scope
+							// SourceModel: Magento\Config\Model\Config\Source\Reports\Scope
 						},
 
 						&element.Field{
@@ -64,7 +64,7 @@ func init() {
 			Label:     `Reports`,
 			SortOrder: 1000,
 			Scope:     scope.NewPerm(scope.DefaultID),
-			Resource:  0, // Otnegam_Reports::reports
+			Resource:  0, // Magento_Reports::reports
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "dashboard",

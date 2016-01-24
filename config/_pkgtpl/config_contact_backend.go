@@ -17,8 +17,8 @@ type PkgBackend struct {
 	model.PkgBackend
 	// ContactContactEnabled => Enable Contact Us.
 	// Path: contact/contact/enabled
-	// BackendModel: Otnegam\Contact\Model\System\Config\Backend\Links
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// BackendModel: Magento\Contact\Model\System\Config\Backend\Links
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	ContactContactEnabled model.Bool
 
 	// ContactEmailRecipientEmail => Send Emails To.
@@ -27,14 +27,14 @@ type PkgBackend struct {
 
 	// ContactEmailSenderEmailIdentity => Email Sender.
 	// Path: contact/email/sender_email_identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	ContactEmailSenderEmailIdentity model.Str
 
 	// ContactEmailEmailTemplate => Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: contact/email/email_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	ContactEmailEmailTemplate model.Str
 }
 

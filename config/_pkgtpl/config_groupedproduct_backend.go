@@ -17,7 +17,7 @@ type PkgBackend struct {
 	model.PkgBackend
 	// CheckoutCartGroupedProductImage => Grouped Product Image.
 	// Path: checkout/cart/grouped_product_image
-	// SourceModel: Otnegam\Catalog\Model\Config\Source\Product\Thumbnail
+	// SourceModel: Magento\Catalog\Model\Config\Source\Product\Thumbnail
 	CheckoutCartGroupedProductImage model.Str
 }
 

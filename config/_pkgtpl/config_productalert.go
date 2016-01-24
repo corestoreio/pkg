@@ -31,7 +31,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -43,7 +43,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -56,7 +56,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `catalog_productalert_email_price_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -69,7 +69,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `catalog_productalert_email_stock_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -81,7 +81,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `general`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 					),
 				},
@@ -100,8 +100,8 @@ func init() {
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
-							// BackendModel: Otnegam\Cron\Model\Config\Backend\Product\Alert
-							// SourceModel: Otnegam\Cron\Model\Config\Source\Frequency
+							// BackendModel: Magento\Cron\Model\Config\Backend\Product\Alert
+							// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 						},
 
 						&element.Field{
@@ -133,7 +133,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   `general`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -146,7 +146,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   `catalog_productalert_cron_error_email_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 					),
 				},

@@ -17,37 +17,37 @@ type PkgBackend struct {
 	model.PkgBackend
 	// TaxWeeeEnable => Enable FPT.
 	// Path: tax/weee/enable
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	TaxWeeeEnable model.Bool
 
 	// TaxWeeeDisplayList => Display Prices In Product Lists.
 	// Path: tax/weee/display_list
-	// SourceModel: Otnegam\Weee\Model\Config\Source\Display
+	// SourceModel: Magento\Weee\Model\Config\Source\Display
 	TaxWeeeDisplayList model.Str
 
 	// TaxWeeeDisplay => Display Prices On Product View Page.
 	// Path: tax/weee/display
-	// SourceModel: Otnegam\Weee\Model\Config\Source\Display
+	// SourceModel: Magento\Weee\Model\Config\Source\Display
 	TaxWeeeDisplay model.Str
 
 	// TaxWeeeDisplaySales => Display Prices In Sales Modules.
 	// Path: tax/weee/display_sales
-	// SourceModel: Otnegam\Weee\Model\Config\Source\Display
+	// SourceModel: Magento\Weee\Model\Config\Source\Display
 	TaxWeeeDisplaySales model.Str
 
 	// TaxWeeeDisplayEmail => Display Prices In Emails.
 	// Path: tax/weee/display_email
-	// SourceModel: Otnegam\Weee\Model\Config\Source\Display
+	// SourceModel: Magento\Weee\Model\Config\Source\Display
 	TaxWeeeDisplayEmail model.Str
 
 	// TaxWeeeApplyVat => Apply Tax To FPT.
 	// Path: tax/weee/apply_vat
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	TaxWeeeApplyVat model.Bool
 
 	// TaxWeeeIncludeInSubtotal => Include FPT In Subtotal.
 	// Path: tax/weee/include_in_subtotal
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	TaxWeeeIncludeInSubtotal model.Bool
 
 	// SalesTotalsSortWeee => Fixed Product Tax.

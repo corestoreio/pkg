@@ -17,7 +17,7 @@ type PkgBackend struct {
 	model.PkgBackend
 	// MultishippingOptionsCheckoutMultiple => Allow Shipping to Multiple Addresses.
 	// Path: multishipping/options/checkout_multiple
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	MultishippingOptionsCheckoutMultiple model.Bool
 
 	// MultishippingOptionsCheckoutMultipleMaximumQty => Maximum Qty Allowed for Shipping to Multiple Addresses.

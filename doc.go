@@ -13,7 +13,7 @@
 // limitations under the License.
 
 /*
-Package csfw contains the CoreStore FrameWork based on Magento's database structure.
+Package csfw contains the CoreStore library based on Magento's database structure.
 99% compatible to Magento 1 and 2.
 
 The package csfw contains at the moment only go:generate commands to build Go code.

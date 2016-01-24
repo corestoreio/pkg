@@ -30,7 +30,7 @@ func init() {
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
 							Scope:   scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Vault\Model\Adminhtml\Source\VaultProvidersMap
+							// SourceModel: Magento\Vault\Model\Adminhtml\Source\VaultProvidersMap
 						},
 					),
 				},
@@ -57,7 +57,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Vault\Model\VaultPaymentInterface`,
+							Default: `Magento\Vault\Model\VaultPaymentInterface`,
 						},
 					),
 				},

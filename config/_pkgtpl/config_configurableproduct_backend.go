@@ -17,7 +17,7 @@ type PkgBackend struct {
 	model.PkgBackend
 	// CheckoutCartConfigurableProductImage => Configurable Product Image.
 	// Path: checkout/cart/configurable_product_image
-	// SourceModel: Otnegam\Catalog\Model\Config\Source\Product\Thumbnail
+	// SourceModel: Magento\Catalog\Model\Config\Source\Product\Thumbnail
 	CheckoutCartConfigurableProductImage model.Str
 }
 

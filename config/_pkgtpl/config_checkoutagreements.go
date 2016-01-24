@@ -27,7 +27,7 @@ func init() {
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},

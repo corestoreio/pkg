@@ -18,7 +18,7 @@ type PkgBackend struct {
 	// PaymentVaultVaultPayment => Vault Provider.
 	// Specified provider should be enabled.
 	// Path: payment/vault/vault_payment
-	// SourceModel: Otnegam\Vault\Model\Adminhtml\Source\VaultProvidersMap
+	// SourceModel: Magento\Vault\Model\Adminhtml\Source\VaultProvidersMap
 	PaymentVaultVaultPayment model.Str
 }
 

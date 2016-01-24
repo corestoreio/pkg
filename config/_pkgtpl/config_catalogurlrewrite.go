@@ -29,7 +29,7 @@ func init() {
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
+							// BackendModel: Magento\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
 						},
 
 						&element.Field{
@@ -41,7 +41,7 @@ func init() {
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
+							// BackendModel: Magento\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
 						},
 
 						&element.Field{
@@ -52,7 +52,7 @@ func init() {
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -63,7 +63,7 @@ func init() {
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},

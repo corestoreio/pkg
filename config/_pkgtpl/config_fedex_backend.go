@@ -17,12 +17,12 @@ type PkgBackend struct {
 	model.PkgBackend
 	// CarriersFedexActive => Enabled for Checkout.
 	// Path: carriers/fedex/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersFedexActive model.Bool
 
 	// CarriersFedexActiveRma => Enabled for RMA.
 	// Path: carriers/fedex/active_rma
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersFedexActiveRma model.Bool
 
 	// CarriersFedexTitle => Title.
@@ -32,27 +32,27 @@ type PkgBackend struct {
 	// CarriersFedexAccount => Account ID.
 	// Please make sure to use only digits here. No dashes are allowed.
 	// Path: carriers/fedex/account
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 	CarriersFedexAccount model.Str
 
 	// CarriersFedexMeterNumber => Meter Number.
 	// Path: carriers/fedex/meter_number
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 	CarriersFedexMeterNumber model.Str
 
 	// CarriersFedexKey => Key.
 	// Path: carriers/fedex/key
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 	CarriersFedexKey model.Str
 
 	// CarriersFedexPassword => Password.
 	// Path: carriers/fedex/password
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 	CarriersFedexPassword model.Str
 
 	// CarriersFedexSandboxMode => Sandbox Mode.
 	// Path: carriers/fedex/sandbox_mode
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersFedexSandboxMode model.Bool
 
 	// CarriersFedexProductionWebservicesUrl => Web-Services URL (Production).
@@ -65,22 +65,22 @@ type PkgBackend struct {
 
 	// CarriersFedexShipmentRequesttype => Packages Request Type.
 	// Path: carriers/fedex/shipment_requesttype
-	// SourceModel: Otnegam\Shipping\Model\Config\Source\Online\Requesttype
+	// SourceModel: Magento\Shipping\Model\Config\Source\Online\Requesttype
 	CarriersFedexShipmentRequesttype model.Str
 
 	// CarriersFedexPackaging => Packaging.
 	// Path: carriers/fedex/packaging
-	// SourceModel: Otnegam\Fedex\Model\Source\Packaging
+	// SourceModel: Magento\Fedex\Model\Source\Packaging
 	CarriersFedexPackaging model.Str
 
 	// CarriersFedexDropoff => Dropoff.
 	// Path: carriers/fedex/dropoff
-	// SourceModel: Otnegam\Fedex\Model\Source\Dropoff
+	// SourceModel: Magento\Fedex\Model\Source\Dropoff
 	CarriersFedexDropoff model.Str
 
 	// CarriersFedexUnitOfMeasure => Weight Unit.
 	// Path: carriers/fedex/unit_of_measure
-	// SourceModel: Otnegam\Fedex\Model\Source\Unitofmeasure
+	// SourceModel: Magento\Fedex\Model\Source\Unitofmeasure
 	CarriersFedexUnitOfMeasure model.Str
 
 	// CarriersFedexMaxPackageWeight => Maximum Package Weight (Please consult your shipping carrier for maximum supported shipping weight).
@@ -89,12 +89,12 @@ type PkgBackend struct {
 
 	// CarriersFedexHandlingType => Calculate Handling Fee.
 	// Path: carriers/fedex/handling_type
-	// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
+	// SourceModel: Magento\Shipping\Model\Source\HandlingType
 	CarriersFedexHandlingType model.Str
 
 	// CarriersFedexHandlingAction => Handling Applied.
 	// Path: carriers/fedex/handling_action
-	// SourceModel: Otnegam\Shipping\Model\Source\HandlingAction
+	// SourceModel: Magento\Shipping\Model\Source\HandlingAction
 	CarriersFedexHandlingAction model.Str
 
 	// CarriersFedexHandlingFee => Handling Fee.
@@ -103,12 +103,12 @@ type PkgBackend struct {
 
 	// CarriersFedexResidenceDelivery => Residential Delivery.
 	// Path: carriers/fedex/residence_delivery
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersFedexResidenceDelivery model.Bool
 
 	// CarriersFedexAllowedMethods => Allowed Methods.
 	// Path: carriers/fedex/allowed_methods
-	// SourceModel: Otnegam\Fedex\Model\Source\Method
+	// SourceModel: Magento\Fedex\Model\Source\Method
 	CarriersFedexAllowedMethods model.StringCSV
 
 	// CarriersFedexSmartpostHubid => Hub ID.
@@ -118,12 +118,12 @@ type PkgBackend struct {
 
 	// CarriersFedexFreeMethod => Free Method.
 	// Path: carriers/fedex/free_method
-	// SourceModel: Otnegam\Fedex\Model\Source\Freemethod
+	// SourceModel: Magento\Fedex\Model\Source\Freemethod
 	CarriersFedexFreeMethod model.Str
 
 	// CarriersFedexFreeShippingEnable => Free Shipping Amount Threshold.
 	// Path: carriers/fedex/free_shipping_enable
-	// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 	CarriersFedexFreeShippingEnable model.Bool
 
 	// CarriersFedexFreeShippingSubtotal => Free Shipping Amount Threshold.
@@ -136,22 +136,22 @@ type PkgBackend struct {
 
 	// CarriersFedexSallowspecific => Ship to Applicable Countries.
 	// Path: carriers/fedex/sallowspecific
-	// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+	// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 	CarriersFedexSallowspecific model.Str
 
 	// CarriersFedexSpecificcountry => Ship to Specific Countries.
 	// Path: carriers/fedex/specificcountry
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	CarriersFedexSpecificcountry model.StringCSV
 
 	// CarriersFedexDebug => Debug.
 	// Path: carriers/fedex/debug
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersFedexDebug model.Bool
 
 	// CarriersFedexShowmethod => Show Method if Not Applicable.
 	// Path: carriers/fedex/showmethod
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersFedexShowmethod model.Bool
 
 	// CarriersFedexSortOrder => Sort Order.

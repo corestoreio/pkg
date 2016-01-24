@@ -18,7 +18,7 @@ func init() {
 			Label:     `Multishipping Settings`,
 			SortOrder: 311,
 			Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-			Resource:  0, // Otnegam_Multishipping::config_multishipping
+			Resource:  0, // Magento_Multishipping::config_multishipping
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "options",
@@ -35,7 +35,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{

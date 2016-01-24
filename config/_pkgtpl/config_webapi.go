@@ -15,10 +15,10 @@ func init() {
 	ConfigStructure = element.MustNewConfiguration(
 		&element.Section{
 			ID:        "webapi",
-			Label:     `Otnegam Web API`,
+			Label:     `Magento Web API`,
 			SortOrder: 102,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Webapi::config_webapi
+			Resource:  0, // Magento_Webapi::config_webapi
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "soap",

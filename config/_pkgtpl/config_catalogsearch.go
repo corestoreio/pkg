@@ -28,7 +28,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 					),
 				},
@@ -45,7 +45,7 @@ func init() {
 							Type:    element.Type,
 							Visible: element.VisibleYes,
 							Default: `mysql`,
-							// BackendModel: Otnegam\CatalogSearch\Model\Adminhtml\System\Config\Backend\Engine
+							// BackendModel: Magento\CatalogSearch\Model\Adminhtml\System\Config\Backend\Engine
 						},
 
 						&element.Field{

@@ -19,12 +19,12 @@ type PkgBackend struct {
 	// Warning! Enabling MAP by default will hide all product prices on
 	// Storefront.
 	// Path: sales/msrp/enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesMsrpEnabled model.Bool
 
 	// SalesMsrpDisplayPriceType => Display Actual Price.
 	// Path: sales/msrp/display_price_type
-	// SourceModel: Otnegam\Msrp\Model\Product\Attribute\Source\Type
+	// SourceModel: Magento\Msrp\Model\Product\Attribute\Source\Type
 	SalesMsrpDisplayPriceType model.Str
 
 	// SalesMsrpExplanationMessage => Default Popup Text Message.

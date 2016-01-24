@@ -17,7 +17,7 @@ type PkgBackend struct {
 	model.PkgBackend
 	// ShippingOriginCountryId => Country.
 	// Path: shipping/origin/country_id
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	ShippingOriginCountryId model.Str
 
 	// ShippingOriginRegionId => Region/State.
@@ -42,7 +42,7 @@ type PkgBackend struct {
 
 	// ShippingShippingPolicyEnableShippingPolicy => Apply custom Shipping Policy.
 	// Path: shipping/shipping_policy/enable_shipping_policy
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	ShippingShippingPolicyEnableShippingPolicy model.Bool
 
 	// ShippingShippingPolicyShippingPolicyContent => Shipping Policy.

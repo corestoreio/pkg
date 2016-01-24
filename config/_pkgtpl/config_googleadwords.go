@@ -31,7 +31,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -42,7 +42,7 @@ func init() {
 							SortOrder: 11,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\GoogleAdwords\Model\Config\Backend\ConversionId
+							// BackendModel: Magento\GoogleAdwords\Model\Config\Backend\ConversionId
 						},
 
 						&element.Field{
@@ -54,7 +54,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `en`,
-							// SourceModel: Otnegam\GoogleAdwords\Model\Config\Source\Language
+							// SourceModel: Magento\GoogleAdwords\Model\Config\Source\Language
 						},
 
 						&element.Field{
@@ -77,7 +77,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `FFFFFF`,
-							// BackendModel: Otnegam\GoogleAdwords\Model\Config\Backend\Color
+							// BackendModel: Magento\GoogleAdwords\Model\Config\Backend\Color
 						},
 
 						&element.Field{
@@ -99,7 +99,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\GoogleAdwords\Model\Config\Source\ValueType
+							// SourceModel: Magento\GoogleAdwords\Model\Config\Source\ValueType
 						},
 
 						&element.Field{

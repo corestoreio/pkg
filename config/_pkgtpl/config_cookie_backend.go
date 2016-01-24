@@ -17,29 +17,29 @@ type PkgBackend struct {
 	model.PkgBackend
 	// WebCookieCookieLifetime => Cookie Lifetime.
 	// Path: web/cookie/cookie_lifetime
-	// BackendModel: Otnegam\Cookie\Model\Config\Backend\Lifetime
+	// BackendModel: Magento\Cookie\Model\Config\Backend\Lifetime
 	WebCookieCookieLifetime model.Str
 
 	// WebCookieCookiePath => Cookie Path.
 	// Path: web/cookie/cookie_path
-	// BackendModel: Otnegam\Cookie\Model\Config\Backend\Path
+	// BackendModel: Magento\Cookie\Model\Config\Backend\Path
 	WebCookieCookiePath model.Str
 
 	// WebCookieCookieDomain => Cookie Domain.
 	// Path: web/cookie/cookie_domain
-	// BackendModel: Otnegam\Cookie\Model\Config\Backend\Domain
+	// BackendModel: Magento\Cookie\Model\Config\Backend\Domain
 	WebCookieCookieDomain model.Str
 
 	// WebCookieCookieHttponly => Use HTTP Only.
 	// Warning: Do not set to "No". User security could be compromised.
 	// Path: web/cookie/cookie_httponly
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	WebCookieCookieHttponly model.Bool
 
 	// WebCookieCookieRestriction => Cookie Restriction Mode.
 	// Path: web/cookie/cookie_restriction
-	// BackendModel: Otnegam\Cookie\Model\Config\Backend\Cookie
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// BackendModel: Magento\Cookie\Model\Config\Backend\Cookie
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	WebCookieCookieRestriction model.Bool
 }
 

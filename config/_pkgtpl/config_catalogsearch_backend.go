@@ -17,12 +17,12 @@ type PkgBackend struct {
 	model.PkgBackend
 	// CatalogSeoSearchTerms => Popular Search Terms.
 	// Path: catalog/seo/search_terms
-	// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 	CatalogSeoSearchTerms model.Bool
 
 	// CatalogSearchEngine => .
 	// Path: catalog/search/engine
-	// BackendModel: Otnegam\CatalogSearch\Model\Adminhtml\System\Config\Backend\Engine
+	// BackendModel: Magento\CatalogSearch\Model\Adminhtml\System\Config\Backend\Engine
 	CatalogSearchEngine model.Str
 
 	// CatalogSearchMinQueryLength => Minimal Query Length.

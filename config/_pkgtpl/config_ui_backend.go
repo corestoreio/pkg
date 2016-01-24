@@ -18,7 +18,7 @@ type PkgBackend struct {
 	// DevJsSessionStorageLogging => Log JS Errors to Session Storage.
 	// If enabled, can be used by functional tests for extended reporting
 	// Path: dev/js/session_storage_logging
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	DevJsSessionStorageLogging model.Bool
 
 	// DevJsSessionStorageKey => Log JS Errors to Session Storage Key.

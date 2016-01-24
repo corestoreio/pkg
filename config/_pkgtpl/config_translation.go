@@ -29,7 +29,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   `dictionary`,
-							// SourceModel: Otnegam\Translation\Model\Js\Config\Source\Strategy
+							// SourceModel: Magento\Translation\Model\Js\Config\Source\Strategy
 						},
 					),
 				},

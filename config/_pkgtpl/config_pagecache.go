@@ -30,7 +30,7 @@ func init() {
 							Visible: element.VisibleYes,
 							Scope:   scope.NewPerm(scope.DefaultID),
 							Default: true,
-							// SourceModel: Otnegam\PageCache\Model\System\Config\Source\Application
+							// SourceModel: Magento\PageCache\Model\System\Config\Source\Application
 						},
 
 						&element.Field{
@@ -43,7 +43,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   86400,
-							// BackendModel: Otnegam\PageCache\Model\System\Config\Backend\Ttl
+							// BackendModel: Magento\PageCache\Model\System\Config\Backend\Ttl
 						},
 					),
 				},

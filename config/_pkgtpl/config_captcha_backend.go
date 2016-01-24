@@ -17,22 +17,22 @@ type PkgBackend struct {
 	model.PkgBackend
 	// AdminCaptchaEnable => Enable CAPTCHA in Admin.
 	// Path: admin/captcha/enable
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	AdminCaptchaEnable model.Bool
 
 	// AdminCaptchaFont => Font.
 	// Path: admin/captcha/font
-	// SourceModel: Otnegam\Captcha\Model\Config\Font
+	// SourceModel: Magento\Captcha\Model\Config\Font
 	AdminCaptchaFont model.Str
 
 	// AdminCaptchaForms => Forms.
 	// Path: admin/captcha/forms
-	// SourceModel: Otnegam\Captcha\Model\Config\Form\Backend
+	// SourceModel: Magento\Captcha\Model\Config\Form\Backend
 	AdminCaptchaForms model.StringCSV
 
 	// AdminCaptchaMode => Displaying Mode.
 	// Path: admin/captcha/mode
-	// SourceModel: Otnegam\Captcha\Model\Config\Mode
+	// SourceModel: Magento\Captcha\Model\Config\Mode
 	AdminCaptchaMode model.Str
 
 	// AdminCaptchaFailedAttemptsLogin => Number of Unsuccessful Attempts to Login.
@@ -58,29 +58,29 @@ type PkgBackend struct {
 
 	// AdminCaptchaCaseSensitive => Case Sensitive.
 	// Path: admin/captcha/case_sensitive
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	AdminCaptchaCaseSensitive model.Bool
 
 	// CustomerCaptchaEnable => Enable CAPTCHA on Storefront.
 	// Path: customer/captcha/enable
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CustomerCaptchaEnable model.Bool
 
 	// CustomerCaptchaFont => Font.
 	// Path: customer/captcha/font
-	// SourceModel: Otnegam\Captcha\Model\Config\Font
+	// SourceModel: Magento\Captcha\Model\Config\Font
 	CustomerCaptchaFont model.Str
 
 	// CustomerCaptchaForms => Forms.
 	// CAPTCHA for "Create user" and "Forgot password" forms is always enabled if
 	// chosen.
 	// Path: customer/captcha/forms
-	// SourceModel: Otnegam\Captcha\Model\Config\Form\Frontend
+	// SourceModel: Magento\Captcha\Model\Config\Form\Frontend
 	CustomerCaptchaForms model.StringCSV
 
 	// CustomerCaptchaMode => Displaying Mode.
 	// Path: customer/captcha/mode
-	// SourceModel: Otnegam\Captcha\Model\Config\Mode
+	// SourceModel: Magento\Captcha\Model\Config\Mode
 	CustomerCaptchaMode model.Str
 
 	// CustomerCaptchaFailedAttemptsLogin => Number of Unsuccessful Attempts to Login.
@@ -106,7 +106,7 @@ type PkgBackend struct {
 
 	// CustomerCaptchaCaseSensitive => Case Sensitive.
 	// Path: customer/captcha/case_sensitive
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CustomerCaptchaCaseSensitive model.Bool
 }
 

@@ -18,7 +18,7 @@ func init() {
 			Label:     `RSS Feeds`,
 			SortOrder: 80,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Rss::rss
+			Resource:  0, // Magento_Rss::rss
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "config",
@@ -34,8 +34,8 @@ func init() {
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\Rss\Model\System\Config\Backend\Links
-							// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+							// BackendModel: Magento\Rss\Model\System\Config\Backend\Links
+							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 					),
 				},

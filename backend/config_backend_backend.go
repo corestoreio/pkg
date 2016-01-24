@@ -32,67 +32,67 @@ type PkgBackend struct {
 	model.PkgBackend
 	// TransEmailIdentCustom1Email => Sender Email.
 	// Path: trans_email/ident_custom1/email
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Email\Address
+	// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 	TransEmailIdentCustom1Email model.Str
 
 	// TransEmailIdentCustom1Name => Sender Name.
 	// Path: trans_email/ident_custom1/name
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Email\Sender
+	// BackendModel: Magento\Config\Model\Config\Backend\Email\Sender
 	TransEmailIdentCustom1Name model.Str
 
 	// TransEmailIdentCustom2Email => Sender Email.
 	// Path: trans_email/ident_custom2/email
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Email\Address
+	// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 	TransEmailIdentCustom2Email model.Str
 
 	// TransEmailIdentCustom2Name => Sender Name.
 	// Path: trans_email/ident_custom2/name
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Email\Sender
+	// BackendModel: Magento\Config\Model\Config\Backend\Email\Sender
 	TransEmailIdentCustom2Name model.Str
 
 	// TransEmailIdentGeneralEmail => Sender Email.
 	// Path: trans_email/ident_general/email
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Email\Address
+	// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 	TransEmailIdentGeneralEmail model.Str
 
 	// TransEmailIdentGeneralName => Sender Name.
 	// Path: trans_email/ident_general/name
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Email\Sender
+	// BackendModel: Magento\Config\Model\Config\Backend\Email\Sender
 	TransEmailIdentGeneralName model.Str
 
 	// TransEmailIdentSalesEmail => Sender Email.
 	// Path: trans_email/ident_sales/email
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Email\Address
+	// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 	TransEmailIdentSalesEmail model.Str
 
 	// TransEmailIdentSalesName => Sender Name.
 	// Path: trans_email/ident_sales/name
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Email\Sender
+	// BackendModel: Magento\Config\Model\Config\Backend\Email\Sender
 	TransEmailIdentSalesName model.Str
 
 	// TransEmailIdentSupportEmail => Sender Email.
 	// Path: trans_email/ident_support/email
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Email\Address
+	// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 	TransEmailIdentSupportEmail model.Str
 
 	// TransEmailIdentSupportName => Sender Name.
 	// Path: trans_email/ident_support/name
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Email\Sender
+	// BackendModel: Magento\Config\Model\Config\Backend\Email\Sender
 	TransEmailIdentSupportName model.Str
 
 	// DesignThemeThemeID => Design Theme.
 	// If no value is specified, the system default will be used. The system
 	// default may be modified by third party extensions.
 	// Path: design/theme/theme_id
-	// BackendModel: Otnegam\Theme\Model\Design\Backend\Theme
-	// SourceModel: Otnegam\Framework\View\Design\Theme\Label::getLabelsCollectionForSystemConfiguration
+	// BackendModel: Magento\Theme\Model\Design\Backend\Theme
+	// SourceModel: Magento\Framework\View\Design\Theme\Label::getLabelsCollectionForSystemConfiguration
 	DesignThemeThemeID model.Str
 
 	// DesignThemeUaRegexp => User-Agent Exceptions.
 	// Search strings are either normal strings or regular exceptions (PCRE). They
 	// are matched in the same order as entered. Examples:Firefox/^mozilla/i
 	// Path: design/theme/ua_regexp
-	// BackendModel: Otnegam\Theme\Model\Design\Backend\Exceptions
+	// BackendModel: Magento\Theme\Model\Design\Backend\Exceptions
 	DesignThemeUaRegexp model.Str
 
 	// DesignPaginationPaginationFrame => Pagination Frame.
@@ -120,80 +120,80 @@ type PkgBackend struct {
 
 	// DevDebugTemplateHintsStorefront => Enabled Template Path Hints for Storefront.
 	// Path: dev/debug/template_hints_storefront
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	DevDebugTemplateHintsStorefront model.Bool
 
 	// DevDebugTemplateHintsAdmin => Enabled Template Path Hints for Admin.
 	// Path: dev/debug/template_hints_admin
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	DevDebugTemplateHintsAdmin model.Bool
 
 	// DevDebugTemplateHintsBlocks => Add Block Names to Hints.
 	// Path: dev/debug/template_hints_blocks
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	DevDebugTemplateHintsBlocks model.Bool
 
 	// DevTemplateAllowSymlink => Allow Symlinks.
 	// Warning! Enabling this feature is not recommended on production
 	// environments because it represents a potential security risk.
 	// Path: dev/template/allow_symlink
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	DevTemplateAllowSymlink model.Bool
 
 	// DevTemplateMinifyHTML => Minify HTML.
 	// Path: dev/template/minify_html
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	DevTemplateMinifyHTML model.Bool
 
 	// DevTranslateInlineActive => Enabled for Storefront.
 	// Path: dev/translate_inline/active
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Translate
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// BackendModel: Magento\Config\Model\Config\Backend\Translate
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	DevTranslateInlineActive model.Bool
 
 	// DevTranslateInlineActiveAdmin => Enabled for Admin.
 	// Translate, blocks and other output caches should be disabled for both
 	// Storefront and Admin inline translations.
 	// Path: dev/translate_inline/active_admin
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Translate
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// BackendModel: Magento\Config\Model\Config\Backend\Translate
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	DevTranslateInlineActiveAdmin model.Bool
 
 	// DevJsMergeFiles => Merge JavaScript Files.
 	// Path: dev/js/merge_files
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	DevJsMergeFiles model.Bool
 
 	// DevJsEnableJsBundling => Enable JavaScript Bundling.
 	// Path: dev/js/enable_js_bundling
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	DevJsEnableJsBundling model.Bool
 
 	// DevJsMinifyFiles => Minify JavaScript Files.
 	// Path: dev/js/minify_files
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	DevJsMinifyFiles model.Bool
 
 	// DevCSSMergeCSSFiles => Merge CSS Files.
 	// Path: dev/css/merge_css_files
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	DevCSSMergeCSSFiles model.Bool
 
 	// DevCSSMinifyFiles => Minify CSS Files.
 	// Path: dev/css/minify_files
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	DevCSSMinifyFiles model.Bool
 
 	// DevImageDefaultAdapter => Image Adapter.
 	// When the adapter was changed, please flush Catalog Images Cache.
 	// Path: dev/image/default_adapter
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Image\Adapter
-	// SourceModel: Otnegam\Config\Model\Config\Source\Image\Adapter
+	// BackendModel: Magento\Config\Model\Config\Backend\Image\Adapter
+	// SourceModel: Magento\Config\Model\Config\Source\Image\Adapter
 	DevImageDefaultAdapter model.Str
 
 	// DevStaticSign => Sign Static Files.
 	// Path: dev/static/sign
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	DevStaticSign model.Bool
 
 	// GeneralStoreInformationName => Store Name.
@@ -210,7 +210,7 @@ type PkgBackend struct {
 
 	// GeneralStoreInformationCountryID => Country.
 	// Path: general/store_information/country_id
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	GeneralStoreInformationCountryID model.Str
 
 	// GeneralStoreInformationRegionID => Region/State.
@@ -241,12 +241,12 @@ type PkgBackend struct {
 	// This setting will not be taken into account if system has more than one
 	// store view.
 	// Path: general/single_store_mode/enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	GeneralSingleStoreModeEnabled model.Bool
 
 	// SystemSMTPDisable => Disable Email Communications.
 	// Path: system/smtp/disable
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SystemSMTPDisable model.Bool
 
 	// SystemSMTPHost => Host.
@@ -261,71 +261,71 @@ type PkgBackend struct {
 
 	// SystemSMTPSetReturnPath => Set Return-Path.
 	// Path: system/smtp/set_return_path
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesnocustom
+	// SourceModel: Magento\Config\Model\Config\Source\Yesnocustom
 	SystemSMTPSetReturnPath model.Bool
 
 	// SystemSMTPReturnPathEmail => Return-Path Email.
 	// Path: system/smtp/return_path_email
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Email\Address
+	// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 	SystemSMTPReturnPathEmail model.Str
 
 	// AdminEmailsForgotEmailTemplate => Forgot Password Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: admin/emails/forgot_email_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	AdminEmailsForgotEmailTemplate model.Str
 
 	// AdminEmailsForgotEmailIdentity => Forgot and Reset Email Sender.
 	// Path: admin/emails/forgot_email_identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	AdminEmailsForgotEmailIdentity model.Str
 
 	// AdminEmailsPasswordResetLinkExpirationPeriod => Recovery Link Expiration Period (days).
 	// Please enter a number 1 or greater in this field.
 	// Path: admin/emails/password_reset_link_expiration_period
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Admin\Password\Link\Expirationperiod
+	// BackendModel: Magento\Config\Model\Config\Backend\Admin\Password\Link\Expirationperiod
 	AdminEmailsPasswordResetLinkExpirationPeriod model.Str
 
 	// AdminStartupMenuItemID => Startup Page.
 	// Path: admin/startup/menu_item_id
-	// SourceModel: Otnegam\Config\Model\Config\Source\Admin\Page
+	// SourceModel: Magento\Config\Model\Config\Source\Admin\Page
 	AdminStartupMenuItemID model.Str
 
 	// AdminURLUseCustom => Use Custom Admin URL.
 	// Path: admin/url/use_custom
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Admin\Usecustom
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// BackendModel: Magento\Config\Model\Config\Backend\Admin\Usecustom
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	AdminURLUseCustom model.Bool
 
 	// AdminURLCustom => Custom Admin URL.
 	// Make sure that base URL ends with '/' (slash), e.g.
 	// http://yourdomain/magento/
 	// Path: admin/url/custom
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Admin\Custom
+	// BackendModel: Magento\Config\Model\Config\Backend\Admin\Custom
 	AdminURLCustom model.Str
 
 	// AdminURLUseCustomPath => Use Custom Admin Path.
 	// Path: admin/url/use_custom_path
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Admin\Custompath
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// BackendModel: Magento\Config\Model\Config\Backend\Admin\Custompath
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	AdminURLUseCustomPath model.Bool
 
 	// AdminURLCustomPath => Custom Admin Path.
 	// You will have to sign in after you save your custom admin path.
 	// Path: admin/url/custom_path
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Admin\Custompath
+	// BackendModel: Magento\Config\Model\Config\Backend\Admin\Custompath
 	AdminURLCustomPath model.Str
 
 	// AdminSecurityUseFormKey => Add Secret Key to URLs.
 	// Path: admin/security/use_form_key
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Admin\Usesecretkey
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// BackendModel: Magento\Config\Model\Config\Backend\Admin\Usesecretkey
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	AdminSecurityUseFormKey model.Bool
 
 	// AdminSecurityUseCaseSensitiveLogin => Login is Case Sensitive.
 	// Path: admin/security/use_case_sensitive_login
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	AdminSecurityUseCaseSensitiveLogin model.Bool
 
 	// AdminSecuritySessionLifetime => Admin Session Lifetime (seconds).
@@ -335,7 +335,7 @@ type PkgBackend struct {
 
 	// AdminDashboardEnableCharts => Enable Charts.
 	// Path: admin/dashboard/enable_charts
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	AdminDashboardEnableCharts model.Bool
 
 	// WebURLUseStore => Add Store Code to URLs.
@@ -343,98 +343,98 @@ type PkgBackend struct {
 	// properly if URLs without Store Codes are specified in the third party
 	// services (e.g. PayPal etc.).
 	// Path: web/url/use_store
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Store
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// BackendModel: Magento\Config\Model\Config\Backend\Store
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	WebURLUseStore model.Bool
 
 	// WebURLRedirectToBase => Auto-redirect to Base URL.
 	// I.e. redirect from http://example.com/store/ to
 	// http://www.example.com/store/
 	// Path: web/url/redirect_to_base
-	// SourceModel: Otnegam\Config\Model\Config\Source\Web\Redirect
+	// SourceModel: Magento\Config\Model\Config\Source\Web\Redirect
 	WebURLRedirectToBase ConfigRedirectToBase
 
 	// WebSeoUseRewrites => Use Web Server Rewrites.
 	// Path: web/seo/use_rewrites
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	WebSeoUseRewrites model.Bool
 
 	// WebUnsecureBaseURL => Base URL.
 	// Specify URL or {{base_url}} placeholder.
 	// Path: web/unsecure/base_url
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Baseurl
+	// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 	WebUnsecureBaseURL model.BaseURL
 
 	// WebUnsecureBaseLinkURL => Base Link URL.
 	// May start with {{unsecure_base_url}} placeholder.
 	// Path: web/unsecure/base_link_url
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Baseurl
+	// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 	WebUnsecureBaseLinkURL model.BaseURL
 
 	// WebUnsecureBaseStaticURL => Base URL for Static View Files.
 	// May be empty or start with {{unsecure_base_url}} placeholder.
 	// Path: web/unsecure/base_static_url
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Baseurl
+	// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 	WebUnsecureBaseStaticURL model.BaseURL
 
 	// WebUnsecureBaseMediaURL => Base URL for User Media Files.
 	// May be empty or start with {{unsecure_base_url}} placeholder.
 	// Path: web/unsecure/base_media_url
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Baseurl
+	// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 	WebUnsecureBaseMediaURL model.BaseURL
 
 	// WebSecureBaseURL => Secure Base URL.
 	// Specify URL or {{base_url}}, or {{unsecure_base_url}} placeholder.
 	// Path: web/secure/base_url
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Baseurl
+	// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 	WebSecureBaseURL model.BaseURL
 
 	// WebSecureBaseLinkURL => Secure Base Link URL.
 	// May start with {{secure_base_url}} or {{unsecure_base_url}} placeholder.
 	// Path: web/secure/base_link_url
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Baseurl
+	// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 	WebSecureBaseLinkURL model.BaseURL
 
 	// WebSecureBaseStaticURL => Secure Base URL for Static View Files.
 	// May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}}
 	// placeholder.
 	// Path: web/secure/base_static_url
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Baseurl
+	// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 	WebSecureBaseStaticURL model.BaseURL
 
 	// WebSecureBaseMediaURL => Secure Base URL for User Media Files.
 	// May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}}
 	// placeholder.
 	// Path: web/secure/base_media_url
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Baseurl
+	// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 	WebSecureBaseMediaURL model.BaseURL
 
 	// WebSecureUseInFrontend => Use Secure URLs on Storefront.
 	// Enter https protocol to use Secure URLs on Storefront.
 	// Path: web/secure/use_in_frontend
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Secure
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// BackendModel: Magento\Config\Model\Config\Backend\Secure
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	WebSecureUseInFrontend model.Bool
 
 	// WebSecureUseInAdminhtml => Use Secure URLs in Admin.
 	// Enter https protocol to use Secure URLs in Admin.
 	// Path: web/secure/use_in_adminhtml
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Secure
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// BackendModel: Magento\Config\Model\Config\Backend\Secure
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	WebSecureUseInAdminhtml model.Bool
 
 	// WebSecureEnableHsts => Enable HTTP Strict Transport Security (HSTS).
 	// See HTTP Strict Transport Security page for details.
 	// Path: web/secure/enable_hsts
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Secure
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// BackendModel: Magento\Config\Model\Config\Backend\Secure
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	WebSecureEnableHsts model.Bool
 
 	// WebSecureEnableUpgradeInsecure => Upgrade Insecure Requests.
 	// See Upgrade Insecure Requests page for details.
 	// Path: web/secure/enable_upgrade_insecure
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Secure
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// BackendModel: Magento\Config\Model\Config\Backend\Secure
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	WebSecureEnableUpgradeInsecure model.Bool
 
 	// WebSecureOffloaderHeader => Offloader header.
@@ -451,28 +451,28 @@ type PkgBackend struct {
 
 	// WebSessionUseRemoteAddr => Validate REMOTE_ADDR.
 	// Path: web/session/use_remote_addr
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	WebSessionUseRemoteAddr model.Bool
 
 	// WebSessionUseHTTPVia => Validate HTTP_VIA.
 	// Path: web/session/use_http_via
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	WebSessionUseHTTPVia model.Bool
 
 	// WebSessionUseHTTPXForwardedFor => Validate HTTP_X_FORWARDED_FOR.
 	// Path: web/session/use_http_x_forwarded_for
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	WebSessionUseHTTPXForwardedFor model.Bool
 
 	// WebSessionUseHTTPUserAgent => Validate HTTP_USER_AGENT.
 	// Path: web/session/use_http_user_agent
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	WebSessionUseHTTPUserAgent model.Bool
 
 	// WebSessionUseFrontendSid => Use SID on Storefront.
 	// Allows customers to stay logged in when switching between different stores.
 	// Path: web/session/use_frontend_sid
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	WebSessionUseFrontendSid model.Bool
 }
 

@@ -17,12 +17,12 @@ type PkgBackend struct {
 	model.PkgBackend
 	// PaymentCheckmoActive => Enabled.
 	// Path: payment/checkmo/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	PaymentCheckmoActive model.Bool
 
 	// PaymentCheckmoOrderStatus => New Order Status.
 	// Path: payment/checkmo/order_status
-	// SourceModel: Otnegam\Sales\Model\Config\Source\Order\Status\NewStatus
+	// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\NewStatus
 	PaymentCheckmoOrderStatus model.Str
 
 	// PaymentCheckmoSortOrder => Sort Order.
@@ -35,12 +35,12 @@ type PkgBackend struct {
 
 	// PaymentCheckmoAllowspecific => Payment from Applicable Countries.
 	// Path: payment/checkmo/allowspecific
-	// SourceModel: Otnegam\Payment\Model\Config\Source\Allspecificcountries
+	// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 	PaymentCheckmoAllowspecific model.Str
 
 	// PaymentCheckmoSpecificcountry => Payment from Specific Countries.
 	// Path: payment/checkmo/specificcountry
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	PaymentCheckmoSpecificcountry model.StringCSV
 
 	// PaymentCheckmoPayableTo => Make Check Payable to.
@@ -65,12 +65,12 @@ type PkgBackend struct {
 
 	// PaymentPurchaseorderActive => Enabled.
 	// Path: payment/purchaseorder/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	PaymentPurchaseorderActive model.Bool
 
 	// PaymentPurchaseorderOrderStatus => New Order Status.
 	// Path: payment/purchaseorder/order_status
-	// SourceModel: Otnegam\Sales\Model\Config\Source\Order\Status\NewStatus
+	// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\NewStatus
 	PaymentPurchaseorderOrderStatus model.Str
 
 	// PaymentPurchaseorderSortOrder => Sort Order.
@@ -83,12 +83,12 @@ type PkgBackend struct {
 
 	// PaymentPurchaseorderAllowspecific => Payment from Applicable Countries.
 	// Path: payment/purchaseorder/allowspecific
-	// SourceModel: Otnegam\Payment\Model\Config\Source\Allspecificcountries
+	// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 	PaymentPurchaseorderAllowspecific model.Str
 
 	// PaymentPurchaseorderSpecificcountry => Payment from Specific Countries.
 	// Path: payment/purchaseorder/specificcountry
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	PaymentPurchaseorderSpecificcountry model.StringCSV
 
 	// PaymentPurchaseorderMinOrderTotal => Minimum Order Total.
@@ -105,7 +105,7 @@ type PkgBackend struct {
 
 	// PaymentBanktransferActive => Enabled.
 	// Path: payment/banktransfer/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	PaymentBanktransferActive model.Bool
 
 	// PaymentBanktransferTitle => Title.
@@ -114,17 +114,17 @@ type PkgBackend struct {
 
 	// PaymentBanktransferOrderStatus => New Order Status.
 	// Path: payment/banktransfer/order_status
-	// SourceModel: Otnegam\Sales\Model\Config\Source\Order\Status\NewStatus
+	// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\NewStatus
 	PaymentBanktransferOrderStatus model.Str
 
 	// PaymentBanktransferAllowspecific => Payment from Applicable Countries.
 	// Path: payment/banktransfer/allowspecific
-	// SourceModel: Otnegam\Payment\Model\Config\Source\Allspecificcountries
+	// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 	PaymentBanktransferAllowspecific model.Str
 
 	// PaymentBanktransferSpecificcountry => Payment from Specific Countries.
 	// Path: payment/banktransfer/specificcountry
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	PaymentBanktransferSpecificcountry model.StringCSV
 
 	// PaymentBanktransferInstructions => Instructions.
@@ -145,7 +145,7 @@ type PkgBackend struct {
 
 	// PaymentCashondeliveryActive => Enabled.
 	// Path: payment/cashondelivery/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	PaymentCashondeliveryActive model.Bool
 
 	// PaymentCashondeliveryTitle => Title.
@@ -154,17 +154,17 @@ type PkgBackend struct {
 
 	// PaymentCashondeliveryOrderStatus => New Order Status.
 	// Path: payment/cashondelivery/order_status
-	// SourceModel: Otnegam\Sales\Model\Config\Source\Order\Status\NewStatus
+	// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\NewStatus
 	PaymentCashondeliveryOrderStatus model.Str
 
 	// PaymentCashondeliveryAllowspecific => Payment from Applicable Countries.
 	// Path: payment/cashondelivery/allowspecific
-	// SourceModel: Otnegam\Payment\Model\Config\Source\Allspecificcountries
+	// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 	PaymentCashondeliveryAllowspecific model.Str
 
 	// PaymentCashondeliverySpecificcountry => Payment from Specific Countries.
 	// Path: payment/cashondelivery/specificcountry
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	PaymentCashondeliverySpecificcountry model.StringCSV
 
 	// PaymentCashondeliveryInstructions => Instructions.
@@ -185,17 +185,17 @@ type PkgBackend struct {
 
 	// PaymentFreeActive => Enabled.
 	// Path: payment/free/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	PaymentFreeActive model.Bool
 
 	// PaymentFreeOrderStatus => New Order Status.
 	// Path: payment/free/order_status
-	// SourceModel: Otnegam\Sales\Model\Config\Source\Order\Status\Newprocessing
+	// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\Newprocessing
 	PaymentFreeOrderStatus model.Str
 
 	// PaymentFreePaymentAction => Automatically Invoice All Items.
 	// Path: payment/free/payment_action
-	// SourceModel: Otnegam\Payment\Model\Source\Invoice
+	// SourceModel: Magento\Payment\Model\Source\Invoice
 	PaymentFreePaymentAction model.Str
 
 	// PaymentFreeSortOrder => Sort Order.
@@ -208,12 +208,12 @@ type PkgBackend struct {
 
 	// PaymentFreeAllowspecific => Payment from Applicable Countries.
 	// Path: payment/free/allowspecific
-	// SourceModel: Otnegam\Payment\Model\Config\Source\Allspecificcountries
+	// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 	PaymentFreeAllowspecific model.Str
 
 	// PaymentFreeSpecificcountry => Payment from Specific Countries.
 	// Path: payment/free/specificcountry
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	PaymentFreeSpecificcountry model.StringCSV
 
 	// PaymentFreeModel => .

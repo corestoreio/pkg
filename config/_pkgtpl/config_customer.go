@@ -18,7 +18,7 @@ func init() {
 			Label:     `Customer Configuration`,
 			SortOrder: 130,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Customer::config_customer
+			Resource:  0, // Magento_Customer::config_customer
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "account_share",
@@ -36,8 +36,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   true,
-							// BackendModel: Otnegam\Customer\Model\Config\Share
-							// SourceModel: Otnegam\Customer\Model\Config\Share
+							// BackendModel: Magento\Customer\Model\Config\Share
+							// SourceModel: Magento\Customer\Model\Config\Share
 						},
 					),
 				},
@@ -56,7 +56,7 @@ func init() {
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -68,7 +68,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `billing`,
-							// SourceModel: Otnegam\Customer\Model\Config\Source\Address\Type
+							// SourceModel: Magento\Customer\Model\Config\Source\Address\Type
 						},
 
 						&element.Field{
@@ -80,7 +80,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Customer\Model\Config\Source\Group
+							// SourceModel: Magento\Customer\Model\Config\Source\Group
 						},
 
 						&element.Field{
@@ -91,7 +91,7 @@ func init() {
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Customer\Model\Config\Source\Group
+							// SourceModel: Magento\Customer\Model\Config\Source\Group
 						},
 
 						&element.Field{
@@ -102,7 +102,7 @@ func init() {
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Customer\Model\Config\Source\Group
+							// SourceModel: Magento\Customer\Model\Config\Source\Group
 						},
 
 						&element.Field{
@@ -113,7 +113,7 @@ func init() {
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Customer\Model\Config\Source\Group
+							// SourceModel: Magento\Customer\Model\Config\Source\Group
 						},
 
 						&element.Field{
@@ -124,7 +124,7 @@ func init() {
 							SortOrder: 55,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Customer\Model\Config\Source\Group
+							// SourceModel: Magento\Customer\Model\Config\Source\Group
 						},
 
 						&element.Field{
@@ -135,7 +135,7 @@ func init() {
 							SortOrder: 56,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -146,8 +146,8 @@ func init() {
 							SortOrder: 57,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
-							// BackendModel: Otnegam\Customer\Model\Config\Backend\CreateAccount\DisableAutoGroupAssignDefault
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// BackendModel: Magento\Customer\Model\Config\Backend\CreateAccount\DisableAutoGroupAssignDefault
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -160,7 +160,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -184,7 +184,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `customer_create_account_email_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -197,7 +197,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `customer_create_account_email_no_password_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -209,7 +209,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `general`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -221,7 +221,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -234,7 +234,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `customer_create_account_email_confirmation_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -247,7 +247,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `customer_create_account_email_confirmed_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -258,7 +258,7 @@ func init() {
 							SortOrder: 120,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -279,7 +279,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `customer_password_forgot_email_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -292,7 +292,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `customer_password_remind_email_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -305,7 +305,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `customer_password_reset_password_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -317,7 +317,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `support`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -330,7 +330,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   1,
-							// BackendModel: Otnegam\Customer\Model\Config\Backend\Password\Link\Expirationperiod
+							// BackendModel: Magento\Customer\Model\Config\Backend\Password\Link\Expirationperiod
 						},
 					),
 				},
@@ -351,7 +351,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   2,
-							// BackendModel: Otnegam\Customer\Model\Config\Backend\Address\Street
+							// BackendModel: Magento\Customer\Model\Config\Backend\Address\Street
 						},
 
 						&element.Field{
@@ -363,8 +363,8 @@ func init() {
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Address
-							// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
+							// BackendModel: Magento\Customer\Model\Config\Backend\Show\Address
+							// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 						},
 
 						&element.Field{
@@ -387,8 +387,8 @@ func init() {
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Address
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// BackendModel: Magento\Customer\Model\Config\Backend\Show\Address
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -400,8 +400,8 @@ func init() {
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Address
-							// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
+							// BackendModel: Magento\Customer\Model\Config\Backend\Show\Address
+							// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 						},
 
 						&element.Field{
@@ -423,8 +423,8 @@ func init() {
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Customer
-							// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
+							// BackendModel: Magento\Customer\Model\Config\Backend\Show\Customer
+							// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 						},
 
 						&element.Field{
@@ -435,8 +435,8 @@ func init() {
 							SortOrder: 80,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Customer
-							// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
+							// BackendModel: Magento\Customer\Model\Config\Backend\Show\Customer
+							// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 						},
 
 						&element.Field{
@@ -447,8 +447,8 @@ func init() {
 							SortOrder: 90,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Customer
-							// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
+							// BackendModel: Magento\Customer\Model\Config\Backend\Show\Customer
+							// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 						},
 					),
 				},
@@ -469,7 +469,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -608,7 +608,7 @@ T: {{var telephone}}
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},

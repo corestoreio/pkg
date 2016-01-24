@@ -18,7 +18,7 @@ func init() {
 			Label:     `New Relic Reporting`,
 			SortOrder: 1100,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_NewRelicReporting::config_newrelicreporting
+			Resource:  0, // Magento_NewRelicReporting::config_newrelicreporting
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "general",
@@ -35,7 +35,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -92,7 +92,7 @@ func init() {
 							SortOrder: 6,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 						},
 
 						&element.Field{
@@ -104,7 +104,7 @@ func init() {
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 						},
 
 						&element.Field{
@@ -135,7 +135,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},

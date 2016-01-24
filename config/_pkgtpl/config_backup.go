@@ -30,7 +30,7 @@ func init() {
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -41,7 +41,7 @@ func init() {
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
-							// SourceModel: Otnegam\Backup\Model\Config\Source\Type
+							// SourceModel: Magento\Backup\Model\Config\Source\Type
 						},
 
 						&element.Field{
@@ -62,8 +62,8 @@ func init() {
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
-							// BackendModel: Otnegam\Backup\Model\Config\Backend\Cron
-							// SourceModel: Otnegam\Cron\Model\Config\Source\Frequency
+							// BackendModel: Magento\Backup\Model\Config\Backend\Cron
+							// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 						},
 
 						&element.Field{
@@ -75,7 +75,7 @@ func init() {
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},

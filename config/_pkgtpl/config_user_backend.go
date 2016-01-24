@@ -19,7 +19,7 @@ type PkgBackend struct {
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: admin/emails/reset_password_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	AdminEmailsResetPasswordTemplate model.Str
 
 	// AdminSecurityLockoutFailures => Maximum Login Failures to Lockout Account.
@@ -38,7 +38,7 @@ type PkgBackend struct {
 
 	// AdminSecurityPasswordIsForced => Password Change.
 	// Path: admin/security/password_is_forced
-	// SourceModel: Otnegam\User\Model\System\Config\Source\Password
+	// SourceModel: Magento\User\Model\System\Config\Source\Password
 	AdminSecurityPasswordIsForced model.Str
 }
 

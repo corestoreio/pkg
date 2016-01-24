@@ -28,7 +28,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `home`,
-							// SourceModel: Otnegam\Cms\Model\Config\Source\Page
+							// SourceModel: Magento\Cms\Model\Config\Source\Page
 						},
 
 						&element.Field{
@@ -40,7 +40,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `no-route`,
-							// SourceModel: Otnegam\Cms\Model\Config\Source\Page
+							// SourceModel: Magento\Cms\Model\Config\Source\Page
 						},
 
 						&element.Field{
@@ -52,7 +52,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `enable-cookies`,
-							// SourceModel: Otnegam\Cms\Model\Config\Source\Page
+							// SourceModel: Magento\Cms\Model\Config\Source\Page
 						},
 
 						&element.Field{
@@ -64,7 +64,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -83,7 +83,7 @@ func init() {
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -94,7 +94,7 @@ func init() {
 							SortOrder: 200,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -105,7 +105,7 @@ func init() {
 							SortOrder: 300,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -116,7 +116,7 @@ func init() {
 			Label:     `Content Management`,
 			SortOrder: 1001,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Cms::config_cms
+			Resource:  0, // Magento_Cms::config_cms
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "wysiwyg",
@@ -133,7 +133,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `enabled`,
-							// SourceModel: Otnegam\Cms\Model\Config\Source\Wysiwyg\Enabled
+							// SourceModel: Magento\Cms\Model\Config\Source\Wysiwyg\Enabled
 						},
 					),
 				},

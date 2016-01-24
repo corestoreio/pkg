@@ -17,7 +17,7 @@ type PkgBackend struct {
 	model.PkgBackend
 	// GoogleAnalyticsActive => Enable.
 	// Path: google/analytics/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	GoogleAnalyticsActive model.Bool
 
 	// GoogleAnalyticsAccount => Account Number.

@@ -19,7 +19,7 @@ func init() {
 				&element.Group{
 					ID:        "braintree_section",
 					Label:     `Braintree`,
-					Comment:   text.Long(`Accept credit/debit cards and PayPal in your Otnegam store. No setup or monthly fees and your customers never leave your store to complete the purchase.`),
+					Comment:   text.Long(`Accept credit/debit cards and PayPal in your Magento store. No setup or monthly fees and your customers never leave your store to complete the purchase.`),
 					SortOrder: 2,
 					Scope:     scope.PermAll,
 					Fields:    element.NewFieldSlice(),
@@ -39,7 +39,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Braintree\Model\PaymentMethod`,
+							Default: `Magento\Braintree\Model\PaymentMethod`,
 						},
 
 						&element.Field{
@@ -143,7 +143,7 @@ func init() {
 							ID:      `public_key`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"_value":null,"_attribute":{"backend_model":"Otnegam\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
+							Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 						},
 
 						&element.Field{
@@ -151,7 +151,7 @@ func init() {
 							ID:      `private_key`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"_value":null,"_attribute":{"backend_model":"Otnegam\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
+							Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 						},
 
 						&element.Field{
@@ -196,7 +196,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Braintree\Model\PaymentMethod\PayPal`,
+							Default: `Magento\Braintree\Model\PaymentMethod\PayPal`,
 						},
 
 						&element.Field{

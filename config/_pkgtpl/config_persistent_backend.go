@@ -17,7 +17,7 @@ type PkgBackend struct {
 	model.PkgBackend
 	// PersistentOptionsEnabled => Enable Persistence.
 	// Path: persistent/options/enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	PersistentOptionsEnabled model.Bool
 
 	// PersistentOptionsLifetime => Persistence Lifetime (seconds).
@@ -26,22 +26,22 @@ type PkgBackend struct {
 
 	// PersistentOptionsRememberEnabled => Enable "Remember Me".
 	// Path: persistent/options/remember_enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	PersistentOptionsRememberEnabled model.Bool
 
 	// PersistentOptionsRememberDefault => "Remember Me" Default Value.
 	// Path: persistent/options/remember_default
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	PersistentOptionsRememberDefault model.Bool
 
 	// PersistentOptionsLogoutClear => Clear Persistence on Sign Out.
 	// Path: persistent/options/logout_clear
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	PersistentOptionsLogoutClear model.Bool
 
 	// PersistentOptionsShoppingCart => Persist Shopping Cart.
 	// Path: persistent/options/shopping_cart
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	PersistentOptionsShoppingCart model.Bool
 }
 

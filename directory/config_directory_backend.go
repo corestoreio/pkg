@@ -33,20 +33,20 @@ type PkgBackend struct {
 	// than one store view, the base currency scope is defined by the catalog
 	// price scope ("Catalog" > "Price" > "Catalog Price Scope").
 	// Path: currency/options/base
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Currency\Base
-	// SourceModel: Otnegam\Config\Model\Config\Source\Locale\Currency
+	// BackendModel: Magento\Config\Model\Config\Backend\Currency\Base
+	// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
 	CurrencyOptionsBase ConfigCurrency
 
 	// CurrencyOptionsDefault => Default Display Currency.
 	// Path: currency/options/default
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Currency\DefaultCurrency
-	// SourceModel: Otnegam\Config\Model\Config\Source\Locale\Currency
+	// BackendModel: Magento\Config\Model\Config\Backend\Currency\DefaultCurrency
+	// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
 	CurrencyOptionsDefault ConfigCurrency
 
 	// CurrencyOptionsAllow => Allowed Currencies.
 	// Path: currency/options/allow
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Currency\Allow
-	// SourceModel: Otnegam\Config\Model\Config\Source\Locale\Currency
+	// BackendModel: Magento\Config\Model\Config\Backend\Currency\Allow
+	// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
 	CurrencyOptionsAllow model.StringCSV
 
 	// CurrencyWebservicexTimeout => Connection Timeout in Seconds.
@@ -55,7 +55,7 @@ type PkgBackend struct {
 
 	// CurrencyImportEnabled => Enabled.
 	// Path: currency/import/enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CurrencyImportEnabled model.Bool
 
 	// CurrencyImportErrorEmail => Error Email Recipient.
@@ -64,25 +64,25 @@ type PkgBackend struct {
 
 	// CurrencyImportErrorEmailIdentity => Error Email Sender.
 	// Path: currency/import/error_email_identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	CurrencyImportErrorEmailIdentity model.Str
 
 	// CurrencyImportErrorEmailTemplate => Error Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: currency/import/error_email_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	CurrencyImportErrorEmailTemplate model.Str
 
 	// CurrencyImportFrequency => Frequency.
 	// Path: currency/import/frequency
-	// SourceModel: Otnegam\Cron\Model\Config\Source\Frequency
+	// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 	CurrencyImportFrequency model.Str
 
 	// CurrencyImportService => Service.
 	// Path: currency/import/service
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Currency\Cron
-	// SourceModel: Otnegam\Directory\Model\Currency\Import\Source\Service
+	// BackendModel: Magento\Config\Model\Config\Backend\Currency\Cron
+	// SourceModel: Magento\Directory\Model\Currency\Import\Source\Service
 	CurrencyImportService model.Str
 
 	// CurrencyImportTime => Start Time.
@@ -92,8 +92,8 @@ type PkgBackend struct {
 	// SystemCurrencyInstalled => Installed Currencies.
 	// Defines all installed and available currencies.
 	// Path: system/currency/installed
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Locale
-	// SourceModel: Otnegam\Config\Model\Config\Source\Locale\Currency\All
+	// BackendModel: Magento\Config\Model\Config\Backend\Locale
+	// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency\All
 	//
 	// TODO:
 	//	// SourceCurrencyAll used in Path: `system/currency/installed`,
@@ -111,56 +111,56 @@ type PkgBackend struct {
 
 	// GeneralCountryOptionalZipCountries => Zip/Postal Code is Optional for.
 	// Path: general/country/optional_zip_countries
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	GeneralCountryOptionalZipCountries model.StringCSV
 
 	// PathGeneralCountryAllow per store view allowed list of countries
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	GeneralCountryAllow model.StringCSV
 
 	// PathGeneralCountryDefault returns the store view default configured country code.
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	GeneralCountryDefault model.Str
 
 	// PathGeneralCountryEuCountries => European Union Countries.
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	GeneralCountryEuCountries model.StringCSV
 
 	// PathGeneralCountryDestinations contains codes of the most used countries.
 	// Such countries can be shown on the top of the country list.
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	GeneralCountryDestinations model.StringCSV
 
 	// PathGeneralLocaleTimezone => Timezone.
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Locale\Timezone
-	// SourceModel: Otnegam\Config\Model\Config\Source\Locale\Timezone
+	// BackendModel: Magento\Config\Model\Config\Backend\Locale\Timezone
+	// SourceModel: Magento\Config\Model\Config\Source\Locale\Timezone
 	GeneralLocaleTimezone model.Str
 
 	// PathGeneralLocaleCode => Locale.
-	// SourceModel: Otnegam\Config\Model\Config\Source\Locale
+	// SourceModel: Magento\Config\Model\Config\Source\Locale
 	GeneralLocaleCode model.Str
 
 	// PathGeneralLocaleFirstday => First Day of Week.
-	// SourceModel: Otnegam\Config\Model\Config\Source\Locale\Weekdays
+	// SourceModel: Magento\Config\Model\Config\Source\Locale\Weekdays
 	GeneralLocaleFirstday model.Str
 
 	// PathGeneralLocaleWeekend => Weekend Days.
-	// SourceModel: Otnegam\Config\Model\Config\Source\Locale\Weekdays
+	// SourceModel: Magento\Config\Model\Config\Source\Locale\Weekdays
 	GeneralLocaleWeekend model.StringCSV
 
 	// GeneralRegionStateRequired => State is Required for.
 	// Path: general/region/state_required
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	GeneralRegionStateRequired model.StringCSV
 
 	// GeneralRegionDisplayAll => Allow to Choose State if It is Optional for Country.
 	// Path: general/region/display_all
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	GeneralRegionDisplayAll model.Bool
 
 	// GeneralLocaleWeightUnit => Weight Unit.
 	// Path: general/locale/weight_unit
-	// SourceModel: Otnegam\Directory\Model\Config\Source\WeightUnit
+	// SourceModel: Magento\Directory\Model\Config\Source\WeightUnit
 	GeneralLocaleWeightUnit model.Str
 }
 

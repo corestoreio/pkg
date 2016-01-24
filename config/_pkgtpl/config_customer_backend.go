@@ -17,61 +17,61 @@ type PkgBackend struct {
 	model.PkgBackend
 	// CustomerAccountShareScope => Share Customer Accounts.
 	// Path: customer/account_share/scope
-	// BackendModel: Otnegam\Customer\Model\Config\Share
-	// SourceModel: Otnegam\Customer\Model\Config\Share
+	// BackendModel: Magento\Customer\Model\Config\Share
+	// SourceModel: Magento\Customer\Model\Config\Share
 	CustomerAccountShareScope model.Str
 
 	// CustomerCreateAccountAutoGroupAssign => Enable Automatic Assignment to Customer Group.
 	// Path: customer/create_account/auto_group_assign
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CustomerCreateAccountAutoGroupAssign model.Bool
 
 	// CustomerCreateAccountTaxCalculationAddressType => Tax Calculation Based On.
 	// Path: customer/create_account/tax_calculation_address_type
-	// SourceModel: Otnegam\Customer\Model\Config\Source\Address\Type
+	// SourceModel: Magento\Customer\Model\Config\Source\Address\Type
 	CustomerCreateAccountTaxCalculationAddressType model.Str
 
 	// CustomerCreateAccountDefaultGroup => Default Group.
 	// Path: customer/create_account/default_group
-	// SourceModel: Otnegam\Customer\Model\Config\Source\Group
+	// SourceModel: Magento\Customer\Model\Config\Source\Group
 	CustomerCreateAccountDefaultGroup model.Str
 
 	// CustomerCreateAccountVivDomesticGroup => Group for Valid VAT ID - Domestic.
 	// Path: customer/create_account/viv_domestic_group
-	// SourceModel: Otnegam\Customer\Model\Config\Source\Group
+	// SourceModel: Magento\Customer\Model\Config\Source\Group
 	CustomerCreateAccountVivDomesticGroup model.Str
 
 	// CustomerCreateAccountVivIntraUnionGroup => Group for Valid VAT ID - Intra-Union.
 	// Path: customer/create_account/viv_intra_union_group
-	// SourceModel: Otnegam\Customer\Model\Config\Source\Group
+	// SourceModel: Magento\Customer\Model\Config\Source\Group
 	CustomerCreateAccountVivIntraUnionGroup model.Str
 
 	// CustomerCreateAccountVivInvalidGroup => Group for Invalid VAT ID.
 	// Path: customer/create_account/viv_invalid_group
-	// SourceModel: Otnegam\Customer\Model\Config\Source\Group
+	// SourceModel: Magento\Customer\Model\Config\Source\Group
 	CustomerCreateAccountVivInvalidGroup model.Str
 
 	// CustomerCreateAccountVivErrorGroup => Validation Error Group.
 	// Path: customer/create_account/viv_error_group
-	// SourceModel: Otnegam\Customer\Model\Config\Source\Group
+	// SourceModel: Magento\Customer\Model\Config\Source\Group
 	CustomerCreateAccountVivErrorGroup model.Str
 
 	// CustomerCreateAccountVivOnEachTransaction => Validate on Each Transaction.
 	// Path: customer/create_account/viv_on_each_transaction
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CustomerCreateAccountVivOnEachTransaction model.Bool
 
 	// CustomerCreateAccountVivDisableAutoGroupAssignDefault => Default Value for Disable Automatic Group Changes Based on VAT ID.
 	// Path: customer/create_account/viv_disable_auto_group_assign_default
-	// BackendModel: Otnegam\Customer\Model\Config\Backend\CreateAccount\DisableAutoGroupAssignDefault
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// BackendModel: Magento\Customer\Model\Config\Backend\CreateAccount\DisableAutoGroupAssignDefault
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CustomerCreateAccountVivDisableAutoGroupAssignDefault model.Bool
 
 	// CustomerCreateAccountVatFrontendVisibility => Show VAT Number on Storefront.
 	// To show VAT number on Storefront, set Show VAT Number on Storefront option
 	// to Yes.
 	// Path: customer/create_account/vat_frontend_visibility
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CustomerCreateAccountVatFrontendVisibility model.Bool
 
 	// CustomerCreateAccountEmailDomain => Default Email Domain.
@@ -82,7 +82,7 @@ type PkgBackend struct {
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: customer/create_account/email_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	CustomerCreateAccountEmailTemplate model.Str
 
 	// CustomerCreateAccountEmailNoPasswordTemplate => Default Welcome Email Without Password.
@@ -90,24 +90,24 @@ type PkgBackend struct {
 	// was created without password.  Email template chosen based on theme
 	// fallback when "Default" option is selected.
 	// Path: customer/create_account/email_no_password_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	CustomerCreateAccountEmailNoPasswordTemplate model.Str
 
 	// CustomerCreateAccountEmailIdentity => Email Sender.
 	// Path: customer/create_account/email_identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	CustomerCreateAccountEmailIdentity model.Str
 
 	// CustomerCreateAccountConfirm => Require Emails Confirmation.
 	// Path: customer/create_account/confirm
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CustomerCreateAccountConfirm model.Bool
 
 	// CustomerCreateAccountEmailConfirmationTemplate => Confirmation Link Email.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: customer/create_account/email_confirmation_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	CustomerCreateAccountEmailConfirmationTemplate model.Str
 
 	// CustomerCreateAccountEmailConfirmedTemplate => Welcome Email.
@@ -115,57 +115,57 @@ type PkgBackend struct {
 	// confirmation.  Email template chosen based on theme fallback when "Default"
 	// option is selected.
 	// Path: customer/create_account/email_confirmed_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	CustomerCreateAccountEmailConfirmedTemplate model.Str
 
 	// CustomerCreateAccountGenerateHumanFriendlyId => Generate Human-Friendly Customer ID.
 	// Path: customer/create_account/generate_human_friendly_id
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CustomerCreateAccountGenerateHumanFriendlyId model.Bool
 
 	// CustomerPasswordForgotEmailTemplate => Forgot Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: customer/password/forgot_email_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	CustomerPasswordForgotEmailTemplate model.Str
 
 	// CustomerPasswordRemindEmailTemplate => Remind Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: customer/password/remind_email_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	CustomerPasswordRemindEmailTemplate model.Str
 
 	// CustomerPasswordResetPasswordTemplate => Reset Password Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: customer/password/reset_password_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	CustomerPasswordResetPasswordTemplate model.Str
 
 	// CustomerPasswordForgotEmailIdentity => Password Template Email Sender.
 	// Path: customer/password/forgot_email_identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	CustomerPasswordForgotEmailIdentity model.Str
 
 	// CustomerPasswordResetLinkExpirationPeriod => Recovery Link Expiration Period (days).
 	// Please enter a number 1 or greater in this field.
 	// Path: customer/password/reset_link_expiration_period
-	// BackendModel: Otnegam\Customer\Model\Config\Backend\Password\Link\Expirationperiod
+	// BackendModel: Magento\Customer\Model\Config\Backend\Password\Link\Expirationperiod
 	CustomerPasswordResetLinkExpirationPeriod model.Str
 
 	// CustomerAddressStreetLines => Number of Lines in a Street Address.
 	// Leave empty for default (2). Valid range: 1-4
 	// Path: customer/address/street_lines
-	// BackendModel: Otnegam\Customer\Model\Config\Backend\Address\Street
+	// BackendModel: Magento\Customer\Model\Config\Backend\Address\Street
 	CustomerAddressStreetLines model.Str
 
 	// CustomerAddressPrefixShow => Show Prefix.
 	// The title that goes before name (Mr., Mrs., etc.)
 	// Path: customer/address/prefix_show
-	// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Address
-	// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
+	// BackendModel: Magento\Customer\Model\Config\Backend\Show\Address
+	// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 	CustomerAddressPrefixShow model.Str
 
 	// CustomerAddressPrefixOptions => Prefix Dropdown Options.
@@ -177,15 +177,15 @@ type PkgBackend struct {
 	// CustomerAddressMiddlenameShow => Show Middle Name (initial).
 	// Always optional.
 	// Path: customer/address/middlename_show
-	// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Address
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// BackendModel: Magento\Customer\Model\Config\Backend\Show\Address
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CustomerAddressMiddlenameShow model.Bool
 
 	// CustomerAddressSuffixShow => Show Suffix.
 	// The suffix that goes after name (Jr., Sr., etc.)
 	// Path: customer/address/suffix_show
-	// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Address
-	// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
+	// BackendModel: Magento\Customer\Model\Config\Backend\Show\Address
+	// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 	CustomerAddressSuffixShow model.Str
 
 	// CustomerAddressSuffixOptions => Suffix Dropdown Options.
@@ -196,26 +196,26 @@ type PkgBackend struct {
 
 	// CustomerAddressDobShow => Show Date of Birth.
 	// Path: customer/address/dob_show
-	// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Customer
-	// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
+	// BackendModel: Magento\Customer\Model\Config\Backend\Show\Customer
+	// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 	CustomerAddressDobShow model.Str
 
 	// CustomerAddressTaxvatShow => Show Tax/VAT Number.
 	// Path: customer/address/taxvat_show
-	// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Customer
-	// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
+	// BackendModel: Magento\Customer\Model\Config\Backend\Show\Customer
+	// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 	CustomerAddressTaxvatShow model.Str
 
 	// CustomerAddressGenderShow => Show Gender.
 	// Path: customer/address/gender_show
-	// BackendModel: Otnegam\Customer\Model\Config\Backend\Show\Customer
-	// SourceModel: Otnegam\Config\Model\Config\Source\Nooptreq
+	// BackendModel: Magento\Customer\Model\Config\Backend\Show\Customer
+	// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 	CustomerAddressGenderShow model.Str
 
 	// CustomerStartupRedirectDashboard => Redirect Customer to Account Dashboard after Logging in.
 	// Customer will stay on the current page if "No" is selected.
 	// Path: customer/startup/redirect_dashboard
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CustomerStartupRedirectDashboard model.Bool
 
 	// CustomerAddressTemplatesText => Text.
@@ -245,7 +245,7 @@ type PkgBackend struct {
 
 	// GeneralRestrictionAutocompleteOnStorefront => Enable Autocomplete on login/forgot password forms.
 	// Path: general/restriction/autocomplete_on_storefront
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	GeneralRestrictionAutocompleteOnStorefront model.Bool
 }
 

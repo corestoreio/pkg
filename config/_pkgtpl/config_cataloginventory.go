@@ -18,7 +18,7 @@ func init() {
 			Label:     `Inventory`,
 			SortOrder: 50,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_CatalogInventory::cataloginventory
+			Resource:  0, // Magento_CatalogInventory::cataloginventory
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "options",
@@ -35,7 +35,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -47,7 +47,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -60,8 +60,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   false,
-							// BackendModel: Otnegam\CatalogInventory\Model\Config\Backend\ShowOutOfStock
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// BackendModel: Magento\CatalogInventory\Model\Config\Backend\ShowOutOfStock
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -83,7 +83,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -105,8 +105,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   true,
-							// BackendModel: Otnegam\CatalogInventory\Model\Config\Backend\Managestock
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// BackendModel: Magento\CatalogInventory\Model\Config\Backend\Managestock
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -119,8 +119,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   false,
-							// BackendModel: Otnegam\CatalogInventory\Model\Config\Backend\Backorders
-							// SourceModel: Otnegam\CatalogInventory\Model\Source\Backorders
+							// BackendModel: Magento\CatalogInventory\Model\Config\Backend\Backorders
+							// SourceModel: Magento\CatalogInventory\Model\Source\Backorders
 						},
 
 						&element.Field{
@@ -142,7 +142,7 @@ func init() {
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
-							// BackendModel: Otnegam\CatalogInventory\Model\System\Config\Backend\Minqty
+							// BackendModel: Magento\CatalogInventory\Model\System\Config\Backend\Minqty
 						},
 
 						&element.Field{
@@ -154,7 +154,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   1,
-							// BackendModel: Otnegam\CatalogInventory\Model\System\Config\Backend\Minsaleqty
+							// BackendModel: Magento\CatalogInventory\Model\System\Config\Backend\Minsaleqty
 						},
 
 						&element.Field{
@@ -176,7 +176,7 @@ func init() {
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -188,7 +188,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -200,7 +200,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   1,
-							// BackendModel: Otnegam\CatalogInventory\Model\System\Config\Backend\Qtyincrements
+							// BackendModel: Magento\CatalogInventory\Model\System\Config\Backend\Qtyincrements
 						},
 					),
 				},

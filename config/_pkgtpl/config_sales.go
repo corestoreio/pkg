@@ -18,7 +18,7 @@ func init() {
 			Label:     `Sales`,
 			SortOrder: 300,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Sales::config_sales
+			Resource:  0, // Magento_Sales::config_sales
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "general",
@@ -34,7 +34,7 @@ func init() {
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
 							Scope:   scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -117,7 +117,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -137,7 +137,7 @@ func init() {
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Image\Pdf
+							// BackendModel: Magento\Config\Model\Config\Backend\Image\Pdf
 						},
 
 						&element.Field{
@@ -149,7 +149,7 @@ func init() {
 							SortOrder: 150,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Image
+							// BackendModel: Magento\Config\Model\Config\Backend\Image
 						},
 
 						&element.Field{
@@ -178,7 +178,7 @@ func init() {
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -201,7 +201,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -233,7 +233,7 @@ func init() {
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -275,7 +275,7 @@ func init() {
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -305,7 +305,7 @@ func init() {
 			Label:     `Sales Emails`,
 			SortOrder: 301,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Sales::sales_email
+			Resource:  0, // Magento_Sales::sales_email
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:    "general",
@@ -321,8 +321,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   false,
-							// BackendModel: Otnegam\Sales\Model\Config\Backend\Email\AsyncSending
-							// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+							// BackendModel: Magento\Sales\Model\Config\Backend\Email\AsyncSending
+							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 					),
 				},
@@ -341,7 +341,7 @@ func init() {
 							Visible: element.VisibleYes,
 							Scope:   scope.PermAll,
 							Default: true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -353,7 +353,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -366,7 +366,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales_email_order_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -379,7 +379,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales_email_order_guest_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -402,7 +402,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `bcc`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
 					),
 				},
@@ -421,7 +421,7 @@ func init() {
 							Visible: element.VisibleYes,
 							Scope:   scope.PermAll,
 							Default: true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -433,7 +433,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -446,7 +446,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales_email_order_comment_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -459,7 +459,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales_email_order_comment_guest_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -482,7 +482,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `bcc`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
 					),
 				},
@@ -501,7 +501,7 @@ func init() {
 							Visible: element.VisibleYes,
 							Scope:   scope.PermAll,
 							Default: true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -513,7 +513,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -526,7 +526,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales_email_invoice_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -539,7 +539,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales_email_invoice_guest_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -562,7 +562,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `bcc`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
 					),
 				},
@@ -581,7 +581,7 @@ func init() {
 							Visible: element.VisibleYes,
 							Scope:   scope.PermAll,
 							Default: true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -593,7 +593,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -606,7 +606,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales_email_invoice_comment_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -619,7 +619,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales_email_invoice_comment_guest_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -642,7 +642,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `bcc`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
 					),
 				},
@@ -661,7 +661,7 @@ func init() {
 							Visible: element.VisibleYes,
 							Scope:   scope.PermAll,
 							Default: true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -673,7 +673,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -686,7 +686,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales_email_shipment_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -699,7 +699,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales_email_shipment_guest_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -722,7 +722,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `bcc`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
 					),
 				},
@@ -741,7 +741,7 @@ func init() {
 							Visible: element.VisibleYes,
 							Scope:   scope.PermAll,
 							Default: true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -753,7 +753,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -766,7 +766,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales_email_shipment_comment_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -779,7 +779,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales_email_shipment_comment_guest_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -802,7 +802,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `bcc`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
 					),
 				},
@@ -821,7 +821,7 @@ func init() {
 							Visible: element.VisibleYes,
 							Scope:   scope.PermAll,
 							Default: true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -833,7 +833,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -846,7 +846,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales_email_creditmemo_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -859,7 +859,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales_email_creditmemo_guest_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -882,7 +882,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `bcc`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
 					),
 				},
@@ -901,7 +901,7 @@ func init() {
 							Visible: element.VisibleYes,
 							Scope:   scope.PermAll,
 							Default: true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -913,7 +913,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
 						&element.Field{
@@ -926,7 +926,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales_email_creditmemo_comment_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -939,7 +939,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `sales_email_creditmemo_comment_guest_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
 						&element.Field{
@@ -962,7 +962,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `bcc`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
 					),
 				},
@@ -973,7 +973,7 @@ func init() {
 			Label:     `PDF Print-outs`,
 			SortOrder: 302,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Sales::sales_pdf
+			Resource:  0, // Magento_Sales::sales_pdf
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "invoice",
@@ -990,7 +990,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -1010,7 +1010,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -1030,7 +1030,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -1053,7 +1053,7 @@ func init() {
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 					),
 				},
@@ -1077,8 +1077,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   false,
-							// BackendModel: Otnegam\Sales\Model\Config\Backend\Grid\AsyncIndexing
-							// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+							// BackendModel: Magento\Sales\Model\Config\Backend\Grid\AsyncIndexing
+							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 					),
 				},

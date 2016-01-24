@@ -17,12 +17,12 @@ type PkgBackend struct {
 	model.PkgBackend
 	// PaymentAuthorizenetDirectpostActive => Enabled.
 	// Path: payment/authorizenet_directpost/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	PaymentAuthorizenetDirectpostActive model.Bool
 
 	// PaymentAuthorizenetDirectpostPaymentAction => Payment Action.
 	// Path: payment/authorizenet_directpost/payment_action
-	// SourceModel: Otnegam\Authorizenet\Model\Source\PaymentAction
+	// SourceModel: Magento\Authorizenet\Model\Source\PaymentAction
 	PaymentAuthorizenetDirectpostPaymentAction model.Str
 
 	// PaymentAuthorizenetDirectpostTitle => Title.
@@ -31,27 +31,27 @@ type PkgBackend struct {
 
 	// PaymentAuthorizenetDirectpostLogin => API Login ID.
 	// Path: payment/authorizenet_directpost/login
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 	PaymentAuthorizenetDirectpostLogin model.Str
 
 	// PaymentAuthorizenetDirectpostTransKey => Transaction Key.
 	// Path: payment/authorizenet_directpost/trans_key
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 	PaymentAuthorizenetDirectpostTransKey model.Str
 
 	// PaymentAuthorizenetDirectpostTransMd5 => Merchant MD5.
 	// Path: payment/authorizenet_directpost/trans_md5
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 	PaymentAuthorizenetDirectpostTransMd5 model.Str
 
 	// PaymentAuthorizenetDirectpostOrderStatus => New Order Status.
 	// Path: payment/authorizenet_directpost/order_status
-	// SourceModel: Otnegam\Sales\Model\Config\Source\Order\Status\Processing
+	// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\Processing
 	PaymentAuthorizenetDirectpostOrderStatus model.Str
 
 	// PaymentAuthorizenetDirectpostTest => Test Mode.
 	// Path: payment/authorizenet_directpost/test
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	PaymentAuthorizenetDirectpostTest model.Bool
 
 	// PaymentAuthorizenetDirectpostCgiUrl => Gateway URL.
@@ -64,17 +64,17 @@ type PkgBackend struct {
 
 	// PaymentAuthorizenetDirectpostCurrency => Accepted Currency.
 	// Path: payment/authorizenet_directpost/currency
-	// SourceModel: Otnegam\Config\Model\Config\Source\Locale\Currency
+	// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
 	PaymentAuthorizenetDirectpostCurrency model.Str
 
 	// PaymentAuthorizenetDirectpostDebug => Debug.
 	// Path: payment/authorizenet_directpost/debug
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	PaymentAuthorizenetDirectpostDebug model.Bool
 
 	// PaymentAuthorizenetDirectpostEmailCustomer => Email Customer.
 	// Path: payment/authorizenet_directpost/email_customer
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	PaymentAuthorizenetDirectpostEmailCustomer model.Bool
 
 	// PaymentAuthorizenetDirectpostMerchantEmail => Merchant's Email.
@@ -83,22 +83,22 @@ type PkgBackend struct {
 
 	// PaymentAuthorizenetDirectpostCctypes => Credit Card Types.
 	// Path: payment/authorizenet_directpost/cctypes
-	// SourceModel: Otnegam\Authorizenet\Model\Source\Cctype
+	// SourceModel: Magento\Authorizenet\Model\Source\Cctype
 	PaymentAuthorizenetDirectpostCctypes model.StringCSV
 
 	// PaymentAuthorizenetDirectpostUseccv => Credit Card Verification.
 	// Path: payment/authorizenet_directpost/useccv
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	PaymentAuthorizenetDirectpostUseccv model.Bool
 
 	// PaymentAuthorizenetDirectpostAllowspecific => Payment from Applicable Countries.
 	// Path: payment/authorizenet_directpost/allowspecific
-	// SourceModel: Otnegam\Payment\Model\Config\Source\Allspecificcountries
+	// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 	PaymentAuthorizenetDirectpostAllowspecific model.Str
 
 	// PaymentAuthorizenetDirectpostSpecificcountry => Payment from Specific Countries.
 	// Path: payment/authorizenet_directpost/specificcountry
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	PaymentAuthorizenetDirectpostSpecificcountry model.StringCSV
 
 	// PaymentAuthorizenetDirectpostMinOrderTotal => Minimum Order Total.

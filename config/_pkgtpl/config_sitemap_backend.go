@@ -17,45 +17,45 @@ type PkgBackend struct {
 	model.PkgBackend
 	// SitemapCategoryChangefreq => Frequency.
 	// Path: sitemap/category/changefreq
-	// SourceModel: Otnegam\Sitemap\Model\Config\Source\Frequency
+	// SourceModel: Magento\Sitemap\Model\Config\Source\Frequency
 	SitemapCategoryChangefreq model.Str
 
 	// SitemapCategoryPriority => Priority.
 	// Valid values range from 0.0 to 1.0.
 	// Path: sitemap/category/priority
-	// BackendModel: Otnegam\Sitemap\Model\Config\Backend\Priority
+	// BackendModel: Magento\Sitemap\Model\Config\Backend\Priority
 	SitemapCategoryPriority model.Str
 
 	// SitemapProductChangefreq => Frequency.
 	// Path: sitemap/product/changefreq
-	// SourceModel: Otnegam\Sitemap\Model\Config\Source\Frequency
+	// SourceModel: Magento\Sitemap\Model\Config\Source\Frequency
 	SitemapProductChangefreq model.Str
 
 	// SitemapProductPriority => Priority.
 	// Valid values range from 0.0 to 1.0.
 	// Path: sitemap/product/priority
-	// BackendModel: Otnegam\Sitemap\Model\Config\Backend\Priority
+	// BackendModel: Magento\Sitemap\Model\Config\Backend\Priority
 	SitemapProductPriority model.Str
 
 	// SitemapProductImageInclude => Add Images into Sitemap.
 	// Path: sitemap/product/image_include
-	// SourceModel: Otnegam\Sitemap\Model\Source\Product\Image\IncludeImage
+	// SourceModel: Magento\Sitemap\Model\Source\Product\Image\IncludeImage
 	SitemapProductImageInclude model.Str
 
 	// SitemapPageChangefreq => Frequency.
 	// Path: sitemap/page/changefreq
-	// SourceModel: Otnegam\Sitemap\Model\Config\Source\Frequency
+	// SourceModel: Magento\Sitemap\Model\Config\Source\Frequency
 	SitemapPageChangefreq model.Str
 
 	// SitemapPagePriority => Priority.
 	// Valid values range from 0.0 to 1.0.
 	// Path: sitemap/page/priority
-	// BackendModel: Otnegam\Sitemap\Model\Config\Backend\Priority
+	// BackendModel: Magento\Sitemap\Model\Config\Backend\Priority
 	SitemapPagePriority model.Str
 
 	// SitemapGenerateEnabled => Enabled.
 	// Path: sitemap/generate/enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SitemapGenerateEnabled model.Bool
 
 	// SitemapGenerateErrorEmail => Error Email Recipient.
@@ -64,20 +64,20 @@ type PkgBackend struct {
 
 	// SitemapGenerateErrorEmailIdentity => Error Email Sender.
 	// Path: sitemap/generate/error_email_identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	SitemapGenerateErrorEmailIdentity model.Str
 
 	// SitemapGenerateErrorEmailTemplate => Error Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sitemap/generate/error_email_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SitemapGenerateErrorEmailTemplate model.Str
 
 	// SitemapGenerateFrequency => Frequency.
 	// Path: sitemap/generate/frequency
-	// BackendModel: Otnegam\Cron\Model\Config\Backend\Sitemap
-	// SourceModel: Otnegam\Cron\Model\Config\Source\Frequency
+	// BackendModel: Magento\Cron\Model\Config\Backend\Sitemap
+	// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 	SitemapGenerateFrequency model.Str
 
 	// SitemapGenerateTime => Start Time.
@@ -95,7 +95,7 @@ type PkgBackend struct {
 
 	// SitemapSearchEnginesSubmissionRobots => Enable Submission to Robots.txt.
 	// Path: sitemap/search_engines/submission_robots
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SitemapSearchEnginesSubmissionRobots model.Bool
 }
 

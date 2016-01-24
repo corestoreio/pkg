@@ -19,7 +19,7 @@ type PkgBackend struct {
 	// Choose whether a customer IP is shown in orders, invoices, shipments, and
 	// credit memos.
 	// Path: sales/general/hide_customer_ip
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesGeneralHideCustomerIp model.Bool
 
 	// SalesTotalsSortDiscount => Discount.
@@ -44,21 +44,21 @@ type PkgBackend struct {
 
 	// SalesReorderAllow => Allow Reorder.
 	// Path: sales/reorder/allow
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesReorderAllow model.Bool
 
 	// SalesIdentityLogo => Logo for PDF Print-outs (200x50).
 	// Your default logo will be used in PDF and HTML documents.(jpeg, tiff, png)
 	// If your pdf image is distorted, try to use larger file-size image.
 	// Path: sales/identity/logo
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Image\Pdf
+	// BackendModel: Magento\Config\Model\Config\Backend\Image\Pdf
 	SalesIdentityLogo model.Str
 
 	// SalesIdentityLogoHtml => Logo for HTML Print View.
 	// Logo for HTML documents only. If empty, default will be used.(jpeg, gif,
 	// png)
 	// Path: sales/identity/logo_html
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Image
+	// BackendModel: Magento\Config\Model\Config\Backend\Image
 	SalesIdentityLogoHtml model.Str
 
 	// SalesIdentityAddress => Address.
@@ -67,7 +67,7 @@ type PkgBackend struct {
 
 	// SalesMinimumOrderActive => Enable.
 	// Path: sales/minimum_order/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesMinimumOrderActive model.Bool
 
 	// SalesMinimumOrderAmount => Minimum Amount.
@@ -77,7 +77,7 @@ type PkgBackend struct {
 
 	// SalesMinimumOrderTaxIncluding => Include Tax to Amount.
 	// Path: sales/minimum_order/tax_including
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesMinimumOrderTaxIncluding model.Bool
 
 	// SalesMinimumOrderDescription => Description Message.
@@ -92,7 +92,7 @@ type PkgBackend struct {
 
 	// SalesMinimumOrderMultiAddress => Validate Each Address Separately in Multi-address Checkout.
 	// Path: sales/minimum_order/multi_address
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesMinimumOrderMultiAddress model.Bool
 
 	// SalesMinimumOrderMultiAddressDescription => Multi-address Description Message.
@@ -108,7 +108,7 @@ type PkgBackend struct {
 	// SalesDashboardUseAggregatedData => Use Aggregated Data (beta).
 	// Improves dashboard performance but provides non-realtime data.
 	// Path: sales/dashboard/use_aggregated_data
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesDashboardUseAggregatedData model.Bool
 
 	// SalesOrdersDeletePendingAfter => Pending Payment Order Lifetime (minutes).
@@ -117,32 +117,32 @@ type PkgBackend struct {
 
 	// SalesEmailGeneralAsyncSending => Asynchronous sending.
 	// Path: sales_email/general/async_sending
-	// BackendModel: Otnegam\Sales\Model\Config\Backend\Email\AsyncSending
-	// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+	// BackendModel: Magento\Sales\Model\Config\Backend\Email\AsyncSending
+	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 	SalesEmailGeneralAsyncSending model.Bool
 
 	// SalesEmailOrderEnabled => Enabled.
 	// Path: sales_email/order/enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesEmailOrderEnabled model.Bool
 
 	// SalesEmailOrderIdentity => New Order Confirmation Email Sender.
 	// Path: sales_email/order/identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	SalesEmailOrderIdentity model.Str
 
 	// SalesEmailOrderTemplate => New Order Confirmation Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/order/template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SalesEmailOrderTemplate model.Str
 
 	// SalesEmailOrderGuestTemplate => New Order Confirmation Template for Guest.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/order/guest_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SalesEmailOrderGuestTemplate model.Str
 
 	// SalesEmailOrderCopyTo => Send Order Email Copy To.
@@ -152,31 +152,31 @@ type PkgBackend struct {
 
 	// SalesEmailOrderCopyMethod => Send Order Email Copy Method.
 	// Path: sales_email/order/copy_method
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 	SalesEmailOrderCopyMethod model.Str
 
 	// SalesEmailOrderCommentEnabled => Enabled.
 	// Path: sales_email/order_comment/enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesEmailOrderCommentEnabled model.Bool
 
 	// SalesEmailOrderCommentIdentity => Order Comment Email Sender.
 	// Path: sales_email/order_comment/identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	SalesEmailOrderCommentIdentity model.Str
 
 	// SalesEmailOrderCommentTemplate => Order Comment Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/order_comment/template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SalesEmailOrderCommentTemplate model.Str
 
 	// SalesEmailOrderCommentGuestTemplate => Order Comment Email Template for Guest.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/order_comment/guest_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SalesEmailOrderCommentGuestTemplate model.Str
 
 	// SalesEmailOrderCommentCopyTo => Send Order Comment Email Copy To.
@@ -186,31 +186,31 @@ type PkgBackend struct {
 
 	// SalesEmailOrderCommentCopyMethod => Send Order Comments Email Copy Method.
 	// Path: sales_email/order_comment/copy_method
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 	SalesEmailOrderCommentCopyMethod model.Str
 
 	// SalesEmailInvoiceEnabled => Enabled.
 	// Path: sales_email/invoice/enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesEmailInvoiceEnabled model.Bool
 
 	// SalesEmailInvoiceIdentity => Invoice Email Sender.
 	// Path: sales_email/invoice/identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	SalesEmailInvoiceIdentity model.Str
 
 	// SalesEmailInvoiceTemplate => Invoice Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/invoice/template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SalesEmailInvoiceTemplate model.Str
 
 	// SalesEmailInvoiceGuestTemplate => Invoice Email Template for Guest.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/invoice/guest_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SalesEmailInvoiceGuestTemplate model.Str
 
 	// SalesEmailInvoiceCopyTo => Send Invoice Email Copy To.
@@ -220,31 +220,31 @@ type PkgBackend struct {
 
 	// SalesEmailInvoiceCopyMethod => Send Invoice Email Copy Method.
 	// Path: sales_email/invoice/copy_method
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 	SalesEmailInvoiceCopyMethod model.Str
 
 	// SalesEmailInvoiceCommentEnabled => Enabled.
 	// Path: sales_email/invoice_comment/enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesEmailInvoiceCommentEnabled model.Bool
 
 	// SalesEmailInvoiceCommentIdentity => Invoice Comment Email Sender.
 	// Path: sales_email/invoice_comment/identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	SalesEmailInvoiceCommentIdentity model.Str
 
 	// SalesEmailInvoiceCommentTemplate => Invoice Comment Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/invoice_comment/template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SalesEmailInvoiceCommentTemplate model.Str
 
 	// SalesEmailInvoiceCommentGuestTemplate => Invoice Comment Email Template for Guest.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/invoice_comment/guest_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SalesEmailInvoiceCommentGuestTemplate model.Str
 
 	// SalesEmailInvoiceCommentCopyTo => Send Invoice Comment Email Copy To.
@@ -254,31 +254,31 @@ type PkgBackend struct {
 
 	// SalesEmailInvoiceCommentCopyMethod => Send Invoice Comments Email Copy Method.
 	// Path: sales_email/invoice_comment/copy_method
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 	SalesEmailInvoiceCommentCopyMethod model.Str
 
 	// SalesEmailShipmentEnabled => Enabled.
 	// Path: sales_email/shipment/enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesEmailShipmentEnabled model.Bool
 
 	// SalesEmailShipmentIdentity => Shipment Email Sender.
 	// Path: sales_email/shipment/identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	SalesEmailShipmentIdentity model.Str
 
 	// SalesEmailShipmentTemplate => Shipment Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/shipment/template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SalesEmailShipmentTemplate model.Str
 
 	// SalesEmailShipmentGuestTemplate => Shipment Email Template for Guest.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/shipment/guest_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SalesEmailShipmentGuestTemplate model.Str
 
 	// SalesEmailShipmentCopyTo => Send Shipment Email Copy To.
@@ -288,31 +288,31 @@ type PkgBackend struct {
 
 	// SalesEmailShipmentCopyMethod => Send Shipment Email Copy Method.
 	// Path: sales_email/shipment/copy_method
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 	SalesEmailShipmentCopyMethod model.Str
 
 	// SalesEmailShipmentCommentEnabled => Enabled.
 	// Path: sales_email/shipment_comment/enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesEmailShipmentCommentEnabled model.Bool
 
 	// SalesEmailShipmentCommentIdentity => Shipment Comment Email Sender.
 	// Path: sales_email/shipment_comment/identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	SalesEmailShipmentCommentIdentity model.Str
 
 	// SalesEmailShipmentCommentTemplate => Shipment Comment Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/shipment_comment/template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SalesEmailShipmentCommentTemplate model.Str
 
 	// SalesEmailShipmentCommentGuestTemplate => Shipment Comment Email Template for Guest.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/shipment_comment/guest_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SalesEmailShipmentCommentGuestTemplate model.Str
 
 	// SalesEmailShipmentCommentCopyTo => Send Shipment Comment Email Copy To.
@@ -322,31 +322,31 @@ type PkgBackend struct {
 
 	// SalesEmailShipmentCommentCopyMethod => Send Shipment Comments Email Copy Method.
 	// Path: sales_email/shipment_comment/copy_method
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 	SalesEmailShipmentCommentCopyMethod model.Str
 
 	// SalesEmailCreditmemoEnabled => Enabled.
 	// Path: sales_email/creditmemo/enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesEmailCreditmemoEnabled model.Bool
 
 	// SalesEmailCreditmemoIdentity => Credit Memo Email Sender.
 	// Path: sales_email/creditmemo/identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	SalesEmailCreditmemoIdentity model.Str
 
 	// SalesEmailCreditmemoTemplate => Credit Memo Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/creditmemo/template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SalesEmailCreditmemoTemplate model.Str
 
 	// SalesEmailCreditmemoGuestTemplate => Credit Memo Email Template for Guest.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/creditmemo/guest_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SalesEmailCreditmemoGuestTemplate model.Str
 
 	// SalesEmailCreditmemoCopyTo => Send Credit Memo Email Copy To.
@@ -356,31 +356,31 @@ type PkgBackend struct {
 
 	// SalesEmailCreditmemoCopyMethod => Send Credit Memo Email Copy Method.
 	// Path: sales_email/creditmemo/copy_method
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 	SalesEmailCreditmemoCopyMethod model.Str
 
 	// SalesEmailCreditmemoCommentEnabled => Enabled.
 	// Path: sales_email/creditmemo_comment/enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesEmailCreditmemoCommentEnabled model.Bool
 
 	// SalesEmailCreditmemoCommentIdentity => Credit Memo Comment Email Sender.
 	// Path: sales_email/creditmemo_comment/identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	SalesEmailCreditmemoCommentIdentity model.Str
 
 	// SalesEmailCreditmemoCommentTemplate => Credit Memo Comment Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/creditmemo_comment/template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SalesEmailCreditmemoCommentTemplate model.Str
 
 	// SalesEmailCreditmemoCommentGuestTemplate => Credit Memo Comment Email Template for Guest.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/creditmemo_comment/guest_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	SalesEmailCreditmemoCommentGuestTemplate model.Str
 
 	// SalesEmailCreditmemoCommentCopyTo => Send Credit Memo Comment Email Copy To.
@@ -390,33 +390,33 @@ type PkgBackend struct {
 
 	// SalesEmailCreditmemoCommentCopyMethod => Send Credit Memo Comments Email Copy Method.
 	// Path: sales_email/creditmemo_comment/copy_method
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Method
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 	SalesEmailCreditmemoCommentCopyMethod model.Str
 
 	// SalesPdfInvoicePutOrderId => Display Order ID in Header.
 	// Path: sales_pdf/invoice/put_order_id
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesPdfInvoicePutOrderId model.Bool
 
 	// SalesPdfShipmentPutOrderId => Display Order ID in Header.
 	// Path: sales_pdf/shipment/put_order_id
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesPdfShipmentPutOrderId model.Bool
 
 	// SalesPdfCreditmemoPutOrderId => Display Order ID in Header.
 	// Path: sales_pdf/creditmemo/put_order_id
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SalesPdfCreditmemoPutOrderId model.Bool
 
 	// RssOrderStatus => Customer Order Status Notification.
 	// Path: rss/order/status
-	// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 	RssOrderStatus model.Bool
 
 	// DevGridAsyncIndexing => Asynchronous indexing.
 	// Path: dev/grid/async_indexing
-	// BackendModel: Otnegam\Sales\Model\Config\Backend\Grid\AsyncIndexing
-	// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+	// BackendModel: Magento\Sales\Model\Config\Backend\Grid\AsyncIndexing
+	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 	DevGridAsyncIndexing model.Bool
 }
 

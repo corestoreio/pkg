@@ -17,8 +17,8 @@ type PkgBackend struct {
 	model.PkgBackend
 	// RssConfigActive => Enable RSS.
 	// Path: rss/config/active
-	// BackendModel: Otnegam\Rss\Model\System\Config\Backend\Links
-	// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+	// BackendModel: Magento\Rss\Model\System\Config\Backend\Links
+	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 	RssConfigActive model.Bool
 }
 

@@ -17,7 +17,7 @@ type PkgBackend struct {
 	model.PkgBackend
 	// NewrelicreportingGeneralEnable => Enable New Relic Integration.
 	// Path: newrelicreporting/general/enable
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	NewrelicreportingGeneralEnable model.Bool
 
 	// NewrelicreportingGeneralApiUrl => New Relic API URL.
@@ -44,13 +44,13 @@ type PkgBackend struct {
 	// This is located by navigating to Events -> Deployments from the New Relic
 	// APM website
 	// Path: newrelicreporting/general/api
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 	NewrelicreportingGeneralApi model.Str
 
 	// NewrelicreportingGeneralInsightsInsertKey => Insights API Key.
 	// Generated under Insights in Manage data -> API Keys -> Insert Keys
 	// Path: newrelicreporting/general/insights_insert_key
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 	NewrelicreportingGeneralInsightsInsertKey model.Str
 
 	// NewrelicreportingGeneralAppName => New Relic Application Name.
@@ -60,7 +60,7 @@ type PkgBackend struct {
 
 	// NewrelicreportingCronEnableCron => Enable Cron.
 	// Path: newrelicreporting/cron/enable_cron
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	NewrelicreportingCronEnableCron model.Bool
 }
 

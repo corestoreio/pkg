@@ -32,7 +32,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   `server_side_compilation`,
-							// SourceModel: Otnegam\Developer\Model\Config\Source\WorkflowType
+							// SourceModel: Magento\Developer\Model\Config\Source\WorkflowType
 						},
 					),
 				},
@@ -52,7 +52,7 @@ func init() {
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\Developer\Model\Config\Backend\AllowedIps
+							// BackendModel: Magento\Developer\Model\Config\Backend\AllowedIps
 						},
 					),
 				},

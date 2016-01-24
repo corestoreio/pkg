@@ -17,7 +17,7 @@ type PkgBackend struct {
 	model.PkgBackend
 	// CatalogRecentlyProductsScope => Show for Current.
 	// Path: catalog/recently_products/scope
-	// SourceModel: Otnegam\Config\Model\Config\Source\Reports\Scope
+	// SourceModel: Magento\Config\Model\Config\Source\Reports\Scope
 	CatalogRecentlyProductsScope model.Str
 
 	// CatalogRecentlyProductsViewedCount => Default Recently Viewed Products Count.

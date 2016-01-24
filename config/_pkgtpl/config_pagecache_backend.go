@@ -17,14 +17,14 @@ type PkgBackend struct {
 	model.PkgBackend
 	// SystemFullPageCacheCachingApplication => Caching Application.
 	// Path: system/full_page_cache/caching_application
-	// SourceModel: Otnegam\PageCache\Model\System\Config\Source\Application
+	// SourceModel: Magento\PageCache\Model\System\Config\Source\Application
 	SystemFullPageCacheCachingApplication model.Str
 
 	// SystemFullPageCacheTtl => TTL for public content.
 	// Public content cache lifetime in seconds. If field is empty default value
 	// 86400 will be saved.
 	// Path: system/full_page_cache/ttl
-	// BackendModel: Otnegam\PageCache\Model\System\Config\Backend\Ttl
+	// BackendModel: Magento\PageCache\Model\System\Config\Backend\Ttl
 	SystemFullPageCacheTtl model.Str
 }
 

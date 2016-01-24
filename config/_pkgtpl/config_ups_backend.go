@@ -17,37 +17,37 @@ type PkgBackend struct {
 	model.PkgBackend
 	// CarriersUpsAccessLicenseNumber => Access License Number.
 	// Path: carriers/ups/access_license_number
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 	CarriersUpsAccessLicenseNumber model.Str
 
 	// CarriersUpsActive => Enabled for Checkout.
 	// Path: carriers/ups/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersUpsActive model.Bool
 
 	// CarriersUpsActiveRma => Enabled for RMA.
 	// Path: carriers/ups/active_rma
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersUpsActiveRma model.Bool
 
 	// CarriersUpsAllowedMethods => Allowed Methods.
 	// Path: carriers/ups/allowed_methods
-	// SourceModel: Otnegam\Ups\Model\Config\Source\Method
+	// SourceModel: Magento\Ups\Model\Config\Source\Method
 	CarriersUpsAllowedMethods model.StringCSV
 
 	// CarriersUpsShipmentRequesttype => Packages Request Type.
 	// Path: carriers/ups/shipment_requesttype
-	// SourceModel: Otnegam\Shipping\Model\Config\Source\Online\Requesttype
+	// SourceModel: Magento\Shipping\Model\Config\Source\Online\Requesttype
 	CarriersUpsShipmentRequesttype model.Str
 
 	// CarriersUpsContainer => Container.
 	// Path: carriers/ups/container
-	// SourceModel: Otnegam\Ups\Model\Config\Source\Container
+	// SourceModel: Magento\Ups\Model\Config\Source\Container
 	CarriersUpsContainer model.Str
 
 	// CarriersUpsFreeShippingEnable => Free Shipping Amount Threshold.
 	// Path: carriers/ups/free_shipping_enable
-	// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 	CarriersUpsFreeShippingEnable model.Bool
 
 	// CarriersUpsFreeShippingSubtotal => Free Shipping Amount Threshold.
@@ -56,12 +56,12 @@ type PkgBackend struct {
 
 	// CarriersUpsDestType => Destination Type.
 	// Path: carriers/ups/dest_type
-	// SourceModel: Otnegam\Ups\Model\Config\Source\DestType
+	// SourceModel: Magento\Ups\Model\Config\Source\DestType
 	CarriersUpsDestType model.Str
 
 	// CarriersUpsFreeMethod => Free Method.
 	// Path: carriers/ups/free_method
-	// SourceModel: Otnegam\Ups\Model\Config\Source\Freemethod
+	// SourceModel: Magento\Ups\Model\Config\Source\Freemethod
 	CarriersUpsFreeMethod model.Str
 
 	// CarriersUpsGatewayUrl => Gateway URL.
@@ -74,12 +74,12 @@ type PkgBackend struct {
 
 	// CarriersUpsHandlingType => Calculate Handling Fee.
 	// Path: carriers/ups/handling_type
-	// SourceModel: Otnegam\Shipping\Model\Source\HandlingType
+	// SourceModel: Magento\Shipping\Model\Source\HandlingType
 	CarriersUpsHandlingType model.Str
 
 	// CarriersUpsHandlingAction => Handling Applied.
 	// Path: carriers/ups/handling_action
-	// SourceModel: Otnegam\Shipping\Model\Source\HandlingAction
+	// SourceModel: Magento\Shipping\Model\Source\HandlingAction
 	CarriersUpsHandlingAction model.Str
 
 	// CarriersUpsHandlingFee => Handling Fee.
@@ -96,17 +96,17 @@ type PkgBackend struct {
 
 	// CarriersUpsOriginShipment => Origin of the Shipment.
 	// Path: carriers/ups/origin_shipment
-	// SourceModel: Otnegam\Ups\Model\Config\Source\OriginShipment
+	// SourceModel: Magento\Ups\Model\Config\Source\OriginShipment
 	CarriersUpsOriginShipment model.Str
 
 	// CarriersUpsPassword => Password.
 	// Path: carriers/ups/password
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 	CarriersUpsPassword model.Str
 
 	// CarriersUpsPickup => Pickup Method.
 	// Path: carriers/ups/pickup
-	// SourceModel: Otnegam\Ups\Model\Config\Source\Pickup
+	// SourceModel: Magento\Ups\Model\Config\Source\Pickup
 	CarriersUpsPickup model.Str
 
 	// CarriersUpsSortOrder => Sort Order.
@@ -123,27 +123,27 @@ type PkgBackend struct {
 
 	// CarriersUpsType => UPS Type.
 	// Path: carriers/ups/type
-	// SourceModel: Otnegam\Ups\Model\Config\Source\Type
+	// SourceModel: Magento\Ups\Model\Config\Source\Type
 	CarriersUpsType model.Str
 
 	// CarriersUpsIsAccountLive => Live Account.
 	// Path: carriers/ups/is_account_live
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersUpsIsAccountLive model.Bool
 
 	// CarriersUpsUnitOfMeasure => Weight Unit.
 	// Path: carriers/ups/unit_of_measure
-	// SourceModel: Otnegam\Ups\Model\Config\Source\Unitofmeasure
+	// SourceModel: Magento\Ups\Model\Config\Source\Unitofmeasure
 	CarriersUpsUnitOfMeasure model.Str
 
 	// CarriersUpsUsername => User ID.
 	// Path: carriers/ups/username
-	// BackendModel: Otnegam\Config\Model\Config\Backend\Encrypted
+	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 	CarriersUpsUsername model.Str
 
 	// CarriersUpsNegotiatedActive => Enable Negotiated Rates.
 	// Path: carriers/ups/negotiated_active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersUpsNegotiatedActive model.Bool
 
 	// CarriersUpsShipperNumber => Shipper Number.
@@ -153,17 +153,17 @@ type PkgBackend struct {
 
 	// CarriersUpsSallowspecific => Ship to Applicable Countries.
 	// Path: carriers/ups/sallowspecific
-	// SourceModel: Otnegam\Shipping\Model\Config\Source\Allspecificcountries
+	// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 	CarriersUpsSallowspecific model.Str
 
 	// CarriersUpsSpecificcountry => Ship to Specific Countries.
 	// Path: carriers/ups/specificcountry
-	// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+	// SourceModel: Magento\Directory\Model\Config\Source\Country
 	CarriersUpsSpecificcountry model.StringCSV
 
 	// CarriersUpsShowmethod => Show Method if Not Applicable.
 	// Path: carriers/ups/showmethod
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersUpsShowmethod model.Bool
 
 	// CarriersUpsSpecificerrmsg => Displayed Error Message.
@@ -171,14 +171,14 @@ type PkgBackend struct {
 	CarriersUpsSpecificerrmsg model.Str
 
 	// CarriersUpsModeXml => Mode.
-	// This enables or disables SSL verification of the Otnegam server by UPS.
+	// This enables or disables SSL verification of the Magento server by UPS.
 	// Path: carriers/ups/mode_xml
-	// SourceModel: Otnegam\Shipping\Model\Config\Source\Online\Mode
+	// SourceModel: Magento\Shipping\Model\Config\Source\Online\Mode
 	CarriersUpsModeXml model.Str
 
 	// CarriersUpsDebug => Debug.
 	// Path: carriers/ups/debug
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	CarriersUpsDebug model.Bool
 }
 

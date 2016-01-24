@@ -17,12 +17,12 @@ type PkgBackend struct {
 	model.PkgBackend
 	// SystemBackupEnabled => Enable Scheduled Backup.
 	// Path: system/backup/enabled
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SystemBackupEnabled model.Bool
 
 	// SystemBackupType => Backup Type.
 	// Path: system/backup/type
-	// SourceModel: Otnegam\Backup\Model\Config\Source\Type
+	// SourceModel: Magento\Backup\Model\Config\Source\Type
 	SystemBackupType model.Str
 
 	// SystemBackupTime => Start Time.
@@ -31,14 +31,14 @@ type PkgBackend struct {
 
 	// SystemBackupFrequency => Frequency.
 	// Path: system/backup/frequency
-	// BackendModel: Otnegam\Backup\Model\Config\Backend\Cron
-	// SourceModel: Otnegam\Cron\Model\Config\Source\Frequency
+	// BackendModel: Magento\Backup\Model\Config\Backend\Cron
+	// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 	SystemBackupFrequency model.Str
 
 	// SystemBackupMaintenance => Maintenance Mode.
 	// Please put your store into maintenance mode during backup.
 	// Path: system/backup/maintenance
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SystemBackupMaintenance model.Bool
 }
 

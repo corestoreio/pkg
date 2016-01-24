@@ -33,7 +33,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -45,7 +45,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `pending`,
-							// SourceModel: Otnegam\Sales\Model\Config\Source\Order\Status\NewStatus
+							// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\NewStatus
 						},
 
 						&element.Field{
@@ -77,7 +77,7 @@ func init() {
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Payment\Model\Config\Source\Allspecificcountries
+							// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 						},
 
 						&element.Field{
@@ -89,7 +89,7 @@ func init() {
 							Visible:    element.VisibleYes,
 							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							CanBeEmpty: true,
-							// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
 						&element.Field{
@@ -137,7 +137,7 @@ func init() {
 							ID:      "model",
 							Type:    element.Type,
 							Visible: element.VisibleYes,
-							Default: `Otnegam\OfflinePayments\Model\Checkmo`,
+							Default: `Magento\OfflinePayments\Model\Checkmo`,
 						},
 					),
 				},
@@ -157,7 +157,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -169,7 +169,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `pending`,
-							// SourceModel: Otnegam\Sales\Model\Config\Source\Order\Status\NewStatus
+							// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\NewStatus
 						},
 
 						&element.Field{
@@ -201,7 +201,7 @@ func init() {
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Payment\Model\Config\Source\Allspecificcountries
+							// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 						},
 
 						&element.Field{
@@ -213,7 +213,7 @@ func init() {
 							Visible:    element.VisibleYes,
 							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							CanBeEmpty: true,
-							// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
 						&element.Field{
@@ -241,7 +241,7 @@ func init() {
 							ID:      "model",
 							Type:    element.Type,
 							Visible: element.VisibleYes,
-							Default: `Otnegam\OfflinePayments\Model\Purchaseorder`,
+							Default: `Magento\OfflinePayments\Model\Purchaseorder`,
 						},
 					),
 				},
@@ -261,7 +261,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -284,7 +284,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `pending`,
-							// SourceModel: Otnegam\Sales\Model\Config\Source\Order\Status\NewStatus
+							// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\NewStatus
 						},
 
 						&element.Field{
@@ -295,7 +295,7 @@ func init() {
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Payment\Model\Config\Source\Allspecificcountries
+							// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 						},
 
 						&element.Field{
@@ -307,7 +307,7 @@ func init() {
 							Visible:    element.VisibleYes,
 							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							CanBeEmpty: true,
-							// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
 						&element.Field{
@@ -367,7 +367,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -390,7 +390,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							Default:   `pending`,
-							// SourceModel: Otnegam\Sales\Model\Config\Source\Order\Status\NewStatus
+							// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\NewStatus
 						},
 
 						&element.Field{
@@ -401,7 +401,7 @@ func init() {
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Payment\Model\Config\Source\Allspecificcountries
+							// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 						},
 
 						&element.Field{
@@ -413,7 +413,7 @@ func init() {
 							Visible:    element.VisibleYes,
 							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							CanBeEmpty: true,
-							// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
 						&element.Field{
@@ -472,7 +472,7 @@ func init() {
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -483,7 +483,7 @@ func init() {
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Sales\Model\Config\Source\Order\Status\Newprocessing
+							// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\Newprocessing
 						},
 
 						&element.Field{
@@ -494,7 +494,7 @@ func init() {
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Payment\Model\Source\Invoice
+							// SourceModel: Magento\Payment\Model\Source\Invoice
 						},
 
 						&element.Field{
@@ -525,7 +525,7 @@ func init() {
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// SourceModel: Otnegam\Payment\Model\Config\Source\Allspecificcountries
+							// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 						},
 
 						&element.Field{
@@ -537,7 +537,7 @@ func init() {
 							Visible:    element.VisibleYes,
 							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 							CanBeEmpty: true,
-							// SourceModel: Otnegam\Directory\Model\Config\Source\Country
+							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
 						&element.Field{
@@ -589,7 +589,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\OfflinePayments\Model\Banktransfer`,
+							Default: `Magento\OfflinePayments\Model\Banktransfer`,
 						},
 
 						&element.Field{
@@ -610,7 +610,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\OfflinePayments\Model\Cashondelivery`,
+							Default: `Magento\OfflinePayments\Model\Cashondelivery`,
 						},
 
 						&element.Field{

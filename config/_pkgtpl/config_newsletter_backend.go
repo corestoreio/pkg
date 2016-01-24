@@ -17,48 +17,48 @@ type PkgBackend struct {
 	model.PkgBackend
 	// NewsletterSubscriptionAllowGuestSubscribe => Allow Guest Subscription.
 	// Path: newsletter/subscription/allow_guest_subscribe
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	NewsletterSubscriptionAllowGuestSubscribe model.Bool
 
 	// NewsletterSubscriptionConfirm => Need to Confirm.
 	// Path: newsletter/subscription/confirm
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	NewsletterSubscriptionConfirm model.Bool
 
 	// NewsletterSubscriptionConfirmEmailIdentity => Confirmation Email Sender.
 	// Path: newsletter/subscription/confirm_email_identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	NewsletterSubscriptionConfirmEmailIdentity model.Str
 
 	// NewsletterSubscriptionConfirmEmailTemplate => Confirmation Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: newsletter/subscription/confirm_email_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	NewsletterSubscriptionConfirmEmailTemplate model.Str
 
 	// NewsletterSubscriptionSuccessEmailIdentity => Success Email Sender.
 	// Path: newsletter/subscription/success_email_identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	NewsletterSubscriptionSuccessEmailIdentity model.Str
 
 	// NewsletterSubscriptionSuccessEmailTemplate => Success Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: newsletter/subscription/success_email_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	NewsletterSubscriptionSuccessEmailTemplate model.Str
 
 	// NewsletterSubscriptionUnEmailIdentity => Unsubscription Email Sender.
 	// Path: newsletter/subscription/un_email_identity
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Identity
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 	NewsletterSubscriptionUnEmailIdentity model.Str
 
 	// NewsletterSubscriptionUnEmailTemplate => Unsubscription Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: newsletter/subscription/un_email_template
-	// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 	NewsletterSubscriptionUnEmailTemplate model.Str
 }
 

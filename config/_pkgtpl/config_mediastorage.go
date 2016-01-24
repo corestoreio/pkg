@@ -32,7 +32,7 @@ func init() {
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
-							// SourceModel: Otnegam\MediaStorage\Model\Config\Source\Storage\Media\Storage
+							// SourceModel: Magento\MediaStorage\Model\Config\Source\Storage\Media\Storage
 						},
 
 						&element.Field{
@@ -43,8 +43,8 @@ func init() {
 							SortOrder: 200,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
-							// BackendModel: Otnegam\MediaStorage\Model\Config\Backend\Storage\Media\Database
-							// SourceModel: Otnegam\MediaStorage\Model\Config\Source\Storage\Media\Database
+							// BackendModel: Magento\MediaStorage\Model\Config\Backend\Storage\Media\Database
+							// SourceModel: Magento\MediaStorage\Model\Config\Source\Storage\Media\Database
 						},
 
 						&element.Field{

@@ -18,7 +18,7 @@ func init() {
 			Label:     `Google API`,
 			SortOrder: 340,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_GoogleAnalytics::google
+			Resource:  0, // Magento_GoogleAnalytics::google
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "analytics",
@@ -34,7 +34,7 @@ func init() {
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{

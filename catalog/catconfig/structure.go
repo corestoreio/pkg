@@ -30,7 +30,7 @@ func init() {
 			Label:     `Catalog`,
 			SortOrder: 40,
 			Scope:     scope.PermAll,
-			Resource:  0, // Otnegam_Catalog::config_catalog
+			Resource:  0, // Magento_Catalog::config_catalog
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "fields_masks",
@@ -103,7 +103,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `grid-list`,
-							// SourceModel: Otnegam\Catalog\Model\Config\Source\ListMode
+							// SourceModel: Magento\Catalog\Model\Config\Source\ListMode
 						},
 
 						&element.Field{
@@ -163,8 +163,8 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   false,
-							// BackendModel: Otnegam\Catalog\Model\Indexer\Category\Flat\System\Config\Mode
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// BackendModel: Magento\Catalog\Model\Indexer\Category\Flat\System\Config\Mode
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -175,8 +175,8 @@ func init() {
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
-							// BackendModel: Otnegam\Catalog\Model\Indexer\Product\Flat\System\Config\Mode
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// BackendModel: Magento\Catalog\Model\Indexer\Product\Flat\System\Config\Mode
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -188,7 +188,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `position`,
-							// SourceModel: Otnegam\Catalog\Model\Config\Source\ListSort
+							// SourceModel: Magento\Catalog\Model\Config\Source\ListSort
 						},
 
 						&element.Field{
@@ -200,7 +200,7 @@ func init() {
 							SortOrder: 6,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -213,7 +213,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   true,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -231,7 +231,7 @@ func init() {
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Image
+							// BackendModel: Magento\Config\Model\Config\Backend\Image
 						},
 					),
 				},
@@ -262,7 +262,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -274,7 +274,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   false,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -294,8 +294,8 @@ func init() {
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
-							// BackendModel: Otnegam\Catalog\Model\Indexer\Product\Price\System\Config\PriceScope
-							// SourceModel: Otnegam\Catalog\Model\Config\Source\Price\Scope
+							// BackendModel: Magento\Catalog\Model\Indexer\Product\Price\System\Config\PriceScope
+							// SourceModel: Magento\Catalog\Model\Config\Source\Price\Scope
 						},
 					),
 				},
@@ -332,7 +332,7 @@ func init() {
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
 						&element.Field{
@@ -355,7 +355,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
 							Default:   `12h`,
-							// SourceModel: Otnegam\Catalog\Model\Config\Source\TimeFormat
+							// SourceModel: Magento\Catalog\Model\Config\Source\TimeFormat
 						},
 
 						&element.Field{
@@ -411,7 +411,7 @@ func init() {
 							SortOrder: 200,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// BackendModel: Otnegam\Config\Model\Config\Backend\Image
+							// BackendModel: Magento\Config\Model\Config\Backend\Image
 						},
 
 						&element.Field{
@@ -422,7 +422,7 @@ func init() {
 							SortOrder: 300,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Catalog\Model\Config\Source\Watermark\Position
+							// SourceModel: Magento\Catalog\Model\Config\Source\Watermark\Position
 						},
 					),
 				},
@@ -443,7 +443,7 @@ func init() {
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
-							// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
 				},
@@ -466,7 +466,7 @@ func init() {
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 
 						&element.Field{
@@ -477,7 +477,7 @@ func init() {
 							SortOrder: 11,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 
 						&element.Field{
@@ -488,7 +488,7 @@ func init() {
 							SortOrder: 14,
 							Visible:   element.VisibleYes,
 							Scope:     scope.PermAll,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Enabledisable
+							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 					),
 				},

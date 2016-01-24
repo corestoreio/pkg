@@ -39,8 +39,8 @@ func init() {
 							SortOrder:  5,
 							Visible:    element.VisibleYes,
 							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
-							// BackendModel: Otnegam\Paypal\Model\System\Config\Backend\MerchantCountry
-							// SourceModel: Otnegam\Paypal\Model\System\Config\Source\MerchantCountry
+							// BackendModel: Magento\Paypal\Model\System\Config\Backend\MerchantCountry
+							// SourceModel: Magento\Paypal\Model\System\Config\Source\MerchantCountry
 						},
 					),
 				},
@@ -238,7 +238,7 @@ func init() {
 							ID:      `api_password`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"_value":null,"_attribute":{"backend_model":"Otnegam\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
+							Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 						},
 
 						&element.Field{
@@ -246,7 +246,7 @@ func init() {
 							ID:      `api_signature`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"_value":null,"_attribute":{"backend_model":"Otnegam\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
+							Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 						},
 
 						&element.Field{
@@ -254,7 +254,7 @@ func init() {
 							ID:      `api_username`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"_value":null,"_attribute":{"backend_model":"Otnegam\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
+							Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 						},
 
 						&element.Field{
@@ -275,7 +275,7 @@ func init() {
 							ID:      `user`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"_value":null,"_attribute":{"backend_model":"Otnegam\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
+							Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 						},
 
 						&element.Field{
@@ -283,7 +283,7 @@ func init() {
 							ID:      `pwd`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"_value":null,"_attribute":{"backend_model":"Otnegam\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
+							Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 						},
 					),
 				},
@@ -296,7 +296,7 @@ func init() {
 							ID:      `ftp_login`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"_value":null,"_attribute":{"backend_model":"Otnegam\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
+							Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 						},
 
 						&element.Field{
@@ -304,7 +304,7 @@ func init() {
 							ID:      `ftp_password`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"_value":null,"_attribute":{"backend_model":"Otnegam\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
+							Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 						},
 
 						&element.Field{
@@ -337,7 +337,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Paypal\Model\Express`,
+							Default: `Magento\Paypal\Model\Express`,
 						},
 
 						&element.Field{
@@ -454,7 +454,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Paypal\Model\Bml`,
+							Default: `Magento\Paypal\Model\Bml`,
 						},
 
 						&element.Field{
@@ -539,7 +539,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Paypal\Model\PayflowExpress`,
+							Default: `Magento\Paypal\Model\PayflowExpress`,
 						},
 					),
 				},
@@ -552,7 +552,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Paypal\Model\Payflow\Bml`,
+							Default: `Magento\Paypal\Model\Payflow\Bml`,
 						},
 
 						&element.Field{
@@ -581,7 +581,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Paypal\Model\Payflow\Transparent`,
+							Default: `Magento\Paypal\Model\Payflow\Transparent`,
 						},
 
 						&element.Field{
@@ -637,7 +637,7 @@ func init() {
 							ID:      `user`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"_value":null,"_attribute":{"backend_model":"Otnegam\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
+							Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 						},
 
 						&element.Field{
@@ -645,7 +645,7 @@ func init() {
 							ID:      `pwd`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"_value":null,"_attribute":{"backend_model":"Otnegam\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
+							Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 						},
 
 						&element.Field{
@@ -785,7 +785,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Paypal\Model\Method\Agreement`,
+							Default: `Magento\Paypal\Model\Method\Agreement`,
 						},
 
 						&element.Field{
@@ -822,7 +822,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Paypal\Model\Payflowlink`,
+							Default: `Magento\Paypal\Model\Payflowlink`,
 						},
 
 						&element.Field{
@@ -846,7 +846,7 @@ func init() {
 							ID:      `user`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"_value":null,"_attribute":{"backend_model":"Otnegam\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
+							Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 						},
 
 						&element.Field{
@@ -854,7 +854,7 @@ func init() {
 							ID:      `pwd`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"_value":null,"_attribute":{"backend_model":"Otnegam\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
+							Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 						},
 
 						&element.Field{
@@ -963,7 +963,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Paypal\Model\Payflowadvanced`,
+							Default: `Magento\Paypal\Model\Payflowadvanced`,
 						},
 
 						&element.Field{
@@ -987,7 +987,7 @@ func init() {
 							ID:      `user`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `[{"_value":null,"_attribute":{"backend_model":"Otnegam\\Config\\Model\\Config\\Backend\\Encrypted"}},"PayPal"]`,
+							Default: `[{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}},"PayPal"]`,
 						},
 
 						&element.Field{
@@ -995,7 +995,7 @@ func init() {
 							ID:      `pwd`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `{"_value":null,"_attribute":{"backend_model":"Otnegam\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
+							Default: `{"_value":null,"_attribute":{"backend_model":"Magento\\Config\\Model\\Config\\Backend\\Encrypted"}}`,
 						},
 
 						&element.Field{
@@ -1112,7 +1112,7 @@ func init() {
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
-							Default: `Otnegam\Paypal\Model\Hostedpro`,
+							Default: `Magento\Paypal\Model\Hostedpro`,
 						},
 
 						&element.Field{

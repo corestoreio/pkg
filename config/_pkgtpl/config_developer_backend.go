@@ -18,13 +18,13 @@ type PkgBackend struct {
 	// DevFrontEndDevelopmentWorkflowType => Workflow type.
 	// Not available in production mode
 	// Path: dev/front_end_development_workflow/type
-	// SourceModel: Otnegam\Developer\Model\Config\Source\WorkflowType
+	// SourceModel: Magento\Developer\Model\Config\Source\WorkflowType
 	DevFrontEndDevelopmentWorkflowType model.Str
 
 	// DevRestrictAllowIps => Allowed IPs (comma separated).
 	// Leave empty for access from any location.
 	// Path: dev/restrict/allow_ips
-	// BackendModel: Otnegam\Developer\Model\Config\Backend\AllowedIps
+	// BackendModel: Magento\Developer\Model\Config\Backend\AllowedIps
 	DevRestrictAllowIps model.Str
 }
 

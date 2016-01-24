@@ -17,17 +17,17 @@ type PkgBackend struct {
 	model.PkgBackend
 	// GoogleAdwordsActive => Enable.
 	// Path: google/adwords/active
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	GoogleAdwordsActive model.Bool
 
 	// GoogleAdwordsConversionId => Conversion ID.
 	// Path: google/adwords/conversion_id
-	// BackendModel: Otnegam\GoogleAdwords\Model\Config\Backend\ConversionId
+	// BackendModel: Magento\GoogleAdwords\Model\Config\Backend\ConversionId
 	GoogleAdwordsConversionId model.Str
 
 	// GoogleAdwordsConversionLanguage => Conversion Language.
 	// Path: google/adwords/conversion_language
-	// SourceModel: Otnegam\GoogleAdwords\Model\Config\Source\Language
+	// SourceModel: Magento\GoogleAdwords\Model\Config\Source\Language
 	GoogleAdwordsConversionLanguage model.Str
 
 	// GoogleAdwordsConversionFormat => Conversion Format.
@@ -36,7 +36,7 @@ type PkgBackend struct {
 
 	// GoogleAdwordsConversionColor => Conversion Color.
 	// Path: google/adwords/conversion_color
-	// BackendModel: Otnegam\GoogleAdwords\Model\Config\Backend\Color
+	// BackendModel: Magento\GoogleAdwords\Model\Config\Backend\Color
 	GoogleAdwordsConversionColor model.Str
 
 	// GoogleAdwordsConversionLabel => Conversion Label.
@@ -45,7 +45,7 @@ type PkgBackend struct {
 
 	// GoogleAdwordsConversionValueType => Conversion Value Type.
 	// Path: google/adwords/conversion_value_type
-	// SourceModel: Otnegam\GoogleAdwords\Model\Config\Source\ValueType
+	// SourceModel: Magento\GoogleAdwords\Model\Config\Source\ValueType
 	GoogleAdwordsConversionValueType model.Str
 
 	// GoogleAdwordsConversionValue => Conversion Value.

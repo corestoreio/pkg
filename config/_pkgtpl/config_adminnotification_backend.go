@@ -17,12 +17,12 @@ type PkgBackend struct {
 	model.PkgBackend
 	// SystemAdminnotificationUseHttps => Use HTTPS to Get Feed.
 	// Path: system/adminnotification/use_https
-	// SourceModel: Otnegam\Config\Model\Config\Source\Yesno
+	// SourceModel: Magento\Config\Model\Config\Source\Yesno
 	SystemAdminnotificationUseHttps model.Bool
 
 	// SystemAdminnotificationFrequency => Update Frequency.
 	// Path: system/adminnotification/frequency
-	// SourceModel: Otnegam\AdminNotification\Model\Config\Source\Frequency
+	// SourceModel: Magento\AdminNotification\Model\Config\Source\Frequency
 	SystemAdminnotificationFrequency model.Str
 
 	// SystemAdminnotificationLastUpdate => Last Update.

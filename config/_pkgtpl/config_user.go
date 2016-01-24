@@ -29,7 +29,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   `admin_emails_reset_password_template`,
-							// SourceModel: Otnegam\Config\Model\Config\Source\Email\Template
+							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 					),
 				},
@@ -81,7 +81,7 @@ func init() {
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
 							Default:   true,
-							// SourceModel: Otnegam\User\Model\System\Config\Source\Password
+							// SourceModel: Magento\User\Model\System\Config\Source\Password
 						},
 					),
 				},

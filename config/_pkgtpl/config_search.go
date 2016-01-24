@@ -27,7 +27,7 @@ func init() {
 							SortOrder: 19,
 							Visible:   element.VisibleYes,
 							Scope:     scope.NewPerm(scope.DefaultID),
-							// SourceModel: Otnegam\Search\Model\Adminhtml\System\Config\Source\Engine
+							// SourceModel: Magento\Search\Model\Adminhtml\System\Config\Source\Engine
 						},
 
 						&element.Field{
