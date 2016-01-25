@@ -19,7 +19,6 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config/path"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/juju/errgo"
 )
 
@@ -37,7 +36,7 @@ type MessageReceiver interface {
 	// Path may contains up to three levels. For more details see the Subscriber
 	// interface of this package. If an error will be returned, the subscriber
 	// gets unsubscribed/removed.
-	MessageConfig(path string, sg scope.Scope, id int64) error
+	MessageConfig(path.Path) error
 }
 
 // Subscriber represents the overall service to receive subscriptions from
@@ -59,7 +58,7 @@ type pubSub struct {
 	// subMap, subscribed writers are getting called when a write event
 	// will happen. uint64 is the path/route (aka topic) and int the Subscriber ID for later
 	// removal.
-	subMap     map[uint64]map[int]MessageReceiver
+	subMap     map[uint32]map[int]MessageReceiver
 	subAutoInc int // subAutoInc increased whenever a Subscriber has been added
 	mu         sync.RWMutex
 	publishArg chan arg
@@ -87,7 +86,7 @@ func (s *pubSub) Close() error {
 // See interface Subscriber for a detailed description.
 // Route can be any kind of level. a or a/b or a/b/c.
 func (s *pubSub) Subscribe(r path.Route, mr MessageReceiver) (subscriptionID int, err error) {
-	if r == nil {
+	if r.IsEmpty() {
 		return 0, path.ErrIncorrectPath
 	}
 	s.mu.Lock()
@@ -99,11 +98,7 @@ func (s *pubSub) Subscribe(r path.Route, mr MessageReceiver) (subscriptionID int
 		Route:           r,
 		RouteLevelValid: true,
 	}
-	hashPath, err := p.Hash(-1)
-	if err != nil {
-		err = errgo.Mask(err)
-		return
-	}
+	hashPath := p.Hash32()
 
 	if _, ok := s.subMap[hashPath]; !ok {
 		s.subMap[hashPath] = make(map[int]MessageReceiver)
@@ -224,13 +219,13 @@ func sendMsgRecoverable(id int, sl MessageReceiver, a arg) (err error) {
 			// and therefore will overwrite the returned nil value!
 		}
 	}()
-	err = sl.MessageConfig(a.Level(-1), a.Scope, a.ID)
+	err = sl.MessageConfig(a.Path)
 	return
 }
 
 func newPubSub() *pubSub {
 	return &pubSub{
-		subMap:     make(map[string]map[int]MessageReceiver),
+		subMap:     make(map[uint32]map[int]MessageReceiver),
 		publishArg: make(chan arg),
 		stop:       make(chan struct{}),
 		closeErr:   make(chan error),

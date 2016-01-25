@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
@@ -76,6 +77,8 @@ var TableCollection csdb.Manager
 var DefaultService *Service
 
 // ErrKeyNotFound will be returned if a key cannot be found or value is nil.
+// If you provide your own interface implementation make sure to also return
+// ErrKeyNotFound if a key cannot be found.
 var ErrKeyNotFound = errors.New("Key not found")
 
 func init() {
@@ -148,19 +151,20 @@ func (s *Service) ApplyCoreConfigData(dbrSess dbr.SessionRunner) (loadedRows, wr
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.Service.ApplyCoreConfigData.LoadSlice", "err", err)
 		}
-		return loadedRows, writtenRows, errgo.Mask(err)
+		err = errgo.Mask(err)
+		return
 	}
 
 	for _, cd := range ccd {
 		if cd.Value.Valid {
-			// scope.ID(cd.ScopeID) because cd.ScopeID is a struct field and cannot satisfy interface scope.IDer
-			if err := s.Write(Path(cd.Path), Scope(scope.FromString(cd.Scope), cd.ScopeID), Value(cd.Value.String)); err != nil {
-				return loadedRows, writtenRows, errgo.Mask(err)
+			if err = s.Write(Route(path.NewRoute(cd.Path)), Scope(scope.FromString(cd.Scope), cd.ScopeID), Value(cd.Value.String)); err != nil {
+				err = errgo.Mask(err)
+				return
 			}
 			writtenRows++
 		}
 	}
-	return loadedRows, writtenRows, err
+	return
 }
 
 // Write puts a value back into the Service. Example usage:
