@@ -79,7 +79,7 @@ func TestNewConfiguration(t *testing.T) {
 					),
 				},
 			},
-			wantErr: `Duplicate entry for path default/0/aa/bb/cc :: [{"ID":"aa","Groups":[{"ID":"bb","Fields":[{"ID":"cc"},{"ID":"cc"}]}]}]`,
+			wantErr: `Duplicate entry for path aa/bb/cc :: [{"ID":"aa","Groups":[{"ID":"bb","Fields":[{"ID":"cc"},{"ID":"cc"}]}]}]`,
 		},
 	}
 
@@ -153,7 +153,7 @@ func TestSectionSliceDefaults(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Exactly(
 		t,
-		element.DefaultMap{"default/0/contact/email/sender_email_identity": 2.718281828459045, "default/0/contact/email/email_template": 4711, "default/0/contact/contact/enabled": true, "default/0/contact/email/recipient_email": "hello@example.com"},
+		element.DefaultMap{"contact/email/sender_email_identity": 2.718281828459045, "contact/email/email_template": 4711, "contact/contact/enabled": true, "contact/email/recipient_email": "hello@example.com"},
 		dm,
 	)
 }
@@ -523,10 +523,10 @@ func TestSectionSliceFindFieldByPath(t *testing.T) {
 		wantErr   error
 	}{
 		{
-			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.GroupSlice{&element.Group{ID: path.NewRoute(`b`)}, &element.Group{ID: path.NewRoute(`bb`)}}}},
+			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`aa`), Groups: element.GroupSlice{&element.Group{ID: path.NewRoute(`bb`)}, &element.Group{ID: path.NewRoute(`cc`)}}}},
 			haveRoute: path.Route{},
 			wantFID:   "",
-			wantErr:   path.ErrRouteEmpty,
+			wantErr:   path.ErrIncorrectPath,
 		},
 		{
 			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.GroupSlice{&element.Group{ID: path.NewRoute(`b`)}, &element.Group{ID: path.NewRoute(`bb`)}}}},
@@ -543,8 +543,8 @@ func TestSectionSliceFindFieldByPath(t *testing.T) {
 		{
 			haveSlice: element.SectionSlice{nil},
 			haveRoute: path.Route{},
-			wantFID:   "b",
-			wantErr:   path.ErrRouteEmpty,
+			wantFID:   "",
+			wantErr:   path.ErrIncorrectPath,
 		},
 		{
 			haveSlice: element.SectionSlice{&element.Section{ID: path.NewRoute(`a`), Groups: element.GroupSlice{nil, &element.Group{ID: path.NewRoute(`b`)}, &element.Group{ID: path.NewRoute(`bb`)}}}},

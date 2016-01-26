@@ -106,11 +106,11 @@ func (ss SectionSlice) Defaults() (DefaultMap, error) {
 	for _, s := range ss {
 		for _, g := range s.Groups {
 			for _, f := range g.Fields {
-				fqp, err := f.FQPathDefault(s.ID, g.ID)
+				r, err := f.Route(s.ID, g.ID)
 				if err != nil {
 					return nil, err
 				}
-				dm[fqp] = f.Default
+				dm[r.String()] = f.Default
 			}
 		}
 	}
@@ -275,11 +275,11 @@ func (ss SectionSlice) Validate() error {
 
 				for _, h := range hashes {
 					if h == fnv1a {
-						p, err := f.FQPathDefault(s.ID, g.ID)
+						p, err := f.Route(s.ID, g.ID)
 						if err != nil {
 							return err
 						}
-						return errgo.Newf("Duplicate entry for path %s :: %s", p, ss.ToJSON())
+						return errgo.Newf("Duplicate entry for path %s :: %s", p.String(), ss.ToJSON())
 					}
 				}
 				hashes[i] = fnv1a

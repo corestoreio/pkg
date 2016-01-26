@@ -43,7 +43,7 @@ func TestSectionValidateDuplicate(t *testing.T) {
 	}
 
 	err := ss.Validate()
-	assert.EqualError(t, err, "Duplicate entry for path default/0/aa/bb/cc :: [{\"ID\":\"aa\",\"Groups\":[{\"ID\":\"bb\",\"Fields\":[{\"ID\":\"cc\"},{\"ID\":\"cc\"}]}]}]\n")
+	assert.EqualError(t, err, "Duplicate entry for path aa/bb/cc :: [{\"ID\":\"aa\",\"Groups\":[{\"ID\":\"bb\",\"Fields\":[{\"ID\":\"cc\"},{\"ID\":\"cc\"}]}]}]\n")
 }
 func TestSectionValidateShortPath(t *testing.T) {
 	t.Parallel()

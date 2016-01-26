@@ -172,21 +172,21 @@ func (fs *FieldSlice) Less(i, j int) bool {
 	return (*fs)[i].SortOrder < (*fs)[j].SortOrder
 }
 
-// FQPathDefault returns the default fully qualified path of either
+// Route returns the merged route of either
 // Section.ID + Group.ID + Field.ID OR Field.ConfgPath if set.
-// Returns on error *FieldError
-func (f *Field) FQPathDefault(preRoutes ...path.Route) (string, error) {
+// Returns on error *FieldError. Owner of the path.Route is *Field.
+func (f *Field) Route(preRoutes ...path.Route) (path.Route, error) {
 	var p path.Path
 	var err error
 	if nil != f.ConfigPath && !f.ConfigPath.Route().IsEmpty() {
-		p, err = path.New(f.ConfigPath.Route().Copy())
+		p, err = path.New(f.ConfigPath.Route())
 	} else {
 		p, err = path.New(append(preRoutes, f.ID)...)
 	}
 	if err != nil {
-		return "", &FieldError{Err: errgo.Mask(err), Field: f, PreRoutes: preRoutes}
+		return path.Route{}, &FieldError{Err: errgo.Mask(err), Field: f, PreRoutes: preRoutes}
 	}
-	return p.String(), nil
+	return p.Route, nil
 }
 
 // RouteHash returns the 64-bit FNV-1a hash of either
