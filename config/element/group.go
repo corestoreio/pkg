@@ -58,7 +58,9 @@ func NewGroupSlice(gs ...*Group) GroupSlice {
 	return GroupSlice(gs)
 }
 
-// FindByID returns a Group pointer or nil if not found
+// FindByID returns a Group pointer or ErrGroupNotFound.
+// Route must be a single part. E.g. if you have path "a/b/c" route would be in
+// this case "b". For comparison the field Sum32 of a route will be used.
 func (gs GroupSlice) FindByID(id path.Route) (*Group, error) {
 	for _, g := range gs {
 		if g != nil && g.ID.Sum32 == id.Sum32 {

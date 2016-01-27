@@ -181,7 +181,9 @@ func (ss *SectionSlice) merge(s *Section) error {
 	return cs.Groups.Merge(s.Groups...)
 }
 
-// FindByID returns a Section pointer or nil if not found. Please check for nil and do not a
+// FindByID returns a Section pointer or ErrSectionNotFound.
+// Route must be a single part. E.g. if you have path "a/b/c" route would be in
+// this case "a". For comparison the field Sum32 of a route will be used.
 func (ss SectionSlice) FindByID(id path.Route) (*Section, error) {
 	for _, s := range ss {
 		if s != nil && s.ID.Sum32 == id.Sum32 {
@@ -191,10 +193,9 @@ func (ss SectionSlice) FindByID(id path.Route) (*Section, error) {
 	return nil, ErrSectionNotFound
 }
 
-// FindGroupByPath searches for a group using the first two path segments.
-// If one argument is given then considered as the full path e.g. a/b/c
-// If two or more arguments are given then each argument will be treated as a path part.
-func (ss SectionSlice) FindGroupByPath(r path.Route) (*Group, error) {
+// FindGroupByID searches for a group using the first two path segments.
+// Route must have the format a/b/c.
+func (ss SectionSlice) FindGroupByID(r path.Route) (*Group, error) {
 
 	spl, err := r.Split()
 	if err != nil {
@@ -208,10 +209,9 @@ func (ss SectionSlice) FindGroupByPath(r path.Route) (*Group, error) {
 	return cs.Groups.FindByID(spl[1])
 }
 
-// FindFieldByPath searches for a field using all three path segments.
-// If one argument is given then considered as the full path e.g. a/b/c
-// If three arguments are given then each argument will be treated as a path part.
-func (ss SectionSlice) FindFieldByPath(r path.Route) (*Field, error) {
+// FindFieldByID searches for a field using all three path segments.
+// Route must have the format a/b/c.
+func (ss SectionSlice) FindFieldByID(r path.Route) (*Field, error) {
 	spl, err := r.Split()
 	if err != nil {
 		return nil, errgo.Mask(err)
@@ -236,7 +236,7 @@ func (ss *SectionSlice) Append(s ...*Section) *SectionSlice {
 // AppendFields adds 0..n *Fields. Path must have at least two path parts like a/b
 // more path parts gets ignored. Not thread safe.
 func (ss SectionSlice) AppendFields(r path.Route, fs ...*Field) error {
-	g, err := ss.FindGroupByPath(r)
+	g, err := ss.FindGroupByID(r)
 	if err != nil {
 		return errgo.Mask(err)
 	}

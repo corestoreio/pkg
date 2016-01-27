@@ -459,7 +459,7 @@ func TestGroupSliceMerge(t *testing.T) {
 	}
 }
 
-func TestSectionSliceFindGroupByPath(t *testing.T) {
+func TestSectionSliceFindGroupByID(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		haveSlice element.SectionSlice
@@ -500,7 +500,7 @@ func TestSectionSliceFindGroupByPath(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		haveGroup, haveErr := test.haveSlice.FindGroupByPath(test.haveRoute)
+		haveGroup, haveErr := test.haveSlice.FindGroupByID(test.haveRoute)
 		if test.wantErr != nil {
 			assert.Error(t, haveErr, "Index %d", i)
 			assert.Nil(t, haveGroup)
@@ -514,7 +514,7 @@ func TestSectionSliceFindGroupByPath(t *testing.T) {
 	}
 }
 
-func TestSectionSliceFindFieldByPath(t *testing.T) {
+func TestSectionSliceFindFieldByID(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		haveSlice element.SectionSlice
@@ -569,7 +569,7 @@ func TestSectionSliceFindFieldByPath(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		haveGroup, haveErr := test.haveSlice.FindFieldByPath(test.haveRoute)
+		haveGroup, haveErr := test.haveSlice.FindFieldByID(test.haveRoute)
 		if test.wantErr != nil {
 			assert.Error(t, haveErr, "Index %d", i)
 			assert.Nil(t, haveGroup, "Index %d", i)

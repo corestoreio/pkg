@@ -87,7 +87,9 @@ func NewFieldSlice(fs ...*Field) FieldSlice {
 	return FieldSlice(fs)
 }
 
-// FindByID returns a Field pointer or nil if not found
+// FindByID returns a Field pointer or ErrFieldNotFound.
+// Route must be a single part. E.g. if you have path "a/b/c" route would be in
+// this case "c". For comparison the field Sum32 of a route will be used.
 func (fs FieldSlice) FindByID(id path.Route) (*Field, error) {
 	for _, f := range fs {
 		if f != nil && f.ID.Sum32 == id.Sum32 {
