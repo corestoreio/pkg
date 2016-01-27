@@ -39,7 +39,7 @@ type Field struct {
 	ID path.Route
 	// ConfigPath if provided defines the storage path and overwrites the path from
 	// section.id + group.id + field.id. ConfigPath can be nil.
-	ConfigPath path.Router `json:",omitempty"` // omitempty does not yet work on non-pointer structs that is reason for the interface
+	ConfigPath path.RouteSelfer `json:",omitempty"` // omitempty does not yet work on non-pointer structs that is reason for the interface
 	// Type is used for the front end on how to display a Field
 	Type FieldTyper `json:",omitempty"`
 	// Label a short label of the field
@@ -180,8 +180,8 @@ func (fs *FieldSlice) Less(i, j int) bool {
 func (f *Field) Route(preRoutes ...path.Route) (path.Route, error) {
 	var p path.Path
 	var err error
-	if nil != f.ConfigPath && !f.ConfigPath.Route().IsEmpty() {
-		p, err = path.New(f.ConfigPath.Route())
+	if nil != f.ConfigPath && !f.ConfigPath.Self().IsEmpty() {
+		p, err = path.New(f.ConfigPath.Self())
 	} else {
 		p, err = path.New(append(preRoutes, f.ID)...)
 	}
@@ -197,8 +197,8 @@ func (f *Field) Route(preRoutes ...path.Route) (path.Route, error) {
 func (f *Field) RouteHash(preRoutes ...path.Route) (uint64, error) {
 	var r path.Route
 
-	if nil != f.ConfigPath && false == f.ConfigPath.Route().IsEmpty() {
-		r = f.ConfigPath.Route()
+	if nil != f.ConfigPath && false == f.ConfigPath.Self().IsEmpty() {
+		r = f.ConfigPath.Self()
 	} else {
 		if err := r.Append(append(preRoutes, f.ID)...); err != nil {
 			return 0, &FieldError{Err: errgo.Mask(err), Field: f, PreRoutes: preRoutes}

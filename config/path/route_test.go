@@ -37,7 +37,7 @@ var _ sql.Scanner = (*path.Route)(nil)
 var _ driver.Valuer = (*path.Route)(nil)
 var _ fmt.GoStringer = (*path.Route)(nil)
 var _ fmt.Stringer = (*path.Route)(nil)
-var _ path.Router = (*path.Route)(nil)
+var _ path.RouteSelfer = (*path.Route)(nil)
 
 func TestRouteRouter(t *testing.T) {
 	t.Parallel()
