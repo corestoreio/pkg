@@ -17,19 +17,30 @@ package config
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSimpleStorage(t *testing.T) {
 	sp := newSimpleStorage()
 
-	sp.Set("k2", 19.99)
-	assert.Exactly(t, 19.99, sp.Get("k2").(float64))
+	p1 := path.MustNewByParts("aa/bb/cc")
 
-	sp.Set("k1", 4711)
-	assert.Exactly(t, 4711, sp.Get("k1").(int))
+	assert.NoError(t, sp.Set(p1, 19.99))
+	f, err := sp.Get(p1)
+	assert.NoError(t, err)
+	assert.Exactly(t, 19.99, f.(float64))
 
-	assert.Nil(t, sp.Get("k1a"))
+	assert.NoError(t, sp.Set(p1, 4711))
+	i, err := sp.Get(p1)
+	assert.NoError(t, err)
+	assert.Exactly(t, 4711, i.(int))
 
-	assert.Exactly(t, []string{"k1", "k2"}, sp.AllKeys())
+	ni, err := sp.Get(path.Path{})
+	assert.NoError(t, err)
+	assert.Nil(t, ni)
+
+	keys, err := sp.AllKeys()
+	assert.NoError(t, err)
+	assert.Exactly(t, []string{"k1", "k2"}, keys)
 }

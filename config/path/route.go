@@ -383,9 +383,10 @@ func (r Route) Part(pos int) (Route, error) {
 // Split splits the route into its three parts. Does not run Validate()
 // Example:
 // 		routes := path.NewRoute("aa/bb/cc")
-//		routes[0].String() == "aa"
-//		routes[1].String() == "bb"
-//		routes[2].String() == "cc"
+//		rs, err := routes.Split()
+//		rs[0].String() == "aa"
+//		rs[1].String() == "bb"
+//		rs[2].String() == "cc"
 func (r Route) Split() (ret [Levels]Route, err error) {
 
 	const sepCount = Levels - 1 // only two separators supported

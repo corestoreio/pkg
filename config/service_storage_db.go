@@ -21,6 +21,7 @@ import (
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cast"
 )
 
@@ -48,9 +49,7 @@ func NewDBStorage(p csdb.Preparer) (*DBStorage, error) {
 
 	dbs := &DBStorage{
 		All: csdb.NewResurrectStmt(p, fmt.Sprintf(
-			"SELECT CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath` FROM `%s` ORDER BY scope,scope_id,path",
-			path.Separator,
-			path.Separator,
+			"SELECT scope,scope_id,path FROM `%s` ORDER BY scope,scope_id,path",
 			TableCollection.Name(TableIndexCoreConfigData),
 		)),
 		Read: csdb.NewResurrectStmt(p, fmt.Sprintf(
@@ -107,7 +106,7 @@ func (dbs *DBStorage) Stop() error {
 
 // Set sets a value with its key. Database errors get logged as Info message.
 // Enabled debug level logs the insert ID or rows affected.
-func (dbs *DBStorage) Set(key string, value interface{}) error {
+func (dbs *DBStorage) Set(key path.Path, value interface{}) error {
 	// update lastUsed at the end because there might be the slight chance
 	// that a statement gets closed despite we're waiting for the result
 	// from the server.
@@ -130,7 +129,7 @@ func (dbs *DBStorage) Set(key string, value interface{}) error {
 		return err
 	}
 
-	p, err := path.SplitFQ(key)
+	pl, err := key.Level(-1)
 	if err != nil {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.DBStorage.Set.ReverseFQPath", "err", err, "key", key)
@@ -138,7 +137,7 @@ func (dbs *DBStorage) Set(key string, value interface{}) error {
 		return err
 	}
 
-	result, err := stmt.Exec(p.Scope, p.ID, p.Level(-1), valStr, valStr)
+	result, err := stmt.Exec(key.Scope, key.ID, pl, valStr, valStr)
 	if err != nil {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.DBStorage.Set.Write.Exec", "err", err, "SQL", dbs.Write.SQL, "key", key, "value", value)
@@ -156,7 +155,7 @@ func (dbs *DBStorage) Set(key string, value interface{}) error {
 // Get returns a value from the database by its key. It is guaranteed that the
 // type in the empty interface is a string. It returns nil on error but errors
 // get logged as info message
-func (dbs *DBStorage) Get(key string) interface{} {
+func (dbs *DBStorage) Get(key path.Path) (interface{}, error) {
 	// update lastUsed at the end because there might be the slight chance
 	// that a statement gets closed despite we're waiting for the result
 	// from the server.
@@ -165,30 +164,36 @@ func (dbs *DBStorage) Get(key string) interface{} {
 
 	stmt, err := dbs.Read.Stmt()
 	if err != nil {
-		PkgLog.Info("config.DBStorage.Get.Read.getStmt", "err", err, "SQL", dbs.Read.SQL)
-		return nil
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.DBStorage.Get.Read.getStmt", "err", err, "SQL", dbs.Read.SQL)
+		}
+		return nil, err
 	}
 
-	p, err := path.SplitFQ(key)
+	pl, err := key.Level(-1)
 	if err != nil {
-		PkgLog.Info("config.DBStorage.Get.ReverseFQPath", "err", err, "key", key)
-		return nil
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.DBStorage.Get.path.Level", "err", err, "key", key)
+		}
+		return nil, err
 	}
 
 	var data dbr.NullString
-	err = stmt.QueryRow(p.Scope, p.ID, p.Level(-1)).Scan(&data)
+	err = stmt.QueryRow(key.Scope, key.ID, pl).Scan(&data)
 	if err != nil {
-		PkgLog.Info("config.DBStorage.Get.QueryRow", "err", err, "key", key)
-		return nil
+		if PkgLog.IsDebug() {
+			PkgLog.Info("config.DBStorage.Get.QueryRow", "err", err, "key", key)
+		}
+		return nil, err
 	}
 	if data.Valid {
-		return data.String
+		return data.String, nil
 	}
-	return nil
+	return nil, ErrKeyNotFound
 }
 
 // AllKeys returns all available keys. Database errors get logged as info message.
-func (dbs *DBStorage) AllKeys() []string {
+func (dbs *DBStorage) AllKeys() ([]path.Path, error) {
 	// update lastUsed at the end because there might be the slight chance
 	// that a statement gets closed despite we're waiting for the result
 	// from the server.
@@ -197,29 +202,53 @@ func (dbs *DBStorage) AllKeys() []string {
 
 	stmt, err := dbs.All.Stmt()
 	if err != nil {
-		PkgLog.Info("config.DBStorage.AllKeys.All.getStmt", "err", err, "SQL", dbs.All.SQL)
-		return nil
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.DBStorage.AllKeys.All.getStmt", "err", err, "SQL", dbs.All.SQL)
+		}
+		return nil, err
 	}
 
 	rows, err := stmt.Query()
 	if err != nil {
-		PkgLog.Info("config.DBStorage.AllKeys.All.Query", "err", err, "SQL", dbs.All.SQL)
-		return nil
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.DBStorage.AllKeys.All.Query", "err", err, "SQL", dbs.All.SQL)
+		}
+		return nil, err
 	}
 	defer rows.Close()
 
-	var ret = make([]string, 0, 500)
-	var data dbr.NullString
+	const maxCap = 750 // Just a guess the 750
+	var ret = make([]path.Path, 0, maxCap)
+	var sqlScope dbr.NullString
+	var sqlScopeID dbr.NullInt64
+	var sqlPath dbr.NullString
+	i := 0
 	for rows.Next() {
-		if err := rows.Scan(&data); err != nil {
-			PkgLog.Info("config.DBStorage.AllKeys.All.Rows.Scan", "err", err, "SQL", dbs.All.SQL)
-			return nil
+		if err := rows.Scan(&sqlScope, &sqlScopeID, &sqlPath); err != nil {
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("config.DBStorage.AllKeys.All.Rows.Scan", "err", err, "SQL", dbs.All.SQL)
+			}
+			return nil, err
 		}
-		if data.Valid {
-			ret = append(ret, data.String)
+		if sqlPath.Valid {
+			p, err := path.NewByParts(sqlPath.String)
+			if err != nil {
+				return ret, err
+			}
+			p = p.Bind(scope.FromString(sqlScope.String), sqlScopeID.Int64)
+			if i < maxCap {
+				ret[i] = p
+			} else {
+				ret = append(ret, p)
+			}
 		}
-		data.String = ""
-		data.Valid = false
+		sqlScope.String = ""
+		sqlScope.Valid = false
+		sqlScopeID.Int64 = 0
+		sqlScopeID.Valid = false
+		sqlPath.String = ""
+		sqlPath.Valid = false
+		i++
 	}
-	return ret
+	return ret, nil
 }

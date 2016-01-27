@@ -17,7 +17,7 @@ package config
 import (
 	"sync"
 
-	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/config/path"
 )
 
 // Storager is the underlying data storage for holding the keys and its values.
@@ -26,48 +26,69 @@ import (
 // ProTip: If you use MySQL as Storager don't execute function
 // ApplyCoreConfigData()
 type Storager interface {
-	Set(key string, value interface{}) error
-	Get(key string) interface{}
-	AllKeys() []string
+	// Set sets a key with a value and returns on success nil or ErrKeyOverwritten,
+	// on failure any other error
+	Set(key path.Path, value interface{}) error
+	// Get may return a ErrKeyNotFound error
+	Get(key path.Path) (interface{}, error)
+	// AllKeys returns the fully qualified keys
+	AllKeys() ([]path.Path, error)
 }
 
 var _ Storager = (*simpleStorage)(nil)
 
+type keyVal struct {
+	k path.Path
+	v interface{}
+}
+
 type simpleStorage struct {
 	sync.Mutex
-	data map[string]interface{}
+	kv map[uint32]keyVal
 }
 
 func newSimpleStorage() *simpleStorage {
 	return &simpleStorage{
-		data: make(map[string]interface{}),
+		kv: make(map[uint32]keyVal),
 	}
 }
 
-func (sp *simpleStorage) Set(key string, value interface{}) error {
+func (sp *simpleStorage) Set(key path.Path, value interface{}) error {
 	sp.Lock()
-	sp.data[key] = value
+	k, err := key.FQ()
+	if err != nil {
+		return err
+	}
+	h32 := k.Hash32()
+	sp.kv[h32] = keyVal{key, value}
 	sp.Unlock()
 	return nil
 }
 
-func (sp *simpleStorage) Get(key string) interface{} {
-	sp.Lock()
-	defer sp.Unlock()
-	if data, ok := sp.data[key]; ok {
-		return data
-	}
-	return nil
-}
-func (sp *simpleStorage) AllKeys() []string {
+func (sp *simpleStorage) Get(key path.Path) (interface{}, error) {
 	sp.Lock()
 	defer sp.Unlock()
 
-	var ret = make(util.StringSlice, len(sp.data))
+	k, err := key.FQ()
+	if err != nil {
+		return nil, err
+	}
+	h32 := k.Hash32()
+	if data, ok := sp.kv[h32]; ok {
+		return data.v, nil
+	}
+	return nil, ErrKeyNotFound
+}
+
+func (sp *simpleStorage) AllKeys() ([]path.Path, error) {
+	sp.Lock()
+	defer sp.Unlock()
+
+	var ret = make([]path.Path, len(sp.kv), len(sp.kv))
 	i := 0
-	for k := range sp.data {
-		ret[i] = k
+	for _, kv := range sp.kv {
+		ret[i] = kv.k
 		i++
 	}
-	return ret.Sort()
+	return ret, nil
 }

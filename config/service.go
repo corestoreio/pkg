@@ -111,7 +111,8 @@ func NewService(opts ...ServiceOption) *Service {
 		s.Storage = newSimpleStorage()
 	}
 	go s.publish()
-	s.Storage.Set(PathCSBaseURL, CSBaseURL)
+	p := path.MustNewByParts(PathCSBaseURL)
+	s.Storage.Set(p, CSBaseURL)
 	return s
 }
 
@@ -131,7 +132,14 @@ func (s *Service) ApplyDefaults(ss element.Sectioner) (count int, err error) {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.Service.ApplyDefaults", k, v)
 		}
-		s.Storage.Set(k, v)
+		var p path.Path
+		p, err = path.NewByParts(k) // default path!
+		if err != nil {
+			return
+		}
+		if err = s.Storage.Set(p, v); err != nil {
+			return
+		}
 		count++
 	}
 	return
@@ -180,26 +188,25 @@ func (s *Service) Write(o ...ArgFunc) error {
 		return errgo.Mask(err)
 	}
 
-	path := a.String()
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("config.Service.Write", "path", path, "val", a.v)
+		PkgLog.Debug("config.Service.Write", "path", a.Path, "val", a.v)
 	}
 
-	s.Storage.Set(path, a.v)
+	s.Storage.Set(a.Path, a.v)
 	s.sendMsg(a)
 	return nil
 }
 
 // get generic getter ... not sure if this should be public ...
-func (s *Service) get(o ...ArgFunc) interface{} {
+func (s *Service) get(o ...ArgFunc) (interface{}, error) {
 	a, err := newArg(o...)
 	if err != nil {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.Service.get.newArg", "err", err)
 		}
-		return errgo.Mask(err)
+		return nil, errgo.Mask(err)
 	}
-	return s.Storage.Get(a.String())
+	return s.Storage.Get(a.Path)
 }
 
 // String returns a string from the Service. Example usage:
@@ -210,50 +217,51 @@ func (s *Service) get(o ...ArgFunc) interface{} {
 //
 // Store   value: String(config.Path("general/locale/timezone"), config.ScopeStore(s))
 func (s *Service) String(o ...ArgFunc) (string, error) {
-	vs := s.get(o...)
-	if vs == nil {
-		return "", ErrKeyNotFound
+	vs, err := s.get(o...)
+	if err != nil {
+		return "", err
 	}
 	return cast.ToStringE(vs)
 }
 
 // Bool returns bool from the Service. Example usage see String.
 func (s *Service) Bool(o ...ArgFunc) (bool, error) {
-	vs := s.get(o...)
-	if vs == nil {
-		return false, ErrKeyNotFound
+	vs, err := s.get(o...)
+	if err != nil {
+		return false, err
 	}
 	return cast.ToBoolE(vs)
 }
 
 // Float64 returns a float64 from the Service. Example usage see String.
 func (s *Service) Float64(o ...ArgFunc) (float64, error) {
-	vs := s.get(o...)
-	if vs == nil {
-		return 0.0, ErrKeyNotFound
+	vs, err := s.get(o...)
+	if err != nil {
+		return 0, err
 	}
 	return cast.ToFloat64E(vs)
 }
 
 // Int returns an int from the Service. Example usage see String.
 func (s *Service) Int(o ...ArgFunc) (int, error) {
-	vs := s.get(o...)
-	if vs == nil {
-		return 0, ErrKeyNotFound
+	vs, err := s.get(o...)
+	if err != nil {
+		return 0, err
 	}
 	return cast.ToIntE(vs)
 }
 
 // DateTime returns a date and time object from the Service. Example usage see String.
 func (s *Service) DateTime(o ...ArgFunc) (time.Time, error) {
-	vs := s.get(o...)
-	if vs == nil {
-		return time.Time{}, ErrKeyNotFound
+	vs, err := s.get(o...)
+	if err != nil {
+		return time.Time{}, err
 	}
 	return cast.ToTimeE(vs)
 }
 
 // IsSet checks if a key is in the configuration. Returns false on error.
+// Errors will be logged in Debug mode.
 func (s *Service) IsSet(o ...ArgFunc) bool {
 	a, err := newArg(o...)
 	if err != nil {
@@ -262,7 +270,14 @@ func (s *Service) IsSet(o ...ArgFunc) bool {
 		}
 		return false
 	}
-	return s.Storage.Get(a.String()) != nil
+	v, err := s.Storage.Get(a.Path)
+	if err != nil {
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("config.Service.IsSet.Storage.Get", "err", err, "path", a)
+		}
+		return false
+	}
+	return v != nil
 }
 
 // NotKeyNotFoundError returns true if err is not nil and not of type Key Not Found.

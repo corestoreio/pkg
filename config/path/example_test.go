@@ -40,6 +40,13 @@ func Example() {
 	}
 	fmt.Println(p.String())
 
+	routes := path.NewRoute("dev/css/merge_css_files")
+	rs, err := routes.Split()
+	if err != nil {
+		fmt.Printf("%s\n", err)
+	}
+	fmt.Println("dev/css/merge_css_files => ", rs[0].String(), rs[1].String(), rs[2].String())
+
 	// Output:
 	//default/0/system/smtp/host
 	//websites/1/system/smtp/host
@@ -48,4 +55,5 @@ func Example() {
 	//stores/3/system/smtp/host
 	//default/0/system/smtp/host
 	//default/0/system/smtp/host
+	//dev/css/merge_css_files =>  dev css merge_css_files
 }

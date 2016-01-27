@@ -82,7 +82,7 @@ func TestScopeApplyDefaults(t *testing.T) {
 	)
 	s := config.NewService()
 	s.ApplyDefaults(pkgCfg)
-	cer, err := pkgCfg.FindFieldByPath("contact", "email", "recipient_email")
+	cer, err := pkgCfg.FindFieldByID("contact", "email", "recipient_email")
 	if err != nil {
 		t.Error(err)
 		return
