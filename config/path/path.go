@@ -121,6 +121,9 @@ func (p Path) Bind(s scope.Scope, id int64) Path {
 }
 
 // Clone returns a new allocated Path with copied data.
+// Clone is not needed if you before or after the assignment to a new variable
+// use Path.Append() or the classic append(Path.Chars,[]byte() ....) to also
+// allocate a new slice.
 func (p Path) Clone() Path {
 	p2 := p
 	p2.Route = p.Route.Clone()

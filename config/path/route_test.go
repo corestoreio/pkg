@@ -39,10 +39,10 @@ var _ fmt.GoStringer = (*path.Route)(nil)
 var _ fmt.Stringer = (*path.Route)(nil)
 var _ path.RouteSelfer = (*path.Route)(nil)
 
-func TestRouteRouter(t *testing.T) {
+func TestRouteRouteSelfer(t *testing.T) {
 	t.Parallel()
 	r := path.NewRoute("a/b/c")
-	assert.Exactly(t, r, r.Route())
+	assert.Exactly(t, r, r.Self())
 }
 
 func TestRouteGoString(t *testing.T) {
@@ -89,6 +89,7 @@ func TestRouteAppend(t *testing.T) {
 		want    string
 		wantErr error
 	}{
+		{path.NewRoute("aa/bb/cc"), path.NewRoute("dd"), "aa/bb/cc/dd", nil},
 		{path.NewRoute("aa"), path.NewRoute("bb/cc"), "aa/bb/cc", nil},
 		{path.NewRoute("aa"), path.NewRoute("bbcc"), "aa/bbcc", nil},
 		{path.NewRoute("aa"), path.NewRoute("bb\x80cc"), "", path.ErrRouteInvalidBytes},

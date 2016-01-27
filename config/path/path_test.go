@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
@@ -395,7 +396,52 @@ func TestPathPartPosition(t *testing.T) {
 	}
 }
 
-func TestPathClone(t *testing.T) {
-	p1 := path.MustNewByParts("aa/bb/cc")
-	p2 := p1.Clone()
+func TestPathCloneRareUseCase(t *testing.T) {
+	t.Parallel()
+	rs := "aa/bb/cc"
+	pOrg := path.MustNewByParts(rs)
+	pOrg = pOrg.Bind(scope.StoreID, 3141)
+
+	largerBuff := make(text.Chars, 100, 100)
+	pOrg.Chars = largerBuff[:copy(largerBuff, rs)]
+
+	pAssigned := pOrg
+	pCloned := pOrg.Clone()
+
+	assert.Exactly(t, pOrg.Scope, pCloned.Scope)
+	assert.Exactly(t, pOrg.ID, pCloned.ID)
+	assert.Exactly(t, pOrg.Route, pCloned.Route)
+
+	assert.Exactly(t, pOrg.Scope, pAssigned.Scope)
+	assert.Exactly(t, pOrg.ID, pAssigned.ID)
+	assert.Exactly(t, pOrg.Route, pAssigned.Route)
+
+	// we're not using Path.Append because it creates internally a new byte slice
+	// this append() grows the slice without creating a new one because the cap == 100, see above.
+	pOrg.Chars = append(pOrg.Chars, []byte(`/dd`)...)
+
+	assert.Exactly(t, "stores/3141/"+rs+"/dd", pOrg.String())
+
+	assert.Exactly(t, "stores/3141/"+rs, pAssigned.String())
+
+	assert.NotEqual(t, pOrg, pAssigned)
+
+	// now expand the slice
+	pAssigned.Chars = pAssigned.Chars[:len(pOrg.Chars)]
+	assert.Exactly(t, "stores/3141/"+rs+"/dd", pAssigned.String())
+	assert.Exactly(t, pOrg, pAssigned)
+	assert.Exactly(t, "stores/3141/"+rs, pCloned.String())
+	assert.NotEqual(t, pOrg, pCloned)
+}
+
+func TestPathCloneAppend(t *testing.T) {
+	t.Parallel()
+	rs := "aa/bb/cc"
+	pOrg := path.MustNewByParts(rs)
+	pOrg = pOrg.Bind(scope.StoreID, 3141)
+
+	pAssigned := pOrg
+	assert.Exactly(t, pOrg, pAssigned)
+	assert.NoError(t, pOrg.Append(path.NewRoute("dd")))
+	assert.NotEqual(t, pOrg, pAssigned)
 }

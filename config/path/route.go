@@ -156,6 +156,7 @@ func (r Route) Clone() Route {
 
 // Append adds other partial routes with a Separator between. After the partial
 // routes have been added a validation check will be done.
+// Internally it creates a new byte slice.
 //
 //		a := path.Route(`catalog/product`)
 //		b := path.Route(`enable_flat_tables`)
@@ -166,7 +167,7 @@ func (r Route) Clone() Route {
 //		// Should print: catalog/product/enable_flat_tables
 func (r *Route) Append(routes ...Route) error {
 
-	if i1, i2 := bytes.LastIndexByte((*r).Chars, Separator), len((*r).Chars)-1; i1 > 0 && i2 > 0 && i1 == i1 {
+	if i1, i2 := bytes.LastIndexByte((*r).Chars, Separator), len((*r).Chars)-1; i1 > 0 && i2 > 0 && i1 == i2 {
 		(*r).Chars = (*r).Chars[:len((*r).Chars)-1] // strip last Separator
 	}
 
