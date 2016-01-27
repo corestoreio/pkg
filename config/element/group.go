@@ -98,10 +98,10 @@ func (gs *GroupSlice) merge(g *Group) error {
 	}
 
 	if !g.Label.IsEmpty() {
-		cg.Label = g.Label.Copy()
+		cg.Label = g.Label.Clone()
 	}
 	if !g.Comment.IsEmpty() {
-		cg.Comment = g.Comment.Copy()
+		cg.Comment = g.Comment.Clone()
 	}
 	if g.Scope > 0 {
 		cg.Scope = g.Scope

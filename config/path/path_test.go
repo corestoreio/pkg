@@ -394,3 +394,8 @@ func TestPathPartPosition(t *testing.T) {
 		assert.Exactly(t, test.wantPart, part.String(), "Index %d", i)
 	}
 }
+
+func TestPathClone(t *testing.T) {
+	p1 := path.MustNewByParts("aa/bb/cc")
+	p2 := p1.Clone()
+}

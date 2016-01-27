@@ -120,6 +120,13 @@ func (p Path) Bind(s scope.Scope, id int64) Path {
 	return p
 }
 
+// Clone returns a new allocated Path with copied data.
+func (p Path) Clone() Path {
+	p2 := p
+	p2.Route = p.Route.Clone()
+	return p2
+}
+
 // StrScope wrapper function. Converts the Path.Scope to a StrScope.
 func (p Path) StrScope() string {
 	return scope.FromScope(p.Scope).String()

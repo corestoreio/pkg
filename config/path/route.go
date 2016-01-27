@@ -149,8 +149,9 @@ func (r Route) Equal(b Route) bool {
 	//return r.Chars.Equal(b.Chars) // takes longer
 }
 
-func (r Route) Copy() Route {
-	return newRoute(r.Chars.Copy())
+// Clone returns a new allocated route with copied data.
+func (r Route) Clone() Route {
+	return newRoute(r.Chars.Clone())
 }
 
 // Append adds other partial routes with a Separator between. After the partial

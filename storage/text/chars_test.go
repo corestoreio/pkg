@@ -69,7 +69,7 @@ func TestChars(t *testing.T) {
 	assert.False(t, l.IsEmpty())
 	assert.Exactly(t, have, l.String())
 
-	l2 := l.Copy()
+	l2 := l.Clone()
 	assert.Exactly(t, l, l2)
 	l2 = nil
 	assert.True(t, l2.IsEmpty())

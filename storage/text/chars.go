@@ -49,7 +49,8 @@ func (c Chars) IsEmpty() bool {
 	return c == nil || len(c) == 0
 }
 
-func (c Chars) Copy() Chars {
+// Clone returns a new allocated slice with copied data.
+func (c Chars) Clone() Chars {
 	n := make([]byte, len(c), len(c))
 	copy(n, c)
 	return n

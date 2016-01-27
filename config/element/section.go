@@ -167,7 +167,7 @@ func (ss *SectionSlice) merge(s *Section) error {
 	}
 
 	if s.Label.IsEmpty() == false {
-		cs.Label = s.Label.Copy()
+		cs.Label = s.Label.Clone()
 	}
 	if s.Scope > 0 {
 		cs.Scope = s.Scope

@@ -15,11 +15,9 @@
 package config_test
 
 import (
-	"testing"
-
 	"errors"
-
 	"sync"
+	"testing"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/path"
@@ -30,30 +28,32 @@ import (
 var _ config.MessageReceiver = (*testSubscriber)(nil)
 
 type testSubscriber struct {
-	f func(path string, sg scope.Scope, id int64) error
+	t *testing.T
+	f func(p path.Path) error
 }
 
-func (ts *testSubscriber) MessageConfig(path string, sg scope.Scope, id int64) error {
-	//ts.t.Logf("Message: %s Group %d Scope %d", path, sg, s.scope.ID())
-	return ts.f(path, sg, id)
+func (ts *testSubscriber) MessageConfig(p path.Path) error {
+	ts.t.Logf("Message: %s ScopeGroup %s ScopeID %d", p.String(), p.Scope.String(), p.ID)
+	return ts.f(p)
 }
 
 func TestPubSubBubbling(t *testing.T) {
 	defer debugLogBuf.Reset()
-	testPath := "aa/bb/cc"
+	testPath := path.MustNewByParts("aa/bb/cc")
 
 	s := config.NewService()
 
-	_, err := s.Subscribe("", nil)
+	_, err := s.Subscribe(path.Route{}, nil)
 	assert.EqualError(t, err, path.ErrIncorrectPath.Error())
 
-	subID, err := s.Subscribe(testPath, &testSubscriber{
-		f: func(path string, sg scope.Scope, id int64) error {
-			assert.Equal(t, testPath, path)
-			if sg == scope.DefaultID {
-				assert.Equal(t, int64(0), id)
+	subID, err := s.Subscribe(testPath.Route, &testSubscriber{
+		t: t,
+		f: func(p path.Path) error {
+			assert.Equal(t, testPath, p.String())
+			if p.Scope == scope.DefaultID {
+				assert.Equal(t, int64(0), p.ID)
 			} else {
-				assert.Equal(t, int64(123), id)
+				assert.Equal(t, int64(123), p.ID)
 			}
 			return nil
 		},
@@ -64,8 +64,14 @@ func TestPubSubBubbling(t *testing.T) {
 	assert.NoError(t, s.Write(config.Value(1), config.Path(testPath), config.Scope(scope.WebsiteID, 123)))
 	assert.NoError(t, s.Close())
 
+	t.Log("Before", "testPath", testPath.Route)
+	testPath2 := testPath.Clone()
+	assert.NoError(t, testPath2.Append(path.NewRoute("Doh")))
+
+	t.Log("After", "testPath", testPath.Route, "testPath2", testPath2.Route)
+
 	// send on closed channel
-	assert.NoError(t, s.Write(config.Value(1), config.Path(testPath+"Doh"), config.Scope(scope.WebsiteID, 3)))
+	assert.NoError(t, s.Write(config.Value(1), config.Path(testPath2), config.Scope(scope.WebsiteID, 3)))
 	assert.EqualError(t, s.Close(), config.ErrPublisherClosed.Error())
 }
 

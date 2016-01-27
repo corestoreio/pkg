@@ -131,13 +131,13 @@ func (fs *FieldSlice) merge(f *Field) error {
 		cf.Type = f.Type
 	}
 	if !f.Label.IsEmpty() {
-		cf.Label = f.Label.Copy()
+		cf.Label = f.Label.Clone()
 	}
 	if !f.Comment.IsEmpty() {
-		cf.Comment = f.Comment.Copy()
+		cf.Comment = f.Comment.Clone()
 	}
 	if !f.Tooltip.IsEmpty() {
-		cf.Tooltip = f.Tooltip.Copy()
+		cf.Tooltip = f.Tooltip.Clone()
 	}
 	if f.Scope > 0 {
 		cf.Scope = f.Scope
