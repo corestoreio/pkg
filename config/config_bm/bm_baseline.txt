@@ -1,6 +1,6 @@
 PASS
 BenchmarkSectionSliceValidate-4        	    2000	   1135257 ns/op	  191408 B/op	    2410 allocs/op
 BenchmarkSectionSliceToJson-4          	     300	   3782409 ns/op	  875707 B/op	   16505 allocs/op
-BenchmarkSectionSliceFindFieldByPath1-4	10000000	       134 ns/op	       0 B/op	       0 allocs/op
-BenchmarkSectionSliceFindFieldByPath5-4	 2000000	       851 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSectionSliceFindFieldByID1-4	10000000	       134 ns/op	       0 B/op	       0 allocs/op
+BenchmarkSectionSliceFindFieldByID5-4	 2000000	       851 ns/op	       0 B/op	       0 allocs/op
 ok  	github.com/corestoreio/csfw/config/config_bm	8.035s

@@ -56,35 +56,35 @@ func BenchmarkSectionSliceToJson(b *testing.B) {
 	}
 }
 
-var sectionSliceFindFieldByPath1 *element.Field
+var sectionSliceFindFieldByID1 *element.Field
 
-// BenchmarkSectionSliceFindFieldByPath1	20000000	       92.9 ns/op	       0 B/op	       0 allocs/op => Go 1.4.2 strings
-// BenchmarkSectionSliceFindFieldByPath1	20000000	       84.1 ns/op	       0 B/op	       0 allocs/op => Go 1.5.0 strings
-// BenchmarkSectionSliceFindFieldByPath1	20000000	        86.6 ns/op	       0 B/op	       0 allocs/op => Go 1.5.2 strings
-// BenchmarkSectionSliceFindFieldByPath1	 2000000	       890 ns/op	       0 B/op	       0 allocs/op => path.Routes
-// BenchmarkSectionSliceFindFieldByPath1-4	 2000000	       751 ns/op	       0 B/op	       0 allocs/op => path.Routes with Sum32
-// BenchmarkSectionSliceFindFieldByPath1-4	10000000	       137 ns/op	       0 B/op	       0 allocs/op => path.Routes with Sum32 + array
-func BenchmarkSectionSliceFindFieldByPath1(b *testing.B) {
+// BenchmarkSectionSliceFindFieldByID1		20000000	       92.9 ns/op	       0 B/op	       0 allocs/op => Go 1.4.2 strings
+// BenchmarkSectionSliceFindFieldByID1		20000000	       84.1 ns/op	       0 B/op	       0 allocs/op => Go 1.5.0 strings
+// BenchmarkSectionSliceFindFieldByID1		20000000	        86.6 ns/op	       0 B/op	       0 allocs/op => Go 1.5.2 strings
+// BenchmarkSectionSliceFindFieldByID1	 	 2000000	       890 ns/op	       0 B/op	       0 allocs/op => path.Routes
+// BenchmarkSectionSliceFindFieldByID1-4	 2000000	       751 ns/op	       0 B/op	       0 allocs/op => path.Routes with Sum32
+// BenchmarkSectionSliceFindFieldByID1-4	10000000	       137 ns/op	       0 B/op	       0 allocs/op => path.Routes with Sum32 + array
+func BenchmarkSectionSliceFindFieldByID1(b *testing.B) {
 	r := path.NewRoute("carriers", "usps", "gateway_url")
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var err error
-		if sectionSliceFindFieldByPath1, err = packageAllConfiguration.FindFieldByPath(r); err != nil {
+		if sectionSliceFindFieldByID1, err = packageAllConfiguration.FindFieldByID(r); err != nil {
 			b.Error(err)
 		}
 	}
-	if sectionSliceFindFieldByPath1.ID.String() != "gateway_url" {
+	if sectionSliceFindFieldByID1.ID.String() != "gateway_url" {
 		b.Error("Field ID must be gateway_url")
 	}
 }
 
-// BenchmarkSectionSliceFindFieldByPath5	 2000000	       587 ns/op	       0 B/op	       0 allocs/op => Go 1.4.2
-// BenchmarkSectionSliceFindFieldByPath5	 3000000	       565 ns/op	       0 B/op	       0 allocs/op => Go 1.5.0
-// BenchmarkSectionSliceFindFieldByPath5	 3000000	       564 ns/op	       0 B/op	       0 allocs/op => Go 1.5.2
-// BenchmarkSectionSliceFindFieldByPath5	  300000	      6077 ns/op	       0 B/op	       0 allocs/op => path.Routes
-// BenchmarkSectionSliceFindFieldByPath5-4	  300000	      4580 ns/op	       0 B/op	       0 allocs/op => path.Routes with Sum32
-// BenchmarkSectionSliceFindFieldByPath5-4	 2000000	       851 ns/op	       0 B/op	       0 allocs/op => path.Routes with Sum32 + array
-func BenchmarkSectionSliceFindFieldByPath5(b *testing.B) {
+// BenchmarkSectionSliceFindFieldByID5	 	 2000000	       587 ns/op	       0 B/op	       0 allocs/op => Go 1.4.2
+// BenchmarkSectionSliceFindFieldByID5	 	 3000000	       565 ns/op	       0 B/op	       0 allocs/op => Go 1.5.0
+// BenchmarkSectionSliceFindFieldByID5	 	 3000000	       564 ns/op	       0 B/op	       0 allocs/op => Go 1.5.2
+// BenchmarkSectionSliceFindFieldByID5	  	  300000	      6077 ns/op	       0 B/op	       0 allocs/op => path.Routes
+// BenchmarkSectionSliceFindFieldByID5-4	  300000	      4580 ns/op	       0 B/op	       0 allocs/op => path.Routes with Sum32
+// BenchmarkSectionSliceFindFieldByID5-4	 2000000	       851 ns/op	       0 B/op	       0 allocs/op => path.Routes with Sum32 + array
+func BenchmarkSectionSliceFindFieldByID5(b *testing.B) {
 	var routePaths = []path.Route{
 		path.NewRoute("carriers", "usps", "gateway_url"),
 		path.NewRoute("wishlist", "email", "number_limit"),
@@ -98,7 +98,7 @@ func BenchmarkSectionSliceFindFieldByPath5(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, r := range routePaths {
 			var err error
-			if sectionSliceFindFieldByPath1, err = packageAllConfiguration.FindFieldByPath(r); err != nil {
+			if sectionSliceFindFieldByID1, err = packageAllConfiguration.FindFieldByID(r); err != nil {
 				b.Error(err)
 			}
 		}
