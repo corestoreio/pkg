@@ -237,25 +237,25 @@ func (r *Route) UnmarshalText(txt []byte) error {
 	return nil
 }
 
-// Level joins a configuration path parts by the path separator PS.
-// The level argument defines the depth of the path parts to join.
-// Level 1 will return the first part like "a", Level 2 returns "a/b"
-// Level 3 returns "a/b/c" and so on. Level -1 joins all available path parts.
+// Level returns a hierarchical based route depending on the depth.
+// The depth argument defines the depth of levels to be returned.
+// Depth 1 will return the first part like "a", Depth 2 returns "a/b"
+// Depth 3 returns "a/b/c" and so on. Level -1 gives you all available levels.
 // Does not generate a fully qualified path.
-// The returned Route slice is owned by Path. For further modifications you must
+// The returned Route slice is owned by Route. For further modifications you must
 // copy it via Route.Copy().
-func (r Route) Level(level int) (Route, error) {
+func (r Route) Level(depth int) (Route, error) {
 	if err := r.Validate(); err != nil {
 		return Route{}, err
 	}
 
 	lp := len(r.Chars)
 	switch {
-	case level < 0:
+	case depth < 0:
 		return r, nil
-	case level == 0:
+	case depth == 0:
 		return Route{}, nil
-	case level >= lp:
+	case depth >= lp:
 		return r, nil
 	}
 
@@ -268,7 +268,7 @@ func (r Route) Level(level int) (Route, error) {
 		}
 		pos += sc + 1
 
-		if i == level {
+		if i == depth {
 			return newRoute(r.Chars[:pos-1]), nil
 		}
 		i++
@@ -293,8 +293,8 @@ const (
 // created by Glenn Fowler, Landon Curt Noll, and Phong Vo.
 // See
 // http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function.
-func (r Route) Hash(level int) (uint32, error) {
-	r2, err := r.Level(level)
+func (r Route) Hash(depth int) (uint32, error) {
+	r2, err := r.Level(depth)
 	if err != nil {
 		return 0, err
 	}

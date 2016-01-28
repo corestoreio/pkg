@@ -187,19 +187,19 @@ func (p Path) FQ() (Route, error) {
 	return newRoute(buf.Bytes()), nil
 }
 
-// Level joins a configuration path parts by the path separator PS.
-// The level argument defines the depth of the path parts to join.
-// Level 1 will return the first part like "a", Level 2 returns "a/b"
-// Level 3 returns "a/b/c" and so on. Level -1 joins all available path parts.
+// Level returns a hierarchical based route depending on the depth.
+// The depth argument defines the depth of levels to be returned.
+// Depth 1 will return the first part like "a", Depth 2 returns "a/b"
+// Depth 3 returns "a/b/c" and so on. Level -1 gives you all available levels.
 // Does not generate a fully qualified path.
-// The returned Route slice is owned by Path. For further modifications you must
-// copy it via Route.Copy().
-func (p Path) Level(level int) (r Route, err error) {
+// The returned Route slice is owned by Path.Route. For further modifications you must
+// copy it via Route.Copy(). A path validation error may occur.
+func (p Path) Level(depth int) (r Route, err error) {
 	p.routeValidated = true
 	if err = p.IsValid(); err != nil {
 		return
 	}
-	return p.Route.Level(level)
+	return p.Route.Level(depth)
 }
 
 // Hash same as Level() but returns a fnv32a value or an error if the route is
@@ -213,12 +213,12 @@ func (p Path) Level(level int) (r Route, err error) {
 // created by Glenn Fowler, Landon Curt Noll, and Phong Vo.
 // See
 // http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function.
-func (p Path) Hash(level int) (uint32, error) {
+func (p Path) Hash(depth int) (uint32, error) {
 	p.routeValidated = true
 	if err := p.IsValid(); err != nil {
 		return 0, err
 	}
-	return p.Route.Hash(level)
+	return p.Route.Hash(depth)
 }
 
 // Part returns the route part on the desired position. The Route gets validated

@@ -178,7 +178,7 @@ func TestRouteLevel(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		have  path.Route
-		level int
+		depth int
 		want  string
 	}{
 		{path.NewRoute("general/single_store_mode/enabled"), 0, ""},
@@ -191,7 +191,7 @@ func TestRouteLevel(t *testing.T) {
 		{path.NewRoute("system/full_page_cache/varnish/backend_port"), 3, "system/full_page_cache/varnish"},
 	}
 	for i, test := range tests {
-		r, err := test.have.Level(test.level)
+		r, err := test.have.Level(test.depth)
 		assert.NoError(t, err)
 		assert.Exactly(t, test.want, r.String(), "Index %d", i)
 	}
@@ -233,7 +233,7 @@ func TestRouteHash(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		have      path.Route
-		level     int
+		depth     int
 		wantHash  uint32
 		wantErr   error
 		wantLevel string
@@ -249,7 +249,7 @@ func TestRouteHash(t *testing.T) {
 	}
 	for i, test := range tests {
 
-		hv, err := test.have.Hash(test.level)
+		hv, err := test.have.Hash(test.depth)
 		if test.wantErr != nil {
 			assert.EqualError(t, err, test.wantErr.Error(), "Index %d", i)
 			assert.Empty(t, hv, "Index %d", i)
@@ -262,7 +262,7 @@ func TestRouteHash(t *testing.T) {
 		assert.NoError(t, cErr)
 		assert.Exactly(t, check.Sum32(), hv, "Have %d Want %d Index %d", check.Sum32(), hv, i)
 
-		l, err := test.have.Level(test.level)
+		l, err := test.have.Level(test.depth)
 		assert.Exactly(t, test.wantLevel, l.String(), "Index %d", i)
 		assert.Exactly(t, test.wantHash, hv, "Have %d Want %d Index %d", test.wantHash, hv, i)
 	}
@@ -332,7 +332,7 @@ func TestRoutePartPosition(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		have     path.Route
-		level    int
+		pos      int
 		wantPart string
 		wantErr  error
 	}{
@@ -347,7 +347,7 @@ func TestRoutePartPosition(t *testing.T) {
 		{path.NewRoute("general/single/store/website/group/mode/enabled/disabled/default"), 5, "group", nil},
 	}
 	for i, test := range tests {
-		part, haveErr := test.have.Part(test.level)
+		part, haveErr := test.have.Part(test.pos)
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
 			assert.Nil(t, part.Chars, "Index %d", i)
