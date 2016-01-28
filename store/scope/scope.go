@@ -23,8 +23,9 @@ import (
 // Func String() attached. Part of type Perm.
 type Scope uint8
 
-// *ID defines the overall scopes. The hierarchical order is always
-// Default -> Website -> Group -> Store.
+// *ID defines the overall scopes. The hierarchical order is always:
+// 		Absent -> Default -> Website -> Group -> Store
+// These internal IDs may change without notice.
 const (
 	AbsentID Scope = iota // must start with 0
 	DefaultID
