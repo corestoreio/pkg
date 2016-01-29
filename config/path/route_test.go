@@ -37,12 +37,12 @@ var _ sql.Scanner = (*path.Route)(nil)
 var _ driver.Valuer = (*path.Route)(nil)
 var _ fmt.GoStringer = (*path.Route)(nil)
 var _ fmt.Stringer = (*path.Route)(nil)
-var _ path.RouteSelfer = (*path.Route)(nil)
+var _ path.SelfRouter = (*path.Route)(nil)
 
 func TestRouteRouteSelfer(t *testing.T) {
 	t.Parallel()
 	r := path.NewRoute("a/b/c")
-	assert.Exactly(t, r, r.Self())
+	assert.Exactly(t, r, r.SelfRoute())
 }
 
 func TestRouteGoString(t *testing.T) {

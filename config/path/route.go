@@ -37,12 +37,12 @@ type Route struct {
 	text.Chars
 }
 
-// RouteSelfer represents a crappy work around because of omitempty in json.Marshal
+// SelfRouter represents a crappy work around because of omitempty in json.Marshal
 // does not work with empty non-pointer structs.
 // See isEmptyValue() in encoding/json/encode.go around line 278.
 // Only used in element.Field.ConfigPath, at the moment.
-type RouteSelfer interface {
-	Self() Route
+type SelfRouter interface {
+	SelfRoute() Route
 }
 
 // NewRoute creates a new rout from sub paths resp. path parts.
@@ -78,9 +78,9 @@ func newRoute(b []byte) Route {
 	return r
 }
 
-// Route implements the RouteSelfer interface. See description of the
+// SelfRoute implements the SelfRouter interface. See description of the
 // RouteSelfer type.
-func (r Route) Self() Route {
+func (r Route) SelfRoute() Route {
 	return r
 }
 
