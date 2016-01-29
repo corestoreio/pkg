@@ -25,8 +25,6 @@ import (
 	"github.com/corestoreio/csfw/util/cast"
 )
 
-var _ Storager = (*DBStorage)(nil)
-
 // DBStorage connects the MySQL DB with the config.Service type.
 type DBStorage struct {
 	// All is a SQL statement for the all keys query
@@ -182,7 +180,7 @@ func (dbs *DBStorage) Get(key path.Path) (interface{}, error) {
 	err = stmt.QueryRow(key.Scope, key.ID, pl).Scan(&data)
 	if err != nil {
 		if PkgLog.IsDebug() {
-			PkgLog.Info("config.DBStorage.Get.QueryRow", "err", err, "key", key)
+			PkgLog.Debug("config.DBStorage.Get.QueryRow", "err", err, "key", key, "path_level", pl)
 		}
 		return nil, err
 	}
@@ -193,7 +191,7 @@ func (dbs *DBStorage) Get(key path.Path) (interface{}, error) {
 }
 
 // AllKeys returns all available keys. Database errors get logged as info message.
-func (dbs *DBStorage) AllKeys() ([]path.Path, error) {
+func (dbs *DBStorage) AllKeys() (path.PathSlice, error) {
 	// update lastUsed at the end because there might be the slight chance
 	// that a statement gets closed despite we're waiting for the result
 	// from the server.

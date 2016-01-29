@@ -59,7 +59,7 @@ func Scope(s scope.Scope, id int64) ArgFunc {
 	}
 }
 
-// Path option function to specify the configuration Path. If the Scope*()
+// Path option function to set the configuration Path. If the Scope*()
 // option functions have not been applied the scope and scope ID from the
 // Path will be taken. You can then overwrite those two settings with the
 // Scope*() functions. The other way round does not work. Once the Scope*()
@@ -77,11 +77,26 @@ func Path(p path.Path) ArgFunc {
 	}
 }
 
+// PathScoped creates a new Path from a path string ps, a scope and the
+// ID. This option function overrides everything.
+func PathScoped(ps string, s scope.Scope, id int64) ArgFunc {
+	return func(a *arg) {
+		p, err := path.NewByParts(ps)
+		if err != nil {
+			a.lastErrors = append(a.lastErrors, err)
+		}
+		a.Path = p.Bind(s, id)
+		if err := a.IsValid(); err != nil {
+			a.lastErrors = append(a.lastErrors, err)
+		}
+	}
+}
+
 // Route option function to specify the configuration path without any scope
-// or scope ID applied. You must call the Scope*() functions also.
+// or scope ID applied. You must call the Scope*() functions also. If not
+// the default scope will be applied.
 func Route(r path.Route) ArgFunc {
 	return func(a *arg) {
-		// only copy Parts, do not overwrite Scope and ID
 		a.Route = r
 		if err := a.IsValid(); err != nil {
 			a.lastErrors = append(a.lastErrors, err)

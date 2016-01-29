@@ -48,40 +48,41 @@ func TestScopedServiceScope(t *testing.T) {
 }
 
 func TestScopedServicePath(t *testing.T) {
+	basePath := path.MustNewByParts("aa/bb/cc")
 	tests := []struct {
 		desc                        string
 		fqpath                      string
-		path                        []string
+		route                       path.Route
 		websiteID, groupID, storeID int64
 		err                         error
 	}{
 		{
 			"Default ScopedGetter should return default scope",
-			path.MustNew("aa/bb/cc").String(), []string{"aa/bb/cc"}, 0, 0, 0, nil,
+			basePath.String(), path.NewRoute("aa/bb/cc"), 0, 0, 0, nil,
 		},
 		{
 			"Website ID 1 ScopedGetter should fall back to default scope",
-			path.MustNew("aa/bb/cc").String(), []string{"aa/bb/cc"}, 1, 0, 0, nil,
+			basePath.String(), path.NewRoute("aa/bb/cc"), 1, 0, 0, nil,
 		},
 		{
 			"Website ID 10 + Group ID 12 ScopedGetter should fall back to website 10 scope",
-			path.MustNew("aa/bb/cc").Bind(scope.WebsiteID, 10).String(), []string{"aa/bb/cc"}, 10, 12, 0, nil,
+			basePath.Bind(scope.WebsiteID, 10).String(), path.NewRoute("aa/bb/cc"), 10, 12, 0, nil,
 		},
 		{
 			"Website ID 10 + Group ID 12 + Store 22 ScopedGetter should fall back to website 10 scope",
-			path.MustNew("aa/bb/cc").Bind(scope.WebsiteID, 10).String(), []string{"aa/bb/cc"}, 10, 12, 22, nil,
+			basePath.Bind(scope.WebsiteID, 10).String(), path.NewRoute("aa/bb/cc"), 10, 12, 22, nil,
 		},
 		{
 			"Website ID 10 + Group ID 12 + Store 22 ScopedGetter should return Store 22 scope",
-			path.MustNew("aa/bb/cc").Bind(scope.StoreID, 22).String(), []string{"aa/bb/cc"}, 10, 12, 22, nil,
+			basePath.Bind(scope.StoreID, 22).String(), path.NewRoute("aa/bb/cc"), 10, 12, 22, nil,
 		},
 		{
 			"Website ID 10 + Group ID 12 + Store 42 ScopedGetter should return nothing",
-			path.MustNew("aa/bb/cc").Bind(scope.StoreID, 22).String(), []string{"aa/bb/cc"}, 10, 12, 42, config.ErrKeyNotFound,
+			basePath.Bind(scope.StoreID, 22).String(), path.NewRoute("aa/bb/cc"), 10, 12, 42, config.ErrKeyNotFound,
 		},
 		{
 			"Path consists of only two elements which is incorrect",
-			path.MustNew("aa/bb/cc").String(), []string{"aa", "bb"}, 0, 0, 0, errors.New("Incorrect number of paths elements: want 3, have 2, Path: [aa bb]"),
+			basePath.String(), path.NewRoute("aa", "bb"), 0, 0, 0, errors.New("Incorrect number of paths elements: want 3, have 2, Path: [aa bb]"),
 		},
 	}
 
@@ -101,15 +102,15 @@ func TestScopedServicePath(t *testing.T) {
 			var haveErr error
 			switch wantVal.(type) {
 			case string:
-				haveVal, haveErr = sg.String(test.path...)
+				haveVal, haveErr = sg.String(test.route)
 			case bool:
-				haveVal, haveErr = sg.Bool(test.path...)
+				haveVal, haveErr = sg.Bool(test.route)
 			case float64:
-				haveVal, haveErr = sg.Float64(test.path...)
+				haveVal, haveErr = sg.Float64(test.route)
 			case int:
-				haveVal, haveErr = sg.Int(test.path...)
+				haveVal, haveErr = sg.Int(test.route)
 			case time.Time:
-				haveVal, haveErr = sg.DateTime(test.path...)
+				haveVal, haveErr = sg.DateTime(test.route)
 			default:
 				t.Fatalf("Unsupported type: %#v in vals index %d", wantVal, vi)
 			}
@@ -130,24 +131,27 @@ func testScopedService(t *testing.T, want, have interface{}, desc string, wantEr
 	assert.Exactly(t, want, have, desc)
 }
 
-// BenchmarkScopedServiceStringStore-4	 1000000	      2218 ns/op	     320 B/op	       9 allocs/op => Go 1.5.2
-// BenchmarkScopedServiceStringStore-4	  500000	      2939 ns/op	     672 B/op	      17 allocs/op
-func BenchmarkScopedServiceStringStore(b *testing.B) {
+var benchmarkScopedServiceStringStore string
 
-	var want = strings.Repeat("Gopher", 100)
+// BenchmarkScopedServiceStringStore-4	 1000000	      2218 ns/op	     320 B/op	       9 allocs/op => Go 1.5.2
+// BenchmarkScopedServiceStringStore-4	  500000	      2939 ns/op	     672 B/op	      17 allocs/op => Go 1.5.3 strings
+func BenchmarkScopedServiceStringStore(b *testing.B) {
+	route := path.NewRoute("aa/bb/cc")
+	want := strings.Repeat("Gopher", 100)
 	sg := config.NewMockGetter(config.WithMockValues(config.MockPV{
-		path.MustNew("aa/bb/cc").String(): want,
+		path.MustNew(route).String(): want,
 	})).NewScoped(1, 1, 1)
 
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		v, err := sg.String("aa/bb/cc")
+		var err error
+		benchmarkScopedServiceStringStore, err = sg.String(route)
 		if err != nil {
 			b.Error(err)
 		}
-		if v != want {
-			b.Errorf("Want %s Have %s", want, v)
+		if benchmarkScopedServiceStringStore != want {
+			b.Errorf("Want %s Have %s", want, benchmarkScopedServiceStringStore)
 		}
 	}
 }

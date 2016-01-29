@@ -19,7 +19,9 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,6 +32,11 @@ var (
 )
 
 func init() {
+	if _, err := csdb.GetDSNTest(); err == csdb.ErrDSNTestNotFound {
+		println("init()", err.Error(), "skipping loading of TableCollection")
+		return
+	}
+
 	dbc := csdb.MustConnectTest()
 	if err := config.TableCollection.Init(dbc.NewSession()); err != nil {
 		panic(err)
@@ -45,34 +52,34 @@ func TestScopeApplyDefaults(t *testing.T) {
 
 	pkgCfg := element.MustNewConfiguration(
 		&element.Section{
-			ID: "contact",
+			ID: path.NewRoute("contact"),
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID: "contact",
+					ID: path.NewRoute("contact"),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: `contact/contact/enabled`,
-							ID:      "enabled",
+							ID:      path.NewRoute("enabled"),
 							Default: true,
 						},
 					),
 				},
 				&element.Group{
-					ID: "email",
+					ID: path.NewRoute("email"),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: `contact/email/recipient_email`,
-							ID:      "recipient_email",
+							ID:      path.NewRoute("recipient_email"),
 							Default: `hello@example.com`,
 						},
 						&element.Field{
 							// Path: `contact/email/sender_email_identity`,
-							ID:      "sender_email_identity",
+							ID:      path.NewRoute("sender_email_identity"),
 							Default: 2.7182818284590452353602874713527,
 						},
 						&element.Field{
 							// Path: `contact/email/email_template`,
-							ID:      "email_template",
+							ID:      path.NewRoute("email_template"),
 							Default: 4711,
 						},
 					),
@@ -82,12 +89,12 @@ func TestScopeApplyDefaults(t *testing.T) {
 	)
 	s := config.NewService()
 	s.ApplyDefaults(pkgCfg)
-	cer, err := pkgCfg.FindFieldByID("contact", "email", "recipient_email")
+	cer, err := pkgCfg.FindFieldByID(path.NewRoute("contact", "email", "recipient_email"))
 	if err != nil {
 		t.Error(err)
 		return
 	}
-	sval, err := s.String(config.Path("contact/email/recipient_email"))
+	sval, err := s.String(config.PathScoped("contact/email/recipient_email", 0, 0)) // default scope
 	assert.NoError(t, err)
 	assert.Exactly(t, cer.Default.(string), sval)
 	assert.NoError(t, s.Close())
@@ -99,6 +106,9 @@ func TestScopeApplyDefaults(t *testing.T) {
 func TestApplyCoreConfigData(t *testing.T) {
 	defer debugLogBuf.Reset()
 	defer infoLogBuf.Reset()
+	if _, err := csdb.GetDSNTest(); err == csdb.ErrDSNTestNotFound {
+		t.Skip(err)
+	}
 
 	dbc := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
@@ -117,11 +127,13 @@ func TestApplyCoreConfigData(t *testing.T) {
 	//	println("\n", debugLogBuf.String(), "\n")
 	//	println("\n", infoLogBuf.String(), "\n")
 
-	assert.NoError(t, s.Write(config.Path("web/secure/offloader_header"), config.ScopeDefault(), config.Value("SSL_OFFLOADED")))
+	assert.NoError(t, s.Write(config.PathScoped("web/secure/offloader_header", scope.DefaultID, 0), config.Value("SSL_OFFLOADED")))
 
-	h, err := s.String(config.Path("web/secure/offloader_header"), config.ScopeDefault())
+	h, err := s.String(config.PathScoped("web/secure/offloader_header", scope.DefaultID, 0))
 	assert.NoError(t, err)
 	assert.Exactly(t, "SSL_OFFLOADED", h)
 
-	assert.Len(t, s.Storage.AllKeys(), writtenRows)
+	allKeys, err := s.Storage.AllKeys()
+	assert.NoError(t, err)
+	assert.Len(t, allKeys, writtenRows)
 }

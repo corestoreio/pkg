@@ -15,9 +15,9 @@
 package path_test
 
 import (
-	"github.com/corestoreio/csfw/config/path"
 	"testing"
 
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )

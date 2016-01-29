@@ -26,10 +26,9 @@ import (
 // up the scope chain from store -> website -> default.
 //
 // This interface is mainly implemented in the store package. The functions
-// should be the same as in Getter but only the different is the paths
-// argument. A path can be either one string containing a valid path like a/b/c
-// or it can consists of 3 path parts like "a", "b", "c". All other arguments
-// are invalid. Returned error is mostly of ErrKeyNotFound.
+// should be the same as in Getter but only the different is the route
+// argument. A route represents always "a/b/c".
+// Returned error is mostly of ErrKeyNotFound.
 type ScopedGetter interface {
 	scope.Scoper
 	String(r path.Route) (string, error)

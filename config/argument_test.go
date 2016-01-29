@@ -18,6 +18,8 @@ import (
 	"errors"
 	"testing"
 
+	"strings"
+
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
@@ -65,6 +67,9 @@ func TestScopeKeyPath(t *testing.T) {
 		{[]ArgFunc{Path(mainPath), ScopeStore(0)}, path.MustNewByParts("aa/bb/cc").String(), nil},
 		{[]ArgFunc{Path(mainPath), ScopeWebsite(50)}, path.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 50).String(), nil},
 		{[]ArgFunc{Path(mainPath), ScopeWebsite(0)}, path.MustNewByParts("aa/bb/cc").String(), nil},
+		{[]ArgFunc{PathScoped("rr/ss/tt", scope.WebsiteID, 2)}, path.MustNewByParts("rr/ss/tt").Bind(scope.WebsiteID, 2).String(), nil},
+		{[]ArgFunc{PathScoped("rr/ss", scope.WebsiteID, 2)}, "", path.ErrIncorrectPath},
+		{[]ArgFunc{PathScoped("", scope.WebsiteID, 2)}, "", path.ErrRouteEmpty},
 		{nil, "", nil},
 	}
 
@@ -80,48 +85,48 @@ func TestScopeKeyPath(t *testing.T) {
 	}
 }
 
-//func TestScopeKeyValue(t *testing.T) {
-//	tests := []struct {
-//		haveArg []ArgFunc
-//		want    string
-//		wantErr error
-//	}{
-//		{[]ArgFunc{Value(1), Path("aa/bb/cc")}, path.MustNew("aa/bb/cc").String(), nil},
-//		{[]ArgFunc{Value("123"), Path("")}, "", errors.New("Incorrect number of paths elements: want 3, have 1, Path: []")},
-//		{[]ArgFunc{Value(1.321), Path()}, "", errors.New("Incorrect number of paths elements: want 3, have 0, Path: []")},
-//		{[]ArgFunc{Value(1), Scope(scope.DefaultID, -9)}, "", nil},
-//		{[]ArgFunc{Value(1), Scope(scope.WebsiteID, 0)}, "", nil},
-//		{[]ArgFunc{Value(1), Scope(scope.StoreID, 0)}, "", nil},
-//		{[]ArgFunc{Value(1), Path("aa/bb/cc"), Scope(scope.WebsiteID, 0)}, path.MustNew("aa/bb/cc").String(), nil},
-//		{[]ArgFunc{Value(1), Path("aa/bb/cc"), Scope(scope.WebsiteID, 2)}, path.MustNew("aa/bb/cc").Bind(scope.WebsiteID, 2).String(), nil},
-//		{[]ArgFunc{Value(8), Path("aa", "bb", "cc"), Scope(scope.WebsiteID, 200)}, path.MustNew("aa/bb/cc").Bind(scope.WebsiteID, 200).String(), nil},
-//		{[]ArgFunc{Value(9), Path("aa", "bb", "cc"), Scope(scope.StoreID, 4)}, path.MustNew("aa/bb/cc").Bind(scope.StoreID, 4).String(), nil},
-//		{[]ArgFunc{Value(10), Path("a", "b"), Scope(scope.StoreID, 4)}, "", errors.New("Incorrect number of paths elements: want 3, have 2, Path: [a b]")},
-//		{[]ArgFunc{Value(11), Path("a/b"), Scope(scope.StoreID, 4)}, "", errors.New("This path part \"a\" is too short. Parts: []string{\"a\", \"b\"}")},
-//		{[]ArgFunc{Value(12), nil, Scope(scope.StoreID, 4)}, "", nil},
-//		{[]ArgFunc{Value(1), Path("aa", "bb", "cc"), ScopeStore(5)}, path.MustNew("aa/bb/cc").Bind(scope.StoreID, 5).String(), nil},
-//		{[]ArgFunc{Value(1.2), Path("aa", "bb", "cc"), ScopeStore(-1)}, path.MustNew("aa/bb/cc").String(), nil},
-//		{[]ArgFunc{Value(1.3), Path("aa", "bb", "cc"), ScopeWebsite(50)}, path.MustNew("aa/bb/cc").Bind(scope.WebsiteID, 50).String(), nil},
-//		{[]ArgFunc{ValueReader(strings.NewReader("a config value")), Path("aa", "bb", "cc"), ScopeWebsite(0)}, path.MustNew("aa/bb/cc").String(), nil},
-//		{nil, "", nil},
-//	}
-//
-//	for i, test := range tests {
-//		a, err := newArg(test.haveArg...)
-//		if test.wantErr == nil {
-//			assert.NoError(t, err, "test IDX: %d", i)
-//		} else {
-//			assert.EqualError(t, err, test.wantErr.Error(), "test IDX: %d", i)
-//		}
-//		actualPath, actualVal := a.String(), a.v
-//		assert.EqualValues(t, test.want, actualPath, "Test: %#v", test)
-//		if test.haveArg != nil && test.wantErr == nil {
-//			assert.NotEmpty(t, actualVal, "test IDX: %d", i)
-//		} else {
-//			assert.Empty(t, actualVal, "test IDX: %d", i)
-//		}
-//	}
-//}
+func TestScopeKeyValue(t *testing.T) {
+	defaultPath := path.MustNew(path.NewRoute("aa/bb/cc"))
+	tests := []struct {
+		haveArg []ArgFunc
+		want    string
+		wantErr error
+	}{
+		{[]ArgFunc{Value(1), PathScoped("aa/bb/cc", 0, 0)}, defaultPath.String(), nil},
+		{[]ArgFunc{Value("123"), PathScoped("", 0, 0)}, "", errors.New("Incorrect number of paths elements: want 3, have 1, Path: []")},
+		{[]ArgFunc{Value(1.321), Path(path.Path{})}, "", errors.New("Incorrect number of paths elements: want 3, have 0, Path: []")},
+		{[]ArgFunc{Value(1), Scope(scope.DefaultID, -9)}, "", nil},
+		{[]ArgFunc{Value(1), Scope(scope.WebsiteID, 0)}, "", nil},
+		{[]ArgFunc{Value(1), Scope(scope.StoreID, 0)}, "", nil},
+		{[]ArgFunc{Value(1), PathScoped("aa/bb/cc", scope.WebsiteID, 0)}, defaultPath.String(), nil},
+		{[]ArgFunc{Value(1), Path(path.MustNewByParts("aa/bb/cc")), Scope(scope.WebsiteID, 2)}, defaultPath.Bind(scope.WebsiteID, 2).String(), nil},
+		{[]ArgFunc{Value(8), Path(path.MustNewByParts("aa", "bb", "cc")), Scope(scope.WebsiteID, 200)}, defaultPath.Bind(scope.WebsiteID, 200).String(), nil},
+		{[]ArgFunc{Value(9), Path(path.MustNewByParts("aa", "bb", "cc")), Scope(scope.StoreID, 4)}, defaultPath.Bind(scope.StoreID, 4).String(), nil},
+		{[]ArgFunc{Value(10), PathScoped("a/b", scope.StoreID, 4)}, "", errors.New("Incorrect number of paths elements: want 3, have 2, Path: [a b]")},
+		{[]ArgFunc{Value(12), nil, Scope(scope.StoreID, 4)}, "", nil},
+		{[]ArgFunc{Value(1), Path(path.MustNewByParts("aa", "bb", "cc")), ScopeStore(5)}, defaultPath.Bind(scope.StoreID, 5).String(), nil},
+		{[]ArgFunc{Value(1.2), Path(path.MustNewByParts("aa", "bb", "cc")), ScopeStore(-1)}, defaultPath.String(), nil},
+		{[]ArgFunc{Value(1.3), Path(path.MustNewByParts("aa", "bb", "cc")), ScopeWebsite(50)}, defaultPath.Bind(scope.WebsiteID, 50).String(), nil},
+		{[]ArgFunc{ValueReader(strings.NewReader("a config value")), PathScoped("aa/bb/cc", scope.WebsiteID, 0)}, defaultPath.String(), nil},
+		{nil, "", nil},
+	}
+
+	for i, test := range tests {
+		a, err := newArg(test.haveArg...)
+		if test.wantErr == nil {
+			assert.NoError(t, err, "test IDX: %d", i)
+		} else {
+			assert.EqualError(t, err, test.wantErr.Error(), "test IDX: %d", i)
+		}
+		actualPath, actualVal := a.String(), a.v
+		assert.EqualValues(t, test.want, actualPath, "Test: %#v", test)
+		if test.haveArg != nil && test.wantErr == nil {
+			assert.NotEmpty(t, actualVal, "test IDX: %d", i)
+		} else {
+			assert.Empty(t, actualVal, "test IDX: %d", i)
+		}
+	}
+}
 
 func TestMustNewArg(t *testing.T) {
 	defer func() { // protect ... you'll never know

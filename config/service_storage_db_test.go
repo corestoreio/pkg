@@ -24,14 +24,19 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
+
+var _ config.Storager = (*config.DBStorage)(nil)
 
 func TestDBStorageOneStmt(t *testing.T) {
 	debugLogBuf.Reset()
 	defer debugLogBuf.Reset()
 	defer infoLogBuf.Reset()
+	if _, err := csdb.GetDSNTest(); err == csdb.ErrDSNTestNotFound {
+		t.Skip(err)
+	}
 
 	dbc := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
@@ -42,33 +47,38 @@ func TestDBStorageOneStmt(t *testing.T) {
 	defer func() { assert.NoError(t, sdb.Stop()) }()
 
 	tests := []struct {
-		key       string
+		key       path.Path
 		value     interface{}
 		wantNil   bool
 		wantValue string
 	}{
-		{"stores/1/testDBStorage/secure/base_url", "http://corestore.io", false, "http://corestore.io"},
-		{"stores/1/testDBStorage/log/active", 1, false, "1"},
-		{"stores/99999/testDBStorage/log/clean", 19.999, false, "19.999"},
-		{"stores/99999/testDBStorage/log/clean", 29.999, false, "29.999"},
-		{"default/1/testDBStorage/catalog/purge", true, false, "true"},
-		{"default/1/testDBStorage/catalog/clean", 0, false, "0"},
+		{path.MustNewByParts("testDBStorage/secure/base_url").Bind(scope.StoreID, 1), "http://corestore.io", false, "http://corestore.io"},
+		{path.MustNewByParts("testDBStorage/log/active").Bind(scope.StoreID, 1), 1, false, "1"},
+		{path.MustNewByParts("testDBStorage/log/clean").Bind(scope.StoreID, 99999), 19.999, false, "19.999"},
+		{path.MustNewByParts("testDBStorage/log/clean").Bind(scope.StoreID, 99999), 29.999, false, "29.999"},
+		{path.MustNewByParts("testDBStorage/catalog/purge").Bind(scope.DefaultID, 1), true, false, "true"},
+		{path.MustNewByParts("testDBStorage/catalog/clean").Bind(scope.DefaultID, 1), 0, false, "0"},
 	}
-	for _, test := range tests {
+	for i, test := range tests {
 		sdb.Set(test.key, test.value)
 		if test.wantNil {
-			assert.Nil(t, sdb.Get(test.key), "Test: %v", test)
+			g, err := sdb.Get(test.key)
+			assert.NoError(t, err, "Index %d", i)
+			assert.Nil(t, g, "Index %d", i)
 		} else {
-			assert.Exactly(t, test.wantValue, sdb.Get(test.key), "Test: %v", test)
+			g, err := sdb.Get(test.key)
+			assert.NoError(t, err, "Index %d", i)
+			assert.Exactly(t, test.wantValue, g, "Index %d", i)
 		}
 	}
 
 	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), `csdb.ResurrectStmt.stmt.Prepare SQL: "INSERT INTO`))
 	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), "csdb.ResurrectStmt.stmt.Prepare SQL: \"SELECT `value` FROM"))
 
-	for _, test := range tests {
-		ak := util.StringSlice(sdb.AllKeys()) // trigger many queries with one statement
-		assert.True(t, ak.Include(test.key), "Missing Key: %s", test.key)
+	for i, test := range tests {
+		allKeys, err := sdb.AllKeys()
+		assert.NoError(t, err, "Index %d", i)
+		assert.True(t, allKeys.Contains(test.key), "Missing Key: %s\nIndex %d", test.key, i)
 	}
 	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), fmt.Sprintf("CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`", path.Separator, path.Separator)))
 }
@@ -77,6 +87,9 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 	debugLogBuf.Reset()
 	defer debugLogBuf.Reset() // contains only data from the debug level, info level will be dumped to os.Stdout
 	defer infoLogBuf.Reset()
+	if _, err := csdb.GetDSNTest(); err == csdb.ErrDSNTestNotFound {
+		t.Skip(err)
+	}
 
 	if testing.Short() {
 		t.Skip("Test skipped in short mode")
@@ -92,19 +105,21 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 	sdb.Start()
 
 	tests := []struct {
-		key       string
+		key       path.Path
 		value     interface{}
 		wantValue string
 	}{
-		{"websites/10/testDBStorage/secure/base_url", "http://corestore.io", "http://corestore.io"},
-		{"websites/10/testDBStorage/log/active", 1, "1"},
-		{"websites/20/testDBStorage/log/clean", 19.999, "19.999"},
-		{"websites/20/testDBStorage/product/shipping", 29.999, "29.999"},
-		{"default/0/testDBStorage/checkout/multishipping", false, "false"},
+		{path.MustNewByParts("testDBStorage/secure/base_url").Bind(scope.WebsiteID, 10), "http://corestore.io", "http://corestore.io"},
+		{path.MustNewByParts("testDBStorage/log/active").Bind(scope.WebsiteID, 10), 1, "1"},
+		{path.MustNewByParts("testDBStorage/log/clean").Bind(scope.WebsiteID, 20), 19.999, "19.999"},
+		{path.MustNewByParts("testDBStorage/product/shipping").Bind(scope.WebsiteID, 20), 29.999, "29.999"},
+		{path.MustNewByParts("testDBStorage/checkout/multishipping"), false, "false"},
 	}
 	for i, test := range tests {
-		sdb.Set(test.key, test.value)
-		assert.Exactly(t, test.wantValue, sdb.Get(test.key), "Test: %v", test)
+		assert.NoError(t, sdb.Set(test.key, test.value), "Index %d", i)
+		g, err := sdb.Get(test.key)
+		assert.NoError(t, err, "Index %d", i)
+		assert.Exactly(t, test.wantValue, g, "Index %d", i)
 		if i < 2 {
 			// last two iterations reopen a new statement, not closing it and reusing it
 			time.Sleep(time.Millisecond * 1500) // trigger ticker to close statements
@@ -112,8 +127,9 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		ak := util.StringSlice(sdb.AllKeys())
-		assert.True(t, ak.Include(test.key), "Missing Key: %s", test.key)
+		allKeys, err := sdb.AllKeys()
+		assert.NoError(t, err, "Index %d", i)
+		assert.True(t, allKeys.Contains(test.key), "Missing Key: %s", test.key)
 		if i < 2 {
 			time.Sleep(time.Millisecond * 1500) // trigger ticker to close statements
 		}

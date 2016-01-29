@@ -32,7 +32,7 @@ type Storager interface {
 	// Get may return a ErrKeyNotFound error
 	Get(key path.Path) (interface{}, error)
 	// AllKeys returns the fully qualified keys
-	AllKeys() ([]path.Path, error)
+	AllKeys() (path.PathSlice, error)
 }
 
 var _ Storager = (*simpleStorage)(nil)
@@ -80,11 +80,11 @@ func (sp *simpleStorage) Get(key path.Path) (interface{}, error) {
 	return nil, ErrKeyNotFound
 }
 
-func (sp *simpleStorage) AllKeys() ([]path.Path, error) {
+func (sp *simpleStorage) AllKeys() (path.PathSlice, error) {
 	sp.Lock()
 	defer sp.Unlock()
 
-	var ret = make([]path.Path, len(sp.kv), len(sp.kv))
+	var ret = make(path.PathSlice, len(sp.kv), len(sp.kv))
 	i := 0
 	for _, kv := range sp.kv {
 		ret[i] = kv.k
