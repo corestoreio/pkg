@@ -129,8 +129,8 @@ func TestStringSlice(t *testing.T) {
 	assert.Len(t, l, l.Len())
 	assert.Equal(t, 1, l.Index("GoLang"))
 	assert.Equal(t, -1, l.Index("Golang"))
-	assert.True(t, l.Include("GoLang"))
-	assert.False(t, l.Include("Golang"))
+	assert.True(t, l.Contains("GoLang"))
+	assert.False(t, l.Contains("Golang"))
 
 	l2 := util.StringSlice{"Maybe", "GoLang"}
 	l2.Map(func(s string) string {

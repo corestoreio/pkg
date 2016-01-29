@@ -73,8 +73,8 @@ func (l Int64Slice) Index(t int64) int {
 	return -1
 }
 
-// Include returns true if the target int64 t is in the slice.
-func (l Int64Slice) Include(t int64) bool {
+// Contains returns true if the target int64 t is in the slice.
+func (l Int64Slice) Contains(t int64) bool {
 	return l.Index(t) >= 0
 }
 

@@ -290,7 +290,7 @@ func (c Column) IsMoney() bool {
 	var ret bool
 	switch {
 	// could us a long list of || statements but switch looks nicer :-)
-	case columnTypes.byName.moneyEqual.Include(c.Field.String):
+	case columnTypes.byName.moneyEqual.Contains(c.Field.String):
 		ret = true
 	case columnTypes.byName.money.ContainsReverse(c.Field.String):
 		ret = true

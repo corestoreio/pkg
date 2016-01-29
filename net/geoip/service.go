@@ -235,7 +235,7 @@ func findHandlerByID(so scope.Scope, id int64, idsIdx util.Int64Slice, handlers 
 }
 
 func defaultIsCountryAllowed(_ *store.Store, c *IPCountry, allowedCountries util.StringSlice, r *http.Request) bool {
-	if false == allowedCountries.Include(c.Country.Country.IsoCode) {
+	if false == allowedCountries.Contains(c.Country.Country.IsoCode) {
 		if PkgLog.IsInfo() {
 			PkgLog.Info("geoip.checkAllow", "IPCountry", c, "allowedCountries", allowedCountries, "request", r)
 		}

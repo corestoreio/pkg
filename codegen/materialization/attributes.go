@@ -150,17 +150,17 @@ func attrCollection(ctx *context, data map[string]interface{}) ([]byte, error) {
 
 	funcMap := template.FuncMap{
 		// isEavAttr checks if the attribute/column name belongs to table eav_attribute
-		"isEavAttr": func(a string) bool { return codegen.EAVAttributeCoreColumns.Include(a) },
+		"isEavAttr": func(a string) bool { return codegen.EAVAttributeCoreColumns.Contains(a) },
 		// isEavEntityAttr checks if the attribute/column belongs to (customer|catalog|etc)_eav_attribute
 		"isEavEntityAttr": func(a string) bool {
 			if et, ok := codegen.ConfigEntityType[ctx.et.EntityTypeCode]; ok {
-				return false == codegen.EAVAttributeCoreColumns.Include(a) && et.AttributeCoreColumns.Include(a)
+				return false == codegen.EAVAttributeCoreColumns.Contains(a) && et.AttributeCoreColumns.Contains(a)
 			}
 			return false
 		},
 		"isUnknownAttr": func(a string) bool {
 			if et, ok := codegen.ConfigEntityType[ctx.et.EntityTypeCode]; ok {
-				return false == codegen.EAVAttributeCoreColumns.Include(a) && false == et.AttributeCoreColumns.Include(a)
+				return false == codegen.EAVAttributeCoreColumns.Contains(a) && false == et.AttributeCoreColumns.Contains(a)
 			}
 			return false
 		},
@@ -244,12 +244,12 @@ func getStructName(ctx *context, suffix ...string) string {
 func stripCoreAttributeColumns(cols codegen.Columns) codegen.Columns {
 	ret := make(codegen.Columns, 0, len(cols))
 	for _, col := range cols {
-		if codegen.EAVAttributeCoreColumns.Include(col.Field.String) {
+		if codegen.EAVAttributeCoreColumns.Contains(col.Field.String) {
 			continue
 		}
 		f := false
 		for _, et := range codegen.ConfigEntityType {
-			if et.AttributeCoreColumns.Include(col.Field.String) {
+			if et.AttributeCoreColumns.Contains(col.Field.String) {
 				f = true
 				break
 			}

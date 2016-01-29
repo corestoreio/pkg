@@ -53,10 +53,10 @@ func TestInt64SliceIndex(t *testing.T) {
 	assert.EqualValues(t, -1, is.Index(123))
 }
 
-func TestInt64SliceInclude(t *testing.T) {
+func TestInt64SliceContains(t *testing.T) {
 	is := util.Int64Slice{-29, 30, -1}
-	assert.True(t, is.Include(-1))
-	assert.False(t, is.Include(-100))
+	assert.True(t, is.Contains(-1))
+	assert.False(t, is.Contains(-100))
 }
 
 func TestInt64SliceAny(t *testing.T) {

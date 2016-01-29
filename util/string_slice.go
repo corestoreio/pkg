@@ -76,8 +76,8 @@ func (l StringSlice) Index(t string) int {
 	return -1
 }
 
-// Include returns true if the target string t is in the slice.
-func (l StringSlice) Include(t string) bool {
+// Contains returns true if the target string t is in the slice.
+func (l StringSlice) Contains(t string) bool {
 	return l.Index(t) >= 0
 }
 

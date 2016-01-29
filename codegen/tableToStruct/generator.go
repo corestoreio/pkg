@@ -265,7 +265,7 @@ func (g *generator) getGenericTemplate(tableName string) string {
 		codegen.LogFatal(err)
 	}
 
-	if false == g.whiteListTables.Include(tableName) {
+	if false == g.whiteListTables.Contains(tableName) {
 		return finalTpl.String()
 	}
 	isAll := (g.tts.GenericsFunctions & tpl.OptAll) == tpl.OptAll
