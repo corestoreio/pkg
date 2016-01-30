@@ -42,7 +42,7 @@ func (id mockScopeID) WebsiteID() int64 {
 }
 
 func TestScopeKeyPath(t *testing.T) {
-
+	t.Parallel()
 	mainRoute := path.NewRoute("aa/bb/cc")
 	mainPath := path.MustNewByParts("aa", "bb", "cc")
 	tests := []struct {
@@ -76,16 +76,17 @@ func TestScopeKeyPath(t *testing.T) {
 	for i, test := range tests {
 		a, err := newArg(test.haveArg...)
 		if test.wantErr == nil {
-			assert.NoError(t, err, "test IDX: %d", i)
+			assert.NoError(t, err, "Index: %d", i)
 		} else {
-			assert.EqualError(t, err, test.wantErr.Error(), "test IDX: %d", i)
+			assert.EqualError(t, err, test.wantErr.Error(), "Index: %d", i)
 		}
 		actualPath := a.String()
-		assert.EqualValues(t, test.want, actualPath, "Test: %#v", test)
+		assert.EqualValues(t, test.want, actualPath, "Index: %d", i)
 	}
 }
 
 func TestScopeKeyValue(t *testing.T) {
+	t.Parallel()
 	defaultPath := path.MustNew(path.NewRoute("aa/bb/cc"))
 	tests := []struct {
 		haveArg []ArgFunc
@@ -98,7 +99,7 @@ func TestScopeKeyValue(t *testing.T) {
 		{[]ArgFunc{Value(1), Scope(scope.DefaultID, -9)}, "", nil},
 		{[]ArgFunc{Value(1), Scope(scope.WebsiteID, 0)}, "", nil},
 		{[]ArgFunc{Value(1), Scope(scope.StoreID, 0)}, "", nil},
-		{[]ArgFunc{Value(1), PathScoped("aa/bb/cc", scope.WebsiteID, 0)}, defaultPath.String(), nil},
+		{[]ArgFunc{Value(1), PathScoped("aa/bb/cc", scope.WebsiteID, 0)}, `websites/0/aa/bb/cc`, nil},
 		{[]ArgFunc{Value(1), Path(path.MustNewByParts("aa/bb/cc")), Scope(scope.WebsiteID, 2)}, defaultPath.Bind(scope.WebsiteID, 2).String(), nil},
 		{[]ArgFunc{Value(8), Path(path.MustNewByParts("aa", "bb", "cc")), Scope(scope.WebsiteID, 200)}, defaultPath.Bind(scope.WebsiteID, 200).String(), nil},
 		{[]ArgFunc{Value(9), Path(path.MustNewByParts("aa", "bb", "cc")), Scope(scope.StoreID, 4)}, defaultPath.Bind(scope.StoreID, 4).String(), nil},
@@ -107,28 +108,29 @@ func TestScopeKeyValue(t *testing.T) {
 		{[]ArgFunc{Value(1), Path(path.MustNewByParts("aa", "bb", "cc")), ScopeStore(5)}, defaultPath.Bind(scope.StoreID, 5).String(), nil},
 		{[]ArgFunc{Value(1.2), Path(path.MustNewByParts("aa", "bb", "cc")), ScopeStore(-1)}, defaultPath.String(), nil},
 		{[]ArgFunc{Value(1.3), Path(path.MustNewByParts("aa", "bb", "cc")), ScopeWebsite(50)}, defaultPath.Bind(scope.WebsiteID, 50).String(), nil},
-		{[]ArgFunc{ValueReader(strings.NewReader("a config value")), PathScoped("aa/bb/cc", scope.WebsiteID, 0)}, defaultPath.String(), nil},
+		{[]ArgFunc{ValueReader(strings.NewReader("a config value")), PathScoped("aa/bb/cc", scope.WebsiteID, 0)}, `websites/0/aa/bb/cc`, nil},
 		{nil, "", nil},
 	}
 
 	for i, test := range tests {
 		a, err := newArg(test.haveArg...)
 		if test.wantErr == nil {
-			assert.NoError(t, err, "test IDX: %d", i)
+			assert.NoError(t, err, "Index: %d", i)
 		} else {
-			assert.EqualError(t, err, test.wantErr.Error(), "test IDX: %d", i)
+			assert.EqualError(t, err, test.wantErr.Error(), "Index: %d", i)
 		}
 		actualPath, actualVal := a.String(), a.v
-		assert.EqualValues(t, test.want, actualPath, "Test: %#v", test)
+		assert.EqualValues(t, test.want, actualPath, "Index: %d", i)
 		if test.haveArg != nil && test.wantErr == nil {
-			assert.NotEmpty(t, actualVal, "test IDX: %d", i)
+			assert.NotEmpty(t, actualVal, "Index: %d", i)
 		} else {
-			assert.Empty(t, actualVal, "test IDX: %d", i)
+			assert.Empty(t, actualVal, "Index: %d", i)
 		}
 	}
 }
 
 func TestMustNewArg(t *testing.T) {
+	t.Parallel()
 	defer func() { // protect ... you'll never know
 		if r := recover(); r != nil {
 			if err, ok := r.(error); ok {
@@ -147,6 +149,7 @@ func (testMultiErrorReader) Read(p []byte) (n int, err error) {
 }
 
 func TestMultiError(t *testing.T) {
+	t.Parallel()
 	a, err := newArg(Path(path.Path{Route: path.NewRoute("a/b")}), ValueReader(testMultiErrorReader{}))
 	assert.NotNil(t, a)
 	assert.EqualError(t, err, "This path part \"a\" is too short. Parts: []string{\"a\", \"b\"}\nValueReader error testMultiErrorReader error")

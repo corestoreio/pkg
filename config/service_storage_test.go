@@ -18,10 +18,12 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestSimpleStorage(t *testing.T) {
+	t.Parallel()
 	sp := newSimpleStorage()
 
 	p1 := path.MustNewByParts("aa/bb/cc")
@@ -31,16 +33,19 @@ func TestSimpleStorage(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Exactly(t, 19.99, f.(float64))
 
-	assert.NoError(t, sp.Set(p1, 4711))
-	i, err := sp.Get(p1)
+	p2 := path.MustNewByParts("xx/yy/zz").Bind(scope.StoreID, 2)
+
+	assert.NoError(t, sp.Set(p2, 4711))
+	i, err := sp.Get(p2)
 	assert.NoError(t, err)
 	assert.Exactly(t, 4711, i.(int))
 
 	ni, err := sp.Get(path.Path{})
-	assert.NoError(t, err)
+	assert.EqualError(t, err, path.ErrRouteEmpty.Error())
 	assert.Nil(t, ni)
 
 	keys, err := sp.AllKeys()
 	assert.NoError(t, err)
-	assert.Exactly(t, []string{"k1", "k2"}, keys)
+	wantKeys := path.PathSlice{path.Path{Route: path.NewRoute(`aa/bb/cc`), Scope: 1, ID: 0}, path.Path{Route: path.NewRoute(`xx/yy/zz`), Scope: 4, ID: 2}}
+	assert.Exactly(t, wantKeys, keys)
 }
