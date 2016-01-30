@@ -33,7 +33,7 @@ var (
 
 func init() {
 	if _, err := csdb.GetDSNTest(); err == csdb.ErrDSNTestNotFound {
-		println("init()", err.Error(), "skipping loading of TableCollection")
+		println("init()", err.Error(), "will skip loading of TableCollection")
 		return
 	}
 

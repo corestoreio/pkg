@@ -84,6 +84,7 @@ func PathScoped(ps string, s scope.Scope, id int64) ArgFunc {
 		p, err := path.NewByParts(ps)
 		if err != nil {
 			a.lastErrors = append(a.lastErrors, err)
+			return
 		}
 		a.Path = p.Bind(s, id)
 		if err := a.IsValid(); err != nil {

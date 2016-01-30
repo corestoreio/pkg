@@ -51,8 +51,8 @@ func TestScopeKeyPath(t *testing.T) {
 		wantErr error
 	}{
 		{[]ArgFunc{Route(mainRoute)}, path.MustNewByParts("aa/bb/cc").String(), nil},
-		{[]ArgFunc{Route(path.NewRoute(""))}, "", errors.New("Incorrect number of paths elements: want 3, have 1, Path: []")},
-		{[]ArgFunc{Route(path.Route{})}, "", errors.New("Incorrect number of paths elements: want 3, have 0, Path: []")},
+		{[]ArgFunc{Route(path.NewRoute(""))}, "", path.ErrRouteEmpty},
+		{[]ArgFunc{Route(path.Route{})}, "", path.ErrRouteEmpty},
 		{[]ArgFunc{Scope(scope.DefaultID, -1)}, "", nil},
 		{[]ArgFunc{Scope(scope.WebsiteID, -1)}, "", nil},
 		{[]ArgFunc{Scope(scope.StoreID, -1)}, "", nil},
@@ -60,8 +60,8 @@ func TestScopeKeyPath(t *testing.T) {
 		{[]ArgFunc{Route(mainRoute), Scope(scope.WebsiteID, 2)}, path.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 2).String(), nil},
 		{[]ArgFunc{Path(mainPath), Scope(scope.WebsiteID, 200)}, path.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 200).String(), nil},
 		{[]ArgFunc{Path(mainPath), Scope(scope.StoreID, 4)}, path.MustNewByParts("aa/bb/cc").Bind(scope.StoreID, 4).String(), nil},
-		{[]ArgFunc{Path(path.Path{Route: path.NewRoute("a", "b")}), Scope(scope.StoreID, 4)}, "", errors.New("Incorrect number of paths elements: want 3, have 2, Path: [a b]")},
-		{[]ArgFunc{Path(path.Path{Route: path.NewRoute("a/b")}), Scope(scope.StoreID, 4)}, "", errors.New("This path part \"a\" is too short. Parts: []string{\"a\", \"b\"}")},
+		{[]ArgFunc{Path(path.Path{Route: path.NewRoute("a", "b")}), Scope(scope.StoreID, 4)}, "", path.ErrIncorrectPath},
+		{[]ArgFunc{Path(path.Path{Route: path.NewRoute("a/b")}), Scope(scope.StoreID, 4)}, "", path.ErrIncorrectPath},
 		{[]ArgFunc{nil, Scope(scope.StoreID, 4)}, "", nil},
 		{[]ArgFunc{Path(mainPath), ScopeStore(5)}, path.MustNewByParts("aa/bb/cc").Bind(scope.StoreID, 5).String(), nil},
 		{[]ArgFunc{Path(mainPath), ScopeStore(0)}, path.MustNewByParts("aa/bb/cc").String(), nil},
@@ -93,8 +93,8 @@ func TestScopeKeyValue(t *testing.T) {
 		wantErr error
 	}{
 		{[]ArgFunc{Value(1), PathScoped("aa/bb/cc", 0, 0)}, defaultPath.String(), nil},
-		{[]ArgFunc{Value("123"), PathScoped("", 0, 0)}, "", errors.New("Incorrect number of paths elements: want 3, have 1, Path: []")},
-		{[]ArgFunc{Value(1.321), Path(path.Path{})}, "", errors.New("Incorrect number of paths elements: want 3, have 0, Path: []")},
+		{[]ArgFunc{Value("123"), PathScoped("", 0, 0)}, "", path.ErrRouteEmpty},
+		{[]ArgFunc{Value(1.321), Path(path.Path{})}, "", path.ErrRouteEmpty},
 		{[]ArgFunc{Value(1), Scope(scope.DefaultID, -9)}, "", nil},
 		{[]ArgFunc{Value(1), Scope(scope.WebsiteID, 0)}, "", nil},
 		{[]ArgFunc{Value(1), Scope(scope.StoreID, 0)}, "", nil},
@@ -102,7 +102,7 @@ func TestScopeKeyValue(t *testing.T) {
 		{[]ArgFunc{Value(1), Path(path.MustNewByParts("aa/bb/cc")), Scope(scope.WebsiteID, 2)}, defaultPath.Bind(scope.WebsiteID, 2).String(), nil},
 		{[]ArgFunc{Value(8), Path(path.MustNewByParts("aa", "bb", "cc")), Scope(scope.WebsiteID, 200)}, defaultPath.Bind(scope.WebsiteID, 200).String(), nil},
 		{[]ArgFunc{Value(9), Path(path.MustNewByParts("aa", "bb", "cc")), Scope(scope.StoreID, 4)}, defaultPath.Bind(scope.StoreID, 4).String(), nil},
-		{[]ArgFunc{Value(10), PathScoped("a/b", scope.StoreID, 4)}, "", errors.New("Incorrect number of paths elements: want 3, have 2, Path: [a b]")},
+		{[]ArgFunc{Value(10), PathScoped("a/b", scope.StoreID, 4)}, "", path.ErrIncorrectPath},
 		{[]ArgFunc{Value(12), nil, Scope(scope.StoreID, 4)}, "", nil},
 		{[]ArgFunc{Value(1), Path(path.MustNewByParts("aa", "bb", "cc")), ScopeStore(5)}, defaultPath.Bind(scope.StoreID, 5).String(), nil},
 		{[]ArgFunc{Value(1.2), Path(path.MustNewByParts("aa", "bb", "cc")), ScopeStore(-1)}, defaultPath.String(), nil},
