@@ -15,6 +15,7 @@
 package config_test
 
 import (
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -22,8 +23,8 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/log"
 	"github.com/stretchr/testify/assert"
-	"runtime"
 )
 
 func TestScopedServiceScope(t *testing.T) {
@@ -137,6 +138,7 @@ var benchmarkScopedServiceStringStore string
 // BenchmarkScopedServiceStringStore-4	  500000	      2939 ns/op	     672 B/op	      17 allocs/op => Go 1.5.3 strings
 // BenchmarkScopedServiceStringStore-4    500000	      2732 ns/op	     912 B/op	      17 allocs/op => path.Path
 func BenchmarkScopedServiceStringStore(b *testing.B) {
+	config.PkgLog.SetLevel(log.StdLevelFatal)
 	route := path.NewRoute("aa/bb/cc")
 	want := strings.Repeat("Gopher", 100)
 	sg := config.NewMockGetter(config.WithMockValues(config.MockPV{

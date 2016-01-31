@@ -22,6 +22,7 @@ import (
 
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -163,6 +164,7 @@ const benchmarkScopeKeyWant = "websites/40/aa/bb/cc"
 // BenchmarkScopeKey____InMap-4       	 1000000	      1139 ns/op	     400 B/op	       9 allocs/op
 // BenchmarkScopeKey____InMap___NewPath-4	 1000000	      1341 ns/op	     528 B/op	      10 allocs/op
 func BenchmarkScopeKey____InMap___NewPath(b *testing.B) {
+	PkgLog.SetLevel(log.StdLevelFatal)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		a, _ := newArg(Path(path.MustNewByParts("aa", "bb", "cc")), Scope(scope.WebsiteID, 40))
