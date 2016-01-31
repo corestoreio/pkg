@@ -15,7 +15,6 @@
 package config_test
 
 import (
-	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -82,7 +81,7 @@ func TestScopedServicePath(t *testing.T) {
 		},
 		{
 			"Path consists of only two elements which is incorrect",
-			basePath.String(), path.NewRoute("aa", "bb"), 0, 0, 0, errors.New("Incorrect number of paths elements: want 3, have 2, Path: [aa bb]"),
+			basePath.String(), path.NewRoute("aa", "bb"), 0, 0, 0, path.ErrIncorrectPath,
 		},
 	}
 

@@ -18,7 +18,6 @@ import (
 	"testing"
 	"time"
 
-	"fmt"
 	"strings"
 
 	"github.com/corestoreio/csfw/config"
@@ -80,7 +79,8 @@ func TestDBStorageOneStmt(t *testing.T) {
 		assert.NoError(t, err, "Index %d", i)
 		assert.True(t, allKeys.Contains(test.key), "Missing Key: %s\nIndex %d", test.key, i)
 	}
-	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), fmt.Sprintf("CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`", path.Separator, path.Separator)))
+
+	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), `SELECT scope,scope_id,path FROM `))
 }
 
 func TestDBStorageMultipleStmt(t *testing.T) {
@@ -146,5 +146,5 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 	//println("\n", logStr, "\n")
 
 	// 6 is: open close for iteration 0+1, open in iteration 2 and close in iteration 4
-	assert.Exactly(t, 6, strings.Count(logStr, fmt.Sprintf("CONCAT(scope,'%s',scope_id,'%s',path) AS `fqpath`", path.Separator, path.Separator)))
+	assert.Exactly(t, 6, strings.Count(logStr, `SELECT scope,scope_id,path FROM `))
 }

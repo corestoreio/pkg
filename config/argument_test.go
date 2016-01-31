@@ -134,7 +134,7 @@ func TestMustNewArg(t *testing.T) {
 	defer func() { // protect ... you'll never know
 		if r := recover(); r != nil {
 			if err, ok := r.(error); ok {
-				assert.EqualError(t, err, "All arguments must be valid! Min want: 3. Have: 2. Parts []string{\"aa\", \"bb\"}")
+				assert.EqualError(t, err, path.ErrIncorrectPath.Error())
 			}
 		}
 	}()
@@ -152,7 +152,7 @@ func TestMultiError(t *testing.T) {
 	t.Parallel()
 	a, err := newArg(Path(path.Path{Route: path.NewRoute("a/b")}), ValueReader(testMultiErrorReader{}))
 	assert.NotNil(t, a)
-	assert.EqualError(t, err, "This path part \"a\" is too short. Parts: []string{\"a\", \"b\"}\nValueReader error testMultiErrorReader error")
+	assert.EqualError(t, err, "Incorrect Path. Either to short or missing path separator.\nValueReader error testMultiErrorReader error")
 }
 
 var benchmarkScopeKey string

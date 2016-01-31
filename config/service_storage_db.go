@@ -216,11 +216,11 @@ func (dbs *DBStorage) AllKeys() (path.PathSlice, error) {
 	defer rows.Close()
 
 	const maxCap = 750 // Just a guess the 750
-	var ret = make([]path.Path, 0, maxCap)
+	var ret = make(path.PathSlice, 0, maxCap)
 	var sqlScope dbr.NullString
 	var sqlScopeID dbr.NullInt64
 	var sqlPath dbr.NullString
-	i := 0
+
 	for rows.Next() {
 		if err := rows.Scan(&sqlScope, &sqlScopeID, &sqlPath); err != nil {
 			if PkgLog.IsDebug() {
@@ -233,12 +233,7 @@ func (dbs *DBStorage) AllKeys() (path.PathSlice, error) {
 			if err != nil {
 				return ret, err
 			}
-			p = p.Bind(scope.FromString(sqlScope.String), sqlScopeID.Int64)
-			if i < maxCap {
-				ret[i] = p
-			} else {
-				ret = append(ret, p)
-			}
+			ret = append(ret, p.Bind(scope.FromString(sqlScope.String), sqlScopeID.Int64))
 		}
 		sqlScope.String = ""
 		sqlScope.Valid = false
@@ -246,7 +241,6 @@ func (dbs *DBStorage) AllKeys() (path.PathSlice, error) {
 		sqlScopeID.Valid = false
 		sqlPath.String = ""
 		sqlPath.Valid = false
-		i++
 	}
 	return ret, nil
 }
