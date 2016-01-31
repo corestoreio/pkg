@@ -16,6 +16,7 @@
 Package storage provides everything from MySQL, Redis, BoltDB, file, etc functions.
 
 TODO(cs): github.com/youtube/vitess/go/mysql we should be compatible with this raw MYSQL driver.
-TODO: use https://bitbucket.org/liamstask/goose for database migrations
+TODO: use https://github.com/rubenv/sql-migrate for database migrations
+	https://github.com/rubenv/sql-migrate is better because the API for using it within your code (FOSDEM2016).
 */
 package storage
