@@ -112,7 +112,7 @@ func TestBasePathString(t *testing.T) {
 	assert.Exactly(t, "X-CoreStore-TOKEN", customStr)
 
 	// now change a default value in the packageConfiguration and see it reflects to p1
-	f, err := configStructure.FindFieldByPath(path)
+	f, err := configStructure.FindFieldByID(path)
 	assert.NoError(t, err)
 	f.Default = "Content-Size,Y-CoreStore-ID"
 

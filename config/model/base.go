@@ -138,7 +138,7 @@ func (p *basePath) Option(opts ...Option) (previous Option) {
 // has changed. Checks if the Scope matches as defined in the non-nil ConfigStructure.
 func (p basePath) Write(w config.Writer, v interface{}, s scope.Scope, id int64) error {
 	if p.ConfigStructure != nil {
-		f, err := p.ConfigStructure.FindFieldByPath(p.r)
+		f, err := p.ConfigStructure.FindFieldByID(p.r)
 		if err != nil {
 			return errgo.Mask(err)
 		}
@@ -160,7 +160,7 @@ func (p basePath) String() string {
 
 // Route returns a copy of the underlying route.
 func (p basePath) Route() path.Route {
-	return p.r.Copy()
+	return p.r.Clone()
 }
 
 // InScope checks if a field from a path is allowed for current scope.
@@ -190,7 +190,7 @@ func (p basePath) FQ(strScope scope.StrScope, scopeID int64) string {
 // field searches for the field in a SectionSlice and checks if the scope in
 // ScopedGetter is sufficient.
 func (p basePath) field(sg scope.Scoper) (f *element.Field, err error) {
-	f, err = p.ConfigStructure.FindFieldByPath(p.r)
+	f, err = p.ConfigStructure.FindFieldByID(p.r)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
