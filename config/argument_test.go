@@ -157,32 +157,60 @@ func TestMultiError(t *testing.T) {
 
 var benchmarkScopeKey string
 
+const benchmarkScopeKeyWant = "websites/40/aa/bb/cc"
+
 // BenchmarkScopeKey____InMap-4      	 2000000	       622 ns/op	     336 B/op	       6 allocs/op
 // BenchmarkScopeKey____InMap-4       	 1000000	      1139 ns/op	     400 B/op	       9 allocs/op
-func BenchmarkScopeKey____InMap(b *testing.B) {
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		a, _ := newArg(Path(path.MustNewByParts("aa", "bb", "cc")), Scope(scope.WebsiteID, 4))
-		benchmarkScopeKey = a.String()
-	}
-}
-
-// BenchmarkScopeKey_NotInMap-4      	 2000000	       687 ns/op	     368 B/op	       7 allocs/op
-// BenchmarkScopeKey_NotInMap-4       	 1000000	      1241 ns/op	     416 B/op	      10 allocs/op
-func BenchmarkScopeKey_NotInMap(b *testing.B) {
+// BenchmarkScopeKey____InMap___NewPath-4	 1000000	      1341 ns/op	     528 B/op	      10 allocs/op
+func BenchmarkScopeKey____InMap___NewPath(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		a, _ := newArg(Path(path.MustNewByParts("aa", "bb", "cc")), Scope(scope.WebsiteID, 40))
 		benchmarkScopeKey = a.String()
 	}
+	if benchmarkScopeKey != benchmarkScopeKeyWant {
+		b.Errorf("Want %s Have %s", benchmarkScopeKeyWant, benchmarkScopeKey)
+	}
 }
 
-// BenchmarkScopeKey____InMapNoJoin-4	 2000000	       768 ns/op	     352 B/op	       7 allocs/op
-// BenchmarkScopeKey____InMapNoJoin-4 	 1000000	      1337 ns/op	     416 B/op	      10 allocs/op
-func BenchmarkScopeKey____InMapNoJoin(b *testing.B) {
+// BenchmarkScopeKey____InMap_ExistPath-4	 1000000	      1023 ns/op	     480 B/op	       8 allocs/op
+func BenchmarkScopeKey____InMap_ExistPath(b *testing.B) {
+	p := path.MustNewByParts("aa", "bb", "cc").Bind(scope.WebsiteID, 40)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		a, _ := newArg(Path(p))
+		benchmarkScopeKey = a.String()
+	}
+	if benchmarkScopeKey != benchmarkScopeKeyWant {
+		b.Errorf("Want %s Have %s", benchmarkScopeKeyWant, benchmarkScopeKey)
+	}
+}
+
+// BenchmarkScopeKey_NotInMap-4      	 2000000	       687 ns/op	     368 B/op	       7 allocs/op
+// BenchmarkScopeKey_NotInMap-4       	 1000000	      1241 ns/op	     416 B/op	      10 allocs/op
+// BenchmarkScopeKey_NotInMap___NewPath-4	 1000000	      1396 ns/op	     528 B/op	      10 allocs/op
+func BenchmarkScopeKey_NotInMap___NewPath(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		a, _ := newArg(Path(path.MustNewByParts("aa/bb/cc")), Scope(scope.WebsiteID, 3))
+		a, _ := newArg(Path(path.MustNewByParts("aa", "bb", "cc")), Scope(scope.WebsiteID, 40))
 		benchmarkScopeKey = a.String()
+	}
+	if benchmarkScopeKey != benchmarkScopeKeyWant {
+		b.Errorf("Want %s Have %s", benchmarkScopeKeyWant, benchmarkScopeKey)
+	}
+}
+
+// BenchmarkScopeKey_NotInMap_ExistPath-4	 1000000	      1276 ns/op	     480 B/op	       8 allocs/op
+func BenchmarkScopeKey_NotInMap_ExistPath(b *testing.B) {
+	p := path.MustNewByParts("aa", "bb", "cc").Bind(scope.WebsiteID, 40)
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		a, _ := newArg(Path(p))
+		benchmarkScopeKey = a.String()
+	}
+	if benchmarkScopeKey != benchmarkScopeKeyWant {
+		b.Errorf("Want %s Have %s", benchmarkScopeKeyWant, benchmarkScopeKey)
 	}
 }

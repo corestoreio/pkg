@@ -23,6 +23,7 @@ import (
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
+	"runtime"
 )
 
 func TestScopedServiceScope(t *testing.T) {
@@ -134,6 +135,7 @@ var benchmarkScopedServiceStringStore string
 
 // BenchmarkScopedServiceStringStore-4	 1000000	      2218 ns/op	     320 B/op	       9 allocs/op => Go 1.5.2
 // BenchmarkScopedServiceStringStore-4	  500000	      2939 ns/op	     672 B/op	      17 allocs/op => Go 1.5.3 strings
+// BenchmarkScopedServiceStringStore-4    500000	      2732 ns/op	     912 B/op	      17 allocs/op => path.Path
 func BenchmarkScopedServiceStringStore(b *testing.B) {
 	route := path.NewRoute("aa/bb/cc")
 	want := strings.Repeat("Gopher", 100)
@@ -141,6 +143,7 @@ func BenchmarkScopedServiceStringStore(b *testing.B) {
 		path.MustNew(route).String(): want,
 	})).NewScoped(1, 1, 1)
 
+	runtime.GC()
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
