@@ -21,7 +21,6 @@ import (
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -94,7 +93,7 @@ func TestScopeApplyDefaults(t *testing.T) {
 		t.Error(err)
 		return
 	}
-	sval, err := s.String(config.PathScoped("contact/email/recipient_email", 0, 0)) // default scope
+	sval, err := s.String(path.MustNewByParts("contact/email/recipient_email")) // default scope
 	assert.NoError(t, err)
 	assert.Exactly(t, cer.Default.(string), sval)
 	assert.NoError(t, s.Close())
@@ -127,9 +126,9 @@ func TestApplyCoreConfigData(t *testing.T) {
 	//	println("\n", debugLogBuf.String(), "\n")
 	//	println("\n", infoLogBuf.String(), "\n")
 
-	assert.NoError(t, s.Write(config.PathScoped("web/secure/offloader_header", scope.DefaultID, 0), config.Value("SSL_OFFLOADED")))
+	assert.NoError(t, s.Write(path.MustNewByParts("web/secure/offloader_header"), "SSL_OFFLOADED"))
 
-	h, err := s.String(config.PathScoped("web/secure/offloader_header", scope.DefaultID, 0))
+	h, err := s.String(path.MustNewByParts("web/secure/offloader_header"))
 	assert.NoError(t, err)
 	assert.Exactly(t, "SSL_OFFLOADED", h)
 

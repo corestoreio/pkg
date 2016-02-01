@@ -63,7 +63,7 @@ func TestPubSubBubbling(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
 
-	assert.NoError(t, s.Write(config.Value(1), config.Path(testPath), config.Scope(scope.WebsiteID, 123)))
+	assert.NoError(t, s.Write(testPath.Bind(scope.WebsiteID, 123), 1))
 	assert.NoError(t, s.Close())
 
 	t.Log("Before", "testPath", testPath.Route)
@@ -73,7 +73,7 @@ func TestPubSubBubbling(t *testing.T) {
 	t.Log("After", "testPath", testPath.Route, "testPath2", testPath2.Route)
 
 	// send on closed channel
-	assert.NoError(t, s.Write(config.Value(1), config.Path(testPath2), config.Scope(scope.WebsiteID, 3)))
+	assert.NoError(t, s.Write(testPath2.Bind(scope.WebsiteID, 3), 1))
 	assert.EqualError(t, s.Close(), config.ErrPublisherClosed.Error())
 }
 
@@ -90,7 +90,7 @@ func TestPubSubPanicSimple(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
-	assert.NoError(t, s.Write(config.Value(321), config.Route(testPath), config.ScopeStore(123)), "Writing value 123 should not fail")
+	assert.NoError(t, s.Write(path.MustNew(testPath).Bind(scope.StoreID, 123), 321), "Writing value 123 should not fail")
 	assert.NoError(t, s.Close(), "Closing the service should not fail.")
 	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.r recover: "Don't panic!"`)
 }
@@ -109,7 +109,7 @@ func TestPubSubPanicError(t *testing.T) {
 	})
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
-	assert.NoError(t, s.Write(config.Value(321), config.Route(testPath), config.ScopeStore(123)))
+	assert.NoError(t, s.Write(path.MustNew(testPath).Bind(scope.StoreID, 123), 321))
 
 	assert.NoError(t, s.Close())
 	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.err err: OMG! Panic!`)
@@ -152,7 +152,7 @@ func TestPubSubPanicMultiple(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, subID > 0)
 
-	assert.NoError(t, s.Write(config.Value(789), config.PathScoped("xx/yy/zz", scope.StoreID, 987)))
+	assert.NoError(t, s.Write(path.MustNewByParts("xx/yy/zz").Bind(scope.StoreID, 987), 789))
 	assert.NoError(t, s.Close())
 
 	assert.Contains(t, debugLogBuf.String(), `config.pubSub.publish.recover.r recover: "One: Don't panic!`)
@@ -174,7 +174,7 @@ func TestPubSubUnsubscribe(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, subID, "The very first subscription ID should be 1")
 	assert.NoError(t, s.Unsubscribe(subID))
-	assert.NoError(t, s.Write(config.Value(321), config.PathScoped("xx/yy/zz", scope.StoreID, 123)))
+	assert.NoError(t, s.Write(path.MustNewByParts("xx/yy/zz").Bind(scope.StoreID, 123), 321))
 	assert.NoError(t, s.Close())
 	assert.Contains(t, debugLogBuf.String(), "config.Service.Write path: path.Path{ Route:path.NewRoute(`xx/yy/zz`), Scope: 4, ID: 123 } val: 321")
 
@@ -221,9 +221,9 @@ func TestPubSubEvict(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 2, subID)
 
-	assert.NoError(t, s.Write(config.Value(321), config.Route(path.NewRoute("xx/yy/zz")), config.ScopeStore(123)))
-	assert.NoError(t, s.Write(config.Value(321), config.PathScoped("xx/yy/aa", scope.StoreID, 123)))
-	assert.NoError(t, s.Write(config.Value(321), config.PathScoped("xx/yy/zz", scope.StoreID, 123)))
+	assert.NoError(t, s.Write(path.MustNewByParts("xx/yy/zz").Bind(scope.StoreID, 123), 321))
+	assert.NoError(t, s.Write(path.MustNewByParts("xx/yy/aa").Bind(scope.StoreID, 123), 321))
+	assert.NoError(t, s.Write(path.MustNewByParts("xx/yy/zz").Bind(scope.StoreID, 123), 321))
 
 	assert.NoError(t, s.Close())
 

@@ -61,7 +61,7 @@ type pubSub struct {
 	subMap     map[uint32]map[int]MessageReceiver
 	subAutoInc int // subAutoInc increased whenever a Subscriber has been added
 	mu         sync.RWMutex
-	publishArg chan arg
+	pubPath    chan path.Path
 	stop       chan struct{} // terminates the goroutine
 	closeErr   chan error    // this one tells us that the go routine has really been terminated
 	closed     bool          // if Close() has been called the config.Service can still Write() without panic
@@ -76,7 +76,7 @@ func (s *pubSub) Close() error {
 	defer func() { close(s.closeErr) }() // last close(s.closeErr) does not work and panics
 	s.closed = true
 	s.stop <- struct{}{}
-	close(s.publishArg)
+	close(s.pubPath)
 	close(s.stop)
 	//close(s.closeErr)
 	return <-s.closeErr
@@ -126,9 +126,9 @@ func (s *pubSub) Unsubscribe(subscriptionID int) error {
 }
 
 // sendMsg sends the arg into the channel
-func (s *pubSub) sendMsg(a arg) {
+func (s *pubSub) sendMsg(p path.Path) {
 	if false == s.closed {
-		s.publishArg <- a
+		s.pubPath <- p
 	}
 }
 
@@ -142,7 +142,7 @@ func (s *pubSub) publish() {
 		case <-s.stop:
 			s.closeErr <- nil
 			return
-		case a, ok := <-s.publishArg:
+		case p, ok := <-s.pubPath:
 			if !ok {
 				// channel closed
 				return
@@ -156,28 +156,28 @@ func (s *pubSub) publish() {
 			var evict []int
 
 			// TODO: extract a function and keep DRY
-			hp1, err := a.Hash(1)
+			hp1, err := p.Hash(1)
 			if err != nil && PkgLog.IsDebug() {
-				PkgLog.Debug("config.pubSub.publish.arg.Hash.err1", "err", err, "arg", a)
+				PkgLog.Debug("config.pubSub.publish.arg.Hash.err1", "err", err, "arg", p)
 			}
 			if subs, ok := s.subMap[hp1]; ok { // e.g.: system
-				evict = append(evict, sendMessages(subs, a)...)
+				evict = append(evict, sendMessages(subs, p)...)
 			}
 
-			hp2, err := a.Hash(2)
+			hp2, err := p.Hash(2)
 			if err != nil && PkgLog.IsDebug() {
-				PkgLog.Debug("config.pubSub.publish.arg.Hash.err2", "err", err, "arg", a)
+				PkgLog.Debug("config.pubSub.publish.arg.Hash.err2", "err", err, "arg", p)
 			}
 			if subs, ok := s.subMap[hp2]; ok { // e.g.: system/smtp
-				evict = append(evict, sendMessages(subs, a)...)
+				evict = append(evict, sendMessages(subs, p)...)
 			}
 
-			hpN, err := a.Hash(-1)
+			hpN, err := p.Hash(-1)
 			if err != nil && PkgLog.IsDebug() {
-				PkgLog.Debug("config.pubSub.publish.arg.Hash.errN", "err", err, "arg", a)
+				PkgLog.Debug("config.pubSub.publish.arg.Hash.errN", "err", err, "arg", p)
 			}
 			if subs, ok := s.subMap[hpN]; ok { // e.g.: system/smtp/host/etc/pp
-				evict = append(evict, sendMessages(subs, a)...)
+				evict = append(evict, sendMessages(subs, p)...)
 			}
 			s.mu.RUnlock()
 
@@ -193,11 +193,11 @@ func (s *pubSub) publish() {
 	}
 }
 
-func sendMessages(subs map[int]MessageReceiver, a arg) (evict []int) {
+func sendMessages(subs map[int]MessageReceiver, p path.Path) (evict []int) {
 	for id, s := range subs {
-		if err := sendMsgRecoverable(id, s, a); err != nil {
+		if err := sendMsgRecoverable(id, s, p); err != nil {
 			if PkgLog.IsDebug() {
-				PkgLog.Debug("config.pubSub.publish.sendMessages", "err", err, "id", id)
+				PkgLog.Debug("config.pubSub.publish.sendMessages", "err", err, "id", id, "path", p)
 			}
 			evict = append(evict, id) // mark Subscribers for removal which failed ...
 		}
@@ -205,29 +205,29 @@ func sendMessages(subs map[int]MessageReceiver, a arg) (evict []int) {
 	return
 }
 
-func sendMsgRecoverable(id int, sl MessageReceiver, a arg) (err error) {
+func sendMsgRecoverable(id int, sl MessageReceiver, p path.Path) (err error) {
 	defer func() { // protect ... you'll never know
 		if r := recover(); r != nil {
 			if recErr, ok := r.(error); ok {
-				PkgLog.Debug("config.pubSub.publish.recover.err", "err", recErr)
+				PkgLog.Debug("config.pubSub.publish.recover.err", "err", recErr, "path", p)
 				err = recErr
 			} else {
-				PkgLog.Debug("config.pubSub.publish.recover.r", "recover", r)
+				PkgLog.Debug("config.pubSub.publish.recover.r", "recover", r, "path", p)
 				err = errgo.Newf("%#v", r)
 			}
 			// the overall trick here is, that defer will assign a new error to err
 			// and therefore will overwrite the returned nil value!
 		}
 	}()
-	err = sl.MessageConfig(a.Path)
+	err = sl.MessageConfig(p)
 	return
 }
 
 func newPubSub() *pubSub {
 	return &pubSub{
-		subMap:     make(map[uint32]map[int]MessageReceiver),
-		publishArg: make(chan arg),
-		stop:       make(chan struct{}),
-		closeErr:   make(chan error),
+		subMap:   make(map[uint32]map[int]MessageReceiver),
+		pubPath:  make(chan path.Path),
+		stop:     make(chan struct{}),
+		closeErr: make(chan error),
 	}
 }

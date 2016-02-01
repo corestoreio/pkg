@@ -73,6 +73,9 @@ func New(rs ...Route) (Path, error) {
 	} else {
 		p.Route.Append(rs...)
 	}
+	if p.Route.Sum32 == 0 {
+		p.Route.Sum32 = p.Route.Hash32()
+	}
 	if err := p.IsValid(); err != nil {
 		return Path{}, err
 	}

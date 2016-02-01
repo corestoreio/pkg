@@ -97,6 +97,20 @@ func BenchmarkNewByParts(b *testing.B) {
 	}
 }
 
+func TestPathNewSum32(t *testing.T) {
+	r := path.Route{
+		Chars: text.Chars(`dd/ee/ff`),
+	}
+	h := fnv.New32a()
+	_, err := h.Write(r.Chars)
+	assert.NoError(t, err)
+	wantHash := h.Sum32()
+
+	p, err := path.New(r)
+	assert.NoError(t, err)
+	assert.Exactly(t, wantHash, p.Sum32)
+}
+
 func TestPathNew(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

@@ -15,12 +15,8 @@
 package config
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"reflect"
-	"sync"
 	"time"
 
 	"github.com/corestoreio/csfw/config/path"
@@ -43,13 +39,9 @@ type MockWrite struct {
 }
 
 // Write writes to a black hole, may return an error
-func (w *MockWrite) Write(o ...ArgFunc) error {
-	a, err := newArg(o...)
-	if err != nil {
-		return err
-	}
-	w.ArgPath = a.String()
-	w.ArgValue = a.v
+func (w *MockWrite) Write(p path.Path, v interface{}) error {
+	w.ArgPath = p.String()
+	w.ArgValue = v
 	return w.WriteError
 }
 
@@ -59,8 +51,7 @@ type mockOptionFunc func(*MockGet)
 // MockGet used for testing. Contains functions which will be called in the
 // appropriate methods of interface config.Getter.
 type MockGet struct {
-	mu              sync.RWMutex
-	mv              MockPV
+	db              Storager
 	FString         func(path string) (string, error)
 	FBool           func(path string) (bool, error)
 	FFloat64        func(path string) (float64, error)
@@ -73,6 +64,18 @@ type MockGet struct {
 // MockPV is a required type for an option function. PV = path => value.
 // This map[string]interface{} is protected by a mutex.
 type MockPV map[string]interface{}
+
+func (m MockPV) set(db Storager) {
+	for fq, v := range m {
+		p, err := path.SplitFQ(fq)
+		if err != nil {
+			panic(err)
+		}
+		if err := db.Set(p, v); err != nil {
+			panic(err)
+		}
+	}
+}
 
 // WithMockString returns a function which can be used in the NewMockGetter().
 // Your function returns a string value from a given path.
@@ -109,34 +112,34 @@ func WithMockTime(f func(path string) (time.Time, error)) mockOptionFunc {
 // WithMockValues lets you define a map of path and its values.
 // Key is the fully qualified configuration path and value is the value.
 // Value must be of the same type as returned by the functions.
+// Panics on error.
 func WithMockValues(pathValues MockPV) mockOptionFunc {
 	return func(mr *MockGet) {
-		mr.mu.Lock()
-		mr.mv = pathValues
-		mr.mu.Unlock()
+		pathValues.set(mr.db)
 	}
 }
 
+// add when needed:
 // WithMockValuesJSON same as WithMockValues but reads data from an io.Reader
 // so you can read config from a JSON file.
 //
-func WithMockValuesJSON(r io.Reader) mockOptionFunc {
-	rawJSON, err := ioutil.ReadAll(r)
-	if err != nil {
-		panic(err)
-	}
-
-	var pathValues MockPV
-	err = json.Unmarshal(rawJSON, &pathValues)
-	if err != nil {
-		panic(err)
-	}
-	return func(mr *MockGet) {
-		mr.mu.Lock()
-		mr.mv = pathValues
-		mr.mu.Unlock()
-	}
-}
+//func WithMockValuesJSON(r io.Reader) mockOptionFunc {
+//	rawJSON, err := ioutil.ReadAll(r)
+//	if err != nil {
+//		panic(err)
+//	}
+//
+//	var pathValues MockPV
+//	err = json.Unmarshal(rawJSON, &pathValues)
+//	if err != nil {
+//		panic(err)
+//	}
+//	return func(mr *MockGet) {
+//		mr.mu.Lock()
+//		mr.mv = pathValues
+//		mr.mu.Unlock()
+//	}
+//}
 
 // WithContextMockGetter adds a MockGetter to a context.
 func WithContextMockGetter(ctx context.Context, opts ...mockOptionFunc) context.Context {
@@ -147,7 +150,9 @@ func WithContextMockGetter(ctx context.Context, opts ...mockOptionFunc) context.
 // Allows you to set different options duration creation or you can
 // set the struct fields afterwards.
 func NewMockGetter(opts ...mockOptionFunc) *MockGet {
-	mr := &MockGet{}
+	mr := &MockGet{
+		db: newSimpleStorage(),
+	}
 	for _, opt := range opts {
 		opt(mr)
 	}
@@ -156,30 +161,29 @@ func NewMockGetter(opts ...mockOptionFunc) *MockGet {
 
 // UpdateValues adds or overwrites the internal path => value map.
 func (mr *MockGet) UpdateValues(pathValues MockPV) {
-	mr.mu.Lock()
-	for k, v := range pathValues {
-		mr.mv[k] = v
+	pathValues.set(mr.db)
+}
+
+func (mr *MockGet) hasVal(p path.Path) bool {
+	v, err := mr.db.Get(p)
+	if err != nil && NotKeyNotFoundError(err) {
+		println("Mock.hasVal error:", err.Error(), "path", p.String())
 	}
-	mr.mu.Unlock()
+	return v != nil && err == nil
 }
 
-func (mr *MockGet) hasVal(path string) bool {
-	mr.mu.Lock()
-	defer mr.mu.Unlock()
-	_, ok := mr.mv[path]
-	return ok
-}
-
-func (mr *MockGet) getVal(path string) interface{} {
-	mr.mu.Lock()
-	defer mr.mu.Unlock()
-	v := mr.mv[path]
+func (mr *MockGet) getVal(p path.Path) interface{} {
+	v, err := mr.db.Get(p)
+	if err != nil && NotKeyNotFoundError(err) {
+		println("Mock.getVal error:", err.Error(), "path", p.String())
+		return nil
+	}
 	v = indirect(v)
 	return v
 }
 
-func (mr *MockGet) valString(path string) (string, error) {
-	switch s := mr.getVal(path).(type) {
+func (mr *MockGet) valString(p path.Path) (string, error) {
+	switch s := mr.getVal(p).(type) {
 	case string:
 		return s, nil
 	case nil:
@@ -192,25 +196,19 @@ func (mr *MockGet) valString(path string) (string, error) {
 }
 
 // String returns a string value
-func (mr *MockGet) String(opts ...ArgFunc) (string, error) {
-	a, err := newArg(opts...)
-	if err != nil {
-		return "", err
-	}
-	path := a.String()
-
+func (mr *MockGet) String(p path.Path) (string, error) {
 	switch {
-	case mr.hasVal(path):
-		return mr.valString(path)
+	case mr.hasVal(p):
+		return mr.valString(p)
 	case mr.FString != nil:
-		return mr.FString(path)
+		return mr.FString(p.String())
 	default:
 		return "", ErrKeyNotFound
 	}
 }
 
-func (mr *MockGet) valBool(path string) (bool, error) {
-	switch b := mr.getVal(path).(type) {
+func (mr *MockGet) valBool(p path.Path) (bool, error) {
+	switch b := mr.getVal(p).(type) {
 	case bool:
 		return b, nil
 	case int, int8, int16, int32, int64:
@@ -226,24 +224,19 @@ func (mr *MockGet) valBool(path string) (bool, error) {
 }
 
 // Bool returns a bool value
-func (mr *MockGet) Bool(opts ...ArgFunc) (bool, error) {
-	a, err := newArg(opts...)
-	if err != nil {
-		return false, err
-	}
-	path := a.String()
+func (mr *MockGet) Bool(p path.Path) (bool, error) {
 	switch {
-	case mr.hasVal(path):
-		return mr.valBool(path)
+	case mr.hasVal(p):
+		return mr.valBool(p)
 	case mr.FBool != nil:
-		return mr.FBool(path)
+		return mr.FBool(p.String())
 	default:
 		return false, ErrKeyNotFound
 	}
 }
 
-func (mr *MockGet) valFloat64(path string) (float64, error) {
-	switch s := mr.getVal(path).(type) {
+func (mr *MockGet) valFloat64(p path.Path) (float64, error) {
+	switch s := mr.getVal(p).(type) {
 	case float64:
 		return s, nil
 	case float32:
@@ -254,24 +247,19 @@ func (mr *MockGet) valFloat64(path string) (float64, error) {
 }
 
 // Float64 returns a float64 value
-func (mr *MockGet) Float64(opts ...ArgFunc) (float64, error) {
-	a, err := newArg(opts...)
-	if err != nil {
-		return 0, err
-	}
-	path := a.String()
+func (mr *MockGet) Float64(p path.Path) (float64, error) {
 	switch {
-	case mr.hasVal(path):
-		return mr.valFloat64(path)
+	case mr.hasVal(p):
+		return mr.valFloat64(p)
 	case mr.FFloat64 != nil:
-		return mr.FFloat64(path)
+		return mr.FFloat64(p.String())
 	default:
 		return 0.0, ErrKeyNotFound
 	}
 }
 
-func (mr *MockGet) valInt(path string) (int, error) {
-	switch s := mr.getVal(path).(type) {
+func (mr *MockGet) valInt(p path.Path) (int, error) {
+	switch s := mr.getVal(p).(type) {
 	case int:
 		return s, nil
 	case nil:
@@ -282,24 +270,19 @@ func (mr *MockGet) valInt(path string) (int, error) {
 }
 
 // Int returns an integer value
-func (mr *MockGet) Int(opts ...ArgFunc) (int, error) {
-	a, err := newArg(opts...)
-	if err != nil {
-		return 0, err
-	}
-	path := a.String()
+func (mr *MockGet) Int(p path.Path) (int, error) {
 	switch {
-	case mr.hasVal(path):
-		return mr.valInt(path)
+	case mr.hasVal(p):
+		return mr.valInt(p)
 	case mr.FInt != nil:
-		return mr.FInt(path)
+		return mr.FInt(p.String())
 	default:
 		return 0, ErrKeyNotFound
 	}
 }
 
-func (mr *MockGet) valDateTime(path string) (time.Time, error) {
-	switch s := mr.getVal(path).(type) {
+func (mr *MockGet) valDateTime(p path.Path) (time.Time, error) {
+	switch s := mr.getVal(p).(type) {
 	case time.Time:
 		return s, nil
 	default:
@@ -308,17 +291,12 @@ func (mr *MockGet) valDateTime(path string) (time.Time, error) {
 }
 
 // DateTime returns a time value
-func (mr *MockGet) DateTime(opts ...ArgFunc) (time.Time, error) {
-	a, err := newArg(opts...)
-	if err != nil {
-		return time.Time{}, err
-	}
-	path := a.String()
+func (mr *MockGet) DateTime(p path.Path) (time.Time, error) {
 	switch {
-	case mr.hasVal(path):
-		return mr.valDateTime(path)
+	case mr.hasVal(p):
+		return mr.valDateTime(p)
 	case mr.FTime != nil:
-		return mr.FTime(path)
+		return mr.FTime(p.String())
 	default:
 		return time.Time{}, ErrKeyNotFound
 	}

@@ -28,6 +28,7 @@ import (
 )
 
 func TestScopedServiceScope(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		websiteID, groupID, storeID int64
 		wantScope                   scope.Scope
@@ -49,6 +50,7 @@ func TestScopedServiceScope(t *testing.T) {
 }
 
 func TestScopedServicePath(t *testing.T) {
+	t.Parallel()
 	basePath := path.MustNewByParts("aa/bb/cc")
 	tests := []struct {
 		desc                        string
@@ -136,7 +138,8 @@ var benchmarkScopedServiceStringStore string
 
 // BenchmarkScopedServiceStringStore-4	 1000000	      2218 ns/op	     320 B/op	       9 allocs/op => Go 1.5.2
 // BenchmarkScopedServiceStringStore-4	  500000	      2939 ns/op	     672 B/op	      17 allocs/op => Go 1.5.3 strings
-// BenchmarkScopedServiceStringStore-4    500000	      2732 ns/op	     912 B/op	      17 allocs/op => path.Path
+// BenchmarkScopedServiceStringStore-4    500000	      2732 ns/op	     912 B/op	      17 allocs/op => path.Path with []ArgFunc
+// BenchmarkScopedServiceStringStore-4	 1000000	      1821 ns/op	     336 B/op	       3 allocs/op => path.Path without []ArgFunc
 func BenchmarkScopedServiceStringStore(b *testing.B) {
 	config.PkgLog.SetLevel(log.StdLevelFatal)
 	route := path.NewRoute("aa/bb/cc")

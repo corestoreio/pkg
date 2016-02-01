@@ -41,11 +41,12 @@ type (
 	// These functions are also available in the ScopedGetter interface.
 	Getter interface {
 		NewScoped(websiteID, groupID, storeID int64) ScopedGetter
-		String(...ArgFunc) (string, error)
-		Bool(...ArgFunc) (bool, error)
-		Float64(...ArgFunc) (float64, error)
-		Int(...ArgFunc) (int, error)
-		DateTime(...ArgFunc) (time.Time, error)
+		String(path.Path) (string, error)
+		Bool(path.Path) (bool, error)
+		Float64(path.Path) (float64, error)
+		Int(path.Path) (int, error)
+		DateTime(path.Path) (time.Time, error)
+		// maybe add compare and swap function
 	}
 
 	// GetterPubSuber implements a configuration Getter and a Subscriber for
@@ -58,7 +59,7 @@ type (
 	// Writer thread safe storing of configuration values under different paths and scopes.
 	Writer interface {
 		// Write writes a configuration entry and may return an error
-		Write(...ArgFunc) error
+		Write(p path.Path, value interface{}) error
 	}
 
 	// Service main configuration provider
@@ -165,7 +166,14 @@ func (s *Service) ApplyCoreConfigData(dbrSess dbr.SessionRunner) (loadedRows, wr
 
 	for _, cd := range ccd {
 		if cd.Value.Valid {
-			if err = s.Write(Route(path.NewRoute(cd.Path)), Scope(scope.FromString(cd.Scope), cd.ScopeID), Value(cd.Value.String)); err != nil {
+			var p path.Path
+			p, err = path.NewByParts(cd.Path)
+			if err != nil {
+				err = errgo.Mask(err)
+				return
+			}
+
+			if err = s.Write(p.Bind(scope.FromString(cd.Scope), cd.ScopeID), cd.Value.String); err != nil {
 				err = errgo.Mask(err)
 				return
 			}
@@ -179,34 +187,22 @@ func (s *Service) ApplyCoreConfigData(dbrSess dbr.SessionRunner) (loadedRows, wr
 // 	Default Scope: Write(config.Path("currency", "option", "base"), config.Value("USD"))
 // 	Website Scope: Write(config.Path("currency", "option", "base"), config.Value("EUR"), config.ScopeWebsite(w))
 // 	Store   Scope: Write(config.Path("currency", "option", "base"), config.ValueReader(resp.Body), config.ScopeStore(s))
-func (s *Service) Write(o ...ArgFunc) error {
-	a, err := newArg(o...)
-	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("config.Service.Write.newArg", "err", err)
-		}
-		return errgo.Mask(err)
-	}
-
+func (s *Service) Write(p path.Path, v interface{}) error {
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("config.Service.Write", "path", a.Path, "val", a.v)
+		PkgLog.Debug("config.Service.Write", "path", p, "val", v)
 	}
 
-	s.Storage.Set(a.Path, a.v)
-	s.sendMsg(a)
+	s.Storage.Set(p, v)
+	s.sendMsg(p)
 	return nil
 }
 
 // get generic getter ... not sure if this should be public ...
-func (s *Service) get(o ...ArgFunc) (interface{}, error) {
-	a, err := newArg(o...)
-	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("config.Service.get.newArg", "err", err)
-		}
-		return nil, errgo.Mask(err)
+func (s *Service) get(p path.Path) (interface{}, error) {
+	if PkgLog.IsDebug() {
+		PkgLog.Debug("config.Service.get", "path", p)
 	}
-	return s.Storage.Get(a.Path)
+	return s.Storage.Get(p)
 }
 
 // String returns a string from the Service. Example usage:
@@ -216,8 +212,8 @@ func (s *Service) get(o ...ArgFunc) (interface{}, error) {
 // Website value: String(config.Path("general/locale/timezone"), config.ScopeWebsite(w))
 //
 // Store   value: String(config.Path("general/locale/timezone"), config.ScopeStore(s))
-func (s *Service) String(o ...ArgFunc) (string, error) {
-	vs, err := s.get(o...)
+func (s *Service) String(p path.Path) (string, error) {
+	vs, err := s.get(p)
 	if err != nil {
 		return "", err
 	}
@@ -225,8 +221,8 @@ func (s *Service) String(o ...ArgFunc) (string, error) {
 }
 
 // Bool returns bool from the Service. Example usage see String.
-func (s *Service) Bool(o ...ArgFunc) (bool, error) {
-	vs, err := s.get(o...)
+func (s *Service) Bool(p path.Path) (bool, error) {
+	vs, err := s.get(p)
 	if err != nil {
 		return false, err
 	}
@@ -234,8 +230,8 @@ func (s *Service) Bool(o ...ArgFunc) (bool, error) {
 }
 
 // Float64 returns a float64 from the Service. Example usage see String.
-func (s *Service) Float64(o ...ArgFunc) (float64, error) {
-	vs, err := s.get(o...)
+func (s *Service) Float64(p path.Path) (float64, error) {
+	vs, err := s.get(p)
 	if err != nil {
 		return 0, err
 	}
@@ -243,8 +239,8 @@ func (s *Service) Float64(o ...ArgFunc) (float64, error) {
 }
 
 // Int returns an int from the Service. Example usage see String.
-func (s *Service) Int(o ...ArgFunc) (int, error) {
-	vs, err := s.get(o...)
+func (s *Service) Int(p path.Path) (int, error) {
+	vs, err := s.get(p)
 	if err != nil {
 		return 0, err
 	}
@@ -252,8 +248,8 @@ func (s *Service) Int(o ...ArgFunc) (int, error) {
 }
 
 // DateTime returns a date and time object from the Service. Example usage see String.
-func (s *Service) DateTime(o ...ArgFunc) (time.Time, error) {
-	vs, err := s.get(o...)
+func (s *Service) DateTime(p path.Path) (time.Time, error) {
+	vs, err := s.get(p)
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -262,18 +258,11 @@ func (s *Service) DateTime(o ...ArgFunc) (time.Time, error) {
 
 // IsSet checks if a key is in the configuration. Returns false on error.
 // Errors will be logged in Debug mode.
-func (s *Service) IsSet(o ...ArgFunc) bool {
-	a, err := newArg(o...)
+func (s *Service) IsSet(p path.Path) bool {
+	v, err := s.Storage.Get(p)
 	if err != nil {
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("config.Service.IsSet.newArg", "err", err)
-		}
-		return false
-	}
-	v, err := s.Storage.Get(a.Path)
-	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("config.Service.IsSet.Storage.Get", "err", err, "path", a)
+			PkgLog.Debug("config.Service.IsSet.Storage.Get", "err", err, "path", p)
 		}
 		return false
 	}
