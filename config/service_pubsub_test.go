@@ -66,11 +66,10 @@ func TestPubSubBubbling(t *testing.T) {
 	assert.NoError(t, s.Write(testPath.Bind(scope.WebsiteID, 123), 1))
 	assert.NoError(t, s.Close())
 
-	t.Log("Before", "testPath", testPath.Route)
+	//t.Log("Before", "testPath", testPath.Route)
 	testPath2 := testPath.Clone()
 	assert.NoError(t, testPath2.Append(path.NewRoute("Doh")))
-
-	t.Log("After", "testPath", testPath.Route, "testPath2", testPath2.Route)
+	//t.Log("After", "testPath", testPath.Route, "testPath2", testPath2.Route)
 
 	// send on closed channel
 	assert.NoError(t, s.Write(testPath2.Bind(scope.WebsiteID, 3), 1))

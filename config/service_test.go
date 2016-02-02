@@ -16,11 +16,13 @@ package config_test
 
 import (
 	"testing"
+	"time"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -45,31 +47,7 @@ func init() {
 	}
 }
 
-func TestNewServiceStandard(t *testing.T) {
-	t.Parallel()
-	srv := config.NewService(nil) // nil for tricking the function
-	assert.NotNil(t, srv)
-
-	// get cs base URL
-	url, err := srv.String(path.MustNewByParts(config.PathCSBaseURL))
-	assert.NoError(t, err)
-	assert.Exactly(t, config.CSBaseURL, url)
-
-	scopedSrv := srv.NewScoped(1, 1, 1)
-	sURL, err := scopedSrv.String(path.NewRoute(config.PathCSBaseURL))
-	assert.NoError(t, err)
-	assert.Exactly(t, config.CSBaseURL, sURL)
-
-	flat, err := scopedSrv.String(path.NewRoute("catalog/product/enable_flat"))
-	assert.EqualError(t, err, config.ErrKeyNotFound.Error())
-	assert.Empty(t, flat)
-}
-
-func TestNewServiceTypes(t *testing.T) {
-	t.Fatal("todo: all types of NewService()")
-}
-
-func TestScopeApplyDefaults(t *testing.T) {
+func TestService_ApplyDefaults(t *testing.T) {
 	t.Parallel()
 
 	pkgCfg := element.MustNewConfiguration(
@@ -121,10 +99,10 @@ func TestScopeApplyDefaults(t *testing.T) {
 	assert.NoError(t, s.Close())
 }
 
-// TestApplyCoreConfigData reads from the MySQL core_config_data table and applies
+// TestService_ApplyCoreConfigData reads from the MySQL core_config_data table and applies
 // these value to the underlying storage. tries to get back the values from the
 // underlying storage
-func TestApplyCoreConfigData(t *testing.T) {
+func TestService_ApplyCoreConfigData(t *testing.T) {
 	defer debugLogBuf.Reset()
 	defer infoLogBuf.Reset()
 	if _, err := csdb.GetDSNTest(); err == csdb.ErrDSNTestNotFound {
@@ -160,5 +138,128 @@ func TestApplyCoreConfigData(t *testing.T) {
 		assert.Len(t, allKeys, writtenRows)
 	} else {
 		assert.True(t, len(allKeys) > 170) // TODO: refactor this if else and use a clean database ...
+	}
+}
+
+func TestNewServiceStandard(t *testing.T) {
+	t.Parallel()
+	srv := config.NewService(nil)
+	assert.NotNil(t, srv)
+	url, err := srv.String(path.MustNewByParts(config.PathCSBaseURL))
+	assert.NoError(t, err)
+	assert.Exactly(t, config.CSBaseURL, url)
+}
+
+func TestWithDBStorage(t *testing.T) {
+	t.Skip("todo")
+}
+
+func TestNotKeyNotFoundError(t *testing.T) {
+	t.Parallel()
+	srv := config.NewService(nil)
+	assert.NotNil(t, srv)
+
+	scopedSrv := srv.NewScoped(1, 1, 1)
+
+	flat, err := scopedSrv.String(path.NewRoute("catalog/product/enable_flat"))
+	assert.EqualError(t, err, config.ErrKeyNotFound.Error())
+	assert.Empty(t, flat)
+	assert.False(t, config.NotKeyNotFoundError(err))
+
+	val, err := scopedSrv.String(path.NewRoute("catalog"))
+	assert.Empty(t, val)
+	assert.EqualError(t, err, path.ErrIncorrectPath.Error())
+	assert.True(t, config.NotKeyNotFoundError(err))
+}
+
+func TestService_NewScoped(t *testing.T) {
+	t.Parallel()
+	srv := config.NewService(nil)
+	assert.NotNil(t, srv)
+
+	scopedSrv := srv.NewScoped(1, 1, 1)
+	sURL, err := scopedSrv.String(path.NewRoute(config.PathCSBaseURL))
+	assert.NoError(t, err)
+	assert.Exactly(t, config.CSBaseURL, sURL)
+
+}
+
+func TestService_Write(t *testing.T) {
+	t.Parallel()
+	srv := config.NewService()
+	assert.NotNil(t, srv)
+
+	p1 := path.Path{}
+	assert.EqualError(t, srv.Write(p1, true), path.ErrRouteEmpty.Error())
+}
+
+func TestService_Types(t *testing.T) {
+	t.Parallel()
+	basePath := path.MustNewByParts("aa/bb/cc")
+	tests := []struct {
+		p   path.Path
+		err error
+	}{
+		{basePath, nil},
+		{path.Path{}, path.ErrRouteEmpty},
+		{basePath.Bind(scope.WebsiteID, 10), nil},
+		{basePath.Bind(scope.StoreID, 22), nil},
+	}
+
+	// vals stores all possible types for which we have functions in config.Service
+	values := []interface{}{"Gopher", true, float64(3.14159), int(2016), time.Now()}
+
+	for vi, wantVal := range values {
+		for i, test := range tests {
+			testServiceTypes(t, test.p, wantVal, wantVal, vi, i, test.err)
+			testServiceTypes(t, test.p, struct{}{}, wantVal, vi, i, test.err) // provokes a cast error
+		}
+	}
+}
+
+func testServiceTypes(t *testing.T, p path.Path, writeVal, wantVal interface{}, iFaceIDX, testIDX int, wantErr error) {
+
+	srv := config.NewService()
+
+	writeErr := srv.Write(p, writeVal)
+	if wantErr != nil {
+		assert.EqualError(t, writeErr, wantErr.Error(), "Index Value %d Index Test %d", iFaceIDX, testIDX)
+	} else {
+		assert.NoError(t, writeErr, "Index Value %d Index Test %d", iFaceIDX, testIDX)
+	}
+
+	var haveVal interface{}
+	var haveErr error
+	switch wantVal.(type) {
+	case string:
+		haveVal, haveErr = srv.String(p)
+	case bool:
+		haveVal, haveErr = srv.Bool(p)
+	case float64:
+		haveVal, haveErr = srv.Float64(p)
+	case int:
+		haveVal, haveErr = srv.Int(p)
+	case time.Time:
+		haveVal, haveErr = srv.DateTime(p)
+	default:
+		t.Fatalf("Unsupported type: %#v in Index Value %d Index Test %d", wantVal, iFaceIDX, testIDX)
+	}
+
+	if wantErr != nil {
+		// if this fails for time.Time{} then my PR to assert pkg has not yet been merged :-(
+		// https://github.com/stretchr/testify/pull/259
+		assert.Empty(t, haveVal, "Index %d", testIDX)
+		assert.EqualError(t, haveErr, wantErr.Error(), "Index %d", testIDX)
+		assert.False(t, srv.IsSet(p))
+		return
+	}
+
+	if ws, ok := writeVal.(struct{}); ok && ws == (struct{}{}) {
+		assert.Contains(t, haveErr.Error(), "Unable to Cast struct {}{} to")
+		assert.Empty(t, haveVal)
+	} else {
+		assert.NoError(t, haveErr, "Index %d", testIDX)
+		assert.Exactly(t, wantVal, haveVal, "Index %d", testIDX)
+		assert.True(t, srv.IsSet(p))
 	}
 }

@@ -184,15 +184,25 @@ func (s *Service) ApplyCoreConfigData(dbrSess dbr.SessionRunner) (loadedRows, wr
 }
 
 // Write puts a value back into the Service. Example usage:
-// 	Default Scope: Write(config.Path("currency", "option", "base"), config.Value("USD"))
-// 	Website Scope: Write(config.Path("currency", "option", "base"), config.Value("EUR"), config.ScopeWebsite(w))
-// 	Store   Scope: Write(config.Path("currency", "option", "base"), config.ValueReader(resp.Body), config.ScopeStore(s))
+//		// Default Scope
+//		p, err := path.NewByParts("currency/option/base") // or use path.MustNewByParts( ... )
+// 		err := Write(p, "USD")
+//
+//		// Website Scope
+//		// 3 for example comes from core_website/store_website database table
+//		err := Write(p.Bind(scope.WebsiteID, 3), "EUR")
+//
+//		// Store Scope
+//		// 6 for example comes from core_store/store database table
+//		err := Write(p.Bind(scope.StoreID, 6), "CHF")
 func (s *Service) Write(p path.Path, v interface{}) error {
 	if PkgLog.IsDebug() {
 		PkgLog.Debug("config.Service.Write", "path", p, "val", v)
 	}
 
-	s.Storage.Set(p, v)
+	if err := s.Storage.Set(p, v); err != nil {
+		return err
+	}
 	s.sendMsg(p)
 	return nil
 }
@@ -207,11 +217,17 @@ func (s *Service) get(p path.Path) (interface{}, error) {
 
 // String returns a string from the Service. Example usage:
 //
-// Default value: String(config.Path("general/locale/timezone"))
+//		// Default Scope
+//		p, err := path.NewByParts("general/locale/timezone") // or use path.MustNewByParts( ... )
+// 		s, err := String(p)
 //
-// Website value: String(config.Path("general/locale/timezone"), config.ScopeWebsite(w))
+//		// Website Scope
+//		// 3 for example comes from core_website/store_website database table
+//		s, err := String(p.Bind(scope.WebsiteID, 3))
 //
-// Store   value: String(config.Path("general/locale/timezone"), config.ScopeStore(s))
+//		// Store Scope
+//		// 6 for example comes from core_store/store database table
+//		s, err := String(p.Bind(scope.StoreID, 6))
 func (s *Service) String(p path.Path) (string, error) {
 	vs, err := s.get(p)
 	if err != nil {
@@ -257,7 +273,8 @@ func (s *Service) DateTime(p path.Path) (time.Time, error) {
 }
 
 // IsSet checks if a key is in the configuration. Returns false on error.
-// Errors will be logged in Debug mode.
+// Errors will be logged in Debug mode. Does not check if the value can be asserted
+// to the desired type.
 func (s *Service) IsSet(p path.Path) bool {
 	v, err := s.Storage.Get(p)
 	if err != nil {

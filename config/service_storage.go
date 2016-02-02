@@ -55,13 +55,13 @@ func newSimpleStorage() *simpleStorage {
 
 func (sp *simpleStorage) Set(key path.Path, value interface{}) error {
 	sp.Lock()
+	defer sp.Unlock()
 	k, err := key.FQ()
 	if err != nil {
 		return err
 	}
 	h32 := k.Hash32()
 	sp.kv[h32] = keyVal{key, value}
-	sp.Unlock()
 	return nil
 }
 
