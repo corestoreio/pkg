@@ -24,6 +24,7 @@ import (
 )
 
 func TestContextMustGetter(t *testing.T) {
+	t.Parallel()
 	mr := config.NewMockGetter()
 	ctx := config.WithContextGetter(context.Background(), mr)
 	mrHave := config.FromContextGetter(ctx)
@@ -35,6 +36,7 @@ func TestContextMustGetter(t *testing.T) {
 }
 
 func TestContextMustGetterPubSuber(t *testing.T) {
+	t.Parallel()
 	mr := config.NewMockGetter()
 	ctx := config.WithContextGetterPubSuber(context.Background(), mr)
 	mrHave, ok := config.FromContextGetterPubSuber(ctx)
@@ -57,6 +59,7 @@ func (w cWrite) Write(_ path.Path, _ interface{}) error {
 var _ config.Writer = (*cWrite)(nil)
 
 func TestContextMustWriter(t *testing.T) {
+	t.Parallel()
 	wr := cWrite{}
 	ctx := config.WithContextWriter(context.Background(), wr)
 	wrHave, ok := config.FromContextWriter(ctx)
@@ -67,4 +70,26 @@ func TestContextMustWriter(t *testing.T) {
 	wrHave, ok = config.FromContextWriter(ctx)
 	assert.Nil(t, wrHave)
 	assert.False(t, ok)
+}
+
+func TestContextScopedGetterOK(t *testing.T) {
+	t.Parallel()
+	srv := config.NewMockGetter()
+	scopedSrv := srv.NewScoped(0, 0, 0)
+
+	ctx := context.Background()
+	ctx = config.WithContextScopedGetter(ctx, scopedSrv)
+	assert.NotNil(t, ctx)
+
+	ctxScopedSrc, ok := config.FromContextScopedGetter(ctx)
+	assert.True(t, ok)
+	assert.Exactly(t, scopedSrv, ctxScopedSrc)
+}
+
+func TestContextScopedGetterFail(t *testing.T) {
+	t.Parallel()
+
+	ctxScopedSrc, ok := config.FromContextScopedGetter(context.Background())
+	assert.False(t, ok)
+	assert.Nil(t, ctxScopedSrc)
 }

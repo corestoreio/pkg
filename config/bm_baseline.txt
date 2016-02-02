@@ -1,7 +1,6 @@
 PASS
-BenchmarkScopeKey____InMap___NewPath-4	 1000000	      1308 ns/op	     528 B/op	      10 allocs/op
-BenchmarkScopeKey____InMap_ExistPath-4	 2000000	      1014 ns/op	     480 B/op	       8 allocs/op
-BenchmarkScopeKey_NotInMap___NewPath-4	 1000000	      1303 ns/op	     528 B/op	      10 allocs/op
-BenchmarkScopeKey_NotInMap_ExistPath-4	 1000000	      1009 ns/op	     480 B/op	       8 allocs/op
-BenchmarkScopedServiceStringStore-4   	  500000	      3018 ns/op	     912 B/op	      17 allocs/op
-ok  	github.com/corestoreio/csfw/config	8.263s
+BenchmarkScopedServiceStringStore-4  	 1000000	      1733 ns/op	     336 B/op	       3 allocs/op
+BenchmarkScopedServiceStringGroup-4  	 1000000	      1194 ns/op	     224 B/op	       2 allocs/op
+BenchmarkScopedServiceStringWebsite-4	 1000000	      1758 ns/op	     336 B/op	       3 allocs/op
+BenchmarkScopedServiceStringDefault-4	 1000000	      1184 ns/op	     224 B/op	       2 allocs/op
+ok  	github.com/corestoreio/csfw/config	5.955s

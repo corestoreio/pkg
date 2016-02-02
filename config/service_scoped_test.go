@@ -134,31 +134,50 @@ func testScopedService(t *testing.T, want, have interface{}, desc string, wantEr
 	assert.Exactly(t, want, have, desc)
 }
 
-var benchmarkScopedServiceStringStore string
+var benchmarkScopedServiceString string
 
 // BenchmarkScopedServiceStringStore-4	 1000000	      2218 ns/op	     320 B/op	       9 allocs/op => Go 1.5.2
 // BenchmarkScopedServiceStringStore-4	  500000	      2939 ns/op	     672 B/op	      17 allocs/op => Go 1.5.3 strings
 // BenchmarkScopedServiceStringStore-4    500000	      2732 ns/op	     912 B/op	      17 allocs/op => path.Path with []ArgFunc
 // BenchmarkScopedServiceStringStore-4	 1000000	      1821 ns/op	     336 B/op	       3 allocs/op => path.Path without []ArgFunc
 func BenchmarkScopedServiceStringStore(b *testing.B) {
+	benchmarkScopedServiceStringRun(b, 1, 1, 1)
+}
+
+// BenchmarkScopedServiceStringGroup-4  	 1000000	      1206 ns/op	     224 B/op	       2 allocs/op
+func BenchmarkScopedServiceStringGroup(b *testing.B) {
+	benchmarkScopedServiceStringRun(b, 1, 1, 0)
+}
+
+// BenchmarkScopedServiceStringWebsite-4	 1000000	      1760 ns/op	     336 B/op	       3 allocs/op
+func BenchmarkScopedServiceStringWebsite(b *testing.B) {
+	benchmarkScopedServiceStringRun(b, 1, 0, 0)
+}
+
+// BenchmarkScopedServiceStringDefault-4	 1000000	      1215 ns/op	     224 B/op	       2 allocs/op
+func BenchmarkScopedServiceStringDefault(b *testing.B) {
+	benchmarkScopedServiceStringRun(b, 0, 0, 0)
+}
+
+func benchmarkScopedServiceStringRun(b *testing.B, websiteID, groupID, storeID int64) {
 	config.PkgLog.SetLevel(log.StdLevelFatal)
 	route := path.NewRoute("aa/bb/cc")
 	want := strings.Repeat("Gopher", 100)
 	sg := config.NewMockGetter(config.WithMockValues(config.MockPV{
 		path.MustNew(route).String(): want,
-	})).NewScoped(1, 1, 1)
+	})).NewScoped(websiteID, groupID, storeID)
 
 	runtime.GC()
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkScopedServiceStringStore, err = sg.String(route)
+		benchmarkScopedServiceString, err = sg.String(route)
 		if err != nil {
 			b.Error(err)
 		}
-		if benchmarkScopedServiceStringStore != want {
-			b.Errorf("Want %s Have %s", want, benchmarkScopedServiceStringStore)
+		if benchmarkScopedServiceString != want {
+			b.Errorf("Want %s Have %s", want, benchmarkScopedServiceString)
 		}
 	}
 }
