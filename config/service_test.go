@@ -45,9 +45,32 @@ func init() {
 	}
 }
 
+func TestNewServiceStandard(t *testing.T) {
+	t.Parallel()
+	srv := config.NewService(nil) // nil for tricking the function
+	assert.NotNil(t, srv)
+
+	// get cs base URL
+	url, err := srv.String(path.MustNewByParts(config.PathCSBaseURL))
+	assert.NoError(t, err)
+	assert.Exactly(t, config.CSBaseURL, url)
+
+	scopedSrv := srv.NewScoped(1, 1, 1)
+	sURL, err := scopedSrv.String(path.NewRoute(config.PathCSBaseURL))
+	assert.NoError(t, err)
+	assert.Exactly(t, config.CSBaseURL, sURL)
+
+	flat, err := scopedSrv.String(path.NewRoute("catalog/product/enable_flat"))
+	assert.EqualError(t, err, config.ErrKeyNotFound.Error())
+	assert.Empty(t, flat)
+}
+
+func TestNewServiceTypes(t *testing.T) {
+	t.Fatal("todo: all types of NewService()")
+}
+
 func TestScopeApplyDefaults(t *testing.T) {
-	defer debugLogBuf.Reset()
-	defer infoLogBuf.Reset()
+	t.Parallel()
 
 	pkgCfg := element.MustNewConfiguration(
 		&element.Section{
@@ -92,9 +115,9 @@ func TestScopeApplyDefaults(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	sval, err := s.String(path.MustNewByParts("contact/email/recipient_email")) // default scope
+	email, err := s.String(path.MustNewByParts("contact/email/recipient_email")) // default scope
 	assert.NoError(t, err)
-	assert.Exactly(t, cer.Default.(string), sval)
+	assert.Exactly(t, cer.Default.(string), email)
 	assert.NoError(t, s.Close())
 }
 
