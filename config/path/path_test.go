@@ -98,6 +98,7 @@ func BenchmarkNewByParts(b *testing.B) {
 }
 
 func TestPathNewSum32(t *testing.T) {
+	t.Parallel()
 	r := path.Route{
 		Chars: text.Chars(`dd/ee/ff`),
 	}

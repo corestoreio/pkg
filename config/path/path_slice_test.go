@@ -23,6 +23,7 @@ import (
 )
 
 func TestPathSliceContains(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		paths  path.PathSlice
 		search path.Path
