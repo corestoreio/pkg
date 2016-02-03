@@ -29,18 +29,18 @@ const CSVSeparator = ","
 
 // StringCSV represents a path in config.Getter which will be saved as a
 // CSV string and returned as a string slice. Separator is a comma.
-type StringCSV struct{ basePath }
+type StringCSV struct{ baseValue }
 
 // NewStringCSV creates a new CSV string type. Acts as a multiselect.
 func NewStringCSV(path string, opts ...Option) StringCSV {
-	return StringCSV{basePath: NewPath(path, opts...)}
+	return StringCSV{baseValue: NewValue(path, opts...)}
 }
 
-// Get returns a string slice
-func (p StringCSV) Get(sg config.ScopedGetter) []string {
-	s, err := p.lookupString(sg)
+// Get returns a string slice. Splits the stored string by comma.
+func (str StringCSV) Get(sg config.ScopedGetter) []string {
+	s, err := str.lookupString(sg)
 	if err != nil && PkgLog.IsDebug() {
-		PkgLog.Debug("model.StringCSV.Get.lookupString", "err", err, "path", p.string)
+		PkgLog.Debug("model.StringCSV.Get.lookupString", "err", err, "route", str.r.String())
 	}
 	if s == "" {
 		return nil
@@ -50,28 +50,29 @@ func (p StringCSV) Get(sg config.ScopedGetter) []string {
 }
 
 // Write writes a slice with its scope and ID to the writer
-func (p StringCSV) Write(w config.Writer, sl []string, s scope.Scope, id int64) error {
+func (str StringCSV) Write(w config.Writer, sl []string, s scope.Scope, id int64) error {
 	for _, v := range sl {
-		if err := p.validateString(v); err != nil {
+		if err := str.validateString(v); err != nil {
 			return err
 		}
 	}
-	return p.basePath.Write(w, strings.Join(sl, CSVSeparator), s, id)
+	return str.baseValue.Write(w, strings.Join(sl, CSVSeparator), s, id)
 }
 
 // IntCSV represents a path in config.Getter which will be saved as a
 // CSV string and returned as an int64 slice. Separator is a comma.
-type IntCSV struct{ basePath }
+type IntCSV struct{ baseValue }
 
 // NewIntCSV creates a new int CSV type. Acts as a multiselect.
 func NewIntCSV(path string, opts ...Option) IntCSV {
-	return IntCSV{basePath: NewPath(path, opts...)}
+	return IntCSV{baseValue: NewValue(path, opts...)}
 }
 
-func (p IntCSV) Get(sg config.ScopedGetter) []int {
-	s, err := p.lookupString(sg)
+// Get returns an int slice. Int string gets splitted by comma.
+func (ic IntCSV) Get(sg config.ScopedGetter) []int {
+	s, err := ic.lookupString(sg)
 	if err != nil && PkgLog.IsDebug() {
-		PkgLog.Debug("model.IntCSV.Get.lookupString", "err", err, "path", p.string)
+		PkgLog.Debug("model.IntCSV.Get.lookupString", "err", err, "route", ic.r.String())
 	}
 	if s == "" {
 		return nil
@@ -90,7 +91,7 @@ func (p IntCSV) Get(sg config.ScopedGetter) []int {
 			continue
 		}
 
-		if err := p.validateInt(v); err != nil {
+		if err := ic.validateInt(v); err != nil {
 			if PkgLog.IsDebug() {
 				PkgLog.Debug("model.IntCSV.Get.validateInt", "err", err, "position", i, "line", line)
 			}
@@ -123,5 +124,5 @@ func (p IntCSV) Write(w config.Writer, sl []int, s scope.Scope, id int64) error 
 			}
 		}
 	}
-	return p.basePath.Write(w, val.String(), s, id)
+	return p.baseValue.Write(w, val.String(), s, id)
 }

@@ -19,14 +19,16 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestBaseURL(t *testing.T) {
 	t.Parallel()
-	wantPath := scope.StrStores.FQPathInt64(1, "web/unsecure/base_url")
-	b := model.NewBaseURL("web/unsecure/base_url", model.WithConfigStructure(configStructure))
+	const pathWebUnsecUrl = "web/unsecure/base_url"
+	wantPath := path.MustNewByParts(pathWebUnsecUrl).Bind(scope.StoreID, 1)
+	b := model.NewBaseURL(pathWebUnsecUrl, model.WithConfigStructure(configStructure))
 
 	assert.Empty(t, b.Options())
 
@@ -34,13 +36,12 @@ func TestBaseURL(t *testing.T) {
 
 	assert.Exactly(t, "http://cs.io", b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			wantPath: "http://cs.io",
+			wantPath.String(): "http://cs.io",
 		}),
 	).NewScoped(0, 0, 1)))
 
 	mw := &config.MockWrite{}
 	assert.NoError(t, b.Write(mw, "dude", scope.StoreID, 1))
-	assert.Exactly(t, wantPath, mw.ArgPath)
+	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, "dude", mw.ArgValue.(string))
-
 }

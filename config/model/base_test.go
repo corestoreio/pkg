@@ -21,6 +21,8 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,19 +31,19 @@ import (
 // test package names are different.
 var configStructure = element.MustNewConfiguration(
 	&element.Section{
-		ID: "web",
+		ID: path.NewRoute("web"),
 		Groups: element.NewGroupSlice(
 			&element.Group{
-				ID:        "cors",
-				Label:     `CORS Cross Origin Resource Sharing`,
+				ID:        path.NewRoute("cors"),
+				Label:     text.Chars(`CORS Cross Origin Resource Sharing`),
 				SortOrder: 150,
 				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: element.NewFieldSlice(
 					&element.Field{
 						// Path: `web/cors/exposed_headers`,
-						ID:        "exposed_headers",
-						Label:     `Exposed Headers`,
-						Comment:   text.Long(`Indicates which headers are safe to expose to the API of a CORS API specification. Separate via line break`),
+						ID:        path.NewRoute("exposed_headers"),
+						Label:     text.Chars(`Exposed Headers`),
+						Comment:   text.Chars(`Indicates which headers are safe to expose to the API of a CORS API specification. Separate via line break`),
 						Type:      element.TypeTextarea,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
@@ -50,8 +52,8 @@ var configStructure = element.MustNewConfiguration(
 					},
 					&element.Field{
 						// Path: `web/cors/allow_credentials`,
-						ID:        "allow_credentials",
-						Label:     `Allowed Credentials`,
+						ID:        path.NewRoute("allow_credentials"),
+						Label:     text.Chars(`Allowed Credentials`),
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
@@ -60,7 +62,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					&element.Field{
 						// Path: `web/cors/int`,
-						ID:        "int",
+						ID:        path.NewRoute("int"),
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
@@ -69,7 +71,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					&element.Field{
 						// Path: `web/cors/float64`,
-						ID:        "float64",
+						ID:        path.NewRoute("float64"),
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
@@ -82,18 +84,18 @@ var configStructure = element.MustNewConfiguration(
 	},
 )
 
-func TestBasePathString(t *testing.T) {
+func TestBaseValueString(t *testing.T) {
 	t.Parallel()
-	const path = "web/cors/exposed_headers"
-	p1 := NewPath(path, WithConfigStructure(configStructure))
-	assert.Exactly(t, path, p1.String())
+	const pathWebCorsHeaders = "web/cors/exposed_headers"
+	p1 := NewValue(pathWebCorsHeaders, WithConfigStructure(configStructure))
+	assert.Exactly(t, pathWebCorsHeaders, p1.String())
 
-	wantPath := scope.StrWebsites.FQPathInt64(2, "web/cors/exposed_headers")
 	wantWebsiteID := int64(2) // This number 2 is usually stored in core_website/store_website table in column website_id
+	wantPath := path.MustNewByParts(pathWebCorsHeaders).Bind(scope.WebsiteID, wantWebsiteID)
 
 	mw := new(config.MockWrite)
 	assert.NoError(t, p1.Write(mw, 314159, scope.WebsiteID, wantWebsiteID))
-	assert.Exactly(t, wantPath, mw.ArgPath)
+	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, 314159, mw.ArgValue.(int))
 
 	sg := config.NewMockGetter().NewScoped(wantWebsiteID, 0, 0)
@@ -103,7 +105,7 @@ func TestBasePathString(t *testing.T) {
 
 	sg = config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			wantPath: "X-CoreStore-TOKEN",
+			wantPath.String(): "X-CoreStore-TOKEN",
 		}),
 	).NewScoped(wantWebsiteID, 0, 0)
 
@@ -112,7 +114,7 @@ func TestBasePathString(t *testing.T) {
 	assert.Exactly(t, "X-CoreStore-TOKEN", customStr)
 
 	// now change a default value in the packageConfiguration and see it reflects to p1
-	f, err := configStructure.FindFieldByID(path)
+	f, err := configStructure.FindFieldByID(wantPath.Route)
 	assert.NoError(t, err)
 	f.Default = "Content-Size,Y-CoreStore-ID"
 
@@ -121,7 +123,7 @@ func TestBasePathString(t *testing.T) {
 	assert.Exactly(t, "Content-Size,Y-CoreStore-ID", ws)
 }
 
-func TestBasePathInScope(t *testing.T) {
+func TestBaseValueInScope(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		sg      config.ScopedGetter
@@ -145,7 +147,7 @@ func TestBasePathInScope(t *testing.T) {
 		},
 	}
 	for _, test := range tests {
-		p1 := NewPath("a/b/c", WithField(&element.Field{
+		p1 := NewValue("a/b/c", WithField(&element.Field{
 			Scope: test.p,
 		}))
 		haveErr := p1.InScope(test.sg)
@@ -158,8 +160,11 @@ func TestBasePathInScope(t *testing.T) {
 	}
 }
 
-func TestFQPathInt64(t *testing.T) {
+func TestBaseValueFQ(t *testing.T) {
 	t.Parallel()
-	p := NewPath("a/b/c")
-	assert.Exactly(t, scope.StrStores.FQPathInt64(4, "a/b/c"), p.FQ(scope.StrStores, 4))
+	const pth = "aa/bb/cc"
+	p := NewValue(pth)
+	fq, err := p.FQ(scope.StoreID, 4)
+	assert.NoError(t, err)
+	assert.Exactly(t, path.MustNewByParts(pth).Bind(scope.StoreID, 4).String(), fq)
 }

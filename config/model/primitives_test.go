@@ -20,7 +20,9 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/source"
+	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,19 +31,19 @@ import (
 // test package names are different.
 var configStructure = element.MustNewConfiguration(
 	&element.Section{
-		ID: "web",
+		ID: path.NewRoute("web"),
 		Groups: element.NewGroupSlice(
 			&element.Group{
-				ID:        "cors",
-				Label:     `CORS Cross Origin Resource Sharing`,
+				ID:        path.NewRoute("cors"),
+				Label:     text.Chars(`CORS Cross Origin Resource Sharing`),
 				SortOrder: 150,
 				Scope:     scope.NewPerm(scope.DefaultID),
 				Fields: element.NewFieldSlice(
 					&element.Field{
 						// Path: `web/cors/exposed_headers`,
-						ID:        "exposed_headers",
-						Label:     `Exposed Headers`,
-						Comment:   text.Long(`Indicates which headers are safe to expose to the API of a CORS API specification. Separate via line break`),
+						ID:        path.NewRoute("exposed_headers"),
+						Label:     text.Chars(`Exposed Headers`),
+						Comment:   text.Chars(`Indicates which headers are safe to expose to the API of a CORS API specification. Separate via line break`),
 						Type:      element.TypeTextarea,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
@@ -50,9 +52,9 @@ var configStructure = element.MustNewConfiguration(
 					},
 					&element.Field{
 						// Path: `web/cors/allowed_origins`,
-						ID:        "allowed_origins",
-						Label:     `Allowed Origins`,
-						Comment:   text.Long(`Is a list of origins a cross-domain request can be executed from.`),
+						ID:        path.NewRoute("allowed_origins"),
+						Label:     text.Chars(`Allowed Origins`),
+						Comment:   text.Chars(`Is a list of origins a cross-domain request can be executed from.`),
 						Type:      element.TypeTextarea,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
@@ -61,8 +63,8 @@ var configStructure = element.MustNewConfiguration(
 					},
 					&element.Field{
 						// Path: `web/cors/allow_credentials`,
-						ID:        "allow_credentials",
-						Label:     `Allowed Credentials`,
+						ID:        path.NewRoute("allow_credentials"),
+						Label:     text.Chars(`Allowed Credentials`),
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
@@ -71,7 +73,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					&element.Field{
 						// Path: `web/cors/int`,
-						ID:        "int",
+						ID:        path.NewRoute("int"),
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
@@ -80,7 +82,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					&element.Field{
 						// Path: `web/cors/int_slice`,
-						ID:        "int_slice",
+						ID:        path.NewRoute("int_slice"),
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
@@ -89,7 +91,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					&element.Field{
 						// Path: `web/cors/float64`,
-						ID:        "float64",
+						ID:        path.NewRoute("float64"),
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
@@ -100,17 +102,17 @@ var configStructure = element.MustNewConfiguration(
 			},
 
 			&element.Group{
-				ID:        "unsecure",
-				Label:     `Base URLs`,
-				Comment:   text.Long(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
+				ID:        path.NewRoute("unsecure"),
+				Label:     text.Chars(`Base URLs`),
+				Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
 				SortOrder: 10,
 				Scope:     scope.PermAll,
 				Fields: element.NewFieldSlice(
 					&element.Field{
 						// Path: `web/unsecure/base_url`,
-						ID:        "base_url",
-						Label:     `Base URL`,
-						Comment:   text.Long(`Specify URL or {{base_url}} placeholder.`),
+						ID:        path.NewRoute("base_url"),
+						Label:     text.Chars(`Base URL`),
+						Comment:   text.Chars(`Specify URL or {{base_url}} placeholder.`),
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
@@ -121,9 +123,9 @@ var configStructure = element.MustNewConfiguration(
 
 					&element.Field{
 						// Path: `web/unsecure/base_link_url`,
-						ID:        "base_link_url",
-						Label:     `Base Link URL`,
-						Comment:   text.Long(`May start with {{unsecure_base_url}} placeholder.`),
+						ID:        path.NewRoute("base_link_url"),
+						Label:     text.Chars(`Base Link URL`),
+						Comment:   text.Chars(`May start with {{unsecure_base_url}} placeholder.`),
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
@@ -134,9 +136,9 @@ var configStructure = element.MustNewConfiguration(
 
 					&element.Field{
 						// Path: `web/unsecure/base_static_url`,
-						ID:        "base_static_url",
-						Label:     `Base URL for Static View Files`,
-						Comment:   text.Long(`May be empty or start with {{unsecure_base_url}} placeholder.`),
+						ID:        path.NewRoute("base_static_url"),
+						Label:     text.Chars(`Base URL for Static View Files`),
+						Comment:   text.Chars(`May be empty or start with {{unsecure_base_url}} placeholder.`),
 						Type:      element.TypeText,
 						SortOrder: 25,
 						Visible:   element.VisibleYes,
@@ -152,8 +154,9 @@ var configStructure = element.MustNewConfiguration(
 
 func TestBool(t *testing.T) {
 	t.Parallel()
-	wantPath := scope.StrWebsites.FQPathInt64(3, "web/cors/allow_credentials")
-	b := model.NewBool("web/cors/allow_credentials", model.WithConfigStructure(configStructure), model.WithSource(source.YesNo))
+	const pathWebCorsCred = "web/cors/allow_credentials"
+	wantPath := path.MustNewByParts(pathWebCorsCred).Bind(scope.WebsiteID, 3)
+	b := model.NewBool(pathWebCorsCred, model.WithConfigStructure(configStructure), model.WithSource(source.YesNo))
 
 	assert.Exactly(t, source.YesNo, b.Options())
 	// because default value in packageConfiguration is "true"
@@ -161,21 +164,22 @@ func TestBool(t *testing.T) {
 
 	assert.False(t, b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			wantPath: 0,
+			wantPath.String(): 0,
 		}),
 	).NewScoped(0, 0, 3)))
 
 	mw := &config.MockWrite{}
 	assert.EqualError(t, b.Write(mw, true, scope.StoreID, 3), "Scope permission insufficient: Have 'Store'; Want 'Default,Website'")
 	assert.NoError(t, b.Write(mw, true, scope.WebsiteID, 3))
-	assert.Exactly(t, wantPath, mw.ArgPath)
-	assert.Exactly(t, "true", mw.ArgValue.(string))
+	assert.Exactly(t, wantPath.String(), mw.ArgPath)
+	assert.Exactly(t, true, mw.ArgValue.(bool))
 }
 
 func TestStr(t *testing.T) {
 	t.Parallel()
-	wantPath := scope.StrDefault.FQPathInt64(0, "web/cors/exposed_headers")
-	b := model.NewStr("web/cors/exposed_headers", model.WithConfigStructure(configStructure))
+	const pathWebCorsHeaders = "web/cors/exposed_headers"
+	wantPath := path.MustNewByParts(pathWebCorsHeaders)
+	b := model.NewStr(pathWebCorsHeaders, model.WithConfigStructure(configStructure))
 
 	assert.Empty(t, b.Options())
 
@@ -183,20 +187,21 @@ func TestStr(t *testing.T) {
 
 	assert.Exactly(t, "X-Gopher", b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			wantPath: "X-Gopher",
+			wantPath.String(): "X-Gopher",
 		}),
 	).NewScoped(0, 0, 0)))
 
 	mw := &config.MockWrite{}
 	assert.NoError(t, b.Write(mw, "dude", scope.DefaultID, 0))
-	assert.Exactly(t, wantPath, mw.ArgPath)
+	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, "dude", mw.ArgValue.(string))
 }
 
 func TestInt(t *testing.T) {
 	t.Parallel()
-	wantPath := scope.StrWebsites.FQPathInt64(10, "web/cors/int")
-	b := model.NewInt("web/cors/int", model.WithConfigStructure(configStructure))
+	const pathWebCorsInt = "web/cors/int"
+	wantPath := path.MustNewByParts(pathWebCorsInt).Bind(scope.WebsiteID, 10)
+	b := model.NewInt(pathWebCorsInt, model.WithConfigStructure(configStructure))
 
 	assert.Empty(t, b.Options())
 
@@ -204,19 +209,20 @@ func TestInt(t *testing.T) {
 
 	assert.Exactly(t, 2016, b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			wantPath: 2016,
+			wantPath.String(): 2016,
 		}),
 	).NewScoped(10, 0, 0)))
 
 	mw := &config.MockWrite{}
 	assert.NoError(t, b.Write(mw, 1, scope.WebsiteID, 10))
-	assert.Exactly(t, wantPath, mw.ArgPath)
+	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, "1", mw.ArgValue.(string))
 }
 
 func TestFloat64(t *testing.T) {
 	t.Parallel()
-	wantPath := scope.StrWebsites.FQPathInt64(10, "web/cors/float64")
+	const pathWebCorsF64 = "web/cors/float64"
+	wantPath := path.MustNewByParts(pathWebCorsF64).Bind(scope.WebsiteID, 10)
 	b := model.NewFloat64("web/cors/float64", model.WithConfigStructure(configStructure))
 
 	assert.Empty(t, b.Options())
@@ -225,14 +231,14 @@ func TestFloat64(t *testing.T) {
 
 	assert.Exactly(t, 2016.1000001, b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			wantPath: 2016.1000001,
+			wantPath.String(): 2016.1000001,
 		}),
 	).NewScoped(10, 0, 0)))
 
 	mw := &config.MockWrite{}
 	assert.NoError(t, b.Write(mw, 1.123456789, scope.WebsiteID, 10))
-	assert.Exactly(t, wantPath, mw.ArgPath)
-	assert.Exactly(t, "1.12345678900000", mw.ArgValue.(string))
+	assert.Exactly(t, wantPath.String(), mw.ArgPath)
+	assert.Exactly(t, 1.12345678900000, mw.ArgValue.(float64))
 }
 
 func TestRecursiveOption(t *testing.T) {

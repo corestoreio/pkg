@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/path"
+	cfgpath "github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cast"
@@ -32,17 +32,17 @@ type PkgBackend struct {
 	sync.Mutex
 }
 
-var _ source.Optioner = (*basePath)(nil)
+var _ source.Optioner = (*baseValue)(nil)
 
 // Option as an optional argument for the New*() functions.
 // To read more about the recursion pattern:
 // http://commandcenter.blogspot.com/2014/01/self-referential-functions-and-design.html
-type Option func(*basePath) Option
+type Option func(*baseValue) Option
 
 // WithConfigStructure sets a global PackageConfiguration for retrieving the
 // default value of a underlying type and for scope permission checking.
 func WithConfigStructure(cfgStruct element.SectionSlice) Option {
-	return func(b *basePath) Option {
+	return func(b *baseValue) Option {
 		prev := b.ConfigStructure
 		b.ConfigStructure = cfgStruct
 		return WithConfigStructure(prev)
@@ -51,10 +51,18 @@ func WithConfigStructure(cfgStruct element.SectionSlice) Option {
 
 // WithField creates a new SectionSlice and GroupSlice containing this one field.
 // The field.ID gets overwritten by the 3rd path parts to match the path.
+// Returns nil on error! Errors gets logged to debug. Might get refactored to return the error.
 func WithField(f *element.Field) Option {
-	return func(b *basePath) Option {
+	return func(b *baseValue) Option {
 		prev := b.ConfigStructure
-		pp := scope.PathSplit(b.string)
+		pp, err := b.r.Split()
+		if err != nil {
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("model.baseValue.WithField.route.Split", "err", err, "route", b.r.String())
+			}
+			b.ConfigStructure = nil
+			return nil
+		}
 		f.ID = pp[2]
 		b.ConfigStructure = element.MustNewConfiguration(
 			&element.Section{
@@ -73,7 +81,7 @@ func WithField(f *element.Field) Option {
 
 // WithSource sets a source slice for Options() and validation.
 func WithSource(vl source.Slice) Option {
-	return func(b *basePath) Option {
+	return func(b *baseValue) Option {
 		prev := b.Source
 		b.Source = vl
 		return WithSource(prev)
@@ -83,7 +91,7 @@ func WithSource(vl source.Slice) Option {
 // WithSourceByString sets a source slice for Options() and validation.
 // Wrapper for source.NewByString
 func WithSourceByString(pairs ...string) Option {
-	return func(b *basePath) Option {
+	return func(b *baseValue) Option {
 		prev := b.Source
 		b.Source = source.NewByString(pairs...)
 		return WithSource(prev)
@@ -93,17 +101,17 @@ func WithSourceByString(pairs ...string) Option {
 // WithSourceByInt sets a source slice for Options() and validation.
 // Wrapper for source.NewByInt
 func WithSourceByInt(vli source.Ints) Option {
-	return func(b *basePath) Option {
+	return func(b *baseValue) Option {
 		prev := b.Source
 		b.Source = source.NewByInt(vli)
 		return WithSource(prev)
 	}
 }
 
-// basePath defines the path in the "core_config_data" table like a/b/c. All other
+// baseValue defines the path in the "core_config_data" table like a/b/c. All other
 // types in this package inherits from this path type.
-type basePath struct {
-	r path.Route // contains the path like web/cors/exposed_headers
+type baseValue struct {
+	r cfgpath.Route // contains the path like web/cors/exposed_headers but has no scope
 
 	// ConfigStructure contains the whole package configuration which is used
 	// for scope permission checks and retrieving the default value. A nil
@@ -117,28 +125,28 @@ type basePath struct {
 	Source source.Slice
 }
 
-// NewPath creates a new basePath type
-func NewPath(p string, opts ...Option) basePath {
-	b := basePath{
-		r: path.Route(p),
+// NewValue creates a new baseValue type
+func NewValue(path string, opts ...Option) baseValue {
+	b := baseValue{
+		r: cfgpath.NewRoute(path),
 	}
 	(&b).Option(opts...)
 	return b
 }
 
 // Option sets the options and returns the last set previous option
-func (p *basePath) Option(opts ...Option) (previous Option) {
+func (bv *baseValue) Option(opts ...Option) (previous Option) {
 	for _, o := range opts {
-		previous = o(p)
+		previous = o(bv)
 	}
 	return
 }
 
 // Write writes a value v to the config.Writer without checking if the value
 // has changed. Checks if the Scope matches as defined in the non-nil ConfigStructure.
-func (p basePath) Write(w config.Writer, v interface{}, s scope.Scope, id int64) error {
-	if p.ConfigStructure != nil {
-		f, err := p.ConfigStructure.FindFieldByID(p.r)
+func (bv baseValue) Write(w config.Writer, v interface{}, s scope.Scope, id int64) error {
+	if bv.ConfigStructure != nil {
+		f, err := bv.ConfigStructure.FindFieldByID(bv.r)
 		if err != nil {
 			return errgo.Mask(err)
 		}
@@ -146,27 +154,27 @@ func (p basePath) Write(w config.Writer, v interface{}, s scope.Scope, id int64)
 			return errgo.Newf("Scope permission insufficient: Have '%s'; Want '%s'", s, f.Scope)
 		}
 	}
-	pp, err := path.New(p.r)
+	pp, err := cfgpath.New(bv.r)
 	if err != nil {
 		return errgo.Mask(err)
 	}
-	return w.Write(config.Path(pp.Bind(s, id)), config.Value(v))
+	return w.Write(pp.Bind(s, id), v)
 }
 
 // String returns the path
-func (p basePath) String() string {
-	return p.r.String()
+func (bv baseValue) String() string {
+	return bv.r.String()
 }
 
 // Route returns a copy of the underlying route.
-func (p basePath) Route() path.Route {
-	return p.r.Clone()
+func (bv baseValue) Route() cfgpath.Route {
+	return bv.r.Clone()
 }
 
 // InScope checks if a field from a path is allowed for current scope.
 // Returns nil on success.
-func (p basePath) InScope(sg scope.Scoper) (err error) {
-	_, err = p.field(sg)
+func (bv baseValue) InScope(sg scope.Scoper) (err error) {
+	_, err = bv.field(sg)
 	return
 }
 
@@ -176,21 +184,22 @@ func (p basePath) InScope(sg scope.Scoper) (err error) {
 // Usually this function gets customized in a sub-type. Customization
 // can have different arguments, etc but must always call this function to set
 // source slice.
-func (p basePath) Options() source.Slice {
-	return p.Source
+func (bv baseValue) Options() source.Slice {
+	return bv.Source
 }
 
 // FQ generates a fully qualified configuration path.
 // Example: general/country/allow would transform with StrScope scope.StrStores
 // and storeID e.g. 4 into: stores/4/general/country/allow
-func (p basePath) FQ(strScope scope.StrScope, scopeID int64) string {
-	return path.MustNew(p.r).BindStr(strScope, scopeID).String()
+func (bv baseValue) FQ(s scope.Scope, scopeID int64) (string, error) {
+	p, err := cfgpath.New(bv.r)
+	return p.Bind(s, scopeID).String(), err
 }
 
 // field searches for the field in a SectionSlice and checks if the scope in
 // ScopedGetter is sufficient.
-func (p basePath) field(sg scope.Scoper) (f *element.Field, err error) {
-	f, err = p.ConfigStructure.FindFieldByID(p.r)
+func (bv baseValue) field(sg scope.Scoper) (f *element.Field, err error) {
+	f, err = bv.ConfigStructure.FindFieldByID(bv.r)
 	if err != nil {
 		return nil, errgo.Mask(err)
 	}
@@ -204,35 +213,35 @@ func (p basePath) field(sg scope.Scoper) (f *element.Field, err error) {
 // lookupString searches the default value in element.SectionSlice and overwrites
 // it with a value from ScopedGetter if ScopedGetter is not empty.
 // validator can be nil which triggers the default validation method.
-func (p basePath) lookupString(sg config.ScopedGetter) (v string, err error) {
+func (bv baseValue) lookupString(sg config.ScopedGetter) (v string, err error) {
 
-	if f, errF := p.field(sg); errF == nil {
+	if f, errF := bv.field(sg); errF == nil {
 		v, err = cast.ToStringE(f.Default)
 	} else if PkgLog.IsDebug() {
-		PkgLog.Debug("model.basePath.lookupString.field", "err", errF, "path", p.r.String())
+		PkgLog.Debug("model.baseValue.lookupString.field", "err", errF, "path", bv.r.String())
 	}
 
-	if val, errSG := sg.String(p.r); errSG == nil {
+	if val, errSG := sg.String(bv.r); errSG == nil {
 		v = val
 	} else if PkgLog.IsDebug() {
 		// errSG is usually a key not found error, but that one is uninteresting
-		PkgLog.Debug("model.basePath.lookupString.ScopedGetter.String", "err", errSG, "path", p.r.String(), "previousErr", err)
+		PkgLog.Debug("model.baseValue.lookupString.ScopedGetter.String", "err", errSG, "path", bv.r.String(), "previousErr", err)
 	}
 	return
 }
 
-func (p basePath) validateString(v string) (err error) {
-	if p.Source != nil && false == p.Source.ContainsValString(v) {
-		jv, jErr := p.Source.ToJSON()
+func (bv baseValue) validateString(v string) (err error) {
+	if bv.Source != nil && false == bv.Source.ContainsValString(v) {
+		jv, jErr := bv.Source.ToJSON()
 		err = errgo.Newf("The value '%s' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
 	}
 	return
 }
 
-func (p basePath) lookupInt(sg config.ScopedGetter) (v int, err error) {
+func (bv baseValue) lookupInt(sg config.ScopedGetter) (v int, err error) {
 
 	var f *element.Field
-	if f, err = p.field(sg); err != nil {
+	if f, err = bv.field(sg); err != nil {
 		return
 	}
 
@@ -242,29 +251,29 @@ func (p basePath) lookupInt(sg config.ScopedGetter) (v int, err error) {
 		return
 	}
 
-	if val, errSG := sg.Int(p.r); errSG == nil {
+	if val, errSG := sg.Int(bv.r); errSG == nil {
 		v = val
 	} else {
 		// errSG is usually a key not found error, but that one is uninteresting
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("model.path.lookupString.ScopedGetter.Int", "err", errSG, "path", p.r.String(), "previousErr", err)
+			PkgLog.Debug("model.path.lookupString.ScopedGetter.Int", "err", errSG, "path", bv.r.String(), "previousErr", err)
 		}
 	}
 	return
 }
 
-func (p basePath) validateInt(v int) (err error) {
-	if p.Source != nil && false == p.Source.ContainsValInt(v) {
-		jv, jErr := p.Source.ToJSON()
+func (bv baseValue) validateInt(v int) (err error) {
+	if bv.Source != nil && false == bv.Source.ContainsValInt(v) {
+		jv, jErr := bv.Source.ToJSON()
 		err = errgo.Newf("The value '%d' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
 	}
 	return
 }
 
-func (p basePath) lookupFloat64(sg config.ScopedGetter) (v float64, err error) {
+func (bv baseValue) lookupFloat64(sg config.ScopedGetter) (v float64, err error) {
 
 	var f *element.Field
-	if f, err = p.field(sg); err != nil {
+	if f, err = bv.field(sg); err != nil {
 		return
 	}
 
@@ -274,29 +283,29 @@ func (p basePath) lookupFloat64(sg config.ScopedGetter) (v float64, err error) {
 		return
 	}
 
-	if val, errSG := sg.Float64(p.r); errSG == nil {
+	if val, errSG := sg.Float64(bv.r); errSG == nil {
 		v = val
 	} else {
 		// errSG is usually a key not found error, but that one is uninteresting
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("model.path.lookupString.ScopedGetter.Float64", "err", errSG, "path", p.r.String(), "previousErr", err)
+			PkgLog.Debug("model.path.lookupString.ScopedGetter.Float64", "err", errSG, "path", bv.r.String(), "previousErr", err)
 		}
 	}
 	return
 }
 
-func (p basePath) validateFloat64(v float64) (err error) {
-	if p.Source != nil && false == p.Source.ContainsValFloat64(v) {
-		jv, jErr := p.Source.ToJSON()
+func (bv baseValue) validateFloat64(v float64) (err error) {
+	if bv.Source != nil && false == bv.Source.ContainsValFloat64(v) {
+		jv, jErr := bv.Source.ToJSON()
 		err = errgo.Newf("The value '%.14f' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
 	}
 	return
 }
 
-func (p basePath) lookupBool(sg config.ScopedGetter) (v bool, err error) {
+func (bv baseValue) lookupBool(sg config.ScopedGetter) (v bool, err error) {
 
 	var f *element.Field
-	if f, err = p.field(sg); err != nil {
+	if f, err = bv.field(sg); err != nil {
 		return
 	}
 
@@ -306,12 +315,12 @@ func (p basePath) lookupBool(sg config.ScopedGetter) (v bool, err error) {
 		return
 	}
 
-	if val, errSG := sg.Bool(p.r); errSG == nil {
+	if val, errSG := sg.Bool(bv.r); errSG == nil {
 		v = val
 	} else {
 		// errSG is usually a key not found error, but that one is uninteresting
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("model.path.lookupString.ScopedGetter.Bool", "err", errSG, "path", p.r.String(), "previousErr", err)
+			PkgLog.Debug("model.path.lookupString.ScopedGetter.Bool", "err", errSG, "path", bv.r.String(), "previousErr", err)
 		}
 	}
 

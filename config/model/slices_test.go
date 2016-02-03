@@ -19,6 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
@@ -26,7 +27,8 @@ import (
 
 func TestStringCSV(t *testing.T) {
 	t.Parallel()
-	wantPath := scope.StrDefault.FQPathInt64(0, "web/cors/exposed_headers")
+	const pathWebCorsHeaders = "web/cors/exposed_headers"
+	wantPath := path.MustNewByParts(pathWebCorsHeaders)
 	b := model.NewStringCSV(
 		"web/cors/exposed_headers",
 		model.WithConfigStructure(configStructure),
@@ -41,7 +43,7 @@ func TestStringCSV(t *testing.T) {
 
 	assert.Exactly(t, []string{"Content-Application", "X-Gopher"}, b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			wantPath: "Content-Application,X-Gopher",
+			wantPath.String(): "Content-Application,X-Gopher",
 		}),
 	).NewScoped(0, 0, 0)))
 
@@ -49,17 +51,18 @@ func TestStringCSV(t *testing.T) {
 	b.Source.Merge(source.NewByString("a", "a", "b", "b", "c", "c"))
 
 	assert.NoError(t, b.Write(mw, []string{"a", "b", "c"}, scope.DefaultID, 0))
-	assert.Exactly(t, wantPath, mw.ArgPath)
+	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, "a,b,c", mw.ArgValue.(string))
 }
 
 func TestIntCSV(t *testing.T) {
-	t.Parallel()
 	defer debugLogBuf.Reset()
 	defer infoLogBuf.Reset()
 
+	const pathWebCorsIntSlice = "web/cors/int_slice"
+
 	b := model.NewIntCSV(
-		"web/cors/int_slice",
+		pathWebCorsIntSlice,
 		model.WithConfigStructure(configStructure),
 		model.WithSourceByInt(source.Ints{
 			{2014, "Year 2014"},
@@ -72,12 +75,12 @@ func TestIntCSV(t *testing.T) {
 	assert.Len(t, b.Options(), 4)
 
 	assert.Exactly(t, []int{2014, 2015, 2016}, b.Get(config.NewMockGetter().NewScoped(0, 0, 4)))
-	assert.Exactly(t, "web/cors/int_slice", b.String())
+	assert.Exactly(t, pathWebCorsIntSlice, b.String())
 
-	wantPath := scope.StrStores.FQPathInt64(4, "web/cors/int_slice")
+	wantPath := path.MustNewByParts(pathWebCorsIntSlice).Bind(scope.StoreID, 4)
 	assert.Exactly(t, []int{}, b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			wantPath: "3015,3016",
+			wantPath.String(): "3015,3016",
 		}),
 	).NewScoped(0, 0, 4)))
 
@@ -86,7 +89,7 @@ func TestIntCSV(t *testing.T) {
 
 	assert.Exactly(t, []int{2015, 2017}, b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			wantPath: "2015,2017",
+			wantPath.String(): "2015,2017",
 		}),
 	).NewScoped(0, 0, 4)))
 
@@ -95,7 +98,7 @@ func TestIntCSV(t *testing.T) {
 		{2018, "Year 2018"},
 	}))
 	assert.NoError(t, b.Write(mw, []int{2016, 2017, 2018}, scope.StoreID, 4))
-	assert.Exactly(t, wantPath, mw.ArgPath)
+	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, "2016,2017,2018", mw.ArgValue.(string))
 
 	//t.Log("\n", debugLogBuf.String())
