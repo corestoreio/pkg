@@ -19,7 +19,8 @@ import (
 )
 
 // AverageBufferSize should be adjusted to the average size of a bytes.buffer
-// in your application
+// in your application.
+// TODO: https://github.com/thejerf/gomempool
 var AverageBufferSize int = 16
 
 var bufferPool = &sync.Pool{
