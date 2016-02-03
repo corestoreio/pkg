@@ -13,86 +13,32 @@
 // limitations under the License.
 
 /*
-Package config handles the scopes and the configuration via consul, etc or simple files.
+Package config handles the configuration and its scopes.
+
+A configuration holds many path.Paths which contains a route, a scope and a scope ID.
+
+A route is defined as a minimum 3 level deep string separated by a slash. For example
+catalog/product/enable_flat.
+
+Scopes are default, website, group and store. Scope IDs are stored in the core_website,
+core_group or core_store tables for M1 and store_website, store_group and store for M2.
+
+Underlying storage can be a simple in memory map (default), MySQL table core_config_data
+itself (package config/db) or etcd (package config/etcd) or consul (package todo) or ...
+
+If you use any other configuration storage engine besides config/db package all values
+gets bi-directional automatically synchronized (todo).
 
 Elements
 
-The three elements Section, Group and Field represents front end configuration fields and more important
-default values and their backend/source models (loading and saving).
-
-Those three elements represents the PackageConfiguration variable which can be found in any package.
-
-Your app which includes the csfw must merge all "PackageConfiguration"s into a single slice.
-You should submit all default values (interface config.Sectioner) to the config.Service.ApplyDefaults()
-function.
-
-The models included in PackageConfiguration will be later used when handling the values
-for each configuration field.
-
-The JSON enconding of the three elements Section, Group and Field are intended to use
-on the backend REST API and for debugging and testing. Only used in non performance critical parts.
+The package config/element contains more detailed information.
 
 Scope Values
 
-To get a value from the configuration Service via any Get* method you have to set up the arguments.
-At least a config.Path() is needed. If you need a config value from another scope (store or website)
-you must also supply a Scope*() value. Without the scope the default value will be returned.
-The order of the arguments doesn't matter.
+To get a value from the configuration Service via any type method you have to provide a
+path.Path. If you use the ScopedGetter via function NewScoped() you can only provide a
+path.Route to the type methods String(), Int(), Float64(), etc.
 
-	val := config.Service.String(config.Path("path/to/setting"))
-
-Above code returns the default value for path/to/setting key.
-
-Can also be rewritten without using slashes:
-
-	val := config.Service.String(config.Path("path", "to", "setting"))
-
-Returning a website scope based value:
-
-	w := store.Service.Website()
-	val := config.Service.String(config.Path("path/to/setting"), config.Scope(scope.WebsiteID, w))
-
-can be rewritten as:
-
-	w := store.Service.Website()
-	val := config.Service.String(config.Path("path/to/setting"), config.ScopeWebsite(w))
-
-The code returns the value for a specific website scope. If the value has not been found then the
-default value will be returned.
-
-Returning a store scope based value:
-
-	w := store.Service.Website()
-	val := config.Service.String(config.Path("path/to/setting"), config.Scope(scope.StoreID, w))
-
-can be rewritten as:
-
-	w := store.Service.Website()
-	val := config.Service.String(config.Path("path/to/setting"), config.ScopeStore(w))
-
-The code returns the value for a specific store scope. If the value has not been found then the
-default value will be returned.
-
-Mixing Store and Website scope in calling of any Write/Get*() function will return that value which scope
-will be added at last to the OptionFunc slice.
-
-Scope Writes
-
-Storing config values happens via the Write() function. The order of the arguments doesn't matter.
-
-Default Scope:
-
-	Write(config.Path("currency", "option", "base"), config.Value("USD"))
-
-Website Scope:
-
-	Write(config.Path("currency", "option", "base"), config.Value("EUR"), config.ScopeWebsite(w))
-
-Store Scope:
-
-	Write(config.Path("currency", "option", "base"), config.ValueReader(resp.Body), config.ScopeStore(s))
-
-An io.Reader is provided with automatic Close() calling.
-
+The examples show the overall best practices.
 */
 package config

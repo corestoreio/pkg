@@ -13,4 +13,21 @@
 // limitations under the License.
 
 // Package element represents Magento system.xml configuration elements.
+//
+// The three elements Section, Group and Field represents front-end configuration fields and more important
+// default values and their permissions. They do not define how to handle the source and backend model
+// in a Magento sense. Source models are use to load values for displaying in a e.g. HTML select field
+// or also known as option values. Backend models know how to save and load a path.Path
+//
+// Those three elements represents the PackageConfiguration variable which can be found in any package.
+//
+// Your app which includes the csfw must merge all "PackageConfiguration"s into a single slice.
+// You should submit all default values (interface config.Sectioner) to the config.Service.ApplyDefaults()
+// function.
+//
+// The models included in PackageConfiguration will be later used when handling the values
+// for each configuration field.
+//
+// The JSON enconding of the three elements Section, Group and Field are intended to use
+// on the backend REST API and for debugging and testing. Only used in non performance critical parts.
 package element
