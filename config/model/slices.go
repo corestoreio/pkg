@@ -20,6 +20,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/juju/errgo"
 )
@@ -37,7 +38,8 @@ func NewStringCSV(path string, opts ...Option) StringCSV {
 }
 
 // Get returns a string slice. Splits the stored string by comma.
-// Can return nil,nil
+// Can return nil,nil. Empty values will be discarded. Returns a slice
+// containing unique entries.
 func (str StringCSV) Get(sg config.ScopedGetter) ([]string, error) {
 	s, err := str.lookupString(sg)
 	if err != nil {
@@ -46,8 +48,16 @@ func (str StringCSV) Get(sg config.ScopedGetter) ([]string, error) {
 	if s == "" {
 		return nil, nil
 	}
-	// validate ?
-	return strings.Split(s, CSVSeparator), nil
+
+	var ret util.StringSlice = strings.Split(s, CSVSeparator)
+	ret = ret.Unique()
+	for i, part := range ret {
+		if err := str.validateString(part); err != nil {
+			ret.Delete(i) // ignore error out of range
+			return ret, err
+		}
+	}
+	return ret, nil
 }
 
 // Write writes a slice with its scope and ID to the writer

@@ -27,45 +27,71 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-//func TestStringCSV(t *testing.T) {
-//	t.Parallel()
-//	const pathWebCorsHeaders = "web/cors/exposed_headers"
-//	wantPath := path.MustNewByParts(pathWebCorsHeaders)
-//	b := model.NewStringCSV(
-//		"web/cors/exposed_headers",
-//		model.WithConfigStructure(configStructure),
-//		model.WithSourceByString(
-//			"Content-Type", "Content Type", "X-CoreStore-ID", "CoreStore Microservice ID",
-//		),
-//	)
-//
-//	assert.NotEmpty(t, b.Options())
-//
-//	sl, err := b.Get(config.NewMockGetter().NewScoped(0, 0, 0))
-//	assert.NoError(t, err)
-//	assert.Exactly(t, []string{"Content-Type", "X-CoreStore-ID"}, sl)
-//
-//	assert.Exactly(t, []string{"Content-Application", "X-Gopher"}, b.Get(config.NewMockGetter(
-//		config.WithMockValues(config.MockPV{
-//			wantPath.String(): "Content-Application,X-Gopher",
-//		}),
-//	).NewScoped(0, 0, 0)))
-//
-//	assert.Nil(t, b.Get(config.NewMockGetter(
-//		config.WithMockValues(config.MockPV{
-//			wantPath.String(): "",
-//		}),
-//	).NewScoped(0, 0, 0)))
-//
-//	mw := &config.MockWrite{}
-//	b.Source.Merge(source.NewByString("a", "a", "b", "b", "c", "c"))
-//
-//	assert.NoError(t, b.Write(mw, []string{"a", "b", "c"}, scope.DefaultID, 0))
-//	assert.Exactly(t, wantPath.String(), mw.ArgPath)
-//	assert.Exactly(t, "a,b,c", mw.ArgValue.(string))
-//
-//	assert.EqualError(t, b.Write(mw, []string{"abc"}, scope.DefaultID, 0), "The value 'abc' cannot be found within the allowed Options():\n[{\"Value\":\"Content-Type\",\"Label\":\"Content Type\"},{\"Value\":\"X-CoreStore-ID\",\"Label\":\"CoreStore Microservice ID\"},{\"Value\":\"a\",\"Label\":\"a\"},{\"Value\":\"b\",\"Label\":\"b\"},{\"Value\":\"c\",\"Label\":\"c\"}]\n\nJSON Error: %!s(<nil>)")
-//}
+func TestStringCSV(t *testing.T) {
+	t.Parallel()
+	const pathWebCorsHeaders = "web/cors/exposed_headers"
+	wantPath := path.MustNewByParts(pathWebCorsHeaders).String()
+	b := model.NewStringCSV(
+		"web/cors/exposed_headers",
+		model.WithConfigStructure(configStructure),
+		model.WithSourceByString(
+			"Content-Type", "Content Type", "X-CoreStore-ID", "CoreStore Microservice ID",
+		),
+	)
+	assert.NotEmpty(t, b.Options())
+
+	sl, err := b.Get(config.NewMockGetter().NewScoped(0, 0, 0))
+	assert.NoError(t, err)
+	assert.Exactly(t, []string{"Content-Type", "X-CoreStore-ID"}, sl) // default values from variable configStructure
+
+	tests := []struct {
+		have    string
+		want    []string
+		wantErr error
+	}{
+		{"Content-Type,X-CoreStore-ID", []string{"Content-Type", "X-CoreStore-ID"}, nil},
+		{"", nil, nil},
+		{"X-CoreStore-ID", []string{"X-CoreStore-ID"}, nil},
+		{"Content-Type,X-CS", []string{"Content-Type"}, errors.New("The value 'X-CS' cannot be found within the allowed Options():\n[{\"Value\":\"Content-Type\",\"Label\":\"Content Type\"},{\"Value\":\"X-CoreStore-ID\",\"Label\":\"CoreStore Microservice ID\"}]\n\nJSON Error: %!s(<nil>)")},
+	}
+	for i, test := range tests {
+		haveSL, haveErr := b.Get(config.NewMockGetter(
+			config.WithMockValues(config.MockPV{
+				wantPath: test.have,
+			}),
+		).NewScoped(0, 0, 4))
+
+		assert.Exactly(t, test.want, haveSL, "Index %d", i)
+		if test.wantErr != nil {
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+			continue
+		}
+		assert.NoError(t, haveErr, "Index %d", i)
+	}
+}
+
+func TestStringCSVWrite(t *testing.T) {
+	t.Parallel()
+	const pathWebCorsHeaders = "web/cors/exposed_headers"
+	wantPath := path.MustNewByParts(pathWebCorsHeaders).String()
+	b := model.NewStringCSV(
+		"web/cors/exposed_headers",
+		model.WithConfigStructure(configStructure),
+		model.WithSourceByString(
+			"Content-Type", "Content Type", "X-CoreStore-ID", "CoreStore Microservice ID",
+		),
+	)
+
+	mw := &config.MockWrite{}
+	b.Source.Merge(source.NewByString("a", "a", "b", "b", "c", "c"))
+
+	assert.NoError(t, b.Write(mw, []string{"a", "b", "c"}, scope.DefaultID, 0))
+	assert.Exactly(t, wantPath, mw.ArgPath)
+	assert.Exactly(t, "a,b,c", mw.ArgValue.(string))
+
+	assert.EqualError(t, b.Write(mw, []string{"abc"}, scope.DefaultID, 0), "The value 'abc' cannot be found within the allowed Options():\n[{\"Value\":\"Content-Type\",\"Label\":\"Content Type\"},{\"Value\":\"X-CoreStore-ID\",\"Label\":\"CoreStore Microservice ID\"},{\"Value\":\"a\",\"Label\":\"a\"},{\"Value\":\"b\",\"Label\":\"b\"},{\"Value\":\"c\",\"Label\":\"c\"}]\n\nJSON Error: %!s(<nil>)")
+
+}
 
 func TestIntCSV(t *testing.T) {
 	t.Parallel()
