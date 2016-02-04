@@ -37,16 +37,17 @@ func NewStringCSV(path string, opts ...Option) StringCSV {
 }
 
 // Get returns a string slice. Splits the stored string by comma.
-func (str StringCSV) Get(sg config.ScopedGetter) []string {
+// Can return nil,nil
+func (str StringCSV) Get(sg config.ScopedGetter) ([]string, error) {
 	s, err := str.lookupString(sg)
-	if err != nil && PkgLog.IsDebug() {
-		PkgLog.Debug("model.StringCSV.Get.lookupString", "err", err, "route", str.r.String())
+	if err != nil {
+		return nil, err
 	}
 	if s == "" {
-		return nil
+		return nil, nil
 	}
 	// validate ?
-	return strings.Split(s, CSVSeparator)
+	return strings.Split(s, CSVSeparator), nil
 }
 
 // Write writes a slice with its scope and ID to the writer
@@ -61,47 +62,53 @@ func (str StringCSV) Write(w config.Writer, sl []string, s scope.Scope, id int64
 
 // IntCSV represents a path in config.Getter which will be saved as a
 // CSV string and returned as an int64 slice. Separator is a comma.
-type IntCSV struct{ baseValue }
+type IntCSV struct {
+	baseValue
+	// Lenient ignores errors in parsing integers
+	Lenient bool
+}
 
 // NewIntCSV creates a new int CSV type. Acts as a multiselect.
 func NewIntCSV(path string, opts ...Option) IntCSV {
 	return IntCSV{baseValue: NewValue(path, opts...)}
 }
 
-// Get returns an int slice. Int string gets splitted by comma.
-func (ic IntCSV) Get(sg config.ScopedGetter) []int {
+// Get returns an int slice. Int string gets splited by comma.
+// Can return nil,nil. If multiple values cannot be casted to int then the
+// last known error gets returned.
+func (ic IntCSV) Get(sg config.ScopedGetter) ([]int, error) {
 	s, err := ic.lookupString(sg)
-	if err != nil && PkgLog.IsDebug() {
-		PkgLog.Debug("model.IntCSV.Get.lookupString", "err", err, "route", ic.r.String())
+	if err != nil {
+		return nil, err
 	}
 	if s == "" {
-		return nil
+		return nil, nil
 	}
 
 	csv := strings.Split(s, CSVSeparator)
 	ret := make([]int, 0, len(csv))
-	for i, line := range csv {
-		var err error
 
-		v, err := strconv.Atoi(line)
-		if err != nil {
-			if PkgLog.IsDebug() {
-				PkgLog.Debug("model.IntCSV.Get.strconv.ParseInt", "err", err, "position", i, "line", line)
-			}
-			continue
+	for _, line := range csv {
+		v, err := ic.extractInt(line)
+		if err != nil && false == ic.Lenient {
+			return ret, err
 		}
-
-		if err := ic.validateInt(v); err != nil {
-			if PkgLog.IsDebug() {
-				PkgLog.Debug("model.IntCSV.Get.validateInt", "err", err, "position", i, "line", line)
-			}
-			continue
+		if err == nil {
+			ret = append(ret, v)
 		}
-
-		ret = append(ret, v)
-
 	}
-	return ret
+	return ret, nil
+}
+
+func (ic IntCSV) extractInt(line string) (int, error) {
+	v, err := strconv.Atoi(line)
+	if err != nil {
+		return 0, err
+	}
+	if err = ic.validateInt(v); err != nil {
+		return 0, err
+	}
+	return v, nil
 }
 
 // Write writes int values as a CSV string
