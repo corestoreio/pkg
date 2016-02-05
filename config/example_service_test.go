@@ -27,7 +27,7 @@ var pathString = path.MustNewByParts("scope/test/string") // panics on incorrect
 
 // Default storage engine with build-in in-memory map.
 // the NewService gets only instantiated once during app start up.
-var configSrv = config.NewService( /*options*/ )
+var configSrv = config.MustNewService( /*options*/ )
 
 func ExampleService() {
 

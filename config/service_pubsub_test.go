@@ -43,7 +43,7 @@ func TestPubSubBubbling(t *testing.T) {
 	defer debugLogBuf.Reset()
 	testPath := path.MustNewByParts("aa/bb/cc")
 
-	s := config.NewService()
+	s := config.MustNewService()
 
 	_, err := s.Subscribe(path.Route{}, nil)
 	assert.EqualError(t, err, path.ErrIncorrectPath.Error())
@@ -80,7 +80,7 @@ func TestPubSubPanicSimple(t *testing.T) {
 	defer debugLogBuf.Reset()
 	testPath := path.NewRoute("xx/yy/zz")
 
-	s := config.NewService()
+	s := config.MustNewService()
 	subID, err := s.Subscribe(testPath, &testSubscriber{
 		t: t,
 		f: func(_ path.Path) error {
@@ -99,7 +99,7 @@ func TestPubSubPanicError(t *testing.T) {
 	testPath := path.NewRoute("aa/bb/cc")
 
 	var pErr = errors.New("OMG! Panic!")
-	s := config.NewService()
+	s := config.MustNewService()
 	subID, err := s.Subscribe(testPath, &testSubscriber{
 		t: t,
 		f: func(_ path.Path) error {
@@ -116,7 +116,7 @@ func TestPubSubPanicError(t *testing.T) {
 
 func TestPubSubPanicMultiple(t *testing.T) {
 	defer debugLogBuf.Reset()
-	s := config.NewService()
+	s := config.MustNewService()
 
 	subID, err := s.Subscribe(path.NewRoute("xx"), &testSubscriber{
 		t: t,
@@ -163,7 +163,7 @@ func TestPubSubUnsubscribe(t *testing.T) {
 	defer debugLogBuf.Reset()
 
 	var pErr = errors.New("WTF? Panic!")
-	s := config.NewService()
+	s := config.MustNewService()
 	subID, err := s.Subscribe(path.NewRoute("xx/yy/zz"), &testSubscriber{
 		t: t,
 		f: func(_ path.Path) error {
@@ -191,7 +191,7 @@ func TestPubSubEvict(t *testing.T) {
 	levelCall := new(levelCalls)
 
 	var pErr = errors.New("WTF Eviction? Panic!")
-	s := config.NewService()
+	s := config.MustNewService()
 	subID, err := s.Subscribe(path.NewRoute("xx/yy"), &testSubscriber{
 		t: t,
 		f: func(p path.Path) error {

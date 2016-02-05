@@ -20,11 +20,8 @@ import (
 
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/path"
-	"github.com/corestoreio/csfw/storage/csdb"
-	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/cast"
-	"github.com/juju/errgo"
 )
 
 // LeftDelim and RightDelim are used withing the core_config_data.value field to allow the replacement
@@ -68,11 +65,11 @@ type (
 		// if you know exactly what you are doing.
 		Storage Storager
 		*pubSub
+		// Errors which ServiceOption function arguments are generating
+		// Usually empty (= nil) ;-)
+		Errors []error
 	}
 )
-
-// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
-var TableCollection csdb.Manager
 
 // DefaultService provides a standard NewService via init() func loaded.
 var DefaultService *Service
@@ -83,38 +80,68 @@ var DefaultService *Service
 var ErrKeyNotFound = errors.New("Key not found")
 
 func init() {
-	DefaultService = NewService()
+	DefaultService = MustNewService()
 }
 
 // ServiceOption applies options to the NewService.
 type ServiceOption func(*Service)
 
-// WithDBStorage applies the MySQL storage to a new Service. It
-// starts the idle checker of the DBStorage type.
-func WithDBStorage(p csdb.Preparer) ServiceOption {
-	return func(s *Service) {
-		s.Storage = MustNewDBStorage(p).Start()
+// NewService creates the main new configuration for all scopes: default, website
+// and store. Default Storage is a simple map[string]interface{}. A new go routine
+// will be startet for the publish and subscribe feature.
+func NewService(opts ...ServiceOption) (*Service, error) {
+	s := &Service{
+		pubSub:  newPubSub(),
+		Storage: newSimpleStorage(),
 	}
+
+	go s.publish()
+
+	_ = s.Options(opts...)
+
+	if len(s.Errors) > 0 {
+		if err := s.Close(); err != nil { // terminate publisher go routine and prevent leaking
+			s.Errors = append(s.Errors, err)
+		}
+		return nil, s
+	}
+
+	p := path.MustNewByParts(PathCSBaseURL)
+	if err := s.Storage.Set(p, CSBaseURL); err != nil {
+		if err := s.Close(); err != nil { // terminate publisher go routine and prevent leaking
+			s.Errors = append(s.Errors, err)
+		}
+		return nil, err
+	}
+	return s, nil
 }
 
-// NewService creates the main new configuration for all scopes: default, website
-// and store. Default Storage is a simple map[string]interface{}
-func NewService(opts ...ServiceOption) *Service {
-	s := &Service{
-		pubSub: newPubSub(),
+// MustNewService same as NewService but panics on error. Use only in testing
+// or during boot process.
+func MustNewService(opts ...ServiceOption) *Service {
+	s, err := NewService(opts...)
+	if err != nil {
+		panic(err)
 	}
+	return s
+}
+
+// Options applies service options.
+func (s *Service) Options(opts ...ServiceOption) error {
 	for _, opt := range opts {
 		if opt != nil {
 			opt(s)
 		}
 	}
-	if s.Storage == nil {
-		s.Storage = newSimpleStorage()
+	if len(s.Errors) > 0 {
+		return s
 	}
-	go s.publish()
-	p := path.MustNewByParts(PathCSBaseURL)
-	s.Storage.Set(p, CSBaseURL)
-	return s
+	return nil
+}
+
+// Error implements error interface
+func (s *Service) Error() string {
+	return util.Errors(s.Errors...)
 }
 
 // NewScoped creates a new scope base configuration reader
@@ -123,7 +150,8 @@ func (s *Service) NewScoped(websiteID, groupID, storeID int64) ScopedGetter {
 }
 
 // ApplyDefaults reads slice Sectioner and applies the keys and values to the
-// default configuration. Overwrites existing values.
+// default configuration. Overwrites existing values. TODO maybe use a flag to
+// prevent overwriting
 func (s *Service) ApplyDefaults(ss element.Sectioner) (count int, err error) {
 	def, err := ss.Defaults()
 	if err != nil {
@@ -142,43 +170,6 @@ func (s *Service) ApplyDefaults(ss element.Sectioner) (count int, err error) {
 			return
 		}
 		count++
-	}
-	return
-}
-
-// ApplyCoreConfigData reads the table core_config_data into the Service and overrides
-// existing values. If the column `value` is NULL entry will be ignored. It returns the
-// loadedRows which are all rows from the table and the writtenRows which are the applied
-// config values where a value is valid.
-func (s *Service) ApplyCoreConfigData(dbrSess dbr.SessionRunner) (loadedRows, writtenRows int, err error) {
-	var ccd TableCoreConfigDataSlice
-	loadedRows, err = csdb.LoadSlice(dbrSess, TableCollection, TableIndexCoreConfigData, &ccd)
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("config.Service.ApplyCoreConfigData", "rows", loadedRows)
-	}
-	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("config.Service.ApplyCoreConfigData.LoadSlice", "err", err)
-		}
-		err = errgo.Mask(err)
-		return
-	}
-
-	for _, cd := range ccd {
-		if cd.Value.Valid {
-			var p path.Path
-			p, err = path.NewByParts(cd.Path)
-			if err != nil {
-				err = errgo.Mask(err)
-				return
-			}
-
-			if err = s.Write(p.Bind(scope.FromString(cd.Scope), cd.ScopeID), cd.Value.String); err != nil {
-				err = errgo.Mask(err)
-				return
-			}
-			writtenRows++
-		}
 	}
 	return
 }

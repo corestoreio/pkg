@@ -21,7 +21,6 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/path"
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
@@ -30,22 +29,8 @@ var (
 	_ config.Getter     = (*config.Service)(nil)
 	_ config.Writer     = (*config.Service)(nil)
 	_ config.Subscriber = (*config.Service)(nil)
+	_ error             = (*config.Service)(nil)
 )
-
-func init() {
-	if _, err := csdb.GetDSNTest(); err == csdb.ErrDSNTestNotFound {
-		println("init()", err.Error(), "will skip loading of TableCollection")
-		return
-	}
-
-	dbc := csdb.MustConnectTest()
-	if err := config.TableCollection.Init(dbc.NewSession()); err != nil {
-		panic(err)
-	}
-	if err := dbc.Close(); err != nil {
-		panic(err)
-	}
-}
 
 func TestService_ApplyDefaults(t *testing.T) {
 	t.Parallel()
@@ -87,7 +72,7 @@ func TestService_ApplyDefaults(t *testing.T) {
 			),
 		},
 	)
-	s := config.NewService()
+	s := config.MustNewService()
 	s.ApplyDefaults(pkgCfg)
 	cer, err := pkgCfg.FindFieldByID(path.NewRoute("contact", "email", "recipient_email"))
 	if err != nil {
@@ -99,51 +84,9 @@ func TestService_ApplyDefaults(t *testing.T) {
 	assert.NoError(t, s.Close())
 }
 
-// TestService_ApplyCoreConfigData reads from the MySQL core_config_data table and applies
-// these value to the underlying storage. tries to get back the values from the
-// underlying storage
-func TestService_ApplyCoreConfigData(t *testing.T) {
-	defer debugLogBuf.Reset()
-	defer infoLogBuf.Reset()
-	if _, err := csdb.GetDSNTest(); err == csdb.ErrDSNTestNotFound {
-		t.Skip(err)
-	}
-
-	dbc := csdb.MustConnectTest()
-	defer func() { assert.NoError(t, dbc.Close()) }()
-	sess := dbc.NewSession(nil) // nil tricks the NewSession ;-)
-
-	s := config.NewService()
-	defer func() { assert.NoError(t, s.Close()) }()
-
-	loadedRows, writtenRows, err := s.ApplyCoreConfigData(sess)
-	if err != nil {
-		t.Fatal(err)
-	}
-	assert.True(t, loadedRows > 9, "loadedRows %d", loadedRows)
-	assert.True(t, writtenRows > 9, "writtenRows %d", writtenRows)
-
-	//	println("\n", debugLogBuf.String(), "\n")
-	//	println("\n", infoLogBuf.String(), "\n")
-
-	assert.NoError(t, s.Write(path.MustNewByParts("web/secure/offloader_header"), "SSL_OFFLOADED"))
-
-	h, err := s.String(path.MustNewByParts("web/secure/offloader_header"))
-	assert.NoError(t, err)
-	assert.Exactly(t, "SSL_OFFLOADED", h)
-
-	allKeys, err := s.Storage.AllKeys()
-	assert.NoError(t, err)
-	if len(allKeys) == writtenRows {
-		assert.Len(t, allKeys, writtenRows)
-	} else {
-		assert.True(t, len(allKeys) > 170) // TODO: refactor this if else and use a clean database ...
-	}
-}
-
 func TestNewServiceStandard(t *testing.T) {
 	t.Parallel()
-	srv := config.NewService(nil)
+	srv := config.MustNewService(nil)
 	assert.NotNil(t, srv)
 	url, err := srv.String(path.MustNewByParts(config.PathCSBaseURL))
 	assert.NoError(t, err)
@@ -156,7 +99,7 @@ func TestWithDBStorage(t *testing.T) {
 
 func TestNotKeyNotFoundError(t *testing.T) {
 	t.Parallel()
-	srv := config.NewService(nil)
+	srv := config.MustNewService(nil)
 	assert.NotNil(t, srv)
 
 	scopedSrv := srv.NewScoped(1, 1, 1)
@@ -174,7 +117,7 @@ func TestNotKeyNotFoundError(t *testing.T) {
 
 func TestService_NewScoped(t *testing.T) {
 	t.Parallel()
-	srv := config.NewService(nil)
+	srv := config.MustNewService(nil)
 	assert.NotNil(t, srv)
 
 	scopedSrv := srv.NewScoped(1, 1, 1)
@@ -186,7 +129,7 @@ func TestService_NewScoped(t *testing.T) {
 
 func TestService_Write(t *testing.T) {
 	t.Parallel()
-	srv := config.NewService()
+	srv := config.MustNewService()
 	assert.NotNil(t, srv)
 
 	p1 := path.Path{}
@@ -219,7 +162,7 @@ func TestService_Types(t *testing.T) {
 
 func testServiceTypes(t *testing.T, p path.Path, writeVal, wantVal interface{}, iFaceIDX, testIDX int, wantErr error) {
 
-	srv := config.NewService()
+	srv := config.MustNewService()
 
 	writeErr := srv.Write(p, writeVal)
 	if wantErr != nil {
