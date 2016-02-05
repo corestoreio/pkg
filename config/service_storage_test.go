@@ -46,8 +46,8 @@ func TestSimpleStorage(t *testing.T) {
 
 	keys, err := sp.AllKeys()
 	assert.NoError(t, err)
+	keys.Sort()
 
-	// this may fail because there is no guaranteed order in the slice. so probably refactor here
 	wantKeys := path.PathSlice{path.Path{Route: path.NewRoute(`aa/bb/cc`), Scope: 1, ID: 0}, path.Path{Route: path.NewRoute(`xx/yy/zz`), Scope: 4, ID: 2}}
 	assert.Exactly(t, wantKeys, keys)
 }

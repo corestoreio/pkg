@@ -16,15 +16,20 @@ package config_test
 
 import (
 	"fmt"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-func ExampleService() {
+// We focus here on type String() other primitive types are of course also available.
+var pathString = path.MustNewByParts("scope/test/string") // panics on incorrect argument.
 
-	// default storage engine with build-in in-memory map.
-	srv := config.NewService( /*options*/ )
+// Default storage engine with build-in in-memory map.
+// the NewService gets only instantiated once during app start up.
+var configSrv = config.NewService( /*options*/ )
+
+func ExampleService() {
 
 	// now add some configuration values with different scopes.
 	// normally these config values will be loaded from the core_config_data table
@@ -33,39 +38,61 @@ func ExampleService() {
 	// The IDs are picked randomly here. Group config values are officially not
 	// supported, but we do ;-)
 
-	// We focus here on type String() other primitive types are of course also available.
-
-	var pathScopeTestString = path.MustNewByParts("scope/test/string") // panics on incorrect argument.
-
 	// scope default:
-	if err := srv.Write(pathScopeTestString, "DefaultGopher"); err != nil {
+	if err := configSrv.Write(pathString, "DefaultGopher"); err != nil {
 		fmt.Printf("Write Error: %s", err)
 		return
 	}
 
 	// scope website. The number 3 is made up and comes usually from DB table
 	// (M1) core_website or (M2) store_website.
-	if err := srv.Write(pathScopeTestString.Bind(scope.WebsiteID, 3), "WebsiteGopher"); err != nil {
+	if err := configSrv.Write(pathString.Bind(scope.WebsiteID, 3), "WebsiteGopher"); err != nil {
 		fmt.Printf("Write Error: %s", err)
 		return
 	}
 
 	// scope store. The number 2 is made up and comes usually from DB table
 	// (M1) core_store or (M2) store.
-	if err := srv.Write(pathScopeTestString.Bind(scope.StoreID, 2), "StoreGopher"); err != nil {
+	if err := configSrv.Write(pathString.Bind(scope.StoreID, 2), "StoreGopher"); err != nil {
 		fmt.Printf("Write Error: %s", err)
 		return
 	}
 
-	val, err := srv.String(pathScopeTestString)
+	// Scope1
+	val, err := configSrv.String(pathString)
 	if err != nil {
 		fmt.Printf("srvString Error: %s", err)
 		return
 	}
 	fmt.Println("Scope1:", val)
 
-	//todo more getters with different scope
+	// Scope2
+	val, err = configSrv.String(pathString.Bind(scope.WebsiteID, 3))
+	if err != nil {
+		fmt.Printf("srvString Error: %s", err)
+		return
+	}
+	fmt.Println("Scope2:", val)
+
+	// Scope3
+	val, err = configSrv.String(pathString.Bind(scope.StoreID, 2))
+	if err != nil {
+		fmt.Printf("srvString Error: %s", err)
+		return
+	}
+	fmt.Println("Scope3:", val)
+
+	// Scope4
+	val, err = configSrv.String(pathString.Bind(scope.StoreID, 3)) // different scope ID
+	if err != nil {
+		fmt.Printf("Scope4: srvString Error: %s\n", err)
+	}
+	fmt.Printf("Scope4: Is KeyNotFound %t\n", !config.NotKeyNotFoundError(err))
 
 	// Output:
 	// Scope1: DefaultGopher
+	// Scope2: WebsiteGopher
+	// Scope3: StoreGopher
+	// Scope4: srvString Error: Key not found
+	// Scope4: Is KeyNotFound true
 }
