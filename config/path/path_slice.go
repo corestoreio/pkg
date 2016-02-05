@@ -14,6 +14,11 @@
 
 package path
 
+import (
+	"bytes"
+	"sort"
+)
+
 // PathSlice represents a collection of Paths
 type PathSlice []Path
 
@@ -29,3 +34,12 @@ func (ps PathSlice) Contains(p Path) bool {
 	}
 	return false
 }
+
+func (ps PathSlice) Len() int { return len(ps) }
+func (ps PathSlice) Less(i, j int) bool {
+	return bytes.Compare(ps[i].Route.Chars, ps[j].Route.Chars) == -1
+}
+func (ps PathSlice) Swap(i, j int) { ps[i], ps[j] = ps[j], ps[i] }
+
+// Sort is a convenience method.
+func (ps PathSlice) Sort() { sort.Stable(ps) }
