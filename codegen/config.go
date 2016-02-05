@@ -247,9 +247,9 @@ var ConfigTableToStruct = TableToStructMap{
 		GenericsWhiteList: "SQLQuery",
 		GenericsFunctions: tpl.OptAll,
 	},
-	"config": TableToStruct{
-		Package:           "config",
-		OutputFile:        BasePath.AppendDir("config", "tables_generated"),
+	"config/ccd": TableToStruct{
+		Package:           "ccd",
+		OutputFile:        BasePath.AppendDir("config", "ccd", "tables_generated"),
 		SQLQuery:          `{{tableprefix}}core_config_data`,
 		EntityTypeCodes:   nil,
 		GenericsWhiteList: "",
