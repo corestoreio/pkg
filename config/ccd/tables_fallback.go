@@ -16,7 +16,7 @@
 
 // Only include this file IF no specific build tag for mage has been set
 
-package config
+package ccd
 
 // Auto generated via tableToStruct
 
@@ -32,6 +32,9 @@ var (
 	_ = (*sort.IntSlice)(nil)
 	_ = (*time.Time)(nil)
 )
+
+// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
+var TableCollection csdb.Manager
 
 // TableIndex... is the index to a table. These constants are guaranteed
 // to stay the same for all Magento versions. Please access a table via this

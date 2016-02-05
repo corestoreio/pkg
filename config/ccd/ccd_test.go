@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config_test
+package ccd_test
 
 import (
 	"testing"
@@ -21,13 +21,14 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/ccd"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ config.Storager = (*config.DBStorage)(nil)
+var _ config.Storager = (*ccd.DBStorage)(nil)
 
 func TestDBStorageOneStmt(t *testing.T) {
 	debugLogBuf.Reset()
@@ -40,7 +41,7 @@ func TestDBStorageOneStmt(t *testing.T) {
 	dbc := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
 
-	sdb := config.MustNewDBStorage(dbc.DB).Start()
+	sdb := ccd.MustNewDBStorage(dbc.DB).Start()
 
 	// Stop() would only be called under rare circumstances on a production system
 	defer func() { assert.NoError(t, sdb.Stop()) }()
@@ -97,7 +98,7 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 	dbc := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
 
-	sdb := config.MustNewDBStorage(dbc.DB)
+	sdb := ccd.MustNewDBStorage(dbc.DB)
 	sdb.All.Idle = time.Second * 1
 	sdb.Read.Idle = time.Second * 1
 	sdb.Write.Idle = time.Second * 1

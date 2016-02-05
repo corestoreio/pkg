@@ -12,12 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package ccd
 
 import (
 	"fmt"
 	"time"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -187,7 +188,7 @@ func (dbs *DBStorage) Get(key path.Path) (interface{}, error) {
 	if data.Valid {
 		return data.String, nil
 	}
-	return nil, ErrKeyNotFound
+	return nil, config.ErrKeyNotFound
 }
 
 // AllKeys returns all available keys. Database errors get logged as info message.
