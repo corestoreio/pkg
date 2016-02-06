@@ -32,7 +32,7 @@ var _ sql.Scanner = (*path.Route)(nil)
 var _ driver.Valuer = (*path.Route)(nil)
 
 func TestIntegrationSQLType(t *testing.T) {
-	if _, err := csdb.GetDSNTest(); err == csdb.ErrDSNTestNotFound {
+	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
 		t.Skip(err)
 	}
 	dbCon := csdb.MustConnectTest()
