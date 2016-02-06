@@ -33,6 +33,17 @@ func (c Chars) String() string {
 	return string(c)
 }
 
+func (c Chars) GoString() string {
+	if c == nil {
+		return `nil`
+	}
+	if bytes.IndexByte(c, '`') > 0 {
+		// this can be optimized but not now
+		return fmt.Sprintf("text.Chars(`%s`)", bytes.Replace(c, []byte("`"), []byte("`+\"`\"+`"), -1))
+	}
+	return fmt.Sprintf("text.Chars(`%s`)", c)
+}
+
 // Bytes converts the Chars to a byte slice ;-)
 func (c Chars) Bytes() []byte {
 	return c

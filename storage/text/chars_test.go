@@ -19,28 +19,45 @@ import (
 	"database/sql/driver"
 	"encoding"
 	"encoding/json"
-	"hash/fnv"
-	"testing"
-
 	"errors"
-
+	"fmt"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/stretchr/testify/assert"
+	"hash/fnv"
+	"testing"
 )
 
-// These checks if a type implements an interface belong into the test package
+// These checks, if a type implements an interface, belong into the test package
 // and not into its "main" package. Otherwise you would also compile each time
-// al the package with their interfaces.
+// all the package with their interfaces.
 var _ encoding.TextMarshaler = (*text.Chars)(nil)
 var _ encoding.TextUnmarshaler = (*text.Chars)(nil)
 var _ sql.Scanner = (*text.Chars)(nil)
 var _ driver.Valuer = (*text.Chars)(nil)
+var _ fmt.GoStringer = (*text.Chars)(nil)
+var _ fmt.Stringer = (*text.Chars)(nil)
 
 func TestBytes(t *testing.T) {
 	t.Parallel()
 	data := []byte(`D€ar eCömmerce World`)
 	txt := text.Chars(data)
 	assert.Exactly(t, data, txt.Bytes())
+}
+
+func TestGoString(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		have text.Chars
+		want string
+	}{
+		{text.Chars(`Hello`), "text.Chars(`Hello`)"},
+		{text.Chars(`Hel"lo`), "text.Chars(`Hel\"lo`)"},
+		{text.Chars("Hel`lo"), "text.Chars(`Hel`+\"`\"+`lo`)"},
+		{nil, "nil"},
+	}
+	for i, test := range tests {
+		assert.Exactly(t, test.want, test.have.GoString(), "Index %d", i)
+	}
 }
 
 func TestEqual(t *testing.T) {
