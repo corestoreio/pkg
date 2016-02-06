@@ -15,19 +15,16 @@
 package cstesting_test
 
 import (
-	"path/filepath"
-	"testing"
-
+	"encoding/csv"
 	"fmt"
-
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-func TestLoadCSVOk(t *testing.T) {
+func TestLoadCSVWithFile(t *testing.T) {
 
-	dataFile := filepath.Join(cstesting.RootPath, "util", "cstesting", "testdata", "core_config_data1.csv")
-	cols, rows, err := cstesting.LoadCSV(dataFile)
+	cols, rows, err := cstesting.LoadCSV(cstesting.WithFile("util", "cstesting", "testdata", "core_config_data1.csv"))
 	assert.NoError(t, err)
 	assert.Exactly(t, []string{"config_id", "scope", "scope_id", "path", "value"}, cols)
 	assert.Len(t, rows, 20)
@@ -36,18 +33,47 @@ func TestLoadCSVOk(t *testing.T) {
 	assert.Exactly(t, want, fmt.Sprintf("%#v", rows))
 }
 
+func TestLoadCSVWithReaderConfig(t *testing.T) {
+
+	cols, rows, err := cstesting.LoadCSV(
+		cstesting.WithFile("util", "cstesting", "testdata", "core_config_data3.csv"),
+		cstesting.WithReaderConfig(&csv.Reader{Comma: '|'}),
+	)
+	assert.NoError(t, err)
+	assert.Exactly(t, []string{"config_id", "scope", "scope_id", "path", "value"}, cols)
+	assert.Len(t, rows, 5)
+
+	want := "[][]driver.Value{[]driver.Value{text.Chars(`1`), text.Chars(`default`), text.Chars(`0`), text.Chars(`cms/wysiwyg/enabled`), text.Chars(`disabled`)}, []driver.Value{text.Chars(`2`), text.Chars(`default`), text.Chars(`0`), text.Chars(`general/region/display_all`), text.Chars(`1`)}, []driver.Value{text.Chars(`3`), text.Chars(`default`), text.Chars(`0`), text.Chars(`general/region/state_required`), text.Chars(`AT,CA,CH,DE,EE,ES,FI,FR,LT,LV,RO,US`)}, []driver.Value{text.Chars(`3`), text.Chars(`stores`), text.Chars(`2`), text.Chars(`general/region/state_required`), text.Chars(`AT`)}, []driver.Value{text.Chars(`5`), text.Chars(`default`), text.Chars(`0`), nil, text.Chars(`1`)}}"
+	assert.Exactly(t, want, fmt.Sprintf("%#v", rows))
+}
+
 func TestLoadCSVFileError(t *testing.T) {
-	dataFile := filepath.Join(cstesting.RootPath, "util", "cstesting", "testdata", "core_config_dataXX.csv")
-	cols, rows, err := cstesting.LoadCSV(dataFile)
+	cols, rows, err := cstesting.LoadCSV(cstesting.WithFile("util", "cstesting", "testdata", "core_config_dataXX.csv"))
 	assert.Nil(t, cols)
 	assert.Nil(t, rows)
 	assert.Contains(t, err.Error(), "core_config_dataXX.csv: no such file or directory")
 }
 
 func TestLoadCSVReadError(t *testing.T) {
-	dataFile := filepath.Join(cstesting.RootPath, "util", "cstesting", "testdata", "core_config_data2.csv")
-	cols, rows, err := cstesting.LoadCSV(dataFile)
+
+	cols, rows, err := cstesting.LoadCSV(cstesting.WithFile("util", "cstesting", "testdata", "core_config_data2.csv"))
 	assert.Exactly(t, []string{"config_id", "scope", "scope_id", "path", "value"}, cols)
 	assert.Len(t, rows, 5)
 	assert.EqualError(t, err, `line 8, column 0: extraneous " in field`)
+}
+
+func TestMockRowsError(t *testing.T) {
+	r, err := cstesting.MockRows(cstesting.WithFile("non", "existent.csv"))
+	assert.Nil(t, r)
+	assert.Contains(t, err.Error(), "non/existent.csv: no such file or directory")
+}
+
+func TestMockRowsLoaded(t *testing.T) {
+	rows, err := cstesting.MockRows(
+		cstesting.WithReaderConfig(&csv.Reader{Comma: '|'}),
+		cstesting.WithFile("util", "cstesting", "testdata", "core_config_data3.csv"),
+	)
+	assert.NoError(t, err)
+	assert.NotNil(t, rows)
+	assert.Len(t, rows.Columns(), 5)
 }

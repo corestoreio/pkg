@@ -21,27 +21,53 @@ import (
 	"os"
 	"strings"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/juju/errgo"
+	"path/filepath"
 )
 
 // CSVOptions applies options to the CSV reader
-type CSVOptions func(*csv.Reader)
+type csvOptions func(*config)
+
+type config struct {
+	r    *csv.Reader
+	path string
+}
+
+// WithFile sets the file name. File path prefix is always RootPath variable.
+func WithFile(elem ...string) csvOptions {
+	return func(c *config) { c.path = filepath.Join(append([]string{RootPath}, elem...)...) }
+}
+
+// WithReaderConfig sets CSV reader options
+func WithReaderConfig(cr *csv.Reader) csvOptions {
+	return func(c *config) { c.r = cr }
+}
 
 // LoadCSV loads a csv file for mocked database testing. Like
 // github.com/DATA-DOG/go-sqlmock does.
 // CSV file should be comma separated.
-func LoadCSV(file string, opts ...CSVOptions) (columns []string, rows [][]driver.Value, err error) {
+func LoadCSV(opts ...csvOptions) (columns []string, rows [][]driver.Value, err error) {
+	c := new(config)
+	for _, opt := range opts {
+		opt(c)
+	}
 
-	f, err := os.Open(file)
+	f, err := os.Open(c.path)
 	if err != nil {
 		err = errgo.Mask(err)
 		return
 	}
 
 	csvReader := csv.NewReader(f)
-	for _, opt := range opts {
-		opt(csvReader)
+	if c.r != nil {
+		csvReader.Comma = c.r.Comma
+		csvReader.Comment = c.r.Comment
+		csvReader.FieldsPerRecord = c.r.FieldsPerRecord
+		csvReader.LazyQuotes = c.r.LazyQuotes
+		csvReader.TrailingComma = c.r.TrailingComma
+		csvReader.TrimLeadingSpace = c.r.TrimLeadingSpace
 	}
 
 	j := 0
@@ -85,4 +111,18 @@ func parseCol(s string) text.Chars {
 		return nil
 	}
 	return []byte(s)
+}
+
+// MockRows same as LoadCSV() but creates a fully functional driver.Rows
+// interface from a CSV file.
+func MockRows(opts ...csvOptions) (sqlmock.Rows, error) {
+	csvHead, csvRows, err := LoadCSV(opts...)
+	if err != nil {
+		return nil, err
+	}
+	rows := sqlmock.NewRows(csvHead)
+	for _, row := range csvRows {
+		rows.AddRow(row...)
+	}
+	return rows, nil
 }
