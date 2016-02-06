@@ -15,9 +15,10 @@
 package cstesting_test
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestMockDB(t *testing.T) {

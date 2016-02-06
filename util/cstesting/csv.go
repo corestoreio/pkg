@@ -17,12 +17,12 @@ package cstesting
 import (
 	"database/sql/driver"
 	"encoding/csv"
+	"io"
 	"os"
 	"strings"
 
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/juju/errgo"
-	"io"
 )
 
 // CSVOptions applies options to the CSV reader
