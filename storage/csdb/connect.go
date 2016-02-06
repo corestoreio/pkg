@@ -26,13 +26,10 @@ import (
 const (
 	// EnvDSN is the name of the environment variable
 	EnvDSN string = "CS_DSN"
-	// EnvDSNTest test env DSN
-	EnvDSNTest string = "CS_DSN_TEST"
 )
 
 var (
-	ErrDSNNotFound     = errors.New("Env var: " + EnvDSN + " not found")
-	ErrDSNTestNotFound = errors.New("Env var: " + EnvDSNTest + " not found")
+	ErrDSNNotFound = errors.New("Env var: " + EnvDSN + " not found")
 )
 
 func getDSN(env string, err error) (string, error) {
@@ -46,11 +43,6 @@ func getDSN(env string, err error) (string, error) {
 // GetDSN returns the data source name from an environment variable or an error
 func GetDSN() (string, error) {
 	return getDSN(EnvDSN, ErrDSNNotFound)
-}
-
-// GetDSNTest returns the test data source name from an environment variable or an error
-func GetDSNTest() (string, error) {
-	return getDSN(EnvDSNTest, ErrDSNTestNotFound)
 }
 
 // Connect creates a new database connection from a DSN stored in an
@@ -67,7 +59,7 @@ func Connect(opts ...dbr.ConnectionOption) (*dbr.Connection, error) {
 // MustConnectTest is a helper function that creates a
 // new database connection using environment variables.
 func MustConnectTest(opts ...dbr.ConnectionOption) *dbr.Connection {
-	dsn, err := GetDSNTest()
+	dsn, err := GetDSN()
 	if err != nil {
 		panic(err)
 	}

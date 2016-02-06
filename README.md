@@ -23,7 +23,7 @@ $ export CS_DSN='magento2:magento2@tcp(localhost:3306)/magento2'
 
 ```
 $ go get github.com/corestoreio/csfw
-$ export CS_DSN_TEST='see next section'
+$ export CS_DSN='see previous'
 $ cd $GOPATH/src/github.com/corestoreio/csfw
 $ go run codegen/tableToStruct/*.go
 ```
@@ -32,13 +32,8 @@ $ go run codegen/tableToStruct/*.go
 
 Setup two databases. One for Magento 1 and one for Magento 2 and fill them with the provided [test data](https://github.com/corestoreio/csfw/tree/master/testData).
 
-Create a DSN env var `CS_DSN_TEST` and point it to Magento 1 database. Run the tests.
+Create a DSN env var `CS_DSN` and point it to Magento 1 database. Run the tests.
 Change the env var to let it point to Magento 2 database. Rerun the tests.
-
-```shell
-$ export CS_DSN_TEST='magento1:magento1@tcp(localhost:3306)/magento1'
-$ export CS_DSN_TEST='magento2:magento2@tcp(localhost:3306)/magento2'
-```
 
 ### Finding Allocations
 
