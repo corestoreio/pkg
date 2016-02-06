@@ -126,3 +126,12 @@ func MockRows(opts ...csvOptions) (sqlmock.Rows, error) {
 	}
 	return rows, nil
 }
+
+// MustMockRows same as MockRows but panics on error
+func MustMockRows(opts ...csvOptions) sqlmock.Rows {
+	r, err := MockRows(opts...)
+	if err != nil {
+		panic(err)
+	}
+	return r
+}

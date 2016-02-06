@@ -22,6 +22,7 @@ import (
 )
 
 func TestMockDB(t *testing.T) {
+	t.Parallel()
 	dbc, mockDB := cstesting.MockDB(t)
 	assert.NotNil(t, dbc)
 	assert.NotNil(t, mockDB)

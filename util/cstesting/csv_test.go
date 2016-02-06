@@ -23,7 +23,7 @@ import (
 )
 
 func TestLoadCSVWithFile(t *testing.T) {
-
+	t.Parallel()
 	cols, rows, err := cstesting.LoadCSV(cstesting.WithFile("util", "cstesting", "testdata", "core_config_data1.csv"))
 	assert.NoError(t, err)
 	assert.Exactly(t, []string{"config_id", "scope", "scope_id", "path", "value"}, cols)
@@ -34,7 +34,7 @@ func TestLoadCSVWithFile(t *testing.T) {
 }
 
 func TestLoadCSVWithReaderConfig(t *testing.T) {
-
+	t.Parallel()
 	cols, rows, err := cstesting.LoadCSV(
 		cstesting.WithFile("util", "cstesting", "testdata", "core_config_data3.csv"),
 		cstesting.WithReaderConfig(&csv.Reader{Comma: '|'}),
@@ -48,6 +48,7 @@ func TestLoadCSVWithReaderConfig(t *testing.T) {
 }
 
 func TestLoadCSVFileError(t *testing.T) {
+	t.Parallel()
 	cols, rows, err := cstesting.LoadCSV(cstesting.WithFile("util", "cstesting", "testdata", "core_config_dataXX.csv"))
 	assert.Nil(t, cols)
 	assert.Nil(t, rows)
@@ -55,7 +56,7 @@ func TestLoadCSVFileError(t *testing.T) {
 }
 
 func TestLoadCSVReadError(t *testing.T) {
-
+	t.Parallel()
 	cols, rows, err := cstesting.LoadCSV(cstesting.WithFile("util", "cstesting", "testdata", "core_config_data2.csv"))
 	assert.Exactly(t, []string{"config_id", "scope", "scope_id", "path", "value"}, cols)
 	assert.Len(t, rows, 5)
@@ -63,12 +64,14 @@ func TestLoadCSVReadError(t *testing.T) {
 }
 
 func TestMockRowsError(t *testing.T) {
+	t.Parallel()
 	r, err := cstesting.MockRows(cstesting.WithFile("non", "existent.csv"))
 	assert.Nil(t, r)
 	assert.Contains(t, err.Error(), "non/existent.csv: no such file or directory")
 }
 
 func TestMockRowsLoaded(t *testing.T) {
+	t.Parallel()
 	rows, err := cstesting.MockRows(
 		cstesting.WithReaderConfig(&csv.Reader{Comma: '|'}),
 		cstesting.WithFile("util", "cstesting", "testdata", "core_config_data3.csv"),
@@ -76,4 +79,18 @@ func TestMockRowsLoaded(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, rows)
 	assert.Len(t, rows.Columns(), 5)
+}
+
+func TestMustMockRows(t *testing.T) {
+	t.Parallel()
+	defer func() {
+		if r := recover(); r != nil {
+			assert.Contains(t, r.(error).Error(), "non/existent.csv: no such file or directory")
+		} else {
+			t.Fatal("Expecting a panic")
+		}
+	}()
+
+	r := cstesting.MustMockRows(cstesting.WithFile("non", "existent.csv"))
+	assert.Nil(t, r)
 }
