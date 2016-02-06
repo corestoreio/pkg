@@ -15,21 +15,18 @@
 package ctxjwt_test
 
 import (
+	"crypto/x509"
+	"fmt"
+	"go/build"
 	"net/http"
+	"net/http/httptest"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"go/build"
-
-	"net/http/httptest"
-
-	"fmt"
-
-	"crypto/x509"
-
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
@@ -134,7 +131,7 @@ func TestLogout(t *testing.T) {
 	assert.Equal(t, theToken, tbl.theToken)
 }
 
-var pkFile = filepath.Join(build.Default.GOPATH, "src", "github.com", "corestoreio", "csfw", "net", "ctxjwt", "test_rsa")
+var pkFile = filepath.Join(cstesting.RootPath, "net", "ctxjwt", "test_rsa")
 
 func TestRSAEncryptedNoOrFailedPassword(t *testing.T) {
 	jm, err := ctxjwt.NewService(ctxjwt.WithRSAFromFile(pkFile))
@@ -167,7 +164,7 @@ func TestRSAEncryptedPassword(t *testing.T) {
 }
 
 func TestRSAWithoutPassword(t *testing.T) {
-	pkFileNP := filepath.Join(build.Default.GOPATH, "src", "github.com", "corestoreio", "csfw", "net", "ctxjwt", "test_rsa_np")
+	pkFileNP := filepath.Join(cstesting.RootPath, "net", "ctxjwt", "test_rsa_np")
 	testRsaOption(t, ctxjwt.WithRSAFromFile(pkFileNP))
 }
 

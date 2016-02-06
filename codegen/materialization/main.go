@@ -23,6 +23,7 @@ import (
 	"github.com/corestoreio/csfw/eav"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/util/cstesting"
 )
 
 // depends on generated code from tableToStruct
@@ -44,7 +45,7 @@ func newContext() *context {
 	return &context{
 		wg:        sync.WaitGroup{},
 		dbc:       dbc,
-		goSrcPath: build.Default.GOPATH + "/src/",
+		goSrcPath: cstesting.RootPath,
 	}
 }
 

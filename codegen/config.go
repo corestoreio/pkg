@@ -20,12 +20,10 @@ import (
 
 	"github.com/corestoreio/csfw/codegen/tableToStruct/tpl"
 	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/cstesting"
 )
 
 const PS = string(os.PathSeparator)
-
-// CSImportPath @todo this must reflect the vendor directory ...
-const CSImportPath string = "github.com" + PS + "corestoreio" + PS + "csfw"
 
 type (
 	// TableToStructMap uses a string key as easy identifier for maybe later
@@ -183,7 +181,7 @@ func (m EntityTypeMap) Keys() []string {
 	return ret
 }
 
-var BasePath = NewOFile(build.Default.GOPATH, "src", CSImportPath)
+var BasePath = NewOFile(cstesting.RootPath)
 
 // EavAttributeColumnNameToInterface mapping column name to Go interface name. Do not add attribute_model
 // as this column is unused in Magento 1+2. If you have custom column then add it here.

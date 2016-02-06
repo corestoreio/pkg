@@ -31,13 +31,14 @@ import (
 	"github.com/corestoreio/csfw/store"
 	storemock "github.com/corestoreio/csfw/store/mock"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/oschwald/geoip2-golang"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
 
 func mustGetTestService(opts ...geoip.Option) *geoip.Service {
-	maxMindDB := filepath.Join(build.Default.GOPATH, "src", "github.com", "corestoreio", "csfw", "net", "geoip", "GeoIP2-Country-Test.mmdb")
+	maxMindDB := filepath.Join(cstesting.RootPath, "net", "geoip", "GeoIP2-Country-Test.mmdb")
 	s, err := geoip.NewService(append(opts, geoip.WithGeoIP2Reader(maxMindDB))...)
 	if err != nil {
 		panic(err)
