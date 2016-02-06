@@ -1032,7 +1032,7 @@ func (b *builder) writeRegion() {
 	m49Index := [9]int16{}
 	fromM49 := []uint16{}
 	m49 := []int{}
-	for k := range fromM49map {
+	for k, _ := range fromM49map {
 		m49 = append(m49, int(k))
 	}
 	sort.Ints(m49)
@@ -1453,7 +1453,7 @@ func (b *builder) writeMatchData() {
 			}
 		}
 	}
-	sort.Sort(sortByConf(matchLang))
+	sort.Stable(sortByConf(matchLang))
 	// collapse percentage into confidence classes
 	for i, m := range matchLang {
 		matchLang[i].conf = toConf(m.conf)
