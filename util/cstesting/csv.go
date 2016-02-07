@@ -19,12 +19,12 @@ import (
 	"encoding/csv"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/juju/errgo"
-	"path/filepath"
 )
 
 // CSVOptions applies options to the CSV reader
@@ -33,6 +33,7 @@ type csvOptions func(*config)
 type config struct {
 	r    *csv.Reader
 	path string
+	test bool
 }
 
 // WithFile sets the file name. File path prefix is always RootPath variable.
@@ -45,29 +46,35 @@ func WithReaderConfig(cr *csv.Reader) csvOptions {
 	return func(c *config) { c.r = cr }
 }
 
+// WithTestMode allows better testing. Converts []bytes in driver.Value to
+// text.Chars
+func WithTestMode() csvOptions {
+	return func(c *config) { c.test = true }
+}
+
 // LoadCSV loads a csv file for mocked database testing. Like
 // github.com/DATA-DOG/go-sqlmock does.
 // CSV file should be comma separated.
 func LoadCSV(opts ...csvOptions) (columns []string, rows [][]driver.Value, err error) {
-	c := new(config)
+	cfg := new(config)
 	for _, opt := range opts {
-		opt(c)
+		opt(cfg)
 	}
 
-	f, err := os.Open(c.path)
+	f, err := os.Open(cfg.path)
 	if err != nil {
 		err = errgo.Mask(err)
 		return
 	}
 
 	csvReader := csv.NewReader(f)
-	if c.r != nil {
-		csvReader.Comma = c.r.Comma
-		csvReader.Comment = c.r.Comment
-		csvReader.FieldsPerRecord = c.r.FieldsPerRecord
-		csvReader.LazyQuotes = c.r.LazyQuotes
-		csvReader.TrailingComma = c.r.TrailingComma
-		csvReader.TrimLeadingSpace = c.r.TrimLeadingSpace
+	if cfg.r != nil {
+		csvReader.Comma = cfg.r.Comma
+		csvReader.Comment = cfg.r.Comment
+		csvReader.FieldsPerRecord = cfg.r.FieldsPerRecord
+		csvReader.LazyQuotes = cfg.r.LazyQuotes
+		csvReader.TrailingComma = cfg.r.TrailingComma
+		csvReader.TrimLeadingSpace = cfg.r.TrimLeadingSpace
 	}
 
 	j := 0
@@ -94,7 +101,11 @@ func LoadCSV(opts ...csvOptions) (columns []string, rows [][]driver.Value, err e
 			if j == 0 {
 				columns[i] = v
 			} else {
-				row[i] = parseCol(v)
+				b := parseCol(v)
+				row[i] = b
+				if cfg.test {
+					row[i] = text.Chars(b)
+				}
 			}
 		}
 		if j > 0 {
@@ -105,7 +116,7 @@ func LoadCSV(opts ...csvOptions) (columns []string, rows [][]driver.Value, err e
 	return
 }
 
-func parseCol(s string) text.Chars {
+func parseCol(s string) []byte {
 	switch {
 	case strings.ToLower(s) == "null":
 		return nil
