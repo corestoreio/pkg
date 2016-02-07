@@ -22,6 +22,7 @@ import (
 )
 
 func TestRound(t *testing.T) {
+	t.Parallel()
 
 	tests := []struct {
 		val, roundOn float64

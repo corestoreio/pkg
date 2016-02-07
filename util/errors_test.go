@@ -24,6 +24,7 @@ import (
 )
 
 func TestErrors(t *testing.T) {
+	t.Parallel()
 	assert.Equal(t, "Err1\nErr2\nErr3", util.Errors(
 		errors.New("Err1"),
 		errors.New("Err2"),
@@ -35,5 +36,5 @@ func TestErrors(t *testing.T) {
 		errgo.New("Err2"),
 		errors.New("Err3"),
 	)
-	assert.Contains(t, err, "corestoreio/csfw/util/errors_test.go:34\nErr2")
+	assert.Contains(t, err, "corestoreio/csfw/util/errors_test.go:35\nErr2")
 }

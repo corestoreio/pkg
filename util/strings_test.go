@@ -22,6 +22,7 @@ import (
 )
 
 func TestStrIsAlNum(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have string
 		want bool
@@ -50,6 +51,7 @@ func BenchmarkStrIsAlNum(b *testing.B) {
 }
 
 func TestUnderscoreToCamelCase(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		in  string
 		out string
@@ -74,6 +76,7 @@ func BenchmarkUnderscoreToCamelCase(b *testing.B) {
 }
 
 func TestCamelCaseToUnderscore(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		in  string
 		out string
@@ -106,6 +109,7 @@ func BenchmarkCamelize(b *testing.B) {
 }
 
 func TestCamelize(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		actual, expected string
 	}{
@@ -129,6 +133,7 @@ func TestCamelize(t *testing.T) {
 }
 
 func TestLintName(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name, want string
 	}{
@@ -180,6 +185,7 @@ func BenchmarkLintName(b *testing.B) {
 }
 
 func TestRandAlnum(t *testing.T) {
+	t.Parallel()
 	s := util.RandAlnum(18)
 	assert.Len(t, s, 18)
 }

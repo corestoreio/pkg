@@ -23,6 +23,7 @@ import (
 )
 
 func TestParseTimeStrict(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		layout  string
 		value   string

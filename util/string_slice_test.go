@@ -22,6 +22,7 @@ import (
 )
 
 func TestStringSliceReduceContains(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		haveSL util.StringSlice
 		haveIN []string
@@ -75,6 +76,7 @@ func BenchmarkStringSliceReduceContains(b *testing.B) {
 }
 
 func TestStringSliceUpdate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		haveSL util.StringSlice
 		haveD  string
@@ -125,6 +127,7 @@ func TestStringSliceUpdate(t *testing.T) {
 }
 
 func TestStringSlice(t *testing.T) {
+	t.Parallel()
 	l := util.StringSlice{"Maybe", "GoLang", "should", "have", "generics", "but", "who", "needs", "them", "?", ";-)"}
 	assert.Len(t, l, l.Len())
 	assert.Equal(t, 1, l.Index("GoLang"))
@@ -143,6 +146,7 @@ func TestStringSlice(t *testing.T) {
 }
 
 func TestStringSliceDelete(t *testing.T) {
+	t.Parallel()
 	l := util.StringSlice{"Maybe", "GoLang", "should"}
 	assert.NoError(t, l.Delete(1))
 	assert.Equal(t, []string{"Maybe", "should"}, l.ToString())
@@ -152,6 +156,7 @@ func TestStringSliceDelete(t *testing.T) {
 }
 
 func TestStringSliceReduce(t *testing.T) {
+	t.Parallel()
 	l := util.StringSlice{"Maybe", "GoLang", "should"}
 	assert.EqualValues(t, []string{"GoLang"}, l.Reduce(func(s string) bool {
 		return s == "GoLang"
@@ -160,6 +165,7 @@ func TestStringSliceReduce(t *testing.T) {
 }
 
 func TestStringSliceFilter(t *testing.T) {
+	t.Parallel()
 	l := util.StringSlice{"All", "Go", "Code", "is"}
 	rl := l.Filter(func(s string) bool {
 		return s == "Go"
@@ -173,6 +179,7 @@ func TestStringSliceFilter(t *testing.T) {
 }
 
 func TestStringSliceUnique(t *testing.T) {
+	t.Parallel()
 	l := util.StringSlice{"Maybe", "GoLang", "GoLang", "GoLang", "or", "or", "RostLang", "RostLang"}
 	assert.Equal(t, []string{"Maybe", "GoLang", "or", "RostLang"}, l.Unique().ToString())
 }
@@ -191,22 +198,26 @@ func BenchmarkStringSliceUnique(b *testing.B) {
 }
 
 func TestStringSliceSplit(t *testing.T) {
+	t.Parallel()
 	l := util.StringSlice{"a", "b"}
 	assert.Equal(t, []string{"a", "b", "c", "d"}, l.Split("c,d", ",").ToString())
 	assert.Equal(t, []string{"a", "b", "c", "d", "e", "f", ""}, l.Split("e,f,", ",").ToString())
 }
 
 func TestStringSliceJoin(t *testing.T) {
+	t.Parallel()
 	l := util.StringSlice{"a", "b"}
 	assert.Equal(t, "a,b", l.Join(","))
 }
 
 func TestStringSliceSort(t *testing.T) {
+	t.Parallel()
 	l := util.StringSlice{"c", "a", "z", "b"}
 	assert.Equal(t, "a,b,c,z", l.Sort().Join(","))
 }
 
 func TestStringSliceAny(t *testing.T) {
+	t.Parallel()
 	l := util.StringSlice{"c", "a", "z", "b"}
 	assert.True(t, l.Any(func(s string) bool {
 		return s == "z"
@@ -217,6 +228,7 @@ func TestStringSliceAny(t *testing.T) {
 }
 
 func TestStringSliceAll(t *testing.T) {
+	t.Parallel()
 	l := util.StringSlice{"c", "a", "z", "b"}
 	assert.True(t, l.All(func(s string) bool {
 		return len(s) == 1
@@ -228,6 +240,7 @@ func TestStringSliceAll(t *testing.T) {
 }
 
 func TestStringSliceSplitStringer8(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		haveName  string
 		haveIndex []uint8
@@ -267,6 +280,7 @@ func BenchmarkStringSliceSplitStringer8(b *testing.B) {
 }
 
 func TestStringSliceContainsReverse(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have string
 		in   util.StringSlice
@@ -284,6 +298,7 @@ func TestStringSliceContainsReverse(t *testing.T) {
 }
 
 func TestStringSliceStartsWithReverse(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have string
 		in   util.StringSlice

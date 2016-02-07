@@ -22,18 +22,21 @@ import (
 )
 
 func TestInt64SliceSort(t *testing.T) {
+	t.Parallel()
 	is := util.Int64Slice{100, 10, 3, 20, 9, 30, -1}
 	assert.EqualValues(t, []int64{-1, 3, 9, 10, 20, 30, 100}, is.Sort().ToInt64())
 	assert.EqualValues(t, []int64{100, 30, 20, 10, 9, 3, -1}, is.Reverse().ToInt64())
 }
 
 func TestInt64SliceAppend(t *testing.T) {
+	t.Parallel()
 	is := util.Int64Slice{30, -1}
 	is.Append(6)
 	assert.EqualValues(t, []int64{30, -1, 6}, is.ToInt64())
 }
 
 func TestInt64SliceUpdate(t *testing.T) {
+	t.Parallel()
 	is := util.Int64Slice{-29, 30, -1}
 	assert.NoError(t, is.Update(1, 31))
 	assert.EqualValues(t, 31, is[1])
@@ -41,6 +44,7 @@ func TestInt64SliceUpdate(t *testing.T) {
 }
 
 func TestInt64SliceDelete(t *testing.T) {
+	t.Parallel()
 	is := util.Int64Slice{-29, 30, -1}
 	assert.NoError(t, is.Delete(1))
 	assert.EqualValues(t, []int64{-29, -1}, is.ToInt64())
@@ -48,18 +52,21 @@ func TestInt64SliceDelete(t *testing.T) {
 }
 
 func TestInt64SliceIndex(t *testing.T) {
+	t.Parallel()
 	is := util.Int64Slice{-29, 30, -1}
 	assert.EqualValues(t, 2, is.Index(-1))
 	assert.EqualValues(t, -1, is.Index(123))
 }
 
 func TestInt64SliceContains(t *testing.T) {
+	t.Parallel()
 	is := util.Int64Slice{-29, 30, -1}
 	assert.True(t, is.Contains(-1))
 	assert.False(t, is.Contains(-100))
 }
 
 func TestInt64SliceAny(t *testing.T) {
+	t.Parallel()
 	l := util.Int64Slice{33, 44, 55, 66}
 	assert.True(t, l.Any(func(i int64) bool {
 		return i == 44
@@ -70,6 +77,7 @@ func TestInt64SliceAny(t *testing.T) {
 }
 
 func TestInt64SliceAll(t *testing.T) {
+	t.Parallel()
 	af := func(i int64) bool {
 		return (i & 1) == 0
 	}
@@ -80,6 +88,7 @@ func TestInt64SliceAll(t *testing.T) {
 }
 
 func TestInt64SliceReduce(t *testing.T) {
+	t.Parallel()
 	af := func(i int64) bool {
 		return (i & 1) == 1
 	}
@@ -90,6 +99,7 @@ func TestInt64SliceReduce(t *testing.T) {
 }
 
 func TestInt64SliceMap(t *testing.T) {
+	t.Parallel()
 	af := func(i int64) int64 {
 		return i + 1
 	}
@@ -98,11 +108,13 @@ func TestInt64SliceMap(t *testing.T) {
 }
 
 func TestInt64SliceSum(t *testing.T) {
+	t.Parallel()
 	l := util.Int64Slice{2, 4, 30, 22}
 	assert.EqualValues(t, 58, l.Sum())
 }
 
 func TestInt64SliceUnique(t *testing.T) {
+	t.Parallel()
 	l := util.Int64Slice{30, 2, 4, 30, 2, 22}
 	assert.EqualValues(t, []int64{30, 2, 4, 22}, l.Unique().ToInt64())
 }
