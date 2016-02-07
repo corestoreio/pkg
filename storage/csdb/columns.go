@@ -15,11 +15,10 @@
 package csdb
 
 import (
-	"fmt"
-	"strings"
-
 	"bytes"
+	"fmt"
 	"hash/fnv"
+	"strings"
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util"
@@ -41,6 +40,47 @@ type Columns []Column
 type Column struct {
 	Field, Type, Null, Key, Default, Extra dbr.NullString
 }
+
+// new idea and use information_schema.columns instead of SHOW COLUMNs query ...
+//
+//type DataType uint8
+//type ColumnKey uint8
+//type ColumnExtra uint8
+//
+//const (
+//	DataTypeVarChar DataType = 1 << iota
+//	DataTypeChar
+//	DataTypeInt
+//	DataTypeSmallInt
+//	DataTypeDecimal
+//)
+//
+//const (
+//	ColumnKeyPRI ColumnKey = 1 << iota
+//	ColumnKeyUNI
+//	ColumnKeyMUL
+//)
+//
+//const (
+//	ColumnExtraAutoIncrement ColumnExtra = 1 << iota
+//	ColumnExtraOnUpdateCurrentTimestamp
+//)
+//
+//// Derived from information_schema.columns
+//type Column2 struct {
+//	Field            string         `db:"COLUMN_NAME"`              //`COLUMN_NAME` varchar(64) NOT NULL DEFAULT '',
+//	Pos              int            `db:"ORDINAL_POSITION"`         //`ORDINAL_POSITION` bigint(21) unsigned NOT NULL DEFAULT '0',
+//	Default          dbr.NullString `db:"COLUMN_DEFAULT"`           //`COLUMN_DEFAULT` longtext,
+//	Null             bool           `db:"IS_NULLABLE"`              //`IS_NULLABLE` varchar(3) NOT NULL DEFAULT '',
+//	DataType         DataType       `db:"DATA_TYPE"`                //`DATA_TYPE` varchar(64) NOT NULL DEFAULT '',
+//	CharMaxLength    dbr.NullInt64  `db:"CHARACTER_MAXIMUM_LENGTH"` //`CHARACTER_MAXIMUM_LENGTH` bigint(21) unsigned DEFAULT NULL,
+//	NumericPrecision dbr.NullInt64  `db:"NUMERIC_PRECISION"`        //`NUMERIC_PRECISION` bigint(21) unsigned DEFAULT NULL,
+//	NumericScale     dbr.NullInt64  `db:"NUMERIC_SCALE"`            //`NUMERIC_SCALE` bigint(21) unsigned DEFAULT NULL,
+//	Type             string         `db:"COLUMN_TYPE"`              //`COLUMN_TYPE` longtext NOT NULL,
+//	ColumnKey        ColumnKey      `db:"COLUMN_KEY"`               //`COLUMN_KEY` varchar(3) NOT NULL DEFAULT '',
+//	ColumnExtra      ColumnExtra    `db:"EXTRA"`                    //`EXTRA` varchar(30) NOT NULL DEFAULT '',
+//	Comment          string         `db:"COLUMN_COMMENT"`           //`COLUMN_COMMENT` varchar(1024) NOT NULL DEFAULT '',
+//}
 
 // GetColumns returns all columns from a table. It discards the column entity_type_id from some
 // entity tables.
@@ -190,6 +230,11 @@ func (cs Columns) ByName(fieldName string) Column {
 }
 
 // @todo add maybe more ByNull(), ByType(), ByKey(), ByDefault(), ByExtra()
+
+// String same as GoString()
+func (cs Columns) String() string {
+	return cs.GoString()
+}
 
 // GoString returns the Go types representation. See interface fmt.GoStringer
 func (cs Columns) GoString() string {

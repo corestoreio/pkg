@@ -26,6 +26,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// Check that type adheres to interfaces
+var _ fmt.Stringer = (*csdb.Columns)(nil)
+var _ fmt.GoStringer = (*csdb.Columns)(nil)
+
 func TestGetColumns(t *testing.T) {
 	t.Parallel()
 	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
