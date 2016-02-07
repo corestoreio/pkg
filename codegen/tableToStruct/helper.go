@@ -15,7 +15,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"regexp"
 	"sync"
@@ -105,15 +104,11 @@ func isDuplicate(sl []string, st string) bool {
 	return false
 }
 
-func detectMagentoVersion(dbrSess dbr.SessionRunner) (MageOne, MageTwo bool) {
+func detectMagentoVersion(dbrSess dbr.SessionRunner) (version int) {
 	defer log.WhenDone(PkgLog).Info("Stats", "Package", "DetectMagentoVersion")
 	allTables, err := codegen.GetTables(dbrSess)
 	codegen.LogFatal(err)
-	MageOne, MageTwo = util.MagentoVersion(codegen.TablePrefix, allTables)
-
-	if MageOne == MageTwo {
-		codegen.LogFatal(errors.New("Cannot detect your Magento version"))
-	}
+	version = util.MagentoVersion(codegen.TablePrefix, allTables)
 	return
 }
 

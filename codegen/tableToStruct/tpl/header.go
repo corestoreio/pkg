@@ -43,7 +43,11 @@ const (
 
 func init(){
     TableCollection = csdb.NewTableManager(
-    {{ range $k,$v := .Tables }} csdb.AddTableByName(TableIndex{{.Name}}, "{{.TableName}}"),
+    {{ range $k,$v := .Tables }} csdb.WithTable(
+    	TableIndex{{.Name}},
+    	"{{.TableName}}",
+    	{{.Columns}},
+    ),
     {{ end }} )
     // Don't forget to call TableCollection.ReInit(...) in your code to load the column definitions.
 }`

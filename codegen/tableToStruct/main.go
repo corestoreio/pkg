@@ -40,10 +40,10 @@ func main() {
 	defer dbc.Close()
 	var wg sync.WaitGroup
 
-	mageV1, mageV2 := detectMagentoVersion(dbc.NewSession())
+	mageVersion := detectMagentoVersion(dbc.NewSession())
 
 	for _, tStruct := range codegen.ConfigTableToStruct {
-		go newGenerator(tStruct, dbc, &wg).setMagentoVersion(mageV1, mageV2).run()
+		go newGenerator(tStruct, dbc, &wg).setMagentoVersion(mageVersion).run()
 	}
 
 	wg.Wait()

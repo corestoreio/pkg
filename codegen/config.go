@@ -15,15 +15,10 @@
 package codegen
 
 import (
-	"go/build"
-	"os"
-
 	"github.com/corestoreio/csfw/codegen/tableToStruct/tpl"
 	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/cstesting"
 )
-
-const PS = string(os.PathSeparator)
 
 type (
 	// TableToStructMap uses a string key as easy identifier for maybe later

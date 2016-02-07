@@ -28,7 +28,6 @@ import (
 
 	"github.com/corestoreio/csfw/codegen"
 	"github.com/corestoreio/csfw/codegen/tableToStruct/tpl"
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/log"
@@ -44,8 +43,7 @@ type generator struct {
 	wg              *sync.WaitGroup
 	// existingMethodSets contains all existing method sets from a package for the Table* types
 	existingMethodSets *duplicateChecker
-	isMagento1         bool
-	isMagento2         bool
+	mageVersion        int
 }
 
 func newGenerator(tts codegen.TableToStruct, dbrConn *dbr.Connection, wg *sync.WaitGroup) *generator {
@@ -75,9 +73,8 @@ func (g *generator) run() {
 	codegen.LogFatal(g.outfile.Close())
 }
 
-func (g *generator) setMagentoVersion(magento1, magento2 bool) *generator {
-	g.isMagento1 = magento1
-	g.isMagento2 = magento2
+func (g *generator) setMagentoVersion(v int) *generator {
+	g.mageVersion = v
 	return g
 }
 
@@ -176,15 +173,11 @@ func (g *generator) initTables() {
 
 func (g *generator) runHeader() {
 	defer log.WhenDone(PkgLog).Info("Stats", "Package", g.tts.Package, "Step", "RunHeader")
-	type Table struct {
-		Name      string
-		TableName string
-	}
 
 	data := struct {
 		Package, Tick          string
 		HasTypeCodeValueTables bool
-		Tables                 []Table
+		Tables                 []OneTable
 	}{
 		Package: g.tts.Package,
 		Tick:    "`",
@@ -192,52 +185,20 @@ func (g *generator) runHeader() {
 	}
 
 	for _, table := range g.tables {
-		data.Tables = append(data.Tables, Table{
-			Name:      g.getConsistentName(table),
-			TableName: g.getMagento2TableName(table),
-		})
+		data.Tables = append(
+			data.Tables,
+			NewOneTable(g.dbrConn.DB, g.mageVersion, g.tts.Package, table),
+		)
 	}
 	g.appendToFile(tpl.Header, data, nil)
 }
 
 func (g *generator) runTable() {
 	defer log.WhenDone(PkgLog).Info("Stats", "Package", g.tts.Package, "Step", "RunTable")
-	type OneTable struct {
-		Package          string
-		Tick             string
-		Name             string
-		TableName        string
-		Struct           string
-		Slice            string
-		Table            string
-		GoColumns        codegen.Columns
-		Columns          csdb.Columns
-		MethodRecvPrefix string
-		FindByPk         string
-	}
 
 	for _, table := range g.tables {
 
-		columns, err := codegen.GetColumns(g.dbrConn.DB, table)
-		codegen.LogFatal(err)
-		codegen.LogFatal(columns.MapSQLToGoDBRType())
-
-		name := g.getConsistentName(table)
-		data := OneTable{
-			Package:   g.tts.Package,
-			Tick:      "`",
-			Name:      name,
-			TableName: g.getMagento2TableName(table), // original table name!
-			Struct:    TypePrefix + name,             // getTableConstantName
-			Slice:     TypePrefix + name + "Slice",   // getTableConstantName
-			Table:     table,
-			GoColumns: columns,
-			Columns:   columns.CopyToCSDB(),
-		}
-
-		if data.Columns.PrimaryKeys().Len() > 0 {
-			data.FindByPk = "FindBy" + util.UnderscoreCamelize(data.Columns.PrimaryKeys().JoinFields("_"))
-		}
+		data := NewOneTable(g.dbrConn.DB, g.mageVersion, g.tts.Package, table)
 
 		tplFuncs := template.FuncMap{
 			"typePrefix": func(name string) string {
@@ -306,37 +267,4 @@ func (g *generator) runEAValueTables() {
 	}
 
 	g.appendToFile(tpl.EAValueStructure, data, nil)
-}
-
-// protects map TableMapMagento1To2. Code smell global variable to protect a global var.
-var mapm1m2Mu sync.Mutex
-
-// getMagento2TableName takes care of the correct table name as some tables
-// have different names in Magento2 than in Magento1.
-func (g *generator) getMagento2TableName(table string) string {
-	mapm1m2Mu.Lock()
-	defer mapm1m2Mu.Unlock()
-
-	if g.isMagento1 && !g.isMagento2 {
-		return table
-	}
-	if mappedName, ok := codegen.TableMapMagento1To2[strings.Replace(table, codegen.TablePrefix, "", 1)]; ok {
-		return mappedName
-	}
-
-	return table
-}
-
-// getConsistentName generates a consistent name for all TableIndex*, Table*Slice
-// and Table* types. This names is guaranteed to be the same whether we run
-// Magento 1 or 2.
-func (g *generator) getConsistentName(table string) string {
-	mapm1m2Mu.Lock()
-	defer mapm1m2Mu.Unlock()
-	// 1. retrieve the mapped name used in Magento2
-	if mappedName, ok := codegen.TableMapMagento1To2[strings.Replace(table, codegen.TablePrefix, "", 1)]; ok {
-		table = mappedName
-	}
-	// 2. Remove the package name from the table name
-	return codegen.PrepareVar(g.tts.Package, table)
 }
