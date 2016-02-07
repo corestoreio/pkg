@@ -84,6 +84,12 @@ func (i Scope) String() string {
 	return _ScopeName[_ScopeIndex[i]:_ScopeIndex[i+1]]
 }
 
+// StrScope converts the underlying scope ID to one of the three available
+// scope strings in database table core_config_data.
+func (i Scope) StrScope() string {
+	return FromScope(i).String()
+}
+
 // StrScope represents a string scope from table core_config_data column scope with
 // special functions attached, mainly for path generation
 type StrScope string

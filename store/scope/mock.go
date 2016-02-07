@@ -19,7 +19,7 @@ var _ GroupIDer = MockID(0)
 var _ StoreIDer = MockID(0)
 
 // AdminScope is always 0 in each of the three scopes.
-var AdminScope MockID
+const AdminScope MockID = 0
 
 // MockID is convenience helper to satisfy the interface WebsiteIDer, GroupIDer and StoreIDer.
 type MockID int64

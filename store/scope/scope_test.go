@@ -79,11 +79,14 @@ func TestFromScope(t *testing.T) {
 		want StrScope
 	}{
 		{DefaultID, StrDefault},
+		{AbsentID, StrDefault},
+		{GroupID, StrDefault},
 		{WebsiteID, StrWebsites},
 		{StoreID, StrStores},
 	}
 	for _, test := range tests {
 		assert.Exactly(t, test.want, FromScope(test.have))
+		assert.Exactly(t, test.want.String(), test.have.StrScope())
 	}
 }
 
