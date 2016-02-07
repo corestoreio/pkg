@@ -15,10 +15,9 @@
 package ccd_test
 
 import (
+	"strings"
 	"testing"
 	"time"
-
-	"strings"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/ccd"
@@ -34,7 +33,7 @@ func TestDBStorageOneStmt(t *testing.T) {
 	debugLogBuf.Reset()
 	defer debugLogBuf.Reset()
 	defer infoLogBuf.Reset()
-	if _, err := csdb.GetDSNTest(); err == csdb.ErrDSNTestNotFound {
+	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
 		t.Skip(err)
 	}
 
@@ -88,7 +87,7 @@ func TestDBStorageMultipleStmt(t *testing.T) {
 	debugLogBuf.Reset()
 	defer debugLogBuf.Reset() // contains only data from the debug level, info level will be dumped to os.Stdout
 	defer infoLogBuf.Reset()
-	if _, err := csdb.GetDSNTest(); err == csdb.ErrDSNTestNotFound {
+	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
 		t.Skip(err)
 	}
 

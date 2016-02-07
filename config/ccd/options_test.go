@@ -20,46 +20,53 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/ccd"
 	"github.com/corestoreio/csfw/config/path"
-	"github.com/corestoreio/csfw/storage/csdb"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-	if _, err := csdb.GetDSNTest(); err == csdb.ErrDSNTestNotFound {
-		println("init()", err.Error(), "will skip loading of TableCollection")
-		return
-	}
-
-	dbc := csdb.MustConnectTest()
-	if err := ccd.TableCollection.Init(dbc.NewSession()); err != nil {
-		panic(err)
-	}
-	if err := dbc.Close(); err != nil {
-		panic(err)
-	}
-}
+// Not needed because columns have been supplied via csdb.WithTable() function
+//func init() {
+//	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
+//		println("init()", err.Error(), "will skip loading of TableCollection")
+//		return
+//	}
+//
+//	dbc := csdb.MustConnectTest()
+//	if err := ccd.TableCollection.Init(dbc.NewSession()); err != nil {
+//		panic(err)
+//	}
+//	if err := dbc.Close(); err != nil {
+//		panic(err)
+//	}
+//}
 
 // Test_WithApplyCoreConfigData reads from the MySQL core_config_data table and applies
 // these value to the underlying storage. tries to get back the values from the
 // underlying storage
 func Test_WithCoreConfigData(t *testing.T) {
-	defer debugLogBuf.Reset()
-	defer infoLogBuf.Reset()
-	if _, err := csdb.GetDSNTest(); err == csdb.ErrDSNTestNotFound {
-		t.Skip(err)
-	}
+	t.Parallel()
 
-	dbc := csdb.MustConnectTest()
-	defer func() { assert.NoError(t, dbc.Close()) }()
+	dbc, dbMock := cstesting.MockDB(t)
+	defer func() {
+		dbMock.ExpectClose()
+
+		assert.NoError(t, dbc.Close())
+
+		if err := dbMock.ExpectationsWereMet(); err != nil {
+			t.Error("there were unfulfilled expections", err)
+		}
+	}()
+
 	sess := dbc.NewSession(nil) // nil tricks the NewSession ;-)
+
+	dbMock.ExpectQuery("SELECT (.+) FROM `core_config_data` AS `main_table`").WillReturnRows(
+		cstesting.MustMockRows(cstesting.WithFile("config", "ccd", "testdata", "core_config_data.csv")),
+	)
 
 	s := config.MustNewService(
 		ccd.WithCoreConfigData(sess),
 	)
 	defer func() { assert.NoError(t, s.Close()) }()
-
-	//	println("\n", debugLogBuf.String(), "\n")
-	//	println("\n", infoLogBuf.String(), "\n")
 
 	assert.NoError(t, s.Write(path.MustNewByParts("web/secure/offloader_header"), "SSL_OFFLOADED"))
 
@@ -69,7 +76,9 @@ func Test_WithCoreConfigData(t *testing.T) {
 
 	allKeys, err := s.Storage.AllKeys()
 	assert.NoError(t, err)
-
-	assert.True(t, len(allKeys) > 170) // TODO: refactor this if else and use a clean database ...
+	//for i, ak := range allKeys {
+	//	t.Log(i, ak.String())
+	//}
+	assert.Len(t, allKeys, 21)
 
 }

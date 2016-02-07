@@ -26,6 +26,9 @@ import (
 	"github.com/corestoreio/csfw/util/cast"
 )
 
+// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
+var TableCollection csdb.TableManager
+
 // DBStorage connects the MySQL DB with the config.Service type.
 type DBStorage struct {
 	// All is a SQL statement for the all keys query

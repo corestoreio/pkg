@@ -26,15 +26,14 @@ import (
 
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/storage/money"
 )
 
 var (
 	_ = (*sort.IntSlice)(nil)
 	_ = (*time.Time)(nil)
+	_ = (*money.Money)(nil)
 )
-
-// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
-var TableCollection csdb.Manager
 
 // TableIndex... is the index to a table. These constants are guaranteed
 // to stay the same for all Magento versions. Please access a table via this
@@ -45,10 +44,17 @@ const (
 )
 
 func init() {
-	TableCollection = csdb.NewTableManager(
-		csdb.AddTableByName(TableIndexCoreConfigData, "core_config_data"),
+	TableCollection = csdb.MustNewTableService(
+		csdb.WithTable(
+			TableIndexCoreConfigData,
+			"core_config_data",
+			csdb.Column{Field: dbr.NewNullString(`config_id`), Type: dbr.NewNullString(`int(10) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`PRI`), Default: dbr.NewNullString(nil), Extra: dbr.NewNullString(`auto_increment`)},
+			csdb.Column{Field: dbr.NewNullString(`scope`), Type: dbr.NewNullString(`varchar(8)`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`MUL`), Default: dbr.NewNullString(`default`), Extra: dbr.NewNullString(``)},
+			csdb.Column{Field: dbr.NewNullString(`scope_id`), Type: dbr.NewNullString(`int(11)`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
+			csdb.Column{Field: dbr.NewNullString(`path`), Type: dbr.NewNullString(`varchar(255)`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(`general`), Extra: dbr.NewNullString(``)},
+			csdb.Column{Field: dbr.NewNullString(`value`), Type: dbr.NewNullString(`text`), Null: dbr.NewNullString(`YES`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(nil), Extra: dbr.NewNullString(``)},
+		),
 	)
-	// Don't forget to call TableCollection.ReInit(...) in your code to load the column definitions.
 }
 
 // TableCoreConfigDataSlice represents a collection type for DB table core_config_data
@@ -58,10 +64,9 @@ type TableCoreConfigDataSlice []*TableCoreConfigData
 // TableCoreConfigData represents a type for DB table core_config_data
 // Generated via tableToStruct.
 type TableCoreConfigData struct {
-	ConfigID int64  `db:"config_id" json:",omitempty"` // config_id int(10) unsigned NOT NULL PRI  auto_increment
-	Scope    string `db:"scope" json:",omitempty"`     // scope varchar(8) NOT NULL MUL DEFAULT 'default'
-	ScopeID  int64  `db:"scope_id" json:",omitempty"`  // scope_id int(11) NOT NULL  DEFAULT '0'
-	// TODO: change table2Struct program to allow for a table column a custom type. in this case path.Route
-	Path  string         `db:"path" json:",omitempty"`  // path varchar(255) NOT NULL  DEFAULT 'general'
-	Value dbr.NullString `db:"value" json:",omitempty"` // value text NULL
+	ConfigID int64          `db:"config_id" json:",omitempty"` // config_id int(10) unsigned NOT NULL PRI  auto_increment
+	Scope    string         `db:"scope" json:",omitempty"`     // scope varchar(8) NOT NULL MUL DEFAULT 'default'
+	ScopeID  int64          `db:"scope_id" json:",omitempty"`  // scope_id int(11) NOT NULL  DEFAULT '0'
+	Path     string         `db:"path" json:",omitempty"`      // path varchar(255) NOT NULL  DEFAULT 'general'
+	Value    dbr.NullString `db:"value" json:",omitempty"`     // value text NULL
 }
