@@ -116,7 +116,11 @@ func (su *ResurrectStmt) close() error {
 	}()
 
 	if su.Log.IsDebug() {
-		su.Log.Debug("csdb.ResurrectStmt.stmt.Close", "SQL", su.SQL)
+		su.Log.Debug("csdb.ResurrectStmt.stmt.Close", "SQL", su.SQL, "stmt", su.stmt)
+	}
+	if su.stmt == nil {
+		// statement has not been opened or is unused.
+		return nil
 	}
 	return errgo.Mask(su.stmt.Close())
 }

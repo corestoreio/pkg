@@ -15,30 +15,37 @@
 package ccd_test
 
 import (
+	"database/sql/driver"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/ccd"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 
 var _ config.Storager = (*ccd.DBStorage)(nil)
 
 func TestDBStorageOneStmt(t *testing.T) {
-	debugLogBuf.Reset()
-	defer debugLogBuf.Reset()
-	defer infoLogBuf.Reset()
-	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
-		t.Skip(err)
-	}
+	t.Parallel()
 
-	dbc := csdb.MustConnectTest()
-	defer func() { assert.NoError(t, dbc.Close()) }()
+	dbc, dbMock := cstesting.MockDB(t)
+	defer func() {
+		dbMock.ExpectClose()
+
+		assert.NoError(t, dbc.Close())
+
+		if err := dbMock.ExpectationsWereMet(); err != nil {
+			t.Error("there were unfulfilled expections", err)
+		}
+	}()
 
 	sdb := ccd.MustNewDBStorage(dbc.DB).Start()
 
@@ -52,14 +59,40 @@ func TestDBStorageOneStmt(t *testing.T) {
 		wantValue string
 	}{
 		{path.MustNewByParts("testDBStorage/secure/base_url").Bind(scope.StoreID, 1), "http://corestore.io", false, "http://corestore.io"},
-		{path.MustNewByParts("testDBStorage/log/active").Bind(scope.StoreID, 1), 1, false, "1"},
+		{path.MustNewByParts("testDBStorage/log/active").Bind(scope.StoreID, 2), 1, false, "1"},
 		{path.MustNewByParts("testDBStorage/log/clean").Bind(scope.StoreID, 99999), 19.999, false, "19.999"},
 		{path.MustNewByParts("testDBStorage/log/clean").Bind(scope.StoreID, 99999), 29.999, false, "29.999"},
 		{path.MustNewByParts("testDBStorage/catalog/purge").Bind(scope.DefaultID, 1), true, false, "true"},
 		{path.MustNewByParts("testDBStorage/catalog/clean").Bind(scope.DefaultID, 1), 0, false, "0"},
 	}
+
+	prepIns := dbMock.ExpectPrepare("INSERT INTO `[^`]+` \\(.+\\) VALUES \\(\\?,\\?,\\?,\\?\\) ON DUPLICATE KEY UPDATE `value`=\\?")
 	for i, test := range tests {
-		sdb.Set(test.key, test.value)
+
+		prepIns.ExpectExec().WithArgs(
+			driver.Value(test.key.Scope.StrScope()),
+			driver.Value(test.key.ID),
+			driver.Value(test.key.Bytes()),
+			driver.Value(test.wantValue), // value
+			driver.Value(test.wantValue), // value fall back on duplicate key
+		).WillReturnResult(sqlmock.NewResult(0, 1))
+
+		if err := sdb.Set(test.key, test.value); err != nil {
+			t.Fatal("Index", i, " => ", err)
+		}
+	}
+
+	// both prepared statements cannot run within one for loop :-(
+
+	prepSel := dbMock.ExpectPrepare("SELECT `value` FROM `[^`]+` WHERE `scope`=\\? AND `scope_id`=\\? AND `path`=\\?")
+	for i, test := range tests {
+
+		prepSel.ExpectQuery().WithArgs(
+			driver.Value(test.key.Scope.StrScope()),
+			driver.Value(test.key.ID),
+			driver.Value(test.key.Bytes()),
+		).WillReturnRows(sqlmock.NewRows([]string{"value"}).FromCSVString(test.wantValue))
+
 		if test.wantNil {
 			g, err := sdb.Get(test.key)
 			assert.NoError(t, err, "Index %d", i)
@@ -71,16 +104,23 @@ func TestDBStorageOneStmt(t *testing.T) {
 		}
 	}
 
-	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), `csdb.ResurrectStmt.stmt.Prepare SQL: "INSERT INTO`))
-	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), "csdb.ResurrectStmt.stmt.Prepare SQL: \"SELECT `value` FROM"))
+	//assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), `csdb.ResurrectStmt.stmt.Prepare SQL: "INSERT INTO`))
+	//assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), "csdb.ResurrectStmt.stmt.Prepare SQL: \"SELECT `value` FROM"))
+
+	mockRows := sqlmock.NewRows([]string{"scope", "scope_id", "path"})
+	for _, test := range tests {
+		mockRows.FromCSVString(fmt.Sprintf("%s,%d,%s", test.key.Scope.StrScope(), test.key.ID, test.key.Chars))
+	}
+	prepAll := dbMock.ExpectPrepare("SELECT scope,scope_id,path FROM `[^`]+` ORDER BY scope,scope_id,path")
+	prepAll.ExpectQuery().WillReturnRows(mockRows)
+
+	allKeys, err := sdb.AllKeys()
+	assert.NoError(t, err)
 
 	for i, test := range tests {
-		allKeys, err := sdb.AllKeys()
-		assert.NoError(t, err, "Index %d", i)
 		assert.True(t, allKeys.Contains(test.key), "Missing Key: %s\nIndex %d", test.key, i)
 	}
-
-	assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), `SELECT scope,scope_id,path FROM `))
+	//assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), `SELECT scope,scope_id,path FROM `))
 }
 
 func TestDBStorageMultipleStmt(t *testing.T) {

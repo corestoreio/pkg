@@ -139,7 +139,7 @@ func (dbs *DBStorage) Set(key path.Path, value interface{}) error {
 		return err
 	}
 
-	result, err := stmt.Exec(key.Scope, key.ID, pl, valStr, valStr)
+	result, err := stmt.Exec(key.Scope.StrScope(), key.ID, pl, valStr, valStr)
 	if err != nil {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.DBStorage.Set.Write.Exec", "err", err, "SQL", dbs.Write.SQL, "key", key, "value", value)
@@ -181,7 +181,7 @@ func (dbs *DBStorage) Get(key path.Path) (interface{}, error) {
 	}
 
 	var data dbr.NullString
-	err = stmt.QueryRow(key.Scope, key.ID, pl).Scan(&data)
+	err = stmt.QueryRow(key.Scope.StrScope(), key.ID, pl).Scan(&data)
 	if err != nil {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.DBStorage.Get.QueryRow", "err", err, "key", key, "path_level", pl)
