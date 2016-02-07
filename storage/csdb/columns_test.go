@@ -27,6 +27,11 @@ import (
 )
 
 func TestGetColumns(t *testing.T) {
+	t.Parallel()
+	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
+		t.Skip("Skipping because no DSN found.")
+	}
+
 	dbc := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()
 	sess := dbc.NewSession()
@@ -69,7 +74,7 @@ func TestGetColumns(t *testing.T) {
 }
 
 func TestColumns(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		have  int
 		want  int
@@ -120,11 +125,75 @@ func TestColumns(t *testing.T) {
 	hash, err := mustStructure(table3).Columns.Hash()
 	assert.NoError(t, err)
 	assert.Equal(t, []byte{0xc7, 0xbc, 0x3b, 0xa5, 0x8f, 0x1e, 0x59, 0x3e}, hash)
+}
 
+func TestColumnsMap(t *testing.T) {
+	t.Parallel()
+
+	cols := csdb.Columns{
+		0: csdb.Column{
+			Field:   dbr.NewNullString(`category_id131`),
+			Type:    dbr.NewNullString(`int(10) unsigned`),
+			Null:    dbr.NewNullString(`NO`),
+			Key:     dbr.NewNullString(`PRI`),
+			Default: dbr.NewNullString(`0`),
+			Extra:   dbr.NewNullString(``),
+		},
+		1: csdb.Column{
+			Field:   dbr.NewNullString(`is_root_category180`),
+			Type:    dbr.NewNullString(`smallint(2) unsigned`),
+			Null:    dbr.NewNullString(`YES`),
+			Key:     dbr.NewNullString(``),
+			Default: dbr.NewNullString(`0`),
+			Extra:   dbr.NewNullString(``),
+		},
+	}
+	colsHave := cols.Map(func(c csdb.Column) csdb.Column {
+		c.Field.String = c.Field.String + "2"
+		return c
+	})
+
+	colsWant := csdb.Columns{
+		csdb.Column{Field: dbr.NewNullString(`category_id1312`), Type: dbr.NewNullString(`int(10) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`PRI`), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
+		csdb.Column{Field: dbr.NewNullString(`is_root_category1802`), Type: dbr.NewNullString(`smallint(2) unsigned`), Null: dbr.NewNullString(`YES`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
+	}
+
+	assert.Exactly(t, colsWant, colsHave)
+}
+
+func TestColumnsFilter(t *testing.T) {
+	t.Parallel()
+
+	cols := csdb.Columns{
+		0: csdb.Column{
+			Field:   dbr.NewNullString(`category_id131`),
+			Type:    dbr.NewNullString(`int(10) unsigned`),
+			Null:    dbr.NewNullString(`NO`),
+			Key:     dbr.NewNullString(`PRI`),
+			Default: dbr.NewNullString(`0`),
+			Extra:   dbr.NewNullString(``),
+		},
+		1: csdb.Column{
+			Field:   dbr.NewNullString(`is_root_category180`),
+			Type:    dbr.NewNullString(`smallint(2) unsigned`),
+			Null:    dbr.NewNullString(`YES`),
+			Key:     dbr.NewNullString(``),
+			Default: dbr.NewNullString(`0`),
+			Extra:   dbr.NewNullString(``),
+		},
+	}
+	colsHave := cols.Filter(func(c csdb.Column) bool {
+		return c.Field.String == "is_root_category180"
+	})
+	colsWant := csdb.Columns{
+		csdb.Column{Field: dbr.NewNullString(`is_root_category180`), Type: dbr.NewNullString(`smallint(2) unsigned`), Null: dbr.NewNullString(`YES`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
+	}
+
+	assert.Exactly(t, colsWant, colsHave)
 }
 
 func TestGetGoPrimitive(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		c           csdb.Column
 		useNullType bool
@@ -305,8 +374,7 @@ func TestGetGoPrimitive(t *testing.T) {
 var benchmarkGetColumns csdb.Columns
 var benchmarkGetColumnsHashWant = []byte{0x3b, 0x2d, 0xdd, 0xf4, 0x4e, 0x2b, 0x3a, 0xd0}
 
-// BenchmarkGetColumns-4	    1000	   3376128 ns/op	   24198 B/op	     196 allocs/op
-// BenchmarkGetColumns-4	    1000	   1185381 ns/op	   21861 B/op	     179 allocs/op
+// BenchmarkGetColumns-4       	5000	    395152 ns/op	   21426 B/op	     179 allocs/op
 func BenchmarkGetColumns(b *testing.B) {
 	dbc := csdb.MustConnectTest()
 	defer dbc.Close()
@@ -361,7 +429,6 @@ var benchmarkColumnsJoinFieldsData = csdb.Columns{
 
 // BenchmarkColumnsJoinFields-4	 2000000	       625 ns/op	     176 B/op	       5 allocs/op <- Go 1.5
 func BenchmarkColumnsJoinFields(b *testing.B) {
-
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

@@ -27,11 +27,11 @@ const (
 	tableIndexZZZ                              // the maximum index, which is not available.
 )
 
-var tableCollection csdb.Manager
+var tableCollection csdb.TableManager
 
 func init() {
 	tableCollection = csdb.NewTableManager(
-		csdb.AddTableByName(tableIndexCoreConfigData, "core_config_data"),
+		csdb.WithTable(tableIndexCoreConfigData, "core_config_data"),
 	)
 	// Don't forget to call TableCollection.ReInit(...) in your code to load the column definitions.
 }

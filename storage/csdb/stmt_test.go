@@ -19,11 +19,12 @@ import (
 	"testing"
 	"time"
 
+	"strings"
+
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/stretchr/testify/assert"
-	"strings"
 )
 
 type typeWriter struct {
@@ -75,6 +76,7 @@ func (tw *typeWriter) Save(key string, value int) error {
 }
 
 func TestResurrectStmtSqlMockNoTicker(t *testing.T) {
+	t.Parallel()
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -103,6 +105,7 @@ func TestResurrectStmtSqlMockNoTicker(t *testing.T) {
 }
 
 func TestResurrectStmtSqlMockShouldPrepareOnceAndThenBecomeIdle(t *testing.T) {
+	t.Parallel()
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -131,6 +134,7 @@ func TestResurrectStmtSqlMockShouldPrepareOnceAndThenBecomeIdle(t *testing.T) {
 }
 
 func TestResurrectStmtSqlMockShouldPrepareTwoTimesWithThreeCalls(t *testing.T) {
+	t.Parallel()
 	db, mock, err := sqlmock.New()
 	if err != nil {
 		t.Fatalf("an error '%s' was not expected when opening a stub database connection", err)
@@ -178,6 +182,10 @@ func TestResurrectStmtRealDB(t *testing.T) {
 	infoLogBuf.Reset()
 	defer debugLogBuf.Reset()
 	defer infoLogBuf.Reset()
+
+	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
+		t.Skip("Skipping because no DSN found.")
+	}
 
 	dbc := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbc.Close()) }()

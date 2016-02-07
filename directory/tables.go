@@ -17,4 +17,4 @@ package directory
 import "github.com/corestoreio/csfw/storage/csdb"
 
 // TableCollection handles all tables and its columns. init() in generated Go file will set the value.
-var TableCollection csdb.Manager
+var TableCollection csdb.TableManager

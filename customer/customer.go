@@ -36,7 +36,7 @@ var (
 	_ eav.EntityTypeAdditionalAttributeTabler = (*Entity)(nil)
 	_ eav.EntityTypeIncrementModeller         = (*Entity)(nil)
 	// TableCollection handles all tables and its columns. init() in generated Go file will set the value.
-	TableCollection csdb.Manager
+	TableCollection csdb.TableManager
 )
 
 func (c *Entity) TBD() {

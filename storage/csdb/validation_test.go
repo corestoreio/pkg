@@ -12,41 +12,34 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csdb
+package csdb_test
 
 import (
 	"errors"
-	"os"
+	"strings"
 	"testing"
 
+	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGetDSN(t *testing.T) {
+func TestIsValidIdentifier(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		env        string
-		envContent string
-		err        error
-		returnErr  bool
+		have string
+		want error
 	}{
-		{
-			env:        "TEST_CS_1",
-			envContent: "Hello",
-			err:        errors.New("World"),
-			returnErr:  false,
-		},
+		{"$catalog_product_3ntity", nil},
+		{"`catalog_product_3ntity", errors.New("Invalid character ``` in name \"`catalog_product_3ntity\"")},
+		{"", csdb.ErrIncorrectIdentifier},
+		{strings.Repeat("a", 64), csdb.ErrIncorrectIdentifier},
 	}
-
-	for _, test := range tests {
-		os.Setenv(test.env, test.envContent)
-		s, aErr := getDSN(test.env, test.err)
-		assert.Equal(t, test.envContent, s)
-		assert.NoError(t, aErr)
-
-		s, aErr = getDSN(test.env+"NOTFOUND", test.err)
-		assert.Equal(t, "", s)
-		assert.Error(t, aErr)
-		assert.Equal(t, test.err, aErr)
+	for i, test := range tests {
+		haveErr := csdb.IsValidIdentifier(test.have)
+		if test.want != nil {
+			assert.EqualError(t, haveErr, test.want.Error(), "Index %d", i)
+		} else {
+			assert.NoError(t, haveErr, "Index %d", i)
+		}
 	}
 }

@@ -34,15 +34,13 @@ const (
 	ColumnAutoIncrement = "auto_increment"
 )
 
-type (
+// Columns contains a slice of column types
+type Columns []Column
 
-	// Columns contains a slice of column types
-	Columns []Column
-	// Column contains info about one database column retrieved from `SHOW COLUMNS FROM table`
-	Column struct {
-		Field, Type, Null, Key, Default, Extra dbr.NullString
-	}
-)
+// Column contains info about one database column retrieved from `SHOW COLUMNS FROM table`
+type Column struct {
+	Field, Type, Null, Key, Default, Extra dbr.NullString
+}
 
 // GetColumns returns all columns from a table. It discards the column entity_type_id from some
 // entity tables.

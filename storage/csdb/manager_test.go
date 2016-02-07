@@ -21,8 +21,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewTableManager(t *testing.T) {
-	assert.Equal(t, csdb.NewTableManager().Len(), csdb.Index(0))
+var _ csdb.TableManager = (*csdb.TableService)(nil)
+var _ error = (*csdb.TableService)(nil)
+
+func TestNewTableService(t *testing.T) {
+	t.Parallel()
+	assert.Equal(t, csdb.MustNewTableService().Len(), csdb.Index(0))
 
 	const (
 		TableIndexStore   csdb.Index = iota // Table: store
@@ -31,46 +35,48 @@ func TestNewTableManager(t *testing.T) {
 		TableIndexZZZ                       // the maximum index, which is not available.
 	)
 
-	tm1 := csdb.NewTableManager(
-		csdb.AddTableByName(TableIndexStore, "store"),
-		csdb.AddTableByName(TableIndexGroup, "store_group"),
-		csdb.AddTableByName(TableIndexWebsite, "store_website"),
+	tm1 := csdb.MustNewTableService(
+		csdb.WithTable(TableIndexStore, "store"),
+		csdb.WithTable(TableIndexGroup, "store_group"),
+		csdb.WithTable(TableIndexWebsite, "store_website"),
 	)
 	assert.Equal(t, tm1.Len(), csdb.Index(3))
 }
-func TestNewTableManagerPanic(t *testing.T) {
+func TestNewTableServicePanic(t *testing.T) {
+	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
-			assert.Contains(t, r.(string), csdb.ErrManagerIncorrectValue.Error())
+			assert.EqualError(t, r.(error), csdb.ErrIncorrectIdentifier.Error())
+		} else {
+			t.Error("Expecting a panic")
 		}
 	}()
 
-	tm0 := csdb.NewTableManager(
-		csdb.AddTableByName(csdb.Index(0), ""),
+	_ = csdb.MustNewTableService(
+		csdb.WithTable(csdb.Index(0), ""),
 	)
+}
+
+func TestNewTableServiceAppend(t *testing.T) {
+	t.Parallel()
+
+	tm0 := csdb.MustNewTableService()
 	assert.NotNil(t, tm0)
+	assert.EqualError(t, tm0.Append(csdb.Index(0), nil), "Table pointer cannot be nil for Index 0")
 	assert.Equal(t, tm0.Len(), csdb.Index(0))
 }
 
-func TestNewTableManagerAppend(t *testing.T) {
-	defer func() {
-		if r := recover(); r != nil {
-			assert.Contains(t, r.(string), "Table pointer cannot be nil for Index")
-		}
-	}()
+func TestIntegration_NewTableServiceInit(t *testing.T) {
+	t.Parallel()
+	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
+		t.Skip("Skipping because no DSN found.")
+	}
 
-	tm0 := csdb.NewTableManager()
-	tm0.Append(csdb.Index(0), nil)
-	assert.NotNil(t, tm0)
-	assert.Equal(t, tm0.Len(), csdb.Index(0))
-}
-
-func TestNewTableManagerInit(t *testing.T) {
 	dbc := csdb.MustConnectTest()
 	defer dbc.Close()
 	i := csdb.Index(4711)
-	tm0 := csdb.NewTableManager(csdb.AddTableByName(i, "admin_user"))
-	assert.EqualError(t, tm0.Init(dbc.NewSession(), true), csdb.ErrManagerInitReload.Error())
+	tm0 := csdb.MustNewTableService(csdb.WithTable(i, "admin_user"))
+	assert.EqualError(t, tm0.Init(dbc.NewSession(), true), csdb.ErrTableServiceInitReload.Error())
 	err := tm0.Init(dbc.NewSession())
 	assert.NoError(t, err)
 

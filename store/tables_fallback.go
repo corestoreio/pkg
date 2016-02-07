@@ -47,9 +47,9 @@ const (
 
 func init() {
 	TableCollection = csdb.NewTableManager(
-		csdb.AddTableByName(TableIndexStore, "store"),
-		csdb.AddTableByName(TableIndexGroup, "store_group"),
-		csdb.AddTableByName(TableIndexWebsite, "store_website"),
+		csdb.WithTable(TableIndexStore, "store"),
+		csdb.WithTable(TableIndexGroup, "store_group"),
+		csdb.WithTable(TableIndexWebsite, "store_website"),
 	)
 	// Don't forget to call TableCollection.ReInit(...) in your code to load the column definitions.
 }

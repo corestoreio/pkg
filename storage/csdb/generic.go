@@ -47,7 +47,7 @@ func (e *Error) Error() string {
 
 // LoadSlice loads the slice dest with the table structure from tsr TableStructurer and table index ti.
 // Returns the number of loaded rows and nil or 0 and an error. Slice must be a pointer to structs.
-func LoadSlice(dbrSess dbr.SessionRunner, tsr Manager, ti Index, dest interface{}, cbs ...dbr.SelectCb) (int, error) {
+func LoadSlice(dbrSess dbr.SessionRunner, tsr TableManager, ti Index, dest interface{}, cbs ...dbr.SelectCb) (int, error) {
 	ts, err := tsr.Structure(ti)
 	if err != nil {
 		return 0, errgo.Mask(err)

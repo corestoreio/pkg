@@ -18,10 +18,8 @@ import (
 	"errors"
 	"sync"
 
-	"bytes"
-	"fmt"
-
 	"github.com/corestoreio/csfw/storage/dbr"
+	"github.com/corestoreio/csfw/util"
 	"github.com/juju/errgo"
 )
 
@@ -35,15 +33,15 @@ const (
 )
 
 var (
-	ErrTableNotFound         = errors.New("Table not found")
-	ErrManagerIncorrectValue = errors.New("NewTableManager: Incorrect value for idx or name")
-	ErrManagerInitReload     = errors.New("You cannot force reload when the init process were not able to run.")
+	ErrTableNotFound          = errors.New("Table not found")
+	ErrTableServiceInitReload = errors.New("You cannot force reload when the init process were not able to run.")
 )
 
-type (
-	Index int
+// Index defines the table index within the TableService
+type Index uint
 
-	Manager interface {
+type (
+	TableManager interface {
 		// Structure returns the TableStructure from a read-only map m by a giving index i.
 		Structure(Index) (*Table, error)
 		// Name is a short hand to return a table name by given index i. Does not return an error
@@ -65,11 +63,11 @@ type (
 		Init(dbrSess dbr.SessionRunner, reInit ...bool) error
 	}
 
-	// ManagerOption applies options to the TableManager
-	ManagerOption func(*TableManager)
+	// ManagerOption applies options to the TableService
+	ManagerOption func(*TableService)
 
-	// TableManager implements interface Manager
-	TableManager struct {
+	// TableService implements interface Manager
+	TableService struct {
 		initDone bool
 		errs     []error
 		mu       sync.RWMutex
@@ -77,27 +75,28 @@ type (
 	}
 )
 
-var _ Manager = (*TableManager)(nil)
+// WithTable adds a database table to the TableService by the table name and index.
+// You can optionally specify the columns to skip the Init() function.
+func WithTable(idx Index, name string, cols ...Column) ManagerOption {
+	return func(tm *TableService) {
 
-// AddTableByName adds a database table to the TableManager by the table name
-// and index.
-func AddTableByName(idx Index, name string) ManagerOption {
-	return func(tm *TableManager) {
-		if idx < Index(0) || name == "" {
-			tm.appendErr(errgo.Mask(ErrManagerIncorrectValue))
+		if err := IsValidIdentifier(name); err != nil {
+			tm.errs = append(tm.errs, err)
+		}
+
+		if len(tm.errs) > 0 {
 			return
 		}
-		if err := tm.Append(idx, NewTable(name)); err != nil {
-			tm.appendErr(err)
+
+		if err := tm.Append(idx, NewTable(name, cols...)); err != nil {
+			tm.errs = append(tm.errs, err)
 		}
 	}
 }
 
-// NewTableManager creates a new TableManager satisfying interface Manager.
-// Panics if an error occurs in an option function. Errors will be logged.
-// This function is only used in generated codes.
-func NewTableManager(opts ...ManagerOption) *TableManager {
-	tm := &TableManager{
+// NewTableService creates a new TableService satisfying interface Manager.
+func NewTableService(opts ...ManagerOption) (*TableService, error) {
+	tm := &TableService{
 		mu: sync.RWMutex{},
 		ts: make(map[Index]*Table),
 	}
@@ -105,13 +104,22 @@ func NewTableManager(opts ...ManagerOption) *TableManager {
 		o(tm)
 	}
 	if len(tm.errs) > 0 {
-		panic(tm.errFlush())
+		return nil, tm
 	}
-	return tm
+	return tm, nil
+}
+
+// MustNewTableService same as NewTableService but panics on error.
+func MustNewTableService(opts ...ManagerOption) *TableService {
+	ts, err := NewTableService(opts...)
+	if err != nil {
+		panic(err)
+	}
+	return ts
 }
 
 // Structure returns the TableStructure from a read-only map m by a giving index i.
-func (tm *TableManager) Structure(i Index) (*Table, error) {
+func (tm *TableService) Structure(i Index) (*Table, error) {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
 	if ts, ok := tm.ts[i]; ok && ts != nil {
@@ -122,7 +130,7 @@ func (tm *TableManager) Structure(i Index) (*Table, error) {
 
 // Name is a short hand to return a table name by given index i. Does not return an error
 // when the table can't be found. Returns an empty string
-func (tm *TableManager) Name(i Index) string {
+func (tm *TableService) Name(i Index) string {
 	tm.mu.RLock()
 	defer tm.mu.RUnlock()
 	if ts, ok := tm.ts[i]; ok && ts != nil {
@@ -132,7 +140,7 @@ func (tm *TableManager) Name(i Index) string {
 }
 
 // Len returns the length of the slice data
-func (tm *TableManager) Len() Index {
+func (tm *TableService) Len() Index {
 	return Index(len(tm.ts))
 }
 
@@ -142,12 +150,12 @@ func (tm *TableManager) Len() Index {
 //		table, err := tableMap.Structure(i)
 //		...
 //	}
-func (tm *TableManager) Next(i Index) bool {
+func (tm *TableService) Next(i Index) bool {
 	return i < tm.Len()
 }
 
 // Append adds a table. Overrides silently existing entries.
-func (tm *TableManager) Append(i Index, ts *Table) error {
+func (tm *TableService) Append(i Index, ts *Table) error {
 	if ts == nil {
 		return errgo.Newf("Table pointer cannot be nil for Index %d", i)
 	}
@@ -159,7 +167,9 @@ func (tm *TableManager) Append(i Index, ts *Table) error {
 
 // Init loads the column definitions from the database for each table. Set reInit
 // to true to allow reloading otherwise it loads only once.
-func (tm *TableManager) Init(dbrSess dbr.SessionRunner, reInit ...bool) error {
+func (tm *TableService) Init(dbrSess dbr.SessionRunner, reInit ...bool) error {
+	tm.mu.Lock()
+	defer tm.mu.Unlock()
 	reLoad := false
 	if len(reInit) > 0 {
 		reLoad = reInit[0]
@@ -168,16 +178,14 @@ func (tm *TableManager) Init(dbrSess dbr.SessionRunner, reInit ...bool) error {
 		return nil
 	}
 	if false == tm.initDone && true == reLoad {
-		return errgo.Mask(ErrManagerInitReload)
+		return errgo.Mask(ErrTableServiceInitReload)
 	}
-	tm.mu.Lock()
-	defer tm.mu.Unlock()
 	tm.initDone = true
 
 	for _, table := range tm.ts {
 		if err := table.LoadColumns(dbrSess); err != nil {
 			if PkgLog.IsDebug() {
-				PkgLog.Debug("csdb.TableManager.Init.LoadColumns", "err", err, "table", table)
+				PkgLog.Debug("csdb.TableService.Init.LoadColumns", "err", err, "table", table)
 			}
 			return errgo.Mask(err)
 		}
@@ -186,19 +194,7 @@ func (tm *TableManager) Init(dbrSess dbr.SessionRunner, reInit ...bool) error {
 	return nil
 }
 
-func (tm *TableManager) appendErr(err error) {
-	tm.errs = append(tm.errs, err)
-}
-
-func (tm *TableManager) errFlush() string {
-	var buf bytes.Buffer
-	for i, e := range tm.errs {
-		PkgLog.Debug("csdb.NewTableManager.errs", "err", e, "tablemanager", tm)
-		fmt.Fprintf(&buf, "%02d: %s", i, e.Error())
-		if l, ok := e.(errgo.Locationer); ok {
-			buf.WriteString("\nLocation: " + l.Location().String())
-		}
-	}
-	tm.errs = nil
-	return buf.String()
+// Error implements error interface
+func (tm *TableService) Error() string {
+	return util.Errors(tm.errs...)
 }
