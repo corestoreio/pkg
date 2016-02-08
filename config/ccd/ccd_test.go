@@ -17,7 +17,6 @@ package ccd_test
 import (
 	"database/sql/driver"
 	"fmt"
-	"strings"
 	"testing"
 	"time"
 
@@ -25,7 +24,6 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/ccd"
 	"github.com/corestoreio/csfw/config/path"
-	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
@@ -123,68 +121,198 @@ func TestDBStorageOneStmt(t *testing.T) {
 	//assert.Exactly(t, 1, strings.Count(debugLogBuf.String(), `SELECT scope,scope_id,path FROM `))
 }
 
-func TestDBStorageMultipleStmt(t *testing.T) {
-	debugLogBuf.Reset()
-	defer debugLogBuf.Reset() // contains only data from the debug level, info level will be dumped to os.Stdout
-	defer infoLogBuf.Reset()
-	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
-		t.Skip(err)
-	}
+var dbStorageMultiTests = []struct {
+	key       path.Path
+	value     interface{}
+	wantValue string
+}{
+	{path.MustNewByParts("testDBStorage/secure/base_url").Bind(scope.WebsiteID, 10), "http://corestore.io", "http://corestore.io"},
+	{path.MustNewByParts("testDBStorage/log/active").Bind(scope.WebsiteID, 10), 1, "1"},
+	{path.MustNewByParts("testDBStorage/log/clean").Bind(scope.WebsiteID, 20), 19.999, "19.999"},
+	{path.MustNewByParts("testDBStorage/product/shipping").Bind(scope.WebsiteID, 20), 29.999, "29.999"},
+	{path.MustNewByParts("testDBStorage/checkout/multishipping"), false, "false"},
+	{path.MustNewByParts("testDBStorage/shipping/rate").Bind(scope.StoreID, 321), 3.14159, "3.14159"},
+}
 
-	if testing.Short() {
-		t.Skip("Test skipped in short mode")
-	}
-	dbc := csdb.MustConnectTest()
-	defer func() { assert.NoError(t, dbc.Close()) }()
+func TestDBStorageMultipleStmt_Set(t *testing.T) {
+	t.Parallel()
+	//debugLogBuf.Reset()
+	//defer debugLogBuf.Reset() // contains only data from the debug level, info level will be dumped to os.Stdout
+
+	dbc, dbMock := cstesting.MockDB(t)
+	defer func() {
+		dbMock.ExpectClose()
+
+		assert.NoError(t, dbc.Close())
+
+		if err := dbMock.ExpectationsWereMet(); err != nil {
+			t.Error("there were unfulfilled expections", err)
+		}
+	}()
 
 	sdb := ccd.MustNewDBStorage(dbc.DB)
-	sdb.All.Idle = time.Second * 1
-	sdb.Read.Idle = time.Second * 1
 	sdb.Write.Idle = time.Second * 1
 
 	sdb.Start()
 
-	tests := []struct {
-		key       path.Path
-		value     interface{}
-		wantValue string
-	}{
-		{path.MustNewByParts("testDBStorage/secure/base_url").Bind(scope.WebsiteID, 10), "http://corestore.io", "http://corestore.io"},
-		{path.MustNewByParts("testDBStorage/log/active").Bind(scope.WebsiteID, 10), 1, "1"},
-		{path.MustNewByParts("testDBStorage/log/clean").Bind(scope.WebsiteID, 20), 19.999, "19.999"},
-		{path.MustNewByParts("testDBStorage/product/shipping").Bind(scope.WebsiteID, 20), 29.999, "29.999"},
-		{path.MustNewByParts("testDBStorage/checkout/multishipping"), false, "false"},
-	}
-	for i, test := range tests {
-		assert.NoError(t, sdb.Set(test.key, test.value), "Index %d", i)
-		g, err := sdb.Get(test.key)
-		assert.NoError(t, err, "Index %d", i)
-		assert.Exactly(t, test.wantValue, g, "Index %d", i)
+	var prepIns *sqlmock.ExpectedPrepare
+	for i, test := range dbStorageMultiTests {
+		if i < 3 {
+			prepIns = dbMock.ExpectPrepare("INSERT INTO `[^`]+` \\(.+\\) VALUES \\(\\?,\\?,\\?,\\?\\) ON DUPLICATE KEY UPDATE `value`=\\?")
+		}
+
+		prepIns.ExpectExec().WithArgs(
+			driver.Value(test.key.Scope.StrScope()),
+			driver.Value(test.key.ID),
+			driver.Value(test.key.Bytes()),
+			driver.Value(test.wantValue), // value
+			driver.Value(test.wantValue), // value fall back on duplicate key
+		).WillReturnResult(sqlmock.NewResult(0, 1))
+
+		if err := sdb.Set(test.key, test.value); err != nil {
+			t.Fatal("Index", i, "with error:", err)
+		}
+
 		if i < 2 {
 			// last two iterations reopen a new statement, not closing it and reusing it
 			time.Sleep(time.Millisecond * 1500) // trigger ticker to close statements
 		}
 	}
 
-	for i, test := range tests {
-		allKeys, err := sdb.AllKeys()
+	assert.NoError(t, sdb.Stop())
+
+	//logStr := debugLogBuf.String()
+	//assert.Exactly(t, 3, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Prepare SQL: "INSERT INTO`))
+	//assert.Exactly(t, 3, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Prepare SQL: \"SELECT `value` FROM"))
+	//
+	//assert.Exactly(t, 4, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Close SQL: "INSERT INTO`), "\n%s\n", logStr)
+	//assert.Exactly(t, 4, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Close SQL: \"SELECT `value` FROM"))
+
+	//
+	//// 6 is: open close for iteration 0+1, open in iteration 2 and close in iteration 4
+	//assert.Exactly(t, 9, strings.Count(logStr, `SELECT scope,scope_id,path FROM `))
+
+	//println("\n", logStr, "\n")
+}
+
+func TestDBStorageMultipleStmt_Get(t *testing.T) {
+	t.Parallel()
+	//debugLogBuf.Reset()
+	//defer debugLogBuf.Reset() // contains only data from the debug level, info level will be dumped to os.Stdout
+
+	dbc, dbMock := cstesting.MockDB(t)
+	defer func() {
+		dbMock.ExpectClose()
+
+		assert.NoError(t, dbc.Close())
+
+		if err := dbMock.ExpectationsWereMet(); err != nil {
+			t.Error("there were unfulfilled expections", err)
+		}
+	}()
+
+	sdb := ccd.MustNewDBStorage(dbc.DB)
+	sdb.Read.Idle = time.Second * 1
+
+	sdb.Start()
+
+	// both prepared statements cannot run within one for loop :-(
+
+	var prepSel *sqlmock.ExpectedPrepare
+	for i, test := range dbStorageMultiTests {
+		if i < 3 {
+			prepSel = dbMock.ExpectPrepare("SELECT `value` FROM `[^`]+` WHERE `scope`=\\? AND `scope_id`=\\? AND `path`=\\?")
+		}
+
+		prepSel.ExpectQuery().WithArgs(
+			driver.Value(test.key.Scope.StrScope()),
+			driver.Value(test.key.ID),
+			driver.Value(test.key.Bytes()),
+		).WillReturnRows(sqlmock.NewRows([]string{"value"}).FromCSVString(test.wantValue))
+
+		g, err := sdb.Get(test.key)
 		assert.NoError(t, err, "Index %d", i)
+		assert.Exactly(t, test.wantValue, g, "Index %d", i)
+
+		if i < 2 {
+			// last two iterations reopen a new statement, not closing it and reusing it
+			time.Sleep(time.Millisecond * 1500) // trigger ticker to close statements
+		}
+	}
+
+	assert.NoError(t, sdb.Stop())
+
+	//logStr := debugLogBuf.String()
+	//assert.Exactly(t, 3, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Prepare SQL: "INSERT INTO`))
+	//assert.Exactly(t, 3, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Prepare SQL: \"SELECT `value` FROM"))
+	//
+	//assert.Exactly(t, 4, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Close SQL: "INSERT INTO`), "\n%s\n", logStr)
+	//assert.Exactly(t, 4, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Close SQL: \"SELECT `value` FROM"))
+
+	//
+	//// 6 is: open close for iteration 0+1, open in iteration 2 and close in iteration 4
+	//assert.Exactly(t, 9, strings.Count(logStr, `SELECT scope,scope_id,path FROM `))
+
+	//println("\n", logStr, "\n")
+}
+
+func TestDBStorageMultipleStmt_All(t *testing.T) {
+	t.Parallel()
+	//debugLogBuf.Reset()
+	//defer debugLogBuf.Reset() // contains only data from the debug level, info level will be dumped to os.Stdout
+
+	dbc, dbMock := cstesting.MockDB(t)
+	defer func() {
+		dbMock.ExpectClose()
+
+		assert.NoError(t, dbc.Close())
+
+		if err := dbMock.ExpectationsWereMet(); err != nil {
+			t.Error("there were unfulfilled expections", err)
+		}
+	}()
+
+	sdb := ccd.MustNewDBStorage(dbc.DB)
+	sdb.All.Idle = time.Second * 1
+
+	sdb.Start()
+
+	var prepAll *sqlmock.ExpectedPrepare
+	for i, test := range dbStorageMultiTests {
+
+		if i < 3 {
+			prepAll = dbMock.ExpectPrepare("SELECT scope,scope_id,path FROM `[^`]+` ORDER BY scope,scope_id,path")
+		}
+
+		mockRows := sqlmock.NewRows([]string{"scope", "scope_id", "path"})
+		for _, test := range dbStorageMultiTests {
+			mockRows.FromCSVString(fmt.Sprintf("%s,%d,%s", test.key.Scope.StrScope(), test.key.ID, test.key.Chars))
+		}
+		prepAll.ExpectQuery().WillReturnRows(mockRows)
+
+		allKeys, err := sdb.AllKeys()
+		if err != nil {
+			t.Fatal("Index", i, "with error AllKeys:", err)
+		}
+
 		assert.True(t, allKeys.Contains(test.key), "Missing Key: %s", test.key)
+
 		if i < 2 {
 			time.Sleep(time.Millisecond * 1500) // trigger ticker to close statements
 		}
 	}
 	assert.NoError(t, sdb.Stop())
 
-	logStr := debugLogBuf.String()
-	assert.Exactly(t, 3, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Prepare SQL: "INSERT INTO`))
-	assert.Exactly(t, 3, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Prepare SQL: \"SELECT `value` FROM"))
+	//logStr := debugLogBuf.String()
+	//assert.Exactly(t, 3, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Prepare SQL: "INSERT INTO`))
+	//assert.Exactly(t, 3, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Prepare SQL: \"SELECT `value` FROM"))
+	//
+	//assert.Exactly(t, 4, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Close SQL: "INSERT INTO`), "\n%s\n", logStr)
+	//assert.Exactly(t, 4, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Close SQL: \"SELECT `value` FROM"))
 
-	assert.Exactly(t, 4, strings.Count(logStr, `csdb.ResurrectStmt.stmt.Close SQL: "INSERT INTO`), "\n%s\n", logStr)
-	assert.Exactly(t, 4, strings.Count(logStr, "csdb.ResurrectStmt.stmt.Close SQL: \"SELECT `value` FROM"))
+	//
+	//// 6 is: open close for iteration 0+1, open in iteration 2 and close in iteration 4
+	//assert.Exactly(t, 9, strings.Count(logStr, `SELECT scope,scope_id,path FROM `))
 
 	//println("\n", logStr, "\n")
-
-	// 6 is: open close for iteration 0+1, open in iteration 2 and close in iteration 4
-	assert.Exactly(t, 6, strings.Count(logStr, `SELECT scope,scope_id,path FROM `))
 }
