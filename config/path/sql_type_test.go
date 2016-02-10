@@ -30,10 +30,17 @@ const (
 var tableCollection csdb.TableManager
 
 func init() {
-	tableCollection = csdb.NewTableManager(
-		csdb.WithTable(tableIndexCoreConfigData, "core_config_data"),
+	tableCollection = csdb.MustNewTableService(
+		csdb.WithTable(
+			tableIndexCoreConfigData,
+			"core_config_data",
+			csdb.Column{Field: dbr.NewNullString(`config_id`), Type: dbr.NewNullString(`int(10) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`PRI`), Default: dbr.NewNullString(nil), Extra: dbr.NewNullString(`auto_increment`)},
+			csdb.Column{Field: dbr.NewNullString(`scope`), Type: dbr.NewNullString(`varchar(8)`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`MUL`), Default: dbr.NewNullString(`default`), Extra: dbr.NewNullString(``)},
+			csdb.Column{Field: dbr.NewNullString(`scope_id`), Type: dbr.NewNullString(`int(11)`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
+			csdb.Column{Field: dbr.NewNullString(`path`), Type: dbr.NewNullString(`varchar(255)`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(`general`), Extra: dbr.NewNullString(``)},
+			csdb.Column{Field: dbr.NewNullString(`value`), Type: dbr.NewNullString(`text`), Null: dbr.NewNullString(`YES`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(nil), Extra: dbr.NewNullString(``)},
+		),
 	)
-	// Don't forget to call TableCollection.ReInit(...) in your code to load the column definitions.
 }
 
 // TableCoreConfigDataSlice represents a collection type for DB table core_config_data

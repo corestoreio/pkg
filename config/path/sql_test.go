@@ -32,13 +32,12 @@ var _ sql.Scanner = (*path.Route)(nil)
 var _ driver.Valuer = (*path.Route)(nil)
 
 func TestIntegrationSQLType(t *testing.T) {
+	t.Parallel()
 	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
 		t.Skip(err)
 	}
 	dbCon := csdb.MustConnectTest()
 	defer func() { assert.NoError(t, dbCon.Close()) }()
-
-	assert.NoError(t, tableCollection.Init(dbCon.NewSession()))
 
 	var testPath = `system/full_page_cache/varnish/` + util.RandAlnum(5)
 	var insPath = path.NewRoute(testPath)
