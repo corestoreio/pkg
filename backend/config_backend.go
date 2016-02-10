@@ -16,6 +16,8 @@ package backend
 
 import (
 	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
@@ -28,15 +30,15 @@ var ConfigStructure element.SectionSlice
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
 		&element.Section{
-			ID:        "advanced",
-			Label:     `Advanced`,
+			ID:        path.NewRoute("advanced"),
+			Label:     text.Chars(`Advanced`),
 			SortOrder: 910,
 			Scope:     scope.PermAll,
 			Resource:  0, // Magento_Backend::advanced
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:        "modules_disable_output",
-					Label:     `Disable Modules Output`,
+					ID:        path.NewRoute("modules_disable_output"),
+					Label:     text.Chars(`Disable Modules Output`),
 					SortOrder: 2,
 					Scope:     scope.PermAll,
 					Fields:    element.NewFieldSlice(),
@@ -44,22 +46,22 @@ func init() {
 			),
 		},
 		&element.Section{
-			ID:        "trans_email",
-			Label:     `Store Email Addresses`,
+			ID:        path.NewRoute("trans_email"),
+			Label:     text.Chars(`Store Email Addresses`),
 			SortOrder: 90,
 			Scope:     scope.PermAll,
 			Resource:  0, // Magento_Backend::trans_email
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:        "ident_custom1",
-					Label:     `Custom Email 1`,
+					ID:        path.NewRoute("ident_custom1"),
+					Label:     text.Chars(`Custom Email 1`),
 					SortOrder: 4,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: trans_email/ident_custom1/email
-							ID:        "email",
-							Label:     `Sender Email`,
+							ID:        path.NewRoute("email"),
+							Label:     text.Chars(`Sender Email`),
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -69,8 +71,8 @@ func init() {
 
 						&element.Field{
 							// Path: trans_email/ident_custom1/name
-							ID:        "name",
-							Label:     `Sender Name`,
+							ID:        path.NewRoute("name"),
+							Label:     text.Chars(`Sender Name`),
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -81,15 +83,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "ident_custom2",
-					Label:     `Custom Email 2`,
+					ID:        path.NewRoute("ident_custom2"),
+					Label:     text.Chars(`Custom Email 2`),
 					SortOrder: 5,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: trans_email/ident_custom2/email
-							ID:        "email",
-							Label:     `Sender Email`,
+							ID:        path.NewRoute("email"),
+							Label:     text.Chars(`Sender Email`),
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -99,8 +101,8 @@ func init() {
 
 						&element.Field{
 							// Path: trans_email/ident_custom2/name
-							ID:        "name",
-							Label:     `Sender Name`,
+							ID:        path.NewRoute("name"),
+							Label:     text.Chars(`Sender Name`),
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -111,15 +113,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "ident_general",
-					Label:     `General Contact`,
+					ID:        path.NewRoute("ident_general"),
+					Label:     text.Chars(`General Contact`),
 					SortOrder: 1,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: trans_email/ident_general/email
-							ID:        "email",
-							Label:     `Sender Email`,
+							ID:        path.NewRoute("email"),
+							Label:     text.Chars(`Sender Email`),
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -129,8 +131,8 @@ func init() {
 
 						&element.Field{
 							// Path: trans_email/ident_general/name
-							ID:        "name",
-							Label:     `Sender Name`,
+							ID:        path.NewRoute("name"),
+							Label:     text.Chars(`Sender Name`),
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -141,15 +143,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "ident_sales",
-					Label:     `Sales Representative`,
+					ID:        path.NewRoute("ident_sales"),
+					Label:     text.Chars(`Sales Representative`),
 					SortOrder: 2,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: trans_email/ident_sales/email
-							ID:        "email",
-							Label:     `Sender Email`,
+							ID:        path.NewRoute("email"),
+							Label:     text.Chars(`Sender Email`),
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -159,8 +161,8 @@ func init() {
 
 						&element.Field{
 							// Path: trans_email/ident_sales/name
-							ID:        "name",
-							Label:     `Sender Name`,
+							ID:        path.NewRoute("name"),
+							Label:     text.Chars(`Sender Name`),
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -171,15 +173,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "ident_support",
-					Label:     `Customer Support`,
+					ID:        path.NewRoute("ident_support"),
+					Label:     text.Chars(`Customer Support`),
 					SortOrder: 3,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: trans_email/ident_support/email
-							ID:        "email",
-							Label:     `Sender Email`,
+							ID:        path.NewRoute("email"),
+							Label:     text.Chars(`Sender Email`),
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -189,8 +191,8 @@ func init() {
 
 						&element.Field{
 							// Path: trans_email/ident_support/name
-							ID:        "name",
-							Label:     `Sender Name`,
+							ID:        path.NewRoute("name"),
+							Label:     text.Chars(`Sender Name`),
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -202,23 +204,23 @@ func init() {
 			),
 		},
 		&element.Section{
-			ID:        "design",
-			Label:     `Design`,
+			ID:        path.NewRoute("design"),
+			Label:     text.Chars(`Design`),
 			SortOrder: 30,
 			Scope:     scope.PermAll,
 			Resource:  0, // Magento_Config::config_design
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:        "theme",
-					Label:     `Design Theme`,
+					ID:        path.NewRoute("theme"),
+					Label:     text.Chars(`Design Theme`),
 					SortOrder: 1,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/theme/theme_id
-							ID:        "theme_id",
-							Label:     `Design Theme`,
-							Comment:   element.LongText(`If no value is specified, the system default will be used. The system default may be modified by third party extensions.`),
+							ID:        path.NewRoute("theme_id"),
+							Label:     text.Chars(`Design Theme`),
+							Comment:   text.Chars(`If no value is specified, the system default will be used. The system default may be modified by third party extensions.`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -229,10 +231,10 @@ func init() {
 
 						&element.Field{
 							// Path: design/theme/ua_regexp
-							ID:        "ua_regexp",
-							Label:     `User-Agent Exceptions`,
-							Comment:   element.LongText(`Search strings are either normal strings or regular exceptions (PCRE). They are matched in the same order as entered. Examples:<br /><span style="font-family:monospace">Firefox<br />/^mozilla/i</span>`),
-							Tooltip:   element.LongText(`Find a string in client user-agent header and switch to specific design theme for that browser.`),
+							ID:        path.NewRoute("ua_regexp"),
+							Label:     text.Chars(`User-Agent Exceptions`),
+							Comment:   text.Chars(`Search strings are either normal strings or regular exceptions (PCRE). They are matched in the same order as entered. Examples:<br /><span style="font-family:monospace">Firefox<br />/^mozilla/i</span>`),
+							Tooltip:   text.Chars(`Find a string in client user-agent header and switch to specific design theme for that browser.`),
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -243,16 +245,16 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "pagination",
-					Label:     `Pagination`,
+					ID:        path.NewRoute("pagination"),
+					Label:     text.Chars(`Pagination`),
 					SortOrder: 500,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/pagination/pagination_frame
-							ID:        "pagination_frame",
-							Label:     `Pagination Frame`,
-							Comment:   element.LongText(`How many links to display at once.`),
+							ID:        path.NewRoute("pagination_frame"),
+							Label:     text.Chars(`Pagination Frame`),
+							Comment:   text.Chars(`How many links to display at once.`),
 							Type:      element.TypeText,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
@@ -261,9 +263,9 @@ func init() {
 
 						&element.Field{
 							// Path: design/pagination/pagination_frame_skip
-							ID:        "pagination_frame_skip",
-							Label:     `Pagination Frame Skip`,
-							Comment:   element.LongText(`If the current frame position does not cover utmost pages, will render link to current position plus/minus this value.`),
+							ID:        path.NewRoute("pagination_frame_skip"),
+							Label:     text.Chars(`Pagination Frame Skip`),
+							Comment:   text.Chars(`If the current frame position does not cover utmost pages, will render link to current position plus/minus this value.`),
 							Type:      element.TypeText,
 							SortOrder: 8,
 							Visible:   element.VisibleYes,
@@ -272,9 +274,9 @@ func init() {
 
 						&element.Field{
 							// Path: design/pagination/anchor_text_for_previous
-							ID:        "anchor_text_for_previous",
-							Label:     `Anchor Text for Previous`,
-							Comment:   element.LongText(`Alternative text for previous link in pagination menu. If empty, default arrow image will used.`),
+							ID:        path.NewRoute("anchor_text_for_previous"),
+							Label:     text.Chars(`Anchor Text for Previous`),
+							Comment:   text.Chars(`Alternative text for previous link in pagination menu. If empty, default arrow image will used.`),
 							Type:      element.TypeText,
 							SortOrder: 9,
 							Visible:   element.VisibleYes,
@@ -283,9 +285,9 @@ func init() {
 
 						&element.Field{
 							// Path: design/pagination/anchor_text_for_next
-							ID:        "anchor_text_for_next",
-							Label:     `Anchor Text for Next`,
-							Comment:   element.LongText(`Alternative text for next link in pagination menu. If empty, default arrow image will used.`),
+							ID:        path.NewRoute("anchor_text_for_next"),
+							Label:     text.Chars(`Anchor Text for Next`),
+							Comment:   text.Chars(`Alternative text for next link in pagination menu. If empty, default arrow image will used.`),
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -296,22 +298,22 @@ func init() {
 			),
 		},
 		&element.Section{
-			ID:        "dev",
-			Label:     `Developer`,
+			ID:        path.NewRoute("dev"),
+			Label:     text.Chars(`Developer`),
 			SortOrder: 920,
 			Scope:     scope.PermAll,
 			Resource:  0, // Magento_Backend::dev
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:        "debug",
-					Label:     `Debug`,
+					ID:        path.NewRoute("debug"),
+					Label:     text.Chars(`Debug`),
 					SortOrder: 20,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/debug/template_hints_storefront
-							ID:        "template_hints_storefront",
-							Label:     `Enabled Template Path Hints for Storefront`,
+							ID:        path.NewRoute("template_hints_storefront"),
+							Label:     text.Chars(`Enabled Template Path Hints for Storefront`),
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -321,8 +323,8 @@ func init() {
 
 						&element.Field{
 							// Path: dev/debug/template_hints_admin
-							ID:        "template_hints_admin",
-							Label:     `Enabled Template Path Hints for Admin`,
+							ID:        path.NewRoute("template_hints_admin"),
+							Label:     text.Chars(`Enabled Template Path Hints for Admin`),
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -332,8 +334,8 @@ func init() {
 
 						&element.Field{
 							// Path: dev/debug/template_hints_blocks
-							ID:        "template_hints_blocks",
-							Label:     `Add Block Names to Hints`,
+							ID:        path.NewRoute("template_hints_blocks"),
+							Label:     text.Chars(`Add Block Names to Hints`),
 							Type:      element.TypeSelect,
 							SortOrder: 21,
 							Visible:   element.VisibleYes,
@@ -344,16 +346,16 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "template",
-					Label:     `Template Settings`,
+					ID:        path.NewRoute("template"),
+					Label:     text.Chars(`Template Settings`),
 					SortOrder: 25,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/template/allow_symlink
-							ID:        "allow_symlink",
-							Label:     `Allow Symlinks`,
-							Comment:   element.LongText(`Warning! Enabling this feature is not recommended on production environments because it represents a potential security risk.`),
+							ID:        path.NewRoute("allow_symlink"),
+							Label:     text.Chars(`Allow Symlinks`),
+							Comment:   text.Chars(`Warning! Enabling this feature is not recommended on production environments because it represents a potential security risk.`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -363,8 +365,8 @@ func init() {
 
 						&element.Field{
 							// Path: dev/template/minify_html
-							ID:        "minify_html",
-							Label:     `Minify Html`,
+							ID:        path.NewRoute("minify_html"),
+							Label:     text.Chars(`Minify Html`),
 							Type:      element.TypeSelect,
 							SortOrder: 25,
 							Visible:   element.VisibleYes,
@@ -376,15 +378,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "translate_inline",
-					Label:     `Translate Inline`,
+					ID:        path.NewRoute("translate_inline"),
+					Label:     text.Chars(`Translate Inline`),
 					SortOrder: 30,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/translate_inline/active
-							ID:        "active",
-							Label:     `Enabled for Storefront`,
+							ID:        path.NewRoute("active"),
+							Label:     text.Chars(`Enabled for Storefront`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -395,9 +397,9 @@ func init() {
 
 						&element.Field{
 							// Path: dev/translate_inline/active_admin
-							ID:        "active_admin",
-							Label:     `Enabled for Admin`,
-							Comment:   element.LongText(`Translate, blocks and other output caches should be disabled for both Storefront and Admin inline translations.`),
+							ID:        path.NewRoute("active_admin"),
+							Label:     text.Chars(`Enabled for Admin`),
+							Comment:   text.Chars(`Translate, blocks and other output caches should be disabled for both Storefront and Admin inline translations.`),
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -409,15 +411,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "js",
-					Label:     `JavaScript Settings`,
+					ID:        path.NewRoute("js"),
+					Label:     text.Chars(`JavaScript Settings`),
 					SortOrder: 100,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/js/merge_files
-							ID:        "merge_files",
-							Label:     `Merge JavaScript Files`,
+							ID:        path.NewRoute("merge_files"),
+							Label:     text.Chars(`Merge JavaScript Files`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -427,8 +429,8 @@ func init() {
 
 						&element.Field{
 							// Path: dev/js/enable_js_bundling
-							ID:        "enable_js_bundling",
-							Label:     `Enable JavaScript Bundling`,
+							ID:        path.NewRoute("enable_js_bundling"),
+							Label:     text.Chars(`Enable JavaScript Bundling`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -438,8 +440,8 @@ func init() {
 
 						&element.Field{
 							// Path: dev/js/minify_files
-							ID:        "minify_files",
-							Label:     `Minify JavaScript Files`,
+							ID:        path.NewRoute("minify_files"),
+							Label:     text.Chars(`Minify JavaScript Files`),
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -450,15 +452,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "css",
-					Label:     `CSS Settings`,
+					ID:        path.NewRoute("css"),
+					Label:     text.Chars(`CSS Settings`),
 					SortOrder: 110,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/css/merge_css_files
-							ID:        "merge_css_files",
-							Label:     `Merge CSS Files`,
+							ID:        path.NewRoute("merge_css_files"),
+							Label:     text.Chars(`Merge CSS Files`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -468,8 +470,8 @@ func init() {
 
 						&element.Field{
 							// Path: dev/css/minify_files
-							ID:        "minify_files",
-							Label:     `Minify CSS Files`,
+							ID:        path.NewRoute("minify_files"),
+							Label:     text.Chars(`Minify CSS Files`),
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -480,16 +482,16 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "image",
-					Label:     `Image Processing Settings`,
+					ID:        path.NewRoute("image"),
+					Label:     text.Chars(`Image Processing Settings`),
 					SortOrder: 120,
 					Scope:     scope.NewPerm(scope.DefaultID),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/image/default_adapter
-							ID:        "default_adapter",
-							Label:     `Image Adapter`,
-							Comment:   element.LongText(`When the adapter was changed, please flush Catalog Images Cache.`),
+							ID:        path.NewRoute("default_adapter"),
+							Label:     text.Chars(`Image Adapter`),
+							Comment:   text.Chars(`When the adapter was changed, please flush Catalog Images Cache.`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -501,15 +503,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "static",
-					Label:     `Static Files Settings`,
+					ID:        path.NewRoute("static"),
+					Label:     text.Chars(`Static Files Settings`),
 					SortOrder: 130,
 					Scope:     scope.NewPerm(scope.DefaultID),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/static/sign
-							ID:        "sign",
-							Label:     `Sign Static Files`,
+							ID:        path.NewRoute("sign"),
+							Label:     text.Chars(`Sign Static Files`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -521,22 +523,22 @@ func init() {
 			),
 		},
 		&element.Section{
-			ID:        "general",
-			Label:     `General`,
+			ID:        path.NewRoute("general"),
+			Label:     text.Chars(`General`),
 			SortOrder: 10,
 			Scope:     scope.PermAll,
 			Resource:  0, // Magento_Config::config_general
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:        "store_information",
-					Label:     `Store Information`,
+					ID:        path.NewRoute("store_information"),
+					Label:     text.Chars(`Store Information`),
 					SortOrder: 100,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/store_information/name
-							ID:        "name",
-							Label:     `Store Name`,
+							ID:        path.NewRoute("name"),
+							Label:     text.Chars(`Store Name`),
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -545,8 +547,8 @@ func init() {
 
 						&element.Field{
 							// Path: general/store_information/phone
-							ID:        "phone",
-							Label:     `Store Phone Number`,
+							ID:        path.NewRoute("phone"),
+							Label:     text.Chars(`Store Phone Number`),
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -555,8 +557,8 @@ func init() {
 
 						&element.Field{
 							// Path: general/store_information/hours
-							ID:        "hours",
-							Label:     `Store Hours of Operation`,
+							ID:        path.NewRoute("hours"),
+							Label:     text.Chars(`Store Hours of Operation`),
 							Type:      element.TypeText,
 							SortOrder: 22,
 							Visible:   element.VisibleYes,
@@ -565,8 +567,8 @@ func init() {
 
 						&element.Field{
 							// Path: general/store_information/country_id
-							ID:         "country_id",
-							Label:      `Country`,
+							ID:         path.NewRoute("country_id"),
+							Label:      text.Chars(`Country`),
 							Type:       element.TypeSelect,
 							SortOrder:  25,
 							Visible:    element.VisibleYes,
@@ -577,8 +579,8 @@ func init() {
 
 						&element.Field{
 							// Path: general/store_information/region_id
-							ID:        "region_id",
-							Label:     `Region/State`,
+							ID:        path.NewRoute("region_id"),
+							Label:     text.Chars(`Region/State`),
 							Type:      element.TypeText,
 							SortOrder: 27,
 							Visible:   element.VisibleYes,
@@ -587,8 +589,8 @@ func init() {
 
 						&element.Field{
 							// Path: general/store_information/postcode
-							ID:        "postcode",
-							Label:     `ZIP/Postal Code`,
+							ID:        path.NewRoute("postcode"),
+							Label:     text.Chars(`ZIP/Postal Code`),
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
@@ -597,8 +599,8 @@ func init() {
 
 						&element.Field{
 							// Path: general/store_information/city
-							ID:        "city",
-							Label:     `City`,
+							ID:        path.NewRoute("city"),
+							Label:     text.Chars(`City`),
 							Type:      element.TypeText,
 							SortOrder: 45,
 							Visible:   element.VisibleYes,
@@ -607,8 +609,8 @@ func init() {
 
 						&element.Field{
 							// Path: general/store_information/street_line1
-							ID:        "street_line1",
-							Label:     `Street Address`,
+							ID:        path.NewRoute("street_line1"),
+							Label:     text.Chars(`Street Address`),
 							Type:      element.TypeText,
 							SortOrder: 55,
 							Visible:   element.VisibleYes,
@@ -617,8 +619,8 @@ func init() {
 
 						&element.Field{
 							// Path: general/store_information/street_line2
-							ID:        "street_line2",
-							Label:     `Street Address Line 2`,
+							ID:        path.NewRoute("street_line2"),
+							Label:     text.Chars(`Street Address Line 2`),
 							Type:      element.TypeText,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
@@ -627,8 +629,8 @@ func init() {
 
 						&element.Field{
 							// Path: general/store_information/merchant_vat_number
-							ID:         "merchant_vat_number",
-							Label:      `VAT Number`,
+							ID:         path.NewRoute("merchant_vat_number"),
+							Label:      text.Chars(`VAT Number`),
 							Type:       element.TypeText,
 							SortOrder:  61,
 							Visible:    element.VisibleYes,
@@ -639,16 +641,16 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "single_store_mode",
-					Label:     `Single-Store Mode`,
+					ID:        path.NewRoute("single_store_mode"),
+					Label:     text.Chars(`Single-Store Mode`),
 					SortOrder: 150,
 					Scope:     scope.NewPerm(scope.DefaultID),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/single_store_mode/enabled
-							ID:        "enabled",
-							Label:     `Enable Single-Store Mode`,
-							Comment:   element.LongText(`This setting will not be taken into account if system has more than one store view.`),
+							ID:        path.NewRoute("enabled"),
+							Label:     text.Chars(`Enable Single-Store Mode`),
+							Comment:   text.Chars(`This setting will not be taken into account if system has more than one store view.`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -660,22 +662,22 @@ func init() {
 			),
 		},
 		&element.Section{
-			ID:        "system",
-			Label:     `System`,
+			ID:        path.NewRoute("system"),
+			Label:     text.Chars(`System`),
 			SortOrder: 900,
 			Scope:     scope.PermAll,
 			Resource:  0, // Magento_Config::config_system
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:        "smtp",
-					Label:     `Mail Sending Settings`,
+					ID:        path.NewRoute("smtp"),
+					Label:     text.Chars(`Mail Sending Settings`),
 					SortOrder: 20,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: system/smtp/disable
-							ID:        "disable",
-							Label:     `Disable Email Communications`,
+							ID:        path.NewRoute("disable"),
+							Label:     text.Chars(`Disable Email Communications`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -685,9 +687,9 @@ func init() {
 
 						&element.Field{
 							// Path: system/smtp/host
-							ID:        "host",
-							Label:     `Host`,
-							Comment:   element.LongText(`For Windows server only.`),
+							ID:        path.NewRoute("host"),
+							Label:     text.Chars(`Host`),
+							Comment:   text.Chars(`For Windows server only.`),
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -696,9 +698,9 @@ func init() {
 
 						&element.Field{
 							// Path: system/smtp/port
-							ID:        "port",
-							Label:     `Port (25)`,
-							Comment:   element.LongText(`For Windows server only.`),
+							ID:        path.NewRoute("port"),
+							Label:     text.Chars(`Port (25)`),
+							Comment:   text.Chars(`For Windows server only.`),
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
@@ -707,8 +709,8 @@ func init() {
 
 						&element.Field{
 							// Path: system/smtp/set_return_path
-							ID:        "set_return_path",
-							Label:     `Set Return-Path`,
+							ID:        path.NewRoute("set_return_path"),
+							Label:     text.Chars(`Set Return-Path`),
 							Type:      element.TypeSelect,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
@@ -718,8 +720,8 @@ func init() {
 
 						&element.Field{
 							// Path: system/smtp/return_path_email
-							ID:        "return_path_email",
-							Label:     `Return-Path Email`,
+							ID:        path.NewRoute("return_path_email"),
+							Label:     text.Chars(`Return-Path Email`),
 							Type:      element.TypeText,
 							SortOrder: 80,
 							Visible:   element.VisibleYes,
@@ -731,23 +733,23 @@ func init() {
 			),
 		},
 		&element.Section{
-			ID:        "admin",
-			Label:     `Admin`,
+			ID:        path.NewRoute("admin"),
+			Label:     text.Chars(`Admin`),
 			SortOrder: 20,
 			Scope:     scope.NewPerm(scope.DefaultID),
 			Resource:  0, // Magento_Config::config_admin
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:        "emails",
-					Label:     `Admin User Emails`,
+					ID:        path.NewRoute("emails"),
+					Label:     text.Chars(`Admin User Emails`),
 					SortOrder: 10,
 					Scope:     scope.NewPerm(scope.DefaultID),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: admin/emails/forgot_email_template
-							ID:        "forgot_email_template",
-							Label:     `Forgot Password Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							ID:        path.NewRoute("forgot_email_template"),
+							Label:     text.Chars(`Forgot Password Email Template`),
+							Comment:   text.Chars(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -757,8 +759,8 @@ func init() {
 
 						&element.Field{
 							// Path: admin/emails/forgot_email_identity
-							ID:        "forgot_email_identity",
-							Label:     `Forgot and Reset Email Sender`,
+							ID:        path.NewRoute("forgot_email_identity"),
+							Label:     text.Chars(`Forgot and Reset Email Sender`),
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -768,9 +770,9 @@ func init() {
 
 						&element.Field{
 							// Path: admin/emails/password_reset_link_expiration_period
-							ID:        "password_reset_link_expiration_period",
-							Label:     `Recovery Link Expiration Period (days)`,
-							Comment:   element.LongText(`Please enter a number 1 or greater in this field.`),
+							ID:        path.NewRoute("password_reset_link_expiration_period"),
+							Label:     text.Chars(`Recovery Link Expiration Period (days)`),
+							Comment:   text.Chars(`Please enter a number 1 or greater in this field.`),
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
@@ -781,15 +783,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "startup",
-					Label:     `Startup Page`,
+					ID:        path.NewRoute("startup"),
+					Label:     text.Chars(`Startup Page`),
 					SortOrder: 20,
 					Scope:     scope.NewPerm(scope.DefaultID),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: admin/startup/menu_item_id
-							ID:        "menu_item_id",
-							Label:     `Startup Page`,
+							ID:        path.NewRoute("menu_item_id"),
+							Label:     text.Chars(`Startup Page`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -800,15 +802,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "url",
-					Label:     `Admin Base URL`,
+					ID:        path.NewRoute("url"),
+					Label:     text.Chars(`Admin Base URL`),
 					SortOrder: 30,
 					Scope:     scope.NewPerm(scope.DefaultID),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: admin/url/use_custom
-							ID:        "use_custom",
-							Label:     `Use Custom Admin URL`,
+							ID:        path.NewRoute("use_custom"),
+							Label:     text.Chars(`Use Custom Admin URL`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -819,9 +821,9 @@ func init() {
 
 						&element.Field{
 							// Path: admin/url/custom
-							ID:        "custom",
-							Label:     `Custom Admin URL`,
-							Comment:   element.LongText(`Make sure that base URL ends with '/' (slash), e.g. http://yourdomain/magento/`),
+							ID:        path.NewRoute("custom"),
+							Label:     text.Chars(`Custom Admin URL`),
+							Comment:   text.Chars(`Make sure that base URL ends with '/' (slash), e.g. http://yourdomain/magento/`),
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -831,8 +833,8 @@ func init() {
 
 						&element.Field{
 							// Path: admin/url/use_custom_path
-							ID:        "use_custom_path",
-							Label:     `Use Custom Admin Path`,
+							ID:        path.NewRoute("use_custom_path"),
+							Label:     text.Chars(`Use Custom Admin Path`),
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
@@ -843,9 +845,9 @@ func init() {
 
 						&element.Field{
 							// Path: admin/url/custom_path
-							ID:        "custom_path",
-							Label:     `Custom Admin Path`,
-							Comment:   element.LongText(`You will have to sign in after you save your custom admin path.`),
+							ID:        path.NewRoute("custom_path"),
+							Label:     text.Chars(`Custom Admin Path`),
+							Comment:   text.Chars(`You will have to sign in after you save your custom admin path.`),
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
@@ -856,15 +858,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "security",
-					Label:     `Security`,
+					ID:        path.NewRoute("security"),
+					Label:     text.Chars(`Security`),
 					SortOrder: 35,
 					Scope:     scope.NewPerm(scope.DefaultID),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: admin/security/use_form_key
-							ID:        "use_form_key",
-							Label:     `Add Secret Key to URLs`,
+							ID:        path.NewRoute("use_form_key"),
+							Label:     text.Chars(`Add Secret Key to URLs`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -875,8 +877,8 @@ func init() {
 
 						&element.Field{
 							// Path: admin/security/use_case_sensitive_login
-							ID:        "use_case_sensitive_login",
-							Label:     `Login is Case Sensitive`,
+							ID:        path.NewRoute("use_case_sensitive_login"),
+							Label:     text.Chars(`Login is Case Sensitive`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -886,9 +888,9 @@ func init() {
 
 						&element.Field{
 							// Path: admin/security/session_lifetime
-							ID:        "session_lifetime",
-							Label:     `Admin Session Lifetime (seconds)`,
-							Comment:   element.LongText(`Values less than 60 are ignored.`),
+							ID:        path.NewRoute("session_lifetime"),
+							Label:     text.Chars(`Admin Session Lifetime (seconds)`),
+							Comment:   text.Chars(`Values less than 60 are ignored.`),
 							Type:      element.TypeText,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
@@ -898,15 +900,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "dashboard",
-					Label:     `Dashboard`,
+					ID:        path.NewRoute("dashboard"),
+					Label:     text.Chars(`Dashboard`),
 					SortOrder: 40,
 					Scope:     scope.NewPerm(scope.DefaultID),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: admin/dashboard/enable_charts
-							ID:        "enable_charts",
-							Label:     `Enable Charts`,
+							ID:        path.NewRoute("enable_charts"),
+							Label:     text.Chars(`Enable Charts`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -918,23 +920,23 @@ func init() {
 			),
 		},
 		&element.Section{
-			ID:        "web",
-			Label:     `Web`,
+			ID:        path.NewRoute("web"),
+			Label:     text.Chars(`Web`),
 			SortOrder: 20,
 			Scope:     scope.PermAll,
 			Resource:  0, // Magento_Backend::web
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:        "url",
-					Label:     `Url Options`,
+					ID:        path.NewRoute("url"),
+					Label:     text.Chars(`Url Options`),
 					SortOrder: 3,
 					Scope:     scope.NewPerm(scope.DefaultID),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/url/use_store
-							ID:        "use_store",
-							Label:     `Add Store Code to Urls`,
-							Comment:   element.LongText(`<strong style="color:red">Warning!</strong> When using Store Code in URLs, in some cases system may not work properly if URLs without Store Codes are specified in the third party services (e.g. PayPal etc.).`),
+							ID:        path.NewRoute("use_store"),
+							Label:     text.Chars(`Add Store Code to Urls`),
+							Comment:   text.Chars(`<strong style="color:red">Warning!</strong> When using Store Code in URLs, in some cases system may not work properly if URLs without Store Codes are specified in the third party services (e.g. PayPal etc.).`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -946,9 +948,9 @@ func init() {
 
 						&element.Field{
 							// Path: web/url/redirect_to_base
-							ID:        "redirect_to_base",
-							Label:     `Auto-redirect to Base URL`,
-							Comment:   element.LongText(`I.e. redirect from http://example.com/store/ to http://www.example.com/store/`),
+							ID:        path.NewRoute("redirect_to_base"),
+							Label:     text.Chars(`Auto-redirect to Base URL`),
+							Comment:   text.Chars(`I.e. redirect from http://example.com/store/ to http://www.example.com/store/`),
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -960,15 +962,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "seo",
-					Label:     `Search Engine Optimization`,
+					ID:        path.NewRoute("seo"),
+					Label:     text.Chars(`Search Engine Optimization`),
 					SortOrder: 5,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/seo/use_rewrites
-							ID:        "use_rewrites",
-							Label:     `Use Web Server Rewrites`,
+							ID:        path.NewRoute("use_rewrites"),
+							Label:     text.Chars(`Use Web Server Rewrites`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -980,17 +982,17 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "unsecure",
-					Label:     `Base URLs`,
-					Comment:   element.LongText(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
+					ID:        path.NewRoute("unsecure"),
+					Label:     text.Chars(`Base URLs`),
+					Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
 					SortOrder: 10,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/unsecure/base_url
-							ID:        "base_url",
-							Label:     `Base URL`,
-							Comment:   element.LongText(`Specify URL or {{base_url}} placeholder.`),
+							ID:        path.NewRoute("base_url"),
+							Label:     text.Chars(`Base URL`),
+							Comment:   text.Chars(`Specify URL or {{base_url}} placeholder.`),
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -1000,9 +1002,9 @@ func init() {
 
 						&element.Field{
 							// Path: web/unsecure/base_link_url
-							ID:        "base_link_url",
-							Label:     `Base Link URL`,
-							Comment:   element.LongText(`May start with {{unsecure_base_url}} placeholder.`),
+							ID:        path.NewRoute("base_link_url"),
+							Label:     text.Chars(`Base Link URL`),
+							Comment:   text.Chars(`May start with {{unsecure_base_url}} placeholder.`),
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -1012,9 +1014,9 @@ func init() {
 
 						&element.Field{
 							// Path: web/unsecure/base_static_url
-							ID:        "base_static_url",
-							Label:     `Base URL for Static View Files`,
-							Comment:   element.LongText(`May be empty or start with {{unsecure_base_url}} placeholder.`),
+							ID:        path.NewRoute("base_static_url"),
+							Label:     text.Chars(`Base URL for Static View Files`),
+							Comment:   text.Chars(`May be empty or start with {{unsecure_base_url}} placeholder.`),
 							Type:      element.TypeText,
 							SortOrder: 25,
 							Visible:   element.VisibleYes,
@@ -1024,9 +1026,9 @@ func init() {
 
 						&element.Field{
 							// Path: web/unsecure/base_media_url
-							ID:        "base_media_url",
-							Label:     `Base URL for User Media Files`,
-							Comment:   element.LongText(`May be empty or start with {{unsecure_base_url}} placeholder.`),
+							ID:        path.NewRoute("base_media_url"),
+							Label:     text.Chars(`Base URL for User Media Files`),
+							Comment:   text.Chars(`May be empty or start with {{unsecure_base_url}} placeholder.`),
 							Type:      element.TypeText,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
@@ -1037,17 +1039,17 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "secure",
-					Label:     `Base URLs (Secure)`,
-					Comment:   element.LongText(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`),
+					ID:        path.NewRoute("secure"),
+					Label:     text.Chars(`Base URLs (Secure)`),
+					Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`),
 					SortOrder: 20,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/secure/base_url
-							ID:        "base_url",
-							Label:     `Secure Base URL`,
-							Comment:   element.LongText(`Specify URL or {{base_url}}, or {{unsecure_base_url}} placeholder.`),
+							ID:        path.NewRoute("base_url"),
+							Label:     text.Chars(`Secure Base URL`),
+							Comment:   text.Chars(`Specify URL or {{base_url}}, or {{unsecure_base_url}} placeholder.`),
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -1057,9 +1059,9 @@ func init() {
 
 						&element.Field{
 							// Path: web/secure/base_link_url
-							ID:        "base_link_url",
-							Label:     `Secure Base Link URL`,
-							Comment:   element.LongText(`May start with {{secure_base_url}} or {{unsecure_base_url}} placeholder.`),
+							ID:        path.NewRoute("base_link_url"),
+							Label:     text.Chars(`Secure Base Link URL`),
+							Comment:   text.Chars(`May start with {{secure_base_url}} or {{unsecure_base_url}} placeholder.`),
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -1069,9 +1071,9 @@ func init() {
 
 						&element.Field{
 							// Path: web/secure/base_static_url
-							ID:        "base_static_url",
-							Label:     `Secure Base URL for Static View Files`,
-							Comment:   element.LongText(`May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`),
+							ID:        path.NewRoute("base_static_url"),
+							Label:     text.Chars(`Secure Base URL for Static View Files`),
+							Comment:   text.Chars(`May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`),
 							Type:      element.TypeText,
 							SortOrder: 25,
 							Visible:   element.VisibleYes,
@@ -1081,9 +1083,9 @@ func init() {
 
 						&element.Field{
 							// Path: web/secure/base_media_url
-							ID:        "base_media_url",
-							Label:     `Secure Base URL for User Media Files`,
-							Comment:   element.LongText(`May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`),
+							ID:        path.NewRoute("base_media_url"),
+							Label:     text.Chars(`Secure Base URL for User Media Files`),
+							Comment:   text.Chars(`May be empty or start with {{secure_base_url}}, or {{unsecure_base_url}} placeholder.`),
 							Type:      element.TypeText,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
@@ -1093,9 +1095,9 @@ func init() {
 
 						&element.Field{
 							// Path: web/secure/use_in_frontend
-							ID:        "use_in_frontend",
-							Label:     `Use Secure URLs on Storefront`,
-							Comment:   element.LongText(`Enter https protocol to use Secure URLs on Storefront.`),
+							ID:        path.NewRoute("use_in_frontend"),
+							Label:     text.Chars(`Use Secure URLs on Storefront`),
+							Comment:   text.Chars(`Enter https protocol to use Secure URLs on Storefront.`),
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
@@ -1106,9 +1108,9 @@ func init() {
 
 						&element.Field{
 							// Path: web/secure/use_in_adminhtml
-							ID:        "use_in_adminhtml",
-							Label:     `Use Secure URLs in Admin`,
-							Comment:   element.LongText(`Enter https protocol to use Secure URLs in Admin.`),
+							ID:        path.NewRoute("use_in_adminhtml"),
+							Label:     text.Chars(`Use Secure URLs in Admin`),
+							Comment:   text.Chars(`Enter https protocol to use Secure URLs in Admin.`),
 							Type:      element.TypeSelect,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
@@ -1119,9 +1121,9 @@ func init() {
 
 						&element.Field{
 							// Path: web/secure/enable_hsts
-							ID:        "enable_hsts",
-							Label:     `Enable HTTP Strict Transport Security (HSTS)`,
-							Comment:   element.LongText(`See <a href="https://www.owasp.org/index.php/HTTP_Strict_Transport_Security" target="_blank">HTTP Strict Transport Security</a> page for details.`),
+							ID:        path.NewRoute("enable_hsts"),
+							Label:     text.Chars(`Enable HTTP Strict Transport Security (HSTS)`),
+							Comment:   text.Chars(`See <a href="https://www.owasp.org/index.php/HTTP_Strict_Transport_Security" target="_blank">HTTP Strict Transport Security</a> page for details.`),
 							Type:      element.TypeSelect,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
@@ -1132,9 +1134,9 @@ func init() {
 
 						&element.Field{
 							// Path: web/secure/enable_upgrade_insecure
-							ID:        "enable_upgrade_insecure",
-							Label:     `Upgrade Insecure Requests`,
-							Comment:   element.LongText(`See <a href="http://www.w3.org/TR/upgrade-insecure-requests/" target="_blank">Upgrade Insecure Requests</a> page for details.`),
+							ID:        path.NewRoute("enable_upgrade_insecure"),
+							Label:     text.Chars(`Upgrade Insecure Requests`),
+							Comment:   text.Chars(`See <a href="http://www.w3.org/TR/upgrade-insecure-requests/" target="_blank">Upgrade Insecure Requests</a> page for details.`),
 							Type:      element.TypeSelect,
 							SortOrder: 80,
 							Visible:   element.VisibleYes,
@@ -1145,8 +1147,8 @@ func init() {
 
 						&element.Field{
 							// Path: web/secure/offloader_header
-							ID:        "offloader_header",
-							Label:     `Offloader header`,
+							ID:        path.NewRoute("offloader_header"),
+							Label:     text.Chars(`Offloader header`),
 							Type:      element.TypeText,
 							SortOrder: 90,
 							Visible:   element.VisibleYes,
@@ -1156,15 +1158,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "default",
-					Label:     `Default Pages`,
+					ID:        path.NewRoute("default"),
+					Label:     text.Chars(`Default Pages`),
 					SortOrder: 30,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/default/front
-							ID:        "front",
-							Label:     `Default Web URL`,
+							ID:        path.NewRoute("front"),
+							Label:     text.Chars(`Default Web URL`),
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -1173,8 +1175,8 @@ func init() {
 
 						&element.Field{
 							// Path: web/default/no_route
-							ID:        "no_route",
-							Label:     `Default No-route URL`,
+							ID:        path.NewRoute("no_route"),
+							Label:     text.Chars(`Default No-route URL`),
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -1184,15 +1186,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "session",
-					Label:     `Session Validation Settings`,
+					ID:        path.NewRoute("session"),
+					Label:     text.Chars(`Session Validation Settings`),
 					SortOrder: 60,
 					Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/session/use_remote_addr
-							ID:        "use_remote_addr",
-							Label:     `Validate REMOTE_ADDR`,
+							ID:        path.NewRoute("use_remote_addr"),
+							Label:     text.Chars(`Validate REMOTE_ADDR`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -1202,8 +1204,8 @@ func init() {
 
 						&element.Field{
 							// Path: web/session/use_http_via
-							ID:        "use_http_via",
-							Label:     `Validate HTTP_VIA`,
+							ID:        path.NewRoute("use_http_via"),
+							Label:     text.Chars(`Validate HTTP_VIA`),
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -1213,8 +1215,8 @@ func init() {
 
 						&element.Field{
 							// Path: web/session/use_http_x_forwarded_for
-							ID:        "use_http_x_forwarded_for",
-							Label:     `Validate HTTP_X_FORWARDED_FOR`,
+							ID:        path.NewRoute("use_http_x_forwarded_for"),
+							Label:     text.Chars(`Validate HTTP_X_FORWARDED_FOR`),
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
@@ -1224,8 +1226,8 @@ func init() {
 
 						&element.Field{
 							// Path: web/session/use_http_user_agent
-							ID:        "use_http_user_agent",
-							Label:     `Validate HTTP_USER_AGENT`,
+							ID:        path.NewRoute("use_http_user_agent"),
+							Label:     text.Chars(`Validate HTTP_USER_AGENT`),
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
@@ -1235,9 +1237,9 @@ func init() {
 
 						&element.Field{
 							// Path: web/session/use_frontend_sid
-							ID:        "use_frontend_sid",
-							Label:     `Use SID on Storefront`,
-							Comment:   element.LongText(`Allows customers to stay logged in when switching between different stores.`),
+							ID:        path.NewRoute("use_frontend_sid"),
+							Label:     text.Chars(`Use SID on Storefront`),
+							Comment:   text.Chars(`Allows customers to stay logged in when switching between different stores.`),
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
@@ -1251,14 +1253,14 @@ func init() {
 
 		// Hidden Configuration, may be visible somewhere else ...
 		&element.Section{
-			ID: "system",
+			ID: path.NewRoute("system"),
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID: "media_storage_configuration",
+					ID: path.NewRoute("media_storage_configuration"),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: system/media_storage_configuration/allowed_resources
-							ID:      `allowed_resources`,
+							ID:      path.NewRoute(`allowed_resources`),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `{"email_folder":"email"}`,
@@ -1267,11 +1269,11 @@ func init() {
 				},
 
 				&element.Group{
-					ID: "emails",
+					ID: path.NewRoute("emails"),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: system/emails/forgot_email_template
-							ID:      `forgot_email_template`,
+							ID:      path.NewRoute(`forgot_email_template`),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `system_emails_forgot_email_template`,
@@ -1279,7 +1281,7 @@ func init() {
 
 						&element.Field{
 							// Path: system/emails/forgot_email_identity
-							ID:      `forgot_email_identity`,
+							ID:      path.NewRoute(`forgot_email_identity`),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `general`,
@@ -1288,11 +1290,11 @@ func init() {
 				},
 
 				&element.Group{
-					ID: "dashboard",
+					ID: path.NewRoute("dashboard"),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: system/dashboard/enable_charts
-							ID:      `enable_charts`,
+							ID:      path.NewRoute(`enable_charts`),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: true,
@@ -1302,14 +1304,14 @@ func init() {
 			),
 		},
 		&element.Section{
-			ID: "general",
+			ID: path.NewRoute("general"),
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID: "validator_data",
+					ID: path.NewRoute("validator_data"),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/validator_data/input_types
-							ID:      `input_types`,
+							ID:      path.NewRoute(`input_types`),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `{"price":"price","media_image":"media_image","gallery":"gallery"}`,

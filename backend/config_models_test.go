@@ -15,12 +15,13 @@
 package backend_test
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestConfigRedirectToBase(t *testing.T) {
@@ -34,7 +35,7 @@ func TestConfigRedirectToBase(t *testing.T) {
 
 	cr := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			backend.Backend.WebURLRedirectToBase.MustFQPathInt64(scope.StrDefault, 0): 2,
+			backend.Backend.WebURLRedirectToBase.String(): 2,
 		}),
 	)
 
