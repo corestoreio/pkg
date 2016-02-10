@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/storage"
 	"golang.org/x/net/context"
 )
 
@@ -51,7 +52,7 @@ type mockOptionFunc func(*MockGet)
 // MockGet used for testing. Contains functions which will be called in the
 // appropriate methods of interface config.Getter.
 type MockGet struct {
-	db              Storager
+	db              storage.Storager
 	FString         func(path string) (string, error)
 	FBool           func(path string) (bool, error)
 	FFloat64        func(path string) (float64, error)
@@ -65,7 +66,7 @@ type MockGet struct {
 // This map[string]interface{} is protected by a mutex.
 type MockPV map[string]interface{}
 
-func (m MockPV) set(db Storager) {
+func (m MockPV) set(db storage.Storager) {
 	for fq, v := range m {
 		p, err := path.SplitFQ(fq)
 		if err != nil {
@@ -151,7 +152,7 @@ func WithContextMockGetter(ctx context.Context, opts ...mockOptionFunc) context.
 // set the struct fields afterwards.
 func NewMockGetter(opts ...mockOptionFunc) *MockGet {
 	mr := &MockGet{
-		db: newSimpleStorage(),
+		db: storage.NewKV(),
 	}
 	for _, opt := range opts {
 		opt(mr)
@@ -203,7 +204,7 @@ func (mr *MockGet) String(p path.Path) (string, error) {
 	case mr.FString != nil:
 		return mr.FString(p.String())
 	default:
-		return "", ErrKeyNotFound
+		return "", storage.ErrKeyNotFound
 	}
 }
 
@@ -231,7 +232,7 @@ func (mr *MockGet) Bool(p path.Path) (bool, error) {
 	case mr.FBool != nil:
 		return mr.FBool(p.String())
 	default:
-		return false, ErrKeyNotFound
+		return false, storage.ErrKeyNotFound
 	}
 }
 
@@ -254,7 +255,7 @@ func (mr *MockGet) Float64(p path.Path) (float64, error) {
 	case mr.FFloat64 != nil:
 		return mr.FFloat64(p.String())
 	default:
-		return 0.0, ErrKeyNotFound
+		return 0.0, storage.ErrKeyNotFound
 	}
 }
 
@@ -277,7 +278,7 @@ func (mr *MockGet) Int(p path.Path) (int, error) {
 	case mr.FInt != nil:
 		return mr.FInt(p.String())
 	default:
-		return 0, ErrKeyNotFound
+		return 0, storage.ErrKeyNotFound
 	}
 }
 
@@ -298,7 +299,7 @@ func (mr *MockGet) DateTime(p path.Path) (time.Time, error) {
 	case mr.FTime != nil:
 		return mr.FTime(p.String())
 	default:
-		return time.Time{}, ErrKeyNotFound
+		return time.Time{}, storage.ErrKeyNotFound
 	}
 }
 

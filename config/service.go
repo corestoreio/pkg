@@ -15,11 +15,11 @@
 package config
 
 import (
-	"errors"
 	"time"
 
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/cast"
 )
@@ -63,7 +63,7 @@ type (
 	Service struct {
 		// Storage is the underlying data holding provider. Only access it
 		// if you know exactly what you are doing.
-		Storage Storager
+		Storage storage.Storager
 		*pubSub
 		// Errors which ServiceOption function arguments are generating
 		// Usually empty (= nil) ;-)
@@ -73,11 +73,6 @@ type (
 
 // DefaultService provides a standard NewService via init() func loaded.
 var DefaultService *Service
-
-// ErrKeyNotFound will be returned if a key cannot be found or value is nil.
-// If you provide your own interface implementation make sure to also return
-// ErrKeyNotFound if a key cannot be found.
-var ErrKeyNotFound = errors.New("Key not found")
 
 func init() {
 	DefaultService = MustNewService()
@@ -92,7 +87,7 @@ type ServiceOption func(*Service)
 func NewService(opts ...ServiceOption) (*Service, error) {
 	s := &Service{
 		pubSub:  newPubSub(),
-		Storage: newSimpleStorage(),
+		Storage: storage.NewKV(),
 	}
 
 	go s.publish()
@@ -279,5 +274,5 @@ func (s *Service) IsSet(p path.Path) bool {
 
 // NotKeyNotFoundError returns true if err is not nil and not of type Key Not Found.
 func NotKeyNotFoundError(err error) bool {
-	return err != nil && err != ErrKeyNotFound
+	return err != nil && err != storage.ErrKeyNotFound
 }

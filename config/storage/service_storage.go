@@ -12,19 +12,29 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package storage
 
 import (
 	"sync"
 
+	"errors"
+
 	"github.com/corestoreio/csfw/config/path"
 )
+
+// ErrKeyNotFound will be returned if a key cannot be found or value is nil.
+// If you provide your own interface implementation make sure to also return
+// ErrKeyNotFound if a key cannot be found.
+var ErrKeyNotFound = errors.New("Key not found")
 
 // Storager is the underlying data storage for holding the keys and its values.
 // Implementations can be spf13/viper or MySQL backed. Default Storager
 // is a simple mutex protected map[string]interface{}.
 // ProTip: If you use MySQL as Storager don't execute function
 // ApplyCoreConfigData()
+// The config.Writer calls the config.Storager functions and config.Storager
+// must make sure of the correct type conversions to the supported type of the
+// underlying storage engine.
 type Storager interface {
 	// Set sets a key with a value and returns on success nil or ErrKeyOverwritten,
 	// on failure any other error
@@ -35,25 +45,25 @@ type Storager interface {
 	AllKeys() (path.PathSlice, error)
 }
 
-var _ Storager = (*simpleStorage)(nil)
-
 type keyVal struct {
 	k path.Path
 	v interface{}
 }
 
-type simpleStorage struct {
+type kvmap struct {
 	sync.Mutex
 	kv map[uint32]keyVal
 }
 
-func newSimpleStorage() *simpleStorage {
-	return &simpleStorage{
+// NewKV creates a new simple key value storage using a map[string]interface{}
+// without any persistence or sync to MySQL core_confing_data table
+func NewKV() *kvmap {
+	return &kvmap{
 		kv: make(map[uint32]keyVal),
 	}
 }
 
-func (sp *simpleStorage) Set(key path.Path, value interface{}) error {
+func (sp *kvmap) Set(key path.Path, value interface{}) error {
 	sp.Lock()
 	defer sp.Unlock()
 	k, err := key.FQ()
@@ -65,7 +75,7 @@ func (sp *simpleStorage) Set(key path.Path, value interface{}) error {
 	return nil
 }
 
-func (sp *simpleStorage) Get(key path.Path) (interface{}, error) {
+func (sp *kvmap) Get(key path.Path) (interface{}, error) {
 	sp.Lock()
 	defer sp.Unlock()
 
@@ -80,7 +90,7 @@ func (sp *simpleStorage) Get(key path.Path) (interface{}, error) {
 	return nil, ErrKeyNotFound
 }
 
-func (sp *simpleStorage) AllKeys() (path.PathSlice, error) {
+func (sp *kvmap) AllKeys() (path.PathSlice, error) {
 	sp.Lock()
 	defer sp.Unlock()
 

@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/ccd"
 	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/storage/ccd"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
@@ -60,7 +60,7 @@ func Test_WithCoreConfigData(t *testing.T) {
 	sess := dbc.NewSession(nil) // nil tricks the NewSession ;-)
 
 	dbMock.ExpectQuery("SELECT (.+) FROM `core_config_data` AS `main_table`").WillReturnRows(
-		cstesting.MustMockRows(cstesting.WithFile("config", "ccd", "testdata", "core_config_data.csv")),
+		cstesting.MustMockRows(cstesting.WithFile("config", "storage", "ccd", "testdata", "core_config_data.csv")),
 	)
 
 	s := config.MustNewService(

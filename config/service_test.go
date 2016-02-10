@@ -21,6 +21,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
@@ -105,7 +106,7 @@ func TestNotKeyNotFoundError(t *testing.T) {
 	scopedSrv := srv.NewScoped(1, 1, 1)
 
 	flat, err := scopedSrv.String(path.NewRoute("catalog/product/enable_flat"))
-	assert.EqualError(t, err, config.ErrKeyNotFound.Error())
+	assert.EqualError(t, err, storage.ErrKeyNotFound.Error())
 	assert.Empty(t, flat)
 	assert.False(t, config.NotKeyNotFoundError(err))
 

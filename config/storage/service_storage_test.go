@@ -12,19 +12,22 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package config
+package storage_test
 
 import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
+var _ storage.Storager = storage.NewKV()
+
 func TestSimpleStorage(t *testing.T) {
 	t.Parallel()
-	sp := newSimpleStorage()
+	sp := storage.NewKV()
 
 	p1 := path.MustNewByParts("aa/bb/cc")
 

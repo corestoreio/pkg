@@ -18,8 +18,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
@@ -191,7 +191,7 @@ func (dbs *DBStorage) Get(key path.Path) (interface{}, error) {
 	if data.Valid {
 		return data.String, nil
 	}
-	return nil, config.ErrKeyNotFound
+	return nil, storage.ErrKeyNotFound
 }
 
 // AllKeys returns all available keys. Database errors get logged as info message.

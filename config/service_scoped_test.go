@@ -22,6 +22,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/log"
 	"github.com/stretchr/testify/assert"
@@ -81,7 +82,7 @@ func TestScopedServicePath(t *testing.T) {
 		},
 		{
 			"Website ID 10 + Group ID 12 + Store 42 ScopedGetter should return nothing",
-			basePath.Bind(scope.StoreID, 22).String(), path.NewRoute("aa/bb/cc"), 10, 12, 42, config.ErrKeyNotFound,
+			basePath.Bind(scope.StoreID, 22).String(), path.NewRoute("aa/bb/cc"), 10, 12, 42, storage.ErrKeyNotFound,
 		},
 		{
 			"Path consists of only two elements which is incorrect",

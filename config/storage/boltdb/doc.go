@@ -12,25 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ccd_test
-
-import (
-	std "log"
-
-	"github.com/corestoreio/csfw/config/ccd"
-	"github.com/corestoreio/csfw/util/log"
-)
-
-var debugLogBuf *log.MutexBuffer
-var infoLogBuf *log.MutexBuffer
-
-func init() {
-	debugLogBuf = new(log.MutexBuffer)
-	infoLogBuf = new(log.MutexBuffer)
-
-	ccd.PkgLog = log.NewStdLogger(
-		log.SetStdDebug(debugLogBuf, "testDebug: ", std.Lshortfile),
-		log.SetStdInfo(infoLogBuf, "testInfo: ", std.Lshortfile),
-	)
-	ccd.PkgLog.SetLevel(log.StdLevelDebug)
-}
+// Package boltdb uses the bolt database for reading and writing
+// configuration paths.
+//
+// Maybe implements synchronization with MySQL core_config_data table.
+// Converts all values to byte slices.
+package boltdb
