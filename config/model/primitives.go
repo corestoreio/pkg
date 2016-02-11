@@ -15,8 +15,6 @@
 package model
 
 import (
-	"strconv"
-
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
 )
@@ -42,7 +40,7 @@ func (b Bool) Get(sg config.ScopedGetter) (v bool) {
 	return
 }
 
-// Write writes a bool. Bool gets internally converted to type string.
+// Write writes a bool.
 func (b Bool) Write(w config.Writer, v bool, s scope.Scope, id int64) error {
 	return b.baseValue.Write(w, v, s, id)
 }
@@ -88,9 +86,9 @@ func (i Int) Get(sg config.ScopedGetter) (v int) {
 	return
 }
 
-// Write writes an int value as a string.
+// Write writes an int value
 func (i Int) Write(w config.Writer, v int, s scope.Scope, id int64) error {
-	return i.baseValue.Write(w, strconv.Itoa(v), s, id)
+	return i.baseValue.Write(w, v, s, id)
 }
 
 // Float64 represents a path in config.Getter which handles int values.
@@ -110,7 +108,7 @@ func (f Float64) Get(sg config.ScopedGetter) (v float64) {
 	return
 }
 
-// Write writes a float64 value as a string.
+// Write writes a float64 value
 func (f Float64) Write(w config.Writer, v float64, s scope.Scope, id int64) error {
 	return f.baseValue.Write(w, v, s, id)
 }

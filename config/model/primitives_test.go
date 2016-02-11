@@ -214,9 +214,9 @@ func TestInt(t *testing.T) {
 	).NewScoped(10, 0, 0)))
 
 	mw := &config.MockWrite{}
-	assert.NoError(t, b.Write(mw, 1, scope.WebsiteID, 10))
+	assert.NoError(t, b.Write(mw, 27182, scope.WebsiteID, 10))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
-	assert.Exactly(t, "1", mw.ArgValue.(string))
+	assert.Exactly(t, 27182, mw.ArgValue.(int))
 }
 
 func TestFloat64(t *testing.T) {

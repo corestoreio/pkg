@@ -33,8 +33,9 @@
 //
 // The signature of the setter function states in most cases:
 // 		Write(w config.Writer, v interface{}, s scope.Scope, id int64) error
-// The interface v gets in the parent type replaced by the correct type and
-// this type gets converted most times to a string or int or float.
+// The responsibility of config.Writer adheres to the correct type conversion
+// to the supported type of the underlying storage engine.
+//
 // Sometimes the Write() function signature can differ in packages.
 //
 // This package stays pointer free because these types will be more often
