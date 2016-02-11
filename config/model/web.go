@@ -41,7 +41,7 @@ func (p BaseURL) Get(sg config.ScopedGetter) string {
 }
 
 // Write writes a new base URL and validates it before saving. @TODO
-func (p BaseURL) Write(w config.Writer, v string, s scope.Scope, id int64) error {
+func (p BaseURL) Write(w config.Writer, v string, s scope.Scope, scopeID int64) error {
 	// todo URL checks app/code/Magento/Config/Model/Config/Backend/Baseurl.php
-	return p.Str.Write(w, v, s, id)
+	return p.Str.Write(w, v, s, scopeID)
 }

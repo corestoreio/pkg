@@ -15,9 +15,8 @@
 package model
 
 import (
-	"testing"
-
 	"errors"
+	"testing"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/element"
@@ -167,4 +166,40 @@ func TestBaseValueFQ(t *testing.T) {
 	fq, err := p.FQ(scope.StoreID, 4)
 	assert.NoError(t, err)
 	assert.Exactly(t, path.MustNewByParts(pth).Bind(scope.StoreID, 4).String(), fq)
+}
+
+func TestBaseValueToPath(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		route   path.Route
+		s       scope.Scope
+		sid     int64
+		wantErr error
+	}{
+		{path.NewRoute("aa/bb/cc"), scope.StoreID, 23, nil},
+		{path.NewRoute("a/bb/cc"), scope.StoreID, 23, path.ErrIncorrectPath},
+	}
+	for i, test := range tests {
+		bv := NewValue(test.route.String())
+		havePath, haveErr := bv.ToPath(test.s, test.sid)
+		if test.wantErr != nil {
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+			continue
+		}
+		assert.NoError(t, test.wantErr, "Index %d", i)
+		wantPath := path.MustNew(test.route).Bind(test.s, test.sid)
+		assert.Exactly(t, wantPath, havePath, "Index %d", i)
+	}
+}
+
+func TestBaseValueRoute(t *testing.T) {
+	t.Parallel()
+	org := NewValue("aa/bb/cc")
+	clone := org.Route()
+
+	if &(org.r) == &clone { // comparing pointer addresses
+		// is there a better way to test of the slice headers points to a different location?
+		// because clone should be a clone ;-)
+		t.Error("Should not be eual")
+	}
 }

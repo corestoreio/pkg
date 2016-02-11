@@ -41,8 +41,8 @@ func (b Bool) Get(sg config.ScopedGetter) (v bool) {
 }
 
 // Write writes a bool.
-func (b Bool) Write(w config.Writer, v bool, s scope.Scope, id int64) error {
-	return b.baseValue.Write(w, v, s, id)
+func (b Bool) Write(w config.Writer, v bool, s scope.Scope, scopeID int64) error {
+	return b.baseValue.Write(w, v, s, scopeID)
 }
 
 // Str represents a path in config.Getter which handles string values.
@@ -65,8 +65,8 @@ func (str Str) Get(sg config.ScopedGetter) (v string) {
 }
 
 // Write writes a string value
-func (str Str) Write(w config.Writer, v string, s scope.Scope, id int64) error {
-	return str.baseValue.Write(w, v, s, id)
+func (str Str) Write(w config.Writer, v string, s scope.Scope, scopeID int64) error {
+	return str.baseValue.Write(w, v, s, scopeID)
 }
 
 // Int represents a path in config.Getter which handles int values.
@@ -87,8 +87,8 @@ func (i Int) Get(sg config.ScopedGetter) (v int) {
 }
 
 // Write writes an int value
-func (i Int) Write(w config.Writer, v int, s scope.Scope, id int64) error {
-	return i.baseValue.Write(w, v, s, id)
+func (i Int) Write(w config.Writer, v int, s scope.Scope, scopeID int64) error {
+	return i.baseValue.Write(w, v, s, scopeID)
 }
 
 // Float64 represents a path in config.Getter which handles int values.
@@ -109,6 +109,6 @@ func (f Float64) Get(sg config.ScopedGetter) (v float64) {
 }
 
 // Write writes a float64 value
-func (f Float64) Write(w config.Writer, v float64, s scope.Scope, id int64) error {
-	return f.baseValue.Write(w, v, s, id)
+func (f Float64) Write(w config.Writer, v float64, s scope.Scope, scopeID int64) error {
+	return f.baseValue.Write(w, v, s, scopeID)
 }

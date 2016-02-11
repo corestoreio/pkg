@@ -144,7 +144,7 @@ func (bv *baseValue) Option(opts ...Option) (previous Option) {
 
 // Write writes a value v to the config.Writer without checking if the value
 // has changed. Checks if the Scope matches as defined in the non-nil ConfigStructure.
-func (bv baseValue) Write(w config.Writer, v interface{}, s scope.Scope, id int64) error {
+func (bv baseValue) Write(w config.Writer, v interface{}, s scope.Scope, scopeID int64) error {
 	if bv.ConfigStructure != nil {
 		f, err := bv.ConfigStructure.FindFieldByID(bv.r)
 		if err != nil {
@@ -154,16 +154,25 @@ func (bv baseValue) Write(w config.Writer, v interface{}, s scope.Scope, id int6
 			return errgo.Newf("Scope permission insufficient: Have '%s'; Want '%s'", s, f.Scope)
 		}
 	}
-	pp, err := cfgpath.New(bv.r)
+	pp, err := bv.ToPath(s, scopeID)
 	if err != nil {
 		return errgo.Mask(err)
 	}
-	return w.Write(pp.Bind(s, id), v)
+	return w.Write(pp, v)
 }
 
-// String returns the path
+// String returns the stringified route
 func (bv baseValue) String() string {
 	return bv.r.String()
+}
+
+// ToPath creates a new path.Path bound to a scope.
+func (bv baseValue) ToPath(s scope.Scope, scopeID int64) (cfgpath.Path, error) {
+	p, err := cfgpath.New(bv.r)
+	if err != nil {
+		return cfgpath.Path{}, errgo.Mask(err)
+	}
+	return p.Bind(s, scopeID), nil
 }
 
 // Route returns a copy of the underlying route.
@@ -192,8 +201,8 @@ func (bv baseValue) Options() source.Slice {
 // Example: general/country/allow would transform with StrScope scope.StrStores
 // and storeID e.g. 4 into: stores/4/general/country/allow
 func (bv baseValue) FQ(s scope.Scope, scopeID int64) (string, error) {
-	p, err := cfgpath.New(bv.r)
-	return p.Bind(s, scopeID).String(), err
+	p, err := bv.ToPath(s, scopeID)
+	return p.String(), err
 }
 
 // field searches for the field in a SectionSlice and checks if the scope in

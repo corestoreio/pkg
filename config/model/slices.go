@@ -61,13 +61,13 @@ func (str StringCSV) Get(sg config.ScopedGetter) ([]string, error) {
 }
 
 // Write writes a slice with its scope and ID to the writer
-func (str StringCSV) Write(w config.Writer, sl []string, s scope.Scope, id int64) error {
+func (str StringCSV) Write(w config.Writer, sl []string, s scope.Scope, scopeID int64) error {
 	for _, v := range sl {
 		if err := str.validateString(v); err != nil {
 			return err
 		}
 	}
-	return str.baseValue.Write(w, strings.Join(sl, CSVSeparator), s, id)
+	return str.baseValue.Write(w, strings.Join(sl, CSVSeparator), s, scopeID)
 }
 
 // IntCSV represents a path in config.Getter which will be saved as a
@@ -122,7 +122,7 @@ func (ic IntCSV) extractInt(line string) (int, error) {
 }
 
 // Write writes int values as a CSV string
-func (p IntCSV) Write(w config.Writer, sl []int, s scope.Scope, id int64) error {
+func (p IntCSV) Write(w config.Writer, sl []int, s scope.Scope, scopeID int64) error {
 
 	val := bufferpool.Get()
 	defer bufferpool.Put(val)
@@ -141,5 +141,5 @@ func (p IntCSV) Write(w config.Writer, sl []int, s scope.Scope, id int64) error 
 			}
 		}
 	}
-	return p.baseValue.Write(w, val.String(), s, id)
+	return p.baseValue.Write(w, val.String(), s, scopeID)
 }

@@ -255,7 +255,7 @@ func SplitFQ(fqPath string) (Path, error) {
 	// moving from strings to bytes was even slower despite inline
 	// th parse int64 function
 	if false == (strings.Count(fqPath, sSeparator) >= Levels+1) {
-		return Path{}, fmt.Errorf("Incorrect fully qualified path: %q", fqPath)
+		return Path{}, fmt.Errorf("Incorrect fully qualified path: %q. Expecting: strScope/ID/%s", fqPath, fqPath)
 	}
 
 	fi := strings.Index(fqPath, sSeparator)
