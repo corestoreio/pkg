@@ -15,7 +15,7 @@
 package i18n
 
 import (
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 	"golang.org/x/text/unicode/cldr"
 )
 
@@ -28,6 +28,6 @@ const (
 
 func init() {
 	if cldr.Version != CLDRVersionRequired {
-		panic(errgo.Newf("Incorrect CLDR Version! Expecting %s but got %s. Please check golang.org/x/text/cldr", CLDRVersionRequired, cldr.Version))
+		panic(errors.Errorf("Incorrect CLDR Version! Expecting %s but got %s. Please check golang.org/x/text/cldr", CLDRVersionRequired, cldr.Version))
 	}
 }

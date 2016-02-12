@@ -19,7 +19,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 	"golang.org/x/text/currency"
 )
 
@@ -248,7 +248,7 @@ func (c *Currency) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac 
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("i18n.Currency.FmtNumber.FmtNumber", "err", err, "buffer", string(c.buf), "sign", sign, "i", intgr, "prec", prec, "frac", frac)
 		}
-		return 0, errgo.Mask(err)
+		return 0, errors.Mask(err)
 	}
 	return c.flushBuf(w)
 }
@@ -264,7 +264,7 @@ func (c *Currency) FmtInt64(w io.Writer, i int64) (int, error) {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("i18n.Currency.FmtInt64.FmtInt64", "err", err, "buffer", string(c.buf), "int", i)
 		}
-		return 0, errgo.Mask(err)
+		return 0, errors.Mask(err)
 	}
 	return c.flushBuf(w)
 }
@@ -280,7 +280,7 @@ func (c *Currency) FmtFloat64(w io.Writer, f float64) (int, error) {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("i18n.Currency.FmtFloat64.FmtFloat64", "err", err, "buffer", string(c.buf), "float64", f)
 		}
-		return 0, errgo.Mask(err)
+		return 0, errors.Mask(err)
 	}
 	return c.flushBuf(w)
 }

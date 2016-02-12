@@ -16,18 +16,15 @@ package i18n
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"math"
 	"strconv"
-
+	"sync"
 	"unicode/utf8"
 
-	"sync"
-
 	"github.com/corestoreio/csfw/util"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 // DefaultNumber default formatter for default locale en-US
@@ -212,7 +209,7 @@ func (no *Number) GetFormat(isNegative bool) (format, error) {
 	if isNegative {
 		if false == no.fneg.parsed {
 			if err := no.fneg.parse(); err != nil {
-				return no.fneg, errgo.Mask(err)
+				return no.fneg, errors.Mask(err)
 			}
 		}
 		if true == no.fneg.parsed { // fneg can still be invalid because not available
@@ -222,7 +219,7 @@ func (no *Number) GetFormat(isNegative bool) (format, error) {
 
 	if false == no.fo.parsed { // parse positive format
 		if err := no.fo.parse(); err != nil {
-			return no.fo, errgo.Mask(err)
+			return no.fo, errors.Mask(err)
 		}
 	}
 	return no.fo, nil
@@ -255,7 +252,7 @@ func (no *Number) FmtNumber(w io.Writer, sign int, intgr int64, prec int, frac i
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("i18n.Number.FmtNumber.GetFormat", "err", err, "format", usedFmt.String())
 		}
-		return 0, errgo.Mask(err)
+		return 0, errors.Mask(err)
 	}
 
 	var wrote int
@@ -424,7 +421,7 @@ func (no *Number) FmtFloat64(w io.Writer, f float64) (int, error) {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("i18n.Number.FmtFloat64.GetFormat", "err", err, "format", usedFmt.String())
 		}
-		return 0, errgo.Mask(err)
+		return 0, errors.Mask(err)
 	}
 
 	// to test the next lines: http://play.golang.org/p/L0ykFv3G4B
