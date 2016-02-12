@@ -20,7 +20,7 @@ import (
 	"strconv"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 var _ json.Marshaler = (*Pair)(nil)
@@ -80,7 +80,7 @@ func (p *Pair) UnmarshalJSON(data []byte) error {
 	}{}
 
 	if err := json.Unmarshal(data, &rawPair); err != nil {
-		return errgo.Mask(err)
+		return errors.Mask(err)
 	}
 
 	p.label = rawPair.Label
@@ -101,7 +101,7 @@ func (p *Pair) UnmarshalJSON(data []byte) error {
 		p.NotNull = NotNullBool
 		p.Bool = vt
 	default:
-		return errgo.Newf("Cannot detect type for value '%s' in Pair: %#v", rawPair.Value, rawPair)
+		return errors.Errorf("Cannot detect type for value '%s' in Pair: %#v", rawPair.Value, rawPair)
 	}
 
 	return nil
