@@ -91,28 +91,26 @@ func (ss scopedService) String(r path.Route) (v string, err error) {
 		err = errors.Mask(err)
 		return
 	}
-	switch {
-	case ss.storeID > 0:
+
+	if ss.storeID > 0 {
 		v, err = ss.root.String(p.Bind(scope.StoreID, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough // if not found in store scope go to group scope
-	case ss.groupID > 0:
+	}
+	if ss.groupID > 0 {
 		v, err = ss.root.String(p.Bind(scope.GroupID, ss.groupID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough // if not found in group scope go to website scope
-	case ss.websiteID > 0:
+	}
+	if ss.websiteID > 0 {
 		v, err = ss.root.String(p.Bind(scope.WebsiteID, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough // if not found in website scope go to default scope
-	default:
-		return ss.root.String(p)
 	}
+	return ss.root.String(p)
 }
 
 // Bool traverses through the scopes store->group->website->default to find
@@ -124,28 +122,26 @@ func (ss scopedService) Bool(r path.Route) (v bool, err error) {
 		err = errors.Mask(err)
 		return
 	}
-	switch {
-	case ss.storeID > 0:
+
+	if ss.storeID > 0 {
 		v, err = ss.root.Bool(p.Bind(scope.StoreID, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough // if not found in store scope go to group scope
-	case ss.groupID > 0:
+	} // if not found in store scope go to group scope
+	if ss.groupID > 0 {
 		v, err = ss.root.Bool(p.Bind(scope.GroupID, ss.groupID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough // if not found in group scope go to website scope
-	case ss.websiteID > 0:
+	} // if not found in group scope go to website scope
+	if ss.websiteID > 0 {
 		v, err = ss.root.Bool(p.Bind(scope.WebsiteID, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough // if not found in website scope go to default scope
-	default:
-		return ss.root.Bool(p)
-	}
+	} // if not found in website scope go to default scope
+	return ss.root.Bool(p)
 }
 
 // Float64 traverses through the scopes store->group->website->default to find
@@ -157,29 +153,26 @@ func (ss scopedService) Float64(r path.Route) (v float64, err error) {
 		err = errors.Mask(err)
 		return
 	}
-	switch {
-	case ss.storeID > 0:
+
+	if ss.storeID > 0 {
 		v, err = ss.root.Float64(p.Bind(scope.StoreID, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough // if not found in store scope go to group scope
-	case ss.groupID > 0:
+	} // if not found in store scope go to group scope
+	if ss.groupID > 0 {
 		v, err = ss.root.Float64(p.Bind(scope.GroupID, ss.groupID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough // if not found in group scope go to website scope
-	case ss.websiteID > 0:
+	} // if not found in group scope go to website scope
+	if ss.websiteID > 0 {
 		v, err = ss.root.Float64(p.Bind(scope.WebsiteID, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough // if not found in website scope go to default scope
-	default:
-		return ss.root.Float64(p)
-	}
-
+	} // if not found in website scope go to default scope
+	return ss.root.Float64(p)
 }
 
 // Int traverses through the scopes store->group->website->default to find
@@ -191,29 +184,26 @@ func (ss scopedService) Int(r path.Route) (v int, err error) {
 		err = errors.Mask(err)
 		return
 	}
-	switch {
-	case ss.storeID > 0:
+
+	if ss.storeID > 0 {
 		v, err = ss.root.Int(p.Bind(scope.StoreID, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough // if not found in store scope go to group scope
-	case ss.groupID > 0:
+	} // if not found in store scope go to group scope
+	if ss.groupID > 0 {
 		v, err = ss.root.Int(p.Bind(scope.GroupID, ss.groupID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough // if not found in group scope go to website scope
-	case ss.websiteID > 0:
+	} // if not found in group scope go to website scope
+	if ss.websiteID > 0 {
 		v, err = ss.root.Int(p.Bind(scope.WebsiteID, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough // if not found in website scope go to default scope
-	default:
-		return ss.root.Int(p)
-	}
-
+	} // if not found in website scope go to default scope
+	return ss.root.Int(p)
 }
 
 // DateTime traverses through the scopes store->group->website->default to find
@@ -225,26 +215,24 @@ func (ss scopedService) DateTime(r path.Route) (v time.Time, err error) {
 		err = errors.Mask(err)
 		return
 	}
-	switch {
-	case ss.storeID > 0:
+
+	if ss.storeID > 0 {
 		v, err = ss.root.DateTime(p.Bind(scope.StoreID, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough // if not found in store scope go to group scope
-	case ss.groupID > 0:
+	} // if not found in store scope go to group scope
+	if ss.groupID > 0 {
 		v, err = ss.root.DateTime(p.Bind(scope.GroupID, ss.groupID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough // if not found in group scope go to website scope
-	case ss.websiteID > 0:
+	} // if not found in group scope go to website scope
+	if ss.websiteID > 0 {
 		v, err = ss.root.DateTime(p.Bind(scope.WebsiteID, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-		fallthrough // if not found in website scope go to default scope
-	default:
-		return ss.root.DateTime(p)
-	}
+	} // if not found in website scope go to default scope
+	return ss.root.DateTime(p)
 }
