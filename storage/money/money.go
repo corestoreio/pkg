@@ -75,7 +75,7 @@ type (
 	// database scanning and JSON en/decoding.
 	Money struct {
 		// Multi collects multiple errors. Can be nil.
-		*cserr.Multi
+		*cserr.MultiErr
 		// m money in Guard/DP
 		m int64
 		// FmtCur to allow language and format specific outputs in a currency format
@@ -352,10 +352,7 @@ func (m Money) LocalizeWriter(w io.Writer) (int, error) {
 func (m Money) String() string {
 	var bufC buf
 	if _, err := m.LocalizeWriter(&bufC); err != nil {
-		if m.Multi == nil {
-			m.Multi = cserr.NewMulti()
-		}
-		m.AppendErrors(err)
+		m.MultiErr = m.AppendErrors(err)
 	}
 	return string(bufC)
 }
@@ -405,10 +402,7 @@ func (m Money) FtoaAppend(dst []byte) []byte {
 func (m Money) Add(d Money) Money {
 	r := m.m + d.m
 	if (r^m.m)&(r^d.m) < 0 {
-		if m.Multi == nil {
-			m.Multi = cserr.NewMulti()
-		}
-		m.AppendErrors(ErrOverflow)
+		m.MultiErr = m.AppendErrors(errors.Mask(ErrOverflow))
 		m.m = 0
 		return m
 	}
@@ -422,10 +416,7 @@ func (m Money) Add(d Money) Money {
 func (m Money) Sub(d Money) Money {
 	r := m.m - d.m
 	if (r^m.m)&^(r^d.m) < 0 {
-		if m.Multi == nil {
-			m.Multi = cserr.NewMulti()
-		}
-		m.AppendErrors(ErrOverflow)
+		m.MultiErr = m.AppendErrors(errors.Mask(ErrOverflow))
 		m.m = 0
 		return m
 	}
