@@ -23,7 +23,8 @@ import (
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cast"
-	"github.com/juju/errgo"
+	"github.com/corestoreio/csfw/util/cserr"
+	"github.com/juju/errors"
 )
 
 // PkgBackend used for embedding in the PkgBackend type in each package.
@@ -51,15 +52,13 @@ func WithConfigStructure(cfgStruct element.SectionSlice) Option {
 
 // WithField creates a new SectionSlice and GroupSlice containing this one field.
 // The field.ID gets overwritten by the 3rd path parts to match the path.
-// Returns nil on error! Errors gets logged to debug. Might get refactored to return the error.
+// Returns nil on error! Errors are stored in the MultiErr field.
 func WithField(f *element.Field) Option {
 	return func(b *baseValue) Option {
 		prev := b.ConfigStructure
 		pp, err := b.r.Split()
 		if err != nil {
-			if PkgLog.IsDebug() {
-				PkgLog.Debug("model.baseValue.WithField.route.Split", "err", err, "route", b.r.String())
-			}
+			b.MultiErr = b.AppendErrors(err, errors.Errorf("Route: %s", b.r))
 			b.ConfigStructure = nil
 			return nil
 		}
@@ -111,6 +110,9 @@ func WithSourceByInt(vli source.Ints) Option {
 // baseValue defines the path in the "core_config_data" table like a/b/c. All other
 // types in this package inherits from this path type.
 type baseValue struct {
+	// MultiErr some errors of the With* option functions gets appended here.
+	*cserr.MultiErr
+
 	r cfgpath.Route // contains the path like web/cors/exposed_headers but has no scope
 
 	// ConfigStructure contains the whole package configuration which is used
@@ -148,15 +150,15 @@ func (bv baseValue) Write(w config.Writer, v interface{}, s scope.Scope, scopeID
 	if bv.ConfigStructure != nil {
 		f, err := bv.ConfigStructure.FindFieldByID(bv.r)
 		if err != nil {
-			return errgo.Mask(err)
+			return errors.Mask(err)
 		}
 		if false == f.Scope.Has(s) {
-			return errgo.Newf("Scope permission insufficient: Have '%s'; Want '%s'", s, f.Scope)
+			return errors.Errorf("Scope permission insufficient: Have '%s'; Want '%s'", s, f.Scope)
 		}
 	}
 	pp, err := bv.ToPath(s, scopeID)
 	if err != nil {
-		return errgo.Mask(err)
+		return errors.Mask(err)
 	}
 	return w.Write(pp, v)
 }
@@ -170,7 +172,7 @@ func (bv baseValue) String() string {
 func (bv baseValue) ToPath(s scope.Scope, scopeID int64) (cfgpath.Path, error) {
 	p, err := cfgpath.New(bv.r)
 	if err != nil {
-		return cfgpath.Path{}, errgo.Mask(err)
+		return cfgpath.Path{}, errors.Mask(err)
 	}
 	return p.Bind(s, scopeID), nil
 }
@@ -210,11 +212,11 @@ func (bv baseValue) FQ(s scope.Scope, scopeID int64) (string, error) {
 func (bv baseValue) field(sg scope.Scoper) (f *element.Field, err error) {
 	f, err = bv.ConfigStructure.FindFieldByID(bv.r)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Mask(err)
 	}
 	s, _ := sg.Scope()
 	if false == f.Scope.Has(s) {
-		return nil, errgo.Newf("Scope permission insufficient: Have '%s'; Want '%s'", s, f.Scope)
+		return nil, errors.Errorf("Scope permission insufficient: Have '%s'; Want '%s'", s, f.Scope)
 	}
 	return
 }
@@ -224,17 +226,24 @@ func (bv baseValue) field(sg scope.Scoper) (f *element.Field, err error) {
 // validator can be nil which triggers the default validation method.
 func (bv baseValue) lookupString(sg config.ScopedGetter) (v string, err error) {
 
-	if f, errF := bv.field(sg); errF == nil {
-		v, err = cast.ToStringE(f.Default)
-	} else if PkgLog.IsDebug() {
-		PkgLog.Debug("model.baseValue.lookupString.field", "err", errF, "path", bv.r.String())
+	f, errF := bv.field(sg)
+	if errF != nil {
+		err = errF
+		return
 	}
 
-	if val, errSG := sg.String(bv.r); errSG == nil {
+	v, err = cast.ToStringE(f.Default)
+	if err != nil {
+		err = errors.Maskf(err, "Route %s", bv.r)
+		return
+	}
+
+	val, errSG := sg.String(bv.r)
+	switch {
+	case errSG == nil:
 		v = val
-	} else if PkgLog.IsDebug() {
-		// errSG is usually a key not found error, but that one is uninteresting
-		PkgLog.Debug("model.baseValue.lookupString.ScopedGetter.String", "err", errSG, "path", bv.r.String(), "previousErr", err)
+	case config.NotKeyNotFoundError(errSG):
+		err = errors.Maskf(errSG, "Route %s", bv.r)
 	}
 	return
 }
@@ -242,7 +251,7 @@ func (bv baseValue) lookupString(sg config.ScopedGetter) (v string, err error) {
 func (bv baseValue) validateString(v string) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValString(v) {
 		jv, jErr := bv.Source.ToJSON()
-		err = errgo.Newf("The value '%s' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
+		err = errors.Errorf("The value '%s' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
 	}
 	return
 }
@@ -250,23 +259,24 @@ func (bv baseValue) validateString(v string) (err error) {
 func (bv baseValue) lookupInt(sg config.ScopedGetter) (v int, err error) {
 
 	var f *element.Field
-	if f, err = bv.field(sg); err != nil {
+	f, err = bv.field(sg)
+	if err != nil {
+		err = errors.Maskf(err, "Route %s", bv.r)
 		return
 	}
 
 	v, err = cast.ToIntE(f.Default)
 	if err != nil {
-		err = errgo.Mask(err)
+		err = errors.Maskf(err, "Route %s", bv.r)
 		return
 	}
 
-	if val, errSG := sg.Int(bv.r); errSG == nil {
+	val, errSG := sg.Int(bv.r)
+	switch {
+	case errSG == nil:
 		v = val
-	} else {
-		// errSG is usually a key not found error, but that one is uninteresting
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("model.path.lookupString.ScopedGetter.Int", "err", errSG, "path", bv.r.String(), "previousErr", err)
-		}
+	case config.NotKeyNotFoundError(errSG):
+		err = errors.Maskf(errSG, "Route %s", bv.r)
 	}
 	return
 }
@@ -274,7 +284,7 @@ func (bv baseValue) lookupInt(sg config.ScopedGetter) (v int, err error) {
 func (bv baseValue) validateInt(v int) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValInt(v) {
 		jv, jErr := bv.Source.ToJSON()
-		err = errgo.Newf("The value '%d' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
+		err = errors.Errorf("The value '%d' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
 	}
 	return
 }
@@ -282,23 +292,24 @@ func (bv baseValue) validateInt(v int) (err error) {
 func (bv baseValue) lookupFloat64(sg config.ScopedGetter) (v float64, err error) {
 
 	var f *element.Field
-	if f, err = bv.field(sg); err != nil {
+	f, err = bv.field(sg)
+	if err != nil {
+		err = errors.Maskf(err, "Route %s", bv.r)
 		return
 	}
 
 	v, err = cast.ToFloat64E(f.Default)
 	if err != nil {
-		err = errgo.Mask(err)
+		err = errors.Maskf(err, "Route %s", bv.r)
 		return
 	}
 
-	if val, errSG := sg.Float64(bv.r); errSG == nil {
+	val, errSG := sg.Float64(bv.r)
+	switch {
+	case errSG == nil:
 		v = val
-	} else {
-		// errSG is usually a key not found error, but that one is uninteresting
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("model.path.lookupString.ScopedGetter.Float64", "err", errSG, "path", bv.r.String(), "previousErr", err)
-		}
+	case config.NotKeyNotFoundError(errSG):
+		err = errors.Maskf(errSG, "Route %s", bv.r)
 	}
 	return
 }
@@ -306,7 +317,7 @@ func (bv baseValue) lookupFloat64(sg config.ScopedGetter) (v float64, err error)
 func (bv baseValue) validateFloat64(v float64) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValFloat64(v) {
 		jv, jErr := bv.Source.ToJSON()
-		err = errgo.Newf("The value '%.14f' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
+		err = errors.Errorf("The value '%.14f' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
 	}
 	return
 }
@@ -315,23 +326,22 @@ func (bv baseValue) lookupBool(sg config.ScopedGetter) (v bool, err error) {
 
 	var f *element.Field
 	if f, err = bv.field(sg); err != nil {
+		err = errors.Maskf(err, "Route %s", bv.r)
 		return
 	}
 
 	v, err = cast.ToBoolE(f.Default)
 	if err != nil {
-		err = errgo.Mask(err)
+		err = errors.Mask(err)
 		return
 	}
 
-	if val, errSG := sg.Bool(bv.r); errSG == nil {
+	val, errSG := sg.Bool(bv.r)
+	switch {
+	case errSG == nil:
 		v = val
-	} else {
-		// errSG is usually a key not found error, but that one is uninteresting
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("model.path.lookupString.ScopedGetter.Bool", "err", errSG, "path", bv.r.String(), "previousErr", err)
-		}
+	case config.NotKeyNotFoundError(errSG):
+		err = errors.Maskf(errSG, "Route %s", bv.r)
 	}
-
 	return
 }

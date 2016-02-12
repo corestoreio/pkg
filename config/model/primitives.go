@@ -32,10 +32,11 @@ func NewBool(path string, opts ...Option) Bool {
 }
 
 // Get returns a bool value.
+// Errors gets appended to MultiErr
 func (b Bool) Get(sg config.ScopedGetter) (v bool) {
 	var err error
-	if v, err = b.lookupBool(sg); err != nil && PkgLog.IsDebug() {
-		PkgLog.Debug("model.Bool.Get.lookupBool", "err", err, "route", b.r.String())
+	if v, err = b.lookupBool(sg); err != nil {
+		b.MultiErr = b.AppendErrors(err)
 	}
 	return
 }
@@ -56,10 +57,11 @@ func NewStr(path string, opts ...Option) Str {
 }
 
 // Get returns a string value
+// Errors gets appended to MultiErr
 func (str Str) Get(sg config.ScopedGetter) (v string) {
 	var err error
-	if v, err = str.lookupString(sg); err != nil && PkgLog.IsDebug() {
-		PkgLog.Debug("model.Str.Get.lookupString", "err", err, "route", str.r.String())
+	if v, err = str.lookupString(sg); err != nil {
+		str.MultiErr = str.AppendErrors(err)
 	}
 	return
 }
@@ -80,8 +82,8 @@ func NewInt(path string, opts ...Option) Int {
 // Get returns an int value.
 func (i Int) Get(sg config.ScopedGetter) (v int) {
 	var err error
-	if v, err = i.lookupInt(sg); err != nil && PkgLog.IsDebug() {
-		PkgLog.Debug("model.Int.Get.lookupInt", "err", err, "route", i.r.String())
+	if v, err = i.lookupInt(sg); err != nil {
+		i.MultiErr = i.AppendErrors(err)
 	}
 	return
 }
@@ -102,8 +104,8 @@ func NewFloat64(path string, opts ...Option) Float64 {
 // Get returns a float64 value.
 func (f Float64) Get(sg config.ScopedGetter) (v float64) {
 	var err error
-	if v, err = f.lookupFloat64(sg); err != nil && PkgLog.IsDebug() {
-		PkgLog.Debug("model.Float64.Get.lookupFloat64", "err", err, "string", f.r.String())
+	if v, err = f.lookupFloat64(sg); err != nil {
+		f.MultiErr = f.AppendErrors(err)
 	}
 	return
 }

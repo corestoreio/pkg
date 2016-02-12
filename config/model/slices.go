@@ -22,7 +22,7 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 // CSVSeparator separates CSV values
@@ -133,11 +133,11 @@ func (p IntCSV) Write(w config.Writer, sl []int, s scope.Scope, scopeID int64) e
 		}
 
 		if _, err := val.WriteString(strconv.Itoa(v)); err != nil {
-			return errgo.Mask(err)
+			return errors.Mask(err)
 		}
 		if i < len(sl)-1 {
 			if _, err := val.WriteString(CSVSeparator); err != nil {
-				return errgo.Mask(err)
+				return errors.Mask(err)
 			}
 		}
 	}

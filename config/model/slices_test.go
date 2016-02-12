@@ -27,7 +27,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestStringCSV(t *testing.T) {
+func TestStringCSVGet(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
 	wantPath := path.MustNewByParts(pathWebCorsHeaders).String()
@@ -59,7 +59,7 @@ func TestStringCSV(t *testing.T) {
 			config.WithMockValues(config.MockPV{
 				wantPath: test.have,
 			}),
-		).NewScoped(0, 0, 4))
+		).NewScoped(1, 0, 0)) // 1,0,0 because scope of pathWebCorsHeaders is default,website
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
 		if test.wantErr != nil {
