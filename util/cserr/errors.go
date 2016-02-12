@@ -29,9 +29,9 @@ type Multi struct {
 
 // NewMulti creates a new multi error struct.
 func NewMulti(errs ...error) Multi {
-	return Multi{
-		errs: errs,
-	}
+	m := Multi{}
+	m.AppendErrors(errs...)
+	return m
 }
 
 // AppendErrors adds multiple errors to the container. Does not add a location.
@@ -41,6 +41,11 @@ func (m *Multi) AppendErrors(errs ...error) {
 			m.errs = append(m.errs, err)
 		}
 	}
+}
+
+// HasErrors checks if Multi contains errors.
+func (m Multi) HasErrors() bool {
+	return false == (len(m.errs) == 0 || (len(m.errs) == 1 && m.errs[0] == nil))
 }
 
 // Error returns a string where each error has been separated by a line break.
@@ -61,7 +66,7 @@ func (m Multi) Error() string {
 
 		if i < le {
 			if _, err := buf.WriteString("\n"); err != nil {
-				return fmt.Sprintf("buf.WriteString (2) internal error: %s\n%s", err, buf.String())
+				return fmt.Sprintf("buf.WriteString (2) internal error (%s):\n%s", err, buf.String())
 			}
 		}
 	}

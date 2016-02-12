@@ -43,11 +43,31 @@ func TestMultiAppend(t *testing.T) {
 		errors.New("Err6"),
 		errors.New("Err7"),
 	)
-
+	assert.True(t, e.HasErrors())
 	assert.Equal(t, "[{github.com/corestoreio/csfw/util/cserr/errors_test.go:41: Err5}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:43: Err6}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:44: Err7}]", e.Error())
 }
 
 func TestMultiEmpty(t *testing.T) {
 	t.Parallel()
+	assert.False(t, cserr.NewMulti(nil, nil).HasErrors())
 	assert.Equal(t, "", cserr.NewMulti(nil).Error())
+}
+
+var benchmarkError string
+
+// BenchmarkError-4	  500000	      3063 ns/op	    1312 B/op	      22 allocs/op
+func BenchmarkError(b *testing.B) {
+	// errors.Details(e) produces those high allocs
+	e := cserr.NewMulti()
+	e.AppendErrors(
+		errors.New("Err5"),
+		nil,
+		errors.New("Err6"),
+		errors.New("Err7"),
+	)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		benchmarkError = e.Error()
+	}
 }
