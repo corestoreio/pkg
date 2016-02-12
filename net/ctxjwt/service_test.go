@@ -17,7 +17,6 @@ package ctxjwt_test
 import (
 	"crypto/x509"
 	"fmt"
-	"go/build"
 	"net/http"
 	"net/http/httptest"
 	"path/filepath"

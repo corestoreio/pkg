@@ -16,7 +16,6 @@ package geoip_test
 
 import (
 	"errors"
-	"go/build"
 	"net"
 	"net/http"
 	"net/http/httptest"

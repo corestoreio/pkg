@@ -15,10 +15,10 @@
 package ctxhttp_test
 
 import (
+	"errors"
 	"net/http"
 	"testing"
 
-	"errors"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/juju/errgo"
 	"github.com/stretchr/testify/assert"
