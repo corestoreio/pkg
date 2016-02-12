@@ -16,9 +16,9 @@ package csdb_test
 
 import (
 	"bytes"
+	"errors"
 	"testing"
 
-	"errors"
 	"fmt"
 
 	"github.com/corestoreio/csfw/storage/csdb"
@@ -68,7 +68,6 @@ func TestGetColumns(t *testing.T) {
 		if test.wantErr != nil {
 			assert.Error(t, err1, "Index %d", i)
 			assert.Contains(t, err1.Error(), test.wantErr.Error(), "Index %d", i)
-			//t.Logf("%s\n%#v\n", err1.Error(), err1.(errgo.Locationer).Location())
 		} else {
 			assert.NoError(t, err1, "Index %d", i)
 			assert.Equal(t, test.want, fmt.Sprintf("%#v\n", cols1), "Index %d", i)

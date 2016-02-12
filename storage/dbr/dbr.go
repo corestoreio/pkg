@@ -2,8 +2,7 @@ package dbr
 
 import (
 	"database/sql"
-
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 // DefaultDriverName is MySQL
@@ -79,7 +78,7 @@ func NewConnection(opts ...ConnectionOption) (*Connection, error) {
 	switch c.dn {
 	case DriverNameMySQL:
 	default:
-		return nil, errgo.Newf("unsupported driver: %s", c.dn)
+		return nil, errors.NotImplementedf("unsupported driver: %s", c.dn)
 	}
 
 	if c.DB != nil {

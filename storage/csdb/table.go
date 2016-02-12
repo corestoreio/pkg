@@ -16,7 +16,7 @@ package csdb
 
 import (
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 // Table represents a table from the database
@@ -59,7 +59,7 @@ func (ts *Table) update() *Table {
 func (ts *Table) LoadColumns(dbrSess dbr.SessionRunner) (err error) {
 	ts.Columns, err = GetColumns(dbrSess, ts.Name)
 	ts.update()
-	return errgo.Mask(err)
+	return errors.Mask(err)
 }
 
 // TableAliasQuote returns a table name with the alias.

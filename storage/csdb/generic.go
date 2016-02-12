@@ -18,7 +18,7 @@ import (
 	"fmt"
 
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 var _ error = (*Error)(nil)
@@ -50,12 +50,12 @@ func (e *Error) Error() string {
 func LoadSlice(dbrSess dbr.SessionRunner, tsr TableManager, ti Index, dest interface{}, cbs ...dbr.SelectCb) (int, error) {
 	ts, err := tsr.Structure(ti)
 	if err != nil {
-		return 0, errgo.Mask(err)
+		return 0, errors.Mask(err)
 	}
 
 	sb, err := ts.Select(dbrSess)
 	if err != nil {
-		return 0, errgo.Mask(err)
+		return 0, errors.Mask(err)
 	}
 
 	for _, cb := range cbs {

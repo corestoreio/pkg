@@ -21,7 +21,7 @@ import (
 	"database/sql"
 
 	"github.com/corestoreio/csfw/util/log"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 // DefaultResurrectStmtIdleTime is the global idle time when you create a new
@@ -122,7 +122,7 @@ func (su *ResurrectStmt) close() error {
 		// statement has not been opened or is unused.
 		return nil
 	}
-	return errgo.Mask(su.stmt.Close())
+	return errors.Mask(su.stmt.Close())
 }
 
 func (su *ResurrectStmt) checkIdle() {
@@ -168,7 +168,7 @@ func (su *ResurrectStmt) Stmt() (*sql.Stmt, error) {
 	var err error
 	su.stmt, err = su.DB.Prepare(su.SQL)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Mask(err)
 	}
 	if su.Log.IsDebug() {
 		su.Log.Debug("csdb.ResurrectStmt.stmt.Prepare", "SQL", su.SQL)

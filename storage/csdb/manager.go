@@ -15,12 +15,11 @@
 package csdb
 
 import (
-	"errors"
 	"sync"
 
 	"github.com/corestoreio/csfw/storage/dbr"
-	"github.com/corestoreio/csfw/util"
-	"github.com/juju/errgo"
+	"github.com/corestoreio/csfw/util/cserr"
+	"github.com/juju/errors"
 )
 
 const (
@@ -68,8 +67,8 @@ type (
 
 	// TableService implements interface Manager
 	TableService struct {
+		cserr.Multi
 		initDone bool
-		errs     []error
 		mu       sync.RWMutex
 		ts       map[Index]*Table
 	}
@@ -81,15 +80,15 @@ func WithTable(idx Index, name string, cols ...Column) ManagerOption {
 	return func(tm *TableService) {
 
 		if err := IsValidIdentifier(name); err != nil {
-			tm.errs = append(tm.errs, err)
+			tm.AppendErrors(err)
 		}
 
-		if len(tm.errs) > 0 {
+		if tm.HasErrors() {
 			return
 		}
 
 		if err := tm.Append(idx, NewTable(name, cols...)); err != nil {
-			tm.errs = append(tm.errs, err)
+			tm.AppendErrors(err)
 		}
 	}
 }
@@ -103,7 +102,7 @@ func NewTableService(opts ...ManagerOption) (*TableService, error) {
 	for _, o := range opts {
 		o(tm)
 	}
-	if len(tm.errs) > 0 {
+	if tm.HasErrors() {
 		return nil, tm
 	}
 	return tm, nil
@@ -157,7 +156,7 @@ func (tm *TableService) Next(i Index) bool {
 // Append adds a table. Overrides silently existing entries.
 func (tm *TableService) Append(i Index, ts *Table) error {
 	if ts == nil {
-		return errgo.Newf("Table pointer cannot be nil for Index %d", i)
+		return errors.Errorf("Table pointer cannot be nil for Index %d", i)
 	}
 	tm.mu.Lock()
 	tm.ts[i] = ts
@@ -178,7 +177,7 @@ func (tm *TableService) Init(dbrSess dbr.SessionRunner, reInit ...bool) error {
 		return nil
 	}
 	if false == tm.initDone && true == reLoad {
-		return errgo.Mask(ErrTableServiceInitReload)
+		return errors.Mask(ErrTableServiceInitReload)
 	}
 	tm.initDone = true
 
@@ -187,14 +186,9 @@ func (tm *TableService) Init(dbrSess dbr.SessionRunner, reInit ...bool) error {
 			if PkgLog.IsDebug() {
 				PkgLog.Debug("csdb.TableService.Init.LoadColumns", "err", err, "table", table)
 			}
-			return errgo.Mask(err)
+			return errors.Mask(err)
 		}
 	}
 
 	return nil
-}
-
-// Error implements error interface
-func (tm *TableService) Error() string {
-	return util.Errors(tm.errs...)
 }

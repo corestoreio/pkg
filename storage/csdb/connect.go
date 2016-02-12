@@ -15,12 +15,11 @@
 package csdb
 
 import (
-	"errors"
 	"os"
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 const (
@@ -50,7 +49,7 @@ func GetDSN() (string, error) {
 func Connect(opts ...dbr.ConnectionOption) (*dbr.Connection, error) {
 	dsn, err := GetDSN()
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Mask(err)
 	}
 	c, err := dbr.NewConnection(dbr.SetDSN(dsn))
 	return c.ApplyOpts(opts...), err

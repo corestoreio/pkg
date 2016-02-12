@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 // InsertBuilder contains the clauses for an INSERT statement
@@ -104,13 +104,13 @@ func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 		return "", nil, ErrMissingTable
 	}
 	if len(b.Cols) == 0 && len(b.Maps) == 0 {
-		return "", nil, errgo.New("no columns or map specified")
+		return "", nil, errors.New("no columns or map specified")
 	} else if len(b.Maps) == 0 {
 		if len(b.Vals) == 0 && len(b.Recs) == 0 {
-			return "", nil, errgo.New("no values or records specified")
+			return "", nil, errors.New("no values or records specified")
 		}
 		if len(b.Cols) == 0 && (len(b.Vals) > 0 || len(b.Recs) > 0) {
-			return "", nil, errgo.New("no columns specified")
+			return "", nil, errors.New("no columns specified")
 		}
 	}
 
@@ -166,7 +166,7 @@ func (b *InsertBuilder) ToSql() (string, []interface{}, error) {
 		ind := reflect.Indirect(reflect.ValueOf(rec))
 		vals, err := b.valuesFor(ind.Type(), ind, b.Cols)
 		if err != nil {
-			return "", nil, errgo.Mask(err)
+			return "", nil, errors.Mask(err)
 		}
 		for _, v := range vals {
 			args = append(args, v)
@@ -190,7 +190,7 @@ func (b *InsertBuilder) MapToSql(sql *bytes.Buffer) (string, []interface{}, erro
 			if val, err := dbVal.Value(); err == nil {
 				vals[i] = val
 			} else {
-				return "", nil, errgo.Mask(err)
+				return "", nil, errors.Mask(err)
 			}
 		} else {
 			vals[i] = v

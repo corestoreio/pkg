@@ -22,7 +22,7 @@ import (
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 const (
@@ -91,7 +91,7 @@ func GetColumns(dbrSess dbr.SessionRunner, table string) (Columns, error) {
 
 	selSql, selArg, err := sel.ToSql()
 	if err != nil {
-		return Columns{}, errgo.Mask(err)
+		return Columns{}, errors.Mask(err)
 	}
 
 	rows, err := sel.Query(selSql, selArg...)
@@ -99,7 +99,7 @@ func GetColumns(dbrSess dbr.SessionRunner, table string) (Columns, error) {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("csdb.GetColumns.Query", "err", err, "query", selSql, "args", selArg)
 		}
-		return nil, errgo.Mask(err)
+		return nil, errors.Mask(err)
 	}
 	defer rows.Close()
 
@@ -110,7 +110,7 @@ func GetColumns(dbrSess dbr.SessionRunner, table string) (Columns, error) {
 			if PkgLog.IsDebug() {
 				PkgLog.Debug("csdb.GetColumns.Rows.Scan", "err", err, "query", selSql, "args", selArg)
 			}
-			return nil, errgo.Mask(err)
+			return nil, errors.Mask(err)
 		}
 		cols = append(cols, col)
 	}
@@ -119,7 +119,7 @@ func GetColumns(dbrSess dbr.SessionRunner, table string) (Columns, error) {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("csdb.GetColumns.Rows.Err", "err", err, "query", selSql, "args", selArg)
 		}
-		return nil, errgo.Mask(err)
+		return nil, errors.Mask(err)
 	}
 	return cols, nil
 }

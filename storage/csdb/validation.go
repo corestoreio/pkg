@@ -15,8 +15,7 @@
 package csdb
 
 import (
-	"errors"
-	"fmt"
+	"github.com/juju/errors"
 )
 
 // ErrIncorrectIdentifier gets returned by IsValidIdentifier on error.
@@ -47,7 +46,7 @@ func IsValidIdentifier(name string) error {
 			ok = true
 		}
 		if !ok {
-			return fmt.Errorf("Invalid character `%s` in name %q", string(r), name)
+			return errors.Errorf("Invalid character `%s` in name %q", string(r), name)
 		}
 	}
 	return nil

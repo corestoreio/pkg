@@ -21,10 +21,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/corestoreio/csfw/storage/text"
-	"github.com/stretchr/testify/assert"
 	"hash/fnv"
 	"testing"
+
+	"github.com/corestoreio/csfw/storage/text"
+	"github.com/stretchr/testify/assert"
 )
 
 // These checks, if a type implements an interface, belong into the test package

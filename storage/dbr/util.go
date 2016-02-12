@@ -4,7 +4,7 @@ import (
 	"database/sql/driver"
 	"strings"
 
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 // argsValuer checks if an argument implements driver.Valuer interface. If so
@@ -15,7 +15,7 @@ func argsValuer(args *[]interface{}) error {
 			if val, err := dbVal.Value(); err == nil {
 				(*args)[i] = val
 			} else {
-				return errgo.Mask(err)
+				return errors.Mask(err)
 			}
 		}
 	}
