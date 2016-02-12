@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/juju/errgo/errors"
+	"github.com/juju/errors"
 	"github.com/stretchr/testify/assert"
 )
 

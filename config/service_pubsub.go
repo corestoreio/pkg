@@ -15,11 +15,10 @@
 package config
 
 import (
-	"errors"
 	"sync"
 
 	"github.com/corestoreio/csfw/config/path"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 // ErrPublisherClosed will returned when the channel has been closed.
@@ -213,7 +212,7 @@ func sendMsgRecoverable(id int, sl MessageReceiver, p path.Path) (err error) {
 				err = recErr
 			} else {
 				PkgLog.Debug("config.pubSub.publish.recover.r", "recover", r, "path", p)
-				err = errgo.Newf("%#v", r)
+				err = errors.Errorf("%#v", r)
 			}
 			// the overall trick here is, that defer will assign a new error to err
 			// and therefore will overwrite the returned nil value!

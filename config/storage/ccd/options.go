@@ -20,7 +20,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 // WithDBStorage applies the MySQL storage to a new Service. It
@@ -47,7 +47,7 @@ func WithCoreConfigData(dbrSess dbr.SessionRunner) config.ServiceOption {
 			if PkgLog.IsDebug() {
 				PkgLog.Debug("ccd.WithCoreConfigData.LoadSlice.err", "err", err)
 			}
-			s.Errors = append(s.Errors, errgo.Mask(err))
+			s.MultiErr = s.AppendErrors(err)
 			return
 		}
 
@@ -57,12 +57,12 @@ func WithCoreConfigData(dbrSess dbr.SessionRunner) config.ServiceOption {
 				var p path.Path
 				p, err = path.NewByParts(cd.Path)
 				if err != nil {
-					s.Errors = append(s.Errors, errgo.Mask(err))
+					s.MultiErr = s.AppendErrors(errors.Mask(err))
 					return
 				}
 
 				if err = s.Write(p.Bind(scope.FromString(cd.Scope), cd.ScopeID), cd.Value.String); err != nil {
-					s.Errors = append(s.Errors, errgo.Mask(err))
+					s.MultiErr = s.AppendErrors(errors.Mask(err))
 					return
 				}
 				writtenRows++

@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 // ScopedGetter is equal to Getter but the underlying implementation takes
@@ -88,7 +88,7 @@ func (ss scopedService) String(r path.Route) (v string, err error) {
 	// fallback to next parent scope if value does not exists
 	p, err := path.New(r)
 	if err != nil {
-		err = errgo.Mask(err)
+		err = errors.Mask(err)
 		return
 	}
 	switch {
@@ -121,7 +121,7 @@ func (ss scopedService) Bool(r path.Route) (v bool, err error) {
 	// fallback to next parent scope if value does not exists
 	p, err := path.New(r)
 	if err != nil {
-		err = errgo.Mask(err)
+		err = errors.Mask(err)
 		return
 	}
 	switch {
@@ -154,7 +154,7 @@ func (ss scopedService) Float64(r path.Route) (v float64, err error) {
 	// fallback to next parent scope if value does not exists
 	p, err := path.New(r)
 	if err != nil {
-		err = errgo.Mask(err)
+		err = errors.Mask(err)
 		return
 	}
 	switch {
@@ -188,7 +188,7 @@ func (ss scopedService) Int(r path.Route) (v int, err error) {
 	// fallback to next parent scope if value does not exists
 	p, err := path.New(r)
 	if err != nil {
-		err = errgo.Mask(err)
+		err = errors.Mask(err)
 		return
 	}
 	switch {
@@ -222,7 +222,7 @@ func (ss scopedService) DateTime(r path.Route) (v time.Time, err error) {
 	// fallback to next parent scope if value does not exists
 	p, err := path.New(r)
 	if err != nil {
-		err = errgo.Mask(err)
+		err = errors.Mask(err)
 		return
 	}
 	switch {

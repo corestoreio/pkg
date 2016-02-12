@@ -15,10 +15,9 @@
 package config
 
 import (
-	"errors"
 	"net/url"
 
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 // PathCSBaseURL main CoreStore base URL, used if no configuration on a store level can be found.
@@ -78,14 +77,14 @@ func (uc *URLCache) Get(t URLType) *url.URL {
 // with the same type will overwrite existing values.
 func (uc *URLCache) Set(t URLType, rawURL string) (*url.URL, error) {
 	if t >= maxURLTypes {
-		return nil, errgo.Newf("Unknown Index %d", t)
+		return nil, errors.Errorf("Unknown Index %d", t)
 	}
 	if rawURL == "" {
-		return nil, errgo.Mask(ErrURLEmpty)
+		return nil, errors.Mask(ErrURLEmpty)
 	}
 	u, err := url.Parse(rawURL)
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Mask(err)
 	}
 	uc.urls[t] = u
 	return u, nil

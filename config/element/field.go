@@ -15,13 +15,12 @@
 package element
 
 import (
-	"errors"
 	"sort"
 
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 // ErrFieldNotFound error when a field cannot be found.
@@ -110,7 +109,7 @@ func (fs *FieldSlice) Append(f ...*Field) *FieldSlice {
 func (fs *FieldSlice) Merge(fields ...*Field) error {
 	for _, f := range fields {
 		if err := (*fs).merge(f); err != nil {
-			return errgo.Mask(err)
+			return errors.Mask(err)
 		}
 	}
 	return nil
@@ -186,7 +185,7 @@ func (f *Field) Route(preRoutes ...path.Route) (path.Route, error) {
 		p, err = path.New(append(preRoutes, f.ID)...)
 	}
 	if err != nil {
-		return path.Route{}, &FieldError{Err: errgo.Mask(err), Field: f, PreRoutes: preRoutes}
+		return path.Route{}, &FieldError{Err: errors.Mask(err), Field: f, PreRoutes: preRoutes}
 	}
 	return p.Route, nil
 }
@@ -201,7 +200,7 @@ func (f *Field) RouteHash(preRoutes ...path.Route) (uint64, error) {
 		r = f.ConfigPath.SelfRoute()
 	} else {
 		if err := r.Append(append(preRoutes, f.ID)...); err != nil {
-			return 0, &FieldError{Err: errgo.Mask(err), Field: f, PreRoutes: preRoutes}
+			return 0, &FieldError{Err: errors.Mask(err), Field: f, PreRoutes: preRoutes}
 		}
 	}
 	return r.Chars.Hash(), nil

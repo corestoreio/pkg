@@ -20,8 +20,8 @@ import (
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/storage"
-	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/cast"
+	"github.com/corestoreio/csfw/util/cserr"
 )
 
 // LeftDelim and RightDelim are used withing the core_config_data.value field to allow the replacement
@@ -64,10 +64,10 @@ type (
 		// Storage is the underlying data holding provider. Only access it
 		// if you know exactly what you are doing.
 		Storage storage.Storager
-		*pubSub
-		// Errors which ServiceOption function arguments are generating
+		// MultiErr which ServiceOption function arguments are generating
 		// Usually empty (= nil) ;-)
-		Errors []error
+		*cserr.MultiErr
+		*pubSub
 	}
 )
 
@@ -94,9 +94,9 @@ func NewService(opts ...ServiceOption) (*Service, error) {
 
 	_ = s.Options(opts...)
 
-	if len(s.Errors) > 0 {
+	if s.HasErrors() {
 		if err := s.Close(); err != nil { // terminate publisher go routine and prevent leaking
-			s.Errors = append(s.Errors, err)
+			s.MultiErr = s.AppendErrors(err)
 		}
 		return nil, s
 	}
@@ -104,7 +104,7 @@ func NewService(opts ...ServiceOption) (*Service, error) {
 	p := path.MustNewByParts(PathCSBaseURL)
 	if err := s.Storage.Set(p, CSBaseURL); err != nil {
 		if err := s.Close(); err != nil { // terminate publisher go routine and prevent leaking
-			s.Errors = append(s.Errors, err)
+			s.MultiErr = s.AppendErrors(err)
 		}
 		return nil, err
 	}
@@ -128,15 +128,10 @@ func (s *Service) Options(opts ...ServiceOption) error {
 			opt(s)
 		}
 	}
-	if len(s.Errors) > 0 {
+	if s.HasErrors() {
 		return s
 	}
 	return nil
-}
-
-// Error implements error interface
-func (s *Service) Error() string {
-	return util.Errors(s.Errors...)
 }
 
 // NewScoped creates a new scope base configuration reader

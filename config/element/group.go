@@ -17,13 +17,12 @@ package element
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"sort"
 
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 // ErrGroupNotFound error when a group cannot be found
@@ -81,7 +80,7 @@ func (gs *GroupSlice) Append(g ...*Group) *GroupSlice {
 func (gs *GroupSlice) Merge(groups ...*Group) error {
 	for _, g := range groups {
 		if err := (*gs).merge(g); err != nil {
-			return errgo.Mask(err)
+			return errors.Mask(err)
 		}
 	}
 	return nil

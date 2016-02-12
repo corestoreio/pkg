@@ -17,13 +17,12 @@ package element
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"sort"
 
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 // ErrSectionNotFound error when a section cannot be found.
@@ -56,7 +55,7 @@ func NewConfiguration(sections ...*Section) (SectionSlice, error) {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.NewConfiguration.Validate", "err", err)
 		}
-		return nil, errgo.Mask(err)
+		return nil, errors.Mask(err)
 	}
 	return ss, nil
 }
@@ -79,13 +78,13 @@ func NewConfigurationMerge(sections ...*Section) (SectionSlice, error) {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.NewConfigurationMerge.Merge", "err", err, "sections", sections)
 		}
-		return nil, errgo.Mask(err)
+		return nil, errors.Mask(err)
 	}
 	if err := ss.Validate(); err != nil {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.NewConfigurationMerge.Validate", "err", err)
 		}
-		return nil, errgo.Mask(err)
+		return nil, errors.Mask(err)
 	}
 	return ss, nil
 }
@@ -147,7 +146,7 @@ func (ss *SectionSlice) Merge(sections ...*Section) error {
 	for _, s := range sections {
 		if s != nil {
 			if err := (*ss).merge(s); err != nil {
-				return errgo.Mask(err)
+				return errors.Mask(err)
 			}
 		}
 	}
@@ -204,7 +203,7 @@ func (ss SectionSlice) FindGroupByID(r path.Route) (*Group, error) {
 	}
 	cs, err := ss.FindByID(spl[0])
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Mask(err)
 	}
 	return cs.Groups.FindByID(spl[1])
 }
@@ -214,15 +213,15 @@ func (ss SectionSlice) FindGroupByID(r path.Route) (*Group, error) {
 func (ss SectionSlice) FindFieldByID(r path.Route) (*Field, error) {
 	spl, err := r.Split()
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Mask(err)
 	}
 	sec, err := ss.FindByID(spl[0])
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Mask(err)
 	}
 	cg, err := sec.Groups.FindByID(spl[1])
 	if err != nil {
-		return nil, errgo.Mask(err)
+		return nil, errors.Mask(err)
 	}
 	return cg.Fields.FindByID(spl[2])
 }
@@ -238,7 +237,7 @@ func (ss *SectionSlice) Append(s ...*Section) *SectionSlice {
 func (ss SectionSlice) AppendFields(r path.Route, fs ...*Field) error {
 	g, err := ss.FindGroupByID(r)
 	if err != nil {
-		return errgo.Mask(err)
+		return errors.Mask(err)
 	}
 	g.Fields.Append(fs...)
 	return nil
@@ -258,7 +257,7 @@ func (ss SectionSlice) ToJSON() string {
 // On error returns *FieldError or duplicate entry error or slice empty error.
 func (ss SectionSlice) Validate() error {
 	if len(ss) == 0 {
-		return errgo.New("SectionSlice is empty")
+		return errors.New("SectionSlice is empty")
 	}
 
 	var hashes = make([]uint64, ss.TotalFields(), ss.TotalFields()) // pc path checker
@@ -279,7 +278,7 @@ func (ss SectionSlice) Validate() error {
 						if err != nil {
 							return err
 						}
-						return errgo.Newf("Duplicate entry for path %s :: %s", p.String(), ss.ToJSON())
+						return errors.Errorf("Duplicate entry for path %s :: %s", p.String(), ss.ToJSON())
 					}
 				}
 				hashes[i] = fnv1a
