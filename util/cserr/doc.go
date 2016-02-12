@@ -12,9 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package model
-
-import "github.com/corestoreio/csfw/util/log"
-
-// PkgLog global package based logger
-var PkgLog log.Logger = log.PkgLog
+// Package cserr contains basic error handling helper functions.
+package cserr
