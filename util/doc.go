@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
-Package util contains general purpose functions and helpers used in many packages.
-*/
+// Package util should stay empty.
+//
+// davecheney: #golang top tip: don't write a "utils" package, don't make a "utils" project.
+// 2/10/16, 11:42 PM
 package util

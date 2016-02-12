@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"io/ioutil"
 
-	"go/build"
 	"path/filepath"
 
 	"github.com/corestoreio/csfw/util/cstesting"

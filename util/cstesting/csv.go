@@ -24,7 +24,7 @@ import (
 
 	"github.com/DATA-DOG/go-sqlmock"
 	"github.com/corestoreio/csfw/storage/text"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 // CSVOptions applies options to the CSV reader
@@ -63,7 +63,7 @@ func LoadCSV(opts ...csvOptions) (columns []string, rows [][]driver.Value, err e
 
 	f, err := os.Open(cfg.path)
 	if err != nil {
-		err = errgo.Mask(err)
+		err = errors.Mask(err)
 		return
 	}
 
@@ -88,7 +88,7 @@ func LoadCSV(opts ...csvOptions) (columns []string, rows [][]driver.Value, err e
 		case err != nil:
 			return
 		case res == nil:
-			err = errgo.New("Cannot read from csv")
+			err = errors.New("Cannot read from csv")
 			return
 		}
 		if j == 0 {

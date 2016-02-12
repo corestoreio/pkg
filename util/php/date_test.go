@@ -15,9 +15,10 @@
 package php_test
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/util/php"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestToGoFormat(t *testing.T) {

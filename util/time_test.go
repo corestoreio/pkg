@@ -15,9 +15,9 @@
 package util_test
 
 import (
+	"errors"
 	"testing"
 
-	"errors"
 	"github.com/corestoreio/csfw/util"
 	"github.com/stretchr/testify/assert"
 )
