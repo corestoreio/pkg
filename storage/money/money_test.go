@@ -49,6 +49,7 @@ var testFmtNum = i18n.NewNumber(
 )
 
 func TestString(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		prec int
 		have int64
@@ -88,6 +89,7 @@ func TestString(t *testing.T) {
 }
 
 func TestAbs(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have int64
 		want int64
@@ -107,6 +109,7 @@ func TestAbs(t *testing.T) {
 }
 
 func TestPrecisionAndGet(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		prec  int
 		have  int64
@@ -146,6 +149,7 @@ func TestPrecisionAndGet(t *testing.T) {
 }
 
 func TestSetf(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		prec  int
 		want  int64
@@ -179,6 +183,7 @@ func TestSetf(t *testing.T) {
 }
 
 func TestSign(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have int64
 		want int
@@ -193,6 +198,7 @@ func TestSign(t *testing.T) {
 }
 
 func TestSwedishNumber(t *testing.T) {
+	t.Parallel()
 
 	tests := []struct {
 		prec int
@@ -289,6 +295,7 @@ func TestSwedishNumber(t *testing.T) {
 }
 
 func TestAdd(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have1 int64
 		have2 int64
@@ -300,17 +307,18 @@ func TestAdd(t *testing.T) {
 		{math.MaxInt64, 2, 0},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		c := money.New().Set(test.have1)
 		c = c.Add(money.New().Set(test.have2))
 		have := c.Raw()
 		if have != test.want {
-			t.Errorf("\nWant: %d\nHave: %d\nIndex: %v\n", test.want, have, test)
+			t.Errorf("\nWant: %d\nHave: %d\nIndex: %d\n", test.want, have, i)
 		}
 	}
 }
 
 func TestSub(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have1 int64
 		have2 int64
@@ -323,17 +331,18 @@ func TestSub(t *testing.T) {
 		{-math.MaxInt64, 2, 0},
 	}
 
-	for _, test := range tests {
+	for i, test := range tests {
 		c := money.New().Set(test.have1)
 		c = c.Sub(money.New().Set(test.have2))
 		have := c.Raw()
 		if have != test.want {
-			t.Errorf("\nWant: %d\nHave: %d\nIndex: %v\n", test.want, have, test)
+			t.Errorf("\nWant: %d\nHave: %d\nIndex: %d\n", test.want, have, i)
 		}
 	}
 }
 
 func TestMulNumber(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		prec  int
 		have1 int64
@@ -373,6 +382,7 @@ func TestMulNumber(t *testing.T) {
 }
 
 func TestMulf(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		prec  int
 		have1 int64
@@ -406,6 +416,7 @@ func TestMulf(t *testing.T) {
 }
 
 func TestDiv(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have1 int64
 		have2 int64

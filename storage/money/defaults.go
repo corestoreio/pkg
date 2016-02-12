@@ -15,20 +15,27 @@
 package money
 
 import (
-	"errors"
 	"math"
+	"sync"
 
 	"github.com/corestoreio/csfw/i18n"
 )
 
-var (
-	// g = global
-	gGuardi  int = 10000
-	gDPi     int = 10000
-	gSwedish     = Interval000
-	// gNaN will be returned if Valid is false in the Currency struct
-	gNaN = []byte(`NaN`)
-)
+type globalSettings struct {
+	sync.Mutex
+	guardi  int
+	dpi     int
+	swedish Interval
+}
+
+var global = &globalSettings{
+	guardi:  10000,
+	dpi:     10000,
+	swedish: Interval000,
+}
+
+// gNaN will be returned if Valid is false in the Currency struct
+var gNaN = []byte(`NaN`)
 
 // DefaultFormatterCurrency sets the package wide default locale specific currency formatter.
 // This variable can be overridden.
@@ -45,33 +52,39 @@ var DefaultJSONEncode Encoder = NewJSONEncoder()
 var DefaultJSONDecode Decoder = NewJSONDecoder()
 
 // DefaultSwedish sets the global and New() defaults swedish rounding. Errors will be logged.
+// Invalid intervals gets ignored. Returns the successful applied value.
 // http://en.wikipedia.org/wiki/Swedish_rounding
-func DefaultSwedish(i Interval) {
+func DefaultSwedish(i Interval) Interval {
+	global.Lock()
+	defer global.Unlock()
 	if i < interval999 {
-		gSwedish = i
-	} else {
-		PkgLog.Debug("money.DefaultSwedish", "err", errors.New("Interval out of scope"), "interval", i)
+		global.swedish = i
 	}
+	return global.swedish
 }
 
 // DefaultGuard sets the global default guard. A fixed-length guard for precision
 // arithmetic. Returns the successful applied value.
 func DefaultGuard(g int) int {
+	global.Lock()
+	defer global.Unlock()
 	if g == 0 {
 		g = 1
 	}
-	gGuardi = g
-	return gGuardi
+	global.guardi = g
+	return global.guardi
 }
 
 // DefaultPrecision sets the global default decimal precision.
 // 2 decimal places => 10^2; 3 decimal places => 10^3; x decimal places => 10^x
 // Returns the successful applied value.
 func DefaultPrecision(p int) int {
+	global.Lock()
+	defer global.Unlock()
 	l := int64(math.Log(float64(p)))
 	if p == 0 || (p != 0 && (l%2) != 0) {
-		p = gDPi
+		p = global.dpi
 	}
-	gDPi = p
-	return gDPi
+	global.dpi = p
+	return global.dpi
 }

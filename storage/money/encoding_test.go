@@ -19,7 +19,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"strconv"
 	"testing"
 
 	"github.com/corestoreio/csfw/i18n"
@@ -30,6 +29,7 @@ import (
 )
 
 func TestJSONMarshal(t *testing.T) {
+	t.Parallel()
 
 	// @todo these tests will fail once i18n has been fully implemented. so fix this.
 	var prefix = `"` + string(i18n.DefaultCurrencySign) + " "
@@ -87,13 +87,14 @@ func TestJSONMarshal(t *testing.T) {
 	}
 }
 func TestJSONUnMarshalSingle(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		haveEnc  money.Encoder
 		jsonData []byte
 		want     string
 		wantErr  error
 	}{
-		{money.JSONNumber, []byte{0xf1, 0x32, 0xd8, 0x8a, 0x12, 0x8a, 0x74, 0x2a, 0x5, 0x5d, 0x18, 0x39, 0xf9, 0xd7, 0x99, 0x8b}, `NaN`, nil},
+		{money.JSONNumber, []byte{0xf1, 0x32, 0xd8, 0x8a, 0x12, 0x8a, 0x74, 0x2a, 0x5, 0x5d, 0x18, 0x39, 0xf9, 0xd7, 0x99, 0x8b}, `NaN`, errors.New("Byte slice contains invalid utf8 characters: \"\\xf12؊\\x12\\x8at*\\x05]\\x189\\xf9י\\x8b\" not valid")},
 
 		{money.JSONNumber, []byte(`1999.0000`), `1999.0000`, nil},
 		{money.JSONNumber, []byte(`-0.01`), `-0.0100`, nil},
@@ -126,20 +127,20 @@ func TestJSONUnMarshalSingle(t *testing.T) {
 		{money.JSONExtended, []byte(`[null,null,null]`), `NaN`, nil},
 		{money.JSONExtended, []byte(`[ ]`), `NaN`, money.ErrDecodeMissingColon},
 	}
-	for _, test := range tests {
+	for i, test := range tests {
 		var c money.Money
 		err := c.UnmarshalJSON(test.jsonData)
 
 		if test.wantErr != nil {
-			assert.Error(t, err)
-			assert.EqualError(t, err, test.wantErr.Error())
+			assert.Error(t, err, "Index %d", i)
+			assert.EqualError(t, err, test.wantErr.Error(), "Index %d", i)
 		} else {
 			var buf []byte
-			assert.NoError(t, err)
+			assert.NoError(t, err, "Index %d", i)
 			buf = c.FtoaAppend(buf)
 			have := string(buf)
 			if test.want != have {
-				t.Errorf("\nHave: %s\n\nWant: %s\n", have, test.want)
+				t.Errorf("\nHave: %s\n\nWant: %s\nIndex %d", have, test.want, i)
 			}
 
 		}
@@ -147,6 +148,7 @@ func TestJSONUnMarshalSingle(t *testing.T) {
 }
 
 func TestJSONUnMarshalSlice(t *testing.T) {
+	t.Parallel()
 
 	tests := []struct {
 		haveEnc  money.Encoder
@@ -297,6 +299,10 @@ func off_TestLoadFromDb(t *testing.T) {
 //}
 
 func TestValue(t *testing.T) {
+	t.Parallel()
+	if _, err := csdb.GetDSN(); err == csdb.ErrDSNNotFound {
+		t.Skip(err)
+	}
 	dbrSess := csdb.MustConnectTest().NewSession()
 
 	tuple := &TableProductEntityDecimal{ValueID: 0, AttributeID: 73, StoreID: 3, EntityID: 231, Value: money.New(money.WithPrecision(4)).Set(7779933)}
@@ -315,7 +321,7 @@ func TestValue(t *testing.T) {
 }
 
 func TestScan(t *testing.T) {
-
+	t.Parallel()
 	tests := []struct {
 		src     interface{}
 		want    string
@@ -327,33 +333,35 @@ func TestScan(t *testing.T) {
 		{[]byte{0x37, 0x30, 0x35, 0x2e, 0x39, 0x39, 0x33, 0x33}, `705.9933`, nil},
 		{[]byte{0x37, 0x30, 0x35, 0x2e, 0x39, 0x39, 0x33, 0x33}, `705.9933`, nil},
 		{[]byte{0x37, 0x30, 0x35, 0x2e, 0x39, 0x39, 0x33, 0x33}, `705.9933`, nil},
-		{[]byte{0x37, 0x30, 0x35, 0x2e, 0x19, 0x39, 0x33, 0x13}, `0.0000`, strconv.ErrSyntax},
+		{[]byte{0x37, 0x30, 0x35, 0x2e, 0x19, 0x39, 0x33, 0x13}, `0.0000`, errors.New("strconv.ParseFloat: parsing \"705.\\x1993\\x13\": invalid syntax")},
 		{[]byte{0x37, 0x33}, `73.0000`, nil},
 		{[]byte{0x37, 0x38}, `78.0000`, nil},
 		{[]byte{0x37, 0x34}, `74.0000`, nil},
 		{[]byte{0x37, 0x37}, `77.0000`, nil},
-		{[]byte{0xa7, 0x3e}, `0.0000`, strconv.ErrSyntax},
-		{int(33), `0.0000`, errors.New("Unsupported Type int for value. Supported: []byte")},
+		{[]byte{0xa7, 0x3e}, `0.0000`, errors.New("strconv.ParseFloat: parsing \"\\xa7>\": invalid syntax")},
+		{int(33), `0.0000`, errors.New("Unsupported Type int for value '!'. Supported: []byte")},
 	}
 
 	var buf bytes.Buffer
-	for _, test := range tests {
+	for i, test := range tests {
 		var c money.Money
 		err := c.Scan(test.src)
 		c.FmtCur = testFmtCur
 		c.FmtNum = testFmtNum
 
 		if test.wantErr != nil {
-			assert.Error(t, err, "%v", test)
-			assert.Contains(t, err.Error(), test.wantErr.Error())
+			assert.Error(t, err, "%v", test, "Index %d", i)
+			assert.EqualError(t, err, test.wantErr.Error(), "Index %d", i)
 		} else {
-			assert.NoError(t, err, "%v", test)
-			assert.EqualValues(t, test.want, string(c.Ftoa()), "%v", test)
+			assert.NoError(t, err, "%v", test, "Index %d", i)
+			assert.EqualValues(t, test.want, string(c.Ftoa()), "Index %d", i)
 
 			if _, err := c.NumberWriter(&buf); err != nil {
 				t.Error(err)
 			}
-			buf.WriteString("; ")
+			if _, err := buf.WriteString("; "); err != nil {
+				t.Error(err)
+			}
 		}
 	}
 
@@ -365,7 +373,7 @@ func TestScan(t *testing.T) {
 }
 
 func TestJSONEncode(t *testing.T) {
-
+	t.Parallel()
 	var peds = TableProductEntityDecimalSlice{
 		&TableProductEntityDecimal{ValueID: 1, AttributeID: 73, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4)).Set(9990000)},
 		&TableProductEntityDecimal{ValueID: 2, AttributeID: 78, StoreID: 0, EntityID: 1, Value: money.New(money.WithPrecision(4))}, // null values

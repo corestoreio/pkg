@@ -19,7 +19,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 var (
@@ -73,18 +73,11 @@ func (m *Money) Scan(src interface{}) error {
 
 	if src == nil {
 		m.m, m.Valid = 0, false
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("money.Currency.Scan", "case", 87, "c", m, "src", src)
-		}
 		return nil
 	}
 
 	if b, ok := src.([]byte); ok {
 		return m.ParseFloat(string(b))
 	}
-	err := errgo.Newf("Unsupported Type %T for value. Supported: []byte", src)
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("money.Currency.Scan.Assertion", "err", err, "src", src)
-	}
-	return err
+	return errors.Errorf("Unsupported Type %T for value %q. Supported: []byte", src, src)
 }

@@ -31,8 +31,6 @@ func (b *buf) Write(p []byte) (int, error) {
 var benchBenchmarkNumberWriter string
 var bufferNumberWriter buf
 
-// Benchmark_NumberWriter	 1000000	      1692 ns/op	     264 B/op	      13 allocs/op => Go 1.4.2
-// Benchmark_NumberWriter  	 1000000	      1168 ns/op	     224 B/op	       7 allocs/op => Go 1.5.0
 func Benchmark_NumberWriter(b *testing.B) {
 	var err error
 	b.ReportAllocs()
@@ -50,8 +48,6 @@ func Benchmark_NumberWriter(b *testing.B) {
 
 var benchmarkMoneyNewGetf float64
 
-// Benchmark_MoneyNewGetf	 2000000	       771 ns/op	     208 B/op	       7 allocs/op => Go 1.4.2
-// Benchmark_MoneyNewGetf  	 3000000	       404 ns/op	     160 B/op	       3 allocs/op => Go 1.5.0
 func Benchmark_MoneyNewGetf(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {

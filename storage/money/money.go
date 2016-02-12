@@ -22,20 +22,20 @@ package money
 */
 
 import (
-	"errors"
 	"io"
 	"math"
 	"strconv"
 
 	"github.com/corestoreio/csfw/i18n"
 	"github.com/corestoreio/csfw/util"
-	"github.com/juju/errgo"
+	"github.com/corestoreio/csfw/util/cserr"
+	"github.com/juju/errors"
 	"golang.org/x/text/currency"
 )
 
 var (
 	// ErrOverflow occurs on integer overflow
-	ErrOverflow = errors.New("Integer Overflow")
+	ErrOverflow = errors.Errorf("Integer Overflow")
 
 	RoundTo = .5
 	//	RoundTo  = .5 + (1 / Guardf)
@@ -74,6 +74,8 @@ type (
 	// with floats. Includes options for printing, Swedish rounding,
 	// database scanning and JSON en/decoding.
 	Money struct {
+		// Multi collects multiple errors. Can be nil.
+		*cserr.Multi
 		// m money in Guard/DP
 		m int64
 		// FmtCur to allow language and format specific outputs in a currency format
@@ -105,10 +107,9 @@ type (
 
 // WithSwedish sets the Swedish rounding
 // http://en.wikipedia.org/wiki/Swedish_rounding
-// Errors will be logged
+// Invalid interval falls back to Interval000.
 func WithSwedish(i Interval) Option {
 	if i >= interval999 {
-		PkgLog.Debug("money.Swedish", "err", errors.New("Interval out of scope. Resetting."), "interval", i)
 		i = Interval000
 	}
 	return func(c *Money) Option {
@@ -188,6 +189,8 @@ func guard(g int) (int64, float64) {
 // If not a decimal power then falls back to the default value.
 func WithPrecision(p int) Option {
 	return func(c *Money) Option {
+		global.Lock()
+		defer global.Unlock()
 		previous := int(c.dp)
 		c.dp, c.dpf, c.prec = precision(p)
 		return WithPrecision(previous)
@@ -199,7 +202,7 @@ func precision(p int) (int64, float64, int) {
 	p64 := int64(p)
 	l := int64(math.Log(float64(p64)))
 	if p64 != 0 && (l%2) != 0 {
-		p64 = int64(gDPi)
+		p64 = int64(global.dpi)
 	}
 	if p64 == 0 { // check for division by zero
 		p64 = 1
@@ -220,11 +223,13 @@ func New(opts ...Option) Money {
 
 // applyDefaults used in New() and Scan()
 func (m *Money) applyDefaults() {
+	global.Lock()
+	defer global.Unlock()
 	if m.guard == 0 {
-		m.guard, m.guardf = guard(gGuardi)
+		m.guard, m.guardf = guard(global.guardi)
 	}
 	if m.dp == 0 {
-		m.dp, m.dpf, m.prec = precision(gDPi)
+		m.dp, m.dpf, m.prec = precision(global.dpi)
 	}
 	if m.Encoder == nil {
 		m.Encoder = DefaultJSONEncode
@@ -238,7 +243,7 @@ func (m *Money) applyDefaults() {
 	if m.FmtNum == nil {
 		m.FmtNum = DefaultFormatterNumber
 	}
-	m.Interval = gSwedish
+	m.Interval = global.swedish
 }
 
 // Options besides New() also Option() can apply options to the current
@@ -302,10 +307,7 @@ func (m Money) Setf(f float64) Money {
 func (m *Money) ParseFloat(s string) error {
 	f, err := strconv.ParseFloat(s, 64)
 	if err != nil {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("money.Currency.strconv.ParseFloat", "err", err, "arg", s, "currency", m)
-		}
-		return errgo.Mask(err)
+		return err
 	}
 	m.Valid = true
 	*m = m.Setf(f)
@@ -346,10 +348,14 @@ func (m Money) LocalizeWriter(w io.Writer) (int, error) {
 }
 
 // String for money type representation in a specific locale.
+// Erros will be appended to Multi type.
 func (m Money) String() string {
 	var bufC buf
 	if _, err := m.LocalizeWriter(&bufC); err != nil {
-		PkgLog.Debug("money.Currency.String.LocalizeWriter", "err", err, "c", m)
+		if m.Multi == nil {
+			m.Multi = cserr.NewMulti()
+		}
+		m.AppendErrors(err)
 	}
 	return string(bufC)
 }
@@ -395,12 +401,16 @@ func (m Money) FtoaAppend(dst []byte) []byte {
 }
 
 // Add adds two Currency types. Returns empty Currency on integer overflow.
-// Errors will be logged and a trace is available when the level for tracing has been set.
+// Errors gets appended to the Multi Error type.
 func (m Money) Add(d Money) Money {
 	r := m.m + d.m
 	if (r^m.m)&(r^d.m) < 0 {
-		PkgLog.Debug("money.Currency.Add.Overflow", "err", ErrOverflow, "m", m, "n", d)
-		return New()
+		if m.Multi == nil {
+			m.Multi = cserr.NewMulti()
+		}
+		m.AppendErrors(ErrOverflow)
+		m.m = 0
+		return m
 	}
 	m.m = r
 	m.Valid = true
@@ -408,12 +418,16 @@ func (m Money) Add(d Money) Money {
 }
 
 // Sub subtracts one Currency type from another. Returns empty Currency on integer overflow.
-// Errors will be logged and a trace is available when the level for tracing has been set.
+// Errors gets appended to the Multi Error type.
 func (m Money) Sub(d Money) Money {
 	r := m.m - d.m
 	if (r^m.m)&^(r^d.m) < 0 {
-		PkgLog.Debug("money.Currency.Sub.Overflow", "err", ErrOverflow, "m", m, "n", d)
-		return New()
+		if m.Multi == nil {
+			m.Multi = cserr.NewMulti()
+		}
+		m.AppendErrors(ErrOverflow)
+		m.m = 0
+		return m
 	}
 	m.m = r
 	return m
