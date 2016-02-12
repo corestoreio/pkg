@@ -16,13 +16,12 @@ package path
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 // Levels defines how many parts are at least in a path.
@@ -170,22 +169,22 @@ func (p Path) FQ() (Route, error) {
 
 	var buf bytes.Buffer
 	if _, err := buf.WriteString(p.StrScope()); err != nil {
-		return Route{}, errgo.Mask(err)
+		return Route{}, errors.Mask(err)
 	}
 	if err := buf.WriteByte(Separator); err != nil {
-		return Route{}, errgo.Mask(err)
+		return Route{}, errors.Mask(err)
 	}
 	bufRaw := buf.Bytes()
 	bufRaw = strconv.AppendInt(bufRaw, p.ID, 10)
 	buf.Reset()
 	if _, err := buf.Write(bufRaw); err != nil {
-		return Route{}, errgo.Mask(err)
+		return Route{}, errors.Mask(err)
 	}
 	if err := buf.WriteByte(Separator); err != nil {
-		return Route{}, errgo.Mask(err)
+		return Route{}, errors.Mask(err)
 	}
 	if _, err := buf.Write(p.Route.Chars); err != nil {
-		return Route{}, errgo.Mask(err)
+		return Route{}, errors.Mask(err)
 	}
 	return newRoute(buf.Bytes()), nil
 }

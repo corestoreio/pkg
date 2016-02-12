@@ -246,20 +246,20 @@ func TestSplitFQ(t *testing.T) {
 		{"websites/1/catalog/frontend/list_allow_all", scope.StrWebsites.String(), 1, "catalog/frontend/list_allow_all", nil},
 		{"default/0/catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", nil},
 		{"default//catalog/frontend/list_allow_all", scope.StrDefault.String(), 0, "catalog/frontend/list_allow_all", errors.New("strconv.ParseInt: parsing \"\\uf8ff\": invalid syntax")},
-		{"stores/123/catalog/index", "default", 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\"")},
+		{"stores/123/catalog/index", "default", 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\". Expecting: strScope/ID/stores/123/catalog/index")},
 	}
-	for _, test := range tests {
+	for i, test := range tests {
 		havePath, haveErr := path.SplitFQ(test.have)
 
 		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error(), "Test %v", test)
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
 		} else {
 			assert.NoError(t, haveErr, "Test %v", test)
 		}
-		assert.Exactly(t, test.wantScope, havePath.StrScope(), "Test %v", test)
-		assert.Exactly(t, test.wantScopeID, havePath.ID, "Test %v", test)
+		assert.Exactly(t, test.wantScope, havePath.StrScope(), "Index %d", i)
+		assert.Exactly(t, test.wantScopeID, havePath.ID, "Index %d", i)
 		l, _ := havePath.Level(-1)
-		assert.Exactly(t, test.wantPath, l.String(), "Test %v", test)
+		assert.Exactly(t, test.wantPath, l.String(), "Index %d", i)
 	}
 }
 

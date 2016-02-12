@@ -1,14 +1,15 @@
 PASS
-BenchmarkNewByParts-4    	 3000000	       463 ns/op	      48 B/op	       1 allocs/op
-BenchmarkFQ-4            	 3000000	       574 ns/op	     112 B/op	       1 allocs/op
-BenchmarkSplitFQ-4       	 5000000	       271 ns/op	      32 B/op	       1 allocs/op
-BenchmarkRouteAppend-4   	 3000000	       476 ns/op	      64 B/op	       2 allocs/op
-BenchmarkRouteLevel_One-4	20000000	       114 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteLevel_Two-4	10000000	       146 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteLevel_All-4	20000000	        93.1 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteHash-4     	 5000000	       289 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteHash32-4   	50000000	        37.7 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRoutePart-4     	 5000000	       268 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteValidate-4 	20000000	        90.3 ns/op	       0 B/op	       0 allocs/op
-BenchmarkRouteSplit-4    	 5000000	       289 ns/op	       0 B/op	       0 allocs/op
-ok  	github.com/corestoreio/csfw/config/path	22.645s
+BenchmarkPathSlice_Sort-4	 1000000	      2031 ns/op	     432 B/op	       8 allocs/op
+BenchmarkNewByParts-4    	 3000000	       507 ns/op	      48 B/op	       1 allocs/op
+BenchmarkFQ-4            	 2000000	       620 ns/op	     112 B/op	       1 allocs/op
+BenchmarkSplitFQ-4       	 5000000	       269 ns/op	      32 B/op	       1 allocs/op
+BenchmarkRouteAppend-4   	 3000000	       508 ns/op	      56 B/op	       2 allocs/op
+BenchmarkRouteLevel_One-4	10000000	       129 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteLevel_Two-4	10000000	       172 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteLevel_All-4	20000000	       107 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteHash-4     	 5000000	       324 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteHash32-4   	50000000	        40.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRoutePart-4     	20000000	        90.2 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteValidate-4 	20000000	       108 ns/op	       0 B/op	       0 allocs/op
+BenchmarkRouteSplit-4    	20000000	       114 ns/op	       0 B/op	       0 allocs/op
+ok  	github.com/corestoreio/csfw/config/path	25.868s
