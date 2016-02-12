@@ -22,13 +22,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ error = (*cserr.Multi)(nil)
+var _ error = (*cserr.MultiErr)(nil)
 
 func TestMultiErrors(t *testing.T) {
 	t.Parallel()
 	assert.Equal(t,
 		"[{github.com/corestoreio/csfw/util/cserr/errors_test.go:35: Err1}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:35: Err2}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:35: Err3}]",
-		cserr.NewMulti(
+		cserr.NewMultiErr(
 			errors.New("Err1"),
 			errors.New("Err2"),
 			errors.New("Err3"),
@@ -39,7 +39,7 @@ func TestMultiErrors(t *testing.T) {
 func TestMultiAppend(t *testing.T) {
 	t.Parallel()
 
-	e := cserr.NewMulti()
+	e := cserr.NewMultiErr()
 	e.AppendErrors(
 		errors.New("Err5"),
 		nil,
@@ -55,25 +55,35 @@ func TestMultiAppend(t *testing.T) {
 
 func TestMultiEmpty(t *testing.T) {
 	t.Parallel()
-	assert.False(t, cserr.NewMulti(nil, nil).HasErrors())
-	assert.Equal(t, "", cserr.NewMulti(nil).Error())
+	assert.False(t, cserr.NewMultiErr(nil, nil).HasErrors())
+	assert.Equal(t, "", cserr.NewMultiErr(nil).Error())
 }
 
 func TestHasErrorsNil(t *testing.T) {
 	t.Parallel()
-	var e *cserr.Multi
+	var e *cserr.MultiErr
 	assert.False(t, e.HasErrors())
 
-	e = &cserr.Multi{}
+	e = &cserr.MultiErr{}
 	assert.False(t, e.HasErrors())
+}
+
+func TestMultiNil(t *testing.T) {
+	t.Parallel()
+	var e *cserr.MultiErr
+	e = e.AppendErrors(errors.New("Err74"))
+
+	assert.True(t, e.HasErrors())
+	assert.Equal(t, "Err74", e.Error())
 }
 
 var benchmarkError string
 
 // BenchmarkError-4	  500000	      3063 ns/op	    1312 B/op	      22 allocs/op
+// BenchmarkError-4	  500000	      3763 ns/op	    1936 B/op	      26 allocs/op
 func BenchmarkError(b *testing.B) {
 	// errors.Details(e) produces those high allocs
-	e := cserr.NewMulti().Details()
+	e := cserr.NewMultiErr().Details()
 	e.AppendErrors(
 		errors.New("Err5"),
 		nil,

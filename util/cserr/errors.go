@@ -21,31 +21,35 @@ import (
 	"github.com/juju/errors"
 )
 
-// Multi represents a container for collecting and printing multiple errors.
+// MultiErr represents a container for collecting and printing multiple errors.
 // Mostly used for embedding in functional options.
-type Multi struct {
+type MultiErr struct {
 	errs    []error
 	details bool
 }
 
-// NewMulti creates a new multi error struct.
-func NewMulti(errs ...error) *Multi {
-	m := new(Multi)
+// NewMultiErr creates a new multi error struct.
+func NewMultiErr(errs ...error) *MultiErr {
+	m := new(MultiErr)
 	m.AppendErrors(errs...)
 	return m
 }
 
 // AppendErrors adds multiple errors to the container. Does not add a location.
-func (m *Multi) AppendErrors(errs ...error) {
+func (m *MultiErr) AppendErrors(errs ...error) *MultiErr {
+	if m == nil {
+		m = new(MultiErr)
+	}
 	for _, err := range errs {
 		if err != nil {
 			m.errs = append(m.errs, err)
 		}
 	}
+	return m
 }
 
 // HasErrors checks if Multi contains errors.
-func (m *Multi) HasErrors() bool {
+func (m *MultiErr) HasErrors() bool {
 	switch {
 	case m == nil:
 		return false
@@ -56,8 +60,8 @@ func (m *Multi) HasErrors() bool {
 }
 
 // Details enables more error details like the location. Use in chaining:
-// 		e := NewMulti(err1, err2).Details()
-func (m *Multi) Details() *Multi {
+// 		e := NewMultiErr(err1, err2).Details()
+func (m *MultiErr) Details() *MultiErr {
 	m.details = true
 	return m
 }
@@ -65,8 +69,8 @@ func (m *Multi) Details() *Multi {
 // Error returns a string where each error has been separated by a line break.
 // The location will be added to the output to show you the file name and line number.
 // You should use package github.com/juju/errors.
-func (m *Multi) Error() string {
-	if len(m.errs) == 0 || (len(m.errs) == 1 && m.errs[0] == nil) {
+func (m *MultiErr) Error() string {
+	if false == m.HasErrors() {
 		return ""
 	}
 	var buf = bufferpool.Get()
