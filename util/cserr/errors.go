@@ -24,12 +24,13 @@ import (
 // Multi represents a container for collecting and printing multiple errors.
 // Mostly used for embedding in functional options.
 type Multi struct {
-	errs []error
+	errs    []error
+	details bool
 }
 
 // NewMulti creates a new multi error struct.
-func NewMulti(errs ...error) Multi {
-	m := Multi{}
+func NewMulti(errs ...error) *Multi {
+	m := new(Multi)
 	m.AppendErrors(errs...)
 	return m
 }
@@ -44,23 +45,41 @@ func (m *Multi) AppendErrors(errs ...error) {
 }
 
 // HasErrors checks if Multi contains errors.
-func (m Multi) HasErrors() bool {
-	return false == (len(m.errs) == 0 || (len(m.errs) == 1 && m.errs[0] == nil))
+func (m *Multi) HasErrors() bool {
+	switch {
+	case m == nil:
+		return false
+	case len(m.errs) > 0:
+		return true
+	}
+	return false
+}
+
+// Details enables more error details like the location. Use in chaining:
+// 		e := NewMulti(err1, err2).Details()
+func (m *Multi) Details() *Multi {
+	m.details = true
+	return m
 }
 
 // Error returns a string where each error has been separated by a line break.
 // The location will be added to the output to show you the file name and line number.
 // You should use package github.com/juju/errors.
-func (m Multi) Error() string {
+func (m *Multi) Error() string {
 	if len(m.errs) == 0 || (len(m.errs) == 1 && m.errs[0] == nil) {
 		return ""
 	}
 	var buf = bufferpool.Get()
 	defer bufferpool.Put(buf)
 
+	var details = errDetail
+	if m.details {
+		details = errors.Details
+	}
+
 	le := len(m.errs) - 1
 	for i, e := range m.errs {
-		if _, err := buf.WriteString(errors.Details(e)); err != nil {
+		if _, err := buf.WriteString(details(e)); err != nil {
 			return fmt.Sprintf("buf.WriteString (1) internal error (%s): %s\n%s", err, e, buf.String())
 		}
 
@@ -71,4 +90,11 @@ func (m Multi) Error() string {
 		}
 	}
 	return buf.String()
+}
+
+var errDetail = func(err error) string {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
 }

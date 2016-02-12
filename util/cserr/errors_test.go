@@ -26,11 +26,14 @@ var _ error = (*cserr.Multi)(nil)
 
 func TestMultiErrors(t *testing.T) {
 	t.Parallel()
-	assert.Equal(t, "[{github.com/corestoreio/csfw/util/cserr/errors_test.go:30: Err1}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:31: Err2}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:32: Err3}]", cserr.NewMulti(
-		errors.New("Err1"),
-		errors.New("Err2"),
-		errors.New("Err3"),
-	).Error())
+	assert.Equal(t,
+		"[{github.com/corestoreio/csfw/util/cserr/errors_test.go:35: Err1}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:35: Err2}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:35: Err3}]",
+		cserr.NewMulti(
+			errors.New("Err1"),
+			errors.New("Err2"),
+			errors.New("Err3"),
+		).Details().Error(),
+	)
 }
 
 func TestMultiAppend(t *testing.T) {
@@ -44,7 +47,10 @@ func TestMultiAppend(t *testing.T) {
 		errors.New("Err7"),
 	)
 	assert.True(t, e.HasErrors())
-	assert.Equal(t, "[{github.com/corestoreio/csfw/util/cserr/errors_test.go:41: Err5}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:43: Err6}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:44: Err7}]", e.Error())
+	assert.Equal(t,
+		"[{github.com/corestoreio/csfw/util/cserr/errors_test.go:44: Err5}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:46: Err6}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:47: Err7}]",
+		e.Details().Error(),
+	)
 }
 
 func TestMultiEmpty(t *testing.T) {
@@ -53,12 +59,21 @@ func TestMultiEmpty(t *testing.T) {
 	assert.Equal(t, "", cserr.NewMulti(nil).Error())
 }
 
+func TestHasErrorsNil(t *testing.T) {
+	t.Parallel()
+	var e *cserr.Multi
+	assert.False(t, e.HasErrors())
+
+	e = &cserr.Multi{}
+	assert.False(t, e.HasErrors())
+}
+
 var benchmarkError string
 
 // BenchmarkError-4	  500000	      3063 ns/op	    1312 B/op	      22 allocs/op
 func BenchmarkError(b *testing.B) {
 	// errors.Details(e) produces those high allocs
-	e := cserr.NewMulti()
+	e := cserr.NewMulti().Details()
 	e.AppendErrors(
 		errors.New("Err5"),
 		nil,
