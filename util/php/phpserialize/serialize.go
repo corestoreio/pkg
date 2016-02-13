@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"fmt"
 	"strconv"
+
+	"github.com/corestoreio/csfw/util/bufferpool"
 )
 
 func Serialize(v PhpValue) (string, error) {
-	encoder := NewSerializer()
-	encoder.SetSerializedEncodeFunc(SerializedEncodeFunc(Serialize))
-	return encoder.Encode(v)
+	enc := NewSerializer()
+	enc.SetSerializedEncodeFunc(SerializedEncodeFunc(Serialize))
+	return enc.Encode(v)
 }
 
 type Serializer struct {
@@ -21,58 +23,56 @@ func NewSerializer() *Serializer {
 	return &Serializer{}
 }
 
-func (self *Serializer) SetSerializedEncodeFunc(f SerializedEncodeFunc) {
-	self.encodeFunc = f
+func (s *Serializer) SetSerializedEncodeFunc(f SerializedEncodeFunc) {
+	s.encodeFunc = f
 }
 
-func (self *Serializer) Encode(v PhpValue) (string, error) {
-	var value bytes.Buffer
+func (s *Serializer) Encode(v PhpValue) (string, error) {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
 
 	switch t := v.(type) {
 	default:
-		self.saveError(fmt.Errorf("phpserialize: Unknown type %T with value %#v", t, v))
+		s.saveError(fmt.Errorf("phpserialize: Unknown type %T with value %#v", t, v))
 	case nil:
-		value = self.encodeNull()
+		s.encodeNull(buf)
 	case bool:
-		value = self.encodeBool(v)
+		s.encodeBool(buf, v)
 	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
-		value = self.encodeNumber(v)
+		s.encodeNumber(buf, v)
 	case string:
-		value = self.encodeString(v, DELIMITER_STRING_LEFT, DELIMITER_STRING_RIGHT, true)
+		s.encodeString(buf, v, DELIMITER_STRING_LEFT, DELIMITER_STRING_RIGHT, true)
 	case PhpArray, map[PhpValue]PhpValue, PhpSlice:
-		value = self.encodeArray(v, true)
+		s.encodeArray(buf, v, true)
 	case *PhpObject:
-		value = self.encodeObject(v)
+		s.encodeObject(buf, v)
 	case *PhpObjectSerialized:
-		value = self.encodeSerialized(v)
+		s.encodeSerialized(buf, v)
 	case *PhpSplArray:
-		value = self.encodeSplArray(v)
+		s.encodeSplArray(buf, v)
 	}
-
-	return value.String(), self.lastErr
+	return buf.String(), s.lastErr
 }
 
-func (self *Serializer) encodeNull() (buffer bytes.Buffer) {
-	buffer.WriteRune(TOKEN_NULL)
-	buffer.WriteRune(SEPARATOR_VALUES)
-	return
+func (s *Serializer) encodeNull(buf *bytes.Buffer) {
+	buf.WriteRune(TOKEN_NULL)
+	buf.WriteRune(SEPARATOR_VALUES)
 }
 
-func (self *Serializer) encodeBool(v PhpValue) (buffer bytes.Buffer) {
-	buffer.WriteRune(TOKEN_BOOL)
-	buffer.WriteRune(SEPARATOR_VALUE_TYPE)
+func (s *Serializer) encodeBool(buf *bytes.Buffer, v PhpValue) {
+	buf.WriteRune(TOKEN_BOOL)
+	buf.WriteRune(SEPARATOR_VALUE_TYPE)
 
+	var bs = "0"
 	if bVal, ok := v.(bool); ok && bVal == true {
-		buffer.WriteString("1")
-	} else {
-		buffer.WriteString("0")
+		bs = "1"
 	}
+	buf.WriteString(bs)
 
-	buffer.WriteRune(SEPARATOR_VALUES)
-	return
+	buf.WriteRune(SEPARATOR_VALUES)
 }
 
-func (self *Serializer) encodeNumber(v PhpValue) (buffer bytes.Buffer) {
+func (s *Serializer) encodeNumber(buf *bytes.Buffer, v PhpValue) {
 	var val string
 
 	isFloat := false
@@ -121,46 +121,42 @@ func (self *Serializer) encodeNumber(v PhpValue) (buffer bytes.Buffer) {
 		isFloat = true
 	}
 
+	var tok = TOKEN_INT
 	if isFloat {
-		buffer.WriteRune(TOKEN_FLOAT)
-	} else {
-		buffer.WriteRune(TOKEN_INT)
+		tok = TOKEN_FLOAT
 	}
+	buf.WriteRune(tok)
 
-	buffer.WriteRune(SEPARATOR_VALUE_TYPE)
-	buffer.WriteString(val)
-	buffer.WriteRune(SEPARATOR_VALUES)
-
-	return
+	buf.WriteRune(SEPARATOR_VALUE_TYPE)
+	buf.WriteString(val)
+	buf.WriteRune(SEPARATOR_VALUES)
 }
 
-func (self *Serializer) encodeString(v PhpValue, left, right rune, isFinal bool) (buffer bytes.Buffer) {
+func (s *Serializer) encodeString(buf *bytes.Buffer, v PhpValue, left, right rune, isFinal bool) {
 	val, _ := v.(string)
 
 	if isFinal {
-		buffer.WriteRune(TOKEN_STRING)
+		buf.WriteRune(TOKEN_STRING)
 	}
 
-	buffer.WriteString(self.prepareLen(len(val)))
-	buffer.WriteRune(left)
-	buffer.WriteString(val)
-	buffer.WriteRune(right)
+	buf.WriteString(s.prepareLen(len(val)))
+	buf.WriteRune(left)
+	buf.WriteString(val)
+	buf.WriteRune(right)
 
 	if isFinal {
-		buffer.WriteRune(SEPARATOR_VALUES)
+		buf.WriteRune(SEPARATOR_VALUES)
 	}
-
-	return
 }
 
-func (self *Serializer) encodeArray(v PhpValue, isFinal bool) (buffer bytes.Buffer) {
+func (s *Serializer) encodeArray(buf *bytes.Buffer, v PhpValue, isFinal bool) {
 	var (
 		arrLen int
-		s      string
+		str    string
 	)
 
 	if isFinal {
-		buffer.WriteRune(TOKEN_ARRAY)
+		buf.WriteRune(TOKEN_ARRAY)
 	}
 
 	switch v.(type) {
@@ -168,117 +164,105 @@ func (self *Serializer) encodeArray(v PhpValue, isFinal bool) (buffer bytes.Buff
 		arrVal, _ := v.(PhpArray)
 		arrLen = len(arrVal)
 
-		buffer.WriteString(self.prepareLen(arrLen))
-		buffer.WriteRune(DELIMITER_OBJECT_LEFT)
+		buf.WriteString(s.prepareLen(arrLen))
+		buf.WriteRune(DELIMITER_OBJECT_LEFT)
 
 		for k, v := range arrVal {
-			s, _ = self.Encode(k)
-			buffer.WriteString(s)
-			s, _ = self.Encode(v)
-			buffer.WriteString(s)
+			str, _ = s.Encode(k)
+			buf.WriteString(str)
+			str, _ = s.Encode(v)
+			buf.WriteString(str)
 		}
 
 	case map[PhpValue]PhpValue:
 		arrVal, _ := v.(map[PhpValue]PhpValue)
 		arrLen = len(arrVal)
 
-		buffer.WriteString(self.prepareLen(arrLen))
-		buffer.WriteRune(DELIMITER_OBJECT_LEFT)
+		buf.WriteString(s.prepareLen(arrLen))
+		buf.WriteRune(DELIMITER_OBJECT_LEFT)
 
 		for k, v := range arrVal {
-			s, _ = self.Encode(k)
-			buffer.WriteString(s)
-			s, _ = self.Encode(v)
-			buffer.WriteString(s)
+			str, _ = s.Encode(k)
+			buf.WriteString(str)
+			str, _ = s.Encode(v)
+			buf.WriteString(str)
 		}
 	case PhpSlice:
 		arrVal, _ := v.(PhpSlice)
 		arrLen = len(arrVal)
 
-		buffer.WriteString(self.prepareLen(arrLen))
-		buffer.WriteRune(DELIMITER_OBJECT_LEFT)
+		buf.WriteString(s.prepareLen(arrLen))
+		buf.WriteRune(DELIMITER_OBJECT_LEFT)
 
 		for k, v := range arrVal {
-			s, _ = self.Encode(k)
-			buffer.WriteString(s)
-			s, _ = self.Encode(v)
-			buffer.WriteString(s)
+			str, _ = s.Encode(k)
+			buf.WriteString(str)
+			str, _ = s.Encode(v)
+			buf.WriteString(str)
 		}
 	}
 
-	buffer.WriteRune(DELIMITER_OBJECT_RIGHT)
-
-	return
+	buf.WriteRune(DELIMITER_OBJECT_RIGHT)
 }
 
-func (self *Serializer) encodeObject(v PhpValue) (buffer bytes.Buffer) {
+func (s *Serializer) encodeObject(buf *bytes.Buffer, v PhpValue) {
 	obj, _ := v.(*PhpObject)
-	buffer.WriteRune(TOKEN_OBJECT)
-	buffer.WriteString(self.prepareClassName(obj.className))
-	encoded := self.encodeArray(obj.members, false)
-	buffer.WriteString(encoded.String())
+	buf.WriteRune(TOKEN_OBJECT)
+	s.prepareClassName(buf, obj.className)
+	s.encodeArray(buf, obj.members, false)
 	return
 }
 
-func (self *Serializer) encodeSerialized(v PhpValue) (buffer bytes.Buffer) {
+func (s *Serializer) encodeSerialized(buf *bytes.Buffer, v PhpValue) {
 	var serialized string
 
 	obj, _ := v.(*PhpObjectSerialized)
-	buffer.WriteRune(TOKEN_OBJECT_SERIALIZED)
-	buffer.WriteString(self.prepareClassName(obj.className))
+	buf.WriteRune(TOKEN_OBJECT_SERIALIZED)
+	s.prepareClassName(buf, obj.className)
 
-	if self.encodeFunc == nil {
+	if s.encodeFunc == nil {
 		serialized = obj.GetData()
 	} else {
 		var err error
-		if serialized, err = self.encodeFunc(obj.GetValue()); err != nil {
-			self.saveError(err)
+		if serialized, err = s.encodeFunc(obj.GetValue()); err != nil {
+			s.saveError(err)
 		}
 	}
 
-	encoded := self.encodeString(serialized, DELIMITER_OBJECT_LEFT, DELIMITER_OBJECT_RIGHT, false)
-	buffer.WriteString(encoded.String())
-	return
+	s.encodeString(buf, serialized, DELIMITER_OBJECT_LEFT, DELIMITER_OBJECT_RIGHT, false)
 }
 
-func (self *Serializer) encodeSplArray(v PhpValue) bytes.Buffer {
-	var buffer bytes.Buffer
+func (s *Serializer) encodeSplArray(buf *bytes.Buffer, v PhpValue) {
+
 	obj, _ := v.(*PhpSplArray)
 
-	buffer.WriteRune(TOKEN_SPL_ARRAY)
-	buffer.WriteRune(SEPARATOR_VALUE_TYPE)
+	buf.WriteRune(TOKEN_SPL_ARRAY)
+	buf.WriteRune(SEPARATOR_VALUE_TYPE)
 
-	encoded := self.encodeNumber(obj.flags)
-	buffer.WriteString(encoded.String())
+	s.encodeNumber(buf, obj.flags)
 
-	data, _ := self.Encode(obj.array)
-	buffer.WriteString(data)
+	data, _ := s.Encode(obj.array)
+	buf.WriteString(data)
 
-	buffer.WriteRune(SEPARATOR_VALUES)
-	buffer.WriteRune(TOKEN_SPL_ARRAY_MEMBERS)
-	buffer.WriteRune(SEPARATOR_VALUE_TYPE)
+	buf.WriteRune(SEPARATOR_VALUES)
+	buf.WriteRune(TOKEN_SPL_ARRAY_MEMBERS)
+	buf.WriteRune(SEPARATOR_VALUE_TYPE)
 
-	data, _ = self.Encode(obj.properties)
-	buffer.WriteString(data)
+	data, _ = s.Encode(obj.properties)
+	buf.WriteString(data)
 
-	return buffer
 }
 
-func (self *Serializer) prepareLen(l int) string {
+func (s *Serializer) prepareLen(l int) string {
 	return string(SEPARATOR_VALUE_TYPE) + strconv.Itoa(l) + string(SEPARATOR_VALUE_TYPE)
 }
 
-func (self *Serializer) prepareClassName(name string) string {
-	encoded := self.encodeString(name, DELIMITER_STRING_LEFT, DELIMITER_STRING_RIGHT, false)
-	return encoded.String()
+func (s *Serializer) prepareClassName(buf *bytes.Buffer, name string) {
+	s.encodeString(buf, name, DELIMITER_STRING_LEFT, DELIMITER_STRING_RIGHT, false)
 }
 
-func (self *Serializer) saveError(err error) {
-	if self.lastErr == nil {
-		self.lastErr = err
+func (s *Serializer) saveError(err error) {
+	if s.lastErr == nil {
+		s.lastErr = err
 	}
-}
-
-func wrapWithRune(s string, left, right rune) string {
-	return string(left) + s + string(right)
 }

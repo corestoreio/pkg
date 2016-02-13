@@ -26,14 +26,6 @@ const (
 	FORMATTER_PRECISION int  = 17
 )
 
-var (
-	debugMode = false
-)
-
-func Debug(value bool) {
-	debugMode = value
-}
-
 func NewPhpObject(className string) *PhpObject {
 	return &PhpObject{
 		className: className,
@@ -41,7 +33,7 @@ func NewPhpObject(className string) *PhpObject {
 	}
 }
 
-type SerializedDecodeFunc func(string) (PhpValue, error)
+type SerializedDecodeFunc func([]byte) (PhpValue, error)
 
 type SerializedEncodeFunc func(PhpValue) (string, error)
 
@@ -56,52 +48,52 @@ type PhpObject struct {
 	members   PhpArray
 }
 
-func (self *PhpObject) GetClassName() string {
-	return self.className
+func (p *PhpObject) GetClassName() string {
+	return p.className
 }
 
-func (self *PhpObject) SetClassName(name string) *PhpObject {
-	self.className = name
-	return self
+func (p *PhpObject) SetClassName(name string) *PhpObject {
+	p.className = name
+	return p
 }
 
-func (self *PhpObject) GetMembers() PhpArray {
-	return self.members
+func (p *PhpObject) GetMembers() PhpArray {
+	return p.members
 }
 
-func (self *PhpObject) SetMembers(members PhpArray) *PhpObject {
-	self.members = members
-	return self
+func (p *PhpObject) SetMembers(members PhpArray) *PhpObject {
+	p.members = members
+	return p
 }
 
-func (self *PhpObject) GetPrivate(name string) (v PhpValue, ok bool) {
-	v, ok = self.members["\x00"+self.className+"\x00"+name]
+func (p *PhpObject) GetPrivate(name string) (v PhpValue, ok bool) {
+	v, ok = p.members["\x00"+p.className+"\x00"+name]
 	return
 }
 
-func (self *PhpObject) SetPrivate(name string, value PhpValue) *PhpObject {
-	self.members["\x00"+self.className+"\x00"+name] = value
-	return self
+func (p *PhpObject) SetPrivate(name string, value PhpValue) *PhpObject {
+	p.members["\x00"+p.className+"\x00"+name] = value
+	return p
 }
 
-func (self *PhpObject) GetProtected(name string) (v PhpValue, ok bool) {
-	v, ok = self.members["\x00*\x00"+name]
+func (p *PhpObject) GetProtected(name string) (v PhpValue, ok bool) {
+	v, ok = p.members["\x00*\x00"+name]
 	return
 }
 
-func (self *PhpObject) SetProtected(name string, value PhpValue) *PhpObject {
-	self.members["\x00*\x00"+name] = value
-	return self
+func (p *PhpObject) SetProtected(name string, value PhpValue) *PhpObject {
+	p.members["\x00*\x00"+name] = value
+	return p
 }
 
-func (self *PhpObject) GetPublic(name string) (v PhpValue, ok bool) {
-	v, ok = self.members[name]
+func (p *PhpObject) GetPublic(name string) (v PhpValue, ok bool) {
+	v, ok = p.members[name]
 	return
 }
 
-func (self *PhpObject) SetPublic(name string, value PhpValue) *PhpObject {
-	self.members[name] = value
-	return self
+func (p *PhpObject) SetPublic(name string, value PhpValue) *PhpObject {
+	p.members[name] = value
+	return p
 }
 
 func NewPhpObjectSerialized(className string) *PhpObjectSerialized {
@@ -116,31 +108,31 @@ type PhpObjectSerialized struct {
 	value     PhpValue
 }
 
-func (self *PhpObjectSerialized) GetClassName() string {
-	return self.className
+func (p *PhpObjectSerialized) GetClassName() string {
+	return p.className
 }
 
-func (self *PhpObjectSerialized) SetClassName(name string) *PhpObjectSerialized {
-	self.className = name
-	return self
+func (p *PhpObjectSerialized) SetClassName(name string) *PhpObjectSerialized {
+	p.className = name
+	return p
 }
 
-func (self *PhpObjectSerialized) GetData() string {
-	return self.data
+func (p *PhpObjectSerialized) GetData() string {
+	return p.data
 }
 
-func (self *PhpObjectSerialized) SetData(data string) *PhpObjectSerialized {
-	self.data = data
-	return self
+func (p *PhpObjectSerialized) SetData(data string) *PhpObjectSerialized {
+	p.data = data
+	return p
 }
 
-func (self *PhpObjectSerialized) GetValue() PhpValue {
-	return self.value
+func (p *PhpObjectSerialized) GetValue() PhpValue {
+	return p.value
 }
 
-func (self *PhpObjectSerialized) SetValue(value PhpValue) *PhpObjectSerialized {
-	self.value = value
-	return self
+func (p *PhpObjectSerialized) SetValue(value PhpValue) *PhpObjectSerialized {
+	p.value = value
+	return p
 }
 
 func NewPhpSplArray(array, properties PhpValue) *PhpSplArray {
@@ -164,26 +156,26 @@ type PhpSplArray struct {
 	properties PhpValue
 }
 
-func (self *PhpSplArray) GetFlags() int {
-	return self.flags
+func (p *PhpSplArray) GetFlags() int {
+	return p.flags
 }
 
-func (self *PhpSplArray) SetFlags(value int) {
-	self.flags = value
+func (p *PhpSplArray) SetFlags(value int) {
+	p.flags = value
 }
 
-func (self *PhpSplArray) GetArray() PhpValue {
-	return self.array
+func (p *PhpSplArray) GetArray() PhpValue {
+	return p.array
 }
 
-func (self *PhpSplArray) SetArray(value PhpValue) {
-	self.array = value
+func (p *PhpSplArray) SetArray(value PhpValue) {
+	p.array = value
 }
 
-func (self *PhpSplArray) GetProperties() PhpValue {
-	return self.properties
+func (p *PhpSplArray) GetProperties() PhpValue {
+	return p.properties
 }
 
-func (self *PhpSplArray) SetProperties(value PhpValue) {
-	self.properties = value
+func (p *PhpSplArray) SetProperties(value PhpValue) {
+	p.properties = value
 }

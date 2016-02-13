@@ -11,7 +11,7 @@ func TestDecodeNil(t *testing.T) {
 		err error
 	)
 
-	decoder := NewUnSerializer("N;")
+	decoder := NewUnSerializer([]byte("N;"))
 	if val, err = decoder.Decode(); err != nil {
 		t.Errorf("Error while decoding nil value: %v\n", err)
 	} else {
@@ -27,7 +27,7 @@ func TestDecodeBoolTrue(t *testing.T) {
 		err error
 	)
 
-	decoder := NewUnSerializer("b:1;")
+	decoder := NewUnSerializer([]byte("b:1;"))
 	if val, err = decoder.Decode(); err != nil {
 		t.Errorf("Error while decoding bool (true) value: %v\n", err)
 	} else {
@@ -45,7 +45,7 @@ func TestDecodeBoolFalse(t *testing.T) {
 		err error
 	)
 
-	decoder := NewUnSerializer("b:0;")
+	decoder := NewUnSerializer([]byte("b:0;"))
 	if val, err = decoder.Decode(); err != nil {
 		t.Errorf("Error while decoding bool (false) value: %v\n", err)
 	} else {
@@ -63,7 +63,7 @@ func TestDecodeInt(t *testing.T) {
 		err error
 	)
 
-	decoder := NewUnSerializer("i:42;")
+	decoder := NewUnSerializer([]byte("i:42;"))
 	if val, err = decoder.Decode(); err != nil {
 		t.Errorf("Error while decoding int value: %v\n", err)
 	} else {
@@ -81,7 +81,7 @@ func TestDecodeIntMinus(t *testing.T) {
 		err error
 	)
 
-	decoder := NewUnSerializer("i:-42;")
+	decoder := NewUnSerializer([]byte("i:-42;"))
 	if val, err = decoder.Decode(); err != nil {
 		t.Errorf("Error while decoding int value: %v\n", err)
 	} else {
@@ -99,7 +99,7 @@ func TestDecodeFloat64(t *testing.T) {
 		err error
 	)
 
-	decoder := NewUnSerializer("d:42.378900000000002;")
+	decoder := NewUnSerializer([]byte("d:42.378900000000002;"))
 	if val, err = decoder.Decode(); err != nil {
 		t.Errorf("Error while decoding float4 value: %v\n", err)
 	} else {
@@ -117,7 +117,7 @@ func TestDecodeFloat64Minus(t *testing.T) {
 		err error
 	)
 
-	decoder := NewUnSerializer("d:-42.378900000000002;")
+	decoder := NewUnSerializer([]byte("d:-42.378900000000002;"))
 	if val, err = decoder.Decode(); err != nil {
 		t.Errorf("Error while decoding float4 value: %v\n", err)
 	} else {
@@ -135,7 +135,7 @@ func TestDecodeString(t *testing.T) {
 		err error
 	)
 
-	decoder := NewUnSerializer("s:6:\"foobar\";")
+	decoder := NewUnSerializer([]byte("s:6:\"foobar\";"))
 	if val, err = decoder.Decode(); err != nil {
 		t.Errorf("Error while decoding string value: %v\n", err)
 	} else {
@@ -153,7 +153,7 @@ func TestDecodeArray(t *testing.T) {
 		err error
 	)
 
-	decoder := NewUnSerializer("a:3:{i:0;i:10;i:1;i:11;i:2;i:12;}")
+	decoder := NewUnSerializer([]byte("a:3:{i:0;i:10;i:1;i:11;i:2;i:12;}"))
 	if val, err = decoder.Decode(); err != nil {
 		t.Errorf("Error while decoding array value: %v\n", err)
 	} else {
@@ -187,7 +187,7 @@ func TestDecodeArrayMap(t *testing.T) {
 		err error
 	)
 
-	decoder := NewUnSerializer("a:2:{s:3:\"foo\";i:4;s:3:\"bar\";i:2;}")
+	decoder := NewUnSerializer([]byte("a:2:{s:3:\"foo\";i:4;s:3:\"bar\";i:2;}"))
 	if val, err = decoder.Decode(); err != nil {
 		t.Errorf("Error while decoding array value: %v\n", err)
 	} else {
@@ -215,7 +215,7 @@ func TestDecodeArrayArray(t *testing.T) {
 		err error
 	)
 
-	decoder := NewUnSerializer("a:2:{s:3:\"foo\";a:3:{i:0;i:10;i:1;i:11;i:2;i:12;}s:3:\"bar\";i:2;}")
+	decoder := NewUnSerializer([]byte("a:2:{s:3:\"foo\";a:3:{i:0;i:10;i:1;i:11;i:2;i:12;}s:3:\"bar\";i:2;}"))
 	if val, err = decoder.Decode(); err != nil {
 		t.Errorf("Error while decoding array value: %v\n", err)
 	} else {
@@ -259,7 +259,7 @@ func TestDecodeObject(t *testing.T) {
 		err error
 	)
 
-	decoder := NewUnSerializer("O:4:\"Test\":3:{s:6:\"public\";i:1;s:12:\"\x00*\x00protected\";i:2;s:13:\"\x00Test\x00private\";i:3;}")
+	decoder := NewUnSerializer([]byte("O:4:\"Test\":3:{s:6:\"public\";i:1;s:12:\"\x00*\x00protected\";i:2;s:13:\"\x00Test\x00private\";i:3;}"))
 	if val, err = decoder.Decode(); err != nil {
 		t.Errorf("Error while decoding object value: %v\n", err)
 	} else {
@@ -295,7 +295,7 @@ func TestDecodeArrayOfObjects(t *testing.T) {
 		err error
 	)
 
-	decoder := NewUnSerializer("a:2:{i:0;O:5:\"Test1\":3:{s:6:\"public\";i:11;s:12:\"\x00*\x00protected\";i:12;s:14:\"\x00Test1\x00private\";i:13;}i:1;O:5:\"Test2\":3:{s:6:\"public\";i:21;s:12:\"\x00*\x00protected\";i:22;s:14:\"\x00Test2\x00private\";i:23;}}")
+	decoder := NewUnSerializer([]byte("a:2:{i:0;O:5:\"Test1\":3:{s:6:\"public\";i:11;s:12:\"\x00*\x00protected\";i:12;s:14:\"\x00Test1\x00private\";i:13;}i:1;O:5:\"Test2\":3:{s:6:\"public\";i:21;s:12:\"\x00*\x00protected\";i:22;s:14:\"\x00Test2\x00private\";i:23;}}"))
 	if val, err = decoder.Decode(); err != nil {
 		t.Errorf("Error while decoding array of objects value: %v\n", err)
 	} else {
@@ -359,7 +359,7 @@ func TestDecodeObjectSerializable(t *testing.T) {
 		err error
 	)
 
-	decoder := NewUnSerializer("C:16:\"TestSerializable\":6:{foobar}")
+	decoder := NewUnSerializer([]byte("C:16:\"TestSerializable\":6:{foobar}"))
 	if val, err = decoder.Decode(); err != nil {
 		t.Errorf("Error while decoding object value: %v\n", err)
 	} else {
@@ -379,7 +379,7 @@ func TestDecodeObjectSerializableArray(t *testing.T) {
 		err error
 	)
 
-	decoder := NewUnSerializer("C:17:\"TestSerializable1\":34:{a:2:{s:3:\"foo\";i:4;s:3:\"bar\";i:2;}}")
+	decoder := NewUnSerializer([]byte("C:17:\"TestSerializable1\":34:{a:2:{s:3:\"foo\";i:4;s:3:\"bar\";i:2;}}"))
 	decoder.SetSerializedDecodeFunc(SerializedDecodeFunc(UnSerialize))
 	if val, err = decoder.Decode(); err != nil {
 		t.Errorf("Error while decoding object value: %v\n", err)
@@ -417,16 +417,16 @@ func TestDecodeObjectSerializableJSON(t *testing.T) {
 		f   SerializedDecodeFunc
 	)
 
-	f = func(s string) (PhpValue, error) {
+	f = func(s []byte) (PhpValue, error) {
 		var (
 			val map[string]int
 			err error
 		)
-		err = json.Unmarshal([]byte(s), &val)
+		err = json.Unmarshal(s, &val)
 		return val, err
 	}
 
-	decoder := NewUnSerializer("C:17:\"TestSerializable2\":17:{{\"foo\":4,\"bar\":2}}")
+	decoder := NewUnSerializer([]byte("C:17:\"TestSerializable2\":17:{{\"foo\":4,\"bar\":2}}"))
 	decoder.SetSerializedDecodeFunc(f)
 	if val, err = decoder.Decode(); err != nil {
 		t.Errorf("Error while decoding object value: %v\n", err)
@@ -454,7 +454,7 @@ func TestDecodeObjectSerializableJSON(t *testing.T) {
 }
 
 func TestDecodeSplArray(t *testing.T) {
-	val, err := UnSerialize("x:i:0;a:1:{s:3:\"foo\";s:3:\"bar\";};m:a:0:{}")
+	val, err := UnSerialize([]byte("x:i:0;a:1:{s:3:\"foo\";s:3:\"bar\";};m:a:0:{}"))
 	if err != nil {
 		t.Errorf("Can't decode array object: %v\n", err)
 	}
@@ -484,7 +484,7 @@ func TestDecodeSplArray(t *testing.T) {
 }
 
 func TestDecodeSplArraySerialized(t *testing.T) {
-	objValue, err := UnSerialize("C:11:\"ArrayObject\":21:{x:i:0;a:0:{};m:a:0:{}}")
+	objValue, err := UnSerialize([]byte("C:11:\"ArrayObject\":21:{x:i:0;a:0:{};m:a:0:{}}"))
 	if err != nil {
 		t.Errorf("Error while decoding object value: %v\n", err)
 	}
