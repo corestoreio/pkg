@@ -6,14 +6,17 @@
 package cast
 
 import (
-	"testing"
-
 	"html/template"
+	"testing"
+	"time"
+
+	"errors"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestToInt(t *testing.T) {
+	t.Parallel()
 	var eight interface{} = 8
 	assert.Equal(t, ToInt(8), 8)
 	assert.Equal(t, ToInt(8.31), 8)
@@ -24,6 +27,7 @@ func TestToInt(t *testing.T) {
 }
 
 func TestToFloat64(t *testing.T) {
+	t.Parallel()
 	var eight interface{} = 8
 	assert.Equal(t, ToFloat64(8), 8.00)
 	assert.Equal(t, ToFloat64(8.31), 8.31)
@@ -32,6 +36,7 @@ func TestToFloat64(t *testing.T) {
 }
 
 func TestToString(t *testing.T) {
+	t.Parallel()
 	var foo interface{} = "one more time"
 	assert.Equal(t, ToString(8), "8")
 	assert.Equal(t, ToString(8.12), "8.12")
@@ -53,6 +58,7 @@ func (x foo) String() string {
 }
 
 func TestStringerToString(t *testing.T) {
+	t.Parallel()
 
 	var x foo
 	x.val = "bar"
@@ -68,12 +74,14 @@ func (x fu) Error() string {
 }
 
 func TestErrorToString(t *testing.T) {
+	t.Parallel()
 	var x fu
 	x.val = "bar"
 	assert.Equal(t, "bar", ToString(x))
 }
 
 func TestMaps(t *testing.T) {
+	t.Parallel()
 	var taxonomies = map[interface{}]interface{}{"tag": "tags", "group": "groups"}
 	var stringMapBool = map[interface{}]interface{}{"v1": true, "v2": false}
 
@@ -116,6 +124,7 @@ func TestMaps(t *testing.T) {
 }
 
 func TestSlices(t *testing.T) {
+	t.Parallel()
 	assert.Equal(t, []string{"a", "b"}, ToStringSlice([]string{"a", "b"}))
 	assert.Equal(t, []string{"1", "3"}, ToStringSlice([]interface{}{1, 3}))
 	assert.Equal(t, []int{1, 3}, ToIntSlice([]int{1, 3}))
@@ -125,6 +134,7 @@ func TestSlices(t *testing.T) {
 }
 
 func TestToBool(t *testing.T) {
+	t.Parallel()
 	assert.Equal(t, ToBool(0), false)
 	assert.Equal(t, ToBool(nil), false)
 	assert.Equal(t, ToBool("false"), false)
@@ -146,10 +156,79 @@ func TestToBool(t *testing.T) {
 }
 
 func TestIndirectPointers(t *testing.T) {
+	t.Parallel()
 	x := 13
 	y := &x
 	z := &y
 
 	assert.Equal(t, ToInt(y), 13)
 	assert.Equal(t, ToInt(z), 13)
+}
+
+func TestToDuration(t *testing.T) {
+	t.Parallel()
+	a := time.Second * 5
+	ai := int64(a)
+	b := time.Second * 5
+	bf := float64(b)
+
+	dai, err := ToDurationE(ai)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, dai, a)
+
+	dbf, err := ToDurationE(bf)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, dbf, b)
+}
+
+func getMockTime(format string) time.Time {
+	nowS := time.Now().Format(format)
+	t, err := time.ParseInLocation(format, nowS, time.Local)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
+func TestStringToDate(t *testing.T) {
+	t.Parallel()
+	for i, f := range TimeFormats {
+		now := getMockTime(f)
+		nowS := now.Format(f)
+
+		haveT, haveErr := StringToDate(nowS, time.Local)
+		if haveErr != nil {
+			t.Fatal("Index", i, "Error", haveErr)
+		}
+		assert.Exactly(t, now.Unix(), haveT.Unix(), "Index %d => Format %s", i, f)
+	}
+}
+
+func TestToTimeE(t *testing.T) {
+	t.Parallel()
+	now := time.Now()
+	tests := []struct {
+		arg      interface{}
+		wantUnix int64
+		wantErr  error
+	}{
+		{now, now.Unix(), nil},
+		{'r', 0, errors.New("Unable to Cast 114 to Time\n")},
+		{now.Unix(), now.Unix(), nil},
+	}
+	for i, test := range tests {
+		haveT, haveErr := ToTimeE(test.arg)
+		if test.wantErr != nil {
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+			continue
+		}
+		if haveErr != nil {
+			t.Fatal("Index", i, " => ", haveErr)
+		}
+		assert.Exactly(t, test.wantUnix, haveT.Unix(), "Index %d", i)
+	}
 }

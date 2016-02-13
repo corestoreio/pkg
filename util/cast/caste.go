@@ -25,11 +25,13 @@ func ToTimeE(i interface{}) (tim time.Time, err error) {
 	case time.Time:
 		return s, nil
 	case string:
-		d, e := StringToDate(s)
+		d, e := StringToDate(s, nil)
 		if e == nil {
 			return d, nil
 		}
 		return time.Time{}, fmt.Errorf("Could not parse Date/Time format: %v\n", e)
+	case int64:
+		return time.Unix(s, 0), nil
 	default:
 		return time.Time{}, fmt.Errorf("Unable to Cast %#v to Time\n", i)
 	}
@@ -41,9 +43,16 @@ func ToDurationE(i interface{}) (d time.Duration, err error) {
 	if PkgLog.IsDebug() {
 		PkgLog.Debug("cast.ToDurationE", "type", reflect.TypeOf(i), "value", i)
 	}
+
 	switch s := i.(type) {
 	case time.Duration:
 		return s, nil
+	case int64:
+		d = time.Duration(s)
+		return
+	case float64:
+		d = time.Duration(s)
+		return
 	case string:
 		d, err = time.ParseDuration(s)
 		return
@@ -442,30 +451,38 @@ func ToIntSliceE(i interface{}) ([]int, error) {
 	}
 }
 
-// StringToDate casts an empty interface to a time.Time.
-func StringToDate(s string) (time.Time, error) {
-	return parseDateWith(s, []string{
-		time.RFC3339,
-		"2006-01-02T15:04:05", // iso8601 without timezone
-		time.RFC1123Z,
-		time.RFC1123,
-		time.RFC822Z,
-		time.RFC822,
-		time.ANSIC,
-		time.UnixDate,
-		time.RubyDate,
-		"2006-01-02 15:04:05Z07:00",
-		"02 Jan 06 15:04 MST",
-		"2006-01-02",
-		"02 Jan 2006",
-		"2006-01-02 15:04:05 -07:00",
-		"2006-01-02 15:04:05 -0700",
-	})
+// TimeFormats available time format to parse
+var TimeFormats = [...]string{
+	time.RFC3339,
+	"2006-01-02T15:04:05", // iso8601 without timezone
+	"2006-01-02 15:04:05", // MySQL
+	time.RFC1123Z,
+	time.RFC1123,
+	time.RFC822Z,
+	time.RFC822,
+	time.ANSIC,
+	time.UnixDate,
+	time.RubyDate,
+	"2006-01-02 15:04:05Z07:00",
+	"02 Jan 06 15:04 MST",
+	"2006-01-02",
+	"02 Jan 2006",
+	"2006-01-02 15:04:05 -07:00",
+	"2006-01-02 15:04:05 -0700",
 }
 
-func parseDateWith(s string, dates []string) (d time.Time, e error) {
+// StringToDate casts an empty interface to a time.Time.
+// Location can be nil, then time.Local is the default value.
+func StringToDate(s string, loc *time.Location) (time.Time, error) {
+	if loc == nil {
+		loc = time.Local
+	}
+	return parseDateWith(s, TimeFormats[:], loc)
+}
+
+func parseDateWith(s string, dates []string, loc *time.Location) (d time.Time, e error) {
 	for _, dateType := range dates {
-		if d, e = time.Parse(dateType, s); e == nil {
+		if d, e = time.ParseInLocation(dateType, s, loc); e == nil {
 			return
 		}
 	}
