@@ -9,7 +9,7 @@ import (
 )
 
 func TestDecodeBooleanValue(t *testing.T) {
-	decoder := NewPhpDecoder("login_ok|b:1;")
+	decoder := NewPhpDecoder([]byte("login_ok|b:1;"))
 	if result, err := decoder.Decode(); err != nil {
 		t.Errorf("Can not decode boolens value %#v \n", err)
 	} else {
@@ -22,7 +22,7 @@ func TestDecodeBooleanValue(t *testing.T) {
 }
 
 func TestDecodeIntValue(t *testing.T) {
-	decoder := NewPhpDecoder("inteiro|i:34;")
+	decoder := NewPhpDecoder([]byte("inteiro|i:34;"))
 	if result, err := decoder.Decode(); err != nil {
 		t.Errorf("Can not decode int value %#v \n", err)
 	} else {
@@ -35,7 +35,7 @@ func TestDecodeIntValue(t *testing.T) {
 }
 
 func TestDecodeBooleanAndIntValue(t *testing.T) {
-	decoder := NewPhpDecoder("login_ok|b:1;inteiro|i:34;")
+	decoder := NewPhpDecoder([]byte("login_ok|b:1;inteiro|i:34;"))
 	if result, err := decoder.Decode(); err != nil {
 		t.Errorf("Can not decode int value %#v \n", err)
 	} else {
@@ -48,7 +48,7 @@ func TestDecodeBooleanAndIntValue(t *testing.T) {
 }
 
 func TestDecodeFloatValue(t *testing.T) {
-	decoder := NewPhpDecoder("float_test|d:34.4679999999;")
+	decoder := NewPhpDecoder([]byte("float_test|d:34.4679999999;"))
 	if result, err := decoder.Decode(); err != nil {
 		t.Errorf("Can not decode float value %#v \n", err)
 	} else {
@@ -61,7 +61,7 @@ func TestDecodeFloatValue(t *testing.T) {
 }
 
 func TestDecodeStringValue(t *testing.T) {
-	decoder := NewPhpDecoder("name|s:9:\"some text\";")
+	decoder := NewPhpDecoder([]byte("name|s:9:\"some text\";"))
 	if result, err := decoder.Decode(); err != nil {
 		t.Errorf("Can not decode string value %#v \n", err)
 	} else {
@@ -74,7 +74,7 @@ func TestDecodeStringValue(t *testing.T) {
 }
 
 func TestDecodeArrayValue(t *testing.T) {
-	decoder := NewPhpDecoder("arr|a:3:{s:4:\"test\";b:1;i:0;i:5;s:5:\"test2\";N;};")
+	decoder := NewPhpDecoder([]byte("arr|a:3:{s:4:\"test\";b:1;i:0;i:5;s:5:\"test2\";N;};"))
 	if result, err := decoder.Decode(); err != nil {
 		t.Errorf("Can not decode array value %#v \n", err)
 	} else {
@@ -93,7 +93,7 @@ func TestDecodeArrayValue(t *testing.T) {
 }
 
 func TestDecodeObjectValue(t *testing.T) {
-	decoder := NewPhpDecoder("obj|O:10:\"TestObject\":3:{s:1:\"a\";i:5;s:13:\"\x00TestObject\x00b\";s:4:\"priv\";s:4:\"\x00*\x00c\";i:8;}")
+	decoder := NewPhpDecoder([]byte("obj|O:10:\"TestObject\":3:{s:1:\"a\";i:5;s:13:\"\x00TestObject\x00b\";s:4:\"priv\";s:4:\"\x00*\x00c\";i:8;}"))
 	if result, err := decoder.Decode(); err != nil {
 		t.Errorf("Can not decode object value %#v \n", err)
 	} else {
@@ -114,7 +114,7 @@ func TestDecodeObjectValue(t *testing.T) {
 }
 
 func TestDecodeComplexArrayValue(t *testing.T) {
-	decoder := NewPhpDecoder("arr2|a:6:{s:10:\"bool_false\";b:0;s:7:\"neg_int\";i:-5;s:9:\"neg_float\";d:-5;s:6:\"quotes\";s:22:\"test\" and 'v' and `q` \";s:8:\"not_ansi\";s:8:\"тест\";s:5:\"test3\";s:15:\"@@@ test $$$ \\ \";}")
+	decoder := NewPhpDecoder([]byte("arr2|a:6:{s:10:\"bool_false\";b:0;s:7:\"neg_int\";i:-5;s:9:\"neg_float\";d:-5;s:6:\"quotes\";s:22:\"test\" and 'v' and `q` \";s:8:\"not_ansi\";s:8:\"тест\";s:5:\"test3\";s:15:\"@@@ test $$$ \\ \";}"))
 	if result, err := decoder.Decode(); err != nil {
 		t.Errorf("Can not decode array value %#v \n", err)
 	} else {
@@ -137,7 +137,7 @@ func TestDecodeComplexArrayValue(t *testing.T) {
 }
 
 func TestDecodeMultidimensionalArrayValue(t *testing.T) {
-	decoder := NewPhpDecoder("arr3|a:1:{s:4:\"dim1\";a:5:{i:0;s:4:\"dim2\";i:1;i:0;i:2;i:3;i:3;i:5;i:4;a:2:{i:0;s:4:\"dim3\";i:1;i:5;}}}")
+	decoder := NewPhpDecoder([]byte("arr3|a:1:{s:4:\"dim1\";a:5:{i:0;s:4:\"dim2\";i:1;i:0;i:2;i:3;i:3;i:5;i:4;a:2:{i:0;s:4:\"dim3\";i:1;i:5;}}}"))
 	if result, err := decoder.Decode(); err != nil {
 		t.Errorf("Can not decode array value %#v \n", err)
 	} else {
@@ -164,7 +164,7 @@ func TestDecodeMultidimensionalArrayValue(t *testing.T) {
 }
 
 func TestDecodeMultipleArraysWithoutSemicolons(t *testing.T) {
-	decoder := NewPhpDecoder("array1|a:1:{s:5:\"test1\";b:1;}array2|a:1:{s:5:\"test2\";b:1;}")
+	decoder := NewPhpDecoder([]byte("array1|a:1:{s:5:\"test1\";b:1;}array2|a:1:{s:5:\"test2\";b:1;}"))
 	if result, err := decoder.Decode(); err != nil {
 		t.Errorf("Can not decode array value %#v \n", err)
 	} else {
@@ -187,7 +187,7 @@ func TestDecodeMultipleArraysWithoutSemicolons(t *testing.T) {
 }
 
 func TestDecodeSerializableObjectValueNoFunc(t *testing.T) {
-	decoder := NewPhpDecoder("obj|C:10:\"TestObject\":49:{a:3:{s:1:\"a\";i:5;s:1:\"b\";s:4:\"priv\";s:1:\"c\";i:8;}}")
+	decoder := NewPhpDecoder([]byte("obj|C:10:\"TestObject\":49:{a:3:{s:1:\"a\";i:5;s:1:\"b\";s:4:\"priv\";s:1:\"c\";i:8;}}"))
 	if result, err := decoder.Decode(); err != nil {
 		t.Errorf("Can not decode object value %#v \n", err)
 	} else {
@@ -204,7 +204,7 @@ func TestDecodeSerializableObjectValueNoFunc(t *testing.T) {
 }
 
 func TestDecodeSerializableObjectValue(t *testing.T) {
-	decoder := NewPhpDecoder("object|C:10:\"TestObject\":96:{a:1:{s:4:\"item\";O:8:\"AbcClass\":3:{s:1:\"a\";i:5;s:11:\"\x00AbcClass\x00b\";s:7:\"private\";s:4:\"\x00*\x00c\";i:8;}}}")
+	decoder := NewPhpDecoder([]byte("object|C:10:\"TestObject\":96:{a:1:{s:4:\"item\";O:8:\"AbcClass\":3:{s:1:\"a\";i:5;s:11:\"\x00AbcClass\x00b\";s:7:\"private\";s:4:\"\x00*\x00c\";i:8;}}}"))
 	decoder.SetSerializedDecodeFunc(phpserialize.SerializedDecodeFunc(phpserialize.UnSerialize))
 	if result, err := decoder.Decode(); err != nil {
 		t.Errorf("Can not decode object value %#v \n", err)
@@ -238,7 +238,7 @@ func TestDecodeSerializableObjectValue(t *testing.T) {
 }
 
 func TestDecodeSerializableObjectFoo(t *testing.T) {
-	decoder := NewPhpDecoder("foo|C:3:\"Foo\":3:{foo}")
+	decoder := NewPhpDecoder([]byte("foo|C:3:\"Foo\":3:{foo}"))
 	if result, err := decoder.Decode(); err != nil {
 		t.Errorf("Can not decode object value %#v \n", err)
 	} else {
@@ -256,16 +256,16 @@ func TestDecodeSerializableObjectFoo(t *testing.T) {
 
 func TestDecodeSerializableObjectBar(t *testing.T) {
 	var f phpserialize.SerializedDecodeFunc
-	f = func(s string) (phpserialize.PhpValue, error) {
+	f = func(s []byte) (phpserialize.PhpValue, error) {
 		var (
 			val map[string]string
 			err error
 		)
-		err = json.Unmarshal([]byte(s), &val)
+		err = json.Unmarshal(s, &val)
 		return val, err
 	}
 
-	decoder := NewPhpDecoder("bar|C:3:\"Bar\":19:{{\"public\":\"public\"}}")
+	decoder := NewPhpDecoder([]byte("bar|C:3:\"Bar\":19:{{\"public\":\"public\"}}"))
 	decoder.SetSerializedDecodeFunc(f)
 	if result, err := decoder.Decode(); err != nil {
 		t.Errorf("Can not decode object value %#v \n", err)
@@ -291,8 +291,8 @@ func TestDecodeSerializableObjectBar(t *testing.T) {
 }
 
 func TestDecodeRealData(t *testing.T) {
-	testData, _ := ioutil.ReadFile("./data/test.session")
-	decoder := NewPhpDecoder(string(testData))
+	testData, _ := ioutil.ReadFile("./testdata/test.session")
+	decoder := NewPhpDecoder(testData)
 	if result, err := decoder.Decode(); err != nil {
 		t.Errorf("Can not decode array value %#v \n", err)
 	} else {
@@ -301,6 +301,22 @@ func TestDecodeRealData(t *testing.T) {
 			if _, ok := result[v]; !ok {
 				t.Errorf("Can not find %v key\n", v)
 			}
+		}
+	}
+}
+
+var benchmarkDecode PhpSession
+
+// BenchmarkDecode-4	   20000	     98038 ns/op	   17901 B/op	     593 allocs/op
+func BenchmarkDecode(b *testing.B) {
+	testData, _ := ioutil.ReadFile("./testdata/test.session")
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		decoder := NewPhpDecoder(testData)
+		var err error
+		if benchmarkDecode, err = decoder.Decode(); err != nil {
+			b.Errorf("Can not decode array value %#v \n", err)
 		}
 	}
 }

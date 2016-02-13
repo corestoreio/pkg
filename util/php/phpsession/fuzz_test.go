@@ -14,7 +14,7 @@ func TestFuzzCrashers(t *testing.T) {
 	}
 
 	for _, f := range crashers {
-		decoder := NewPhpDecoder(f)
+		decoder := NewPhpDecoder([]byte(f))
 		decoder.Decode()
 	}
 }

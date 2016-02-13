@@ -1,9 +1,9 @@
 package phpsession
 
 import (
-	"bytes"
 	"fmt"
 
+	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/php/phpserialize"
 )
 
@@ -27,21 +27,18 @@ func (self *PhpEncoder) Encode() (string, error) {
 	if self.data == nil {
 		return "", nil
 	}
-	var (
-		err error
-		val string
-	)
-	buf := bytes.NewBuffer([]byte{})
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
 
 	for k, v := range self.data {
 		buf.WriteString(k)
 		buf.WriteRune(SEPARATOR_VALUE_NAME)
-		if val, err = self.encoder.Encode(v); err != nil {
-			err = fmt.Errorf("php_session: error during encode value for %q: %v", k, err)
-			break
+		val, err := self.encoder.Encode(v)
+		if err != nil {
+			return buf.String(), fmt.Errorf("php_session: error during encode value for %q: %v", k, err)
 		}
 		buf.WriteString(val)
 	}
 
-	return buf.String(), err
+	return buf.String(), nil
 }

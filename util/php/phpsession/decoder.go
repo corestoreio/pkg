@@ -3,20 +3,23 @@ package phpsession
 import (
 	"bytes"
 	"io"
-	"strings"
 
+	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/php/phpserialize"
 )
 
 type PhpDecoder struct {
-	source  *strings.Reader
+	source interface {
+		io.Reader
+		io.RuneReader
+	}
 	decoder *phpserialize.UnSerializer
 }
 
-func NewPhpDecoder(phpSession string) *PhpDecoder {
+func NewPhpDecoder(phpSession []byte) *PhpDecoder {
 	decoder := &PhpDecoder{
-		source:  strings.NewReader(phpSession),
-		decoder: phpserialize.NewUnSerializer(""),
+		source:  bytes.NewReader(phpSession),
+		decoder: phpserialize.NewUnSerializer(nil),
 	}
 	decoder.decoder.SetReader(decoder.source)
 	return decoder
@@ -51,17 +54,14 @@ func (self *PhpDecoder) Decode() (PhpSession, error) {
 }
 
 func (self *PhpDecoder) readName() (string, error) {
-	var (
-		token rune
-		err   error
-	)
-	buf := bytes.NewBuffer([]byte{})
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
 	for {
-		if token, _, err = self.source.ReadRune(); err != nil || token == SEPARATOR_VALUE_NAME {
-			break
+		if token, _, err := self.source.ReadRune(); err != nil || token == SEPARATOR_VALUE_NAME {
+			return buf.String(), err
 		} else {
 			buf.WriteRune(token)
 		}
 	}
-	return buf.String(), err
+	return buf.String(), nil
 }
