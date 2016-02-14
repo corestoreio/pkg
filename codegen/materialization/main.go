@@ -15,7 +15,6 @@
 package main
 
 import (
-	"go/build"
 	"runtime"
 	"sync"
 

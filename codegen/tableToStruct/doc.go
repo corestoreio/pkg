@@ -13,4 +13,6 @@
 // limitations under the License.
 
 // package main generates Go structs, slices and function receivers from SQL tables.
+//
+// TODO: https://github.com/knq/xo
 package main
