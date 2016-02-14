@@ -15,6 +15,8 @@
 package model
 
 import (
+	"time"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
 )
@@ -32,13 +34,8 @@ func NewBool(path string, opts ...Option) Bool {
 }
 
 // Get returns a bool value.
-// Errors gets appended to MultiErr
-func (b Bool) Get(sg config.ScopedGetter) (v bool) {
-	var err error
-	if v, err = b.lookupBool(sg); err != nil {
-		b.MultiErr = b.AppendErrors(err)
-	}
-	return
+func (b Bool) Get(sg config.ScopedGetter) (bool, error) {
+	return b.lookupBool(sg)
 }
 
 // Write writes a bool.
@@ -58,12 +55,8 @@ func NewStr(path string, opts ...Option) Str {
 
 // Get returns a string value
 // Errors gets appended to MultiErr
-func (str Str) Get(sg config.ScopedGetter) (v string) {
-	var err error
-	if v, err = str.lookupString(sg); err != nil {
-		str.MultiErr = str.AppendErrors(err)
-	}
-	return
+func (str Str) Get(sg config.ScopedGetter) (string, error) {
+	return str.lookupString(sg)
 }
 
 // Write writes a string value
@@ -80,12 +73,8 @@ func NewInt(path string, opts ...Option) Int {
 }
 
 // Get returns an int value.
-func (i Int) Get(sg config.ScopedGetter) (v int) {
-	var err error
-	if v, err = i.lookupInt(sg); err != nil {
-		i.MultiErr = i.AppendErrors(err)
-	}
-	return
+func (i Int) Get(sg config.ScopedGetter) (int, error) {
+	return i.lookupInt(sg)
 }
 
 // Write writes an int value
@@ -93,7 +82,7 @@ func (i Int) Write(w config.Writer, v int, s scope.Scope, scopeID int64) error {
 	return i.baseValue.Write(w, v, s, scopeID)
 }
 
-// Float64 represents a path in config.Getter which handles int values.
+// Float64 represents a path in config.Getter which handles float64 values.
 type Float64 struct{ baseValue }
 
 // NewFloat64 creates a new Float64 model with a given path.
@@ -102,15 +91,29 @@ func NewFloat64(path string, opts ...Option) Float64 {
 }
 
 // Get returns a float64 value.
-func (f Float64) Get(sg config.ScopedGetter) (v float64) {
-	var err error
-	if v, err = f.lookupFloat64(sg); err != nil {
-		f.MultiErr = f.AppendErrors(err)
-	}
-	return
+func (f Float64) Get(sg config.ScopedGetter) (float64, error) {
+	return f.lookupFloat64(sg)
 }
 
 // Write writes a float64 value
 func (f Float64) Write(w config.Writer, v float64, s scope.Scope, scopeID int64) error {
 	return f.baseValue.Write(w, v, s, scopeID)
+}
+
+// Time represents a path in config.Getter which handles int values.
+type Time struct{ baseValue }
+
+// NewTime creates a new Time model with a given path.
+func NewTime(path string, opts ...Option) Time {
+	return Time{baseValue: NewValue(path, opts...)}
+}
+
+// Get returns a time value.
+func (t Time) Get(sg config.ScopedGetter) (time.Time, error) {
+	return t.lookupTime(sg)
+}
+
+// Write writes a time value
+func (t Time) Write(w config.Writer, v time.Time, s scope.Scope, scopeID int64) error {
+	return t.baseValue.Write(w, v, s, scopeID)
 }

@@ -17,6 +17,8 @@ package model_test
 import (
 	"testing"
 
+	"time"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/model"
@@ -24,6 +26,9 @@ import (
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/cast"
+	"github.com/corestoreio/csfw/util/cserr"
+	"github.com/juju/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -92,11 +97,20 @@ var configStructure = element.MustNewConfiguration(
 					&element.Field{
 						// Path: `web/cors/float64`,
 						ID:        path.NewRoute("float64"),
-						Type:      element.TypeSelect,
-						SortOrder: 30,
+						Type:      element.TypeText,
+						SortOrder: 50,
 						Visible:   element.VisibleYes,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Default:   2015.1000001,
+					},
+					&element.Field{
+						// Path: `web/cors/time`,
+						ID:        path.NewRoute("time"),
+						Type:      element.TypeText,
+						SortOrder: 90,
+						Visible:   element.VisibleYes,
+						Scope:     scope.PermAll,
+						Default:   "2012-08-23 09:20:13",
 					},
 				),
 			},
@@ -152,21 +166,70 @@ var configStructure = element.MustNewConfiguration(
 	},
 )
 
-func TestBool(t *testing.T) {
+func TestBoolGetWithCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsCred = "web/cors/allow_credentials"
 	wantPath := path.MustNewByParts(pathWebCorsCred).Bind(scope.WebsiteID, 3)
 	b := model.NewBool(pathWebCorsCred, model.WithConfigStructure(configStructure), model.WithSource(source.YesNo))
 
 	assert.Exactly(t, source.YesNo, b.Options())
-	// because default value in packageConfiguration is "true"
-	assert.True(t, b.Get(config.NewMockGetter().NewScoped(0, 0, 0)))
 
-	assert.False(t, b.Get(config.NewMockGetter(
-		config.WithMockValues(config.MockPV{
-			wantPath.String(): 0,
+	tests := []struct {
+		sg   config.ScopedGetter
+		want bool
+	}{
+		{config.NewMockGetter().NewScoped(0, 0, 0), true}, // because default value in packageConfiguration is "true"
+		{config.NewMockGetter().NewScoped(5, 3, 4), true}, // because default value in packageConfiguration is "true"
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.String(): 0})).NewScoped(3, 0, 0), false},
+	}
+	for i, test := range tests {
+		gb, err := b.Get(test.sg)
+		if err != nil {
+			t.Fatal("Index", i, err)
+		}
+		assert.Exactly(t, test.want, gb, "Index %d", i)
+	}
+}
+
+func TestBoolGetWithoutCfgStruct(t *testing.T) {
+	t.Parallel()
+	const pathWebCorsCred = "web/cors/allow_credentials"
+	wantPath := path.MustNewByParts(pathWebCorsCred).Bind(scope.WebsiteID, 4)
+	b := model.NewBool(pathWebCorsCred)
+
+	tests := []struct {
+		sg   config.ScopedGetter
+		want bool
+	}{
+		{config.NewMockGetter().NewScoped(0, 0, 0), false},
+		{config.NewMockGetter().NewScoped(5, 3, 4), false},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.String(): 1})).NewScoped(4, 0, 0), true},
+	}
+	for i, test := range tests {
+		gb, err := b.Get(test.sg)
+		if err != nil {
+			t.Fatal("Index", i, err)
+		}
+		assert.Exactly(t, test.want, gb, "Index %d", i)
+	}
+
+	haveErr := errors.New("Unexpected error")
+	gb, err := b.Get(config.NewMockGetter(
+		config.WithMockValues(config.MockPV{wantPath.String(): true}),
+		config.WithMockBool(func(path string) (bool, error) {
+			return false, haveErr
 		}),
-	).NewScoped(0, 0, 3)))
+	).NewScoped(1, 1, 1))
+	assert.Empty(t, gb)
+	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
+
+}
+
+func TestBoolWrite(t *testing.T) {
+	t.Parallel()
+	const pathWebCorsCred = "web/cors/allow_credentials"
+	wantPath := path.MustNewByParts(pathWebCorsCred).Bind(scope.WebsiteID, 3)
+	b := model.NewBool(pathWebCorsCred, model.WithConfigStructure(configStructure), model.WithSource(source.YesNo))
 
 	mw := &config.MockWrite{}
 	assert.EqualError(t, b.Write(mw, true, scope.StoreID, 3), "Scope permission insufficient: Have 'Store'; Want 'Default,Website'")
@@ -175,21 +238,80 @@ func TestBool(t *testing.T) {
 	assert.Exactly(t, true, mw.ArgValue.(bool))
 }
 
-func TestStr(t *testing.T) {
+func TestStrGetWithCfgStruct(t *testing.T) {
+	t.Parallel()
+	const pathWebCorsHeaders = "web/cors/exposed_headers"
+	b := model.NewStr(pathWebCorsHeaders, model.WithConfigStructure(configStructure))
+	assert.Empty(t, b.Options())
+
+	wantPath := path.MustNewByParts(pathWebCorsHeaders)
+	tests := []struct {
+		sg   config.ScopedGetter
+		want string
+	}{
+		{config.NewMockGetter().NewScoped(0, 0, 0), "Content-Type,X-CoreStore-ID"}, // because default value in packageConfiguration
+		{config.NewMockGetter().NewScoped(5, 3, 4), "Content-Type,X-CoreStore-ID"}, // because default value in packageConfiguration
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.String(): "X-Gopher"})).NewScoped(0, 0, 0), "X-Gopher"},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.String(): "X-Gopher"})).NewScoped(3, 4, 5), "X-Gopher"},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{
+			wantPath.String():                         "X-Gopher",
+			wantPath.Bind(scope.StoreID, 44).String(): "X-Gopher44",
+		})).NewScoped(3, 0, 44), "X-Gopher44"},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{
+			wantPath.String():                           "X-Gopher",
+			wantPath.Bind(scope.WebsiteID, 33).String(): "X-Gopher33",
+			wantPath.Bind(scope.WebsiteID, 43).String(): "X-GopherW43",
+			wantPath.Bind(scope.StoreID, 44).String():   "X-Gopher44",
+		})).NewScoped(33, 0, 43), "X-Gopher33"},
+	}
+	for i, test := range tests {
+		gb, err := b.Get(test.sg)
+		if err != nil {
+			t.Fatal("Index", i, err)
+		}
+		assert.Exactly(t, test.want, gb, "Index %d", i)
+	}
+}
+
+func TestStrGetWithoutCfgStruct(t *testing.T) {
+	t.Parallel()
+	const pathWebCorsHeaders = "web/cors/exposed_headers"
+	b := model.NewStr(pathWebCorsHeaders)
+	assert.Empty(t, b.Options())
+
+	wantPath := path.MustNewByParts(pathWebCorsHeaders)
+	tests := []struct {
+		sg   config.ScopedGetter
+		want string
+	}{
+		{config.NewMockGetter().NewScoped(0, 0, 0), ""},
+		{config.NewMockGetter().NewScoped(5, 3, 4), ""},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.String(): "X-Gopher"})).NewScoped(0, 0, 0), "X-Gopher"},
+	}
+	for i, test := range tests {
+		gb, err := b.Get(test.sg)
+		if err != nil {
+			t.Fatal("Index", i, err)
+		}
+		assert.Exactly(t, test.want, gb, "Index %d", i)
+	}
+
+	haveErr := errors.New("Unexpected error")
+	gb, err := b.Get(config.NewMockGetter(
+		config.WithMockValues(config.MockPV{wantPath.String(): "..."}),
+		config.WithMockString(func(path string) (string, error) {
+			return "", haveErr
+		}),
+	).NewScoped(1, 1, 1))
+	assert.Empty(t, gb)
+	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
+}
+
+func TestStrWrite(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
 	wantPath := path.MustNewByParts(pathWebCorsHeaders)
 	b := model.NewStr(pathWebCorsHeaders, model.WithConfigStructure(configStructure))
-
-	assert.Empty(t, b.Options())
-
-	assert.Exactly(t, "Content-Type,X-CoreStore-ID", b.Get(config.NewMockGetter().NewScoped(0, 0, 0)))
-
-	assert.Exactly(t, "X-Gopher", b.Get(config.NewMockGetter(
-		config.WithMockValues(config.MockPV{
-			wantPath.String(): "X-Gopher",
-		}),
-	).NewScoped(0, 0, 0)))
 
 	mw := &config.MockWrite{}
 	assert.NoError(t, b.Write(mw, "dude", scope.DefaultID, 0))
@@ -197,21 +319,76 @@ func TestStr(t *testing.T) {
 	assert.Exactly(t, "dude", mw.ArgValue.(string))
 }
 
-func TestInt(t *testing.T) {
+func TestIntGetWithCfgStruct(t *testing.T) {
+	t.Parallel()
+	const pathWebCorsInt = "web/cors/int"
+	b := model.NewInt(pathWebCorsInt, model.WithConfigStructure(configStructure))
+	assert.Empty(t, b.Options())
+
+	wantPath := path.MustNewByParts(pathWebCorsInt)
+	tests := []struct {
+		sg   config.ScopedGetter
+		want int
+	}{
+		{config.NewMockGetter().NewScoped(0, 0, 0), 2015}, // because default value in packageConfiguration
+		{config.NewMockGetter().NewScoped(0, 0, 1), 2015}, // because default value in packageConfiguration
+		{config.NewMockGetter().NewScoped(0, 1, 1), 2015}, // because default value in packageConfiguration
+		{config.NewMockGetter().NewScoped(1, 1, 1), 2015}, // because default value in packageConfiguration
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): 2016})).NewScoped(10, 0, 0), 2016},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): 2016})).NewScoped(10, 0, 1), 2016},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): 2016})).NewScoped(10, 1, 1), 2016},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{
+			wantPath.String():                         2017,
+			wantPath.Bind(scope.StoreID, 11).String(): 2016,
+		})).NewScoped(10, 0, 11), 2016},
+	}
+	for i, test := range tests {
+		gb, err := b.Get(test.sg)
+		if err != nil {
+			t.Fatal("Index", i, err)
+		}
+		assert.Exactly(t, test.want, gb, "Index %d", i)
+	}
+}
+
+func TestIntGetWithoutCfgStruct(t *testing.T) {
+	t.Parallel()
+	const pathWebCorsInt = "web/cors/int"
+	b := model.NewInt(pathWebCorsInt)
+	assert.Empty(t, b.Options())
+
+	wantPath := path.MustNewByParts(pathWebCorsInt)
+	tests := []struct {
+		sg   config.ScopedGetter
+		want int
+	}{
+		{config.NewMockGetter().NewScoped(1, 1, 1), 0},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): 2016})).NewScoped(10, 0, 0), 2016},
+	}
+	for i, test := range tests {
+		gb, err := b.Get(test.sg)
+		if err != nil {
+			t.Fatal("Index", i, err)
+		}
+		assert.Exactly(t, test.want, gb, "Index %d", i)
+	}
+
+	haveErr := errors.New("Unexpected error")
+	gb, err := b.Get(config.NewMockGetter(
+		config.WithMockValues(config.MockPV{wantPath.String(): 987}),
+		config.WithMockInt(func(path string) (int, error) {
+			return 0, haveErr
+		}),
+	).NewScoped(1, 1, 1))
+	assert.Empty(t, gb)
+	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
+}
+
+func TestIntWrite(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsInt = "web/cors/int"
 	wantPath := path.MustNewByParts(pathWebCorsInt).Bind(scope.WebsiteID, 10)
 	b := model.NewInt(pathWebCorsInt, model.WithConfigStructure(configStructure))
-
-	assert.Empty(t, b.Options())
-
-	assert.Exactly(t, 2015, b.Get(config.NewMockGetter().NewScoped(0, 0, 0)))
-
-	assert.Exactly(t, 2016, b.Get(config.NewMockGetter(
-		config.WithMockValues(config.MockPV{
-			wantPath.String(): 2016,
-		}),
-	).NewScoped(10, 0, 0)))
 
 	mw := &config.MockWrite{}
 	assert.NoError(t, b.Write(mw, 27182, scope.WebsiteID, 10))
@@ -219,21 +396,78 @@ func TestInt(t *testing.T) {
 	assert.Exactly(t, 27182, mw.ArgValue.(int))
 }
 
-func TestFloat64(t *testing.T) {
+func TestFloat64GetWithCfgStruct(t *testing.T) {
+	t.Parallel()
+	const pathWebCorsF64 = "web/cors/float64"
+	b := model.NewFloat64("web/cors/float64", model.WithConfigStructure(configStructure))
+	assert.Empty(t, b.Options())
+
+	wantPath := path.MustNewByParts(pathWebCorsF64).Bind(scope.WebsiteID, 10)
+	tests := []struct {
+		sg   config.ScopedGetter
+		want float64
+	}{
+		{config.NewMockGetter().NewScoped(0, 0, 0), 2015.1000001}, // because default value in packageConfiguration
+		{config.NewMockGetter().NewScoped(0, 0, 1), 2015.1000001}, // because default value in packageConfiguration
+		{config.NewMockGetter().NewScoped(0, 1, 1), 2015.1000001}, // because default value in packageConfiguration
+		{config.NewMockGetter().NewScoped(1, 1, 1), 2015.1000001}, // because default value in packageConfiguration
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): 2016.1000001})).NewScoped(10, 0, 0), 2016.1000001},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): 2016.1000001})).NewScoped(10, 0, 1), 2016.1000001},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): 2016.1000001})).NewScoped(10, 1, 1), 2016.1000001},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{
+			wantPath.String():                         2017.1000001,
+			wantPath.Bind(scope.StoreID, 11).String(): 2016.1000001,
+		})).NewScoped(10, 0, 11), 2016.1000001},
+	}
+	for i, test := range tests {
+		gb, err := b.Get(test.sg)
+		if err != nil {
+			t.Fatal("Index", i, err)
+		}
+		assert.Exactly(t, test.want, gb, "Index %d", i)
+	}
+
+}
+
+func TestFloat64GetWithoutCfgStruct(t *testing.T) {
+	t.Parallel()
+	const pathWebCorsF64 = "web/cors/float64"
+	b := model.NewFloat64("web/cors/float64")
+	assert.Empty(t, b.Options())
+
+	wantPath := path.MustNewByParts(pathWebCorsF64).Bind(scope.WebsiteID, 10)
+	tests := []struct {
+		sg   config.ScopedGetter
+		want float64
+	}{
+		{config.NewMockGetter().NewScoped(0, 0, 0), 0},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): 2016.1000001})).NewScoped(10, 0, 0), 2016.1000001},
+	}
+	for i, test := range tests {
+		gb, err := b.Get(test.sg)
+		if err != nil {
+			t.Fatal("Index", i, err)
+		}
+		assert.Exactly(t, test.want, gb, "Index %d", i)
+	}
+
+	haveErr := errors.New("Unexpected error")
+	gb, err := b.Get(config.NewMockGetter(
+		config.WithMockValues(config.MockPV{wantPath.String(): 123.456}),
+		config.WithMockFloat64(func(path string) (float64, error) {
+			return 0, haveErr
+		}),
+	).NewScoped(1, 1, 1))
+	assert.Empty(t, gb)
+	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
+
+}
+
+func TestFloat64Write(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsF64 = "web/cors/float64"
 	wantPath := path.MustNewByParts(pathWebCorsF64).Bind(scope.WebsiteID, 10)
 	b := model.NewFloat64("web/cors/float64", model.WithConfigStructure(configStructure))
-
-	assert.Empty(t, b.Options())
-
-	assert.Exactly(t, 2015.1000001, b.Get(config.NewMockGetter().NewScoped(0, 0, 0)))
-
-	assert.Exactly(t, 2016.1000001, b.Get(config.NewMockGetter(
-		config.WithMockValues(config.MockPV{
-			wantPath.String(): 2016.1000001,
-		}),
-	).NewScoped(10, 0, 0)))
 
 	mw := &config.MockWrite{}
 	assert.NoError(t, b.Write(mw, 1.123456789, scope.WebsiteID, 10))
@@ -258,4 +492,99 @@ func TestRecursiveOption(t *testing.T) {
 
 	b.Option(previous)
 	assert.Exactly(t, source.NewByString("a", "A", "b", "b"), b.Source)
+}
+
+func mustParseTime(s string) time.Time {
+	t, err := cast.StringToDate(s, nil)
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
+
+func TestTimeGetWithCfgStruct(t *testing.T) {
+	t.Parallel()
+	const pathWebCorsTime = "web/cors/time"
+	b := model.NewTime("web/cors/time", model.WithConfigStructure(configStructure))
+	assert.Empty(t, b.Options())
+
+	wantPath := path.MustNewByParts(pathWebCorsTime).Bind(scope.WebsiteID, 10)
+	defaultTime := mustParseTime("2012-08-23 09:20:13")
+	tests := []struct {
+		sg   config.ScopedGetter
+		want time.Time
+	}{
+		{config.NewMockGetter().NewScoped(0, 0, 0), defaultTime}, // because default value in packageConfiguration
+		{config.NewMockGetter().NewScoped(0, 0, 1), defaultTime}, // because default value in packageConfiguration
+		{config.NewMockGetter().NewScoped(0, 1, 1), defaultTime}, // because default value in packageConfiguration
+		{config.NewMockGetter().NewScoped(1, 1, 1), defaultTime}, // because default value in packageConfiguration
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): defaultTime.Add(time.Second * 2)})).NewScoped(10, 0, 0), defaultTime.Add(time.Second * 2)},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): defaultTime.Add(time.Second * 3)})).NewScoped(10, 0, 1), defaultTime.Add(time.Second * 3)},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): defaultTime.Add(time.Second * 4)})).NewScoped(10, 1, 1), defaultTime.Add(time.Second * 4)},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{
+			wantPath.String():                         defaultTime.Add(time.Second * 5),
+			wantPath.Bind(scope.StoreID, 11).String(): defaultTime.Add(time.Second * 6),
+		})).NewScoped(10, 0, 11), defaultTime.Add(time.Second * 6)},
+	}
+	for i, test := range tests {
+		gb, err := b.Get(test.sg)
+		if err != nil {
+			t.Fatal("Index", i, err)
+		}
+		assert.Exactly(t, test.want, gb, "Index %d", i)
+	}
+}
+
+func TestTimeGetWithoutCfgStruct(t *testing.T) {
+	t.Parallel()
+	const pathWebCorsTime = "web/cors/time"
+	b := model.NewTime("web/cors/time")
+	assert.Empty(t, b.Options())
+
+	wantPath := path.MustNewByParts(pathWebCorsTime).Bind(scope.WebsiteID, 10)
+	defaultTime := mustParseTime("2012-08-23 09:20:13")
+	tests := []struct {
+		sg   config.ScopedGetter
+		want time.Time
+	}{
+		{config.NewMockGetter().NewScoped(1, 1, 1), time.Time{}}, // because default value in packageConfiguration
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.String(): defaultTime.Add(time.Second * 2)})).NewScoped(10, 0, 0), defaultTime.Add(time.Second * 2)},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.String(): defaultTime.Add(time.Second * 3)})).NewScoped(10, 0, 1), defaultTime.Add(time.Second * 3)},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.String(): defaultTime.Add(time.Second * 4)})).NewScoped(10, 1, 1), defaultTime.Add(time.Second * 4)},
+		{config.NewMockGetter(config.WithMockValues(config.MockPV{
+			wantPath.String():                         defaultTime.Add(time.Second * 5),
+			wantPath.Bind(scope.StoreID, 11).String(): defaultTime.Add(time.Second * 6),
+		})).NewScoped(10, 0, 11), defaultTime.Add(time.Second * 6)},
+	}
+	for i, test := range tests {
+		gb, err := b.Get(test.sg)
+		if err != nil {
+			t.Fatal("Index", i, err)
+		}
+		assert.Exactly(t, test.want, gb, "Index %d", i)
+	}
+
+	haveErr := errors.New("Unexpected error")
+	gb, err := b.Get(config.NewMockGetter(
+		config.WithMockValues(config.MockPV{wantPath.String(): defaultTime.Add(time.Second * 4)}),
+		config.WithMockTime(func(path string) (time.Time, error) {
+			return time.Time{}, haveErr
+		}),
+	).NewScoped(1, 1, 1))
+	assert.Empty(t, gb)
+	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
+}
+
+func TestTimeWrite(t *testing.T) {
+	t.Parallel()
+	const pathWebCorsF64 = "web/cors/time"
+	wantPath := path.MustNewByParts(pathWebCorsF64).Bind(scope.WebsiteID, 10)
+	haveTime := mustParseTime("2000-08-23 09:20:13")
+
+	b := model.NewTime("web/cors/time", model.WithConfigStructure(configStructure))
+
+	mw := &config.MockWrite{}
+	assert.NoError(t, b.Write(mw, haveTime, scope.WebsiteID, 10))
+	assert.Exactly(t, wantPath.String(), mw.ArgPath)
+	assert.Exactly(t, haveTime, mw.ArgValue.(time.Time))
 }

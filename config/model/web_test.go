@@ -24,7 +24,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBaseURL(t *testing.T) {
+func TestBaseURLGet(t *testing.T) {
 	t.Parallel()
 	const pathWebUnsecUrl = "web/unsecure/base_url"
 	wantPath := path.MustNewByParts(pathWebUnsecUrl).Bind(scope.StoreID, 1)
@@ -32,13 +32,29 @@ func TestBaseURL(t *testing.T) {
 
 	assert.Empty(t, b.Options())
 
-	assert.Exactly(t, "{{base_url}}", b.Get(config.NewMockGetter().NewScoped(0, 0, 1)))
+	sg, err := b.Get(config.NewMockGetter().NewScoped(0, 0, 1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, "{{base_url}}", sg)
 
-	assert.Exactly(t, "http://cs.io", b.Get(config.NewMockGetter(
+	sg, err = b.Get(config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
 			wantPath.String(): "http://cs.io",
 		}),
-	).NewScoped(0, 0, 1)))
+	).NewScoped(0, 0, 1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, "http://cs.io", sg)
+
+}
+
+func TestBaseURLWrite(t *testing.T) {
+	t.Parallel()
+	const pathWebUnsecUrl = "web/unsecure/base_url"
+	wantPath := path.MustNewByParts(pathWebUnsecUrl).Bind(scope.StoreID, 1)
+	b := model.NewBaseURL(pathWebUnsecUrl, model.WithConfigStructure(configStructure))
 
 	mw := &config.MockWrite{}
 	assert.NoError(t, b.Write(mw, "dude", scope.StoreID, 1))

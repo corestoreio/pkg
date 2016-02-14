@@ -36,7 +36,7 @@ func NewBaseURL(path string, opts ...Option) BaseURL {
 }
 
 // Get returns a base URL
-func (p BaseURL) Get(sg config.ScopedGetter) string {
+func (p BaseURL) Get(sg config.ScopedGetter) (string, error) {
 	return p.Str.Get(sg)
 }
 

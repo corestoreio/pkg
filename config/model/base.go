@@ -16,6 +16,7 @@ package model
 
 import (
 	"sync"
+	"time"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/element"
@@ -163,7 +164,7 @@ func (bv baseValue) Write(w config.Writer, v interface{}, s scope.Scope, scopeID
 	return w.Write(pp, v)
 }
 
-// String returns the stringified route
+// String returns the stringyfied route
 func (bv baseValue) String() string {
 	return bv.r.String()
 }
@@ -185,7 +186,15 @@ func (bv baseValue) Route() cfgpath.Route {
 // InScope checks if a field from a path is allowed for current scope.
 // Returns nil on success.
 func (bv baseValue) InScope(sg scope.Scoper) (err error) {
-	_, err = bv.field(sg)
+	var f *element.Field
+	f, err = bv.field(sg)
+	if err != nil {
+		return
+	}
+	s, _ := sg.Scope()
+	if false == f.Scope.Has(s) {
+		err = errors.Errorf("Scope permission insufficient: Have '%s'; Want '%s'", s, f.Scope)
+	}
 	return
 }
 
@@ -210,42 +219,38 @@ func (bv baseValue) FQ(s scope.Scope, scopeID int64) (string, error) {
 // field searches for the field in a SectionSlice and checks if the scope in
 // ScopedGetter is sufficient.
 func (bv baseValue) field(sg scope.Scoper) (f *element.Field, err error) {
-	f, err = bv.ConfigStructure.FindFieldByID(bv.r)
-	if err != nil {
-		return nil, errors.Mask(err)
-	}
-	s, _ := sg.Scope()
-	if false == f.Scope.Has(s) {
-		return nil, errors.Errorf("Scope permission insufficient: Have '%s'; Want '%s'", s, f.Scope)
-	}
-	return
+	return bv.ConfigStructure.FindFieldByID(bv.r)
 }
 
 // lookupString searches the default value in element.SectionSlice and overwrites
 // it with a value from ScopedGetter if ScopedGetter is not empty.
 // validator can be nil which triggers the default validation method.
-func (bv baseValue) lookupString(sg config.ScopedGetter) (v string, err error) {
-
-	f, errF := bv.field(sg)
-	if errF != nil {
-		err = errF
-		return
+func (bv baseValue) lookupString(sg config.ScopedGetter) (string, error) {
+	// This code must be kept in sync with other lookup*() functions
+	f, err := bv.field(sg)
+	if element.NotNotFoundError(err) {
+		return "", errors.Maskf(err, "Route %s", bv.r)
 	}
 
-	v, err = cast.ToStringE(f.Default)
-	if err != nil {
-		err = errors.Maskf(err, "Route %s", bv.r)
-		return
+	var v string
+	if f != nil {
+		var err error
+		v, err = cast.ToStringE(f.Default)
+		if err != nil {
+			return "", errors.Mask(err)
+		}
 	}
 
-	val, errSG := sg.String(bv.r)
+	val, err := sg.String(bv.r)
 	switch {
-	case errSG == nil:
+	case err == nil: // we found the value in the config service
 		v = val
-	case config.NotKeyNotFoundError(errSG):
-		err = errors.Maskf(errSG, "Route %s", bv.r)
+	case config.NotKeyNotFoundError(err):
+		err = errors.Maskf(err, "Route %s", bv.r)
+	default:
+		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
 	}
-	return
+	return v, err
 }
 
 func (bv baseValue) validateString(v string) (err error) {
@@ -256,29 +261,33 @@ func (bv baseValue) validateString(v string) (err error) {
 	return
 }
 
-func (bv baseValue) lookupInt(sg config.ScopedGetter) (v int, err error) {
-
-	var f *element.Field
-	f, err = bv.field(sg)
-	if err != nil {
-		err = errors.Maskf(err, "Route %s", bv.r)
-		return
+func (bv baseValue) lookupInt(sg config.ScopedGetter) (int, error) {
+	// This code must be kept in sync with other lookup*() functions
+	f, err := bv.field(sg)
+	if element.NotNotFoundError(err) {
+		return 0, errors.Maskf(err, "Route %s", bv.r)
 	}
 
-	v, err = cast.ToIntE(f.Default)
-	if err != nil {
-		err = errors.Maskf(err, "Route %s", bv.r)
-		return
+	var v int
+	if f != nil {
+		var err error
+		v, err = cast.ToIntE(f.Default)
+		if err != nil {
+			return 0, errors.Mask(err)
+		}
 	}
 
-	val, errSG := sg.Int(bv.r)
+	val, err := sg.Int(bv.r)
 	switch {
-	case errSG == nil:
+	case err == nil: // we found the value in the config service
 		v = val
-	case config.NotKeyNotFoundError(errSG):
-		err = errors.Maskf(errSG, "Route %s", bv.r)
+	case config.NotKeyNotFoundError(err):
+		err = errors.Maskf(err, "Route %s", bv.r)
+	default:
+		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
 	}
-	return
+	return v, err
+
 }
 
 func (bv baseValue) validateInt(v int) (err error) {
@@ -289,29 +298,32 @@ func (bv baseValue) validateInt(v int) (err error) {
 	return
 }
 
-func (bv baseValue) lookupFloat64(sg config.ScopedGetter) (v float64, err error) {
-
-	var f *element.Field
-	f, err = bv.field(sg)
-	if err != nil {
-		err = errors.Maskf(err, "Route %s", bv.r)
-		return
+func (bv baseValue) lookupFloat64(sg config.ScopedGetter) (float64, error) {
+	// This code must be kept in sync with other lookup*() functions
+	f, err := bv.field(sg)
+	if element.NotNotFoundError(err) {
+		return 0, errors.Maskf(err, "Route %s", bv.r)
 	}
 
-	v, err = cast.ToFloat64E(f.Default)
-	if err != nil {
-		err = errors.Maskf(err, "Route %s", bv.r)
-		return
+	var v float64
+	if f != nil {
+		var err error
+		v, err = cast.ToFloat64E(f.Default)
+		if err != nil {
+			return 0, errors.Mask(err)
+		}
 	}
 
-	val, errSG := sg.Float64(bv.r)
+	val, err := sg.Float64(bv.r)
 	switch {
-	case errSG == nil:
+	case err == nil: // we found the value in the config service
 		v = val
-	case config.NotKeyNotFoundError(errSG):
-		err = errors.Maskf(errSG, "Route %s", bv.r)
+	case config.NotKeyNotFoundError(err):
+		err = errors.Maskf(err, "Route %s", bv.r)
+	default:
+		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
 	}
-	return
+	return v, err
 }
 
 func (bv baseValue) validateFloat64(v float64) (err error) {
@@ -322,26 +334,60 @@ func (bv baseValue) validateFloat64(v float64) (err error) {
 	return
 }
 
-func (bv baseValue) lookupBool(sg config.ScopedGetter) (v bool, err error) {
-
-	var f *element.Field
-	if f, err = bv.field(sg); err != nil {
-		err = errors.Maskf(err, "Route %s", bv.r)
-		return
+func (bv baseValue) lookupBool(sg config.ScopedGetter) (bool, error) {
+	// This code must be kept in sync with other lookup*() functions
+	f, err := bv.field(sg)
+	if element.NotNotFoundError(err) {
+		return false, errors.Maskf(err, "Route %s", bv.r)
 	}
 
-	v, err = cast.ToBoolE(f.Default)
-	if err != nil {
-		err = errors.Mask(err)
-		return
+	var v bool
+	if f != nil {
+		var err error
+		v, err = cast.ToBoolE(f.Default)
+		if err != nil {
+			return false, errors.Mask(err)
+		}
 	}
 
-	val, errSG := sg.Bool(bv.r)
+	val, err := sg.Bool(bv.r)
 	switch {
-	case errSG == nil:
+	case err == nil: // we found the value in the config service
 		v = val
-	case config.NotKeyNotFoundError(errSG):
-		err = errors.Maskf(errSG, "Route %s", bv.r)
+	case config.NotKeyNotFoundError(err):
+		err = errors.Maskf(err, "Route %s", bv.r)
+	default:
+		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
 	}
-	return
+	return v, err
+}
+
+// lookupTime is able to parse available time formats as defined in
+// github.com/corestoreio/csfw/util/cast.StringToDate()
+func (bv baseValue) lookupTime(sg config.ScopedGetter) (time.Time, error) {
+	// This code must be kept in sync with other lookup*() functions
+	f, err := bv.field(sg)
+	if element.NotNotFoundError(err) {
+		return time.Time{}, errors.Maskf(err, "Route %s", bv.r)
+	}
+
+	var v time.Time
+	if f != nil {
+		var err error
+		v, err = cast.ToTimeE(f.Default)
+		if err != nil {
+			return time.Time{}, errors.Mask(err)
+		}
+	}
+
+	val, err := sg.Time(bv.r)
+	switch {
+	case err == nil: // we found the value in the config service
+		v = val
+	case config.NotKeyNotFoundError(err):
+		err = errors.Maskf(err, "Route %s", bv.r)
+	default:
+		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
+	}
+	return v, err
 }
