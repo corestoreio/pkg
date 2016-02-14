@@ -12,6 +12,9 @@ import (
 
 	"errors"
 
+	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/storage/text"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -43,10 +46,13 @@ func TestToString(t *testing.T) {
 	assert.Equal(t, ToString([]byte("one time")), "one time")
 	assert.Equal(t, ToString(template.HTML("one time")), "one time")
 	assert.Equal(t, ToString(template.URL("http://somehost.foo")), "http://somehost.foo")
+	assert.Equal(t, ToString(text.Chars("http://somehost.foo")), "http://somehost.foo")
+	assert.Equal(t, ToString(path.NewRoute("http://somehost.foo")), "http://somehost.foo")
 	assert.Equal(t, ToString(foo), "one more time")
 	assert.Equal(t, ToString(nil), "")
 	assert.Equal(t, ToString(true), "true")
 	assert.Equal(t, ToString(false), "false")
+	assert.Equal(t, ToString(path.MustNewByParts("aa/bb/cc").Bind(scope.StoreID, 33)), "stores/33/aa/bb/cc")
 }
 
 type foo struct {
@@ -136,6 +142,7 @@ func TestSlices(t *testing.T) {
 func TestToBool(t *testing.T) {
 	t.Parallel()
 	assert.Equal(t, ToBool(0), false)
+	assert.Equal(t, ToBool(int64(0)), false)
 	assert.Equal(t, ToBool(nil), false)
 	assert.Equal(t, ToBool("false"), false)
 	assert.Equal(t, ToBool("FALSE"), false)
@@ -151,8 +158,10 @@ func TestToBool(t *testing.T) {
 	assert.Equal(t, ToBool("t"), true)
 	assert.Equal(t, ToBool("T"), true)
 	assert.Equal(t, ToBool(1), true)
+	assert.Equal(t, ToBool(int64(2)), true)
 	assert.Equal(t, ToBool(true), true)
 	assert.Equal(t, ToBool(-1), true)
+	assert.Equal(t, ToBool(int64(-1)), true)
 }
 
 func TestIndirectPointers(t *testing.T) {
@@ -211,6 +220,9 @@ func TestStringToDate(t *testing.T) {
 func TestToTimeE(t *testing.T) {
 	t.Parallel()
 	now := time.Now()
+
+	fUnix := float64(now.Unix()) + (float64(now.Nanosecond()) / 1e9)
+
 	tests := []struct {
 		arg      interface{}
 		wantUnix int64
@@ -219,6 +231,7 @@ func TestToTimeE(t *testing.T) {
 		{now, now.Unix(), nil},
 		{'r', 0, errors.New("Unable to Cast 114 to Time\n")},
 		{now.Unix(), now.Unix(), nil},
+		{fUnix, now.Unix(), nil},
 	}
 	for i, test := range tests {
 		haveT, haveErr := ToTimeE(test.arg)

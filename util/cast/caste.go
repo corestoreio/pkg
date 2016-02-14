@@ -8,13 +8,19 @@ package cast
 import (
 	"fmt"
 	"html/template"
+	"math"
 	"reflect"
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/storage/text"
 )
 
 // ToTimeE casts an empty interface to time.Time.
+// Supported types: time.Time, string, int64 and float64.
+// float64 fractals gets applied as nsec.
 func ToTimeE(i interface{}) (tim time.Time, err error) {
 	i = indirect(i)
 	if PkgLog.IsDebug() {
@@ -32,6 +38,9 @@ func ToTimeE(i interface{}) (tim time.Time, err error) {
 		return time.Time{}, fmt.Errorf("Could not parse Date/Time format: %v\n", e)
 	case int64:
 		return time.Unix(s, 0), nil
+	case float64:
+		fi, frac := math.Modf(s)
+		return time.Unix(int64(fi), int64(frac)), nil
 	default:
 		return time.Time{}, fmt.Errorf("Unable to Cast %#v to Time\n", i)
 	}
@@ -75,6 +84,11 @@ func ToBoolE(i interface{}) (bool, error) {
 		return false, nil
 	case int:
 		if i.(int) != 0 {
+			return true, nil
+		}
+		return false, nil
+	case int64:
+		if i.(int64) != 0 {
 			return true, nil
 		}
 		return false, nil
@@ -214,6 +228,13 @@ func ToStringE(i interface{}) (string, error) {
 		return strconv.FormatInt(int64(i.(int)), 10), nil
 	case []byte:
 		return string(s), nil
+	case text.Chars:
+		return s.String(), nil
+	case path.Route:
+		return s.String(), nil
+	case path.Path:
+		sp, err := s.FQ()
+		return sp.String(), err
 	case template.HTML:
 		return string(s), nil
 	case template.URL:
