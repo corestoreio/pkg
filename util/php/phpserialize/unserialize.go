@@ -1,16 +1,15 @@
 package phpserialize
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"strconv"
 
-	"bytes"
-
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"io"
 )
 
-const UNSERIAZABLE_OBJECT_MAX_LEN = 10 * 1024 * 1024 * 1024
+const UnseriazableObjectMaxLen = 10 * 1024 * 1024 * 1024
 
 func UnSerialize(s []byte) (PhpValue, error) {
 	dec := NewUnSerializer(s)
@@ -36,7 +35,7 @@ func NewUnSerializer(data []byte) *UnSerializer {
 	}
 }
 
-func (us *UnSerializer) SetReader(r *bytes.Reader) {
+func (us *UnSerializer) SetReader(r UnSerializerReader) {
 	us.r = r
 }
 
@@ -53,25 +52,25 @@ func (us *UnSerializer) Decode() (v PhpValue, err error) {
 		switch token {
 		default:
 			us.saveError(fmt.Errorf("phpserialize: Unknown token %#U", token))
-		case TOKEN_NULL:
+		case TokeNull:
 			v = us.decodeNull()
-		case TOKEN_BOOL:
+		case TokenBool:
 			v = us.decodeBool()
-		case TOKEN_INT:
+		case TokenInt:
 			v = us.decodeNumber(false)
-		case TOKEN_FLOAT:
+		case TokenFloat:
 			v = us.decodeNumber(true)
-		case TOKEN_STRING:
-			v = us.decodeString(DELIMITER_STRING_LEFT, DELIMITER_STRING_RIGHT, true)
-		case TOKEN_ARRAY:
+		case TokenString:
+			v = us.decodeString(DelimiterStringLeft, DelimiterStringRight, true)
+		case TokenArray:
 			v = us.decodeArray()
-		case TOKEN_OBJECT:
+		case TokenObject:
 			v = us.decodeObject()
-		case TOKEN_OBJECT_SERIALIZED:
+		case TokenObjectSerialized:
 			v = us.decodeSerialized()
-		case TOKEN_REFERENCE, TOKEN_REFERENCE_OBJECT:
+		case TokenReference, TOkenReferenceObject:
 			v = us.decodeReference()
-		case TOKEN_SPL_ARRAY:
+		case TokenSplArray:
 			v = us.decodeSplArray()
 
 		}
@@ -81,7 +80,7 @@ func (us *UnSerializer) Decode() (v PhpValue, err error) {
 }
 
 func (us *UnSerializer) decodeNull() PhpValue {
-	us.expect(SEPARATOR_VALUES)
+	us.expect(SeparatorValues)
 	return nil
 }
 
@@ -90,13 +89,13 @@ func (us *UnSerializer) decodeBool() PhpValue {
 		raw rune
 		err error
 	)
-	us.expect(SEPARATOR_VALUE_TYPE)
+	us.expect(SepratorValueTypes)
 
 	if raw, _, err = us.r.ReadRune(); err != nil {
 		us.saveError(fmt.Errorf("phpserialize: Error while reading bool value: %v", err))
 	}
 
-	us.expect(SEPARATOR_VALUES)
+	us.expect(SeparatorValues)
 	return raw == '1'
 }
 
@@ -106,9 +105,9 @@ func (us *UnSerializer) decodeNumber(isFloat bool) PhpValue {
 		err error
 		val PhpValue
 	)
-	us.expect(SEPARATOR_VALUE_TYPE)
+	us.expect(SepratorValueTypes)
 
-	if raw, err = us.readUntil(SEPARATOR_VALUES); err != nil {
+	if raw, err = us.readUntil(SeparatorValues); err != nil {
 		us.saveError(fmt.Errorf("phpserialize: Error while reading number value: %v", err))
 	} else {
 		if isFloat {
@@ -151,7 +150,7 @@ func (us *UnSerializer) decodeString(left, right rune, isFinal bool) PhpValue {
 
 	us.expect(right)
 	if isFinal {
-		us.expect(SEPARATOR_VALUES)
+		us.expect(SeparatorValues)
 	}
 	return val
 }
@@ -161,7 +160,7 @@ func (us *UnSerializer) decodeArray() PhpValue {
 	val := make(PhpArray)
 
 	arrLen = us.readLen()
-	us.expect(DELIMITER_OBJECT_LEFT)
+	us.expect(DelimiterObjectLeft)
 
 	for i := 0; i < arrLen; i++ {
 		k, errKey := us.Decode()
@@ -184,7 +183,7 @@ func (us *UnSerializer) decodeArray() PhpValue {
 		}
 	}
 
-	us.expect(DELIMITER_OBJECT_RIGHT)
+	us.expect(DelimiterObjectRight)
 	return val
 }
 
@@ -204,7 +203,7 @@ func (us *UnSerializer) decodeSerialized() PhpValue {
 		className: us.readClassName(),
 	}
 
-	rawData := us.decodeString(DELIMITER_OBJECT_LEFT, DELIMITER_OBJECT_RIGHT, false)
+	rawData := us.decodeString(DelimiterObjectLeft, DelimiterObjectRight, false)
 	val.data, _ = rawData.(string)
 
 	if us.decodeFunc != nil && val.data != "" {
@@ -218,8 +217,8 @@ func (us *UnSerializer) decodeSerialized() PhpValue {
 }
 
 func (us *UnSerializer) decodeReference() PhpValue {
-	us.expect(SEPARATOR_VALUE_TYPE)
-	if _, err := us.readUntil(SEPARATOR_VALUES); err != nil {
+	us.expect(SepratorValueTypes)
+	if _, err := us.readUntil(SeparatorValues); err != nil {
 		us.saveError(fmt.Errorf("phpserialize: Error while reading reference value: %v", err))
 	}
 	return nil
@@ -256,14 +255,14 @@ func (us *UnSerializer) readLen() int {
 		err error
 		val int
 	)
-	us.expect(SEPARATOR_VALUE_TYPE)
+	us.expect(SepratorValueTypes)
 
-	if raw, err = us.readUntil(SEPARATOR_VALUE_TYPE); err != nil {
+	if raw, err = us.readUntil(SepratorValueTypes); err != nil {
 		us.saveError(fmt.Errorf("phpserialize: Error while reading lenght of value: %v", err))
 	} else {
 		if val, err = strconv.Atoi(raw); err != nil {
 			us.saveError(fmt.Errorf("phpserialize: Unable to convert %s to int: %v", raw, err))
-		} else if val > UNSERIAZABLE_OBJECT_MAX_LEN {
+		} else if val > UnseriazableObjectMaxLen {
 			us.saveError(fmt.Errorf("phpserialize: Unserializable object length looks too big(%d). If you are sure you wanna unserialise it, please increase UNSERIAZABLE_OBJECT_MAX_LEN const: %s", val, err))
 			val = 0
 		}
@@ -272,7 +271,7 @@ func (us *UnSerializer) readLen() int {
 }
 
 func (us *UnSerializer) readClassName() (res string) {
-	rawClass := us.decodeString(DELIMITER_STRING_LEFT, DELIMITER_STRING_RIGHT, false)
+	rawClass := us.decodeString(DelimiterStringLeft, DelimiterStringRight, false)
 	res, _ = rawClass.(string)
 	return
 }
@@ -287,8 +286,8 @@ func (us *UnSerializer) decodeSplArray() PhpValue {
 	var err error
 	val := &PhpSplArray{}
 
-	us.expect(SEPARATOR_VALUE_TYPE)
-	us.expect(TOKEN_INT)
+	us.expect(SepratorValueTypes)
+	us.expect(TokenInt)
 
 	flags := us.decodeNumber(false)
 	if flags == nil {
@@ -302,9 +301,9 @@ func (us *UnSerializer) decodeSplArray() PhpValue {
 		return nil
 	}
 
-	us.expect(SEPARATOR_VALUES)
-	us.expect(TOKEN_SPL_ARRAY_MEMBERS)
-	us.expect(SEPARATOR_VALUE_TYPE)
+	us.expect(SeparatorValues)
+	us.expect(TokenSplArrayMembers)
+	us.expect(SepratorValueTypes)
 
 	if val.properties, err = us.Decode(); err != nil {
 		us.saveError(fmt.Errorf("phpserialize: Can't parse properties of SplArray: %v", err))

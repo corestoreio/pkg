@@ -1,29 +1,29 @@
 package phpserialize
 
 const (
-	TOKEN_NULL              rune = 'N'
-	TOKEN_BOOL              rune = 'b'
-	TOKEN_INT               rune = 'i'
-	TOKEN_FLOAT             rune = 'd'
-	TOKEN_STRING            rune = 's'
-	TOKEN_ARRAY             rune = 'a'
-	TOKEN_OBJECT            rune = 'O'
-	TOKEN_OBJECT_SERIALIZED rune = 'C'
-	TOKEN_REFERENCE         rune = 'R'
-	TOKEN_REFERENCE_OBJECT  rune = 'r'
-	TOKEN_SPL_ARRAY         rune = 'x'
-	TOKEN_SPL_ARRAY_MEMBERS rune = 'm'
+	TokeNull              = 'N'
+	TokenBool             = 'b'
+	TokenInt              = 'i'
+	TokenFloat            = 'd'
+	TokenString           = 's'
+	TokenArray            = 'a'
+	TokenObject           = 'O'
+	TokenObjectSerialized = 'C'
+	TokenReference        = 'R'
+	TOkenReferenceObject  = 'r'
+	TokenSplArray         = 'x'
+	TokenSplArrayMembers  = 'm'
 
-	SEPARATOR_VALUE_TYPE rune = ':'
-	SEPARATOR_VALUES     rune = ';'
+	SepratorValueTypes = ':'
+	SeparatorValues    = ';'
 
-	DELIMITER_STRING_LEFT  rune = '"'
-	DELIMITER_STRING_RIGHT rune = '"'
-	DELIMITER_OBJECT_LEFT  rune = '{'
-	DELIMITER_OBJECT_RIGHT rune = '}'
+	DelimiterStringLeft  = '"'
+	DelimiterStringRight = '"'
+	DelimiterObjectLeft  = '{'
+	DelimiterObjectRight = '}'
 
-	FORMATTER_FLOAT     byte = 'g'
-	FORMATTER_PRECISION int  = 17
+	FormatterFloat     byte = 'g'
+	FormatterPrecision      = 17
 )
 
 func NewPhpObject(className string) *PhpObject {
