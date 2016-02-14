@@ -42,7 +42,7 @@ type (
 		Bool(path.Path) (bool, error)
 		Float64(path.Path) (float64, error)
 		Int(path.Path) (int, error)
-		DateTime(path.Path) (time.Time, error)
+		Time(path.Path) (time.Time, error)
 		// maybe add compare and swap function
 	}
 
@@ -244,8 +244,10 @@ func (s *Service) Int(p path.Path) (int, error) {
 	return cast.ToIntE(vs)
 }
 
-// DateTime returns a date and time object from the Service. Example usage see String.
-func (s *Service) DateTime(p path.Path) (time.Time, error) {
+// Time returns a date and time object from the Service. Example usage see String.
+// Time() is able to parse available time formats as defined in
+// github.com/corestoreio/csfw/util/cast.StringToDate()
+func (s *Service) Time(p path.Path) (time.Time, error) {
 	vs, err := s.get(p)
 	if err != nil {
 		return time.Time{}, err
@@ -269,5 +271,6 @@ func (s *Service) IsSet(p path.Path) bool {
 
 // NotKeyNotFoundError returns true if err is not nil and not of type Key Not Found.
 func NotKeyNotFoundError(err error) bool {
+	err = cserr.UnwrapMasked(err)
 	return err != nil && err != storage.ErrKeyNotFound
 }

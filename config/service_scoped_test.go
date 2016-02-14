@@ -114,7 +114,7 @@ func TestScopedServicePath(t *testing.T) {
 			case int:
 				haveVal, haveErr = sg.Int(test.route)
 			case time.Time:
-				haveVal, haveErr = sg.DateTime(test.route)
+				haveVal, haveErr = sg.Time(test.route)
 			default:
 				t.Fatalf("Unsupported type: %#v in vals index %d", wantVal, vi)
 			}

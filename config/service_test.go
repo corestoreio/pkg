@@ -184,7 +184,7 @@ func testServiceTypes(t *testing.T, p path.Path, writeVal, wantVal interface{}, 
 	case int:
 		haveVal, haveErr = srv.Int(p)
 	case time.Time:
-		haveVal, haveErr = srv.DateTime(p)
+		haveVal, haveErr = srv.Time(p)
 	default:
 		t.Fatalf("Unsupported type: %#v in Index Value %d Index Test %d", wantVal, iFaceIDX, testIDX)
 	}

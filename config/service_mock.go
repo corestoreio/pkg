@@ -282,7 +282,7 @@ func (mr *MockGet) Int(p path.Path) (int, error) {
 	}
 }
 
-func (mr *MockGet) valDateTime(p path.Path) (time.Time, error) {
+func (mr *MockGet) valTime(p path.Path) (time.Time, error) {
 	switch s := mr.getVal(p).(type) {
 	case time.Time:
 		return s, nil
@@ -291,11 +291,11 @@ func (mr *MockGet) valDateTime(p path.Path) (time.Time, error) {
 	}
 }
 
-// DateTime returns a time value
-func (mr *MockGet) DateTime(p path.Path) (time.Time, error) {
+// Time returns a time value
+func (mr *MockGet) Time(p path.Path) (time.Time, error) {
 	switch {
 	case mr.hasVal(p):
-		return mr.valDateTime(p)
+		return mr.valTime(p)
 	case mr.FTime != nil:
 		return mr.FTime(p.String())
 	default:

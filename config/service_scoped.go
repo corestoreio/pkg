@@ -36,7 +36,7 @@ type ScopedGetter interface {
 	Bool(r path.Route) (bool, error)
 	Float64(r path.Route) (float64, error)
 	Int(r path.Route) (int, error)
-	DateTime(r path.Route) (time.Time, error)
+	Time(r path.Route) (time.Time, error)
 }
 
 // think about that segregation
@@ -206,9 +206,9 @@ func (ss scopedService) Int(r path.Route) (v int, err error) {
 	return ss.root.Int(p)
 }
 
-// DateTime traverses through the scopes store->group->website->default to find
+// Time traverses through the scopes store->group->website->default to find
 // a matching time.Time value.
-func (ss scopedService) DateTime(r path.Route) (v time.Time, err error) {
+func (ss scopedService) Time(r path.Route) (v time.Time, err error) {
 	// fallback to next parent scope if value does not exists
 	p, err := path.New(r)
 	if err != nil {
@@ -217,22 +217,22 @@ func (ss scopedService) DateTime(r path.Route) (v time.Time, err error) {
 	}
 
 	if ss.storeID > 0 {
-		v, err = ss.root.DateTime(p.Bind(scope.StoreID, ss.storeID))
+		v, err = ss.root.Time(p.Bind(scope.StoreID, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 	} // if not found in store scope go to group scope
 	if ss.groupID > 0 {
-		v, err = ss.root.DateTime(p.Bind(scope.GroupID, ss.groupID))
+		v, err = ss.root.Time(p.Bind(scope.GroupID, ss.groupID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 	} // if not found in group scope go to website scope
 	if ss.websiteID > 0 {
-		v, err = ss.root.DateTime(p.Bind(scope.WebsiteID, ss.websiteID))
+		v, err = ss.root.Time(p.Bind(scope.WebsiteID, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 	} // if not found in website scope go to default scope
-	return ss.root.DateTime(p)
+	return ss.root.Time(p)
 }
