@@ -15,12 +15,14 @@
 package element_test
 
 import (
+	goerr "errors"
 	"testing"
 
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/juju/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -701,5 +703,28 @@ func TestSectionSliceAppendFields(t *testing.T) {
 	have := ss.ToJSON()
 	if want != have {
 		t.Errorf("\nWant: %s\nHave: %s\n", want, have)
+	}
+}
+
+func TestNotNotFoundError(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		have error
+		want bool
+	}{
+		{goerr.New("PHP"), true},
+		{errors.Mask(goerr.New("Scala")), true},
+		{errors.New("Java"), true},
+		{errors.Mask(errors.New("Java")), true},
+		{element.ErrSectionNotFound, false},
+		{element.ErrGroupNotFound, false},
+		{element.ErrFieldNotFound, false},
+		{errors.Mask(element.ErrFieldNotFound), false},
+		{errors.Maskf(errors.Mask(element.ErrFieldNotFound), "A field not found error"), false},
+		{nil, false},
+		{errors.Mask(nil), false},
+	}
+	for i, test := range tests {
+		assert.Exactly(t, test.want, element.NotNotFoundError(test.have), "Index %d", i)
 	}
 }
