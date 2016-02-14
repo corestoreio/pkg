@@ -12,27 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package php_test
-
-import (
-	"testing"
-
-	"github.com/corestoreio/csfw/util/php"
-	"github.com/stretchr/testify/assert"
-)
-
-func TestToGoFormat(t *testing.T) {
-
-	t.Skip("todo")
-
-	tests := []struct {
-		phpf string
-		gof  string
-	}{
-		{`l jS \of F Y h:i:s A`, `a b of `}, // e.g. Monday 8th of August 2005 03:12:46 PM
-		{`l \t\h\e jS`, `x the DATE`},       // e.g. Wednesday the 15th
-	}
-	for _, test := range tests {
-		assert.Exactly(t, test.gof, php.DateToGoFormat(test.phpf))
-	}
-}
+// Package phpdate converts a PHP date format into Go format.
+//
+// Not all formatters are supported.
+package phpdate
