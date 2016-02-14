@@ -12,28 +12,18 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package backend_test
+package cserr
 
-import (
-	std "log"
+import "github.com/juju/errors"
 
-	"github.com/corestoreio/csfw/backend"
-	"github.com/corestoreio/csfw/config/model"
-	"github.com/corestoreio/csfw/util/log"
-)
-
-var debugLogBuf *log.MutexBuffer
-var infoLogBuf *log.MutexBuffer
-
-func init() {
-	debugLogBuf = new(log.MutexBuffer)
-	infoLogBuf = new(log.MutexBuffer)
-
-	backend.PkgLog = log.NewStdLogger(
-		log.SetStdDebug(debugLogBuf, "testDebug: ", std.Lshortfile),
-		log.SetStdInfo(infoLogBuf, "testInfo: ", std.Lshortfile),
-	)
-	backend.PkgLog.SetLevel(log.StdLevelDebug)
-
-	model.PkgLog = backend.PkgLog
+// UnwrapMasked returns the underlying original error to be used for
+// comparison with Err* variables. Recursive function.
+// Only in use with github.com/juju/errors package.
+func UnwrapMasked(err error) error {
+	if theErr, ok := err.(*errors.Err); ok {
+		if uErr := theErr.Underlying(); uErr != nil {
+			return UnwrapMasked(uErr)
+		}
+	}
+	return err
 }
