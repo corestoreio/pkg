@@ -38,7 +38,7 @@ func (b Bool) Get(sg config.ScopedGetter) (bool, error) {
 	return b.lookupBool(sg)
 }
 
-// Write writes a bool.
+// Write writes a bool value without validating it against the source.Slice.
 func (b Bool) Write(w config.Writer, v bool, s scope.Scope, scopeID int64) error {
 	return b.baseValue.Write(w, v, s, scopeID)
 }
@@ -54,12 +54,11 @@ func NewStr(path string, opts ...Option) Str {
 }
 
 // Get returns a string value
-// Errors gets appended to MultiErr
 func (str Str) Get(sg config.ScopedGetter) (string, error) {
 	return str.lookupString(sg)
 }
 
-// Write writes a string value
+// Write writes a string value without validating it against the source.Slice.
 func (str Str) Write(w config.Writer, v string, s scope.Scope, scopeID int64) error {
 	return str.baseValue.Write(w, v, s, scopeID)
 }
@@ -77,7 +76,7 @@ func (i Int) Get(sg config.ScopedGetter) (int, error) {
 	return i.lookupInt(sg)
 }
 
-// Write writes an int value
+// Write writes an int value without validating it against the source.Slice.
 func (i Int) Write(w config.Writer, v int, s scope.Scope, scopeID int64) error {
 	return i.baseValue.Write(w, v, s, scopeID)
 }
@@ -95,7 +94,7 @@ func (f Float64) Get(sg config.ScopedGetter) (float64, error) {
 	return f.lookupFloat64(sg)
 }
 
-// Write writes a float64 value
+// Write writes a float64 value without validating it against the source.Slice.
 func (f Float64) Write(w config.Writer, v float64, s scope.Scope, scopeID int64) error {
 	return f.baseValue.Write(w, v, s, scopeID)
 }
@@ -113,7 +112,7 @@ func (t Time) Get(sg config.ScopedGetter) (time.Time, error) {
 	return t.lookupTime(sg)
 }
 
-// Write writes a time value
+// Write writes a time value without validating it against the source.Slice.
 func (t Time) Write(w config.Writer, v time.Time, s scope.Scope, scopeID int64) error {
 	return t.baseValue.Write(w, v, s, scopeID)
 }

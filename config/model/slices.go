@@ -52,7 +52,7 @@ func (str StringCSV) Get(sg config.ScopedGetter) ([]string, error) {
 	var ret util.StringSlice = strings.Split(s, CSVSeparator)
 	ret = ret.Unique()
 	for i, part := range ret {
-		if err := str.validateString(part); err != nil {
+		if err := str.ValidateString(part); err != nil {
 			ret.Delete(i) // ignore error out of range
 			return ret, err
 		}
@@ -63,7 +63,7 @@ func (str StringCSV) Get(sg config.ScopedGetter) ([]string, error) {
 // Write writes a slice with its scope and ID to the writer
 func (str StringCSV) Write(w config.Writer, sl []string, s scope.Scope, scopeID int64) error {
 	for _, v := range sl {
-		if err := str.validateString(v); err != nil {
+		if err := str.ValidateString(v); err != nil {
 			return err
 		}
 	}
@@ -115,7 +115,7 @@ func (ic IntCSV) extractInt(line string) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	if err = ic.validateInt(v); err != nil {
+	if err = ic.ValidateInt(v); err != nil {
 		return 0, err
 	}
 	return v, nil
@@ -128,7 +128,7 @@ func (p IntCSV) Write(w config.Writer, sl []int, s scope.Scope, scopeID int64) e
 	defer bufferpool.Put(val)
 	for i, v := range sl {
 
-		if err := p.validateInt(v); err != nil {
+		if err := p.ValidateInt(v); err != nil {
 			return err
 		}
 

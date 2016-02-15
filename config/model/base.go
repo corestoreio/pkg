@@ -253,7 +253,8 @@ func (bv baseValue) lookupString(sg config.ScopedGetter) (string, error) {
 	return v, err
 }
 
-func (bv baseValue) validateString(v string) (err error) {
+// ValidateString checks if string v is contained in Source source.Slice.
+func (bv baseValue) ValidateString(v string) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValString(v) {
 		jv, jErr := bv.Source.ToJSON()
 		err = errors.Errorf("The value '%s' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
@@ -290,7 +291,8 @@ func (bv baseValue) lookupInt(sg config.ScopedGetter) (int, error) {
 
 }
 
-func (bv baseValue) validateInt(v int) (err error) {
+// ValidateInt checks if int v is contained in non-nil Source source.Slice.
+func (bv baseValue) ValidateInt(v int) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValInt(v) {
 		jv, jErr := bv.Source.ToJSON()
 		err = errors.Errorf("The value '%d' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
@@ -326,7 +328,8 @@ func (bv baseValue) lookupFloat64(sg config.ScopedGetter) (float64, error) {
 	return v, err
 }
 
-func (bv baseValue) validateFloat64(v float64) (err error) {
+// ValidateFloat64 checks if float64 v is contained in non-nil Source source.Slice.
+func (bv baseValue) ValidateFloat64(v float64) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValFloat64(v) {
 		jv, jErr := bv.Source.ToJSON()
 		err = errors.Errorf("The value '%.14f' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
@@ -390,4 +393,14 @@ func (bv baseValue) lookupTime(sg config.ScopedGetter) (time.Time, error) {
 		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
 	}
 	return v, err
+}
+
+// ValidateTime checks if time.Time v is contained in non-nil Source source.Slice.
+func (bv baseValue) ValidateTime(v time.Time) (err error) {
+	// todo:
+	//if bv.Source != nil && false == bv.Source.ContainsValFloat64(v) {
+	//	jv, jErr := bv.Source.ToJSON()
+	//	err = errors.Errorf("The value '%.14f' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
+	//}
+	return
 }
