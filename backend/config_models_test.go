@@ -25,7 +25,6 @@ import (
 )
 
 func TestConfigRedirectToBase(t *testing.T) {
-	defer debugLogBuf.Reset()
 	t.Parallel()
 
 	r := backend.NewConfigRedirectToBase(
@@ -33,23 +32,85 @@ func TestConfigRedirectToBase(t *testing.T) {
 		model.WithConfigStructure(backend.ConfigStructure),
 	)
 
+	redirCode, err := r.Get(config.NewMockGetter().NewScoped(0, 0, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(
+		t,
+		1, // default value in backend.ConfigStructure
+		redirCode,
+	)
+
+	redirCode, err = r.Get(config.NewMockGetter().NewScoped(10, 0, 13))
+	if err != nil {
+		t.Fatal(err)
+	}
+	// 1 == default value in backend.ConfigStructure
+	assert.Exactly(t, 1, redirCode)
+
+	webURLRedirectToBasePath, err := backend.Backend.WebURLRedirectToBase.ToPath(0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	cr := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			backend.Backend.WebURLRedirectToBase.String(): 2,
+			webURLRedirectToBasePath.String():                         2,
+			webURLRedirectToBasePath.Bind(scope.StoreID, 33).String(): 34,
 		}),
 	)
 
-	code := r.Get(cr.NewScoped(0, 0, 0))
-	assert.Exactly(t, 2, code)
-	code = r.Get(cr.NewScoped(1, 1, 2))
-	assert.Exactly(t, 0, code)
-
-	// that is crap we should return an error
-	assert.Contains(t, debugLogBuf.String(), "Scope permission insufficient: Have 'Store'; Want 'Default'")
+	tests := []struct {
+		sg   config.ScopedGetter
+		want int
+	}{
+		{cr.NewScoped(0, 0, 0), 2},
+		{cr.NewScoped(1, 1, 2), 2},
+		{cr.NewScoped(1, 1, 33), 34},
+	}
+	for i, test := range tests {
+		code, err := r.Get(test.sg)
+		if err != nil {
+			t.Fatalf("Index %d => %s", i, err)
+		}
+		assert.Exactly(t, test.want, code, "Index %d", i)
+		assert.False(t, r.HasErrors(), "Index %d", i)
+	}
 
 	mw := new(config.MockWrite)
 	assert.EqualError(t, r.Write(mw, 200, scope.DefaultID, 0),
-		"Cannot find 200 in list: [{\"Value\":0,\"Label\":\"No\"},{\"Value\":1,\"Label\":\"Yes (302 Found)\"},{\"Value\":302,\"Label\":\"Yes (302 Found)\"},{\"Value\":301,\"Label\":\"Yes (301 Moved Permanently)\"}]\n",
+		"The value '200' cannot be found within the allowed Options():\n[{\"Value\":0,\"Label\":\"No\"},{\"Value\":1,\"Label\":\"Yes (302 Found)\"},{\"Value\":302,\"Label\":\"Yes (302 Found)\"},{\"Value\":301,\"Label\":\"Yes (301 Moved Permanently)\"}]\n\nJSON Error: %!s(<nil>)",
 	) // 200 not allowed
+}
 
+// BenchmarkConfigRedirectToBase-4	  500000	      2966 ns/op	     432 B/op	       6 allocs/op
+func BenchmarkConfigRedirectToBase(b *testing.B) {
+	r := backend.NewConfigRedirectToBase(
+		backend.Backend.WebURLRedirectToBase.String(),
+		model.WithConfigStructure(backend.ConfigStructure),
+	)
+	webURLRedirectToBasePath, err := backend.Backend.WebURLRedirectToBase.ToPath(0, 0)
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	sg := config.NewMockGetter(
+		config.WithMockValues(config.MockPV{
+			webURLRedirectToBasePath.String():                           2,
+			webURLRedirectToBasePath.Bind(scope.WebsiteID, 33).String(): 34,
+		}),
+	).NewScoped(33, 0, 1)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		code, err := r.Get(sg)
+		if err != nil {
+			b.Fatal(err)
+		}
+		if code != 34 {
+			b.Fatalf("Want %d Have %d", 34, code)
+		}
+	}
 }

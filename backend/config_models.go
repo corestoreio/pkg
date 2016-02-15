@@ -15,7 +15,6 @@
 package backend
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/corestoreio/csfw/config"
@@ -37,7 +36,7 @@ func NewConfigRedirectToBase(path string, opts ...model.Option) ConfigRedirectTo
 			path,
 			append(opts, model.WithSourceByInt(source.Ints{
 				0: {0, "No"},
-				1: {1, "Yes (302 Found)"},                // old from Magento
+				1: {1, "Yes (302 Found)"},                // old from Magento :-(
 				2: {http.StatusFound, "Yes (302 Found)"}, // new correct
 				3: {http.StatusMovedPermanently, "Yes (301 Moved Permanently)"},
 			}))...,
@@ -48,8 +47,8 @@ func NewConfigRedirectToBase(path string, opts ...model.Option) ConfigRedirectTo
 // Write writes an int value and checks if the int value is within the allowed Options.
 func (p ConfigRedirectToBase) Write(w config.Writer, v int, s scope.Scope, id int64) error {
 
-	if false == p.Source.ContainsValInt(v) {
-		return fmt.Errorf("Cannot find %d in list: %s", v, p.Source)
+	if err := p.ValidateInt(v); err != nil {
+		return err
 	}
 
 	return p.Int.Write(w, v, s, id)
