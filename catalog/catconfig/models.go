@@ -19,7 +19,7 @@ import (
 	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 const (
@@ -49,19 +49,29 @@ func NewConfigPriceScope(path string, opts ...model.Option) configPriceScope {
 }
 
 // IsGlobal true if global scope for base currency
-func (p configPriceScope) IsGlobal(sg config.ScopedGetter) bool {
-	return p.Get(sg) == PriceScopeGlobal
+func (p configPriceScope) IsGlobal(sg config.ScopedGetter) (bool, error) {
+	g, err := p.Get(sg)
+	if err != nil {
+		return false, errors.Mask(err)
+	}
+	return g == PriceScopeGlobal, nil
 }
 
 func (p configPriceScope) Write(w config.Writer, v int, s scope.Scope, id int64, idx interface {
 	Invalidate()
 }) error {
 
-	if err := p.Int.Write(w, v, s, id); err != nil {
-		return errgo.Mask(err)
+	if err := p.ValidateInt(v); err != nil {
+		return err
 	}
 
-	idx.Invalidate()
+	if err := p.Int.Write(w, v, s, id); err != nil {
+		return errors.Mask(err)
+	}
+
+	if idx != nil {
+		idx.Invalidate()
+	}
 
 	// invalid price indexer and fully reindex
 	//<backend_model>Magento\Catalog\Model\Indexer\Product\Price\System\Config\PriceScope</backend_model>
