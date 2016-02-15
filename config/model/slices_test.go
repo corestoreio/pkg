@@ -52,7 +52,8 @@ func TestStringCSVGet(t *testing.T) {
 		{"Content-Type,X-CoreStore-ID", []string{"Content-Type", "X-CoreStore-ID"}, nil},
 		{"", nil, nil},
 		{"X-CoreStore-ID", []string{"X-CoreStore-ID"}, nil},
-		{"Content-Type,X-CS", []string{"Content-Type"}, errors.New("The value 'X-CS' cannot be found within the allowed Options():\n[{\"Value\":\"Content-Type\",\"Label\":\"Content Type\"},{\"Value\":\"X-CoreStore-ID\",\"Label\":\"CoreStore Microservice ID\"}]\n\nJSON Error: %!s(<nil>)")},
+		{"Content-Type,X-CS", []string{"Content-Type", "X-CS"}, nil},
+		// todo add errors
 	}
 	for i, test := range tests {
 		haveSL, haveErr := b.Get(config.NewMockGetter(
@@ -123,7 +124,7 @@ func TestIntCSV(t *testing.T) {
 		want    []int
 		wantErr error
 	}{
-		{false, "3015,3016", []int{}, errors.New("The value '3015' cannot be found within the allowed Options():\n[{\"Value\":2014,\"Label\":\"Year 2014\"},{\"Value\":2015,\"Label\":\"Year 2015\"},{\"Value\":2016,\"Label\":\"Year 2016\"},{\"Value\":2017,\"Label\":\"Year 2017\"}]\n\nJSON Error: %!s(<nil>)")},
+		{false, "3015,3016", []int{3015, 3016}, nil},
 		{false, "2015,2017", []int{2015, 2017}, nil},
 		{false, "", nil, nil},
 		{false, "2015,,2017", []int{2015}, errors.New("strconv.ParseInt: parsing \"\": invalid syntax")},

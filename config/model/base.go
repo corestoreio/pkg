@@ -257,6 +257,9 @@ func (bv baseValue) lookupString(sg config.ScopedGetter) (string, error) {
 func (bv baseValue) ValidateString(v string) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValString(v) {
 		jv, jErr := bv.Source.ToJSON()
+		if jErr != nil {
+			return errors.Maskf(err, "Source: %#v", bv.Source)
+		}
 		err = errors.Errorf("The value '%s' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
 	}
 	return
