@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
@@ -27,10 +28,15 @@ func TestNewConfigCurrencyGet(t *testing.T) {
 	t.Parallel()
 	cc := directory.NewConfigCurrency(directory.Backend.CurrencyOptionsBase.String())
 
+	cobPath, err := directory.Backend.CurrencyOptionsBase.ToPath(0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	cr := config.NewMockGetter(
 		config.WithMockValues(config.MockPV{
-			directory.Backend.CurrencyOptionsBase.FQPathInt64(scope.StrStores, 1): "EUR",
-			directory.Backend.CurrencyOptionsBase.FQPathInt64(scope.StrStores, 2): "WIR", // Special Swiss currency
+			cobPath.Bind(scope.StoreID, 1).String(): "EUR",
+			cobPath.Bind(scope.StoreID, 2).String(): "WIR", // Special Swiss currency
 		}),
 	)
 
@@ -45,13 +51,28 @@ func TestNewConfigCurrencyGet(t *testing.T) {
 
 func TestNewConfigCurrencyWrite(t *testing.T) {
 	t.Parallel()
-	cc := directory.NewConfigCurrency(directory.Backend.CurrencyOptionsBase.String())
+	// special setup for testing
+	cc := directory.NewConfigCurrency(
+		directory.Backend.CurrencyOptionsBase.String(),
+		model.WithConfigStructure(directory.ConfigStructure),
+		model.WithSourceByString("EUR", "Euro", "CHF", "Swiss Franc", "AUD", "Australian Dinar ;-)"),
+	)
+
 	c := directory.MustNewCurrencyISO("EUR")
 
-	w := new(config.MockWrite)
+	cobPath, err := directory.Backend.CurrencyOptionsBase.ToPath(0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
 
+	w := new(config.MockWrite)
 	assert.NoError(t, cc.Write(w, c, scope.WebsiteID, 33))
 
-	assert.Exactly(t, directory.Backend.CurrencyOptionsBase.FQPathInt64(scope.StrWebsites, 33), w.ArgPath)
+	assert.Exactly(t, cobPath.Bind(scope.WebsiteID, 33).String(), w.ArgPath)
 	assert.Exactly(t, "EUR", w.ArgValue)
+
+	assert.EqualError(t,
+		cc.Write(w, directory.Currency{}, scope.WebsiteID, 33),
+		"The value 'XXX' cannot be found within the allowed Options():\n[{\"Value\":\"EUR\",\"Label\":\"Euro\"},{\"Value\":\"CHF\",\"Label\":\"Swiss Franc\"},{\"Value\":\"AUD\",\"Label\":\"Australian Dinar ;-)\"}]\n",
+	)
 }

@@ -18,7 +18,7 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 	"golang.org/x/text/currency"
 )
 
@@ -36,15 +36,25 @@ func NewConfigCurrency(path string, opts ...model.Option) ConfigCurrency {
 
 // Get tries to retrieve a currency
 func (p ConfigCurrency) Get(sg config.ScopedGetter) (Currency, error) {
-	cur := p.Str.Get(sg)
+	cur, err := p.Str.Get(sg)
+	if err != nil {
+		return Currency{}, errors.Mask(err)
+	}
 	u, err := currency.ParseISO(cur)
 	if err != nil {
-		return Currency{}, errgo.Mask(err)
+		return Currency{}, errors.Mask(err)
 	}
 	return Currency{Unit: u}, nil
 }
 
 // Writes a currency to the configuration storage.
 func (p ConfigCurrency) Write(w config.Writer, v Currency, s scope.Scope, id int64) error {
-	return p.Str.Write(w, v.String(), s, id)
+	cur := v.String()
+
+	println("cur", cur, p.Source.ContainsValString(cur))
+
+	if err := p.ValidateString(cur); err != nil {
+		return errors.Mask(err)
+	}
+	return p.Str.Write(w, cur, s, id)
 }

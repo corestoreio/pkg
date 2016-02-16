@@ -16,6 +16,8 @@ package directory
 
 import (
 	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
@@ -26,23 +28,23 @@ var ConfigStructure element.SectionSlice
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
 		&element.Section{
-			ID:        "currency",
-			Label:     `Currency Setup`,
+			ID:        path.NewRoute("currency"),
+			Label:     text.Chars(`Currency Setup`),
 			SortOrder: 60,
 			Scope:     scope.PermAll,
 			Resource:  0, // Magento_Backend::currency
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:        "options",
-					Label:     `Currency Options`,
+					ID:        path.NewRoute("options"),
+					Label:     text.Chars(`Currency Options`),
 					SortOrder: 30,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: currency/options/base
-							ID:        "base",
-							Label:     `Base Currency`,
-							Comment:   element.LongText(`Base currency is used for all online payment transactions. If you have more than one store view, the base currency scope is defined by the catalog price scope ("Catalog" > "Price" > "Catalog Price Scope").`),
+							ID:        path.NewRoute("base"),
+							Label:     text.Chars(`Base Currency`),
+							Comment:   text.Chars(`Base currency is used for all online payment transactions. If you have more than one store view, the base currency scope is defined by the catalog price scope ("Catalog" > "Price" > "Catalog Price Scope").`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -54,8 +56,8 @@ func init() {
 
 						&element.Field{
 							// Path: currency/options/default
-							ID:        "default",
-							Label:     `Default Display Currency`,
+							ID:        path.NewRoute("default"),
+							Label:     text.Chars(`Default Display Currency`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -67,8 +69,8 @@ func init() {
 
 						&element.Field{
 							// Path: currency/options/allow
-							ID:         "allow",
-							Label:      `Allowed Currencies`,
+							ID:         path.NewRoute("allow"),
+							Label:      text.Chars(`Allowed Currencies`),
 							Type:       element.TypeMultiselect,
 							SortOrder:  3,
 							Visible:    element.VisibleYes,
@@ -82,15 +84,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "webservicex",
-					Label:     `Webservicex`,
+					ID:        path.NewRoute("webservicex"),
+					Label:     text.Chars(`Webservicex`),
 					SortOrder: 40,
 					Scope:     scope.NewPerm(scope.DefaultID),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: currency/webservicex/timeout
-							ID:      "timeout",
-							Label:   `Connection Timeout in Seconds`,
+							ID:      path.NewRoute("timeout"),
+							Label:   text.Chars(`Connection Timeout in Seconds`),
 							Type:    element.TypeText,
 							Visible: element.VisibleYes,
 							Scope:   scope.NewPerm(scope.DefaultID),
@@ -100,15 +102,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "import",
-					Label:     `Scheduled Import Settings`,
+					ID:        path.NewRoute("import"),
+					Label:     text.Chars(`Scheduled Import Settings`),
 					SortOrder: 50,
 					Scope:     scope.NewPerm(scope.DefaultID),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: currency/import/enabled
-							ID:        "enabled",
-							Label:     `Enabled`,
+							ID:        path.NewRoute("enabled"),
+							Label:     text.Chars(`Enabled`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -119,8 +121,8 @@ func init() {
 
 						&element.Field{
 							// Path: currency/import/error_email
-							ID:        "error_email",
-							Label:     `Error Email Recipient`,
+							ID:        path.NewRoute("error_email"),
+							Label:     text.Chars(`Error Email Recipient`),
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
@@ -129,8 +131,8 @@ func init() {
 
 						&element.Field{
 							// Path: currency/import/error_email_identity
-							ID:        "error_email_identity",
-							Label:     `Error Email Sender`,
+							ID:        path.NewRoute("error_email_identity"),
+							Label:     text.Chars(`Error Email Sender`),
 							Type:      element.TypeSelect,
 							SortOrder: 6,
 							Visible:   element.VisibleYes,
@@ -141,9 +143,9 @@ func init() {
 
 						&element.Field{
 							// Path: currency/import/error_email_template
-							ID:        "error_email_template",
-							Label:     `Error Email Template`,
-							Comment:   element.LongText(`Email template chosen based on theme fallback when "Default" option is selected.`),
+							ID:        path.NewRoute("error_email_template"),
+							Label:     text.Chars(`Error Email Template`),
+							Comment:   text.Chars(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
@@ -154,8 +156,8 @@ func init() {
 
 						&element.Field{
 							// Path: currency/import/frequency
-							ID:        "frequency",
-							Label:     `Frequency`,
+							ID:        path.NewRoute("frequency"),
+							Label:     text.Chars(`Frequency`),
 							Type:      element.TypeSelect,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
@@ -165,8 +167,8 @@ func init() {
 
 						&element.Field{
 							// Path: currency/import/service
-							ID:        "service",
-							Label:     `Service`,
+							ID:        path.NewRoute("service"),
+							Label:     text.Chars(`Service`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
@@ -177,8 +179,8 @@ func init() {
 
 						&element.Field{
 							// Path: currency/import/time
-							ID:        "time",
-							Label:     `Start Time`,
+							ID:        path.NewRoute("time"),
+							Label:     text.Chars(`Start Time`),
 							Type:      element.TypeTime,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
@@ -189,18 +191,18 @@ func init() {
 			),
 		},
 		&element.Section{
-			ID: "system",
+			ID: path.NewRoute("system"),
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:        "currency",
-					Label:     `Currency`,
+					ID:        path.NewRoute("currency"),
+					Label:     text.Chars(`Currency`),
 					SortOrder: 50,
 					Scope:     scope.NewPerm(scope.DefaultID),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: system/currency/installed
-							ID:         "installed",
-							Label:      `Installed Currencies`,
+							ID:         path.NewRoute("installed"),
+							Label:      text.Chars(`Installed Currencies`),
 							Type:       element.TypeMultiselect,
 							SortOrder:  1,
 							Visible:    element.VisibleYes,
@@ -215,18 +217,18 @@ func init() {
 			),
 		},
 		&element.Section{
-			ID: "general",
+			ID: path.NewRoute("general"),
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:        "country",
-					Label:     `Country Options`,
+					ID:        path.NewRoute("country"),
+					Label:     text.Chars(`Country Options`),
 					SortOrder: 1,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/country/allow
-							ID:         "allow",
-							Label:      `Allow Countries`,
+							ID:         path.NewRoute("allow"),
+							Label:      text.Chars(`Allow Countries`),
 							Type:       element.TypeMultiselect,
 							SortOrder:  2,
 							Visible:    element.VisibleYes,
@@ -238,8 +240,8 @@ func init() {
 
 						&element.Field{
 							// Path: general/country/default
-							ID:        "default",
-							Label:     `Default Country`,
+							ID:        path.NewRoute("default"),
+							Label:     text.Chars(`Default Country`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -249,8 +251,8 @@ func init() {
 
 						&element.Field{
 							// Path: general/country/eu_countries
-							ID:        "eu_countries",
-							Label:     `European Union Countries`,
+							ID:        path.NewRoute("eu_countries"),
+							Label:     text.Chars(`European Union Countries`),
 							Type:      element.TypeMultiselect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
@@ -260,9 +262,9 @@ func init() {
 
 						&element.Field{
 							// Path: general/country/destinations
-							ID:        "destinations",
-							Label:     `Top destinations`,
-							Comment:   element.LongText(`Contains codes of the most used countries. Such countries can be shown on the top of the country list.`),
+							ID:        path.NewRoute("destinations"),
+							Label:     text.Chars(`Top destinations`),
+							Comment:   text.Chars(`Contains codes of the most used countries. Such countries can be shown on the top of the country list.`),
 							Type:      element.TypeMultiselect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
@@ -271,8 +273,8 @@ func init() {
 						},
 						&element.Field{
 							// Path: general/country/optional_zip_countries
-							ID:         "optional_zip_countries",
-							Label:      `Zip/Postal Code is Optional for`,
+							ID:         path.NewRoute("optional_zip_countries"),
+							Label:      text.Chars(`Zip/Postal Code is Optional for`),
 							Type:       element.TypeMultiselect,
 							SortOrder:  3,
 							Visible:    element.VisibleYes,
@@ -285,15 +287,15 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        "locale",
-					Label:     `Locale Options`,
+					ID:        path.NewRoute("locale"),
+					Label:     text.Chars(`Locale Options`),
 					SortOrder: 8,
 					Scope:     scope.PermAll,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/locale/timezone
-							ID:        "timezone",
-							Label:     `Timezone`,
+							ID:        path.NewRoute("timezone"),
+							Label:     text.Chars(`Timezone`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -305,8 +307,8 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/code
-							ID:        "code",
-							Label:     `Locale`,
+							ID:        path.NewRoute("code"),
+							Label:     text.Chars(`Locale`),
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
@@ -317,8 +319,8 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/firstday
-							ID:        "firstday",
-							Label:     `First Day of Week`,
+							ID:        path.NewRoute("firstday"),
+							Label:     text.Chars(`First Day of Week`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
@@ -328,8 +330,8 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/weekend
-							ID:         "weekend",
-							Label:      `Weekend Days`,
+							ID:         path.NewRoute("weekend"),
+							Label:      text.Chars(`Weekend Days`),
 							Type:       element.TypeMultiselect,
 							SortOrder:  15,
 							Visible:    element.VisibleYes,
@@ -339,8 +341,8 @@ func init() {
 						},
 						&element.Field{
 							// Path: general/locale/weight_unit
-							ID:        "weight_unit",
-							Label:     `Weight Unit`,
+							ID:        path.NewRoute("weight_unit"),
+							Label:     text.Chars(`Weight Unit`),
 							Type:      element.TypeSelect,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
@@ -351,15 +353,15 @@ func init() {
 					),
 				},
 				&element.Group{
-					ID:        "region",
-					Label:     `State Options`,
+					ID:        path.NewRoute("region"),
+					Label:     text.Chars(`State Options`),
 					SortOrder: 4,
 					Scope:     scope.NewPerm(scope.DefaultID),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/region/state_required
-							ID:        "state_required",
-							Label:     `State is Required for`,
+							ID:        path.NewRoute("state_required"),
+							Label:     text.Chars(`State is Required for`),
 							Type:      element.TypeMultiselect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
@@ -369,8 +371,8 @@ func init() {
 
 						&element.Field{
 							// Path: general/region/display_all
-							ID:        "display_all",
-							Label:     `Allow to Choose State if It is Optional for Country`,
+							ID:        path.NewRoute("display_all"),
+							Label:     text.Chars(`Allow to Choose State if It is Optional for Country`),
 							Type:      element.TypeSelect,
 							SortOrder: 8,
 							Visible:   element.VisibleYes,
@@ -384,14 +386,14 @@ func init() {
 
 		// Hidden Configuration, may be visible somewhere else ...
 		&element.Section{
-			ID: "general",
+			ID: path.NewRoute("general"),
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID: "locale",
+					ID: path.NewRoute("locale"),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/locale/datetime_format_long
-							ID:      `datetime_format_long`,
+							ID:      path.NewRoute("datetime_format_long"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%A, %B %e %Y [%I:%M %p]`,
@@ -399,7 +401,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/datetime_format_medium
-							ID:      `datetime_format_medium`,
+							ID:      path.NewRoute("datetime_format_medium"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%a, %b %e %Y [%I:%M %p]`,
@@ -407,7 +409,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/datetime_format_short
-							ID:      `datetime_format_short`,
+							ID:      path.NewRoute("datetime_format_short"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%m/%d/%y [%I:%M %p]`,
@@ -415,7 +417,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/date_format_long
-							ID:      `date_format_long`,
+							ID:      path.NewRoute("date_format_long"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%A, %B %e %Y`,
@@ -423,7 +425,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/date_format_medium
-							ID:      `date_format_medium`,
+							ID:      path.NewRoute("date_format_medium"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%a, %b %e %Y`,
@@ -431,7 +433,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/date_format_short
-							ID:      `date_format_short`,
+							ID:      path.NewRoute("date_format_short"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%m/%d/%y`,
@@ -439,7 +441,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/language
-							ID:      `language`,
+							ID:      path.NewRoute("language"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `en`,
