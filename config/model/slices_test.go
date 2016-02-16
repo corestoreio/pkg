@@ -89,9 +89,10 @@ func TestStringCSVWrite(t *testing.T) {
 	assert.NoError(t, b.Write(mw, []string{"a", "b", "c"}, scope.DefaultID, 0))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 	assert.Exactly(t, "a,b,c", mw.ArgValue.(string))
-
-	assert.EqualError(t, b.Write(mw, []string{"abc"}, scope.DefaultID, 0), "The value 'abc' cannot be found within the allowed Options():\n[{\"Value\":\"Content-Type\",\"Label\":\"Content Type\"},{\"Value\":\"X-CoreStore-ID\",\"Label\":\"CoreStore Microservice ID\"},{\"Value\":\"a\",\"Label\":\"a\"},{\"Value\":\"b\",\"Label\":\"b\"},{\"Value\":\"c\",\"Label\":\"c\"}]\n\nJSON Error: %!s(<nil>)")
-
+	assert.EqualError(t,
+		b.Write(mw, []string{"abc"}, scope.DefaultID, 0),
+		"The value 'abc' cannot be found within the allowed Options():\n[{\"Value\":\"Content-Type\",\"Label\":\"Content Type\"},{\"Value\":\"X-CoreStore-ID\",\"Label\":\"CoreStore Microservice ID\"},{\"Value\":\"a\",\"Label\":\"a\"},{\"Value\":\"b\",\"Label\":\"b\"},{\"Value\":\"c\",\"Label\":\"c\"}]\n",
+	)
 }
 
 func TestIntCSV(t *testing.T) {
@@ -153,5 +154,8 @@ func TestIntCSV(t *testing.T) {
 	assert.NoError(t, b.Write(mw, []int{2016, 2017, 2018}, scope.StoreID, 4))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 	assert.Exactly(t, "2016,2017,2018", mw.ArgValue.(string))
-	assert.EqualError(t, b.Write(mw, []int{2019}, scope.StoreID, 4), "The value '2019' cannot be found within the allowed Options():\n[{\"Value\":2014,\"Label\":\"Year 2014\"},{\"Value\":2015,\"Label\":\"Year 2015\"},{\"Value\":2016,\"Label\":\"Year 2016\"},{\"Value\":2017,\"Label\":\"Year 2017\"},{\"Value\":2018,\"Label\":\"Year 2018\"}]\n\nJSON Error: %!s(<nil>)")
+	assert.EqualError(t,
+		b.Write(mw, []int{2019}, scope.StoreID, 4),
+		"The value '2019' cannot be found within the allowed Options():\n[{\"Value\":2014,\"Label\":\"Year 2014\"},{\"Value\":2015,\"Label\":\"Year 2015\"},{\"Value\":2016,\"Label\":\"Year 2016\"},{\"Value\":2017,\"Label\":\"Year 2017\"},{\"Value\":2018,\"Label\":\"Year 2018\"}]\n",
+	)
 }

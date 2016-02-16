@@ -260,7 +260,7 @@ func (bv baseValue) ValidateString(v string) (err error) {
 		if jErr != nil {
 			return errors.Maskf(err, "Source: %#v", bv.Source)
 		}
-		err = errors.Errorf("The value '%s' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
+		err = errors.Errorf("The value '%s' cannot be found within the allowed Options():\n%s", v, jv)
 	}
 	return
 }
@@ -298,7 +298,10 @@ func (bv baseValue) lookupInt(sg config.ScopedGetter) (int, error) {
 func (bv baseValue) ValidateInt(v int) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValInt(v) {
 		jv, jErr := bv.Source.ToJSON()
-		err = errors.Errorf("The value '%d' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
+		if jErr != nil {
+			return errors.Maskf(err, "Source: %#v", bv.Source)
+		}
+		err = errors.Errorf("The value '%d' cannot be found within the allowed Options():\n%s", v, jv)
 	}
 	return
 }
@@ -335,7 +338,10 @@ func (bv baseValue) lookupFloat64(sg config.ScopedGetter) (float64, error) {
 func (bv baseValue) ValidateFloat64(v float64) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValFloat64(v) {
 		jv, jErr := bv.Source.ToJSON()
-		err = errors.Errorf("The value '%.14f' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
+		if jErr != nil {
+			return errors.Maskf(err, "Source: %#v", bv.Source)
+		}
+		err = errors.Errorf("The value '%.14f' cannot be found within the allowed Options():\n%s", v, jv)
 	}
 	return
 }
@@ -402,8 +408,11 @@ func (bv baseValue) lookupTime(sg config.ScopedGetter) (time.Time, error) {
 func (bv baseValue) ValidateTime(v time.Time) (err error) {
 	// todo:
 	//if bv.Source != nil && false == bv.Source.ContainsValFloat64(v) {
-	//	jv, jErr := bv.Source.ToJSON()
-	//	err = errors.Errorf("The value '%.14f' cannot be found within the allowed Options():\n%s\nJSON Error: %s", v, jv, jErr)
+	//jv, jErr := bv.Source.ToJSON()
+	//if jErr != nil {
+	//	return errors.Maskf(err, "Source: %#v", bv.Source)
+	//}
+	//err = errors.Errorf("The value '%s' cannot be found within the allowed Options():\n%s", v, jv)
 	//}
 	return
 }
