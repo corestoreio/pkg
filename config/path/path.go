@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/juju/errors"
 )
 
@@ -155,38 +156,11 @@ func (p Path) GoString() string {
 // FQ returns the fully qualified route. Safe for further processing of the
 // returned byte slice. If scope is equal to scope.DefaultID and ID is not
 // zero then ID gets set to zero.
-// The returned Route slice is owned by Path. For further modifications you must
-// copy it via Route.Copy().
 func (p Path) FQ() (Route, error) {
-	if err := p.IsValid(); err != nil {
-		return Route{}, err
-	}
-
-	if (p.Scope == scope.DefaultID || p.Scope == scope.GroupID) && p.ID > 0 {
-		p.Scope = scope.DefaultID
-		p.ID = 0
-	}
-
+	// bufferpool not possible because we're returning bytes, which can be modified
 	var buf bytes.Buffer
-	if _, err := buf.WriteString(p.StrScope()); err != nil {
-		return Route{}, errors.Mask(err)
-	}
-	if err := buf.WriteByte(Separator); err != nil {
-		return Route{}, errors.Mask(err)
-	}
-	bufRaw := buf.Bytes()
-	bufRaw = strconv.AppendInt(bufRaw, p.ID, 10)
-	buf.Reset()
-	if _, err := buf.Write(bufRaw); err != nil {
-		return Route{}, errors.Mask(err)
-	}
-	if err := buf.WriteByte(Separator); err != nil {
-		return Route{}, errors.Mask(err)
-	}
-	if _, err := buf.Write(p.Route.Chars); err != nil {
-		return Route{}, errors.Mask(err)
-	}
-	return newRoute(buf.Bytes()), nil
+	err := p.fq(&buf)
+	return newRoute(buf.Bytes()), err
 }
 
 // Level returns a hierarchical based route depending on the depth.
@@ -205,7 +179,8 @@ func (p Path) Level(depth int) (r Route, err error) {
 }
 
 // Hash same as Level() but returns a fnv32a value or an error if the route is
-// invalid.
+// invalid. The hash value contains the scope, scopeID and route.
+// The returned Hash is equal to FQ().Hash32, but this function has less allocs.
 //
 // Copyright 2011 The Go Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style
@@ -217,10 +192,49 @@ func (p Path) Level(depth int) (r Route, err error) {
 // http://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function.
 func (p Path) Hash(depth int) (uint32, error) {
 	p.routeValidated = true
-	if err := p.IsValid(); err != nil {
+
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	err := p.fq(buf)
+	if err != nil {
 		return 0, err
 	}
-	return p.Route.Hash(depth)
+	r := newRoute(buf.Bytes())
+	if depth < 0 {
+		return r.Sum32, nil
+	}
+	return r.Hash(depth + 2)
+}
+
+func (p Path) fq(buf *bytes.Buffer) error {
+	if err := p.IsValid(); err != nil {
+		return err
+	}
+
+	if (p.Scope == scope.DefaultID || p.Scope == scope.GroupID) && p.ID > 0 {
+		p.Scope = scope.DefaultID
+		p.ID = 0
+	}
+
+	if _, err := buf.Write(p.Scope.Bytes()); err != nil {
+		return errors.Mask(err)
+	}
+	if err := buf.WriteByte(Separator); err != nil {
+		return errors.Mask(err)
+	}
+	bufRaw := buf.Bytes()
+	bufRaw = strconv.AppendInt(bufRaw, p.ID, 10)
+	buf.Reset()
+	if _, err := buf.Write(bufRaw); err != nil {
+		return errors.Mask(err)
+	}
+	if err := buf.WriteByte(Separator); err != nil {
+		return errors.Mask(err)
+	}
+	if _, err := buf.Write(p.Route.Chars); err != nil {
+		return errors.Mask(err)
+	}
+	return nil
 }
 
 // Part returns the route part on the desired position. The Route gets validated

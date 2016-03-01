@@ -75,7 +75,7 @@ func TestMustNewByPartsNoPanic(t *testing.T) {
 		}
 	}()
 	p := path.MustNewByParts("aa", "bb", "cc")
-	assert.Exactly(t, p.String(), "default/0/aa/bb/cc")
+	assert.Exactly(t, "default/0/aa/bb/cc", p.String())
 }
 
 var benchmarkNewByParts path.Path
@@ -207,28 +207,64 @@ func TestShouldPanicIncorrectPath(t *testing.T) {
 	assert.Exactly(t, "websites/345/xxxxx/yyyyy", path.MustNew(path.NewRoute("xxxxx/yyyyy")).BindStr(scope.StrWebsites, 345).String())
 }
 
-var benchmarkStrScopeFQPath path.Route
+var benchmarkPathFQ path.Route
 
-func benchmarkFQ(scopeID int64, b *testing.B) {
+// BenchmarkPathFQ-4     	 3000000	       401 ns/op	     112 B/op	       1 allocs/op
+func BenchmarkPathFQ(b *testing.B) {
+	var scopeID int64 = 11
 	want := path.NewRoute(scope.StrWebsites.String() + "/" + strconv.FormatInt(scopeID, 10) + "/system/dev/debug")
 	p := path.NewRoute("system/dev/debug")
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkStrScopeFQPath, err = path.MustNew(p).BindStr(scope.StrWebsites, scopeID).FQ()
+		benchmarkPathFQ, err = path.MustNew(p).BindStr(scope.StrWebsites, scopeID).FQ()
 		if err != nil {
 			b.Error(err)
 		}
 	}
-	if benchmarkStrScopeFQPath.Equal(want) == false {
-		b.Errorf("Want: %s; Have, %s", want, benchmarkStrScopeFQPath)
+	if benchmarkPathFQ.Equal(want) == false {
+		b.Errorf("Want: %s; Have, %s", want, benchmarkPathFQ)
 	}
 }
 
-// BenchmarkFQ-4     	 3000000	       401 ns/op	     112 B/op	       1 allocs/op
-func BenchmarkFQ(b *testing.B) {
-	benchmarkFQ(11, b)
+var benchmarkPathHash uint32
+
+// BenchmarkPathHashFull-4  	 3000000	       502 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkPathHashFull(b *testing.B) {
+	const scopeID int64 = 12
+	const want uint32 = 1479679325
+	p := path.NewRoute("system/dev/debug")
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var err error
+		benchmarkPathHash, err = path.MustNew(p).BindStr(scope.StrWebsites, scopeID).Hash(-1)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+	if benchmarkPathHash != want {
+		b.Errorf("Want: %d; Have, %d", want, benchmarkPathHash)
+	}
+}
+
+func BenchmarkPathHashLevel2(b *testing.B) {
+	const scopeID int64 = 13
+	const want uint32 = 723768876
+	p := path.NewRoute("system/dev/debug")
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		var err error
+		benchmarkPathHash, err = path.MustNew(p).BindStr(scope.StrWebsites, scopeID).Hash(2)
+		if err != nil {
+			b.Error(err)
+		}
+	}
+	if benchmarkPathHash != want {
+		b.Errorf("Want: %d; Have, %d", want, benchmarkPathHash)
+	}
 }
 
 func TestSplitFQ(t *testing.T) {
@@ -336,7 +372,23 @@ func TestPathRouteIsValid(t *testing.T) {
 	assert.NoError(t, p.IsValid())
 }
 
-func TestPathHash(t *testing.T) {
+func TestPathHashWebsite(t *testing.T) {
+	t.Parallel()
+
+	p := path.MustNewByParts("general/single_store_mode/enabled").Bind(scope.WebsiteID, 33)
+	hv, err := p.Hash(-1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	check := fnv.New32a()
+	_, cErr := check.Write([]byte(p.String()))
+	assert.NoError(t, cErr)
+	assert.Exactly(t, check.Sum32(), hv, "Have %d want %d", hv, check.Sum32())
+
+}
+
+func TestPathHashDefault(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		have      path.Route
@@ -346,13 +398,13 @@ func TestPathHash(t *testing.T) {
 		wantLevel string
 	}{
 		{path.NewRoute("general/single_\x80store_mode/enabled"), 0, 0, path.ErrRouteInvalidBytes, ""},
-		{path.NewRoute("general/single_store_mode/enabled"), 0, 2166136261, nil, ""},
-		{path.NewRoute("general/single_store_mode/enabled"), 1, 616112491, nil, "general"},
-		{path.NewRoute("general/single_store_mode/enabled"), 2, 2274889228, nil, "general/single_store_mode"},
-		{path.NewRoute("general/single_store_mode/enabled"), 3, 1644245266, nil, "general/single_store_mode/enabled"},
-		{path.NewRoute("general/single_store_mode/enabled"), -1, 1644245266, nil, "general/single_store_mode/enabled"},
-		{path.NewRoute("general/single_store_mode/enabled"), 5, 1644245266, nil, "general/single_store_mode/enabled"},
-		{path.NewRoute("general/single_store_mode/enabled"), 4, 1644245266, nil, "general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), 0, 453736105, nil, "default/0"},
+		{path.NewRoute("general/single_store_mode/enabled"), 1, 2243014074, nil, "default/0/general"},
+		{path.NewRoute("general/single_store_mode/enabled"), 2, 4182795913, nil, "default/0/general/single_store_mode"},
+		{path.NewRoute("general/single_store_mode/enabled"), 3, 1584651487, nil, "default/0/general/single_store_mode/enabled"},
+		{path.NewRoute("general/single_store_mode/enabled"), -1, 1584651487, nil, "default/0/general/single_store_mode/enabled"}, // 5
+		{path.NewRoute("general/single_store_mode/enabled"), 5, 1584651487, nil, "default/0/general/single_store_mode/enabled"},  // 6
+		{path.NewRoute("general/single_store_mode/enabled"), 4, 1584651487, nil, "default/0/general/single_store_mode/enabled"},  // 7
 	}
 	for i, test := range tests {
 		p := path.Path{
@@ -370,10 +422,21 @@ func TestPathHash(t *testing.T) {
 		check := fnv.New32a()
 		_, cErr := check.Write([]byte(test.wantLevel))
 		assert.NoError(t, cErr)
-		assert.Exactly(t, check.Sum32(), hv, "Index %d", i)
+		assert.Exactly(t, check.Sum32(), hv, "Want %d Have %d Index %d", check.Sum32(), hv, i)
 
-		l, err := p.Level(test.level)
-		assert.Exactly(t, test.wantLevel, l.String(), "Index %d", i)
+		xr, err := p.FQ()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if test.level < 0 {
+			test.level = -3
+		}
+		xrl, err := xr.Level(test.level + 2)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Exactly(t, test.wantLevel, xrl.String(), "Index %d", i)
 		assert.Exactly(t, test.wantHash, hv, "Want %d Have %d Index %d", test.wantHash, hv, i)
 	}
 }
