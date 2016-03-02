@@ -44,7 +44,7 @@ func TestSimpleStorage(t *testing.T) {
 	assert.Exactly(t, 4711, i.(int))
 
 	ni, err := sp.Get(path.Path{})
-	assert.EqualError(t, err, path.ErrRouteEmpty.Error())
+	assert.EqualError(t, err, path.ErrIncorrectPath.Error())
 	assert.Nil(t, ni)
 
 	keys, err := sp.AllKeys()
@@ -53,4 +53,9 @@ func TestSimpleStorage(t *testing.T) {
 
 	wantKeys := path.PathSlice{path.Path{Route: path.NewRoute(`aa/bb/cc`), Scope: 1, ID: 0}, path.Path{Route: path.NewRoute(`xx/yy/zz`), Scope: 4, ID: 2}}
 	assert.Exactly(t, wantKeys, keys)
+
+	p3 := path.MustNewByParts("rr/ss/tt").Bind(scope.StoreID, 1)
+	ni, err = sp.Get(p3)
+	assert.EqualError(t, err, storage.ErrKeyNotFound.Error())
+	assert.Nil(t, ni)
 }

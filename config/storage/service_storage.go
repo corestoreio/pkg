@@ -52,7 +52,7 @@ type keyVal struct {
 
 type kvmap struct {
 	sync.Mutex
-	kv map[uint32]keyVal
+	kv map[uint32]keyVal // todo: create benchmark to check if worth switching to pointers
 }
 
 // NewKV creates a new simple key value storage using a map[string]interface{}
@@ -63,33 +63,35 @@ func NewKV() *kvmap {
 	}
 }
 
+// Set implements Storager interface
 func (sp *kvmap) Set(key path.Path, value interface{}) error {
 	sp.Lock()
 	defer sp.Unlock()
-	k, err := key.FQ()
+
+	h32, err := key.Hash(-1)
 	if err != nil {
 		return err
 	}
-	h32 := k.Hash32()
 	sp.kv[h32] = keyVal{key, value}
 	return nil
 }
 
+// Get implements Storager interface
 func (sp *kvmap) Get(key path.Path) (interface{}, error) {
 	sp.Lock()
 	defer sp.Unlock()
 
-	k, err := key.FQ()
+	h32, err := key.Hash(-1)
 	if err != nil {
 		return nil, err
 	}
-	h32 := k.Hash32()
 	if data, ok := sp.kv[h32]; ok {
 		return data.v, nil
 	}
 	return nil, ErrKeyNotFound
 }
 
+// AllKeys implements Storager interface
 func (sp *kvmap) AllKeys() (path.PathSlice, error) {
 	sp.Lock()
 	defer sp.Unlock()
