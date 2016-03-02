@@ -84,7 +84,6 @@ func TestConfigRedirectToBase(t *testing.T) {
 	) // 200 not allowed
 }
 
-// BenchmarkConfigRedirectToBase-4	  500000	      2966 ns/op	     432 B/op	       6 allocs/op
 func BenchmarkConfigRedirectToBase(b *testing.B) {
 	r := backend.NewConfigRedirectToBase(
 		backend.Backend.WebURLRedirectToBase.String(),

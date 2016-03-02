@@ -11,7 +11,6 @@ import (
 // benchmarkGlobalStruct trick the compiler to not optimize anything
 var benchmarkGlobalStruct bool
 
-// Benchmark_StructGlobal-4       	  500000	      3530 ns/op	     544 B/op	       7 allocs/op
 func Benchmark_StructGlobal(b *testing.B) {
 
 	sg := config.NewMockGetter().NewScoped(1, 1, 1)
@@ -26,7 +25,6 @@ func Benchmark_StructGlobal(b *testing.B) {
 	}
 }
 
-// Benchmark_StructSpecific-4     	  500000	      3735 ns/op	     528 B/op	       5 allocs/op
 func Benchmark_StructSpecific(b *testing.B) {
 
 	sg := config.NewMockGetter().NewScoped(1, 1, 1)

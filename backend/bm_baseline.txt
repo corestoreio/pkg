@@ -1,0 +1,5 @@
+PASS
+Benchmark_StructGlobal-4       	  500000	      3031 ns/op	      96 B/op	       3 allocs/op
+Benchmark_StructSpecific-4     	  500000	      4660 ns/op	      80 B/op	       1 allocs/op
+BenchmarkConfigRedirectToBase-4	  500000	      2523 ns/op	      96 B/op	       3 allocs/op
+ok  	github.com/corestoreio/csfw/backend	5.221s
