@@ -90,6 +90,19 @@ func (i Scope) StrScope() string {
 	return FromScope(i).String()
 }
 
+// Bytes returns the StrScope as byte slice from a Scope.
+// The returned byte slice is owned by this package. You must
+// copy it for further use.
+func (i Scope) Bytes() []byte {
+	switch i {
+	case WebsiteID:
+		return bWebsites
+	case StoreID:
+		return bStores
+	}
+	return bDefault
+}
+
 // StrScope represents a string scope from table core_config_data column scope with
 // special functions attached, mainly for path generation
 type StrScope string
@@ -101,9 +114,9 @@ const (
 )
 
 var (
-	bDefault  = []byte("default")
-	bWebsites = []byte("websites")
-	bStores   = []byte("stores")
+	bDefault  = []byte(strDefault)
+	bWebsites = []byte(strWebsites)
+	bStores   = []byte(strStores)
 )
 
 // Str* constants are used in the database table core_config_data.

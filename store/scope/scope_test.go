@@ -102,6 +102,7 @@ func TestStrScope(t *testing.T) {
 }
 
 func TestValid(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have string
 		want bool
@@ -135,6 +136,7 @@ func TestFromBytes(t *testing.T) {
 }
 
 func TestValidBytes(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		have []byte
 		want bool
@@ -148,5 +150,20 @@ func TestValidBytes(t *testing.T) {
 	}
 	for i, test := range tests {
 		assert.Exactly(t, test.want, ValidBytes(test.have), "Index %d", i)
+	}
+}
+
+func TestStrScopeBytes(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		id Scope
+	}{
+		{DefaultID},
+		{WebsiteID},
+		{StoreID},
+		{44},
+	}
+	for i, test := range tests {
+		assert.Exactly(t, test.id.StrScope(), string(test.id.Bytes()), "Index %d", i)
 	}
 }

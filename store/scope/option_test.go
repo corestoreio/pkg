@@ -22,6 +22,7 @@ import (
 )
 
 func TestApplyCode(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		wantStoreCode   string
 		wantWebsiteCode string
@@ -50,6 +51,7 @@ func TestApplyCode(t *testing.T) {
 }
 
 func TestApplyID(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		wantWebsiteID scope.WebsiteIDer
 		wantGroupID   scope.GroupIDer
@@ -101,6 +103,7 @@ func TestApplyID(t *testing.T) {
 }
 
 func TestApplyWebsite(t *testing.T) {
+	t.Parallel()
 	so := scope.Option{Website: scope.MockID(3)}
 	assert.NotNil(t, so)
 	assert.Equal(t, int64(3), so.Website.WebsiteID())
@@ -110,6 +113,7 @@ func TestApplyWebsite(t *testing.T) {
 }
 
 func TestApplyGroup(t *testing.T) {
+	t.Parallel()
 	so := scope.Option{Group: scope.MockID(3)}
 	assert.NotNil(t, so)
 	assert.Equal(t, int64(3), so.Group.GroupID())
@@ -119,6 +123,7 @@ func TestApplyGroup(t *testing.T) {
 }
 
 func TestApplyStore(t *testing.T) {
+	t.Parallel()
 	so := scope.Option{Store: scope.MockID(3)}
 	assert.NotNil(t, so)
 	assert.Equal(t, int64(3), so.Store.StoreID())
@@ -128,6 +133,7 @@ func TestApplyStore(t *testing.T) {
 }
 
 func TestApplyDefault(t *testing.T) {
+	t.Parallel()
 	so := scope.Option{}
 	assert.NotNil(t, so)
 	assert.Exactly(t, scope.DefaultID, so.Scope())
