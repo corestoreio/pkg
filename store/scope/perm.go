@@ -19,44 +19,44 @@ import (
 	"github.com/corestoreio/csfw/util/bufferpool"
 )
 
-// Perm is a bit set and used for permissions, Group is not a part of this bit set.
-// Type Group is a subpart of Perm
-type Perm uint64
+// Perm is a bit set and used for permissions. Uint16 should be big enough.
+type Perm uint16
 
-// PermStore convenient helper variable contains all scope permission levels.
+// PermStore convenient helper contains all scope permission levels.
 // The official core_config_data table and its classes to not support the
-// GroupID scope, so that is the reasion why PermStore does not have a GroupID.
-var PermStore = NewPerm(DefaultID, WebsiteID, StoreID)
+// GroupID scope, so that is the reason why PermStore does not have a GroupID.
+const PermStore Perm = 1<<DefaultID | 1<<WebsiteID | 1<<StoreID
 
-// PermGroup convenient helper variable contains default, website and group scope permission levels.
-// Not officially supported by M1 and M2.
-var PermGroup = NewPerm(DefaultID, WebsiteID, GroupID)
+// PermWebsite convenient helper contains default and website scope permission levels.
+const PermWebsite Perm = 1<<DefaultID | 1<<WebsiteID
 
-// PermWebsite convenient helper variable contains default and website scope permission levels.
-var PermWebsite = NewPerm(DefaultID, WebsiteID)
+// PermDefault convenient helper contains default scope permission level.
+const PermDefault Perm = 1 << DefaultID
 
-// PermDefault convenient helper variable contains default scope permission level.
-var PermDefault = NewPerm(DefaultID)
+// PermStoreReverse convenient helper to enforce hierarchy levels.
+// Only used in config.scopedService implementation.
+const PermStoreReverse Perm = 1 << StoreID
+
+// PermWebsiteReverse convenient helper to enforce hierarchy levels
+// Only used in config.scopedService implementation.
+const PermWebsiteReverse Perm = 1<<StoreID | 1<<WebsiteID
 
 // NewPerm returns a new permission container
 func NewPerm(scopes ...Scope) Perm {
-	p := Perm(0)
-	p.Set(scopes...)
-	return p
+	return Perm(0).Set(scopes...)
 }
 
-// All applies all scopes
-func (bits *Perm) All() Perm {
-	bits.Set(DefaultID, WebsiteID, StoreID)
-	return *bits
+// All applies DefaultID, WebsiteID and StoreID scopes
+func (bits Perm) All() Perm {
+	return bits.Set(DefaultID, WebsiteID, StoreID)
 }
 
 // Set takes a variadic amount of Group to set them to Bits
-func (bits *Perm) Set(scopes ...Scope) Perm {
+func (bits Perm) Set(scopes ...Scope) Perm {
 	for _, i := range scopes {
-		*bits = *bits | (1 << i) // (1 << power = 2^power)
+		bits = bits | (1 << i) // (1 << power = 2^power)
 	}
-	return *bits
+	return bits
 }
 
 // Has checks if a give scope exists within a Perm. Only the
