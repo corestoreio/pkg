@@ -15,24 +15,22 @@
 package httputil_test
 
 import (
-	"testing"
+	std "log"
 
 	"github.com/corestoreio/csfw/net/httputil"
-	"github.com/stretchr/testify/assert"
+	"github.com/corestoreio/csfw/util/log"
 )
 
-func TestVersionize(t *testing.T) {
-	t.Parallel()
-	tests := []struct {
-		have, want string
-	}{
-		{"login", "/V1/login"},
-		{"/login", "/V1/login"},
-		{"", "/V1/"},
-	}
-	for _, test := range tests {
-		h := httputil.APIRoute.Versionize(test.have)
-		assert.Equal(t, test.want, h)
-	}
-	assert.Equal(t, "/V1/", httputil.APIRoute.String())
+var debugLogBuf *log.MutexBuffer
+var infoLogBuf *log.MutexBuffer
+
+func init() {
+	debugLogBuf = new(log.MutexBuffer)
+	infoLogBuf = new(log.MutexBuffer)
+
+	httputil.PkgLog = log.NewStdLogger(
+		log.SetStdDebug(debugLogBuf, "testDebug: ", std.Lshortfile),
+		log.SetStdInfo(infoLogBuf, "testInfo: ", std.Lshortfile),
+	)
+	httputil.PkgLog.SetLevel(log.StdLevelDebug)
 }

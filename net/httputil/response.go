@@ -39,14 +39,13 @@ package httputil
 import (
 	"encoding/json"
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"path/filepath"
 
 	"github.com/corestoreio/csfw/util/bufferpool"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 const indexFile = "index.html"
@@ -98,32 +97,31 @@ func (p Print) Render(code int, name string, data interface{}) error {
 // HTML formats according to a format specifier and sends HTML response with
 // status code.
 func (p Print) HTML(code int, format string, a ...interface{}) error {
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-	_, err := fmt.Fprintf(buf, format, a...)
+	err := p.html(code, nil)
 	if err != nil {
 		return err
 	}
-	return p.html(code, buf.Bytes())
+	_, err = fmt.Fprintf(p.Response, format, a...)
+	return err
 }
 
 func (p Print) html(code int, data []byte) (err error) {
 	p.Response.Header().Set(ContentType, TextHTMLCharsetUTF8)
 	p.Response.WriteHeader(code)
-	_, err = p.Response.Write(data)
-	return err
+	if data != nil {
+		_, err = p.Response.Write(data)
+	}
+	return
 }
 
 // String formats according to a format specifier and sends text response with
 // status code.
 func (p Print) String(code int, format string, a ...interface{}) (err error) {
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
-	_, err = fmt.Fprintf(buf, format, a...)
-	if err != nil {
+	if err := p.string(code, nil); err != nil {
 		return err
 	}
-	return p.string(code, buf.Bytes())
+	_, err = fmt.Fprintf(p.Response, format, a...)
+	return err
 }
 
 // WriteString converts a string into []bytes and outputs it. No formatting
@@ -148,7 +146,7 @@ func (p Print) JSON(code int, i interface{}) (err error) {
 	defer bufferpool.Put(buf)
 
 	if err := json.NewEncoder(buf).Encode(i); err != nil {
-		return errgo.Mask(err)
+		return errors.Mask(err)
 	}
 	return p.json(code, buf.Bytes())
 }
@@ -165,7 +163,9 @@ func (p Print) JSONIndent(code int, i interface{}, prefix string, indent string)
 func (p Print) json(code int, b []byte) (err error) {
 	p.Response.Header().Set(ContentType, ApplicationJSONCharsetUTF8)
 	p.Response.WriteHeader(code)
-	_, err = p.Response.Write(b)
+	if b != nil {
+		_, err = p.Response.Write(b)
+	}
 	return err
 }
 
@@ -176,20 +176,20 @@ func (p Print) JSONP(code int, callback string, i interface{}) (err error) {
 	defer bufferpool.Put(buf)
 
 	if err := json.NewEncoder(buf).Encode(i); err != nil {
-		return errgo.Mask(err)
+		return errors.Mask(err)
 	}
 	p.Response.Header().Set(ContentType, ApplicationJavaScriptCharsetUTF8)
 	p.Response.WriteHeader(code)
 	_, err = p.Response.Write([]byte(callback + "("))
 	if err != nil {
-		return errgo.Mask(err)
+		return errors.Mask(err)
 	}
 	_, err = p.Response.Write(buf.Bytes())
 	if err != nil {
-		return errgo.Mask(err)
+		return errors.Mask(err)
 	}
 	_, err = p.Response.Write([]byte(");"))
-	return errgo.Mask(err)
+	return errors.Mask(err)
 }
 
 // XML sends an XML response with status code.
@@ -198,7 +198,7 @@ func (p Print) XML(code int, i interface{}) (err error) {
 	defer bufferpool.Put(buf)
 
 	if err := xml.NewEncoder(buf).Encode(i); err != nil {
-		return errgo.Mask(err)
+		return errors.Mask(err)
 	}
 	return p.xml(code, buf.Bytes())
 }
@@ -218,7 +218,9 @@ func (p Print) xml(code int, b []byte) (err error) {
 	if _, err = p.Response.Write([]byte(xml.Header)); err != nil {
 		return err
 	}
-	_, err = p.Response.Write(b)
+	if b != nil {
+		_, err = p.Response.Write(b)
+	}
 	return err
 }
 
@@ -259,7 +261,7 @@ func serveFile(dir, file string, p Print) error {
 
 	f, err := p.FileSystem.Open(file)
 	if err != nil {
-		return errgo.Newf("File not found: %s => %s", dir, file)
+		return errors.Errorf("File not found: %s => %s", dir, file)
 	}
 	defer f.Close()
 
@@ -268,7 +270,7 @@ func serveFile(dir, file string, p Print) error {
 		file = filepath.Join(file, indexFile)
 		f, err = p.FileSystem.Open(file)
 		if err != nil {
-			return errgo.Newf("Cannot access file: %s", file) // http.StatusForbidden
+			return errors.Errorf("Cannot access file: %s", file) // http.StatusForbidden
 		}
 		fi, _ = f.Stat()
 	}

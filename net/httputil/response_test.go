@@ -38,6 +38,7 @@ func (errorWriter) Write(p []byte) (n int, err error) {
 }
 
 func TestPrintRender(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 	tpl, err := template.New("foo").Parse(`{{define "T"}}Hello, {{.}}!{{end}}`)
@@ -50,6 +51,7 @@ func TestPrintRender(t *testing.T) {
 }
 
 func TestPrintRenderErrors(t *testing.T) {
+	t.Parallel()
 	assert.EqualError(t, httputil.NewPrinter(nil, nil).Render(0, "", nil), httputil.ErrRendererNotRegistered.Error())
 
 	w := httptest.NewRecorder()
@@ -63,6 +65,7 @@ func TestPrintRenderErrors(t *testing.T) {
 }
 
 func TestPrintHTML(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
@@ -73,6 +76,7 @@ func TestPrintHTML(t *testing.T) {
 }
 
 func TestPrintHTMLError(t *testing.T) {
+	t.Parallel()
 	w := new(errorWriter)
 	w.ResponseRecorder = httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
@@ -84,6 +88,7 @@ func TestPrintHTMLError(t *testing.T) {
 }
 
 func TestPrintString(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
@@ -94,6 +99,7 @@ func TestPrintString(t *testing.T) {
 }
 
 func TestPrintWriteString(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
@@ -104,6 +110,7 @@ func TestPrintWriteString(t *testing.T) {
 }
 
 func TestPrintStringError(t *testing.T) {
+	t.Parallel()
 	w := new(errorWriter)
 	w.ResponseRecorder = httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
@@ -126,6 +133,7 @@ var encodeData = []EncData{
 }
 
 func TestPrintJSON(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
@@ -136,6 +144,7 @@ func TestPrintJSON(t *testing.T) {
 }
 
 func TestPrintJSONError(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
@@ -146,6 +155,7 @@ func TestPrintJSONError(t *testing.T) {
 }
 
 func TestPrintJSONIndent(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
@@ -156,6 +166,7 @@ func TestPrintJSONIndent(t *testing.T) {
 }
 
 func TestPrintJSONIndentError(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
@@ -166,6 +177,7 @@ func TestPrintJSONIndentError(t *testing.T) {
 }
 
 func TestPrintJSONP(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
@@ -176,6 +188,7 @@ func TestPrintJSONP(t *testing.T) {
 }
 
 func TestPrintJSONPError(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
@@ -186,6 +199,7 @@ func TestPrintJSONPError(t *testing.T) {
 }
 
 func TestPrintXML(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
@@ -196,6 +210,7 @@ func TestPrintXML(t *testing.T) {
 }
 
 func TestPrintXMLError(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
@@ -206,6 +221,7 @@ func TestPrintXMLError(t *testing.T) {
 }
 
 func TestPrintXMLIndent(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
@@ -216,6 +232,7 @@ func TestPrintXMLIndent(t *testing.T) {
 }
 
 func TestPrintXMLIndentError(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 
@@ -226,6 +243,7 @@ func TestPrintXMLIndentError(t *testing.T) {
 }
 
 func TestPrintNoContent(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	p := httputil.NewPrinter(w, nil)
 	assert.NoError(t, p.NoContent(501))
@@ -234,6 +252,7 @@ func TestPrintNoContent(t *testing.T) {
 }
 
 func TestPrintRedirect(t *testing.T) {
+	t.Parallel()
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "http://coretore.io", nil)
 	assert.NoError(t, err)
@@ -274,6 +293,7 @@ func init() {
 }
 
 func TestPrintFileNoAttachment(t *testing.T) {
+	t.Parallel()
 
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "http://coretore.io", nil)
@@ -291,6 +311,7 @@ func TestPrintFileNoAttachment(t *testing.T) {
 }
 
 func TestPrintFileWithAttachment(t *testing.T) {
+	t.Parallel()
 
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "http://coretore.io", nil)
@@ -308,6 +329,7 @@ func TestPrintFileWithAttachment(t *testing.T) {
 }
 
 func TestPrintFileWithAttachmentError(t *testing.T) {
+	t.Parallel()
 
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("GET", "http://coretore.io", nil)
@@ -323,6 +345,7 @@ func TestPrintFileWithAttachmentError(t *testing.T) {
 }
 
 func TestPrintFileDirectoryIndex(t *testing.T) {
+	t.Parallel()
 
 	testMemFs := &memFS{MemMapFs: new(afero.MemMapFs)}
 

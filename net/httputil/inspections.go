@@ -15,13 +15,13 @@
 package httputil
 
 import (
-	"errors"
 	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/juju/errgo"
+	"github.com/corestoreio/csfw/config/model"
+	"github.com/juju/errors"
 	"golang.org/x/net/context"
 )
 
@@ -29,28 +29,51 @@ import (
 // configured URL.
 var ErrBaseURLDoNotMatch = errors.New("The Base URLs do not match")
 
-// PathOffloaderHeader defines the header name when a proxy server forwards an
-// already terminated TLS request.
-const PathOffloaderHeader = "web/secure/offloader_header"
-
-// CtxIsSecure same as IsSecure() but extract the config.Reader out of the context.
-// Wrapper function.
-func CtxIsSecure(ctx context.Context, r *http.Request) bool {
-	return IsSecure(config.FromContextGetter(ctx), r)
+// CheckSecureRequest checks if a request is secure using the SSL offloader header
+type CheckSecureRequest struct {
+	// WebSecureOffloaderHeader => Offloader header.
+	// See package backend.
+	// Path: web/secure/offloader_header
+	WebSecureOffloaderHeader model.Str
 }
 
-// IsSecure checks if a request has been sent over a TLS connection. Also checks
+// NewCeckSecureRequest creates a new SecureRequest type pointer.
+// Requires the correct path to the WebSecureOffloaderHeader configuration.
+func NewCeckSecureRequest(cfgOffloader model.Str) *CheckSecureRequest {
+	return &CheckSecureRequest{
+		WebSecureOffloaderHeader: cfgOffloader,
+	}
+}
+
+// CtxIs same as IsSecure() but extract the config.ScopedGetter out of the context.
+// Wrapper function.
+func (sr *CheckSecureRequest) CtxIs(ctx context.Context, r *http.Request) bool {
+	sg, ok := config.FromContextScopedGetter(ctx)
+	if !ok {
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("net.httputil.CtxIsSecure.FromContextScopedGetter", "ok", ok, "request", r)
+		}
+	}
+	return sr.Is(sg, r)
+}
+
+// Is checks if a request has been sent over a TLS connection. Also checks
 // if the app runs behind a proxy server and therefore checks the off loader header.
-func IsSecure(cr config.Getter, r *http.Request) bool {
-	// due to import cycle this function must be in this package
+// config.ScopedGetter can be nil.
+func (sr *CheckSecureRequest) Is(sg config.ScopedGetter, r *http.Request) bool {
+
 	if r.TLS != nil {
 		return true
 	}
 
-	oh, err := cr.String(config.Path(PathOffloaderHeader), config.ScopeDefault())
+	if sg == nil {
+		return false
+	}
+
+	oh, err := sr.WebSecureOffloaderHeader.Get(sg)
 	if err != nil {
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("net.httputil.IsSecure.FromContextReader.String", "err", err, "path", PathOffloaderHeader)
+			PkgLog.Debug("net.httputil.IsSecure.FromContextReader.String", "err", err, "path", sr.WebSecureOffloaderHeader.Route())
 		}
 		return false
 	}
@@ -75,5 +98,5 @@ func IsBaseURLCorrect(r *http.Request, baseURL *url.URL) error {
 	if PkgLog.IsDebug() {
 		PkgLog.Debug("store.isBaseUrlCorrect.compare", "err", ErrBaseURLDoNotMatch, "r.Host", r.Host, "baseURL", baseURL.String(), "requestURL", r.URL.String(), "strings.Contains", []string{r.URL.RequestURI(), baseURL.Path})
 	}
-	return errgo.Mask(ErrBaseURLDoNotMatch)
+	return errors.Mask(ErrBaseURLDoNotMatch)
 }

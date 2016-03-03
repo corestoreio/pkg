@@ -20,13 +20,21 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/httputil"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
 
 func TestCtxIsSecure(t *testing.T) {
+	t.Parallel()
+	woh, err := backend.Backend.WebSecureOffloaderHeader.ToPath(scope.DefaultID, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	tests := []struct {
 		ctx          context.Context
 		req          *http.Request
@@ -45,8 +53,8 @@ func TestCtxIsSecure(t *testing.T) {
 			true,
 		},
 		{
-			config.WithContextMockGetter(context.Background(), config.WithMockValues(config.MockPV{
-				config.MockPathScopeDefault(httputil.PathOffloaderHeader): "X_FORWARDED_PROTO",
+			config.WithContextMockScopedGetter(3, 2, 1, context.Background(), config.WithMockValues(config.MockPV{
+				woh.String(): "X_FORWARDED_PROTO",
 			})),
 			func() *http.Request {
 				r, err := http.NewRequest("GET", "/", nil)
@@ -59,8 +67,8 @@ func TestCtxIsSecure(t *testing.T) {
 			true,
 		},
 		{
-			config.WithContextMockGetter(context.Background(), config.WithMockValues(config.MockPV{
-				config.MockPathScopeDefault(httputil.PathOffloaderHeader): "X_FORWARDED_PROTO",
+			config.WithContextMockScopedGetter(1, 2, 3, context.Background(), config.WithMockValues(config.MockPV{
+				woh.String(): "X_FORWARDED_PROTO",
 			})),
 			func() *http.Request {
 				r, err := http.NewRequest("GET", "/", nil)
@@ -73,7 +81,7 @@ func TestCtxIsSecure(t *testing.T) {
 			false,
 		},
 		{
-			config.WithContextMockGetter(context.Background(), config.WithMockValues(config.MockPV{})),
+			config.WithContextMockScopedGetter(3, 4, 5, context.Background(), config.WithMockValues(config.MockPV{})),
 			func() *http.Request {
 				r, err := http.NewRequest("GET", "/", nil)
 				if err != nil {
@@ -85,12 +93,15 @@ func TestCtxIsSecure(t *testing.T) {
 			false,
 		},
 	}
-	for _, test := range tests {
-		assert.Exactly(t, test.wantIsSecure, httputil.CtxIsSecure(test.ctx, test.req))
+
+	secReq := httputil.NewCeckSecureRequest(backend.Backend.WebSecureOffloaderHeader)
+	for i, test := range tests {
+		assert.Exactly(t, test.wantIsSecure, secReq.CtxIs(test.ctx, test.req), "Index %d", i)
 	}
 }
 
 func TestIsBaseUrlCorrect(t *testing.T) {
+	t.Parallel()
 
 	var nr = func(urlStr string) *http.Request {
 		r, err := http.NewRequest("GET", urlStr, nil)

@@ -24,6 +24,7 @@ import (
 )
 
 func TestGetRemoteAddr(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		r      *http.Request
 		wantIP net.IP
