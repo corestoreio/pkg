@@ -28,7 +28,7 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 	"github.com/oschwald/geoip2-golang"
 )
 
@@ -122,7 +122,7 @@ func (s *Service) newContextCountryByIP(ctx context.Context, r *http.Request) (c
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("geoip.WithCountryByIP.GetCountryByIP", "err", err, "remoteAddr", remoteAddr, "req", r)
 		}
-		return ctx, nil, errgo.Mask(err)
+		return ctx, nil, errors.Mask(err)
 	}
 	c.IP = remoteAddr
 	return WithContextCountry(ctx, c), c, nil
@@ -154,7 +154,7 @@ func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("geoip.WithCountryByIP.FromContextManagerReader", "err", err)
 				}
-				return errgo.Mask(err)
+				return errors.Mask(err)
 			}
 
 			var ipCountry *IPCountry
@@ -169,7 +169,7 @@ func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("geoip.WithCountryByIP.directory.AllowedCountries", "err", err, "st.Config", requestedStore.Config)
 				}
-				return errgo.Mask(err)
+				return errors.Mask(err)
 			}
 
 			if false == s.IsAllowed(requestedStore, ipCountry, allowedCountries, r) {

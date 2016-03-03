@@ -23,7 +23,7 @@ import (
 	"fmt"
 
 	"github.com/dgrijalva/jwt-go"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 	"github.com/pborman/uuid"
 )
 
@@ -178,5 +178,5 @@ func (s *Service) Parse(rawToken string) (*jwt.Token, error) {
 	if PkgLog.IsDebug() {
 		PkgLog.Debug("ctxjwt.Service.Parse", "err", err, "inBlackList", inBL, "rawToken", rawToken, "token", token)
 	}
-	return nil, errgo.Mask(err)
+	return nil, errors.Mask(err)
 }

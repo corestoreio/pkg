@@ -18,7 +18,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 	"golang.org/x/net/context"
 )
 
@@ -411,7 +411,7 @@ func TestRouterPanicHandlerError(t *testing.T) {
 	router := New()
 
 	router.PanicHandler = func(ctx context.Context, rw http.ResponseWriter, r *http.Request) error {
-		return errgo.New("Epic fail")
+		return errors.New("Epic fail")
 	}
 
 	router.Handle("PUT", "/user/:name", func(_ context.Context, _ http.ResponseWriter, _ *http.Request) error {
@@ -440,7 +440,7 @@ func TestServeHTTPError(t *testing.T) {
 	router := New()
 
 	router.Handle("PUT", "/user/:name", func(_ context.Context, _ http.ResponseWriter, _ *http.Request) error {
-		return errgo.New("TestServeHTTPError")
+		return errors.New("TestServeHTTPError")
 	})
 
 	w := httptest.NewRecorder()

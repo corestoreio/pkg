@@ -20,7 +20,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,7 +48,7 @@ func TestNewErrorFromErrors(t *testing.T) {
 	}{
 		{http.StatusBadGateway, nil, http.StatusText(http.StatusBadGateway)},
 		{http.StatusTeapot, []error{errors.New("No coffee pot"), errors.New("Not even a milk pot")}, "No coffee pot\nNot even a milk pot"},
-		{http.StatusConflict, []error{errgo.New("Now a coffee pot"), errgo.New("Not even close to a milk pot")}, "error_test.go"},
+		{http.StatusConflict, []error{errors.New("Now a coffee pot"), errors.New("Not even close to a milk pot")}, "error_test.go"},
 	}
 	for _, test := range tests {
 		he := ctxhttp.NewErrorFromErrors(test.code, test.errs...)
