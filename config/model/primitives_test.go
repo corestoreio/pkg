@@ -91,7 +91,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   "2014,2015,2016",
 					},
 					&element.Field{
@@ -109,7 +109,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeText,
 						SortOrder: 90,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   "2012-08-23 09:20:13",
 					},
 				),
@@ -120,7 +120,7 @@ var configStructure = element.MustNewConfiguration(
 				Label:     text.Chars(`Base URLs`),
 				Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
 				SortOrder: 10,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.NewFieldSlice(
 					&element.Field{
 						// Path: `web/unsecure/base_url`,
@@ -130,7 +130,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   "{{base_url}}",
 						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 					},
@@ -143,7 +143,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   "{{unsecure_base_url}}",
 						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 					},
@@ -156,7 +156,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeText,
 						SortOrder: 25,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 					},

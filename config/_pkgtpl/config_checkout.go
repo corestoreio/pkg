@@ -17,14 +17,14 @@ func init() {
 			ID:        "checkout",
 			Label:     `Checkout`,
 			SortOrder: 305,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Checkout::checkout
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "options",
 					Label:     `Checkout Options`,
 					SortOrder: 1,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: checkout/options/onepage_checkout_enabled
@@ -33,7 +33,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -45,7 +45,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -56,7 +56,7 @@ func init() {
 					ID:        "cart",
 					Label:     `Shopping Cart`,
 					SortOrder: 2,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: checkout/cart/delete_quote_after
@@ -76,7 +76,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -107,7 +107,7 @@ func init() {
 					ID:        "sidebar",
 					Label:     `Shopping Cart Sidebar`,
 					SortOrder: 4,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: checkout/sidebar/display
@@ -116,7 +116,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -128,7 +128,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   5,
 						},
 					),
@@ -138,7 +138,7 @@ func init() {
 					ID:        "payment_failed",
 					Label:     `Payment Failed Emails`,
 					SortOrder: 100,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: checkout/payment_failed/identity
@@ -147,7 +147,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `general`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -159,7 +159,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `general`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -172,7 +172,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `checkout_payment_failed_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -185,7 +185,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -195,7 +195,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
 					),

@@ -20,7 +20,7 @@ func init() {
 					ID:        "usps",
 					Label:     `USPS`,
 					SortOrder: 110,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: carriers/usps/active
@@ -75,7 +75,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `United States Postal Service`,
 						},
 
@@ -299,7 +299,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 170,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 						},
 

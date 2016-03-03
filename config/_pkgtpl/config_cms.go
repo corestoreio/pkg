@@ -26,7 +26,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `home`,
 							// SourceModel: Magento\Cms\Model\Config\Source\Page
 						},
@@ -38,7 +38,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `no-route`,
 							// SourceModel: Magento\Cms\Model\Config\Source\Page
 						},
@@ -50,7 +50,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `enable-cookies`,
 							// SourceModel: Magento\Cms\Model\Config\Source\Page
 						},
@@ -62,7 +62,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -73,7 +73,7 @@ func init() {
 					ID:        "browser_capabilities",
 					Label:     `Browser Capabilities Detection`,
 					SortOrder: 200,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/browser_capabilities/cookies
@@ -82,7 +82,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -93,7 +93,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 200,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -104,7 +104,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 300,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
@@ -115,14 +115,14 @@ func init() {
 			ID:        "cms",
 			Label:     `Content Management`,
 			SortOrder: 1001,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Cms::config_cms
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "wysiwyg",
 					Label:     `WYSIWYG Options`,
 					SortOrder: 100,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: cms/wysiwyg/enabled
@@ -131,7 +131,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `enabled`,
 							// SourceModel: Magento\Cms\Model\Config\Source\Wysiwyg\Enabled
 						},

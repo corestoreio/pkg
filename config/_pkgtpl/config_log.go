@@ -12,7 +12,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 		ID:        "customer",
 		Label:     "",
 		SortOrder: 130,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "online_customers",

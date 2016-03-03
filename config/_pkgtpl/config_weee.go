@@ -20,7 +20,7 @@ func init() {
 					ID:        "weee",
 					Label:     `Fixed Product Taxes`,
 					SortOrder: 100,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: tax/weee/enable

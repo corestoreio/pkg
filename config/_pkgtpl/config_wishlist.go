@@ -17,14 +17,14 @@ func init() {
 			ID:        "wishlist",
 			Label:     `Wish List`,
 			SortOrder: 140,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Wishlist::config_wishlist
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "email",
 					Label:     `Share Options`,
 					SortOrder: 2,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: wishlist/email/email_identity
@@ -33,7 +33,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `general`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -46,7 +46,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `wishlist_email_email_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -59,7 +59,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   10,
 						},
 
@@ -71,7 +71,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   255,
 						},
 					),
@@ -81,7 +81,7 @@ func init() {
 					ID:        "general",
 					Label:     `General Options`,
 					SortOrder: 1,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: wishlist/general/active
@@ -90,7 +90,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -124,7 +124,7 @@ func init() {
 					ID:        "wishlist",
 					Label:     `Wish List`,
 					SortOrder: 2,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: rss/wishlist/active
@@ -133,7 +133,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 					),

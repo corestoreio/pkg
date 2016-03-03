@@ -16,13 +16,13 @@ func init() {
 		&element.Section{
 			ID:        "payment",
 			SortOrder: 400,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "checkmo",
 					Label:     `Check / Money Order`,
 					SortOrder: 30,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: payment/checkmo/active
@@ -65,7 +65,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `Check / Money order`,
 						},
 
@@ -99,7 +99,7 @@ func init() {
 							Type:      element.Type,
 							SortOrder: 61,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -109,7 +109,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 62,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -146,7 +146,7 @@ func init() {
 					ID:        "purchaseorder",
 					Label:     `Purchase Order`,
 					SortOrder: 32,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: payment/purchaseorder/active
@@ -189,7 +189,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `Purchase Order`,
 						},
 
@@ -250,7 +250,7 @@ func init() {
 					ID:        "banktransfer",
 					Label:     `Bank Transfer Payment`,
 					SortOrder: 30,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: payment/banktransfer/active
@@ -271,7 +271,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `Bank Transfer Payment`,
 						},
 
@@ -317,7 +317,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 62,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -356,7 +356,7 @@ func init() {
 					ID:        "cashondelivery",
 					Label:     `Cash On Delivery Payment`,
 					SortOrder: 30,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: payment/cashondelivery/active
@@ -377,7 +377,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `Cash On Delivery`,
 						},
 
@@ -423,7 +423,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 62,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -462,7 +462,7 @@ func init() {
 					ID:        "free",
 					Label:     `Zero Subtotal Checkout`,
 					SortOrder: 30,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: payment/free/active
@@ -514,7 +514,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{

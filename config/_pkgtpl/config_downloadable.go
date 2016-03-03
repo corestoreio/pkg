@@ -20,7 +20,7 @@ func init() {
 					ID:        "downloadable",
 					Label:     `Downloadable Product Options`,
 					SortOrder: 600,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/downloadable/order_item_status
@@ -62,7 +62,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 400,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `Samples`,
 						},
 
@@ -73,7 +73,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 500,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `Links`,
 						},
 
@@ -96,7 +96,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 700,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `inline`,
 							// SourceModel: Magento\Downloadable\Model\System\Config\Source\Contentdisposition
 						},

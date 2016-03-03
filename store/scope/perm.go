@@ -23,8 +23,20 @@ import (
 // Type Group is a subpart of Perm
 type Perm uint64
 
-// PermAll convenient helper variable contains all scope permission levels
-var PermAll = Perm(1<<DefaultID | 1<<WebsiteID | 1<<StoreID)
+// PermStore convenient helper variable contains all scope permission levels.
+// The official core_config_data table and its classes to not support the
+// GroupID scope, so that is the reasion why PermStore does not have a GroupID.
+var PermStore = NewPerm(DefaultID, WebsiteID, StoreID)
+
+// PermGroup convenient helper variable contains default, website and group scope permission levels.
+// Not officially supported by M1 and M2.
+var PermGroup = NewPerm(DefaultID, WebsiteID, GroupID)
+
+// PermWebsite convenient helper variable contains default and website scope permission levels.
+var PermWebsite = NewPerm(DefaultID, WebsiteID)
+
+// PermDefault convenient helper variable contains default scope permission level.
+var PermDefault = NewPerm(DefaultID)
 
 // NewPerm returns a new permission container
 func NewPerm(scopes ...Scope) Perm {
@@ -47,10 +59,15 @@ func (bits *Perm) Set(scopes ...Scope) Perm {
 	return *bits
 }
 
-// Has checks if Group is in Bits
-func (bits Perm) Has(s Scope) bool {
-	var one Scope = 1 // ^^
-	return (bits & Perm(one<<s)) != 0
+// Has checks if a give scope exists within a Perm. Only the
+// first argument is supported. Providing no argument assumes
+// the scope.DefaultID.
+func (bits Perm) Has(s ...Scope) bool {
+	scp := DefaultID
+	if len(s) > 0 {
+		scp = s[0]
+	}
+	return (bits & Perm(1<<scp)) != 0
 }
 
 // Human readable representation of the permissions

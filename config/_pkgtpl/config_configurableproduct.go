@@ -26,7 +26,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `parent`,
 							// SourceModel: Magento\Catalog\Model\Config\Source\Product\Thumbnail
 						},

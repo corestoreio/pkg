@@ -20,7 +20,7 @@ func init() {
 					ID:        "head",
 					Label:     `HTML Head`,
 					SortOrder: 20,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/head/shortcut_icon
@@ -30,7 +30,7 @@ func init() {
 							Type:      element.TypeImage,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Image\Favicon
 						},
 
@@ -41,7 +41,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -51,7 +51,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 12,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -61,7 +61,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 14,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -71,7 +71,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -81,7 +81,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -92,7 +92,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -102,7 +102,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 80,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
@@ -112,7 +112,7 @@ func init() {
 					ID:        "search_engine_robots",
 					Label:     `Search Engine Robots`,
 					SortOrder: 25,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/search_engine_robots/default_robots
@@ -122,7 +122,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `INDEX,FOLLOW`,
 							// SourceModel: Magento\Config\Model\Config\Source\Design\Robots
 						},
@@ -134,7 +134,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Robots
 						},
 
@@ -146,7 +146,7 @@ func init() {
 							Type:      element.TypeButton,
 							SortOrder: 80,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 					),
 				},
@@ -155,7 +155,7 @@ func init() {
 					ID:        "header",
 					Label:     `Header`,
 					SortOrder: 30,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/header/logo_src
@@ -165,7 +165,7 @@ func init() {
 							Type:      element.TypeImage,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Image\Logo
 						},
 
@@ -176,7 +176,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 11,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -186,7 +186,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 12,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -196,7 +196,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -206,7 +206,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 					),
 				},
@@ -215,7 +215,7 @@ func init() {
 					ID:        "footer",
 					Label:     `Footer`,
 					SortOrder: 40,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/footer/copyright
@@ -224,7 +224,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -235,7 +235,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 					),
 				},

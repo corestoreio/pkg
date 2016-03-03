@@ -17,7 +17,7 @@ func init() {
 			ID:        "oauth",
 			Label:     `OAuth`,
 			SortOrder: 300,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Integration::config_oauth
 			Groups: element.NewGroupSlice(
 				&element.Group{

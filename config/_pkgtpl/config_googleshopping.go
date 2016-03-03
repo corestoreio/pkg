@@ -19,7 +19,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 				Label:     `Google Shopping`,
 				Comment:   ``,
 				SortOrder: 20,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `google/googleshopping/account_id`,
@@ -29,7 +29,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        scope.PermAll,
+						Scope:        scope.PermStore,
 						Default:      nil,
 						BackendModel: nil,
 						// SourceModel:  nil,
@@ -43,7 +43,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        scope.PermAll,
+						Scope:        scope.PermStore,
 						Default:      nil,
 						BackendModel: nil,
 						// SourceModel:  nil,
@@ -57,7 +57,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeObscure,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        scope.PermAll,
+						Scope:        scope.PermStore,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Encrypted // @todo Magento\Config\Model\Config\Backend\Encrypted
 						// SourceModel:  nil,
@@ -71,7 +71,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        scope.PermAll,
+						Scope:        scope.PermStore,
 						Default:      `HOSTED_OR_GOOGLE`,
 						BackendModel: nil,
 						// SourceModel:  nil, // Magento\GoogleShopping\Model\Source\Accounttype
@@ -85,7 +85,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    90,
 						Visible:      config.VisibleYes,
-						Scope:        scope.PermAll,
+						Scope:        scope.PermStore,
 						Default:      `US`,
 						BackendModel: nil,
 						// SourceModel:  nil, // Magento\GoogleShopping\Model\Source\Country
@@ -99,7 +99,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    100,
 						Visible:      config.VisibleYes,
-						Scope:        scope.PermAll,
+						Scope:        scope.PermStore,
 						Default:      nil,
 						BackendModel: nil,
 						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -113,7 +113,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    110,
 						Visible:      config.VisibleYes,
-						Scope:        scope.PermAll,
+						Scope:        scope.PermStore,
 						Default:      nil,
 						BackendModel: nil,
 						// SourceModel:  nil,
@@ -141,7 +141,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.Type,
 						SortOrder:    150,
 						Visible:      config.VisibleYes,
-						Scope:        scope.PermAll,
+						Scope:        scope.PermStore,
 						Default:      `{"product_search":"ProductSearch","product_ads":"ProductAds","commerce_search":"CommerceSearch"}`,
 						BackendModel: nil,
 						// SourceModel:  nil,
@@ -155,7 +155,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    151,
 						Visible:      config.VisibleYes,
-						Scope:        scope.PermAll,
+						Scope:        scope.PermStore,
 						Default:      nil,
 						BackendModel: nil,
 						// SourceModel:  nil, // Magento\GoogleShopping\Model\Source\Destinationstates
@@ -169,7 +169,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    152,
 						Visible:      config.VisibleYes,
-						Scope:        scope.PermAll,
+						Scope:        scope.PermStore,
 						Default:      nil,
 						BackendModel: nil,
 						// SourceModel:  nil, // Magento\GoogleShopping\Model\Source\Destinationstates
@@ -183,7 +183,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    153,
 						Visible:      config.VisibleYes,
-						Scope:        scope.PermAll,
+						Scope:        scope.PermStore,
 						Default:      nil,
 						BackendModel: nil,
 						// SourceModel:  nil, // Magento\GoogleShopping\Model\Source\Destinationstates

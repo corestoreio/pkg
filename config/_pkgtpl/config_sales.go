@@ -17,14 +17,14 @@ func init() {
 			ID:        "sales",
 			Label:     `Sales`,
 			SortOrder: 300,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Sales::config_sales
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "general",
 					Label:     `General`,
 					SortOrder: 5,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales/general/hide_customer_ip
@@ -33,7 +33,7 @@ func init() {
 							Comment: text.Long(`Choose whether a customer IP is shown in orders, invoices, shipments, and credit memos.`),
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
-							Scope:   scope.PermAll,
+							Scope:   scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
@@ -106,7 +106,7 @@ func init() {
 					ID:        "reorder",
 					Label:     `Reorder`,
 					SortOrder: 20,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales/reorder/allow
@@ -115,7 +115,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -126,7 +126,7 @@ func init() {
 					ID:        "identity",
 					Label:     `Invoice and Packing Slip Design`,
 					SortOrder: 40,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales/identity/logo
@@ -136,7 +136,7 @@ func init() {
 							Type:      element.TypeImage,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Image\Pdf
 						},
 
@@ -148,7 +148,7 @@ func init() {
 							Type:      element.TypeImage,
 							SortOrder: 150,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Image
 						},
 
@@ -159,7 +159,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 200,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 					),
 				},
@@ -168,7 +168,7 @@ func init() {
 					ID:        "minimum_order",
 					Label:     `Minimum Order Amount`,
 					SortOrder: 50,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales/minimum_order/active
@@ -212,7 +212,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -222,7 +222,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -244,7 +244,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -255,7 +255,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 					),
 				},
@@ -304,7 +304,7 @@ func init() {
 			ID:        "sales_email",
 			Label:     `Sales Emails`,
 			SortOrder: 301,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Sales::sales_email
 			Groups: element.NewGroupSlice(
 				&element.Group{
@@ -331,7 +331,7 @@ func init() {
 					ID:        "order",
 					Label:     `Order`,
 					SortOrder: 1,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/order/enabled
@@ -339,7 +339,7 @@ func init() {
 							Label:   `Enabled`,
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
-							Scope:   scope.PermAll,
+							Scope:   scope.PermStore,
 							Default: true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -351,7 +351,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -364,7 +364,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales_email_order_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -377,7 +377,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales_email_order_guest_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -390,7 +390,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -400,7 +400,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `bcc`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
@@ -411,7 +411,7 @@ func init() {
 					ID:        "order_comment",
 					Label:     `Order Comments`,
 					SortOrder: 2,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/order_comment/enabled
@@ -419,7 +419,7 @@ func init() {
 							Label:   `Enabled`,
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
-							Scope:   scope.PermAll,
+							Scope:   scope.PermStore,
 							Default: true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -431,7 +431,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -444,7 +444,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales_email_order_comment_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -457,7 +457,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales_email_order_comment_guest_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -470,7 +470,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -480,7 +480,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `bcc`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
@@ -491,7 +491,7 @@ func init() {
 					ID:        "invoice",
 					Label:     `Invoice`,
 					SortOrder: 3,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/invoice/enabled
@@ -499,7 +499,7 @@ func init() {
 							Label:   `Enabled`,
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
-							Scope:   scope.PermAll,
+							Scope:   scope.PermStore,
 							Default: true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -511,7 +511,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -524,7 +524,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales_email_invoice_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -537,7 +537,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales_email_invoice_guest_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -550,7 +550,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -560,7 +560,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `bcc`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
@@ -571,7 +571,7 @@ func init() {
 					ID:        "invoice_comment",
 					Label:     `Invoice Comments`,
 					SortOrder: 4,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/invoice_comment/enabled
@@ -579,7 +579,7 @@ func init() {
 							Label:   `Enabled`,
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
-							Scope:   scope.PermAll,
+							Scope:   scope.PermStore,
 							Default: true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -591,7 +591,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -604,7 +604,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales_email_invoice_comment_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -617,7 +617,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales_email_invoice_comment_guest_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -630,7 +630,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -640,7 +640,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `bcc`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
@@ -651,7 +651,7 @@ func init() {
 					ID:        "shipment",
 					Label:     `Shipment`,
 					SortOrder: 5,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/shipment/enabled
@@ -659,7 +659,7 @@ func init() {
 							Label:   `Enabled`,
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
-							Scope:   scope.PermAll,
+							Scope:   scope.PermStore,
 							Default: true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -671,7 +671,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -684,7 +684,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales_email_shipment_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -697,7 +697,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales_email_shipment_guest_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -710,7 +710,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -720,7 +720,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `bcc`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
@@ -731,7 +731,7 @@ func init() {
 					ID:        "shipment_comment",
 					Label:     `Shipment Comments`,
 					SortOrder: 6,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/shipment_comment/enabled
@@ -739,7 +739,7 @@ func init() {
 							Label:   `Enabled`,
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
-							Scope:   scope.PermAll,
+							Scope:   scope.PermStore,
 							Default: true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -751,7 +751,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -764,7 +764,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales_email_shipment_comment_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -777,7 +777,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales_email_shipment_comment_guest_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -790,7 +790,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -800,7 +800,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `bcc`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
@@ -811,7 +811,7 @@ func init() {
 					ID:        "creditmemo",
 					Label:     `Credit Memo`,
 					SortOrder: 7,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/creditmemo/enabled
@@ -819,7 +819,7 @@ func init() {
 							Label:   `Enabled`,
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
-							Scope:   scope.PermAll,
+							Scope:   scope.PermStore,
 							Default: true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -831,7 +831,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -844,7 +844,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales_email_creditmemo_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -857,7 +857,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales_email_creditmemo_guest_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -870,7 +870,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -880,7 +880,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `bcc`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
@@ -891,7 +891,7 @@ func init() {
 					ID:        "creditmemo_comment",
 					Label:     `Credit Memo Comments`,
 					SortOrder: 8,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/creditmemo_comment/enabled
@@ -899,7 +899,7 @@ func init() {
 							Label:   `Enabled`,
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
-							Scope:   scope.PermAll,
+							Scope:   scope.PermStore,
 							Default: true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -911,7 +911,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -924,7 +924,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales_email_creditmemo_comment_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -937,7 +937,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `sales_email_creditmemo_comment_guest_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -950,7 +950,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -960,7 +960,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `bcc`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Method
 						},
@@ -972,14 +972,14 @@ func init() {
 			ID:        "sales_pdf",
 			Label:     `PDF Print-outs`,
 			SortOrder: 302,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Sales::sales_pdf
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "invoice",
 					Label:     `Invoice`,
 					SortOrder: 10,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_pdf/invoice/put_order_id
@@ -988,7 +988,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -999,7 +999,7 @@ func init() {
 					ID:        "shipment",
 					Label:     `Shipment`,
 					SortOrder: 20,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_pdf/shipment/put_order_id
@@ -1008,7 +1008,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -1019,7 +1019,7 @@ func init() {
 					ID:        "creditmemo",
 					Label:     `Credit Memo`,
 					SortOrder: 30,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_pdf/creditmemo/put_order_id
@@ -1028,7 +1028,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -1043,7 +1043,7 @@ func init() {
 					ID:        "order",
 					Label:     `Order`,
 					SortOrder: 4,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: rss/order/status
@@ -1052,7 +1052,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 					),

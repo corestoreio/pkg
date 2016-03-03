@@ -17,14 +17,14 @@ func init() {
 			ID:        "contact",
 			Label:     `Contacts`,
 			SortOrder: 100,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Contact::contact
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "contact",
 					Label:     `Contact Us`,
 					SortOrder: 10,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: contact/contact/enabled
@@ -33,7 +33,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   true,
 							// BackendModel: Magento\Contact\Model\System\Config\Backend\Links
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
@@ -45,7 +45,7 @@ func init() {
 					ID:        "email",
 					Label:     `Email Options`,
 					SortOrder: 50,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: contact/email/recipient_email
@@ -54,7 +54,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `hello@example.com`,
 						},
 
@@ -65,7 +65,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `custom2`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -78,7 +78,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `contact_email_email_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},

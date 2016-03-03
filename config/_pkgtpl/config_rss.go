@@ -17,14 +17,14 @@ func init() {
 			ID:        "rss",
 			Label:     `RSS Feeds`,
 			SortOrder: 80,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Rss::rss
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "config",
 					Label:     `Rss Config`,
 					SortOrder: 1,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: rss/config/active
@@ -33,7 +33,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Rss\Model\System\Config\Backend\Links
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},

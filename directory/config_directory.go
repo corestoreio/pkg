@@ -31,14 +31,14 @@ func init() {
 			ID:        path.NewRoute("currency"),
 			Label:     text.Chars(`Currency Setup`),
 			SortOrder: 60,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Backend::currency
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("options"),
 					Label:     text.Chars(`Currency Options`),
 					SortOrder: 30,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: currency/options/base
@@ -61,7 +61,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `USD`,
 							// BackendModel: Magento\Config\Model\Config\Backend\Currency\DefaultCurrency
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
@@ -74,7 +74,7 @@ func init() {
 							Type:       element.TypeMultiselect,
 							SortOrder:  3,
 							Visible:    element.VisibleYes,
-							Scope:      scope.PermAll,
+							Scope:      scope.PermStore,
 							CanBeEmpty: true,
 							Default:    `USD,EUR`,
 							// BackendModel: Magento\Config\Model\Config\Backend\Currency\Allow
@@ -114,7 +114,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -126,7 +126,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -161,7 +161,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 						},
 
@@ -172,7 +172,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Currency\Cron
 							// SourceModel: Magento\Directory\Model\Currency\Import\Source\Service
 						},
@@ -184,7 +184,7 @@ func init() {
 							Type:      element.TypeTime,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 					),
 				},
@@ -223,7 +223,7 @@ func init() {
 					ID:        path.NewRoute("country"),
 					Label:     text.Chars(`Country Options`),
 					SortOrder: 1,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/country/allow
@@ -232,7 +232,7 @@ func init() {
 							Type:       element.TypeMultiselect,
 							SortOrder:  2,
 							Visible:    element.VisibleYes,
-							Scope:      scope.PermAll,
+							Scope:      scope.PermStore,
 							CanBeEmpty: true,
 							Default:    `AF,AL,DZ,AS,AD,AO,AI,AQ,AG,AR,AM,AW,AU,AT,AX,AZ,BS,BH,BD,BB,BY,BE,BZ,BJ,BM,BL,BT,BO,BA,BW,BV,BR,IO,VG,BN,BG,BF,BI,KH,CM,CA,CD,CV,KY,CF,TD,CL,CN,CX,CC,CO,KM,CG,CK,CR,HR,CU,CY,CZ,DK,DJ,DM,DO,EC,EG,SV,GQ,ER,EE,ET,FK,FO,FJ,FI,FR,GF,PF,TF,GA,GM,GE,DE,GG,GH,GI,GR,GL,GD,GP,GU,GT,GN,GW,GY,HT,HM,HN,HK,HU,IS,IM,IN,ID,IR,IQ,IE,IL,IT,CI,JE,JM,JP,JO,KZ,KE,KI,KW,KG,LA,LV,LB,LS,LR,LY,LI,LT,LU,ME,MF,MO,MK,MG,MW,MY,MV,ML,MT,MH,MQ,MR,MU,YT,FX,MX,FM,MD,MC,MN,MS,MA,MZ,MM,NA,NR,NP,NL,AN,NC,NZ,NI,NE,NG,NU,NF,KP,MP,NO,OM,PK,PW,PA,PG,PY,PE,PH,PN,PL,PS,PT,PR,QA,RE,RO,RS,RU,RW,SH,KN,LC,PM,VC,WS,SM,ST,SA,SN,SC,SL,SG,SK,SI,SB,SO,ZA,GS,KR,ES,LK,SD,SR,SJ,SZ,SE,CH,SY,TL,TW,TJ,TZ,TH,TG,TK,TO,TT,TN,TR,TM,TC,TV,VI,UG,UA,AE,GB,US,UM,UY,UZ,VU,VA,VE,VN,WF,EH,YE,ZM,ZW`,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
@@ -245,7 +245,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
@@ -290,7 +290,7 @@ func init() {
 					ID:        path.NewRoute("locale"),
 					Label:     text.Chars(`Locale Options`),
 					SortOrder: 8,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/locale/timezone
@@ -312,7 +312,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `en_US`,
 							// SourceModel: Magento\Config\Model\Config\Source\Locale
 						},
@@ -324,7 +324,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Weekdays
 						},
 
@@ -335,7 +335,7 @@ func init() {
 							Type:       element.TypeMultiselect,
 							SortOrder:  15,
 							Visible:    element.VisibleYes,
-							Scope:      scope.PermAll,
+							Scope:      scope.PermStore,
 							CanBeEmpty: true,
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Weekdays
 						},
@@ -346,7 +346,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `lbs`,
 							// SourceModel: Magento\Directory\Model\Config\Source\WeightUnit
 						},

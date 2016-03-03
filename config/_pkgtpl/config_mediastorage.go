@@ -16,13 +16,13 @@ func init() {
 		&element.Section{
 			ID:        "system",
 			SortOrder: 900,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "media_storage_configuration",
 					Label:     `Storage Configuration for Media`,
 					SortOrder: 900,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: system/media_storage_configuration/media_storage

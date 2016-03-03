@@ -16,12 +16,12 @@ func init() {
 		&element.Section{
 			ID:        "catalog",
 			SortOrder: 40,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "frontend",
 					SortOrder: 100,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/frontend/swatches_per_product
@@ -30,7 +30,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 300,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   16,
 						},
 					),

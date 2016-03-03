@@ -20,7 +20,7 @@ func init() {
 					ID:        "dhl",
 					Label:     `DHL`,
 					SortOrder: 140,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: carriers/dhl/active
@@ -64,7 +64,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `DHL`,
 						},
 
@@ -157,7 +157,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 130,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -169,7 +169,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 140,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `K`,
 							// SourceModel: Magento\Dhl\Model\Source\Method\Unitofmeasure
 						},
@@ -181,7 +181,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 150,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `R`,
 							// SourceModel: Magento\Dhl\Model\Source\Method\Size
 						},
@@ -193,7 +193,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 151,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -203,7 +203,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 152,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -213,7 +213,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 153,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -258,7 +258,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 800,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 						},
 

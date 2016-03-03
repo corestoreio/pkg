@@ -17,14 +17,14 @@ func init() {
 			ID:        "sitemap",
 			Label:     `XML Sitemap`,
 			SortOrder: 70,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Sitemap::config_sitemap
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "category",
 					Label:     `Categories Options`,
 					SortOrder: 1,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sitemap/category/changefreq
@@ -33,7 +33,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `daily`,
 							// SourceModel: Magento\Sitemap\Model\Config\Source\Frequency
 						},
@@ -46,7 +46,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   0.5,
 							// BackendModel: Magento\Sitemap\Model\Config\Backend\Priority
 						},
@@ -57,7 +57,7 @@ func init() {
 					ID:        "product",
 					Label:     `Products Options`,
 					SortOrder: 2,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sitemap/product/changefreq
@@ -66,7 +66,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `daily`,
 							// SourceModel: Magento\Sitemap\Model\Config\Source\Frequency
 						},
@@ -79,7 +79,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   1,
 							// BackendModel: Magento\Sitemap\Model\Config\Backend\Priority
 						},
@@ -91,7 +91,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `all`,
 							// SourceModel: Magento\Sitemap\Model\Source\Product\Image\IncludeImage
 						},
@@ -102,7 +102,7 @@ func init() {
 					ID:        "page",
 					Label:     `CMS Pages Options`,
 					SortOrder: 3,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sitemap/page/changefreq
@@ -111,7 +111,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `daily`,
 							// SourceModel: Magento\Sitemap\Model\Config\Source\Frequency
 						},
@@ -124,7 +124,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   0.25,
 							// BackendModel: Magento\Sitemap\Model\Config\Backend\Priority
 						},
@@ -144,7 +144,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -156,7 +156,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -191,7 +191,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Cron\Model\Config\Backend\Sitemap
 							// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 						},
@@ -203,7 +203,7 @@ func init() {
 							Type:      element.TypeTime,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 					),
 				},
@@ -212,7 +212,7 @@ func init() {
 					ID:        "limit",
 					Label:     `Sitemap File Limits`,
 					SortOrder: 5,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sitemap/limit/max_lines
@@ -221,7 +221,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   50000,
 						},
 
@@ -233,7 +233,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   10485760,
 						},
 					),
@@ -243,7 +243,7 @@ func init() {
 					ID:        "search_engines",
 					Label:     `Search Engine Submission Settings`,
 					SortOrder: 6,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sitemap/search_engines/submission_robots
@@ -252,7 +252,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},

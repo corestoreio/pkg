@@ -16,13 +16,13 @@ func init() {
 		&element.Section{
 			ID:        "carriers",
 			SortOrder: 320,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "flatrate",
 					Label:     `Flat Rate`,
 					SortOrder: 2,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: carriers/flatrate/active
@@ -43,7 +43,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `Fixed`,
 						},
 
@@ -97,7 +97,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `Flat Rate`,
 						},
 
@@ -155,7 +155,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 80,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `This shipping method is not available. To use this shipping method, please contact us.`,
 						},
 					),
@@ -165,7 +165,7 @@ func init() {
 					ID:        "tablerate",
 					Label:     `Table Rates`,
 					SortOrder: 3,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: carriers/tablerate/handling_type
@@ -253,7 +253,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `Table Rate`,
 						},
 
@@ -274,7 +274,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `Best Way`,
 						},
 
@@ -320,7 +320,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 80,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `This shipping method is not available. To use this shipping method, please contact us.`,
 						},
 					),
@@ -330,7 +330,7 @@ func init() {
 					ID:        "freeshipping",
 					Label:     `Free Shipping`,
 					SortOrder: 2,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: carriers/freeshipping/active
@@ -361,7 +361,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `Free`,
 						},
 
@@ -382,7 +382,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `Free Shipping`,
 						},
 
@@ -428,7 +428,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 80,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `This shipping method is not available. To use this shipping method, please contact us.`,
 						},
 					),

@@ -113,13 +113,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("advanced"),
 		Label:     text.Chars("Advanced"),
 		SortOrder: 910,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("modules_disable_output"),
 				Label:     text.Chars(`Disable Modules Output`),
 				SortOrder: 2,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields:    element.FieldSlice{},
 			},
 		},
@@ -128,13 +128,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("trans_email"),
 		Label:     text.Chars("Store Email Addresses"),
 		SortOrder: 90,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("ident_custom1"),
 				Label:     text.Chars(`Custom Email 1`),
 				SortOrder: 4,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `trans_email/ident_custom1/email`,
@@ -143,7 +143,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -154,7 +154,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -164,7 +164,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("ident_custom2"),
 				Label:     text.Chars(`Custom Email 2`),
 				SortOrder: 5,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `trans_email/ident_custom2/email`,
@@ -173,7 +173,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -184,7 +184,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -194,7 +194,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("ident_general"),
 				Label:     text.Chars(`General Contact`),
 				SortOrder: 1,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `trans_email/ident_general/email`,
@@ -203,7 +203,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -214,7 +214,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -224,7 +224,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("ident_sales"),
 				Label:     text.Chars(`Sales Representative`),
 				SortOrder: 2,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `trans_email/ident_sales/email`,
@@ -233,7 +233,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -244,7 +244,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -254,7 +254,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("ident_support"),
 				Label:     text.Chars(`Customer Support`),
 				SortOrder: 3,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `trans_email/ident_support/email`,
@@ -263,7 +263,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -274,7 +274,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -285,13 +285,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("design"),
 		Label:     text.Chars("Design"),
 		SortOrder: 30,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("theme"),
 				Label:     text.Chars(`Design Theme`),
 				SortOrder: 1,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `design/theme/theme_id`,
@@ -301,7 +301,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -323,7 +323,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("pagination"),
 				Label:     text.Chars(`Pagination`),
 				SortOrder: 500,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `design/pagination/pagination_frame`,
@@ -333,7 +333,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 7,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -345,7 +345,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 8,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -357,7 +357,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 9,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -369,7 +369,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -379,7 +379,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("email"),
 				Label:     text.Chars(`Transactional Emails`),
 				SortOrder: 510,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `design/email/logo`,
@@ -389,7 +389,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeImage,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -400,7 +400,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -411,7 +411,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("dev"),
 		Label:     text.Chars("Developer"),
 		SortOrder: 920,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("debug"),
@@ -447,7 +447,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("template"),
 				Label:     text.Chars(`Template Settings`),
 				SortOrder: 25,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/template/allow_symlink`,
@@ -457,7 +457,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -468,7 +468,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 25,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 				},
@@ -478,7 +478,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("translate_inline"),
 				Label:     text.Chars(`Translate Inline`),
 				SortOrder: 30,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/translate_inline/active`,
@@ -487,7 +487,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -509,7 +509,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("js"),
 				Label:     text.Chars(`JavaScript Settings`),
 				SortOrder: 100,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/js/merge_files`,
@@ -518,7 +518,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -529,7 +529,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -540,7 +540,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -550,7 +550,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("css"),
 				Label:     text.Chars(`CSS Settings`),
 				SortOrder: 110,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/css/merge_css_files`,
@@ -559,7 +559,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -570,7 +570,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -620,13 +620,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("general"),
 		Label:     text.Chars("General"),
 		SortOrder: 10,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("country"),
 				Label:     text.Chars(`Country Options`),
 				SortOrder: 1,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `general/country/allow`,
@@ -635,7 +635,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeMultiselect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -646,7 +646,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -667,7 +667,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("locale"),
 				Label:     text.Chars(`Locale Options`),
 				SortOrder: 8,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `general/locale/timezone`,
@@ -687,7 +687,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -698,7 +698,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -709,7 +709,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeMultiselect,
 						SortOrder: 15,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -719,7 +719,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("store_information"),
 				Label:     text.Chars(`Store Information`),
 				SortOrder: 100,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `general/store_information/name`,
@@ -728,7 +728,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -739,7 +739,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -847,13 +847,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("system"),
 		Label:     text.Chars("System"),
 		SortOrder: 900,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("smtp"),
 				Label:     text.Chars(`Mail Sending Settings`),
 				SortOrder: 20,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `system/smtp/disable`,
@@ -862,7 +862,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -874,7 +874,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -886,7 +886,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -1102,7 +1102,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("web"),
 		Label:     text.Chars("Web"),
 		SortOrder: 20,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("url"),
@@ -1140,7 +1140,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("seo"),
 				Label:     text.Chars(`Search Engine Optimization`),
 				SortOrder: 5,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/seo/use_rewrites`,
@@ -1149,7 +1149,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 				},
@@ -1160,7 +1160,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				Label:     text.Chars(`Base URLs`),
 				Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
 				SortOrder: 10,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/unsecure/base_url`,
@@ -1170,7 +1170,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -1182,7 +1182,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -1194,7 +1194,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 25,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -1206,7 +1206,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -1217,7 +1217,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				Label:     text.Chars(`Base URLs (Secure)`),
 				Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`),
 				SortOrder: 20,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/secure/base_url`,
@@ -1227,7 +1227,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -1239,7 +1239,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -1251,7 +1251,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 25,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -1263,7 +1263,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -1275,7 +1275,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -1308,7 +1308,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("default"),
 				Label:     text.Chars(`Default Pages`),
 				SortOrder: 30,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/default/front`,
@@ -1317,7 +1317,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -1328,7 +1328,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -1945,13 +1945,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("catalog"),
 		Label:     text.Chars("Catalog"),
 		SortOrder: 40,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("fields_masks"),
 				Label:     text.Chars(`Product Fields Auto-Generation`),
 				SortOrder: 90,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/fields_masks/sku`,
@@ -2007,7 +2007,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("frontend"),
 				Label:     text.Chars(`Frontend`),
 				SortOrder: 100,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/frontend/list_mode`,
@@ -2016,7 +2016,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `grid-list`,
 					},
 
@@ -2028,7 +2028,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `9,15,30`,
 					},
 
@@ -2040,7 +2040,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   9,
 					},
 
@@ -2052,7 +2052,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `5,10,15,20,25`,
 					},
 
@@ -2064,7 +2064,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   10,
 					},
 
@@ -2097,7 +2097,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 6,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `position`,
 					},
 
@@ -2109,7 +2109,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 6,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -2121,7 +2121,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 200,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 				},
@@ -2131,7 +2131,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("placeholder"),
 				Label:     text.Chars(`Product Image Placeholders`),
 				SortOrder: 300,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/placeholder/placeholder`,
@@ -2140,7 +2140,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeImage,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -2150,7 +2150,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("seo"),
 				Label:     text.Chars(`Search Engine Optimization`),
 				SortOrder: 500,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/seo/title_separator`,
@@ -2159,7 +2159,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 6,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `-`,
 					},
 
@@ -2170,7 +2170,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 7,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 
@@ -2181,7 +2181,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 8,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 				},
@@ -2211,7 +2211,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("navigation"),
 				Label:     text.Chars(`Category Top Navigation`),
 				SortOrder: 500,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/navigation/max_depth`,
@@ -2230,7 +2230,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("custom_options"),
 				Label:     text.Chars(`Date & Time Custom Options`),
 				SortOrder: 700,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/custom_options/use_calendar`,
@@ -2239,7 +2239,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -2250,7 +2250,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `m,d,y`,
 					},
 
@@ -2261,7 +2261,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `12h`,
 					},
 
@@ -2273,7 +2273,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -2290,7 +2290,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("watermark"),
 				Label:     text.Chars(`Product Image Watermarks`),
 				SortOrder: 400,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `design/watermark/size`,
@@ -2300,7 +2300,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -2311,7 +2311,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 150,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -2323,7 +2323,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeImage,
 						SortOrder: 200,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -2334,7 +2334,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 300,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -2378,7 +2378,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("catalog"),
 				Label:     text.Chars(`Catalog`),
 				SortOrder: 3,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `rss/catalog/new`,
@@ -2387,7 +2387,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -2398,7 +2398,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 11,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -2409,7 +2409,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 14,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -2523,13 +2523,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("cataloginventory"),
 		Label:     text.Chars("Inventory"),
 		SortOrder: 50,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("options"),
 				Label:     text.Chars(`Stock Options`),
 				SortOrder: 1,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `cataloginventory/options/can_subtract`,
@@ -2583,7 +2583,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 				},
@@ -2594,7 +2594,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				Label:     text.Chars(`Product Stock Options`),
 				Comment:   text.Chars(`Please note that these settings apply to individual items in the cart, not to the entire cart.`),
 				SortOrder: 10,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `cataloginventory/item_options/manage_stock`,
@@ -2720,7 +2720,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 				},
@@ -2730,7 +2730,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("search"),
 				Label:     text.Chars(`Catalog Search`),
 				SortOrder: 500,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/search/engine`,
@@ -2750,7 +2750,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   1,
 					},
 
@@ -2761,7 +2761,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   128,
 					},
 
@@ -2773,7 +2773,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 25,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   0,
 					},
 				},
@@ -2801,7 +2801,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -2813,7 +2813,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -2824,7 +2824,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -2835,7 +2835,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -2847,7 +2847,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("payment_services"),
 		Label:     text.Chars("Payment Services"),
 		SortOrder: 450,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("centinel"),
@@ -2919,13 +2919,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("checkout"),
 		Label:     text.Chars("Checkout"),
 		SortOrder: 305,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("options"),
 				Label:     text.Chars(`Checkout Options`),
 				SortOrder: 1,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `checkout/options/onepage_checkout_enabled`,
@@ -2934,7 +2934,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -2945,7 +2945,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -2966,7 +2966,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("cart"),
 				Label:     text.Chars(`Shopping Cart`),
 				SortOrder: 2,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `checkout/cart/delete_quote_after`,
@@ -2986,7 +2986,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 				},
@@ -3015,7 +3015,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("sidebar"),
 				Label:     text.Chars(`Shopping Cart Sidebar`),
 				SortOrder: 4,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `checkout/sidebar/display`,
@@ -3024,7 +3024,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -3035,7 +3035,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   5,
 					},
 				},
@@ -3045,7 +3045,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("payment_failed"),
 				Label:     text.Chars(`Payment Failed Emails`),
 				SortOrder: 100,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `checkout/payment_failed/identity`,
@@ -3054,7 +3054,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `general`,
 					},
 
@@ -3065,7 +3065,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `general`,
 					},
 
@@ -3076,7 +3076,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `checkout_payment_failed_template`,
 					},
 
@@ -3088,7 +3088,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -3099,7 +3099,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -3126,7 +3126,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -3153,7 +3153,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `home`,
 					},
 
@@ -3164,7 +3164,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `no-route`,
 					},
 
@@ -3175,7 +3175,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `enable-cookies`,
 					},
 
@@ -3186,7 +3186,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 				},
@@ -3196,7 +3196,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("browser_capabilities"),
 				Label:     text.Chars(`Browser Capabilities Detection`),
 				SortOrder: 200,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/browser_capabilities/cookies`,
@@ -3205,7 +3205,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -3216,7 +3216,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 200,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -3227,7 +3227,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 300,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -3238,13 +3238,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("cms"),
 		Label:     text.Chars("Content Management"),
 		SortOrder: 1001,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("wysiwyg"),
 				Label:     text.Chars(`WYSIWYG Options`),
 				SortOrder: 100,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `cms/wysiwyg/enabled`,
@@ -3253,7 +3253,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `enabled`,
 					},
 				},
@@ -3327,7 +3327,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `parent`,
 					},
 				},
@@ -3339,13 +3339,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("contact"),
 		Label:     text.Chars("Contacts"),
 		SortOrder: 100,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("contact"),
 				Label:     text.Chars(`Contact Us`),
 				SortOrder: 10,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `contact/contact/enabled`,
@@ -3354,7 +3354,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 				},
@@ -3364,7 +3364,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("email"),
 				Label:     text.Chars(`Email Options`),
 				SortOrder: 50,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `contact/email/recipient_email`,
@@ -3373,7 +3373,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `hello@example.com`,
 					},
 
@@ -3384,7 +3384,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `custom2`,
 					},
 
@@ -3395,7 +3395,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `contact_email_email_template`,
 					},
 				},
@@ -3413,7 +3413,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("cookie"),
 				Label:     text.Chars(`Default Cookie Settings`),
 				SortOrder: 50,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/cookie/cookie_lifetime`,
@@ -3422,7 +3422,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   3600,
 					},
 
@@ -3433,7 +3433,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -3444,7 +3444,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -3456,7 +3456,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -3516,7 +3516,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("customer"),
 		Label:     text.Chars("Customer Configuration"),
 		SortOrder: 130,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("account_share"),
@@ -3541,7 +3541,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("create_account"),
 				Label:     text.Chars(`Create New Account Options`),
 				SortOrder: 20,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `customer/create_account/auto_group_assign`,
@@ -3550,7 +3550,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -3561,7 +3561,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `billing`,
 					},
 
@@ -3572,7 +3572,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -3583,7 +3583,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -3594,7 +3594,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -3605,7 +3605,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -3616,7 +3616,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 55,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -3627,7 +3627,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 56,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -3661,7 +3661,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `example.com`,
 					},
 
@@ -3672,7 +3672,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 70,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `customer_create_account_email_template`,
 					},
 
@@ -3683,7 +3683,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 80,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `general`,
 					},
 
@@ -3705,7 +3705,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `customer_create_account_email_confirmation_template`,
 					},
 
@@ -3717,7 +3717,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 110,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `customer_create_account_email_confirmed_template`,
 					},
 
@@ -3738,7 +3738,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("password"),
 				Label:     text.Chars(`Password Options`),
 				SortOrder: 30,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `customer/password/forgot_email_template`,
@@ -3747,7 +3747,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `customer_password_forgot_email_template`,
 					},
 
@@ -3758,7 +3758,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `customer_password_remind_email_template`,
 					},
 
@@ -3769,7 +3769,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `customer_password_reset_password_template`,
 					},
 
@@ -3780,7 +3780,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `support`,
 					},
 
@@ -3802,7 +3802,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("address"),
 				Label:     text.Chars(`Name and Address Options`),
 				SortOrder: 40,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `customer/address/street_lines`,
@@ -3915,7 +3915,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("startup"),
 				Label:     text.Chars(`Login Options`),
 				SortOrder: 90,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `customer/startup/redirect_dashboard`,
@@ -3935,7 +3935,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("address_templates"),
 				Label:     text.Chars(`Address Templates`),
 				SortOrder: 100,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `customer/address_templates/text`,
@@ -3944,7 +3944,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeTextarea,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default: `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}
 {{depend company}}{{var company}}{{/depend}}
 {{if street1}}{{var street1}}
@@ -3966,7 +3966,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}, {{var street}}, {{var city}}, {{var region}} {{var postcode}}, {{var country}}`,
 					},
 
@@ -3977,7 +3977,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default: `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}{{depend firstname}}<br/>{{/depend}}
 {{depend company}}{{var company}}<br />{{/depend}}
 {{if street1}}{{var street1}}<br />{{/if}}
@@ -3998,7 +3998,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default: `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}|
 {{depend company}}{{var company}}|{{/depend}}
 {{if street1}}{{var street1}}
@@ -4142,7 +4142,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("front_end_development_workflow"),
 				Label:     text.Chars(`Front-end development workflow`),
 				SortOrder: 8,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/front_end_development_workflow/type`,
@@ -4162,7 +4162,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("restrict"),
 				Label:     text.Chars(`Developer Client Restrictions`),
 				SortOrder: 10,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/restrict/allow_ips`,
@@ -4172,7 +4172,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -4210,7 +4210,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("dhl"),
 				Label:     text.Chars(`DHL`),
 				SortOrder: 140,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `carriers/dhl/active`,
@@ -4241,7 +4241,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `DHL`,
 					},
 
@@ -4331,7 +4331,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 130,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -4342,7 +4342,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 140,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `K`,
 					},
 
@@ -4353,7 +4353,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 150,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `R`,
 					},
 
@@ -4364,7 +4364,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 151,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -4375,7 +4375,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 152,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -4386,7 +4386,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 153,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -4431,7 +4431,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 800,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 					},
 
@@ -4631,7 +4631,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("downloadable"),
 				Label:     text.Chars(`Downloadable Product Options`),
 				SortOrder: 600,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/downloadable/order_item_status`,
@@ -4673,7 +4673,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 400,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `Samples`,
 					},
 
@@ -4684,7 +4684,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 500,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `Links`,
 					},
 
@@ -4706,7 +4706,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 700,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `inline`,
 					},
 
@@ -4736,7 +4736,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("fedex"),
 				Label:     text.Chars(`FedEx`),
 				SortOrder: 120,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `carriers/fedex/active`,
@@ -4756,7 +4756,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `Federal Express`,
 					},
 
@@ -5000,7 +5000,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 240,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 					},
 
@@ -5196,7 +5196,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("adwords"),
 				Label:     text.Chars(`Google AdWords`),
 				SortOrder: 15,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `google/adwords/active`,
@@ -5205,7 +5205,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 
@@ -5216,7 +5216,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 11,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -5227,7 +5227,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 12,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `en`,
 					},
 
@@ -5238,7 +5238,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 13,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   2,
 					},
 
@@ -5249,7 +5249,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 14,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `FFFFFF`,
 					},
 
@@ -5260,7 +5260,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 15,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -5271,7 +5271,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 16,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -5282,7 +5282,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 17,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   0,
 					},
 				},
@@ -5341,13 +5341,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("google"),
 		Label:     text.Chars("Google API"),
 		SortOrder: 340,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("analytics"),
 				Label:     text.Chars(`Google Analytics`),
 				SortOrder: 10,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `google/analytics/active`,
@@ -5356,7 +5356,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -5367,7 +5367,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -5394,7 +5394,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -5432,7 +5432,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("googleshopping"),
 				Label:     text.Chars(`Google Shopping`),
 				SortOrder: 20,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `google/googleshopping/account_id`,
@@ -5441,7 +5441,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -5452,7 +5452,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -5463,7 +5463,7 @@ T: {{var telephone}}
 						Type:      element.TypeObscure,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -5474,7 +5474,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `HOSTED_OR_GOOGLE`,
 					},
 
@@ -5485,7 +5485,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 90,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `US`,
 					},
 
@@ -5496,7 +5496,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -5507,7 +5507,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 110,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -5529,7 +5529,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 150,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `{"product_search":"ProductSearch","product_ads":"ProductAds","commerce_search":"CommerceSearch"}`,
 					},
 
@@ -5540,7 +5540,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 151,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -5551,7 +5551,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 152,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -5562,7 +5562,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 153,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -5621,13 +5621,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("checkout"),
 		Label:     nil,
 		SortOrder: 305,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("cart"),
 				Label:     nil,
 				SortOrder: 2,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `checkout/cart/grouped_product_image`,
@@ -5636,7 +5636,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `itself`,
 					},
 				},
@@ -5648,7 +5648,7 @@ T: {{var telephone}}
 		ID:        path.NewRoute("oauth"),
 		Label:     text.Chars("OAuth"),
 		SortOrder: 300,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("cleanup"),
@@ -5732,13 +5732,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 40,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("layered_navigation"),
 				Label:     text.Chars(`Layered Navigation`),
 				SortOrder: 490,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/layered_navigation/display_product_count`,
@@ -5747,7 +5747,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -5758,7 +5758,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `auto`,
 					},
 
@@ -5769,7 +5769,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 15,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   100,
 					},
 
@@ -5781,7 +5781,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   10,
 					},
 
@@ -5793,7 +5793,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 15,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 
@@ -5805,7 +5805,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   9,
 					},
 				},
@@ -5817,7 +5817,7 @@ T: {{var telephone}}
 		ID:        path.NewRoute("customer"),
 		Label:     nil,
 		SortOrder: 130,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("online_customers"),
@@ -5984,13 +5984,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("system"),
 		Label:     nil,
 		SortOrder: 900,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("media_storage_configuration"),
 				Label:     text.Chars(`Storage Configuration for Media`),
 				SortOrder: 900,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `system/media_storage_configuration/media_storage`,
@@ -6083,7 +6083,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `Our price is lower than the manufacturer's "minimum advertised price." As a result, we cannot show you the price in catalog or the product page. <br /><br /> You have no obligation to purchase the product once you know the price. You can simply remove the item from your cart.`,
 					},
 
@@ -6094,7 +6094,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `Our price is lower than the manufacturer's "minimum advertised price." As a result, we cannot show you the price in catalog or the product page. <br /><br /> You have no obligation to purchase the product once you know the price. You can simply remove the item from your cart.`,
 					},
 				},
@@ -6144,13 +6144,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("newsletter"),
 		Label:     text.Chars("Newsletter"),
 		SortOrder: 110,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("subscription"),
 				Label:     text.Chars(`Subscription Options`),
 				SortOrder: 1,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `newsletter/subscription/allow_guest_subscribe`,
@@ -6159,7 +6159,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -6170,7 +6170,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 
@@ -6181,7 +6181,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `support`,
 					},
 
@@ -6192,7 +6192,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `newsletter_subscription_confirm_email_template`,
 					},
 
@@ -6203,7 +6203,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `general`,
 					},
 
@@ -6214,7 +6214,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `newsletter_subscription_success_email_template`,
 					},
 
@@ -6225,7 +6225,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `support`,
 					},
 
@@ -6236,7 +6236,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `newsletter_subscription_un_email_template`,
 					},
 				},
@@ -6268,13 +6268,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("payment"),
 		Label:     nil,
 		SortOrder: 400,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("checkmo"),
 				Label:     text.Chars(`Check / Money Order`),
 				SortOrder: 30,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `payment/checkmo/active`,
@@ -6316,7 +6316,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `Check / Money order`,
 					},
 
@@ -6349,7 +6349,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 61,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -6360,7 +6360,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 62,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -6403,7 +6403,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("purchaseorder"),
 				Label:     text.Chars(`Purchase Order`),
 				SortOrder: 32,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `payment/purchaseorder/active`,
@@ -6445,7 +6445,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `Purchase Order`,
 					},
 
@@ -6510,7 +6510,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("banktransfer"),
 				Label:     text.Chars(`Bank Transfer Payment`),
 				SortOrder: 30,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `payment/banktransfer/active`,
@@ -6530,7 +6530,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `Bank Transfer Payment`,
 					},
 
@@ -6574,7 +6574,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 62,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -6617,7 +6617,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("cashondelivery"),
 				Label:     text.Chars(`Cash On Delivery Payment`),
 				SortOrder: 30,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `payment/cashondelivery/active`,
@@ -6637,7 +6637,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `Cash On Delivery`,
 					},
 
@@ -6681,7 +6681,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 62,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -6724,7 +6724,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("free"),
 				Label:     text.Chars(`Zero Subtotal Checkout`),
 				SortOrder: 30,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `payment/free/active`,
@@ -6777,7 +6777,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -6916,13 +6916,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("carriers"),
 		Label:     nil,
 		SortOrder: 320,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("flatrate"),
 				Label:     text.Chars(`Flat Rate`),
 				SortOrder: 2,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `carriers/flatrate/active`,
@@ -6942,7 +6942,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `Fixed`,
 					},
 
@@ -6997,7 +6997,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `Flat Rate`,
 					},
 
@@ -7052,7 +7052,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 80,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `This shipping method is not available. To use this shipping method, please contact us.`,
 					},
 				},
@@ -7062,7 +7062,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("tablerate"),
 				Label:     text.Chars(`Table Rates`),
 				SortOrder: 3,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `carriers/tablerate/handling_type`,
@@ -7148,7 +7148,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `Table Rate`,
 					},
 
@@ -7170,7 +7170,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `Best Way`,
 					},
 
@@ -7214,7 +7214,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 80,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `This shipping method is not available. To use this shipping method, please contact us.`,
 					},
 				},
@@ -7224,7 +7224,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("freeshipping"),
 				Label:     text.Chars(`Free Shipping`),
 				SortOrder: 2,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `carriers/freeshipping/active`,
@@ -7255,7 +7255,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `Free`,
 					},
 
@@ -7277,7 +7277,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `Free Shipping`,
 					},
 
@@ -7321,7 +7321,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 80,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `This shipping method is not available. To use this shipping method, please contact us.`,
 					},
 				},
@@ -7467,7 +7467,7 @@ T: {{var telephone}}
 		ID:        path.NewRoute("payment"),
 		Label:     text.Chars("Payment Methods"),
 		SortOrder: 400,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups:    element.GroupSlice{},
 	},
 
@@ -7660,7 +7660,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("productalert"),
 				Label:     text.Chars(`Product Alerts`),
 				SortOrder: 250,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/productalert/allow_price`,
@@ -7669,7 +7669,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 
@@ -7691,7 +7691,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `catalog_productalert_email_price_template`,
 					},
 
@@ -7702,7 +7702,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `catalog_productalert_email_stock_template`,
 					},
 
@@ -7713,7 +7713,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `general`,
 					},
 				},
@@ -7834,7 +7834,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   5,
 					},
 
@@ -7845,7 +7845,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   5,
 					},
 				},
@@ -7922,13 +7922,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("rss"),
 		Label:     text.Chars("RSS Feeds"),
 		SortOrder: 80,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("config"),
 				Label:     text.Chars(`Rss Config`),
 				SortOrder: 1,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `rss/config/active`,
@@ -7937,7 +7937,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -7949,13 +7949,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("sales"),
 		Label:     text.Chars("Sales"),
 		SortOrder: 300,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("general"),
 				Label:     text.Chars(`General`),
 				SortOrder: 5,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/general/hide_customer_ip`,
@@ -7965,7 +7965,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 0,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -8038,7 +8038,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("reorder"),
 				Label:     text.Chars(`Reorder`),
 				SortOrder: 20,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/reorder/allow`,
@@ -8047,7 +8047,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 				},
@@ -8057,7 +8057,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("identity"),
 				Label:     text.Chars(`Invoice and Packing Slip Design`),
 				SortOrder: 40,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/identity/logo`,
@@ -8067,7 +8067,7 @@ T: {{var telephone}}
 						Type:      element.TypeImage,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -8079,7 +8079,7 @@ T: {{var telephone}}
 						Type:      element.TypeImage,
 						SortOrder: 150,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -8090,7 +8090,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 200,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -8100,7 +8100,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("minimum_order"),
 				Label:     text.Chars(`Minimum Order Amount`),
 				SortOrder: 50,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/minimum_order/active`,
@@ -8144,7 +8144,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -8155,7 +8155,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -8178,7 +8178,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -8190,7 +8190,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -8221,7 +8221,7 @@ T: {{var telephone}}
 		ID:        path.NewRoute("sales_email"),
 		Label:     text.Chars("Sales Emails"),
 		SortOrder: 301,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("general"),
@@ -8246,7 +8246,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("order"),
 				Label:     text.Chars(`Order`),
 				SortOrder: 1,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/order/enabled`,
@@ -8255,7 +8255,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 0,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -8266,7 +8266,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales`,
 					},
 
@@ -8277,7 +8277,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales_email_order_template`,
 					},
 
@@ -8288,7 +8288,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales_email_order_guest_template`,
 					},
 
@@ -8300,7 +8300,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -8311,7 +8311,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `bcc`,
 					},
 				},
@@ -8321,7 +8321,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("order_comment"),
 				Label:     text.Chars(`Order Comments`),
 				SortOrder: 2,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/order_comment/enabled`,
@@ -8330,7 +8330,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 0,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -8341,7 +8341,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales`,
 					},
 
@@ -8352,7 +8352,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales_email_order_comment_template`,
 					},
 
@@ -8363,7 +8363,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales_email_order_comment_guest_template`,
 					},
 
@@ -8375,7 +8375,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -8386,7 +8386,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `bcc`,
 					},
 				},
@@ -8396,7 +8396,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("invoice"),
 				Label:     text.Chars(`Invoice`),
 				SortOrder: 3,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/invoice/enabled`,
@@ -8405,7 +8405,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 0,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -8416,7 +8416,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales`,
 					},
 
@@ -8427,7 +8427,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales_email_invoice_template`,
 					},
 
@@ -8438,7 +8438,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales_email_invoice_guest_template`,
 					},
 
@@ -8450,7 +8450,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -8461,7 +8461,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `bcc`,
 					},
 				},
@@ -8471,7 +8471,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("invoice_comment"),
 				Label:     text.Chars(`Invoice Comments`),
 				SortOrder: 4,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/invoice_comment/enabled`,
@@ -8480,7 +8480,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 0,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -8491,7 +8491,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales`,
 					},
 
@@ -8502,7 +8502,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales_email_invoice_comment_template`,
 					},
 
@@ -8513,7 +8513,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales_email_invoice_comment_guest_template`,
 					},
 
@@ -8525,7 +8525,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -8536,7 +8536,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `bcc`,
 					},
 				},
@@ -8546,7 +8546,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("shipment"),
 				Label:     text.Chars(`Shipment`),
 				SortOrder: 5,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/shipment/enabled`,
@@ -8555,7 +8555,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 0,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -8566,7 +8566,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales`,
 					},
 
@@ -8577,7 +8577,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales_email_shipment_template`,
 					},
 
@@ -8588,7 +8588,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales_email_shipment_guest_template`,
 					},
 
@@ -8600,7 +8600,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -8611,7 +8611,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `bcc`,
 					},
 				},
@@ -8621,7 +8621,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("shipment_comment"),
 				Label:     text.Chars(`Shipment Comments`),
 				SortOrder: 6,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/shipment_comment/enabled`,
@@ -8630,7 +8630,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 0,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -8641,7 +8641,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales`,
 					},
 
@@ -8652,7 +8652,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales_email_shipment_comment_template`,
 					},
 
@@ -8663,7 +8663,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales_email_shipment_comment_guest_template`,
 					},
 
@@ -8675,7 +8675,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -8686,7 +8686,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `bcc`,
 					},
 				},
@@ -8696,7 +8696,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("creditmemo"),
 				Label:     text.Chars(`Credit Memo`),
 				SortOrder: 7,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/creditmemo/enabled`,
@@ -8705,7 +8705,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 0,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -8716,7 +8716,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales`,
 					},
 
@@ -8727,7 +8727,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales_email_creditmemo_template`,
 					},
 
@@ -8738,7 +8738,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales_email_creditmemo_guest_template`,
 					},
 
@@ -8750,7 +8750,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -8761,7 +8761,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `bcc`,
 					},
 				},
@@ -8771,7 +8771,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("creditmemo_comment"),
 				Label:     text.Chars(`Credit Memo Comments`),
 				SortOrder: 8,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/creditmemo_comment/enabled`,
@@ -8780,7 +8780,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 0,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -8791,7 +8791,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales`,
 					},
 
@@ -8802,7 +8802,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales_email_creditmemo_comment_template`,
 					},
 
@@ -8813,7 +8813,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sales_email_creditmemo_comment_guest_template`,
 					},
 
@@ -8825,7 +8825,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -8836,7 +8836,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `bcc`,
 					},
 				},
@@ -8847,13 +8847,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("sales_pdf"),
 		Label:     text.Chars("PDF Print-outs"),
 		SortOrder: 302,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("invoice"),
 				Label:     text.Chars(`Invoice`),
 				SortOrder: 10,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_pdf/invoice/put_order_id`,
@@ -8862,7 +8862,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 				},
@@ -8872,7 +8872,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("shipment"),
 				Label:     text.Chars(`Shipment`),
 				SortOrder: 20,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_pdf/shipment/put_order_id`,
@@ -8881,7 +8881,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 				},
@@ -8891,7 +8891,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("creditmemo"),
 				Label:     text.Chars(`Credit Memo`),
 				SortOrder: 30,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_pdf/creditmemo/put_order_id`,
@@ -8900,7 +8900,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 				},
@@ -8917,7 +8917,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("order"),
 				Label:     text.Chars(`Order`),
 				SortOrder: 4,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `rss/order/status`,
@@ -8926,7 +8926,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -9051,7 +9051,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 12,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -9112,13 +9112,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("sendfriend"),
 		Label:     text.Chars("Email to a Friend"),
 		SortOrder: 120,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("email"),
 				Label:     text.Chars(`Email Templates`),
 				SortOrder: 1,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sendfriend/email/enabled`,
@@ -9127,7 +9127,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -9138,7 +9138,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `sendfriend_email_template`,
 					},
 
@@ -9149,7 +9149,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 
@@ -9160,7 +9160,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   5,
 					},
 
@@ -9171,7 +9171,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   5,
 					},
 
@@ -9182,7 +9182,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 6,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 				},
@@ -9275,7 +9275,7 @@ T: {{var telephone}}
 		ID:        path.NewRoute("carriers"),
 		Label:     text.Chars("Shipping Methods"),
 		SortOrder: 320,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups:    element.GroupSlice{},
 	},
 
@@ -9283,13 +9283,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("sitemap"),
 		Label:     text.Chars("XML Sitemap"),
 		SortOrder: 70,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("category"),
 				Label:     text.Chars(`Categories Options`),
 				SortOrder: 1,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sitemap/category/changefreq`,
@@ -9298,7 +9298,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `daily`,
 					},
 
@@ -9310,7 +9310,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   0.5,
 					},
 				},
@@ -9320,7 +9320,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("product"),
 				Label:     text.Chars(`Products Options`),
 				SortOrder: 2,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sitemap/product/changefreq`,
@@ -9329,7 +9329,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `daily`,
 					},
 
@@ -9341,7 +9341,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   1,
 					},
 
@@ -9352,7 +9352,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `all`,
 					},
 				},
@@ -9362,7 +9362,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("page"),
 				Label:     text.Chars(`CMS Pages Options`),
 				SortOrder: 3,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sitemap/page/changefreq`,
@@ -9371,7 +9371,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `daily`,
 					},
 
@@ -9383,7 +9383,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   0.25,
 					},
 				},
@@ -9402,7 +9402,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 
@@ -9413,7 +9413,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -9446,7 +9446,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -9457,7 +9457,7 @@ T: {{var telephone}}
 						Type:      element.TypeTime,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -9467,7 +9467,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("limit"),
 				Label:     text.Chars(`Sitemap File Limits`),
 				SortOrder: 5,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sitemap/limit/max_lines`,
@@ -9476,7 +9476,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   50000,
 					},
 
@@ -9488,7 +9488,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   10485760,
 					},
 				},
@@ -9498,7 +9498,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("search_engines"),
 				Label:     text.Chars(`Search Engine Submission Settings`),
 				SortOrder: 6,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sitemap/search_engines/submission_robots`,
@@ -9507,7 +9507,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 				},
@@ -9553,13 +9553,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("tax"),
 		Label:     text.Chars("Tax"),
 		SortOrder: 303,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("classes"),
 				Label:     text.Chars(`Tax Classes`),
 				SortOrder: 10,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `tax/classes/shipping_tax_class`,
@@ -9600,7 +9600,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("calculation"),
 				Label:     text.Chars(`Calculation Settings`),
 				SortOrder: 20,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `tax/calculation/algorithm`,
@@ -9700,7 +9700,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("defaults"),
 				Label:     text.Chars(`Default Tax Destination Calculation`),
 				SortOrder: 30,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `tax/defaults/country`,
@@ -9709,7 +9709,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `US`,
 					},
 
@@ -9720,7 +9720,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 
@@ -9731,7 +9731,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `*`,
 					},
 				},
@@ -9741,7 +9741,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("display"),
 				Label:     text.Chars(`Price Display Settings`),
 				SortOrder: 40,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `tax/display/type`,
@@ -9750,7 +9750,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -9761,7 +9761,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 				},
@@ -9771,7 +9771,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("cart_display"),
 				Label:     text.Chars(`Shopping Cart Display Settings`),
 				SortOrder: 50,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `tax/cart_display/price`,
@@ -9780,7 +9780,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -9791,7 +9791,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -9802,7 +9802,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -9813,7 +9813,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 
@@ -9824,7 +9824,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 
@@ -9835,7 +9835,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 120,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 				},
@@ -9845,7 +9845,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("sales_display"),
 				Label:     text.Chars(`Orders, Invoices, Credit Memos Display Settings`),
 				SortOrder: 60,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `tax/sales_display/price`,
@@ -9854,7 +9854,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -9865,7 +9865,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -9876,7 +9876,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 
@@ -9887,7 +9887,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 
@@ -9898,7 +9898,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 
@@ -9909,7 +9909,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 120,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   false,
 					},
 				},
@@ -9975,7 +9975,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("head"),
 				Label:     text.Chars(`HTML Head`),
 				SortOrder: 20,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `design/head/shortcut_icon`,
@@ -9985,7 +9985,7 @@ T: {{var telephone}}
 						Type:      element.TypeImage,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -9996,7 +9996,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -10007,7 +10007,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 12,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -10018,7 +10018,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 14,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -10029,7 +10029,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -10040,7 +10040,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -10052,7 +10052,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 70,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -10063,7 +10063,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 80,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -10073,7 +10073,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("search_engine_robots"),
 				Label:     text.Chars(`Search Engine Robots`),
 				SortOrder: 25,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `design/search_engine_robots/default_robots`,
@@ -10083,7 +10083,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `INDEX,FOLLOW`,
 					},
 
@@ -10094,7 +10094,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 70,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -10106,7 +10106,7 @@ T: {{var telephone}}
 						Type:      element.TypeButton,
 						SortOrder: 80,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -10116,7 +10116,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("header"),
 				Label:     text.Chars(`Header`),
 				SortOrder: 30,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `design/header/logo_src`,
@@ -10126,7 +10126,7 @@ T: {{var telephone}}
 						Type:      element.TypeImage,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -10137,7 +10137,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -10148,7 +10148,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -10158,7 +10158,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("footer"),
 				Label:     text.Chars(`Footer`),
 				SortOrder: 40,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `design/footer/copyright`,
@@ -10167,7 +10167,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -10179,7 +10179,7 @@ T: {{var telephone}}
 						Type:      element.TypeTextarea,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -10407,7 +10407,7 @@ Disallow: /*SID=
 				ID:        path.NewRoute("ups"),
 				Label:     text.Chars(`UPS`),
 				SortOrder: 100,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `carriers/ups/access_license_number`,
@@ -10636,7 +10636,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `United Parcel Service`,
 					},
 
@@ -10758,7 +10758,7 @@ Disallow: /*SID=
 						Type:      element.TypeTextarea,
 						SortOrder: 800,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 					},
 
@@ -10920,7 +10920,7 @@ Disallow: /*SID=
 				ID:        path.NewRoute("usps"),
 				Label:     text.Chars(`USPS`),
 				SortOrder: 110,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `carriers/usps/active`,
@@ -10962,7 +10962,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `United States Postal Service`,
 					},
 
@@ -11182,7 +11182,7 @@ Disallow: /*SID=
 						Type:      element.TypeTextarea,
 						SortOrder: 170,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 					},
 
@@ -11332,13 +11332,13 @@ Disallow: /*SID=
 		ID:        path.NewRoute("webapi"),
 		Label:     text.Chars("Magento Web API"),
 		SortOrder: 102,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("soap"),
 				Label:     text.Chars(`SOAP Settings`),
 				SortOrder: 1,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `webapi/soap/charset`,
@@ -11348,7 +11348,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -11366,7 +11366,7 @@ Disallow: /*SID=
 				ID:        path.NewRoute("weee"),
 				Label:     text.Chars(`Fixed Product Taxes`),
 				SortOrder: 100,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `tax/weee/enable`,
@@ -11517,13 +11517,13 @@ Disallow: /*SID=
 		ID:        path.NewRoute("wishlist"),
 		Label:     text.Chars("Wishlist"),
 		SortOrder: 140,
-		Scope:     scope.PermAll,
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("email"),
 				Label:     text.Chars(`Share Options`),
 				SortOrder: 2,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `wishlist/email/email_identity`,
@@ -11532,7 +11532,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `general`,
 					},
 
@@ -11543,7 +11543,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   `wishlist_email_email_template`,
 					},
 
@@ -11555,7 +11555,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   10,
 					},
 
@@ -11567,7 +11567,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   255,
 					},
 				},
@@ -11577,7 +11577,7 @@ Disallow: /*SID=
 				ID:        path.NewRoute("general"),
 				Label:     text.Chars(`General Options`),
 				SortOrder: 1,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `wishlist/general/active`,
@@ -11586,7 +11586,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   true,
 					},
 				},
@@ -11622,7 +11622,7 @@ Disallow: /*SID=
 				ID:        path.NewRoute("wishlist"),
 				Label:     text.Chars(`Wishlist`),
 				SortOrder: 2,
-				Scope:     scope.PermAll,
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `rss/wishlist/active`,
@@ -11631,7 +11631,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermAll,
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},

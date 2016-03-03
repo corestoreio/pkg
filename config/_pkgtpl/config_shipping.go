@@ -17,7 +17,7 @@ func init() {
 			ID:        "shipping",
 			Label:     `Shipping Settings`,
 			SortOrder: 310,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Shipping::config_shipping
 			Groups: element.NewGroupSlice(
 				&element.Group{
@@ -96,7 +96,7 @@ func init() {
 					ID:        "shipping_policy",
 					Label:     `Shipping Policy Parameters`,
 					SortOrder: 120,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: shipping/shipping_policy/enable_shipping_policy
@@ -116,7 +116,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 					),
 				},
@@ -126,7 +126,7 @@ func init() {
 			ID:        "carriers",
 			Label:     `Shipping Methods`,
 			SortOrder: 320,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Shipping::carriers
 			Groups:    element.NewGroupSlice(),
 		},

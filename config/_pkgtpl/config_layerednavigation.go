@@ -16,13 +16,13 @@ func init() {
 		&element.Section{
 			ID:        "catalog",
 			SortOrder: 40,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "layered_navigation",
 					Label:     `Layered Navigation`,
 					SortOrder: 490,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/layered_navigation/display_product_count
@@ -31,7 +31,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -43,7 +43,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `auto`,
 							// SourceModel: Magento\Catalog\Model\Config\Source\Price\Step
 						},
@@ -55,7 +55,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 15,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   100,
 						},
 
@@ -67,7 +67,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   10,
 						},
 
@@ -79,7 +79,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 15,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -92,7 +92,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   9,
 						},
 					),

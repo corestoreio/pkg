@@ -277,7 +277,7 @@ func TestSectionSliceMerge(t *testing.T) {
 						SortOrder: 1000,
 						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
 						Groups: element.NewGroupSlice(
-							&element.Group{ID: path.NewRoute(`b`), Label: text.Chars(`GroupLabelB1`), Scope: scope.PermAll},
+							&element.Group{ID: path.NewRoute(`b`), Label: text.Chars(`GroupLabelB1`), Scope: scope.PermStore},
 							&element.Group{ID: path.NewRoute(`b`), Label: text.Chars(`GroupLabelB2`), Comment: text.Chars("Section2AGroup3BComment"), SortOrder: 100},
 							&element.Group{ID: path.NewRoute(`b2`)},
 						),

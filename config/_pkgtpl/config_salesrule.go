@@ -97,7 +97,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 12,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 					),

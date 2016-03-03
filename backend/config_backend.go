@@ -33,14 +33,14 @@ func init() {
 			ID:        path.NewRoute("advanced"),
 			Label:     text.Chars(`Advanced`),
 			SortOrder: 910,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Backend::advanced
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("modules_disable_output"),
 					Label:     text.Chars(`Disable Modules Output`),
 					SortOrder: 2,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields:    element.NewFieldSlice(),
 				},
 			),
@@ -49,14 +49,14 @@ func init() {
 			ID:        path.NewRoute("trans_email"),
 			Label:     text.Chars(`Store Email Addresses`),
 			SortOrder: 90,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Backend::trans_email
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("ident_custom1"),
 					Label:     text.Chars(`Custom Email 1`),
 					SortOrder: 4,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: trans_email/ident_custom1/email
@@ -65,7 +65,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
 
@@ -76,7 +76,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Sender
 						},
 					),
@@ -86,7 +86,7 @@ func init() {
 					ID:        path.NewRoute("ident_custom2"),
 					Label:     text.Chars(`Custom Email 2`),
 					SortOrder: 5,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: trans_email/ident_custom2/email
@@ -95,7 +95,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
 
@@ -106,7 +106,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Sender
 						},
 					),
@@ -116,7 +116,7 @@ func init() {
 					ID:        path.NewRoute("ident_general"),
 					Label:     text.Chars(`General Contact`),
 					SortOrder: 1,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: trans_email/ident_general/email
@@ -125,7 +125,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
 
@@ -136,7 +136,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Sender
 						},
 					),
@@ -146,7 +146,7 @@ func init() {
 					ID:        path.NewRoute("ident_sales"),
 					Label:     text.Chars(`Sales Representative`),
 					SortOrder: 2,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: trans_email/ident_sales/email
@@ -155,7 +155,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
 
@@ -166,7 +166,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Sender
 						},
 					),
@@ -176,7 +176,7 @@ func init() {
 					ID:        path.NewRoute("ident_support"),
 					Label:     text.Chars(`Customer Support`),
 					SortOrder: 3,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: trans_email/ident_support/email
@@ -185,7 +185,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
 
@@ -196,7 +196,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Sender
 						},
 					),
@@ -207,14 +207,14 @@ func init() {
 			ID:        path.NewRoute("design"),
 			Label:     text.Chars(`Design`),
 			SortOrder: 30,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Config::config_design
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("theme"),
 					Label:     text.Chars(`Design Theme`),
 					SortOrder: 1,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/theme/theme_id
@@ -224,7 +224,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Theme\Model\Design\Backend\Theme
 							// SourceModel: Magento\Framework\View\Design\Theme\Label::getLabelsCollectionForSystemConfiguration
 						},
@@ -248,7 +248,7 @@ func init() {
 					ID:        path.NewRoute("pagination"),
 					Label:     text.Chars(`Pagination`),
 					SortOrder: 500,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/pagination/pagination_frame
@@ -258,7 +258,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -269,7 +269,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 8,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -280,7 +280,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 9,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -291,7 +291,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 					),
 				},
@@ -301,14 +301,14 @@ func init() {
 			ID:        path.NewRoute("dev"),
 			Label:     text.Chars(`Developer`),
 			SortOrder: 920,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Backend::dev
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("debug"),
 					Label:     text.Chars(`Debug`),
 					SortOrder: 20,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/debug/template_hints_storefront
@@ -317,7 +317,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -339,7 +339,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 21,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
@@ -349,7 +349,7 @@ func init() {
 					ID:        path.NewRoute("template"),
 					Label:     text.Chars(`Template Settings`),
 					SortOrder: 25,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/template/allow_symlink
@@ -359,7 +359,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -370,7 +370,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 25,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -381,7 +381,7 @@ func init() {
 					ID:        path.NewRoute("translate_inline"),
 					Label:     text.Chars(`Translate Inline`),
 					SortOrder: 30,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/translate_inline/active
@@ -390,7 +390,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Translate
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -414,7 +414,7 @@ func init() {
 					ID:        path.NewRoute("js"),
 					Label:     text.Chars(`JavaScript Settings`),
 					SortOrder: 100,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/js/merge_files
@@ -423,7 +423,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -434,7 +434,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -445,7 +445,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
@@ -455,7 +455,7 @@ func init() {
 					ID:        path.NewRoute("css"),
 					Label:     text.Chars(`CSS Settings`),
 					SortOrder: 110,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/css/merge_css_files
@@ -464,7 +464,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -475,7 +475,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
@@ -526,14 +526,14 @@ func init() {
 			ID:        path.NewRoute("general"),
 			Label:     text.Chars(`General`),
 			SortOrder: 10,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Config::config_general
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("store_information"),
 					Label:     text.Chars(`Store Information`),
 					SortOrder: 100,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/store_information/name
@@ -542,7 +542,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -552,7 +552,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -562,7 +562,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 22,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -665,14 +665,14 @@ func init() {
 			ID:        path.NewRoute("system"),
 			Label:     text.Chars(`System`),
 			SortOrder: 900,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Config::config_system
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("smtp"),
 					Label:     text.Chars(`Mail Sending Settings`),
 					SortOrder: 20,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: system/smtp/disable
@@ -681,7 +681,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -693,7 +693,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -704,7 +704,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -923,7 +923,7 @@ func init() {
 			ID:        path.NewRoute("web"),
 			Label:     text.Chars(`Web`),
 			SortOrder: 20,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Backend::web
 			Groups: element.NewGroupSlice(
 				&element.Group{
@@ -965,7 +965,7 @@ func init() {
 					ID:        path.NewRoute("seo"),
 					Label:     text.Chars(`Search Engine Optimization`),
 					SortOrder: 5,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/seo/use_rewrites
@@ -974,7 +974,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -986,7 +986,7 @@ func init() {
 					Label:     text.Chars(`Base URLs`),
 					Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
 					SortOrder: 10,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/unsecure/base_url
@@ -996,7 +996,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
@@ -1008,7 +1008,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
@@ -1020,7 +1020,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 25,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
@@ -1032,7 +1032,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 					),
@@ -1043,7 +1043,7 @@ func init() {
 					Label:     text.Chars(`Base URLs (Secure)`),
 					Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`),
 					SortOrder: 20,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/secure/base_url
@@ -1053,7 +1053,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
@@ -1065,7 +1065,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
@@ -1077,7 +1077,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 25,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
@@ -1089,7 +1089,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
@@ -1101,7 +1101,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Secure
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -1127,7 +1127,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Secure
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -1140,7 +1140,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 80,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Secure
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -1161,7 +1161,7 @@ func init() {
 					ID:        path.NewRoute("default"),
 					Label:     text.Chars(`Default Pages`),
 					SortOrder: 30,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/default/front
@@ -1170,7 +1170,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -1180,7 +1180,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 					),
 				},

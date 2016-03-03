@@ -17,7 +17,7 @@ func init() {
 			ID:        "customer",
 			Label:     `Customer Configuration`,
 			SortOrder: 130,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Customer::config_customer
 			Groups: element.NewGroupSlice(
 				&element.Group{
@@ -46,7 +46,7 @@ func init() {
 					ID:        "create_account",
 					Label:     `Create New Account Options`,
 					SortOrder: 20,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: customer/create_account/auto_group_assign
@@ -55,7 +55,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -66,7 +66,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `billing`,
 							// SourceModel: Magento\Customer\Model\Config\Source\Address\Type
 						},
@@ -78,7 +78,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Customer\Model\Config\Source\Group
 						},
@@ -90,7 +90,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Customer\Model\Config\Source\Group
 						},
 
@@ -101,7 +101,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Customer\Model\Config\Source\Group
 						},
 
@@ -112,7 +112,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Customer\Model\Config\Source\Group
 						},
 
@@ -123,7 +123,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 55,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Customer\Model\Config\Source\Group
 						},
 
@@ -134,7 +134,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 56,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -170,7 +170,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `example.com`,
 						},
 
@@ -182,7 +182,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `customer_create_account_email_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -195,7 +195,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 75,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `customer_create_account_email_no_password_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -207,7 +207,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 80,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `general`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -232,7 +232,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `customer_create_account_email_confirmation_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -245,7 +245,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 110,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `customer_create_account_email_confirmed_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -267,7 +267,7 @@ func init() {
 					ID:        "password",
 					Label:     `Password Options`,
 					SortOrder: 30,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: customer/password/forgot_email_template
@@ -277,7 +277,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `customer_password_forgot_email_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -290,7 +290,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `customer_password_remind_email_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -303,7 +303,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `customer_password_reset_password_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -315,7 +315,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `support`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -339,7 +339,7 @@ func init() {
 					ID:        "address",
 					Label:     `Name and Address Options`,
 					SortOrder: 40,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: customer/address/street_lines
@@ -457,7 +457,7 @@ func init() {
 					ID:        "startup",
 					Label:     `Login Options`,
 					SortOrder: 90,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: customer/startup/redirect_dashboard
@@ -478,7 +478,7 @@ func init() {
 					ID:        "address_templates",
 					Label:     `Address Templates`,
 					SortOrder: 100,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: customer/address_templates/text
@@ -487,7 +487,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default: `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}
 {{depend company}}{{var company}}{{/depend}}
 {{if street1}}{{var street1}}
@@ -509,7 +509,7 @@ T: {{var telephone}}
 							Type:      element.TypeTextarea,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}, {{var street}}, {{var city}}, {{var region}} {{var postcode}}, {{var country}}`,
 						},
 
@@ -520,7 +520,7 @@ T: {{var telephone}}
 							Type:      element.TypeTextarea,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default: `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}{{depend firstname}}<br/>{{/depend}}
 {{depend company}}{{var company}}<br />{{/depend}}
 {{if street1}}{{var street1}}<br />{{/if}}
@@ -541,7 +541,7 @@ T: {{var telephone}}
 							Type:      element.TypeTextarea,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default: `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}|
 {{depend company}}{{var company}}|{{/depend}}
 {{if street1}}{{var street1}}

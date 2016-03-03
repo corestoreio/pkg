@@ -16,12 +16,12 @@ func init() {
 		&element.Section{
 			ID:        "checkout",
 			SortOrder: 305,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "cart",
 					SortOrder: 2,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: checkout/cart/grouped_product_image
@@ -30,7 +30,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `itself`,
 							// SourceModel: Magento\Catalog\Model\Config\Source\Product\Thumbnail
 						},

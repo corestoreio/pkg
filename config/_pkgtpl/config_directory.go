@@ -17,14 +17,14 @@ func init() {
 			ID:        "currency",
 			Label:     `Currency Setup`,
 			SortOrder: 60,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Backend::currency
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "options",
 					Label:     `Currency Options`,
 					SortOrder: 30,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: currency/options/base
@@ -47,7 +47,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `USD`,
 							// BackendModel: Magento\Config\Model\Config\Backend\Currency\DefaultCurrency
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
@@ -60,7 +60,7 @@ func init() {
 							Type:       element.TypeMultiselect,
 							SortOrder:  3,
 							Visible:    element.VisibleYes,
-							Scope:      scope.PermAll,
+							Scope:      scope.PermStore,
 							CanBeEmpty: true,
 							Default:    `USD,EUR`,
 							// BackendModel: Magento\Config\Model\Config\Backend\Currency\Allow
@@ -100,7 +100,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -112,7 +112,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -147,7 +147,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 						},
 
@@ -158,7 +158,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Currency\Cron
 							// SourceModel: Magento\Directory\Model\Currency\Import\Source\Service
 						},
@@ -170,7 +170,7 @@ func init() {
 							Type:      element.TypeTime,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 					),
 				},
@@ -263,7 +263,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `lbs`,
 							// SourceModel: Magento\Directory\Model\Config\Source\WeightUnit
 						},

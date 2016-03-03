@@ -31,14 +31,14 @@ func init() {
 			ID:        path.NewRoute("catalog"),
 			Label:     text.Chars(`Catalog`),
 			SortOrder: 40,
-			Scope:     scope.PermAll,
+			Scope:     scope.PermStore,
 			Resource:  0, // Magento_Catalog::config_catalog
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("fields_masks"),
 					Label:     text.Chars(`Product Fields Auto-Generation`),
 					SortOrder: 90,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/fields_masks/sku
@@ -94,7 +94,7 @@ func init() {
 					ID:        path.NewRoute("frontend"),
 					Label:     text.Chars(`Storefront`),
 					SortOrder: 100,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/frontend/list_mode
@@ -103,7 +103,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `grid-list`,
 							// SourceModel: Magento\Catalog\Model\Config\Source\ListMode
 						},
@@ -116,7 +116,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `9,15,30`,
 						},
 
@@ -128,7 +128,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   9,
 						},
 
@@ -140,7 +140,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `5,10,15,20,25`,
 						},
 
@@ -152,7 +152,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   10,
 						},
 
@@ -188,7 +188,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 6,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `position`,
 							// SourceModel: Magento\Catalog\Model\Config\Source\ListSort
 						},
@@ -201,7 +201,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 6,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -213,7 +213,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 200,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -224,7 +224,7 @@ func init() {
 					ID:        path.NewRoute("placeholder"),
 					Label:     text.Chars(`Product Image Placeholders`),
 					SortOrder: 300,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/placeholder/placeholder
@@ -232,7 +232,7 @@ func init() {
 							Type:      element.TypeImage,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Image
 						},
 					),
@@ -242,7 +242,7 @@ func init() {
 					ID:        path.NewRoute("seo"),
 					Label:     text.Chars(`Search Engine Optimization`),
 					SortOrder: 500,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/seo/title_separator
@@ -251,7 +251,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 6,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `-`,
 						},
 
@@ -262,7 +262,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -274,7 +274,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 8,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -306,7 +306,7 @@ func init() {
 					ID:        path.NewRoute("navigation"),
 					Label:     text.Chars(`Category Top Navigation`),
 					SortOrder: 500,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/navigation/max_depth
@@ -324,7 +324,7 @@ func init() {
 					ID:        path.NewRoute("custom_options"),
 					Label:     text.Chars(`Date & Time Custom Options`),
 					SortOrder: 700,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/custom_options/use_calendar
@@ -333,7 +333,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -344,7 +344,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `m,d,y`,
 						},
 
@@ -355,7 +355,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							Default:   `12h`,
 							// SourceModel: Magento\Catalog\Model\Config\Source\TimeFormat
 						},
@@ -368,7 +368,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 					),
 				},
@@ -381,7 +381,7 @@ func init() {
 					ID:        path.NewRoute("watermark"),
 					Label:     text.Chars(`Product Image Watermarks`),
 					SortOrder: 400,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/watermark/size
@@ -391,7 +391,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -401,7 +401,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 150,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 						},
 
 						&element.Field{
@@ -412,7 +412,7 @@ func init() {
 							Type:      element.TypeImage,
 							SortOrder: 200,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Image
 						},
 
@@ -423,7 +423,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 300,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Catalog\Model\Config\Source\Watermark\Position
 						},
 					),
@@ -458,7 +458,7 @@ func init() {
 					ID:        path.NewRoute("catalog"),
 					Label:     text.Chars(`Catalog`),
 					SortOrder: 3,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: rss/catalog/new
@@ -467,7 +467,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 
@@ -478,7 +478,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 11,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 
@@ -489,7 +489,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 14,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 					),

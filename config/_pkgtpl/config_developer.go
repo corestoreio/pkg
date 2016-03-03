@@ -20,7 +20,7 @@ func init() {
 					ID:        "front_end_development_workflow",
 					Label:     `Frontend Development Workflow`,
 					SortOrder: 8,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/front_end_development_workflow/type
@@ -41,7 +41,7 @@ func init() {
 					ID:        "restrict",
 					Label:     `Developer Client Restrictions`,
 					SortOrder: 10,
-					Scope:     scope.PermAll,
+					Scope:     scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/restrict/allow_ips
@@ -51,7 +51,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermAll,
+							Scope:     scope.PermStore,
 							// BackendModel: Magento\Developer\Model\Config\Backend\AllowedIps
 						},
 					),
