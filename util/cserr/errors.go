@@ -50,13 +50,7 @@ func (m *MultiErr) AppendErrors(errs ...error) *MultiErr {
 
 // HasErrors checks if Multi contains errors.
 func (m *MultiErr) HasErrors() bool {
-	switch {
-	case m == nil:
-		return false
-	case len(m.errs) > 0:
-		return true
-	}
-	return false
+	return m != nil && len(m.errs) > 0
 }
 
 // VerboseErrors enables more error details like the location. Use in chaining:
