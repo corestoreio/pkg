@@ -26,6 +26,9 @@ import (
 // ErrRouteInvalidBytes whenever a non-rune is detected.
 var ErrRouteInvalidBytes = errors.New("Route contains invalid bytes which are not runes.")
 
+// ErrRouteEmpty bytes are nil or len equals zero
+var ErrRouteEmpty = errors.New("Route is empty")
+
 // Route consists of at least three parts each of them separated by a slash
 // (See constant Separator). A route can be seen as a tree.
 // Route example: catalog/product/scope or websites/1/catalog/product/scope

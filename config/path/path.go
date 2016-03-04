@@ -21,7 +21,6 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/juju/errors"
 )
 
@@ -39,9 +38,6 @@ const Separator byte = '/'
 const sSeparator = "/"
 
 var bSeparator = []byte(sSeparator)
-
-// ErrRouteEmpty path parts are empty
-var ErrRouteEmpty = errors.New("Route is empty")
 
 // ErrIncorrectPath a path is missing a path separator or is too short
 var ErrIncorrectPath = errors.New("Incorrect Path. Either to short or missing path separator.")
@@ -141,11 +137,16 @@ func (p Path) StrScope() string {
 // String returns a fully qualified path. Errors get logged if debug mode
 // is enabled. String is empty on error.
 func (p Path) String() string {
-	s, err := p.FQ()
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("path.Path.FQ.String", "err", err, "path", p)
+	buf := bufPool.Get()
+	defer bufPool.Put(buf)
+	err := p.fq(buf)
+	if err != nil {
+		if PkgLog.IsDebug() {
+			PkgLog.Debug("path.Path.FQ.String", "err", err, "path", p, "buf", buf.String())
+		}
+		return ""
 	}
-	return s.String()
+	return buf.String()
 }
 
 // GoString returns the internal representation of Path
@@ -157,7 +158,8 @@ func (p Path) GoString() string {
 // returned byte slice. If scope is equal to scope.DefaultID and ID is not
 // zero then ID gets set to zero.
 func (p Path) FQ() (Route, error) {
-	// bufferpool not possible because we're returning bytes, which can be modified
+	// bufPool not possible because we're returning bytes, which can be modified
+	// and bufPool truncates the slice, so return would a zero slice.
 	var buf bytes.Buffer
 	err := p.fq(&buf)
 	return newRoute(buf.Bytes()), err
@@ -193,8 +195,8 @@ func (p Path) Level(depth int) (r Route, err error) {
 func (p Path) Hash(depth int) (uint32, error) {
 	p.routeValidated = true
 
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
+	buf := bufPool.Get()
+	defer bufPool.Put(buf)
 	err := p.fq(buf)
 	if err != nil {
 		return 0, err
