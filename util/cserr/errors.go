@@ -59,9 +59,9 @@ func (m *MultiErr) HasErrors() bool {
 	return false
 }
 
-// Details enables more error details like the location. Use in chaining:
+// VerboseErrors enables more error details like the location. Use in chaining:
 // 		e := NewMultiErr(err1, err2).Details()
-func (m *MultiErr) Details() *MultiErr {
+func (m *MultiErr) VerboseErrors() *MultiErr {
 	m.details = true
 	return m
 }

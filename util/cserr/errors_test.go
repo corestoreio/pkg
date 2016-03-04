@@ -32,7 +32,7 @@ func TestMultiErrors(t *testing.T) {
 			errors.New("Err1"),
 			errors.New("Err2"),
 			errors.New("Err3"),
-		).Details().Error(),
+		).VerboseErrors().Error(),
 	)
 }
 
@@ -49,7 +49,7 @@ func TestMultiAppend(t *testing.T) {
 	assert.True(t, e.HasErrors())
 	assert.Equal(t,
 		"[{github.com/corestoreio/csfw/util/cserr/errors_test.go:44: Err5}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:46: Err6}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:47: Err7}]",
-		e.Details().Error(),
+		e.VerboseErrors().Error(),
 	)
 }
 
@@ -83,7 +83,7 @@ var benchmarkError string
 // BenchmarkError-4	  500000	      3763 ns/op	    1936 B/op	      26 allocs/op
 func BenchmarkError(b *testing.B) {
 	// errors.Details(e) produces those high allocs
-	e := cserr.NewMultiErr().Details()
+	e := cserr.NewMultiErr().VerboseErrors()
 	e.AppendErrors(
 		errors.New("Err5"),
 		nil,
