@@ -83,7 +83,14 @@ func (s *pubSub) Close() error {
 
 // Subscribe adds a Subscriber to be called when a write event happens.
 // See interface Subscriber for a detailed description.
-// Route can be any kind of level. a or a/b or a/b/c.
+// Route can be any kind of level and can contain StrScope and Scope ID.
+// Valid routes can be for example:
+//		- StrScope/ID/currency/options/base
+//		- StrScope/ID/currency/options
+//		- StrScope/ID/currency
+//		- currency/options/base
+//		- currency/options
+//		- currency
 func (s *pubSub) Subscribe(r path.Route, mr MessageReceiver) (subscriptionID int, err error) {
 	if r.IsEmpty() {
 		return 0, path.ErrIncorrectPath
@@ -93,11 +100,7 @@ func (s *pubSub) Subscribe(r path.Route, mr MessageReceiver) (subscriptionID int
 	s.subAutoInc++
 	subscriptionID = s.subAutoInc
 
-	p := path.Path{
-		Route:           r,
-		RouteLevelValid: true,
-	}
-	hashPath := p.Hash32()
+	hashPath := r.Hash32()
 
 	if _, ok := s.subMap[hashPath]; !ok {
 		s.subMap[hashPath] = make(map[int]MessageReceiver)
@@ -136,6 +139,9 @@ func (s *pubSub) sendMsg(p path.Path) {
 // because we don't know how long each subscriber needs.
 func (s *pubSub) publish() {
 
+	// TODO: review this API and the running goroutine: http://www.jtolds.com/writing/2016/03/go-channels-are-bad-and-you-should-feel-bad/
+	// but for know it works, someone can refactor it :-)
+
 	for {
 		select {
 		case <-s.stop:
@@ -151,36 +157,13 @@ func (s *pubSub) publish() {
 				break
 			}
 
-			s.mu.RLock()
 			var evict []int
 
-			// TODO: extract a function and keep DRY
-			hp1, err := p.Hash(1)
-			if err != nil && PkgLog.IsDebug() {
-				PkgLog.Debug("config.pubSub.publish.arg.Hash.err1", "err", err, "arg", p)
-			}
-			if subs, ok := s.subMap[hp1]; ok { // e.g.: system
-				evict = append(evict, sendMessages(subs, p)...)
-			}
+			evict = append(evict, s.readMapAndSend(p, 1)...)  // e.g.: system and StrScope/ID/system
+			evict = append(evict, s.readMapAndSend(p, 2)...)  // e.g.: system/smtp and StrScope/ID/system/smtp
+			evict = append(evict, s.readMapAndSend(p, -1)...) // e.g.: system/smtp/host/... and StrScope/ID/system/smtp/host/...
 
-			hp2, err := p.Hash(2)
-			if err != nil && PkgLog.IsDebug() {
-				PkgLog.Debug("config.pubSub.publish.arg.Hash.err2", "err", err, "arg", p)
-			}
-			if subs, ok := s.subMap[hp2]; ok { // e.g.: system/smtp
-				evict = append(evict, sendMessages(subs, p)...)
-			}
-
-			hpN, err := p.Hash(-1)
-			if err != nil && PkgLog.IsDebug() {
-				PkgLog.Debug("config.pubSub.publish.arg.Hash.errN", "err", err, "arg", p)
-			}
-			if subs, ok := s.subMap[hpN]; ok { // e.g.: system/smtp/host/etc/pp
-				evict = append(evict, sendMessages(subs, p)...)
-			}
-			s.mu.RUnlock()
-
-			// remove all Subscribers which failed
+			// remove all failed Subscribers
 			if len(evict) > 0 {
 				for _, e := range evict {
 					if err := s.Unsubscribe(e); err != nil && PkgLog.IsDebug() {
@@ -192,7 +175,30 @@ func (s *pubSub) publish() {
 	}
 }
 
-func sendMessages(subs map[int]MessageReceiver, p path.Path) (evict []int) {
+func (s *pubSub) readMapAndSend(p path.Path, level int) (evict []int) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	h, err := p.Hash(level) // including scope and scopeID and the route
+	if err != nil && PkgLog.IsDebug() {
+		PkgLog.Debug("config.pubSub.publish.PathHash.err", "err", err, "path", p)
+	}
+	if subs, ok := s.subMap[h]; ok { // e.g.: strScope/ID/system/smtp/host/etc/pp
+		evict = append(evict, sendMsgs(subs, p)...)
+	}
+
+	h, err = p.Route.Hash(level) // without scope and scopeID and route only
+	if err != nil && PkgLog.IsDebug() {
+		PkgLog.Debug("config.pubSub.publish.RouteHash.err", "err", err, "path", p)
+	}
+	if subs, ok := s.subMap[h]; ok { // e.g.: system/smtp/host/etc/pp
+		evict = append(evict, sendMsgs(subs, p)...)
+	}
+
+	return
+}
+
+func sendMsgs(subs map[int]MessageReceiver, p path.Path) (evict []int) {
 	for id, s := range subs {
 		if err := sendMsgRecoverable(id, s, p); err != nil {
 			if PkgLog.IsDebug() {

@@ -103,7 +103,7 @@ func TestNotKeyNotFoundError(t *testing.T) {
 	srv := config.MustNewService(nil)
 	assert.NotNil(t, srv)
 
-	scopedSrv := srv.NewScoped(1, 1, 1)
+	scopedSrv := srv.NewScoped(1, 1)
 
 	flat, err := scopedSrv.String(path.NewRoute("catalog/product/enable_flat"))
 	assert.EqualError(t, err, storage.ErrKeyNotFound.Error())
@@ -121,7 +121,7 @@ func TestService_NewScoped(t *testing.T) {
 	srv := config.MustNewService(nil)
 	assert.NotNil(t, srv)
 
-	scopedSrv := srv.NewScoped(1, 1, 1)
+	scopedSrv := srv.NewScoped(1, 1)
 	sURL, err := scopedSrv.String(path.NewRoute(config.PathCSBaseURL))
 	assert.NoError(t, err)
 	assert.Exactly(t, config.CSBaseURL, sURL)
@@ -134,7 +134,7 @@ func TestService_Write(t *testing.T) {
 	assert.NotNil(t, srv)
 
 	p1 := path.Path{}
-	assert.EqualError(t, srv.Write(p1, true), path.ErrRouteEmpty.Error())
+	assert.EqualError(t, srv.Write(p1, true), path.ErrIncorrectPath.Error())
 }
 
 func TestService_Types(t *testing.T) {
@@ -145,7 +145,7 @@ func TestService_Types(t *testing.T) {
 		err error
 	}{
 		{basePath, nil},
-		{path.Path{}, path.ErrRouteEmpty},
+		{path.Path{}, path.ErrIncorrectPath},
 		{basePath.Bind(scope.WebsiteID, 10), nil},
 		{basePath.Bind(scope.StoreID, 22), nil},
 	}

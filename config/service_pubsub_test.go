@@ -40,7 +40,6 @@ func (ts *testSubscriber) MessageConfig(p path.Path) error {
 }
 
 func TestPubSubBubbling(t *testing.T) {
-	t.Parallel()
 	testPath := path.MustNewByParts("aa/bb/cc")
 
 	s := config.MustNewService()

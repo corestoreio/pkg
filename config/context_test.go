@@ -75,7 +75,7 @@ func TestContextMustWriter(t *testing.T) {
 func TestContextScopedGetterOK(t *testing.T) {
 	t.Parallel()
 	srv := config.NewMockGetter()
-	scopedSrv := srv.NewScoped(0, 0, 0)
+	scopedSrv := srv.NewScoped(0, 0)
 
 	ctx := context.Background()
 	ctx = config.WithContextScopedGetter(ctx, scopedSrv)

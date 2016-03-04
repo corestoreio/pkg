@@ -24,7 +24,12 @@ import (
 
 // ScopedGetter is equal to Getter but the underlying implementation takes
 // care of providing the correct scope: default, website or store and bubbling
-// up the scope chain from store -> website -> default.
+// up the scope chain from store -> website -> default if a value won't get
+// found in the desired scope.
+//
+// To restrict bubbling up you can provide a second argument scope.Scope.
+// You can restrict a configuration path to be only used with the default,
+// website or store scope.
 //
 // This interface is mainly implemented in the store package. The functions
 // should be the same as in Getter but only the different is the route
@@ -32,49 +37,42 @@ import (
 // Returned error is mostly of ErrKeyNotFound.
 type ScopedGetter interface {
 	scope.Scoper
-	String(r path.Route) (string, error)
-	Bool(r path.Route) (bool, error)
-	Float64(r path.Route) (float64, error)
-	Int(r path.Route) (int, error)
-	Time(r path.Route) (time.Time, error)
+	String(r path.Route, s ...scope.Scope) (string, error)
+	Bool(r path.Route, s ...scope.Scope) (bool, error)
+	Float64(r path.Route, s ...scope.Scope) (float64, error)
+	Int(r path.Route, s ...scope.Scope) (int, error)
+	Time(r path.Route, s ...scope.Scope) (time.Time, error)
 }
 
 // think about that segregation
 //type ScopedStringer interface {
 //	scope.Scoper
-//	String(r path.Route) (string, error)
+//	Bind(scope.Scope) ScopedGetter
+//	String(r path.Route, s ...scope.Scope) (string, error)
 //}
-//
-//type ScopedBooler interface {
-//	scope.Scoper
-//	Bool(r path.Route) (bool, error)
-//}
+// and so on ...
 
 type scopedService struct {
 	root      Getter
 	websiteID int64
-	groupID   int64
 	storeID   int64
 }
 
 var _ ScopedGetter = (*scopedService)(nil)
 
-func newScopedService(r Getter, websiteID, groupID, storeID int64) scopedService {
+func newScopedService(r Getter, websiteID, storeID int64) scopedService {
 	return scopedService{
 		root:      r,
 		websiteID: websiteID,
-		groupID:   groupID,
 		storeID:   storeID,
 	}
 }
 
-// Scope tells you the current underlying scope and its website, group or store ID
+// Scope tells you the current underlying scope and its website or store ID
 func (ss scopedService) Scope() (scope.Scope, int64) {
 	switch {
 	case ss.storeID > 0:
 		return scope.StoreID, ss.storeID
-	case ss.groupID > 0:
-		return scope.GroupID, ss.groupID
 	case ss.websiteID > 0:
 		return scope.WebsiteID, ss.websiteID
 	default:
@@ -82,9 +80,9 @@ func (ss scopedService) Scope() (scope.Scope, int64) {
 	}
 }
 
-// String traverses through the scopes store->group->website->default to find
+// String traverses through the scopes store->website->default to find
 // a matching string value.
-func (ss scopedService) String(r path.Route) (v string, err error) {
+func (ss scopedService) String(r path.Route, s ...scope.Scope) (v string, err error) {
 	// fallback to next parent scope if value does not exists
 	p, err := path.New(r)
 	if err != nil {
@@ -92,19 +90,13 @@ func (ss scopedService) String(r path.Route) (v string, err error) {
 		return
 	}
 
-	if ss.storeID > 0 {
+	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
 		v, err = ss.root.String(p.Bind(scope.StoreID, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 	}
-	if ss.groupID > 0 {
-		v, err = ss.root.String(p.Bind(scope.GroupID, ss.groupID))
-		if NotKeyNotFoundError(err) || err == nil {
-			return // value found or err is not a KeyNotFound error
-		}
-	}
-	if ss.websiteID > 0 {
+	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
 		v, err = ss.root.String(p.Bind(scope.WebsiteID, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
@@ -113,9 +105,9 @@ func (ss scopedService) String(r path.Route) (v string, err error) {
 	return ss.root.String(p)
 }
 
-// Bool traverses through the scopes store->group->website->default to find
+// Bool traverses through the scopes store->website->default to find
 // a matching bool value.
-func (ss scopedService) Bool(r path.Route) (v bool, err error) {
+func (ss scopedService) Bool(r path.Route, s ...scope.Scope) (v bool, err error) {
 	// fallback to next parent scope if value does not exists
 	p, err := path.New(r)
 	if err != nil {
@@ -123,19 +115,14 @@ func (ss scopedService) Bool(r path.Route) (v bool, err error) {
 		return
 	}
 
-	if ss.storeID > 0 {
+	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
 		v, err = ss.root.Bool(p.Bind(scope.StoreID, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-	} // if not found in store scope go to group scope
-	if ss.groupID > 0 {
-		v, err = ss.root.Bool(p.Bind(scope.GroupID, ss.groupID))
-		if NotKeyNotFoundError(err) || err == nil {
-			return // value found or err is not a KeyNotFound error
-		}
-	} // if not found in group scope go to website scope
-	if ss.websiteID > 0 {
+	} // if not found in store scope go to website scope
+
+	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
 		v, err = ss.root.Bool(p.Bind(scope.WebsiteID, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
@@ -144,9 +131,9 @@ func (ss scopedService) Bool(r path.Route) (v bool, err error) {
 	return ss.root.Bool(p)
 }
 
-// Float64 traverses through the scopes store->group->website->default to find
+// Float64 traverses through the scopes store->website->default to find
 // a matching float64 value.
-func (ss scopedService) Float64(r path.Route) (v float64, err error) {
+func (ss scopedService) Float64(r path.Route, s ...scope.Scope) (v float64, err error) {
 	// fallback to next parent scope if value does not exists
 	p, err := path.New(r)
 	if err != nil {
@@ -154,19 +141,14 @@ func (ss scopedService) Float64(r path.Route) (v float64, err error) {
 		return
 	}
 
-	if ss.storeID > 0 {
+	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
 		v, err = ss.root.Float64(p.Bind(scope.StoreID, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-	} // if not found in store scope go to group scope
-	if ss.groupID > 0 {
-		v, err = ss.root.Float64(p.Bind(scope.GroupID, ss.groupID))
-		if NotKeyNotFoundError(err) || err == nil {
-			return // value found or err is not a KeyNotFound error
-		}
-	} // if not found in group scope go to website scope
-	if ss.websiteID > 0 {
+	} // if not found in store scope go to website scope
+
+	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
 		v, err = ss.root.Float64(p.Bind(scope.WebsiteID, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
@@ -175,9 +157,9 @@ func (ss scopedService) Float64(r path.Route) (v float64, err error) {
 	return ss.root.Float64(p)
 }
 
-// Int traverses through the scopes store->group->website->default to find
+// Int traverses through the scopes store->website->default to find
 // a matching int value.
-func (ss scopedService) Int(r path.Route) (v int, err error) {
+func (ss scopedService) Int(r path.Route, s ...scope.Scope) (v int, err error) {
 	// fallback to next parent scope if value does not exists
 	p, err := path.New(r)
 	if err != nil {
@@ -185,19 +167,14 @@ func (ss scopedService) Int(r path.Route) (v int, err error) {
 		return
 	}
 
-	if ss.storeID > 0 {
+	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
 		v, err = ss.root.Int(p.Bind(scope.StoreID, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-	} // if not found in store scope go to group scope
-	if ss.groupID > 0 {
-		v, err = ss.root.Int(p.Bind(scope.GroupID, ss.groupID))
-		if NotKeyNotFoundError(err) || err == nil {
-			return // value found or err is not a KeyNotFound error
-		}
-	} // if not found in group scope go to website scope
-	if ss.websiteID > 0 {
+	} // if not found in store scope go to website scope
+
+	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
 		v, err = ss.root.Int(p.Bind(scope.WebsiteID, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
@@ -206,9 +183,9 @@ func (ss scopedService) Int(r path.Route) (v int, err error) {
 	return ss.root.Int(p)
 }
 
-// Time traverses through the scopes store->group->website->default to find
+// Time traverses through the scopes store->website->default to find
 // a matching time.Time value.
-func (ss scopedService) Time(r path.Route) (v time.Time, err error) {
+func (ss scopedService) Time(r path.Route, s ...scope.Scope) (v time.Time, err error) {
 	// fallback to next parent scope if value does not exists
 	p, err := path.New(r)
 	if err != nil {
@@ -216,19 +193,14 @@ func (ss scopedService) Time(r path.Route) (v time.Time, err error) {
 		return
 	}
 
-	if ss.storeID > 0 {
+	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
 		v, err = ss.root.Time(p.Bind(scope.StoreID, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
-	} // if not found in store scope go to group scope
-	if ss.groupID > 0 {
-		v, err = ss.root.Time(p.Bind(scope.GroupID, ss.groupID))
-		if NotKeyNotFoundError(err) || err == nil {
-			return // value found or err is not a KeyNotFound error
-		}
-	} // if not found in group scope go to website scope
-	if ss.websiteID > 0 {
+	} // if not found in store scope go to website scope
+
+	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
 		v, err = ss.root.Time(p.Bind(scope.WebsiteID, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error

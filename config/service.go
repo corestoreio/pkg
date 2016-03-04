@@ -33,11 +33,14 @@ const (
 
 type (
 	// Getter implements how to receive thread-safe a configuration value from
-	// a path and or scope.
-	//
+	// a path.Path.
+	// Providing a path.Path argument does not make any assumptions if the
+	// scope of the path.Path is allowed to retrieve the value.
+	// The NewScoped() function binds a path.Route to a scope.Scope and
+	// gives you the possibility to fallback the hierarchy levels.
 	// These functions are also available in the ScopedGetter interface.
 	Getter interface {
-		NewScoped(websiteID, groupID, storeID int64) ScopedGetter
+		NewScoped(websiteID, storeID int64) ScopedGetter
 		String(path.Path) (string, error)
 		Bool(path.Path) (bool, error)
 		Float64(path.Path) (float64, error)
@@ -75,6 +78,7 @@ type (
 var DefaultService *Service
 
 func init() {
+	// todo: think about removing it or explain properly why a global code smell is needed.
 	DefaultService = MustNewService()
 }
 
@@ -135,8 +139,8 @@ func (s *Service) Options(opts ...ServiceOption) error {
 }
 
 // NewScoped creates a new scope base configuration reader
-func (s *Service) NewScoped(websiteID, groupID, storeID int64) ScopedGetter {
-	return newScopedService(s, websiteID, groupID, storeID)
+func (s *Service) NewScoped(websiteID, storeID int64) ScopedGetter {
+	return newScopedService(s, websiteID, storeID)
 }
 
 // ApplyDefaults reads slice Sectioner and applies the keys and values to the

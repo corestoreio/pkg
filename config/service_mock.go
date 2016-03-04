@@ -120,31 +120,14 @@ func WithMockValues(pathValues MockPV) mockOptionFunc {
 	}
 }
 
-// add when needed:
-// WithMockValuesJSON same as WithMockValues but reads data from an io.Reader
-// so you can read config from a JSON file.
-//
-//func WithMockValuesJSON(r io.Reader) mockOptionFunc {
-//	rawJSON, err := ioutil.ReadAll(r)
-//	if err != nil {
-//		panic(err)
-//	}
-//
-//	var pathValues MockPV
-//	err = json.Unmarshal(rawJSON, &pathValues)
-//	if err != nil {
-//		panic(err)
-//	}
-//	return func(mr *MockGet) {
-//		mr.mu.Lock()
-//		mr.mv = pathValues
-//		mr.mu.Unlock()
-//	}
-//}
-
 // WithContextMockGetter adds a MockGetter to a context.
 func WithContextMockGetter(ctx context.Context, opts ...mockOptionFunc) context.Context {
 	return context.WithValue(ctx, ctxKeyGetter{}, NewMockGetter(opts...))
+}
+
+// WithContextMockScopedGetter adds a scoped MockGetter to a context.
+func WithContextMockScopedGetter(websiteID, storeID int64, ctx context.Context, opts ...mockOptionFunc) context.Context {
+	return context.WithValue(ctx, ctxKeyScopedGetter{}, NewMockGetter(opts...).NewScoped(websiteID, storeID))
 }
 
 // NewMockGetter creates a new MockGetter used in testing.
@@ -311,8 +294,8 @@ func (mr *MockGet) Subscribe(_ path.Route, s MessageReceiver) (subscriptionID in
 
 // NewScoped creates a new config.ScopedReader which uses the underlying
 // mocked paths and values.
-func (mr *MockGet) NewScoped(websiteID, groupID, storeID int64) ScopedGetter {
-	return newScopedService(mr, websiteID, groupID, storeID)
+func (mr *MockGet) NewScoped(websiteID, storeID int64) ScopedGetter {
+	return newScopedService(mr, websiteID, storeID)
 }
 
 // From html/template/content.go
