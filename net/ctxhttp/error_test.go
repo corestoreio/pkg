@@ -15,7 +15,6 @@
 package ctxhttp_test
 
 import (
-	"errors"
 	"net/http"
 	"testing"
 

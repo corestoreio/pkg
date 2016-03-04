@@ -17,7 +17,6 @@ package ctxhttp
 import (
 	"net/http"
 
-	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/cserr"
 )
 
