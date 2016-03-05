@@ -47,8 +47,9 @@ type Field struct {
 	Comment text.Chars `json:",omitempty"`
 	// Tooltip used for frontend and can contain HTML
 	Tooltip text.Chars `json:",omitempty"`
-	// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
-	Scope scope.Perm `json:",omitempty"`
+	// Scopes: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
+	// Scopes can contain multiple Scope but no more than Default, Website and Store.
+	Scopes scope.Perm `json:",omitempty"`
 	// SortOrder in ascending order
 	SortOrder int `json:",omitempty"`
 	// Visible used for configuration settings which are not exposed to the user.
@@ -138,8 +139,8 @@ func (fs *FieldSlice) merge(f *Field) error {
 	if !f.Tooltip.IsEmpty() {
 		cf.Tooltip = f.Tooltip.Clone()
 	}
-	if f.Scope > 0 {
-		cf.Scope = f.Scope
+	if f.Scopes > 0 {
+		cf.Scopes = f.Scopes
 	}
 	if f.SortOrder != 0 {
 		cf.SortOrder = f.SortOrder

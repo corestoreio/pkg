@@ -33,7 +33,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -45,7 +45,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   31536000,
 						},
 
@@ -56,7 +56,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -68,7 +68,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -80,7 +80,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -92,7 +92,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},

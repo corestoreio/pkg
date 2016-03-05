@@ -29,7 +29,7 @@ func init() {
 							Comment: text.Long(`Specified provider should be enabled.`),
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
-							Scope:   scope.PermWebsite,
+							Scopes:  scope.PermWebsite,
 							// SourceModel: Magento\Vault\Model\Adminhtml\Source\VaultProvidersMap
 						},
 					),

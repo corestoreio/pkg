@@ -34,7 +34,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   12,
 						},
 
@@ -45,7 +45,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   true,
 							// SourceModel: Magento\SalesRule\Model\System\Config\Source\Coupon\Format
 						},
@@ -57,7 +57,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 						},
 
 						&element.Field{
@@ -67,7 +67,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 						},
 
 						&element.Field{
@@ -78,7 +78,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 						},
 					),
 				},
@@ -97,7 +97,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 12,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 					),

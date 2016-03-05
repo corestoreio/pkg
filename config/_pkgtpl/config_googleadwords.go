@@ -29,7 +29,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -41,7 +41,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 11,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// BackendModel: Magento\GoogleAdwords\Model\Config\Backend\ConversionId
 						},
 
@@ -52,7 +52,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 12,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `en`,
 							// SourceModel: Magento\GoogleAdwords\Model\Config\Source\Language
 						},
@@ -64,7 +64,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 13,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   2,
 						},
 
@@ -75,7 +75,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 14,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `FFFFFF`,
 							// BackendModel: Magento\GoogleAdwords\Model\Config\Backend\Color
 						},
@@ -87,7 +87,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 15,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -97,7 +97,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 16,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\GoogleAdwords\Model\Config\Source\ValueType
 						},
@@ -109,7 +109,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 17,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 					),
 				},

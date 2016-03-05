@@ -29,7 +29,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -41,7 +41,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   `linlibertine`,
 							// SourceModel: Magento\Captcha\Model\Config\Font
 						},
@@ -53,7 +53,7 @@ func init() {
 							Type:      element.TypeMultiselect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   `backend_forgotpassword`,
 							// SourceModel: Magento\Captcha\Model\Config\Form\Backend
 						},
@@ -65,7 +65,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   `after_fail`,
 							// SourceModel: Magento\Captcha\Model\Config\Mode
 						},
@@ -78,7 +78,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   3,
 						},
 
@@ -89,7 +89,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 6,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   7,
 						},
 
@@ -101,7 +101,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   `4-5`,
 						},
 
@@ -113,7 +113,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 8,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   `ABCDEFGHJKMnpqrstuvwxyz23456789`,
 						},
 
@@ -124,7 +124,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 9,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -148,7 +148,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -160,7 +160,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `linlibertine`,
 							// SourceModel: Magento\Captcha\Model\Config\Font
 						},
@@ -173,7 +173,7 @@ func init() {
 							Type:      element.TypeMultiselect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `user_forgotpassword`,
 							// SourceModel: Magento\Captcha\Model\Config\Form\Frontend
 						},
@@ -185,7 +185,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `after_fail`,
 							// SourceModel: Magento\Captcha\Model\Config\Mode
 						},
@@ -198,7 +198,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   3,
 						},
 
@@ -209,7 +209,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 6,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   7,
 						},
 
@@ -221,7 +221,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `4-5`,
 						},
 
@@ -233,7 +233,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 8,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `ABCDEFGHJKMnpqrstuvwxyz23456789`,
 						},
 
@@ -244,7 +244,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 9,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},

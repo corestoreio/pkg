@@ -26,7 +26,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),

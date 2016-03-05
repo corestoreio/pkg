@@ -29,7 +29,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -41,7 +41,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 15,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -53,7 +53,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `https://xmlpi-ea.dhl.com/XMLShippingServlet`,
 						},
 
@@ -64,7 +64,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `DHL`,
 						},
 
@@ -75,7 +75,7 @@ func init() {
 							Type:      element.TypeObscure,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   nil,
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
@@ -87,7 +87,7 @@ func init() {
 							Type:      element.TypeObscure,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   nil,
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
@@ -99,7 +99,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -109,7 +109,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 90,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `N`,
 							// SourceModel: Magento\Dhl\Model\Source\Contenttype
 						},
@@ -121,7 +121,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `F`,
 							// SourceModel: Magento\Shipping\Model\Source\HandlingType
 						},
@@ -134,7 +134,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 110,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `O`,
 							// SourceModel: Magento\Shipping\Model\Source\HandlingAction
 						},
@@ -146,7 +146,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 120,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -157,7 +157,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 130,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -169,7 +169,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 140,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `K`,
 							// SourceModel: Magento\Dhl\Model\Source\Method\Unitofmeasure
 						},
@@ -181,7 +181,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 150,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `R`,
 							// SourceModel: Magento\Dhl\Model\Source\Method\Size
 						},
@@ -193,7 +193,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 151,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -203,7 +203,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 152,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -213,7 +213,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 153,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -223,7 +223,7 @@ func init() {
 							Type:      element.TypeMultiselect,
 							SortOrder: 170,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `2,5,6,7,9,B,C,D,U,K,L,G,W,I,N,O,R,S,T,X`,
 							// SourceModel: Magento\Dhl\Model\Source\Method\Doc
 						},
@@ -235,7 +235,7 @@ func init() {
 							Type:      element.TypeMultiselect,
 							SortOrder: 170,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `1,3,4,8,P,Q,E,F,H,J,M,V,Y`,
 							// SourceModel: Magento\Dhl\Model\Source\Method\Nondoc
 						},
@@ -248,7 +248,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 180,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -258,7 +258,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 800,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 						},
 
@@ -269,7 +269,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1200,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							// SourceModel: Magento\Dhl\Model\Source\Method\Freedoc
 						},
 
@@ -280,7 +280,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1200,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							// SourceModel: Magento\Dhl\Model\Source\Method\Freenondoc
 						},
 
@@ -291,7 +291,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1210,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 
@@ -302,7 +302,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 1220,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -312,7 +312,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1900,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 						},
@@ -324,7 +324,7 @@ func init() {
 							Type:       element.TypeMultiselect,
 							SortOrder:  1910,
 							Visible:    element.VisibleYes,
-							Scope:      scope.PermWebsite,
+							Scopes:     scope.PermWebsite,
 							CanBeEmpty: true,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
@@ -336,7 +336,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1940,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -347,7 +347,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2000,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -357,7 +357,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1950,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),

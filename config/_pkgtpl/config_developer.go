@@ -30,7 +30,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   `server_side_compilation`,
 							// SourceModel: Magento\Developer\Model\Config\Source\WorkflowType
 						},
@@ -51,7 +51,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Developer\Model\Config\Backend\AllowedIps
 						},
 					),

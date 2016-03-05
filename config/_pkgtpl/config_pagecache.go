@@ -28,7 +28,7 @@ func init() {
 							Label:   `Caching Application`,
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
-							Scope:   scope.PermDefault,
+							Scopes:  scope.PermDefault,
 							Default: true,
 							// SourceModel: Magento\PageCache\Model\System\Config\Source\Application
 						},
@@ -41,7 +41,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   86400,
 							// BackendModel: Magento\PageCache\Model\System\Config\Backend\Ttl
 						},

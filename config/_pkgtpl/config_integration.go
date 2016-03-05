@@ -34,7 +34,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   100,
 						},
 
@@ -46,7 +46,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   120,
 						},
 					),
@@ -66,7 +66,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   300,
 						},
 
@@ -78,7 +78,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 						},
 
 						&element.Field{
@@ -89,7 +89,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   5,
 						},
 					),

@@ -33,7 +33,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Rss\Model\System\Config\Backend\Links
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},

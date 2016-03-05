@@ -26,7 +26,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
@@ -55,7 +55,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   1,
 						},
 
@@ -66,7 +66,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   128,
 						},
 					),

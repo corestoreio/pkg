@@ -30,7 +30,7 @@ func init() {
 							Type:      element.TypeImage,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Image\Favicon
 						},
 
@@ -41,7 +41,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -51,7 +51,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 12,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -61,7 +61,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 14,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -71,7 +71,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -81,7 +81,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -92,7 +92,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -102,7 +102,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 80,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
@@ -122,7 +122,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `INDEX,FOLLOW`,
 							// SourceModel: Magento\Config\Model\Config\Source\Design\Robots
 						},
@@ -134,7 +134,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Robots
 						},
 
@@ -146,7 +146,7 @@ func init() {
 							Type:      element.TypeButton,
 							SortOrder: 80,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 					),
 				},
@@ -165,7 +165,7 @@ func init() {
 							Type:      element.TypeImage,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Image\Logo
 						},
 
@@ -176,7 +176,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 11,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -186,7 +186,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 12,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -196,7 +196,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -206,7 +206,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 					),
 				},
@@ -224,7 +224,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -235,7 +235,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 					),
 				},

@@ -30,7 +30,7 @@ func init() {
 							Type:      element.TypeImage,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Logo
 						},
 
@@ -41,7 +41,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -52,7 +52,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -63,7 +63,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -74,7 +74,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `design_email_header_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -87,7 +87,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `design_email_footer_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},

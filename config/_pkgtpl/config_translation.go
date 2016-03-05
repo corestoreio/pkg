@@ -27,7 +27,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   `dictionary`,
 							// SourceModel: Magento\Translation\Model\Js\Config\Source\Strategy
 						},

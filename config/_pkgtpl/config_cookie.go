@@ -29,7 +29,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   3600,
 							// BackendModel: Magento\Cookie\Model\Config\Backend\Lifetime
 						},
@@ -41,7 +41,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Cookie\Model\Config\Backend\Path
 						},
 
@@ -52,7 +52,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Cookie\Model\Config\Backend\Domain
 						},
 
@@ -64,7 +64,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -76,7 +76,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   false,
 							// BackendModel: Magento\Cookie\Model\Config\Backend\Cookie
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno

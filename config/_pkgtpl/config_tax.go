@@ -33,7 +33,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Tax\Model\TaxClass\Source\Product
 						},
@@ -45,7 +45,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   2,
 							// BackendModel: Magento\Tax\Model\Config\TaxClass
 							// SourceModel: Magento\Tax\Model\TaxClass\Source\Product
@@ -58,7 +58,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   3,
 							// SourceModel: Magento\Tax\Model\TaxClass\Source\Customer
 						},
@@ -78,7 +78,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `TOTAL_BASE_CALCULATION`,
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Algorithm
 						},
@@ -90,7 +90,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `shipping`,
 							// BackendModel: Magento\Tax\Model\Config\Notification
 							// SourceModel: Magento\Tax\Model\Config\Source\Basedon
@@ -104,7 +104,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   false,
 							// BackendModel: Magento\Tax\Model\Config\Price\IncludePrice
 							// SourceModel: Magento\Tax\Model\System\Config\Source\PriceType
@@ -118,7 +118,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   false,
 							// BackendModel: Magento\Tax\Model\Config\Price\IncludePrice
 							// SourceModel: Magento\Tax\Model\System\Config\Source\PriceType
@@ -131,7 +131,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   true,
 							// BackendModel: Magento\Tax\Model\Config\Notification
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Apply
@@ -145,7 +145,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `["0","0"]`,
 							// BackendModel: Magento\Tax\Model\Config\Notification
 							// SourceModel: Magento\Tax\Model\System\Config\Source\PriceType
@@ -158,7 +158,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Tax\Model\Config\Source\Apply\On
 						},
@@ -171,7 +171,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
@@ -190,7 +190,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `US`,
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Country
 						},
@@ -202,7 +202,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Region
 						},
@@ -214,7 +214,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 					),
 				},
@@ -232,7 +232,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   true,
 							// BackendModel: Magento\Tax\Model\Config\Notification
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -245,7 +245,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   true,
 							// BackendModel: Magento\Tax\Model\Config\Notification
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -266,7 +266,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   true,
 							// BackendModel: Magento\Tax\Model\Config\Notification
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -279,7 +279,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   true,
 							// BackendModel: Magento\Tax\Model\Config\Notification
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -292,7 +292,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   true,
 							// BackendModel: Magento\Tax\Model\Config\Notification
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -305,7 +305,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -317,7 +317,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -329,7 +329,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 120,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -349,7 +349,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   true,
 							// BackendModel: Magento\Tax\Model\Config\Notification
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -362,7 +362,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   true,
 							// BackendModel: Magento\Tax\Model\Config\Notification
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -375,7 +375,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   true,
 							// BackendModel: Magento\Tax\Model\Config\Notification
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
@@ -388,7 +388,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -400,7 +400,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -412,7 +412,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 120,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},

@@ -38,7 +38,7 @@ func init() {
 							Type:       element.TypeSelect,
 							SortOrder:  5,
 							Visible:    element.VisibleYes,
-							Scope:      scope.PermWebsite,
+							Scopes:     scope.PermWebsite,
 							// BackendModel: Magento\Paypal\Model\System\Config\Backend\MerchantCountry
 							// SourceModel: Magento\Paypal\Model\System\Config\Source\MerchantCountry
 						},

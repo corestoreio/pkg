@@ -33,7 +33,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   true,
 							// BackendModel: Magento\Contact\Model\System\Config\Backend\Links
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
@@ -54,7 +54,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `hello@example.com`,
 						},
 
@@ -65,7 +65,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `custom2`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -78,7 +78,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `contact_email_email_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},

@@ -31,7 +31,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -43,7 +43,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `pending`,
 							// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\NewStatus
 						},
@@ -55,7 +55,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -65,7 +65,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `Check / Money order`,
 						},
 
@@ -76,7 +76,7 @@ func init() {
 							Type:      element.TypeAllowspecific,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 						},
 
@@ -87,7 +87,7 @@ func init() {
 							Type:       element.TypeMultiselect,
 							SortOrder:  51,
 							Visible:    element.VisibleYes,
-							Scope:      scope.PermWebsite,
+							Scopes:     scope.PermWebsite,
 							CanBeEmpty: true,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
@@ -99,7 +99,7 @@ func init() {
 							Type:      element.Type,
 							SortOrder: 61,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -109,7 +109,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 62,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -119,7 +119,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 98,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -129,7 +129,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 99,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -155,7 +155,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -167,7 +167,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `pending`,
 							// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\NewStatus
 						},
@@ -179,7 +179,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -189,7 +189,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `Purchase Order`,
 						},
 
@@ -200,7 +200,7 @@ func init() {
 							Type:      element.TypeAllowspecific,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 						},
 
@@ -211,7 +211,7 @@ func init() {
 							Type:       element.TypeMultiselect,
 							SortOrder:  51,
 							Visible:    element.VisibleYes,
-							Scope:      scope.PermWebsite,
+							Scopes:     scope.PermWebsite,
 							CanBeEmpty: true,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
@@ -223,7 +223,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 98,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -233,7 +233,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 99,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -259,7 +259,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -271,7 +271,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `Bank Transfer Payment`,
 						},
 
@@ -282,7 +282,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `pending`,
 							// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\NewStatus
 						},
@@ -294,7 +294,7 @@ func init() {
 							Type:      element.TypeAllowspecific,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 						},
 
@@ -305,7 +305,7 @@ func init() {
 							Type:       element.TypeMultiselect,
 							SortOrder:  51,
 							Visible:    element.VisibleYes,
-							Scope:      scope.PermWebsite,
+							Scopes:     scope.PermWebsite,
 							CanBeEmpty: true,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
@@ -317,7 +317,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 62,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -327,7 +327,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 98,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -337,7 +337,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 99,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -347,7 +347,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 					),
 				},
@@ -365,7 +365,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -377,7 +377,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `Cash On Delivery`,
 						},
 
@@ -388,7 +388,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   `pending`,
 							// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\NewStatus
 						},
@@ -400,7 +400,7 @@ func init() {
 							Type:      element.TypeAllowspecific,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 						},
 
@@ -411,7 +411,7 @@ func init() {
 							Type:       element.TypeMultiselect,
 							SortOrder:  51,
 							Visible:    element.VisibleYes,
-							Scope:      scope.PermWebsite,
+							Scopes:     scope.PermWebsite,
 							CanBeEmpty: true,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
@@ -423,7 +423,7 @@ func init() {
 							Type:      element.TypeTextarea,
 							SortOrder: 62,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -433,7 +433,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 98,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -443,7 +443,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 99,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -453,7 +453,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 					),
 				},
@@ -471,7 +471,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -482,7 +482,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\Newprocessing
 						},
 
@@ -493,7 +493,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							// SourceModel: Magento\Payment\Model\Source\Invoice
 						},
 
@@ -504,7 +504,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -514,7 +514,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -524,7 +524,7 @@ func init() {
 							Type:      element.TypeAllowspecific,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 						},
 
@@ -535,7 +535,7 @@ func init() {
 							Type:       element.TypeMultiselect,
 							SortOrder:  51,
 							Visible:    element.VisibleYes,
-							Scope:      scope.PermWebsite,
+							Scopes:     scope.PermWebsite,
 							CanBeEmpty: true,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},

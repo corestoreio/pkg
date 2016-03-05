@@ -29,7 +29,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   9,
 							// SourceModel: Magento\Downloadable\Model\System\Config\Source\Orderitemstatus
 						},
@@ -41,7 +41,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 200,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -51,7 +51,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 300,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -62,7 +62,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 400,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `Samples`,
 						},
 
@@ -73,7 +73,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 500,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `Links`,
 						},
 
@@ -84,7 +84,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 600,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -96,7 +96,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 700,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `inline`,
 							// SourceModel: Magento\Downloadable\Model\System\Config\Source\Contentdisposition
 						},
@@ -109,7 +109,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 800,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},

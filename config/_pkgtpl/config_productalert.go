@@ -29,7 +29,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -41,7 +41,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermWebsite,
+							Scopes:    scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -54,7 +54,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `catalog_productalert_email_price_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -67,7 +67,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `catalog_productalert_email_stock_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -79,7 +79,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `general`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -99,7 +99,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							// BackendModel: Magento\Cron\Model\Config\Backend\Product\Alert
 							// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 						},
@@ -111,7 +111,7 @@ func init() {
 							Type:      element.TypeTime,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 						},
 
 						&element.Field{
@@ -121,7 +121,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 						},
 
 						&element.Field{
@@ -131,7 +131,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   `general`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -144,7 +144,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermDefault,
+							Scopes:    scope.PermDefault,
 							Default:   `catalog_productalert_cron_error_email_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},

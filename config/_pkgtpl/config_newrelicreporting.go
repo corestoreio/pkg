@@ -33,7 +33,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -45,7 +45,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `https://api.newrelic.com/deployments.xml`,
 						},
 
@@ -57,7 +57,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `https://insights-collector.newrelic.com/v1/accounts/%s/events`,
 						},
 
@@ -69,7 +69,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -80,7 +80,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 
 						&element.Field{
@@ -91,7 +91,7 @@ func init() {
 							Type:      element.TypeObscure,
 							SortOrder: 6,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 						},
 
@@ -103,7 +103,7 @@ func init() {
 							Type:      element.TypeObscure,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 						},
 
@@ -115,7 +115,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 8,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 						},
 					),
 				},
@@ -133,7 +133,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},

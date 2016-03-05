@@ -30,7 +30,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 300,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   16,
 						},
 					),

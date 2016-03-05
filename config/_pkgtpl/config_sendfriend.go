@@ -33,7 +33,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -46,7 +46,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `sendfriend_email_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -58,7 +58,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -70,7 +70,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   5,
 						},
 
@@ -81,7 +81,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   5,
 						},
 
@@ -92,7 +92,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 6,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   false,
 							// SourceModel: Magento\SendFriend\Model\Source\Checktype
 						},

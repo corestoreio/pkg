@@ -26,7 +26,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `home`,
 							// SourceModel: Magento\Cms\Model\Config\Source\Page
 						},
@@ -38,7 +38,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `no-route`,
 							// SourceModel: Magento\Cms\Model\Config\Source\Page
 						},
@@ -50,7 +50,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `enable-cookies`,
 							// SourceModel: Magento\Cms\Model\Config\Source\Page
 						},
@@ -62,7 +62,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -82,7 +82,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -93,7 +93,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 200,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -104,7 +104,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 300,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
@@ -131,7 +131,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `enabled`,
 							// SourceModel: Magento\Cms\Model\Config\Source\Wysiwyg\Enabled
 						},

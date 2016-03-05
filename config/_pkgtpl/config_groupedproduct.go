@@ -30,7 +30,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.PermStore,
+							Scopes:    scope.PermStore,
 							Default:   `itself`,
 							// SourceModel: Magento\Catalog\Model\Config\Source\Product\Thumbnail
 						},
