@@ -29,7 +29,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -41,7 +41,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   true,
 							// SourceModel: Magento\Weee\Model\Config\Source\Display
 						},
@@ -53,7 +53,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   true,
 							// SourceModel: Magento\Weee\Model\Config\Source\Display
 						},
@@ -65,7 +65,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   true,
 							// SourceModel: Magento\Weee\Model\Config\Source\Display
 						},
@@ -77,7 +77,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   true,
 							// SourceModel: Magento\Weee\Model\Config\Source\Display
 						},
@@ -89,7 +89,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -101,7 +101,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -122,7 +122,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   35,
 						},
 					),

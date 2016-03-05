@@ -20,7 +20,7 @@ func init() {
 					ID:        "product_video",
 					Label:     `Product Video`,
 					SortOrder: 350,
-					Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+					Scope:     scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/product_video/youtube_api_key
@@ -29,7 +29,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 						},
 
 						&element.Field{

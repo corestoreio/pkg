@@ -17,14 +17,14 @@ func init() {
 			ID:        "promo",
 			Label:     `Promotions`,
 			SortOrder: 400,
-			Scope:     scope.NewPerm(scope.DefaultID),
+			Scope:     scope.PermDefault,
 			Resource:  0, // Magento_SalesRule::config_promo
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "auto_generated_coupon_codes",
 					Label:     `Auto Generated Specific Coupon Codes`,
 					SortOrder: 10,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: promo/auto_generated_coupon_codes/length
@@ -34,7 +34,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   12,
 						},
 
@@ -45,7 +45,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   true,
 							// SourceModel: Magento\SalesRule\Model\System\Config\Source\Coupon\Format
 						},
@@ -57,7 +57,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 						},
 
 						&element.Field{
@@ -67,7 +67,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 						},
 
 						&element.Field{
@@ -78,7 +78,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 						},
 					),
 				},

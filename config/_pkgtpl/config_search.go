@@ -26,7 +26,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 19,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Search\Model\Adminhtml\System\Config\Source\Engine
 						},
 

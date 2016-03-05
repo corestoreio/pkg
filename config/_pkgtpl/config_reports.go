@@ -20,7 +20,7 @@ func init() {
 					ID:        "recently_products",
 					Label:     `Recently Viewed/Compared Products`,
 					SortOrder: 350,
-					Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+					Scope:     scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/recently_products/scope
@@ -29,7 +29,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   `website`,
 							// SourceModel: Magento\Config\Model\Config\Source\Reports\Scope
 						},
@@ -63,14 +63,14 @@ func init() {
 			ID:        "reports",
 			Label:     `Reports`,
 			SortOrder: 1000,
-			Scope:     scope.NewPerm(scope.DefaultID),
+			Scope:     scope.PermDefault,
 			Resource:  0, // Magento_Reports::reports
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "dashboard",
 					Label:     `Dashboard`,
 					SortOrder: 1,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: reports/dashboard/ytd_start
@@ -79,7 +79,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   `1,1`,
 						},
 
@@ -91,7 +91,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   true,
 						},
 					),

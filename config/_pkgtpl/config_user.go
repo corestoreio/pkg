@@ -27,7 +27,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   `admin_emails_reset_password_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -45,7 +45,7 @@ func init() {
 							Type:      element.Type,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   6,
 						},
 
@@ -56,7 +56,7 @@ func init() {
 							Type:      element.Type,
 							SortOrder: 110,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   30,
 						},
 
@@ -68,7 +68,7 @@ func init() {
 							Type:      element.Type,
 							SortOrder: 120,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   90,
 						},
 
@@ -79,7 +79,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 130,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   true,
 							// SourceModel: Magento\User\Model\System\Config\Source\Password
 						},

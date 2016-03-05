@@ -19,7 +19,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 				Label:     `Online Customers Options`,
 				Comment:   ``,
 				SortOrder: 10,
-				Scope:     scope.NewPerm(config.IDScopeDefault),
+				Scope:     scope.PermDefault,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `customer/online_customers/online_minutes_interval`,
@@ -29,7 +29,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(config.IDScopeDefault),
+						Scope:        scope.PermDefault,
 						Default:      nil,
 						BackendModel: nil,
 						// SourceModel:  nil,
@@ -42,14 +42,14 @@ var PackageConfiguration = config.MustNewConfiguration(
 		ID:        "system",
 		Label:     "",
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: config.GroupSlice{
 			&config.Group{
 				ID:        "log",
 				Label:     `Log Cleaning`,
 				Comment:   ``,
 				SortOrder: 200,
-				Scope:     scope.NewPerm(config.IDScopeDefault),
+				Scope:     scope.PermDefault,
 				Fields: config.FieldSlice{
 					&config.Field{
 						// Path: `system/log/clean_after_day`,
@@ -59,7 +59,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    1,
 						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(config.IDScopeDefault),
+						Scope:        scope.PermDefault,
 						Default:      180,
 						BackendModel: nil,
 						// SourceModel:  nil,
@@ -73,7 +73,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    2,
 						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(config.IDScopeDefault),
+						Scope:        scope.PermDefault,
 						Default:      false,
 						BackendModel: nil,
 						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesno
@@ -87,7 +87,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeTime,
 						SortOrder:    3,
 						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(config.IDScopeDefault),
+						Scope:        scope.PermDefault,
 						Default:      nil,
 						BackendModel: nil,
 						// SourceModel:  nil,
@@ -101,7 +101,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    4,
 						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(config.IDScopeDefault),
+						Scope:        scope.PermDefault,
 						Default:      `D`,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Log\Cron
 						// SourceModel:  nil, // Magento\Cron\Model\Config\Source\Frequency
@@ -115,7 +115,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    5,
 						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(config.IDScopeDefault),
+						Scope:        scope.PermDefault,
 						Default:      nil,
 						BackendModel: nil,
 						// SourceModel:  nil,
@@ -129,7 +129,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    6,
 						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(config.IDScopeDefault),
+						Scope:        scope.PermDefault,
 						Default:      `general`,
 						BackendModel: nil,
 						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Identity
@@ -143,7 +143,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    7,
 						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(config.IDScopeDefault),
+						Scope:        scope.PermDefault,
 						Default:      `system_log_error_email_template`,
 						BackendModel: nil,
 						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Email\Template
@@ -165,7 +165,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						ID:      "online_update_frequency",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(config.IDScopeDefault), // @todo search for that
+						Scope:   scope.PermDefault, // @todo search for that
 						Default: 60,
 					},
 				},
@@ -183,7 +183,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						ID:      "time",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(config.IDScopeDefault), // @todo search for that
+						Scope:   scope.PermDefault, // @todo search for that
 						Default: nil,
 					},
 
@@ -192,7 +192,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						ID:      "error_email",
 						Type:    config.TypeHidden,
 						Visible: config.VisibleNo,
-						Scope:   scope.NewPerm(config.IDScopeDefault), // @todo search for that
+						Scope:   scope.PermDefault, // @todo search for that
 						Default: nil,
 					},
 				},

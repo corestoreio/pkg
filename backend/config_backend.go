@@ -238,7 +238,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							// BackendModel: Magento\Theme\Model\Design\Backend\Exceptions
 						},
 					),
@@ -328,7 +328,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -403,7 +403,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Translate
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -485,7 +485,7 @@ func init() {
 					ID:        path.NewRoute("image"),
 					Label:     text.Chars(`Image Processing Settings`),
 					SortOrder: 120,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/image/default_adapter
@@ -495,7 +495,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Image\Adapter
 							// SourceModel: Magento\Config\Model\Config\Source\Image\Adapter
 						},
@@ -506,7 +506,7 @@ func init() {
 					ID:        path.NewRoute("static"),
 					Label:     text.Chars(`Static Files Settings`),
 					SortOrder: 130,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/static/sign
@@ -515,7 +515,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
@@ -572,7 +572,7 @@ func init() {
 							Type:       element.TypeSelect,
 							SortOrder:  25,
 							Visible:    element.VisibleYes,
-							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:      scope.PermWebsite,
 							CanBeEmpty: true,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
@@ -584,7 +584,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 27,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -594,7 +594,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -604,7 +604,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 45,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -614,7 +614,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 55,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -624,7 +624,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -634,7 +634,7 @@ func init() {
 							Type:       element.TypeText,
 							SortOrder:  61,
 							Visible:    element.VisibleYes,
-							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:      scope.PermWebsite,
 							CanBeEmpty: true,
 						},
 					),
@@ -644,7 +644,7 @@ func init() {
 					ID:        path.NewRoute("single_store_mode"),
 					Label:     text.Chars(`Single-Store Mode`),
 					SortOrder: 150,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/single_store_mode/enabled
@@ -654,7 +654,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
@@ -714,7 +714,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesnocustom
 						},
 
@@ -725,7 +725,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 80,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
 					),
@@ -736,14 +736,14 @@ func init() {
 			ID:        path.NewRoute("admin"),
 			Label:     text.Chars(`Admin`),
 			SortOrder: 20,
-			Scope:     scope.NewPerm(scope.DefaultID),
+			Scope:     scope.PermDefault,
 			Resource:  0, // Magento_Config::config_admin
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("emails"),
 					Label:     text.Chars(`Admin User Emails`),
 					SortOrder: 10,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: admin/emails/forgot_email_template
@@ -753,7 +753,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
@@ -764,7 +764,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
@@ -776,7 +776,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Password\Link\Expirationperiod
 						},
 					),
@@ -786,7 +786,7 @@ func init() {
 					ID:        path.NewRoute("startup"),
 					Label:     text.Chars(`Startup Page`),
 					SortOrder: 20,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: admin/startup/menu_item_id
@@ -795,7 +795,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Admin\Page
 						},
 					),
@@ -805,7 +805,7 @@ func init() {
 					ID:        path.NewRoute("url"),
 					Label:     text.Chars(`Admin Base URL`),
 					SortOrder: 30,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: admin/url/use_custom
@@ -814,7 +814,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Usecustom
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -827,7 +827,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Custom
 						},
 
@@ -838,7 +838,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Custompath
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -851,7 +851,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Custompath
 						},
 					),
@@ -861,7 +861,7 @@ func init() {
 					ID:        path.NewRoute("security"),
 					Label:     text.Chars(`Security`),
 					SortOrder: 35,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: admin/security/use_form_key
@@ -870,7 +870,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Usesecretkey
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -882,7 +882,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -894,7 +894,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 						},
 					),
 				},
@@ -903,7 +903,7 @@ func init() {
 					ID:        path.NewRoute("dashboard"),
 					Label:     text.Chars(`Dashboard`),
 					SortOrder: 40,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: admin/dashboard/enable_charts
@@ -912,7 +912,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
@@ -930,7 +930,7 @@ func init() {
 					ID:        path.NewRoute("url"),
 					Label:     text.Chars(`Url Options`),
 					SortOrder: 3,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/url/use_store
@@ -940,7 +940,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   false,
 							// BackendModel: Magento\Config\Model\Config\Backend\Store
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
@@ -954,7 +954,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   1,
 							// SourceModel: Magento\Config\Model\Config\Source\Web\Redirect
 						},
@@ -1114,7 +1114,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// BackendModel: Magento\Config\Model\Config\Backend\Secure
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -1152,7 +1152,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 90,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 						},
 					),
 				},
@@ -1189,7 +1189,7 @@ func init() {
 					ID:        path.NewRoute("session"),
 					Label:     text.Chars(`Session Validation Settings`),
 					SortOrder: 60,
-					Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+					Scope:     scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/session/use_remote_addr
@@ -1198,7 +1198,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -1209,7 +1209,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -1220,7 +1220,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -1231,7 +1231,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -1243,7 +1243,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),

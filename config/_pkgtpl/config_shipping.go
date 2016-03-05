@@ -24,7 +24,7 @@ func init() {
 					ID:        "origin",
 					Label:     `Origin`,
 					SortOrder: 1,
-					Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+					Scope:     scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: shipping/origin/country_id
@@ -33,7 +33,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   `US`,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
@@ -45,7 +45,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   12,
 						},
 
@@ -56,7 +56,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   90034,
 						},
 
@@ -67,7 +67,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -77,7 +77,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -87,7 +87,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 						},
 					),
 				},
@@ -105,7 +105,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 

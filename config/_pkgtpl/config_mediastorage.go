@@ -31,7 +31,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\MediaStorage\Model\Config\Source\Storage\Media\Storage
 						},
 
@@ -42,7 +42,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 200,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// BackendModel: Magento\MediaStorage\Model\Config\Backend\Storage\Media\Database
 							// SourceModel: Magento\MediaStorage\Model\Config\Source\Storage\Media\Database
 						},
@@ -54,7 +54,7 @@ func init() {
 							Type:      element.TypeButton,
 							SortOrder: 300,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 						},
 
 						&element.Field{
@@ -64,7 +64,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 400,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 						},
 					),
 				},

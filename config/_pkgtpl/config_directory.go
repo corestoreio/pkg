@@ -34,7 +34,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   `USD`,
 							// BackendModel: Magento\Config\Model\Config\Backend\Currency\Base
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
@@ -73,7 +73,7 @@ func init() {
 					ID:        "webservicex",
 					Label:     `Webservicex`,
 					SortOrder: 40,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: currency/webservicex/timeout
@@ -81,7 +81,7 @@ func init() {
 							Label:   `Connection Timeout in Seconds`,
 							Type:    element.TypeText,
 							Visible: element.VisibleYes,
-							Scope:   scope.NewPerm(scope.DefaultID),
+							Scope:   scope.PermDefault,
 							Default: 100,
 						},
 					),
@@ -91,7 +91,7 @@ func init() {
 					ID:        "import",
 					Label:     `Scheduled Import Settings`,
 					SortOrder: 50,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: currency/import/enabled
@@ -122,7 +122,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 6,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   `general`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -135,7 +135,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   `currency_import_error_email_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
@@ -183,7 +183,7 @@ func init() {
 					ID:        "currency",
 					Label:     `Currency`,
 					SortOrder: 50,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: system/currency/installed
@@ -192,7 +192,7 @@ func init() {
 							Type:       element.TypeMultiselect,
 							SortOrder:  1,
 							Visible:    element.VisibleYes,
-							Scope:      scope.NewPerm(scope.DefaultID),
+							Scope:      scope.PermDefault,
 							CanBeEmpty: true,
 							Default:    `AZN,AZM,AFN,ALL,DZD,AOA,ARS,AMD,AWG,AUD,BSD,BHD,BDT,BBD,BYR,BZD,BMD,BTN,BOB,BAM,BWP,BRL,GBP,BND,BGN,BUK,BIF,KHR,CAD,CVE,CZK,KYD,CLP,CNY,COP,KMF,CDF,CRC,HRK,CUP,DKK,DJF,DOP,XCD,EGP,SVC,GQE,ERN,EEK,ETB,EUR,FKP,FJD,GMD,GEK,GEL,GHS,GIP,GTQ,GNF,GYD,HTG,HNL,HKD,HUF,ISK,INR,IDR,IRR,IQD,ILS,JMD,JPY,JOD,KZT,KES,KWD,KGS,LAK,LVL,LBP,LSL,LRD,LYD,LTL,MOP,MKD,MGA,MWK,MYR,MVR,LSM,MRO,MUR,MXN,MDL,MNT,MAD,MZN,MMK,NAD,NPR,ANG,TRL,TRY,NZD,NIC,NGN,KPW,NOK,OMR,PKR,PAB,PGK,PYG,PEN,PHP,PLN,QAR,RHD,RON,ROL,RUB,RWF,SHP,STD,SAR,RSD,SCR,SLL,SGD,SKK,SBD,SOS,ZAR,KRW,LKR,SDG,SRD,SZL,SEK,CHF,SYP,TWD,TJS,TZS,THB,TOP,TTD,TND,TMM,USD,UGX,UAH,AED,UYU,UZS,VUV,VEB,VEF,VND,CHE,CHW,XOF,XPF,WST,YER,ZMK,ZWD`,
 							// BackendModel: Magento\Config\Model\Config\Backend\Locale
@@ -215,7 +215,7 @@ func init() {
 							Type:       element.TypeMultiselect,
 							SortOrder:  3,
 							Visible:    element.VisibleYes,
-							Scope:      scope.NewPerm(scope.DefaultID),
+							Scope:      scope.PermDefault,
 							CanBeEmpty: true,
 							Default:    `HK,IE,MO,PA,GB`,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
@@ -227,7 +227,7 @@ func init() {
 					ID:        "region",
 					Label:     `State Options`,
 					SortOrder: 4,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/region/state_required
@@ -236,7 +236,7 @@ func init() {
 							Type:      element.TypeMultiselect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
@@ -247,7 +247,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 8,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),

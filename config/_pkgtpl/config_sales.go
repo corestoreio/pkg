@@ -43,7 +43,7 @@ func init() {
 					ID:        "totals_sort",
 					Label:     `Checkout Totals Sort Order`,
 					SortOrder: 10,
-					Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+					Scope:     scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales/totals_sort/discount
@@ -52,7 +52,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   20,
 						},
 
@@ -63,7 +63,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   100,
 						},
 
@@ -74,7 +74,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   30,
 						},
 
@@ -85,7 +85,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   10,
 						},
 
@@ -96,7 +96,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   40,
 						},
 					),
@@ -177,7 +177,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -189,7 +189,7 @@ func init() {
 							Type:      element.Type,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -199,7 +199,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 15,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -232,7 +232,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -264,7 +264,7 @@ func init() {
 					ID:        "dashboard",
 					Label:     `Dashboard`,
 					SortOrder: 60,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales/dashboard/use_aggregated_data
@@ -274,7 +274,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
@@ -284,7 +284,7 @@ func init() {
 					ID:        "orders",
 					Label:     `Orders Cron Settings`,
 					SortOrder: 70,
-					Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+					Scope:     scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales/orders/delete_pending_after
@@ -293,7 +293,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 6,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   480,
 						},
 					),
@@ -310,7 +310,7 @@ func init() {
 				&element.Group{
 					ID:    "general",
 					Label: `General Settings`,
-					Scope: scope.NewPerm(scope.DefaultID),
+					Scope: scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/general/async_sending
@@ -319,7 +319,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   false,
 							// BackendModel: Magento\Sales\Model\Config\Backend\Email\AsyncSending
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
@@ -1066,7 +1066,7 @@ func init() {
 					ID:        "grid",
 					Label:     `Grid Settings`,
 					SortOrder: 131,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/grid/async_indexing
@@ -1075,7 +1075,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   false,
 							// BackendModel: Magento\Sales\Model\Config\Backend\Grid\AsyncIndexing
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable

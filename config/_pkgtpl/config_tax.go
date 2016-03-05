@@ -33,7 +33,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Tax\Model\TaxClass\Source\Product
 						},
@@ -45,7 +45,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   2,
 							// BackendModel: Magento\Tax\Model\Config\TaxClass
 							// SourceModel: Magento\Tax\Model\TaxClass\Source\Product
@@ -58,7 +58,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   3,
 							// SourceModel: Magento\Tax\Model\TaxClass\Source\Customer
 						},
@@ -78,7 +78,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   `TOTAL_BASE_CALCULATION`,
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Algorithm
 						},
@@ -90,7 +90,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   `shipping`,
 							// BackendModel: Magento\Tax\Model\Config\Notification
 							// SourceModel: Magento\Tax\Model\Config\Source\Basedon
@@ -104,7 +104,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   false,
 							// BackendModel: Magento\Tax\Model\Config\Price\IncludePrice
 							// SourceModel: Magento\Tax\Model\System\Config\Source\PriceType
@@ -118,7 +118,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   false,
 							// BackendModel: Magento\Tax\Model\Config\Price\IncludePrice
 							// SourceModel: Magento\Tax\Model\System\Config\Source\PriceType
@@ -131,7 +131,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   true,
 							// BackendModel: Magento\Tax\Model\Config\Notification
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Apply
@@ -145,7 +145,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   `["0","0"]`,
 							// BackendModel: Magento\Tax\Model\Config\Notification
 							// SourceModel: Magento\Tax\Model\System\Config\Source\PriceType
@@ -158,7 +158,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Tax\Model\Config\Source\Apply\On
 						},
@@ -171,7 +171,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),

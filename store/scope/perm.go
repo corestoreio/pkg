@@ -41,11 +41,6 @@ const PermStoreReverse Perm = 1 << StoreID
 // Only used in config.scopedService implementation.
 const PermWebsiteReverse Perm = 1<<StoreID | 1<<WebsiteID
 
-// NewPerm returns a new permission container
-func NewPerm(scopes ...Scope) Perm {
-	return Perm(0).Set(scopes...)
-}
-
 // All applies DefaultID, WebsiteID and StoreID scopes
 func (bits Perm) All() Perm {
 	return bits.Set(DefaultID, WebsiteID, StoreID)
@@ -57,6 +52,16 @@ func (bits Perm) Set(scopes ...Scope) Perm {
 		bits = bits | (1 << i) // (1 << power = 2^power)
 	}
 	return bits
+}
+
+func (bits Perm) Top() Scope {
+	switch {
+	case bits.Has(StoreID):
+		return StoreID
+	case bits.Has(WebsiteID):
+		return WebsiteID
+	}
+	return DefaultID
 }
 
 // Has checks if a give scope exists within a Perm. Only the

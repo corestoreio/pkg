@@ -393,7 +393,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeSelect,
 						SortOrder:    70,
 						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID),
+						Scope:        scope.PermDefault,
 						Default:      nil,
 						BackendModel: nil,
 						// SourceModel:  nil, // Magento\Config\Model\Config\Source\Yesnocustom
@@ -407,7 +407,7 @@ var PackageConfiguration = config.MustNewConfiguration(
 						Type:         config.TypeText,
 						SortOrder:    80,
 						Visible:      config.VisibleYes,
-						Scope:        scope.NewPerm(scope.DefaultID),
+						Scope:        scope.PermDefault,
 						Default:      nil,
 						BackendModel: nil, // Magento\Config\Model\Config\Backend\Email\Address
 						// SourceModel:  nil,

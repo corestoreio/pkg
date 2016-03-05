@@ -33,7 +33,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -45,7 +45,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -58,7 +58,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   false,
 							// BackendModel: Magento\CatalogInventory\Model\Config\Backend\ShowOutOfStock
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
@@ -71,7 +71,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -103,7 +103,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   true,
 							// BackendModel: Magento\CatalogInventory\Model\Config\Backend\Managestock
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
@@ -117,7 +117,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 3,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   false,
 							// BackendModel: Magento\CatalogInventory\Model\Config\Backend\Backorders
 							// SourceModel: Magento\CatalogInventory\Model\Source\Backorders
@@ -130,7 +130,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 4,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   10000,
 						},
 
@@ -141,7 +141,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// BackendModel: Magento\CatalogInventory\Model\System\Config\Backend\Minqty
 						},
 
@@ -152,7 +152,7 @@ func init() {
 							Type:      element.Type,
 							SortOrder: 6,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   1,
 							// BackendModel: Magento\CatalogInventory\Model\System\Config\Backend\Minsaleqty
 						},
@@ -164,7 +164,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   1,
 						},
 
@@ -175,7 +175,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
@@ -186,7 +186,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 8,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -198,7 +198,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 9,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   1,
 							// BackendModel: Magento\CatalogInventory\Model\System\Config\Backend\Qtyincrements
 						},

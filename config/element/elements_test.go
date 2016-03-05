@@ -212,7 +212,7 @@ func TestSectionSliceMerge(t *testing.T) {
 						Groups: element.NewGroupSlice(
 							&element.Group{
 								ID:    path.NewRoute(`b`),
-								Scope: scope.NewPerm(scope.DefaultID),
+								Scope: scope.PermDefault,
 								Fields: element.NewFieldSlice(
 									&element.Field{ID: path.NewRoute(`c`), Default: `c`},
 								),
@@ -224,7 +224,7 @@ func TestSectionSliceMerge(t *testing.T) {
 				{
 					&element.Section{
 						ID:    path.NewRoute(`a`),
-						Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope: scope.PermWebsite,
 						Groups: element.NewGroupSlice(
 							&element.Group{ID: path.NewRoute(`b`), Label: text.Chars(`GroupLabelB1`)},
 							nil,
@@ -249,7 +249,7 @@ func TestSectionSliceMerge(t *testing.T) {
 					&element.Section{ID: path.NewRoute(`a`), Label: text.Chars(`SectionLabelA`), SortOrder: 20, Resource: 22},
 				},
 				{
-					&element.Section{ID: path.NewRoute(`a`), Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID), SortOrder: 10, Resource: 3},
+					&element.Section{ID: path.NewRoute(`a`), Scope: scope.PermWebsite, SortOrder: 10, Resource: 3},
 				},
 			},
 			wantErr: "",
@@ -266,7 +266,7 @@ func TestSectionSliceMerge(t *testing.T) {
 								ID:      path.NewRoute(`b`),
 								Label:   text.Chars(`SectionAGroupB`),
 								Comment: text.Chars("SectionAGroupBComment"),
-								Scope:   scope.NewPerm(scope.DefaultID),
+								Scope:   scope.PermDefault,
 							},
 						),
 					},
@@ -275,7 +275,7 @@ func TestSectionSliceMerge(t *testing.T) {
 					&element.Section{
 						ID:        path.NewRoute(`a`),
 						SortOrder: 1000,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Groups: element.NewGroupSlice(
 							&element.Group{ID: path.NewRoute(`b`), Label: text.Chars(`GroupLabelB1`), Scope: scope.PermStore},
 							&element.Group{ID: path.NewRoute(`b`), Label: text.Chars(`GroupLabelB2`), Comment: text.Chars("Section2AGroup3BComment"), SortOrder: 100},
@@ -306,7 +306,7 @@ func TestSectionSliceMerge(t *testing.T) {
 								Fields: element.NewFieldSlice(
 									nil,
 									&element.Field{ID: path.NewRoute(`d`), Default: `d`, Comment: text.Chars("Ring of fire"), Type: element.TypeObscure},
-									&element.Field{ID: path.NewRoute(`c`), Default: `haha`, Type: element.TypeSelect, Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID)},
+									&element.Field{ID: path.NewRoute(`c`), Default: `haha`, Type: element.TypeSelect, Scope: scope.PermWebsite},
 								),
 							},
 						),
@@ -423,7 +423,7 @@ func TestGroupSliceMerge(t *testing.T) {
 					ID: path.NewRoute(`b`),
 					Fields: element.NewFieldSlice(
 						&element.Field{ID: path.NewRoute(`d`), Default: `d`, Comment: text.Chars("Ring of fire"), Type: element.TypeObscure},
-						&element.Field{ID: path.NewRoute(`c`), Default: `haha`, Type: element.TypeSelect, Scope: scope.NewPerm(scope.DefaultID, scope.WebsiteID)},
+						&element.Field{ID: path.NewRoute(`c`), Default: `haha`, Type: element.TypeSelect, Scope: scope.PermWebsite},
 					),
 				},
 				{

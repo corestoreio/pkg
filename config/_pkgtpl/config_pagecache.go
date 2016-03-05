@@ -20,7 +20,7 @@ func init() {
 					ID:        "full_page_cache",
 					Label:     `Full Page Cache`,
 					SortOrder: 600,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: system/full_page_cache/caching_application
@@ -28,7 +28,7 @@ func init() {
 							Label:   `Caching Application`,
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
-							Scope:   scope.NewPerm(scope.DefaultID),
+							Scope:   scope.PermDefault,
 							Default: true,
 							// SourceModel: Magento\PageCache\Model\System\Config\Source\Application
 						},
@@ -41,7 +41,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 5,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   86400,
 							// BackendModel: Magento\PageCache\Model\System\Config\Backend\Ttl
 						},

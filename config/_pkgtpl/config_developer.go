@@ -30,7 +30,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   `server_side_compilation`,
 							// SourceModel: Magento\Developer\Model\Config\Source\WorkflowType
 						},

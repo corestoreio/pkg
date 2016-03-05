@@ -49,7 +49,7 @@ func init() {
 					Label:     `CORS Cross Origin Resource Sharing`,
 					Comment:   ``,
 					SortOrder: 150,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: config.FieldSlice{
 						&config.Field{
 							// Path: `web/cors/exposed_headers`,
@@ -59,7 +59,7 @@ func init() {
 							Type:         config.TypeTextarea,
 							SortOrder:    10,
 							Visible:      config.VisibleYes,
-							Scope:        scope.NewPerm(scope.WebsiteID),
+							Scope:        scope.PermWebsite,
 							Default:      nil,
 							BackendModel: nil, // CSV
 							SourceModel:  nil,
@@ -77,7 +77,7 @@ Default value is ["*"]`,
 							Type:         config.TypeTextarea,
 							SortOrder:    20,
 							Visible:      config.VisibleYes,
-							Scope:        scope.NewPerm(scope.WebsiteID),
+							Scope:        scope.PermWebsite,
 							Default:      nil,
 							BackendModel: nil, // CSV
 							SourceModel:  nil,

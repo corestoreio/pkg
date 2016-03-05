@@ -28,7 +28,7 @@ func init() {
 					ID:        "account",
 					Label:     `Merchant Location`,
 					SortOrder: 1,
-					Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+					Scope:     scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							ConfigPath: `paypal/general/merchant_country`, // Original: payment/account/merchant_country
@@ -38,7 +38,7 @@ func init() {
 							Type:       element.TypeSelect,
 							SortOrder:  5,
 							Visible:    element.VisibleYes,
-							Scope:      scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:      scope.PermWebsite,
 							// BackendModel: Magento\Paypal\Model\System\Config\Backend\MerchantCountry
 							// SourceModel: Magento\Paypal\Model\System\Config\Source\MerchantCountry
 						},

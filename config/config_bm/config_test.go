@@ -33,7 +33,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("adminnotification"),
 				Label:     text.Chars(`Notifications`),
 				SortOrder: 250,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `system/adminnotification/use_https`,
@@ -42,7 +42,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   false,
 					},
 
@@ -53,7 +53,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   true,
 					},
 
@@ -64,7 +64,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeLabel,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   0,
 					},
 				},
@@ -84,7 +84,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("feed_url"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `notifications.magentocommerce.com/magento2/community/notifications.rss`,
 					},
 
@@ -93,7 +93,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("popup_url"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `widgets.magentocommerce.com/notificationPopup`,
 					},
 
@@ -102,7 +102,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("severity_icons_url"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `widgets.magentocommerce.com/%s/%s.gif`,
 					},
 				},
@@ -313,7 +313,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -417,7 +417,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("debug"),
 				Label:     text.Chars(`Debug`),
 				SortOrder: 20,
-				Scope:     scope.NewPerm(scope.WebsiteID, scope.StoreID),
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/debug/template_hints`,
@@ -426,7 +426,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.WebsiteID, scope.StoreID),
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -437,7 +437,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 21,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.WebsiteID, scope.StoreID),
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -499,7 +499,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -580,7 +580,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("image"),
 				Label:     text.Chars(`Image Processing Settings`),
 				SortOrder: 120,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/image/default_adapter`,
@@ -590,7 +590,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -600,7 +600,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("static"),
 				Label:     text.Chars(`Static Files Settings`),
 				SortOrder: 130,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/static/sign`,
@@ -609,7 +609,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -657,7 +657,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeMultiselect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -676,7 +676,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -750,7 +750,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 25,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -761,7 +761,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 27,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -772,7 +772,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -783,7 +783,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 45,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -794,7 +794,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 55,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -805,7 +805,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -816,7 +816,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 61,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -826,7 +826,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("single_store_mode"),
 				Label:     text.Chars(`Single-Store Mode`),
 				SortOrder: 150,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `general/single_store_mode/enabled`,
@@ -836,7 +836,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -897,7 +897,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 70,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -908,7 +908,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 80,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -919,13 +919,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("admin"),
 		Label:     text.Chars("Admin"),
 		SortOrder: 20,
-		Scope:     scope.NewPerm(scope.DefaultID),
+		Scope:     scope.PermDefault,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("emails"),
 				Label:     text.Chars(`Admin User Emails`),
 				SortOrder: 10,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `admin/emails/forgot_email_template`,
@@ -934,7 +934,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -945,7 +945,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -957,7 +957,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -967,7 +967,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("startup"),
 				Label:     text.Chars(`Startup Page`),
 				SortOrder: 20,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `admin/startup/menu_item_id`,
@@ -976,7 +976,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -986,7 +986,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("url"),
 				Label:     text.Chars(`Admin Base URL`),
 				SortOrder: 30,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `admin/url/use_custom`,
@@ -995,7 +995,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -1007,7 +1007,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -1018,7 +1018,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -1030,7 +1030,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -1040,7 +1040,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("security"),
 				Label:     text.Chars(`Security`),
 				SortOrder: 35,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `admin/security/use_form_key`,
@@ -1049,7 +1049,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -1060,7 +1060,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -1072,7 +1072,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -1082,7 +1082,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("dashboard"),
 				Label:     text.Chars(`Dashboard`),
 				SortOrder: 40,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `admin/dashboard/enable_charts`,
@@ -1091,7 +1091,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -1108,7 +1108,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("url"),
 				Label:     text.Chars(`Url Options`),
 				SortOrder: 3,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/url/use_store`,
@@ -1118,7 +1118,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -1130,7 +1130,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -1287,7 +1287,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -1298,7 +1298,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 70,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -1338,7 +1338,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("session"),
 				Label:     text.Chars(`Session Validation Settings`),
 				SortOrder: 60,
-				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+				Scope:     scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/session/use_remote_addr`,
@@ -1347,7 +1347,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -1358,7 +1358,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -1369,7 +1369,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -1380,7 +1380,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -1392,7 +1392,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -1412,7 +1412,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("allowed_resources"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"email_folder":"email"}`,
 					},
 				},
@@ -1426,7 +1426,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("forgot_email_template"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `system_emails_forgot_email_template`,
 					},
 
@@ -1435,7 +1435,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("forgot_email_identity"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `general`,
 					},
 				},
@@ -1449,7 +1449,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("enable_charts"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: true,
 					},
 				},
@@ -1467,7 +1467,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("input_types"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"price":"price","media_image":"media_image","gallery":"gallery"}`,
 					},
 				},
@@ -1478,13 +1478,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("system"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("backup"),
 				Label:     text.Chars(`Scheduled Backup Settings`),
 				SortOrder: 500,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `system/backup/enabled`,
@@ -1493,7 +1493,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -1504,7 +1504,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -1515,7 +1515,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeTime,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -1526,7 +1526,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -1538,7 +1538,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -1549,13 +1549,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("admin"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("captcha"),
 				Label:     text.Chars(`CAPTCHA`),
 				SortOrder: 50,
-				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+				Scope:     scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `admin/captcha/enable`,
@@ -1564,7 +1564,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   false,
 					},
 
@@ -1575,7 +1575,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `linlibertine`,
 					},
 
@@ -1586,7 +1586,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeMultiselect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `backend_forgotpassword`,
 					},
 
@@ -1597,7 +1597,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `after_fail`,
 					},
 
@@ -1609,7 +1609,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   3,
 					},
 
@@ -1620,7 +1620,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 6,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   7,
 					},
 
@@ -1632,7 +1632,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 7,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `4-5`,
 					},
 
@@ -1644,7 +1644,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 8,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `ABCDEFGHJKMnpqrstuvwxyz23456789`,
 					},
 
@@ -1655,7 +1655,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 9,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   false,
 					},
 				},
@@ -1666,13 +1666,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("customer"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("captcha"),
 				Label:     text.Chars(`CAPTCHA`),
 				SortOrder: 110,
-				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+				Scope:     scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `customer/captcha/enable`,
@@ -1681,7 +1681,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -1692,7 +1692,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `linlibertine`,
 					},
 
@@ -1704,7 +1704,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeMultiselect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `user_forgotpassword`,
 					},
 
@@ -1715,7 +1715,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `after_fail`,
 					},
 
@@ -1727,7 +1727,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   3,
 					},
 
@@ -1738,7 +1738,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 6,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   7,
 					},
 
@@ -1750,7 +1750,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 7,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `4-5`,
 					},
 
@@ -1762,7 +1762,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 8,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `ABCDEFGHJKMnpqrstuvwxyz23456789`,
 					},
 
@@ -1773,7 +1773,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 9,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 				},
@@ -1793,7 +1793,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("allowed_resources"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"captcha_folder":"captcha"}`,
 					},
 				},
@@ -1811,7 +1811,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("type"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `default`,
 					},
 
@@ -1820,7 +1820,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("failed_attempts_ip"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: 1000,
 					},
 
@@ -1829,7 +1829,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("shown_to_logged_in_user"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 
@@ -1838,7 +1838,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("always_for"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"backend_forgotpassword":"1"}`,
 					},
 				},
@@ -1856,7 +1856,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("type"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `default`,
 					},
 
@@ -1865,7 +1865,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("failed_attempts_ip"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: 1000,
 					},
 
@@ -1874,7 +1874,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("shown_to_logged_in_user"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"contact_us":"1"}`,
 					},
 
@@ -1883,7 +1883,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("always_for"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"user_create":"1","user_forgotpassword":"1","guest_checkout":"1","register_during_checkout":"1","contact_us":"1"}`,
 					},
 				},
@@ -1901,7 +1901,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("fonts"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"linlibertine":{"label":"LinLibertine","path":"LinLibertineFont\/LinLibertine_Bd-2.8.1.ttf"}}`,
 					},
 
@@ -1910,7 +1910,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("frontend"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"areas":{"user_create":{"label":"Create user"},"user_login":{"label":"Login"},"user_forgotpassword":{"label":"Forgot password"},"guest_checkout":{"label":"Checkout as Guest"},"register_during_checkout":{"label":"Register during Checkout"},"contact_us":{"label":"Contact Us"}}}`,
 					},
 
@@ -1919,7 +1919,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("backend"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"areas":{"backend_login":{"label":"Admin Login"},"backend_forgotpassword":{"label":"Admin Forgot Password"}}}`,
 					},
 				},
@@ -1933,7 +1933,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("translate"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `label`,
 					},
 				},
@@ -1961,7 +1961,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `{{name}}`,
 					},
 
@@ -1973,7 +1973,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `{{name}}`,
 					},
 
@@ -1985,7 +1985,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `{{name}}`,
 					},
 
@@ -1997,7 +1997,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `{{name}} {{description}}`,
 					},
 				},
@@ -2075,7 +2075,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   false,
 					},
 
@@ -2086,7 +2086,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -2191,7 +2191,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("price"),
 				Label:     text.Chars(`Price`),
 				SortOrder: 400,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/price/scope`,
@@ -2201,7 +2201,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -2220,7 +2220,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   0,
 					},
 				},
@@ -2284,7 +2284,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("design"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("watermark"),
@@ -2345,13 +2345,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("cms"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("wysiwyg"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.NewPerm(),
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `cms/wysiwyg/use_static_urls_in_catalog`,
@@ -2361,7 +2361,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -2372,7 +2372,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("rss"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("catalog"),
@@ -2429,7 +2429,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("flat"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"max_index_count":"64"}`,
 					},
 
@@ -2438,7 +2438,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("default_tax_group"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: 2,
 					},
 				},
@@ -2452,7 +2452,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("product_url_suffix"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `.html`,
 					},
 
@@ -2461,7 +2461,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("category_url_suffix"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `.html`,
 					},
 
@@ -2470,7 +2470,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("product_use_categories"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 
@@ -2479,7 +2479,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("save_rewrites_history"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: true,
 					},
 				},
@@ -2493,7 +2493,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("forbidden_extensions"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `php,exe`,
 					},
 				},
@@ -2511,7 +2511,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("allowed_resources"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"catalog_images_folder":"catalog","product_custom_options_fodler":"custom_options"}`,
 					},
 				},
@@ -2538,7 +2538,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   true,
 					},
 
@@ -2549,7 +2549,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   true,
 					},
 
@@ -2561,7 +2561,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   false,
 					},
 
@@ -2572,7 +2572,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   0,
 					},
 
@@ -2604,7 +2604,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   true,
 					},
 
@@ -2616,7 +2616,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   false,
 					},
 
@@ -2627,7 +2627,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   10000,
 					},
 
@@ -2638,7 +2638,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   0,
 					},
 
@@ -2649,7 +2649,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 6,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   1,
 					},
 
@@ -2660,7 +2660,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 7,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   1,
 					},
 
@@ -2671,7 +2671,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -2682,7 +2682,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 8,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   false,
 					},
 
@@ -2693,7 +2693,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 9,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   1,
 					},
 				},
@@ -2705,13 +2705,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("seo"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.NewPerm(),
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/seo/search_terms`,
@@ -2739,7 +2739,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 0,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(),
+						Scope:     scope.PermStore,
 						Default:   `mysql`,
 					},
 
@@ -2785,13 +2785,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("seo"),
 				Label:     text.Chars(`Search Engine Optimization`),
 				SortOrder: 0,
-				Scope:     scope.NewPerm(),
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/seo/category_url_suffix`,
@@ -2853,7 +2853,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("centinel"),
 				Label:     text.Chars(`3D Secure Credit Card Validation`),
 				SortOrder: 1,
-				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+				Scope:     scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `payment_services/centinel/processor_id`,
@@ -2862,7 +2862,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -2873,7 +2873,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -2884,7 +2884,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeObscure,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -2896,7 +2896,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -2907,7 +2907,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -2956,7 +2956,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 15,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -2975,7 +2975,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   30,
 					},
 
@@ -2996,7 +2996,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("cart_link"),
 				Label:     text.Chars(`My Cart Link`),
 				SortOrder: 3,
-				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+				Scope:     scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `checkout/cart_link/use_qty`,
@@ -3005,7 +3005,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 				},
@@ -3111,13 +3111,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("checkout"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("options"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.NewPerm(),
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `checkout/options/enable_agreements`,
@@ -3138,13 +3138,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("web"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("default"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.NewPerm(),
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/default/cms_home_page`,
@@ -3273,7 +3273,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("front"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `cms`,
 					},
 
@@ -3282,7 +3282,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("no_route"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `cms/noroute/index`,
 					},
 				},
@@ -3300,7 +3300,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("allowed_resources"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"wysiwyg_image_folder":"wysiwyg"}`,
 					},
 				},
@@ -3312,13 +3312,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("checkout"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("cart"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.NewPerm(),
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `checkout/cart/configurable_product_image`,
@@ -3407,7 +3407,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("web"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("cookie"),
@@ -3467,7 +3467,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 				},
@@ -3487,7 +3487,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						ID:      path.NewRoute("cookie_restriction_lifetime"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: 31536000,
 					},
 				},
@@ -3499,14 +3499,14 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("system"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("cron"),
 				Label:     text.Chars(`Cron (Scheduled Tasks) - all the times are in minutes`),
 				Comment:   text.Chars(`For correct URLs generated during cron runs please make sure that Web > Secure and Unsecure Base URLs are explicitly set.`),
 				SortOrder: 15,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields:    element.FieldSlice{},
 			},
 		},
@@ -3522,7 +3522,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("account_share"),
 				Label:     text.Chars(`Account Sharing Options`),
 				SortOrder: 10,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `customer/account_share/scope`,
@@ -3531,7 +3531,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   true,
 					},
 				},
@@ -3638,7 +3638,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 57,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -3650,7 +3650,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 58,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -3694,7 +3694,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 90,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -3728,7 +3728,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 120,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -3792,7 +3792,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   1,
 					},
 				},
@@ -3812,7 +3812,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   2,
 					},
 
@@ -3824,7 +3824,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -3836,7 +3836,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -3848,7 +3848,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -3860,7 +3860,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -3872,7 +3872,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeText,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -3883,7 +3883,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 70,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -3894,7 +3894,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 80,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -3905,7 +3905,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 90,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -3925,7 +3925,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 				},
@@ -4021,13 +4021,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("general"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("store_information"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.NewPerm(),
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `general/store_information/validate_vat_number`,
@@ -4036,7 +4036,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 62,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -4056,7 +4056,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("group"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: true,
 					},
 				},
@@ -4070,7 +4070,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("prefix_show"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 
@@ -4079,7 +4079,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("prefix_options"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 
@@ -4088,7 +4088,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("middlename_show"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 
@@ -4097,7 +4097,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("suffix_show"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 
@@ -4106,7 +4106,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("suffix_options"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 
@@ -4115,7 +4115,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("dob_show"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 
@@ -4124,7 +4124,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("gender_show"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 				},
@@ -4136,7 +4136,7 @@ T: {{var telephone}}
 		ID:        path.NewRoute("dev"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("front_end_development_workflow"),
@@ -4152,7 +4152,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `server_side_compilation`,
 					},
 				},
@@ -4192,7 +4192,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("allow_ips"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 				},
@@ -4204,7 +4204,7 @@ T: {{var telephone}}
 		ID:        path.NewRoute("carriers"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("dhl"),
@@ -4219,7 +4219,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -4230,7 +4230,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `https://xmlpi-ea.dhl.com/XMLShippingServlet`,
 					},
 
@@ -4252,7 +4252,7 @@ T: {{var telephone}}
 						Type:      element.TypeObscure,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4263,7 +4263,7 @@ T: {{var telephone}}
 						Type:      element.TypeObscure,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4274,7 +4274,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 70,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4285,7 +4285,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 90,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `N`,
 					},
 
@@ -4296,7 +4296,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `F`,
 					},
 
@@ -4308,7 +4308,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 110,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `O`,
 					},
 
@@ -4319,7 +4319,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 120,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4397,7 +4397,7 @@ T: {{var telephone}}
 						Type:      element.TypeMultiselect,
 						SortOrder: 170,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `2,5,6,7,9,B,C,D,U,K,L,G,W,I,N,O,R,S,T,X`,
 					},
 
@@ -4408,7 +4408,7 @@ T: {{var telephone}}
 						Type:      element.TypeMultiselect,
 						SortOrder: 170,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `1,3,4,8,P,Q,E,F,H,J,M,V,Y`,
 					},
 
@@ -4420,7 +4420,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 180,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4442,7 +4442,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1200,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4453,7 +4453,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1200,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4464,7 +4464,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1210,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4475,7 +4475,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 1220,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4486,7 +4486,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1900,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -4497,7 +4497,7 @@ T: {{var telephone}}
 						Type:      element.TypeMultiselect,
 						SortOrder: 1910,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4508,7 +4508,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1940,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4519,7 +4519,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 2000,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4530,7 +4530,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1950,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -4550,7 +4550,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("allowed_resources"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"dhl_folder":"dhl"}`,
 					},
 				},
@@ -4568,7 +4568,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("model"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `Magento\Dhl\Model\Carrier`,
 					},
 
@@ -4577,7 +4577,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("account"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 
@@ -4586,7 +4586,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("free_method"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `G`,
 					},
 
@@ -4595,7 +4595,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("shipment_days"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `Mon,Tue,Wed,Thu,Fri`,
 					},
 
@@ -4604,7 +4604,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("active_rma"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 
@@ -4613,7 +4613,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("is_online"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: true,
 					},
 				},
@@ -4625,7 +4625,7 @@ T: {{var telephone}}
 		ID:        path.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("downloadable"),
@@ -4640,7 +4640,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   9,
 					},
 
@@ -4651,7 +4651,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 200,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   0,
 					},
 
@@ -4662,7 +4662,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 300,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4695,7 +4695,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 600,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 
@@ -4718,7 +4718,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 800,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 				},
@@ -4730,7 +4730,7 @@ T: {{var telephone}}
 		ID:        path.NewRoute("carriers"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("fedex"),
@@ -4745,7 +4745,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -4768,7 +4768,7 @@ T: {{var telephone}}
 						Type:      element.TypeObscure,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4779,7 +4779,7 @@ T: {{var telephone}}
 						Type:      element.TypeObscure,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4790,7 +4790,7 @@ T: {{var telephone}}
 						Type:      element.TypeObscure,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4801,7 +4801,7 @@ T: {{var telephone}}
 						Type:      element.TypeObscure,
 						SortOrder: 70,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4812,7 +4812,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 80,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -4823,7 +4823,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 90,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `https://ws.fedex.com:443/web-services/`,
 					},
 
@@ -4834,7 +4834,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `https://wsbeta.fedex.com:443/web-services/`,
 					},
 
@@ -4845,7 +4845,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 110,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -4856,7 +4856,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 120,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `YOUR_PACKAGING`,
 					},
 
@@ -4867,7 +4867,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 130,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `REGULAR_PICKUP`,
 					},
 
@@ -4878,7 +4878,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 135,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `LB`,
 					},
 
@@ -4889,7 +4889,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 140,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   150,
 					},
 
@@ -4900,7 +4900,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 150,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `F`,
 					},
 
@@ -4911,7 +4911,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 160,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `O`,
 					},
 
@@ -4922,7 +4922,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 170,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4933,7 +4933,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 180,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4944,7 +4944,7 @@ T: {{var telephone}}
 						Type:      element.TypeMultiselect,
 						SortOrder: 190,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `EUROPE_FIRST_INTERNATIONAL_PRIORITY,FEDEX_1_DAY_FREIGHT,FEDEX_2_DAY_FREIGHT,FEDEX_2_DAY,FEDEX_2_DAY_AM,FEDEX_3_DAY_FREIGHT,FEDEX_EXPRESS_SAVER,FEDEX_GROUND,FIRST_OVERNIGHT,GROUND_HOME_DELIVERY,INTERNATIONAL_ECONOMY,INTERNATIONAL_ECONOMY_FREIGHT,INTERNATIONAL_FIRST,INTERNATIONAL_GROUND,INTERNATIONAL_PRIORITY,INTERNATIONAL_PRIORITY_FREIGHT,PRIORITY_OVERNIGHT,SMART_POST,STANDARD_OVERNIGHT,FEDEX_FREIGHT,FEDEX_NATIONAL_FREIGHT`,
 					},
 
@@ -4956,7 +4956,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 200,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4967,7 +4967,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 210,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `FEDEX_GROUND`,
 					},
 
@@ -4978,7 +4978,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 220,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -4989,7 +4989,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 230,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -5011,7 +5011,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 250,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -5022,7 +5022,7 @@ T: {{var telephone}}
 						Type:      element.TypeMultiselect,
 						SortOrder: 260,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -5033,7 +5033,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 270,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -5044,7 +5044,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 280,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -5055,7 +5055,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 290,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -5075,7 +5075,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("cutoff_cost"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 
@@ -5084,7 +5084,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("handling"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 
@@ -5093,7 +5093,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("model"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `Magento\Fedex\Model\Carrier`,
 					},
 
@@ -5102,7 +5102,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("active_rma"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 
@@ -5111,7 +5111,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("is_online"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: true,
 					},
 				},
@@ -5123,13 +5123,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("sales"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("gift_options"),
 				Label:     text.Chars(`Gift Options`),
 				SortOrder: 100,
-				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+				Scope:     scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/gift_options/allow_order`,
@@ -5138,7 +5138,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -5149,7 +5149,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -5169,7 +5169,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("allow_items"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 
@@ -5178,7 +5178,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("allow_order"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 				},
@@ -5190,7 +5190,7 @@ T: {{var telephone}}
 		ID:        path.NewRoute("google"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("adwords"),
@@ -5302,7 +5302,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("languages"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"ar":"ar","bg":"bg","ca":"ca","cs":"cs","da":"da","de":"de","el":"el","en":"en","es":"es","et":"et","fi":"fi","fr":"fr","hi":"hi","hr":"hr","hu":"hu","id":"id","is":"is","it":"it","iw":"iw","ja":"ja","ko":"ko","lt":"lt","lv":"lv","nl":"nl","no":"no","pl":"pl","pt":"pt","ro":"ro","ru":"ru","sk":"sk","sl":"sl","sr":"sr","sv":"sv","th":"th","tl":"tl","tr":"tr","uk":"uk","ur":"ur","vi":"vi","zh_TW":"zh_TW","zh_CN":"zh_CN"}`,
 					},
 
@@ -5311,7 +5311,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("language_convert"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"zh_CN":"zh_Hans","zh_TW":"zh_Hant","iw":"he"}`,
 					},
 
@@ -5320,7 +5320,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("conversion_js_src"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `https://www.googleadservices.com/pagead/conversion.js`,
 					},
 
@@ -5329,7 +5329,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("conversion_img_src"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `https://www.googleadservices.com/pagead/conversion/%s/?label=%s&guid=ON&script=0`,
 					},
 				},
@@ -5379,13 +5379,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("google"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("analytics"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.NewPerm(),
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `google/analytics/experiments`,
@@ -5414,7 +5414,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("active"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 				},
@@ -5426,7 +5426,7 @@ T: {{var telephone}}
 		ID:        path.NewRoute("google"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("googleshopping"),
@@ -5518,7 +5518,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 140,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -5582,7 +5582,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("allowed_countries"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"AU":{"_value":{"name":"Australia","language":"en","currency":"AUD","currency_name":"Australian Dollar"},"_attribute":{"translate":"name currency_name"}},"BR":{"_value":{"name":"Brazil","language":"pt","locale":"pt_BR","currency":"BRL","currency_name":"Brazilian Real"},"_attribute":{"translate":"name currency_name"}},"CN":{"_value":{"name":"China","language":"zh_CN","currency":"CNY","currency_name":"Chinese Yuan Renminbi"},"_attribute":{"translate":"name currency_name"}},"FR":{"_value":{"name":"France","language":"fr","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"DE":{"_value":{"name":"Germany","language":"de","locale":"de_DE","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"IT":{"_value":{"name":"Italy","language":"it","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"JP":{"_value":{"name":"Japan","language":"ja","currency":"JPY","currency_name":"Japanese Yen"},"_attribute":{"translate":"name currency_name"}},"NL":{"_value":{"name":"Netherlands","language":"nl","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"ES":{"_value":{"name":"Spain","language":"es","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"CH":{"_value":{"name":"Switzerland","language":"de","locale":"de_CH","currency":"CHF","currency_name":"Swiss Franc"},"_attribute":{"translate":"name currency_name"}},"GB":{"_value":{"name":"United Kingdom","language":"en","locale":"en_GB","currency":"GBP","currency_name":"British Pound Sterling"},"_attribute":{"translate":"name currency_name"}},"US":{"_value":{"name":"United States","language":"en","locale":"en_US","currency":"USD","currency_name":"US Dollar"},"_attribute":{"translate":"name currency_name"}}}`,
 					},
 
@@ -5591,7 +5591,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("attributes"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"Item":{"title":{"_value":{"name":"Title","required":"1"},"_attribute":{"translate":"name"}},"content":{"_value":{"name":"Description","required":"1"},"_attribute":{"translate":"name"}},"expiration_date":{"_value":{"name":"Expiration date","required":"0"},"_attribute":{"translate":"name"}},"adult":{"_value":{"name":"Adult","required":"0"},"_attribute":{"translate":"name"}}},"ProductSearch":{"condition":{"_value":{"name":"Condition","required":"1"},"_attribute":{"translate":"name"}},"price":{"_value":{"name":"Price","required":"1"},"_attribute":{"translate":"name"}},"sale_price":{"_value":{"name":"Sale Price","required":"0","country":"US"},"_attribute":{"translate":"name"}},"sale_price_effective_date_from":{"_value":{"name":"Sale Price Effective From Date","required":"0","country":"US"},"_attribute":{"translate":"name"}},"sale_price_effective_date_to":{"_value":{"name":"Sale Price Effective To Date","required":"0","country":"US"},"_attribute":{"translate":"name"}},"age_group":{"_value":{"name":"Age Group","required":"1"},"_attribute":{"translate":"name"}},"brand":{"_value":{"name":"Brand","required":"1"},"_attribute":{"translate":"name"}},"color":{"_value":{"name":"Color","required":"1"},"_attribute":{"translate":"name"}},"gender":{"_value":{"name":"Gender","required":"1"},"_attribute":{"translate":"name"}},"mpn":{"_value":{"name":"Manufacturer\\'s Part Number (MPN)","required":"1"},"_attribute":{"translate":"name"}},"online_only":{"_value":{"name":"Online Only","required":"0"},"_attribute":{"translate":"name"}},"gtin":{"_value":{"name":"GTIN","required":"1"},"_attribute":{"translate":"name"}},"product_type":{"_value":{"name":"Product Type (Category)","required":"0"},"_attribute":{"translate":"name"}},"product_review_average":{"_value":{"name":"Product Review Average","required":"0"},"_attribute":{"translate":"name"}},"product_review_count":{"_value":{"name":"Product Review Count","required":"0"},"_attribute":{"translate":"name"}},"shipping_weight":{"_value":{"name":"Shipping Weight","required":"0"},"_attribute":{"translate":"name"}},"size":{"_value":{"name":"Size","required":"1"},"_attribute":{"translate":"name"}},"material":{"_value":{"name":"Material","required":"1"},"_attribute":{"translate":"name"}},"pattern":{"_value":{"name":"Pattern\/Graphic","required":"1"},"_attribute":{"translate":"name"}}},"ProductAds":{"adwords_grouping":{"_value":{"name":"Grouping","required":"0"},"_attribute":{"translate":"name"}},"adwords_labels":{"_value":{"name":"Labels","required":"0"},"_attribute":{"translate":"name"}},"adwords_redirect":{"_value":{"name":"Redirect","required":"0"},"_attribute":{"translate":"name"}},"adwords_queryparam":{"_value":{"name":"Query Param","required":"0"},"_attribute":{"translate":"name"}}}}`,
 					},
 
@@ -5600,7 +5600,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("attribute_groups"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"price":{"sale_price":null,"tax":null,"sale_price_effective_date":null,"sale_price_effective_date_from":null,"sale_price_effective_date_to":null},"shipping_weight":{"weight":null},"title":{"name":null},"content":{"description":null}}`,
 					},
 
@@ -5609,7 +5609,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("base_attributes"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"id":null,"title":null,"link":null,"content":null,"price":null,"image_link":null,"condition":null,"target_country":null,"content_language":null,"destinations":null,"availability":null,"google_product_category":null,"product_type":null}`,
 					},
 				},
@@ -5654,7 +5654,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("cleanup"),
 				Label:     text.Chars(`Cleanup Settings`),
 				SortOrder: 300,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `oauth/cleanup/cleanup_probability`,
@@ -5664,7 +5664,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   100,
 					},
 
@@ -5676,7 +5676,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   120,
 					},
 				},
@@ -5686,7 +5686,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("consumer"),
 				Label:     text.Chars(`Consumer Settings`),
 				SortOrder: 400,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `oauth/consumer/expiration_period`,
@@ -5696,7 +5696,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   300,
 					},
 
@@ -5708,7 +5708,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   0,
 					},
 
@@ -5720,7 +5720,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   5,
 					},
 				},
@@ -5823,7 +5823,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("online_customers"),
 				Label:     text.Chars(`Online Customers Options`),
 				SortOrder: 10,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `customer/online_customers/online_minutes_interval`,
@@ -5833,7 +5833,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -5844,13 +5844,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("system"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("log"),
 				Label:     text.Chars(`Log Cleaning`),
 				SortOrder: 200,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `system/log/clean_after_day`,
@@ -5859,7 +5859,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   180,
 					},
 
@@ -5870,7 +5870,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   false,
 					},
 
@@ -5881,7 +5881,7 @@ T: {{var telephone}}
 						Type:      element.TypeTime,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -5892,7 +5892,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `D`,
 					},
 
@@ -5903,7 +5903,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -5914,7 +5914,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 6,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `general`,
 					},
 
@@ -5925,7 +5925,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 7,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `system_log_error_email_template`,
 					},
 				},
@@ -5945,7 +5945,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("online_update_frequency"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: 60,
 					},
 				},
@@ -5963,7 +5963,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("time"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 
@@ -5972,7 +5972,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("error_email"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 				},
@@ -5999,7 +5999,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -6010,7 +6010,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 200,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -6022,7 +6022,7 @@ T: {{var telephone}}
 						Type:      element.TypeButton,
 						SortOrder: 300,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -6033,7 +6033,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 400,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -6045,13 +6045,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("sales"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("msrp"),
 				Label:     text.Chars(`Minimum Advertised Price`),
 				SortOrder: 110,
-				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+				Scope:     scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/msrp/enabled`,
@@ -6061,7 +6061,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -6072,7 +6072,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 
@@ -6106,13 +6106,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("multishipping"),
 		Label:     text.Chars("Multishipping Settings"),
 		SortOrder: 311,
-		Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+		Scope:     scope.PermWebsite,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("options"),
 				Label:     text.Chars(`Options`),
 				SortOrder: 2,
-				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+				Scope:     scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `multishipping/options/checkout_multiple`,
@@ -6121,7 +6121,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 
@@ -6132,7 +6132,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   100,
 					},
 				},
@@ -6256,7 +6256,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("set_return_path"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 				},
@@ -6283,7 +6283,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 
@@ -6294,7 +6294,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `pending`,
 					},
 
@@ -6305,7 +6305,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6327,7 +6327,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   0,
 					},
 
@@ -6338,7 +6338,7 @@ T: {{var telephone}}
 						Type:      element.TypeMultiselect,
 						SortOrder: 51,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6371,7 +6371,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 98,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6382,7 +6382,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 99,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6393,7 +6393,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 0,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(),
+						Scope:     scope.PermStore,
 						Default:   `Magento\OfflinePayments\Model\Checkmo`,
 					},
 				},
@@ -6412,7 +6412,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -6423,7 +6423,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `pending`,
 					},
 
@@ -6434,7 +6434,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6456,7 +6456,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   0,
 					},
 
@@ -6467,7 +6467,7 @@ T: {{var telephone}}
 						Type:      element.TypeMultiselect,
 						SortOrder: 51,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6478,7 +6478,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 98,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6489,7 +6489,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 99,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6500,7 +6500,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 0,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(),
+						Scope:     scope.PermStore,
 						Default:   `Magento\OfflinePayments\Model\Purchaseorder`,
 					},
 				},
@@ -6519,7 +6519,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -6541,7 +6541,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `pending`,
 					},
 
@@ -6552,7 +6552,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   0,
 					},
 
@@ -6563,7 +6563,7 @@ T: {{var telephone}}
 						Type:      element.TypeMultiselect,
 						SortOrder: 51,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6585,7 +6585,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 98,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6596,7 +6596,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 99,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6607,7 +6607,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -6626,7 +6626,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -6648,7 +6648,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `pending`,
 					},
 
@@ -6659,7 +6659,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   0,
 					},
 
@@ -6670,7 +6670,7 @@ T: {{var telephone}}
 						Type:      element.TypeMultiselect,
 						SortOrder: 51,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6692,7 +6692,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 98,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6703,7 +6703,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 99,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6714,7 +6714,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -6733,7 +6733,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6744,7 +6744,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6755,7 +6755,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6766,7 +6766,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6788,7 +6788,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6799,7 +6799,7 @@ T: {{var telephone}}
 						Type:      element.TypeMultiselect,
 						SortOrder: 51,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6810,7 +6810,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 0,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(),
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -6830,7 +6830,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("group"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `offline`,
 					},
 				},
@@ -6844,7 +6844,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("group"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `offline`,
 					},
 				},
@@ -6858,7 +6858,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("model"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `Magento\OfflinePayments\Model\Banktransfer`,
 					},
 
@@ -6867,7 +6867,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("group"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `offline`,
 					},
 				},
@@ -6881,7 +6881,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("model"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `Magento\OfflinePayments\Model\Cashondelivery`,
 					},
 
@@ -6890,7 +6890,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("group"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `offline`,
 					},
 				},
@@ -6904,7 +6904,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("group"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `offline`,
 					},
 				},
@@ -6931,7 +6931,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 
@@ -6953,7 +6953,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   5.00,
 					},
 
@@ -6964,7 +6964,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 7,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `F`,
 					},
 
@@ -6975,7 +6975,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 8,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -6986,7 +6986,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -7008,7 +7008,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `I`,
 					},
 
@@ -7019,7 +7019,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 90,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -7030,7 +7030,7 @@ T: {{var telephone}}
 						Type:      element.TypeMultiselect,
 						SortOrder: 91,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -7041,7 +7041,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 92,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -7071,7 +7071,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 7,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `F`,
 					},
 
@@ -7082,7 +7082,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 8,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -7093,7 +7093,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -7104,7 +7104,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `package_weight`,
 					},
 
@@ -7115,7 +7115,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 
@@ -7126,7 +7126,7 @@ T: {{var telephone}}
 						Type:      element.TypeCustom, // @to do: Magento\OfflineShipping\Block\Adminhtml\Form\Field\Export,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -7137,7 +7137,7 @@ T: {{var telephone}}
 						Type:      element.TypeCustom, // @to do: Magento\OfflineShipping\Block\Adminhtml\Form\Field\Import,
 						SortOrder: 6,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -7159,7 +7159,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -7181,7 +7181,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 90,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -7192,7 +7192,7 @@ T: {{var telephone}}
 						Type:      element.TypeMultiselect,
 						SortOrder: 91,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -7203,7 +7203,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 92,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -7233,7 +7233,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -7244,7 +7244,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -7266,7 +7266,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -7288,7 +7288,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 90,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -7299,7 +7299,7 @@ T: {{var telephone}}
 						Type:      element.TypeMultiselect,
 						SortOrder: 91,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -7310,7 +7310,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 92,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -7341,7 +7341,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("model"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `Magento\OfflineShipping\Model\Carrier\Flatrate`,
 					},
 				},
@@ -7355,7 +7355,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("model"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `Magento\OfflineShipping\Model\Carrier\Tablerate`,
 					},
 				},
@@ -7369,7 +7369,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("cutoff_cost"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: 50,
 					},
 
@@ -7378,7 +7378,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("model"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `Magento\OfflineShipping\Model\Carrier\Freeshipping`,
 					},
 				},
@@ -7390,13 +7390,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("system"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("full_page_cache"),
 				Label:     text.Chars(`Full Page Cache`),
 				SortOrder: 600,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `system/full_page_cache/caching_application`,
@@ -7405,7 +7405,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 0,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   true,
 					},
 
@@ -7417,7 +7417,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   120,
 					},
 				},
@@ -7437,7 +7437,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("varnish3"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"path":"Magento\/PageCache\/etc\/varnish3.vcl"}`,
 					},
 
@@ -7446,7 +7446,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("varnish4"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"path":"Magento\/PageCache\/etc\/varnish4.vcl"}`,
 					},
 
@@ -7455,7 +7455,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("default"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"access_list":"localhost","backend_host":"localhost","backend_port":"8080","ttl":"120"}`,
 					},
 				},
@@ -7483,7 +7483,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("active"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: true,
 					},
 
@@ -7492,7 +7492,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("model"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `Magento\Payment\Model\Method\Free`,
 					},
 
@@ -7501,7 +7501,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("order_status"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `pending`,
 					},
 
@@ -7510,7 +7510,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("title"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `No Payment Information Required`,
 					},
 
@@ -7519,7 +7519,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("allowspecific"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 
@@ -7528,7 +7528,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("sort_order"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: true,
 					},
 				},
@@ -7542,7 +7542,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("active"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 
@@ -7551,7 +7551,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("model"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `Magento\Payment\Model\Method\Substitution`,
 					},
 
@@ -7560,7 +7560,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("allowspecific"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 				},
@@ -7572,13 +7572,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("persistent"),
 		Label:     text.Chars("Persistent Shopping Cart"),
 		SortOrder: 500,
-		Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+		Scope:     scope.PermWebsite,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("options"),
 				Label:     text.Chars(`General Options`),
 				SortOrder: 10,
-				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+				Scope:     scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `persistent/options/enabled`,
@@ -7587,7 +7587,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -7598,7 +7598,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   31536000,
 					},
 
@@ -7609,7 +7609,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 
@@ -7620,7 +7620,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 
@@ -7631,7 +7631,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 
@@ -7642,7 +7642,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 				},
@@ -7654,7 +7654,7 @@ T: {{var telephone}}
 		ID:        path.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("productalert"),
@@ -7680,7 +7680,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -7723,7 +7723,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("productalert_cron"),
 				Label:     text.Chars(`Product Alerts Run Settings`),
 				SortOrder: 260,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/productalert_cron/frequency`,
@@ -7732,7 +7732,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -7743,7 +7743,7 @@ T: {{var telephone}}
 						Type:      element.TypeTime,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -7754,7 +7754,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -7765,7 +7765,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `general`,
 					},
 
@@ -7776,7 +7776,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `catalog_productalert_cron_error_email_template`,
 					},
 				},
@@ -7796,7 +7796,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("error_email"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 				},
@@ -7808,13 +7808,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("recently_products"),
 				Label:     text.Chars(`Recently Viewed/Compared Products`),
 				SortOrder: 350,
-				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+				Scope:     scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/recently_products/scope`,
@@ -7823,7 +7823,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `website`,
 					},
 
@@ -7856,13 +7856,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("reports"),
 		Label:     text.Chars("Reports"),
 		SortOrder: 1000,
-		Scope:     scope.NewPerm(scope.DefaultID),
+		Scope:     scope.PermDefault,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("dashboard"),
 				Label:     text.Chars(`Dashboard`),
 				SortOrder: 1,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `reports/dashboard/ytd_start`,
@@ -7871,7 +7871,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `1,1`,
 					},
 
@@ -7883,7 +7883,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   true,
 					},
 				},
@@ -7895,13 +7895,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("review"),
 				Label:     text.Chars(`Product Reviews`),
 				SortOrder: 100,
-				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+				Scope:     scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/review/allow_guest`,
@@ -7910,7 +7910,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 				},
@@ -7975,7 +7975,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("totals_sort"),
 				Label:     text.Chars(`Checkout Totals Sort Order`),
 				SortOrder: 10,
-				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+				Scope:     scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/totals_sort/discount`,
@@ -7984,7 +7984,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 2,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   20,
 					},
 
@@ -7995,7 +7995,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   100,
 					},
 
@@ -8006,7 +8006,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 3,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   30,
 					},
 
@@ -8017,7 +8017,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   10,
 					},
 
@@ -8028,7 +8028,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   40,
 					},
 				},
@@ -8109,7 +8109,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 5,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -8121,7 +8121,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -8132,7 +8132,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 15,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 
@@ -8166,7 +8166,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -8200,7 +8200,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("dashboard"),
 				Label:     text.Chars(`Dashboard`),
 				SortOrder: 60,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/dashboard/use_aggregated_data`,
@@ -8210,7 +8210,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -8227,7 +8227,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("general"),
 				Label:     text.Chars(`General Settings`),
 				SortOrder: 0,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/general/async_sending`,
@@ -8236,7 +8236,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   false,
 					},
 				},
@@ -8911,7 +8911,7 @@ T: {{var telephone}}
 		ID:        path.NewRoute("rss"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("order"),
@@ -8937,13 +8937,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("dev"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("grid"),
 				Label:     text.Chars(`Grid Settings`),
 				SortOrder: 131,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/grid/async_indexing`,
@@ -8952,7 +8952,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   false,
 					},
 				},
@@ -8964,13 +8964,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("promo"),
 		Label:     text.Chars("Promotions"),
 		SortOrder: 400,
-		Scope:     scope.NewPerm(scope.DefaultID),
+		Scope:     scope.PermDefault,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("auto_generated_coupon_codes"),
 				Label:     text.Chars(`Auto Generated Specific Coupon Codes`),
 				SortOrder: 10,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `promo/auto_generated_coupon_codes/length`,
@@ -8980,7 +8980,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   12,
 					},
 
@@ -8991,7 +8991,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   true,
 					},
 
@@ -9002,7 +9002,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -9013,7 +9013,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -9025,7 +9025,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 				},
@@ -9036,13 +9036,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("rss"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("catalog"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.NewPerm(),
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `rss/catalog/discounts`,
@@ -9063,13 +9063,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("search"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.NewPerm(),
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/search/engine`,
@@ -9078,7 +9078,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 19,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   nil,
 					},
 
@@ -9089,7 +9089,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 0,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(),
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 
@@ -9100,7 +9100,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 0,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(),
+						Scope:     scope.PermStore,
 						Default:   nil,
 					},
 				},
@@ -9194,13 +9194,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("shipping"),
 		Label:     text.Chars("Shipping Settings"),
 		SortOrder: 310,
-		Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+		Scope:     scope.PermWebsite,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("origin"),
 				Label:     text.Chars(`Origin`),
 				SortOrder: 1,
-				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+				Scope:     scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `shipping/origin/country_id`,
@@ -9209,7 +9209,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `US`,
 					},
 
@@ -9220,7 +9220,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   12,
 					},
 
@@ -9231,7 +9231,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   90034,
 					},
 
@@ -9242,7 +9242,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -9253,7 +9253,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -9264,7 +9264,7 @@ T: {{var telephone}}
 						Type:      element.TypeText,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -9393,7 +9393,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("generate"),
 				Label:     text.Chars(`Generation Settings`),
 				SortOrder: 4,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sitemap/generate/enabled`,
@@ -9424,7 +9424,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 6,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `general`,
 					},
 
@@ -9435,7 +9435,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 7,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `sitemap_generate_error_email_template`,
 					},
 
@@ -9527,7 +9527,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("error_email"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 				},
@@ -9541,7 +9541,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("valid_paths"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"available":{"any_path":"\/*\/*.xml"}}`,
 					},
 				},
@@ -9568,7 +9568,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -9579,7 +9579,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   2,
 					},
 
@@ -9590,7 +9590,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   3,
 					},
 				},
@@ -9609,7 +9609,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `TOTAL_BASE_CALCULATION`,
 					},
 
@@ -9620,7 +9620,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `shipping`,
 					},
 
@@ -9632,7 +9632,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -9644,7 +9644,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -9655,7 +9655,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 
@@ -9667,7 +9667,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `["0","0"]`,
 					},
 
@@ -9678,7 +9678,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -9690,7 +9690,7 @@ T: {{var telephone}}
 						Type:      element.TypeSelect,
 						SortOrder: 70,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -9929,7 +9929,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("discount"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: true,
 					},
 				},
@@ -9943,7 +9943,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("discount"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: true,
 					},
 				},
@@ -9957,7 +9957,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("url"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `http://www.magentocommerce.com/knowledge-base/entry/magento-ce-18-ee-113-tax-calc`,
 					},
 				},
@@ -9969,7 +9969,7 @@ T: {{var telephone}}
 		ID:        path.NewRoute("design"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("head"),
@@ -10199,7 +10199,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("_value"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"default_title":"Magento Commerce","default_description":"Default Description","default_keywords":"Magento, Varien, E-commerce","default_media_type":"text\/html","default_charset":"utf-8"}`,
 					},
 
@@ -10208,7 +10208,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("_attribute"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"translate":"default_description"}`,
 					},
 				},
@@ -10222,7 +10222,7 @@ T: {{var telephone}}
 						ID:      path.NewRoute("default_custom_instructions"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `
 User-agent: *
 Disallow: /index.php/
@@ -10255,7 +10255,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("_value"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"logo_alt":"Magento Commerce","welcome":"Default welcome msg!"}`,
 					},
 
@@ -10264,7 +10264,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("_attribute"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"translate":"welcome"}`,
 					},
 				},
@@ -10278,7 +10278,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("_value"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"copyright":"&copy; 2014 Magento Demo Store. All Rights Reserved."}`,
 					},
 
@@ -10287,7 +10287,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("_attribute"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"translate":"copyright"}`,
 					},
 				},
@@ -10305,7 +10305,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("custom_css"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `Magento\Theme\Model\Theme\Customization\File\CustomCss`,
 					},
 				},
@@ -10323,7 +10323,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("allowed_resources"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"site_favicons":"favicon"}`,
 					},
 				},
@@ -10335,13 +10335,13 @@ Disallow: /*SID=
 		ID:        path.NewRoute("dev"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("js"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.NewPerm(),
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/js/translate_strategy`,
@@ -10351,7 +10351,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `none`,
 					},
 				},
@@ -10371,7 +10371,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("active"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 
@@ -10380,7 +10380,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("active_admin"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 
@@ -10389,7 +10389,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("invalid_caches"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"block_html":null}`,
 					},
 				},
@@ -10401,7 +10401,7 @@ Disallow: /*SID=
 		ID:        path.NewRoute("carriers"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("ups"),
@@ -10416,7 +10416,7 @@ Disallow: /*SID=
 						Type:      element.TypeObscure,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -10427,7 +10427,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -10438,7 +10438,7 @@ Disallow: /*SID=
 						Type:      element.TypeMultiselect,
 						SortOrder: 170,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `1DM,1DML,1DA,1DAL,1DAPI,1DP,1DPL,2DM,2DML,2DA,2DAL,3DS,GND,GNDCOM,GNDRES,STD,XPR,WXS,XPRL,XDM,XDML,XPD,01,02,03,07,08,11,12,14,54,59,65`,
 					},
 
@@ -10449,7 +10449,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 47,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -10460,7 +10460,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `CP`,
 					},
 
@@ -10471,7 +10471,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 210,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -10482,7 +10482,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 220,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -10493,7 +10493,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `RES`,
 					},
 
@@ -10504,7 +10504,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 200,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `GND`,
 					},
 
@@ -10515,7 +10515,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `http://www.ups.com/using/services/rave/qcostcgi.cgi`,
 					},
 
@@ -10526,7 +10526,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `https://onlinetools.ups.com/ups.app/xml/Rate`,
 					},
 
@@ -10537,7 +10537,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 110,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `F`,
 					},
 
@@ -10548,7 +10548,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 120,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `O`,
 					},
 
@@ -10559,7 +10559,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 130,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -10570,7 +10570,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 80,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   150,
 					},
 
@@ -10581,7 +10581,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 90,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   0.1,
 					},
 
@@ -10592,7 +10592,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `Shipments Originating in United States`,
 					},
 
@@ -10603,7 +10603,7 @@ Disallow: /*SID=
 						Type:      element.TypeObscure,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -10614,7 +10614,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 80,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `CC`,
 					},
 
@@ -10625,7 +10625,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 1000,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -10647,7 +10647,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `https://www.ups.com/ups.app/xml/Track`,
 					},
 
@@ -10658,7 +10658,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `UPS`,
 					},
 
@@ -10669,7 +10669,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 25,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -10680,7 +10680,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `LBS`,
 					},
 
@@ -10691,7 +10691,7 @@ Disallow: /*SID=
 						Type:      element.TypeObscure,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -10702,7 +10702,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -10714,7 +10714,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -10725,7 +10725,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 900,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -10736,7 +10736,7 @@ Disallow: /*SID=
 						Type:      element.TypeMultiselect,
 						SortOrder: 910,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -10747,7 +10747,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 920,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -10770,7 +10770,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 
@@ -10781,7 +10781,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 920,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -10801,7 +10801,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("cutoff_cost"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 
@@ -10810,7 +10810,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("handling"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 
@@ -10819,7 +10819,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("model"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `Magento\Ups\Model\Carrier`,
 					},
 
@@ -10828,7 +10828,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("active_rma"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 
@@ -10837,7 +10837,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("is_online"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: true,
 					},
 				},
@@ -10849,13 +10849,13 @@ Disallow: /*SID=
 		ID:        path.NewRoute("admin"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("emails"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.NewPerm(),
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `admin/emails/reset_password_template`,
@@ -10864,7 +10864,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID),
+						Scope:     scope.PermDefault,
 						Default:   `admin_emails_reset_password_template`,
 					},
 				},
@@ -10884,7 +10884,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("forgot_email_template"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `admin_emails_forgot_email_template`,
 					},
 
@@ -10893,7 +10893,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("forgot_email_identity"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `general`,
 					},
 
@@ -10902,7 +10902,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("password_reset_link_expiration_period"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: true,
 					},
 				},
@@ -10914,7 +10914,7 @@ Disallow: /*SID=
 		ID:        path.NewRoute("carriers"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("usps"),
@@ -10929,7 +10929,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -10940,7 +10940,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `http://production.shippingapis.com/ShippingAPI.dll`,
 					},
 
@@ -10951,7 +10951,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `https://secure.shippingapis.com/ShippingAPI.dll`,
 					},
 
@@ -10973,7 +10973,7 @@ Disallow: /*SID=
 						Type:      element.TypeObscure,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -10984,7 +10984,7 @@ Disallow: /*SID=
 						Type:      element.TypeObscure,
 						SortOrder: 53,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -10995,7 +10995,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 54,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -11006,7 +11006,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 55,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -11017,7 +11017,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `VARIABLE`,
 					},
 
@@ -11028,7 +11028,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 70,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `REGULAR`,
 					},
 
@@ -11039,7 +11039,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 73,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -11050,7 +11050,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 72,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -11061,7 +11061,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 74,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -11072,7 +11072,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 76,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -11083,7 +11083,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 80,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `true`,
 					},
 
@@ -11094,7 +11094,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 90,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   70,
 					},
 
@@ -11105,7 +11105,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 100,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `F`,
 					},
 
@@ -11116,7 +11116,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 110,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `O`,
 					},
 
@@ -11127,7 +11127,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 120,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -11138,7 +11138,7 @@ Disallow: /*SID=
 						Type:      element.TypeMultiselect,
 						SortOrder: 130,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   `0_FCLE,0_FCL,0_FCP,1,2,3,4,6,7,13,16,17,22,23,25,27,28,33,34,35,36,37,42,43,53,55,56,57,61,INT_1,INT_2,INT_4,INT_6,INT_7,INT_8,INT_9,INT_10,INT_11,INT_12,INT_13,INT_14,INT_15,INT_16,INT_20,INT_26`,
 					},
 
@@ -11149,7 +11149,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 140,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -11160,7 +11160,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 1500,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -11171,7 +11171,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 160,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -11193,7 +11193,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 180,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -11204,7 +11204,7 @@ Disallow: /*SID=
 						Type:      element.TypeMultiselect,
 						SortOrder: 190,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -11215,7 +11215,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 200,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -11226,7 +11226,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 210,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 
@@ -11237,7 +11237,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 220,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -11257,7 +11257,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("cutoff_cost"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 
@@ -11266,7 +11266,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("free_method"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 
@@ -11275,7 +11275,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("handling"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 
@@ -11284,7 +11284,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("methods"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: nil,
 					},
 
@@ -11293,7 +11293,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("model"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `Magento\Usps\Model\Carrier`,
 					},
 
@@ -11302,7 +11302,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("isproduction"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 
@@ -11311,7 +11311,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("active_rma"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: false,
 					},
 
@@ -11320,7 +11320,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("is_online"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: true,
 					},
 				},
@@ -11360,7 +11360,7 @@ Disallow: /*SID=
 		ID:        path.NewRoute("tax"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("weee"),
@@ -11375,7 +11375,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -11386,7 +11386,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 
@@ -11397,7 +11397,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 
@@ -11408,7 +11408,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 
@@ -11419,7 +11419,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 40,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   true,
 					},
 
@@ -11430,7 +11430,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 60,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 
@@ -11441,7 +11441,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 70,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   false,
 					},
 				},
@@ -11452,13 +11452,13 @@ Disallow: /*SID=
 		ID:        path.NewRoute("sales"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("totals_sort"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.NewPerm(),
+				Scope:     scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/totals_sort/weee`,
@@ -11467,7 +11467,7 @@ Disallow: /*SID=
 						Type:      element.TypeText,
 						SortOrder: 4,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   35,
 					},
 				},
@@ -11487,7 +11487,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("weee_tax"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: 35,
 					},
 				},
@@ -11505,7 +11505,7 @@ Disallow: /*SID=
 						ID:      path.NewRoute("input_types"),
 						Type:    element.TypeHidden,
 						Visible: element.VisibleNo,
-						Scope:   scope.NewPerm(scope.DefaultID),
+						Scope:   scope.PermDefault,
 						Default: `{"weee":"weee"}`,
 					},
 				},
@@ -11596,7 +11596,7 @@ Disallow: /*SID=
 				ID:        path.NewRoute("wishlist_link"),
 				Label:     text.Chars(`My Wish List Link`),
 				SortOrder: 3,
-				Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+				Scope:     scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `wishlist/wishlist_link/use_qty`,
@@ -11605,7 +11605,7 @@ Disallow: /*SID=
 						Type:      element.TypeSelect,
 						SortOrder: 1,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scope:     scope.PermWebsite,
 						Default:   nil,
 					},
 				},
@@ -11616,7 +11616,7 @@ Disallow: /*SID=
 		ID:        path.NewRoute("rss"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.NewPerm(),
+		Scope:     scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("wishlist"),

@@ -20,7 +20,7 @@ func init() {
 					ID:        "vault",
 					Label:     `Vault Provider`,
 					SortOrder: 2,
-					Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+					Scope:     scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: payment/vault/vault_payment
@@ -29,7 +29,7 @@ func init() {
 							Comment: text.Long(`Specified provider should be enabled.`),
 							Type:    element.TypeSelect,
 							Visible: element.VisibleYes,
-							Scope:   scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:   scope.PermWebsite,
 							// SourceModel: Magento\Vault\Model\Adminhtml\Source\VaultProvidersMap
 						},
 					),

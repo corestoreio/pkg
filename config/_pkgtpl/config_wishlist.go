@@ -101,7 +101,7 @@ func init() {
 					ID:        "wishlist_link",
 					Label:     `My Wish List Link`,
 					SortOrder: 3,
-					Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+					Scope:     scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: wishlist/wishlist_link/use_qty
@@ -110,7 +110,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							// SourceModel: Magento\Wishlist\Model\Config\Source\Summary
 						},
 					),

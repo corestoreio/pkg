@@ -76,7 +76,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   false,
 							// BackendModel: Magento\Cookie\Model\Config\Backend\Cookie
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno

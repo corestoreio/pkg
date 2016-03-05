@@ -135,7 +135,7 @@ func init() {
 					ID:        "generate",
 					Label:     `Generation Settings`,
 					SortOrder: 4,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sitemap/generate/enabled
@@ -166,7 +166,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 6,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   `general`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
@@ -179,7 +179,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 7,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   `sitemap_generate_error_email_template`,
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},

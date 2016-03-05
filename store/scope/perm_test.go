@@ -32,9 +32,9 @@ func TestPermAll(t *testing.T) {
 
 func TestNewPerm(t *testing.T) {
 	t.Parallel()
-	p := scope.NewPerm(scope.WebsiteID)
+	p := scope.PermWebsite
 
-	assert.False(t, p.Has(scope.DefaultID))
+	assert.True(t, p.Has(scope.DefaultID))
 	assert.True(t, p.Has(scope.WebsiteID))
 	assert.False(t, p.Has(scope.StoreID))
 }

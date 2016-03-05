@@ -48,7 +48,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   `{{name}}`,
 						},
 
@@ -60,7 +60,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   `{{name}}`,
 						},
 
@@ -72,7 +72,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   `{{name}}`,
 						},
 
@@ -84,7 +84,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   `{{name}} {{description}}`,
 						},
 					),
@@ -163,7 +163,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   false,
 							// BackendModel: Magento\Catalog\Model\Indexer\Category\Flat\System\Config\Mode
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
@@ -176,7 +176,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 100,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// BackendModel: Magento\Catalog\Model\Indexer\Product\Flat\System\Config\Mode
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -285,7 +285,7 @@ func init() {
 					ID:        path.NewRoute("price"),
 					Label:     text.Chars(`Price`),
 					SortOrder: 400,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/price/scope
@@ -295,7 +295,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// BackendModel: Magento\Catalog\Model\Indexer\Product\Price\System\Config\PriceScope
 							// SourceModel: Magento\Catalog\Model\Config\Source\Price\Scope
 						},
@@ -315,7 +315,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 						},
 					),
 				},
@@ -444,7 +444,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),

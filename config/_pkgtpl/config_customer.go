@@ -24,7 +24,7 @@ func init() {
 					ID:        "account_share",
 					Label:     `Account Sharing Options`,
 					SortOrder: 10,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					HideInSingleStoreMode: true,
 					Fields: element.NewFieldSlice(
 						&element.Field{
@@ -34,7 +34,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   true,
 							// BackendModel: Magento\Customer\Model\Config\Share
 							// SourceModel: Magento\Customer\Model\Config\Share
@@ -145,7 +145,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 57,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// BackendModel: Magento\Customer\Model\Config\Backend\CreateAccount\DisableAutoGroupAssignDefault
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -158,7 +158,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 58,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -219,7 +219,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 90,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -257,7 +257,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 120,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 					),
@@ -328,7 +328,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 							Default:   1,
 							// BackendModel: Magento\Customer\Model\Config\Backend\Password\Link\Expirationperiod
 						},
@@ -349,7 +349,7 @@ func init() {
 							Type:      element.Type,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   2,
 							// BackendModel: Magento\Customer\Model\Config\Backend\Address\Street
 						},
@@ -362,7 +362,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							// BackendModel: Magento\Customer\Model\Config\Backend\Show\Address
 							// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 						},
@@ -375,7 +375,7 @@ func init() {
 							Type:      element.Type,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -386,7 +386,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							// BackendModel: Magento\Customer\Model\Config\Backend\Show\Address
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -399,7 +399,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 50,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							// BackendModel: Magento\Customer\Model\Config\Backend\Show\Address
 							// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 						},
@@ -412,7 +412,7 @@ func init() {
 							Type:      element.Type,
 							SortOrder: 60,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 						},
 
 						&element.Field{
@@ -422,7 +422,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							// BackendModel: Magento\Customer\Model\Config\Backend\Show\Customer
 							// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 						},
@@ -434,7 +434,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 80,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							// BackendModel: Magento\Customer\Model\Config\Backend\Show\Customer
 							// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 						},
@@ -446,7 +446,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 90,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							// BackendModel: Magento\Customer\Model\Config\Backend\Show\Customer
 							// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 						},
@@ -467,7 +467,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -563,7 +563,7 @@ T: {{var telephone}}
 					ID:        "online_customers",
 					Label:     `Online Customers Options`,
 					SortOrder: 10,
-					Scope:     scope.NewPerm(scope.DefaultID),
+					Scope:     scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: customer/online_customers/online_minutes_interval
@@ -573,7 +573,7 @@ T: {{var telephone}}
 							Type:      element.TypeText,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID),
+							Scope:     scope.PermDefault,
 						},
 					),
 				},
@@ -591,7 +591,7 @@ T: {{var telephone}}
 							Type:      element.Type,
 							SortOrder: 62,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 						},
 					),
 				},
@@ -606,7 +606,7 @@ T: {{var telephone}}
 							Type:      element.TypeSelect,
 							SortOrder: 65,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   false,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},

@@ -17,14 +17,14 @@ func init() {
 			ID:        "multishipping",
 			Label:     `Multishipping Settings`,
 			SortOrder: 311,
-			Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+			Scope:     scope.PermWebsite,
 			Resource:  0, // Magento_Multishipping::config_multishipping
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "options",
 					Label:     `Options`,
 					SortOrder: 2,
-					Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+					Scope:     scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: multishipping/options/checkout_multiple
@@ -33,7 +33,7 @@ func init() {
 							Type:      element.TypeSelect,
 							SortOrder: 1,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   true,
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
@@ -45,7 +45,7 @@ func init() {
 							Type:      element.TypeText,
 							SortOrder: 2,
 							Visible:   element.VisibleYes,
-							Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+							Scope:     scope.PermWebsite,
 							Default:   100,
 						},
 					),
