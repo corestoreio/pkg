@@ -54,6 +54,9 @@ func (bits Perm) Set(scopes ...Scope) Perm {
 	return bits
 }
 
+// Top returns the highest stored scope within a Perm.
+// A Perm can consists of 3 scopes: 1. Default -> 2. Website -> 3. Store
+// Highest scope for a Perm with all scopes is: Store.
 func (bits Perm) Top() Scope {
 	switch {
 	case bits.Has(StoreID):

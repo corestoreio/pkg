@@ -30,13 +30,15 @@ func TestPermAll(t *testing.T) {
 	assert.True(t, pa.Has(scope.StoreID))
 }
 
-func TestNewPerm(t *testing.T) {
+func TestPermTop(t *testing.T) {
 	t.Parallel()
-	p := scope.PermWebsite
 
-	assert.True(t, p.Has(scope.DefaultID))
-	assert.True(t, p.Has(scope.WebsiteID))
-	assert.False(t, p.Has(scope.StoreID))
+	assert.Exactly(t, scope.WebsiteID, scope.PermWebsite.Top())
+	assert.Exactly(t, scope.StoreID, scope.PermStore.Top())
+	assert.Exactly(t, scope.DefaultID, scope.PermDefault.Top())
+	assert.Exactly(t, scope.WebsiteID, scope.Perm(44).Top())
+	assert.Exactly(t, scope.StoreID, scope.PermWebsiteReverse.Top())
+	assert.Exactly(t, scope.StoreID, scope.PermStoreReverse.Top())
 }
 
 func TestPermMarshalJSONAll(t *testing.T) {

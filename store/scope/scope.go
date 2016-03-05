@@ -34,6 +34,8 @@ const (
 	StoreID
 )
 
+// TODO: rename Scope constants and remove the stupid ID ...
+
 // Scoper specifies how to return the scope to which an ID belongs to.
 // ID is one of a website, group or store ID as definied in their database tables.
 // config.ScopedGetter implements Scoper.
