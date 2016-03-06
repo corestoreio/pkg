@@ -16,12 +16,12 @@ func init() {
 		&element.Section{
 			ID:        "checkout",
 			SortOrder: 305,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "cart",
 					SortOrder: 2,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: checkout/cart/grouped_product_image

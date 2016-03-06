@@ -20,7 +20,7 @@ func init() {
 					ID:        "msrp",
 					Label:     `Minimum Advertised Price`,
 					SortOrder: 110,
-					Scope:     scope.PermWebsite,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales/msrp/enabled

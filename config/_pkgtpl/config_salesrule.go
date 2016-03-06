@@ -17,14 +17,14 @@ func init() {
 			ID:        "promo",
 			Label:     `Promotions`,
 			SortOrder: 400,
-			Scope:     scope.PermDefault,
+			Scopes:    scope.PermDefault,
 			Resource:  0, // Magento_SalesRule::config_promo
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "auto_generated_coupon_codes",
 					Label:     `Auto Generated Specific Coupon Codes`,
 					SortOrder: 10,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: promo/auto_generated_coupon_codes/length

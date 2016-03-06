@@ -20,7 +20,7 @@ func init() {
 					ID:        "adwords",
 					Label:     `Google AdWords`,
 					SortOrder: 15,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: google/adwords/active

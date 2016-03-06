@@ -16,13 +16,13 @@ func init() {
 		&element.Section{
 			ID:        "payment",
 			SortOrder: 400,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "checkmo",
 					Label:     `Check / Money Order`,
 					SortOrder: 30,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: payment/checkmo/active
@@ -146,7 +146,7 @@ func init() {
 					ID:        "purchaseorder",
 					Label:     `Purchase Order`,
 					SortOrder: 32,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: payment/purchaseorder/active
@@ -250,7 +250,7 @@ func init() {
 					ID:        "banktransfer",
 					Label:     `Bank Transfer Payment`,
 					SortOrder: 30,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: payment/banktransfer/active
@@ -356,7 +356,7 @@ func init() {
 					ID:        "cashondelivery",
 					Label:     `Cash On Delivery Payment`,
 					SortOrder: 30,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: payment/cashondelivery/active
@@ -462,7 +462,7 @@ func init() {
 					ID:        "free",
 					Label:     `Zero Subtotal Checkout`,
 					SortOrder: 30,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: payment/free/active

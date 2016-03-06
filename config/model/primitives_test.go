@@ -43,7 +43,7 @@ var configStructure = element.MustNewConfiguration(
 				ID:        path.NewRoute("cors"),
 				Label:     text.Chars(`CORS Cross Origin Resource Sharing`),
 				SortOrder: 150,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.NewFieldSlice(
 					&element.Field{
 						// Path: `web/cors/exposed_headers`,
@@ -121,7 +121,7 @@ var configStructure = element.MustNewConfiguration(
 				Label:     text.Chars(`Base URLs`),
 				Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
 				SortOrder: 10,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.NewFieldSlice(
 					&element.Field{
 						// Path: `web/unsecure/base_url`,

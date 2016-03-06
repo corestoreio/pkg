@@ -31,14 +31,14 @@ func init() {
 			ID:        path.NewRoute("catalog"),
 			Label:     text.Chars(`Catalog`),
 			SortOrder: 40,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Catalog::config_catalog
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("fields_masks"),
 					Label:     text.Chars(`Product Fields Auto-Generation`),
 					SortOrder: 90,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/fields_masks/sku
@@ -94,7 +94,7 @@ func init() {
 					ID:        path.NewRoute("frontend"),
 					Label:     text.Chars(`Storefront`),
 					SortOrder: 100,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/frontend/list_mode
@@ -224,7 +224,7 @@ func init() {
 					ID:        path.NewRoute("placeholder"),
 					Label:     text.Chars(`Product Image Placeholders`),
 					SortOrder: 300,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/placeholder/placeholder
@@ -242,7 +242,7 @@ func init() {
 					ID:        path.NewRoute("seo"),
 					Label:     text.Chars(`Search Engine Optimization`),
 					SortOrder: 500,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/seo/title_separator
@@ -285,7 +285,7 @@ func init() {
 					ID:        path.NewRoute("price"),
 					Label:     text.Chars(`Price`),
 					SortOrder: 400,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/price/scope
@@ -306,7 +306,7 @@ func init() {
 					ID:        path.NewRoute("navigation"),
 					Label:     text.Chars(`Category Top Navigation`),
 					SortOrder: 500,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/navigation/max_depth
@@ -324,7 +324,7 @@ func init() {
 					ID:        path.NewRoute("custom_options"),
 					Label:     text.Chars(`Date & Time Custom Options`),
 					SortOrder: 700,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/custom_options/use_calendar
@@ -381,7 +381,7 @@ func init() {
 					ID:        path.NewRoute("watermark"),
 					Label:     text.Chars(`Product Image Watermarks`),
 					SortOrder: 400,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/watermark/size
@@ -458,7 +458,7 @@ func init() {
 					ID:        path.NewRoute("catalog"),
 					Label:     text.Chars(`Catalog`),
 					SortOrder: 3,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: rss/catalog/new

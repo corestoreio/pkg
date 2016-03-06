@@ -31,14 +31,14 @@ func init() {
 			ID:        path.NewRoute("currency"),
 			Label:     text.Chars(`Currency Setup`),
 			SortOrder: 60,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::currency
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("options"),
 					Label:     text.Chars(`Currency Options`),
 					SortOrder: 30,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: currency/options/base
@@ -87,7 +87,7 @@ func init() {
 					ID:        path.NewRoute("webservicex"),
 					Label:     text.Chars(`Webservicex`),
 					SortOrder: 40,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: currency/webservicex/timeout
@@ -105,7 +105,7 @@ func init() {
 					ID:        path.NewRoute("import"),
 					Label:     text.Chars(`Scheduled Import Settings`),
 					SortOrder: 50,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: currency/import/enabled
@@ -197,7 +197,7 @@ func init() {
 					ID:        path.NewRoute("currency"),
 					Label:     text.Chars(`Currency`),
 					SortOrder: 50,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: system/currency/installed
@@ -223,7 +223,7 @@ func init() {
 					ID:        path.NewRoute("country"),
 					Label:     text.Chars(`Country Options`),
 					SortOrder: 1,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/country/allow
@@ -290,7 +290,7 @@ func init() {
 					ID:        path.NewRoute("locale"),
 					Label:     text.Chars(`Locale Options`),
 					SortOrder: 8,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/locale/timezone
@@ -356,7 +356,7 @@ func init() {
 					ID:        path.NewRoute("region"),
 					Label:     text.Chars(`State Options`),
 					SortOrder: 4,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/region/state_required

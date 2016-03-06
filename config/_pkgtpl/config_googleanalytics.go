@@ -17,14 +17,14 @@ func init() {
 			ID:        "google",
 			Label:     `Google API`,
 			SortOrder: 340,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_GoogleAnalytics::google
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "analytics",
 					Label:     `Google Analytics`,
 					SortOrder: 10,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: google/analytics/active

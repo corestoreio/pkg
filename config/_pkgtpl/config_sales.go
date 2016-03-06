@@ -17,14 +17,14 @@ func init() {
 			ID:        "sales",
 			Label:     `Sales`,
 			SortOrder: 300,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Sales::config_sales
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "general",
 					Label:     `General`,
 					SortOrder: 5,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales/general/hide_customer_ip
@@ -43,7 +43,7 @@ func init() {
 					ID:        "totals_sort",
 					Label:     `Checkout Totals Sort Order`,
 					SortOrder: 10,
-					Scope:     scope.PermWebsite,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales/totals_sort/discount
@@ -106,7 +106,7 @@ func init() {
 					ID:        "reorder",
 					Label:     `Reorder`,
 					SortOrder: 20,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales/reorder/allow
@@ -126,7 +126,7 @@ func init() {
 					ID:        "identity",
 					Label:     `Invoice and Packing Slip Design`,
 					SortOrder: 40,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales/identity/logo
@@ -168,7 +168,7 @@ func init() {
 					ID:        "minimum_order",
 					Label:     `Minimum Order Amount`,
 					SortOrder: 50,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales/minimum_order/active
@@ -264,7 +264,7 @@ func init() {
 					ID:        "dashboard",
 					Label:     `Dashboard`,
 					SortOrder: 60,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales/dashboard/use_aggregated_data
@@ -284,7 +284,7 @@ func init() {
 					ID:        "orders",
 					Label:     `Orders Cron Settings`,
 					SortOrder: 70,
-					Scope:     scope.PermWebsite,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales/orders/delete_pending_after
@@ -304,13 +304,13 @@ func init() {
 			ID:        "sales_email",
 			Label:     `Sales Emails`,
 			SortOrder: 301,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Sales::sales_email
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:    "general",
-					Label: `General Settings`,
-					Scope: scope.PermDefault,
+					ID:     "general",
+					Label:  `General Settings`,
+					Scopes: scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/general/async_sending
@@ -331,7 +331,7 @@ func init() {
 					ID:        "order",
 					Label:     `Order`,
 					SortOrder: 1,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/order/enabled
@@ -411,7 +411,7 @@ func init() {
 					ID:        "order_comment",
 					Label:     `Order Comments`,
 					SortOrder: 2,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/order_comment/enabled
@@ -491,7 +491,7 @@ func init() {
 					ID:        "invoice",
 					Label:     `Invoice`,
 					SortOrder: 3,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/invoice/enabled
@@ -571,7 +571,7 @@ func init() {
 					ID:        "invoice_comment",
 					Label:     `Invoice Comments`,
 					SortOrder: 4,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/invoice_comment/enabled
@@ -651,7 +651,7 @@ func init() {
 					ID:        "shipment",
 					Label:     `Shipment`,
 					SortOrder: 5,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/shipment/enabled
@@ -731,7 +731,7 @@ func init() {
 					ID:        "shipment_comment",
 					Label:     `Shipment Comments`,
 					SortOrder: 6,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/shipment_comment/enabled
@@ -811,7 +811,7 @@ func init() {
 					ID:        "creditmemo",
 					Label:     `Credit Memo`,
 					SortOrder: 7,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/creditmemo/enabled
@@ -891,7 +891,7 @@ func init() {
 					ID:        "creditmemo_comment",
 					Label:     `Credit Memo Comments`,
 					SortOrder: 8,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_email/creditmemo_comment/enabled
@@ -972,14 +972,14 @@ func init() {
 			ID:        "sales_pdf",
 			Label:     `PDF Print-outs`,
 			SortOrder: 302,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Sales::sales_pdf
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "invoice",
 					Label:     `Invoice`,
 					SortOrder: 10,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_pdf/invoice/put_order_id
@@ -999,7 +999,7 @@ func init() {
 					ID:        "shipment",
 					Label:     `Shipment`,
 					SortOrder: 20,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_pdf/shipment/put_order_id
@@ -1019,7 +1019,7 @@ func init() {
 					ID:        "creditmemo",
 					Label:     `Credit Memo`,
 					SortOrder: 30,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales_pdf/creditmemo/put_order_id
@@ -1043,7 +1043,7 @@ func init() {
 					ID:        "order",
 					Label:     `Order`,
 					SortOrder: 4,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: rss/order/status
@@ -1066,7 +1066,7 @@ func init() {
 					ID:        "grid",
 					Label:     `Grid Settings`,
 					SortOrder: 131,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/grid/async_indexing

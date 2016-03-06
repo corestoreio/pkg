@@ -33,14 +33,14 @@ func init() {
 			ID:        path.NewRoute("advanced"),
 			Label:     text.Chars(`Advanced`),
 			SortOrder: 910,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::advanced
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("modules_disable_output"),
 					Label:     text.Chars(`Disable Modules Output`),
 					SortOrder: 2,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields:    element.NewFieldSlice(),
 				},
 			),
@@ -49,14 +49,14 @@ func init() {
 			ID:        path.NewRoute("trans_email"),
 			Label:     text.Chars(`Store Email Addresses`),
 			SortOrder: 90,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::trans_email
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("ident_custom1"),
 					Label:     text.Chars(`Custom Email 1`),
 					SortOrder: 4,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: trans_email/ident_custom1/email
@@ -86,7 +86,7 @@ func init() {
 					ID:        path.NewRoute("ident_custom2"),
 					Label:     text.Chars(`Custom Email 2`),
 					SortOrder: 5,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: trans_email/ident_custom2/email
@@ -116,7 +116,7 @@ func init() {
 					ID:        path.NewRoute("ident_general"),
 					Label:     text.Chars(`General Contact`),
 					SortOrder: 1,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: trans_email/ident_general/email
@@ -146,7 +146,7 @@ func init() {
 					ID:        path.NewRoute("ident_sales"),
 					Label:     text.Chars(`Sales Representative`),
 					SortOrder: 2,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: trans_email/ident_sales/email
@@ -176,7 +176,7 @@ func init() {
 					ID:        path.NewRoute("ident_support"),
 					Label:     text.Chars(`Customer Support`),
 					SortOrder: 3,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: trans_email/ident_support/email
@@ -207,14 +207,14 @@ func init() {
 			ID:        path.NewRoute("design"),
 			Label:     text.Chars(`Design`),
 			SortOrder: 30,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Config::config_design
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("theme"),
 					Label:     text.Chars(`Design Theme`),
 					SortOrder: 1,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/theme/theme_id
@@ -248,7 +248,7 @@ func init() {
 					ID:        path.NewRoute("pagination"),
 					Label:     text.Chars(`Pagination`),
 					SortOrder: 500,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/pagination/pagination_frame
@@ -301,14 +301,14 @@ func init() {
 			ID:        path.NewRoute("dev"),
 			Label:     text.Chars(`Developer`),
 			SortOrder: 920,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::dev
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("debug"),
 					Label:     text.Chars(`Debug`),
 					SortOrder: 20,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/debug/template_hints_storefront
@@ -349,7 +349,7 @@ func init() {
 					ID:        path.NewRoute("template"),
 					Label:     text.Chars(`Template Settings`),
 					SortOrder: 25,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/template/allow_symlink
@@ -381,7 +381,7 @@ func init() {
 					ID:        path.NewRoute("translate_inline"),
 					Label:     text.Chars(`Translate Inline`),
 					SortOrder: 30,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/translate_inline/active
@@ -414,7 +414,7 @@ func init() {
 					ID:        path.NewRoute("js"),
 					Label:     text.Chars(`JavaScript Settings`),
 					SortOrder: 100,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/js/merge_files
@@ -455,7 +455,7 @@ func init() {
 					ID:        path.NewRoute("css"),
 					Label:     text.Chars(`CSS Settings`),
 					SortOrder: 110,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/css/merge_css_files
@@ -485,7 +485,7 @@ func init() {
 					ID:        path.NewRoute("image"),
 					Label:     text.Chars(`Image Processing Settings`),
 					SortOrder: 120,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/image/default_adapter
@@ -506,7 +506,7 @@ func init() {
 					ID:        path.NewRoute("static"),
 					Label:     text.Chars(`Static Files Settings`),
 					SortOrder: 130,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: dev/static/sign
@@ -526,14 +526,14 @@ func init() {
 			ID:        path.NewRoute("general"),
 			Label:     text.Chars(`General`),
 			SortOrder: 10,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Config::config_general
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("store_information"),
 					Label:     text.Chars(`Store Information`),
 					SortOrder: 100,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/store_information/name
@@ -644,7 +644,7 @@ func init() {
 					ID:        path.NewRoute("single_store_mode"),
 					Label:     text.Chars(`Single-Store Mode`),
 					SortOrder: 150,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/single_store_mode/enabled
@@ -665,14 +665,14 @@ func init() {
 			ID:        path.NewRoute("system"),
 			Label:     text.Chars(`System`),
 			SortOrder: 900,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Config::config_system
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("smtp"),
 					Label:     text.Chars(`Mail Sending Settings`),
 					SortOrder: 20,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: system/smtp/disable
@@ -736,14 +736,14 @@ func init() {
 			ID:        path.NewRoute("admin"),
 			Label:     text.Chars(`Admin`),
 			SortOrder: 20,
-			Scope:     scope.PermDefault,
+			Scopes:    scope.PermDefault,
 			Resource:  0, // Magento_Config::config_admin
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("emails"),
 					Label:     text.Chars(`Admin User Emails`),
 					SortOrder: 10,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: admin/emails/forgot_email_template
@@ -786,7 +786,7 @@ func init() {
 					ID:        path.NewRoute("startup"),
 					Label:     text.Chars(`Startup Page`),
 					SortOrder: 20,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: admin/startup/menu_item_id
@@ -805,7 +805,7 @@ func init() {
 					ID:        path.NewRoute("url"),
 					Label:     text.Chars(`Admin Base URL`),
 					SortOrder: 30,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: admin/url/use_custom
@@ -861,7 +861,7 @@ func init() {
 					ID:        path.NewRoute("security"),
 					Label:     text.Chars(`Security`),
 					SortOrder: 35,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: admin/security/use_form_key
@@ -903,7 +903,7 @@ func init() {
 					ID:        path.NewRoute("dashboard"),
 					Label:     text.Chars(`Dashboard`),
 					SortOrder: 40,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: admin/dashboard/enable_charts
@@ -923,14 +923,14 @@ func init() {
 			ID:        path.NewRoute("web"),
 			Label:     text.Chars(`Web`),
 			SortOrder: 20,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::web
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        path.NewRoute("url"),
 					Label:     text.Chars(`Url Options`),
 					SortOrder: 3,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/url/use_store
@@ -965,7 +965,7 @@ func init() {
 					ID:        path.NewRoute("seo"),
 					Label:     text.Chars(`Search Engine Optimization`),
 					SortOrder: 5,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/seo/use_rewrites
@@ -986,7 +986,7 @@ func init() {
 					Label:     text.Chars(`Base URLs`),
 					Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
 					SortOrder: 10,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/unsecure/base_url
@@ -1043,7 +1043,7 @@ func init() {
 					Label:     text.Chars(`Base URLs (Secure)`),
 					Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`),
 					SortOrder: 20,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/secure/base_url
@@ -1161,7 +1161,7 @@ func init() {
 					ID:        path.NewRoute("default"),
 					Label:     text.Chars(`Default Pages`),
 					SortOrder: 30,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/default/front
@@ -1189,7 +1189,7 @@ func init() {
 					ID:        path.NewRoute("session"),
 					Label:     text.Chars(`Session Validation Settings`),
 					SortOrder: 60,
-					Scope:     scope.PermWebsite,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/session/use_remote_addr

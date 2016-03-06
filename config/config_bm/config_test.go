@@ -33,7 +33,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("adminnotification"),
 				Label:     text.Chars(`Notifications`),
 				SortOrder: 250,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `system/adminnotification/use_https`,
@@ -113,13 +113,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("advanced"),
 		Label:     text.Chars("Advanced"),
 		SortOrder: 910,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("modules_disable_output"),
 				Label:     text.Chars(`Disable Modules Output`),
 				SortOrder: 2,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields:    element.FieldSlice{},
 			},
 		},
@@ -128,13 +128,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("trans_email"),
 		Label:     text.Chars("Store Email Addresses"),
 		SortOrder: 90,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("ident_custom1"),
 				Label:     text.Chars(`Custom Email 1`),
 				SortOrder: 4,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `trans_email/ident_custom1/email`,
@@ -164,7 +164,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("ident_custom2"),
 				Label:     text.Chars(`Custom Email 2`),
 				SortOrder: 5,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `trans_email/ident_custom2/email`,
@@ -194,7 +194,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("ident_general"),
 				Label:     text.Chars(`General Contact`),
 				SortOrder: 1,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `trans_email/ident_general/email`,
@@ -224,7 +224,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("ident_sales"),
 				Label:     text.Chars(`Sales Representative`),
 				SortOrder: 2,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `trans_email/ident_sales/email`,
@@ -254,7 +254,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("ident_support"),
 				Label:     text.Chars(`Customer Support`),
 				SortOrder: 3,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `trans_email/ident_support/email`,
@@ -285,13 +285,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("design"),
 		Label:     text.Chars("Design"),
 		SortOrder: 30,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("theme"),
 				Label:     text.Chars(`Design Theme`),
 				SortOrder: 1,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `design/theme/theme_id`,
@@ -323,7 +323,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("pagination"),
 				Label:     text.Chars(`Pagination`),
 				SortOrder: 500,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `design/pagination/pagination_frame`,
@@ -379,7 +379,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("email"),
 				Label:     text.Chars(`Transactional Emails`),
 				SortOrder: 510,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `design/email/logo`,
@@ -411,13 +411,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("dev"),
 		Label:     text.Chars("Developer"),
 		SortOrder: 920,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("debug"),
 				Label:     text.Chars(`Debug`),
 				SortOrder: 20,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/debug/template_hints`,
@@ -447,7 +447,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("template"),
 				Label:     text.Chars(`Template Settings`),
 				SortOrder: 25,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/template/allow_symlink`,
@@ -478,7 +478,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("translate_inline"),
 				Label:     text.Chars(`Translate Inline`),
 				SortOrder: 30,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/translate_inline/active`,
@@ -509,7 +509,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("js"),
 				Label:     text.Chars(`JavaScript Settings`),
 				SortOrder: 100,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/js/merge_files`,
@@ -550,7 +550,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("css"),
 				Label:     text.Chars(`CSS Settings`),
 				SortOrder: 110,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/css/merge_css_files`,
@@ -580,7 +580,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("image"),
 				Label:     text.Chars(`Image Processing Settings`),
 				SortOrder: 120,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/image/default_adapter`,
@@ -600,7 +600,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("static"),
 				Label:     text.Chars(`Static Files Settings`),
 				SortOrder: 130,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/static/sign`,
@@ -620,13 +620,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("general"),
 		Label:     text.Chars("General"),
 		SortOrder: 10,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("country"),
 				Label:     text.Chars(`Country Options`),
 				SortOrder: 1,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `general/country/allow`,
@@ -667,7 +667,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("locale"),
 				Label:     text.Chars(`Locale Options`),
 				SortOrder: 8,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `general/locale/timezone`,
@@ -719,7 +719,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("store_information"),
 				Label:     text.Chars(`Store Information`),
 				SortOrder: 100,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `general/store_information/name`,
@@ -826,7 +826,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("single_store_mode"),
 				Label:     text.Chars(`Single-Store Mode`),
 				SortOrder: 150,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `general/single_store_mode/enabled`,
@@ -847,13 +847,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("system"),
 		Label:     text.Chars("System"),
 		SortOrder: 900,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("smtp"),
 				Label:     text.Chars(`Mail Sending Settings`),
 				SortOrder: 20,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `system/smtp/disable`,
@@ -919,13 +919,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("admin"),
 		Label:     text.Chars("Admin"),
 		SortOrder: 20,
-		Scope:     scope.PermDefault,
+		Scopes:    scope.PermDefault,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("emails"),
 				Label:     text.Chars(`Admin User Emails`),
 				SortOrder: 10,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `admin/emails/forgot_email_template`,
@@ -967,7 +967,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("startup"),
 				Label:     text.Chars(`Startup Page`),
 				SortOrder: 20,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `admin/startup/menu_item_id`,
@@ -986,7 +986,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("url"),
 				Label:     text.Chars(`Admin Base URL`),
 				SortOrder: 30,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `admin/url/use_custom`,
@@ -1040,7 +1040,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("security"),
 				Label:     text.Chars(`Security`),
 				SortOrder: 35,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `admin/security/use_form_key`,
@@ -1082,7 +1082,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("dashboard"),
 				Label:     text.Chars(`Dashboard`),
 				SortOrder: 40,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `admin/dashboard/enable_charts`,
@@ -1102,13 +1102,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("web"),
 		Label:     text.Chars("Web"),
 		SortOrder: 20,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("url"),
 				Label:     text.Chars(`Url Options`),
 				SortOrder: 3,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/url/use_store`,
@@ -1140,7 +1140,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("seo"),
 				Label:     text.Chars(`Search Engine Optimization`),
 				SortOrder: 5,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/seo/use_rewrites`,
@@ -1160,7 +1160,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				Label:     text.Chars(`Base URLs`),
 				Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
 				SortOrder: 10,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/unsecure/base_url`,
@@ -1217,7 +1217,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				Label:     text.Chars(`Base URLs (Secure)`),
 				Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`),
 				SortOrder: 20,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/secure/base_url`,
@@ -1308,7 +1308,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("default"),
 				Label:     text.Chars(`Default Pages`),
 				SortOrder: 30,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/default/front`,
@@ -1338,7 +1338,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("session"),
 				Label:     text.Chars(`Session Validation Settings`),
 				SortOrder: 60,
-				Scope:     scope.PermWebsite,
+				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/session/use_remote_addr`,
@@ -1478,13 +1478,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("system"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("backup"),
 				Label:     text.Chars(`Scheduled Backup Settings`),
 				SortOrder: 500,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `system/backup/enabled`,
@@ -1549,13 +1549,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("admin"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("captcha"),
 				Label:     text.Chars(`CAPTCHA`),
 				SortOrder: 50,
-				Scope:     scope.PermWebsite,
+				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `admin/captcha/enable`,
@@ -1666,13 +1666,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("customer"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("captcha"),
 				Label:     text.Chars(`CAPTCHA`),
 				SortOrder: 110,
-				Scope:     scope.PermWebsite,
+				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `customer/captcha/enable`,
@@ -1945,13 +1945,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("catalog"),
 		Label:     text.Chars("Catalog"),
 		SortOrder: 40,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("fields_masks"),
 				Label:     text.Chars(`Product Fields Auto-Generation`),
 				SortOrder: 90,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/fields_masks/sku`,
@@ -2007,7 +2007,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("frontend"),
 				Label:     text.Chars(`Frontend`),
 				SortOrder: 100,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/frontend/list_mode`,
@@ -2131,7 +2131,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("placeholder"),
 				Label:     text.Chars(`Product Image Placeholders`),
 				SortOrder: 300,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/placeholder/placeholder`,
@@ -2150,7 +2150,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("seo"),
 				Label:     text.Chars(`Search Engine Optimization`),
 				SortOrder: 500,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/seo/title_separator`,
@@ -2191,7 +2191,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("price"),
 				Label:     text.Chars(`Price`),
 				SortOrder: 400,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/price/scope`,
@@ -2211,7 +2211,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("navigation"),
 				Label:     text.Chars(`Category Top Navigation`),
 				SortOrder: 500,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/navigation/max_depth`,
@@ -2230,7 +2230,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("custom_options"),
 				Label:     text.Chars(`Date & Time Custom Options`),
 				SortOrder: 700,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/custom_options/use_calendar`,
@@ -2284,13 +2284,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("design"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("watermark"),
 				Label:     text.Chars(`Product Image Watermarks`),
 				SortOrder: 400,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `design/watermark/size`,
@@ -2345,13 +2345,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("cms"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("wysiwyg"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `cms/wysiwyg/use_static_urls_in_catalog`,
@@ -2372,13 +2372,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("rss"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("catalog"),
 				Label:     text.Chars(`Catalog`),
 				SortOrder: 3,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `rss/catalog/new`,
@@ -2523,13 +2523,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("cataloginventory"),
 		Label:     text.Chars("Inventory"),
 		SortOrder: 50,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("options"),
 				Label:     text.Chars(`Stock Options`),
 				SortOrder: 1,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `cataloginventory/options/can_subtract`,
@@ -2594,7 +2594,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				Label:     text.Chars(`Product Stock Options`),
 				Comment:   text.Chars(`Please note that these settings apply to individual items in the cart, not to the entire cart.`),
 				SortOrder: 10,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `cataloginventory/item_options/manage_stock`,
@@ -2705,13 +2705,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("seo"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/seo/search_terms`,
@@ -2730,7 +2730,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("search"),
 				Label:     text.Chars(`Catalog Search`),
 				SortOrder: 500,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/search/engine`,
@@ -2785,13 +2785,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("seo"),
 				Label:     text.Chars(`Search Engine Optimization`),
 				SortOrder: 0,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/seo/category_url_suffix`,
@@ -2847,13 +2847,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("payment_services"),
 		Label:     text.Chars("Payment Services"),
 		SortOrder: 450,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("centinel"),
 				Label:     text.Chars(`3D Secure Credit Card Validation`),
 				SortOrder: 1,
-				Scope:     scope.PermWebsite,
+				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `payment_services/centinel/processor_id`,
@@ -2919,13 +2919,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("checkout"),
 		Label:     text.Chars("Checkout"),
 		SortOrder: 305,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("options"),
 				Label:     text.Chars(`Checkout Options`),
 				SortOrder: 1,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `checkout/options/onepage_checkout_enabled`,
@@ -2966,7 +2966,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("cart"),
 				Label:     text.Chars(`Shopping Cart`),
 				SortOrder: 2,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `checkout/cart/delete_quote_after`,
@@ -2996,7 +2996,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("cart_link"),
 				Label:     text.Chars(`My Cart Link`),
 				SortOrder: 3,
-				Scope:     scope.PermWebsite,
+				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `checkout/cart_link/use_qty`,
@@ -3015,7 +3015,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("sidebar"),
 				Label:     text.Chars(`Shopping Cart Sidebar`),
 				SortOrder: 4,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `checkout/sidebar/display`,
@@ -3045,7 +3045,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("payment_failed"),
 				Label:     text.Chars(`Payment Failed Emails`),
 				SortOrder: 100,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `checkout/payment_failed/identity`,
@@ -3111,13 +3111,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("checkout"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("options"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `checkout/options/enable_agreements`,
@@ -3138,13 +3138,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("web"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("default"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/default/cms_home_page`,
@@ -3196,7 +3196,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("browser_capabilities"),
 				Label:     text.Chars(`Browser Capabilities Detection`),
 				SortOrder: 200,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/browser_capabilities/cookies`,
@@ -3238,13 +3238,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("cms"),
 		Label:     text.Chars("Content Management"),
 		SortOrder: 1001,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("wysiwyg"),
 				Label:     text.Chars(`WYSIWYG Options`),
 				SortOrder: 100,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `cms/wysiwyg/enabled`,
@@ -3312,13 +3312,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("checkout"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("cart"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `checkout/cart/configurable_product_image`,
@@ -3339,13 +3339,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("contact"),
 		Label:     text.Chars("Contacts"),
 		SortOrder: 100,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("contact"),
 				Label:     text.Chars(`Contact Us`),
 				SortOrder: 10,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `contact/contact/enabled`,
@@ -3364,7 +3364,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("email"),
 				Label:     text.Chars(`Email Options`),
 				SortOrder: 50,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `contact/email/recipient_email`,
@@ -3407,13 +3407,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("web"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("cookie"),
 				Label:     text.Chars(`Default Cookie Settings`),
 				SortOrder: 50,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `web/cookie/cookie_lifetime`,
@@ -3499,14 +3499,14 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("system"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("cron"),
 				Label:     text.Chars(`Cron (Scheduled Tasks) - all the times are in minutes`),
 				Comment:   text.Chars(`For correct URLs generated during cron runs please make sure that Web > Secure and Unsecure Base URLs are explicitly set.`),
 				SortOrder: 15,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields:    element.FieldSlice{},
 			},
 		},
@@ -3516,13 +3516,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		ID:        path.NewRoute("customer"),
 		Label:     text.Chars("Customer Configuration"),
 		SortOrder: 130,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("account_share"),
 				Label:     text.Chars(`Account Sharing Options`),
 				SortOrder: 10,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `customer/account_share/scope`,
@@ -3541,7 +3541,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("create_account"),
 				Label:     text.Chars(`Create New Account Options`),
 				SortOrder: 20,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `customer/create_account/auto_group_assign`,
@@ -3738,7 +3738,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("password"),
 				Label:     text.Chars(`Password Options`),
 				SortOrder: 30,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `customer/password/forgot_email_template`,
@@ -3802,7 +3802,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("address"),
 				Label:     text.Chars(`Name and Address Options`),
 				SortOrder: 40,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `customer/address/street_lines`,
@@ -3915,7 +3915,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("startup"),
 				Label:     text.Chars(`Login Options`),
 				SortOrder: 90,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `customer/startup/redirect_dashboard`,
@@ -3935,7 +3935,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				ID:        path.NewRoute("address_templates"),
 				Label:     text.Chars(`Address Templates`),
 				SortOrder: 100,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `customer/address_templates/text`,
@@ -4021,13 +4021,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("general"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("store_information"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `general/store_information/validate_vat_number`,
@@ -4136,13 +4136,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("dev"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("front_end_development_workflow"),
 				Label:     text.Chars(`Front-end development workflow`),
 				SortOrder: 8,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/front_end_development_workflow/type`,
@@ -4162,7 +4162,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("restrict"),
 				Label:     text.Chars(`Developer Client Restrictions`),
 				SortOrder: 10,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/restrict/allow_ips`,
@@ -4204,13 +4204,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("carriers"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("dhl"),
 				Label:     text.Chars(`DHL`),
 				SortOrder: 140,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `carriers/dhl/active`,
@@ -4625,13 +4625,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("downloadable"),
 				Label:     text.Chars(`Downloadable Product Options`),
 				SortOrder: 600,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/downloadable/order_item_status`,
@@ -4730,13 +4730,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("carriers"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("fedex"),
 				Label:     text.Chars(`FedEx`),
 				SortOrder: 120,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `carriers/fedex/active`,
@@ -5123,13 +5123,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("sales"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("gift_options"),
 				Label:     text.Chars(`Gift Options`),
 				SortOrder: 100,
-				Scope:     scope.PermWebsite,
+				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/gift_options/allow_order`,
@@ -5190,13 +5190,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("google"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("adwords"),
 				Label:     text.Chars(`Google AdWords`),
 				SortOrder: 15,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `google/adwords/active`,
@@ -5341,13 +5341,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("google"),
 		Label:     text.Chars("Google API"),
 		SortOrder: 340,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("analytics"),
 				Label:     text.Chars(`Google Analytics`),
 				SortOrder: 10,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `google/analytics/active`,
@@ -5379,13 +5379,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("google"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("analytics"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `google/analytics/experiments`,
@@ -5426,13 +5426,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("google"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("googleshopping"),
 				Label:     text.Chars(`Google Shopping`),
 				SortOrder: 20,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `google/googleshopping/account_id`,
@@ -5621,13 +5621,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("checkout"),
 		Label:     nil,
 		SortOrder: 305,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("cart"),
 				Label:     nil,
 				SortOrder: 2,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `checkout/cart/grouped_product_image`,
@@ -5648,13 +5648,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("oauth"),
 		Label:     text.Chars("OAuth"),
 		SortOrder: 300,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("cleanup"),
 				Label:     text.Chars(`Cleanup Settings`),
 				SortOrder: 300,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `oauth/cleanup/cleanup_probability`,
@@ -5686,7 +5686,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("consumer"),
 				Label:     text.Chars(`Consumer Settings`),
 				SortOrder: 400,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `oauth/consumer/expiration_period`,
@@ -5732,13 +5732,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 40,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("layered_navigation"),
 				Label:     text.Chars(`Layered Navigation`),
 				SortOrder: 490,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/layered_navigation/display_product_count`,
@@ -5817,13 +5817,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("customer"),
 		Label:     nil,
 		SortOrder: 130,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("online_customers"),
 				Label:     text.Chars(`Online Customers Options`),
 				SortOrder: 10,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `customer/online_customers/online_minutes_interval`,
@@ -5844,13 +5844,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("system"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("log"),
 				Label:     text.Chars(`Log Cleaning`),
 				SortOrder: 200,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `system/log/clean_after_day`,
@@ -5984,13 +5984,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("system"),
 		Label:     nil,
 		SortOrder: 900,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("media_storage_configuration"),
 				Label:     text.Chars(`Storage Configuration for Media`),
 				SortOrder: 900,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `system/media_storage_configuration/media_storage`,
@@ -6045,13 +6045,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("sales"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("msrp"),
 				Label:     text.Chars(`Minimum Advertised Price`),
 				SortOrder: 110,
-				Scope:     scope.PermWebsite,
+				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/msrp/enabled`,
@@ -6106,13 +6106,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("multishipping"),
 		Label:     text.Chars("Multishipping Settings"),
 		SortOrder: 311,
-		Scope:     scope.PermWebsite,
+		Scopes:    scope.PermWebsite,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("options"),
 				Label:     text.Chars(`Options`),
 				SortOrder: 2,
-				Scope:     scope.PermWebsite,
+				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `multishipping/options/checkout_multiple`,
@@ -6144,13 +6144,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("newsletter"),
 		Label:     text.Chars("Newsletter"),
 		SortOrder: 110,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("subscription"),
 				Label:     text.Chars(`Subscription Options`),
 				SortOrder: 1,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `newsletter/subscription/allow_guest_subscribe`,
@@ -6268,13 +6268,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("payment"),
 		Label:     nil,
 		SortOrder: 400,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("checkmo"),
 				Label:     text.Chars(`Check / Money Order`),
 				SortOrder: 30,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `payment/checkmo/active`,
@@ -6403,7 +6403,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("purchaseorder"),
 				Label:     text.Chars(`Purchase Order`),
 				SortOrder: 32,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `payment/purchaseorder/active`,
@@ -6510,7 +6510,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("banktransfer"),
 				Label:     text.Chars(`Bank Transfer Payment`),
 				SortOrder: 30,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `payment/banktransfer/active`,
@@ -6617,7 +6617,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("cashondelivery"),
 				Label:     text.Chars(`Cash On Delivery Payment`),
 				SortOrder: 30,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `payment/cashondelivery/active`,
@@ -6724,7 +6724,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("free"),
 				Label:     text.Chars(`Zero Subtotal Checkout`),
 				SortOrder: 30,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `payment/free/active`,
@@ -6916,13 +6916,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("carriers"),
 		Label:     nil,
 		SortOrder: 320,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("flatrate"),
 				Label:     text.Chars(`Flat Rate`),
 				SortOrder: 2,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `carriers/flatrate/active`,
@@ -7062,7 +7062,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("tablerate"),
 				Label:     text.Chars(`Table Rates`),
 				SortOrder: 3,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `carriers/tablerate/handling_type`,
@@ -7224,7 +7224,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("freeshipping"),
 				Label:     text.Chars(`Free Shipping`),
 				SortOrder: 2,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `carriers/freeshipping/active`,
@@ -7390,13 +7390,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("system"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("full_page_cache"),
 				Label:     text.Chars(`Full Page Cache`),
 				SortOrder: 600,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `system/full_page_cache/caching_application`,
@@ -7467,7 +7467,7 @@ T: {{var telephone}}
 		ID:        path.NewRoute("payment"),
 		Label:     text.Chars("Payment Methods"),
 		SortOrder: 400,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups:    element.GroupSlice{},
 	},
 
@@ -7572,13 +7572,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("persistent"),
 		Label:     text.Chars("Persistent Shopping Cart"),
 		SortOrder: 500,
-		Scope:     scope.PermWebsite,
+		Scopes:    scope.PermWebsite,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("options"),
 				Label:     text.Chars(`General Options`),
 				SortOrder: 10,
-				Scope:     scope.PermWebsite,
+				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `persistent/options/enabled`,
@@ -7654,13 +7654,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("productalert"),
 				Label:     text.Chars(`Product Alerts`),
 				SortOrder: 250,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/productalert/allow_price`,
@@ -7723,7 +7723,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("productalert_cron"),
 				Label:     text.Chars(`Product Alerts Run Settings`),
 				SortOrder: 260,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/productalert_cron/frequency`,
@@ -7808,13 +7808,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("recently_products"),
 				Label:     text.Chars(`Recently Viewed/Compared Products`),
 				SortOrder: 350,
-				Scope:     scope.PermWebsite,
+				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/recently_products/scope`,
@@ -7856,13 +7856,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("reports"),
 		Label:     text.Chars("Reports"),
 		SortOrder: 1000,
-		Scope:     scope.PermDefault,
+		Scopes:    scope.PermDefault,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("dashboard"),
 				Label:     text.Chars(`Dashboard`),
 				SortOrder: 1,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `reports/dashboard/ytd_start`,
@@ -7895,13 +7895,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("review"),
 				Label:     text.Chars(`Product Reviews`),
 				SortOrder: 100,
-				Scope:     scope.PermWebsite,
+				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/review/allow_guest`,
@@ -7922,13 +7922,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("rss"),
 		Label:     text.Chars("RSS Feeds"),
 		SortOrder: 80,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("config"),
 				Label:     text.Chars(`Rss Config`),
 				SortOrder: 1,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `rss/config/active`,
@@ -7949,13 +7949,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("sales"),
 		Label:     text.Chars("Sales"),
 		SortOrder: 300,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("general"),
 				Label:     text.Chars(`General`),
 				SortOrder: 5,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/general/hide_customer_ip`,
@@ -7975,7 +7975,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("totals_sort"),
 				Label:     text.Chars(`Checkout Totals Sort Order`),
 				SortOrder: 10,
-				Scope:     scope.PermWebsite,
+				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/totals_sort/discount`,
@@ -8038,7 +8038,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("reorder"),
 				Label:     text.Chars(`Reorder`),
 				SortOrder: 20,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/reorder/allow`,
@@ -8057,7 +8057,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("identity"),
 				Label:     text.Chars(`Invoice and Packing Slip Design`),
 				SortOrder: 40,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/identity/logo`,
@@ -8100,7 +8100,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("minimum_order"),
 				Label:     text.Chars(`Minimum Order Amount`),
 				SortOrder: 50,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/minimum_order/active`,
@@ -8200,7 +8200,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("dashboard"),
 				Label:     text.Chars(`Dashboard`),
 				SortOrder: 60,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/dashboard/use_aggregated_data`,
@@ -8221,13 +8221,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("sales_email"),
 		Label:     text.Chars("Sales Emails"),
 		SortOrder: 301,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("general"),
 				Label:     text.Chars(`General Settings`),
 				SortOrder: 0,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/general/async_sending`,
@@ -8246,7 +8246,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("order"),
 				Label:     text.Chars(`Order`),
 				SortOrder: 1,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/order/enabled`,
@@ -8321,7 +8321,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("order_comment"),
 				Label:     text.Chars(`Order Comments`),
 				SortOrder: 2,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/order_comment/enabled`,
@@ -8396,7 +8396,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("invoice"),
 				Label:     text.Chars(`Invoice`),
 				SortOrder: 3,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/invoice/enabled`,
@@ -8471,7 +8471,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("invoice_comment"),
 				Label:     text.Chars(`Invoice Comments`),
 				SortOrder: 4,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/invoice_comment/enabled`,
@@ -8546,7 +8546,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("shipment"),
 				Label:     text.Chars(`Shipment`),
 				SortOrder: 5,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/shipment/enabled`,
@@ -8621,7 +8621,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("shipment_comment"),
 				Label:     text.Chars(`Shipment Comments`),
 				SortOrder: 6,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/shipment_comment/enabled`,
@@ -8696,7 +8696,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("creditmemo"),
 				Label:     text.Chars(`Credit Memo`),
 				SortOrder: 7,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/creditmemo/enabled`,
@@ -8771,7 +8771,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("creditmemo_comment"),
 				Label:     text.Chars(`Credit Memo Comments`),
 				SortOrder: 8,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_email/creditmemo_comment/enabled`,
@@ -8847,13 +8847,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("sales_pdf"),
 		Label:     text.Chars("PDF Print-outs"),
 		SortOrder: 302,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("invoice"),
 				Label:     text.Chars(`Invoice`),
 				SortOrder: 10,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_pdf/invoice/put_order_id`,
@@ -8872,7 +8872,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("shipment"),
 				Label:     text.Chars(`Shipment`),
 				SortOrder: 20,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_pdf/shipment/put_order_id`,
@@ -8891,7 +8891,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("creditmemo"),
 				Label:     text.Chars(`Credit Memo`),
 				SortOrder: 30,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales_pdf/creditmemo/put_order_id`,
@@ -8911,13 +8911,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("rss"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("order"),
 				Label:     text.Chars(`Order`),
 				SortOrder: 4,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `rss/order/status`,
@@ -8937,13 +8937,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("dev"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("grid"),
 				Label:     text.Chars(`Grid Settings`),
 				SortOrder: 131,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/grid/async_indexing`,
@@ -8964,13 +8964,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("promo"),
 		Label:     text.Chars("Promotions"),
 		SortOrder: 400,
-		Scope:     scope.PermDefault,
+		Scopes:    scope.PermDefault,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("auto_generated_coupon_codes"),
 				Label:     text.Chars(`Auto Generated Specific Coupon Codes`),
 				SortOrder: 10,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `promo/auto_generated_coupon_codes/length`,
@@ -9036,13 +9036,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("rss"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("catalog"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `rss/catalog/discounts`,
@@ -9063,13 +9063,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("search"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `catalog/search/engine`,
@@ -9112,13 +9112,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("sendfriend"),
 		Label:     text.Chars("Email to a Friend"),
 		SortOrder: 120,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("email"),
 				Label:     text.Chars(`Email Templates`),
 				SortOrder: 1,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sendfriend/email/enabled`,
@@ -9194,13 +9194,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("shipping"),
 		Label:     text.Chars("Shipping Settings"),
 		SortOrder: 310,
-		Scope:     scope.PermWebsite,
+		Scopes:    scope.PermWebsite,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("origin"),
 				Label:     text.Chars(`Origin`),
 				SortOrder: 1,
-				Scope:     scope.PermWebsite,
+				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `shipping/origin/country_id`,
@@ -9275,7 +9275,7 @@ T: {{var telephone}}
 		ID:        path.NewRoute("carriers"),
 		Label:     text.Chars("Shipping Methods"),
 		SortOrder: 320,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups:    element.GroupSlice{},
 	},
 
@@ -9283,13 +9283,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("sitemap"),
 		Label:     text.Chars("XML Sitemap"),
 		SortOrder: 70,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("category"),
 				Label:     text.Chars(`Categories Options`),
 				SortOrder: 1,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sitemap/category/changefreq`,
@@ -9320,7 +9320,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("product"),
 				Label:     text.Chars(`Products Options`),
 				SortOrder: 2,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sitemap/product/changefreq`,
@@ -9362,7 +9362,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("page"),
 				Label:     text.Chars(`CMS Pages Options`),
 				SortOrder: 3,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sitemap/page/changefreq`,
@@ -9393,7 +9393,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("generate"),
 				Label:     text.Chars(`Generation Settings`),
 				SortOrder: 4,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sitemap/generate/enabled`,
@@ -9467,7 +9467,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("limit"),
 				Label:     text.Chars(`Sitemap File Limits`),
 				SortOrder: 5,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sitemap/limit/max_lines`,
@@ -9498,7 +9498,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("search_engines"),
 				Label:     text.Chars(`Search Engine Submission Settings`),
 				SortOrder: 6,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sitemap/search_engines/submission_robots`,
@@ -9553,13 +9553,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("tax"),
 		Label:     text.Chars("Tax"),
 		SortOrder: 303,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("classes"),
 				Label:     text.Chars(`Tax Classes`),
 				SortOrder: 10,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `tax/classes/shipping_tax_class`,
@@ -9600,7 +9600,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("calculation"),
 				Label:     text.Chars(`Calculation Settings`),
 				SortOrder: 20,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `tax/calculation/algorithm`,
@@ -9700,7 +9700,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("defaults"),
 				Label:     text.Chars(`Default Tax Destination Calculation`),
 				SortOrder: 30,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `tax/defaults/country`,
@@ -9741,7 +9741,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("display"),
 				Label:     text.Chars(`Price Display Settings`),
 				SortOrder: 40,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `tax/display/type`,
@@ -9771,7 +9771,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("cart_display"),
 				Label:     text.Chars(`Shopping Cart Display Settings`),
 				SortOrder: 50,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `tax/cart_display/price`,
@@ -9845,7 +9845,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("sales_display"),
 				Label:     text.Chars(`Orders, Invoices, Credit Memos Display Settings`),
 				SortOrder: 60,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `tax/sales_display/price`,
@@ -9969,13 +9969,13 @@ T: {{var telephone}}
 		ID:        path.NewRoute("design"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("head"),
 				Label:     text.Chars(`HTML Head`),
 				SortOrder: 20,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `design/head/shortcut_icon`,
@@ -10073,7 +10073,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("search_engine_robots"),
 				Label:     text.Chars(`Search Engine Robots`),
 				SortOrder: 25,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `design/search_engine_robots/default_robots`,
@@ -10116,7 +10116,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("header"),
 				Label:     text.Chars(`Header`),
 				SortOrder: 30,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `design/header/logo_src`,
@@ -10158,7 +10158,7 @@ T: {{var telephone}}
 				ID:        path.NewRoute("footer"),
 				Label:     text.Chars(`Footer`),
 				SortOrder: 40,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `design/footer/copyright`,
@@ -10335,13 +10335,13 @@ Disallow: /*SID=
 		ID:        path.NewRoute("dev"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("js"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `dev/js/translate_strategy`,
@@ -10401,13 +10401,13 @@ Disallow: /*SID=
 		ID:        path.NewRoute("carriers"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("ups"),
 				Label:     text.Chars(`UPS`),
 				SortOrder: 100,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `carriers/ups/access_license_number`,
@@ -10849,13 +10849,13 @@ Disallow: /*SID=
 		ID:        path.NewRoute("admin"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("emails"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `admin/emails/reset_password_template`,
@@ -10914,13 +10914,13 @@ Disallow: /*SID=
 		ID:        path.NewRoute("carriers"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("usps"),
 				Label:     text.Chars(`USPS`),
 				SortOrder: 110,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `carriers/usps/active`,
@@ -11332,13 +11332,13 @@ Disallow: /*SID=
 		ID:        path.NewRoute("webapi"),
 		Label:     text.Chars("Magento Web API"),
 		SortOrder: 102,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("soap"),
 				Label:     text.Chars(`SOAP Settings`),
 				SortOrder: 1,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `webapi/soap/charset`,
@@ -11360,13 +11360,13 @@ Disallow: /*SID=
 		ID:        path.NewRoute("tax"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("weee"),
 				Label:     text.Chars(`Fixed Product Taxes`),
 				SortOrder: 100,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `tax/weee/enable`,
@@ -11452,13 +11452,13 @@ Disallow: /*SID=
 		ID:        path.NewRoute("sales"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("totals_sort"),
 				Label:     nil,
 				SortOrder: 0,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `sales/totals_sort/weee`,
@@ -11517,13 +11517,13 @@ Disallow: /*SID=
 		ID:        path.NewRoute("wishlist"),
 		Label:     text.Chars("Wishlist"),
 		SortOrder: 140,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("email"),
 				Label:     text.Chars(`Share Options`),
 				SortOrder: 2,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `wishlist/email/email_identity`,
@@ -11577,7 +11577,7 @@ Disallow: /*SID=
 				ID:        path.NewRoute("general"),
 				Label:     text.Chars(`General Options`),
 				SortOrder: 1,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `wishlist/general/active`,
@@ -11596,7 +11596,7 @@ Disallow: /*SID=
 				ID:        path.NewRoute("wishlist_link"),
 				Label:     text.Chars(`My Wish List Link`),
 				SortOrder: 3,
-				Scope:     scope.PermWebsite,
+				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `wishlist/wishlist_link/use_qty`,
@@ -11616,13 +11616,13 @@ Disallow: /*SID=
 		ID:        path.NewRoute("rss"),
 		Label:     nil,
 		SortOrder: 0,
-		Scope:     scope.PermStore,
+		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
 			&element.Group{
 				ID:        path.NewRoute("wishlist"),
 				Label:     text.Chars(`Wishlist`),
 				SortOrder: 2,
-				Scope:     scope.PermStore,
+				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
 					&element.Field{
 						// Path: `rss/wishlist/active`,

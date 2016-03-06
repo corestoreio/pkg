@@ -17,14 +17,14 @@ func init() {
 			ID:        "checkout",
 			Label:     `Checkout`,
 			SortOrder: 305,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Checkout::checkout
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "options",
 					Label:     `Checkout Options`,
 					SortOrder: 1,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: checkout/options/onepage_checkout_enabled
@@ -56,7 +56,7 @@ func init() {
 					ID:        "cart",
 					Label:     `Shopping Cart`,
 					SortOrder: 2,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: checkout/cart/delete_quote_after
@@ -87,7 +87,7 @@ func init() {
 					ID:        "cart_link",
 					Label:     `My Cart Link`,
 					SortOrder: 3,
-					Scope:     scope.PermWebsite,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: checkout/cart_link/use_qty
@@ -107,7 +107,7 @@ func init() {
 					ID:        "sidebar",
 					Label:     `Shopping Cart Sidebar`,
 					SortOrder: 4,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: checkout/sidebar/display
@@ -138,7 +138,7 @@ func init() {
 					ID:        "payment_failed",
 					Label:     `Payment Failed Emails`,
 					SortOrder: 100,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: checkout/payment_failed/identity

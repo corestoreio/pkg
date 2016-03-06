@@ -37,7 +37,7 @@ func init() {
 					ID:        "search",
 					Label:     `Catalog Search`,
 					SortOrder: 500,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/search/engine

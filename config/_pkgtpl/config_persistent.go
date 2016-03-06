@@ -17,14 +17,14 @@ func init() {
 			ID:        "persistent",
 			Label:     `Persistent Shopping Cart`,
 			SortOrder: 500,
-			Scope:     scope.PermWebsite,
+			Scopes:    scope.PermWebsite,
 			Resource:  0, // Magento_Persistent::persistent
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "options",
 					Label:     `General Options`,
 					SortOrder: 10,
-					Scope:     scope.PermWebsite,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: persistent/options/enabled

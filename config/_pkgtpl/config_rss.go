@@ -17,14 +17,14 @@ func init() {
 			ID:        "rss",
 			Label:     `RSS Feeds`,
 			SortOrder: 80,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Rss::rss
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "config",
 					Label:     `Rss Config`,
 					SortOrder: 1,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: rss/config/active

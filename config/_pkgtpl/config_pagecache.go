@@ -20,7 +20,7 @@ func init() {
 					ID:        "full_page_cache",
 					Label:     `Full Page Cache`,
 					SortOrder: 600,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: system/full_page_cache/caching_application

@@ -20,7 +20,7 @@ func init() {
 					ID:        "product_video",
 					Label:     `Product Video`,
 					SortOrder: 350,
-					Scope:     scope.PermWebsite,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/product_video/youtube_api_key

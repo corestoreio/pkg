@@ -39,8 +39,8 @@ type Group struct {
 	ID      path.Route
 	Label   text.Chars `json:",omitempty"`
 	Comment text.Chars `json:",omitempty"`
-	// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
-	Scope     scope.Perm `json:",omitempty"`
+	// Scopes: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
+	Scopes    scope.Perm `json:",omitempty"`
 	SortOrder int        `json:",omitempty"`
 
 	HelpURL               text.Chars `json:",omitempty"`
@@ -102,8 +102,8 @@ func (gs *GroupSlice) merge(g *Group) error {
 	if !g.Comment.IsEmpty() {
 		cg.Comment = g.Comment.Clone()
 	}
-	if g.Scope > 0 {
-		cg.Scope = g.Scope
+	if g.Scopes > 0 {
+		cg.Scopes = g.Scopes
 	}
 	if g.SortOrder != 0 {
 		cg.SortOrder = g.SortOrder

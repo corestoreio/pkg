@@ -17,14 +17,14 @@ func init() {
 			ID:        "wishlist",
 			Label:     `Wish List`,
 			SortOrder: 140,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Wishlist::config_wishlist
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "email",
 					Label:     `Share Options`,
 					SortOrder: 2,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: wishlist/email/email_identity
@@ -81,7 +81,7 @@ func init() {
 					ID:        "general",
 					Label:     `General Options`,
 					SortOrder: 1,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: wishlist/general/active
@@ -101,7 +101,7 @@ func init() {
 					ID:        "wishlist_link",
 					Label:     `My Wish List Link`,
 					SortOrder: 3,
-					Scope:     scope.PermWebsite,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: wishlist/wishlist_link/use_qty
@@ -124,7 +124,7 @@ func init() {
 					ID:        "wishlist",
 					Label:     `Wish List`,
 					SortOrder: 2,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: rss/wishlist/active

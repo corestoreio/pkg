@@ -20,7 +20,7 @@ func init() {
 					ID:        "head",
 					Label:     `HTML Head`,
 					SortOrder: 20,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/head/shortcut_icon
@@ -112,7 +112,7 @@ func init() {
 					ID:        "search_engine_robots",
 					Label:     `Search Engine Robots`,
 					SortOrder: 25,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/search_engine_robots/default_robots
@@ -155,7 +155,7 @@ func init() {
 					ID:        "header",
 					Label:     `Header`,
 					SortOrder: 30,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/header/logo_src
@@ -215,7 +215,7 @@ func init() {
 					ID:        "footer",
 					Label:     `Footer`,
 					SortOrder: 40,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/footer/copyright

@@ -20,7 +20,7 @@ func init() {
 					ID:        "vault",
 					Label:     `Vault Provider`,
 					SortOrder: 2,
-					Scope:     scope.PermWebsite,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: payment/vault/vault_payment

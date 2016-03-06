@@ -20,7 +20,7 @@ func init() {
 					ID:        "usps",
 					Label:     `USPS`,
 					SortOrder: 110,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: carriers/usps/active

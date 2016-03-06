@@ -17,14 +17,14 @@ func init() {
 			ID:        "sendfriend",
 			Label:     `Email to a Friend`,
 			SortOrder: 120,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::sendfriend
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "email",
 					Label:     `Email Templates`,
 					SortOrder: 1,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sendfriend/email/enabled

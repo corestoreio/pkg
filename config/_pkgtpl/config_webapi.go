@@ -17,14 +17,14 @@ func init() {
 			ID:        "webapi",
 			Label:     `Magento Web API`,
 			SortOrder: 102,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Webapi::config_webapi
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "soap",
 					Label:     `SOAP Settings`,
 					SortOrder: 1,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: webapi/soap/charset

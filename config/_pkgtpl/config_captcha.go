@@ -20,7 +20,7 @@ func init() {
 					ID:        "captcha",
 					Label:     `CAPTCHA`,
 					SortOrder: 50,
-					Scope:     scope.PermWebsite,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: admin/captcha/enable
@@ -139,7 +139,7 @@ func init() {
 					ID:        "captcha",
 					Label:     `CAPTCHA`,
 					SortOrder: 110,
-					Scope:     scope.PermWebsite,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: customer/captcha/enable

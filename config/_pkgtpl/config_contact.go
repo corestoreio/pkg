@@ -17,14 +17,14 @@ func init() {
 			ID:        "contact",
 			Label:     `Contacts`,
 			SortOrder: 100,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Contact::contact
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "contact",
 					Label:     `Contact Us`,
 					SortOrder: 10,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: contact/contact/enabled
@@ -45,7 +45,7 @@ func init() {
 					ID:        "email",
 					Label:     `Email Options`,
 					SortOrder: 50,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: contact/email/recipient_email

@@ -21,7 +21,7 @@ func init() {
 					Label:     `BraintreeTwo`,
 					Comment:   text.Long(`Accept credit/debit cards and PayPal in your Magento store. No setup or monthly fees and your customers never leave your store to complete the purchase.`),
 					SortOrder: 2,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields:    element.NewFieldSlice(),
 				},
 			),

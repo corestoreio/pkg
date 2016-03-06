@@ -16,13 +16,13 @@ func init() {
 		&element.Section{
 			ID:        "carriers",
 			SortOrder: 320,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "flatrate",
 					Label:     `Flat Rate`,
 					SortOrder: 2,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: carriers/flatrate/active
@@ -165,7 +165,7 @@ func init() {
 					ID:        "tablerate",
 					Label:     `Table Rates`,
 					SortOrder: 3,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: carriers/tablerate/handling_type
@@ -330,7 +330,7 @@ func init() {
 					ID:        "freeshipping",
 					Label:     `Free Shipping`,
 					SortOrder: 2,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: carriers/freeshipping/active

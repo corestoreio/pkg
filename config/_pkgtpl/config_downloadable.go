@@ -20,7 +20,7 @@ func init() {
 					ID:        "downloadable",
 					Label:     `Downloadable Product Options`,
 					SortOrder: 600,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/downloadable/order_item_status

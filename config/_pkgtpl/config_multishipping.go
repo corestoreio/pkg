@@ -17,14 +17,14 @@ func init() {
 			ID:        "multishipping",
 			Label:     `Multishipping Settings`,
 			SortOrder: 311,
-			Scope:     scope.PermWebsite,
+			Scopes:    scope.PermWebsite,
 			Resource:  0, // Magento_Multishipping::config_multishipping
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "options",
 					Label:     `Options`,
 					SortOrder: 2,
-					Scope:     scope.PermWebsite,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: multishipping/options/checkout_multiple

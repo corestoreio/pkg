@@ -20,7 +20,7 @@ func init() {
 					ID:        "dhl",
 					Label:     `DHL`,
 					SortOrder: 140,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: carriers/dhl/active

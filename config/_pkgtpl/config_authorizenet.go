@@ -20,7 +20,7 @@ func init() {
 					ID:        "authorizenet_directpost",
 					Label:     `Authorize.net Direct Post`,
 					SortOrder: 34,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: payment/authorizenet_directpost/active

@@ -20,7 +20,7 @@ func init() {
 					ID:        "productalert",
 					Label:     `Product Alerts`,
 					SortOrder: 250,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/productalert/allow_price
@@ -90,7 +90,7 @@ func init() {
 					ID:        "productalert_cron",
 					Label:     `Product Alerts Run Settings`,
 					SortOrder: 260,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/productalert_cron/frequency

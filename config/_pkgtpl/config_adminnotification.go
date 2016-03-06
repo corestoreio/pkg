@@ -20,7 +20,7 @@ func init() {
 					ID:        "adminnotification",
 					Label:     `Notifications`,
 					SortOrder: 250,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: system/adminnotification/use_https

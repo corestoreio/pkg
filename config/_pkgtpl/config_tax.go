@@ -17,14 +17,14 @@ func init() {
 			ID:        "tax",
 			Label:     `Tax`,
 			SortOrder: 303,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Tax::config_tax
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "classes",
 					Label:     `Tax Classes`,
 					SortOrder: 10,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: tax/classes/shipping_tax_class
@@ -69,7 +69,7 @@ func init() {
 					ID:        "calculation",
 					Label:     `Calculation Settings`,
 					SortOrder: 20,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: tax/calculation/algorithm
@@ -181,7 +181,7 @@ func init() {
 					ID:        "defaults",
 					Label:     `Default Tax Destination Calculation`,
 					SortOrder: 30,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: tax/defaults/country
@@ -223,7 +223,7 @@ func init() {
 					ID:        "display",
 					Label:     `Price Display Settings`,
 					SortOrder: 40,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: tax/display/type
@@ -257,7 +257,7 @@ func init() {
 					ID:        "cart_display",
 					Label:     `Shopping Cart Display Settings`,
 					SortOrder: 50,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: tax/cart_display/price
@@ -340,7 +340,7 @@ func init() {
 					ID:        "sales_display",
 					Label:     `Orders, Invoices, Credit Memos Display Settings`,
 					SortOrder: 60,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: tax/sales_display/price

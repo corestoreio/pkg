@@ -20,7 +20,7 @@ func init() {
 					ID:        "review",
 					Label:     `Product Reviews`,
 					SortOrder: 100,
-					Scope:     scope.PermWebsite,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/review/allow_guest

@@ -40,7 +40,7 @@ var configStructure = element.MustNewConfiguration(
 				ID:        path.NewRoute("cors"),
 				Label:     text.Chars(`CORS Cross Origin Resource Sharing`),
 				SortOrder: 150,
-				Scope:     scope.PermDefault,
+				Scopes:    scope.PermDefault,
 				Fields: element.NewFieldSlice(
 					&element.Field{
 						// Path: `web/cors/exposed_headers`,

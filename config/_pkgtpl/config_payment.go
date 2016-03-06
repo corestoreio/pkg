@@ -17,7 +17,7 @@ func init() {
 			ID:        "payment",
 			Label:     `Payment Methods`,
 			SortOrder: 400,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Payment::payment
 			Groups:    element.NewGroupSlice(),
 		},

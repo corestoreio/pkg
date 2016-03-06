@@ -20,7 +20,7 @@ func init() {
 					ID:        "email",
 					Label:     `Emails`,
 					SortOrder: 510,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: design/email/logo

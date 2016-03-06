@@ -39,8 +39,9 @@ type Section struct {
 	// ID unique ID and merged with others. 1st part of the path.
 	ID    path.Route
 	Label text.Chars `json:",omitempty"`
-	// Scope: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
-	Scope     scope.Perm `json:",omitempty"`
+	// Scopes: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
+	// Scopes can contain multiple Scope but no more than Default, Website and Store.
+	Scopes    scope.Perm `json:",omitempty"`
 	SortOrder int        `json:",omitempty"`
 	// Resource some kind of ACL if someone is allowed for no,read or write access @todo
 	Resource uint `json:",omitempty"`
@@ -168,8 +169,8 @@ func (ss *SectionSlice) merge(s *Section) error {
 	if s.Label.IsEmpty() == false {
 		cs.Label = s.Label.Clone()
 	}
-	if s.Scope > 0 {
-		cs.Scope = s.Scope
+	if s.Scopes > 0 {
+		cs.Scopes = s.Scopes
 	}
 	if s.SortOrder != 0 {
 		cs.SortOrder = s.SortOrder

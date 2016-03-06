@@ -17,14 +17,14 @@ func init() {
 			ID:        "sitemap",
 			Label:     `XML Sitemap`,
 			SortOrder: 70,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Sitemap::config_sitemap
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "category",
 					Label:     `Categories Options`,
 					SortOrder: 1,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sitemap/category/changefreq
@@ -57,7 +57,7 @@ func init() {
 					ID:        "product",
 					Label:     `Products Options`,
 					SortOrder: 2,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sitemap/product/changefreq
@@ -102,7 +102,7 @@ func init() {
 					ID:        "page",
 					Label:     `CMS Pages Options`,
 					SortOrder: 3,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sitemap/page/changefreq
@@ -135,7 +135,7 @@ func init() {
 					ID:        "generate",
 					Label:     `Generation Settings`,
 					SortOrder: 4,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sitemap/generate/enabled
@@ -212,7 +212,7 @@ func init() {
 					ID:        "limit",
 					Label:     `Sitemap File Limits`,
 					SortOrder: 5,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sitemap/limit/max_lines
@@ -243,7 +243,7 @@ func init() {
 					ID:        "search_engines",
 					Label:     `Search Engine Submission Settings`,
 					SortOrder: 6,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sitemap/search_engines/submission_robots

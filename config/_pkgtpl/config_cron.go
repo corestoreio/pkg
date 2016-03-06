@@ -21,7 +21,7 @@ func init() {
 					Label:     `Cron (Scheduled Tasks) - all the times are in minutes`,
 					Comment:   text.Long(`For correct URLs generated during cron runs please make sure that Web > Secure and Unsecure Base URLs are explicitly set.`),
 					SortOrder: 15,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields:    element.NewFieldSlice(),
 				},
 			),

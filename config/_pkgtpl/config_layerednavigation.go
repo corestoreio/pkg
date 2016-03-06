@@ -16,13 +16,13 @@ func init() {
 		&element.Section{
 			ID:        "catalog",
 			SortOrder: 40,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "layered_navigation",
 					Label:     `Layered Navigation`,
 					SortOrder: 490,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/layered_navigation/display_product_count

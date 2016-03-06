@@ -20,7 +20,7 @@ func init() {
 					ID:        "recently_products",
 					Label:     `Recently Viewed/Compared Products`,
 					SortOrder: 350,
-					Scope:     scope.PermWebsite,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: catalog/recently_products/scope
@@ -63,14 +63,14 @@ func init() {
 			ID:        "reports",
 			Label:     `Reports`,
 			SortOrder: 1000,
-			Scope:     scope.PermDefault,
+			Scopes:    scope.PermDefault,
 			Resource:  0, // Magento_Reports::reports
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "dashboard",
 					Label:     `Dashboard`,
 					SortOrder: 1,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: reports/dashboard/ytd_start

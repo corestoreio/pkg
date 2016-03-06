@@ -20,7 +20,7 @@ func init() {
 					ID:        "gift_options",
 					Label:     `Gift Options`,
 					SortOrder: 100,
-					Scope:     scope.PermWebsite,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: sales/gift_options/allow_order

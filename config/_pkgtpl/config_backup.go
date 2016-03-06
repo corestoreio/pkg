@@ -20,7 +20,7 @@ func init() {
 					ID:        "backup",
 					Label:     `Scheduled Backup Settings`,
 					SortOrder: 500,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: system/backup/enabled

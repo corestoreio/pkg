@@ -20,7 +20,7 @@ func init() {
 					ID:        "ups",
 					Label:     `UPS`,
 					SortOrder: 100,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: carriers/ups/access_license_number

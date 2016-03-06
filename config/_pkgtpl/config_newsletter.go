@@ -17,14 +17,14 @@ func init() {
 			ID:        "newsletter",
 			Label:     `Newsletter`,
 			SortOrder: 110,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Newsletter::newsletter
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "subscription",
 					Label:     `Subscription Options`,
 					SortOrder: 1,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: newsletter/subscription/allow_guest_subscribe

@@ -17,14 +17,14 @@ func init() {
 			ID:        "cataloginventory",
 			Label:     `Inventory`,
 			SortOrder: 50,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_CatalogInventory::cataloginventory
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "options",
 					Label:     `Stock Options`,
 					SortOrder: 1,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: cataloginventory/options/can_subtract
@@ -93,7 +93,7 @@ func init() {
 					Label:     `Product Stock Options`,
 					Comment:   text.Long(`Please note that these settings apply to individual items in the cart, not to the entire cart.`),
 					SortOrder: 10,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: cataloginventory/item_options/manage_stock

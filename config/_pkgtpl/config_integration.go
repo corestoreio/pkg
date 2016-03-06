@@ -17,14 +17,14 @@ func init() {
 			ID:        "oauth",
 			Label:     `OAuth`,
 			SortOrder: 300,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Integration::config_oauth
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "cleanup",
 					Label:     `Cleanup Settings`,
 					SortOrder: 300,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: oauth/cleanup/cleanup_probability
@@ -56,7 +56,7 @@ func init() {
 					ID:        "consumer",
 					Label:     `Consumer Settings`,
 					SortOrder: 400,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: oauth/consumer/expiration_period

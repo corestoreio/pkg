@@ -211,8 +211,8 @@ func TestSectionSliceMerge(t *testing.T) {
 						Label: text.Chars(`SectionLabelA`),
 						Groups: element.NewGroupSlice(
 							&element.Group{
-								ID:    path.NewRoute(`b`),
-								Scope: scope.PermDefault,
+								ID:     path.NewRoute(`b`),
+								Scopes: scope.PermDefault,
 								Fields: element.NewFieldSlice(
 									&element.Field{ID: path.NewRoute(`c`), Default: `c`},
 								),
@@ -223,8 +223,8 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 				{
 					&element.Section{
-						ID:    path.NewRoute(`a`),
-						Scope: scope.PermWebsite,
+						ID:     path.NewRoute(`a`),
+						Scopes: scope.PermWebsite,
 						Groups: element.NewGroupSlice(
 							&element.Group{ID: path.NewRoute(`b`), Label: text.Chars(`GroupLabelB1`)},
 							nil,
@@ -240,7 +240,7 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 			},
 			wantErr: "",
-			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["Default","Website"],"Groups":[{"ID":"b","Label":"GroupLabelB2","Scope":["Default"],"Fields":[{"ID":"c","Default":"c"}]},{"ID":"b2","Fields":[{"ID":"d","Default":"d"}]}]}]` + "\n",
+			want:    `[{"ID":"a","Label":"SectionLabelA","Scopes":["Default","Website"],"Groups":[{"ID":"b","Label":"GroupLabelB2","Scopes":["Default"],"Fields":[{"ID":"c","Default":"c"}]},{"ID":"b2","Fields":[{"ID":"d","Default":"d"}]}]}]` + "\n",
 			wantLen: 2,
 		},
 		2: {
@@ -249,11 +249,11 @@ func TestSectionSliceMerge(t *testing.T) {
 					&element.Section{ID: path.NewRoute(`a`), Label: text.Chars(`SectionLabelA`), SortOrder: 20, Resource: 22},
 				},
 				{
-					&element.Section{ID: path.NewRoute(`a`), Scope: scope.PermWebsite, SortOrder: 10, Resource: 3},
+					&element.Section{ID: path.NewRoute(`a`), Scopes: scope.PermWebsite, SortOrder: 10, Resource: 3},
 				},
 			},
 			wantErr: "",
-			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["Default","Website"],"SortOrder":10,"Resource":3,"Groups":null}]` + "\n",
+			want:    `[{"ID":"a","Label":"SectionLabelA","Scopes":["Default","Website"],"SortOrder":10,"Resource":3,"Groups":null}]` + "\n",
 		},
 		3: {
 			have: []element.SectionSlice{
@@ -266,7 +266,7 @@ func TestSectionSliceMerge(t *testing.T) {
 								ID:      path.NewRoute(`b`),
 								Label:   text.Chars(`SectionAGroupB`),
 								Comment: text.Chars("SectionAGroupBComment"),
-								Scope:   scope.PermDefault,
+								Scopes:  scope.PermDefault,
 							},
 						),
 					},
@@ -275,9 +275,9 @@ func TestSectionSliceMerge(t *testing.T) {
 					&element.Section{
 						ID:        path.NewRoute(`a`),
 						SortOrder: 1000,
-						Scope:     scope.PermWebsite,
+						Scopes:    scope.PermWebsite,
 						Groups: element.NewGroupSlice(
-							&element.Group{ID: path.NewRoute(`b`), Label: text.Chars(`GroupLabelB1`), Scope: scope.PermStore},
+							&element.Group{ID: path.NewRoute(`b`), Label: text.Chars(`GroupLabelB1`), Scopes: scope.PermStore},
 							&element.Group{ID: path.NewRoute(`b`), Label: text.Chars(`GroupLabelB2`), Comment: text.Chars("Section2AGroup3BComment"), SortOrder: 100},
 							&element.Group{ID: path.NewRoute(`b2`)},
 						),
@@ -285,7 +285,7 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 			},
 			wantErr: "",
-			want:    `[{"ID":"a","Label":"SectionLabelA","Scope":["Default","Website"],"SortOrder":1000,"Groups":[{"ID":"b","Label":"GroupLabelB2","Comment":"Section2AGroup3BComment","Scope":["Default","Website","Store"],"SortOrder":100,"Fields":null},{"ID":"b2","Fields":null}]}]` + "\n",
+			want:    `[{"ID":"a","Label":"SectionLabelA","Scopes":["Default","Website"],"SortOrder":1000,"Groups":[{"ID":"b","Label":"GroupLabelB2","Comment":"Section2AGroup3BComment","Scopes":["Default","Website","Store"],"SortOrder":100,"Fields":null},{"ID":"b2","Fields":null}]}]` + "\n",
 		},
 		4: {
 			have: []element.SectionSlice{
@@ -329,7 +329,7 @@ func TestSectionSliceMerge(t *testing.T) {
 				},
 			},
 			wantErr: "",
-			want:    `[{"ID":"a","Groups":[{"ID":"b","Label":"b3","Fields":[{"ID":"c","Type":"hidden","Scope":["Default","Website"],"SortOrder":1001,"Default":"overriddenHaha"},{"ID":"d","Type":"obscure","Label":"Sect2Group2Label4","Comment":"LOTR","Default":"overriddenD"}]}]}]` + "\n",
+			want:    `[{"ID":"a","Groups":[{"ID":"b","Label":"b3","Fields":[{"ID":"c","Type":"hidden","Scopes":["Default","Website"],"SortOrder":1001,"Default":"overriddenHaha"},{"ID":"d","Type":"obscure","Label":"Sect2Group2Label4","Comment":"LOTR","Default":"overriddenD"}]}]}]` + "\n",
 			wantLen: 2,
 		},
 		5: {
@@ -435,7 +435,7 @@ func TestGroupSliceMerge(t *testing.T) {
 				},
 			},
 			wantErr: nil,
-			want:    `[{"ID":"b","Fields":[{"ID":"c","Type":"hidden","Scope":["Default","Website"],"Default":"overriddenHaha"},{"ID":"d","Type":"obscure","Label":"Sect2Group2Label4","Comment":"LOTR","Default":"overriddenD"}]}]` + "\n",
+			want:    `[{"ID":"b","Fields":[{"ID":"c","Type":"hidden","Scopes":["Default","Website"],"Default":"overriddenHaha"},{"ID":"d","Type":"obscure","Label":"Sect2Group2Label4","Comment":"LOTR","Default":"overriddenD"}]}]` + "\n",
 		},
 		{
 			have:    nil,

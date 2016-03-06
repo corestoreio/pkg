@@ -17,14 +17,14 @@ func init() {
 			ID:        "shipping",
 			Label:     `Shipping Settings`,
 			SortOrder: 310,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Shipping::config_shipping
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "origin",
 					Label:     `Origin`,
 					SortOrder: 1,
-					Scope:     scope.PermWebsite,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: shipping/origin/country_id
@@ -96,7 +96,7 @@ func init() {
 					ID:        "shipping_policy",
 					Label:     `Shipping Policy Parameters`,
 					SortOrder: 120,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: shipping/shipping_policy/enable_shipping_policy
@@ -126,7 +126,7 @@ func init() {
 			ID:        "carriers",
 			Label:     `Shipping Methods`,
 			SortOrder: 320,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Shipping::carriers
 			Groups:    element.NewGroupSlice(),
 		},

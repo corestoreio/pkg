@@ -17,14 +17,14 @@ func init() {
 			ID:        "customer",
 			Label:     `Customer Configuration`,
 			SortOrder: 130,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Customer::config_customer
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:        "account_share",
-					Label:     `Account Sharing Options`,
-					SortOrder: 10,
-					Scope:     scope.PermDefault,
+					ID:                    "account_share",
+					Label:                 `Account Sharing Options`,
+					SortOrder:             10,
+					Scopes:                scope.PermDefault,
 					HideInSingleStoreMode: true,
 					Fields: element.NewFieldSlice(
 						&element.Field{
@@ -46,7 +46,7 @@ func init() {
 					ID:        "create_account",
 					Label:     `Create New Account Options`,
 					SortOrder: 20,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: customer/create_account/auto_group_assign
@@ -267,7 +267,7 @@ func init() {
 					ID:        "password",
 					Label:     `Password Options`,
 					SortOrder: 30,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: customer/password/forgot_email_template
@@ -339,7 +339,7 @@ func init() {
 					ID:        "address",
 					Label:     `Name and Address Options`,
 					SortOrder: 40,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: customer/address/street_lines
@@ -457,7 +457,7 @@ func init() {
 					ID:        "startup",
 					Label:     `Login Options`,
 					SortOrder: 90,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: customer/startup/redirect_dashboard
@@ -478,7 +478,7 @@ func init() {
 					ID:        "address_templates",
 					Label:     `Address Templates`,
 					SortOrder: 100,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: customer/address_templates/text
@@ -563,7 +563,7 @@ T: {{var telephone}}
 					ID:        "online_customers",
 					Label:     `Online Customers Options`,
 					SortOrder: 10,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: customer/online_customers/online_minutes_interval

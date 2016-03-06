@@ -17,14 +17,14 @@ func init() {
 			ID:        "currency",
 			Label:     `Currency Setup`,
 			SortOrder: 60,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::currency
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "options",
 					Label:     `Currency Options`,
 					SortOrder: 30,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: currency/options/base
@@ -73,7 +73,7 @@ func init() {
 					ID:        "webservicex",
 					Label:     `Webservicex`,
 					SortOrder: 40,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: currency/webservicex/timeout
@@ -91,7 +91,7 @@ func init() {
 					ID:        "import",
 					Label:     `Scheduled Import Settings`,
 					SortOrder: 50,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: currency/import/enabled
@@ -183,7 +183,7 @@ func init() {
 					ID:        "currency",
 					Label:     `Currency`,
 					SortOrder: 50,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: system/currency/installed
@@ -227,7 +227,7 @@ func init() {
 					ID:        "region",
 					Label:     `State Options`,
 					SortOrder: 4,
-					Scope:     scope.PermDefault,
+					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/region/state_required

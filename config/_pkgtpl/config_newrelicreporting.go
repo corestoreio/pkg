@@ -17,14 +17,14 @@ func init() {
 			ID:        "newrelicreporting",
 			Label:     `New Relic Reporting`,
 			SortOrder: 1100,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_NewRelicReporting::config_newrelicreporting
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "general",
 					Label:     `General`,
 					SortOrder: 1,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: newrelicreporting/general/enable
@@ -124,7 +124,7 @@ func init() {
 					ID:        "cron",
 					Label:     `Cron`,
 					SortOrder: 2,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: newrelicreporting/cron/enable_cron

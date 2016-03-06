@@ -20,7 +20,7 @@ func init() {
 					ID:        "cookie",
 					Label:     `Default Cookie Settings`,
 					SortOrder: 50,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/cookie/cookie_lifetime

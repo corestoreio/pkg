@@ -73,7 +73,7 @@ func init() {
 					ID:        "browser_capabilities",
 					Label:     `Browser Capabilities Detection`,
 					SortOrder: 200,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: web/browser_capabilities/cookies
@@ -115,14 +115,14 @@ func init() {
 			ID:        "cms",
 			Label:     `Content Management`,
 			SortOrder: 1001,
-			Scope:     scope.PermStore,
+			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Cms::config_cms
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:        "wysiwyg",
 					Label:     `WYSIWYG Options`,
 					SortOrder: 100,
-					Scope:     scope.PermStore,
+					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: cms/wysiwyg/enabled
