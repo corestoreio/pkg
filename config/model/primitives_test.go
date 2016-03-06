@@ -21,12 +21,13 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/config/mock"
 	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/cast"
+	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/juju/errors"
 	"github.com/stretchr/testify/assert"
@@ -42,7 +43,7 @@ var configStructure = element.MustNewConfiguration(
 				ID:        path.NewRoute("cors"),
 				Label:     text.Chars(`CORS Cross Origin Resource Sharing`),
 				SortOrder: 150,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.NewFieldSlice(
 					&element.Field{
 						// Path: `web/cors/exposed_headers`,
@@ -52,7 +53,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeTextarea,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scopes:    scope.PermWebsite,
 						Default:   "Content-Type,X-CoreStore-ID",
 					},
 					&element.Field{
@@ -63,7 +64,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeTextarea,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scopes:    scope.PermWebsite,
 						Default:   "corestore.io,cs.io",
 					},
 					&element.Field{
@@ -73,7 +74,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scopes:    scope.PermWebsite,
 						Default:   "true",
 					},
 					&element.Field{
@@ -82,7 +83,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scopes:    scope.PermWebsite,
 						Default:   2015,
 					},
 					&element.Field{
@@ -91,7 +92,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermStore,
+						Scopes:    scope.PermStore,
 						Default:   "2014,2015,2016",
 					},
 					&element.Field{
@@ -100,7 +101,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeText,
 						SortOrder: 50,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scopes:    scope.PermWebsite,
 						Default:   2015.1000001,
 					},
 					&element.Field{
@@ -109,7 +110,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeText,
 						SortOrder: 90,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermStore,
+						Scopes:    scope.PermStore,
 						Default:   "2012-08-23 09:20:13",
 					},
 				),
@@ -130,7 +131,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeText,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermStore,
+						Scopes:    scope.PermStore,
 						Default:   "{{base_url}}",
 						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 					},
@@ -143,7 +144,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeText,
 						SortOrder: 20,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermStore,
+						Scopes:    scope.PermStore,
 						Default:   "{{unsecure_base_url}}",
 						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 					},
@@ -156,7 +157,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeText,
 						SortOrder: 25,
 						Visible:   element.VisibleYes,
-						Scope:     scope.PermStore,
+						Scopes:    scope.PermStore,
 						Default:   nil,
 						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 					},
@@ -170,7 +171,7 @@ func TestBoolGetWithCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsCred = "web/cors/allow_credentials"
 	wantPath := path.MustNewByParts(pathWebCorsCred).Bind(scope.WebsiteID, 3)
-	b := model.NewBool(pathWebCorsCred, model.WithConfigStructure(configStructure), model.WithSource(source.YesNo))
+	b := model.NewBool(pathWebCorsCred, model.WithFieldFromSectionSlice(configStructure), model.WithSource(source.YesNo))
 
 	assert.Exactly(t, source.YesNo, b.Options())
 
@@ -178,9 +179,9 @@ func TestBoolGetWithCfgStruct(t *testing.T) {
 		sg   config.ScopedGetter
 		want bool
 	}{
-		{config.NewMockGetter().NewScoped(0, 0, 0), true}, // because default value in packageConfiguration is "true"
-		{config.NewMockGetter().NewScoped(5, 3, 4), true}, // because default value in packageConfiguration is "true"
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.String(): 0})).NewScoped(3, 0, 0), false},
+		{mock.NewService().NewScoped(0, 0), true}, // because default value in packageConfiguration is "true"
+		{mock.NewService().NewScoped(5, 4), true}, // because default value in packageConfiguration is "true"
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.String(): 0})).NewScoped(3, 0), false},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -201,9 +202,10 @@ func TestBoolGetWithoutCfgStruct(t *testing.T) {
 		sg   config.ScopedGetter
 		want bool
 	}{
-		{config.NewMockGetter().NewScoped(0, 0, 0), false},
-		{config.NewMockGetter().NewScoped(5, 3, 4), false},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.String(): 1})).NewScoped(4, 0, 0), true},
+		{mock.NewService().NewScoped(0, 0), false},
+		{mock.NewService().NewScoped(5, 4), false},
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.String(): 1})).NewScoped(4, 0), false}, // not allowed because DefaultID scope because there has not been set a *element.Field!
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.Bind(scope.DefaultID, 0).String(): 1})).NewScoped(4, 0), true},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -212,26 +214,30 @@ func TestBoolGetWithoutCfgStruct(t *testing.T) {
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
 	}
+}
 
+func TestBoolGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
+	t.Parallel()
+
+	b := model.NewBool("web/cors/allow_credentials")
 	haveErr := errors.New("Unexpected error")
-	gb, err := b.Get(config.NewMockGetter(
-		config.WithMockValues(config.MockPV{wantPath.String(): true}),
-		config.WithMockBool(func(path string) (bool, error) {
+
+	gb, err := b.Get(mock.NewService(
+		mock.WithBool(func(path string) (bool, error) {
 			return false, haveErr
 		}),
-	).NewScoped(1, 1, 1))
+	).NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
-
 }
 
 func TestBoolWrite(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsCred = "web/cors/allow_credentials"
 	wantPath := path.MustNewByParts(pathWebCorsCred).Bind(scope.WebsiteID, 3)
-	b := model.NewBool(pathWebCorsCred, model.WithConfigStructure(configStructure), model.WithSource(source.YesNo))
+	b := model.NewBool(pathWebCorsCred, model.WithFieldFromSectionSlice(configStructure), model.WithSource(source.YesNo))
 
-	mw := &config.MockWrite{}
+	mw := &mock.Write{}
 	assert.EqualError(t, b.Write(mw, true, scope.StoreID, 3), "Scope permission insufficient: Have 'Store'; Want 'Default,Website'")
 	assert.NoError(t, b.Write(mw, true, scope.WebsiteID, 3))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
@@ -241,7 +247,7 @@ func TestBoolWrite(t *testing.T) {
 func TestStrGetWithCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
-	b := model.NewStr(pathWebCorsHeaders, model.WithConfigStructure(configStructure))
+	b := model.NewStr(pathWebCorsHeaders, model.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, b.Options())
 
 	wantPath := path.MustNewByParts(pathWebCorsHeaders)
@@ -249,20 +255,20 @@ func TestStrGetWithCfgStruct(t *testing.T) {
 		sg   config.ScopedGetter
 		want string
 	}{
-		{config.NewMockGetter().NewScoped(0, 0, 0), "Content-Type,X-CoreStore-ID"}, // because default value in packageConfiguration
-		{config.NewMockGetter().NewScoped(5, 3, 4), "Content-Type,X-CoreStore-ID"}, // because default value in packageConfiguration
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.String(): "X-Gopher"})).NewScoped(0, 0, 0), "X-Gopher"},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.String(): "X-Gopher"})).NewScoped(3, 4, 5), "X-Gopher"},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{
-			wantPath.String():                         "X-Gopher",
-			wantPath.Bind(scope.StoreID, 44).String(): "X-Gopher44",
-		})).NewScoped(3, 0, 44), "X-Gopher44"},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{
+		{mock.NewService().NewScoped(0, 0), "Content-Type,X-CoreStore-ID"}, // because default value in packageConfiguration
+		{mock.NewService().NewScoped(5, 4), "Content-Type,X-CoreStore-ID"}, // because default value in packageConfiguration
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.String(): "X-Gopher"})).NewScoped(0, 0), "X-Gopher"},
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.String(): "X-Gopher"})).NewScoped(3, 5), "X-Gopher"},
+		{mock.NewService(mock.WithPV(mock.PathValue{
+			wantPath.String():                         "X-Gopher262",
+			wantPath.Bind(scope.StoreID, 44).String(): "X-Gopher44", // because Field.Scopes has PermWebsite
+		})).NewScoped(3, 44), "X-Gopher262"},
+		{mock.NewService(mock.WithPV(mock.PathValue{
 			wantPath.String():                           "X-Gopher",
 			wantPath.Bind(scope.WebsiteID, 33).String(): "X-Gopher33",
 			wantPath.Bind(scope.WebsiteID, 43).String(): "X-GopherW43",
 			wantPath.Bind(scope.StoreID, 44).String():   "X-Gopher44",
-		})).NewScoped(33, 0, 43), "X-Gopher33"},
+		})).NewScoped(33, 43), "X-Gopher33"},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -284,9 +290,9 @@ func TestStrGetWithoutCfgStruct(t *testing.T) {
 		sg   config.ScopedGetter
 		want string
 	}{
-		{config.NewMockGetter().NewScoped(0, 0, 0), ""},
-		{config.NewMockGetter().NewScoped(5, 3, 4), ""},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.String(): "X-Gopher"})).NewScoped(0, 0, 0), "X-Gopher"},
+		{mock.NewService().NewScoped(0, 0), ""},
+		{mock.NewService().NewScoped(5, 4), ""},
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.String(): "X-Gopher"})).NewScoped(0, 0), "X-Gopher"},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -295,14 +301,20 @@ func TestStrGetWithoutCfgStruct(t *testing.T) {
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
 	}
+}
+
+func TestStrGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
+	t.Parallel()
+
+	b := model.NewStr("web/cors/exposed_headers")
+	assert.Empty(t, b.Options())
 
 	haveErr := errors.New("Unexpected error")
-	gb, err := b.Get(config.NewMockGetter(
-		config.WithMockValues(config.MockPV{wantPath.String(): "..."}),
-		config.WithMockString(func(path string) (string, error) {
+	gb, err := b.Get(mock.NewService(
+		mock.WithString(func(path string) (string, error) {
 			return "", haveErr
 		}),
-	).NewScoped(1, 1, 1))
+	).NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
 }
@@ -311,9 +323,9 @@ func TestStrWrite(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
 	wantPath := path.MustNewByParts(pathWebCorsHeaders)
-	b := model.NewStr(pathWebCorsHeaders, model.WithConfigStructure(configStructure))
+	b := model.NewStr(pathWebCorsHeaders, model.WithFieldFromSectionSlice(configStructure))
 
-	mw := &config.MockWrite{}
+	mw := &mock.Write{}
 	assert.NoError(t, b.Write(mw, "dude", scope.DefaultID, 0))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, "dude", mw.ArgValue.(string))
@@ -322,7 +334,7 @@ func TestStrWrite(t *testing.T) {
 func TestIntGetWithCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsInt = "web/cors/int"
-	b := model.NewInt(pathWebCorsInt, model.WithConfigStructure(configStructure))
+	b := model.NewInt(pathWebCorsInt, model.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, b.Options())
 
 	wantPath := path.MustNewByParts(pathWebCorsInt)
@@ -330,17 +342,20 @@ func TestIntGetWithCfgStruct(t *testing.T) {
 		sg   config.ScopedGetter
 		want int
 	}{
-		{config.NewMockGetter().NewScoped(0, 0, 0), 2015}, // because default value in packageConfiguration
-		{config.NewMockGetter().NewScoped(0, 0, 1), 2015}, // because default value in packageConfiguration
-		{config.NewMockGetter().NewScoped(0, 1, 1), 2015}, // because default value in packageConfiguration
-		{config.NewMockGetter().NewScoped(1, 1, 1), 2015}, // because default value in packageConfiguration
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): 2016})).NewScoped(10, 0, 0), 2016},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): 2016})).NewScoped(10, 0, 1), 2016},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): 2016})).NewScoped(10, 1, 1), 2016},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{
-			wantPath.String():                         2017,
-			wantPath.Bind(scope.StoreID, 11).String(): 2016,
-		})).NewScoped(10, 0, 11), 2016},
+		{mock.NewService().NewScoped(0, 0), 2015}, // because default value in packageConfiguration
+		{mock.NewService().NewScoped(0, 1), 2015}, // because default value in packageConfiguration
+		{mock.NewService().NewScoped(1, 1), 2015}, // because default value in packageConfiguration
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.Bind(scope.WebsiteID, 10).String(): 2016})).NewScoped(10, 0), 2016},
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.Bind(scope.WebsiteID, 10).String(): 2016})).NewScoped(10, 1), 2016},
+		{mock.NewService(mock.WithPV(mock.PathValue{
+			wantPath.String():                         3017,
+			wantPath.Bind(scope.StoreID, 11).String(): 2016, // because Field.Scopes set to PermWebsite
+		})).NewScoped(10, 11), 3017},
+		{mock.NewService(mock.WithPV(mock.PathValue{
+			wantPath.String():                           3017,
+			wantPath.Bind(scope.WebsiteID, 10).String(): 4018,
+			wantPath.Bind(scope.StoreID, 11).String():   2016, // because Field.Scopes set to PermWebsite
+		})).NewScoped(10, 11), 4018},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -353,8 +368,9 @@ func TestIntGetWithCfgStruct(t *testing.T) {
 
 func TestIntGetWithoutCfgStruct(t *testing.T) {
 	t.Parallel()
+
 	const pathWebCorsInt = "web/cors/int"
-	b := model.NewInt(pathWebCorsInt)
+	b := model.NewInt(pathWebCorsInt) // no *element.Field has been set. So Default Scope will be enforced
 	assert.Empty(t, b.Options())
 
 	wantPath := path.MustNewByParts(pathWebCorsInt)
@@ -362,8 +378,9 @@ func TestIntGetWithoutCfgStruct(t *testing.T) {
 		sg   config.ScopedGetter
 		want int
 	}{
-		{config.NewMockGetter().NewScoped(1, 1, 1), 0},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): 2016})).NewScoped(10, 0, 0), 2016},
+		{mock.NewService().NewScoped(1, 1), 0},
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.Bind(scope.WebsiteID, 10).String(): 2016})).NewScoped(10, 0), 0},
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.Bind(scope.DefaultID, 0).String(): 2019})).NewScoped(10, 0), 2019},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -372,14 +389,19 @@ func TestIntGetWithoutCfgStruct(t *testing.T) {
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
 	}
+}
+
+func TestIntGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
+	t.Parallel()
+
+	b := model.NewInt("web/cors/int")
 
 	haveErr := errors.New("Unexpected error")
-	gb, err := b.Get(config.NewMockGetter(
-		config.WithMockValues(config.MockPV{wantPath.String(): 987}),
-		config.WithMockInt(func(path string) (int, error) {
+	gb, err := b.Get(mock.NewService(
+		mock.WithInt(func(path string) (int, error) {
 			return 0, haveErr
 		}),
-	).NewScoped(1, 1, 1))
+	).NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
 }
@@ -388,9 +410,9 @@ func TestIntWrite(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsInt = "web/cors/int"
 	wantPath := path.MustNewByParts(pathWebCorsInt).Bind(scope.WebsiteID, 10)
-	b := model.NewInt(pathWebCorsInt, model.WithConfigStructure(configStructure))
+	b := model.NewInt(pathWebCorsInt, model.WithFieldFromSectionSlice(configStructure))
 
-	mw := &config.MockWrite{}
+	mw := &mock.Write{}
 	assert.NoError(t, b.Write(mw, 27182, scope.WebsiteID, 10))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, 27182, mw.ArgValue.(int))
@@ -399,7 +421,7 @@ func TestIntWrite(t *testing.T) {
 func TestFloat64GetWithCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsF64 = "web/cors/float64"
-	b := model.NewFloat64("web/cors/float64", model.WithConfigStructure(configStructure))
+	b := model.NewFloat64("web/cors/float64", model.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, b.Options())
 
 	wantPath := path.MustNewByParts(pathWebCorsF64).Bind(scope.WebsiteID, 10)
@@ -407,17 +429,20 @@ func TestFloat64GetWithCfgStruct(t *testing.T) {
 		sg   config.ScopedGetter
 		want float64
 	}{
-		{config.NewMockGetter().NewScoped(0, 0, 0), 2015.1000001}, // because default value in packageConfiguration
-		{config.NewMockGetter().NewScoped(0, 0, 1), 2015.1000001}, // because default value in packageConfiguration
-		{config.NewMockGetter().NewScoped(0, 1, 1), 2015.1000001}, // because default value in packageConfiguration
-		{config.NewMockGetter().NewScoped(1, 1, 1), 2015.1000001}, // because default value in packageConfiguration
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): 2016.1000001})).NewScoped(10, 0, 0), 2016.1000001},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): 2016.1000001})).NewScoped(10, 0, 1), 2016.1000001},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): 2016.1000001})).NewScoped(10, 1, 1), 2016.1000001},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{
+		{mock.NewService().NewScoped(0, 0), 2015.1000001}, // because default value in packageConfiguration
+		{mock.NewService().NewScoped(0, 1), 2015.1000001}, // because default value in packageConfiguration
+		{mock.NewService().NewScoped(1, 1), 2015.1000001}, // because default value in packageConfiguration
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.Bind(scope.WebsiteID, 10).String(): 2016.1000001})).NewScoped(10, 0), 2016.1000001},
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.Bind(scope.WebsiteID, 10).String(): 2016.1000001})).NewScoped(10, 1), 2016.1000001},
+		{mock.NewService(mock.WithPV(mock.PathValue{
 			wantPath.String():                         2017.1000001,
-			wantPath.Bind(scope.StoreID, 11).String(): 2016.1000001,
-		})).NewScoped(10, 0, 11), 2016.1000001},
+			wantPath.Bind(scope.StoreID, 11).String(): 2016.1000021,
+		})).NewScoped(10, 11), 2017.1000001},
+		{mock.NewService(mock.WithPV(mock.PathValue{
+			wantPath.String():                           2017.1000001,
+			wantPath.Bind(scope.WebsiteID, 13).String(): 2018.2000001,
+			wantPath.Bind(scope.StoreID, 11).String():   2016.1000021,
+		})).NewScoped(13, 11), 2018.2000001},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -432,7 +457,7 @@ func TestFloat64GetWithCfgStruct(t *testing.T) {
 func TestFloat64GetWithoutCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsF64 = "web/cors/float64"
-	b := model.NewFloat64("web/cors/float64")
+	b := model.NewFloat64(pathWebCorsF64) // no *element.Field has been set. So Default Scope will be enforced
 	assert.Empty(t, b.Options())
 
 	wantPath := path.MustNewByParts(pathWebCorsF64).Bind(scope.WebsiteID, 10)
@@ -440,8 +465,9 @@ func TestFloat64GetWithoutCfgStruct(t *testing.T) {
 		sg   config.ScopedGetter
 		want float64
 	}{
-		{config.NewMockGetter().NewScoped(0, 0, 0), 0},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): 2016.1000001})).NewScoped(10, 0, 0), 2016.1000001},
+		{mock.NewService().NewScoped(0, 0), 0},
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.Bind(scope.WebsiteID, 10).String(): 2016.1000001})).NewScoped(10, 0), 0},
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.Bind(scope.DefaultID, 0).String(): 2016.1000001})).NewScoped(10, 0), 2016.1000001},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -450,14 +476,20 @@ func TestFloat64GetWithoutCfgStruct(t *testing.T) {
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
 	}
+}
+
+func TestFloat64GetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
+	t.Parallel()
+
+	b := model.NewFloat64("web/cors/float64")
 
 	haveErr := errors.New("Unexpected error")
-	gb, err := b.Get(config.NewMockGetter(
-		config.WithMockValues(config.MockPV{wantPath.String(): 123.456}),
-		config.WithMockFloat64(func(path string) (float64, error) {
+	gb, err := b.Get(mock.NewService(
+
+		mock.WithFloat64(func(path string) (float64, error) {
 			return 0, haveErr
 		}),
-	).NewScoped(1, 1, 1))
+	).NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
 
@@ -467,9 +499,9 @@ func TestFloat64Write(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsF64 = "web/cors/float64"
 	wantPath := path.MustNewByParts(pathWebCorsF64).Bind(scope.WebsiteID, 10)
-	b := model.NewFloat64("web/cors/float64", model.WithConfigStructure(configStructure))
+	b := model.NewFloat64("web/cors/float64", model.WithFieldFromSectionSlice(configStructure))
 
-	mw := &config.MockWrite{}
+	mw := &mock.Write{}
 	assert.NoError(t, b.Write(mw, 1.123456789, scope.WebsiteID, 10))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, 1.12345678900000, mw.ArgValue.(float64))
@@ -479,7 +511,7 @@ func TestRecursiveOption(t *testing.T) {
 	t.Parallel()
 	b := model.NewInt(
 		"web/cors/int",
-		model.WithConfigStructure(configStructure),
+		model.WithFieldFromSectionSlice(configStructure),
 		model.WithSourceByString("a", "A", "b", "b"),
 	)
 
@@ -495,7 +527,7 @@ func TestRecursiveOption(t *testing.T) {
 }
 
 func mustParseTime(s string) time.Time {
-	t, err := cast.StringToDate(s, nil)
+	t, err := conv.StringToDate(s, nil)
 	if err != nil {
 		panic(err)
 	}
@@ -505,8 +537,8 @@ func mustParseTime(s string) time.Time {
 func TestTimeGetWithCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsTime = "web/cors/time"
-	b := model.NewTime("web/cors/time", model.WithConfigStructure(configStructure))
-	assert.Empty(t, b.Options())
+	tm := model.NewTime("web/cors/time", model.WithFieldFromSectionSlice(configStructure))
+	assert.Empty(t, tm.Options())
 
 	wantPath := path.MustNewByParts(pathWebCorsTime).Bind(scope.WebsiteID, 10)
 	defaultTime := mustParseTime("2012-08-23 09:20:13")
@@ -514,20 +546,18 @@ func TestTimeGetWithCfgStruct(t *testing.T) {
 		sg   config.ScopedGetter
 		want time.Time
 	}{
-		{config.NewMockGetter().NewScoped(0, 0, 0), defaultTime}, // because default value in packageConfiguration
-		{config.NewMockGetter().NewScoped(0, 0, 1), defaultTime}, // because default value in packageConfiguration
-		{config.NewMockGetter().NewScoped(0, 1, 1), defaultTime}, // because default value in packageConfiguration
-		{config.NewMockGetter().NewScoped(1, 1, 1), defaultTime}, // because default value in packageConfiguration
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): defaultTime.Add(time.Second * 2)})).NewScoped(10, 0, 0), defaultTime.Add(time.Second * 2)},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): defaultTime.Add(time.Second * 3)})).NewScoped(10, 0, 1), defaultTime.Add(time.Second * 3)},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.Bind(scope.WebsiteID, 10).String(): defaultTime.Add(time.Second * 4)})).NewScoped(10, 1, 1), defaultTime.Add(time.Second * 4)},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{
+		{mock.NewService().NewScoped(0, 0), defaultTime}, // because default value in packageConfiguration
+		{mock.NewService().NewScoped(0, 1), defaultTime}, // because default value in packageConfiguration
+		{mock.NewService().NewScoped(1, 1), defaultTime}, // because default value in packageConfiguration
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.Bind(scope.WebsiteID, 10).String(): defaultTime.Add(time.Second * 2)})).NewScoped(10, 0), defaultTime.Add(time.Second * 2)},
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.Bind(scope.WebsiteID, 10).String(): defaultTime.Add(time.Second * 3)})).NewScoped(10, 1), defaultTime.Add(time.Second * 3)},
+		{mock.NewService(mock.WithPV(mock.PathValue{
 			wantPath.String():                         defaultTime.Add(time.Second * 5),
 			wantPath.Bind(scope.StoreID, 11).String(): defaultTime.Add(time.Second * 6),
-		})).NewScoped(10, 0, 11), defaultTime.Add(time.Second * 6)},
+		})).NewScoped(10, 11), defaultTime.Add(time.Second * 6)},
 	}
 	for i, test := range tests {
-		gb, err := b.Get(test.sg)
+		gb, err := tm.Get(test.sg)
 		if err != nil {
 			t.Fatal("Index", i, err)
 		}
@@ -538,7 +568,7 @@ func TestTimeGetWithCfgStruct(t *testing.T) {
 func TestTimeGetWithoutCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsTime = "web/cors/time"
-	b := model.NewTime("web/cors/time")
+	b := model.NewTime(pathWebCorsTime)
 	assert.Empty(t, b.Options())
 
 	wantPath := path.MustNewByParts(pathWebCorsTime).Bind(scope.WebsiteID, 10)
@@ -547,14 +577,14 @@ func TestTimeGetWithoutCfgStruct(t *testing.T) {
 		sg   config.ScopedGetter
 		want time.Time
 	}{
-		{config.NewMockGetter().NewScoped(1, 1, 1), time.Time{}}, // because default value in packageConfiguration
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.String(): defaultTime.Add(time.Second * 2)})).NewScoped(10, 0, 0), defaultTime.Add(time.Second * 2)},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.String(): defaultTime.Add(time.Second * 3)})).NewScoped(10, 0, 1), defaultTime.Add(time.Second * 3)},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{wantPath.String(): defaultTime.Add(time.Second * 4)})).NewScoped(10, 1, 1), defaultTime.Add(time.Second * 4)},
-		{config.NewMockGetter(config.WithMockValues(config.MockPV{
-			wantPath.String():                         defaultTime.Add(time.Second * 5),
-			wantPath.Bind(scope.StoreID, 11).String(): defaultTime.Add(time.Second * 6),
-		})).NewScoped(10, 0, 11), defaultTime.Add(time.Second * 6)},
+		{mock.NewService().NewScoped(1, 1), time.Time{}}, // because default value in packageConfiguration
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.String(): defaultTime.Add(time.Second * 2)})).NewScoped(10, 0), time.Time{}},
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.String(): defaultTime.Add(time.Second * 3)})).NewScoped(10, 1), time.Time{}},
+		{mock.NewService(mock.WithPV(mock.PathValue{wantPath.Bind(scope.DefaultID, 0).String(): defaultTime.Add(time.Second * 3)})).NewScoped(0, 0), defaultTime.Add(time.Second * 3)},
+		{mock.NewService(mock.WithPV(mock.PathValue{
+			wantPath.Bind(scope.DefaultID, 0).String(): defaultTime.Add(time.Second * 5),
+			wantPath.Bind(scope.StoreID, 11).String():  defaultTime.Add(time.Second * 6),
+		})).NewScoped(10, 11), defaultTime.Add(time.Second * 5)},
 	}
 	for i, test := range tests {
 		gb, err := b.Get(test.sg)
@@ -563,14 +593,20 @@ func TestTimeGetWithoutCfgStruct(t *testing.T) {
 		}
 		assert.Exactly(t, test.want, gb, "Index %d", i)
 	}
+}
+
+func TestTimeGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
+	t.Parallel()
+
+	b := model.NewTime("web/cors/time")
+	assert.Empty(t, b.Options())
 
 	haveErr := errors.New("Unexpected error")
-	gb, err := b.Get(config.NewMockGetter(
-		config.WithMockValues(config.MockPV{wantPath.String(): defaultTime.Add(time.Second * 4)}),
-		config.WithMockTime(func(path string) (time.Time, error) {
+	gb, err := b.Get(mock.NewService(
+		mock.WithTime(func(path string) (time.Time, error) {
 			return time.Time{}, haveErr
 		}),
-	).NewScoped(1, 1, 1))
+	).NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
 }
@@ -581,9 +617,9 @@ func TestTimeWrite(t *testing.T) {
 	wantPath := path.MustNewByParts(pathWebCorsF64).Bind(scope.WebsiteID, 10)
 	haveTime := mustParseTime("2000-08-23 09:20:13")
 
-	b := model.NewTime("web/cors/time", model.WithConfigStructure(configStructure))
+	b := model.NewTime("web/cors/time", model.WithFieldFromSectionSlice(configStructure))
 
-	mw := &config.MockWrite{}
+	mw := &mock.Write{}
 	assert.NoError(t, b.Write(mw, haveTime, scope.WebsiteID, 10))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, haveTime, mw.ArgValue.(time.Time))

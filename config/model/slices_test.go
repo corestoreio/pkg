@@ -19,7 +19,7 @@ import (
 
 	"errors"
 
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/mock"
 	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/source"
@@ -33,14 +33,14 @@ func TestStringCSVGet(t *testing.T) {
 	wantPath := path.MustNewByParts(pathWebCorsHeaders).String()
 	b := model.NewStringCSV(
 		"web/cors/exposed_headers",
-		model.WithConfigStructure(configStructure),
+		model.WithFieldFromSectionSlice(configStructure),
 		model.WithSourceByString(
 			"Content-Type", "Content Type", "X-CoreStore-ID", "CoreStore Microservice ID",
 		),
 	)
 	assert.NotEmpty(t, b.Options())
 
-	sl, err := b.Get(config.NewMockGetter().NewScoped(0, 0, 0))
+	sl, err := b.Get(mock.NewService().NewScoped(0, 0))
 	assert.NoError(t, err)
 	assert.Exactly(t, []string{"Content-Type", "X-CoreStore-ID"}, sl) // default values from variable configStructure
 
@@ -56,11 +56,11 @@ func TestStringCSVGet(t *testing.T) {
 		// todo add errors
 	}
 	for i, test := range tests {
-		haveSL, haveErr := b.Get(config.NewMockGetter(
-			config.WithMockValues(config.MockPV{
+		haveSL, haveErr := b.Get(mock.NewService(
+			mock.WithPV(mock.PathValue{
 				wantPath: test.have,
 			}),
-		).NewScoped(1, 0, 0)) // 1,0,0 because scope of pathWebCorsHeaders is default,website
+		).NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
 		if test.wantErr != nil {
@@ -77,13 +77,13 @@ func TestStringCSVWrite(t *testing.T) {
 	wantPath := path.MustNewByParts(pathWebCorsHeaders).String()
 	b := model.NewStringCSV(
 		"web/cors/exposed_headers",
-		model.WithConfigStructure(configStructure),
+		model.WithFieldFromSectionSlice(configStructure),
 		model.WithSourceByString(
 			"Content-Type", "Content Type", "X-CoreStore-ID", "CoreStore Microservice ID",
 		),
 	)
 
-	mw := &config.MockWrite{}
+	mw := &mock.Write{}
 	b.Source.Merge(source.NewByString("a", "a", "b", "b", "c", "c"))
 
 	assert.NoError(t, b.Write(mw, []string{"a", "b", "c"}, scope.DefaultID, 0))
@@ -95,6 +95,35 @@ func TestStringCSVWrite(t *testing.T) {
 	)
 }
 
+func TestStringCSVCustomSeparator(t *testing.T) {
+	t.Parallel()
+
+	const cfgPath = "aa/bb/cc"
+
+	b := model.NewStringCSV(
+		cfgPath,
+		model.WithSourceByString(
+			"2014", "Year 2014",
+			"2015", "Year 2015",
+			"2016", "Year 2016",
+			"2017", "Year 2017",
+		),
+		model.WithCSVSeparator(''),
+	)
+	wantPath := path.MustNewByParts(cfgPath).String() // Default Scope
+
+	haveSL, haveErr := b.Get(mock.NewService(
+		mock.WithPV(mock.PathValue{
+			wantPath: `20152016`,
+		}),
+	).NewScoped(34, 4))
+	if haveErr != nil {
+		t.Fatal(haveErr)
+	}
+
+	assert.Exactly(t, []string{"2015", "2016"}, haveSL)
+}
+
 func TestIntCSV(t *testing.T) {
 	t.Parallel()
 
@@ -102,7 +131,7 @@ func TestIntCSV(t *testing.T) {
 
 	b := model.NewIntCSV(
 		pathWebCorsIntSlice,
-		model.WithConfigStructure(configStructure),
+		model.WithFieldFromSectionSlice(configStructure),
 		model.WithSourceByInt(source.Ints{
 			{2014, "Year 2014"},
 			{2015, "Year 2015"},
@@ -113,7 +142,7 @@ func TestIntCSV(t *testing.T) {
 	assert.Len(t, b.Options(), 4)
 	assert.Exactly(t, pathWebCorsIntSlice, b.String())
 	// default values:
-	sl, err := b.Get(config.NewMockGetter().NewScoped(0, 0, 4))
+	sl, err := b.Get(mock.NewService().NewScoped(0, 4))
 	assert.NoError(t, err)
 	assert.Exactly(t, []int{2014, 2015, 2016}, sl) // three years are defined in variable configStructure
 
@@ -128,16 +157,16 @@ func TestIntCSV(t *testing.T) {
 		{false, "3015,3016", []int{3015, 3016}, nil},
 		{false, "2015,2017", []int{2015, 2017}, nil},
 		{false, "", nil, nil},
-		{false, "2015,,2017", []int{2015}, errors.New("strconv.ParseInt: parsing \"\": invalid syntax")},
+		{false, "2015,,20x17", []int{2015}, errors.New("strconv.ParseInt: parsing \"20x17\": invalid syntax")},
 		{true, "2015,,2017", []int{2015, 2017}, nil},
 	}
 	for i, test := range tests {
 		b.Lenient = test.lenient
-		haveSL, haveErr := b.Get(config.NewMockGetter(
-			config.WithMockValues(config.MockPV{
+		haveSL, haveErr := b.Get(mock.NewService(
+			mock.WithPV(mock.PathValue{
 				wantPath: test.have,
 			}),
-		).NewScoped(0, 0, 4))
+		).NewScoped(0, 4))
 
 		assert.Exactly(t, test.want, haveSL, "Index %d", i)
 		if test.wantErr != nil {
@@ -146,8 +175,26 @@ func TestIntCSV(t *testing.T) {
 		}
 		assert.NoError(t, haveErr, "Index %d", i)
 	}
+}
 
-	mw := &config.MockWrite{}
+func TestIntCSVWrite(t *testing.T) {
+	t.Parallel()
+
+	const pathWebCorsIntSlice = "web/cors/int_slice"
+
+	b := model.NewIntCSV(
+		pathWebCorsIntSlice,
+		model.WithFieldFromSectionSlice(configStructure),
+		model.WithSourceByInt(source.Ints{
+			{2014, "Year 2014"},
+			{2015, "Year 2015"},
+			{2016, "Year 2016"},
+			{2017, "Year 2017"},
+		}),
+	)
+	wantPath := path.MustNewByParts(pathWebCorsIntSlice).Bind(scope.StoreID, 4).String()
+
+	mw := &mock.Write{}
 	b.Source.Merge(source.NewByInt(source.Ints{
 		{2018, "Year 2018"},
 	}))
@@ -158,4 +205,34 @@ func TestIntCSV(t *testing.T) {
 		b.Write(mw, []int{2019}, scope.StoreID, 4),
 		"The value '2019' cannot be found within the allowed Options():\n[{\"Value\":2014,\"Label\":\"Year 2014\"},{\"Value\":2015,\"Label\":\"Year 2015\"},{\"Value\":2016,\"Label\":\"Year 2016\"},{\"Value\":2017,\"Label\":\"Year 2017\"},{\"Value\":2018,\"Label\":\"Year 2018\"}]\n",
 	)
+}
+
+func TestIntCSVCustomSeparator(t *testing.T) {
+	t.Parallel()
+
+	const pathWebCorsIntSlice = "web/cors/int_slice"
+
+	b := model.NewIntCSV(
+		pathWebCorsIntSlice,
+		model.WithFieldFromSectionSlice(configStructure),
+		model.WithSourceByInt(source.Ints{
+			{2014, "Year 2014"},
+			{2015, "Year 2015"},
+			{2016, "Year 2016"},
+			{2017, "Year 2017"},
+		}),
+		model.WithCSVSeparator('|'),
+	)
+	wantPath := path.MustNewByParts(pathWebCorsIntSlice).Bind(scope.WebsiteID, 34).String()
+
+	haveSL, haveErr := b.Get(mock.NewService(
+		mock.WithPV(mock.PathValue{
+			wantPath: `2015|2016|`,
+		}),
+	).NewScoped(34, 4))
+	if haveErr != nil {
+		t.Fatal(haveErr)
+	}
+
+	assert.Exactly(t, []int{2015, 2016}, haveSL)
 }

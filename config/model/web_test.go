@@ -17,7 +17,7 @@ package model_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/mock"
 	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
@@ -28,21 +28,21 @@ func TestBaseURLGet(t *testing.T) {
 	t.Parallel()
 	const pathWebUnsecUrl = "web/unsecure/base_url"
 	wantPath := path.MustNewByParts(pathWebUnsecUrl).Bind(scope.StoreID, 1)
-	b := model.NewBaseURL(pathWebUnsecUrl, model.WithConfigStructure(configStructure))
+	b := model.NewBaseURL(pathWebUnsecUrl, model.WithFieldFromSectionSlice(configStructure))
 
 	assert.Empty(t, b.Options())
 
-	sg, err := b.Get(config.NewMockGetter().NewScoped(0, 0, 1))
+	sg, err := b.Get(mock.NewService().NewScoped(0, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, "{{base_url}}", sg)
 
-	sg, err = b.Get(config.NewMockGetter(
-		config.WithMockValues(config.MockPV{
+	sg, err = b.Get(mock.NewService(
+		mock.WithPV(mock.PathValue{
 			wantPath.String(): "http://cs.io",
 		}),
-	).NewScoped(0, 0, 1))
+	).NewScoped(0, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,9 +54,9 @@ func TestBaseURLWrite(t *testing.T) {
 	t.Parallel()
 	const pathWebUnsecUrl = "web/unsecure/base_url"
 	wantPath := path.MustNewByParts(pathWebUnsecUrl).Bind(scope.StoreID, 1)
-	b := model.NewBaseURL(pathWebUnsecUrl, model.WithConfigStructure(configStructure))
+	b := model.NewBaseURL(pathWebUnsecUrl, model.WithFieldFromSectionSlice(configStructure))
 
-	mw := &config.MockWrite{}
+	mw := &mock.Write{}
 	assert.NoError(t, b.Write(mw, "dude", scope.StoreID, 1))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, "dude", mw.ArgValue.(string))

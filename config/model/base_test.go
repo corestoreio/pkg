@@ -20,11 +20,15 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/config/mock"
 	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
+
+var _ source.Optioner = (*baseValue)(nil)
 
 // configStructure might be a duplicate of primitives_test but note that the
 // test package names are different.
@@ -36,7 +40,7 @@ var configStructure = element.MustNewConfiguration(
 				ID:        path.NewRoute("cors"),
 				Label:     text.Chars(`CORS Cross Origin Resource Sharing`),
 				SortOrder: 150,
-				Scope:     scope.NewPerm(scope.DefaultID),
+				Scope:     scope.PermDefault,
 				Fields: element.NewFieldSlice(
 					&element.Field{
 						// Path: `web/cors/exposed_headers`,
@@ -46,7 +50,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeTextarea,
 						SortOrder: 10,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scopes:    scope.PermWebsite,
 						Default:   "Content-Type,X-CoreStore-ID",
 					},
 					&element.Field{
@@ -56,7 +60,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scopes:    scope.PermWebsite,
 						Default:   "true",
 					},
 					&element.Field{
@@ -65,7 +69,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scopes:    scope.PermWebsite,
 						Default:   2015,
 					},
 					&element.Field{
@@ -74,7 +78,7 @@ var configStructure = element.MustNewConfiguration(
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
-						Scope:     scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+						Scopes:    scope.PermWebsite,
 						Default:   2015.1000001,
 					},
 				),
@@ -86,29 +90,29 @@ var configStructure = element.MustNewConfiguration(
 func TestBaseValueString(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
-	p1 := NewValue(pathWebCorsHeaders, WithConfigStructure(configStructure))
+	p1 := NewStr(pathWebCorsHeaders, WithFieldFromSectionSlice(configStructure))
 	assert.Exactly(t, pathWebCorsHeaders, p1.String())
 
 	wantWebsiteID := int64(2) // This number 2 is usually stored in core_website/store_website table in column website_id
 	wantPath := path.MustNewByParts(pathWebCorsHeaders).Bind(scope.WebsiteID, wantWebsiteID)
 
-	mw := new(config.MockWrite)
-	assert.NoError(t, p1.Write(mw, 314159, scope.WebsiteID, wantWebsiteID))
+	mw := new(mock.Write)
+	assert.NoError(t, p1.Write(mw, "314159", scope.WebsiteID, wantWebsiteID))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
-	assert.Exactly(t, 314159, mw.ArgValue.(int))
+	assert.Exactly(t, "314159", mw.ArgValue.(string))
 
-	sg := config.NewMockGetter().NewScoped(wantWebsiteID, 0, 0)
-	defaultStr, err := p1.lookupString(sg)
+	sg := mock.NewService().NewScoped(wantWebsiteID, 0)
+	defaultStr, err := p1.Get(sg)
 	assert.NoError(t, err)
 	assert.Exactly(t, "Content-Type,X-CoreStore-ID", defaultStr)
 
-	sg = config.NewMockGetter(
-		config.WithMockValues(config.MockPV{
+	sg = mock.NewService(
+		mock.WithPV(mock.PathValue{
 			wantPath.String(): "X-CoreStore-TOKEN",
 		}),
-	).NewScoped(wantWebsiteID, 0, 0)
+	).NewScoped(wantWebsiteID, 0)
 
-	customStr, err := p1.lookupString(sg)
+	customStr, err := p1.Get(sg)
 	assert.NoError(t, err)
 	assert.Exactly(t, "X-CoreStore-TOKEN", customStr)
 
@@ -117,7 +121,7 @@ func TestBaseValueString(t *testing.T) {
 	assert.NoError(t, err)
 	f.Default = "Content-Size,Y-CoreStore-ID"
 
-	ws, err := p1.lookupString(config.NewMockGetter().NewScoped(wantWebsiteID, 0, 0))
+	ws, err := p1.Get(mock.NewService().NewScoped(wantWebsiteID, 0))
 	assert.NoError(t, err)
 	assert.Exactly(t, "Content-Size,Y-CoreStore-ID", ws)
 }
@@ -130,31 +134,41 @@ func TestBaseValueInScope(t *testing.T) {
 		wantErr error
 	}{
 		{
-			config.NewMockGetter().NewScoped(0, 0, 0),
-			scope.NewPerm(scope.DefaultID, scope.WebsiteID),
+			mock.NewService().NewScoped(0, 0),
+			scope.PermWebsite,
 			nil,
 		},
 		{
-			config.NewMockGetter().NewScoped(0, 0, 4),
-			scope.NewPerm(scope.StoreID),
+			mock.NewService().NewScoped(0, 4),
+			scope.PermStore,
 			nil,
 		},
 		{
-			config.NewMockGetter().NewScoped(0, 4, 0),
-			scope.NewPerm(scope.StoreID),
-			errors.New("Scope permission insufficient: Have 'Group'; Want 'Store'"),
+			mock.NewService().NewScoped(4, 0),
+			scope.PermStore,
+			nil,
+		},
+		{
+			mock.NewService().NewScoped(0, 4),
+			scope.PermWebsite,
+			errors.New("Scope permission insufficient: Have 'Store'; Want 'Default,Website'"),
+		},
+		{
+			mock.NewService().NewScoped(4, 0),
+			scope.PermDefault,
+			errors.New("Scope permission insufficient: Have 'Website'; Want 'Default'"),
 		},
 	}
-	for _, test := range tests {
+	for i, test := range tests {
 		p1 := NewValue("a/b/c", WithField(&element.Field{
-			Scope: test.p,
+			Scopes: test.p,
 		}))
 		haveErr := p1.InScope(test.sg)
 
 		if test.wantErr != nil {
-			assert.EqualError(t, haveErr, test.wantErr.Error())
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
 		} else {
-			assert.NoError(t, haveErr)
+			assert.NoError(t, haveErr, "Index %d", i)
 		}
 	}
 }
@@ -197,9 +211,9 @@ func TestBaseValueRoute(t *testing.T) {
 	org := NewValue("aa/bb/cc")
 	clone := org.Route()
 
-	if &(org.r) == &clone { // comparing pointer addresses
+	if &(org.route) == &clone { // comparing pointer addresses
 		// is there a better way to test of the slice headers points to a different location?
 		// because clone should be a clone ;-)
-		t.Error("Should not be eual")
+		t.Error("Should not be equal")
 	}
 }

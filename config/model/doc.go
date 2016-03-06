@@ -12,33 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package model provides types for getting and setting values of configuration
-// fields/values with validation and their default value handling.
+// Package model provides types to get/set values of a configuration.
+//
+// Package model handles the scope permission checking, validation based
+// on source models and default value handling based on element.Field type.
 //
 // In Mage world this would be called BackendModel.
 //
-// The default value gets returned if the Get call to the store configuration
-// value fails or value is not set.
-//
 // The signature of a getter function states in most cases:
 //		Get(sg config.ScopedGetter) (v <T>)
-// The global PackageConfiguration variable which is present in each
-// package gets set to the Path* variables during init process and then
-// shall not change. PackageConfiguration knows the default value of a
-// configuration path.
-// sg config.ScopedGetter is the current config.Getter but bounded to a
-// scope. If sg finds not a value then the default value gets returned.
-//
 // The Get() function signature may vary between the packages.
 //
 // The signature of the setter function states in most cases:
 // 		Write(w config.Writer, v interface{}, s scope.Scope, id int64) error
+// The Write() function signature differs within the types to mainly force the
+// type safety. In other packages the Write() signature can be totally different.
+//
 // The responsibility of config.Writer adheres to the correct type conversion
-// to the supported type of the underlying storage engine.
+// to the supported type of the underlying storage engine. E.g. for package
+// config/storage/ccd it config.Writer converts all types to a byte slice.
 //
-// Sometimes the Write() function signature can differ in packages.
 //
-// This package stays pointer free because these types will be more often
-// used as global variables, cough cough, through different packages.
-// With non-pointers we reduce the pressure on the GC.
+// The global PackageConfiguration variable (type element.SectionSlice), which
+// is present in each package, gets set to the model.New* variables during init
+// process. The element.Field will be extracted to allow scope checks and access
+// to default values.
+//
+// The default value gets returned if the Get call to the store configuration
+// value fails or a value is not set.
 package model
