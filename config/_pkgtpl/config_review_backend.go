@@ -29,7 +29,7 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogReviewAllowGuest = model.NewBool(`catalog/review/allow_guest`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogReviewAllowGuest = model.NewBool(`catalog/review/allow_guest`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

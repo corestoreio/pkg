@@ -31,7 +31,7 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.PaypalGeneralMerchantCountry = model.NewStr(`paypal/general/merchant_country`, model.WithConfigStructure(cfgStruct))
+	pp.PaypalGeneralMerchantCountry = model.NewStr(`paypal/general/merchant_country`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

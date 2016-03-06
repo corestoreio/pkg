@@ -50,11 +50,11 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.SystemBackupEnabled = model.NewBool(`system/backup/enabled`, model.WithConfigStructure(cfgStruct))
-	pp.SystemBackupType = model.NewStr(`system/backup/type`, model.WithConfigStructure(cfgStruct))
-	pp.SystemBackupTime = model.NewStr(`system/backup/time`, model.WithConfigStructure(cfgStruct))
-	pp.SystemBackupFrequency = model.NewStr(`system/backup/frequency`, model.WithConfigStructure(cfgStruct))
-	pp.SystemBackupMaintenance = model.NewBool(`system/backup/maintenance`, model.WithConfigStructure(cfgStruct))
+	pp.SystemBackupEnabled = model.NewBool(`system/backup/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemBackupType = model.NewStr(`system/backup/type`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemBackupTime = model.NewStr(`system/backup/time`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemBackupFrequency = model.NewStr(`system/backup/frequency`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemBackupMaintenance = model.NewBool(`system/backup/maintenance`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

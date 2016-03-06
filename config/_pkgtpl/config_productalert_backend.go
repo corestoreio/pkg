@@ -79,16 +79,16 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogProductalertAllowPrice = model.NewBool(`catalog/productalert/allow_price`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogProductalertAllowStock = model.NewBool(`catalog/productalert/allow_stock`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogProductalertEmailPriceTemplate = model.NewStr(`catalog/productalert/email_price_template`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogProductalertEmailStockTemplate = model.NewStr(`catalog/productalert/email_stock_template`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogProductalertEmailIdentity = model.NewStr(`catalog/productalert/email_identity`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogProductalertCronFrequency = model.NewStr(`catalog/productalert_cron/frequency`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogProductalertCronTime = model.NewStr(`catalog/productalert_cron/time`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogProductalertCronErrorEmail = model.NewStr(`catalog/productalert_cron/error_email`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogProductalertCronErrorEmailIdentity = model.NewStr(`catalog/productalert_cron/error_email_identity`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogProductalertCronErrorEmailTemplate = model.NewStr(`catalog/productalert_cron/error_email_template`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogProductalertAllowPrice = model.NewBool(`catalog/productalert/allow_price`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogProductalertAllowStock = model.NewBool(`catalog/productalert/allow_stock`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogProductalertEmailPriceTemplate = model.NewStr(`catalog/productalert/email_price_template`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogProductalertEmailStockTemplate = model.NewStr(`catalog/productalert/email_stock_template`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogProductalertEmailIdentity = model.NewStr(`catalog/productalert/email_identity`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogProductalertCronFrequency = model.NewStr(`catalog/productalert_cron/frequency`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogProductalertCronTime = model.NewStr(`catalog/productalert_cron/time`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogProductalertCronErrorEmail = model.NewStr(`catalog/productalert_cron/error_email`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogProductalertCronErrorEmailIdentity = model.NewStr(`catalog/productalert_cron/error_email_identity`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogProductalertCronErrorEmailTemplate = model.NewStr(`catalog/productalert_cron/error_email_template`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

@@ -36,8 +36,8 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.DevFrontEndDevelopmentWorkflowType = model.NewStr(`dev/front_end_development_workflow/type`, model.WithConfigStructure(cfgStruct))
-	pp.DevRestrictAllowIps = model.NewStr(`dev/restrict/allow_ips`, model.WithConfigStructure(cfgStruct))
+	pp.DevFrontEndDevelopmentWorkflowType = model.NewStr(`dev/front_end_development_workflow/type`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.DevRestrictAllowIps = model.NewStr(`dev/restrict/allow_ips`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

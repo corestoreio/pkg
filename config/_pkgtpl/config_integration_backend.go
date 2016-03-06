@@ -51,11 +51,11 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.OauthCleanupCleanupProbability = model.NewStr(`oauth/cleanup/cleanup_probability`, model.WithConfigStructure(cfgStruct))
-	pp.OauthCleanupExpirationPeriod = model.NewStr(`oauth/cleanup/expiration_period`, model.WithConfigStructure(cfgStruct))
-	pp.OauthConsumerExpirationPeriod = model.NewStr(`oauth/consumer/expiration_period`, model.WithConfigStructure(cfgStruct))
-	pp.OauthConsumerPostMaxredirects = model.NewStr(`oauth/consumer/post_maxredirects`, model.WithConfigStructure(cfgStruct))
-	pp.OauthConsumerPostTimeout = model.NewStr(`oauth/consumer/post_timeout`, model.WithConfigStructure(cfgStruct))
+	pp.OauthCleanupCleanupProbability = model.NewStr(`oauth/cleanup/cleanup_probability`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.OauthCleanupExpirationPeriod = model.NewStr(`oauth/cleanup/expiration_period`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.OauthConsumerExpirationPeriod = model.NewStr(`oauth/consumer/expiration_period`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.OauthConsumerPostMaxredirects = model.NewStr(`oauth/consumer/post_maxredirects`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.OauthConsumerPostTimeout = model.NewStr(`oauth/consumer/post_timeout`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

@@ -63,14 +63,14 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.TaxWeeeEnable = model.NewBool(`tax/weee/enable`, model.WithConfigStructure(cfgStruct))
-	pp.TaxWeeeDisplayList = model.NewStr(`tax/weee/display_list`, model.WithConfigStructure(cfgStruct))
-	pp.TaxWeeeDisplay = model.NewStr(`tax/weee/display`, model.WithConfigStructure(cfgStruct))
-	pp.TaxWeeeDisplaySales = model.NewStr(`tax/weee/display_sales`, model.WithConfigStructure(cfgStruct))
-	pp.TaxWeeeDisplayEmail = model.NewStr(`tax/weee/display_email`, model.WithConfigStructure(cfgStruct))
-	pp.TaxWeeeApplyVat = model.NewBool(`tax/weee/apply_vat`, model.WithConfigStructure(cfgStruct))
-	pp.TaxWeeeIncludeInSubtotal = model.NewBool(`tax/weee/include_in_subtotal`, model.WithConfigStructure(cfgStruct))
-	pp.SalesTotalsSortWeee = model.NewStr(`sales/totals_sort/weee`, model.WithConfigStructure(cfgStruct))
+	pp.TaxWeeeEnable = model.NewBool(`tax/weee/enable`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.TaxWeeeDisplayList = model.NewStr(`tax/weee/display_list`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.TaxWeeeDisplay = model.NewStr(`tax/weee/display`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.TaxWeeeDisplaySales = model.NewStr(`tax/weee/display_sales`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.TaxWeeeDisplayEmail = model.NewStr(`tax/weee/display_email`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.TaxWeeeApplyVat = model.NewBool(`tax/weee/apply_vat`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.TaxWeeeIncludeInSubtotal = model.NewBool(`tax/weee/include_in_subtotal`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesTotalsSortWeee = model.NewStr(`sales/totals_sort/weee`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

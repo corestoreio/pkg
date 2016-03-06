@@ -33,8 +33,8 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.GoogleAnalyticsActive = model.NewBool(`google/analytics/active`, model.WithConfigStructure(cfgStruct))
-	pp.GoogleAnalyticsAccount = model.NewStr(`google/analytics/account`, model.WithConfigStructure(cfgStruct))
+	pp.GoogleAnalyticsActive = model.NewBool(`google/analytics/active`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.GoogleAnalyticsAccount = model.NewStr(`google/analytics/account`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

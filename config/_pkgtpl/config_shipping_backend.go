@@ -58,14 +58,14 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.ShippingOriginCountryId = model.NewStr(`shipping/origin/country_id`, model.WithConfigStructure(cfgStruct))
-	pp.ShippingOriginRegionId = model.NewStr(`shipping/origin/region_id`, model.WithConfigStructure(cfgStruct))
-	pp.ShippingOriginPostcode = model.NewStr(`shipping/origin/postcode`, model.WithConfigStructure(cfgStruct))
-	pp.ShippingOriginCity = model.NewStr(`shipping/origin/city`, model.WithConfigStructure(cfgStruct))
-	pp.ShippingOriginStreetLine1 = model.NewStr(`shipping/origin/street_line1`, model.WithConfigStructure(cfgStruct))
-	pp.ShippingOriginStreetLine2 = model.NewStr(`shipping/origin/street_line2`, model.WithConfigStructure(cfgStruct))
-	pp.ShippingShippingPolicyEnableShippingPolicy = model.NewBool(`shipping/shipping_policy/enable_shipping_policy`, model.WithConfigStructure(cfgStruct))
-	pp.ShippingShippingPolicyShippingPolicyContent = model.NewStr(`shipping/shipping_policy/shipping_policy_content`, model.WithConfigStructure(cfgStruct))
+	pp.ShippingOriginCountryId = model.NewStr(`shipping/origin/country_id`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.ShippingOriginRegionId = model.NewStr(`shipping/origin/region_id`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.ShippingOriginPostcode = model.NewStr(`shipping/origin/postcode`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.ShippingOriginCity = model.NewStr(`shipping/origin/city`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.ShippingOriginStreetLine1 = model.NewStr(`shipping/origin/street_line1`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.ShippingOriginStreetLine2 = model.NewStr(`shipping/origin/street_line2`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.ShippingShippingPolicyEnableShippingPolicy = model.NewBool(`shipping/shipping_policy/enable_shipping_policy`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.ShippingShippingPolicyShippingPolicyContent = model.NewStr(`shipping/shipping_policy/shipping_policy_content`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

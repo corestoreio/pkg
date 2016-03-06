@@ -50,11 +50,11 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.AdminEmailsResetPasswordTemplate = model.NewStr(`admin/emails/reset_password_template`, model.WithConfigStructure(cfgStruct))
-	pp.AdminSecurityLockoutFailures = model.NewStr(`admin/security/lockout_failures`, model.WithConfigStructure(cfgStruct))
-	pp.AdminSecurityLockoutThreshold = model.NewStr(`admin/security/lockout_threshold`, model.WithConfigStructure(cfgStruct))
-	pp.AdminSecurityPasswordLifetime = model.NewStr(`admin/security/password_lifetime`, model.WithConfigStructure(cfgStruct))
-	pp.AdminSecurityPasswordIsForced = model.NewStr(`admin/security/password_is_forced`, model.WithConfigStructure(cfgStruct))
+	pp.AdminEmailsResetPasswordTemplate = model.NewStr(`admin/emails/reset_password_template`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.AdminSecurityLockoutFailures = model.NewStr(`admin/security/lockout_failures`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.AdminSecurityLockoutThreshold = model.NewStr(`admin/security/lockout_threshold`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.AdminSecurityPasswordLifetime = model.NewStr(`admin/security/password_lifetime`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.AdminSecurityPasswordIsForced = model.NewStr(`admin/security/password_is_forced`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

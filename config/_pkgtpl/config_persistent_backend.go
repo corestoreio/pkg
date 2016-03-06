@@ -53,12 +53,12 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.PersistentOptionsEnabled = model.NewBool(`persistent/options/enabled`, model.WithConfigStructure(cfgStruct))
-	pp.PersistentOptionsLifetime = model.NewStr(`persistent/options/lifetime`, model.WithConfigStructure(cfgStruct))
-	pp.PersistentOptionsRememberEnabled = model.NewBool(`persistent/options/remember_enabled`, model.WithConfigStructure(cfgStruct))
-	pp.PersistentOptionsRememberDefault = model.NewBool(`persistent/options/remember_default`, model.WithConfigStructure(cfgStruct))
-	pp.PersistentOptionsLogoutClear = model.NewBool(`persistent/options/logout_clear`, model.WithConfigStructure(cfgStruct))
-	pp.PersistentOptionsShoppingCart = model.NewBool(`persistent/options/shopping_cart`, model.WithConfigStructure(cfgStruct))
+	pp.PersistentOptionsEnabled = model.NewBool(`persistent/options/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.PersistentOptionsLifetime = model.NewStr(`persistent/options/lifetime`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.PersistentOptionsRememberEnabled = model.NewBool(`persistent/options/remember_enabled`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.PersistentOptionsRememberDefault = model.NewBool(`persistent/options/remember_default`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.PersistentOptionsLogoutClear = model.NewBool(`persistent/options/logout_clear`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.PersistentOptionsShoppingCart = model.NewBool(`persistent/options/shopping_cart`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

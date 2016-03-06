@@ -72,15 +72,15 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.NewrelicreportingGeneralEnable = model.NewBool(`newrelicreporting/general/enable`, model.WithConfigStructure(cfgStruct))
-	pp.NewrelicreportingGeneralApiUrl = model.NewStr(`newrelicreporting/general/api_url`, model.WithConfigStructure(cfgStruct))
-	pp.NewrelicreportingGeneralInsightsApiUrl = model.NewStr(`newrelicreporting/general/insights_api_url`, model.WithConfigStructure(cfgStruct))
-	pp.NewrelicreportingGeneralAccountId = model.NewStr(`newrelicreporting/general/account_id`, model.WithConfigStructure(cfgStruct))
-	pp.NewrelicreportingGeneralAppId = model.NewStr(`newrelicreporting/general/app_id`, model.WithConfigStructure(cfgStruct))
-	pp.NewrelicreportingGeneralApi = model.NewStr(`newrelicreporting/general/api`, model.WithConfigStructure(cfgStruct))
-	pp.NewrelicreportingGeneralInsightsInsertKey = model.NewStr(`newrelicreporting/general/insights_insert_key`, model.WithConfigStructure(cfgStruct))
-	pp.NewrelicreportingGeneralAppName = model.NewStr(`newrelicreporting/general/app_name`, model.WithConfigStructure(cfgStruct))
-	pp.NewrelicreportingCronEnableCron = model.NewBool(`newrelicreporting/cron/enable_cron`, model.WithConfigStructure(cfgStruct))
+	pp.NewrelicreportingGeneralEnable = model.NewBool(`newrelicreporting/general/enable`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingGeneralApiUrl = model.NewStr(`newrelicreporting/general/api_url`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingGeneralInsightsApiUrl = model.NewStr(`newrelicreporting/general/insights_api_url`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingGeneralAccountId = model.NewStr(`newrelicreporting/general/account_id`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingGeneralAppId = model.NewStr(`newrelicreporting/general/app_id`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingGeneralApi = model.NewStr(`newrelicreporting/general/api`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingGeneralInsightsInsertKey = model.NewStr(`newrelicreporting/general/insights_insert_key`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingGeneralAppName = model.NewStr(`newrelicreporting/general/app_name`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingCronEnableCron = model.NewBool(`newrelicreporting/cron/enable_cron`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

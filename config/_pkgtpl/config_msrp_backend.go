@@ -44,10 +44,10 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.SalesMsrpEnabled = model.NewBool(`sales/msrp/enabled`, model.WithConfigStructure(cfgStruct))
-	pp.SalesMsrpDisplayPriceType = model.NewStr(`sales/msrp/display_price_type`, model.WithConfigStructure(cfgStruct))
-	pp.SalesMsrpExplanationMessage = model.NewStr(`sales/msrp/explanation_message`, model.WithConfigStructure(cfgStruct))
-	pp.SalesMsrpExplanationMessageWhatsThis = model.NewStr(`sales/msrp/explanation_message_whats_this`, model.WithConfigStructure(cfgStruct))
+	pp.SalesMsrpEnabled = model.NewBool(`sales/msrp/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesMsrpDisplayPriceType = model.NewStr(`sales/msrp/display_price_type`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesMsrpExplanationMessage = model.NewStr(`sales/msrp/explanation_message`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesMsrpExplanationMessageWhatsThis = model.NewStr(`sales/msrp/explanation_message_whats_this`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

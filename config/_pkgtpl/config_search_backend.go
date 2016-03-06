@@ -33,8 +33,8 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogSearchEngine = model.NewStr(`catalog/search/engine`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogSearchSearchType = model.NewStr(`catalog/search/search_type`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogSearchEngine = model.NewStr(`catalog/search/engine`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSearchSearchType = model.NewStr(`catalog/search/search_type`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

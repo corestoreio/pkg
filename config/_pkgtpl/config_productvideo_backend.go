@@ -43,10 +43,10 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogProductVideoYoutubeApiKey = model.NewStr(`catalog/product_video/youtube_api_key`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogProductVideoPlayIfBase = model.NewBool(`catalog/product_video/play_if_base`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogProductVideoShowRelated = model.NewBool(`catalog/product_video/show_related`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogProductVideoVideoAutoRestart = model.NewBool(`catalog/product_video/video_auto_restart`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogProductVideoYoutubeApiKey = model.NewStr(`catalog/product_video/youtube_api_key`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogProductVideoPlayIfBase = model.NewBool(`catalog/product_video/play_if_base`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogProductVideoShowRelated = model.NewBool(`catalog/product_video/show_related`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogProductVideoVideoAutoRestart = model.NewBool(`catalog/product_video/video_auto_restart`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

@@ -29,7 +29,7 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.WebapiSoapCharset = model.NewStr(`webapi/soap/charset`, model.WithConfigStructure(cfgStruct))
+	pp.WebapiSoapCharset = model.NewStr(`webapi/soap/charset`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

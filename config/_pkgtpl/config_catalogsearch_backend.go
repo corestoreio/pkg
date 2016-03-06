@@ -42,10 +42,10 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogSeoSearchTerms = model.NewBool(`catalog/seo/search_terms`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogSearchEngine = model.NewStr(`catalog/search/engine`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogSearchMinQueryLength = model.NewStr(`catalog/search/min_query_length`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogSearchMaxQueryLength = model.NewStr(`catalog/search/max_query_length`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogSeoSearchTerms = model.NewBool(`catalog/seo/search_terms`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSearchEngine = model.NewStr(`catalog/search/engine`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSearchMinQueryLength = model.NewStr(`catalog/search/min_query_length`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSearchMaxQueryLength = model.NewStr(`catalog/search/max_query_length`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

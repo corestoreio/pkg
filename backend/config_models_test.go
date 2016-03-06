@@ -29,7 +29,7 @@ func TestConfigRedirectToBase(t *testing.T) {
 
 	r := backend.NewConfigRedirectToBase(
 		backend.Backend.WebURLRedirectToBase.String(),
-		model.WithConfigStructure(backend.ConfigStructure),
+		model.WithFieldFromSectionSlice(backend.ConfigStructure),
 	)
 
 	redirCode, err := r.Get(config.NewMockGetter().NewScoped(0, 0, 0))
@@ -87,7 +87,7 @@ func TestConfigRedirectToBase(t *testing.T) {
 func BenchmarkConfigRedirectToBase(b *testing.B) {
 	r := backend.NewConfigRedirectToBase(
 		backend.Backend.WebURLRedirectToBase.String(),
-		model.WithConfigStructure(backend.ConfigStructure),
+		model.WithFieldFromSectionSlice(backend.ConfigStructure),
 	)
 	webURLRedirectToBasePath, err := backend.Backend.WebURLRedirectToBase.ToPath(0, 0)
 	if err != nil {

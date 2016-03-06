@@ -62,14 +62,14 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogDownloadableOrderItemStatus = model.NewStr(`catalog/downloadable/order_item_status`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogDownloadableDownloadsNumber = model.NewStr(`catalog/downloadable/downloads_number`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogDownloadableShareable = model.NewBool(`catalog/downloadable/shareable`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogDownloadableSamplesTitle = model.NewStr(`catalog/downloadable/samples_title`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogDownloadableLinksTitle = model.NewStr(`catalog/downloadable/links_title`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogDownloadableLinksTargetNewWindow = model.NewBool(`catalog/downloadable/links_target_new_window`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogDownloadableContentDisposition = model.NewStr(`catalog/downloadable/content_disposition`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogDownloadableDisableGuestCheckout = model.NewBool(`catalog/downloadable/disable_guest_checkout`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogDownloadableOrderItemStatus = model.NewStr(`catalog/downloadable/order_item_status`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogDownloadableDownloadsNumber = model.NewStr(`catalog/downloadable/downloads_number`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogDownloadableShareable = model.NewBool(`catalog/downloadable/shareable`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogDownloadableSamplesTitle = model.NewStr(`catalog/downloadable/samples_title`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogDownloadableLinksTitle = model.NewStr(`catalog/downloadable/links_title`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogDownloadableLinksTargetNewWindow = model.NewBool(`catalog/downloadable/links_target_new_window`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogDownloadableContentDisposition = model.NewStr(`catalog/downloadable/content_disposition`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogDownloadableDisableGuestCheckout = model.NewBool(`catalog/downloadable/disable_guest_checkout`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

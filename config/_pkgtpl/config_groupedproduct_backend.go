@@ -29,7 +29,7 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CheckoutCartGroupedProductImage = model.NewStr(`checkout/cart/grouped_product_image`, model.WithConfigStructure(cfgStruct))
+	pp.CheckoutCartGroupedProductImage = model.NewStr(`checkout/cart/grouped_product_image`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

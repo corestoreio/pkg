@@ -30,7 +30,7 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.PaymentVaultVaultPayment = model.NewStr(`payment/vault/vault_payment`, model.WithConfigStructure(cfgStruct))
+	pp.PaymentVaultVaultPayment = model.NewStr(`payment/vault/vault_payment`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

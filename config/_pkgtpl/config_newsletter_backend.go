@@ -70,14 +70,14 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.NewsletterSubscriptionAllowGuestSubscribe = model.NewBool(`newsletter/subscription/allow_guest_subscribe`, model.WithConfigStructure(cfgStruct))
-	pp.NewsletterSubscriptionConfirm = model.NewBool(`newsletter/subscription/confirm`, model.WithConfigStructure(cfgStruct))
-	pp.NewsletterSubscriptionConfirmEmailIdentity = model.NewStr(`newsletter/subscription/confirm_email_identity`, model.WithConfigStructure(cfgStruct))
-	pp.NewsletterSubscriptionConfirmEmailTemplate = model.NewStr(`newsletter/subscription/confirm_email_template`, model.WithConfigStructure(cfgStruct))
-	pp.NewsletterSubscriptionSuccessEmailIdentity = model.NewStr(`newsletter/subscription/success_email_identity`, model.WithConfigStructure(cfgStruct))
-	pp.NewsletterSubscriptionSuccessEmailTemplate = model.NewStr(`newsletter/subscription/success_email_template`, model.WithConfigStructure(cfgStruct))
-	pp.NewsletterSubscriptionUnEmailIdentity = model.NewStr(`newsletter/subscription/un_email_identity`, model.WithConfigStructure(cfgStruct))
-	pp.NewsletterSubscriptionUnEmailTemplate = model.NewStr(`newsletter/subscription/un_email_template`, model.WithConfigStructure(cfgStruct))
+	pp.NewsletterSubscriptionAllowGuestSubscribe = model.NewBool(`newsletter/subscription/allow_guest_subscribe`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewsletterSubscriptionConfirm = model.NewBool(`newsletter/subscription/confirm`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewsletterSubscriptionConfirmEmailIdentity = model.NewStr(`newsletter/subscription/confirm_email_identity`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewsletterSubscriptionConfirmEmailTemplate = model.NewStr(`newsletter/subscription/confirm_email_template`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewsletterSubscriptionSuccessEmailIdentity = model.NewStr(`newsletter/subscription/success_email_identity`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewsletterSubscriptionSuccessEmailTemplate = model.NewStr(`newsletter/subscription/success_email_template`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewsletterSubscriptionUnEmailIdentity = model.NewStr(`newsletter/subscription/un_email_identity`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewsletterSubscriptionUnEmailTemplate = model.NewStr(`newsletter/subscription/un_email_template`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

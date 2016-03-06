@@ -61,14 +61,14 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.GoogleAdwordsActive = model.NewBool(`google/adwords/active`, model.WithConfigStructure(cfgStruct))
-	pp.GoogleAdwordsConversionId = model.NewStr(`google/adwords/conversion_id`, model.WithConfigStructure(cfgStruct))
-	pp.GoogleAdwordsConversionLanguage = model.NewStr(`google/adwords/conversion_language`, model.WithConfigStructure(cfgStruct))
-	pp.GoogleAdwordsConversionFormat = model.NewStr(`google/adwords/conversion_format`, model.WithConfigStructure(cfgStruct))
-	pp.GoogleAdwordsConversionColor = model.NewStr(`google/adwords/conversion_color`, model.WithConfigStructure(cfgStruct))
-	pp.GoogleAdwordsConversionLabel = model.NewStr(`google/adwords/conversion_label`, model.WithConfigStructure(cfgStruct))
-	pp.GoogleAdwordsConversionValueType = model.NewStr(`google/adwords/conversion_value_type`, model.WithConfigStructure(cfgStruct))
-	pp.GoogleAdwordsConversionValue = model.NewStr(`google/adwords/conversion_value`, model.WithConfigStructure(cfgStruct))
+	pp.GoogleAdwordsActive = model.NewBool(`google/adwords/active`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.GoogleAdwordsConversionId = model.NewStr(`google/adwords/conversion_id`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.GoogleAdwordsConversionLanguage = model.NewStr(`google/adwords/conversion_language`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.GoogleAdwordsConversionFormat = model.NewStr(`google/adwords/conversion_format`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.GoogleAdwordsConversionColor = model.NewStr(`google/adwords/conversion_color`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.GoogleAdwordsConversionLabel = model.NewStr(`google/adwords/conversion_label`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.GoogleAdwordsConversionValueType = model.NewStr(`google/adwords/conversion_value_type`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.GoogleAdwordsConversionValue = model.NewStr(`google/adwords/conversion_value`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

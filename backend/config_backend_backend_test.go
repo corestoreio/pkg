@@ -29,7 +29,7 @@ func Benchmark_StructSpecific(b *testing.B) {
 
 	sg := config.NewMockGetter().NewScoped(1, 1, 1)
 
-	mb := model.NewBool("aa/bb/cc", model.WithConfigStructure(backend.ConfigStructure), model.WithSource(source.YesNo))
+	mb := model.NewBool("aa/bb/cc", model.WithFieldFromSectionSlice(backend.ConfigStructure), model.WithSource(source.YesNo))
 
 	b.ResetTimer()
 	b.ReportAllocs()

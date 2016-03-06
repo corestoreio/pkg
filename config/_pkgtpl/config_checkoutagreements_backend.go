@@ -29,7 +29,7 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CheckoutOptionsEnableAgreements = model.NewBool(`checkout/options/enable_agreements`, model.WithConfigStructure(cfgStruct))
+	pp.CheckoutOptionsEnableAgreements = model.NewBool(`checkout/options/enable_agreements`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

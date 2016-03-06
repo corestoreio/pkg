@@ -54,12 +54,12 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.SendfriendEmailEnabled = model.NewBool(`sendfriend/email/enabled`, model.WithConfigStructure(cfgStruct))
-	pp.SendfriendEmailTemplate = model.NewStr(`sendfriend/email/template`, model.WithConfigStructure(cfgStruct))
-	pp.SendfriendEmailAllowGuest = model.NewBool(`sendfriend/email/allow_guest`, model.WithConfigStructure(cfgStruct))
-	pp.SendfriendEmailMaxRecipients = model.NewStr(`sendfriend/email/max_recipients`, model.WithConfigStructure(cfgStruct))
-	pp.SendfriendEmailMaxPerHour = model.NewStr(`sendfriend/email/max_per_hour`, model.WithConfigStructure(cfgStruct))
-	pp.SendfriendEmailCheckBy = model.NewStr(`sendfriend/email/check_by`, model.WithConfigStructure(cfgStruct))
+	pp.SendfriendEmailEnabled = model.NewBool(`sendfriend/email/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SendfriendEmailTemplate = model.NewStr(`sendfriend/email/template`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SendfriendEmailAllowGuest = model.NewBool(`sendfriend/email/allow_guest`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SendfriendEmailMaxRecipients = model.NewStr(`sendfriend/email/max_recipients`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SendfriendEmailMaxPerHour = model.NewStr(`sendfriend/email/max_per_hour`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SendfriendEmailCheckBy = model.NewStr(`sendfriend/email/check_by`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

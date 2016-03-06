@@ -46,10 +46,10 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.SystemMediaStorageConfigurationMediaStorage = model.NewStr(`system/media_storage_configuration/media_storage`, model.WithConfigStructure(cfgStruct))
-	pp.SystemMediaStorageConfigurationMediaDatabase = model.NewStr(`system/media_storage_configuration/media_database`, model.WithConfigStructure(cfgStruct))
-	pp.SystemMediaStorageConfigurationSynchronize = model.NewStr(`system/media_storage_configuration/synchronize`, model.WithConfigStructure(cfgStruct))
-	pp.SystemMediaStorageConfigurationConfigurationUpdateTime = model.NewStr(`system/media_storage_configuration/configuration_update_time`, model.WithConfigStructure(cfgStruct))
+	pp.SystemMediaStorageConfigurationMediaStorage = model.NewStr(`system/media_storage_configuration/media_storage`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemMediaStorageConfigurationMediaDatabase = model.NewStr(`system/media_storage_configuration/media_database`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemMediaStorageConfigurationSynchronize = model.NewStr(`system/media_storage_configuration/synchronize`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemMediaStorageConfigurationConfigurationUpdateTime = model.NewStr(`system/media_storage_configuration/configuration_update_time`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

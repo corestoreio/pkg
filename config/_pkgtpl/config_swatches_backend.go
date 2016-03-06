@@ -28,7 +28,7 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogFrontendSwatchesPerProduct = model.NewStr(`catalog/frontend/swatches_per_product`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogFrontendSwatchesPerProduct = model.NewStr(`catalog/frontend/swatches_per_product`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

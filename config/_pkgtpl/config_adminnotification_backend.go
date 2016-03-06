@@ -38,9 +38,9 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.SystemAdminnotificationUseHttps = model.NewBool(`system/adminnotification/use_https`, model.WithConfigStructure(cfgStruct))
-	pp.SystemAdminnotificationFrequency = model.NewStr(`system/adminnotification/frequency`, model.WithConfigStructure(cfgStruct))
-	pp.SystemAdminnotificationLastUpdate = model.NewStr(`system/adminnotification/last_update`, model.WithConfigStructure(cfgStruct))
+	pp.SystemAdminnotificationUseHttps = model.NewBool(`system/adminnotification/use_https`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemAdminnotificationFrequency = model.NewStr(`system/adminnotification/frequency`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemAdminnotificationLastUpdate = model.NewStr(`system/adminnotification/last_update`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

@@ -36,8 +36,8 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.SystemFullPageCacheCachingApplication = model.NewStr(`system/full_page_cache/caching_application`, model.WithConfigStructure(cfgStruct))
-	pp.SystemFullPageCacheTtl = model.NewStr(`system/full_page_cache/ttl`, model.WithConfigStructure(cfgStruct))
+	pp.SystemFullPageCacheCachingApplication = model.NewStr(`system/full_page_cache/caching_application`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemFullPageCacheTtl = model.NewStr(`system/full_page_cache/ttl`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

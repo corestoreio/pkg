@@ -56,12 +56,12 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogLayeredNavigationDisplayProductCount = model.NewBool(`catalog/layered_navigation/display_product_count`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogLayeredNavigationPriceRangeCalculation = model.NewStr(`catalog/layered_navigation/price_range_calculation`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogLayeredNavigationPriceRangeStep = model.NewStr(`catalog/layered_navigation/price_range_step`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogLayeredNavigationPriceRangeMaxIntervals = model.NewStr(`catalog/layered_navigation/price_range_max_intervals`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogLayeredNavigationOnePriceInterval = model.NewBool(`catalog/layered_navigation/one_price_interval`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogLayeredNavigationIntervalDivisionLimit = model.NewStr(`catalog/layered_navigation/interval_division_limit`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogLayeredNavigationDisplayProductCount = model.NewBool(`catalog/layered_navigation/display_product_count`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogLayeredNavigationPriceRangeCalculation = model.NewStr(`catalog/layered_navigation/price_range_calculation`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogLayeredNavigationPriceRangeStep = model.NewStr(`catalog/layered_navigation/price_range_step`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogLayeredNavigationPriceRangeMaxIntervals = model.NewStr(`catalog/layered_navigation/price_range_max_intervals`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogLayeredNavigationOnePriceInterval = model.NewBool(`catalog/layered_navigation/one_price_interval`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogLayeredNavigationIntervalDivisionLimit = model.NewStr(`catalog/layered_navigation/interval_division_limit`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

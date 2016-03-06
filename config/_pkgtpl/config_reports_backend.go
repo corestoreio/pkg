@@ -46,11 +46,11 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogRecentlyProductsScope = model.NewStr(`catalog/recently_products/scope`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogRecentlyProductsViewedCount = model.NewStr(`catalog/recently_products/viewed_count`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogRecentlyProductsComparedCount = model.NewStr(`catalog/recently_products/compared_count`, model.WithConfigStructure(cfgStruct))
-	pp.ReportsDashboardYtdStart = model.NewStr(`reports/dashboard/ytd_start`, model.WithConfigStructure(cfgStruct))
-	pp.ReportsDashboardMtdStart = model.NewStr(`reports/dashboard/mtd_start`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogRecentlyProductsScope = model.NewStr(`catalog/recently_products/scope`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogRecentlyProductsViewedCount = model.NewStr(`catalog/recently_products/viewed_count`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogRecentlyProductsComparedCount = model.NewStr(`catalog/recently_products/compared_count`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.ReportsDashboardYtdStart = model.NewStr(`reports/dashboard/ytd_start`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.ReportsDashboardMtdStart = model.NewStr(`reports/dashboard/mtd_start`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

@@ -62,12 +62,12 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.DesignEmailLogo = model.NewStr(`design/email/logo`, model.WithConfigStructure(cfgStruct))
-	pp.DesignEmailLogoAlt = model.NewStr(`design/email/logo_alt`, model.WithConfigStructure(cfgStruct))
-	pp.DesignEmailLogoWidth = model.NewStr(`design/email/logo_width`, model.WithConfigStructure(cfgStruct))
-	pp.DesignEmailLogoHeight = model.NewStr(`design/email/logo_height`, model.WithConfigStructure(cfgStruct))
-	pp.DesignEmailHeaderTemplate = model.NewStr(`design/email/header_template`, model.WithConfigStructure(cfgStruct))
-	pp.DesignEmailFooterTemplate = model.NewStr(`design/email/footer_template`, model.WithConfigStructure(cfgStruct))
+	pp.DesignEmailLogo = model.NewStr(`design/email/logo`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignEmailLogoAlt = model.NewStr(`design/email/logo_alt`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignEmailLogoWidth = model.NewStr(`design/email/logo_width`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignEmailLogoHeight = model.NewStr(`design/email/logo_height`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignEmailHeaderTemplate = model.NewStr(`design/email/header_template`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignEmailFooterTemplate = model.NewStr(`design/email/footer_template`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

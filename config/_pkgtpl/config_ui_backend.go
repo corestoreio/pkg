@@ -35,8 +35,8 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.DevJsSessionStorageLogging = model.NewBool(`dev/js/session_storage_logging`, model.WithConfigStructure(cfgStruct))
-	pp.DevJsSessionStorageKey = model.NewStr(`dev/js/session_storage_key`, model.WithConfigStructure(cfgStruct))
+	pp.DevJsSessionStorageLogging = model.NewBool(`dev/js/session_storage_logging`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.DevJsSessionStorageKey = model.NewStr(`dev/js/session_storage_key`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

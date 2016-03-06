@@ -46,10 +46,10 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogSeoCategoryUrlSuffix = model.NewStr(`catalog/seo/category_url_suffix`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogSeoProductUrlSuffix = model.NewStr(`catalog/seo/product_url_suffix`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogSeoProductUseCategories = model.NewBool(`catalog/seo/product_use_categories`, model.WithConfigStructure(cfgStruct))
-	pp.CatalogSeoSaveRewritesHistory = model.NewBool(`catalog/seo/save_rewrites_history`, model.WithConfigStructure(cfgStruct))
+	pp.CatalogSeoCategoryUrlSuffix = model.NewStr(`catalog/seo/category_url_suffix`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSeoProductUrlSuffix = model.NewStr(`catalog/seo/product_url_suffix`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSeoProductUseCategories = model.NewBool(`catalog/seo/product_use_categories`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSeoSaveRewritesHistory = model.NewBool(`catalog/seo/save_rewrites_history`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

@@ -64,14 +64,14 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.WebDefaultCmsHomePage = model.NewStr(`web/default/cms_home_page`, model.WithConfigStructure(cfgStruct))
-	pp.WebDefaultCmsNoRoute = model.NewStr(`web/default/cms_no_route`, model.WithConfigStructure(cfgStruct))
-	pp.WebDefaultCmsNoCookies = model.NewStr(`web/default/cms_no_cookies`, model.WithConfigStructure(cfgStruct))
-	pp.WebDefaultShowCmsBreadcrumbs = model.NewBool(`web/default/show_cms_breadcrumbs`, model.WithConfigStructure(cfgStruct))
-	pp.WebBrowserCapabilitiesCookies = model.NewBool(`web/browser_capabilities/cookies`, model.WithConfigStructure(cfgStruct))
-	pp.WebBrowserCapabilitiesJavascript = model.NewBool(`web/browser_capabilities/javascript`, model.WithConfigStructure(cfgStruct))
-	pp.WebBrowserCapabilitiesLocalStorage = model.NewBool(`web/browser_capabilities/local_storage`, model.WithConfigStructure(cfgStruct))
-	pp.CmsWysiwygEnabled = model.NewStr(`cms/wysiwyg/enabled`, model.WithConfigStructure(cfgStruct))
+	pp.WebDefaultCmsHomePage = model.NewStr(`web/default/cms_home_page`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebDefaultCmsNoRoute = model.NewStr(`web/default/cms_no_route`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebDefaultCmsNoCookies = model.NewStr(`web/default/cms_no_cookies`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebDefaultShowCmsBreadcrumbs = model.NewBool(`web/default/show_cms_breadcrumbs`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebBrowserCapabilitiesCookies = model.NewBool(`web/browser_capabilities/cookies`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebBrowserCapabilitiesJavascript = model.NewBool(`web/browser_capabilities/javascript`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebBrowserCapabilitiesLocalStorage = model.NewBool(`web/browser_capabilities/local_storage`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CmsWysiwygEnabled = model.NewStr(`cms/wysiwyg/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

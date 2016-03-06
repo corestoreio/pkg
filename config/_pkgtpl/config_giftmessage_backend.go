@@ -34,8 +34,8 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.SalesGiftOptionsAllowOrder = model.NewBool(`sales/gift_options/allow_order`, model.WithConfigStructure(cfgStruct))
-	pp.SalesGiftOptionsAllowItems = model.NewBool(`sales/gift_options/allow_items`, model.WithConfigStructure(cfgStruct))
+	pp.SalesGiftOptionsAllowOrder = model.NewBool(`sales/gift_options/allow_order`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesGiftOptionsAllowItems = model.NewBool(`sales/gift_options/allow_items`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

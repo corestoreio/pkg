@@ -29,7 +29,7 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.GoogleAnalyticsExperiments = model.NewBool(`google/analytics/experiments`, model.WithConfigStructure(cfgStruct))
+	pp.GoogleAnalyticsExperiments = model.NewBool(`google/analytics/experiments`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

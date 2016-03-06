@@ -46,10 +46,10 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.ContactContactEnabled = model.NewBool(`contact/contact/enabled`, model.WithConfigStructure(cfgStruct))
-	pp.ContactEmailRecipientEmail = model.NewStr(`contact/email/recipient_email`, model.WithConfigStructure(cfgStruct))
-	pp.ContactEmailSenderEmailIdentity = model.NewStr(`contact/email/sender_email_identity`, model.WithConfigStructure(cfgStruct))
-	pp.ContactEmailEmailTemplate = model.NewStr(`contact/email/email_template`, model.WithConfigStructure(cfgStruct))
+	pp.ContactContactEnabled = model.NewBool(`contact/contact/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.ContactEmailRecipientEmail = model.NewStr(`contact/email/recipient_email`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.ContactEmailSenderEmailIdentity = model.NewStr(`contact/email/sender_email_identity`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.ContactEmailEmailTemplate = model.NewStr(`contact/email/email_template`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

@@ -51,11 +51,11 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.WebCookieCookieLifetime = model.NewStr(`web/cookie/cookie_lifetime`, model.WithConfigStructure(cfgStruct))
-	pp.WebCookieCookiePath = model.NewStr(`web/cookie/cookie_path`, model.WithConfigStructure(cfgStruct))
-	pp.WebCookieCookieDomain = model.NewStr(`web/cookie/cookie_domain`, model.WithConfigStructure(cfgStruct))
-	pp.WebCookieCookieHttponly = model.NewBool(`web/cookie/cookie_httponly`, model.WithConfigStructure(cfgStruct))
-	pp.WebCookieCookieRestriction = model.NewBool(`web/cookie/cookie_restriction`, model.WithConfigStructure(cfgStruct))
+	pp.WebCookieCookieLifetime = model.NewStr(`web/cookie/cookie_lifetime`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebCookieCookiePath = model.NewStr(`web/cookie/cookie_path`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebCookieCookieDomain = model.NewStr(`web/cookie/cookie_domain`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebCookieCookieHttponly = model.NewBool(`web/cookie/cookie_httponly`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebCookieCookieRestriction = model.NewBool(`web/cookie/cookie_restriction`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

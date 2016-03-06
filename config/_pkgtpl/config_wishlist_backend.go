@@ -61,13 +61,13 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.WishlistEmailEmailIdentity = model.NewStr(`wishlist/email/email_identity`, model.WithConfigStructure(cfgStruct))
-	pp.WishlistEmailEmailTemplate = model.NewStr(`wishlist/email/email_template`, model.WithConfigStructure(cfgStruct))
-	pp.WishlistEmailNumberLimit = model.NewStr(`wishlist/email/number_limit`, model.WithConfigStructure(cfgStruct))
-	pp.WishlistEmailTextLimit = model.NewStr(`wishlist/email/text_limit`, model.WithConfigStructure(cfgStruct))
-	pp.WishlistGeneralActive = model.NewBool(`wishlist/general/active`, model.WithConfigStructure(cfgStruct))
-	pp.WishlistWishlistLinkUseQty = model.NewStr(`wishlist/wishlist_link/use_qty`, model.WithConfigStructure(cfgStruct))
-	pp.RssWishlistActive = model.NewBool(`rss/wishlist/active`, model.WithConfigStructure(cfgStruct))
+	pp.WishlistEmailEmailIdentity = model.NewStr(`wishlist/email/email_identity`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.WishlistEmailEmailTemplate = model.NewStr(`wishlist/email/email_template`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.WishlistEmailNumberLimit = model.NewStr(`wishlist/email/number_limit`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.WishlistEmailTextLimit = model.NewStr(`wishlist/email/text_limit`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.WishlistGeneralActive = model.NewBool(`wishlist/general/active`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.WishlistWishlistLinkUseQty = model.NewStr(`wishlist/wishlist_link/use_qty`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.RssWishlistActive = model.NewBool(`rss/wishlist/active`, model.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

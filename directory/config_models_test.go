@@ -54,7 +54,7 @@ func TestNewConfigCurrencyWrite(t *testing.T) {
 	// special setup for testing
 	cc := directory.NewConfigCurrency(
 		directory.Backend.CurrencyOptionsBase.String(),
-		model.WithConfigStructure(directory.ConfigStructure),
+		model.WithFieldFromSectionSlice(directory.ConfigStructure),
 		model.WithSourceByString("EUR", "Euro", "CHF", "Swiss Franc", "AUD", "Australian Dinar ;-)"),
 	)
 
