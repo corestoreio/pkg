@@ -3,7 +3,7 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
-package cast
+package conv
 
 import (
 	"html/template"
@@ -244,4 +244,14 @@ func TestToTimeE(t *testing.T) {
 		}
 		assert.Exactly(t, test.wantUnix, haveT.Unix(), "Index %d", i)
 	}
+}
+
+func TestToTimeSpecific(t *testing.T) {
+	t.Parallel()
+	const have = "2012-08-23 09:20:13"
+	tm, err := ToTimeE(have)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Log(tm.String())
 }

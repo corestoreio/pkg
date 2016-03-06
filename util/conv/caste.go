@@ -3,7 +3,7 @@
 // Use of this source code is governed by an MIT-style
 // license that can be found in the LICENSE file.
 
-package cast
+package conv
 
 import (
 	"fmt"
@@ -24,7 +24,7 @@ import (
 func ToTimeE(i interface{}) (tim time.Time, err error) {
 	i = indirect(i)
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("cast.ToTimeE", "type", reflect.TypeOf(i), "value", i)
+		PkgLog.Debug("conv.ToTimeE", "type", reflect.TypeOf(i), "value", i)
 	}
 
 	switch s := i.(type) {
@@ -50,7 +50,7 @@ func ToTimeE(i interface{}) (tim time.Time, err error) {
 func ToDurationE(i interface{}) (d time.Duration, err error) {
 	i = indirect(i)
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("cast.ToDurationE", "type", reflect.TypeOf(i), "value", i)
+		PkgLog.Debug("conv.ToDurationE", "type", reflect.TypeOf(i), "value", i)
 	}
 
 	switch s := i.(type) {
@@ -75,7 +75,7 @@ func ToDurationE(i interface{}) (d time.Duration, err error) {
 func ToBoolE(i interface{}) (bool, error) {
 	i = indirect(i)
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("cast.ToBoolE", "type", reflect.TypeOf(i), "value", i)
+		PkgLog.Debug("conv.ToBoolE", "type", reflect.TypeOf(i), "value", i)
 	}
 	switch b := i.(type) {
 	case bool:
@@ -103,7 +103,7 @@ func ToBoolE(i interface{}) (bool, error) {
 func ToFloat64E(i interface{}) (float64, error) {
 	i = indirect(i)
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("cast.ToFloat64E", "type", reflect.TypeOf(i), "value", i)
+		PkgLog.Debug("conv.ToFloat64E", "type", reflect.TypeOf(i), "value", i)
 	}
 
 	switch s := i.(type) {
@@ -136,7 +136,7 @@ func ToFloat64E(i interface{}) (float64, error) {
 func ToIntE(i interface{}) (int, error) {
 	i = indirect(i)
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("cast.ToIntE", "type", reflect.TypeOf(i), "value", i)
+		PkgLog.Debug("conv.ToIntE", "type", reflect.TypeOf(i), "value", i)
 	}
 
 	switch s := i.(type) {
@@ -214,7 +214,7 @@ func indirectToStringerOrError(a interface{}) interface{} {
 func ToStringE(i interface{}) (string, error) {
 	i = indirectToStringerOrError(i)
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("cast.ToStringE", "type", reflect.TypeOf(i), "value", i)
+		PkgLog.Debug("conv.ToStringE", "type", reflect.TypeOf(i), "value", i)
 	}
 
 	switch s := i.(type) {
@@ -253,7 +253,7 @@ func ToStringE(i interface{}) (string, error) {
 // ToStringMapStringE casts an empty interface to a map[string]string.
 func ToStringMapStringE(i interface{}) (map[string]string, error) {
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("cast.ToStringMapStringE", "type", reflect.TypeOf(i), "value", i)
+		PkgLog.Debug("conv.ToStringMapStringE", "type", reflect.TypeOf(i), "value", i)
 	}
 
 	var m = map[string]string{}
@@ -284,7 +284,7 @@ func ToStringMapStringE(i interface{}) (map[string]string, error) {
 // ToStringMapStringSliceE casts an empty interface to a map[string][]string.
 func ToStringMapStringSliceE(i interface{}) (map[string][]string, error) {
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("cast.ToStringMapStringSliceE", "type", reflect.TypeOf(i), "value", i)
+		PkgLog.Debug("conv.ToStringMapStringSliceE", "type", reflect.TypeOf(i), "value", i)
 	}
 
 	var m = map[string][]string{}
@@ -342,7 +342,7 @@ func ToStringMapStringSliceE(i interface{}) (map[string][]string, error) {
 // ToStringMapBoolE casts an empty interface to a map[string]bool.
 func ToStringMapBoolE(i interface{}) (map[string]bool, error) {
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("cast.ToStringMapBoolE", "type", reflect.TypeOf(i), "value", i)
+		PkgLog.Debug("conv.ToStringMapBoolE", "type", reflect.TypeOf(i), "value", i)
 	}
 
 	var m = map[string]bool{}
@@ -368,7 +368,7 @@ func ToStringMapBoolE(i interface{}) (map[string]bool, error) {
 // ToStringMapE casts an empty interface to a map[string]interface{}.
 func ToStringMapE(i interface{}) (map[string]interface{}, error) {
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("cast.ToStringMapE", "type", reflect.TypeOf(i), "value", i)
+		PkgLog.Debug("conv.ToStringMapE", "type", reflect.TypeOf(i), "value", i)
 	}
 
 	var m = map[string]interface{}{}
@@ -389,7 +389,7 @@ func ToStringMapE(i interface{}) (map[string]interface{}, error) {
 // ToSliceE casts an empty interface to a []interface{}.
 func ToSliceE(i interface{}) ([]interface{}, error) {
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("cast.ToSliceE", "type", reflect.TypeOf(i), "value", i)
+		PkgLog.Debug("conv.ToSliceE", "type", reflect.TypeOf(i), "value", i)
 	}
 
 	var s []interface{}
@@ -413,7 +413,7 @@ func ToSliceE(i interface{}) ([]interface{}, error) {
 // ToStringSliceE casts an empty interface to a []string.
 func ToStringSliceE(i interface{}) ([]string, error) {
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("cast.ToStringSliceE", "type", reflect.TypeOf(i), "value", i)
+		PkgLog.Debug("conv.ToStringSliceE", "type", reflect.TypeOf(i), "value", i)
 	}
 
 	var a []string
@@ -442,7 +442,7 @@ func ToStringSliceE(i interface{}) ([]string, error) {
 // ToIntSliceE casts an empty interface to a []int.
 func ToIntSliceE(i interface{}) ([]int, error) {
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("cast.ToIntSliceE", "type", reflect.TypeOf(i), "value", i)
+		PkgLog.Debug("conv.ToIntSliceE", "type", reflect.TypeOf(i), "value", i)
 	}
 
 	if i == nil {

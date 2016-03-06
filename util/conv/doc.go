@@ -12,9 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package cast
-
-import "github.com/corestoreio/csfw/util/log"
-
-// PkgLog global package based logger
-var PkgLog log.Logger = log.PkgLog
+// Package conv - easy and safe casting from one type to another.
+//
+// CoreStore specific types have been additionally implemented for example
+// in funtion ToStringE()
+package conv

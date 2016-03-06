@@ -1,7 +1,7 @@
 cast
 ====
 
-Easy and safe casting from one type to another in Go.
+Easy and safe casting from one type to another in Go
 
 Don’t Panic! ... Cast.
 
