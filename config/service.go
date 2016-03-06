@@ -140,7 +140,7 @@ func (s *Service) Options(opts ...ServiceOption) error {
 
 // NewScoped creates a new scope base configuration reader
 func (s *Service) NewScoped(websiteID, storeID int64) ScopedGetter {
-	return newScopedService(s, websiteID, storeID)
+	return NewScopedService(s, websiteID, storeID)
 }
 
 // ApplyDefaults reads slice Sectioner and applies the keys and values to the

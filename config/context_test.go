@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/mock"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
@@ -25,7 +26,7 @@ import (
 
 func TestContextMustGetter(t *testing.T) {
 	t.Parallel()
-	mr := config.NewMockGetter()
+	mr := mock.NewService()
 	ctx := config.WithContextGetter(context.Background(), mr)
 	mrHave := config.FromContextGetter(ctx)
 	assert.Exactly(t, mr, mrHave)
@@ -37,7 +38,7 @@ func TestContextMustGetter(t *testing.T) {
 
 func TestContextMustGetterPubSuber(t *testing.T) {
 	t.Parallel()
-	mr := config.NewMockGetter()
+	mr := mock.NewService()
 	ctx := config.WithContextGetterPubSuber(context.Background(), mr)
 	mrHave, ok := config.FromContextGetterPubSuber(ctx)
 	assert.Exactly(t, mr, mrHave)
@@ -74,7 +75,7 @@ func TestContextMustWriter(t *testing.T) {
 
 func TestContextScopedGetterOK(t *testing.T) {
 	t.Parallel()
-	srv := config.NewMockGetter()
+	srv := mock.NewService()
 	scopedSrv := srv.NewScoped(0, 0)
 
 	ctx := context.Background()

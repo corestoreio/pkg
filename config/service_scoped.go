@@ -29,7 +29,7 @@ import (
 //
 // To restrict bubbling up you can provide a second argument scope.Scope.
 // You can restrict a configuration path to be only used with the default,
-// website or store scope.
+// website or store scope. See the examples.
 //
 // This interface is mainly implemented in the store package. The functions
 // should be the same as in Getter but only the different is the route
@@ -60,7 +60,9 @@ type scopedService struct {
 
 var _ ScopedGetter = (*scopedService)(nil)
 
-func newScopedService(r Getter, websiteID, storeID int64) scopedService {
+// NewScopedService instantiates a ScopedGetter implementation.
+// For internal use only. Exported because of the config/mock package.
+func NewScopedService(r Getter, websiteID, storeID int64) scopedService {
 	return scopedService{
 		root:      r,
 		websiteID: websiteID,

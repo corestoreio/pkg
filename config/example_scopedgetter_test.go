@@ -14,8 +14,6 @@
 
 package config_test
 
-// commented out becasue refactor store package TODO
-
 //import (
 //	"fmt"
 //
@@ -27,8 +25,9 @@ package config_test
 //)
 //
 //// Default storage engine with build-in in-memory map.
-//// the config.NewService gets only instantiated once during app start up.
-//var configSrv = config.NewService( /*options*/ )
+//// the config.NewService or config.MustNewService gets only instantiated once
+//// during app start up.
+//var configSrv = config.MustNewService( /*options*/ )
 //
 //// The store.MustNewService gets only instantiated once during app start up.
 //var storeSrv = store.MustNewService(

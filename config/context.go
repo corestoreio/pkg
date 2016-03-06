@@ -14,20 +14,15 @@
 
 package config
 
-import "golang.org/x/net/context"
-
-// ctx types are unexported to avoid collisions in context.Context with other packages
-type (
-	ctxKeyGetter         struct{}
-	ctxKeyGetterPubSuber struct{}
-	ctxKeyScopedGetter   struct{}
-	ctxKeyWriter         struct{}
+import (
+	"github.com/corestoreio/csfw/config/internal/cfgctx"
+	"golang.org/x/net/context"
 )
 
 // FromContextGetter returns a config.Getter from a context. If not found returns
 // the config.DefaultService
 func FromContextGetter(ctx context.Context) Getter {
-	if r, ok := ctx.Value(ctxKeyGetter{}).(Getter); ok {
+	if r, ok := ctx.Value(cfgctx.KeyGetter{}).(Getter); ok {
 		return r
 	}
 	return DefaultService
@@ -35,38 +30,38 @@ func FromContextGetter(ctx context.Context) Getter {
 
 // WithContextGetter adds a config.Getter to a context
 func WithContextGetter(ctx context.Context, r Getter) context.Context {
-	return context.WithValue(ctx, ctxKeyGetter{}, r)
+	return context.WithValue(ctx, cfgctx.KeyGetter{}, r)
 }
 
 // FromContextScopedGetter returns a config.ScopedGetter from a context.
 func FromContextScopedGetter(ctx context.Context) (r ScopedGetter, ok bool) {
-	r, ok = ctx.Value(ctxKeyScopedGetter{}).(ScopedGetter)
+	r, ok = ctx.Value(cfgctx.KeyScopedGetter{}).(ScopedGetter)
 	return
 }
 
 // WithContextScopedGetter adds a config.ScopedGetter to a context
 func WithContextScopedGetter(ctx context.Context, r ScopedGetter) context.Context {
-	return context.WithValue(ctx, ctxKeyScopedGetter{}, r)
+	return context.WithValue(ctx, cfgctx.KeyScopedGetter{}, r)
 }
 
 // FromContextGetterPubSuber returns a config.GetterPubSuber from a context.
 func FromContextGetterPubSuber(ctx context.Context) (r GetterPubSuber, ok bool) {
-	r, ok = ctx.Value(ctxKeyGetterPubSuber{}).(GetterPubSuber)
+	r, ok = ctx.Value(cfgctx.KeyGetterPubSuber{}).(GetterPubSuber)
 	return
 }
 
 // WithContextGetterPubSuber adds a GetterPubSuber to a context.
 func WithContextGetterPubSuber(ctx context.Context, r GetterPubSuber) context.Context {
-	return context.WithValue(ctx, ctxKeyGetterPubSuber{}, r)
+	return context.WithValue(ctx, cfgctx.KeyGetterPubSuber{}, r)
 }
 
 // FromContextWriter returns a config.Writer from a context.
 func FromContextWriter(ctx context.Context) (w Writer, ok bool) {
-	w, ok = ctx.Value(ctxKeyWriter{}).(Writer)
+	w, ok = ctx.Value(cfgctx.KeyWriter{}).(Writer)
 	return
 }
 
 // WithContextWriter adds a writer to a context
 func WithContextWriter(ctx context.Context, w Writer) context.Context {
-	return context.WithValue(ctx, ctxKeyWriter{}, w)
+	return context.WithValue(ctx, cfgctx.KeyWriter{}, w)
 }

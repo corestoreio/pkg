@@ -21,6 +21,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/mock"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/store/scope"
@@ -41,7 +42,7 @@ func TestScopedServiceScope(t *testing.T) {
 		{0, 3, scope.StoreID, 3},
 	}
 	for i, test := range tests {
-		sg := config.NewMockGetter().NewScoped(test.websiteID, test.storeID)
+		sg := mock.NewService().NewScoped(test.websiteID, test.storeID)
 		haveScope, haveID := sg.Scope()
 		assert.Exactly(t, test.wantScope, haveScope, "Index %d", i)
 		assert.Exactly(t, test.wantID, haveID, "Index %d", i)
@@ -96,7 +97,7 @@ func TestScopedServicePath(t *testing.T) {
 	for vi, wantVal := range vals {
 		for _, test := range tests {
 
-			cg := config.NewMockGetter(config.WithMockValues(config.MockPV{
+			cg := mock.NewService(mock.WithPV(mock.PathValue{
 				test.fqpath: wantVal,
 			}))
 
@@ -158,7 +159,7 @@ func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64, s s
 	config.PkgLog.SetLevel(log.StdLevelFatal)
 	route := path.NewRoute("aa/bb/cc")
 	want := strings.Repeat("Gopher", 100)
-	sg := config.NewMockGetter(config.WithMockValues(config.MockPV{
+	sg := mock.NewService(mock.WithPV(mock.PathValue{
 		path.MustNew(route).String(): want,
 	})).NewScoped(websiteID, storeID)
 
@@ -182,7 +183,7 @@ func TestScopedServicePermission(t *testing.T) {
 
 	basePath := path.MustNewByParts("aa/bb/cc")
 
-	sg := config.NewMockGetter(config.WithMockValues(config.MockPV{
+	sg := mock.NewService(mock.WithPV(mock.PathValue{
 		basePath.Bind(scope.DefaultID, 0).String(): "a",
 		basePath.Bind(scope.WebsiteID, 1).String(): "b",
 		basePath.Bind(scope.StoreID, 1).String():   "c",

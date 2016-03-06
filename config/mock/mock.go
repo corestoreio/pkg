@@ -26,8 +26,8 @@ import (
 	"golang.org/x/net/context"
 )
 
-// MockWrite used for testing when writing configuration values.
-type MockWrite struct {
+// Write used for testing when writing configuration values.
+type Write struct {
 	// WriteError gets always returned by Write
 	WriteError error
 	// ArgPath will be set after calling write to export the config path.
@@ -38,19 +38,19 @@ type MockWrite struct {
 }
 
 // Write writes to a black hole, may return an error
-func (w *MockWrite) Write(p path.Path, v interface{}) error {
+func (w *Write) Write(p path.Path, v interface{}) error {
 	w.ArgPath = p.String()
 	w.ArgValue = v
 	return w.WriteError
 }
 
-// mockOptionFunc to initialize the NewMockGetter
-type mockOptionFunc func(*MockGet)
+// OptionFunc to initialize the NewService
+type OptionFunc func(*Service)
 
-// MockGet used for testing. Contains functions which will be called in the
+// Service used for testing. Contains functions which will be called in the
 // appropriate methods of interface config.Getter.
-// Using WithMockValues() has precedence over the applied functions.
-type MockGet struct {
+// Using WithPV() has precedence over the applied functions.
+type Service struct {
 	db              storage.Storager
 	FString         func(path string) (string, error)
 	FBool           func(path string) (bool, error)
@@ -61,11 +61,11 @@ type MockGet struct {
 	SubscriptionErr error
 }
 
-// MockPV is a required type for an option function. PV = path => value.
+// PathValue is a required type for an option function. PV = path => value.
 // This map[string]interface{} is protected by a mutex.
-type MockPV map[string]interface{}
+type PathValue map[string]interface{}
 
-func (m MockPV) set(db storage.Storager) {
+func (m PathValue) set(db storage.Storager) {
 	for fq, v := range m {
 		p, err := path.SplitFQ(fq)
 		if err != nil {
@@ -77,70 +77,70 @@ func (m MockPV) set(db storage.Storager) {
 	}
 }
 
-// WithMockString returns a function which can be used in the NewMockGetter().
+// WithString returns a function which can be used in the NewService().
 // Your function returns a string value from a given path.
 // Call priority 2.
-func WithMockString(f func(path string) (string, error)) mockOptionFunc {
-	return func(mr *MockGet) { mr.FString = f }
+func WithString(f func(path string) (string, error)) OptionFunc {
+	return func(mr *Service) { mr.FString = f }
 }
 
-// WithMockBool returns a function which can be used in the NewMockGetter().
+// WithBool returns a function which can be used in the NewService().
 // Your function returns a bool value from a given path.
 // Call priority 2.
-func WithMockBool(f func(path string) (bool, error)) mockOptionFunc {
-	return func(mr *MockGet) { mr.FBool = f }
+func WithBool(f func(path string) (bool, error)) OptionFunc {
+	return func(mr *Service) { mr.FBool = f }
 }
 
-// WithMockFloat64 returns a function which can be used in the NewMockGetter().
+// WithFloat64 returns a function which can be used in the NewService().
 // Your function returns a float64 value from a given path.
 // Call priority 2.
-func WithMockFloat64(f func(path string) (float64, error)) mockOptionFunc {
-	return func(mr *MockGet) { mr.FFloat64 = f }
+func WithFloat64(f func(path string) (float64, error)) OptionFunc {
+	return func(mr *Service) { mr.FFloat64 = f }
 }
 
-// WithMockInt returns a function which can be used in the NewMockGetter().
+// WithInt returns a function which can be used in the NewService().
 // Your function returns an int value from a given path.
 // Call priority 2.
-func WithMockInt(f func(path string) (int, error)) mockOptionFunc {
-	return func(mr *MockGet) { mr.FInt = f }
+func WithInt(f func(path string) (int, error)) OptionFunc {
+	return func(mr *Service) { mr.FInt = f }
 }
 
-// WithMockTime returns a function which can be used in the NewMockGetter().
+// WithTime returns a function which can be used in the NewService().
 // Your function returns a Time value from a given path.
 // Call priority 2.
-func WithMockTime(f func(path string) (time.Time, error)) mockOptionFunc {
-	return func(mr *MockGet) {
+func WithTime(f func(path string) (time.Time, error)) OptionFunc {
+	return func(mr *Service) {
 		mr.FTime = f
 	}
 }
 
-// WithMockValues lets you define a map of path and its values.
+// WithPV lets you define a map of path and its values.
 // Key is the fully qualified configuration path and value is the value.
 // Value must be of the same type as returned by the functions.
 // Panics on error.
 // Call priority 1.
-func WithMockValues(pathValues MockPV) mockOptionFunc {
-	return func(mr *MockGet) {
-		pathValues.set(mr.db)
+func WithPV(pv PathValue) OptionFunc {
+	return func(mr *Service) {
+		pv.set(mr.db)
 	}
 }
 
-// WithContextMockGetter adds a MockGetter to a context.
-func WithContextMockGetter(ctx context.Context, opts ...mockOptionFunc) context.Context {
-	return context.WithValue(ctx, cfgctx.KeyGetter{}, NewMockGetter(opts...))
+// WithContextGetter adds a mock.Service to a context.
+func WithContextGetter(ctx context.Context, opts ...OptionFunc) context.Context {
+	return context.WithValue(ctx, cfgctx.KeyGetter{}, NewService(opts...))
 }
 
-// WithContextMockScopedGetter adds a scoped MockGetter to a context.
-func WithContextMockScopedGetter(websiteID, storeID int64, ctx context.Context, opts ...mockOptionFunc) context.Context {
-	return context.WithValue(ctx, cfgctx.KeyScopedGetter{}, NewMockGetter(opts...).NewScoped(websiteID, storeID))
+// WithContextScopedGetter adds a scoped mock.Service to a context.
+func WithContextScopedGetter(websiteID, storeID int64, ctx context.Context, opts ...OptionFunc) context.Context {
+	return context.WithValue(ctx, cfgctx.KeyScopedGetter{}, NewService(opts...).NewScoped(websiteID, storeID))
 }
 
-// NewMockGetter creates a new MockGetter used in testing.
+// NewService creates a new Service used in testing.
 // Allows you to set different options duration creation or you can
 // set the struct fields afterwards.
-// WithMockValues() option has priority over WithMock<T>() functions.
-func NewMockGetter(opts ...mockOptionFunc) *MockGet {
-	mr := &MockGet{
+// WithPV() option has priority over With<T>() functions.
+func NewService(opts ...OptionFunc) *Service {
+	mr := &Service{
 		db: storage.NewKV(),
 	}
 	for _, opt := range opts {
@@ -150,22 +150,22 @@ func NewMockGetter(opts ...mockOptionFunc) *MockGet {
 }
 
 // UpdateValues adds or overwrites the internal path => value map.
-func (mr *MockGet) UpdateValues(pathValues MockPV) {
+func (mr *Service) UpdateValues(pathValues PathValue) {
 	pathValues.set(mr.db)
 }
 
-func (mr *MockGet) hasVal(p path.Path) bool {
+func (mr *Service) hasVal(p path.Path) bool {
 	v, err := mr.db.Get(p)
 	if err != nil && config.NotKeyNotFoundError(err) {
-		println("Mock.hasVal error:", err.Error(), "path", p.String())
+		println("Mock.Service.hasVal error:", err.Error(), "path", p.String())
 	}
 	return v != nil && err == nil
 }
 
-func (mr *MockGet) getVal(p path.Path) interface{} {
+func (mr *Service) getVal(p path.Path) interface{} {
 	v, err := mr.db.Get(p)
 	if err != nil && config.NotKeyNotFoundError(err) {
-		println("Mock.getVal error:", err.Error(), "path", p.String())
+		println("Mock.Service.getVal error:", err.Error(), "path", p.String())
 		return nil
 	}
 	v = indirect(v)
@@ -173,10 +173,10 @@ func (mr *MockGet) getVal(p path.Path) interface{} {
 }
 
 // String returns a string value
-func (mr *MockGet) String(p path.Path) (string, error) {
+func (mr *Service) String(p path.Path) (string, error) {
 	switch {
 	case mr.hasVal(p):
-		return cast.ToStringE(mr.getVal(p)) //mr.valString(p)
+		return cast.ToStringE(mr.getVal(p))
 	case mr.FString != nil:
 		return mr.FString(p.String())
 	default:
@@ -185,7 +185,7 @@ func (mr *MockGet) String(p path.Path) (string, error) {
 }
 
 // Bool returns a bool value
-func (mr *MockGet) Bool(p path.Path) (bool, error) {
+func (mr *Service) Bool(p path.Path) (bool, error) {
 	switch {
 	case mr.hasVal(p):
 		return cast.ToBoolE(mr.getVal(p))
@@ -197,7 +197,7 @@ func (mr *MockGet) Bool(p path.Path) (bool, error) {
 }
 
 // Float64 returns a float64 value
-func (mr *MockGet) Float64(p path.Path) (float64, error) {
+func (mr *Service) Float64(p path.Path) (float64, error) {
 	switch {
 	case mr.hasVal(p):
 		return cast.ToFloat64E(mr.getVal(p))
@@ -209,7 +209,7 @@ func (mr *MockGet) Float64(p path.Path) (float64, error) {
 }
 
 // Int returns an integer value
-func (mr *MockGet) Int(p path.Path) (int, error) {
+func (mr *Service) Int(p path.Path) (int, error) {
 	switch {
 	case mr.hasVal(p):
 		return cast.ToIntE(mr.getVal(p))
@@ -221,7 +221,7 @@ func (mr *MockGet) Int(p path.Path) (int, error) {
 }
 
 // Time returns a time value
-func (mr *MockGet) Time(p path.Path) (time.Time, error) {
+func (mr *Service) Time(p path.Path) (time.Time, error) {
 	switch {
 	case mr.hasVal(p):
 		return cast.ToTimeE(mr.getVal(p))
@@ -234,13 +234,13 @@ func (mr *MockGet) Time(p path.Path) (time.Time, error) {
 
 // Subscribe returns the before applied SubscriptionID and SubscriptionErr
 // Does not start any underlying Goroutines.
-func (mr *MockGet) Subscribe(_ path.Route, s config.MessageReceiver) (subscriptionID int, err error) {
+func (mr *Service) Subscribe(_ path.Route, s config.MessageReceiver) (subscriptionID int, err error) {
 	return mr.SubscriptionID, mr.SubscriptionErr
 }
 
 // NewScoped creates a new config.ScopedReader which uses the underlying
 // mocked paths and values.
-func (mr *MockGet) NewScoped(websiteID, storeID int64) config.ScopedGetter {
+func (mr *Service) NewScoped(websiteID, storeID int64) config.ScopedGetter {
 	return config.NewScopedService(mr, websiteID, storeID)
 }
 

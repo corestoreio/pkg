@@ -15,18 +15,18 @@
 package mock_test
 
 import (
+	"reflect"
 	"testing"
+	"time"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/mock"
 	"github.com/corestoreio/csfw/config/path"
-	"reflect"
-	"time"
 )
 
-var _ config.Getter = (*mock.MockGet)(nil)
-var _ config.Writer = (*mock.MockWrite)(nil)
-var _ config.GetterPubSuber = (*mock.MockGet)(nil)
+var _ config.Getter = (*mock.Service)(nil)
+var _ config.Writer = (*mock.Write)(nil)
+var _ config.GetterPubSuber = (*mock.Service)(nil)
 
 func TestNewMockGetterAllTypes(t *testing.T) {
 	t.Parallel()
@@ -35,8 +35,8 @@ func TestNewMockGetterAllTypes(t *testing.T) {
 	p := path.MustNewByParts("aa/bb/cc")
 
 	for iFaceIDX, wantVal := range types {
-		mg := mock.NewMockGetter(mock.WithMockValues(
-			mock.MockPV{
+		mg := mock.NewService(mock.WithPV(
+			mock.PathValue{
 				p.String(): wantVal,
 			},
 		))
