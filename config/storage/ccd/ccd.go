@@ -23,7 +23,7 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/cast"
+	"github.com/corestoreio/csfw/util/conv"
 )
 
 // TableCollection handles all tables and its columns. init() in generated Go file will set the value.
@@ -115,7 +115,7 @@ func (dbs *DBStorage) Set(key path.Path, value interface{}) error {
 	dbs.Write.StartStmtUse()
 	defer dbs.Write.StopStmtUse()
 
-	valStr, err := cast.ToStringE(value)
+	valStr, err := conv.ToStringE(value)
 	if err != nil {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.DBStorage.Set.ToString", "err", err, "SQL", dbs.Write.SQL, "value", value)

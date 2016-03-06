@@ -20,7 +20,7 @@ import (
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/storage"
-	"github.com/corestoreio/csfw/util/cast"
+	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/cserr"
 )
 
@@ -218,7 +218,7 @@ func (s *Service) String(p path.Path) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return cast.ToStringE(vs)
+	return conv.ToStringE(vs)
 }
 
 // Bool returns bool from the Service. Example usage see String.
@@ -227,7 +227,7 @@ func (s *Service) Bool(p path.Path) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	return cast.ToBoolE(vs)
+	return conv.ToBoolE(vs)
 }
 
 // Float64 returns a float64 from the Service. Example usage see String.
@@ -236,7 +236,7 @@ func (s *Service) Float64(p path.Path) (float64, error) {
 	if err != nil {
 		return 0, err
 	}
-	return cast.ToFloat64E(vs)
+	return conv.ToFloat64E(vs)
 }
 
 // Int returns an int from the Service. Example usage see String.
@@ -245,18 +245,18 @@ func (s *Service) Int(p path.Path) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return cast.ToIntE(vs)
+	return conv.ToIntE(vs)
 }
 
 // Time returns a date and time object from the Service. Example usage see String.
 // Time() is able to parse available time formats as defined in
-// github.com/corestoreio/csfw/util/cast.StringToDate()
+// github.com/corestoreio/csfw/util/conv.StringToDate()
 func (s *Service) Time(p path.Path) (time.Time, error) {
 	vs, err := s.get(p)
 	if err != nil {
 		return time.Time{}, err
 	}
-	return cast.ToTimeE(vs)
+	return conv.ToTimeE(vs)
 }
 
 // IsSet checks if a key is in the configuration. Returns false on error.

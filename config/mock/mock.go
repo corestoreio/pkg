@@ -22,7 +22,7 @@ import (
 	"github.com/corestoreio/csfw/config/internal/cfgctx"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/storage"
-	"github.com/corestoreio/csfw/util/cast"
+	"github.com/corestoreio/csfw/util/conv"
 	"golang.org/x/net/context"
 )
 
@@ -176,7 +176,7 @@ func (mr *Service) getVal(p path.Path) interface{} {
 func (mr *Service) String(p path.Path) (string, error) {
 	switch {
 	case mr.hasVal(p):
-		return cast.ToStringE(mr.getVal(p))
+		return conv.ToStringE(mr.getVal(p))
 	case mr.FString != nil:
 		return mr.FString(p.String())
 	default:
@@ -188,7 +188,7 @@ func (mr *Service) String(p path.Path) (string, error) {
 func (mr *Service) Bool(p path.Path) (bool, error) {
 	switch {
 	case mr.hasVal(p):
-		return cast.ToBoolE(mr.getVal(p))
+		return conv.ToBoolE(mr.getVal(p))
 	case mr.FBool != nil:
 		return mr.FBool(p.String())
 	default:
@@ -200,7 +200,7 @@ func (mr *Service) Bool(p path.Path) (bool, error) {
 func (mr *Service) Float64(p path.Path) (float64, error) {
 	switch {
 	case mr.hasVal(p):
-		return cast.ToFloat64E(mr.getVal(p))
+		return conv.ToFloat64E(mr.getVal(p))
 	case mr.FFloat64 != nil:
 		return mr.FFloat64(p.String())
 	default:
@@ -212,7 +212,7 @@ func (mr *Service) Float64(p path.Path) (float64, error) {
 func (mr *Service) Int(p path.Path) (int, error) {
 	switch {
 	case mr.hasVal(p):
-		return cast.ToIntE(mr.getVal(p))
+		return conv.ToIntE(mr.getVal(p))
 	case mr.FInt != nil:
 		return mr.FInt(p.String())
 	default:
@@ -224,7 +224,7 @@ func (mr *Service) Int(p path.Path) (int, error) {
 func (mr *Service) Time(p path.Path) (time.Time, error) {
 	switch {
 	case mr.hasVal(p):
-		return cast.ToTimeE(mr.getVal(p))
+		return conv.ToTimeE(mr.getVal(p))
 	case mr.FTime != nil:
 		return mr.FTime(p.String())
 	default:
