@@ -46,4 +46,4 @@ func NewNullService() *NullService {
 	return &NullService{}
 }
 
-var _ store.Reader = (*NullService)(nil)
+var _ store.Provider = (*NullService)(nil)

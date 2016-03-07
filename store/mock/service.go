@@ -18,6 +18,7 @@ import (
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storenet"
 	"golang.org/x/net/context"
 )
 
@@ -46,7 +47,7 @@ func WithContextMustService(so scope.Option, opts ...func(ms *Storage)) context.
 	if err != nil {
 		panic(err)
 	}
-	return store.WithContextReader(context.Background(), sm)
+	return storenet.WithContextReader(context.Background(), sm)
 }
 
 // Storage main underlying data container
