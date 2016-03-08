@@ -17,11 +17,10 @@ package ctxjwt
 import (
 	"crypto/ecdsa"
 	"crypto/rsa"
-	"errors"
+	"fmt"
 	"time"
 
-	"fmt"
-
+	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/juju/errors"
 	"github.com/pborman/uuid"
@@ -42,12 +41,11 @@ type Blacklister interface {
 
 // Service main object for handling JWT authentication, generation, blacklists and log outs.
 type Service struct {
-	rsapk    *rsa.PrivateKey
-	ecdsapk  *ecdsa.PrivateKey
-	password []byte // password for hmac
-	hasKey   bool   // must be set to true if one of the three above keys has been set
-
-	lastError error // last error assigned via an OptionFunc
+	*cserr.MultiErr
+	rsapk        *rsa.PrivateKey
+	ecdsapk      *ecdsa.PrivateKey
+	hmacPassword []byte // password for hmac
+	hasKey       bool   // must be set to true if one of the three above keys has been set
 
 	// Expire defines the duration when the token is about to expire
 	Expire time.Duration
@@ -69,16 +67,15 @@ type Service struct {
 // method is HMAC512. The auto generated password will not be outputted.
 func NewService(opts ...Option) (*Service, error) {
 	s := new(Service)
-	for _, opt := range opts {
-		opt(s)
+
+	if err := s.Options(opts...); err != nil {
+		return nil, s
 	}
-	if s.lastError != nil {
-		return nil, s.lastError
-	}
+
 	if !s.hasKey {
 		s.hasKey = true
 		s.SigningMethod = jwt.SigningMethodHS512
-		s.password = []byte(uuid.NewRandom()) // @todo can be better ...
+		s.hmacPassword = []byte(uuid.NewRandom()) // @todo can be better ...
 	}
 	if s.Expire.Seconds() < 1 {
 		s.Expire = DefaultExpire
@@ -90,6 +87,26 @@ func NewService(opts ...Option) (*Service, error) {
 		s.JTI = jti{}
 	}
 	return s, nil
+}
+
+// MustNewService same as NewService but panics on error.
+func MustNewService(opts ...Option) *Service {
+	s, err := NewService(opts...)
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
+// Options applies option at creation time or refreshes them.
+func (s *Service) Options(opts ...Option) error {
+	for _, opt := range opts {
+		opt(s)
+	}
+	if s.HasErrors() {
+		return s
+	}
+	return nil
 }
 
 // GenerateToken creates a new JSON web token. The claims argument will be
@@ -117,7 +134,7 @@ func (s *Service) GenerateToken(claims map[string]interface{}) (token, jti strin
 	case jwt.SigningMethodES256.Alg(), jwt.SigningMethodES384.Alg(), jwt.SigningMethodES512.Alg():
 		token, err = t.SignedString(s.ecdsapk)
 	case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
-		token, err = t.SignedString(s.password)
+		token, err = t.SignedString(s.hmacPassword)
 	default:
 		return "", "", fmt.Errorf("GenerateToken: Unknown algorithm %s", t.Method.Alg())
 	}
@@ -159,7 +176,7 @@ func (s *Service) keyFunc(t *jwt.Token) (interface{}, error) {
 	case jwt.SigningMethodES256.Alg(), jwt.SigningMethodES384.Alg(), jwt.SigningMethodES512.Alg():
 		return &s.ecdsapk.PublicKey, nil
 	case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
-		return s.password, nil
+		return s.hmacPassword, nil
 	default:
 		return nil, fmt.Errorf("ctxjwt.Service.keyFunc: Unknown algorithm %s", t.Method.Alg())
 	}

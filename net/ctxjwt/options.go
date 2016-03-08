@@ -25,12 +25,9 @@ import (
 	"os"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/model"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/pborman/uuid"
 )
-
-// PathJWTPassword defines the path where the password has been stored.
-const PathJWTPassword = "corestore/jwt/password"
 
 // ErrPrivateKeyNotFound will be returned when the PK cannot be read from the Reader
 var ErrPrivateKeyNotFound = errors.New("Private Key from io.Reader no found")
@@ -55,22 +52,39 @@ func WithBlacklist(blacklist Blacklister) Option {
 }
 
 // WithPasswordFromConfig retrieves the password from the configuration with path
-// as defined in constant PathJWTPassword
-func WithPasswordFromConfig(cr config.Getter) Option {
-	pw, err := cr.String(config.Path(PathJWTPassword))
-	if config.NotKeyNotFoundError(err) {
-		pw = string(uuid.NewRandom())
+// as defined in constant PathJWTHMACPassword. If a configured password cannot be found
+// an error will be returned. For the third argument you may provide:
+// 		model.WithFieldFromSectionSlice(cfgStruct),
+// for further validation of the scope.
+func WithPasswordFromConfig(sg config.ScopedGetter, enc model.Encryptor, opts ...model.Option) Option {
+
+	pwm := model.NewObscure(
+		PathJWTHMACPassword,
+		append([]model.Option{model.WithEncryptor(enc)}, opts...)...,
+	)
+
+	return func(s *Service) {
+		pw, err := pwm.Get(sg)
+		if config.NotKeyNotFoundError(err) {
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("ctxjwt.WithPasswordFromConfig.Obscure.Get", "err", err, "path", PathJWTHMACPassword)
+			}
+			s.MultiErr = s.AppendErrors(err)
+			return
+		}
+
+		s.hasKey = true
+		s.SigningMethod = jwt.SigningMethodHS256
+		s.hmacPassword = []byte(pw)
 	}
-	return WithPassword([]byte(pw))
 }
 
 // WithPassword sets the HMAC 256 bit signing method with a password. Useful to use Magento encryption key.
 func WithPassword(key []byte) Option {
 	return func(s *Service) {
-		s.lastError = nil
 		s.hasKey = true
 		s.SigningMethod = jwt.SigningMethodHS256
-		s.password = key
+		s.hmacPassword = key
 	}
 }
 
@@ -82,7 +96,7 @@ func WithECDSAFromFile(fileName string, password ...[]byte) Option {
 			if PkgLog.IsDebug() {
 				PkgLog.Debug("ctxjwt.WithECDSAFromFile.os.Open", "err", err, "file", fileName)
 			}
-			s.lastError = err
+			s.MultiErr = s.AppendErrors(err)
 		}
 	}
 	return WithECDSA(fpk, password...)
@@ -102,7 +116,7 @@ func WithECDSA(privateKey io.Reader, password ...[]byte) Option {
 
 	return func(s *Service) {
 		s.hasKey = false // set to true if fully implemented
-		s.lastError = errors.New("@todo implement")
+		s.AppendErrors(errors.New("@todo implement"))
 		s.SigningMethod = jwt.SigningMethodES256
 		s.ecdsapk = nil
 	}
@@ -118,7 +132,7 @@ func WithRSAFromFile(fileName string, password ...[]byte) Option {
 			if PkgLog.IsDebug() {
 				PkgLog.Debug("ctxjwt.WithRSAFromFile.os.Open", "err", err, "file", fileName)
 			}
-			s.lastError = err
+			s.MultiErr = s.AppendErrors(err)
 		}
 	}
 	return WithRSA(fpk, password...)
@@ -139,11 +153,11 @@ func WithRSA(privateKey io.Reader, password ...[]byte) Option {
 	}
 	prKeyData, errRA := ioutil.ReadAll(privateKey)
 	if errRA != nil {
-		return func(a *Service) {
+		return func(s *Service) {
 			if PkgLog.IsDebug() {
 				PkgLog.Debug("ctxjwt.WithRSA.ioutil.ReadAll", "err", errRA, "privateKey", privateKey)
 			}
-			a.lastError = errRA
+			s.MultiErr = s.AppendErrors(errRA)
 		}
 	}
 	var prKeyPEM *pem.Block
@@ -152,7 +166,7 @@ func WithRSA(privateKey io.Reader, password ...[]byte) Option {
 			if PkgLog.IsDebug() {
 				PkgLog.Debug("ctxjwt.WithRSA.pem.Decode", "err", ErrPrivateKeyNotFound, "prKeyData", prKeyData)
 			}
-			s.lastError = ErrPrivateKeyNotFound
+			s.MultiErr = s.AppendErrors(ErrPrivateKeyNotFound)
 		}
 	}
 
@@ -164,7 +178,7 @@ func WithRSA(privateKey io.Reader, password ...[]byte) Option {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("ctxjwt.WithRSA.IsEncryptedPEMBlock", "err", ErrPrivateKeyNoPassword)
 				}
-				s.lastError = ErrPrivateKeyNoPassword
+				s.MultiErr = s.AppendErrors(ErrPrivateKeyNoPassword)
 			}
 		}
 		var dd []byte
@@ -174,7 +188,7 @@ func WithRSA(privateKey io.Reader, password ...[]byte) Option {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("ctxjwt.WithRSA.DecryptPEMBlock", "err", errPEM)
 				}
-				s.lastError = errPEM
+				s.MultiErr = s.AppendErrors(errPEM)
 			}
 		}
 		rsaPrivateKey, err = x509.ParsePKCS1PrivateKey(dd)
@@ -190,7 +204,7 @@ func WithRSA(privateKey io.Reader, password ...[]byte) Option {
 			if PkgLog.IsDebug() {
 				PkgLog.Debug("ctxjwt.WithRSA.ParsePKCS1PrivateKey", "err", err)
 			}
-			s.lastError = err
+			s.MultiErr = s.AppendErrors(err)
 		}
 	}
 }
@@ -209,7 +223,7 @@ func WithRSAGenerator() Option {
 			if PkgLog.IsDebug() {
 				PkgLog.Debug("ctxjwt.WithRSAGenerator.GenerateKey", "err", err)
 			}
-			s.lastError = err
+			s.MultiErr = s.AppendErrors(err)
 		}
 	}
 }

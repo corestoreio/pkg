@@ -15,26 +15,26 @@
 package ctxjwt_test
 
 import (
+	"bytes"
 	"testing"
 
-	"bytes"
-
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/mock"
+	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/net/ctxjwt"
-	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPasswordFromConfig(t *testing.T) {
-
-	cfg := config.NewMockGetter(
-		config.WithMockValues(config.MockPV{
-			scope.StrDefault.FQPathInt64(ctxjwt.PathJWTPassword): `Rump3lst!lzch3n`,
+	t.Parallel()
+	srvSG := mock.NewService(
+		mock.WithPV(mock.PathValue{
+			path.MustNewByParts(ctxjwt.PathJWTHMACPassword).String(): `Rump3lst!lzch3n`,
 		}),
-	)
+	).NewScoped(1, 2)
 
 	jm, err := ctxjwt.NewService(
-		ctxjwt.WithPasswordFromConfig(cfg),
+		ctxjwt.WithPasswordFromConfig(srvSG, model.NoopEncryptor{}),
 	)
 	assert.NoError(t, err)
 
@@ -45,7 +45,7 @@ func TestPasswordFromConfig(t *testing.T) {
 }
 
 func TestWithRSAReaderFail(t *testing.T) {
-
+	t.Parallel()
 	jm, err := ctxjwt.NewService(
 		ctxjwt.WithRSA(bytes.NewReader([]byte(`invalid pem data`))),
 	)

@@ -31,9 +31,12 @@ import (
 	"golang.org/x/net/context"
 )
 
+var _ error = (*ctxjwt.Service)(nil)
+
 const uuidLen = 36
 
 func TestNewDefault(t *testing.T) {
+	t.Parallel()
 	jm, err := ctxjwt.NewService()
 	assert.NoError(t, err)
 	assert.Equal(t, time.Hour, jm.Expire)
@@ -66,6 +69,7 @@ func TestNewDefault(t *testing.T) {
 }
 
 func TestInvalidSigningMethod(t *testing.T) {
+	t.Parallel()
 	password := []byte(`Rump3lst!lzch3n`)
 	jm, err := ctxjwt.NewService(
 		ctxjwt.WithPassword(password),
@@ -85,6 +89,7 @@ func TestInvalidSigningMethod(t *testing.T) {
 }
 
 func TestJTI(t *testing.T) {
+	t.Parallel()
 	jm, err := ctxjwt.NewService()
 	assert.NoError(t, err)
 	jm.EnableJTI = true
@@ -110,6 +115,7 @@ func (b *testBL) Set(theToken string, exp time.Duration) error {
 func (b *testBL) Has(_ string) bool { return false }
 
 func TestLogout(t *testing.T) {
+	t.Parallel()
 
 	tbl := &testBL{T: t}
 	jm, err := ctxjwt.NewService(
@@ -133,6 +139,7 @@ func TestLogout(t *testing.T) {
 var pkFile = filepath.Join(cstesting.RootPath, "net", "ctxjwt", "test_rsa")
 
 func TestRSAEncryptedNoOrFailedPassword(t *testing.T) {
+	t.Parallel()
 	jm, err := ctxjwt.NewService(ctxjwt.WithRSAFromFile(pkFile))
 	assert.EqualError(t, err, ctxjwt.ErrPrivateKeyNoPassword.Error())
 	assert.Nil(t, jm)
@@ -158,16 +165,19 @@ func testRsaOption(t *testing.T, opt ctxjwt.Option) {
 }
 
 func TestRSAEncryptedPassword(t *testing.T) {
+	t.Parallel()
 	pw := []byte("cccamp")
 	testRsaOption(t, ctxjwt.WithRSAFromFile(pkFile, pw))
 }
 
 func TestRSAWithoutPassword(t *testing.T) {
+	t.Parallel()
 	pkFileNP := filepath.Join(cstesting.RootPath, "net", "ctxjwt", "test_rsa_np")
 	testRsaOption(t, ctxjwt.WithRSAFromFile(pkFileNP))
 }
 
 func TestRSAGenerate(t *testing.T) {
+	t.Parallel()
 	if testing.Short() {
 		t.Skip("Test skipped in short mode")
 	}
@@ -192,6 +202,7 @@ func testAuth(t *testing.T, errH ctxhttp.HandlerFunc, opts ...ctxjwt.Option) (ct
 }
 
 func TestWithParseAndValidateNoToken(t *testing.T) {
+	t.Parallel()
 
 	authHandler, _ := testAuth(t, nil)
 
@@ -204,6 +215,7 @@ func TestWithParseAndValidateNoToken(t *testing.T) {
 }
 
 func TestWithParseAndValidateHTTPErrorHandler(t *testing.T) {
+	t.Parallel()
 
 	authHandler, _ := testAuth(t, func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		tok, err := ctxjwt.FromContext(ctx)
@@ -222,6 +234,7 @@ func TestWithParseAndValidateHTTPErrorHandler(t *testing.T) {
 }
 
 func TestWithParseAndValidateSuccess(t *testing.T) {
+	t.Parallel()
 	jm, err := ctxjwt.NewService()
 	assert.NoError(t, err)
 
@@ -268,6 +281,7 @@ func (b *testRealBL) Set(t string, exp time.Duration) error {
 func (b *testRealBL) Has(t string) bool { return b.token == t }
 
 func TestWithParseAndValidateInBlackList(t *testing.T) {
+	t.Parallel()
 	bl := &testRealBL{}
 	jm, err := ctxjwt.NewService(
 		ctxjwt.WithBlacklist(bl),

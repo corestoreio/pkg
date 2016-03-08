@@ -21,8 +21,10 @@ import (
 	"golang.org/x/net/context"
 )
 
-type keyJSONWebToken struct{}
-type keyctxErr struct{}
+type (
+	keyJSONWebToken struct{}
+	keyctxErr       struct{}
+)
 
 // ErrContextJWTNotFound gets returned when the jwt cannot be found.
 var ErrContextJWTNotFound = errors.New("Cannot extract ctxjwt nor an error from context")

@@ -23,6 +23,7 @@ import (
 )
 
 func TestSimpleMapBlackListSet(t *testing.T) {
+	t.Parallel()
 
 	token := "My new token cannot be spoken."
 	bl := ctxjwt.NewSimpleMapBlackList()
@@ -38,6 +39,7 @@ func TestSimpleMapBlackListSet(t *testing.T) {
 }
 
 func TestSimpleMapBlackListHas(t *testing.T) {
+	t.Parallel()
 
 	token := "My new token cannot be spoken."
 	bl := ctxjwt.NewSimpleMapBlackList()
