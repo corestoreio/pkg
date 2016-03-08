@@ -25,6 +25,7 @@ import (
 )
 
 var _ model.Encryptor = (*rot13)(nil)
+var _ model.Encryptor = (*model.NoopEncryptor)(nil)
 
 type rot13 struct {
 }
@@ -74,4 +75,18 @@ func TestObscure(t *testing.T) {
 	b.Write(mw, wantPlain, scope.StoreID, 12)
 	assert.Exactly(t, wantCiphered, mw.ArgValue)
 	assert.Exactly(t, "stores/12/aa/bb/cc", mw.ArgPath)
+}
+
+func TestNoopEncryptor(t *testing.T) {
+	t.Parallel()
+
+	ne := model.NoopEncryptor{}
+
+	e, err := ne.Encrypt("a")
+	assert.Exactly(t, "a", e)
+	assert.NoError(t, err)
+
+	d, err := ne.Decrypt("b")
+	assert.Exactly(t, "b", d)
+	assert.NoError(t, err)
 }

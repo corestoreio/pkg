@@ -26,6 +26,23 @@ type Encryptor interface {
 	Decrypt(string) (string, error)
 }
 
+// NoopEncryptor does nothing and only used for testing.
+// Noop = No operator
+type NoopEncryptor struct {
+	// EncErr allows to return an error while encrypting
+	EncErr error
+	// DecErr allows to return an error while decryption
+	DecErr error
+}
+
+func (ne NoopEncryptor) Encrypt(s string) (string, error) {
+	return s, ne.EncErr
+}
+
+func (ne NoopEncryptor) Decrypt(s string) (string, error) {
+	return s, ne.DecErr
+}
+
 // WithEncryptor sets the functions for reading and writing encrypted data
 // to the configuration service
 func WithEncryptor(e Encryptor) Option {
