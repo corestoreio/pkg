@@ -15,10 +15,11 @@
 package storemock_test
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestNewInitService(t *testing.T) {

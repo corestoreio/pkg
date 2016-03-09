@@ -15,10 +15,11 @@
 package storemock_test
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 var _ store.Provider = (*storemock.NullService)(nil)
