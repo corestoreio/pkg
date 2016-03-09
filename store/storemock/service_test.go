@@ -12,15 +12,33 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
-Package mock implements mocking of the store.Service for tests.
+package storemock_test
 
-Please import this package as:
+import (
+	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/stretchr/testify/assert"
+	"testing"
+)
 
-	import (
-		storemock "github.com/corestoreio/csfw/store/mock"
-	)
+func TestNewInitService(t *testing.T) {
 
-To avoid confusion with other mock packages.
-*/
-package mock
+	so, err := scope.SetByID(1, scope.WebsiteID) // website euro
+	if err != nil {
+		t.Fatal(err)
+	}
+	ns := storemock.NewInitService(so)
+	assert.NotNil(t, ns)
+
+	s, err := ns.Store(scope.MockID(4))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, "uk", s.Data.Code.String)
+
+	s, err = ns.DefaultStoreView()
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, "at", s.Data.Code.String)
+}

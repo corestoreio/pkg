@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mock
+package storemock
 
 import (
 	"github.com/corestoreio/csfw/store"
@@ -45,5 +45,3 @@ func (m *NullService) RequestedStore(scope.Option) (*store.Store, error) {
 func NewNullService() *NullService {
 	return &NullService{}
 }
-
-var _ store.Provider = (*NullService)(nil)
