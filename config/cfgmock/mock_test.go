@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package mock_test
+package cfgmock_test
 
 import (
 	"reflect"
@@ -20,13 +20,13 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/mock"
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/path"
 )
 
-var _ config.Getter = (*mock.Service)(nil)
-var _ config.Writer = (*mock.Write)(nil)
-var _ config.GetterPubSuber = (*mock.Service)(nil)
+var _ config.Getter = (*cfgmock.Service)(nil)
+var _ config.Writer = (*cfgmock.Write)(nil)
+var _ config.GetterPubSuber = (*cfgmock.Service)(nil)
 
 func TestNewMockGetterAllTypes(t *testing.T) {
 	t.Parallel()
@@ -35,8 +35,8 @@ func TestNewMockGetterAllTypes(t *testing.T) {
 	p := path.MustNewByParts("aa/bb/cc")
 
 	for iFaceIDX, wantVal := range types {
-		mg := mock.NewService(mock.WithPV(
-			mock.PathValue{
+		mg := cfgmock.NewService(cfgmock.WithPV(
+			cfgmock.PathValue{
 				p.String(): wantVal,
 			},
 		))

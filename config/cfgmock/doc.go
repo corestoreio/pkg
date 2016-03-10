@@ -12,5 +12,5 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package mock provides mock types and functions for the config.Service type.
-package mock
+// Package cfgmock provides mock types and functions for the config.Service type.
+package cfgmock
