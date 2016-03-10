@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
-	cfgpath "github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cserr"
@@ -162,7 +162,7 @@ func (bv baseValue) String() string {
 	return bv.route.String()
 }
 
-// ToPath creates a new path.Path bound to a scope.
+// ToPath creates a new cfgpath.Path bound to a scope.
 func (bv baseValue) ToPath(s scope.Scope, scopeID int64) (cfgpath.Path, error) {
 	p, err := cfgpath.New(bv.route)
 	if err != nil {

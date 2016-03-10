@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -53,7 +53,7 @@ func TestContextMustGetterPubSuber(t *testing.T) {
 type cWrite struct {
 }
 
-func (w cWrite) Write(_ path.Path, _ interface{}) error {
+func (w cWrite) Write(_ cfgpath.Path, _ interface{}) error {
 	return nil
 }
 

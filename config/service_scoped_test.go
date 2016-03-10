@@ -22,7 +22,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/log"
@@ -51,42 +51,42 @@ func TestScopedServiceScope(t *testing.T) {
 
 func TestScopedServicePath(t *testing.T) {
 	t.Parallel()
-	basePath := path.MustNewByParts("aa/bb/cc")
+	basePath := cfgpath.MustNewByParts("aa/bb/cc")
 	tests := []struct {
 		desc               string
 		fqpath             string
-		route              path.Route
+		route              cfgpath.Route
 		perm               scope.Scope
 		websiteID, storeID int64
 		err                error
 	}{
 		{
 			"Default ScopedGetter should return default scope",
-			basePath.String(), path.NewRoute("aa/bb/cc"), scope.AbsentID, 0, 0, nil,
+			basePath.String(), cfgpath.NewRoute("aa/bb/cc"), scope.AbsentID, 0, 0, nil,
 		},
 		{
 			"Website ID 1 ScopedGetter should fall back to default scope",
-			basePath.String(), path.NewRoute("aa/bb/cc"), scope.WebsiteID, 1, 0, nil,
+			basePath.String(), cfgpath.NewRoute("aa/bb/cc"), scope.WebsiteID, 1, 0, nil,
 		},
 		{
 			"Website ID 10 ScopedGetter should fall back to website 10 scope",
-			basePath.Bind(scope.WebsiteID, 10).String(), path.NewRoute("aa/bb/cc"), scope.WebsiteID, 10, 0, nil,
+			basePath.Bind(scope.WebsiteID, 10).String(), cfgpath.NewRoute("aa/bb/cc"), scope.WebsiteID, 10, 0, nil,
 		},
 		{
 			"Website ID 10 + Store 22 ScopedGetter should fall back to website 10 scope",
-			basePath.Bind(scope.WebsiteID, 10).String(), path.NewRoute("aa/bb/cc"), scope.StoreID, 10, 22, nil,
+			basePath.Bind(scope.WebsiteID, 10).String(), cfgpath.NewRoute("aa/bb/cc"), scope.StoreID, 10, 22, nil,
 		},
 		{
 			"Website ID 10 + Store 22 ScopedGetter should return Store 22 scope",
-			basePath.Bind(scope.StoreID, 22).String(), path.NewRoute("aa/bb/cc"), scope.StoreID, 10, 22, nil,
+			basePath.Bind(scope.StoreID, 22).String(), cfgpath.NewRoute("aa/bb/cc"), scope.StoreID, 10, 22, nil,
 		},
 		{
 			"Website ID 10 + Store 42 ScopedGetter should return nothing",
-			basePath.Bind(scope.StoreID, 22).String(), path.NewRoute("aa/bb/cc"), scope.StoreID, 10, 42, storage.ErrKeyNotFound,
+			basePath.Bind(scope.StoreID, 22).String(), cfgpath.NewRoute("aa/bb/cc"), scope.StoreID, 10, 42, storage.ErrKeyNotFound,
 		},
 		{
 			"Path consists of only two elements which is incorrect",
-			basePath.String(), path.NewRoute("aa", "bb"), scope.StoreID, 0, 0, path.ErrIncorrectPath,
+			basePath.String(), cfgpath.NewRoute("aa", "bb"), scope.StoreID, 0, 0, cfgpath.ErrIncorrectPath,
 		},
 	}
 
@@ -140,9 +140,9 @@ var benchmarkScopedServiceString string
 
 // BenchmarkScopedServiceStringStore-4	 1000000	      2218 ns/op	     320 B/op	       9 allocs/op => Go 1.5.2
 // BenchmarkScopedServiceStringStore-4	  500000	      2939 ns/op	     672 B/op	      17 allocs/op => Go 1.5.3 strings
-// BenchmarkScopedServiceStringStore-4    500000	      2732 ns/op	     912 B/op	      17 allocs/op => path.Path with []ArgFunc
-// BenchmarkScopedServiceStringStore-4	 1000000	      1821 ns/op	     336 B/op	       3 allocs/op => path.Path without []ArgFunc
-// BenchmarkScopedServiceStringStore-4   1000000	      1747 ns/op	       0 B/op	       0 allocs/op => Go 1.6 sync.Pool path.Path without []ArgFunc
+// BenchmarkScopedServiceStringStore-4    500000	      2732 ns/op	     912 B/op	      17 allocs/op => cfgpath.Path with []ArgFunc
+// BenchmarkScopedServiceStringStore-4	 1000000	      1821 ns/op	     336 B/op	       3 allocs/op => cfgpath.Path without []ArgFunc
+// BenchmarkScopedServiceStringStore-4   1000000	      1747 ns/op	       0 B/op	       0 allocs/op => Go 1.6 sync.Pool cfgpath.Path without []ArgFunc
 func BenchmarkScopedServiceStringStore(b *testing.B) {
 	benchmarkScopedServiceStringRun(b, 1, 1, scope.StoreID)
 }
@@ -157,10 +157,10 @@ func BenchmarkScopedServiceStringDefault(b *testing.B) {
 
 func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64, s scope.Scope) {
 	config.PkgLog.SetLevel(log.StdLevelFatal)
-	route := path.NewRoute("aa/bb/cc")
+	route := cfgpath.NewRoute("aa/bb/cc")
 	want := strings.Repeat("Gopher", 100)
 	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
-		path.MustNew(route).String(): want,
+		cfgpath.MustNew(route).String(): want,
 	})).NewScoped(websiteID, storeID)
 
 	runtime.GC()
@@ -181,7 +181,7 @@ func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64, s s
 func TestScopedServicePermission(t *testing.T) {
 	t.Parallel()
 
-	basePath := path.MustNewByParts("aa/bb/cc")
+	basePath := cfgpath.MustNewByParts("aa/bb/cc")
 
 	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
 		basePath.Bind(scope.DefaultID, 0).String(): "a",

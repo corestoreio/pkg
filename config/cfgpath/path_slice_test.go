@@ -12,41 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package path_test
+package cfgpath_test
 
 import (
 	"testing"
 
 	"sort"
 
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ sort.Interface = (*path.PathSlice)(nil)
+var _ sort.Interface = (*cfgpath.PathSlice)(nil)
 
 func TestPathSlice_Contains(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		paths  path.PathSlice
-		search path.Path
+		paths  cfgpath.PathSlice
+		search cfgpath.Path
 		want   bool
 	}{
 		{
-			path.PathSlice{
-				0: path.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 3),
-				1: path.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 2),
+			cfgpath.PathSlice{
+				0: cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 3),
+				1: cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 2),
 			},
-			path.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 2),
+			cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 2),
 			true,
 		},
 		{
-			path.PathSlice{
-				0: path.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 3),
-				1: path.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 2),
+			cfgpath.PathSlice{
+				0: cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 3),
+				1: cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 2),
 			},
-			path.MustNewByParts("aa/bb/cc").Bind(scope.StoreID, 2),
+			cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.StoreID, 2),
 			false,
 		},
 	}
@@ -57,13 +57,13 @@ func TestPathSlice_Contains(t *testing.T) {
 
 func TestPathSlice_Sort(t *testing.T) {
 	t.Parallel()
-	ps := path.PathSlice{
-		path.MustNewByParts("bb/cc/dd"),
-		path.MustNewByParts("xx/yy/zz"),
-		path.MustNewByParts("aa/bb/cc"),
+	ps := cfgpath.PathSlice{
+		cfgpath.MustNewByParts("bb/cc/dd"),
+		cfgpath.MustNewByParts("xx/yy/zz"),
+		cfgpath.MustNewByParts("aa/bb/cc"),
 	}
 	ps.Sort()
-	want := path.PathSlice{path.Path{Route: path.NewRoute(`aa/bb/cc`), Scope: 1, ID: 0}, path.Path{Route: path.NewRoute(`bb/cc/dd`), Scope: 1, ID: 0}, path.Path{Route: path.NewRoute(`xx/yy/zz`), Scope: 1, ID: 0}}
+	want := cfgpath.PathSlice{cfgpath.Path{Route: cfgpath.NewRoute(`aa/bb/cc`), Scope: 1, ID: 0}, cfgpath.Path{Route: cfgpath.NewRoute(`bb/cc/dd`), Scope: 1, ID: 0}, cfgpath.Path{Route: cfgpath.NewRoute(`xx/yy/zz`), Scope: 1, ID: 0}}
 	assert.Exactly(t, want, ps)
 }
 
@@ -73,13 +73,13 @@ func BenchmarkPathSlice_Sort(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		ps := path.PathSlice{
-			path.MustNewByParts("rr/ss/tt"),
-			path.MustNewByParts("bb/cc/dd"),
-			path.MustNewByParts("xx/yy/zz"),
-			path.MustNewByParts("aa/bb/cc"),
-			path.MustNewByParts("ff/gg/hh"),
-			path.MustNewByParts("cc/dd/ee"),
+		ps := cfgpath.PathSlice{
+			cfgpath.MustNewByParts("rr/ss/tt"),
+			cfgpath.MustNewByParts("bb/cc/dd"),
+			cfgpath.MustNewByParts("xx/yy/zz"),
+			cfgpath.MustNewByParts("aa/bb/cc"),
+			cfgpath.MustNewByParts("ff/gg/hh"),
+			cfgpath.MustNewByParts("cc/dd/ee"),
 		}
 		ps.Sort()
 		if len(ps) != 6 {

@@ -12,35 +12,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package path_test
+package cfgpath_test
 
 import (
 	"fmt"
 
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
 func Example() {
 
-	fmt.Println(path.MustNew(path.NewRoute("system/smtp/host")).String())
-	fmt.Println(path.MustNewByParts("system", "smtp", "host").Bind(scope.WebsiteID, 1).String())
+	fmt.Println(cfgpath.MustNew(cfgpath.NewRoute("system/smtp/host")).String())
+	fmt.Println(cfgpath.MustNewByParts("system", "smtp", "host").Bind(scope.WebsiteID, 1).String())
 	// alternative way
-	fmt.Println(path.MustNewByParts("system/smtp/host").BindStr(scope.StrWebsites, 1).String())
+	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").BindStr(scope.StrWebsites, 1).String())
 
-	fmt.Println(path.MustNewByParts("system/smtp/host").Bind(scope.StoreID, 3).String())
+	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").Bind(scope.StoreID, 3).String())
 	// alternative way
-	fmt.Println(path.MustNewByParts("system/smtp/host").BindStr(scope.StrStores, 3).String())
+	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").BindStr(scope.StrStores, 3).String())
 	// Group is not supported and falls back to default
-	fmt.Println(path.MustNewByParts("system/smtp/host").Bind(scope.GroupID, 4).String())
+	fmt.Println(cfgpath.MustNewByParts("system/smtp/host").Bind(scope.GroupID, 4).String())
 
-	p, err := path.NewByParts("system", "smtp", "host")
+	p, err := cfgpath.NewByParts("system", "smtp", "host")
 	if err != nil {
 		fmt.Printf("%s\n", err)
 	}
 	fmt.Println(p.String())
 
-	routes := path.NewRoute("dev/css/merge_css_files")
+	routes := cfgpath.NewRoute("dev/css/merge_css_files")
 	rs, err := routes.Split()
 	if err != nil {
 		fmt.Printf("%s\n", err)

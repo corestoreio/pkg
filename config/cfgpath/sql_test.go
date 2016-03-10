@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package path_test
+package cfgpath_test
 
 import (
 	"database/sql"
@@ -21,15 +21,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/util"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ sql.Scanner = (*path.Route)(nil)
-var _ driver.Valuer = (*path.Route)(nil)
+var _ sql.Scanner = (*cfgpath.Route)(nil)
+var _ driver.Valuer = (*cfgpath.Route)(nil)
 
 func TestIntegrationSQLType(t *testing.T) {
 	t.Parallel()
@@ -40,11 +40,11 @@ func TestIntegrationSQLType(t *testing.T) {
 	defer func() { assert.NoError(t, dbCon.Close()) }()
 
 	var testPath = `system/full_page_cache/varnish/` + util.RandAlnum(5)
-	var insPath = path.NewRoute(testPath)
+	var insPath = cfgpath.NewRoute(testPath)
 	var insVal = time.Now().Unix()
 
 	// just for testing !
-	stmt, err := dbCon.DB.Prepare("INSERT INTO `" + tableCollection.Name(tableIndexCoreConfigData) + "` (path,value) values (?,?)")
+	stmt, err := dbCon.DB.Prepare("INSERT INTO `" + tableCollection.Name(tableIndexCoreConfigData) + "` (cfgpath,value) values (?,?)")
 	if false == assert.NoError(t, err) {
 		t.Fatal("Stopping ...")
 	}

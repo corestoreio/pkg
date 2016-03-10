@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/model"
-	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
@@ -59,7 +59,7 @@ func TestObscure(t *testing.T) {
 		model.WithCSVSeparator(''), // trick it
 		model.WithEncryptor(rot13{}),
 	)
-	wantPath := path.MustNewByParts(cfgPath).String() // Default Scope
+	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
 
 	haveSL, haveErr := b.Get(cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package path
+package cfgpath
 
 import (
 	"bytes"
@@ -90,9 +90,9 @@ func (r Route) SelfRoute() Route {
 // GoString returns the Go type of the Route including the underlying bytes.
 func (r Route) GoString() string {
 	if r.IsEmpty() {
-		return "path.Route{}"
+		return "cfgpath.Route{}"
 	}
-	return fmt.Sprintf("path.Route{Chars:[]byte(`%s`)}", r)
+	return fmt.Sprintf("cfgpath.Route{Chars:[]byte(`%s`)}", r)
 }
 
 const rSeparator = rune(Separator)
@@ -161,8 +161,8 @@ func (r Route) Clone() Route {
 // routes have been added a validation check will be done.
 // Internally it creates a new byte slice.
 //
-//		a := path.Route(`catalog/product`)
-//		b := path.Route(`enable_flat_tables`)
+//		a := cfgpath.Route(`catalog/product`)
+//		b := cfgpath.Route(`enable_flat_tables`)
 //		if err := a.Append(b); err != nil {
 //			panic(err)
 //		}
@@ -389,7 +389,7 @@ func (r Route) Part(pos int) (Route, error) {
 
 // Split splits the route into its three parts. Does not run Validate()
 // Example:
-// 		routes := path.NewRoute("aa/bb/cc")
+// 		routes := cfgpath.NewRoute("aa/bb/cc")
 //		rs, err := routes.Split()
 //		rs[0].String() == "aa"
 //		rs[1].String() == "bb"

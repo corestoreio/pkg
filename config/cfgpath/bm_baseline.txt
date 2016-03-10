@@ -14,4 +14,4 @@ BenchmarkRouteHash32-4   	50000000	        37.7 ns/op	       0 B/op	       0 all
 BenchmarkRoutePart-4     	20000000	        93.8 ns/op	       0 B/op	       0 allocs/op
 BenchmarkRouteValidate-4 	20000000	        91.1 ns/op	       0 B/op	       0 allocs/op
 BenchmarkRouteSplit-4    	20000000	       109 ns/op	       0 B/op	       0 allocs/op
-ok  	github.com/corestoreio/csfw/config/path	29.978s
+ok  	github.com/corestoreio/csfw/config/cfgpath	29.978s

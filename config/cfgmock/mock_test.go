@@ -21,7 +21,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 )
 
 var _ config.Getter = (*cfgmock.Service)(nil)
@@ -32,7 +32,7 @@ func TestNewMockGetterAllTypes(t *testing.T) {
 	t.Parallel()
 
 	types := []interface{}{"a", int(3141), float64(2.7182) * 3.141, true, time.Now()}
-	p := path.MustNewByParts("aa/bb/cc")
+	p := cfgpath.MustNewByParts("aa/bb/cc")
 
 	for iFaceIDX, wantVal := range types {
 		mg := cfgmock.NewService(cfgmock.WithPV(

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package path_test
+package cfgpath_test
 
 import (
 	"errors"
@@ -20,7 +20,7 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
@@ -36,12 +36,12 @@ func TestNewByParts(t *testing.T) {
 		{[]string{"aa/bb/cc"}, "aa/bb/cc", nil},
 		{[]string{"aa/bb", "cc"}, "aa/bb/cc", nil},
 		{[]string{"aa", "bb", "cc"}, "aa/bb/cc", nil},
-		{[]string{"aa", "bb", "c"}, "aa/bb/cc", path.ErrIncorrectPath},
-		{nil, "", path.ErrRouteEmpty},
-		{[]string{""}, "", path.ErrRouteEmpty},
+		{[]string{"aa", "bb", "c"}, "aa/bb/cc", cfgpath.ErrIncorrectPath},
+		{nil, "", cfgpath.ErrRouteEmpty},
+		{[]string{""}, "", cfgpath.ErrRouteEmpty},
 	}
 	for i, test := range tests {
-		haveP, haveErr := path.NewByParts(test.parts...)
+		haveP, haveErr := cfgpath.NewByParts(test.parts...)
 		if test.wantErr != nil {
 			assert.Nil(t, haveP.Route.Chars, "Index %d", i)
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
@@ -57,12 +57,12 @@ func TestMustNewByPartsPanic(t *testing.T) {
 	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), path.ErrRouteInvalidBytes.Error())
+			assert.EqualError(t, r.(error), cfgpath.ErrRouteInvalidBytes.Error())
 		} else {
 			t.Fatal("Expecting a panic")
 		}
 	}()
-	_ = path.MustNewByParts("a/\x80/c")
+	_ = cfgpath.MustNewByParts("a/\x80/c")
 }
 
 func TestMustNewByPartsNoPanic(t *testing.T) {
@@ -74,20 +74,20 @@ func TestMustNewByPartsNoPanic(t *testing.T) {
 			assert.Nil(t, r, "Why is here a panic")
 		}
 	}()
-	p := path.MustNewByParts("aa", "bb", "cc")
+	p := cfgpath.MustNewByParts("aa", "bb", "cc")
 	assert.Exactly(t, "default/0/aa/bb/cc", p.String())
 }
 
-var benchmarkNewByParts path.Path
+var benchmarkNewByParts cfgpath.Path
 
 // BenchmarkNewByParts-4	 5000000	       297 ns/op	      48 B/op	       1 allocs/op
 func BenchmarkNewByParts(b *testing.B) {
-	want := path.NewRoute("general/single_store_mode/enabled")
+	want := cfgpath.NewRoute("general/single_store_mode/enabled")
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkNewByParts, err = path.NewByParts("general", "single_store_mode", "enabled")
+		benchmarkNewByParts, err = cfgpath.NewByParts("general", "single_store_mode", "enabled")
 		if err != nil {
 			b.Error(err)
 		}
@@ -99,7 +99,7 @@ func BenchmarkNewByParts(b *testing.B) {
 
 func TestPathNewSum32(t *testing.T) {
 	t.Parallel()
-	r := path.Route{
+	r := cfgpath.Route{
 		Chars: text.Chars(`dd/ee/ff`),
 	}
 	h := fnv.New32a()
@@ -107,7 +107,7 @@ func TestPathNewSum32(t *testing.T) {
 	assert.NoError(t, err)
 	wantHash := h.Sum32()
 
-	p, err := path.New(r)
+	p, err := cfgpath.New(r)
 	assert.NoError(t, err)
 	assert.Exactly(t, wantHash, p.Sum32)
 }
@@ -115,21 +115,21 @@ func TestPathNewSum32(t *testing.T) {
 func TestPathNew(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		route      path.Route
+		route      cfgpath.Route
 		s          scope.Scope
 		id         int64
-		wantFQ     path.Route
+		wantFQ     cfgpath.Route
 		wantNewErr error
 	}{
-		{path.NewRoute("ab/b\x80/cd"), scope.WebsiteID, 3, path.NewRoute("websites/3/ab/ba/cd"), path.ErrRouteInvalidBytes},
-		{path.NewRoute("ab/ba/cd"), scope.WebsiteID, 3, path.NewRoute("websites/3/ab/ba/cd"), nil},
-		{path.NewRoute("ad/ba/ca/sd"), scope.WebsiteID, 3, path.NewRoute("websites/3/ad/ba/ca/sd"), nil},
-		{path.NewRoute("as/sb"), scope.WebsiteID, 3, path.NewRoute("websites/3/a/b/c/d"), path.ErrIncorrectPath},
-		{path.NewRoute("aa/bb/cc"), scope.GroupID, 3, path.NewRoute("default/0/aa/bb/cc"), nil},
-		{path.NewRoute("aa/bb/cc"), scope.StoreID, 3, path.NewRoute("stores/3/aa/bb/cc"), nil},
+		{cfgpath.NewRoute("ab/b\x80/cd"), scope.WebsiteID, 3, cfgpath.NewRoute("websites/3/ab/ba/cd"), cfgpath.ErrRouteInvalidBytes},
+		{cfgpath.NewRoute("ab/ba/cd"), scope.WebsiteID, 3, cfgpath.NewRoute("websites/3/ab/ba/cd"), nil},
+		{cfgpath.NewRoute("ad/ba/ca/sd"), scope.WebsiteID, 3, cfgpath.NewRoute("websites/3/ad/ba/ca/sd"), nil},
+		{cfgpath.NewRoute("as/sb"), scope.WebsiteID, 3, cfgpath.NewRoute("websites/3/a/b/c/d"), cfgpath.ErrIncorrectPath},
+		{cfgpath.NewRoute("aa/bb/cc"), scope.GroupID, 3, cfgpath.NewRoute("default/0/aa/bb/cc"), nil},
+		{cfgpath.NewRoute("aa/bb/cc"), scope.StoreID, 3, cfgpath.NewRoute("stores/3/aa/bb/cc"), nil},
 	}
 	for i, test := range tests {
-		haveP, haveErr := path.New(test.route)
+		haveP, haveErr := cfgpath.New(test.route)
 		haveP = haveP.Bind(test.s, test.id)
 		if test.wantNewErr != nil {
 			assert.EqualError(t, haveErr, test.wantNewErr.Error(), "Index %d", i)
@@ -146,21 +146,21 @@ func TestFQ(t *testing.T) {
 	tests := []struct {
 		str     scope.StrScope
 		id      int64
-		route   path.Route
+		route   cfgpath.Route
 		want    string
 		wantErr error
 	}{
-		{scope.StrDefault, 0, path.Route{}, "", path.ErrRouteEmpty},
-		{scope.StrDefault, 0, path.NewRoute(""), "", path.ErrRouteEmpty},
-		{scope.StrDefault, 0, path.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
-		{scope.StrDefault, 44, path.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
-		{scope.StrWebsites, 0, path.NewRoute("system/dev/debug"), scope.StrWebsites.String() + "/0/system/dev/debug", nil},
-		{scope.StrWebsites, 343, path.NewRoute("system/dev/debug"), scope.StrWebsites.String() + "/343/system/dev/debug", nil},
-		{scope.StrScope("hello"), 0, path.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
-		{scope.StrScope("hello"), 343, path.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
+		{scope.StrDefault, 0, cfgpath.Route{}, "", cfgpath.ErrRouteEmpty},
+		{scope.StrDefault, 0, cfgpath.NewRoute(""), "", cfgpath.ErrRouteEmpty},
+		{scope.StrDefault, 0, cfgpath.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
+		{scope.StrDefault, 44, cfgpath.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
+		{scope.StrWebsites, 0, cfgpath.NewRoute("system/dev/debug"), scope.StrWebsites.String() + "/0/system/dev/debug", nil},
+		{scope.StrWebsites, 343, cfgpath.NewRoute("system/dev/debug"), scope.StrWebsites.String() + "/343/system/dev/debug", nil},
+		{scope.StrScope("hello"), 0, cfgpath.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
+		{scope.StrScope("hello"), 343, cfgpath.NewRoute("system/dev/debug"), scope.StrDefault.String() + "/0/system/dev/debug", nil},
 	}
 	for i, test := range tests {
-		p, pErr := path.New(test.route)
+		p, pErr := cfgpath.New(test.route)
 		p = p.BindStr(test.str, test.id)
 		have, haveErr := p.FQ()
 		if test.wantErr != nil {
@@ -176,49 +176,49 @@ func TestFQ(t *testing.T) {
 		assert.Exactly(t, test.want, have.String(), "Index %d", i)
 	}
 
-	r := path.NewRoute("catalog/frontend/list_allow_all")
-	assert.Exactly(t, "stores/7475/catalog/frontend/list_allow_all", path.MustNew(r).BindStr(scope.StrStores, 7475).String())
-	p := path.MustNew(r).BindStr(scope.StrStores, 5)
+	r := cfgpath.NewRoute("catalog/frontend/list_allow_all")
+	assert.Exactly(t, "stores/7475/catalog/frontend/list_allow_all", cfgpath.MustNew(r).BindStr(scope.StrStores, 7475).String())
+	p := cfgpath.MustNew(r).BindStr(scope.StrStores, 5)
 	assert.Exactly(t, "stores/5/catalog/frontend/list_allow_all", p.String())
-	assert.Exactly(t, "path.Path{ Route:path.NewRoute(`catalog/frontend/list_allow_all`), Scope: 4, ID: 5 }", p.GoString())
+	assert.Exactly(t, "cfgpath.Path{ Route:cfgpath.NewRoute(`catalog/frontend/list_allow_all`), Scope: 4, ID: 5 }", p.GoString())
 }
 
 func TestShouldNotPanicBecauseOfIncorrectStrScope(t *testing.T) {
 	t.Parallel()
-	assert.Exactly(t, "stores/345/xxxxx/yyyyy/zzzzz", path.MustNew(path.NewRoute("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrStores, 345).String())
+	assert.Exactly(t, "stores/345/xxxxx/yyyyy/zzzzz", cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrStores, 345).String())
 	defer func() {
 		if r := recover(); r != nil {
 			t.Fatal("Did not expect a panic")
 		}
 	}()
-	_ = path.MustNew(path.NewRoute("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrScope("invalid"), 345)
+	_ = cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrScope("invalid"), 345)
 }
 
 func TestShouldPanicIncorrectPath(t *testing.T) {
 	t.Parallel()
-	assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", path.MustNew(path.NewRoute("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrDefault, 345).String())
+	assert.Exactly(t, "default/0/xxxxx/yyyyy/zzzzz", cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy/zzzzz")).BindStr(scope.StrDefault, 345).String())
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), path.ErrIncorrectPath.Error())
+			assert.EqualError(t, r.(error), cfgpath.ErrIncorrectPath.Error())
 		} else {
 			t.Fatal("Expecting a panic")
 		}
 	}()
-	assert.Exactly(t, "websites/345/xxxxx/yyyyy", path.MustNew(path.NewRoute("xxxxx/yyyyy")).BindStr(scope.StrWebsites, 345).String())
+	assert.Exactly(t, "websites/345/xxxxx/yyyyy", cfgpath.MustNew(cfgpath.NewRoute("xxxxx/yyyyy")).BindStr(scope.StrWebsites, 345).String())
 }
 
-var benchmarkPathFQ path.Route
+var benchmarkPathFQ cfgpath.Route
 
 // BenchmarkPathFQ-4     	 3000000	       401 ns/op	     112 B/op	       1 allocs/op
 func BenchmarkPathFQ(b *testing.B) {
 	var scopeID int64 = 11
-	want := path.NewRoute(scope.StrWebsites.String() + "/" + strconv.FormatInt(scopeID, 10) + "/system/dev/debug")
-	p := path.NewRoute("system/dev/debug")
+	want := cfgpath.NewRoute(scope.StrWebsites.String() + "/" + strconv.FormatInt(scopeID, 10) + "/system/dev/debug")
+	p := cfgpath.NewRoute("system/dev/debug")
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkPathFQ, err = path.MustNew(p).BindStr(scope.StrWebsites, scopeID).FQ()
+		benchmarkPathFQ, err = cfgpath.MustNew(p).BindStr(scope.StrWebsites, scopeID).FQ()
 		if err != nil {
 			b.Error(err)
 		}
@@ -234,12 +234,12 @@ var benchmarkPathHash uint32
 func BenchmarkPathHashFull(b *testing.B) {
 	const scopeID int64 = 12
 	const want uint32 = 1479679325
-	p := path.NewRoute("system/dev/debug")
+	p := cfgpath.NewRoute("system/dev/debug")
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkPathHash, err = path.MustNew(p).BindStr(scope.StrWebsites, scopeID).Hash(-1)
+		benchmarkPathHash, err = cfgpath.MustNew(p).BindStr(scope.StrWebsites, scopeID).Hash(-1)
 		if err != nil {
 			b.Error(err)
 		}
@@ -252,12 +252,12 @@ func BenchmarkPathHashFull(b *testing.B) {
 func BenchmarkPathHashLevel2(b *testing.B) {
 	const scopeID int64 = 13
 	const want uint32 = 723768876
-	p := path.NewRoute("system/dev/debug")
+	p := cfgpath.NewRoute("system/dev/debug")
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkPathHash, err = path.MustNew(p).BindStr(scope.StrWebsites, scopeID).Hash(2)
+		benchmarkPathHash, err = cfgpath.MustNew(p).BindStr(scope.StrWebsites, scopeID).Hash(2)
 		if err != nil {
 			b.Error(err)
 		}
@@ -285,7 +285,7 @@ func TestSplitFQ(t *testing.T) {
 		{"stores/123/catalog/index", "default", 0, "", errors.New("Incorrect fully qualified path: \"stores/123/catalog/index\". Expecting: strScope/ID/stores/123/catalog/index")},
 	}
 	for i, test := range tests {
-		havePath, haveErr := path.SplitFQ(test.have)
+		havePath, haveErr := cfgpath.SplitFQ(test.have)
 
 		if test.wantErr != nil {
 			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
@@ -299,14 +299,14 @@ func TestSplitFQ(t *testing.T) {
 	}
 }
 
-var benchmarkReverseFQPath path.Path
+var benchmarkReverseFQPath cfgpath.Path
 
 // BenchmarkSplitFQ-4  	10000000	       199 ns/op	      32 B/op	       1 allocs/op
 func BenchmarkSplitFQ(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var err error
-		benchmarkReverseFQPath, err = path.SplitFQ("stores/7475/catalog/frontend/list_allow_all")
+		benchmarkReverseFQPath, err = cfgpath.SplitFQ("stores/7475/catalog/frontend/list_allow_all")
 		if err != nil {
 			b.Error(err)
 		}
@@ -322,25 +322,25 @@ func TestPathIsValid(t *testing.T) {
 	tests := []struct {
 		s    scope.Scope
 		id   int64
-		have path.Route
+		have cfgpath.Route
 		want error
 	}{
-		{scope.DefaultID, 0, path.NewRoute("//"), path.ErrIncorrectPath},
-		{scope.DefaultID, 0, path.NewRoute("general/store_information/city"), nil},
-		{scope.DefaultID, 33, path.NewRoute("general/store_information/city"), nil},
-		{scope.WebsiteID, 33, path.NewRoute("system/full_page_cache/varnish/backend_port"), nil},
-		{scope.DefaultID, 0, path.NewRoute(""), path.ErrRouteEmpty},
-		{scope.DefaultID, 0, path.NewRoute("general/store_information"), path.ErrIncorrectPath},
-		////{path.NewRoute(path.MustNew("system/dev/debug").Bind(scope.WebsiteID, 22).String()), path.ErrIncorrectPath},
-		{scope.DefaultID, 0, path.NewRoute("groups/33/general/store_information/street"), nil},
-		{scope.DefaultID, 0, path.NewRoute("groups/33"), path.ErrIncorrectPath},
-		{scope.DefaultID, 0, path.NewRoute("system/dEv/inv˚lid"), errors.New("This character \"˚\" is not allowed in Route system/dEv/inv˚lid")},
-		{scope.DefaultID, 0, path.NewRoute("system/dEv/inv'lid"), errors.New("This character \"'\" is not allowed in Route system/dEv/inv'lid")},
-		{scope.DefaultID, 0, path.NewRoute("syst3m/dEv/invalid"), nil},
-		{scope.DefaultID, 0, path.Route{}, path.ErrRouteEmpty},
+		{scope.DefaultID, 0, cfgpath.NewRoute("//"), cfgpath.ErrIncorrectPath},
+		{scope.DefaultID, 0, cfgpath.NewRoute("general/store_information/city"), nil},
+		{scope.DefaultID, 33, cfgpath.NewRoute("general/store_information/city"), nil},
+		{scope.WebsiteID, 33, cfgpath.NewRoute("system/full_page_cache/varnish/backend_port"), nil},
+		{scope.DefaultID, 0, cfgpath.NewRoute(""), cfgpath.ErrRouteEmpty},
+		{scope.DefaultID, 0, cfgpath.NewRoute("general/store_information"), cfgpath.ErrIncorrectPath},
+		////{cfgpath.NewRoute(cfgpath.MustNew("system/dev/debug").Bind(scope.WebsiteID, 22).String()), cfgpath.ErrIncorrectPath},
+		{scope.DefaultID, 0, cfgpath.NewRoute("groups/33/general/store_information/street"), nil},
+		{scope.DefaultID, 0, cfgpath.NewRoute("groups/33"), cfgpath.ErrIncorrectPath},
+		{scope.DefaultID, 0, cfgpath.NewRoute("system/dEv/inv˚lid"), errors.New("This character \"˚\" is not allowed in Route system/dEv/inv˚lid")},
+		{scope.DefaultID, 0, cfgpath.NewRoute("system/dEv/inv'lid"), errors.New("This character \"'\" is not allowed in Route system/dEv/inv'lid")},
+		{scope.DefaultID, 0, cfgpath.NewRoute("syst3m/dEv/invalid"), nil},
+		{scope.DefaultID, 0, cfgpath.Route{}, cfgpath.ErrRouteEmpty},
 	}
 	for i, test := range tests {
-		p := path.Path{
+		p := cfgpath.Path{
 			Scope: test.s,
 			ID:    test.id,
 			Route: test.have,
@@ -356,17 +356,17 @@ func TestPathIsValid(t *testing.T) {
 
 func TestPathRouteIsValid(t *testing.T) {
 	t.Parallel()
-	p := path.Path{
+	p := cfgpath.Path{
 		Scope: scope.StoreID,
 		ID:    2,
-		Route: path.NewRoute(`general/store_information`),
+		Route: cfgpath.NewRoute(`general/store_information`),
 	}
-	assert.EqualError(t, p.IsValid(), path.ErrIncorrectPath.Error())
+	assert.EqualError(t, p.IsValid(), cfgpath.ErrIncorrectPath.Error())
 
-	p = path.Path{
+	p = cfgpath.Path{
 		Scope:           scope.StoreID,
 		ID:              2,
-		Route:           path.NewRoute(`general/store_information`),
+		Route:           cfgpath.NewRoute(`general/store_information`),
 		RouteLevelValid: true,
 	}
 	assert.NoError(t, p.IsValid())
@@ -375,7 +375,7 @@ func TestPathRouteIsValid(t *testing.T) {
 func TestPathHashWebsite(t *testing.T) {
 	t.Parallel()
 
-	p := path.MustNewByParts("general/single_store_mode/enabled").Bind(scope.WebsiteID, 33)
+	p := cfgpath.MustNewByParts("general/single_store_mode/enabled").Bind(scope.WebsiteID, 33)
 	hv, err := p.Hash(-1)
 	if err != nil {
 		t.Fatal(err)
@@ -391,23 +391,23 @@ func TestPathHashWebsite(t *testing.T) {
 func TestPathHashDefault(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		have      path.Route
+		have      cfgpath.Route
 		level     int
 		wantHash  uint32
 		wantErr   error
 		wantLevel string
 	}{
-		{path.NewRoute("general/single_\x80store_mode/enabled"), 0, 0, path.ErrRouteInvalidBytes, ""},
-		{path.NewRoute("general/single_store_mode/enabled"), 0, 453736105, nil, "default/0"},
-		{path.NewRoute("general/single_store_mode/enabled"), 1, 2243014074, nil, "default/0/general"},
-		{path.NewRoute("general/single_store_mode/enabled"), 2, 4182795913, nil, "default/0/general/single_store_mode"},
-		{path.NewRoute("general/single_store_mode/enabled"), 3, 1584651487, nil, "default/0/general/single_store_mode/enabled"},
-		{path.NewRoute("general/single_store_mode/enabled"), -1, 1584651487, nil, "default/0/general/single_store_mode/enabled"}, // 5
-		{path.NewRoute("general/single_store_mode/enabled"), 5, 1584651487, nil, "default/0/general/single_store_mode/enabled"},  // 6
-		{path.NewRoute("general/single_store_mode/enabled"), 4, 1584651487, nil, "default/0/general/single_store_mode/enabled"},  // 7
+		{cfgpath.NewRoute("general/single_\x80store_mode/enabled"), 0, 0, cfgpath.ErrRouteInvalidBytes, ""},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), 0, 453736105, nil, "default/0"},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), 1, 2243014074, nil, "default/0/general"},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), 2, 4182795913, nil, "default/0/general/single_store_mode"},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), 3, 1584651487, nil, "default/0/general/single_store_mode/enabled"},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), -1, 1584651487, nil, "default/0/general/single_store_mode/enabled"}, // 5
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), 5, 1584651487, nil, "default/0/general/single_store_mode/enabled"},  // 6
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), 4, 1584651487, nil, "default/0/general/single_store_mode/enabled"},  // 7
 	}
 	for i, test := range tests {
-		p := path.Path{
+		p := cfgpath.Path{
 			Route: test.have,
 		}
 
@@ -444,24 +444,24 @@ func TestPathHashDefault(t *testing.T) {
 func TestPathPartPosition(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		have     path.Route
+		have     cfgpath.Route
 		level    int
 		wantPart string
 		wantErr  error
 	}{
-		{path.NewRoute("general/single_\x80store_mode/enabled"), 0, "", path.ErrIncorrectPosition},
-		{path.NewRoute("general/single_store_mode/enabled"), 0, "", path.ErrIncorrectPosition},
-		{path.NewRoute("general/single_store_mode/enabled"), 1, "general", nil},
-		{path.NewRoute("general/single_store_mode/enabled"), 2, "single_store_mode", nil},
-		{path.NewRoute("general/single_store_mode/enabled"), 3, "enabled", nil},
-		{path.NewRoute("general/single_store_mode/enabled"), -1, "", path.ErrIncorrectPosition},
-		{path.NewRoute("general/single_store_mode/enabled"), 5, "", path.ErrIncorrectPosition},
-		{path.NewRoute("general/single/store/website/group/mode/enabled/disabled/default"), 5, "group", nil},
-		{path.NewRoute("system/full_page_cache/varnish/backend_port"), 3, "varnish", nil},
-		{path.NewRoute("system/full_page_cache/varnish/backend_port"), 4, "backend_port", nil},
+		{cfgpath.NewRoute("general/single_\x80store_mode/enabled"), 0, "", cfgpath.ErrIncorrectPosition},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), 0, "", cfgpath.ErrIncorrectPosition},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), 1, "general", nil},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), 2, "single_store_mode", nil},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), 3, "enabled", nil},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), -1, "", cfgpath.ErrIncorrectPosition},
+		{cfgpath.NewRoute("general/single_store_mode/enabled"), 5, "", cfgpath.ErrIncorrectPosition},
+		{cfgpath.NewRoute("general/single/store/website/group/mode/enabled/disabled/default"), 5, "group", nil},
+		{cfgpath.NewRoute("system/full_page_cache/varnish/backend_port"), 3, "varnish", nil},
+		{cfgpath.NewRoute("system/full_page_cache/varnish/backend_port"), 4, "backend_port", nil},
 	}
 	for i, test := range tests {
-		p := path.Path{
+		p := cfgpath.Path{
 			Route: test.have,
 		}
 		part, haveErr := p.Part(test.level)
@@ -477,7 +477,7 @@ func TestPathPartPosition(t *testing.T) {
 func TestPathCloneRareUseCase(t *testing.T) {
 	t.Parallel()
 	rs := "aa/bb/cc"
-	pOrg := path.MustNewByParts(rs)
+	pOrg := cfgpath.MustNewByParts(rs)
 	pOrg = pOrg.Bind(scope.StoreID, 3141)
 
 	largerBuff := make(text.Chars, 100, 100)
@@ -515,11 +515,11 @@ func TestPathCloneRareUseCase(t *testing.T) {
 func TestPathCloneAppend(t *testing.T) {
 	t.Parallel()
 	rs := "aa/bb/cc"
-	pOrg := path.MustNewByParts(rs)
+	pOrg := cfgpath.MustNewByParts(rs)
 	pOrg = pOrg.Bind(scope.StoreID, 3141)
 
 	pAssigned := pOrg
 	assert.Exactly(t, pOrg, pAssigned)
-	assert.NoError(t, pOrg.Append(path.NewRoute("dd")))
+	assert.NoError(t, pOrg.Append(cfgpath.NewRoute("dd")))
 	assert.NotEqual(t, pOrg, pAssigned)
 }

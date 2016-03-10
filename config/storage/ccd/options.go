@@ -16,7 +16,7 @@ package ccd
 
 import (
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
@@ -54,8 +54,8 @@ func WithCoreConfigData(dbrSess dbr.SessionRunner) config.ServiceOption {
 		var writtenRows int
 		for _, cd := range ccd {
 			if cd.Value.Valid {
-				var p path.Path
-				p, err = path.NewByParts(cd.Path)
+				var p cfgpath.Path
+				p, err = cfgpath.NewByParts(cd.Path)
 				if err != nil {
 					s.MultiErr = s.AppendErrors(errors.Mask(err))
 					return

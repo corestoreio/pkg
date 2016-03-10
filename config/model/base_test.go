@@ -20,8 +20,8 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
@@ -34,17 +34,17 @@ var _ source.Optioner = (*baseValue)(nil)
 // test package names are different.
 var configStructure = element.MustNewConfiguration(
 	&element.Section{
-		ID: path.NewRoute("web"),
+		ID: cfgpath.NewRoute("web"),
 		Groups: element.NewGroupSlice(
 			&element.Group{
-				ID:        path.NewRoute("cors"),
+				ID:        cfgpath.NewRoute("cors"),
 				Label:     text.Chars(`CORS Cross Origin Resource Sharing`),
 				SortOrder: 150,
 				Scopes:    scope.PermDefault,
 				Fields: element.NewFieldSlice(
 					&element.Field{
 						// Path: `web/cors/exposed_headers`,
-						ID:        path.NewRoute("exposed_headers"),
+						ID:        cfgpath.NewRoute("exposed_headers"),
 						Label:     text.Chars(`Exposed Headers`),
 						Comment:   text.Chars(`Indicates which headers are safe to expose to the API of a CORS API specification. Separate via line break`),
 						Type:      element.TypeTextarea,
@@ -55,7 +55,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					&element.Field{
 						// Path: `web/cors/allow_credentials`,
-						ID:        path.NewRoute("allow_credentials"),
+						ID:        cfgpath.NewRoute("allow_credentials"),
 						Label:     text.Chars(`Allowed Credentials`),
 						Type:      element.TypeSelect,
 						SortOrder: 30,
@@ -65,7 +65,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					&element.Field{
 						// Path: `web/cors/int`,
-						ID:        path.NewRoute("int"),
+						ID:        cfgpath.NewRoute("int"),
 						Type:      element.TypeText,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
@@ -74,7 +74,7 @@ var configStructure = element.MustNewConfiguration(
 					},
 					&element.Field{
 						// Path: `web/cors/float64`,
-						ID:        path.NewRoute("float64"),
+						ID:        cfgpath.NewRoute("float64"),
 						Type:      element.TypeSelect,
 						SortOrder: 30,
 						Visible:   element.VisibleYes,
@@ -94,7 +94,7 @@ func TestBaseValueString(t *testing.T) {
 	assert.Exactly(t, pathWebCorsHeaders, p1.String())
 
 	wantWebsiteID := int64(2) // This number 2 is usually stored in core_website/store_website table in column website_id
-	wantPath := path.MustNewByParts(pathWebCorsHeaders).Bind(scope.WebsiteID, wantWebsiteID)
+	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).Bind(scope.WebsiteID, wantWebsiteID)
 
 	mw := new(cfgmock.Write)
 	assert.NoError(t, p1.Write(mw, "314159", scope.WebsiteID, wantWebsiteID))
@@ -179,19 +179,19 @@ func TestBaseValueFQ(t *testing.T) {
 	p := NewValue(pth)
 	fq, err := p.FQ(scope.StoreID, 4)
 	assert.NoError(t, err)
-	assert.Exactly(t, path.MustNewByParts(pth).Bind(scope.StoreID, 4).String(), fq)
+	assert.Exactly(t, cfgpath.MustNewByParts(pth).Bind(scope.StoreID, 4).String(), fq)
 }
 
 func TestBaseValueToPath(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		route   path.Route
+		route   cfgpath.Route
 		s       scope.Scope
 		sid     int64
 		wantErr error
 	}{
-		{path.NewRoute("aa/bb/cc"), scope.StoreID, 23, nil},
-		{path.NewRoute("a/bb/cc"), scope.StoreID, 23, path.ErrIncorrectPath},
+		{cfgpath.NewRoute("aa/bb/cc"), scope.StoreID, 23, nil},
+		{cfgpath.NewRoute("a/bb/cc"), scope.StoreID, 23, cfgpath.ErrIncorrectPath},
 	}
 	for i, test := range tests {
 		bv := NewValue(test.route.String())
@@ -201,7 +201,7 @@ func TestBaseValueToPath(t *testing.T) {
 			continue
 		}
 		assert.NoError(t, test.wantErr, "Index %d", i)
-		wantPath := path.MustNew(test.route).Bind(test.s, test.sid)
+		wantPath := cfgpath.MustNew(test.route).Bind(test.s, test.sid)
 		assert.Exactly(t, wantPath, havePath, "Index %d", i)
 	}
 }

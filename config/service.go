@@ -17,8 +17,8 @@ package config
 import (
 	"time"
 
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/cserr"
@@ -33,19 +33,19 @@ const (
 
 type (
 	// Getter implements how to receive thread-safe a configuration value from
-	// a path.Path.
-	// Providing a path.Path argument does not make any assumptions if the
-	// scope of the path.Path is allowed to retrieve the value.
-	// The NewScoped() function binds a path.Route to a scope.Scope and
+	// a cfgpath.Path.
+	// Providing a cfgpath.Path argument does not make any assumptions if the
+	// scope of the cfgpath.Path is allowed to retrieve the value.
+	// The NewScoped() function binds a cfgpath.Route to a scope.Scope and
 	// gives you the possibility to fallback the hierarchy levels.
 	// These functions are also available in the ScopedGetter interface.
 	Getter interface {
 		NewScoped(websiteID, storeID int64) ScopedGetter
-		String(path.Path) (string, error)
-		Bool(path.Path) (bool, error)
-		Float64(path.Path) (float64, error)
-		Int(path.Path) (int, error)
-		Time(path.Path) (time.Time, error)
+		String(cfgpath.Path) (string, error)
+		Bool(cfgpath.Path) (bool, error)
+		Float64(cfgpath.Path) (float64, error)
+		Int(cfgpath.Path) (int, error)
+		Time(cfgpath.Path) (time.Time, error)
 		// maybe add compare and swap function
 	}
 
@@ -59,7 +59,7 @@ type (
 	// Writer thread safe storing of configuration values under different paths and scopes.
 	Writer interface {
 		// Write writes a configuration entry and may return an error
-		Write(p path.Path, value interface{}) error
+		Write(p cfgpath.Path, value interface{}) error
 	}
 
 	// Service main configuration provider
@@ -105,7 +105,7 @@ func NewService(opts ...ServiceOption) (*Service, error) {
 		return nil, s
 	}
 
-	p := path.MustNewByParts(PathCSBaseURL)
+	p := cfgpath.MustNewByParts(PathCSBaseURL)
 	if err := s.Storage.Set(p, CSBaseURL); err != nil {
 		if err := s.Close(); err != nil { // terminate publisher go routine and prevent leaking
 			s.MultiErr = s.AppendErrors(err)
@@ -155,8 +155,8 @@ func (s *Service) ApplyDefaults(ss element.Sectioner) (count int, err error) {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.Service.ApplyDefaults", k, v)
 		}
-		var p path.Path
-		p, err = path.NewByParts(k) // default path!
+		var p cfgpath.Path
+		p, err = cfgpath.NewByParts(k) // default path!
 		if err != nil {
 			return
 		}
@@ -170,7 +170,7 @@ func (s *Service) ApplyDefaults(ss element.Sectioner) (count int, err error) {
 
 // Write puts a value back into the Service. Example usage:
 //		// Default Scope
-//		p, err := path.NewByParts("currency/option/base") // or use path.MustNewByParts( ... )
+//		p, err := cfgpath.NewByParts("currency/option/base") // or use cfgpath.MustNewByParts( ... )
 // 		err := Write(p, "USD")
 //
 //		// Website Scope
@@ -180,7 +180,7 @@ func (s *Service) ApplyDefaults(ss element.Sectioner) (count int, err error) {
 //		// Store Scope
 //		// 6 for example comes from core_store/store database table
 //		err := Write(p.Bind(scope.StoreID, 6), "CHF")
-func (s *Service) Write(p path.Path, v interface{}) error {
+func (s *Service) Write(p cfgpath.Path, v interface{}) error {
 	if PkgLog.IsDebug() {
 		PkgLog.Debug("config.Service.Write", "path", p, "val", v)
 	}
@@ -193,7 +193,7 @@ func (s *Service) Write(p path.Path, v interface{}) error {
 }
 
 // get generic getter ... not sure if this should be public ...
-func (s *Service) get(p path.Path) (interface{}, error) {
+func (s *Service) get(p cfgpath.Path) (interface{}, error) {
 	if PkgLog.IsDebug() {
 		PkgLog.Debug("config.Service.get", "path", p)
 	}
@@ -203,7 +203,7 @@ func (s *Service) get(p path.Path) (interface{}, error) {
 // String returns a string from the Service. Example usage:
 //
 //		// Default Scope
-//		p, err := path.NewByParts("general/locale/timezone") // or use path.MustNewByParts( ... )
+//		p, err := cfgpath.NewByParts("general/locale/timezone") // or use cfgpath.MustNewByParts( ... )
 // 		s, err := String(p)
 //
 //		// Website Scope
@@ -213,7 +213,7 @@ func (s *Service) get(p path.Path) (interface{}, error) {
 //		// Store Scope
 //		// 6 for example comes from core_store/store database table
 //		s, err := String(p.Bind(scope.StoreID, 6))
-func (s *Service) String(p path.Path) (string, error) {
+func (s *Service) String(p cfgpath.Path) (string, error) {
 	vs, err := s.get(p)
 	if err != nil {
 		return "", err
@@ -222,7 +222,7 @@ func (s *Service) String(p path.Path) (string, error) {
 }
 
 // Bool returns bool from the Service. Example usage see String.
-func (s *Service) Bool(p path.Path) (bool, error) {
+func (s *Service) Bool(p cfgpath.Path) (bool, error) {
 	vs, err := s.get(p)
 	if err != nil {
 		return false, err
@@ -231,7 +231,7 @@ func (s *Service) Bool(p path.Path) (bool, error) {
 }
 
 // Float64 returns a float64 from the Service. Example usage see String.
-func (s *Service) Float64(p path.Path) (float64, error) {
+func (s *Service) Float64(p cfgpath.Path) (float64, error) {
 	vs, err := s.get(p)
 	if err != nil {
 		return 0, err
@@ -240,7 +240,7 @@ func (s *Service) Float64(p path.Path) (float64, error) {
 }
 
 // Int returns an int from the Service. Example usage see String.
-func (s *Service) Int(p path.Path) (int, error) {
+func (s *Service) Int(p cfgpath.Path) (int, error) {
 	vs, err := s.get(p)
 	if err != nil {
 		return 0, err
@@ -251,7 +251,7 @@ func (s *Service) Int(p path.Path) (int, error) {
 // Time returns a date and time object from the Service. Example usage see String.
 // Time() is able to parse available time formats as defined in
 // github.com/corestoreio/csfw/util/conv.StringToDate()
-func (s *Service) Time(p path.Path) (time.Time, error) {
+func (s *Service) Time(p cfgpath.Path) (time.Time, error) {
 	vs, err := s.get(p)
 	if err != nil {
 		return time.Time{}, err
@@ -262,7 +262,7 @@ func (s *Service) Time(p path.Path) (time.Time, error) {
 // IsSet checks if a key is in the configuration. Returns false on error.
 // Errors will be logged in Debug mode. Does not check if the value can be asserted
 // to the desired type.
-func (s *Service) IsSet(p path.Path) bool {
+func (s *Service) IsSet(p cfgpath.Path) bool {
 	v, err := s.Storage.Get(p)
 	if err != nil {
 		if PkgLog.IsDebug() {

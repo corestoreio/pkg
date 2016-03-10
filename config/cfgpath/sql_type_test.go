@@ -14,10 +14,10 @@
 
 // Only include this file IF no specific build tag for mage has been set
 
-package path_test
+package cfgpath_test
 
 import (
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 )
@@ -37,7 +37,7 @@ func init() {
 			csdb.Column{Field: dbr.NewNullString(`config_id`), Type: dbr.NewNullString(`int(10) unsigned`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`PRI`), Default: dbr.NewNullString(nil), Extra: dbr.NewNullString(`auto_increment`)},
 			csdb.Column{Field: dbr.NewNullString(`scope`), Type: dbr.NewNullString(`varchar(8)`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(`MUL`), Default: dbr.NewNullString(`default`), Extra: dbr.NewNullString(``)},
 			csdb.Column{Field: dbr.NewNullString(`scope_id`), Type: dbr.NewNullString(`int(11)`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(`0`), Extra: dbr.NewNullString(``)},
-			csdb.Column{Field: dbr.NewNullString(`path`), Type: dbr.NewNullString(`varchar(255)`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(`general`), Extra: dbr.NewNullString(``)},
+			csdb.Column{Field: dbr.NewNullString(`cfgpath`), Type: dbr.NewNullString(`varchar(255)`), Null: dbr.NewNullString(`NO`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(`general`), Extra: dbr.NewNullString(``)},
 			csdb.Column{Field: dbr.NewNullString(`value`), Type: dbr.NewNullString(`text`), Null: dbr.NewNullString(`YES`), Key: dbr.NewNullString(``), Default: dbr.NewNullString(nil), Extra: dbr.NewNullString(``)},
 		),
 	)
@@ -53,6 +53,6 @@ type TableCoreConfigData struct {
 	ConfigID int64          `db:"config_id" json:",omitempty"` // config_id int(10) unsigned NOT NULL PRI  auto_increment
 	Scope    string         `db:"scope" json:",omitempty"`     // scope varchar(8) NOT NULL MUL DEFAULT 'default'
 	ScopeID  int64          `db:"scope_id" json:",omitempty"`  // scope_id int(11) NOT NULL  DEFAULT '0'
-	Path     path.Route     `db:"path" json:",omitempty"`      // path varchar(255) NOT NULL  DEFAULT 'general'
+	Path     cfgpath.Route  `db:"path" json:",omitempty"`      // path varchar(255) NOT NULL  DEFAULT 'general'
 	Value    dbr.NullString `db:"value" json:",omitempty"`     // value text NULL
 }

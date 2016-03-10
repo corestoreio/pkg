@@ -19,7 +19,7 @@ import (
 
 	"errors"
 
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 )
 
 // ErrKeyNotFound will be returned if a key cannot be found or value is nil.
@@ -38,15 +38,15 @@ var ErrKeyNotFound = errors.New("Key not found")
 type Storager interface {
 	// Set sets a key with a value and returns on success nil or ErrKeyOverwritten,
 	// on failure any other error
-	Set(key path.Path, value interface{}) error
+	Set(key cfgpath.Path, value interface{}) error
 	// Get may return a ErrKeyNotFound error
-	Get(key path.Path) (interface{}, error)
+	Get(key cfgpath.Path) (interface{}, error)
 	// AllKeys returns the fully qualified keys
-	AllKeys() (path.PathSlice, error)
+	AllKeys() (cfgpath.PathSlice, error)
 }
 
 type keyVal struct {
-	k path.Path
+	k cfgpath.Path
 	v interface{}
 }
 
@@ -64,7 +64,7 @@ func NewKV() *kvmap {
 }
 
 // Set implements Storager interface
-func (sp *kvmap) Set(key path.Path, value interface{}) error {
+func (sp *kvmap) Set(key cfgpath.Path, value interface{}) error {
 	sp.Lock()
 	defer sp.Unlock()
 
@@ -77,7 +77,7 @@ func (sp *kvmap) Set(key path.Path, value interface{}) error {
 }
 
 // Get implements Storager interface
-func (sp *kvmap) Get(key path.Path) (interface{}, error) {
+func (sp *kvmap) Get(key cfgpath.Path) (interface{}, error) {
 	sp.Lock()
 	defer sp.Unlock()
 
@@ -92,11 +92,11 @@ func (sp *kvmap) Get(key path.Path) (interface{}, error) {
 }
 
 // AllKeys implements Storager interface
-func (sp *kvmap) AllKeys() (path.PathSlice, error) {
+func (sp *kvmap) AllKeys() (cfgpath.PathSlice, error) {
 	sp.Lock()
 	defer sp.Unlock()
 
-	var ret = make(path.PathSlice, len(sp.kv), len(sp.kv))
+	var ret = make(cfgpath.PathSlice, len(sp.kv), len(sp.kv))
 	i := 0
 	for _, kv := range sp.kv {
 		ret[i] = kv.k

@@ -17,7 +17,7 @@ package config
 import (
 	"sync"
 
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/juju/errors"
 )
 
@@ -35,7 +35,7 @@ type MessageReceiver interface {
 	// Path may contains up to three levels. For more details see the Subscriber
 	// interface of this package. If an error will be returned, the subscriber
 	// gets unsubscribed/removed.
-	MessageConfig(path.Path) error
+	MessageConfig(cfgpath.Path) error
 }
 
 // Subscriber represents the overall service to receive subscriptions from
@@ -49,7 +49,7 @@ type Subscriber interface {
 	// for all paths beginning with "system". A path is equal to a topic in a PubSub system.
 	// Path cannot be empty means you cannot listen to all changes.
 	// Returns a unique identifier for the Subscriber for later removal, or an error.
-	Subscribe(path.Route, MessageReceiver) (subscriptionID int, err error)
+	Subscribe(cfgpath.Route, MessageReceiver) (subscriptionID int, err error)
 }
 
 // pubSub embedded pointer struct into the Service
@@ -60,7 +60,7 @@ type pubSub struct {
 	subMap     map[uint32]map[int]MessageReceiver
 	subAutoInc int // subAutoInc increased whenever a Subscriber has been added
 	mu         sync.RWMutex
-	pubPath    chan path.Path
+	pubPath    chan cfgpath.Path
 	stop       chan struct{} // terminates the goroutine
 	closeErr   chan error    // this one tells us that the go routine has really been terminated
 	closed     bool          // if Close() has been called the config.Service can still Write() without panic
@@ -91,9 +91,9 @@ func (s *pubSub) Close() error {
 //		- currency/options/base
 //		- currency/options
 //		- currency
-func (s *pubSub) Subscribe(r path.Route, mr MessageReceiver) (subscriptionID int, err error) {
+func (s *pubSub) Subscribe(r cfgpath.Route, mr MessageReceiver) (subscriptionID int, err error) {
 	if r.IsEmpty() {
-		return 0, path.ErrIncorrectPath
+		return 0, cfgpath.ErrIncorrectPath
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -128,7 +128,7 @@ func (s *pubSub) Unsubscribe(subscriptionID int) error {
 }
 
 // sendMsg sends the arg into the channel
-func (s *pubSub) sendMsg(p path.Path) {
+func (s *pubSub) sendMsg(p cfgpath.Path) {
 	if false == s.closed {
 		s.pubPath <- p
 	}
@@ -175,7 +175,7 @@ func (s *pubSub) publish() {
 	}
 }
 
-func (s *pubSub) readMapAndSend(p path.Path, level int) (evict []int) {
+func (s *pubSub) readMapAndSend(p cfgpath.Path, level int) (evict []int) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
@@ -198,7 +198,7 @@ func (s *pubSub) readMapAndSend(p path.Path, level int) (evict []int) {
 	return
 }
 
-func sendMsgs(subs map[int]MessageReceiver, p path.Path) (evict []int) {
+func sendMsgs(subs map[int]MessageReceiver, p cfgpath.Path) (evict []int) {
 	for id, s := range subs {
 		if err := sendMsgRecoverable(id, s, p); err != nil {
 			if PkgLog.IsDebug() {
@@ -210,7 +210,7 @@ func sendMsgs(subs map[int]MessageReceiver, p path.Path) (evict []int) {
 	return
 }
 
-func sendMsgRecoverable(id int, sl MessageReceiver, p path.Path) (err error) {
+func sendMsgRecoverable(id int, sl MessageReceiver, p cfgpath.Path) (err error) {
 	defer func() { // protect ... you'll never know
 		if r := recover(); r != nil {
 			if recErr, ok := r.(error); ok {
@@ -231,7 +231,7 @@ func sendMsgRecoverable(id int, sl MessageReceiver, p path.Path) (err error) {
 func newPubSub() *pubSub {
 	return &pubSub{
 		subMap:   make(map[uint32]map[int]MessageReceiver),
-		pubPath:  make(chan path.Path),
+		pubPath:  make(chan cfgpath.Path),
 		stop:     make(chan struct{}),
 		closeErr: make(chan error),
 	}

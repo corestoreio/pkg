@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -108,7 +108,7 @@ func (dbs *DBStorage) Stop() error {
 
 // Set sets a value with its key. Database errors get logged as Info message.
 // Enabled debug level logs the insert ID or rows affected.
-func (dbs *DBStorage) Set(key path.Path, value interface{}) error {
+func (dbs *DBStorage) Set(key cfgpath.Path, value interface{}) error {
 	// update lastUsed at the end because there might be the slight chance
 	// that a statement gets closed despite we're waiting for the result
 	// from the server.
@@ -157,7 +157,7 @@ func (dbs *DBStorage) Set(key path.Path, value interface{}) error {
 // Get returns a value from the database by its key. It is guaranteed that the
 // type in the empty interface is a string. It returns nil on error but errors
 // get logged as info message
-func (dbs *DBStorage) Get(key path.Path) (interface{}, error) {
+func (dbs *DBStorage) Get(key cfgpath.Path) (interface{}, error) {
 	// update lastUsed at the end because there might be the slight chance
 	// that a statement gets closed despite we're waiting for the result
 	// from the server.
@@ -175,7 +175,7 @@ func (dbs *DBStorage) Get(key path.Path) (interface{}, error) {
 	pl, err := key.Level(-1)
 	if err != nil {
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("config.DBStorage.Get.path.Level", "err", err, "key", key)
+			PkgLog.Debug("config.DBStorage.Get.cfgpath.Level", "err", err, "key", key)
 		}
 		return nil, err
 	}
@@ -195,7 +195,7 @@ func (dbs *DBStorage) Get(key path.Path) (interface{}, error) {
 }
 
 // AllKeys returns all available keys. Database errors get logged as info message.
-func (dbs *DBStorage) AllKeys() (path.PathSlice, error) {
+func (dbs *DBStorage) AllKeys() (cfgpath.PathSlice, error) {
 	// update lastUsed at the end because there might be the slight chance
 	// that a statement gets closed despite we're waiting for the result
 	// from the server.
@@ -220,7 +220,7 @@ func (dbs *DBStorage) AllKeys() (path.PathSlice, error) {
 	defer rows.Close()
 
 	const maxCap = 750 // Just a guess the 750
-	var ret = make(path.PathSlice, 0, maxCap)
+	var ret = make(cfgpath.PathSlice, 0, maxCap)
 	var sqlScope dbr.NullString
 	var sqlScopeID dbr.NullInt64
 	var sqlPath dbr.NullString
@@ -233,7 +233,7 @@ func (dbs *DBStorage) AllKeys() (path.PathSlice, error) {
 			return nil, err
 		}
 		if sqlPath.Valid {
-			p, err := path.NewByParts(sqlPath.String)
+			p, err := cfgpath.NewByParts(sqlPath.String)
 			if err != nil {
 				return ret, err
 			}

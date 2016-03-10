@@ -21,7 +21,7 @@ import (
 	"time"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/config/storage/ccd"
 	"github.com/corestoreio/csfw/store/scope"
@@ -51,17 +51,17 @@ func TestDBStorageOneStmt(t *testing.T) {
 	defer func() { assert.NoError(t, sdb.Stop()) }()
 
 	tests := []struct {
-		key       path.Path
+		key       cfgpath.Path
 		value     interface{}
 		wantNil   bool
 		wantValue string
 	}{
-		{path.MustNewByParts("testDBStorage/secure/base_url").Bind(scope.StoreID, 1), "http://corestore.io", false, "http://corestore.io"},
-		{path.MustNewByParts("testDBStorage/log/active").Bind(scope.StoreID, 2), 1, false, "1"},
-		{path.MustNewByParts("testDBStorage/log/clean").Bind(scope.StoreID, 99999), 19.999, false, "19.999"},
-		{path.MustNewByParts("testDBStorage/log/clean").Bind(scope.StoreID, 99999), 29.999, false, "29.999"},
-		{path.MustNewByParts("testDBStorage/catalog/purge").Bind(scope.DefaultID, 1), true, false, "true"},
-		{path.MustNewByParts("testDBStorage/catalog/clean").Bind(scope.DefaultID, 1), 0, false, "0"},
+		{cfgpath.MustNewByParts("testDBStorage/secure/base_url").Bind(scope.StoreID, 1), "http://corestore.io", false, "http://corestore.io"},
+		{cfgpath.MustNewByParts("testDBStorage/log/active").Bind(scope.StoreID, 2), 1, false, "1"},
+		{cfgpath.MustNewByParts("testDBStorage/log/clean").Bind(scope.StoreID, 99999), 19.999, false, "19.999"},
+		{cfgpath.MustNewByParts("testDBStorage/log/clean").Bind(scope.StoreID, 99999), 29.999, false, "29.999"},
+		{cfgpath.MustNewByParts("testDBStorage/catalog/purge").Bind(scope.DefaultID, 1), true, false, "true"},
+		{cfgpath.MustNewByParts("testDBStorage/catalog/clean").Bind(scope.DefaultID, 1), 0, false, "0"},
 	}
 
 	prepIns := dbMock.ExpectPrepare("INSERT INTO `[^`]+` \\(.+\\) VALUES \\(\\?,\\?,\\?,\\?\\) ON DUPLICATE KEY UPDATE `value`=\\?")
@@ -122,16 +122,16 @@ func TestDBStorageOneStmt(t *testing.T) {
 }
 
 var dbStorageMultiTests = []struct {
-	key       path.Path
+	key       cfgpath.Path
 	value     interface{}
 	wantValue string
 }{
-	{path.MustNewByParts("testDBStorage/secure/base_url").Bind(scope.WebsiteID, 10), "http://corestore.io", "http://corestore.io"},
-	{path.MustNewByParts("testDBStorage/log/active").Bind(scope.WebsiteID, 10), 1, "1"},
-	{path.MustNewByParts("testDBStorage/log/clean").Bind(scope.WebsiteID, 20), 19.999, "19.999"},
-	{path.MustNewByParts("testDBStorage/product/shipping").Bind(scope.WebsiteID, 20), 29.999, "29.999"},
-	{path.MustNewByParts("testDBStorage/checkout/multishipping"), false, "false"},
-	{path.MustNewByParts("testDBStorage/shipping/rate").Bind(scope.StoreID, 321), 3.14159, "3.14159"},
+	{cfgpath.MustNewByParts("testDBStorage/secure/base_url").Bind(scope.WebsiteID, 10), "http://corestore.io", "http://corestore.io"},
+	{cfgpath.MustNewByParts("testDBStorage/log/active").Bind(scope.WebsiteID, 10), 1, "1"},
+	{cfgpath.MustNewByParts("testDBStorage/log/clean").Bind(scope.WebsiteID, 20), 19.999, "19.999"},
+	{cfgpath.MustNewByParts("testDBStorage/product/shipping").Bind(scope.WebsiteID, 20), 29.999, "29.999"},
+	{cfgpath.MustNewByParts("testDBStorage/checkout/multishipping"), false, "false"},
+	{cfgpath.MustNewByParts("testDBStorage/shipping/rate").Bind(scope.StoreID, 321), 3.14159, "3.14159"},
 }
 
 func TestDBStorageMultipleStmt_Set(t *testing.T) {

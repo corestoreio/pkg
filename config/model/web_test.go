@@ -18,8 +18,8 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/model"
-	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
@@ -27,7 +27,7 @@ import (
 func TestBaseURLGet(t *testing.T) {
 	t.Parallel()
 	const pathWebUnsecUrl = "web/unsecure/base_url"
-	wantPath := path.MustNewByParts(pathWebUnsecUrl).Bind(scope.StoreID, 1)
+	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).Bind(scope.StoreID, 1)
 	b := model.NewBaseURL(pathWebUnsecUrl, model.WithFieldFromSectionSlice(configStructure))
 
 	assert.Empty(t, b.Options())
@@ -53,7 +53,7 @@ func TestBaseURLGet(t *testing.T) {
 func TestBaseURLWrite(t *testing.T) {
 	t.Parallel()
 	const pathWebUnsecUrl = "web/unsecure/base_url"
-	wantPath := path.MustNewByParts(pathWebUnsecUrl).Bind(scope.StoreID, 1)
+	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).Bind(scope.StoreID, 1)
 	b := model.NewBaseURL(pathWebUnsecUrl, model.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}

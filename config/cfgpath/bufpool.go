@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package path
+package cfgpath
 
-import "github.com/corestoreio/csfw/util/log"
+import "github.com/corestoreio/csfw/util/bufferpool"
 
-// PkgLog global package based logger
-var PkgLog log.Logger = log.PkgLog
+// size of a route including scope and ID is: 255 (path) + 11 (ID) + 8 (strScope), see core_config_data table
+var bufPool = bufferpool.New(320)

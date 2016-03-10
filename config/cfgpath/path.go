@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package path
+package cfgpath
 
 import (
 	"bytes"
@@ -142,7 +142,7 @@ func (p Path) String() string {
 	err := p.fq(buf)
 	if err != nil {
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("path.Path.FQ.String", "err", err, "path", p, "buf", buf.String())
+			PkgLog.Debug("cfgpath.Path.FQ.String", "err", err, "path", p, "buf", buf.String())
 		}
 		return ""
 	}
@@ -151,7 +151,7 @@ func (p Path) String() string {
 
 // GoString returns the internal representation of Path
 func (p Path) GoString() string {
-	return fmt.Sprintf("path.Path{ Route:path.NewRoute(`%s`), Scope: %d, ID: %d }", p.Route, p.Scope, p.ID)
+	return fmt.Sprintf("cfgpath.Path{ Route:cfgpath.NewRoute(`%s`), Scope: %d, ID: %d }", p.Route, p.Scope, p.ID)
 }
 
 // FQ returns the fully qualified route. Safe for further processing of the

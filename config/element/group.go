@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"sort"
 
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/juju/errors"
@@ -36,7 +36,7 @@ type GroupSlice []*Group
 //  Thread safe for reading but not for modifying.
 type Group struct {
 	// ID unique ID and merged with others. 2nd part of the path.
-	ID      path.Route
+	ID      cfgpath.Route
 	Label   text.Chars `json:",omitempty"`
 	Comment text.Chars `json:",omitempty"`
 	// Scopes: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
@@ -60,7 +60,7 @@ func NewGroupSlice(gs ...*Group) GroupSlice {
 // FindByID returns a Group pointer or ErrGroupNotFound.
 // Route must be a single part. E.g. if you have path "a/b/c" route would be in
 // this case "b". For comparison the field Sum32 of a route will be used.
-func (gs GroupSlice) FindByID(id path.Route) (*Group, error) {
+func (gs GroupSlice) FindByID(id cfgpath.Route) (*Group, error) {
 	for _, g := range gs {
 		if g != nil && g.ID.Sum32 == id.Sum32 {
 			return g, nil

@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/text"
 )
 
@@ -230,9 +230,9 @@ func ToStringE(i interface{}) (string, error) {
 		return string(s), nil
 	case text.Chars:
 		return s.String(), nil
-	case path.Route:
+	case cfgpath.Route:
 		return s.String(), nil
-	case path.Path:
+	case cfgpath.Path:
 		sp, err := s.FQ()
 		return sp.String(), err
 	case template.HTML:

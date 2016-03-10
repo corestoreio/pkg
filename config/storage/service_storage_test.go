@@ -17,7 +17,7 @@ package storage_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
@@ -29,32 +29,32 @@ func TestSimpleStorage(t *testing.T) {
 	t.Parallel()
 	sp := storage.NewKV()
 
-	p1 := path.MustNewByParts("aa/bb/cc")
+	p1 := cfgpath.MustNewByParts("aa/bb/cc")
 
 	assert.NoError(t, sp.Set(p1, 19.99))
 	f, err := sp.Get(p1)
 	assert.NoError(t, err)
 	assert.Exactly(t, 19.99, f.(float64))
 
-	p2 := path.MustNewByParts("xx/yy/zz").Bind(scope.StoreID, 2)
+	p2 := cfgpath.MustNewByParts("xx/yy/zz").Bind(scope.StoreID, 2)
 
 	assert.NoError(t, sp.Set(p2, 4711))
 	i, err := sp.Get(p2)
 	assert.NoError(t, err)
 	assert.Exactly(t, 4711, i.(int))
 
-	ni, err := sp.Get(path.Path{})
-	assert.EqualError(t, err, path.ErrIncorrectPath.Error())
+	ni, err := sp.Get(cfgpath.Path{})
+	assert.EqualError(t, err, cfgpath.ErrIncorrectPath.Error())
 	assert.Nil(t, ni)
 
 	keys, err := sp.AllKeys()
 	assert.NoError(t, err)
 	keys.Sort()
 
-	wantKeys := path.PathSlice{path.Path{Route: path.NewRoute(`aa/bb/cc`), Scope: 1, ID: 0}, path.Path{Route: path.NewRoute(`xx/yy/zz`), Scope: 4, ID: 2}}
+	wantKeys := cfgpath.PathSlice{cfgpath.Path{Route: cfgpath.NewRoute(`aa/bb/cc`), Scope: 1, ID: 0}, cfgpath.Path{Route: cfgpath.NewRoute(`xx/yy/zz`), Scope: 4, ID: 2}}
 	assert.Exactly(t, wantKeys, keys)
 
-	p3 := path.MustNewByParts("rr/ss/tt").Bind(scope.StoreID, 1)
+	p3 := cfgpath.MustNewByParts("rr/ss/tt").Bind(scope.StoreID, 1)
 	ni, err = sp.Get(p3)
 	assert.EqualError(t, err, storage.ErrKeyNotFound.Error())
 	assert.Nil(t, ni)

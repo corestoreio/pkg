@@ -20,8 +20,8 @@ import (
 	"errors"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/model"
-	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
@@ -30,7 +30,7 @@ import (
 func TestStringCSVGet(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
-	wantPath := path.MustNewByParts(pathWebCorsHeaders).String()
+	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).String()
 	b := model.NewStringCSV(
 		"web/cors/exposed_headers",
 		model.WithFieldFromSectionSlice(configStructure),
@@ -74,7 +74,7 @@ func TestStringCSVGet(t *testing.T) {
 func TestStringCSVWrite(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
-	wantPath := path.MustNewByParts(pathWebCorsHeaders).String()
+	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).String()
 	b := model.NewStringCSV(
 		"web/cors/exposed_headers",
 		model.WithFieldFromSectionSlice(configStructure),
@@ -110,7 +110,7 @@ func TestStringCSVCustomSeparator(t *testing.T) {
 		),
 		model.WithCSVSeparator(''),
 	)
-	wantPath := path.MustNewByParts(cfgPath).String() // Default Scope
+	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
 
 	haveSL, haveErr := b.Get(cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{
@@ -146,7 +146,7 @@ func TestIntCSV(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Exactly(t, []int{2014, 2015, 2016}, sl) // three years are defined in variable configStructure
 
-	wantPath := path.MustNewByParts(pathWebCorsIntSlice).Bind(scope.StoreID, 4).String()
+	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.StoreID, 4).String()
 
 	tests := []struct {
 		lenient bool
@@ -192,7 +192,7 @@ func TestIntCSVWrite(t *testing.T) {
 			{2017, "Year 2017"},
 		}),
 	)
-	wantPath := path.MustNewByParts(pathWebCorsIntSlice).Bind(scope.StoreID, 4).String()
+	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.StoreID, 4).String()
 
 	mw := &cfgmock.Write{}
 	b.Source.Merge(source.NewByInt(source.Ints{
@@ -223,7 +223,7 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 		}),
 		model.WithCSVSeparator('|'),
 	)
-	wantPath := path.MustNewByParts(pathWebCorsIntSlice).Bind(scope.WebsiteID, 34).String()
+	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.WebsiteID, 34).String()
 
 	haveSL, haveErr := b.Get(cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{

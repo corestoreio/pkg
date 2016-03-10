@@ -17,7 +17,7 @@ package config
 import (
 	"time"
 
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/juju/errors"
 )
@@ -37,18 +37,18 @@ import (
 // Returned error is mostly of ErrKeyNotFound.
 type ScopedGetter interface {
 	scope.Scoper
-	String(r path.Route, s ...scope.Scope) (string, error)
-	Bool(r path.Route, s ...scope.Scope) (bool, error)
-	Float64(r path.Route, s ...scope.Scope) (float64, error)
-	Int(r path.Route, s ...scope.Scope) (int, error)
-	Time(r path.Route, s ...scope.Scope) (time.Time, error)
+	String(r cfgpath.Route, s ...scope.Scope) (string, error)
+	Bool(r cfgpath.Route, s ...scope.Scope) (bool, error)
+	Float64(r cfgpath.Route, s ...scope.Scope) (float64, error)
+	Int(r cfgpath.Route, s ...scope.Scope) (int, error)
+	Time(r cfgpath.Route, s ...scope.Scope) (time.Time, error)
 }
 
 // think about that segregation
 //type ScopedStringer interface {
 //	scope.Scoper
 //	Bind(scope.Scope) ScopedGetter
-//	String(r path.Route, s ...scope.Scope) (string, error)
+//	String(r cfgpath.Route, s ...scope.Scope) (string, error)
 //}
 // and so on ...
 
@@ -84,9 +84,9 @@ func (ss scopedService) Scope() (scope.Scope, int64) {
 
 // String traverses through the scopes store->website->default to find
 // a matching string value.
-func (ss scopedService) String(r path.Route, s ...scope.Scope) (v string, err error) {
+func (ss scopedService) String(r cfgpath.Route, s ...scope.Scope) (v string, err error) {
 	// fallback to next parent scope if value does not exists
-	p, err := path.New(r)
+	p, err := cfgpath.New(r)
 	if err != nil {
 		err = errors.Mask(err)
 		return
@@ -109,9 +109,9 @@ func (ss scopedService) String(r path.Route, s ...scope.Scope) (v string, err er
 
 // Bool traverses through the scopes store->website->default to find
 // a matching bool value.
-func (ss scopedService) Bool(r path.Route, s ...scope.Scope) (v bool, err error) {
+func (ss scopedService) Bool(r cfgpath.Route, s ...scope.Scope) (v bool, err error) {
 	// fallback to next parent scope if value does not exists
-	p, err := path.New(r)
+	p, err := cfgpath.New(r)
 	if err != nil {
 		err = errors.Mask(err)
 		return
@@ -135,9 +135,9 @@ func (ss scopedService) Bool(r path.Route, s ...scope.Scope) (v bool, err error)
 
 // Float64 traverses through the scopes store->website->default to find
 // a matching float64 value.
-func (ss scopedService) Float64(r path.Route, s ...scope.Scope) (v float64, err error) {
+func (ss scopedService) Float64(r cfgpath.Route, s ...scope.Scope) (v float64, err error) {
 	// fallback to next parent scope if value does not exists
-	p, err := path.New(r)
+	p, err := cfgpath.New(r)
 	if err != nil {
 		err = errors.Mask(err)
 		return
@@ -161,9 +161,9 @@ func (ss scopedService) Float64(r path.Route, s ...scope.Scope) (v float64, err 
 
 // Int traverses through the scopes store->website->default to find
 // a matching int value.
-func (ss scopedService) Int(r path.Route, s ...scope.Scope) (v int, err error) {
+func (ss scopedService) Int(r cfgpath.Route, s ...scope.Scope) (v int, err error) {
 	// fallback to next parent scope if value does not exists
-	p, err := path.New(r)
+	p, err := cfgpath.New(r)
 	if err != nil {
 		err = errors.Mask(err)
 		return
@@ -187,9 +187,9 @@ func (ss scopedService) Int(r path.Route, s ...scope.Scope) (v int, err error) {
 
 // Time traverses through the scopes store->website->default to find
 // a matching time.Time value.
-func (ss scopedService) Time(r path.Route, s ...scope.Scope) (v time.Time, err error) {
+func (ss scopedService) Time(r cfgpath.Route, s ...scope.Scope) (v time.Time, err error) {
 	// fallback to next parent scope if value does not exists
-	p, err := path.New(r)
+	p, err := cfgpath.New(r)
 	if err != nil {
 		err = errors.Mask(err)
 		return

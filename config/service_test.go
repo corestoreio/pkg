@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
@@ -38,34 +38,34 @@ func TestService_ApplyDefaults(t *testing.T) {
 
 	pkgCfg := element.MustNewConfiguration(
 		&element.Section{
-			ID: path.NewRoute("contact"),
+			ID: cfgpath.NewRoute("contact"),
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID: path.NewRoute("contact"),
+					ID: cfgpath.NewRoute("contact"),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: `contact/contact/enabled`,
-							ID:      path.NewRoute("enabled"),
+							ID:      cfgpath.NewRoute("enabled"),
 							Default: true,
 						},
 					),
 				},
 				&element.Group{
-					ID: path.NewRoute("email"),
+					ID: cfgpath.NewRoute("email"),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: `contact/email/recipient_email`,
-							ID:      path.NewRoute("recipient_email"),
+							ID:      cfgpath.NewRoute("recipient_email"),
 							Default: `hello@example.com`,
 						},
 						&element.Field{
 							// Path: `contact/email/sender_email_identity`,
-							ID:      path.NewRoute("sender_email_identity"),
+							ID:      cfgpath.NewRoute("sender_email_identity"),
 							Default: 2.7182818284590452353602874713527,
 						},
 						&element.Field{
 							// Path: `contact/email/email_template`,
-							ID:      path.NewRoute("email_template"),
+							ID:      cfgpath.NewRoute("email_template"),
 							Default: 4711,
 						},
 					),
@@ -75,11 +75,11 @@ func TestService_ApplyDefaults(t *testing.T) {
 	)
 	s := config.MustNewService()
 	s.ApplyDefaults(pkgCfg)
-	cer, err := pkgCfg.FindFieldByID(path.NewRoute("contact", "email", "recipient_email"))
+	cer, err := pkgCfg.FindFieldByID(cfgpath.NewRoute("contact", "email", "recipient_email"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	email, err := s.String(path.MustNewByParts("contact/email/recipient_email")) // default scope
+	email, err := s.String(cfgpath.MustNewByParts("contact/email/recipient_email")) // default scope
 	assert.NoError(t, err)
 	assert.Exactly(t, cer.Default.(string), email)
 	assert.NoError(t, s.Close())
@@ -89,7 +89,7 @@ func TestNewServiceStandard(t *testing.T) {
 	t.Parallel()
 	srv := config.MustNewService(nil)
 	assert.NotNil(t, srv)
-	url, err := srv.String(path.MustNewByParts(config.PathCSBaseURL))
+	url, err := srv.String(cfgpath.MustNewByParts(config.PathCSBaseURL))
 	assert.NoError(t, err)
 	assert.Exactly(t, config.CSBaseURL, url)
 }
@@ -105,14 +105,14 @@ func TestNotKeyNotFoundError(t *testing.T) {
 
 	scopedSrv := srv.NewScoped(1, 1)
 
-	flat, err := scopedSrv.String(path.NewRoute("catalog/product/enable_flat"))
+	flat, err := scopedSrv.String(cfgpath.NewRoute("catalog/product/enable_flat"))
 	assert.EqualError(t, err, storage.ErrKeyNotFound.Error())
 	assert.Empty(t, flat)
 	assert.False(t, config.NotKeyNotFoundError(err))
 
-	val, err := scopedSrv.String(path.NewRoute("catalog"))
+	val, err := scopedSrv.String(cfgpath.NewRoute("catalog"))
 	assert.Empty(t, val)
-	assert.EqualError(t, err, path.ErrIncorrectPath.Error())
+	assert.EqualError(t, err, cfgpath.ErrIncorrectPath.Error())
 	assert.True(t, config.NotKeyNotFoundError(err))
 }
 
@@ -122,7 +122,7 @@ func TestService_NewScoped(t *testing.T) {
 	assert.NotNil(t, srv)
 
 	scopedSrv := srv.NewScoped(1, 1)
-	sURL, err := scopedSrv.String(path.NewRoute(config.PathCSBaseURL))
+	sURL, err := scopedSrv.String(cfgpath.NewRoute(config.PathCSBaseURL))
 	assert.NoError(t, err)
 	assert.Exactly(t, config.CSBaseURL, sURL)
 
@@ -133,19 +133,19 @@ func TestService_Write(t *testing.T) {
 	srv := config.MustNewService()
 	assert.NotNil(t, srv)
 
-	p1 := path.Path{}
-	assert.EqualError(t, srv.Write(p1, true), path.ErrIncorrectPath.Error())
+	p1 := cfgpath.Path{}
+	assert.EqualError(t, srv.Write(p1, true), cfgpath.ErrIncorrectPath.Error())
 }
 
 func TestService_Types(t *testing.T) {
 	t.Parallel()
-	basePath := path.MustNewByParts("aa/bb/cc")
+	basePath := cfgpath.MustNewByParts("aa/bb/cc")
 	tests := []struct {
-		p   path.Path
+		p   cfgpath.Path
 		err error
 	}{
 		{basePath, nil},
-		{path.Path{}, path.ErrIncorrectPath},
+		{cfgpath.Path{}, cfgpath.ErrIncorrectPath},
 		{basePath.Bind(scope.WebsiteID, 10), nil},
 		{basePath.Bind(scope.StoreID, 22), nil},
 	}
@@ -161,7 +161,7 @@ func TestService_Types(t *testing.T) {
 	}
 }
 
-func testServiceTypes(t *testing.T, p path.Path, writeVal, wantVal interface{}, iFaceIDX, testIDX int, wantErr error) {
+func testServiceTypes(t *testing.T, p cfgpath.Path, writeVal, wantVal interface{}, iFaceIDX, testIDX int, wantErr error) {
 
 	srv := config.MustNewService()
 

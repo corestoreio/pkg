@@ -17,8 +17,8 @@ package config_test
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/util/log"
 )
 
@@ -29,8 +29,8 @@ func init() {
 // BenchmarkSectionSliceValidate	    1000	   1791239 ns/op	  158400 B/op	    4016 allocs/op => Go 1.4.2
 // BenchmarkSectionSliceValidate   	    1000	   1636547 ns/op	  158400 B/op	    3213 allocs/op => Go 1.5.0
 // BenchmarkSectionSliceValidate   	    1000	   1766386 ns/op	  102783 B/op	    1607 allocs/op => Go 1.5.2
-// BenchmarkSectionSliceValidate   	    2000	   1092104 ns/op	  152864 B/op	    2410 allocs/op => path.Routes
-// BenchmarkSectionSliceValidate   	    2000	   1123606 ns/op	  191408 B/op	    2410 allocs/op => path.Routes with Sum32
+// BenchmarkSectionSliceValidate   	    2000	   1092104 ns/op	  152864 B/op	    2410 allocs/op => cfgpath.Routes
+// BenchmarkSectionSliceValidate   	    2000	   1123606 ns/op	  191408 B/op	    2410 allocs/op => cfgpath.Routes with Sum32
 func BenchmarkSectionSliceValidate(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -45,7 +45,7 @@ var bsstj string
 // BenchmarkSectionSliceToJson	     300	   4336829 ns/op	  973188 B/op	   17254 allocs/op => Go 1.4.2
 // BenchmarkSectionSliceToJson 	     500	   3609676 ns/op	  914083 B/op	   14943 allocs/op => Go 1.5.0
 // BenchmarkSectionSliceToJson 	     500	   3580314 ns/op	  895303 B/op	   14620 allocs/op => Go 1.5.2
-// BenchmarkSectionSliceToJson	     500	   3844865 ns/op	  874724 B/op	   16505 allocs/op => path.Routes
+// BenchmarkSectionSliceToJson	     500	   3844865 ns/op	  874724 B/op	   16505 allocs/op => cfgpath.Routes
 // BenchmarkSectionSliceToJson 	     500	   3728585 ns/op	  875460 B/op	   16505 allocs/op
 func BenchmarkSectionSliceToJson(b *testing.B) {
 	b.ReportAllocs()
@@ -61,11 +61,11 @@ var sectionSliceFindFieldByID1 *element.Field
 // BenchmarkSectionSliceFindFieldByID1		20000000	       92.9 ns/op	       0 B/op	       0 allocs/op => Go 1.4.2 strings
 // BenchmarkSectionSliceFindFieldByID1		20000000	       84.1 ns/op	       0 B/op	       0 allocs/op => Go 1.5.0 strings
 // BenchmarkSectionSliceFindFieldByID1		20000000	        86.6 ns/op	       0 B/op	       0 allocs/op => Go 1.5.2 strings
-// BenchmarkSectionSliceFindFieldByID1	 	 2000000	       890 ns/op	       0 B/op	       0 allocs/op => path.Routes
-// BenchmarkSectionSliceFindFieldByID1-4	 2000000	       751 ns/op	       0 B/op	       0 allocs/op => path.Routes with Sum32
-// BenchmarkSectionSliceFindFieldByID1-4	10000000	       137 ns/op	       0 B/op	       0 allocs/op => path.Routes with Sum32 + array
+// BenchmarkSectionSliceFindFieldByID1	 	 2000000	       890 ns/op	       0 B/op	       0 allocs/op => cfgpath.Routes
+// BenchmarkSectionSliceFindFieldByID1-4	 2000000	       751 ns/op	       0 B/op	       0 allocs/op => cfgpath.Routes with Sum32
+// BenchmarkSectionSliceFindFieldByID1-4	10000000	       137 ns/op	       0 B/op	       0 allocs/op => cfgpath.Routes with Sum32 + array
 func BenchmarkSectionSliceFindFieldByID1(b *testing.B) {
-	r := path.NewRoute("carriers", "usps", "gateway_url")
+	r := cfgpath.NewRoute("carriers", "usps", "gateway_url")
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var err error
@@ -81,16 +81,16 @@ func BenchmarkSectionSliceFindFieldByID1(b *testing.B) {
 // BenchmarkSectionSliceFindFieldByID5	 	 2000000	       587 ns/op	       0 B/op	       0 allocs/op => Go 1.4.2
 // BenchmarkSectionSliceFindFieldByID5	 	 3000000	       565 ns/op	       0 B/op	       0 allocs/op => Go 1.5.0
 // BenchmarkSectionSliceFindFieldByID5	 	 3000000	       564 ns/op	       0 B/op	       0 allocs/op => Go 1.5.2
-// BenchmarkSectionSliceFindFieldByID5	  	  300000	      6077 ns/op	       0 B/op	       0 allocs/op => path.Routes
-// BenchmarkSectionSliceFindFieldByID5-4	  300000	      4580 ns/op	       0 B/op	       0 allocs/op => path.Routes with Sum32
-// BenchmarkSectionSliceFindFieldByID5-4	 2000000	       851 ns/op	       0 B/op	       0 allocs/op => path.Routes with Sum32 + array
+// BenchmarkSectionSliceFindFieldByID5	  	  300000	      6077 ns/op	       0 B/op	       0 allocs/op => cfgpath.Routes
+// BenchmarkSectionSliceFindFieldByID5-4	  300000	      4580 ns/op	       0 B/op	       0 allocs/op => cfgpath.Routes with Sum32
+// BenchmarkSectionSliceFindFieldByID5-4	 2000000	       851 ns/op	       0 B/op	       0 allocs/op => cfgpath.Routes with Sum32 + array
 func BenchmarkSectionSliceFindFieldByID5(b *testing.B) {
-	var routePaths = []path.Route{
-		path.NewRoute("carriers", "usps", "gateway_url"),
-		path.NewRoute("wishlist", "email", "number_limit"),
-		path.NewRoute("tax", "calculation", "apply_tax_on"),
-		path.NewRoute("sitemap", "generate", "frequency"),
-		path.NewRoute("sales_email", "creditmemo_comment", "guest_template"),
+	var routePaths = []cfgpath.Route{
+		cfgpath.NewRoute("carriers", "usps", "gateway_url"),
+		cfgpath.NewRoute("wishlist", "email", "number_limit"),
+		cfgpath.NewRoute("tax", "calculation", "apply_tax_on"),
+		cfgpath.NewRoute("sitemap", "generate", "frequency"),
+		cfgpath.NewRoute("sales_email", "creditmemo_comment", "guest_template"),
 	}
 
 	b.ReportAllocs()

@@ -17,8 +17,8 @@ package element_test
 import (
 	"testing"
 
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/path"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -29,13 +29,13 @@ func TestSectionValidateDuplicate(t *testing.T) {
 	t.Parallel()
 	ss := element.SectionSlice{
 		0: &element.Section{
-			ID: path.NewRoute(`aa`),
+			ID: cfgpath.NewRoute(`aa`),
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID: path.NewRoute(`bb`),
+					ID: cfgpath.NewRoute(`bb`),
 					Fields: element.FieldSlice{
-						&element.Field{ID: path.NewRoute(`cc`)},
-						&element.Field{ID: path.NewRoute(`cc`)},
+						&element.Field{ID: cfgpath.NewRoute(`cc`)},
+						&element.Field{ID: cfgpath.NewRoute(`cc`)},
 					},
 				},
 			),
@@ -49,13 +49,13 @@ func TestSectionValidateShortPath(t *testing.T) {
 	t.Parallel()
 	ss := element.SectionSlice{
 		0: &element.Section{
-			//ID: path.NewRoute(`aa`),
+			//ID: cfgpath.NewRoute(`aa`),
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					//ID: path.NewRoute(`b`),
+					//ID: cfgpath.NewRoute(`b`),
 					Fields: element.FieldSlice{
-						&element.Field{ID: path.NewRoute(`ca`)},
-						&element.Field{ID: path.NewRoute(`cb`)},
+						&element.Field{ID: cfgpath.NewRoute(`ca`)},
+						&element.Field{ID: cfgpath.NewRoute(`cb`)},
 						&element.Field{},
 					},
 				},
@@ -64,7 +64,7 @@ func TestSectionValidateShortPath(t *testing.T) {
 	}
 
 	err := ss.Validate()
-	assert.EqualError(t, err, path.ErrRouteEmpty.Error())
+	assert.EqualError(t, err, cfgpath.ErrRouteEmpty.Error())
 
 	if e2, ok := err.(*element.FieldError); ok {
 		assert.Exactly(t, "", e2.Field.ID.String())

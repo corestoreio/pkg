@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package path_test
+package cfgpath_test
 
 import (
 	std "log"
 
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/util/log"
 )
 
@@ -28,10 +28,10 @@ func init() {
 	debugLogBuf = new(log.MutexBuffer)
 	infoLogBuf = new(log.MutexBuffer)
 
-	path.PkgLog = log.NewStdLogger(
+	cfgpath.PkgLog = log.NewStdLogger(
 		log.SetStdDebug(debugLogBuf, "testDebug: ", std.Lshortfile),
 		log.SetStdInfo(infoLogBuf, "testInfo: ", std.Lshortfile),
 		log.SetStdDisableStackTrace(),
 	)
-	path.PkgLog.SetLevel(log.StdLevelDebug)
+	cfgpath.PkgLog.SetLevel(log.StdLevelDebug)
 }

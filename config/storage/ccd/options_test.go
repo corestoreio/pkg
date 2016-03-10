@@ -18,7 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/storage/ccd"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
@@ -68,9 +68,9 @@ func Test_WithCoreConfigData(t *testing.T) {
 	)
 	defer func() { assert.NoError(t, s.Close()) }()
 
-	assert.NoError(t, s.Write(path.MustNewByParts("web/secure/offloader_header"), "SSL_OFFLOADED"))
+	assert.NoError(t, s.Write(cfgpath.MustNewByParts("web/secure/offloader_header"), "SSL_OFFLOADED"))
 
-	h, err := s.String(path.MustNewByParts("web/secure/offloader_header"))
+	h, err := s.String(cfgpath.MustNewByParts("web/secure/offloader_header"))
 	assert.NoError(t, err)
 	assert.Exactly(t, "SSL_OFFLOADED", h)
 

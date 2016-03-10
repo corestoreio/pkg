@@ -18,12 +18,12 @@ import (
 	"fmt"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
 // We focus here on type String() other primitive types are of course also available.
-var pathString = path.MustNewByParts("scope/test/string") // panics on incorrect argument.
+var pathString = cfgpath.MustNewByParts("scope/test/string") // panics on incorrect argument.
 
 // Default storage engine with build-in in-memory map.
 // the NewService gets only instantiated once during app start up.

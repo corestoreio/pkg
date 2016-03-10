@@ -12,7 +12,7 @@ import (
 
 	"errors"
 
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
@@ -47,12 +47,12 @@ func TestToString(t *testing.T) {
 	assert.Equal(t, ToString(template.HTML("one time")), "one time")
 	assert.Equal(t, ToString(template.URL("http://somehost.foo")), "http://somehost.foo")
 	assert.Equal(t, ToString(text.Chars("http://somehost.foo")), "http://somehost.foo")
-	assert.Equal(t, ToString(path.NewRoute("http://somehost.foo")), "http://somehost.foo")
+	assert.Equal(t, ToString(cfgpath.NewRoute("http://somehost.foo")), "http://somehost.foo")
 	assert.Equal(t, ToString(foo), "one more time")
 	assert.Equal(t, ToString(nil), "")
 	assert.Equal(t, ToString(true), "true")
 	assert.Equal(t, ToString(false), "false")
-	assert.Equal(t, ToString(path.MustNewByParts("aa/bb/cc").Bind(scope.StoreID, 33)), "stores/33/aa/bb/cc")
+	assert.Equal(t, ToString(cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.StoreID, 33)), "stores/33/aa/bb/cc")
 }
 
 type foo struct {

@@ -19,8 +19,8 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/internal/cfgctx"
-	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/util/conv"
 	"golang.org/x/net/context"
@@ -38,7 +38,7 @@ type Write struct {
 }
 
 // Write writes to a black hole, may return an error
-func (w *Write) Write(p path.Path, v interface{}) error {
+func (w *Write) Write(p cfgpath.Path, v interface{}) error {
 	w.ArgPath = p.String()
 	w.ArgValue = v
 	return w.WriteError
@@ -67,7 +67,7 @@ type PathValue map[string]interface{}
 
 func (m PathValue) set(db storage.Storager) {
 	for fq, v := range m {
-		p, err := path.SplitFQ(fq)
+		p, err := cfgpath.SplitFQ(fq)
 		if err != nil {
 			panic(err)
 		}
@@ -78,7 +78,7 @@ func (m PathValue) set(db storage.Storager) {
 }
 
 // WithString returns a function which can be used in the NewService().
-// Your function returns a string value from a given path.
+// Your function returns a string value from a given cfgpath.
 // Call priority 2.
 func WithString(f func(path string) (string, error)) OptionFunc {
 	return func(mr *Service) { mr.FString = f }
@@ -154,7 +154,7 @@ func (mr *Service) UpdateValues(pathValues PathValue) {
 	pathValues.set(mr.db)
 }
 
-func (mr *Service) hasVal(p path.Path) bool {
+func (mr *Service) hasVal(p cfgpath.Path) bool {
 	v, err := mr.db.Get(p)
 	if err != nil && config.NotKeyNotFoundError(err) {
 		println("Mock.Service.hasVal error:", err.Error(), "path", p.String())
@@ -162,7 +162,7 @@ func (mr *Service) hasVal(p path.Path) bool {
 	return v != nil && err == nil
 }
 
-func (mr *Service) getVal(p path.Path) interface{} {
+func (mr *Service) getVal(p cfgpath.Path) interface{} {
 	v, err := mr.db.Get(p)
 	if err != nil && config.NotKeyNotFoundError(err) {
 		println("Mock.Service.getVal error:", err.Error(), "path", p.String())
@@ -173,7 +173,7 @@ func (mr *Service) getVal(p path.Path) interface{} {
 }
 
 // String returns a string value
-func (mr *Service) String(p path.Path) (string, error) {
+func (mr *Service) String(p cfgpath.Path) (string, error) {
 	switch {
 	case mr.hasVal(p):
 		return conv.ToStringE(mr.getVal(p))
@@ -185,7 +185,7 @@ func (mr *Service) String(p path.Path) (string, error) {
 }
 
 // Bool returns a bool value
-func (mr *Service) Bool(p path.Path) (bool, error) {
+func (mr *Service) Bool(p cfgpath.Path) (bool, error) {
 	switch {
 	case mr.hasVal(p):
 		return conv.ToBoolE(mr.getVal(p))
@@ -197,7 +197,7 @@ func (mr *Service) Bool(p path.Path) (bool, error) {
 }
 
 // Float64 returns a float64 value
-func (mr *Service) Float64(p path.Path) (float64, error) {
+func (mr *Service) Float64(p cfgpath.Path) (float64, error) {
 	switch {
 	case mr.hasVal(p):
 		return conv.ToFloat64E(mr.getVal(p))
@@ -209,7 +209,7 @@ func (mr *Service) Float64(p path.Path) (float64, error) {
 }
 
 // Int returns an integer value
-func (mr *Service) Int(p path.Path) (int, error) {
+func (mr *Service) Int(p cfgpath.Path) (int, error) {
 	switch {
 	case mr.hasVal(p):
 		return conv.ToIntE(mr.getVal(p))
@@ -221,7 +221,7 @@ func (mr *Service) Int(p path.Path) (int, error) {
 }
 
 // Time returns a time value
-func (mr *Service) Time(p path.Path) (time.Time, error) {
+func (mr *Service) Time(p cfgpath.Path) (time.Time, error) {
 	switch {
 	case mr.hasVal(p):
 		return conv.ToTimeE(mr.getVal(p))
@@ -234,7 +234,7 @@ func (mr *Service) Time(p path.Path) (time.Time, error) {
 
 // Subscribe returns the before applied SubscriptionID and SubscriptionErr
 // Does not start any underlying Goroutines.
-func (mr *Service) Subscribe(_ path.Route, s config.MessageReceiver) (subscriptionID int, err error) {
+func (mr *Service) Subscribe(_ cfgpath.Route, s config.MessageReceiver) (subscriptionID int, err error) {
 	return mr.SubscriptionID, mr.SubscriptionErr
 }
 

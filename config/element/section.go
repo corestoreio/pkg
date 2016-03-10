@@ -19,7 +19,7 @@ import (
 	"encoding/json"
 	"sort"
 
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/juju/errors"
@@ -37,7 +37,7 @@ type SectionSlice []*Section
 // groups and fields. Thread safe for reading but not for modifying.
 type Section struct {
 	// ID unique ID and merged with others. 1st part of the path.
-	ID    path.Route
+	ID    cfgpath.Route
 	Label text.Chars `json:",omitempty"`
 	// Scopes: bit value eg: showInDefault="1" showInWebsite="1" showInStore="1"
 	// Scopes can contain multiple Scope but no more than Default, Website and Store.
@@ -184,7 +184,7 @@ func (ss *SectionSlice) merge(s *Section) error {
 // FindByID returns a Section pointer or ErrSectionNotFound.
 // Route must be a single part. E.g. if you have path "a/b/c" route would be in
 // this case "a". For comparison the field Sum32 of a route will be used.
-func (ss SectionSlice) FindByID(id path.Route) (*Section, error) {
+func (ss SectionSlice) FindByID(id cfgpath.Route) (*Section, error) {
 	for _, s := range ss {
 		if s != nil && s.ID.Sum32 == id.Sum32 {
 			return s, nil
@@ -195,7 +195,7 @@ func (ss SectionSlice) FindByID(id path.Route) (*Section, error) {
 
 // FindGroupByID searches for a group using the first two path segments.
 // Route must have the format a/b/c.
-func (ss SectionSlice) FindGroupByID(r path.Route) (*Group, error) {
+func (ss SectionSlice) FindGroupByID(r cfgpath.Route) (*Group, error) {
 
 	spl, err := r.Split()
 	if err != nil {
@@ -211,7 +211,7 @@ func (ss SectionSlice) FindGroupByID(r path.Route) (*Group, error) {
 
 // FindFieldByID searches for a field using all three path segments.
 // Route must have the format a/b/c.
-func (ss SectionSlice) FindFieldByID(r path.Route) (*Field, error) {
+func (ss SectionSlice) FindFieldByID(r cfgpath.Route) (*Field, error) {
 	spl, err := r.Split()
 	if err != nil {
 		return nil, errors.Mask(err)
@@ -235,7 +235,7 @@ func (ss *SectionSlice) Append(s ...*Section) *SectionSlice {
 
 // AppendFields adds 0..n *Fields. Path must have at least two path parts like a/b
 // more path parts gets ignored. Not thread safe.
-func (ss SectionSlice) AppendFields(r path.Route, fs ...*Field) error {
+func (ss SectionSlice) AppendFields(r cfgpath.Route, fs ...*Field) error {
 	g, err := ss.FindGroupByID(r)
 	if err != nil {
 		return errors.Mask(err)
