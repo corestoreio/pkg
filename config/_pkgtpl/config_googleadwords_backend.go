@@ -3,8 +3,8 @@
 package googleadwords
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,43 +14,43 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// GoogleAdwordsActive => Enable.
 	// Path: google/adwords/active
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	GoogleAdwordsActive model.Bool
+	GoogleAdwordsActive cfgmodel.Bool
 
 	// GoogleAdwordsConversionId => Conversion ID.
 	// Path: google/adwords/conversion_id
 	// BackendModel: Magento\GoogleAdwords\Model\Config\Backend\ConversionId
-	GoogleAdwordsConversionId model.Str
+	GoogleAdwordsConversionId cfgmodel.Str
 
 	// GoogleAdwordsConversionLanguage => Conversion Language.
 	// Path: google/adwords/conversion_language
 	// SourceModel: Magento\GoogleAdwords\Model\Config\Source\Language
-	GoogleAdwordsConversionLanguage model.Str
+	GoogleAdwordsConversionLanguage cfgmodel.Str
 
 	// GoogleAdwordsConversionFormat => Conversion Format.
 	// Path: google/adwords/conversion_format
-	GoogleAdwordsConversionFormat model.Str
+	GoogleAdwordsConversionFormat cfgmodel.Str
 
 	// GoogleAdwordsConversionColor => Conversion Color.
 	// Path: google/adwords/conversion_color
 	// BackendModel: Magento\GoogleAdwords\Model\Config\Backend\Color
-	GoogleAdwordsConversionColor model.Str
+	GoogleAdwordsConversionColor cfgmodel.Str
 
 	// GoogleAdwordsConversionLabel => Conversion Label.
 	// Path: google/adwords/conversion_label
-	GoogleAdwordsConversionLabel model.Str
+	GoogleAdwordsConversionLabel cfgmodel.Str
 
 	// GoogleAdwordsConversionValueType => Conversion Value Type.
 	// Path: google/adwords/conversion_value_type
 	// SourceModel: Magento\GoogleAdwords\Model\Config\Source\ValueType
-	GoogleAdwordsConversionValueType model.Str
+	GoogleAdwordsConversionValueType cfgmodel.Str
 
 	// GoogleAdwordsConversionValue => Conversion Value.
 	// Path: google/adwords/conversion_value
-	GoogleAdwordsConversionValue model.Str
+	GoogleAdwordsConversionValue cfgmodel.Str
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -61,14 +61,14 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.GoogleAdwordsActive = model.NewBool(`google/adwords/active`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GoogleAdwordsConversionId = model.NewStr(`google/adwords/conversion_id`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GoogleAdwordsConversionLanguage = model.NewStr(`google/adwords/conversion_language`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GoogleAdwordsConversionFormat = model.NewStr(`google/adwords/conversion_format`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GoogleAdwordsConversionColor = model.NewStr(`google/adwords/conversion_color`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GoogleAdwordsConversionLabel = model.NewStr(`google/adwords/conversion_label`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GoogleAdwordsConversionValueType = model.NewStr(`google/adwords/conversion_value_type`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GoogleAdwordsConversionValue = model.NewStr(`google/adwords/conversion_value`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.GoogleAdwordsActive = cfgmodel.NewBool(`google/adwords/active`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.GoogleAdwordsConversionId = cfgmodel.NewStr(`google/adwords/conversion_id`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.GoogleAdwordsConversionLanguage = cfgmodel.NewStr(`google/adwords/conversion_language`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.GoogleAdwordsConversionFormat = cfgmodel.NewStr(`google/adwords/conversion_format`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.GoogleAdwordsConversionColor = cfgmodel.NewStr(`google/adwords/conversion_color`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.GoogleAdwordsConversionLabel = cfgmodel.NewStr(`google/adwords/conversion_label`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.GoogleAdwordsConversionValueType = cfgmodel.NewStr(`google/adwords/conversion_value_type`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.GoogleAdwordsConversionValue = cfgmodel.NewStr(`google/adwords/conversion_value`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

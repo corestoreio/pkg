@@ -3,8 +3,8 @@
 package authorizenet
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,104 +14,104 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// PaymentAuthorizenetDirectpostActive => Enabled.
 	// Path: payment/authorizenet_directpost/active
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	PaymentAuthorizenetDirectpostActive model.Bool
+	PaymentAuthorizenetDirectpostActive cfgmodel.Bool
 
 	// PaymentAuthorizenetDirectpostPaymentAction => Payment Action.
 	// Path: payment/authorizenet_directpost/payment_action
 	// SourceModel: Magento\Authorizenet\Model\Source\PaymentAction
-	PaymentAuthorizenetDirectpostPaymentAction model.Str
+	PaymentAuthorizenetDirectpostPaymentAction cfgmodel.Str
 
 	// PaymentAuthorizenetDirectpostTitle => Title.
 	// Path: payment/authorizenet_directpost/title
-	PaymentAuthorizenetDirectpostTitle model.Str
+	PaymentAuthorizenetDirectpostTitle cfgmodel.Str
 
 	// PaymentAuthorizenetDirectpostLogin => API Login ID.
 	// Path: payment/authorizenet_directpost/login
 	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
-	PaymentAuthorizenetDirectpostLogin model.Str
+	PaymentAuthorizenetDirectpostLogin cfgmodel.Str
 
 	// PaymentAuthorizenetDirectpostTransKey => Transaction Key.
 	// Path: payment/authorizenet_directpost/trans_key
 	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
-	PaymentAuthorizenetDirectpostTransKey model.Str
+	PaymentAuthorizenetDirectpostTransKey cfgmodel.Str
 
 	// PaymentAuthorizenetDirectpostTransMd5 => Merchant MD5.
 	// Path: payment/authorizenet_directpost/trans_md5
 	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
-	PaymentAuthorizenetDirectpostTransMd5 model.Str
+	PaymentAuthorizenetDirectpostTransMd5 cfgmodel.Str
 
 	// PaymentAuthorizenetDirectpostOrderStatus => New Order Status.
 	// Path: payment/authorizenet_directpost/order_status
 	// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\Processing
-	PaymentAuthorizenetDirectpostOrderStatus model.Str
+	PaymentAuthorizenetDirectpostOrderStatus cfgmodel.Str
 
 	// PaymentAuthorizenetDirectpostTest => Test Mode.
 	// Path: payment/authorizenet_directpost/test
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	PaymentAuthorizenetDirectpostTest model.Bool
+	PaymentAuthorizenetDirectpostTest cfgmodel.Bool
 
 	// PaymentAuthorizenetDirectpostCgiUrl => Gateway URL.
 	// Path: payment/authorizenet_directpost/cgi_url
-	PaymentAuthorizenetDirectpostCgiUrl model.Str
+	PaymentAuthorizenetDirectpostCgiUrl cfgmodel.Str
 
 	// PaymentAuthorizenetDirectpostCgiUrlTd => Transaction Details URL.
 	// Path: payment/authorizenet_directpost/cgi_url_td
-	PaymentAuthorizenetDirectpostCgiUrlTd model.Str
+	PaymentAuthorizenetDirectpostCgiUrlTd cfgmodel.Str
 
 	// PaymentAuthorizenetDirectpostCurrency => Accepted Currency.
 	// Path: payment/authorizenet_directpost/currency
 	// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
-	PaymentAuthorizenetDirectpostCurrency model.Str
+	PaymentAuthorizenetDirectpostCurrency cfgmodel.Str
 
 	// PaymentAuthorizenetDirectpostDebug => Debug.
 	// Path: payment/authorizenet_directpost/debug
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	PaymentAuthorizenetDirectpostDebug model.Bool
+	PaymentAuthorizenetDirectpostDebug cfgmodel.Bool
 
 	// PaymentAuthorizenetDirectpostEmailCustomer => Email Customer.
 	// Path: payment/authorizenet_directpost/email_customer
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	PaymentAuthorizenetDirectpostEmailCustomer model.Bool
+	PaymentAuthorizenetDirectpostEmailCustomer cfgmodel.Bool
 
 	// PaymentAuthorizenetDirectpostMerchantEmail => Merchant's Email.
 	// Path: payment/authorizenet_directpost/merchant_email
-	PaymentAuthorizenetDirectpostMerchantEmail model.Str
+	PaymentAuthorizenetDirectpostMerchantEmail cfgmodel.Str
 
 	// PaymentAuthorizenetDirectpostCctypes => Credit Card Types.
 	// Path: payment/authorizenet_directpost/cctypes
 	// SourceModel: Magento\Authorizenet\Model\Source\Cctype
-	PaymentAuthorizenetDirectpostCctypes model.StringCSV
+	PaymentAuthorizenetDirectpostCctypes cfgmodel.StringCSV
 
 	// PaymentAuthorizenetDirectpostUseccv => Credit Card Verification.
 	// Path: payment/authorizenet_directpost/useccv
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	PaymentAuthorizenetDirectpostUseccv model.Bool
+	PaymentAuthorizenetDirectpostUseccv cfgmodel.Bool
 
 	// PaymentAuthorizenetDirectpostAllowspecific => Payment from Applicable Countries.
 	// Path: payment/authorizenet_directpost/allowspecific
 	// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
-	PaymentAuthorizenetDirectpostAllowspecific model.Str
+	PaymentAuthorizenetDirectpostAllowspecific cfgmodel.Str
 
 	// PaymentAuthorizenetDirectpostSpecificcountry => Payment from Specific Countries.
 	// Path: payment/authorizenet_directpost/specificcountry
 	// SourceModel: Magento\Directory\Model\Config\Source\Country
-	PaymentAuthorizenetDirectpostSpecificcountry model.StringCSV
+	PaymentAuthorizenetDirectpostSpecificcountry cfgmodel.StringCSV
 
 	// PaymentAuthorizenetDirectpostMinOrderTotal => Minimum Order Total.
 	// Path: payment/authorizenet_directpost/min_order_total
-	PaymentAuthorizenetDirectpostMinOrderTotal model.Str
+	PaymentAuthorizenetDirectpostMinOrderTotal cfgmodel.Str
 
 	// PaymentAuthorizenetDirectpostMaxOrderTotal => Maximum Order Total.
 	// Path: payment/authorizenet_directpost/max_order_total
-	PaymentAuthorizenetDirectpostMaxOrderTotal model.Str
+	PaymentAuthorizenetDirectpostMaxOrderTotal cfgmodel.Str
 
 	// PaymentAuthorizenetDirectpostSortOrder => Sort Order.
 	// Path: payment/authorizenet_directpost/sort_order
-	PaymentAuthorizenetDirectpostSortOrder model.Str
+	PaymentAuthorizenetDirectpostSortOrder cfgmodel.Str
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -122,27 +122,27 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.PaymentAuthorizenetDirectpostActive = model.NewBool(`payment/authorizenet_directpost/active`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostPaymentAction = model.NewStr(`payment/authorizenet_directpost/payment_action`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostTitle = model.NewStr(`payment/authorizenet_directpost/title`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostLogin = model.NewStr(`payment/authorizenet_directpost/login`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostTransKey = model.NewStr(`payment/authorizenet_directpost/trans_key`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostTransMd5 = model.NewStr(`payment/authorizenet_directpost/trans_md5`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostOrderStatus = model.NewStr(`payment/authorizenet_directpost/order_status`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostTest = model.NewBool(`payment/authorizenet_directpost/test`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostCgiUrl = model.NewStr(`payment/authorizenet_directpost/cgi_url`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostCgiUrlTd = model.NewStr(`payment/authorizenet_directpost/cgi_url_td`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostCurrency = model.NewStr(`payment/authorizenet_directpost/currency`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostDebug = model.NewBool(`payment/authorizenet_directpost/debug`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostEmailCustomer = model.NewBool(`payment/authorizenet_directpost/email_customer`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostMerchantEmail = model.NewStr(`payment/authorizenet_directpost/merchant_email`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostCctypes = model.NewStringCSV(`payment/authorizenet_directpost/cctypes`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostUseccv = model.NewBool(`payment/authorizenet_directpost/useccv`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostAllowspecific = model.NewStr(`payment/authorizenet_directpost/allowspecific`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostSpecificcountry = model.NewStringCSV(`payment/authorizenet_directpost/specificcountry`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostMinOrderTotal = model.NewStr(`payment/authorizenet_directpost/min_order_total`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostMaxOrderTotal = model.NewStr(`payment/authorizenet_directpost/max_order_total`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PaymentAuthorizenetDirectpostSortOrder = model.NewStr(`payment/authorizenet_directpost/sort_order`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostActive = cfgmodel.NewBool(`payment/authorizenet_directpost/active`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostPaymentAction = cfgmodel.NewStr(`payment/authorizenet_directpost/payment_action`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostTitle = cfgmodel.NewStr(`payment/authorizenet_directpost/title`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostLogin = cfgmodel.NewStr(`payment/authorizenet_directpost/login`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostTransKey = cfgmodel.NewStr(`payment/authorizenet_directpost/trans_key`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostTransMd5 = cfgmodel.NewStr(`payment/authorizenet_directpost/trans_md5`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostOrderStatus = cfgmodel.NewStr(`payment/authorizenet_directpost/order_status`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostTest = cfgmodel.NewBool(`payment/authorizenet_directpost/test`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostCgiUrl = cfgmodel.NewStr(`payment/authorizenet_directpost/cgi_url`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostCgiUrlTd = cfgmodel.NewStr(`payment/authorizenet_directpost/cgi_url_td`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostCurrency = cfgmodel.NewStr(`payment/authorizenet_directpost/currency`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostDebug = cfgmodel.NewBool(`payment/authorizenet_directpost/debug`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostEmailCustomer = cfgmodel.NewBool(`payment/authorizenet_directpost/email_customer`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostMerchantEmail = cfgmodel.NewStr(`payment/authorizenet_directpost/merchant_email`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostCctypes = cfgmodel.NewStringCSV(`payment/authorizenet_directpost/cctypes`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostUseccv = cfgmodel.NewBool(`payment/authorizenet_directpost/useccv`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostAllowspecific = cfgmodel.NewStr(`payment/authorizenet_directpost/allowspecific`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostSpecificcountry = cfgmodel.NewStringCSV(`payment/authorizenet_directpost/specificcountry`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostMinOrderTotal = cfgmodel.NewStr(`payment/authorizenet_directpost/min_order_total`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostMaxOrderTotal = cfgmodel.NewStr(`payment/authorizenet_directpost/max_order_total`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentAuthorizenetDirectpostSortOrder = cfgmodel.NewStr(`payment/authorizenet_directpost/sort_order`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

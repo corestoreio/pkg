@@ -333,7 +333,7 @@ func init() {
 					ID: "paypal_express",
 					Fields: element.NewFieldSlice(
 						&element.Field{
-							// Path: payment/paypal_express/model
+							// Path: payment/paypal_express/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
@@ -450,7 +450,7 @@ func init() {
 					ID: "paypal_express_bml",
 					Fields: element.NewFieldSlice(
 						&element.Field{
-							// Path: payment/paypal_express_bml/model
+							// Path: payment/paypal_express_bml/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
@@ -535,7 +535,7 @@ func init() {
 						},
 
 						&element.Field{
-							// Path: payment/payflow_express/model
+							// Path: payment/payflow_express/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
@@ -548,7 +548,7 @@ func init() {
 					ID: "payflow_express_bml",
 					Fields: element.NewFieldSlice(
 						&element.Field{
-							// Path: payment/payflow_express_bml/model
+							// Path: payment/payflow_express_bml/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
@@ -577,7 +577,7 @@ func init() {
 					ID: "payflowpro",
 					Fields: element.NewFieldSlice(
 						&element.Field{
-							// Path: payment/payflowpro/model
+							// Path: payment/payflowpro/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
@@ -781,7 +781,7 @@ func init() {
 						},
 
 						&element.Field{
-							// Path: payment/paypal_billing_agreement/model
+							// Path: payment/paypal_billing_agreement/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
@@ -818,7 +818,7 @@ func init() {
 					ID: "payflow_link",
 					Fields: element.NewFieldSlice(
 						&element.Field{
-							// Path: payment/payflow_link/model
+							// Path: payment/payflow_link/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
@@ -959,7 +959,7 @@ func init() {
 					ID: "payflow_advanced",
 					Fields: element.NewFieldSlice(
 						&element.Field{
-							// Path: payment/payflow_advanced/model
+							// Path: payment/payflow_advanced/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
@@ -1108,7 +1108,7 @@ func init() {
 					ID: "hosted_pro",
 					Fields: element.NewFieldSlice(
 						&element.Field{
-							// Path: payment/hosted_pro/model
+							// Path: payment/hosted_pro/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,

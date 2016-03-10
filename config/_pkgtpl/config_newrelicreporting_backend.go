@@ -3,8 +3,8 @@
 package newrelicreporting
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,54 +14,54 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// NewrelicreportingGeneralEnable => Enable New Relic Integration.
 	// Path: newrelicreporting/general/enable
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	NewrelicreportingGeneralEnable model.Bool
+	NewrelicreportingGeneralEnable cfgmodel.Bool
 
 	// NewrelicreportingGeneralApiUrl => New Relic API URL.
 	// Path: newrelicreporting/general/api_url
-	NewrelicreportingGeneralApiUrl model.Str
+	NewrelicreportingGeneralApiUrl cfgmodel.Str
 
 	// NewrelicreportingGeneralInsightsApiUrl => Insights API URL.
 	// Use %s to replace the account ID in the URL
 	// Path: newrelicreporting/general/insights_api_url
-	NewrelicreportingGeneralInsightsApiUrl model.Str
+	NewrelicreportingGeneralInsightsApiUrl cfgmodel.Str
 
 	// NewrelicreportingGeneralAccountId => New Relic Account ID.
 	// "Need a New Relic account? Click here to get one
 	// Path: newrelicreporting/general/account_id
-	NewrelicreportingGeneralAccountId model.Str
+	NewrelicreportingGeneralAccountId cfgmodel.Str
 
 	// NewrelicreportingGeneralAppId => New Relic Application ID.
 	// This can commonly be found at the end of the URL when viewing the APM after
 	// "/applications/"
 	// Path: newrelicreporting/general/app_id
-	NewrelicreportingGeneralAppId model.Str
+	NewrelicreportingGeneralAppId cfgmodel.Str
 
 	// NewrelicreportingGeneralApi => New Relic API Key.
 	// This is located by navigating to Events -> Deployments from the New Relic
 	// APM website
 	// Path: newrelicreporting/general/api
 	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
-	NewrelicreportingGeneralApi model.Str
+	NewrelicreportingGeneralApi cfgmodel.Str
 
 	// NewrelicreportingGeneralInsightsInsertKey => Insights API Key.
 	// Generated under Insights in Manage data -> API Keys -> Insert Keys
 	// Path: newrelicreporting/general/insights_insert_key
 	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
-	NewrelicreportingGeneralInsightsInsertKey model.Str
+	NewrelicreportingGeneralInsightsInsertKey cfgmodel.Str
 
 	// NewrelicreportingGeneralAppName => New Relic Application Name.
 	// This is located by navigating to Settings from the New Relic APM website
 	// Path: newrelicreporting/general/app_name
-	NewrelicreportingGeneralAppName model.Str
+	NewrelicreportingGeneralAppName cfgmodel.Str
 
 	// NewrelicreportingCronEnableCron => Enable Cron.
 	// Path: newrelicreporting/cron/enable_cron
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	NewrelicreportingCronEnableCron model.Bool
+	NewrelicreportingCronEnableCron cfgmodel.Bool
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -72,15 +72,15 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.NewrelicreportingGeneralEnable = model.NewBool(`newrelicreporting/general/enable`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.NewrelicreportingGeneralApiUrl = model.NewStr(`newrelicreporting/general/api_url`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.NewrelicreportingGeneralInsightsApiUrl = model.NewStr(`newrelicreporting/general/insights_api_url`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.NewrelicreportingGeneralAccountId = model.NewStr(`newrelicreporting/general/account_id`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.NewrelicreportingGeneralAppId = model.NewStr(`newrelicreporting/general/app_id`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.NewrelicreportingGeneralApi = model.NewStr(`newrelicreporting/general/api`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.NewrelicreportingGeneralInsightsInsertKey = model.NewStr(`newrelicreporting/general/insights_insert_key`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.NewrelicreportingGeneralAppName = model.NewStr(`newrelicreporting/general/app_name`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.NewrelicreportingCronEnableCron = model.NewBool(`newrelicreporting/cron/enable_cron`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingGeneralEnable = cfgmodel.NewBool(`newrelicreporting/general/enable`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingGeneralApiUrl = cfgmodel.NewStr(`newrelicreporting/general/api_url`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingGeneralInsightsApiUrl = cfgmodel.NewStr(`newrelicreporting/general/insights_api_url`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingGeneralAccountId = cfgmodel.NewStr(`newrelicreporting/general/account_id`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingGeneralAppId = cfgmodel.NewStr(`newrelicreporting/general/app_id`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingGeneralApi = cfgmodel.NewStr(`newrelicreporting/general/api`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingGeneralInsightsInsertKey = cfgmodel.NewStr(`newrelicreporting/general/insights_insert_key`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingGeneralAppName = cfgmodel.NewStr(`newrelicreporting/general/app_name`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewrelicreportingCronEnableCron = cfgmodel.NewBool(`newrelicreporting/cron/enable_cron`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

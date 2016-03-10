@@ -3,8 +3,8 @@
 package persistent
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,35 +14,35 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// PersistentOptionsEnabled => Enable Persistence.
 	// Path: persistent/options/enabled
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	PersistentOptionsEnabled model.Bool
+	PersistentOptionsEnabled cfgmodel.Bool
 
 	// PersistentOptionsLifetime => Persistence Lifetime (seconds).
 	// Path: persistent/options/lifetime
-	PersistentOptionsLifetime model.Str
+	PersistentOptionsLifetime cfgmodel.Str
 
 	// PersistentOptionsRememberEnabled => Enable "Remember Me".
 	// Path: persistent/options/remember_enabled
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	PersistentOptionsRememberEnabled model.Bool
+	PersistentOptionsRememberEnabled cfgmodel.Bool
 
 	// PersistentOptionsRememberDefault => "Remember Me" Default Value.
 	// Path: persistent/options/remember_default
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	PersistentOptionsRememberDefault model.Bool
+	PersistentOptionsRememberDefault cfgmodel.Bool
 
 	// PersistentOptionsLogoutClear => Clear Persistence on Sign Out.
 	// Path: persistent/options/logout_clear
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	PersistentOptionsLogoutClear model.Bool
+	PersistentOptionsLogoutClear cfgmodel.Bool
 
 	// PersistentOptionsShoppingCart => Persist Shopping Cart.
 	// Path: persistent/options/shopping_cart
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	PersistentOptionsShoppingCart model.Bool
+	PersistentOptionsShoppingCart cfgmodel.Bool
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -53,12 +53,12 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.PersistentOptionsEnabled = model.NewBool(`persistent/options/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PersistentOptionsLifetime = model.NewStr(`persistent/options/lifetime`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PersistentOptionsRememberEnabled = model.NewBool(`persistent/options/remember_enabled`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PersistentOptionsRememberDefault = model.NewBool(`persistent/options/remember_default`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PersistentOptionsLogoutClear = model.NewBool(`persistent/options/logout_clear`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.PersistentOptionsShoppingCart = model.NewBool(`persistent/options/shopping_cart`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.PersistentOptionsEnabled = cfgmodel.NewBool(`persistent/options/enabled`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PersistentOptionsLifetime = cfgmodel.NewStr(`persistent/options/lifetime`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PersistentOptionsRememberEnabled = cfgmodel.NewBool(`persistent/options/remember_enabled`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PersistentOptionsRememberDefault = cfgmodel.NewBool(`persistent/options/remember_default`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PersistentOptionsLogoutClear = cfgmodel.NewBool(`persistent/options/logout_clear`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.PersistentOptionsShoppingCart = cfgmodel.NewBool(`persistent/options/shopping_cart`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

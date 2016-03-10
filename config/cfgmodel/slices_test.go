@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package model_test
+package cfgmodel_test
 
 import (
 	"testing"
@@ -20,8 +20,8 @@ import (
 	"errors"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
@@ -31,10 +31,10 @@ func TestStringCSVGet(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
 	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).String()
-	b := model.NewStringCSV(
+	b := cfgmodel.NewStringCSV(
 		"web/cors/exposed_headers",
-		model.WithFieldFromSectionSlice(configStructure),
-		model.WithSourceByString(
+		cfgmodel.WithFieldFromSectionSlice(configStructure),
+		cfgmodel.WithSourceByString(
 			"Content-Type", "Content Type", "X-CoreStore-ID", "CoreStore Microservice ID",
 		),
 	)
@@ -75,10 +75,10 @@ func TestStringCSVWrite(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
 	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).String()
-	b := model.NewStringCSV(
+	b := cfgmodel.NewStringCSV(
 		"web/cors/exposed_headers",
-		model.WithFieldFromSectionSlice(configStructure),
-		model.WithSourceByString(
+		cfgmodel.WithFieldFromSectionSlice(configStructure),
+		cfgmodel.WithSourceByString(
 			"Content-Type", "Content Type", "X-CoreStore-ID", "CoreStore Microservice ID",
 		),
 	)
@@ -100,15 +100,15 @@ func TestStringCSVCustomSeparator(t *testing.T) {
 
 	const cfgPath = "aa/bb/cc"
 
-	b := model.NewStringCSV(
+	b := cfgmodel.NewStringCSV(
 		cfgPath,
-		model.WithSourceByString(
+		cfgmodel.WithSourceByString(
 			"2014", "Year 2014",
 			"2015", "Year 2015",
 			"2016", "Year 2016",
 			"2017", "Year 2017",
 		),
-		model.WithCSVSeparator(''),
+		cfgmodel.WithCSVSeparator(''),
 	)
 	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
 
@@ -129,10 +129,10 @@ func TestIntCSV(t *testing.T) {
 
 	const pathWebCorsIntSlice = "web/cors/int_slice"
 
-	b := model.NewIntCSV(
+	b := cfgmodel.NewIntCSV(
 		pathWebCorsIntSlice,
-		model.WithFieldFromSectionSlice(configStructure),
-		model.WithSourceByInt(source.Ints{
+		cfgmodel.WithFieldFromSectionSlice(configStructure),
+		cfgmodel.WithSourceByInt(source.Ints{
 			{2014, "Year 2014"},
 			{2015, "Year 2015"},
 			{2016, "Year 2016"},
@@ -182,10 +182,10 @@ func TestIntCSVWrite(t *testing.T) {
 
 	const pathWebCorsIntSlice = "web/cors/int_slice"
 
-	b := model.NewIntCSV(
+	b := cfgmodel.NewIntCSV(
 		pathWebCorsIntSlice,
-		model.WithFieldFromSectionSlice(configStructure),
-		model.WithSourceByInt(source.Ints{
+		cfgmodel.WithFieldFromSectionSlice(configStructure),
+		cfgmodel.WithSourceByInt(source.Ints{
 			{2014, "Year 2014"},
 			{2015, "Year 2015"},
 			{2016, "Year 2016"},
@@ -212,16 +212,16 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 
 	const pathWebCorsIntSlice = "web/cors/int_slice"
 
-	b := model.NewIntCSV(
+	b := cfgmodel.NewIntCSV(
 		pathWebCorsIntSlice,
-		model.WithFieldFromSectionSlice(configStructure),
-		model.WithSourceByInt(source.Ints{
+		cfgmodel.WithFieldFromSectionSlice(configStructure),
+		cfgmodel.WithSourceByInt(source.Ints{
 			{2014, "Year 2014"},
 			{2015, "Year 2015"},
 			{2016, "Year 2016"},
 			{2017, "Year 2017"},
 		}),
-		model.WithCSVSeparator('|'),
+		cfgmodel.WithCSVSeparator('|'),
 	)
 	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.WebsiteID, 34).String()
 

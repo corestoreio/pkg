@@ -3,8 +3,8 @@
 package mediastorage
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,28 +14,28 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// SystemMediaStorageConfigurationMediaStorage => Media Storage.
 	// Path: system/media_storage_configuration/media_storage
 	// SourceModel: Magento\MediaStorage\Model\Config\Source\Storage\Media\Storage
-	SystemMediaStorageConfigurationMediaStorage model.Str
+	SystemMediaStorageConfigurationMediaStorage cfgmodel.Str
 
 	// SystemMediaStorageConfigurationMediaDatabase => Select Media Database.
 	// Path: system/media_storage_configuration/media_database
 	// BackendModel: Magento\MediaStorage\Model\Config\Backend\Storage\Media\Database
 	// SourceModel: Magento\MediaStorage\Model\Config\Source\Storage\Media\Database
-	SystemMediaStorageConfigurationMediaDatabase model.Str
+	SystemMediaStorageConfigurationMediaDatabase cfgmodel.Str
 
 	// SystemMediaStorageConfigurationSynchronize => .
 	// After selecting a new media storage location, press the Synchronize button
 	// to transfer all media to that location. Media will not be available in the
 	// new location until the synchronization process is complete.
 	// Path: system/media_storage_configuration/synchronize
-	SystemMediaStorageConfigurationSynchronize model.Str
+	SystemMediaStorageConfigurationSynchronize cfgmodel.Str
 
 	// SystemMediaStorageConfigurationConfigurationUpdateTime => Environment Update Time.
 	// Path: system/media_storage_configuration/configuration_update_time
-	SystemMediaStorageConfigurationConfigurationUpdateTime model.Str
+	SystemMediaStorageConfigurationConfigurationUpdateTime cfgmodel.Str
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -46,10 +46,10 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.SystemMediaStorageConfigurationMediaStorage = model.NewStr(`system/media_storage_configuration/media_storage`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SystemMediaStorageConfigurationMediaDatabase = model.NewStr(`system/media_storage_configuration/media_database`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SystemMediaStorageConfigurationSynchronize = model.NewStr(`system/media_storage_configuration/synchronize`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SystemMediaStorageConfigurationConfigurationUpdateTime = model.NewStr(`system/media_storage_configuration/configuration_update_time`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemMediaStorageConfigurationMediaStorage = cfgmodel.NewStr(`system/media_storage_configuration/media_storage`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemMediaStorageConfigurationMediaDatabase = cfgmodel.NewStr(`system/media_storage_configuration/media_database`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemMediaStorageConfigurationSynchronize = cfgmodel.NewStr(`system/media_storage_configuration/synchronize`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemMediaStorageConfigurationConfigurationUpdateTime = cfgmodel.NewStr(`system/media_storage_configuration/configuration_update_time`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

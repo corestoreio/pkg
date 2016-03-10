@@ -444,7 +444,7 @@ func init() {
 					ID: "flatrate",
 					Fields: element.NewFieldSlice(
 						&element.Field{
-							// Path: carriers/flatrate/model
+							// Path: carriers/flatrate/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
@@ -457,7 +457,7 @@ func init() {
 					ID: "tablerate",
 					Fields: element.NewFieldSlice(
 						&element.Field{
-							// Path: carriers/tablerate/model
+							// Path: carriers/tablerate/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
@@ -478,7 +478,7 @@ func init() {
 						},
 
 						&element.Field{
-							// Path: carriers/freeshipping/model
+							// Path: carriers/freeshipping/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,

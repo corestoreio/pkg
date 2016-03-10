@@ -3,8 +3,8 @@
 package search
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,15 +14,15 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// CatalogSearchEngine => Search Engine.
 	// Path: catalog/search/engine
 	// SourceModel: Magento\Search\Model\Adminhtml\System\Config\Source\Engine
-	CatalogSearchEngine model.Str
+	CatalogSearchEngine cfgmodel.Str
 
 	// CatalogSearchSearchType => .
 	// Path: catalog/search/search_type
-	CatalogSearchSearchType model.Str
+	CatalogSearchSearchType cfgmodel.Str
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -33,8 +33,8 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogSearchEngine = model.NewStr(`catalog/search/engine`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogSearchSearchType = model.NewStr(`catalog/search/search_type`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSearchEngine = cfgmodel.NewStr(`catalog/search/engine`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSearchSearchType = cfgmodel.NewStr(`catalog/search/search_type`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

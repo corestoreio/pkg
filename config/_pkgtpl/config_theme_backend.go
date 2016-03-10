@@ -3,8 +3,8 @@
 package theme
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,91 +14,91 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// DesignHeadShortcutIcon => Favicon Icon.
 	// Allowed file types: ICO, PNG, GIF, JPG, JPEG, APNG, SVG. Not all browsers
 	// support all these formats!
 	// Path: design/head/shortcut_icon
 	// BackendModel: Magento\Config\Model\Config\Backend\Image\Favicon
-	DesignHeadShortcutIcon model.Str
+	DesignHeadShortcutIcon cfgmodel.Str
 
 	// DesignHeadDefaultTitle => Default Title.
 	// Path: design/head/default_title
-	DesignHeadDefaultTitle model.Str
+	DesignHeadDefaultTitle cfgmodel.Str
 
 	// DesignHeadTitlePrefix => Title Prefix.
 	// Path: design/head/title_prefix
-	DesignHeadTitlePrefix model.Str
+	DesignHeadTitlePrefix cfgmodel.Str
 
 	// DesignHeadTitleSuffix => Title Suffix.
 	// Path: design/head/title_suffix
-	DesignHeadTitleSuffix model.Str
+	DesignHeadTitleSuffix cfgmodel.Str
 
 	// DesignHeadDefaultDescription => Default Description.
 	// Path: design/head/default_description
-	DesignHeadDefaultDescription model.Str
+	DesignHeadDefaultDescription cfgmodel.Str
 
 	// DesignHeadDefaultKeywords => Default Keywords.
 	// Path: design/head/default_keywords
-	DesignHeadDefaultKeywords model.Str
+	DesignHeadDefaultKeywords cfgmodel.Str
 
 	// DesignHeadIncludes => Miscellaneous Scripts.
 	// This will be included before head closing tag in page HTML.
 	// Path: design/head/includes
-	DesignHeadIncludes model.Str
+	DesignHeadIncludes cfgmodel.Str
 
 	// DesignHeadDemonotice => Display Demo Store Notice.
 	// Path: design/head/demonotice
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	DesignHeadDemonotice model.Bool
+	DesignHeadDemonotice cfgmodel.Bool
 
 	// DesignSearchEngineRobotsDefaultRobots => Default Robots.
 	// This will be included before head closing tag in page HTML.
 	// Path: design/search_engine_robots/default_robots
 	// SourceModel: Magento\Config\Model\Config\Source\Design\Robots
-	DesignSearchEngineRobotsDefaultRobots model.Str
+	DesignSearchEngineRobotsDefaultRobots cfgmodel.Str
 
 	// DesignSearchEngineRobotsCustomInstructions => Edit custom instruction of robots.txt File.
 	// Path: design/search_engine_robots/custom_instructions
 	// BackendModel: Magento\Config\Model\Config\Backend\Admin\Robots
-	DesignSearchEngineRobotsCustomInstructions model.Str
+	DesignSearchEngineRobotsCustomInstructions cfgmodel.Str
 
 	// DesignSearchEngineRobotsResetToDefaults => Reset to Defaults.
 	// This action will delete your custom instructions and reset robots.txt file
 	// to system's default settings.
 	// Path: design/search_engine_robots/reset_to_defaults
-	DesignSearchEngineRobotsResetToDefaults model.Str
+	DesignSearchEngineRobotsResetToDefaults cfgmodel.Str
 
 	// DesignHeaderLogoSrc => Logo Image.
 	// Allowed file types:PNG, GIF, JPG, JPEG, SVG.
 	// Path: design/header/logo_src
 	// BackendModel: Magento\Config\Model\Config\Backend\Image\Logo
-	DesignHeaderLogoSrc model.Str
+	DesignHeaderLogoSrc cfgmodel.Str
 
 	// DesignHeaderLogoWidth => Logo Image Width.
 	// Path: design/header/logo_width
-	DesignHeaderLogoWidth model.Str
+	DesignHeaderLogoWidth cfgmodel.Str
 
 	// DesignHeaderLogoHeight => Logo Image Height.
 	// Path: design/header/logo_height
-	DesignHeaderLogoHeight model.Str
+	DesignHeaderLogoHeight cfgmodel.Str
 
 	// DesignHeaderLogoAlt => Logo Image Alt.
 	// Path: design/header/logo_alt
-	DesignHeaderLogoAlt model.Str
+	DesignHeaderLogoAlt cfgmodel.Str
 
 	// DesignHeaderWelcome => Welcome Text.
 	// Path: design/header/welcome
-	DesignHeaderWelcome model.Str
+	DesignHeaderWelcome cfgmodel.Str
 
 	// DesignFooterCopyright => Copyright.
 	// Path: design/footer/copyright
-	DesignFooterCopyright model.Str
+	DesignFooterCopyright cfgmodel.Str
 
 	// DesignFooterAbsoluteFooter => Miscellaneous HTML.
 	// This will be displayed just before body closing tag.
 	// Path: design/footer/absolute_footer
-	DesignFooterAbsoluteFooter model.Str
+	DesignFooterAbsoluteFooter cfgmodel.Str
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -109,24 +109,24 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.DesignHeadShortcutIcon = model.NewStr(`design/head/shortcut_icon`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignHeadDefaultTitle = model.NewStr(`design/head/default_title`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignHeadTitlePrefix = model.NewStr(`design/head/title_prefix`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignHeadTitleSuffix = model.NewStr(`design/head/title_suffix`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignHeadDefaultDescription = model.NewStr(`design/head/default_description`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignHeadDefaultKeywords = model.NewStr(`design/head/default_keywords`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignHeadIncludes = model.NewStr(`design/head/includes`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignHeadDemonotice = model.NewBool(`design/head/demonotice`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignSearchEngineRobotsDefaultRobots = model.NewStr(`design/search_engine_robots/default_robots`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignSearchEngineRobotsCustomInstructions = model.NewStr(`design/search_engine_robots/custom_instructions`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignSearchEngineRobotsResetToDefaults = model.NewStr(`design/search_engine_robots/reset_to_defaults`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignHeaderLogoSrc = model.NewStr(`design/header/logo_src`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignHeaderLogoWidth = model.NewStr(`design/header/logo_width`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignHeaderLogoHeight = model.NewStr(`design/header/logo_height`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignHeaderLogoAlt = model.NewStr(`design/header/logo_alt`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignHeaderWelcome = model.NewStr(`design/header/welcome`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignFooterCopyright = model.NewStr(`design/footer/copyright`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignFooterAbsoluteFooter = model.NewStr(`design/footer/absolute_footer`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignHeadShortcutIcon = cfgmodel.NewStr(`design/head/shortcut_icon`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignHeadDefaultTitle = cfgmodel.NewStr(`design/head/default_title`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignHeadTitlePrefix = cfgmodel.NewStr(`design/head/title_prefix`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignHeadTitleSuffix = cfgmodel.NewStr(`design/head/title_suffix`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignHeadDefaultDescription = cfgmodel.NewStr(`design/head/default_description`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignHeadDefaultKeywords = cfgmodel.NewStr(`design/head/default_keywords`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignHeadIncludes = cfgmodel.NewStr(`design/head/includes`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignHeadDemonotice = cfgmodel.NewBool(`design/head/demonotice`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignSearchEngineRobotsDefaultRobots = cfgmodel.NewStr(`design/search_engine_robots/default_robots`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignSearchEngineRobotsCustomInstructions = cfgmodel.NewStr(`design/search_engine_robots/custom_instructions`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignSearchEngineRobotsResetToDefaults = cfgmodel.NewStr(`design/search_engine_robots/reset_to_defaults`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignHeaderLogoSrc = cfgmodel.NewStr(`design/header/logo_src`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignHeaderLogoWidth = cfgmodel.NewStr(`design/header/logo_width`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignHeaderLogoHeight = cfgmodel.NewStr(`design/header/logo_height`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignHeaderLogoAlt = cfgmodel.NewStr(`design/header/logo_alt`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignHeaderWelcome = cfgmodel.NewStr(`design/header/welcome`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignFooterCopyright = cfgmodel.NewStr(`design/footer/copyright`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignFooterAbsoluteFooter = cfgmodel.NewStr(`design/footer/absolute_footer`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

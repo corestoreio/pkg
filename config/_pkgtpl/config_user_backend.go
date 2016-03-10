@@ -3,8 +3,8 @@
 package user
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,32 +14,32 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// AdminEmailsResetPasswordTemplate => Reset Password Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: admin/emails/reset_password_template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	AdminEmailsResetPasswordTemplate model.Str
+	AdminEmailsResetPasswordTemplate cfgmodel.Str
 
 	// AdminSecurityLockoutFailures => Maximum Login Failures to Lockout Account.
 	// We will disable this feature if the value is empty.
 	// Path: admin/security/lockout_failures
-	AdminSecurityLockoutFailures model.Str
+	AdminSecurityLockoutFailures cfgmodel.Str
 
 	// AdminSecurityLockoutThreshold => Lockout Time (minutes).
 	// Path: admin/security/lockout_threshold
-	AdminSecurityLockoutThreshold model.Str
+	AdminSecurityLockoutThreshold cfgmodel.Str
 
 	// AdminSecurityPasswordLifetime => Password Lifetime (days).
 	// We will disable this feature if the value is empty.
 	// Path: admin/security/password_lifetime
-	AdminSecurityPasswordLifetime model.Str
+	AdminSecurityPasswordLifetime cfgmodel.Str
 
 	// AdminSecurityPasswordIsForced => Password Change.
 	// Path: admin/security/password_is_forced
 	// SourceModel: Magento\User\Model\System\Config\Source\Password
-	AdminSecurityPasswordIsForced model.Str
+	AdminSecurityPasswordIsForced cfgmodel.Str
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -50,11 +50,11 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.AdminEmailsResetPasswordTemplate = model.NewStr(`admin/emails/reset_password_template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.AdminSecurityLockoutFailures = model.NewStr(`admin/security/lockout_failures`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.AdminSecurityLockoutThreshold = model.NewStr(`admin/security/lockout_threshold`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.AdminSecurityPasswordLifetime = model.NewStr(`admin/security/password_lifetime`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.AdminSecurityPasswordIsForced = model.NewStr(`admin/security/password_is_forced`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.AdminEmailsResetPasswordTemplate = cfgmodel.NewStr(`admin/emails/reset_password_template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.AdminSecurityLockoutFailures = cfgmodel.NewStr(`admin/security/lockout_failures`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.AdminSecurityLockoutThreshold = cfgmodel.NewStr(`admin/security/lockout_threshold`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.AdminSecurityPasswordLifetime = cfgmodel.NewStr(`admin/security/password_lifetime`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.AdminSecurityPasswordIsForced = cfgmodel.NewStr(`admin/security/password_is_forced`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

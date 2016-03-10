@@ -3,8 +3,8 @@
 package multishipping
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,15 +14,15 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// MultishippingOptionsCheckoutMultiple => Allow Shipping to Multiple Addresses.
 	// Path: multishipping/options/checkout_multiple
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	MultishippingOptionsCheckoutMultiple model.Bool
+	MultishippingOptionsCheckoutMultiple cfgmodel.Bool
 
 	// MultishippingOptionsCheckoutMultipleMaximumQty => Maximum Qty Allowed for Shipping to Multiple Addresses.
 	// Path: multishipping/options/checkout_multiple_maximum_qty
-	MultishippingOptionsCheckoutMultipleMaximumQty model.Str
+	MultishippingOptionsCheckoutMultipleMaximumQty cfgmodel.Str
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -33,8 +33,8 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.MultishippingOptionsCheckoutMultiple = model.NewBool(`multishipping/options/checkout_multiple`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.MultishippingOptionsCheckoutMultipleMaximumQty = model.NewStr(`multishipping/options/checkout_multiple_maximum_qty`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.MultishippingOptionsCheckoutMultiple = cfgmodel.NewBool(`multishipping/options/checkout_multiple`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.MultishippingOptionsCheckoutMultipleMaximumQty = cfgmodel.NewStr(`multishipping/options/checkout_multiple_maximum_qty`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

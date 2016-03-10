@@ -133,7 +133,7 @@ func init() {
 						},
 
 						&element.Field{
-							// Path: payment/checkmo/model
+							// Path: payment/checkmo/cfgmodel
 							ID:      "model",
 							Type:    element.Type,
 							Visible: element.VisibleYes,
@@ -237,7 +237,7 @@ func init() {
 						},
 
 						&element.Field{
-							// Path: payment/purchaseorder/model
+							// Path: payment/purchaseorder/cfgmodel
 							ID:      "model",
 							Type:    element.Type,
 							Visible: element.VisibleYes,
@@ -541,7 +541,7 @@ func init() {
 						},
 
 						&element.Field{
-							// Path: payment/free/model
+							// Path: payment/free/cfgmodel
 							ID:      "model",
 							Type:    element.Type,
 							Visible: element.VisibleYes,
@@ -585,7 +585,7 @@ func init() {
 					ID: "banktransfer",
 					Fields: element.NewFieldSlice(
 						&element.Field{
-							// Path: payment/banktransfer/model
+							// Path: payment/banktransfer/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
@@ -606,7 +606,7 @@ func init() {
 					ID: "cashondelivery",
 					Fields: element.NewFieldSlice(
 						&element.Field{
-							// Path: payment/cashondelivery/model
+							// Path: payment/cashondelivery/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,

@@ -3,8 +3,8 @@
 package catalogsearch
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,24 +14,24 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// CatalogSeoSearchTerms => Popular Search Terms.
 	// Path: catalog/seo/search_terms
 	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
-	CatalogSeoSearchTerms model.Bool
+	CatalogSeoSearchTerms cfgmodel.Bool
 
 	// CatalogSearchEngine => .
 	// Path: catalog/search/engine
 	// BackendModel: Magento\CatalogSearch\Model\Adminhtml\System\Config\Backend\Engine
-	CatalogSearchEngine model.Str
+	CatalogSearchEngine cfgmodel.Str
 
 	// CatalogSearchMinQueryLength => Minimal Query Length.
 	// Path: catalog/search/min_query_length
-	CatalogSearchMinQueryLength model.Str
+	CatalogSearchMinQueryLength cfgmodel.Str
 
 	// CatalogSearchMaxQueryLength => Maximum Query Length.
 	// Path: catalog/search/max_query_length
-	CatalogSearchMaxQueryLength model.Str
+	CatalogSearchMaxQueryLength cfgmodel.Str
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -42,10 +42,10 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogSeoSearchTerms = model.NewBool(`catalog/seo/search_terms`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogSearchEngine = model.NewStr(`catalog/search/engine`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogSearchMinQueryLength = model.NewStr(`catalog/search/min_query_length`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogSearchMaxQueryLength = model.NewStr(`catalog/search/max_query_length`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSeoSearchTerms = cfgmodel.NewBool(`catalog/seo/search_terms`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSearchEngine = cfgmodel.NewStr(`catalog/search/engine`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSearchMinQueryLength = cfgmodel.NewStr(`catalog/search/min_query_length`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSearchMaxQueryLength = cfgmodel.NewStr(`catalog/search/max_query_length`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

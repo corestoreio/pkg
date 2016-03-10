@@ -279,7 +279,7 @@ func init() {
 						},
 
 						&element.Field{
-							// Path: payment/authorizenet_directpost/model
+							// Path: payment/authorizenet_directpost/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,

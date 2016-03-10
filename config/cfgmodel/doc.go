@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package model provides types to get/set values of a configuration.
+// Package cfgmodel provides types to get/set values of a configuration.
 //
-// Package model handles the scope permission checking, validation based
+// Package cfgmodel handles the scope permission checking, validation based
 // on source models and default value handling based on element.Field type.
 //
 // In Mage world this would be called BackendModel.
@@ -34,10 +34,10 @@
 //
 //
 // The global PackageConfiguration variable (type element.SectionSlice), which
-// is present in each package, gets set to the model.New* variables during init
+// is present in each package, gets set to the cfgmodel.New* variables during init
 // process. The element.Field will be extracted to allow scope checks and access
 // to default values.
 //
 // The default value gets returned if the Get call to the store configuration
 // value fails or a value is not set.
-package model
+package cfgmodel

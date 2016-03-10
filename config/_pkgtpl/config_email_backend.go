@@ -3,8 +3,8 @@
 package email
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,44 +14,44 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// DesignEmailLogo => Logo Image.
 	// Allowed file types: jpg, jpeg, gif, png. To optimize logo for
 	// high-resolution displays, upload an image that is 3x normal size and then
 	// specify 1x dimensions in width/height fields below.
 	// Path: design/email/logo
 	// BackendModel: Magento\Config\Model\Config\Backend\Email\Logo
-	DesignEmailLogo model.Str
+	DesignEmailLogo cfgmodel.Str
 
 	// DesignEmailLogoAlt => Logo Image Alt.
 	// Path: design/email/logo_alt
-	DesignEmailLogoAlt model.Str
+	DesignEmailLogoAlt cfgmodel.Str
 
 	// DesignEmailLogoWidth => Logo Width.
 	// Only necessary if image has been uploaded above. Enter number of pixels,
 	// without appending "px".
 	// Path: design/email/logo_width
-	DesignEmailLogoWidth model.Str
+	DesignEmailLogoWidth cfgmodel.Str
 
 	// DesignEmailLogoHeight => Logo Height.
 	// Only necessary if image has been uploaded above. Enter number of pixels,
 	// without appending "px".
 	// Path: design/email/logo_height
-	DesignEmailLogoHeight model.Str
+	DesignEmailLogoHeight cfgmodel.Str
 
 	// DesignEmailHeaderTemplate => Header Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: design/email/header_template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	DesignEmailHeaderTemplate model.Str
+	DesignEmailHeaderTemplate cfgmodel.Str
 
 	// DesignEmailFooterTemplate => Footer Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: design/email/footer_template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	DesignEmailFooterTemplate model.Str
+	DesignEmailFooterTemplate cfgmodel.Str
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -62,12 +62,12 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.DesignEmailLogo = model.NewStr(`design/email/logo`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignEmailLogoAlt = model.NewStr(`design/email/logo_alt`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignEmailLogoWidth = model.NewStr(`design/email/logo_width`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignEmailLogoHeight = model.NewStr(`design/email/logo_height`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignEmailHeaderTemplate = model.NewStr(`design/email/header_template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignEmailFooterTemplate = model.NewStr(`design/email/footer_template`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignEmailLogo = cfgmodel.NewStr(`design/email/logo`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignEmailLogoAlt = cfgmodel.NewStr(`design/email/logo_alt`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignEmailLogoWidth = cfgmodel.NewStr(`design/email/logo_width`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignEmailLogoHeight = cfgmodel.NewStr(`design/email/logo_height`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignEmailHeaderTemplate = cfgmodel.NewStr(`design/email/header_template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignEmailFooterTemplate = cfgmodel.NewStr(`design/email/footer_template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

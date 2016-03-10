@@ -12,14 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package model_test
+package cfgmodel_test
 
 import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,7 +28,7 @@ func TestBaseURLGet(t *testing.T) {
 	t.Parallel()
 	const pathWebUnsecUrl = "web/unsecure/base_url"
 	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).Bind(scope.StoreID, 1)
-	b := model.NewBaseURL(pathWebUnsecUrl, model.WithFieldFromSectionSlice(configStructure))
+	b := cfgmodel.NewBaseURL(pathWebUnsecUrl, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	assert.Empty(t, b.Options())
 
@@ -54,7 +54,7 @@ func TestBaseURLWrite(t *testing.T) {
 	t.Parallel()
 	const pathWebUnsecUrl = "web/unsecure/base_url"
 	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).Bind(scope.StoreID, 1)
-	b := model.NewBaseURL(pathWebUnsecUrl, model.WithFieldFromSectionSlice(configStructure))
+	b := cfgmodel.NewBaseURL(pathWebUnsecUrl, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
 	assert.NoError(t, b.Write(mw, "dude", scope.StoreID, 1))

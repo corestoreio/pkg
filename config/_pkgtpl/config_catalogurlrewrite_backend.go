@@ -3,8 +3,8 @@
 package catalogurlrewrite
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,28 +14,28 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// CatalogSeoCategoryUrlSuffix => Category URL Suffix.
 	// You need to refresh the cache.
 	// Path: catalog/seo/category_url_suffix
 	// BackendModel: Magento\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
-	CatalogSeoCategoryUrlSuffix model.Str
+	CatalogSeoCategoryUrlSuffix cfgmodel.Str
 
 	// CatalogSeoProductUrlSuffix => Product URL Suffix.
 	// You need to refresh the cache.
 	// Path: catalog/seo/product_url_suffix
 	// BackendModel: Magento\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
-	CatalogSeoProductUrlSuffix model.Str
+	CatalogSeoProductUrlSuffix cfgmodel.Str
 
 	// CatalogSeoProductUseCategories => Use Categories Path for Product URLs.
 	// Path: catalog/seo/product_use_categories
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CatalogSeoProductUseCategories model.Bool
+	CatalogSeoProductUseCategories cfgmodel.Bool
 
 	// CatalogSeoSaveRewritesHistory => Create Permanent Redirect for URLs if URL Key Changed.
 	// Path: catalog/seo/save_rewrites_history
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CatalogSeoSaveRewritesHistory model.Bool
+	CatalogSeoSaveRewritesHistory cfgmodel.Bool
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -46,10 +46,10 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogSeoCategoryUrlSuffix = model.NewStr(`catalog/seo/category_url_suffix`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogSeoProductUrlSuffix = model.NewStr(`catalog/seo/product_url_suffix`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogSeoProductUseCategories = model.NewBool(`catalog/seo/product_use_categories`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogSeoSaveRewritesHistory = model.NewBool(`catalog/seo/save_rewrites_history`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSeoCategoryUrlSuffix = cfgmodel.NewStr(`catalog/seo/category_url_suffix`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSeoProductUrlSuffix = cfgmodel.NewStr(`catalog/seo/product_url_suffix`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSeoProductUseCategories = cfgmodel.NewBool(`catalog/seo/product_use_categories`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSeoSaveRewritesHistory = cfgmodel.NewBool(`catalog/seo/save_rewrites_history`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

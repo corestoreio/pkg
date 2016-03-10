@@ -395,7 +395,7 @@ func init() {
 						},
 
 						&element.Field{
-							// Path: carriers/fedex/model
+							// Path: carriers/fedex/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,

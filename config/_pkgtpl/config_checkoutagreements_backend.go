@@ -3,8 +3,8 @@
 package checkoutagreements
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,11 +14,11 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// CheckoutOptionsEnableAgreements => Enable Terms and Conditions.
 	// Path: checkout/options/enable_agreements
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CheckoutOptionsEnableAgreements model.Bool
+	CheckoutOptionsEnableAgreements cfgmodel.Bool
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -29,7 +29,7 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CheckoutOptionsEnableAgreements = model.NewBool(`checkout/options/enable_agreements`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CheckoutOptionsEnableAgreements = cfgmodel.NewBool(`checkout/options/enable_agreements`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

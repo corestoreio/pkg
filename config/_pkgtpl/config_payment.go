@@ -38,7 +38,7 @@ func init() {
 						},
 
 						&element.Field{
-							// Path: payment/free/model
+							// Path: payment/free/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
@@ -91,7 +91,7 @@ func init() {
 						},
 
 						&element.Field{
-							// Path: payment/substitution/model
+							// Path: payment/substitution/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,

@@ -3,8 +3,8 @@
 package vault
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,12 +14,12 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// PaymentVaultVaultPayment => Vault Provider.
 	// Specified provider should be enabled.
 	// Path: payment/vault/vault_payment
 	// SourceModel: Magento\Vault\Model\Adminhtml\Source\VaultProvidersMap
-	PaymentVaultVaultPayment model.Str
+	PaymentVaultVaultPayment cfgmodel.Str
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -30,7 +30,7 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.PaymentVaultVaultPayment = model.NewStr(`payment/vault/vault_payment`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.PaymentVaultVaultPayment = cfgmodel.NewStr(`payment/vault/vault_payment`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

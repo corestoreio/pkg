@@ -3,8 +3,8 @@
 package review
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,11 +14,11 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// CatalogReviewAllowGuest => Allow Guests to Write Reviews.
 	// Path: catalog/review/allow_guest
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CatalogReviewAllowGuest model.Bool
+	CatalogReviewAllowGuest cfgmodel.Bool
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -29,7 +29,7 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogReviewAllowGuest = model.NewBool(`catalog/review/allow_guest`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogReviewAllowGuest = cfgmodel.NewBool(`catalog/review/allow_guest`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

@@ -3,8 +3,8 @@
 package downloadable
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,44 +14,44 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// CatalogDownloadableOrderItemStatus => Order Item Status to Enable Downloads.
 	// Path: catalog/downloadable/order_item_status
 	// SourceModel: Magento\Downloadable\Model\System\Config\Source\Orderitemstatus
-	CatalogDownloadableOrderItemStatus model.Str
+	CatalogDownloadableOrderItemStatus cfgmodel.Str
 
 	// CatalogDownloadableDownloadsNumber => Default Maximum Number of Downloads.
 	// Path: catalog/downloadable/downloads_number
-	CatalogDownloadableDownloadsNumber model.Str
+	CatalogDownloadableDownloadsNumber cfgmodel.Str
 
 	// CatalogDownloadableShareable => Shareable.
 	// Path: catalog/downloadable/shareable
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CatalogDownloadableShareable model.Bool
+	CatalogDownloadableShareable cfgmodel.Bool
 
 	// CatalogDownloadableSamplesTitle => Default Sample Title.
 	// Path: catalog/downloadable/samples_title
-	CatalogDownloadableSamplesTitle model.Str
+	CatalogDownloadableSamplesTitle cfgmodel.Str
 
 	// CatalogDownloadableLinksTitle => Default Link Title.
 	// Path: catalog/downloadable/links_title
-	CatalogDownloadableLinksTitle model.Str
+	CatalogDownloadableLinksTitle cfgmodel.Str
 
 	// CatalogDownloadableLinksTargetNewWindow => Open Links in New Window.
 	// Path: catalog/downloadable/links_target_new_window
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CatalogDownloadableLinksTargetNewWindow model.Bool
+	CatalogDownloadableLinksTargetNewWindow cfgmodel.Bool
 
 	// CatalogDownloadableContentDisposition => Use Content-Disposition.
 	// Path: catalog/downloadable/content_disposition
 	// SourceModel: Magento\Downloadable\Model\System\Config\Source\Contentdisposition
-	CatalogDownloadableContentDisposition model.Str
+	CatalogDownloadableContentDisposition cfgmodel.Str
 
 	// CatalogDownloadableDisableGuestCheckout => Disable Guest Checkout if Cart Contains Downloadable Items.
 	// Guest checkout will only work with shareable.
 	// Path: catalog/downloadable/disable_guest_checkout
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CatalogDownloadableDisableGuestCheckout model.Bool
+	CatalogDownloadableDisableGuestCheckout cfgmodel.Bool
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -62,14 +62,14 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogDownloadableOrderItemStatus = model.NewStr(`catalog/downloadable/order_item_status`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogDownloadableDownloadsNumber = model.NewStr(`catalog/downloadable/downloads_number`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogDownloadableShareable = model.NewBool(`catalog/downloadable/shareable`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogDownloadableSamplesTitle = model.NewStr(`catalog/downloadable/samples_title`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogDownloadableLinksTitle = model.NewStr(`catalog/downloadable/links_title`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogDownloadableLinksTargetNewWindow = model.NewBool(`catalog/downloadable/links_target_new_window`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogDownloadableContentDisposition = model.NewStr(`catalog/downloadable/content_disposition`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogDownloadableDisableGuestCheckout = model.NewBool(`catalog/downloadable/disable_guest_checkout`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogDownloadableOrderItemStatus = cfgmodel.NewStr(`catalog/downloadable/order_item_status`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogDownloadableDownloadsNumber = cfgmodel.NewStr(`catalog/downloadable/downloads_number`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogDownloadableShareable = cfgmodel.NewBool(`catalog/downloadable/shareable`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogDownloadableSamplesTitle = cfgmodel.NewStr(`catalog/downloadable/samples_title`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogDownloadableLinksTitle = cfgmodel.NewStr(`catalog/downloadable/links_title`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogDownloadableLinksTargetNewWindow = cfgmodel.NewBool(`catalog/downloadable/links_target_new_window`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogDownloadableContentDisposition = cfgmodel.NewStr(`catalog/downloadable/content_disposition`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogDownloadableDisableGuestCheckout = cfgmodel.NewBool(`catalog/downloadable/disable_guest_checkout`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

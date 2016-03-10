@@ -3,8 +3,8 @@
 package backup
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,32 +14,32 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// SystemBackupEnabled => Enable Scheduled Backup.
 	// Path: system/backup/enabled
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SystemBackupEnabled model.Bool
+	SystemBackupEnabled cfgmodel.Bool
 
 	// SystemBackupType => Backup Type.
 	// Path: system/backup/type
 	// SourceModel: Magento\Backup\Model\Config\Source\Type
-	SystemBackupType model.Str
+	SystemBackupType cfgmodel.Str
 
 	// SystemBackupTime => Start Time.
 	// Path: system/backup/time
-	SystemBackupTime model.Str
+	SystemBackupTime cfgmodel.Str
 
 	// SystemBackupFrequency => Frequency.
 	// Path: system/backup/frequency
 	// BackendModel: Magento\Backup\Model\Config\Backend\Cron
 	// SourceModel: Magento\Cron\Model\Config\Source\Frequency
-	SystemBackupFrequency model.Str
+	SystemBackupFrequency cfgmodel.Str
 
 	// SystemBackupMaintenance => Maintenance Mode.
 	// Please put your store into maintenance mode during backup.
 	// Path: system/backup/maintenance
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SystemBackupMaintenance model.Bool
+	SystemBackupMaintenance cfgmodel.Bool
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -50,11 +50,11 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.SystemBackupEnabled = model.NewBool(`system/backup/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SystemBackupType = model.NewStr(`system/backup/type`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SystemBackupTime = model.NewStr(`system/backup/time`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SystemBackupFrequency = model.NewStr(`system/backup/frequency`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SystemBackupMaintenance = model.NewBool(`system/backup/maintenance`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemBackupEnabled = cfgmodel.NewBool(`system/backup/enabled`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemBackupType = cfgmodel.NewStr(`system/backup/type`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemBackupTime = cfgmodel.NewStr(`system/backup/time`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemBackupFrequency = cfgmodel.NewStr(`system/backup/frequency`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SystemBackupMaintenance = cfgmodel.NewBool(`system/backup/maintenance`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

@@ -399,7 +399,7 @@ func init() {
 						},
 
 						&element.Field{
-							// Path: carriers/usps/model
+							// Path: carriers/usps/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,

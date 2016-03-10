@@ -12,20 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package model_test
+package cfgmodel_test
 
 import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ model.Encryptor = (*rot13)(nil)
-var _ model.Encryptor = (*model.NoopEncryptor)(nil)
+var _ cfgmodel.Encryptor = (*rot13)(nil)
+var _ cfgmodel.Encryptor = (*cfgmodel.NoopEncryptor)(nil)
 
 type rot13 struct {
 }
@@ -54,10 +54,10 @@ func TestObscure(t *testing.T) {
 	const wantCiphered = `U3yyb T0curef`
 	const cfgPath = "aa/bb/cc"
 
-	b := model.NewObscure(
+	b := cfgmodel.NewObscure(
 		cfgPath,
-		model.WithCSVSeparator(''), // trick it
-		model.WithEncryptor(rot13{}),
+		cfgmodel.WithCSVSeparator(''), // trick it
+		cfgmodel.WithEncryptor(rot13{}),
 	)
 	wantPath := cfgpath.MustNewByParts(cfgPath).String() // Default Scope
 
@@ -80,7 +80,7 @@ func TestObscure(t *testing.T) {
 func TestNoopEncryptor(t *testing.T) {
 	t.Parallel()
 
-	ne := model.NoopEncryptor{}
+	ne := cfgmodel.NoopEncryptor{}
 
 	e, err := ne.Encrypt("a")
 	assert.Exactly(t, "a", e)

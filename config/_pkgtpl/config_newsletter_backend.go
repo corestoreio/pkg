@@ -3,8 +3,8 @@
 package newsletter
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,52 +14,52 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// NewsletterSubscriptionAllowGuestSubscribe => Allow Guest Subscription.
 	// Path: newsletter/subscription/allow_guest_subscribe
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	NewsletterSubscriptionAllowGuestSubscribe model.Bool
+	NewsletterSubscriptionAllowGuestSubscribe cfgmodel.Bool
 
 	// NewsletterSubscriptionConfirm => Need to Confirm.
 	// Path: newsletter/subscription/confirm
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	NewsletterSubscriptionConfirm model.Bool
+	NewsletterSubscriptionConfirm cfgmodel.Bool
 
 	// NewsletterSubscriptionConfirmEmailIdentity => Confirmation Email Sender.
 	// Path: newsletter/subscription/confirm_email_identity
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
-	NewsletterSubscriptionConfirmEmailIdentity model.Str
+	NewsletterSubscriptionConfirmEmailIdentity cfgmodel.Str
 
 	// NewsletterSubscriptionConfirmEmailTemplate => Confirmation Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: newsletter/subscription/confirm_email_template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	NewsletterSubscriptionConfirmEmailTemplate model.Str
+	NewsletterSubscriptionConfirmEmailTemplate cfgmodel.Str
 
 	// NewsletterSubscriptionSuccessEmailIdentity => Success Email Sender.
 	// Path: newsletter/subscription/success_email_identity
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
-	NewsletterSubscriptionSuccessEmailIdentity model.Str
+	NewsletterSubscriptionSuccessEmailIdentity cfgmodel.Str
 
 	// NewsletterSubscriptionSuccessEmailTemplate => Success Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: newsletter/subscription/success_email_template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	NewsletterSubscriptionSuccessEmailTemplate model.Str
+	NewsletterSubscriptionSuccessEmailTemplate cfgmodel.Str
 
 	// NewsletterSubscriptionUnEmailIdentity => Unsubscription Email Sender.
 	// Path: newsletter/subscription/un_email_identity
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
-	NewsletterSubscriptionUnEmailIdentity model.Str
+	NewsletterSubscriptionUnEmailIdentity cfgmodel.Str
 
 	// NewsletterSubscriptionUnEmailTemplate => Unsubscription Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: newsletter/subscription/un_email_template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	NewsletterSubscriptionUnEmailTemplate model.Str
+	NewsletterSubscriptionUnEmailTemplate cfgmodel.Str
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -70,14 +70,14 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.NewsletterSubscriptionAllowGuestSubscribe = model.NewBool(`newsletter/subscription/allow_guest_subscribe`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.NewsletterSubscriptionConfirm = model.NewBool(`newsletter/subscription/confirm`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.NewsletterSubscriptionConfirmEmailIdentity = model.NewStr(`newsletter/subscription/confirm_email_identity`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.NewsletterSubscriptionConfirmEmailTemplate = model.NewStr(`newsletter/subscription/confirm_email_template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.NewsletterSubscriptionSuccessEmailIdentity = model.NewStr(`newsletter/subscription/success_email_identity`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.NewsletterSubscriptionSuccessEmailTemplate = model.NewStr(`newsletter/subscription/success_email_template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.NewsletterSubscriptionUnEmailIdentity = model.NewStr(`newsletter/subscription/un_email_identity`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.NewsletterSubscriptionUnEmailTemplate = model.NewStr(`newsletter/subscription/un_email_template`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewsletterSubscriptionAllowGuestSubscribe = cfgmodel.NewBool(`newsletter/subscription/allow_guest_subscribe`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewsletterSubscriptionConfirm = cfgmodel.NewBool(`newsletter/subscription/confirm`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewsletterSubscriptionConfirmEmailIdentity = cfgmodel.NewStr(`newsletter/subscription/confirm_email_identity`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewsletterSubscriptionConfirmEmailTemplate = cfgmodel.NewStr(`newsletter/subscription/confirm_email_template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewsletterSubscriptionSuccessEmailIdentity = cfgmodel.NewStr(`newsletter/subscription/success_email_identity`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewsletterSubscriptionSuccessEmailTemplate = cfgmodel.NewStr(`newsletter/subscription/success_email_template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewsletterSubscriptionUnEmailIdentity = cfgmodel.NewStr(`newsletter/subscription/un_email_identity`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.NewsletterSubscriptionUnEmailTemplate = cfgmodel.NewStr(`newsletter/subscription/un_email_template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

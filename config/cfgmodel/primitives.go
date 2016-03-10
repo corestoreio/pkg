@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package model
+package cfgmodel
 
 import (
 	"time"
@@ -26,7 +26,7 @@ import (
 // Bool represents a path in config.Getter which handles bool values.
 type Bool struct{ baseValue }
 
-// NewBool creates a new Bool model with a given path.
+// NewBool creates a new Bool cfgmodel with a given path.
 func NewBool(path string, opts ...Option) Bool {
 	return Bool{
 		baseValue: NewValue(path, opts...),
@@ -73,7 +73,7 @@ func (b Bool) Write(w config.Writer, v bool, s scope.Scope, scopeID int64) error
 // in the Stringer interface.
 type Str struct{ baseValue }
 
-// NewStr creates a new Str model with a given path.
+// NewStr creates a new Str cfgmodel with a given path.
 func NewStr(path string, opts ...Option) Str {
 	return Str{baseValue: NewValue(path, opts...)}
 }
@@ -116,7 +116,7 @@ func (str Str) Write(w config.Writer, v string, s scope.Scope, scopeID int64) er
 // Int represents a path in config.Getter which handles int values.
 type Int struct{ baseValue }
 
-// NewInt creates a new Int model with a given path.
+// NewInt creates a new Int cfgmodel with a given path.
 func NewInt(path string, opts ...Option) Int {
 	return Int{baseValue: NewValue(path, opts...)}
 }
@@ -159,7 +159,7 @@ func (i Int) Write(w config.Writer, v int, s scope.Scope, scopeID int64) error {
 // Float64 represents a path in config.Getter which handles float64 values.
 type Float64 struct{ baseValue }
 
-// NewFloat64 creates a new Float64 model with a given path.
+// NewFloat64 creates a new Float64 cfgmodel with a given path.
 func NewFloat64(path string, opts ...Option) Float64 {
 	return Float64{baseValue: NewValue(path, opts...)}
 }
@@ -202,7 +202,7 @@ func (f Float64) Write(w config.Writer, v float64, s scope.Scope, scopeID int64)
 // Time represents a path in config.Getter which handles time values.
 type Time struct{ baseValue }
 
-// NewTime creates a new Time model with a given path.
+// NewTime creates a new Time cfgmodel with a given path.
 func NewTime(path string, opts ...Option) Time {
 	return Time{baseValue: NewValue(path, opts...)}
 }

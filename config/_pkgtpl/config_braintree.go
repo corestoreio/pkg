@@ -35,7 +35,7 @@ func init() {
 					ID: "braintree",
 					Fields: element.NewFieldSlice(
 						&element.Field{
-							// Path: payment/braintree/model
+							// Path: payment/braintree/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
@@ -192,7 +192,7 @@ func init() {
 					ID: "braintree_paypal",
 					Fields: element.NewFieldSlice(
 						&element.Field{
-							// Path: payment/braintree_paypal/model
+							// Path: payment/braintree_paypal/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,

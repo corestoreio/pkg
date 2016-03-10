@@ -454,7 +454,7 @@ func init() {
 						},
 
 						&element.Field{
-							// Path: carriers/ups/model
+							// Path: carriers/ups/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,

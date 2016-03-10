@@ -3,8 +3,8 @@
 package swatches
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,10 +14,10 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// CatalogFrontendSwatchesPerProduct => Swatches per Product.
 	// Path: catalog/frontend/swatches_per_product
-	CatalogFrontendSwatchesPerProduct model.Str
+	CatalogFrontendSwatchesPerProduct cfgmodel.Str
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -28,7 +28,7 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogFrontendSwatchesPerProduct = model.NewStr(`catalog/frontend/swatches_per_product`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogFrontendSwatchesPerProduct = cfgmodel.NewStr(`catalog/frontend/swatches_per_product`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

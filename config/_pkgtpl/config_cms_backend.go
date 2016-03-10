@@ -3,8 +3,8 @@
 package cms
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,46 +14,46 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// WebDefaultCmsHomePage => CMS Home Page.
 	// Path: web/default/cms_home_page
 	// SourceModel: Magento\Cms\Model\Config\Source\Page
-	WebDefaultCmsHomePage model.Str
+	WebDefaultCmsHomePage cfgmodel.Str
 
 	// WebDefaultCmsNoRoute => CMS No Route Page.
 	// Path: web/default/cms_no_route
 	// SourceModel: Magento\Cms\Model\Config\Source\Page
-	WebDefaultCmsNoRoute model.Str
+	WebDefaultCmsNoRoute cfgmodel.Str
 
 	// WebDefaultCmsNoCookies => CMS No Cookies Page.
 	// Path: web/default/cms_no_cookies
 	// SourceModel: Magento\Cms\Model\Config\Source\Page
-	WebDefaultCmsNoCookies model.Str
+	WebDefaultCmsNoCookies cfgmodel.Str
 
 	// WebDefaultShowCmsBreadcrumbs => Show Breadcrumbs for CMS Pages.
 	// Path: web/default/show_cms_breadcrumbs
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	WebDefaultShowCmsBreadcrumbs model.Bool
+	WebDefaultShowCmsBreadcrumbs cfgmodel.Bool
 
 	// WebBrowserCapabilitiesCookies => Redirect to CMS-page if Cookies are Disabled.
 	// Path: web/browser_capabilities/cookies
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	WebBrowserCapabilitiesCookies model.Bool
+	WebBrowserCapabilitiesCookies cfgmodel.Bool
 
 	// WebBrowserCapabilitiesJavascript => Show Notice if JavaScript is Disabled.
 	// Path: web/browser_capabilities/javascript
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	WebBrowserCapabilitiesJavascript model.Bool
+	WebBrowserCapabilitiesJavascript cfgmodel.Bool
 
 	// WebBrowserCapabilitiesLocalStorage => Show Notice if Local Storage is Disabled.
 	// Path: web/browser_capabilities/local_storage
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	WebBrowserCapabilitiesLocalStorage model.Bool
+	WebBrowserCapabilitiesLocalStorage cfgmodel.Bool
 
 	// CmsWysiwygEnabled => Enable WYSIWYG Editor.
 	// Path: cms/wysiwyg/enabled
 	// SourceModel: Magento\Cms\Model\Config\Source\Wysiwyg\Enabled
-	CmsWysiwygEnabled model.Str
+	CmsWysiwygEnabled cfgmodel.Str
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -64,14 +64,14 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.WebDefaultCmsHomePage = model.NewStr(`web/default/cms_home_page`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.WebDefaultCmsNoRoute = model.NewStr(`web/default/cms_no_route`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.WebDefaultCmsNoCookies = model.NewStr(`web/default/cms_no_cookies`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.WebDefaultShowCmsBreadcrumbs = model.NewBool(`web/default/show_cms_breadcrumbs`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.WebBrowserCapabilitiesCookies = model.NewBool(`web/browser_capabilities/cookies`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.WebBrowserCapabilitiesJavascript = model.NewBool(`web/browser_capabilities/javascript`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.WebBrowserCapabilitiesLocalStorage = model.NewBool(`web/browser_capabilities/local_storage`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CmsWysiwygEnabled = model.NewStr(`cms/wysiwyg/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebDefaultCmsHomePage = cfgmodel.NewStr(`web/default/cms_home_page`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebDefaultCmsNoRoute = cfgmodel.NewStr(`web/default/cms_no_route`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebDefaultCmsNoCookies = cfgmodel.NewStr(`web/default/cms_no_cookies`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebDefaultShowCmsBreadcrumbs = cfgmodel.NewBool(`web/default/show_cms_breadcrumbs`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebBrowserCapabilitiesCookies = cfgmodel.NewBool(`web/browser_capabilities/cookies`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebBrowserCapabilitiesJavascript = cfgmodel.NewBool(`web/browser_capabilities/javascript`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.WebBrowserCapabilitiesLocalStorage = cfgmodel.NewBool(`web/browser_capabilities/local_storage`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CmsWysiwygEnabled = cfgmodel.NewStr(`cms/wysiwyg/enabled`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

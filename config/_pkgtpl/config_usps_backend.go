@@ -3,8 +3,8 @@
 package usps
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,144 +14,144 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// CarriersUspsActive => Enabled for Checkout.
 	// Path: carriers/usps/active
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CarriersUspsActive model.Bool
+	CarriersUspsActive cfgmodel.Bool
 
 	// CarriersUspsActiveRma => Enabled for RMA.
 	// Path: carriers/usps/active_rma
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CarriersUspsActiveRma model.Bool
+	CarriersUspsActiveRma cfgmodel.Bool
 
 	// CarriersUspsGatewayUrl => Gateway URL.
 	// Path: carriers/usps/gateway_url
-	CarriersUspsGatewayUrl model.Str
+	CarriersUspsGatewayUrl cfgmodel.Str
 
 	// CarriersUspsGatewaySecureUrl => Secure Gateway URL.
 	// Path: carriers/usps/gateway_secure_url
-	CarriersUspsGatewaySecureUrl model.Str
+	CarriersUspsGatewaySecureUrl cfgmodel.Str
 
 	// CarriersUspsTitle => Title.
 	// Path: carriers/usps/title
-	CarriersUspsTitle model.Str
+	CarriersUspsTitle cfgmodel.Str
 
 	// CarriersUspsUserid => User ID.
 	// Path: carriers/usps/userid
 	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
-	CarriersUspsUserid model.Str
+	CarriersUspsUserid cfgmodel.Str
 
 	// CarriersUspsPassword => Password.
 	// Path: carriers/usps/password
 	// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
-	CarriersUspsPassword model.Str
+	CarriersUspsPassword cfgmodel.Str
 
 	// CarriersUspsMode => Mode.
 	// Path: carriers/usps/mode
 	// SourceModel: Magento\Shipping\Model\Config\Source\Online\Mode
-	CarriersUspsMode model.Str
+	CarriersUspsMode cfgmodel.Str
 
 	// CarriersUspsShipmentRequesttype => Packages Request Type.
 	// Path: carriers/usps/shipment_requesttype
 	// SourceModel: Magento\Shipping\Model\Config\Source\Online\Requesttype
-	CarriersUspsShipmentRequesttype model.Str
+	CarriersUspsShipmentRequesttype cfgmodel.Str
 
 	// CarriersUspsContainer => Container.
 	// Path: carriers/usps/container
 	// SourceModel: Magento\Usps\Model\Source\Container
-	CarriersUspsContainer model.Str
+	CarriersUspsContainer cfgmodel.Str
 
 	// CarriersUspsSize => Size.
 	// Path: carriers/usps/size
 	// SourceModel: Magento\Usps\Model\Source\Size
-	CarriersUspsSize model.Str
+	CarriersUspsSize cfgmodel.Str
 
 	// CarriersUspsWidth => Width.
 	// Path: carriers/usps/width
-	CarriersUspsWidth model.Str
+	CarriersUspsWidth cfgmodel.Str
 
 	// CarriersUspsLength => Length.
 	// Path: carriers/usps/length
-	CarriersUspsLength model.Str
+	CarriersUspsLength cfgmodel.Str
 
 	// CarriersUspsHeight => Height.
 	// Path: carriers/usps/height
-	CarriersUspsHeight model.Str
+	CarriersUspsHeight cfgmodel.Str
 
 	// CarriersUspsGirth => Girth.
 	// Path: carriers/usps/girth
-	CarriersUspsGirth model.Str
+	CarriersUspsGirth cfgmodel.Str
 
 	// CarriersUspsMachinable => Machinable.
 	// Path: carriers/usps/machinable
 	// SourceModel: Magento\Usps\Model\Source\Machinable
-	CarriersUspsMachinable model.Str
+	CarriersUspsMachinable cfgmodel.Str
 
 	// CarriersUspsMaxPackageWeight => Maximum Package Weight (Please consult your shipping carrier for maximum supported shipping weight).
 	// Path: carriers/usps/max_package_weight
-	CarriersUspsMaxPackageWeight model.Str
+	CarriersUspsMaxPackageWeight cfgmodel.Str
 
 	// CarriersUspsHandlingType => Calculate Handling Fee.
 	// Path: carriers/usps/handling_type
 	// SourceModel: Magento\Shipping\Model\Source\HandlingType
-	CarriersUspsHandlingType model.Str
+	CarriersUspsHandlingType cfgmodel.Str
 
 	// CarriersUspsHandlingAction => Handling Applied.
 	// Path: carriers/usps/handling_action
 	// SourceModel: Magento\Shipping\Model\Source\HandlingAction
-	CarriersUspsHandlingAction model.Str
+	CarriersUspsHandlingAction cfgmodel.Str
 
 	// CarriersUspsHandlingFee => Handling Fee.
 	// Path: carriers/usps/handling_fee
-	CarriersUspsHandlingFee model.Str
+	CarriersUspsHandlingFee cfgmodel.Str
 
 	// CarriersUspsAllowedMethods => Allowed Methods.
 	// Path: carriers/usps/allowed_methods
 	// SourceModel: Magento\Usps\Model\Source\Method
-	CarriersUspsAllowedMethods model.StringCSV
+	CarriersUspsAllowedMethods cfgmodel.StringCSV
 
 	// CarriersUspsFreeMethod => Free Method.
 	// Path: carriers/usps/free_method
 	// SourceModel: Magento\Usps\Model\Source\Freemethod
-	CarriersUspsFreeMethod model.Str
+	CarriersUspsFreeMethod cfgmodel.Str
 
 	// CarriersUspsFreeShippingEnable => Free Shipping Amount Threshold.
 	// Path: carriers/usps/free_shipping_enable
 	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
-	CarriersUspsFreeShippingEnable model.Bool
+	CarriersUspsFreeShippingEnable cfgmodel.Bool
 
 	// CarriersUspsFreeShippingSubtotal => Free Shipping Amount Threshold.
 	// Path: carriers/usps/free_shipping_subtotal
-	CarriersUspsFreeShippingSubtotal model.Str
+	CarriersUspsFreeShippingSubtotal cfgmodel.Str
 
 	// CarriersUspsSpecificerrmsg => Displayed Error Message.
 	// Path: carriers/usps/specificerrmsg
-	CarriersUspsSpecificerrmsg model.Str
+	CarriersUspsSpecificerrmsg cfgmodel.Str
 
 	// CarriersUspsSallowspecific => Ship to Applicable Countries.
 	// Path: carriers/usps/sallowspecific
 	// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
-	CarriersUspsSallowspecific model.Str
+	CarriersUspsSallowspecific cfgmodel.Str
 
 	// CarriersUspsSpecificcountry => Ship to Specific Countries.
 	// Path: carriers/usps/specificcountry
 	// SourceModel: Magento\Directory\Model\Config\Source\Country
-	CarriersUspsSpecificcountry model.StringCSV
+	CarriersUspsSpecificcountry cfgmodel.StringCSV
 
 	// CarriersUspsDebug => Debug.
 	// Path: carriers/usps/debug
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CarriersUspsDebug model.Bool
+	CarriersUspsDebug cfgmodel.Bool
 
 	// CarriersUspsShowmethod => Show Method if Not Applicable.
 	// Path: carriers/usps/showmethod
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CarriersUspsShowmethod model.Bool
+	CarriersUspsShowmethod cfgmodel.Bool
 
 	// CarriersUspsSortOrder => Sort Order.
 	// Path: carriers/usps/sort_order
-	CarriersUspsSortOrder model.Str
+	CarriersUspsSortOrder cfgmodel.Str
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -162,36 +162,36 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CarriersUspsActive = model.NewBool(`carriers/usps/active`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsActiveRma = model.NewBool(`carriers/usps/active_rma`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsGatewayUrl = model.NewStr(`carriers/usps/gateway_url`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsGatewaySecureUrl = model.NewStr(`carriers/usps/gateway_secure_url`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsTitle = model.NewStr(`carriers/usps/title`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsUserid = model.NewStr(`carriers/usps/userid`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsPassword = model.NewStr(`carriers/usps/password`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsMode = model.NewStr(`carriers/usps/mode`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsShipmentRequesttype = model.NewStr(`carriers/usps/shipment_requesttype`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsContainer = model.NewStr(`carriers/usps/container`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsSize = model.NewStr(`carriers/usps/size`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsWidth = model.NewStr(`carriers/usps/width`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsLength = model.NewStr(`carriers/usps/length`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsHeight = model.NewStr(`carriers/usps/height`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsGirth = model.NewStr(`carriers/usps/girth`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsMachinable = model.NewStr(`carriers/usps/machinable`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsMaxPackageWeight = model.NewStr(`carriers/usps/max_package_weight`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsHandlingType = model.NewStr(`carriers/usps/handling_type`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsHandlingAction = model.NewStr(`carriers/usps/handling_action`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsHandlingFee = model.NewStr(`carriers/usps/handling_fee`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsAllowedMethods = model.NewStringCSV(`carriers/usps/allowed_methods`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsFreeMethod = model.NewStr(`carriers/usps/free_method`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsFreeShippingEnable = model.NewBool(`carriers/usps/free_shipping_enable`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsFreeShippingSubtotal = model.NewStr(`carriers/usps/free_shipping_subtotal`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsSpecificerrmsg = model.NewStr(`carriers/usps/specificerrmsg`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsSallowspecific = model.NewStr(`carriers/usps/sallowspecific`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsSpecificcountry = model.NewStringCSV(`carriers/usps/specificcountry`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsDebug = model.NewBool(`carriers/usps/debug`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsShowmethod = model.NewBool(`carriers/usps/showmethod`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CarriersUspsSortOrder = model.NewStr(`carriers/usps/sort_order`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsActive = cfgmodel.NewBool(`carriers/usps/active`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsActiveRma = cfgmodel.NewBool(`carriers/usps/active_rma`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsGatewayUrl = cfgmodel.NewStr(`carriers/usps/gateway_url`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsGatewaySecureUrl = cfgmodel.NewStr(`carriers/usps/gateway_secure_url`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsTitle = cfgmodel.NewStr(`carriers/usps/title`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsUserid = cfgmodel.NewStr(`carriers/usps/userid`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsPassword = cfgmodel.NewStr(`carriers/usps/password`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsMode = cfgmodel.NewStr(`carriers/usps/mode`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsShipmentRequesttype = cfgmodel.NewStr(`carriers/usps/shipment_requesttype`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsContainer = cfgmodel.NewStr(`carriers/usps/container`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsSize = cfgmodel.NewStr(`carriers/usps/size`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsWidth = cfgmodel.NewStr(`carriers/usps/width`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsLength = cfgmodel.NewStr(`carriers/usps/length`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsHeight = cfgmodel.NewStr(`carriers/usps/height`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsGirth = cfgmodel.NewStr(`carriers/usps/girth`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsMachinable = cfgmodel.NewStr(`carriers/usps/machinable`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsMaxPackageWeight = cfgmodel.NewStr(`carriers/usps/max_package_weight`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsHandlingType = cfgmodel.NewStr(`carriers/usps/handling_type`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsHandlingAction = cfgmodel.NewStr(`carriers/usps/handling_action`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsHandlingFee = cfgmodel.NewStr(`carriers/usps/handling_fee`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsAllowedMethods = cfgmodel.NewStringCSV(`carriers/usps/allowed_methods`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsFreeMethod = cfgmodel.NewStr(`carriers/usps/free_method`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsFreeShippingEnable = cfgmodel.NewBool(`carriers/usps/free_shipping_enable`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsFreeShippingSubtotal = cfgmodel.NewStr(`carriers/usps/free_shipping_subtotal`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsSpecificerrmsg = cfgmodel.NewStr(`carriers/usps/specificerrmsg`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsSallowspecific = cfgmodel.NewStr(`carriers/usps/sallowspecific`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsSpecificcountry = cfgmodel.NewStringCSV(`carriers/usps/specificcountry`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsDebug = cfgmodel.NewBool(`carriers/usps/debug`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsShowmethod = cfgmodel.NewBool(`carriers/usps/showmethod`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CarriersUspsSortOrder = cfgmodel.NewStr(`carriers/usps/sort_order`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

@@ -53,7 +53,7 @@ func init() {
 						},
 
 						&element.Field{
-							// Path: payment/vault/model
+							// Path: payment/vault/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,

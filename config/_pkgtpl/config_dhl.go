@@ -390,7 +390,7 @@ func init() {
 					ID: "dhl",
 					Fields: element.NewFieldSlice(
 						&element.Field{
-							// Path: carriers/dhl/model
+							// Path: carriers/dhl/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,

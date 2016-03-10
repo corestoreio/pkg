@@ -3,8 +3,8 @@
 package sales
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,410 +14,410 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// SalesGeneralHideCustomerIp => Hide Customer IP.
 	// Choose whether a customer IP is shown in orders, invoices, shipments, and
 	// credit memos.
 	// Path: sales/general/hide_customer_ip
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesGeneralHideCustomerIp model.Bool
+	SalesGeneralHideCustomerIp cfgmodel.Bool
 
 	// SalesTotalsSortDiscount => Discount.
 	// Path: sales/totals_sort/discount
-	SalesTotalsSortDiscount model.Str
+	SalesTotalsSortDiscount cfgmodel.Str
 
 	// SalesTotalsSortGrandTotal => Grand Total.
 	// Path: sales/totals_sort/grand_total
-	SalesTotalsSortGrandTotal model.Str
+	SalesTotalsSortGrandTotal cfgmodel.Str
 
 	// SalesTotalsSortShipping => Shipping.
 	// Path: sales/totals_sort/shipping
-	SalesTotalsSortShipping model.Str
+	SalesTotalsSortShipping cfgmodel.Str
 
 	// SalesTotalsSortSubtotal => Subtotal.
 	// Path: sales/totals_sort/subtotal
-	SalesTotalsSortSubtotal model.Str
+	SalesTotalsSortSubtotal cfgmodel.Str
 
 	// SalesTotalsSortTax => Tax.
 	// Path: sales/totals_sort/tax
-	SalesTotalsSortTax model.Str
+	SalesTotalsSortTax cfgmodel.Str
 
 	// SalesReorderAllow => Allow Reorder.
 	// Path: sales/reorder/allow
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesReorderAllow model.Bool
+	SalesReorderAllow cfgmodel.Bool
 
 	// SalesIdentityLogo => Logo for PDF Print-outs (200x50).
 	// Your default logo will be used in PDF and HTML documents.(jpeg, tiff, png)
 	// If your pdf image is distorted, try to use larger file-size image.
 	// Path: sales/identity/logo
 	// BackendModel: Magento\Config\Model\Config\Backend\Image\Pdf
-	SalesIdentityLogo model.Str
+	SalesIdentityLogo cfgmodel.Str
 
 	// SalesIdentityLogoHtml => Logo for HTML Print View.
 	// Logo for HTML documents only. If empty, default will be used.(jpeg, gif,
 	// png)
 	// Path: sales/identity/logo_html
 	// BackendModel: Magento\Config\Model\Config\Backend\Image
-	SalesIdentityLogoHtml model.Str
+	SalesIdentityLogoHtml cfgmodel.Str
 
 	// SalesIdentityAddress => Address.
 	// Path: sales/identity/address
-	SalesIdentityAddress model.Str
+	SalesIdentityAddress cfgmodel.Str
 
 	// SalesMinimumOrderActive => Enable.
 	// Path: sales/minimum_order/active
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesMinimumOrderActive model.Bool
+	SalesMinimumOrderActive cfgmodel.Bool
 
 	// SalesMinimumOrderAmount => Minimum Amount.
 	// Subtotal after discount
 	// Path: sales/minimum_order/amount
-	SalesMinimumOrderAmount model.Str
+	SalesMinimumOrderAmount cfgmodel.Str
 
 	// SalesMinimumOrderTaxIncluding => Include Tax to Amount.
 	// Path: sales/minimum_order/tax_including
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesMinimumOrderTaxIncluding model.Bool
+	SalesMinimumOrderTaxIncluding cfgmodel.Bool
 
 	// SalesMinimumOrderDescription => Description Message.
 	// This message will be shown in the shopping cart when the subtotal (after
 	// discount) is lower than the minimum allowed amount.
 	// Path: sales/minimum_order/description
-	SalesMinimumOrderDescription model.Str
+	SalesMinimumOrderDescription cfgmodel.Str
 
 	// SalesMinimumOrderErrorMessage => Error to Show in Shopping Cart.
 	// Path: sales/minimum_order/error_message
-	SalesMinimumOrderErrorMessage model.Str
+	SalesMinimumOrderErrorMessage cfgmodel.Str
 
 	// SalesMinimumOrderMultiAddress => Validate Each Address Separately in Multi-address Checkout.
 	// Path: sales/minimum_order/multi_address
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesMinimumOrderMultiAddress model.Bool
+	SalesMinimumOrderMultiAddress cfgmodel.Bool
 
 	// SalesMinimumOrderMultiAddressDescription => Multi-address Description Message.
 	// We'll use the default description above if you leave this empty.
 	// Path: sales/minimum_order/multi_address_description
-	SalesMinimumOrderMultiAddressDescription model.Str
+	SalesMinimumOrderMultiAddressDescription cfgmodel.Str
 
 	// SalesMinimumOrderMultiAddressErrorMessage => Multi-address Error to Show in Shopping Cart.
 	// We'll use the default error above if you leave this empty.
 	// Path: sales/minimum_order/multi_address_error_message
-	SalesMinimumOrderMultiAddressErrorMessage model.Str
+	SalesMinimumOrderMultiAddressErrorMessage cfgmodel.Str
 
 	// SalesDashboardUseAggregatedData => Use Aggregated Data (beta).
 	// Improves dashboard performance but provides non-realtime data.
 	// Path: sales/dashboard/use_aggregated_data
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesDashboardUseAggregatedData model.Bool
+	SalesDashboardUseAggregatedData cfgmodel.Bool
 
 	// SalesOrdersDeletePendingAfter => Pending Payment Order Lifetime (minutes).
 	// Path: sales/orders/delete_pending_after
-	SalesOrdersDeletePendingAfter model.Str
+	SalesOrdersDeletePendingAfter cfgmodel.Str
 
 	// SalesEmailGeneralAsyncSending => Asynchronous sending.
 	// Path: sales_email/general/async_sending
 	// BackendModel: Magento\Sales\Model\Config\Backend\Email\AsyncSending
 	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
-	SalesEmailGeneralAsyncSending model.Bool
+	SalesEmailGeneralAsyncSending cfgmodel.Bool
 
 	// SalesEmailOrderEnabled => Enabled.
 	// Path: sales_email/order/enabled
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesEmailOrderEnabled model.Bool
+	SalesEmailOrderEnabled cfgmodel.Bool
 
 	// SalesEmailOrderIdentity => New Order Confirmation Email Sender.
 	// Path: sales_email/order/identity
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
-	SalesEmailOrderIdentity model.Str
+	SalesEmailOrderIdentity cfgmodel.Str
 
 	// SalesEmailOrderTemplate => New Order Confirmation Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/order/template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	SalesEmailOrderTemplate model.Str
+	SalesEmailOrderTemplate cfgmodel.Str
 
 	// SalesEmailOrderGuestTemplate => New Order Confirmation Template for Guest.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/order/guest_template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	SalesEmailOrderGuestTemplate model.Str
+	SalesEmailOrderGuestTemplate cfgmodel.Str
 
 	// SalesEmailOrderCopyTo => Send Order Email Copy To.
 	// Comma-separated
 	// Path: sales_email/order/copy_to
-	SalesEmailOrderCopyTo model.Str
+	SalesEmailOrderCopyTo cfgmodel.Str
 
 	// SalesEmailOrderCopyMethod => Send Order Email Copy Method.
 	// Path: sales_email/order/copy_method
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
-	SalesEmailOrderCopyMethod model.Str
+	SalesEmailOrderCopyMethod cfgmodel.Str
 
 	// SalesEmailOrderCommentEnabled => Enabled.
 	// Path: sales_email/order_comment/enabled
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesEmailOrderCommentEnabled model.Bool
+	SalesEmailOrderCommentEnabled cfgmodel.Bool
 
 	// SalesEmailOrderCommentIdentity => Order Comment Email Sender.
 	// Path: sales_email/order_comment/identity
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
-	SalesEmailOrderCommentIdentity model.Str
+	SalesEmailOrderCommentIdentity cfgmodel.Str
 
 	// SalesEmailOrderCommentTemplate => Order Comment Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/order_comment/template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	SalesEmailOrderCommentTemplate model.Str
+	SalesEmailOrderCommentTemplate cfgmodel.Str
 
 	// SalesEmailOrderCommentGuestTemplate => Order Comment Email Template for Guest.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/order_comment/guest_template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	SalesEmailOrderCommentGuestTemplate model.Str
+	SalesEmailOrderCommentGuestTemplate cfgmodel.Str
 
 	// SalesEmailOrderCommentCopyTo => Send Order Comment Email Copy To.
 	// Comma-separated
 	// Path: sales_email/order_comment/copy_to
-	SalesEmailOrderCommentCopyTo model.Str
+	SalesEmailOrderCommentCopyTo cfgmodel.Str
 
 	// SalesEmailOrderCommentCopyMethod => Send Order Comments Email Copy Method.
 	// Path: sales_email/order_comment/copy_method
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
-	SalesEmailOrderCommentCopyMethod model.Str
+	SalesEmailOrderCommentCopyMethod cfgmodel.Str
 
 	// SalesEmailInvoiceEnabled => Enabled.
 	// Path: sales_email/invoice/enabled
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesEmailInvoiceEnabled model.Bool
+	SalesEmailInvoiceEnabled cfgmodel.Bool
 
 	// SalesEmailInvoiceIdentity => Invoice Email Sender.
 	// Path: sales_email/invoice/identity
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
-	SalesEmailInvoiceIdentity model.Str
+	SalesEmailInvoiceIdentity cfgmodel.Str
 
 	// SalesEmailInvoiceTemplate => Invoice Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/invoice/template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	SalesEmailInvoiceTemplate model.Str
+	SalesEmailInvoiceTemplate cfgmodel.Str
 
 	// SalesEmailInvoiceGuestTemplate => Invoice Email Template for Guest.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/invoice/guest_template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	SalesEmailInvoiceGuestTemplate model.Str
+	SalesEmailInvoiceGuestTemplate cfgmodel.Str
 
 	// SalesEmailInvoiceCopyTo => Send Invoice Email Copy To.
 	// Comma-separated
 	// Path: sales_email/invoice/copy_to
-	SalesEmailInvoiceCopyTo model.Str
+	SalesEmailInvoiceCopyTo cfgmodel.Str
 
 	// SalesEmailInvoiceCopyMethod => Send Invoice Email Copy Method.
 	// Path: sales_email/invoice/copy_method
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
-	SalesEmailInvoiceCopyMethod model.Str
+	SalesEmailInvoiceCopyMethod cfgmodel.Str
 
 	// SalesEmailInvoiceCommentEnabled => Enabled.
 	// Path: sales_email/invoice_comment/enabled
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesEmailInvoiceCommentEnabled model.Bool
+	SalesEmailInvoiceCommentEnabled cfgmodel.Bool
 
 	// SalesEmailInvoiceCommentIdentity => Invoice Comment Email Sender.
 	// Path: sales_email/invoice_comment/identity
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
-	SalesEmailInvoiceCommentIdentity model.Str
+	SalesEmailInvoiceCommentIdentity cfgmodel.Str
 
 	// SalesEmailInvoiceCommentTemplate => Invoice Comment Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/invoice_comment/template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	SalesEmailInvoiceCommentTemplate model.Str
+	SalesEmailInvoiceCommentTemplate cfgmodel.Str
 
 	// SalesEmailInvoiceCommentGuestTemplate => Invoice Comment Email Template for Guest.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/invoice_comment/guest_template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	SalesEmailInvoiceCommentGuestTemplate model.Str
+	SalesEmailInvoiceCommentGuestTemplate cfgmodel.Str
 
 	// SalesEmailInvoiceCommentCopyTo => Send Invoice Comment Email Copy To.
 	// Comma-separated
 	// Path: sales_email/invoice_comment/copy_to
-	SalesEmailInvoiceCommentCopyTo model.Str
+	SalesEmailInvoiceCommentCopyTo cfgmodel.Str
 
 	// SalesEmailInvoiceCommentCopyMethod => Send Invoice Comments Email Copy Method.
 	// Path: sales_email/invoice_comment/copy_method
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
-	SalesEmailInvoiceCommentCopyMethod model.Str
+	SalesEmailInvoiceCommentCopyMethod cfgmodel.Str
 
 	// SalesEmailShipmentEnabled => Enabled.
 	// Path: sales_email/shipment/enabled
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesEmailShipmentEnabled model.Bool
+	SalesEmailShipmentEnabled cfgmodel.Bool
 
 	// SalesEmailShipmentIdentity => Shipment Email Sender.
 	// Path: sales_email/shipment/identity
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
-	SalesEmailShipmentIdentity model.Str
+	SalesEmailShipmentIdentity cfgmodel.Str
 
 	// SalesEmailShipmentTemplate => Shipment Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/shipment/template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	SalesEmailShipmentTemplate model.Str
+	SalesEmailShipmentTemplate cfgmodel.Str
 
 	// SalesEmailShipmentGuestTemplate => Shipment Email Template for Guest.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/shipment/guest_template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	SalesEmailShipmentGuestTemplate model.Str
+	SalesEmailShipmentGuestTemplate cfgmodel.Str
 
 	// SalesEmailShipmentCopyTo => Send Shipment Email Copy To.
 	// Comma-separated
 	// Path: sales_email/shipment/copy_to
-	SalesEmailShipmentCopyTo model.Str
+	SalesEmailShipmentCopyTo cfgmodel.Str
 
 	// SalesEmailShipmentCopyMethod => Send Shipment Email Copy Method.
 	// Path: sales_email/shipment/copy_method
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
-	SalesEmailShipmentCopyMethod model.Str
+	SalesEmailShipmentCopyMethod cfgmodel.Str
 
 	// SalesEmailShipmentCommentEnabled => Enabled.
 	// Path: sales_email/shipment_comment/enabled
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesEmailShipmentCommentEnabled model.Bool
+	SalesEmailShipmentCommentEnabled cfgmodel.Bool
 
 	// SalesEmailShipmentCommentIdentity => Shipment Comment Email Sender.
 	// Path: sales_email/shipment_comment/identity
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
-	SalesEmailShipmentCommentIdentity model.Str
+	SalesEmailShipmentCommentIdentity cfgmodel.Str
 
 	// SalesEmailShipmentCommentTemplate => Shipment Comment Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/shipment_comment/template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	SalesEmailShipmentCommentTemplate model.Str
+	SalesEmailShipmentCommentTemplate cfgmodel.Str
 
 	// SalesEmailShipmentCommentGuestTemplate => Shipment Comment Email Template for Guest.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/shipment_comment/guest_template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	SalesEmailShipmentCommentGuestTemplate model.Str
+	SalesEmailShipmentCommentGuestTemplate cfgmodel.Str
 
 	// SalesEmailShipmentCommentCopyTo => Send Shipment Comment Email Copy To.
 	// Comma-separated
 	// Path: sales_email/shipment_comment/copy_to
-	SalesEmailShipmentCommentCopyTo model.Str
+	SalesEmailShipmentCommentCopyTo cfgmodel.Str
 
 	// SalesEmailShipmentCommentCopyMethod => Send Shipment Comments Email Copy Method.
 	// Path: sales_email/shipment_comment/copy_method
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
-	SalesEmailShipmentCommentCopyMethod model.Str
+	SalesEmailShipmentCommentCopyMethod cfgmodel.Str
 
 	// SalesEmailCreditmemoEnabled => Enabled.
 	// Path: sales_email/creditmemo/enabled
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesEmailCreditmemoEnabled model.Bool
+	SalesEmailCreditmemoEnabled cfgmodel.Bool
 
 	// SalesEmailCreditmemoIdentity => Credit Memo Email Sender.
 	// Path: sales_email/creditmemo/identity
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
-	SalesEmailCreditmemoIdentity model.Str
+	SalesEmailCreditmemoIdentity cfgmodel.Str
 
 	// SalesEmailCreditmemoTemplate => Credit Memo Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/creditmemo/template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	SalesEmailCreditmemoTemplate model.Str
+	SalesEmailCreditmemoTemplate cfgmodel.Str
 
 	// SalesEmailCreditmemoGuestTemplate => Credit Memo Email Template for Guest.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/creditmemo/guest_template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	SalesEmailCreditmemoGuestTemplate model.Str
+	SalesEmailCreditmemoGuestTemplate cfgmodel.Str
 
 	// SalesEmailCreditmemoCopyTo => Send Credit Memo Email Copy To.
 	// Comma-separated
 	// Path: sales_email/creditmemo/copy_to
-	SalesEmailCreditmemoCopyTo model.Str
+	SalesEmailCreditmemoCopyTo cfgmodel.Str
 
 	// SalesEmailCreditmemoCopyMethod => Send Credit Memo Email Copy Method.
 	// Path: sales_email/creditmemo/copy_method
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
-	SalesEmailCreditmemoCopyMethod model.Str
+	SalesEmailCreditmemoCopyMethod cfgmodel.Str
 
 	// SalesEmailCreditmemoCommentEnabled => Enabled.
 	// Path: sales_email/creditmemo_comment/enabled
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesEmailCreditmemoCommentEnabled model.Bool
+	SalesEmailCreditmemoCommentEnabled cfgmodel.Bool
 
 	// SalesEmailCreditmemoCommentIdentity => Credit Memo Comment Email Sender.
 	// Path: sales_email/creditmemo_comment/identity
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
-	SalesEmailCreditmemoCommentIdentity model.Str
+	SalesEmailCreditmemoCommentIdentity cfgmodel.Str
 
 	// SalesEmailCreditmemoCommentTemplate => Credit Memo Comment Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/creditmemo_comment/template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	SalesEmailCreditmemoCommentTemplate model.Str
+	SalesEmailCreditmemoCommentTemplate cfgmodel.Str
 
 	// SalesEmailCreditmemoCommentGuestTemplate => Credit Memo Comment Email Template for Guest.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: sales_email/creditmemo_comment/guest_template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	SalesEmailCreditmemoCommentGuestTemplate model.Str
+	SalesEmailCreditmemoCommentGuestTemplate cfgmodel.Str
 
 	// SalesEmailCreditmemoCommentCopyTo => Send Credit Memo Comment Email Copy To.
 	// Comma-separated
 	// Path: sales_email/creditmemo_comment/copy_to
-	SalesEmailCreditmemoCommentCopyTo model.Str
+	SalesEmailCreditmemoCommentCopyTo cfgmodel.Str
 
 	// SalesEmailCreditmemoCommentCopyMethod => Send Credit Memo Comments Email Copy Method.
 	// Path: sales_email/creditmemo_comment/copy_method
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Method
-	SalesEmailCreditmemoCommentCopyMethod model.Str
+	SalesEmailCreditmemoCommentCopyMethod cfgmodel.Str
 
 	// SalesPdfInvoicePutOrderId => Display Order ID in Header.
 	// Path: sales_pdf/invoice/put_order_id
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesPdfInvoicePutOrderId model.Bool
+	SalesPdfInvoicePutOrderId cfgmodel.Bool
 
 	// SalesPdfShipmentPutOrderId => Display Order ID in Header.
 	// Path: sales_pdf/shipment/put_order_id
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesPdfShipmentPutOrderId model.Bool
+	SalesPdfShipmentPutOrderId cfgmodel.Bool
 
 	// SalesPdfCreditmemoPutOrderId => Display Order ID in Header.
 	// Path: sales_pdf/creditmemo/put_order_id
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	SalesPdfCreditmemoPutOrderId model.Bool
+	SalesPdfCreditmemoPutOrderId cfgmodel.Bool
 
 	// RssOrderStatus => Customer Order Status Notification.
 	// Path: rss/order/status
 	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
-	RssOrderStatus model.Bool
+	RssOrderStatus cfgmodel.Bool
 
 	// DevGridAsyncIndexing => Asynchronous indexing.
 	// Path: dev/grid/async_indexing
 	// BackendModel: Magento\Sales\Model\Config\Backend\Grid\AsyncIndexing
 	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
-	DevGridAsyncIndexing model.Bool
+	DevGridAsyncIndexing cfgmodel.Bool
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -428,80 +428,80 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.SalesGeneralHideCustomerIp = model.NewBool(`sales/general/hide_customer_ip`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesTotalsSortDiscount = model.NewStr(`sales/totals_sort/discount`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesTotalsSortGrandTotal = model.NewStr(`sales/totals_sort/grand_total`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesTotalsSortShipping = model.NewStr(`sales/totals_sort/shipping`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesTotalsSortSubtotal = model.NewStr(`sales/totals_sort/subtotal`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesTotalsSortTax = model.NewStr(`sales/totals_sort/tax`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesReorderAllow = model.NewBool(`sales/reorder/allow`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesIdentityLogo = model.NewStr(`sales/identity/logo`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesIdentityLogoHtml = model.NewStr(`sales/identity/logo_html`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesIdentityAddress = model.NewStr(`sales/identity/address`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesMinimumOrderActive = model.NewBool(`sales/minimum_order/active`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesMinimumOrderAmount = model.NewStr(`sales/minimum_order/amount`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesMinimumOrderTaxIncluding = model.NewBool(`sales/minimum_order/tax_including`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesMinimumOrderDescription = model.NewStr(`sales/minimum_order/description`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesMinimumOrderErrorMessage = model.NewStr(`sales/minimum_order/error_message`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesMinimumOrderMultiAddress = model.NewBool(`sales/minimum_order/multi_address`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesMinimumOrderMultiAddressDescription = model.NewStr(`sales/minimum_order/multi_address_description`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesMinimumOrderMultiAddressErrorMessage = model.NewStr(`sales/minimum_order/multi_address_error_message`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesDashboardUseAggregatedData = model.NewBool(`sales/dashboard/use_aggregated_data`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesOrdersDeletePendingAfter = model.NewStr(`sales/orders/delete_pending_after`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailGeneralAsyncSending = model.NewBool(`sales_email/general/async_sending`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailOrderEnabled = model.NewBool(`sales_email/order/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailOrderIdentity = model.NewStr(`sales_email/order/identity`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailOrderTemplate = model.NewStr(`sales_email/order/template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailOrderGuestTemplate = model.NewStr(`sales_email/order/guest_template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailOrderCopyTo = model.NewStr(`sales_email/order/copy_to`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailOrderCopyMethod = model.NewStr(`sales_email/order/copy_method`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailOrderCommentEnabled = model.NewBool(`sales_email/order_comment/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailOrderCommentIdentity = model.NewStr(`sales_email/order_comment/identity`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailOrderCommentTemplate = model.NewStr(`sales_email/order_comment/template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailOrderCommentGuestTemplate = model.NewStr(`sales_email/order_comment/guest_template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailOrderCommentCopyTo = model.NewStr(`sales_email/order_comment/copy_to`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailOrderCommentCopyMethod = model.NewStr(`sales_email/order_comment/copy_method`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailInvoiceEnabled = model.NewBool(`sales_email/invoice/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailInvoiceIdentity = model.NewStr(`sales_email/invoice/identity`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailInvoiceTemplate = model.NewStr(`sales_email/invoice/template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailInvoiceGuestTemplate = model.NewStr(`sales_email/invoice/guest_template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailInvoiceCopyTo = model.NewStr(`sales_email/invoice/copy_to`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailInvoiceCopyMethod = model.NewStr(`sales_email/invoice/copy_method`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailInvoiceCommentEnabled = model.NewBool(`sales_email/invoice_comment/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailInvoiceCommentIdentity = model.NewStr(`sales_email/invoice_comment/identity`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailInvoiceCommentTemplate = model.NewStr(`sales_email/invoice_comment/template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailInvoiceCommentGuestTemplate = model.NewStr(`sales_email/invoice_comment/guest_template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailInvoiceCommentCopyTo = model.NewStr(`sales_email/invoice_comment/copy_to`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailInvoiceCommentCopyMethod = model.NewStr(`sales_email/invoice_comment/copy_method`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailShipmentEnabled = model.NewBool(`sales_email/shipment/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailShipmentIdentity = model.NewStr(`sales_email/shipment/identity`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailShipmentTemplate = model.NewStr(`sales_email/shipment/template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailShipmentGuestTemplate = model.NewStr(`sales_email/shipment/guest_template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailShipmentCopyTo = model.NewStr(`sales_email/shipment/copy_to`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailShipmentCopyMethod = model.NewStr(`sales_email/shipment/copy_method`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailShipmentCommentEnabled = model.NewBool(`sales_email/shipment_comment/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailShipmentCommentIdentity = model.NewStr(`sales_email/shipment_comment/identity`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailShipmentCommentTemplate = model.NewStr(`sales_email/shipment_comment/template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailShipmentCommentGuestTemplate = model.NewStr(`sales_email/shipment_comment/guest_template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailShipmentCommentCopyTo = model.NewStr(`sales_email/shipment_comment/copy_to`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailShipmentCommentCopyMethod = model.NewStr(`sales_email/shipment_comment/copy_method`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailCreditmemoEnabled = model.NewBool(`sales_email/creditmemo/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailCreditmemoIdentity = model.NewStr(`sales_email/creditmemo/identity`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailCreditmemoTemplate = model.NewStr(`sales_email/creditmemo/template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailCreditmemoGuestTemplate = model.NewStr(`sales_email/creditmemo/guest_template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailCreditmemoCopyTo = model.NewStr(`sales_email/creditmemo/copy_to`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailCreditmemoCopyMethod = model.NewStr(`sales_email/creditmemo/copy_method`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailCreditmemoCommentEnabled = model.NewBool(`sales_email/creditmemo_comment/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailCreditmemoCommentIdentity = model.NewStr(`sales_email/creditmemo_comment/identity`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailCreditmemoCommentTemplate = model.NewStr(`sales_email/creditmemo_comment/template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailCreditmemoCommentGuestTemplate = model.NewStr(`sales_email/creditmemo_comment/guest_template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailCreditmemoCommentCopyTo = model.NewStr(`sales_email/creditmemo_comment/copy_to`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesEmailCreditmemoCommentCopyMethod = model.NewStr(`sales_email/creditmemo_comment/copy_method`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesPdfInvoicePutOrderId = model.NewBool(`sales_pdf/invoice/put_order_id`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesPdfShipmentPutOrderId = model.NewBool(`sales_pdf/shipment/put_order_id`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SalesPdfCreditmemoPutOrderId = model.NewBool(`sales_pdf/creditmemo/put_order_id`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.RssOrderStatus = model.NewBool(`rss/order/status`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DevGridAsyncIndexing = model.NewBool(`dev/grid/async_indexing`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesGeneralHideCustomerIp = cfgmodel.NewBool(`sales/general/hide_customer_ip`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesTotalsSortDiscount = cfgmodel.NewStr(`sales/totals_sort/discount`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesTotalsSortGrandTotal = cfgmodel.NewStr(`sales/totals_sort/grand_total`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesTotalsSortShipping = cfgmodel.NewStr(`sales/totals_sort/shipping`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesTotalsSortSubtotal = cfgmodel.NewStr(`sales/totals_sort/subtotal`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesTotalsSortTax = cfgmodel.NewStr(`sales/totals_sort/tax`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesReorderAllow = cfgmodel.NewBool(`sales/reorder/allow`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesIdentityLogo = cfgmodel.NewStr(`sales/identity/logo`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesIdentityLogoHtml = cfgmodel.NewStr(`sales/identity/logo_html`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesIdentityAddress = cfgmodel.NewStr(`sales/identity/address`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesMinimumOrderActive = cfgmodel.NewBool(`sales/minimum_order/active`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesMinimumOrderAmount = cfgmodel.NewStr(`sales/minimum_order/amount`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesMinimumOrderTaxIncluding = cfgmodel.NewBool(`sales/minimum_order/tax_including`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesMinimumOrderDescription = cfgmodel.NewStr(`sales/minimum_order/description`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesMinimumOrderErrorMessage = cfgmodel.NewStr(`sales/minimum_order/error_message`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesMinimumOrderMultiAddress = cfgmodel.NewBool(`sales/minimum_order/multi_address`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesMinimumOrderMultiAddressDescription = cfgmodel.NewStr(`sales/minimum_order/multi_address_description`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesMinimumOrderMultiAddressErrorMessage = cfgmodel.NewStr(`sales/minimum_order/multi_address_error_message`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesDashboardUseAggregatedData = cfgmodel.NewBool(`sales/dashboard/use_aggregated_data`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesOrdersDeletePendingAfter = cfgmodel.NewStr(`sales/orders/delete_pending_after`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailGeneralAsyncSending = cfgmodel.NewBool(`sales_email/general/async_sending`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailOrderEnabled = cfgmodel.NewBool(`sales_email/order/enabled`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailOrderIdentity = cfgmodel.NewStr(`sales_email/order/identity`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailOrderTemplate = cfgmodel.NewStr(`sales_email/order/template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailOrderGuestTemplate = cfgmodel.NewStr(`sales_email/order/guest_template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailOrderCopyTo = cfgmodel.NewStr(`sales_email/order/copy_to`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailOrderCopyMethod = cfgmodel.NewStr(`sales_email/order/copy_method`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailOrderCommentEnabled = cfgmodel.NewBool(`sales_email/order_comment/enabled`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailOrderCommentIdentity = cfgmodel.NewStr(`sales_email/order_comment/identity`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailOrderCommentTemplate = cfgmodel.NewStr(`sales_email/order_comment/template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailOrderCommentGuestTemplate = cfgmodel.NewStr(`sales_email/order_comment/guest_template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailOrderCommentCopyTo = cfgmodel.NewStr(`sales_email/order_comment/copy_to`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailOrderCommentCopyMethod = cfgmodel.NewStr(`sales_email/order_comment/copy_method`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailInvoiceEnabled = cfgmodel.NewBool(`sales_email/invoice/enabled`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailInvoiceIdentity = cfgmodel.NewStr(`sales_email/invoice/identity`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailInvoiceTemplate = cfgmodel.NewStr(`sales_email/invoice/template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailInvoiceGuestTemplate = cfgmodel.NewStr(`sales_email/invoice/guest_template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailInvoiceCopyTo = cfgmodel.NewStr(`sales_email/invoice/copy_to`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailInvoiceCopyMethod = cfgmodel.NewStr(`sales_email/invoice/copy_method`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailInvoiceCommentEnabled = cfgmodel.NewBool(`sales_email/invoice_comment/enabled`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailInvoiceCommentIdentity = cfgmodel.NewStr(`sales_email/invoice_comment/identity`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailInvoiceCommentTemplate = cfgmodel.NewStr(`sales_email/invoice_comment/template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailInvoiceCommentGuestTemplate = cfgmodel.NewStr(`sales_email/invoice_comment/guest_template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailInvoiceCommentCopyTo = cfgmodel.NewStr(`sales_email/invoice_comment/copy_to`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailInvoiceCommentCopyMethod = cfgmodel.NewStr(`sales_email/invoice_comment/copy_method`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailShipmentEnabled = cfgmodel.NewBool(`sales_email/shipment/enabled`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailShipmentIdentity = cfgmodel.NewStr(`sales_email/shipment/identity`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailShipmentTemplate = cfgmodel.NewStr(`sales_email/shipment/template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailShipmentGuestTemplate = cfgmodel.NewStr(`sales_email/shipment/guest_template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailShipmentCopyTo = cfgmodel.NewStr(`sales_email/shipment/copy_to`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailShipmentCopyMethod = cfgmodel.NewStr(`sales_email/shipment/copy_method`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailShipmentCommentEnabled = cfgmodel.NewBool(`sales_email/shipment_comment/enabled`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailShipmentCommentIdentity = cfgmodel.NewStr(`sales_email/shipment_comment/identity`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailShipmentCommentTemplate = cfgmodel.NewStr(`sales_email/shipment_comment/template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailShipmentCommentGuestTemplate = cfgmodel.NewStr(`sales_email/shipment_comment/guest_template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailShipmentCommentCopyTo = cfgmodel.NewStr(`sales_email/shipment_comment/copy_to`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailShipmentCommentCopyMethod = cfgmodel.NewStr(`sales_email/shipment_comment/copy_method`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailCreditmemoEnabled = cfgmodel.NewBool(`sales_email/creditmemo/enabled`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailCreditmemoIdentity = cfgmodel.NewStr(`sales_email/creditmemo/identity`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailCreditmemoTemplate = cfgmodel.NewStr(`sales_email/creditmemo/template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailCreditmemoGuestTemplate = cfgmodel.NewStr(`sales_email/creditmemo/guest_template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailCreditmemoCopyTo = cfgmodel.NewStr(`sales_email/creditmemo/copy_to`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailCreditmemoCopyMethod = cfgmodel.NewStr(`sales_email/creditmemo/copy_method`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailCreditmemoCommentEnabled = cfgmodel.NewBool(`sales_email/creditmemo_comment/enabled`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailCreditmemoCommentIdentity = cfgmodel.NewStr(`sales_email/creditmemo_comment/identity`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailCreditmemoCommentTemplate = cfgmodel.NewStr(`sales_email/creditmemo_comment/template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailCreditmemoCommentGuestTemplate = cfgmodel.NewStr(`sales_email/creditmemo_comment/guest_template`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailCreditmemoCommentCopyTo = cfgmodel.NewStr(`sales_email/creditmemo_comment/copy_to`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesEmailCreditmemoCommentCopyMethod = cfgmodel.NewStr(`sales_email/creditmemo_comment/copy_method`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesPdfInvoicePutOrderId = cfgmodel.NewBool(`sales_pdf/invoice/put_order_id`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesPdfShipmentPutOrderId = cfgmodel.NewBool(`sales_pdf/shipment/put_order_id`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.SalesPdfCreditmemoPutOrderId = cfgmodel.NewBool(`sales_pdf/creditmemo/put_order_id`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.RssOrderStatus = cfgmodel.NewBool(`rss/order/status`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DevGridAsyncIndexing = cfgmodel.NewBool(`dev/grid/async_indexing`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

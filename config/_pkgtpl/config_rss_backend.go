@@ -3,8 +3,8 @@
 package rss
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -14,12 +14,12 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// RssConfigActive => Enable RSS.
 	// Path: rss/config/active
 	// BackendModel: Magento\Rss\Model\System\Config\Backend\Links
 	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
-	RssConfigActive model.Bool
+	RssConfigActive cfgmodel.Bool
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -30,7 +30,7 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.RssConfigActive = model.NewBool(`rss/config/active`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.RssConfigActive = cfgmodel.NewBool(`rss/config/active`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

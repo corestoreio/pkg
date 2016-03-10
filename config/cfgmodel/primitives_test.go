@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package model_test
+package cfgmodel_test
 
 import (
 	"testing"
@@ -21,9 +21,9 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
@@ -171,7 +171,7 @@ func TestBoolGetWithCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsCred = "web/cors/allow_credentials"
 	wantPath := cfgpath.MustNewByParts(pathWebCorsCred).Bind(scope.WebsiteID, 3)
-	b := model.NewBool(pathWebCorsCred, model.WithFieldFromSectionSlice(configStructure), model.WithSource(source.YesNo))
+	b := cfgmodel.NewBool(pathWebCorsCred, cfgmodel.WithFieldFromSectionSlice(configStructure), cfgmodel.WithSource(source.YesNo))
 
 	assert.Exactly(t, source.YesNo, b.Options())
 
@@ -196,7 +196,7 @@ func TestBoolGetWithoutCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsCred = "web/cors/allow_credentials"
 	wantPath := cfgpath.MustNewByParts(pathWebCorsCred).Bind(scope.WebsiteID, 4)
-	b := model.NewBool(pathWebCorsCred)
+	b := cfgmodel.NewBool(pathWebCorsCred)
 
 	tests := []struct {
 		sg   config.ScopedGetter
@@ -219,7 +219,7 @@ func TestBoolGetWithoutCfgStruct(t *testing.T) {
 func TestBoolGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	t.Parallel()
 
-	b := model.NewBool("web/cors/allow_credentials")
+	b := cfgmodel.NewBool("web/cors/allow_credentials")
 	haveErr := errors.New("Unexpected error")
 
 	gb, err := b.Get(cfgmock.NewService(
@@ -235,7 +235,7 @@ func TestBoolWrite(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsCred = "web/cors/allow_credentials"
 	wantPath := cfgpath.MustNewByParts(pathWebCorsCred).Bind(scope.WebsiteID, 3)
-	b := model.NewBool(pathWebCorsCred, model.WithFieldFromSectionSlice(configStructure), model.WithSource(source.YesNo))
+	b := cfgmodel.NewBool(pathWebCorsCred, cfgmodel.WithFieldFromSectionSlice(configStructure), cfgmodel.WithSource(source.YesNo))
 
 	mw := &cfgmock.Write{}
 	assert.EqualError(t, b.Write(mw, true, scope.StoreID, 3), "Scope permission insufficient: Have 'Store'; Want 'Default,Website'")
@@ -247,7 +247,7 @@ func TestBoolWrite(t *testing.T) {
 func TestStrGetWithCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
-	b := model.NewStr(pathWebCorsHeaders, model.WithFieldFromSectionSlice(configStructure))
+	b := cfgmodel.NewStr(pathWebCorsHeaders, cfgmodel.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, b.Options())
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders)
@@ -282,7 +282,7 @@ func TestStrGetWithCfgStruct(t *testing.T) {
 func TestStrGetWithoutCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
-	b := model.NewStr(pathWebCorsHeaders)
+	b := cfgmodel.NewStr(pathWebCorsHeaders)
 	assert.Empty(t, b.Options())
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders)
@@ -306,7 +306,7 @@ func TestStrGetWithoutCfgStruct(t *testing.T) {
 func TestStrGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	t.Parallel()
 
-	b := model.NewStr("web/cors/exposed_headers")
+	b := cfgmodel.NewStr("web/cors/exposed_headers")
 	assert.Empty(t, b.Options())
 
 	haveErr := errors.New("Unexpected error")
@@ -323,7 +323,7 @@ func TestStrWrite(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
 	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders)
-	b := model.NewStr(pathWebCorsHeaders, model.WithFieldFromSectionSlice(configStructure))
+	b := cfgmodel.NewStr(pathWebCorsHeaders, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
 	assert.NoError(t, b.Write(mw, "dude", scope.DefaultID, 0))
@@ -334,7 +334,7 @@ func TestStrWrite(t *testing.T) {
 func TestIntGetWithCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsInt = "web/cors/int"
-	b := model.NewInt(pathWebCorsInt, model.WithFieldFromSectionSlice(configStructure))
+	b := cfgmodel.NewInt(pathWebCorsInt, cfgmodel.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, b.Options())
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsInt)
@@ -370,7 +370,7 @@ func TestIntGetWithoutCfgStruct(t *testing.T) {
 	t.Parallel()
 
 	const pathWebCorsInt = "web/cors/int"
-	b := model.NewInt(pathWebCorsInt) // no *element.Field has been set. So Default Scope will be enforced
+	b := cfgmodel.NewInt(pathWebCorsInt) // no *element.Field has been set. So Default Scope will be enforced
 	assert.Empty(t, b.Options())
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsInt)
@@ -394,7 +394,7 @@ func TestIntGetWithoutCfgStruct(t *testing.T) {
 func TestIntGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	t.Parallel()
 
-	b := model.NewInt("web/cors/int")
+	b := cfgmodel.NewInt("web/cors/int")
 
 	haveErr := errors.New("Unexpected error")
 	gb, err := b.Get(cfgmock.NewService(
@@ -410,7 +410,7 @@ func TestIntWrite(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsInt = "web/cors/int"
 	wantPath := cfgpath.MustNewByParts(pathWebCorsInt).Bind(scope.WebsiteID, 10)
-	b := model.NewInt(pathWebCorsInt, model.WithFieldFromSectionSlice(configStructure))
+	b := cfgmodel.NewInt(pathWebCorsInt, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
 	assert.NoError(t, b.Write(mw, 27182, scope.WebsiteID, 10))
@@ -421,7 +421,7 @@ func TestIntWrite(t *testing.T) {
 func TestFloat64GetWithCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsF64 = "web/cors/float64"
-	b := model.NewFloat64("web/cors/float64", model.WithFieldFromSectionSlice(configStructure))
+	b := cfgmodel.NewFloat64("web/cors/float64", cfgmodel.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, b.Options())
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).Bind(scope.WebsiteID, 10)
@@ -457,7 +457,7 @@ func TestFloat64GetWithCfgStruct(t *testing.T) {
 func TestFloat64GetWithoutCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsF64 = "web/cors/float64"
-	b := model.NewFloat64(pathWebCorsF64) // no *element.Field has been set. So Default Scope will be enforced
+	b := cfgmodel.NewFloat64(pathWebCorsF64) // no *element.Field has been set. So Default Scope will be enforced
 	assert.Empty(t, b.Options())
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).Bind(scope.WebsiteID, 10)
@@ -481,7 +481,7 @@ func TestFloat64GetWithoutCfgStruct(t *testing.T) {
 func TestFloat64GetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	t.Parallel()
 
-	b := model.NewFloat64("web/cors/float64")
+	b := cfgmodel.NewFloat64("web/cors/float64")
 
 	haveErr := errors.New("Unexpected error")
 	gb, err := b.Get(cfgmock.NewService(
@@ -499,7 +499,7 @@ func TestFloat64Write(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsF64 = "web/cors/float64"
 	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).Bind(scope.WebsiteID, 10)
-	b := model.NewFloat64("web/cors/float64", model.WithFieldFromSectionSlice(configStructure))
+	b := cfgmodel.NewFloat64("web/cors/float64", cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
 	assert.NoError(t, b.Write(mw, 1.123456789, scope.WebsiteID, 10))
@@ -509,15 +509,15 @@ func TestFloat64Write(t *testing.T) {
 
 func TestRecursiveOption(t *testing.T) {
 	t.Parallel()
-	b := model.NewInt(
+	b := cfgmodel.NewInt(
 		"web/cors/int",
-		model.WithFieldFromSectionSlice(configStructure),
-		model.WithSourceByString("a", "A", "b", "b"),
+		cfgmodel.WithFieldFromSectionSlice(configStructure),
+		cfgmodel.WithSourceByString("a", "A", "b", "b"),
 	)
 
 	assert.Exactly(t, source.NewByString("a", "A", "b", "b"), b.Source)
 
-	previous := b.Option(model.WithSourceByString(
+	previous := b.Option(cfgmodel.WithSourceByString(
 		"1", "One", "2", "Two",
 	))
 	assert.Exactly(t, source.NewByString("1", "One", "2", "Two"), b.Source)
@@ -537,7 +537,7 @@ func mustParseTime(s string) time.Time {
 func TestTimeGetWithCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsTime = "web/cors/time"
-	tm := model.NewTime("web/cors/time", model.WithFieldFromSectionSlice(configStructure))
+	tm := cfgmodel.NewTime("web/cors/time", cfgmodel.WithFieldFromSectionSlice(configStructure))
 	assert.Empty(t, tm.Options())
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsTime).Bind(scope.WebsiteID, 10)
@@ -568,7 +568,7 @@ func TestTimeGetWithCfgStruct(t *testing.T) {
 func TestTimeGetWithoutCfgStruct(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsTime = "web/cors/time"
-	b := model.NewTime(pathWebCorsTime)
+	b := cfgmodel.NewTime(pathWebCorsTime)
 	assert.Empty(t, b.Options())
 
 	wantPath := cfgpath.MustNewByParts(pathWebCorsTime).Bind(scope.WebsiteID, 10)
@@ -598,7 +598,7 @@ func TestTimeGetWithoutCfgStruct(t *testing.T) {
 func TestTimeGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	t.Parallel()
 
-	b := model.NewTime("web/cors/time")
+	b := cfgmodel.NewTime("web/cors/time")
 	assert.Empty(t, b.Options())
 
 	haveErr := errors.New("Unexpected error")
@@ -617,7 +617,7 @@ func TestTimeWrite(t *testing.T) {
 	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).Bind(scope.WebsiteID, 10)
 	haveTime := mustParseTime("2000-08-23 09:20:13")
 
-	b := model.NewTime("web/cors/time", model.WithFieldFromSectionSlice(configStructure))
+	b := cfgmodel.NewTime("web/cors/time", cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
 	assert.NoError(t, b.Write(mw, haveTime, scope.WebsiteID, 10))
