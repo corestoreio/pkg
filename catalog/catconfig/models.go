@@ -16,7 +16,7 @@ package catconfig
 
 import (
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/juju/errors"
@@ -29,17 +29,19 @@ const (
 	PriceScopeWebsite int = 1
 )
 
-type configPriceScope struct {
-	model.Int
+// PriceScope takes of the correct values for the price scope.
+// A price scope can only be global or website based.
+type PriceScope struct {
+	cfgmodel.Int
 }
 
-// NewConfigPriceScope defines the base currency scope
+// NewPriceScope defines the base currency scope
 // ("Currency Setup" > "Currency Options" > "Base Currency").
 // can be 0 = Global or 1 = Website
 // See constants PriceScopeGlobal and PriceScopeWebsite.
-func NewConfigPriceScope(path string, opts ...model.Option) configPriceScope {
-	return configPriceScope{
-		Int: model.NewInt(path, append(opts, model.WithSourceByInt(source.Ints{
+func NewPriceScope(path string, opts ...cfgmodel.Option) PriceScope {
+	return PriceScope{
+		Int: cfgmodel.NewInt(path, append(opts, cfgmodel.WithSourceByInt(source.Ints{
 			0: {PriceScopeGlobal, "Global Scope"},
 			1: {PriceScopeWebsite, "Website Scope"},
 		}))...),
@@ -49,7 +51,7 @@ func NewConfigPriceScope(path string, opts ...model.Option) configPriceScope {
 }
 
 // IsGlobal true if global scope for base currency
-func (p configPriceScope) IsGlobal(sg config.ScopedGetter) (bool, error) {
+func (p PriceScope) IsGlobal(sg config.ScopedGetter) (bool, error) {
 	g, err := p.Get(sg)
 	if err != nil {
 		return false, errors.Mask(err)
@@ -57,7 +59,7 @@ func (p configPriceScope) IsGlobal(sg config.ScopedGetter) (bool, error) {
 	return g == PriceScopeGlobal, nil
 }
 
-func (p configPriceScope) Write(w config.Writer, v int, s scope.Scope, id int64, idx interface {
+func (p PriceScope) Write(w config.Writer, v int, s scope.Scope, id int64, idx interface {
 	Invalidate()
 }) error {
 

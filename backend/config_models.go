@@ -18,7 +18,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/store/scope"
 )
@@ -26,15 +26,15 @@ import (
 // ConfigRedirectToBase enables if a redirect to the base URL should
 // happen and with which status code.
 type ConfigRedirectToBase struct {
-	model.Int
+	cfgmodel.Int
 }
 
 // NewConfigRedirectToBase creates a new type.
-func NewConfigRedirectToBase(path string, opts ...model.Option) ConfigRedirectToBase {
+func NewConfigRedirectToBase(path string, opts ...cfgmodel.Option) ConfigRedirectToBase {
 	return ConfigRedirectToBase{
-		Int: model.NewInt(
+		Int: cfgmodel.NewInt(
 			path,
-			append(opts, model.WithSourceByInt(source.Ints{
+			append(opts, cfgmodel.WithSourceByInt(source.Ints{
 				0: {0, "No"},
 				1: {1, "Yes (302 Found)"},                // old from Magento :-(
 				2: {http.StatusFound, "Yes (302 Found)"}, // new correct

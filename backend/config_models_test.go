@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,7 +29,7 @@ func TestConfigRedirectToBase(t *testing.T) {
 
 	r := backend.NewConfigRedirectToBase(
 		backend.Backend.WebURLRedirectToBase.String(),
-		model.WithFieldFromSectionSlice(backend.ConfigStructure),
+		cfgmodel.WithFieldFromSectionSlice(backend.ConfigStructure),
 	)
 
 	redirCode, err := r.Get(config.NewMockGetter().NewScoped(0, 0, 0))
@@ -87,7 +87,7 @@ func TestConfigRedirectToBase(t *testing.T) {
 func BenchmarkConfigRedirectToBase(b *testing.B) {
 	r := backend.NewConfigRedirectToBase(
 		backend.Backend.WebURLRedirectToBase.String(),
-		model.WithFieldFromSectionSlice(backend.ConfigStructure),
+		cfgmodel.WithFieldFromSectionSlice(backend.ConfigStructure),
 	)
 	webURLRedirectToBasePath, err := backend.Backend.WebURLRedirectToBase.ToPath(0, 0)
 	if err != nil {

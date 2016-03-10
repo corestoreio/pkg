@@ -15,8 +15,8 @@
 package catconfig
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
 
 // Backend will be initialized in the init() function together with ConfigStructure.
@@ -26,101 +26,101 @@ var Backend *PkgBackend
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 	// CatalogFieldsMasksSku => Mask for SKU.
 	// Use {{name}} as Product Name placeholder
 	// Path: catalog/fields_masks/sku
-	CatalogFieldsMasksSku model.Str
+	CatalogFieldsMasksSku cfgmodel.Str
 
 	// CatalogFieldsMasksMetaTitle => Mask for Meta Title.
 	// Use {{name}} as Product Name placeholder
 	// Path: catalog/fields_masks/meta_title
-	CatalogFieldsMasksMetaTitle model.Str
+	CatalogFieldsMasksMetaTitle cfgmodel.Str
 
 	// CatalogFieldsMasksMetaKeyword => Mask for Meta Keywords.
 	// Use {{name}} as Product Name or {{sku}} as Product SKU placeholders
 	// Path: catalog/fields_masks/meta_keyword
-	CatalogFieldsMasksMetaKeyword model.Str
+	CatalogFieldsMasksMetaKeyword cfgmodel.Str
 
 	// CatalogFieldsMasksMetaDescription => Mask for Meta Description.
 	// Use {{name}} and {{description}} as Product Name and Product Description
 	// placeholders
 	// Path: catalog/fields_masks/meta_description
-	CatalogFieldsMasksMetaDescription model.Str
+	CatalogFieldsMasksMetaDescription cfgmodel.Str
 
 	// CatalogFrontendListMode => List Mode.
 	// Path: catalog/frontend/list_mode
 	// SourceModel: Magento\Catalog\Model\Config\Source\ListMode
-	CatalogFrontendListMode model.Str
+	CatalogFrontendListMode cfgmodel.Str
 
 	// CatalogFrontendGridPerPageValues => Products per Page on Grid Allowed Values.
 	// Comma-separated.
 	// Path: catalog/frontend/grid_per_page_values
-	CatalogFrontendGridPerPageValues model.Str
+	CatalogFrontendGridPerPageValues cfgmodel.Str
 
 	// CatalogFrontendGridPerPage => Products per Page on Grid Default Value.
 	// Must be in the allowed values list
 	// Path: catalog/frontend/grid_per_page
-	CatalogFrontendGridPerPage model.Str
+	CatalogFrontendGridPerPage cfgmodel.Str
 
 	// CatalogFrontendListPerPageValues => Products per Page on List Allowed Values.
 	// Comma-separated.
 	// Path: catalog/frontend/list_per_page_values
-	CatalogFrontendListPerPageValues model.Str
+	CatalogFrontendListPerPageValues cfgmodel.Str
 
 	// CatalogFrontendListPerPage => Products per Page on List Default Value.
 	// Must be in the allowed values list
 	// Path: catalog/frontend/list_per_page
-	CatalogFrontendListPerPage model.Str
+	CatalogFrontendListPerPage cfgmodel.Str
 
 	// CatalogFrontendFlatCatalogCategory => Use Flat Catalog Category.
 	// Path: catalog/frontend/flat_catalog_category
 	// BackendModel: Magento\Catalog\Model\Indexer\Category\Flat\System\Config\Mode
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CatalogFrontendFlatCatalogCategory model.Bool
+	CatalogFrontendFlatCatalogCategory cfgmodel.Bool
 
 	// CatalogFrontendFlatCatalogProduct => Use Flat Catalog Product.
 	// Path: catalog/frontend/flat_catalog_product
 	// BackendModel: Magento\Catalog\Model\Indexer\Product\Flat\System\Config\Mode
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CatalogFrontendFlatCatalogProduct model.Bool
+	CatalogFrontendFlatCatalogProduct cfgmodel.Bool
 
 	// CatalogFrontendDefaultSortBy => Product Listing Sort by.
 	// Path: catalog/frontend/default_sort_by
 	// SourceModel: Magento\Catalog\Model\Config\Source\ListSort
-	CatalogFrontendDefaultSortBy model.Str
+	CatalogFrontendDefaultSortBy cfgmodel.Str
 
 	// CatalogFrontendListAllowAll => Allow All Products per Page.
 	// Whether to show "All" option in the "Show X Per Page" dropdown
 	// Path: catalog/frontend/list_allow_all
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CatalogFrontendListAllowAll model.Bool
+	CatalogFrontendListAllowAll cfgmodel.Bool
 
 	// CatalogFrontendParseUrlDirectives => Allow Dynamic Media URLs in Products and Categories.
 	// E.g. {{media url="path/to/image.jpg"}} {{skin url="path/to/picture.gif"}}.
 	// Dynamic directives parsing impacts catalog performance.
 	// Path: catalog/frontend/parse_url_directives
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CatalogFrontendParseUrlDirectives model.Bool
+	CatalogFrontendParseUrlDirectives cfgmodel.Bool
 
 	// CatalogPlaceholderPlaceholder => .
 	// Path: catalog/placeholder/placeholder
 	// BackendModel: Magento\Config\Model\Config\Backend\Image
-	CatalogPlaceholderPlaceholder model.Str
+	CatalogPlaceholderPlaceholder cfgmodel.Str
 
 	// CatalogSeoTitleSeparator => Page Title Separator.
 	// Path: catalog/seo/title_separator
-	CatalogSeoTitleSeparator model.Str
+	CatalogSeoTitleSeparator cfgmodel.Str
 
 	// CatalogSeoCategoryCanonicalTag => Use Canonical Link Meta Tag For Categories.
 	// Path: catalog/seo/category_canonical_tag
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CatalogSeoCategoryCanonicalTag model.Bool
+	CatalogSeoCategoryCanonicalTag cfgmodel.Bool
 
 	// CatalogSeoProductCanonicalTag => Use Canonical Link Meta Tag For Products.
 	// Path: catalog/seo/product_canonical_tag
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CatalogSeoProductCanonicalTag model.Bool
+	CatalogSeoProductCanonicalTag cfgmodel.Bool
 
 	// CatalogPriceScope => Catalog Price Scope.
 	// This defines the base currency scope ("Currency Setup" > "Currency Options"
@@ -128,50 +128,50 @@ type PkgBackend struct {
 	// Path: catalog/price/scope
 	// BackendModel: Magento\Catalog\Model\Indexer\Product\Price\System\Config\PriceScope
 	// SourceModel: Magento\Catalog\Model\Config\Source\Price\Scope
-	CatalogPriceScope configPriceScope
+	CatalogPriceScope PriceScope
 
 	// CatalogNavigationMaxDepth => Maximal Depth.
 	// Path: catalog/navigation/max_depth
-	CatalogNavigationMaxDepth model.Str
+	CatalogNavigationMaxDepth cfgmodel.Str
 
 	// CatalogCustomOptionsUseCalendar => Use JavaScript Calendar.
 	// Path: catalog/custom_options/use_calendar
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CatalogCustomOptionsUseCalendar model.Bool
+	CatalogCustomOptionsUseCalendar cfgmodel.Bool
 
 	// CatalogCustomOptionsDateFieldsOrder => Date Fields Order.
 	// Path: catalog/custom_options/date_fields_order
-	CatalogCustomOptionsDateFieldsOrder model.Str
+	CatalogCustomOptionsDateFieldsOrder cfgmodel.Str
 
 	// CatalogCustomOptionsTimeFormat => Time Format.
 	// Path: catalog/custom_options/time_format
 	// SourceModel: Magento\Catalog\Model\Config\Source\TimeFormat
-	CatalogCustomOptionsTimeFormat model.Str
+	CatalogCustomOptionsTimeFormat cfgmodel.Str
 
 	// CatalogCustomOptionsYearRange => Year Range.
 	// Please use a four-digit year format.
 	// Path: catalog/custom_options/year_range
-	CatalogCustomOptionsYearRange model.Str
+	CatalogCustomOptionsYearRange cfgmodel.Str
 
 	// DesignWatermarkSize => Watermark Default Size.
 	// Example format: 200x300.
 	// Path: design/watermark/size
-	DesignWatermarkSize model.Str
+	DesignWatermarkSize cfgmodel.Str
 
 	// DesignWatermarkImageOpacity => Watermark Opacity, Percent.
 	// Path: design/watermark/imageOpacity
-	DesignWatermarkImageOpacity model.Str
+	DesignWatermarkImageOpacity cfgmodel.Str
 
 	// DesignWatermarkImage => Watermark.
 	// Allowed file types: jpeg, gif, png.
 	// Path: design/watermark/image
 	// BackendModel: Magento\Config\Model\Config\Backend\Image
-	DesignWatermarkImage model.Str
+	DesignWatermarkImage cfgmodel.Str
 
 	// DesignWatermarkPosition => Watermark Position.
 	// Path: design/watermark/position
 	// SourceModel: Magento\Catalog\Model\Config\Source\Watermark\Position
-	DesignWatermarkPosition model.Str
+	DesignWatermarkPosition cfgmodel.Str
 
 	// CmsWysiwygUseStaticUrlsInCatalog => Use Static URLs for Media Content in WYSIWYG for Catalog.
 	// This applies only to catalog products and categories. Media content will be
@@ -179,22 +179,22 @@ type PkgBackend struct {
 	// the system configuration base URL changes.
 	// Path: cms/wysiwyg/use_static_urls_in_catalog
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CmsWysiwygUseStaticUrlsInCatalog model.Bool
+	CmsWysiwygUseStaticUrlsInCatalog cfgmodel.Bool
 
 	// RssCatalogNew => New Products.
 	// Path: rss/catalog/new
 	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
-	RssCatalogNew model.Bool
+	RssCatalogNew cfgmodel.Bool
 
 	// RssCatalogSpecial => Special Products.
 	// Path: rss/catalog/special
 	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
-	RssCatalogSpecial model.Bool
+	RssCatalogSpecial cfgmodel.Bool
 
 	// RssCatalogCategory => Top Level Category.
 	// Path: rss/catalog/category
 	// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
-	RssCatalogCategory model.Bool
+	RssCatalogCategory cfgmodel.Bool
 }
 
 // NewBackend initializes the global Backend variable. See init()
@@ -205,38 +205,38 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogFieldsMasksSku = model.NewStr(`catalog/fields_masks/sku`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFieldsMasksMetaTitle = model.NewStr(`catalog/fields_masks/meta_title`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFieldsMasksMetaKeyword = model.NewStr(`catalog/fields_masks/meta_keyword`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFieldsMasksMetaDescription = model.NewStr(`catalog/fields_masks/meta_description`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendListMode = model.NewStr(`catalog/frontend/list_mode`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendGridPerPageValues = model.NewStr(`catalog/frontend/grid_per_page_values`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendGridPerPage = model.NewStr(`catalog/frontend/grid_per_page`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendListPerPageValues = model.NewStr(`catalog/frontend/list_per_page_values`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendListPerPage = model.NewStr(`catalog/frontend/list_per_page`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendFlatCatalogCategory = model.NewBool(`catalog/frontend/flat_catalog_category`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendFlatCatalogProduct = model.NewBool(`catalog/frontend/flat_catalog_product`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendDefaultSortBy = model.NewStr(`catalog/frontend/default_sort_by`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendListAllowAll = model.NewBool(`catalog/frontend/list_allow_all`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendParseUrlDirectives = model.NewBool(`catalog/frontend/parse_url_directives`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogPlaceholderPlaceholder = model.NewStr(`catalog/placeholder/placeholder`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogSeoTitleSeparator = model.NewStr(`catalog/seo/title_separator`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogSeoCategoryCanonicalTag = model.NewBool(`catalog/seo/category_canonical_tag`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogSeoProductCanonicalTag = model.NewBool(`catalog/seo/product_canonical_tag`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogPriceScope = NewConfigPriceScope(`catalog/price/scope`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogNavigationMaxDepth = model.NewStr(`catalog/navigation/max_depth`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogCustomOptionsUseCalendar = model.NewBool(`catalog/custom_options/use_calendar`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogCustomOptionsDateFieldsOrder = model.NewStr(`catalog/custom_options/date_fields_order`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogCustomOptionsTimeFormat = model.NewStr(`catalog/custom_options/time_format`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogCustomOptionsYearRange = model.NewStr(`catalog/custom_options/year_range`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignWatermarkSize = model.NewStr(`design/watermark/size`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignWatermarkImageOpacity = model.NewStr(`design/watermark/imageOpacity`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignWatermarkImage = model.NewStr(`design/watermark/image`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignWatermarkPosition = model.NewStr(`design/watermark/position`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CmsWysiwygUseStaticUrlsInCatalog = model.NewBool(`cms/wysiwyg/use_static_urls_in_catalog`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.RssCatalogNew = model.NewBool(`rss/catalog/new`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.RssCatalogSpecial = model.NewBool(`rss/catalog/special`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.RssCatalogCategory = model.NewBool(`rss/catalog/category`, model.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogFieldsMasksSku = cfgmodel.NewStr(`catalog/fields_masks/sku`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogFieldsMasksMetaTitle = cfgmodel.NewStr(`catalog/fields_masks/meta_title`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogFieldsMasksMetaKeyword = cfgmodel.NewStr(`catalog/fields_masks/meta_keyword`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogFieldsMasksMetaDescription = cfgmodel.NewStr(`catalog/fields_masks/meta_description`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogFrontendListMode = cfgmodel.NewStr(`catalog/frontend/list_mode`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogFrontendGridPerPageValues = cfgmodel.NewStr(`catalog/frontend/grid_per_page_values`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogFrontendGridPerPage = cfgmodel.NewStr(`catalog/frontend/grid_per_page`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogFrontendListPerPageValues = cfgmodel.NewStr(`catalog/frontend/list_per_page_values`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogFrontendListPerPage = cfgmodel.NewStr(`catalog/frontend/list_per_page`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogFrontendFlatCatalogCategory = cfgmodel.NewBool(`catalog/frontend/flat_catalog_category`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogFrontendFlatCatalogProduct = cfgmodel.NewBool(`catalog/frontend/flat_catalog_product`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogFrontendDefaultSortBy = cfgmodel.NewStr(`catalog/frontend/default_sort_by`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogFrontendListAllowAll = cfgmodel.NewBool(`catalog/frontend/list_allow_all`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogFrontendParseUrlDirectives = cfgmodel.NewBool(`catalog/frontend/parse_url_directives`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogPlaceholderPlaceholder = cfgmodel.NewStr(`catalog/placeholder/placeholder`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSeoTitleSeparator = cfgmodel.NewStr(`catalog/seo/title_separator`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSeoCategoryCanonicalTag = cfgmodel.NewBool(`catalog/seo/category_canonical_tag`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogSeoProductCanonicalTag = cfgmodel.NewBool(`catalog/seo/product_canonical_tag`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogPriceScope = NewPriceScope(`catalog/price/scope`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogNavigationMaxDepth = cfgmodel.NewStr(`catalog/navigation/max_depth`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogCustomOptionsUseCalendar = cfgmodel.NewBool(`catalog/custom_options/use_calendar`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogCustomOptionsDateFieldsOrder = cfgmodel.NewStr(`catalog/custom_options/date_fields_order`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogCustomOptionsTimeFormat = cfgmodel.NewStr(`catalog/custom_options/time_format`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CatalogCustomOptionsYearRange = cfgmodel.NewStr(`catalog/custom_options/year_range`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignWatermarkSize = cfgmodel.NewStr(`design/watermark/size`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignWatermarkImageOpacity = cfgmodel.NewStr(`design/watermark/imageOpacity`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignWatermarkImage = cfgmodel.NewStr(`design/watermark/image`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.DesignWatermarkPosition = cfgmodel.NewStr(`design/watermark/position`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.CmsWysiwygUseStaticUrlsInCatalog = cfgmodel.NewBool(`cms/wysiwyg/use_static_urls_in_catalog`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.RssCatalogNew = cfgmodel.NewBool(`rss/catalog/new`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.RssCatalogSpecial = cfgmodel.NewBool(`rss/catalog/special`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+	pp.RssCatalogCategory = cfgmodel.NewBool(`rss/catalog/category`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
 	return pp
 }

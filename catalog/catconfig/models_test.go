@@ -22,5 +22,5 @@ import (
 
 func TestConfigPriceScope(t *testing.T) {
 	t.Skip("todo")
-	_ = catconfig.NewConfigPriceScope("a/b/c")
+	_ = catconfig.NewPriceScope("a/b/c")
 }

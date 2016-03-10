@@ -3,7 +3,7 @@ package backend_test
 import (
 	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/source"
 	"testing"
 )
@@ -29,7 +29,7 @@ func Benchmark_StructSpecific(b *testing.B) {
 
 	sg := config.NewMockGetter().NewScoped(1, 1, 1)
 
-	mb := model.NewBool("aa/bb/cc", model.WithFieldFromSectionSlice(backend.ConfigStructure), model.WithSource(source.YesNo))
+	mb := cfgmodel.NewBool("aa/bb/cc", cfgmodel.WithFieldFromSectionSlice(backend.ConfigStructure), cfgmodel.WithSource(source.YesNo))
 
 	b.ResetTimer()
 	b.ReportAllocs()
