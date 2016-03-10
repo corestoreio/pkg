@@ -125,12 +125,12 @@ func WithPV(pv PathValue) OptionFunc {
 	}
 }
 
-// WithContextGetter adds a mock.Service to a context.
+// WithContextGetter adds a cfgmock.Service to a context.
 func WithContextGetter(ctx context.Context, opts ...OptionFunc) context.Context {
 	return context.WithValue(ctx, cfgctx.KeyGetter{}, NewService(opts...))
 }
 
-// WithContextScopedGetter adds a scoped mock.Service to a context.
+// WithContextScopedGetter adds a scoped cfgmock.Service to a context.
 func WithContextScopedGetter(websiteID, storeID int64, ctx context.Context, opts ...OptionFunc) context.Context {
 	return context.WithValue(ctx, cfgctx.KeyScopedGetter{}, NewService(opts...).NewScoped(websiteID, storeID))
 }

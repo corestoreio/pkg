@@ -19,8 +19,8 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/mock"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/storage/text"
@@ -96,18 +96,18 @@ func TestBaseValueString(t *testing.T) {
 	wantWebsiteID := int64(2) // This number 2 is usually stored in core_website/store_website table in column website_id
 	wantPath := path.MustNewByParts(pathWebCorsHeaders).Bind(scope.WebsiteID, wantWebsiteID)
 
-	mw := new(mock.Write)
+	mw := new(cfgmock.Write)
 	assert.NoError(t, p1.Write(mw, "314159", scope.WebsiteID, wantWebsiteID))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, "314159", mw.ArgValue.(string))
 
-	sg := mock.NewService().NewScoped(wantWebsiteID, 0)
+	sg := cfgmock.NewService().NewScoped(wantWebsiteID, 0)
 	defaultStr, err := p1.Get(sg)
 	assert.NoError(t, err)
 	assert.Exactly(t, "Content-Type,X-CoreStore-ID", defaultStr)
 
-	sg = mock.NewService(
-		mock.WithPV(mock.PathValue{
+	sg = cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{
 			wantPath.String(): "X-CoreStore-TOKEN",
 		}),
 	).NewScoped(wantWebsiteID, 0)
@@ -121,7 +121,7 @@ func TestBaseValueString(t *testing.T) {
 	assert.NoError(t, err)
 	f.Default = "Content-Size,Y-CoreStore-ID"
 
-	ws, err := p1.Get(mock.NewService().NewScoped(wantWebsiteID, 0))
+	ws, err := p1.Get(cfgmock.NewService().NewScoped(wantWebsiteID, 0))
 	assert.NoError(t, err)
 	assert.Exactly(t, "Content-Size,Y-CoreStore-ID", ws)
 }
@@ -134,27 +134,27 @@ func TestBaseValueInScope(t *testing.T) {
 		wantErr error
 	}{
 		{
-			mock.NewService().NewScoped(0, 0),
+			cfgmock.NewService().NewScoped(0, 0),
 			scope.PermWebsite,
 			nil,
 		},
 		{
-			mock.NewService().NewScoped(0, 4),
+			cfgmock.NewService().NewScoped(0, 4),
 			scope.PermStore,
 			nil,
 		},
 		{
-			mock.NewService().NewScoped(4, 0),
+			cfgmock.NewService().NewScoped(4, 0),
 			scope.PermStore,
 			nil,
 		},
 		{
-			mock.NewService().NewScoped(0, 4),
+			cfgmock.NewService().NewScoped(0, 4),
 			scope.PermWebsite,
 			errors.New("Scope permission insufficient: Have 'Store'; Want 'Default,Website'"),
 		},
 		{
-			mock.NewService().NewScoped(4, 0),
+			cfgmock.NewService().NewScoped(4, 0),
 			scope.PermDefault,
 			errors.New("Scope permission insufficient: Have 'Website'; Want 'Default'"),
 		},

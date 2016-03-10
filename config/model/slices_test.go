@@ -19,7 +19,7 @@ import (
 
 	"errors"
 
-	"github.com/corestoreio/csfw/config/mock"
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/config/source"
@@ -40,7 +40,7 @@ func TestStringCSVGet(t *testing.T) {
 	)
 	assert.NotEmpty(t, b.Options())
 
-	sl, err := b.Get(mock.NewService().NewScoped(0, 0))
+	sl, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
 	assert.NoError(t, err)
 	assert.Exactly(t, []string{"Content-Type", "X-CoreStore-ID"}, sl) // default values from variable configStructure
 
@@ -56,8 +56,8 @@ func TestStringCSVGet(t *testing.T) {
 		// todo add errors
 	}
 	for i, test := range tests {
-		haveSL, haveErr := b.Get(mock.NewService(
-			mock.WithPV(mock.PathValue{
+		haveSL, haveErr := b.Get(cfgmock.NewService(
+			cfgmock.WithPV(cfgmock.PathValue{
 				wantPath: test.have,
 			}),
 		).NewScoped(1, 0)) // 1,0 because scope of pathWebCorsHeaders is default,website
@@ -83,7 +83,7 @@ func TestStringCSVWrite(t *testing.T) {
 		),
 	)
 
-	mw := &mock.Write{}
+	mw := &cfgmock.Write{}
 	b.Source.Merge(source.NewByString("a", "a", "b", "b", "c", "c"))
 
 	assert.NoError(t, b.Write(mw, []string{"a", "b", "c"}, scope.DefaultID, 0))
@@ -112,8 +112,8 @@ func TestStringCSVCustomSeparator(t *testing.T) {
 	)
 	wantPath := path.MustNewByParts(cfgPath).String() // Default Scope
 
-	haveSL, haveErr := b.Get(mock.NewService(
-		mock.WithPV(mock.PathValue{
+	haveSL, haveErr := b.Get(cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{
 			wantPath: `20152016`,
 		}),
 	).NewScoped(34, 4))
@@ -142,7 +142,7 @@ func TestIntCSV(t *testing.T) {
 	assert.Len(t, b.Options(), 4)
 	assert.Exactly(t, pathWebCorsIntSlice, b.String())
 	// default values:
-	sl, err := b.Get(mock.NewService().NewScoped(0, 4))
+	sl, err := b.Get(cfgmock.NewService().NewScoped(0, 4))
 	assert.NoError(t, err)
 	assert.Exactly(t, []int{2014, 2015, 2016}, sl) // three years are defined in variable configStructure
 
@@ -162,8 +162,8 @@ func TestIntCSV(t *testing.T) {
 	}
 	for i, test := range tests {
 		b.Lenient = test.lenient
-		haveSL, haveErr := b.Get(mock.NewService(
-			mock.WithPV(mock.PathValue{
+		haveSL, haveErr := b.Get(cfgmock.NewService(
+			cfgmock.WithPV(cfgmock.PathValue{
 				wantPath: test.have,
 			}),
 		).NewScoped(0, 4))
@@ -194,7 +194,7 @@ func TestIntCSVWrite(t *testing.T) {
 	)
 	wantPath := path.MustNewByParts(pathWebCorsIntSlice).Bind(scope.StoreID, 4).String()
 
-	mw := &mock.Write{}
+	mw := &cfgmock.Write{}
 	b.Source.Merge(source.NewByInt(source.Ints{
 		{2018, "Year 2018"},
 	}))
@@ -225,8 +225,8 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 	)
 	wantPath := path.MustNewByParts(pathWebCorsIntSlice).Bind(scope.WebsiteID, 34).String()
 
-	haveSL, haveErr := b.Get(mock.NewService(
-		mock.WithPV(mock.PathValue{
+	haveSL, haveErr := b.Get(cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{
 			wantPath: `2015|2016|`,
 		}),
 	).NewScoped(34, 4))

@@ -17,7 +17,7 @@ package model_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/config/mock"
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
@@ -32,14 +32,14 @@ func TestBaseURLGet(t *testing.T) {
 
 	assert.Empty(t, b.Options())
 
-	sg, err := b.Get(mock.NewService().NewScoped(0, 1))
+	sg, err := b.Get(cfgmock.NewService().NewScoped(0, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, "{{base_url}}", sg)
 
-	sg, err = b.Get(mock.NewService(
-		mock.WithPV(mock.PathValue{
+	sg, err = b.Get(cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{
 			wantPath.String(): "http://cs.io",
 		}),
 	).NewScoped(0, 1))
@@ -56,7 +56,7 @@ func TestBaseURLWrite(t *testing.T) {
 	wantPath := path.MustNewByParts(pathWebUnsecUrl).Bind(scope.StoreID, 1)
 	b := model.NewBaseURL(pathWebUnsecUrl, model.WithFieldFromSectionSlice(configStructure))
 
-	mw := &mock.Write{}
+	mw := &cfgmock.Write{}
 	assert.NoError(t, b.Write(mw, "dude", scope.StoreID, 1))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, "dude", mw.ArgValue.(string))

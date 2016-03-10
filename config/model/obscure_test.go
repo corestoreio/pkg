@@ -17,7 +17,7 @@ package model_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/config/mock"
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/model"
 	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/store/scope"
@@ -61,8 +61,8 @@ func TestObscure(t *testing.T) {
 	)
 	wantPath := path.MustNewByParts(cfgPath).String() // Default Scope
 
-	haveSL, haveErr := b.Get(mock.NewService(
-		mock.WithPV(mock.PathValue{
+	haveSL, haveErr := b.Get(cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{
 			wantPath: wantCiphered,
 		}),
 	).NewScoped(34, 4))
@@ -71,7 +71,7 @@ func TestObscure(t *testing.T) {
 	}
 	assert.Exactly(t, wantPlain, haveSL)
 
-	mw := new(mock.Write)
+	mw := new(cfgmock.Write)
 	b.Write(mw, wantPlain, scope.StoreID, 12)
 	assert.Exactly(t, wantCiphered, mw.ArgValue)
 	assert.Exactly(t, "stores/12/aa/bb/cc", mw.ArgPath)

@@ -61,7 +61,7 @@ type scopedService struct {
 var _ ScopedGetter = (*scopedService)(nil)
 
 // NewScopedService instantiates a ScopedGetter implementation.
-// For internal use only. Exported because of the config/mock package.
+// For internal use only. Exported because of the config/cfgmock package.
 func NewScopedService(r Getter, websiteID, storeID int64) scopedService {
 	return scopedService{
 		root:      r,
