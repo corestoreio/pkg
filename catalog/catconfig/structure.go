@@ -21,12 +21,21 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-// ConfigStructure global configuration structure for this package.
-// Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+// MustNewConfigStructure same as NewConfigStructure() but panics on error.
+func MustNewConfigStructure() element.SectionSlice {
+	ss, err := NewConfigStructure()
+	if err != nil {
+		panic(err)
+	}
+	return ss
+}
 
-func init() {
-	ConfigStructure = element.MustNewConfiguration(
+// NewConfigStructure global configuration structure for this package.
+// Used in frontend (to display the user all the settings) and in
+// backend (scope checks and default values). See the source code
+// of this function for the overall available sections, groups and fields.
+func NewConfigStructure() (element.SectionSlice, error) {
+	return element.NewConfiguration(
 		&element.Section{
 			ID:        cfgpath.NewRoute("catalog"),
 			Label:     text.Chars(`Catalog`),
@@ -591,5 +600,4 @@ func init() {
 			),
 		},
 	)
-	Backend = NewBackend(ConfigStructure)
 }

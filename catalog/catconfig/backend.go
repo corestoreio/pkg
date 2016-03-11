@@ -19,9 +19,6 @@ import (
 	"github.com/corestoreio/csfw/config/element"
 )
 
-// Backend will be initialized in the init() function together with ConfigStructure.
-var Backend *PkgBackend
-
 // PkgBackend just exported for the sake of documentation. See fields
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
@@ -197,46 +194,55 @@ type PkgBackend struct {
 	RssCatalogCategory cfgmodel.Bool
 }
 
-// NewBackend initializes the global Backend variable. See init()
+// NewBackend initializes the global configuration models containing the
+// cfgpath.Route variable to the appropriate entry.
+// The function Load() will be executed to apply the SectionSlice
+// to all models. See Load() for more details.
 func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
-	return (&PkgBackend{}).init(cfgStruct)
+	return (&PkgBackend{}).Load(cfgStruct)
 }
 
-func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
+// Load creates the configuration models for each PkgBackend field.
+// Internal mutex will protect the fields during loading.
+// The argument SectionSlice will be applied to all models.
+func (pp *PkgBackend) Load(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CatalogFieldsMasksSku = cfgmodel.NewStr(`catalog/fields_masks/sku`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFieldsMasksMetaTitle = cfgmodel.NewStr(`catalog/fields_masks/meta_title`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFieldsMasksMetaKeyword = cfgmodel.NewStr(`catalog/fields_masks/meta_keyword`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFieldsMasksMetaDescription = cfgmodel.NewStr(`catalog/fields_masks/meta_description`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendListMode = cfgmodel.NewStr(`catalog/frontend/list_mode`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendGridPerPageValues = cfgmodel.NewStr(`catalog/frontend/grid_per_page_values`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendGridPerPage = cfgmodel.NewStr(`catalog/frontend/grid_per_page`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendListPerPageValues = cfgmodel.NewStr(`catalog/frontend/list_per_page_values`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendListPerPage = cfgmodel.NewStr(`catalog/frontend/list_per_page`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendFlatCatalogCategory = cfgmodel.NewBool(`catalog/frontend/flat_catalog_category`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendFlatCatalogProduct = cfgmodel.NewBool(`catalog/frontend/flat_catalog_product`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendDefaultSortBy = cfgmodel.NewStr(`catalog/frontend/default_sort_by`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendListAllowAll = cfgmodel.NewBool(`catalog/frontend/list_allow_all`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogFrontendParseUrlDirectives = cfgmodel.NewBool(`catalog/frontend/parse_url_directives`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogPlaceholderPlaceholder = cfgmodel.NewStr(`catalog/placeholder/placeholder`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogSeoTitleSeparator = cfgmodel.NewStr(`catalog/seo/title_separator`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogSeoCategoryCanonicalTag = cfgmodel.NewBool(`catalog/seo/category_canonical_tag`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogSeoProductCanonicalTag = cfgmodel.NewBool(`catalog/seo/product_canonical_tag`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogPriceScope = NewPriceScope(`catalog/price/scope`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogNavigationMaxDepth = cfgmodel.NewStr(`catalog/navigation/max_depth`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogCustomOptionsUseCalendar = cfgmodel.NewBool(`catalog/custom_options/use_calendar`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogCustomOptionsDateFieldsOrder = cfgmodel.NewStr(`catalog/custom_options/date_fields_order`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogCustomOptionsTimeFormat = cfgmodel.NewStr(`catalog/custom_options/time_format`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CatalogCustomOptionsYearRange = cfgmodel.NewStr(`catalog/custom_options/year_range`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignWatermarkSize = cfgmodel.NewStr(`design/watermark/size`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignWatermarkImageOpacity = cfgmodel.NewStr(`design/watermark/imageOpacity`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignWatermarkImage = cfgmodel.NewStr(`design/watermark/image`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.DesignWatermarkPosition = cfgmodel.NewStr(`design/watermark/position`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.CmsWysiwygUseStaticUrlsInCatalog = cfgmodel.NewBool(`cms/wysiwyg/use_static_urls_in_catalog`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.RssCatalogNew = cfgmodel.NewBool(`rss/catalog/new`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.RssCatalogSpecial = cfgmodel.NewBool(`rss/catalog/special`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
-	pp.RssCatalogCategory = cfgmodel.NewBool(`rss/catalog/category`, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
+
+	opt := cfgmodel.WithFieldFromSectionSlice(cfgStruct)
+
+	pp.CatalogFieldsMasksSku = cfgmodel.NewStr(`catalog/fields_masks/sku`, opt)
+	pp.CatalogFieldsMasksMetaTitle = cfgmodel.NewStr(`catalog/fields_masks/meta_title`, opt)
+	pp.CatalogFieldsMasksMetaKeyword = cfgmodel.NewStr(`catalog/fields_masks/meta_keyword`, opt)
+	pp.CatalogFieldsMasksMetaDescription = cfgmodel.NewStr(`catalog/fields_masks/meta_description`, opt)
+	pp.CatalogFrontendListMode = cfgmodel.NewStr(`catalog/frontend/list_mode`, opt)
+	pp.CatalogFrontendGridPerPageValues = cfgmodel.NewStr(`catalog/frontend/grid_per_page_values`, opt)
+	pp.CatalogFrontendGridPerPage = cfgmodel.NewStr(`catalog/frontend/grid_per_page`, opt)
+	pp.CatalogFrontendListPerPageValues = cfgmodel.NewStr(`catalog/frontend/list_per_page_values`, opt)
+	pp.CatalogFrontendListPerPage = cfgmodel.NewStr(`catalog/frontend/list_per_page`, opt)
+	pp.CatalogFrontendFlatCatalogCategory = cfgmodel.NewBool(`catalog/frontend/flat_catalog_category`, opt)
+	pp.CatalogFrontendFlatCatalogProduct = cfgmodel.NewBool(`catalog/frontend/flat_catalog_product`, opt)
+	pp.CatalogFrontendDefaultSortBy = cfgmodel.NewStr(`catalog/frontend/default_sort_by`, opt)
+	pp.CatalogFrontendListAllowAll = cfgmodel.NewBool(`catalog/frontend/list_allow_all`, opt)
+	pp.CatalogFrontendParseUrlDirectives = cfgmodel.NewBool(`catalog/frontend/parse_url_directives`, opt)
+	pp.CatalogPlaceholderPlaceholder = cfgmodel.NewStr(`catalog/placeholder/placeholder`, opt)
+	pp.CatalogSeoTitleSeparator = cfgmodel.NewStr(`catalog/seo/title_separator`, opt)
+	pp.CatalogSeoCategoryCanonicalTag = cfgmodel.NewBool(`catalog/seo/category_canonical_tag`, opt)
+	pp.CatalogSeoProductCanonicalTag = cfgmodel.NewBool(`catalog/seo/product_canonical_tag`, opt)
+	pp.CatalogPriceScope = NewPriceScope(`catalog/price/scope`, opt)
+	pp.CatalogNavigationMaxDepth = cfgmodel.NewStr(`catalog/navigation/max_depth`, opt)
+	pp.CatalogCustomOptionsUseCalendar = cfgmodel.NewBool(`catalog/custom_options/use_calendar`, opt)
+	pp.CatalogCustomOptionsDateFieldsOrder = cfgmodel.NewStr(`catalog/custom_options/date_fields_order`, opt)
+	pp.CatalogCustomOptionsTimeFormat = cfgmodel.NewStr(`catalog/custom_options/time_format`, opt)
+	pp.CatalogCustomOptionsYearRange = cfgmodel.NewStr(`catalog/custom_options/year_range`, opt)
+	pp.DesignWatermarkSize = cfgmodel.NewStr(`design/watermark/size`, opt)
+	pp.DesignWatermarkImageOpacity = cfgmodel.NewStr(`design/watermark/imageOpacity`, opt)
+	pp.DesignWatermarkImage = cfgmodel.NewStr(`design/watermark/image`, opt)
+	pp.DesignWatermarkPosition = cfgmodel.NewStr(`design/watermark/position`, opt)
+	pp.CmsWysiwygUseStaticUrlsInCatalog = cfgmodel.NewBool(`cms/wysiwyg/use_static_urls_in_catalog`, opt)
+	pp.RssCatalogNew = cfgmodel.NewBool(`rss/catalog/new`, opt)
+	pp.RssCatalogSpecial = cfgmodel.NewBool(`rss/catalog/special`, opt)
+	pp.RssCatalogCategory = cfgmodel.NewBool(`rss/catalog/category`, opt)
 
 	return pp
 }
