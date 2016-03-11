@@ -15,18 +15,15 @@
 package directory
 
 import (
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/model"
 )
-
-// Backend will be initialized in the init() function together with ConfigStructure.
-var Backend *PkgBackend
 
 // PkgBackend just exported for the sake of documentation. See fields
 // for more information. The PkgBackend handles the reading and writing
 // of configuration values within this package.
 type PkgBackend struct {
-	model.PkgBackend
+	cfgmodel.PkgBackend
 
 	// CurrencyOptionsBase => Base Currency.
 	// Base currency is used for all online payment transactions. If you have more
@@ -47,47 +44,47 @@ type PkgBackend struct {
 	// Path: currency/options/allow
 	// BackendModel: Magento\Config\Model\Config\Backend\Currency\Allow
 	// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
-	CurrencyOptionsAllow model.StringCSV
+	CurrencyOptionsAllow cfgmodel.StringCSV
 
 	// CurrencyWebservicexTimeout => Connection Timeout in Seconds.
 	// Path: currency/webservicex/timeout
-	CurrencyWebservicexTimeout model.Str
+	CurrencyWebservicexTimeout cfgmodel.Str
 
 	// CurrencyImportEnabled => Enabled.
 	// Path: currency/import/enabled
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	CurrencyImportEnabled model.Bool
+	CurrencyImportEnabled cfgmodel.Bool
 
 	// CurrencyImportErrorEmail => Error Email Recipient.
 	// Path: currency/import/error_email
-	CurrencyImportErrorEmail model.Str
+	CurrencyImportErrorEmail cfgmodel.Str
 
 	// CurrencyImportErrorEmailIdentity => Error Email Sender.
 	// Path: currency/import/error_email_identity
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
-	CurrencyImportErrorEmailIdentity model.Str
+	CurrencyImportErrorEmailIdentity cfgmodel.Str
 
 	// CurrencyImportErrorEmailTemplate => Error Email Template.
 	// Email template chosen based on theme fallback when "Default" option is
 	// selected.
 	// Path: currency/import/error_email_template
 	// SourceModel: Magento\Config\Model\Config\Source\Email\Template
-	CurrencyImportErrorEmailTemplate model.Str
+	CurrencyImportErrorEmailTemplate cfgmodel.Str
 
 	// CurrencyImportFrequency => Frequency.
 	// Path: currency/import/frequency
 	// SourceModel: Magento\Cron\Model\Config\Source\Frequency
-	CurrencyImportFrequency model.Str
+	CurrencyImportFrequency cfgmodel.Str
 
 	// CurrencyImportService => Service.
 	// Path: currency/import/service
 	// BackendModel: Magento\Config\Model\Config\Backend\Currency\Cron
 	// SourceModel: Magento\Directory\Model\Currency\Import\Source\Service
-	CurrencyImportService model.Str
+	CurrencyImportService cfgmodel.Str
 
 	// CurrencyImportTime => Start Time.
 	// Path: currency/import/time
-	CurrencyImportTime model.Str
+	CurrencyImportTime cfgmodel.Str
 
 	// SystemCurrencyInstalled => Installed Currencies.
 	// Defines all installed and available currencies.
@@ -107,95 +104,104 @@ type PkgBackend struct {
 	//	storeLocale, err := sca.mc.Config.String(config.Path(PathDefaultLocale), config.ScopeStore(sca.mc.ScopeStore.StoreID()))
 	//	return nil
 	//}
-	SystemCurrencyInstalled model.StringCSV
+	SystemCurrencyInstalled cfgmodel.StringCSV
 
 	// GeneralCountryOptionalZipCountries => Zip/Postal Code is Optional for.
 	// Path: general/country/optional_zip_countries
 	// SourceModel: Magento\Directory\Model\Config\Source\Country
-	GeneralCountryOptionalZipCountries model.StringCSV
+	GeneralCountryOptionalZipCountries cfgmodel.StringCSV
 
 	// PathGeneralCountryAllow per store view allowed list of countries
 	// SourceModel: Magento\Directory\Model\Config\Source\Country
-	GeneralCountryAllow model.StringCSV
+	GeneralCountryAllow cfgmodel.StringCSV
 
 	// PathGeneralCountryDefault returns the store view default configured country code.
 	// SourceModel: Magento\Directory\Model\Config\Source\Country
-	GeneralCountryDefault model.Str
+	GeneralCountryDefault cfgmodel.Str
 
 	// PathGeneralCountryEuCountries => European Union Countries.
 	// SourceModel: Magento\Directory\Model\Config\Source\Country
-	GeneralCountryEuCountries model.StringCSV
+	GeneralCountryEuCountries cfgmodel.StringCSV
 
 	// PathGeneralCountryDestinations contains codes of the most used countries.
 	// Such countries can be shown on the top of the country list.
 	// SourceModel: Magento\Directory\Model\Config\Source\Country
-	GeneralCountryDestinations model.StringCSV
+	GeneralCountryDestinations cfgmodel.StringCSV
 
 	// PathGeneralLocaleTimezone => Timezone.
 	// BackendModel: Magento\Config\Model\Config\Backend\Locale\Timezone
 	// SourceModel: Magento\Config\Model\Config\Source\Locale\Timezone
-	GeneralLocaleTimezone model.Str
+	GeneralLocaleTimezone cfgmodel.Str
 
 	// PathGeneralLocaleCode => Locale.
 	// SourceModel: Magento\Config\Model\Config\Source\Locale
-	GeneralLocaleCode model.Str
+	GeneralLocaleCode cfgmodel.Str
 
 	// PathGeneralLocaleFirstday => First Day of Week.
 	// SourceModel: Magento\Config\Model\Config\Source\Locale\Weekdays
-	GeneralLocaleFirstday model.Str
+	GeneralLocaleFirstday cfgmodel.Str
 
 	// PathGeneralLocaleWeekend => Weekend Days.
 	// SourceModel: Magento\Config\Model\Config\Source\Locale\Weekdays
-	GeneralLocaleWeekend model.StringCSV
+	GeneralLocaleWeekend cfgmodel.StringCSV
 
 	// GeneralRegionStateRequired => State is Required for.
 	// Path: general/region/state_required
 	// SourceModel: Magento\Directory\Model\Config\Source\Country
-	GeneralRegionStateRequired model.StringCSV
+	GeneralRegionStateRequired cfgmodel.StringCSV
 
 	// GeneralRegionDisplayAll => Allow to Choose State if It is Optional for Country.
 	// Path: general/region/display_all
 	// SourceModel: Magento\Config\Model\Config\Source\Yesno
-	GeneralRegionDisplayAll model.Bool
+	GeneralRegionDisplayAll cfgmodel.Bool
 
 	// GeneralLocaleWeightUnit => Weight Unit.
 	// Path: general/locale/weight_unit
 	// SourceModel: Magento\Directory\Model\Config\Source\WeightUnit
-	GeneralLocaleWeightUnit model.Str
+	GeneralLocaleWeightUnit cfgmodel.Str
 }
 
-// NewBackend initializes the global Path variable. See init()
+// NewBackend initializes the global configuration models containing the
+// cfgpath.Route variable to the appropriate entry.
+// The function Load() will be executed to apply the SectionSlice
+// to all models. See Load() for more details.
 func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
-	return (&PkgBackend{}).init(cfgStruct)
+	return (&PkgBackend{}).Load(cfgStruct)
 }
 
-func (pp *PkgBackend) init(cfgStruct element.SectionSlice) *PkgBackend {
+// Load creates the configuration models for each PkgBackend field.
+// Internal mutex will protect the fields during loading.
+// The argument SectionSlice will be applied to all models.
+func (pp *PkgBackend) Load(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
-	pp.CurrencyOptionsBase = NewConfigCurrency(`currency/options/base`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CurrencyOptionsDefault = NewConfigCurrency(`currency/options/default`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CurrencyOptionsAllow = model.NewStringCSV(`currency/options/allow`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CurrencyWebservicexTimeout = model.NewStr(`currency/webservicex/timeout`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CurrencyImportEnabled = model.NewBool(`currency/import/enabled`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CurrencyImportErrorEmail = model.NewStr(`currency/import/error_email`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CurrencyImportErrorEmailIdentity = model.NewStr(`currency/import/error_email_identity`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CurrencyImportErrorEmailTemplate = model.NewStr(`currency/import/error_email_template`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CurrencyImportFrequency = model.NewStr(`currency/import/frequency`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CurrencyImportService = model.NewStr(`currency/import/service`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.CurrencyImportTime = model.NewStr(`currency/import/time`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.SystemCurrencyInstalled = model.NewStringCSV(`system/currency/installed`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralCountryOptionalZipCountries = model.NewStringCSV(`general/country/optional_zip_countries`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralCountryAllow = model.NewStringCSV(`general/country/allow`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralCountryDefault = model.NewStr(`general/country/default`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralCountryEuCountries = model.NewStringCSV(`general/country/eu_countries`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralCountryDestinations = model.NewStringCSV(`general/country/destinations`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralLocaleTimezone = model.NewStr(`general/locale/timezone`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralLocaleCode = model.NewStr(`general/locale/code`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralLocaleFirstday = model.NewStr(`general/locale/firstday`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralLocaleWeekend = model.NewStringCSV(`general/locale/weekend`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralRegionStateRequired = model.NewStringCSV(`general/region/state_required`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralRegionDisplayAll = model.NewBool(`general/region/display_all`, model.WithFieldFromSectionSlice(cfgStruct))
-	pp.GeneralLocaleWeightUnit = model.NewStr(`general/locale/weight_unit`, model.WithFieldFromSectionSlice(cfgStruct))
+
+	opt := cfgmodel.WithFieldFromSectionSlice(cfgStruct)
+
+	pp.CurrencyOptionsBase = NewConfigCurrency(`currency/options/base`, opt)
+	pp.CurrencyOptionsDefault = NewConfigCurrency(`currency/options/default`, opt)
+	pp.CurrencyOptionsAllow = cfgmodel.NewStringCSV(`currency/options/allow`, opt)
+	pp.CurrencyWebservicexTimeout = cfgmodel.NewStr(`currency/webservicex/timeout`, opt)
+	pp.CurrencyImportEnabled = cfgmodel.NewBool(`currency/import/enabled`, opt)
+	pp.CurrencyImportErrorEmail = cfgmodel.NewStr(`currency/import/error_email`, opt)
+	pp.CurrencyImportErrorEmailIdentity = cfgmodel.NewStr(`currency/import/error_email_identity`, opt)
+	pp.CurrencyImportErrorEmailTemplate = cfgmodel.NewStr(`currency/import/error_email_template`, opt)
+	pp.CurrencyImportFrequency = cfgmodel.NewStr(`currency/import/frequency`, opt)
+	pp.CurrencyImportService = cfgmodel.NewStr(`currency/import/service`, opt)
+	pp.CurrencyImportTime = cfgmodel.NewStr(`currency/import/time`, opt)
+	pp.SystemCurrencyInstalled = cfgmodel.NewStringCSV(`system/currency/installed`, opt)
+	pp.GeneralCountryOptionalZipCountries = cfgmodel.NewStringCSV(`general/country/optional_zip_countries`, opt)
+	pp.GeneralCountryAllow = cfgmodel.NewStringCSV(`general/country/allow`, opt)
+	pp.GeneralCountryDefault = cfgmodel.NewStr(`general/country/default`, opt)
+	pp.GeneralCountryEuCountries = cfgmodel.NewStringCSV(`general/country/eu_countries`, opt)
+	pp.GeneralCountryDestinations = cfgmodel.NewStringCSV(`general/country/destinations`, opt)
+	pp.GeneralLocaleTimezone = cfgmodel.NewStr(`general/locale/timezone`, opt)
+	pp.GeneralLocaleCode = cfgmodel.NewStr(`general/locale/code`, opt)
+	pp.GeneralLocaleFirstday = cfgmodel.NewStr(`general/locale/firstday`, opt)
+	pp.GeneralLocaleWeekend = cfgmodel.NewStringCSV(`general/locale/weekend`, opt)
+	pp.GeneralRegionStateRequired = cfgmodel.NewStringCSV(`general/region/state_required`, opt)
+	pp.GeneralRegionDisplayAll = cfgmodel.NewBool(`general/region/display_all`, opt)
+	pp.GeneralLocaleWeightUnit = cfgmodel.NewStr(`general/locale/weight_unit`, opt)
 
 	return pp
 }

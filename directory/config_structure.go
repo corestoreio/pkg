@@ -15,34 +15,43 @@
 package directory
 
 import (
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-// ConfigStructure global configuration structure for this package.
-// Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
+// MustNewConfigStructure same as NewConfigStructure() but panics on error.
+func MustNewConfigStructure() element.SectionSlice {
+	ss, err := NewConfigStructure()
+	if err != nil {
+		panic(err)
+	}
+	return ss
+}
 
-func init() {
-	ConfigStructure = element.MustNewConfiguration(
+// NewConfigStructure global configuration structure for this package.
+// Used in frontend (to display the user all the settings) and in
+// backend (scope checks and default values). See the source code
+// of this function for the overall available sections, groups and fields.
+func NewConfigStructure() (element.SectionSlice, error) {
+	return element.NewConfiguration(
 		&element.Section{
-			ID:        path.NewRoute("currency"),
+			ID:        cfgpath.NewRoute("currency"),
 			Label:     text.Chars(`Currency Setup`),
 			SortOrder: 60,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::currency
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:        path.NewRoute("options"),
+					ID:        cfgpath.NewRoute("options"),
 					Label:     text.Chars(`Currency Options`),
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: currency/options/base
-							ID:        path.NewRoute("base"),
+							ID:        cfgpath.NewRoute("base"),
 							Label:     text.Chars(`Base Currency`),
 							Comment:   text.Chars(`Base currency is used for all online payment transactions. If you have more than one store view, the base currency scope is defined by the catalog price scope ("Catalog" > "Price" > "Catalog Price Scope").`),
 							Type:      element.TypeSelect,
@@ -56,7 +65,7 @@ func init() {
 
 						&element.Field{
 							// Path: currency/options/default
-							ID:        path.NewRoute("default"),
+							ID:        cfgpath.NewRoute("default"),
 							Label:     text.Chars(`Default Display Currency`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
@@ -69,7 +78,7 @@ func init() {
 
 						&element.Field{
 							// Path: currency/options/allow
-							ID:         path.NewRoute("allow"),
+							ID:         cfgpath.NewRoute("allow"),
 							Label:      text.Chars(`Allowed Currencies`),
 							Type:       element.TypeMultiselect,
 							SortOrder:  3,
@@ -84,14 +93,14 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        path.NewRoute("webservicex"),
+					ID:        cfgpath.NewRoute("webservicex"),
 					Label:     text.Chars(`Webservicex`),
 					SortOrder: 40,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: currency/webservicex/timeout
-							ID:      path.NewRoute("timeout"),
+							ID:      cfgpath.NewRoute("timeout"),
 							Label:   text.Chars(`Connection Timeout in Seconds`),
 							Type:    element.TypeText,
 							Visible: element.VisibleYes,
@@ -102,14 +111,14 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        path.NewRoute("import"),
+					ID:        cfgpath.NewRoute("import"),
 					Label:     text.Chars(`Scheduled Import Settings`),
 					SortOrder: 50,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: currency/import/enabled
-							ID:        path.NewRoute("enabled"),
+							ID:        cfgpath.NewRoute("enabled"),
 							Label:     text.Chars(`Enabled`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
@@ -121,7 +130,7 @@ func init() {
 
 						&element.Field{
 							// Path: currency/import/error_email
-							ID:        path.NewRoute("error_email"),
+							ID:        cfgpath.NewRoute("error_email"),
 							Label:     text.Chars(`Error Email Recipient`),
 							Type:      element.TypeText,
 							SortOrder: 5,
@@ -131,7 +140,7 @@ func init() {
 
 						&element.Field{
 							// Path: currency/import/error_email_identity
-							ID:        path.NewRoute("error_email_identity"),
+							ID:        cfgpath.NewRoute("error_email_identity"),
 							Label:     text.Chars(`Error Email Sender`),
 							Type:      element.TypeSelect,
 							SortOrder: 6,
@@ -143,7 +152,7 @@ func init() {
 
 						&element.Field{
 							// Path: currency/import/error_email_template
-							ID:        path.NewRoute("error_email_template"),
+							ID:        cfgpath.NewRoute("error_email_template"),
 							Label:     text.Chars(`Error Email Template`),
 							Comment:   text.Chars(`Email template chosen based on theme fallback when "Default" option is selected.`),
 							Type:      element.TypeSelect,
@@ -156,7 +165,7 @@ func init() {
 
 						&element.Field{
 							// Path: currency/import/frequency
-							ID:        path.NewRoute("frequency"),
+							ID:        cfgpath.NewRoute("frequency"),
 							Label:     text.Chars(`Frequency`),
 							Type:      element.TypeSelect,
 							SortOrder: 4,
@@ -167,7 +176,7 @@ func init() {
 
 						&element.Field{
 							// Path: currency/import/service
-							ID:        path.NewRoute("service"),
+							ID:        cfgpath.NewRoute("service"),
 							Label:     text.Chars(`Service`),
 							Type:      element.TypeSelect,
 							SortOrder: 2,
@@ -179,7 +188,7 @@ func init() {
 
 						&element.Field{
 							// Path: currency/import/time
-							ID:        path.NewRoute("time"),
+							ID:        cfgpath.NewRoute("time"),
 							Label:     text.Chars(`Start Time`),
 							Type:      element.TypeTime,
 							SortOrder: 3,
@@ -191,17 +200,17 @@ func init() {
 			),
 		},
 		&element.Section{
-			ID: path.NewRoute("system"),
+			ID: cfgpath.NewRoute("system"),
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:        path.NewRoute("currency"),
+					ID:        cfgpath.NewRoute("currency"),
 					Label:     text.Chars(`Currency`),
 					SortOrder: 50,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: system/currency/installed
-							ID:         path.NewRoute("installed"),
+							ID:         cfgpath.NewRoute("installed"),
 							Label:      text.Chars(`Installed Currencies`),
 							Type:       element.TypeMultiselect,
 							SortOrder:  1,
@@ -217,17 +226,17 @@ func init() {
 			),
 		},
 		&element.Section{
-			ID: path.NewRoute("general"),
+			ID: cfgpath.NewRoute("general"),
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:        path.NewRoute("country"),
+					ID:        cfgpath.NewRoute("country"),
 					Label:     text.Chars(`Country Options`),
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/country/allow
-							ID:         path.NewRoute("allow"),
+							ID:         cfgpath.NewRoute("allow"),
 							Label:      text.Chars(`Allow Countries`),
 							Type:       element.TypeMultiselect,
 							SortOrder:  2,
@@ -240,7 +249,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/country/default
-							ID:        path.NewRoute("default"),
+							ID:        cfgpath.NewRoute("default"),
 							Label:     text.Chars(`Default Country`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
@@ -251,7 +260,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/country/eu_countries
-							ID:        path.NewRoute("eu_countries"),
+							ID:        cfgpath.NewRoute("eu_countries"),
 							Label:     text.Chars(`European Union Countries`),
 							Type:      element.TypeMultiselect,
 							SortOrder: 30,
@@ -262,7 +271,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/country/destinations
-							ID:        path.NewRoute("destinations"),
+							ID:        cfgpath.NewRoute("destinations"),
 							Label:     text.Chars(`Top destinations`),
 							Comment:   text.Chars(`Contains codes of the most used countries. Such countries can be shown on the top of the country list.`),
 							Type:      element.TypeMultiselect,
@@ -273,7 +282,7 @@ func init() {
 						},
 						&element.Field{
 							// Path: general/country/optional_zip_countries
-							ID:         path.NewRoute("optional_zip_countries"),
+							ID:         cfgpath.NewRoute("optional_zip_countries"),
 							Label:      text.Chars(`Zip/Postal Code is Optional for`),
 							Type:       element.TypeMultiselect,
 							SortOrder:  3,
@@ -287,14 +296,14 @@ func init() {
 				},
 
 				&element.Group{
-					ID:        path.NewRoute("locale"),
+					ID:        cfgpath.NewRoute("locale"),
 					Label:     text.Chars(`Locale Options`),
 					SortOrder: 8,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/locale/timezone
-							ID:        path.NewRoute("timezone"),
+							ID:        cfgpath.NewRoute("timezone"),
 							Label:     text.Chars(`Timezone`),
 							Type:      element.TypeSelect,
 							SortOrder: 1,
@@ -307,7 +316,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/code
-							ID:        path.NewRoute("code"),
+							ID:        cfgpath.NewRoute("code"),
 							Label:     text.Chars(`Locale`),
 							Type:      element.TypeSelect,
 							SortOrder: 5,
@@ -319,7 +328,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/firstday
-							ID:        path.NewRoute("firstday"),
+							ID:        cfgpath.NewRoute("firstday"),
 							Label:     text.Chars(`First Day of Week`),
 							Type:      element.TypeSelect,
 							SortOrder: 10,
@@ -330,7 +339,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/weekend
-							ID:         path.NewRoute("weekend"),
+							ID:         cfgpath.NewRoute("weekend"),
 							Label:      text.Chars(`Weekend Days`),
 							Type:       element.TypeMultiselect,
 							SortOrder:  15,
@@ -341,7 +350,7 @@ func init() {
 						},
 						&element.Field{
 							// Path: general/locale/weight_unit
-							ID:        path.NewRoute("weight_unit"),
+							ID:        cfgpath.NewRoute("weight_unit"),
 							Label:     text.Chars(`Weight Unit`),
 							Type:      element.TypeSelect,
 							SortOrder: 7,
@@ -353,14 +362,14 @@ func init() {
 					),
 				},
 				&element.Group{
-					ID:        path.NewRoute("region"),
+					ID:        cfgpath.NewRoute("region"),
 					Label:     text.Chars(`State Options`),
 					SortOrder: 4,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/region/state_required
-							ID:        path.NewRoute("state_required"),
+							ID:        cfgpath.NewRoute("state_required"),
 							Label:     text.Chars(`State is Required for`),
 							Type:      element.TypeMultiselect,
 							SortOrder: 1,
@@ -371,7 +380,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/region/display_all
-							ID:        path.NewRoute("display_all"),
+							ID:        cfgpath.NewRoute("display_all"),
 							Label:     text.Chars(`Allow to Choose State if It is Optional for Country`),
 							Type:      element.TypeSelect,
 							SortOrder: 8,
@@ -386,14 +395,14 @@ func init() {
 
 		// Hidden Configuration, may be visible somewhere else ...
 		&element.Section{
-			ID: path.NewRoute("general"),
+			ID: cfgpath.NewRoute("general"),
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID: path.NewRoute("locale"),
+					ID: cfgpath.NewRoute("locale"),
 					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: general/locale/datetime_format_long
-							ID:      path.NewRoute("datetime_format_long"),
+							ID:      cfgpath.NewRoute("datetime_format_long"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%A, %B %e %Y [%I:%M %p]`,
@@ -401,7 +410,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/datetime_format_medium
-							ID:      path.NewRoute("datetime_format_medium"),
+							ID:      cfgpath.NewRoute("datetime_format_medium"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%a, %b %e %Y [%I:%M %p]`,
@@ -409,7 +418,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/datetime_format_short
-							ID:      path.NewRoute("datetime_format_short"),
+							ID:      cfgpath.NewRoute("datetime_format_short"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%m/%d/%y [%I:%M %p]`,
@@ -417,7 +426,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/date_format_long
-							ID:      path.NewRoute("date_format_long"),
+							ID:      cfgpath.NewRoute("date_format_long"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%A, %B %e %Y`,
@@ -425,7 +434,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/date_format_medium
-							ID:      path.NewRoute("date_format_medium"),
+							ID:      cfgpath.NewRoute("date_format_medium"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%a, %b %e %Y`,
@@ -433,7 +442,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/date_format_short
-							ID:      path.NewRoute("date_format_short"),
+							ID:      cfgpath.NewRoute("date_format_short"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `%m/%d/%y`,
@@ -441,7 +450,7 @@ func init() {
 
 						&element.Field{
 							// Path: general/locale/language
-							ID:      path.NewRoute("language"),
+							ID:      cfgpath.NewRoute("language"),
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 							Default: `en`,
@@ -451,5 +460,4 @@ func init() {
 			),
 		},
 	)
-	Backend = NewBackend(ConfigStructure)
 }

@@ -16,7 +16,7 @@ package directory
 
 import (
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/juju/errors"
 	"golang.org/x/text/currency"
@@ -24,37 +24,55 @@ import (
 
 // ConfigCurrency currency type for the configuration based on text/currency pkg.
 type ConfigCurrency struct {
-	model.Str
+	cfgmodel.Str
 }
 
 // NewConfigCurrency creates a new currency configuration type.
-func NewConfigCurrency(path string, opts ...model.Option) ConfigCurrency {
+func NewConfigCurrency(path string, opts ...cfgmodel.Option) ConfigCurrency {
 	return ConfigCurrency{
-		Str: model.NewStr(path, opts...),
+		Str: cfgmodel.NewStr(path, opts...),
 	}
 }
 
-// Get tries to retrieve a currency
-func (p ConfigCurrency) Get(sg config.ScopedGetter) (Currency, error) {
-	cur, err := p.Str.Get(sg)
+// GetDefault returns the default currency without considering the scope.
+func (cc ConfigCurrency) GetDefault(sg config.Getter) (cur Currency, err error) {
+	p, err := cc.ToPath(scope.DefaultID, 0)
 	if err != nil {
-		return Currency{}, errors.Mask(err)
+		err = errors.Mask(err)
+		return
 	}
-	u, err := currency.ParseISO(cur)
+	raw, err := sg.String(p)
 	if err != nil {
-		return Currency{}, errors.Mask(err)
+		err = errors.Mask(err)
+		return
 	}
-	return Currency{Unit: u}, nil
+
+	cur.Unit, err = currency.ParseISO(raw)
+	return
+}
+
+// Get tries to retrieve a currency considering the scope
+func (cc ConfigCurrency) Get(sg config.ScopedGetter) (cur Currency, err error) {
+	raw, err := cc.Str.Get(sg)
+	if err != nil {
+		err = errors.Mask(err)
+		return
+	}
+	if raw == "" {
+		scp, scpID := sg.Scope()
+		err = errors.Errorf("Empty currency for path: %q, scope: %q, scopeID: %d", cc.String(), scp, scpID)
+		return
+	}
+	cur.Unit, err = currency.ParseISO(raw)
+	return
 }
 
 // Writes a currency to the configuration storage.
-func (p ConfigCurrency) Write(w config.Writer, v Currency, s scope.Scope, id int64) error {
+func (cc ConfigCurrency) Write(w config.Writer, v Currency, s scope.Scope, id int64) error {
 	cur := v.String()
 
-	println("cur", cur, p.Source.ContainsValString(cur))
-
-	if err := p.ValidateString(cur); err != nil {
+	if err := cc.ValidateString(cur); err != nil {
 		return errors.Mask(err)
 	}
-	return p.Str.Write(w, cur, s, id)
+	return cc.Str.Write(w, cur, s, id)
 }

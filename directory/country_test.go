@@ -17,40 +17,32 @@ package directory_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/model"
-	"github.com/corestoreio/csfw/directory"
+	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
-func init() {
-
-	directory.InitSources(nil)
-
-}
-
 func TestPathCountryAllowedCustom(t *testing.T) {
 	t.Parallel()
-	defer debugLogBuf.Reset()
 
-	previous := directory.Backend.GeneralCountryAllow.Option(model.WithSourceByString(
+	previous := backend.GeneralCountryAllow.Option(cfgmodel.WithSourceByString(
 		"DE", "Germany", "AU", "'Straya", "CH", "Switzerland",
 	))
-	defer directory.Backend.GeneralCountryAllow.Option(previous)
+	defer backend.GeneralCountryAllow.Option(previous)
 
-	gcaPath, err := directory.Backend.GeneralCountryAllow.ToPath(0, 0) // creates a default path
+	gcaPath, err := backend.GeneralCountryAllow.ToPath(0, 0) // creates a default path
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cr := config.NewMockGetter(
-		config.WithMockValues(config.MockPV{
+	cr := cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{
 			gcaPath.Bind(scope.StoreID, 1).String(): "DE,AU,CH,AT",
 		}),
 	)
 
-	haveCountries, err := directory.Backend.GeneralCountryAllow.Get(cr.NewScoped(1, 1, 1))
+	haveCountries, err := backend.GeneralCountryAllow.Get(cr.NewScoped(1, 1))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,13 +53,12 @@ func TestPathCountryAllowedCustom(t *testing.T) {
 
 func TestPathGeneralCountryAllowDefault(t *testing.T) {
 	t.Parallel()
-	defer debugLogBuf.Reset()
 
-	cr := config.NewMockGetter(
-		config.WithMockValues(config.MockPV{}),
+	cr := cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{}),
 	)
 
-	haveCountries, err := directory.Backend.GeneralCountryAllow.Get(cr.NewScoped(1, 1, 1))
+	haveCountries, err := backend.GeneralCountryAllow.Get(cr.NewScoped(1, 1))
 	if err != nil {
 		t.Fatal(err)
 	}

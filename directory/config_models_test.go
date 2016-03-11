@@ -17,34 +17,107 @@ package directory_test
 import (
 	"testing"
 
-	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/config/cfgmodel"
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewConfigCurrencyGet(t *testing.T) {
+func TestNewConfigCurrencyGetDefault(t *testing.T) {
 	t.Parallel()
-	cc := directory.NewConfigCurrency(directory.Backend.CurrencyOptionsBase.String())
 
-	cobPath, err := directory.Backend.CurrencyOptionsBase.ToPath(0, 0)
+	cobPath, err := backend.CurrencyOptionsBase.ToPath(0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cr := config.NewMockGetter(
-		config.WithMockValues(config.MockPV{
-			cobPath.Bind(scope.StoreID, 1).String(): "EUR",
-			cobPath.Bind(scope.StoreID, 2).String(): "WIR", // Special Swiss currency
+	cr := cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{
+			cobPath.Bind(scope.DefaultID, 0).String(): "CHF",
 		}),
 	)
 
-	cur, err := cc.Get(cr.NewScoped(1, 1, 1))
+	cur, err := backend.CurrencyOptionsBase.GetDefault(cr)
 	assert.NoError(t, err)
+	assert.Exactly(t, "CHF", cur.String())
+}
+
+func TestNewConfigCurrencyGetDefaultPathError(t *testing.T) {
+	t.Parallel()
+
+	ccModel := directory.NewConfigCurrency("a/b/c")
+
+	cr := cfgmock.NewService()
+
+	cur, err := ccModel.GetDefault(cr)
+	assert.EqualError(t, err, cfgpath.ErrIncorrectPath.Error())
+	assert.Exactly(t, "XXX", cur.String())
+}
+
+func TestNewConfigCurrencyGetPathError(t *testing.T) {
+	t.Parallel()
+
+	ccModel := directory.NewConfigCurrency("a//c")
+
+	cr := cfgmock.NewService()
+
+	cur, err := ccModel.Get(cr.NewScoped(0, 0))
+	assert.EqualError(t, err, "Route a/\uf8ff/c: This character \"\\uf8ff\" is not allowed in Route a/\uf8ff/c")
+	assert.Exactly(t, "XXX", cur.String())
+}
+
+func TestNewConfigCurrencyGetEmpty(t *testing.T) {
+	t.Parallel()
+
+	cobPath, err := backend.CurrencyOptionsBase.ToPath(0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// this test shows a discouraged use of the NewConfigCurrency() model.
+	ccModel := directory.NewConfigCurrency(backend.CurrencyOptionsBase.String())
+
+	cr := cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{
+			// default scope is enforced because NewConfigCurrency() has been created
+			// with the ConfigStructure slice and so we're missing the *element.Field
+			// with the special configuration
+			cobPath.Bind(scope.WebsiteID, 1).String(): "CHF",
+			cobPath.Bind(scope.StoreID, 1).String():   "EUR",
+		}),
+	)
+
+	cur, err := ccModel.Get(cr.NewScoped(1, 1))
+	assert.EqualError(t, err, `Empty currency for path: "currency/options/base", scope: "Store", scopeID: 1`)
+	assert.Exactly(t, "XXX", cur.String())
+}
+
+func TestNewConfigCurrencyGet(t *testing.T) {
+	t.Parallel()
+
+	cobPath, err := backend.CurrencyOptionsBase.ToPath(0, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cr := cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{
+			cobPath.Bind(scope.WebsiteID, 1).String(): "EUR",
+			cobPath.Bind(scope.WebsiteID, 2).String(): "WIR", // Special Swiss currency
+		}),
+	)
+
+	// scope of CurrencyOptionsBase set to website, so no store config values are possible
+	cur, err := backend.CurrencyOptionsBase.Get(cr.NewScoped(1, 1))
+	if err != nil {
+		t.Fatal(err, cur)
+	}
+
 	assert.Exactly(t, directory.MustNewCurrencyISO("EUR"), cur)
 
-	cur, err = cc.Get(cr.NewScoped(1, 1, 2))
+	cur, err = backend.CurrencyOptionsBase.Get(cr.NewScoped(2, 1))
 	assert.EqualError(t, err, "currency: tag is not a recognized currency")
 	assert.Exactly(t, directory.Currency{}, cur)
 }
@@ -53,19 +126,19 @@ func TestNewConfigCurrencyWrite(t *testing.T) {
 	t.Parallel()
 	// special setup for testing
 	cc := directory.NewConfigCurrency(
-		directory.Backend.CurrencyOptionsBase.String(),
-		model.WithFieldFromSectionSlice(directory.ConfigStructure),
-		model.WithSourceByString("EUR", "Euro", "CHF", "Swiss Franc", "AUD", "Australian Dinar ;-)"),
+		backend.CurrencyOptionsBase.String(),
+		cfgmodel.WithFieldFromSectionSlice(directory.MustNewConfigStructure()),
+		cfgmodel.WithSourceByString("EUR", "Euro", "CHF", "Swiss Franc", "AUD", "Australian Dinar ;-)"),
 	)
 
 	c := directory.MustNewCurrencyISO("EUR")
 
-	cobPath, err := directory.Backend.CurrencyOptionsBase.ToPath(0, 0)
+	cobPath, err := backend.CurrencyOptionsBase.ToPath(0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	w := new(config.MockWrite)
+	w := new(cfgmock.Write)
 	assert.NoError(t, cc.Write(w, c, scope.WebsiteID, 33))
 
 	assert.Exactly(t, cobPath.Bind(scope.WebsiteID, 33).String(), w.ArgPath)
