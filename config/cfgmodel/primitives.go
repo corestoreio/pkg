@@ -33,8 +33,7 @@ func NewBool(path string, opts ...Option) Bool {
 	}
 }
 
-// Get returns a bool value.
-// Retrieves a bool value from ScopedGetter, if empty the
+// Get returns a bool value from ScopedGetter, if empty the
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
 func (b Bool) Get(sg config.ScopedGetter) (bool, error) {
@@ -78,10 +77,9 @@ func NewStr(path string, opts ...Option) Str {
 	return Str{baseValue: NewValue(path, opts...)}
 }
 
-// Get returns a string value
-// Retrieves a string value from ScopedGetter, if empty the
-// *Field.Default value will be applied if provided.
-// scope.DefaultID will be enforced if *Field.Scopes is empty.
+// Get returns a string value from ScopedGetter, if empty the
+// *element.Field.Default value will be applied if provided.
+// scope.DefaultID will be enforced if *element.Field.Scopes is empty.
 func (str Str) Get(sg config.ScopedGetter) (string, error) {
 	// This code must be kept in sync with other lookup*() functions
 
@@ -121,8 +119,7 @@ func NewInt(path string, opts ...Option) Int {
 	return Int{baseValue: NewValue(path, opts...)}
 }
 
-// Get returns an int value.
-// Retrieves an int value from ScopedGetter, if empty the
+// Get returns an int value from ScopedGetter, if empty the
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
 func (i Int) Get(sg config.ScopedGetter) (int, error) {
@@ -164,8 +161,7 @@ func NewFloat64(path string, opts ...Option) Float64 {
 	return Float64{baseValue: NewValue(path, opts...)}
 }
 
-// Get returns a float64 value.
-// Retrieves a float64 value from ScopedGetter, if empty the
+// Get returns a float64 value from ScopedGetter, if empty the
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
 func (f Float64) Get(sg config.ScopedGetter) (float64, error) {
@@ -207,8 +203,7 @@ func NewTime(path string, opts ...Option) Time {
 	return Time{baseValue: NewValue(path, opts...)}
 }
 
-// Get returns a time value.
-// Retrieves a time value from ScopedGetter, if empty the
+// Get returns a time value from ScopedGetter, if empty the
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
 // Get is able to parse available time formats as defined in
