@@ -124,10 +124,16 @@ func TestNewConfigCurrencyGet(t *testing.T) {
 
 func TestNewConfigCurrencyWrite(t *testing.T) {
 	t.Parallel()
+
+	cfgStruct, err := directory.NewConfigStructure()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	// special setup for testing
 	cc := directory.NewConfigCurrency(
 		backend.CurrencyOptionsBase.String(),
-		cfgmodel.WithFieldFromSectionSlice(directory.MustNewConfigStructure()),
+		cfgmodel.WithFieldFromSectionSlice(cfgStruct),
 		cfgmodel.WithSourceByString("EUR", "Euro", "CHF", "Swiss Franc", "AUD", "Australian Dinar ;-)"),
 	)
 

@@ -21,8 +21,12 @@ var backend *directory.PkgBackend
 
 // this would belong into the test suit setup
 func init() {
+	cfgStruct, err := directory.NewConfigStructure()
+	if err != nil {
+		panic(err)
+	}
 
-	backend = directory.NewBackend(directory.MustNewConfigStructure())
+	backend = directory.NewBackend(cfgStruct)
 
 	src, err := backend.InitSources(nil) // TODO(cs) add DB
 	if err != nil {

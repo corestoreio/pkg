@@ -21,15 +21,6 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-// MustNewConfigStructure same as NewConfigStructure() but panics on error.
-func MustNewConfigStructure() element.SectionSlice {
-	ss, err := NewConfigStructure()
-	if err != nil {
-		panic(err)
-	}
-	return ss
-}
-
 // NewConfigStructure global configuration structure for this package.
 // Used in frontend (to display the user all the settings) and in
 // backend (scope checks and default values). See the source code
