@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/juju/errors"
 	"golang.org/x/net/context"
 )
@@ -34,12 +34,12 @@ type CheckSecureRequest struct {
 	// WebSecureOffloaderHeader => Offloader header.
 	// See package backend.
 	// Path: web/secure/offloader_header
-	WebSecureOffloaderHeader model.Str
+	WebSecureOffloaderHeader cfgmodel.Str
 }
 
 // NewCeckSecureRequest creates a new SecureRequest type pointer.
 // Requires the correct path to the WebSecureOffloaderHeader configuration.
-func NewCeckSecureRequest(cfgOffloader model.Str) *CheckSecureRequest {
+func NewCeckSecureRequest(cfgOffloader cfgmodel.Str) *CheckSecureRequest {
 	return &CheckSecureRequest{
 		WebSecureOffloaderHeader: cfgOffloader,
 	}

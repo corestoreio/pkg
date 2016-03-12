@@ -21,7 +21,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/backend"
-	"github.com/corestoreio/csfw/config/mock"
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
@@ -53,7 +53,7 @@ func TestCtxIsSecure(t *testing.T) {
 			true,
 		},
 		{
-			mock.WithContextScopedGetter(3, 1, context.Background(), mock.WithPV(mock.PathValue{
+			cfgmock.WithContextScopedGetter(3, 1, context.Background(), cfgmock.WithPV(cfgmock.PathValue{
 				woh.String(): "X_FORWARDED_PROTO",
 			})),
 			func() *http.Request {
@@ -67,7 +67,7 @@ func TestCtxIsSecure(t *testing.T) {
 			true,
 		},
 		{
-			mock.WithContextScopedGetter(1, 3, context.Background(), mock.WithPV(mock.PathValue{
+			cfgmock.WithContextScopedGetter(1, 3, context.Background(), cfgmock.WithPV(cfgmock.PathValue{
 				woh.String(): "X_FORWARDED_PROTO",
 			})),
 			func() *http.Request {
@@ -81,7 +81,7 @@ func TestCtxIsSecure(t *testing.T) {
 			false,
 		},
 		{
-			mock.WithContextScopedGetter(3, 5, context.Background(), mock.WithPV(mock.PathValue{})),
+			cfgmock.WithContextScopedGetter(3, 5, context.Background(), cfgmock.WithPV(cfgmock.PathValue{})),
 			func() *http.Request {
 				r, err := http.NewRequest("GET", "/", nil)
 				if err != nil {
