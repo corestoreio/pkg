@@ -18,23 +18,29 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/corestoreio/csfw/config/mock"
-	"github.com/corestoreio/csfw/config/model"
-	"github.com/corestoreio/csfw/config/path"
+	"github.com/corestoreio/csfw/config/cfgmock"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/ctxjwt"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestPasswordFromConfig(t *testing.T) {
 	t.Parallel()
-	srvSG := mock.NewService(
-		mock.WithPV(mock.PathValue{
-			path.MustNewByParts(ctxjwt.PathJWTHMACPassword).String(): `Rump3lst!lzch3n`,
+
+	pwp, err := backend.NetCtxjwtHmacPassword.ToPath(scope.DefaultID, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	srvSG := cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{
+			pwp.String(): `Rump3lst!lzch3n`,
 		}),
 	).NewScoped(1, 2)
 
 	jm, err := ctxjwt.NewService(
-		ctxjwt.WithPasswordFromConfig(srvSG, model.NoopEncryptor{}),
+		ctxjwt.WithPasswordFromConfig(srvSG, backend, cfgmodel.NoopEncryptor{}),
 	)
 	assert.NoError(t, err)
 

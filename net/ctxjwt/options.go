@@ -25,7 +25,7 @@ import (
 	"os"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/dgrijalva/jwt-go"
 )
 
@@ -51,23 +51,26 @@ func WithBlacklist(blacklist Blacklister) Option {
 	}
 }
 
-// WithPasswordFromConfig retrieves the password from the configuration with path
-// as defined in constant PathJWTHMACPassword. If a configured password cannot be found
-// an error will be returned. For the third argument you may provide:
-// 		model.WithFieldFromSectionSlice(cfgStruct),
-// for further validation of the scope.
-func WithPasswordFromConfig(sg config.ScopedGetter, enc model.Encryptor, opts ...model.Option) Option {
+// WithPasswordFromConfig retrieves the password from the configuration.
+// If a configured password cannot be found an error will be returned.
+// For the third argument you may provide:
+// 		cfgmodel.WithFieldFromSectionSlice(cfgStruct),
+// for further validation of the scope or any more options.
+// If a nil argument *PgBackend and cfgmodel.Encryptor will be passed
+// this functions panics.
+func WithPasswordFromConfig(sg config.ScopedGetter, pb *PkgBackend, enc cfgmodel.Encryptor, opts ...cfgmodel.Option) Option {
 
-	pwm := model.NewObscure(
-		PathJWTHMACPassword,
-		append([]model.Option{model.WithEncryptor(enc)}, opts...)...,
+	// pwModel has been copied from the original model, so safe to modify
+	pwModel := pb.NetCtxjwtHmacPassword
+	pwModel.Option(
+		append([]cfgmodel.Option{cfgmodel.WithEncryptor(enc)}, opts...)...,
 	)
 
 	return func(s *Service) {
-		pw, err := pwm.Get(sg)
+		pw, err := pwModel.Get(sg)
 		if config.NotKeyNotFoundError(err) {
 			if PkgLog.IsDebug() {
-				PkgLog.Debug("ctxjwt.WithPasswordFromConfig.Obscure.Get", "err", err, "path", PathJWTHMACPassword)
+				PkgLog.Debug("ctxjwt.WithPasswordFromConfig.Obscure.Get", "err", err, "path", pwModel.String())
 			}
 			s.MultiErr = s.AppendErrors(err)
 			return

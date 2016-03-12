@@ -15,37 +15,35 @@
 package ctxjwt
 
 import (
+	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/path"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-const PathJWTHMACPassword = `corestore/jwt/hmac_password`
-
-// ConfigStructure global configuration structure for this package.
-// Used in frontend and backend. See init() for details.
-var ConfigStructure element.SectionSlice
-
-func init() {
-	ConfigStructure = element.MustNewConfiguration(
+// NewConfigStructure global configuration structure for this package.
+// Used in frontend (to display the user all the settings) and in
+// backend (scope checks and default values). See the source code
+// of this function for the overall available sections, groups and fields.
+func NewConfigStructure() (element.SectionSlice, error) {
+	return element.NewConfiguration(
 		&element.Section{
-			ID: path.NewRoute("corestore"),
+			ID: cfgpath.NewRoute("net"),
 			Groups: element.NewGroupSlice(
 				&element.Group{
-					ID:        path.NewRoute("jwt"),
+					ID:        cfgpath.NewRoute("ctxjwt"),
 					Label:     text.Chars(`JSON Web Token (JWT)`),
 					SortOrder: 40,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
 						&element.Field{
-							// Path: corestore/jwt/hmac_password
-							ID:        path.NewRoute("hmac_password"),
+							// Path: net/ctxjwt/hmac_password
+							ID:        cfgpath.NewRoute("hmac_password"),
 							Label:     text.Chars(`Token Password`),
 							Type:      element.TypeObscure,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
-							Scopes:    scope.PermStore,
+							Scopes:    scope.PermWebsite,
 						},
 					),
 				},
