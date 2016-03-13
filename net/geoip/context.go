@@ -25,7 +25,7 @@ type keyctxCountry struct{}
 type keyctxErr struct{}
 
 // WithContextCountry creates a new context with geoip.Country attached.
-func WithContextCountry(ctx context.Context, c *IPCountry) context.Context {
+func WithContextCountry(ctx context.Context, c *Country) context.Context {
 	return context.WithValue(ctx, keyctxCountry{}, c)
 }
 
@@ -37,11 +37,11 @@ func WithContextError(ctx context.Context, err error) context.Context {
 // FromContextCountry returns the geoip.Country in ctx if it exists or
 // and error if that one exists. The error has been previously set
 // by WithContextError.
-func FromContextCountry(ctx context.Context) (*IPCountry, error, bool) {
+func FromContextCountry(ctx context.Context) (*Country, error, bool) {
 	err, ok := ctx.Value(keyctxErr{}).(error)
 	if ok {
 		return nil, err, ok
 	}
-	c, ok := ctx.Value(keyctxCountry{}).(*IPCountry)
+	c, ok := ctx.Value(keyctxCountry{}).(*Country)
 	return c, nil, ok
 }

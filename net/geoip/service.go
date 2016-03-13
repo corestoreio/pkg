@@ -17,56 +17,40 @@ package geoip
 import (
 	"net/http"
 
-	"golang.org/x/net/context"
-
-	"errors"
-	"net"
-
-	"github.com/corestoreio/csfw/directory"
+	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/juju/errors"
-	"github.com/oschwald/geoip2-golang"
+	"golang.org/x/net/context"
 )
 
 // ErrCannotGetRemoteAddr will be returned if there is an invalid or not found
 // RemoteAddr in the request.
 var ErrCannotGetRemoteAddr = errors.New("Cannot get request.RemoteAddr")
 
-// IPCountry contains the found country and the IP address
-type IPCountry struct {
-	*geoip2.Country
-	IP net.IP
-}
-
-// Reader defines the functions which are needed to return a country by an IP.
-type Reader interface {
-	Country(net.IP) (*geoip2.Country, error)
-	Close() error
-}
-
-// IsAllowedFunc checks in middleware WithIsCountryAllowedByIP if the country is
-// allowed to process the request. The StringSlice contains a list of ISO country
-// names fetched from the config.Reader for a specific store view including fallback.
-type IsAllowedFunc func(*store.Store, *IPCountry, util.StringSlice, *http.Request) bool
-
 // Service represents a service manager
 type Service struct {
+	*cserr.MultiErr
+	// AllowedCountries a model containing a path to the configuration which
+	// countries are allowed within a scope. Current implementation triggers
+	// for each HTTP request a configuration lookup which can be a bottle neck.
+	AllowedCountries cfgmodel.StringCSV
 	// GeoIP searches the country for an IP address
 	GeoIP Reader
 	// IsAllowed checks in middleware WithIsCountryAllowedByIP if the country is
 	// allowed to process the request.
-	IsAllowed  IsAllowedFunc
-	lastErrors []error
-	// IDs and AltH slices must have both the same length because with the ID found in IDs slice
-	// we take the index key and access the appropriate handler in AltH.
+	IsAllowed IsAllowedFunc
+	// AltH are alternative handlers if the current request is not allowed for
+	// a country.
+	// IDs and AltH slices must have both the same length because with the ID
+	// found in IDs slice we take the index key and access the appropriate handler in AltH.
 	websiteIDs  util.Int64Slice
 	websiteAltH []ctxhttp.HandlerFunc
-	groupIDs    util.Int64Slice
-	groupAltH   []ctxhttp.HandlerFunc
 	storeIDs    util.Int64Slice
 	storeAltH   []ctxhttp.HandlerFunc
 }
@@ -77,7 +61,7 @@ func NewService(opts ...Option) (*Service, error) {
 	for _, opt := range opts {
 		opt(s)
 	}
-	if s.lastErrors != nil {
+	if s.HasErrors() {
 		return nil, s
 	}
 	if s.GeoIP == nil {
@@ -89,47 +73,31 @@ func NewService(opts ...Option) (*Service, error) {
 	return s, nil
 }
 
-var _ error = (*Service)(nil)
-
-// Error returns an error string
-func (s *Service) Error() string {
-	return util.Errors(s.lastErrors...)
-}
-
-// GetCountryByIP returns from an IP address the country
-func (s *Service) GetCountryByIP(ip net.IP) (*IPCountry, error) {
-	// todo maybe add caching layer
-	c, err := s.GeoIP.Country(ip)
-	return &IPCountry{
-		Country: c,
-	}, err
-}
-
 // newContextCountryByIP searches the country for an IP address and puts the country
 // into a new context.
-func (s *Service) newContextCountryByIP(ctx context.Context, r *http.Request) (context.Context, *IPCountry, error) {
+func (s *Service) newContextCountryByIP(ctx context.Context, r *http.Request) (context.Context, *Country, error) {
 
-	remoteAddr := httputil.GetRemoteAddr(r)
-	if remoteAddr == nil {
+	ip := httputil.GetRemoteAddr(r)
+	if ip == nil {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("geoip.WithCountryByIP.GetRemoteAddr", "err", ErrCannotGetRemoteAddr, "req", r)
 		}
 		return ctx, nil, ErrCannotGetRemoteAddr
 	}
 
-	c, err := s.GetCountryByIP(remoteAddr)
+	c, err := s.GeoIP.Country(ip)
 	if err != nil {
 		if PkgLog.IsDebug() {
-			PkgLog.Debug("geoip.WithCountryByIP.GetCountryByIP", "err", err, "remoteAddr", remoteAddr, "req", r)
+			PkgLog.Debug("geoip.WithCountryByIP.GeoIP.Country", "err", err, "remoteAddr", ip, "req", r)
 		}
 		return ctx, nil, errors.Mask(err)
 	}
-	c.IP = remoteAddr
 	return WithContextCountry(ctx, c), c, nil
 }
 
 // WithCountryByIP is a simple middleware which detects the country via an IP
 // address. With the detected country a new tree context.Context gets created.
+// Use FromContextCountry() to extract the country or an error.
 func (s *Service) WithCountryByIP() ctxhttp.Middleware {
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
@@ -143,13 +111,15 @@ func (s *Service) WithCountryByIP() ctxhttp.Middleware {
 	}
 }
 
-// WithIsCountryAllowedByIP a more advanced function. It expects from the context
-// the store.ManagerReader ...
+// WithIsCountryAllowedByIP queries the AllowedCountries configuration model
+// to retrieve a list of countries for a scope and then uses the function
+// IsAllowedFunc to check if a country is allowed for an IP address.
+// Use FromContextCountry() to extract the country or an error.
 func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 	return func(h ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			_, requestedStore, err := store.FromContextReader(ctx)
+			_, requestedStore, err := storenet.FromContextReader(ctx)
 			if err != nil {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("geoip.WithCountryByIP.FromContextManagerReader", "err", err)
@@ -157,14 +127,14 @@ func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 				return errors.Mask(err)
 			}
 
-			var ipCountry *IPCountry
-			ctx, ipCountry, err = s.newContextCountryByIP(ctx, r)
+			var c *Country
+			ctx, c, err = s.newContextCountryByIP(ctx, r)
 			if err != nil {
 				ctx = WithContextError(ctx, err)
 				return h(ctx, w, r)
 			}
 
-			allowedCountries, err := directory.AllowedCountries(requestedStore.Config)
+			allowedCountries, err := s.AllowedCountries.Get(requestedStore.Config)
 			if err != nil {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("geoip.WithCountryByIP.directory.AllowedCountries", "err", err, "st.Config", requestedStore.Config)
@@ -172,7 +142,7 @@ func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 				return errors.Mask(err)
 			}
 
-			if false == s.IsAllowed(requestedStore, ipCountry, allowedCountries, r) {
+			if false == s.IsAllowed(requestedStore, c, allowedCountries, r) {
 				h = s.altHandlerByID(requestedStore)
 			}
 
@@ -181,10 +151,10 @@ func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 	}
 }
 
-// DefaultAlternativeHandler gets called when detected IPCountry cannot be found
-// within the list of allowed countries. This handler can be overridden depending
-// on the overall scope (Website, Group or Store). This function gets called in
-// WithIsCountryAllowedByIP.
+// DefaultAlternativeHandler gets called when detected Country cannot be found
+// within the list of allowed countries. This handler can be overridden to provide
+// a fallback for all scopes. To set a alternative handler for a website or store
+// use the With*() options. This function gets called in WithIsCountryAllowedByIP.
 //
 // Status is StatusServiceUnavailable
 var DefaultAlternativeHandler ctxhttp.HandlerFunc = defaultAlternativeHandler
@@ -194,16 +164,13 @@ var defaultAlternativeHandler = func(_ context.Context, w http.ResponseWriter, _
 	return nil
 }
 
-// altHandlerByID searches in the hierarchical order of store -> group -> website
+// altHandlerByID searches in the hierarchical order of store -> website -> default.
 // the next alternative handler IF a country is not allowed as defined in function
 // type IsAllowedFunc.
 func (s *Service) altHandlerByID(st *store.Store) ctxhttp.HandlerFunc {
 
 	if s.storeIDs != nil && s.storeAltH != nil {
 		return findHandlerByID(scope.StoreID, st.StoreID(), s.storeIDs, s.storeAltH)
-	}
-	if s.groupIDs != nil && s.groupAltH != nil {
-		return findHandlerByID(scope.GroupID, st.Group.GroupID(), s.groupIDs, s.groupAltH)
 	}
 	if s.websiteIDs != nil && s.websiteAltH != nil {
 		return findHandlerByID(scope.WebsiteID, st.Website.WebsiteID(), s.websiteIDs, s.websiteAltH)
@@ -234,10 +201,11 @@ func findHandlerByID(so scope.Scope, id int64, idsIdx util.Int64Slice, handlers 
 	return prospect
 }
 
-func defaultIsCountryAllowed(_ *store.Store, c *IPCountry, allowedCountries util.StringSlice, r *http.Request) bool {
-	if false == allowedCountries.Contains(c.Country.Country.IsoCode) {
+func defaultIsCountryAllowed(_ *store.Store, c *Country, allowedCountries []string, r *http.Request) bool {
+	var ac util.StringSlice = allowedCountries
+	if false == ac.Contains(c.Country.IsoCode) {
 		if PkgLog.IsInfo() {
-			PkgLog.Info("geoip.checkAllow", "IPCountry", c, "allowedCountries", allowedCountries, "request", r)
+			PkgLog.Info("geoip.checkAllow", "Country", c, "allowedCountries", allowedCountries, "request", r)
 		}
 		return false
 	}

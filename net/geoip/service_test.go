@@ -28,13 +28,15 @@ import (
 	"github.com/corestoreio/csfw/net/geoip"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
-	storemock "github.com/corestoreio/csfw/store/mock"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/cstesting"
-	"github.com/oschwald/geoip2-golang"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
+
+var _ error = (*geoip.Service)(nil)
 
 func mustGetTestService(opts ...geoip.Option) *geoip.Service {
 	maxMindDB := filepath.Join(cstesting.RootPath, "net", "geoip", "GeoIP2-Country-Test.mmdb")
@@ -52,7 +54,7 @@ func finalHandlerFinland(t *testing.T) ctxhttp.HandlerFunc {
 		assert.True(t, ok)
 		assert.NoError(t, err)
 		assert.Exactly(t, "2a02:d200::", ipc.IP.String())
-		assert.Exactly(t, "FI", ipc.Country.Country.IsoCode)
+		assert.Exactly(t, "FI", ipc.Country.IsoCode)
 		return nil
 	}
 }
@@ -94,14 +96,14 @@ func TestNewServiceWithGeoIP2Reader(t *testing.T) {
 	ip, _, err := net.ParseCIDR("2a02:d200::/29") // IP range for Finland
 
 	assert.NoError(t, err)
-	haveCty, err := s.GetCountryByIP(ip)
+	haveCty, err := s.GeoIP.Country(ip)
 	assert.NoError(t, err)
-	assert.Exactly(t, "FI", haveCty.Country.Country.IsoCode)
+	assert.Exactly(t, "FI", haveCty.Country.IsoCode)
 }
 
 type geoReaderMock struct{}
 
-func (geoReaderMock) Country(ipAddress net.IP) (*geoip2.Country, error) {
+func (geoReaderMock) Country(ipAddress net.IP) (*geoip.Country, error) {
 	return nil, errors.New("Failed to read country from MMDB")
 }
 func (geoReaderMock) Close() error { return nil }
@@ -153,7 +155,7 @@ func TestWithIsCountryAllowedByIPErrorStoreManager(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "http://corestore.io", nil)
 	assert.NoError(t, err)
-	assert.EqualError(t, countryHandler.ServeHTTPContext(context.Background(), rec, req), store.ErrContextServiceNotFound.Error())
+	assert.EqualError(t, countryHandler.ServeHTTPContext(context.Background(), rec, req), storenet.ErrContextServiceNotFound.Error())
 }
 
 var managerStoreSimpleTest = storemock.WithContextMustService(scope.Option{}, func(ms *storemock.Storage) {

@@ -12,10 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package geoip detects the country by an IP address using the maxmind database.
+// Package geoip detects the country by an IP address and restricts the access.
 //
 // This package is compatible to IPv4 and IPv6.
+// Uses the maxmind database or alternative country/city detectors.
+//
+// Lots of things TODO.
 //
 // The detected country and all its attributes will be added to a context.
-// It may also check general/country/allow
 package geoip
