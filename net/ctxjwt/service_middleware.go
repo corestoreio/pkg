@@ -40,10 +40,17 @@ func SetHeaderAuthorization(req *http.Request, token string) {
 // to a form (multipart/form-data) with an input name of access_token. If the
 // token cannot be found within the Header the fallback triggers the lookup within the form.
 func (s *Service) WithParseAndValidate(errHandler ...ctxhttp.HandlerFunc) ctxhttp.Middleware {
-	errH := defaultTokenErrorHandler
+
+	// todo: move this into the Service struct as a field like in ctxthrottled
+	errH := func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return nil
+	}
+
 	if len(errHandler) == 1 && errHandler[0] != nil {
 		errH = errHandler[0]
 	}
+
 	return func(h ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
@@ -62,9 +69,4 @@ func (s *Service) WithParseAndValidate(errHandler ...ctxhttp.HandlerFunc) ctxhtt
 			return errH(WithContextError(ctx, err), w, r)
 		}
 	}
-}
-
-func defaultTokenErrorHandler(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-	http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-	return nil
 }
