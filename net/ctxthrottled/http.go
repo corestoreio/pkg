@@ -28,172 +28,83 @@
 package ctxthrottled
 
 import (
-	"math"
 	"net/http"
-	"strconv"
+	"sync"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/ctxhttp"
-	"golang.org/x/net/context"
+	"github.com/corestoreio/csfw/util/cserr"
+	"github.com/juju/errors"
 	"gopkg.in/throttled/throttled.v2"
-	"gopkg.in/throttled/throttled.v2/store/memstore"
+
+	"golang.org/x/net/context"
 )
 
-const (
-	// PathRateLimitBurst defines the number of requests that
-	// will be allowed to exceed the rate in a single burst and must be
-	// greater than or equal to zero.
-	// Scope Global, Type Int.
-	PathRateLimitBurst = `corestore/ctxthrottled/burst`
-	// PathRateLimitRequests number of requests allowed per time period
-	// Scope Global, Type Int.
-	PathRateLimitRequests = `corestore/ctxthrottled/requests`
-	// PathRateLimitDuration per second (s), minute (i), hour (h), day (d)
-	// Scope Global, Type String.
-	PathRateLimitDuration = `corestore/ctxthrottled/duration`
-)
+type RateLimiterFactory func(*PkgBackend, config.ScopedGetter) (throttled.RateLimiter, error)
 
-// DefaultDeniedHandler is the default DeniedHandler for an
-// HTTPRateLimit. It returns a 429 status code with a generic
-// message.
-var DefaultDeniedHandler = ctxhttp.Handler(ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
-	http.Error(w, "limit exceeded", 429)
-	return nil
-}))
-
-// DefaultBurst defines the number of requests that
-// will be allowed to exceed the rate in a single burst and must be
-// greater than or equal to zero.
-var DefaultBurst int = 5
-
-// DefaultRequests number of requests allowed per time period
-var DefaultRequests int = 100
-
-// DefaultDuration per second (s), minute (i), hour (h), day (d)
-var DefaultDuration string = "h"
+// VaryByer is called for each request to generate a key for the
+// limiter. If it is nil, all requests use an empty string key.
+type VaryByer interface {
+	Key(*http.Request) string
+}
 
 // HTTPRateLimit faciliates using a Limiter to limit HTTP requests.
 type HTTPRateLimit struct {
-	// Config is the config.Service with PubSub
-	Config config.GetterPubSuber
+	me *cserr.MultiErr
+	// Backend configuration, if nil everything panics.
+	be *PkgBackend
 
-	// configScope config.ScopedReader todo for later: rate limit on a per website level
+	// DeniedHandler can be customized instead of showing a HTTP status 429
+	// error page once the HTTPRateLimit has been reached.
+	// It will be called if the request gets over the limit.
+	DeniedHandler ctxhttp.HandlerFunc
 
-	// DeniedHandler is called if the request is disallowed. If it is
-	// nil, the DefaultDeniedHandler variable is used.
-	DeniedHandler ctxhttp.Handler
+	// RateLimitFactory creates a new rate limiter for each scope
+	RateLimiterFactory
 
-	// Limiter is call for each request to determine whether the
-	// request is permitted and update internal state. It must be set.
-	RateLimiter throttled.RateLimiter
-
-	// VaryBy is called for each request to generate a key for the
+	// VaryByer is called for each request to generate a key for the
 	// limiter. If it is nil, all requests use an empty string key.
-	VaryBy interface {
-		Key(*http.Request) string
-	}
+	VaryByer
+
+	mu sync.RWMutex
+	// scopedRLs internal cache of already created rate limiter with their
+	// storage. ID relates to the website ID.
+	// Due to the overall nature I assume that the rate limit is the bottleneck
+	// for an application instead of this mutex protected map.
+	scopedRLs map[int64]throttled.RateLimiter
 }
 
-func (t *HTTPRateLimit) quota() throttled.RateQuota {
-	var burst, request int
-	var duration string
-
-	if burst, _ = t.Config.Int(config.Path(PathRateLimitBurst)); burst < 0 {
-		burst = DefaultBurst
-	}
-	if request, _ = t.Config.Int(config.Path(PathRateLimitRequests)); request == 0 {
-		request = DefaultRequests
-	}
-	if duration, _ = t.Config.String(config.Path(PathRateLimitDuration)); duration == "" {
-		duration = DefaultDuration
+func NewHTTPRateLimit(be *PkgBackend, opts ...Option) (*HTTPRateLimit, error) {
+	if be == nil {
+		return nil, errors.New("PkgBackend cannot be nil")
 	}
 
-	var r throttled.Rate
-	switch duration {
-	case "s": // second
-		r = throttled.PerSec(request)
-	case "i": // minute
-		r = throttled.PerMin(request)
-	case "h": // hour
-		r = throttled.PerHour(request)
-	case "d": // day
-		r = throttled.PerDay(request)
-	default:
-		r = throttled.PerHour(request)
+	rl := &HTTPRateLimit{
+		be:        be,
+		scopedRLs: make(map[int64]throttled.RateLimiter),
+		DeniedHandler: func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
+			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
+			return nil
+		},
 	}
 
-	return throttled.RateQuota{r, burst}
+	if err := rl.Options(opts...); err != nil {
+		return nil, err
+	}
+
+	if rl.RateLimiterFactory == nil {
+		rl.RateLimiterFactory = NewGCRAMemStore(MemStoreMaxKeys)
+	}
+	return rl, nil
 }
 
-// WithRateLimit wraps an ctxhttp.Handler to limit incoming requests.
-// Requests that are not limited will be passed to the handler
-// unchanged.  Limited requests will be passed to the DeniedHandler.
-// X-RateLimit-Limit, X-RateLimit-Remaining, X-RateLimit-Reset and
-// Retry-After headers will be written to the response based on the
-// values in the RateLimitResult.
-func (t *HTTPRateLimit) WithRateLimit(rlStore throttled.GCRAStore, h ctxhttp.Handler) ctxhttp.Handler {
-	if t.Config == nil {
-		t.Config = config.DefaultService
+// Options applies option at creation time or refreshes them.
+func (s *HTTPRateLimit) Options(opts ...Option) error {
+	for _, opt := range opts {
+		opt(s)
 	}
-	if t.DeniedHandler == nil {
-		t.DeniedHandler = DefaultDeniedHandler
+	if s.me.HasErrors() {
+		return s
 	}
-
-	if t.RateLimiter == nil {
-		if rlStore == nil {
-			var err error
-			rlStore, err = memstore.New(65536)
-			if err != nil {
-				panic(err)
-			}
-		}
-
-		var err error
-		t.RateLimiter, err = throttled.NewGCRARateLimiter(rlStore, t.quota())
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	return ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-
-		var k string
-		if t.VaryBy != nil {
-			k = t.VaryBy.Key(r)
-		}
-
-		limited, context, err := t.RateLimiter.RateLimit(k, 1)
-
-		if err != nil {
-			return err
-		}
-
-		setRateLimitHeaders(w, context)
-
-		if !limited {
-			return h.ServeHTTPContext(ctx, w, r)
-		}
-
-		return t.DeniedHandler.ServeHTTPContext(ctx, w, r)
-	})
-}
-
-func setRateLimitHeaders(w http.ResponseWriter, context throttled.RateLimitResult) {
-	if v := context.Limit; v >= 0 {
-		w.Header().Add("X-RateLimit-Limit", strconv.Itoa(v))
-	}
-
-	if v := context.Remaining; v >= 0 {
-		w.Header().Add("X-RateLimit-Remaining", strconv.Itoa(v))
-	}
-
-	if v := context.ResetAfter; v >= 0 {
-		vi := int(math.Ceil(v.Seconds()))
-		w.Header().Add("X-RateLimit-Reset", strconv.Itoa(vi))
-	}
-
-	if v := context.RetryAfter; v >= 0 {
-		vi := int(math.Ceil(v.Seconds()))
-		w.Header().Add("Retry-After", strconv.Itoa(vi))
-	}
+	return nil
 }

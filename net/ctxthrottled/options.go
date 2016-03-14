@@ -12,8 +12,32 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package ctxthrottled implements rate limiting access to resources such
-// as context.Context compatible HTTP endpoints.
-//
-// TODO(cs) Add Examples
 package ctxthrottled
+
+import "gopkg.in/throttled/throttled.v2"
+
+// Option can be used as an argument in NewService to configure a token service.
+type Option func(a *HTTPRateLimit)
+
+// WithVaryBy ...
+func WithVaryBy(vb VaryByer) Option {
+	return func(s *HTTPRateLimit) {
+		s.VaryByer = vb
+	}
+}
+
+// WithRateLimiterForWebsite ...
+func WithRateLimiterForWebsite(websiteID int64, rl throttled.RateLimiter) Option {
+	return func(s *HTTPRateLimit) {
+		s.mu.Lock()
+		s.scopedRLs[websiteID] = rl
+		s.mu.Unlock()
+	}
+}
+
+// WithRateLimiterFactory ...
+func WithRateLimiterFactory(rlf RateLimiterFactory) Option {
+	return func(s *HTTPRateLimit) {
+		s.RateLimiterFactory = rlf
+	}
+}

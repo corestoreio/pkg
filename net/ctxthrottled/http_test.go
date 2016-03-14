@@ -69,8 +69,8 @@ type httpTestCase struct {
 
 func TestHTTPRateLimit(t *testing.T) {
 	limiter := ctxthrottled.HTTPRateLimit{
-		RateLimiter: &stubLimiter{},
-		VaryBy:      &pathGetter{},
+		rootRL: &stubLimiter{},
+		VaryBy: &pathGetter{},
 	}
 
 	handler := limiter.WithRateLimit(nil, ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
@@ -112,9 +112,9 @@ func TestHTTPRateLimitConfig(t *testing.T) {
 
 func TestCustomHTTPRateLimitHandlers(t *testing.T) {
 	limiter := ctxthrottled.HTTPRateLimit{
-		RateLimiter: &stubLimiter{},
-		VaryBy:      &pathGetter{},
-		DeniedHandler: ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
+		rootRL: &stubLimiter{},
+		VaryBy: &pathGetter{},
+		deniedHandler: ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
 			http.Error(w, "custom limit exceeded", 400)
 			return nil
 		}),

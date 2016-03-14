@@ -12,8 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package ctxthrottled implements rate limiting access to resources such
-// as context.Context compatible HTTP endpoints.
-//
-// TODO(cs) Add Examples
-package ctxthrottled
+package ctxthrottled_test
+
+import "github.com/corestoreio/csfw/net/ctxthrottled"
+
+// backend overall backend models for all tests
+var backend *ctxthrottled.PkgBackend
+
+// this would belong into the test suit setup
+func init() {
+
+	cfgStruct, err := ctxthrottled.NewConfigStructure()
+	if err != nil {
+		panic(err)
+	}
+
+	backend = ctxthrottled.NewBackend(cfgStruct)
+}
