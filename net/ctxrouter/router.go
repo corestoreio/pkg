@@ -4,6 +4,39 @@
 
 // Package ctxrouter is a trie based high performance HTTP request router for net/context.
 //
+// A trivial example is:
+//
+//		package main
+//
+//		import (
+//			"fmt"
+//			"github.com/corestoreio/csfw/net/ctxrouter"
+//			"golang.org/x/net/context"
+//			"log"
+//			"net/http"
+//		)
+//
+//		func Index(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+//			fmt.Fprint(w, "Welcome!\n")
+//			return nil
+//		}
+//
+//		func Hello(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+//			ps := ctxrouter.ParamsFromContext(ctx)
+//			fmt.Fprintf(w, "hello, %s!\n", ps.ByName("name"))
+//			return nil
+//		}
+//
+//		func main() {
+//			router := ctxrouter.New()
+//			router.GET("/", Index)
+//			router.GET("/hello/:name", Hello)
+//			log.Fatal(http.ListenAndServe(":8080", router))
+//		}
+//
+// Copyright (c) 2013 Julien Schmidt. All rights reserved.
+// Middleware and net/context integration: CoreStore Authors and Contributors
+//
 // The router matches incoming requests by the request method and the path.
 // If a handle is registered for this path and method, the router delegates the
 // request to that function.
@@ -53,7 +86,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/util/cserr"
 	"golang.org/x/net/context"
 	"golang.org/x/net/websocket"
 )
@@ -113,6 +146,10 @@ type Router struct {
 	// handler.
 	HandleMethodNotAllowed bool
 
+	// If enabled, the router automatically replies to OPTIONS requests.
+	// Custom OPTIONS handlers take priority over automatic replies.
+	HandleOPTIONS bool
+
 	// Configurable ctxhttp.Handler which is called when no matching route is
 	// found. If it is not set, http.NotFound is used.
 	NotFound ctxhttp.Handler
@@ -120,14 +157,15 @@ type Router struct {
 	// Configurable ctxhttp.Handler which is called when a request
 	// cannot be routed and HandleMethodNotAllowed is true.
 	// If it is not set, http.Error with http.StatusMethodNotAllowed is used.
+	// The "Allow" header with allowed request methods is set before the handler
+	// is called.
 	MethodNotAllowed ctxhttp.Handler
 
 	// PanicHandler is a function to handle panics recovered from ctxhttp handlers.
 	// It should be used to generate a error page and return the http error code
 	// 500 (Internal Server Error).
 	// The handler can be used to keep your server from crashing because of
-	// unrecovered panics. You can extract the panic value from the context
-	// via the PanicFromContext() function.
+	// unrecovered panics.
 	PanicHandler ctxhttp.HandlerFunc
 
 	// ErrorHandler takes care of the errors returned by a ctxhttp.HandlerFunc.
@@ -159,6 +197,7 @@ func New(cc ...context.Context) *Router {
 		RedirectFixedPath:      true,
 		HandleMethodNotAllowed: true,
 		RootContext:            rc,
+		HandleOPTIONS:          true,
 	}
 }
 
@@ -312,21 +351,59 @@ func (r *Router) ServeFiles(path string, root http.FileSystem) {
 func (r *Router) recv(ctx context.Context, w http.ResponseWriter, req *http.Request) {
 	if rcv := recover(); rcv != nil {
 		if err := r.PanicHandler(WithContextPanic(ctx, rcv), w, req); err != nil {
-			http.Error(w, util.Errors(err), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	}
 }
 
 // Lookup allows the manual lookup of a method + path combo.
 // This is e.g. useful to build a framework around this router.
-// If the path was found, it returns the handle function. Otherwise the third
-// return value indicates whether a redirection to
+// If the path was found, it returns the handle function and the path parameter
+// values. Otherwise the third return value indicates whether a redirection to
 // the same path with an extra / without the trailing slash should be performed.
 func (r *Router) Lookup(method, path string) (ctxhttp.HandlerFunc, ctxhttp.MiddlewareSlice, Params, bool) {
 	if root := r.trees[method]; root != nil {
 		return root.getValue(path)
 	}
 	return nil, nil, nil, false
+}
+
+func (r *Router) allowed(path, reqMethod string) (allow string) {
+	if path == "*" { // server-wide
+		for method := range r.trees {
+			if method == "OPTIONS" {
+				continue
+			}
+
+			// add request method to list of allowed methods
+			if len(allow) == 0 {
+				allow = method
+			} else {
+				allow += ", " + method
+			}
+		}
+	} else { // specific path
+		for method := range r.trees {
+			// Skip the requested method - we already tried this one
+			if method == reqMethod || method == "OPTIONS" {
+				continue
+			}
+
+			handle, _, _, _ := r.trees[method].getValue(path)
+			if handle != nil {
+				// add request method to list of allowed methods
+				if len(allow) == 0 {
+					allow = method
+				} else {
+					allow += ", " + method
+				}
+			}
+		}
+	}
+	if len(allow) > 0 {
+		allow += ", OPTIONS"
+	}
+	return
 }
 
 // ServeHTTP makes the router implement the http.Handler interface. Calls the
@@ -351,7 +428,7 @@ func handleError(w http.ResponseWriter, errs ...error) {
 			return
 		}
 	}
-	http.Error(w, util.Errors(errs...), http.StatusInternalServerError)
+	http.Error(w, cserr.NewMultiErr(errs...).Error(), http.StatusInternalServerError)
 }
 
 // ServeHTTPContext makes the router implement the ctxhttp.Handler interface.
@@ -360,8 +437,9 @@ func (r *Router) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, re
 		defer r.recv(ctx, w, req)
 	}
 
+	path := req.URL.Path
+
 	if root := r.trees[req.Method]; root != nil {
-		path := req.URL.Path
 
 		if handle, mws, ps, tsr := root.getValue(path); handle != nil {
 			if mws != nil {
@@ -404,23 +482,27 @@ func (r *Router) ServeHTTPContext(ctx context.Context, w http.ResponseWriter, re
 		}
 	}
 
-	// Handle 405
-	if r.HandleMethodNotAllowed {
-		for method := range r.trees {
-			// Skip the requested method - we already tried this one
-			if method == req.Method {
-				continue
+	if req.Method == "OPTIONS" {
+		// Handle OPTIONS requests
+		if r.HandleOPTIONS {
+			if allow := r.allowed(path, req.Method); len(allow) > 0 {
+				w.Header().Set("Allow", allow)
+				return nil
 			}
-
-			handle, _, _, _ := r.trees[method].getValue(req.URL.Path)
-			if handle != nil {
+		}
+	} else {
+		// Handle 405
+		if r.HandleMethodNotAllowed {
+			if allow := r.allowed(path, req.Method); len(allow) > 0 {
+				w.Header().Set("Allow", allow)
 				if r.MethodNotAllowed != nil {
 					return r.MethodNotAllowed.ServeHTTPContext(ctx, w, req)
+				} else {
+					http.Error(w,
+						http.StatusText(http.StatusMethodNotAllowed),
+						http.StatusMethodNotAllowed,
+					)
 				}
-				http.Error(w,
-					http.StatusText(http.StatusMethodNotAllowed),
-					http.StatusMethodNotAllowed,
-				)
 				return nil
 			}
 		}
