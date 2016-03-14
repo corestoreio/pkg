@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store
+package storenet
 
 import (
 	"errors"
 
+	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"golang.org/x/net/context"
 )
@@ -26,17 +27,17 @@ var ErrContextServiceNotFound = errors.New("store.Reader not found in context.Co
 
 type ctxServiceKey struct{}
 type ctxServiceWrapper struct {
-	service        Reader
-	requestedStore *Store
+	service        store.Provider
+	requestedStore *store.Store
 }
 
-// FromContextReader returns a store.Reader and a store.Store from a context.
+// FromContextProvider returns a store.Reader and a store.Store from a context.
 // The *store.Store is either the current requested store (via JWT or cookie or REQUEST
 // parameter) or if those are not set then the default initialized store when
 // instantiating a new Reader. The returned store.Store identifies the current
 // scope.Scope of a request. If it cannot determine a store.Store then the
 // error ErrStoreNotFound will get returned.
-func FromContextReader(ctx context.Context) (Reader, *Store, error) {
+func FromContextProvider(ctx context.Context) (store.Provider, *store.Store, error) {
 	sw, ok := ctx.Value(ctxServiceKey{}).(ctxServiceWrapper)
 	if !ok || sw.service == nil {
 		return nil, nil, ErrContextServiceNotFound
@@ -52,11 +53,11 @@ func FromContextReader(ctx context.Context) (Reader, *Store, error) {
 	return sw.service, sw.requestedStore, nil
 }
 
-// WithContextReader adds a store.Reader and an optional requestedStore to the context.
+// WithContextProvider adds a store.Reader and an optional requestedStore to the context.
 // requestedStore can be provided 0 or 1 time. If you provide the RequestedStore
 // argument then it will override the default RequestedStore from FromContextReader()
-func WithContextReader(ctx context.Context, r Reader, requestedStore ...*Store) context.Context {
-	var rs *Store
+func WithContextProvider(ctx context.Context, r store.Provider, requestedStore ...*store.Store) context.Context {
+	var rs *store.Store
 	if len(requestedStore) == 1 {
 		rs = requestedStore[0]
 	}
@@ -68,10 +69,10 @@ func WithContextReader(ctx context.Context, r Reader, requestedStore ...*Store) 
 
 // WithContextMustService creates a new StoreService wrapped in a context.Background().
 // Convenience function. Panics on error.
-func WithContextMustService(so scope.Option, s Storager, opts ...ServiceOption) context.Context {
-	sm, err := NewService(so, s, opts...)
+func WithContextMustService(so scope.Option, s store.Storager, opts ...store.ServiceOption) context.Context {
+	sm, err := store.NewService(so, s, opts...)
 	if err != nil {
 		panic(err)
 	}
-	return WithContextReader(context.Background(), sm)
+	return WithContextProvider(context.Background(), sm)
 }

@@ -12,25 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store_test
+package storenet
 
-import (
-	std "log"
+import "github.com/corestoreio/csfw/util/log"
 
-	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/util/log"
-)
-
-var debugLogBuf *log.MutexBuffer
-var infoLogBuf *log.MutexBuffer
-
-func init() {
-	debugLogBuf = new(log.MutexBuffer)
-	infoLogBuf = new(log.MutexBuffer)
-
-	store.PkgLog = log.NewStdLogger(
-		log.SetStdDebug(debugLogBuf, "testDebug: ", std.Lshortfile),
-		log.SetStdInfo(infoLogBuf, "testInfo: ", std.Lshortfile),
-	)
-	store.PkgLog.SetLevel(log.StdLevelDebug)
-}
+// PkgLog global package based logger
+var PkgLog log.Logger = log.PkgLog

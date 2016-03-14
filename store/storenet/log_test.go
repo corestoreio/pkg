@@ -12,12 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store_test
+package storenet_test
 
 import (
 	std "log"
 
-	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/log"
 )
 
@@ -28,9 +28,9 @@ func init() {
 	debugLogBuf = new(log.MutexBuffer)
 	infoLogBuf = new(log.MutexBuffer)
 
-	store.PkgLog = log.NewStdLogger(
+	storenet.PkgLog = log.NewStdLogger(
 		log.SetStdDebug(debugLogBuf, "testDebug: ", std.Lshortfile),
 		log.SetStdInfo(infoLogBuf, "testInfo: ", std.Lshortfile),
 	)
-	store.PkgLog.SetLevel(log.StdLevelDebug)
+	storenet.PkgLog.SetLevel(log.StdLevelDebug)
 }

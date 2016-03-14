@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store_test
+package storenet_test
 
 import (
 	"errors"
@@ -24,6 +24,8 @@ import (
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/log"
 	"golang.org/x/net/context"
 )
@@ -38,7 +40,7 @@ func Benchmark_WithValidateBaseUrl(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	finalHandler := store.WithValidateBaseURL(middlewareConfigReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	finalHandler := storenet.WithValidateBaseURL(middlewareConfigReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		return errors.New("This handler should not be called!")
 	}))
 	want := "https://www.corestore.io/customer/comments/view?id=1916#tab=ratings"
@@ -58,7 +60,7 @@ func Benchmark_WithValidateBaseUrl(b *testing.B) {
 
 func benchValidationHandler(b *testing.B, wantStoreCode string) ctxhttp.HandlerFunc {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		_, haveReqStore, err := store.FromContextReader(ctx)
+		_, haveReqStore, err := storenet.FromContextProvider(ctx)
 		if err != nil {
 			return err
 		}
@@ -79,7 +81,7 @@ func Benchmark_WithInitStoreByToken(b *testing.B) {
 	wantStoreCode := "nz"
 	ctx := newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, wantStoreCode)
 
-	mw := store.WithInitStoreByToken()(benchValidationHandler(b, wantStoreCode))
+	mw := storenet.WithInitStoreByToken()(benchValidationHandler(b, wantStoreCode))
 
 	rec := httptest.NewRecorder()
 	req, err := http.NewRequest(httputil.MethodGet, "https://corestore.io/store/list/", nil)
@@ -102,9 +104,9 @@ func Benchmark_WithInitStoreByFormCookie(b *testing.B) {
 	b.ReportAllocs()
 
 	wantStoreCode := "nz"
-	ctx := store.WithContextReader(context.Background(), getInitializedStoreService(scope.Option{Website: scope.MockID(2)}))
+	ctx := storenet.WithContextProvider(context.Background(), storemock.NewInitService(scope.Option{Website: scope.MockID(2)}))
 
-	mw := store.WithInitStoreByFormCookie()(benchValidationHandler(b, wantStoreCode))
+	mw := storenet.WithInitStoreByFormCookie()(benchValidationHandler(b, wantStoreCode))
 
 	rec := httptest.NewRecorder()
 	req, err := http.NewRequest(httputil.MethodGet, "https://corestore.io/store/list/", nil)
@@ -113,7 +115,7 @@ func Benchmark_WithInitStoreByFormCookie(b *testing.B) {
 	}
 
 	req.AddCookie(&http.Cookie{
-		Name:  store.ParamName,
+		Name:  storenet.ParamName,
 		Value: wantStoreCode,
 	})
 

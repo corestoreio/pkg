@@ -47,7 +47,7 @@ func WithContextMustService(so scope.Option, opts ...func(ms *Storage)) context.
 	if err != nil {
 		panic(err)
 	}
-	return storenet.WithContextReader(context.Background(), sm)
+	return storenet.WithContextProvider(context.Background(), sm)
 }
 
 // Storage main underlying data container

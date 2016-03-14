@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store_test
+package storenet_test
 
 import (
 	"fmt"
@@ -24,26 +24,26 @@ import (
 	"reflect"
 
 	"github.com/corestoreio/csfw/backend"
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
-	storemock "github.com/corestoreio/csfw/store/mock"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/juju/errgo"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
 
-var middlewareConfigReader *config.MockGet
+var middlewareConfigReader *cfgmock.Service
 var middlewareCtxStoreService context.Context
 
 func init() {
-	middlewareConfigReader = config.NewMockGetter(
-		config.WithMockValues(config.MockPV{
+	middlewareConfigReader = cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{
 			scope.StrDefault.FQPathInt64(0, backend.Backend.WebURLRedirectToBase.String()):  1,
 			scope.StrStores.FQPathInt64(1, backend.Backend.WebSecureUseInFrontend.String()): true,
 			scope.StrStores.FQPathInt64(1, backend.Backend.WebUnsecureBaseURL.String()):     "http://www.corestore.io/",
@@ -77,8 +77,8 @@ func finalHandlerWithValidateBaseURL(t *testing.T) ctxhttp.HandlerFunc {
 
 func TestWithValidateBaseUrl_DeactivatedAndShouldNotRedirectWithGETRequest(t *testing.T) {
 
-	mockReader := config.NewMockGetter(
-		config.WithMockValues(config.MockPV{
+	mockReader := cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{
 			scope.StrDefault.FQPathInt64(0, backend.Backend.WebURLRedirectToBase.String()): 0,
 		}),
 	)
@@ -88,14 +88,14 @@ func TestWithValidateBaseUrl_DeactivatedAndShouldNotRedirectWithGETRequest(t *te
 	req, err := http.NewRequest(httputil.MethodGet, "http://corestore.io/catalog/product/view", nil)
 	assert.NoError(t, err)
 
-	err = store.WithValidateBaseURL(mockReader)(finalHandlerWithValidateBaseURL(t)).ServeHTTPContext(context.Background(), w, req)
+	err = storenet.WithValidateBaseURL(mockReader)(finalHandlerWithValidateBaseURL(t)).ServeHTTPContext(context.Background(), w, req)
 	assert.NoError(t, err)
 }
 
 func TestWithValidateBaseUrl_ActivatedAndShouldNotRedirectWithPOSTRequest(t *testing.T) {
 
-	mockReader := config.NewMockGetter(
-		config.WithMockValues(config.MockPV{
+	mockReader := cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{
 			scope.StrDefault.FQPathInt64(0, backend.Backend.WebURLRedirectToBase.String()): 301,
 		}),
 	)
@@ -104,10 +104,10 @@ func TestWithValidateBaseUrl_ActivatedAndShouldNotRedirectWithPOSTRequest(t *tes
 	req, err := http.NewRequest(httputil.MethodGet, "http://corestore.io/catalog/product/view", nil)
 	assert.NoError(t, err)
 
-	mw := store.WithValidateBaseURL(mockReader)(finalHandlerWithValidateBaseURL(t))
+	mw := storenet.WithValidateBaseURL(mockReader)(finalHandlerWithValidateBaseURL(t))
 
 	err = mw.ServeHTTPContext(context.Background(), w, req)
-	assert.EqualError(t, err, store.ErrContextServiceNotFound.Error())
+	assert.EqualError(t, err, storenet.ErrContextServiceNotFound.Error())
 
 	w = httptest.NewRecorder()
 	req, err = http.NewRequest(httputil.MethodPost, "http://corestore.io/catalog/product/view", strings.NewReader(`{ "k1": "v1",  "k2": { "k3": ["va1"]  }}`))
@@ -161,7 +161,7 @@ func TestWithValidateBaseUrl_ActivatedAndShouldRedirectWithGETRequest(t *testing
 	}
 
 	for i, test := range tests {
-		mw := store.WithValidateBaseURL(middlewareConfigReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		mw := storenet.WithValidateBaseURL(middlewareConfigReader)(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 			return fmt.Errorf("This handler should not be called! Iindex %d", i)
 		}))
 		assert.NoError(t, mw.ServeHTTPContext(middlewareCtxStoreService, test.rec, test.req), "Index %d", i)
@@ -182,7 +182,7 @@ func getMWTestRequest(m, u string, c *http.Cookie) *http.Request {
 
 func finalInitStoreHandler(t *testing.T, wantStoreCode string) ctxhttp.HandlerFunc {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		_, haveReqStore, err := store.FromContextReader(ctx)
+		_, haveReqStore, err := storenet.FromContextProvider(ctx)
 		if err != nil {
 			return err
 		}
@@ -200,97 +200,97 @@ var testsMWInitByFormCookie = []struct {
 	wantLog       string
 }{
 	{
-		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.ParamName, Value: "uk"}),
-		scope.Option{Store: scope.MockID(1)}, "uk", nil, store.ParamName + "=uk;", store.ErrStoreCodeInvalid.Error(),
+		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: storenet.ParamName, Value: "uk"}),
+		scope.Option{Store: scope.MockID(1)}, "uk", nil, storenet.ParamName + "=uk;", store.ErrStoreCodeInvalid.Error(),
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
-		scope.Option{Store: scope.MockID(1)}, "uk", nil, store.ParamName + "=uk;", "", // generates a new 1year valid cookie
+		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=uk", nil),
+		scope.Option{Store: scope.MockID(1)}, "uk", nil, storenet.ParamName + "=uk;", "", // generates a new 1year valid cookie
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=%20uk", nil),
+		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=%20uk", nil),
 		scope.Option{Store: scope.MockID(1)}, "de", nil, "", store.ErrStoreCodeInvalid.Error(),
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.ParamName, Value: "de"}),
-		scope.Option{Group: scope.MockID(1)}, "de", nil, store.ParamName + "=de;", store.ErrStoreCodeInvalid.Error(),
+		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: storenet.ParamName, Value: "de"}),
+		scope.Option{Group: scope.MockID(1)}, "de", nil, storenet.ParamName + "=de;", store.ErrStoreCodeInvalid.Error(),
 	},
 	{
 		getMWTestRequest("GET", "http://cs.io", nil),
 		scope.Option{Group: scope.MockID(1)}, "at", nil, "", http.ErrNoCookie.Error(),
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=de", nil),
-		scope.Option{Group: scope.MockID(1)}, "de", nil, store.ParamName + "=de;", "", // generates a new 1y valid cookie
+		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=de", nil),
+		scope.Option{Group: scope.MockID(1)}, "de", nil, storenet.ParamName + "=de;", "", // generates a new 1y valid cookie
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=at", nil),
-		scope.Option{Group: scope.MockID(1)}, "at", nil, store.ParamName + "=;", "", // generates a delete cookie
+		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=at", nil),
+		scope.Option{Group: scope.MockID(1)}, "at", nil, storenet.ParamName + "=;", "", // generates a delete cookie
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=cz", nil),
+		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=cz", nil),
 		scope.Option{Group: scope.MockID(1)}, "at", store.ErrIDNotFoundTableStoreSlice, "", "",
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
+		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=uk", nil),
 		scope.Option{Group: scope.MockID(1)}, "at", store.ErrStoreChangeNotAllowed, "", "",
 	},
 
 	{
-		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.ParamName, Value: "nz"}),
-		scope.Option{Website: scope.MockID(2)}, "nz", nil, store.ParamName + "=nz;", store.ErrStoreCodeInvalid.Error(),
+		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: storenet.ParamName, Value: "nz"}),
+		scope.Option{Website: scope.MockID(2)}, "nz", nil, storenet.ParamName + "=nz;", store.ErrStoreCodeInvalid.Error(),
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: store.ParamName, Value: "n'z"}),
+		getMWTestRequest("GET", "http://cs.io", &http.Cookie{Name: storenet.ParamName, Value: "n'z"}),
 		scope.Option{Website: scope.MockID(2)}, "au", nil, "", store.ErrStoreCodeInvalid.Error(),
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=uk", nil),
+		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=uk", nil),
 		scope.Option{Website: scope.MockID(2)}, "au", store.ErrStoreChangeNotAllowed, "", "",
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=nz", nil),
-		scope.Option{Website: scope.MockID(2)}, "nz", nil, store.ParamName + "=nz;", "",
+		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=nz", nil),
+		scope.Option{Website: scope.MockID(2)}, "nz", nil, storenet.ParamName + "=nz;", "",
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=ch", nil),
+		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=ch", nil),
 		scope.Option{Website: scope.MockID(1)}, "at", store.ErrStoreNotActive, "", "",
 	},
 	{
-		getMWTestRequest("GET", "http://cs.io/?"+store.HTTPRequestParamStore+"=nz", nil),
+		getMWTestRequest("GET", "http://cs.io/?"+storenet.HTTPRequestParamStore+"=nz", nil),
 		scope.Option{Website: scope.MockID(1)}, "at", store.ErrStoreChangeNotAllowed, "", "",
 	},
 }
 
 func TestWithInitStoreByFormCookie(t *testing.T) {
-	errLogBuf.Reset()
-	defer errLogBuf.Reset()
+	debugLogBuf.Reset()
+	defer debugLogBuf.Reset()
 
 	for i, test := range testsMWInitByFormCookie {
 
-		ctx := store.WithContextReader(context.Background(), getInitializedStoreService(test.haveSO))
+		ctx := storenet.WithContextProvider(context.Background(), storemock.NewInitService(test.haveSO))
 
-		mw := store.WithInitStoreByFormCookie()(finalInitStoreHandler(t, test.wantStoreCode))
+		mw := storenet.WithInitStoreByFormCookie()(finalInitStoreHandler(t, test.wantStoreCode))
 
 		rec := httptest.NewRecorder()
 		surfErr := mw.ServeHTTPContext(ctx, rec, test.req)
 		if test.wantErr != nil {
 			var loc string
-			if l, ok := surfErr.(errgo.Locationer); ok {
-				loc = l.Location().String()
-			}
+			//if l, ok := surfErr.(errgo.Locationer); ok {
+			//	loc = l.Location().String()
+			//}
 
 			assert.EqualError(t, surfErr, test.wantErr.Error(), "\nIndex %d\n%s", i, loc)
-			errLogBuf.Reset()
+			debugLogBuf.Reset()
 			continue
 		}
 
 		if test.wantLog != "" {
-			assert.Contains(t, errLogBuf.String(), test.wantLog, "\nIndex %d\n", i)
-			errLogBuf.Reset()
+			assert.Contains(t, debugLogBuf.String(), test.wantLog, "\nIndex %d\n", i)
+			debugLogBuf.Reset()
 			continue
 		} else {
-			assert.Empty(t, errLogBuf.String(), "\nIndex %d\n", i)
+			assert.Empty(t, debugLogBuf.String(), "\nIndex %d\n", i)
 		}
 
 		assert.NoError(t, surfErr, "Index %d", i)
@@ -301,20 +301,20 @@ func TestWithInitStoreByFormCookie(t *testing.T) {
 		} else {
 			assert.Empty(t, newKeks, "%#v", test)
 		}
-		errLogBuf.Reset()
+		debugLogBuf.Reset()
 	}
 }
 
 func TestWithInitStoreByFormCookie_NilCtx(t *testing.T) {
-	mw := store.WithInitStoreByFormCookie()(nil)
+	mw := storenet.WithInitStoreByFormCookie()(nil)
 	surfErr := mw.ServeHTTPContext(context.Background(), nil, nil)
-	assert.EqualError(t, surfErr, store.ErrContextServiceNotFound.Error())
+	assert.EqualError(t, surfErr, storenet.ErrContextServiceNotFound.Error())
 }
 
 func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) context.Context {
-	ctx := store.WithContextReader(context.Background(), getInitializedStoreService(initO))
+	ctx := storenet.WithContextProvider(context.Background(), storemock.NewInitService(initO))
 	tok := jwt.New(jwt.SigningMethodHS256)
-	tok.Claims[store.ParamName] = tokenStoreCode
+	tok.Claims[storenet.ParamName] = tokenStoreCode
 	ctx = ctxjwt.WithContext(ctx, tok)
 	return ctx
 }
@@ -334,8 +334,8 @@ func TestWithInitStoreByToken(t *testing.T) {
 		wantStoreCode string
 		wantErr       error
 	}{
-		{store.WithContextReader(context.Background(), nil), "de", store.ErrContextServiceNotFound},
-		{store.WithContextReader(context.Background(), getInitializedStoreService(scope.Option{Store: scope.MockCode("de")})), "de", ctxjwt.ErrContextJWTNotFound},
+		{storenet.WithContextProvider(context.Background(), nil), "de", storenet.ErrContextServiceNotFound},
+		{storenet.WithContextProvider(context.Background(), storemock.NewInitService(scope.Option{Store: scope.MockCode("de")})), "de", ctxjwt.ErrContextJWTNotFound},
 		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "de"), "de", nil},
 		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("at")}, "ch"), "at", store.ErrStoreNotActive},
 		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "at"), "at", nil},
@@ -355,7 +355,7 @@ func TestWithInitStoreByToken(t *testing.T) {
 	}
 	for i, test := range tests {
 
-		mw := store.WithInitStoreByToken()(finalInitStoreHandler(t, test.wantStoreCode))
+		mw := storenet.WithInitStoreByToken()(finalInitStoreHandler(t, test.wantStoreCode))
 		rec := httptest.NewRecorder()
 		surfErr := mw.ServeHTTPContext(test.ctx, rec, newReq(i))
 		if test.wantErr != nil {
@@ -379,8 +379,8 @@ func TestWithInitStoreByToken_EqualPointers(t *testing.T) {
 	}
 
 	var equalStorePointer *store.Store
-	mw := store.WithInitStoreByToken()(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		_, haveReqStore, err := store.FromContextReader(ctx)
+	mw := storenet.WithInitStoreByToken()(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		_, haveReqStore, err := storenet.FromContextProvider(ctx)
 		if err != nil {
 			return err
 		}

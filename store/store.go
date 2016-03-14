@@ -17,35 +17,19 @@ package store
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
-	"sort"
 	"strings"
-	"time"
-
-	"fmt"
 
 	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/model"
-	"github.com/corestoreio/csfw/directory"
-	"github.com/corestoreio/csfw/net/httputil"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util"
+	"github.com/corestoreio/csfw/config/cfgmodel"
+	"github.com/corestoreio/csfw/config/cfgpath"
 )
 
-const (
-	// DefaultStoreID is always 0.
-	DefaultStoreID int64 = 0
-	// HTTPRequestParamStore name of the GET parameter to set a new store in a
-	// current website/group context
-	HTTPRequestParamStore = `___store`
-	// ParamName important when the user selects a different store within the
-	// current website/group context. This name will be used in a cookie or as
-	// key value in a token to permanently save the new selected
-	// store code.
-	ParamName = `store`
-)
+// DefaultStoreID is always 0.
+const DefaultStoreID int64 = 0
 
 // Store represents the scope in which a shop runs. Everything is bound to a
 // Store. A store knows its website ID, group ID and if its active. A store can
@@ -70,10 +54,6 @@ type Store struct {
 		unsecure *config.URLCache
 	}
 }
-
-// StoreSlice a collection of pointers to the Store structs.
-// StoreSlice has some nifty method receivers.
-type StoreSlice []*Store
 
 // StoreOption can be used as an argument in NewStore to configure a store.
 type StoreOption func(s *Store)
@@ -174,7 +154,7 @@ func (s *Store) ApplyOptions(opts ...StoreOption) *Store {
 		}
 	}
 	if nil != s.Website && nil != s.Group {
-		s.Config = s.cr.NewScoped(s.Website.WebsiteID(), s.Group.GroupID(), s.StoreID())
+		s.Config = s.cr.NewScoped(s.Website.WebsiteID(), s.StoreID())
 	}
 	return s
 }
@@ -182,11 +162,6 @@ func (s *Store) ApplyOptions(opts ...StoreOption) *Store {
 /*
 	TODO(cs) implement Magento\Store\Model\Store
 */
-
-var _ scope.StoreIDer = (*Store)(nil)
-var _ scope.GroupIDer = (*Store)(nil)
-var _ scope.WebsiteIDer = (*Store)(nil)
-var _ scope.StoreCoder = (*Store)(nil)
 
 // StoreID satisfies the interface scope.StoreIDer and returns the store ID.
 func (s *Store) StoreID() int64 {
@@ -241,7 +216,7 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 		}
 	}
 
-	var p model.BaseURL
+	var p cfgmodel.BaseURL
 	switch ut {
 	case config.URLTypeWeb:
 		p = backend.Backend.WebUnsecureBaseURL
@@ -269,17 +244,20 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 		return url.URL{}, fmt.Errorf("Unsupported UrlType: %d", ut)
 	}
 
-	rawURL := p.Get(s.Config)
+	rawURL, err := p.Get(s.Config)
+	if err != nil {
+		return url.URL{}, err
+	}
 
-	if strings.Contains(rawURL, model.PlaceholderBaseURL) {
+	if strings.Contains(rawURL, cfgmodel.PlaceholderBaseURL) {
 		// TODO(cs) replace placeholder with \Magento\Framework\App\Request\Http::getDistroBaseUrl()
 		// getDistroBaseUrl will be generated from the $_SERVER variable,
-		base, err := s.cr.String(config.Path(config.PathCSBaseURL))
+		base, err := s.cr.String(cfgpath.MustNewByParts(config.PathCSBaseURL))
 		if config.NotKeyNotFoundError(err) {
 			PkgLog.Debug("store.Store.BaseURL.String", "err", err, "path", config.PathCSBaseURL)
 			base = config.CSBaseURL
 		}
-		rawURL = strings.Replace(rawURL, model.PlaceholderBaseURL, base, 1)
+		rawURL = strings.Replace(rawURL, cfgmodel.PlaceholderBaseURL, base, 1)
 	}
 	rawURL = strings.TrimRight(rawURL, "/") + "/"
 
@@ -293,63 +271,27 @@ func (s *Store) BaseURL(ut config.URLType, isSecure bool) (url.URL, error) {
 
 // IsFrontURLSecure returns true from the config if the frontend must be secure.
 func (s *Store) IsFrontURLSecure() bool {
-	return backend.Backend.WebSecureUseInFrontend.Get(s.Config)
+	return false // backend.Backend.WebSecureUseInFrontend.Get(s.Config)
 }
 
 // IsCurrentlySecure checks if a request for a give store aka. scope is secure. Checks
 // include if base URL has been set and if front URL is secure
 // This function might gets executed on every request.
 func (s *Store) IsCurrentlySecure(r *http.Request) bool {
-	if httputil.IsSecure(s.cr, r) {
-		return true
-	}
-
-	secureBaseURL, err := s.BaseURL(config.URLTypeWeb, true)
-	if err != nil || false == s.IsFrontURLSecure() {
-		PkgLog.Debug("store.Store.IsCurrentlySecure.BaseURL", "err", err, "secureBaseURL", secureBaseURL)
-		return false
-	}
-	return secureBaseURL.Scheme == "https" && r.URL.Scheme == "https" // todo(cs) check for ports !? other schemes?
+	return false
+	//if httputil.IsSecure(s.cr, r) {
+	//	return true
+	//}
+	//
+	//secureBaseURL, err := s.BaseURL(config.URLTypeWeb, true)
+	//if err != nil || false == s.IsFrontURLSecure() {
+	//	PkgLog.Debug("store.Store.IsCurrentlySecure.BaseURL", "err", err, "secureBaseURL", secureBaseURL)
+	//	return false
+	//}
+	//return secureBaseURL.Scheme == "https" && r.URL.Scheme == "https" // todo(cs) check for ports !? other schemes?
 }
 
-// NewCookie creates a new pre-configured cookie.
-// TODO(cs) create cookie manager to stick to the limits of http://www.ietf.org/rfc/rfc2109.txt page 15
-// @see http://browsercookielimits.squawky.net/
-func (s *Store) NewCookie() *http.Cookie {
-	return &http.Cookie{
-		Name:     ParamName,
-		Value:    "",
-		Path:     s.Path(),
-		Domain:   "",
-		Secure:   false,
-		HttpOnly: true,
-	}
-}
-
-// SetCookie adds a cookie which contains the store code and is valid for one year.
-func (s *Store) SetCookie(res http.ResponseWriter) {
-	if res != nil {
-		keks := s.NewCookie()
-		keks.Value = s.Data.Code.String
-		keks.Expires = time.Now().AddDate(1, 0, 0) // one year valid
-		http.SetCookie(res, keks)
-	}
-}
-
-// DeleteCookie deletes the store cookie
-func (s *Store) DeleteCookie(res http.ResponseWriter) {
-	if res != nil {
-		keks := s.NewCookie()
-		keks.Expires = time.Now().AddDate(-10, 0, 0)
-		http.SetCookie(res, keks)
-	}
-}
-
-// AddClaim adds the store code to a JSON web token.
-// tokenClaim may be *jwt.Token.Claim
-func (s *Store) AddClaim(tokenClaim map[string]interface{}) {
-	tokenClaim[ParamName] = s.Data.Code.String
-}
+// TOOD move net related functions into the storenet package
 
 // RootCategoryID returns the root category ID assigned to this store view.
 func (s *Store) RootCategoryID() int64 {
@@ -362,71 +304,20 @@ func (s *Store) RootCategoryID() int64 {
 
 // CurrentCurrency TODO(cs)
 // @see app/code/Magento/Store/Model/Store.php::getCurrentCurrency
-func (s *Store) CurrentCurrency() *directory.Currency {
-	return nil
+func (s *Store) CurrentCurrency() string {
+	/*
+		this returns just a string or string slice and no further
+		involvement of the directory package.
+
+		or those functions move directly into the directory package
+	*/
+	return ""
 }
 
-/*
-	StoreSlice method receivers
-*/
-
-// Sort convenience helper
-func (ss *StoreSlice) Sort() *StoreSlice {
-	sort.Sort(ss)
-	return ss
+func (s *Store) DefaultCurrency() string {
+	return ""
 }
 
-func (ss StoreSlice) Len() int { return len(ss) }
-
-func (ss *StoreSlice) Swap(i, j int) { (*ss)[i], (*ss)[j] = (*ss)[j], (*ss)[i] }
-
-func (ss *StoreSlice) Less(i, j int) bool {
-	return (*ss)[i].Data.SortOrder < (*ss)[j].Data.SortOrder
-}
-
-// Filter returns a new slice filtered by predicate f
-func (ss StoreSlice) Filter(f func(*Store) bool) StoreSlice {
-	var stores StoreSlice
-	for _, v := range ss {
-		if v != nil && f(v) {
-			stores = append(stores, v)
-		}
-	}
-	return stores
-}
-
-// Codes returns a StringSlice with all store codes
-func (ss StoreSlice) Codes() util.StringSlice {
-	if len(ss) == 0 {
-		return nil
-	}
-	var c util.StringSlice
-	for _, st := range ss {
-		if st != nil {
-			c.Append(st.Data.Code.String)
-		}
-	}
-	return c
-}
-
-// IDs returns an Int64Slice with all store ids
-func (ss StoreSlice) IDs() util.Int64Slice {
-	if len(ss) == 0 {
-		return nil
-	}
-	var ids util.Int64Slice
-	for _, st := range ss {
-		if st != nil {
-			ids.Append(st.Data.StoreID)
-		}
-	}
-	return ids
-}
-
-// LastItem returns the last item of this slice or nil
-func (ss StoreSlice) LastItem() *Store {
-	if ss.Len() > 0 {
-		return ss[ss.Len()-1]
-	}
+func (s *Store) AvailableCurrencyCodes() []string {
 	return nil
 }

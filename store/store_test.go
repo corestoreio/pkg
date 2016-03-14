@@ -20,7 +20,10 @@ import (
 
 	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/config/model"
+	"github.com/corestoreio/csfw/config/cfgmodel"
+	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/csfw/config/mock"
+	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
@@ -28,6 +31,11 @@ import (
 	"github.com/corestoreio/csfw/util"
 	"github.com/stretchr/testify/assert"
 )
+
+var _ scope.StoreIDer = (*store.Store)(nil)
+var _ scope.GroupIDer = (*store.Store)(nil)
+var _ scope.WebsiteIDer = (*store.Store)(nil)
+var _ scope.StoreCoder = (*store.Store)(nil)
 
 const TODO_Better_Test_Data = "@todo implement better test data which is equal for each Magento version"
 
@@ -245,47 +253,47 @@ func TestStoreBaseURLandPath(t *testing.T) {
 		wantPath     string
 	}{
 		{
-			config.NewMockGetter(config.WithMockString(
+			mock.NewService(mock.WithString(
 				func(path string) (string, error) {
 
 					switch path {
 					// scope is here store but config.ScopedGetter must fall back to default
-					case backend.Backend.WebSecureBaseURL.MustFQPathInt64(scope.StrDefault, 0):
+					case backend.Backend.WebSecureBaseURL.String():
 						return "https://corestore.io", nil
-					case backend.Backend.WebUnsecureBaseURL.MustFQPathInt64(scope.StrDefault, 0):
+					case backend.Backend.WebUnsecureBaseURL.String():
 						return "http://corestore.io", nil
 					}
-					return "", config.ErrKeyNotFound
+					return "", storage.ErrKeyNotFound
 				},
 			)),
 			config.URLTypeWeb, true, "https://corestore.io/", "/",
 		},
 		{
-			config.NewMockGetter(config.WithMockString(
+			mock.NewService(mock.WithString(
 				func(path string) (string, error) {
 					switch path {
-					case backend.Backend.WebSecureBaseURL.MustFQPathInt64(scope.StrDefault, 0):
+					case backend.Backend.WebSecureBaseURL.String():
 						return "https://myplatform.io/customer1", nil
-					case backend.Backend.WebUnsecureBaseURL.MustFQPathInt64(scope.StrDefault, 0):
+					case backend.Backend.WebUnsecureBaseURL.String():
 						return "http://myplatform.io/customer1", nil
 					}
-					return "", config.ErrKeyNotFound
+					return "", storage.ErrKeyNotFound
 				},
 			)),
 			config.URLTypeWeb, false, "http://myplatform.io/customer1/", "/customer1/",
 		},
 		{
-			config.NewMockGetter(config.WithMockString(
-				func(path string) (string, error) {
-					switch path {
-					case backend.Backend.WebSecureBaseURL.MustFQPathInt64(scope.StrDefault, 0):
-						return model.PlaceholderBaseURL, nil
-					case backend.Backend.WebUnsecureBaseURL.MustFQPathInt64(scope.StrDefault, 0):
-						return model.PlaceholderBaseURL, nil
-					case scope.StrDefault.FQPathInt64(0, config.PathCSBaseURL):
+			mock.NewService(mock.WithString(
+				func(p string) (string, error) {
+					switch p {
+					case backend.Backend.WebSecureBaseURL.String():
+						return cfgmodel.PlaceholderBaseURL, nil
+					case backend.Backend.WebUnsecureBaseURL.String():
+						return cfgmodel.PlaceholderBaseURL, nil
+					case cfgpath.MustNewByParts(config.PathCSBaseURL).String():
 						return config.CSBaseURL, nil
 					}
-					return "", config.ErrKeyNotFound
+					return "", storage.ErrKeyNotFound
 				},
 			)),
 			config.URLTypeWeb, false, config.CSBaseURL, "/",

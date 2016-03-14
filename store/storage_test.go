@@ -25,6 +25,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// check if interface has been implemented
+var _ store.Storager = (*store.Storage)(nil)
+var _ error = (*store.Storage)(nil)
+
 // todo inspect the high allocs
 
 var testStorage = store.MustNewStorage(

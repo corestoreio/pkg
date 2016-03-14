@@ -119,7 +119,7 @@ func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 	return func(h ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			_, requestedStore, err := storenet.FromContextReader(ctx)
+			_, requestedStore, err := storenet.FromContextProvider(ctx)
 			if err != nil {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("geoip.WithCountryByIP.FromContextManagerReader", "err", err)

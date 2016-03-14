@@ -12,25 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store_test
+package store
 
-import (
-	std "log"
-
-	"github.com/corestoreio/csfw/store"
-	"github.com/corestoreio/csfw/util/log"
-)
-
-var debugLogBuf *log.MutexBuffer
-var infoLogBuf *log.MutexBuffer
-
-func init() {
-	debugLogBuf = new(log.MutexBuffer)
-	infoLogBuf = new(log.MutexBuffer)
-
-	store.PkgLog = log.NewStdLogger(
-		log.SetStdDebug(debugLogBuf, "testDebug: ", std.Lshortfile),
-		log.SetStdInfo(infoLogBuf, "testInfo: ", std.Lshortfile),
-	)
-	store.PkgLog.SetLevel(log.StdLevelDebug)
+// ScopeTree todo app/code/Magento/Store/Model/ScopeTreeProvider.php
+func ScopeTree(p Provider) {
+	// todo app/code/Magento/Store/Model/ScopeTreeProvider.php
 }

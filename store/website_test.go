@@ -19,7 +19,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/catalog/catconfig"
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/mock"
 	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -28,6 +28,11 @@ import (
 	"github.com/corestoreio/csfw/util"
 	"github.com/stretchr/testify/assert"
 )
+
+var _ scope.WebsiteIDer = (*store.Website)(nil)
+var _ scope.StoreIDer = (*store.Website)(nil)
+var _ scope.GroupIDer = (*store.Website)(nil)
+var _ scope.WebsiteCoder = (*store.Website)(nil)
 
 func TestNewWebsite(t *testing.T) {
 	w, err := store.NewWebsite(
@@ -152,7 +157,7 @@ func getWebsiteBaseCurrency(priceScope int, curGlobal, curWebsite string) (*stor
 			},
 		),
 		store.SetWebsiteConfig(
-			config.NewMockGetter(config.WithMockValues(config.MockPV{
+			mock.NewService(mock.WithPV(mock.PathValue{
 				catconfig.Backend.CatalogPriceScope.FQPathInt64(scope.StrDefault, 0):    priceScope,
 				directory.Backend.CurrencyOptionsBase.FQPathInt64(scope.StrDefault, 0):  curGlobal,
 				directory.Backend.CurrencyOptionsBase.FQPathInt64(scope.StrWebsites, 1): curWebsite,

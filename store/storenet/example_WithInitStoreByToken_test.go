@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store_test
+package storenet_test
 
 import (
 	"bytes"
@@ -27,12 +27,13 @@ import (
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/log"
 	"golang.org/x/net/context"
 )
 
 var testDebugLogBuf bytes.Buffer
-var testStoreService store.Reader
+var testStoreService store.Provider
 
 func initStore() {
 	store.PkgLog = log.NewStdLogger(
@@ -74,13 +75,13 @@ func initStore() {
 
 func ExampleWithInitStoreByToken() {
 	initStore()
-	ctx := store.WithContextReader(context.Background(), testStoreService)
+	ctx := storenet.WithContextProvider(context.Background(), testStoreService)
 
 	jwtService, err := ctxjwt.NewService(ctxjwt.WithPassword([]byte(`GÒph3r`)))
 
 	finalHandler := ctxhttp.Chain(
 		func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			_, haveReqStore, err := store.FromContextReader(ctx)
+			_, haveReqStore, err := storenet.FromContextProvider(ctx)
 			if err != nil {
 				return err
 			}
@@ -89,7 +90,7 @@ func ExampleWithInitStoreByToken() {
 			return nil
 		}, //
 		jwtService.WithParseAndValidate(),
-		store.WithInitStoreByToken(),
+		storenet.WithInitStoreByToken(),
 	)
 
 	ts := httptest.NewServer(ctxhttp.NewAdapter(ctx, finalHandler))
@@ -100,7 +101,7 @@ func ExampleWithInitStoreByToken() {
 		map[string]interface{}{
 			// Despite default store for Website ID 1 is AT we are currently
 			// in the store context of DE.
-			store.ParamName: "de",
+			storenet.ParamName: "de",
 		},
 	)
 	if err != nil {

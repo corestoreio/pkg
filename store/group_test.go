@@ -20,9 +20,13 @@ import (
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util"
 	"github.com/stretchr/testify/assert"
 )
+
+var _ scope.GroupIDer = (*store.Group)(nil)
+var _ scope.StoreIDer = (*store.Group)(nil)
 
 func init() {
 	dbc := csdb.MustConnectTest()

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store
+package storenet
 
 import (
 	"net/http"
@@ -22,10 +22,15 @@ import (
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/net/httputil"
+	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 	"golang.org/x/net/context"
 )
+
+// HTTPRequestParamStore name of the GET parameter to set a new store in a
+// current website/group context
+const HTTPRequestParamStore = `___store`
 
 // WithValidateBaseURL is a middleware which checks if the request base URL
 // is equal to the one store in the configuration, if not
@@ -38,8 +43,11 @@ func WithValidateBaseURL(cg config.GetterPubSuber) ctxhttp.Middleware {
 	// the isRedirectToBase value.
 
 	// <todo check logic!>
-	cgDefaultScope := cg.NewScoped(0, 0, 0)
-	configRedirectCode := backend.Backend.WebURLRedirectToBase.Get(cgDefaultScope)
+	cgDefaultScope := cg.NewScoped(0, 0)
+	configRedirectCode, err := backend.Backend.WebURLRedirectToBase.Get(cgDefaultScope)
+	if err != nil {
+		panic(err) // we can panic here because during app start up
+	}
 
 	redirectCode := http.StatusMovedPermanently
 	if configRedirectCode != redirectCode {
@@ -52,12 +60,12 @@ func WithValidateBaseURL(cg config.GetterPubSuber) ctxhttp.Middleware {
 
 			if configRedirectCode > 0 && r.Method != "POST" {
 
-				_, requestedStore, err := FromContextReader(ctx)
+				_, requestedStore, err := FromContextProvider(ctx)
 				if err != nil {
 					if PkgLog.IsDebug() {
 						PkgLog.Debug("ctxhttp.WithValidateBaseUrl.FromContextServiceReader", "err", err, "ctx", ctx)
 					}
-					return errgo.Mask(err)
+					return errors.Mask(err)
 				}
 
 				baseURL, err := requestedStore.BaseURL(config.URLTypeWeb, requestedStore.IsCurrentlySecure(r))
@@ -65,7 +73,7 @@ func WithValidateBaseURL(cg config.GetterPubSuber) ctxhttp.Middleware {
 					if PkgLog.IsDebug() {
 						PkgLog.Debug("ctxhttp.WithValidateBaseUrl.requestedStore.BaseURL", "err", err, "ctx", ctx)
 					}
-					return errgo.Mask(err)
+					return errors.Mask(err)
 				}
 
 				if err := httputil.IsBaseURLCorrect(r, &baseURL); err != nil {
@@ -96,12 +104,12 @@ func WithInitStoreByToken() ctxhttp.Middleware {
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			storeService, requestedStore, err := FromContextReader(ctx)
+			storeService, requestedStore, err := FromContextProvider(ctx)
 			if err != nil {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.WithInitStoreByToken.FromContextServiceReader", "err", err, "ctx", ctx)
 				}
-				return errgo.Mask(err)
+				return errors.Mask(err)
 			}
 
 			token, err := ctxjwt.FromContext(ctx)
@@ -109,7 +117,7 @@ func WithInitStoreByToken() ctxhttp.Middleware {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.WithInitStoreByToken.ctxjwt.FromContext.err", "err", err, "ctx", ctx)
 				}
-				return errgo.Mask(err)
+				return errors.Mask(err)
 			}
 
 			scopeOption, err := CodeFromClaim(token.Claims)
@@ -117,7 +125,7 @@ func WithInitStoreByToken() ctxhttp.Middleware {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.WithInitStoreByToken.StoreCodeFromClaim", "err", err, "token", token, "ctx", ctx)
 				}
-				return errgo.Mask(err)
+				return errors.Mask(err)
 			}
 
 			newRequestedStore, err := storeService.RequestedStore(scopeOption)
@@ -125,13 +133,13 @@ func WithInitStoreByToken() ctxhttp.Middleware {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.WithInitStoreByToken.RequestedStore", "err", err, "token", token, "scopeOption", scopeOption, "ctx", ctx)
 				}
-				return errgo.Mask(err)
+				return errors.Mask(err)
 			}
 
 			if newRequestedStore.StoreID() != requestedStore.StoreID() {
 				// this may lead to a bug because the previously set storeService and requestedStore
 				// will still exists and have not been removed.
-				ctx = WithContextReader(ctx, storeService, newRequestedStore)
+				ctx = WithContextProvider(ctx, storeService, newRequestedStore)
 			}
 
 			return hf.ServeHTTPContext(ctx, w, r)
@@ -150,12 +158,12 @@ func WithInitStoreByFormCookie() ctxhttp.Middleware {
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			storeService, requestedStore, err := FromContextReader(ctx)
+			storeService, requestedStore, err := FromContextProvider(ctx)
 			if err != nil {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.WithInitStoreByToken.FromContextServiceReader", "err", err, "ctx", ctx)
 				}
-				return errgo.Mask(err)
+				return errors.Mask(err)
 			}
 
 			var reqSO scope.Option
@@ -176,12 +184,12 @@ func WithInitStoreByFormCookie() ctxhttp.Middleware {
 				}
 			}
 
-			var newRequestedStore *Store
+			var newRequestedStore *store.Store
 			if newRequestedStore, err = storeService.RequestedStore(reqSO); err != nil {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.WithInitStoreByFormCookie.storeService.RequestedStore", "err", err, "req", r, "scope", reqSO)
 				}
-				return errgo.Mask(err)
+				return errors.Mask(err)
 			}
 
 			soStoreCode := reqSO.StoreCode()
@@ -193,17 +201,18 @@ func WithInitStoreByFormCookie() ctxhttp.Middleware {
 					if PkgLog.IsDebug() {
 						PkgLog.Debug("store.WithInitStoreByFormCookie.Website.DefaultStore", "err", err, "soStoreCode", soStoreCode)
 					}
-					return errgo.Mask(err)
+					return errors.Mask(err)
 				}
+				keks := Cookie{Store: newRequestedStore}
 				if wds.Data.Code.String == soStoreCode {
-					newRequestedStore.DeleteCookie(w) // cookie not needed anymore
+					keks.Delete(w) // cookie not needed anymore
 				} else {
-					newRequestedStore.SetCookie(w) // make sure we force set the new store
+					keks.Set(w) // make sure we force set the new store
 
 					if newRequestedStore.StoreID() != requestedStore.StoreID() {
 						// this may lead to a bug because the previously set storeService and requestedStore
 						// will still exists and have not been removed.
-						ctx = WithContextReader(ctx, storeService, newRequestedStore)
+						ctx = WithContextProvider(ctx, storeService, newRequestedStore)
 					}
 				}
 			}

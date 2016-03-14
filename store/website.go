@@ -16,30 +16,25 @@ package store
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
-	"sort"
 
 	"github.com/corestoreio/csfw/catalog/catconfig"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/directory"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util"
-	"github.com/juju/errgo"
+	"github.com/corestoreio/csfw/util/cserr"
+	"github.com/juju/errors"
 )
 
-const (
-	// DefaultWebsiteID is always 0
-	DefaultWebsiteID int64 = 0
-)
+// DefaultWebsiteID is always 0
+const DefaultWebsiteID int64 = 0
 
 // Website represents the overall parent structure of its children Group and Store.
 // A website defines the default group ID. A website can contain custom configuration
 // settings which overrides the default scope but get itself overridden by the Store scope.
 type Website struct {
 	cr config.Getter // internal root config.Reader which can be overridden
-	// crDefault w.cr.NewScoped(0, 0, 0)
-	crDefault config.ScopedGetter
+
 	// Config contains the scope based configuration reader.
 	Config config.ScopedGetter
 	// Data raw website data from DB table.
@@ -48,12 +43,9 @@ type Website struct {
 	// Groups contains a slice to all groups associated to one website. This slice can be nil.
 	Groups GroupSlice
 	// Stores contains a slice to all stores associated to one website. This slice can be nil.
-	Stores     StoreSlice
-	lastErrors []error
+	Stores StoreSlice
+	*cserr.MultiErr
 }
-
-// WebsiteSlice contains pointer to Website struct and some nifty method receivers.
-type WebsiteSlice []*Website
 
 // WebsiteOption can be used as an argument in NewWebsite to configure a website.
 type WebsiteOption func(*Website)
@@ -72,7 +64,6 @@ var (
 func SetWebsiteConfig(cr config.Getter) WebsiteOption {
 	return func(w *Website) {
 		w.cr = cr
-		w.crDefault = cr.NewScoped(0, 0, 0)
 	}
 }
 
@@ -93,7 +84,7 @@ func SetWebsiteGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) WebsiteOpt
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.SetWebsiteGroupsStores.NewGroup", "err", err, "g", g, "w", w.Data)
 				}
-				w.addError(errgo.Mask(err))
+				w.MultiErr = w.AppendErrors(errors.Mask(err))
 				return
 			}
 		}
@@ -102,7 +93,7 @@ func SetWebsiteGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) WebsiteOpt
 		for i, s := range stores {
 			group, err := tgs.FindByGroupID(s.GroupID)
 			if err != nil {
-				w.addError(fmt.Errorf("Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs))
+				w.MultiErr = w.AppendErrors(fmt.Errorf("Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs))
 				return
 			}
 			w.Stores[i], err = NewStore(s, w.Data, group, WithStoreConfig(w.cr))
@@ -110,7 +101,7 @@ func SetWebsiteGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) WebsiteOpt
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.SetWebsiteGroupsStores.NewStore", "err", err, "s", s, "w.Data", w.Data, "group", group)
 				}
-				w.addError(errgo.Mask(err))
+				w.MultiErr = w.AppendErrors(errors.Mask(err))
 				return
 			}
 		}
@@ -123,9 +114,8 @@ func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) (*Website, error) {
 		return nil, ErrArgumentCannotBeNil
 	}
 	w := &Website{
-		cr:        config.DefaultService,
-		crDefault: config.DefaultService.NewScoped(0, 0, 0),
-		Data:      tw,
+		cr:   config.DefaultService,
+		Data: tw,
 	}
 	return w.ApplyOptions(opts...)
 }
@@ -146,30 +136,12 @@ func (w *Website) ApplyOptions(opts ...WebsiteOption) (*Website, error) {
 			opt(w)
 		}
 	}
-	if len(w.lastErrors) > 0 {
+	if w.HasErrors() {
 		return nil, w
 	}
-	w.Config = w.cr.NewScoped(w.WebsiteID(), 0, 0) // Scope Store and Group is not available
+	w.Config = w.cr.NewScoped(w.WebsiteID(), 0) // Scope Store is not available
 	return w, nil
 }
-
-// addError adds a non nil error to the internal error collector
-func (w *Website) addError(err error) {
-	if err != nil {
-		w.lastErrors = append(w.lastErrors, err)
-	}
-}
-
-// Error implements the error interface. Returns a string where each error has
-// been separated by a line break.
-func (w *Website) Error() string {
-	return util.Errors(w.lastErrors...)
-}
-
-var _ scope.WebsiteIDer = (*Website)(nil)
-var _ scope.StoreIDer = (*Website)(nil)
-var _ scope.GroupIDer = (*Website)(nil)
-var _ scope.WebsiteCoder = (*Website)(nil)
 
 // WebsiteID satisfies the interface scope.WebsiteIDer and returns the website ID.
 func (w *Website) WebsiteID() int64 { return w.Data.WebsiteID }
@@ -223,71 +195,18 @@ func (w *Website) DefaultStore() (*Store, error) {
 }
 
 // BaseCurrency returns the base currency code of a website.
-func (w *Website) BaseCurrency() (directory.Currency, error) {
-	if catconfig.Backend.CatalogPriceScope.IsGlobal(w.crDefault) {
-		return directory.Backend.CurrencyOptionsBase.Get(w.crDefault)
+// 	1st argument should be a path to catalog/price/scope
+// 	2nd argument should be a path to currency/options/base
+func (w *Website) BaseCurrency(ps catconfig.PriceScope, cc directory.ConfigCurrency) (directory.Currency, error) {
+
+	isGlobal, err := ps.IsGlobal(w.Config)
+	if err != nil {
+		return directory.Currency{}, errors.Mask(err)
 	}
-	return directory.Backend.CurrencyOptionsBase.Get(w.Config)
-}
-
-/*
-	WebsiteSlice method receivers
-*/
-
-// Sort convenience helper
-func (ws *WebsiteSlice) Sort() *WebsiteSlice {
-	sort.Sort(ws)
-	return ws
-}
-
-// Len returns the length of the slice
-func (ws WebsiteSlice) Len() int { return len(ws) }
-
-// Swap swaps positions within the slice
-func (ws *WebsiteSlice) Swap(i, j int) { (*ws)[i], (*ws)[j] = (*ws)[j], (*ws)[i] }
-
-// Less checks the Data field SortOrder if index i < index j.
-func (ws *WebsiteSlice) Less(i, j int) bool {
-	return (*ws)[i].Data.SortOrder < (*ws)[j].Data.SortOrder
-}
-
-// Filter returns a new slice filtered by predicate f
-func (ws WebsiteSlice) Filter(f func(*Website) bool) WebsiteSlice {
-	var nws WebsiteSlice
-	for _, v := range ws {
-		if v != nil && f(v) {
-			nws = append(nws, v)
-		}
+	if isGlobal {
+		return cc.GetDefault(w.cr) // default scope
 	}
-	return nws
-}
-
-// Codes returns a StringSlice with all website codes
-func (ws WebsiteSlice) Codes() util.StringSlice {
-	if len(ws) == 0 {
-		return nil
-	}
-	var c util.StringSlice
-	for _, w := range ws {
-		if w != nil {
-			c.Append(w.Data.Code.String)
-		}
-	}
-	return c
-}
-
-// IDs returns an Int64Slice with all website ids
-func (ws WebsiteSlice) IDs() util.Int64Slice {
-	if len(ws) == 0 {
-		return nil
-	}
-	var ids util.Int64Slice
-	for _, w := range ws {
-		if w != nil {
-			ids.Append(w.Data.WebsiteID)
-		}
-	}
-	return ids
+	return cc.Get(w.Config) // website scope
 }
 
 /*

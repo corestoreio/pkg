@@ -12,36 +12,37 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package store_test
+package storenet_test
 
 import (
 	"testing"
 
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
-	storemock "github.com/corestoreio/csfw/store/mock"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
 
 func TestContextReaderError(t *testing.T) {
-	haveMr, s, err := store.FromContextReader(context.Background())
+	haveMr, s, err := storenet.FromContextProvider(context.Background())
 	assert.Nil(t, haveMr)
 	assert.Nil(t, s)
-	assert.EqualError(t, err, store.ErrContextServiceNotFound.Error())
+	assert.EqualError(t, err, storenet.ErrContextServiceNotFound.Error())
 
-	ctx := store.WithContextReader(context.Background(), nil)
+	ctx := storenet.WithContextProvider(context.Background(), nil)
 	assert.NotNil(t, ctx)
-	haveMr, s, err = store.FromContextReader(ctx)
+	haveMr, s, err = storenet.FromContextProvider(ctx)
 	assert.Nil(t, haveMr)
 	assert.Nil(t, s)
-	assert.EqualError(t, err, store.ErrContextServiceNotFound.Error())
+	assert.EqualError(t, err, storenet.ErrContextServiceNotFound.Error())
 
 	mr := storemock.NewNullService()
-	ctx = store.WithContextReader(context.Background(), mr)
+	ctx = storenet.WithContextProvider(context.Background(), mr)
 	assert.NotNil(t, ctx)
-	haveMr, s, err = store.FromContextReader(ctx)
+	haveMr, s, err = storenet.FromContextProvider(ctx)
 	assert.EqualError(t, err, store.ErrStoreNotFound.Error())
 	assert.Nil(t, haveMr)
 	assert.Nil(t, s)
@@ -61,7 +62,7 @@ func TestContextReaderSuccess(t *testing.T) {
 		},
 	)
 
-	haveMr, s, err := store.FromContextReader(ctx)
+	haveMr, s, err := storenet.FromContextProvider(ctx)
 	assert.NoError(t, err)
 	assert.Exactly(t, int64(6), s.StoreID())
 
@@ -77,5 +78,5 @@ func TestWithContextMustService(t *testing.T) {
 			assert.EqualError(t, r.(error), "runtime error: invalid memory address or nil pointer dereference")
 		}
 	}()
-	store.WithContextMustService(scope.Option{}, nil)
+	storenet.WithContextMustService(scope.Option{}, nil)
 }

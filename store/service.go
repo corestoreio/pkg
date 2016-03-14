@@ -15,20 +15,18 @@
 package store
 
 import (
-	"errors"
 	"sync"
 
-	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/juju/errgo"
+	"github.com/juju/errors"
 )
 
 type (
-	// Reader specifies a store Service from which you can only read.
+	// Provider specifies a store Service from which you can only read.
 	// A Reader is bound to a scope.Scope.
-	Reader interface {
+	Provider interface {
 		IsSingleStoreMode() bool
 		HasSingleStore() bool
 		Website(r ...scope.WebsiteIDer) (*Website, error)
@@ -93,7 +91,7 @@ type (
 	}
 )
 
-var _ Reader = (*Service)(nil)
+var _ Provider = (*Service)(nil)
 
 // ErrStoreChangeNotAllowed if a given store within a website would like to
 // switch to another store in a different website.
@@ -135,7 +133,7 @@ func NewService(so scope.Option, storage Storager, opts ...ServiceOption) (*Serv
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("store.Service.Init", "err", err, "ScopeOption", so)
 		}
-		return nil, errgo.Mask(err)
+		return nil, errors.Mask(err)
 	}
 
 	return s, nil
@@ -163,11 +161,11 @@ func (sm *Service) findDefaultStoreByScope(allowedScope scope.Scope, so scope.Op
 			if PkgLog.IsDebug() {
 				PkgLog.Debug("store.Service.findDefaultStoreByScope.Group", "err", errG, "ScopeOption", so)
 			}
-			return nil, errgo.Mask(errG)
+			return nil, errors.Mask(errG)
 		}
 		store, err = sm.Store(g) // Group g implements StoreIDer interface to get the default store ID
 		if err != nil {
-			err = errgo.Mask(ErrGroupDefaultStoreNotFound)
+			err = errors.Mask(ErrGroupDefaultStoreNotFound)
 		}
 	case scope.WebsiteID:
 		if so.Website == nil { // if so.Website == nil then search default website
@@ -181,22 +179,22 @@ func (sm *Service) findDefaultStoreByScope(allowedScope scope.Scope, so scope.Op
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.Service.findDefaultStoreByScope.Website", "err", errW, "ScopeOption", so)
 				}
-				return nil, errgo.Mask(errW)
+				return nil, errors.Mask(errW)
 			}
 			g, errG := w.DefaultGroup()
 			if errG != nil {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.Service.findDefaultStoreByScope.Website.DefaultGroup", "err", errG, "ScopeOption", so)
 				}
-				return nil, errgo.Mask(errG)
+				return nil, errors.Mask(errG)
 			}
 			store, err = sm.Store(g) // Group g implements StoreIDer interface to get the default store ID
 			if err != nil {
-				err = errgo.Mask(ErrGroupDefaultStoreNotFound)
+				err = errors.Mask(ErrGroupDefaultStoreNotFound)
 			}
 		}
 	default:
-		err = errgo.Mask(scope.ErrUnsupportedScopeID)
+		err = errors.Mask(scope.ErrUnsupportedScopeID)
 	}
 	return
 }
@@ -247,7 +245,8 @@ func (sm *Service) RequestedStore(so scope.Option) (activeStore *Store, err erro
 // This flag only shows that admin does not want to show certain UI components at backend (like store switchers etc)
 // if Magento has only one store view but it does not check the store view collection.
 func (sm *Service) IsSingleStoreMode() bool {
-	return sm.HasSingleStore() && backend.Backend.GeneralSingleStoreModeEnabled.Get(sm.cr.NewScoped(0, 0, 0)) // default scope
+	// refactor and remove dependency to backend.Backend
+	return sm.HasSingleStore() // && backend.Backend.GeneralSingleStoreModeEnabled.Get(sm.cr.NewScoped(0, 0)) // default scope
 }
 
 // HasSingleStore checks if we only have one store view besides the admin store view.
@@ -287,7 +286,7 @@ func (sm *Service) Website(ids ...scope.WebsiteIDer) (*Website, error) {
 
 	w, err := sm.storage.Website(ids[0])
 	sm.websiteMap[key] = w
-	return sm.websiteMap[key], errgo.Mask(err)
+	return sm.websiteMap[key], errors.Mask(err)
 }
 
 // Websites returns a cached slice containing all pointers to Websites with its associated
@@ -326,7 +325,7 @@ func (sm *Service) Group(ids ...scope.GroupIDer) (*Group, error) {
 
 	g, err := sm.storage.Group(ids[0])
 	sm.groupMap[key] = g
-	return sm.groupMap[key], errgo.Mask(err)
+	return sm.groupMap[key], errors.Mask(err)
 }
 
 // Groups returns a cached slice containing all pointers to Groups with its associated
@@ -365,7 +364,7 @@ func (sm *Service) Store(ids ...scope.StoreIDer) (*Store, error) {
 
 	s, err := sm.storage.Store(ids[0])
 	sm.storeMap[key] = s
-	return sm.storeMap[key], errgo.Mask(err)
+	return sm.storeMap[key], errors.Mask(err)
 }
 
 // Stores returns a cached Store slice. Can return an error when the website or

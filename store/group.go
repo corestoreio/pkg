@@ -15,42 +15,30 @@
 package store
 
 import (
-	"errors"
-
 	"encoding/json"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util"
-	"github.com/juju/errgo"
+	"github.com/corestoreio/csfw/util/cserr"
+	"github.com/juju/errors"
 )
 
-const (
-	// DefaultGroupID defines the default group id which is always 0.
-	DefaultGroupID int64 = 0
-)
+// DefaultGroupID defines the default group id which is always 0.
+const DefaultGroupID int64 = 0
 
 // Group defines the root category id and default store id for a set of stores.
 // A group is assigned to one website and a group can have multiple stores.
 // A group does not have any kind of configuration setting.
 type Group struct {
 	cr config.Getter // internal root config.Reader which can be overridden
-	// Config contains a config.Service which takes care of the scope based
-	// configuration values. Not an official feature based on a Group.
-	// This Config can be nil when a Website has not yet been set.
-	Config config.ScopedGetter
 
 	// Data contains the raw group data.
 	Data *TableGroup
 	// Stores contains a slice to all stores associated to this group. Can be nil.
 	Stores StoreSlice
 	// Website contains the Website which belongs to this group. Can be nil.
-	Website    *Website
-	lastErrors []error
+	Website *Website
+	*cserr.MultiErr
 }
-
-// GroupSlice collection of Group. GroupSlice has some nice method receivers.
-type GroupSlice []*Group
 
 // GroupOption can be used as an argument in NewGroup to configure a group.
 type GroupOption func(*Group)
@@ -75,17 +63,17 @@ func SetGroupConfig(cr config.Getter) GroupOption { return func(g *Group) { g.cr
 func SetGroupWebsite(tw *TableWebsite) GroupOption {
 	return func(g *Group) {
 		if g.Data == nil {
-			g.addError(ErrGroupNotFound)
+			g.AppendErrors(ErrGroupNotFound)
 			return
 		}
 		if tw != nil && g.Data.WebsiteID != tw.WebsiteID {
-			g.addError(ErrGroupWebsiteNotFound)
+			g.AppendErrors(ErrGroupWebsiteNotFound)
 			return
 		}
 		if tw != nil {
 			var err error
 			g.Website, err = NewWebsite(tw, SetWebsiteConfig(g.cr))
-			g.addError(err)
+			g.AppendErrors(err)
 		}
 	}
 }
@@ -100,14 +88,14 @@ func SetGroupStores(tss TableStoreSlice, w *TableWebsite) GroupOption {
 			return
 		}
 		if g.Website == nil && w == nil {
-			g.addError(ErrGroupWebsiteNotFound)
+			g.AppendErrors(ErrGroupWebsiteNotFound)
 			return
 		}
 		if w == nil {
 			w = g.Website.Data
 		}
 		if w.WebsiteID != g.Data.WebsiteID {
-			g.addError(ErrGroupWebsiteIntegrityFailed)
+			g.AppendErrors(ErrGroupWebsiteIntegrityFailed)
 			return
 		}
 		for _, s := range tss.FilterByGroupID(g.Data.GroupID) {
@@ -116,7 +104,7 @@ func SetGroupStores(tss TableStoreSlice, w *TableWebsite) GroupOption {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.SetGroupStores.NewStore", "err", err, "s", s, "w", w, "g.Data", g.Data)
 				}
-				g.addError(errgo.Mask(err))
+				g.AppendErrors(errors.Mask(err))
 				return
 			}
 			g.Stores = append(g.Stores, ns)
@@ -148,9 +136,6 @@ func MustNewGroup(tg *TableGroup, opts ...GroupOption) *Group {
 	return g
 }
 
-var _ scope.GroupIDer = (*Group)(nil)
-var _ scope.StoreIDer = (*Group)(nil)
-
 // ApplyOptions sets the options to a Group.
 func (g *Group) ApplyOptions(opts ...GroupOption) (*Group, error) {
 	for _, opt := range opts {
@@ -158,7 +143,7 @@ func (g *Group) ApplyOptions(opts ...GroupOption) (*Group, error) {
 			opt(g)
 		}
 	}
-	if len(g.lastErrors) > 0 {
+	if g.HasErrors() {
 		return nil, g
 	}
 	if g.Website != nil {
@@ -167,24 +152,10 @@ func (g *Group) ApplyOptions(opts ...GroupOption) (*Group, error) {
 			if PkgLog.IsDebug() {
 				PkgLog.Debug("store.Group.ApplyOptions.Website.ApplyOptions", "err", err, "g", g)
 			}
-			return nil, errgo.Mask(err)
+			return nil, errors.Mask(err)
 		}
-		g.Config = g.cr.NewScoped(g.Website.WebsiteID(), g.GroupID(), 0) // Scope Store is not available
 	}
 	return g, nil
-}
-
-// addError adds a non nil error to the internal error collector
-func (g *Group) addError(err error) {
-	if err != nil {
-		g.lastErrors = append(g.lastErrors, err)
-	}
-}
-
-// Error implements the error interface. Returns a string where each error has
-// been separated by a line break.
-func (g *Group) Error() string {
-	return util.Errors(g.lastErrors...)
 }
 
 // GroupID satisfies interface scope.GroupIDer and returns the group ID.
@@ -220,35 +191,3 @@ func (g *Group) DefaultStore() (*Store, error) {
 /*
 	@todo implement Magento\Store\Model\Group
 */
-
-/*
-	GroupSlice method receivers
-*/
-
-// Len returns the length
-func (s GroupSlice) Len() int { return len(s) }
-
-// Filter returns a new slice filtered by predicate f
-func (s GroupSlice) Filter(f func(*Group) bool) GroupSlice {
-	var gs GroupSlice
-	for _, v := range s {
-		if v != nil && f(v) {
-			gs = append(gs, v)
-		}
-	}
-	return gs
-}
-
-// IDs returns an Int64Slice with all store ids
-func (s GroupSlice) IDs() util.Int64Slice {
-	if len(s) == 0 {
-		return nil
-	}
-	var ids util.Int64Slice
-	for _, g := range s {
-		if g != nil {
-			ids.Append(g.Data.GroupID)
-		}
-	}
-	return ids
-}
