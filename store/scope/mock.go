@@ -22,16 +22,16 @@ var _ StoreIDer = MockID(0)
 const AdminScope MockID = 0
 
 // MockID is convenience helper to satisfy the interface WebsiteIDer, GroupIDer and StoreIDer.
-type MockID int64
+type MockID int
 
 // WebsiteID is convenience helper to satisfy the interface WebsiteIDer
-func (i MockID) WebsiteID() int64 { return int64(i) }
+func (i MockID) WebsiteID() int { return int(i) }
 
 // GroupID is convenience helper to satisfy the interface GroupIDer
-func (i MockID) GroupID() int64 { return int64(i) }
+func (i MockID) GroupID() int { return int(i) }
 
 // StoreID is convenience helper to satisfy the interface StoreIDer
-func (i MockID) StoreID() int64 { return int64(i) }
+func (i MockID) StoreID() int { return int(i) }
 
 var _ StoreCoder = MockCode("")
 var _ WebsiteCoder = MockCode("")
@@ -41,7 +41,7 @@ var _ StoreIDer = MockCode("")
 
 // UnavailableStoreID gets returned when you use a MockCode type and try to use
 // the *ID() function. Store in this name refers to the package name :-\
-const UnavailableStoreID int64 = -1
+const UnavailableStoreID int = -1
 
 // MockCode is convenience helper to satisfy the interface WebsiteCoder, StoreCoder,
 // WebsiteIDer, GroupIDer and StoreIDer. Reason: In package store all functions have
@@ -50,29 +50,29 @@ const UnavailableStoreID int64 = -1
 type MockCode string
 
 // WebsiteID is convenience helper to satisfy the interface WebsiteIDer. Returns -1.
-func (c MockCode) WebsiteID() int64 { return UnavailableStoreID }
+func (c MockCode) WebsiteID() int { return UnavailableStoreID }
 
 // WebsiteCode mock helper to return a website code
 func (c MockCode) WebsiteCode() string { return string(c) }
 
 // StoreID is convenience helper to satisfy the interface StoreIDer. Returns -1.
-func (c MockCode) StoreID() int64 { return UnavailableStoreID }
+func (c MockCode) StoreID() int { return UnavailableStoreID }
 
 // StoreCode mock helper to return a store code
 func (c MockCode) StoreCode() string { return string(c) }
 
 // GroupID is convenience helper to satisfy the interface GroupIDer. Returns -1.
-func (c MockCode) GroupID() int64 { return UnavailableStoreID }
+func (c MockCode) GroupID() int { return UnavailableStoreID }
 
 var _ Scoper = (*Mock)(nil)
 
 // Mock implements Scoper interface
 type Mock struct {
 	Scp Scope
-	ID  int64
+	ID  int
 }
 
 // Scope to satisfy Scoper interface
-func (m Mock) Scope() (Scope, int64) {
+func (m Mock) Scope() (Scope, int) {
 	return m.Scp, m.ID
 }

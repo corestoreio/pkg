@@ -97,8 +97,8 @@ func (bits Perm) String() string {
 
 	for i := uint(0); i < 64; i++ {
 		if (bits & (1 << i)) != 0 {
-			buf.WriteString(Scope(i).String())
-			buf.WriteByte(',')
+			_, _ = buf.WriteString(Scope(i).String())
+			_ = buf.WriteByte(',')
 		}
 	}
 	buf.Truncate(buf.Len() - 1) // remove last colon

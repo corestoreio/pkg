@@ -19,6 +19,8 @@ import (
 	"fmt"
 )
 
+const maxUint8 = 1<<8 - 1
+
 // Scope used in constants where default is the lowest and store the highest.
 // Func String() attached. Part of type Perm.
 type Scope uint8
@@ -40,7 +42,7 @@ const (
 // ID is one of a website, group or store ID as definied in their database tables.
 // config.ScopedGetter implements Scoper.
 type Scoper interface {
-	Scope() (Scope, int64)
+	Scope() (Scope, int)
 }
 
 // Interfaces for different scopes. Note that WebsiteIDer may have an underlying
@@ -48,17 +50,17 @@ type Scoper interface {
 type (
 	// WebsiteIDer defines the scope of a website.
 	WebsiteIDer interface {
-		WebsiteID() int64
+		WebsiteID() int
 	}
 
 	// GroupIDer defines the scope of a group.
 	GroupIDer interface {
-		GroupID() int64
+		GroupID() int
 	}
 
 	// StoreIDer defines the scope of a store.
 	StoreIDer interface {
-		StoreID() int64
+		StoreID() int
 	}
 
 	// GroupCoder not available because not existent.

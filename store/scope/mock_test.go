@@ -23,7 +23,7 @@ import (
 
 func TestMockID(t *testing.T) {
 	t.Parallel()
-	var e int64 = 29
+	var e int = 29
 	assert.Equal(t, e, scope.MockID(29).StoreID())
 	assert.Equal(t, e, scope.MockID(29).GroupID())
 	assert.Equal(t, e, scope.MockID(29).WebsiteID())
@@ -33,7 +33,7 @@ func TestMockCode(t *testing.T) {
 	t.Parallel()
 	assert.Equal(t, "Waverly", scope.MockCode("Waverly").StoreCode())
 	assert.Equal(t, "Waverly", scope.MockCode("Waverly").WebsiteCode())
-	var i int64 = -1
+	var i int = -1
 	assert.Equal(t, i, scope.MockCode("Waverly").WebsiteID())
 	assert.Equal(t, i, scope.MockCode("Waverly").GroupID())
 	assert.Equal(t, i, scope.MockCode("Waverly").StoreID())
@@ -43,7 +43,7 @@ func TestMock(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		s  scope.Scope
-		id int64
+		id int
 	}{
 		{scope.DefaultID, 0},
 		{scope.WebsiteID, 1},

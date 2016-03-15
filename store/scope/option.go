@@ -57,9 +57,9 @@ func SetByCode(code string, scopeType Scope) (o Option, err error) {
 	return
 }
 
-// SetByID depending on the scopeType the scopeID int64 gets converted into a
+// SetByID depending on the scopeType the scopeID int gets converted into a
 // [Website|Group|Store]IDer.
-func SetByID(scopeID int64, scopeType Scope) (o Option, err error) {
+func SetByID(scopeID int, scopeType Scope) (o Option, err error) {
 	i := MockID(scopeID)
 	// the order of the cases is important
 	switch scopeType {
