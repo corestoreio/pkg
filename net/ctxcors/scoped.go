@@ -21,44 +21,42 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-// corsScopeCache creates a new Cors type for a website configuration. Why are
+// scopeCache creates a new Cors type for a website configuration. Why are
 // we not using the store view based configuration? because that is too low level
 // and store views are mainly used for languages. but we can change that or
 // make it configurable.
-type corsScopeCache struct {
+type scopeCache struct {
 	config config.Getter
-	scope  scope.Scope
 	parent *Cors
 
 	// rwmu protects the map
 	rwmu sync.RWMutex
 	// storage key is the ID and value the current cors config
-	storage map[int64]*Cors
+	storage map[scope.Hash]*Cors
 }
 
-func newCorsScopeCache(cg config.Getter, s scope.Scope, parent *Cors) *corsScopeCache {
-	return &corsScopeCache{
+func newScopeCache(cg config.Getter, parent *Cors) *scopeCache {
+	return &scopeCache{
 		config:  cg,
-		scope:   s,
 		parent:  parent,
-		storage: make(map[int64]*Cors),
+		storage: make(map[scope.Hash]*Cors),
 	}
 }
 
 // get uses a read lock to check if a Cors exists for an ID. returns nil
 // if there is no Cors pointer. aim is: multiple goroutines can read from the
 // map while adding new Cors pointers can only be done by one goroutine.
-func (cs *corsScopeCache) get(id int64) *Cors {
+func (cs *scopeCache) get(s scope.Scope, id int64) *Cors {
 	cs.rwmu.RLock()
 	defer cs.rwmu.RUnlock()
-	if c, ok := cs.storage[id]; ok {
+	if c, ok := cs.storage[scope.NewHash(s, id)]; ok {
 		return c
 	}
 	return nil
 }
 
 // create creates a new Cors type and returns it.
-func (cs *corsScopeCache) insert(id int64) *Cors {
+func (cs *scopeCache) insert(s scope.Scope, id int64) *Cors {
 	cs.rwmu.Lock()
 	defer cs.rwmu.Unlock()
 
@@ -67,6 +65,6 @@ func (cs *corsScopeCache) insert(id int64) *Cors {
 	//	fields, err := PackageConfiguration.FindFieldByPath(PathCorsExposedHeaders)
 
 	c := New(WithLogger(cs.parent.Log)) // inherit more?
-	cs.storage[id] = c
+	cs.storage[scope.NewHash(s, id)] = c
 	return c
 }

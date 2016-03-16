@@ -26,8 +26,8 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/log"
 	"golang.org/x/net/context"
 )
@@ -87,10 +87,11 @@ func New(opts ...Option) *Cors {
 		allowedHeaders: []string{"Origin", "Accept", "Content-Type"},
 		Log:            log.BlackHole{}, // debug and info logging disabled
 	}
-	return c.applyOpts(opts...)
+	return c.Options(opts...)
 }
 
-func (c *Cors) applyOpts(opts ...Option) *Cors {
+// Options applies the options
+func (c *Cors) Options(opts ...Option) *Cors {
 	for _, opt := range opts {
 		if opt != nil {
 			opt(c)
@@ -104,7 +105,7 @@ func (c *Cors) applyOpts(opts ...Option) *Cors {
 // different configurations for different store scopes. The applied configuration
 // is used for the all store scopes.
 func (c *Cors) WithCORS(opts ...Option) ctxhttp.Middleware {
-	c.applyOpts(opts...)
+	c.Options(opts...)
 	csc := c.initCache()
 
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
@@ -135,12 +136,12 @@ func (c *Cors) WithCORS(opts ...Option) ctxhttp.Middleware {
 }
 
 // current returns a non-nil pointer to a Cors. current is used within a request.
-func (c *Cors) current(csc *corsScopeCache, ctx context.Context) *Cors {
+func (c *Cors) current(csc *scopeCache, ctx context.Context) *Cors {
 	if c.config == nil || csc == nil {
 		return c
 	}
 
-	_, st, err := store.FromContextReader(ctx)
+	_, st, err := storenet.FromContextProvider(ctx)
 	if err != nil {
 		if c.Log.IsInfo() {
 			c.Log.Info("ctxcors.Cors.current.store.FromContextReader", "err", err)
@@ -149,20 +150,19 @@ func (c *Cors) current(csc *corsScopeCache, ctx context.Context) *Cors {
 	}
 
 	var cc *Cors // cc == current CORS config the current request
-	if cc = csc.get(st.WebsiteID()); cc == nil {
-		cc = csc.insert(st.WebsiteID())
+	if cc = csc.get(scope.WebsiteID, st.WebsiteID()); cc == nil {
+		cc = csc.insert(scope.WebsiteID, st.WebsiteID())
 	}
-	// todo: run a defer or goroutine to check if config changes
-	// and if so delete the entry from the map
+	// todo: run a defer or goroutine to check if config changes and if so delete the entry from the map
 	return cc
 }
 
 // initCache if config.Getter has been set returns an initialized internal
 // cache for different Cors configurations. Returns nil if config.Getter
 // is not in use.
-func (c *Cors) initCache() (cs *corsScopeCache) {
+func (c *Cors) initCache() (cs *scopeCache) {
 	if c.config != nil {
-		cs = newCorsScopeCache(c.config, scope.WebsiteID, c)
+		cs = newScopeCache(c.config, c)
 	}
 	return
 }
