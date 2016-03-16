@@ -44,7 +44,7 @@ type Group struct {
 	SortOrder int        `json:",omitempty"`
 
 	HelpURL               text.Chars `json:",omitempty"`
-	MoreURL               text.Chars `json:",omitempty"`
+	MoreURL               text.Chars `json:",omitempty"` // todo maybe a slice because we might have multiple URLs
 	DemoLink              text.Chars `json:",omitempty"`
 	HideInSingleStoreMode bool       `json:",omitempty"`
 
