@@ -17,8 +17,6 @@ package cfgmodel_test
 import (
 	"testing"
 
-	"time"
-
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgmodel"
@@ -27,7 +25,6 @@ import (
 	"github.com/corestoreio/csfw/config/source"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/juju/errors"
 	"github.com/stretchr/testify/assert"
@@ -112,6 +109,15 @@ var configStructure = element.MustNewConfiguration(
 						Visible:   element.VisibleYes,
 						Scopes:    scope.PermStore,
 						Default:   "2012-08-23 09:20:13",
+					},
+					&element.Field{
+						// Path: `web/cors/duration`,
+						ID:        cfgpath.NewRoute("duration"),
+						Type:      element.TypeText,
+						SortOrder: 100,
+						Visible:   element.VisibleYes,
+						Scopes:    scope.PermStore,
+						Default:   "1h45m",
 					},
 				),
 			},
@@ -524,103 +530,4 @@ func TestRecursiveOption(t *testing.T) {
 
 	b.Option(previous)
 	assert.Exactly(t, source.NewByString("a", "A", "b", "b"), b.Source)
-}
-
-func mustParseTime(s string) time.Time {
-	t, err := conv.StringToDate(s, nil)
-	if err != nil {
-		panic(err)
-	}
-	return t
-}
-
-func TestTimeGetWithCfgStruct(t *testing.T) {
-	t.Parallel()
-	const pathWebCorsTime = "web/cors/time"
-	tm := cfgmodel.NewTime("web/cors/time", cfgmodel.WithFieldFromSectionSlice(configStructure))
-	assert.Empty(t, tm.Options())
-
-	wantPath := cfgpath.MustNewByParts(pathWebCorsTime).Bind(scope.WebsiteID, 10)
-	defaultTime := mustParseTime("2012-08-23 09:20:13")
-	tests := []struct {
-		sg   config.ScopedGetter
-		want time.Time
-	}{
-		{cfgmock.NewService().NewScoped(0, 0), defaultTime}, // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(0, 1), defaultTime}, // because default value in packageConfiguration
-		{cfgmock.NewService().NewScoped(1, 1), defaultTime}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.Bind(scope.WebsiteID, 10).String(): defaultTime.Add(time.Second * 2)})).NewScoped(10, 0), defaultTime.Add(time.Second * 2)},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.Bind(scope.WebsiteID, 10).String(): defaultTime.Add(time.Second * 3)})).NewScoped(10, 1), defaultTime.Add(time.Second * 3)},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
-			wantPath.String():                         defaultTime.Add(time.Second * 5),
-			wantPath.Bind(scope.StoreID, 11).String(): defaultTime.Add(time.Second * 6),
-		})).NewScoped(10, 11), defaultTime.Add(time.Second * 6)},
-	}
-	for i, test := range tests {
-		gb, err := tm.Get(test.sg)
-		if err != nil {
-			t.Fatal("Index", i, err)
-		}
-		assert.Exactly(t, test.want, gb, "Index %d", i)
-	}
-}
-
-func TestTimeGetWithoutCfgStruct(t *testing.T) {
-	t.Parallel()
-	const pathWebCorsTime = "web/cors/time"
-	b := cfgmodel.NewTime(pathWebCorsTime)
-	assert.Empty(t, b.Options())
-
-	wantPath := cfgpath.MustNewByParts(pathWebCorsTime).Bind(scope.WebsiteID, 10)
-	defaultTime := mustParseTime("2012-08-23 09:20:13")
-	tests := []struct {
-		sg   config.ScopedGetter
-		want time.Time
-	}{
-		{cfgmock.NewService().NewScoped(1, 1), time.Time{}}, // because default value in packageConfiguration
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.String(): defaultTime.Add(time.Second * 2)})).NewScoped(10, 0), time.Time{}},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.String(): defaultTime.Add(time.Second * 3)})).NewScoped(10, 1), time.Time{}},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.Bind(scope.DefaultID, 0).String(): defaultTime.Add(time.Second * 3)})).NewScoped(0, 0), defaultTime.Add(time.Second * 3)},
-		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
-			wantPath.Bind(scope.DefaultID, 0).String(): defaultTime.Add(time.Second * 5),
-			wantPath.Bind(scope.StoreID, 11).String():  defaultTime.Add(time.Second * 6),
-		})).NewScoped(10, 11), defaultTime.Add(time.Second * 5)},
-	}
-	for i, test := range tests {
-		gb, err := b.Get(test.sg)
-		if err != nil {
-			t.Fatal("Index", i, err)
-		}
-		assert.Exactly(t, test.want, gb, "Index %d", i)
-	}
-}
-
-func TestTimeGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
-	t.Parallel()
-
-	b := cfgmodel.NewTime("web/cors/time")
-	assert.Empty(t, b.Options())
-
-	haveErr := errors.New("Unexpected error")
-	gb, err := b.Get(cfgmock.NewService(
-		cfgmock.WithTime(func(path string) (time.Time, error) {
-			return time.Time{}, haveErr
-		}),
-	).NewScoped(1, 1))
-	assert.Empty(t, gb)
-	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
-}
-
-func TestTimeWrite(t *testing.T) {
-	t.Parallel()
-	const pathWebCorsF64 = "web/cors/time"
-	wantPath := cfgpath.MustNewByParts(pathWebCorsF64).Bind(scope.WebsiteID, 10)
-	haveTime := mustParseTime("2000-08-23 09:20:13")
-
-	b := cfgmodel.NewTime("web/cors/time", cfgmodel.WithFieldFromSectionSlice(configStructure))
-
-	mw := &cfgmock.Write{}
-	assert.NoError(t, b.Write(mw, haveTime, scope.WebsiteID, 10))
-	assert.Exactly(t, wantPath.String(), mw.ArgPath)
-	assert.Exactly(t, haveTime, mw.ArgValue.(time.Time))
 }

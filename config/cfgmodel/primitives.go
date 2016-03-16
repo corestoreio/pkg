@@ -15,8 +15,6 @@
 package cfgmodel
 
 import (
-	"time"
-
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
@@ -37,7 +35,7 @@ func NewBool(path string, opts ...Option) Bool {
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
 func (b Bool) Get(sg config.ScopedGetter) (bool, error) {
-	// This code must be kept in sync with other lookup*() functions
+	// This code must be kept in sync with other Get() functions
 
 	var v bool
 	var scp = scope.DefaultID
@@ -123,7 +121,7 @@ func NewInt(path string, opts ...Option) Int {
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
 func (i Int) Get(sg config.ScopedGetter) (int, error) {
-	// This code must be kept in sync with other lookup*() functions
+	// This code must be kept in sync with other Get() functions
 
 	var v int
 	var scp = scope.DefaultID
@@ -165,7 +163,7 @@ func NewFloat64(path string, opts ...Option) Float64 {
 // *Field.Default value will be applied if provided.
 // scope.DefaultID will be enforced if *Field.Scopes is empty.
 func (f Float64) Get(sg config.ScopedGetter) (float64, error) {
-	// This code must be kept in sync with other lookup*() functions
+	// This code must be kept in sync with other Get() functions
 
 	var v float64
 	var scp = scope.DefaultID
@@ -193,48 +191,4 @@ func (f Float64) Get(sg config.ScopedGetter) (float64, error) {
 // Write writes a float64 value without validating it against the source.Slice.
 func (f Float64) Write(w config.Writer, v float64, s scope.Scope, scopeID int64) error {
 	return f.baseValue.Write(w, v, s, scopeID)
-}
-
-// Time represents a path in config.Getter which handles time values.
-type Time struct{ baseValue }
-
-// NewTime creates a new Time cfgmodel with a given path.
-func NewTime(path string, opts ...Option) Time {
-	return Time{baseValue: NewValue(path, opts...)}
-}
-
-// Get returns a time value from ScopedGetter, if empty the
-// *Field.Default value will be applied if provided.
-// scope.DefaultID will be enforced if *Field.Scopes is empty.
-// Get is able to parse available time formats as defined in
-// github.com/corestoreio/csfw/util/conv.StringToDate()
-func (t Time) Get(sg config.ScopedGetter) (time.Time, error) {
-	// This code must be kept in sync with other lookup*() functions
-
-	var v time.Time
-	var scp = scope.DefaultID
-	if t.Field != nil {
-		scp = t.Field.Scopes.Top()
-		var err error
-		v, err = conv.ToTimeE(t.Field.Default)
-		if err != nil {
-			return time.Time{}, errors.Mask(err)
-		}
-	}
-
-	val, err := sg.Time(t.route, scp)
-	switch {
-	case err == nil: // we found the value in the config service
-		v = val
-	case config.NotKeyNotFoundError(err):
-		err = errors.Maskf(err, "Route %s", t.route)
-	default:
-		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
-	}
-	return v, err
-}
-
-// Write writes a time value without validating it against the source.Slice.
-func (t Time) Write(w config.Writer, v time.Time, s scope.Scope, scopeID int64) error {
-	return t.baseValue.Write(w, v, s, scopeID)
 }
