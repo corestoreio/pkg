@@ -12,7 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package scope defines the configuration of scopes: website, group and store.
+// Package scope defines the configuration of scopes default, website and store.
 //
-// TODO: Should move as sub package in the store package.
+// The fall back explained from bottom to top:
+//     + +-----------+
+//     | |  Default  | <---------------+
+//     | +-----------+                 |
+//     |                               +
+//     |                         Falls back to
+//     |                               ^
+//     |      +------------+ +---------+
+//     |      |  Websites  |
+//     |      +------------+ <---------+
+//     |                               +
+//     |                         Falls back to
+//     |                               +
+//     |            +-----------+      |
+//     |            |  Stores   +------+
+//     +            +-----------+
+//     http://asciiflow.com
+// A group scope does not make sense here.
 package scope

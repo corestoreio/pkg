@@ -12,13 +12,41 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-/*
-Package store implements the handling of websites, groups and stores.
-
-Usage
-
-	m := store.NewService(options ...)
-
-
-*/
+// Package store implements the handling of websites, groups and stores.
+//
+// The following shows a hierarchical diagram of the structure:
+//        +---------------------+
+//        |  Website            |
+//        |   ID     <-----------------+---+
+//        |   Code              |      |   |
+//     +----+ Default Group ID  |      |   |
+//     |  |   Is Default        |      |   |
+//     |  +---------------------+      |   |
+//     |                               |   |
+//     |    +----------------------+   |   |
+//     |    |  Group               |   |   |
+//     +------> ID                 |   |   |
+//          |   Website ID +-----------+   |
+//          |   Root Category ID   |       |
+//     +------+ Default Store ID   |       |
+//     |    +----------------------+       |
+//     |                                   |
+//     |      +---------------+            |
+//     |      |  Store        |            |
+//     |      |   ID          |            |
+//     |      |   Code        |            |
+//     +--------> Group ID    |            |
+//            |   Website ID +-------------+
+//            |   Is Active   |
+//            +---------------+
+//     http://asciiflow.com
+//
+// Those three objects also represents the tables in the database.
+//
+// Sub package Scope
+//
+// The subpackage scope depends on these structure except that the group has
+// been removed and a default scope has been introduced.
+//
+// More explanation @todo
 package store
