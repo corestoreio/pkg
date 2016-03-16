@@ -42,7 +42,7 @@ const (
 // ID is one of a website, group or store ID as definied in their database tables.
 // config.ScopedGetter implements Scoper.
 type Scoper interface {
-	Scope() (Scope, int)
+	Scope() (Scope, int64)
 }
 
 // Interfaces for different scopes. Note that WebsiteIDer may have an underlying
@@ -50,17 +50,17 @@ type Scoper interface {
 type (
 	// WebsiteIDer defines the scope of a website.
 	WebsiteIDer interface {
-		WebsiteID() int
+		WebsiteID() int64
 	}
 
 	// GroupIDer defines the scope of a group.
 	GroupIDer interface {
-		GroupID() int
+		GroupID() int64
 	}
 
 	// StoreIDer defines the scope of a store.
 	StoreIDer interface {
-		StoreID() int
+		StoreID() int64
 	}
 
 	// GroupCoder not available because not existent.

@@ -37,7 +37,7 @@ func TestApplyCode(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		so, err := scope.SetByCode(test.haveCode, test.s)
+		so, err := scope.SetByCode(test.s, test.haveCode)
 		assert.NotNil(t, so)
 		if test.err != nil {
 			assert.EqualError(t, err, test.err.Error())
@@ -57,7 +57,7 @@ func TestApplyID(t *testing.T) {
 		wantGroupID   scope.GroupIDer
 		wantStoreID   scope.StoreIDer
 
-		haveID int
+		haveID int64
 		s      scope.Scope
 		err    error
 	}{
@@ -68,7 +68,7 @@ func TestApplyID(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		so, err := scope.SetByID(test.haveID, test.s)
+		so, err := scope.SetByID(test.s, test.haveID)
 		assert.NotNil(t, so)
 		if test.err != nil {
 			assert.EqualError(t, err, test.err.Error())
@@ -106,7 +106,7 @@ func TestApplyWebsite(t *testing.T) {
 	t.Parallel()
 	so := scope.Option{Website: scope.MockID(3)}
 	assert.NotNil(t, so)
-	assert.Equal(t, int(3), so.Website.WebsiteID())
+	assert.Equal(t, int64(3), so.Website.WebsiteID())
 	assert.Nil(t, so.Group)
 	assert.Nil(t, so.Store)
 	assert.Exactly(t, scope.WebsiteID.String(), so.String())
@@ -116,7 +116,7 @@ func TestApplyGroup(t *testing.T) {
 	t.Parallel()
 	so := scope.Option{Group: scope.MockID(3)}
 	assert.NotNil(t, so)
-	assert.Equal(t, int(3), so.Group.GroupID())
+	assert.Equal(t, int64(3), so.Group.GroupID())
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Store)
 	assert.Exactly(t, scope.GroupID.String(), so.String())
@@ -126,7 +126,7 @@ func TestApplyStore(t *testing.T) {
 	t.Parallel()
 	so := scope.Option{Store: scope.MockID(3)}
 	assert.NotNil(t, so)
-	assert.Equal(t, int(3), so.Store.StoreID())
+	assert.Equal(t, int64(3), so.Store.StoreID())
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)
 	assert.Exactly(t, scope.StoreID.String(), so.String())

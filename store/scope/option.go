@@ -43,10 +43,10 @@ type Option struct {
 // StoreCoder or WebsiteCoder interface and the appropriate struct fields
 // get assigned with the *Coder interface. scopeType can only be WebsiteID or
 // StoreID because a Group code does not exists.
-func SetByCode(code string, scopeType Scope) (o Option, err error) {
+func SetByCode(scp Scope, code string) (o Option, err error) {
 	c := MockCode(code)
 	// GroupID does not have a scope code
-	switch scopeType {
+	switch scp {
 	case WebsiteID:
 		o.Website = c
 	case StoreID:
@@ -57,12 +57,12 @@ func SetByCode(code string, scopeType Scope) (o Option, err error) {
 	return
 }
 
-// SetByID depending on the scopeType the scopeID int gets converted into a
+// SetByID depending on the scopeType the scopeID int64 gets converted into a
 // [Website|Group|Store]IDer.
-func SetByID(scopeID int, scopeType Scope) (o Option, err error) {
-	i := MockID(scopeID)
+func SetByID(scp Scope, id int64) (o Option, err error) {
+	i := MockID(id)
 	// the order of the cases is important
-	switch scopeType {
+	switch scp {
 	case WebsiteID:
 		o.Website = i
 	case GroupID:

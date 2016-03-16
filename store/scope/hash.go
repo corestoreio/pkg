@@ -16,8 +16,9 @@ package scope
 
 import "fmt"
 
-// MaxStoreID maximum allowed store ID
-const MaxStoreID = 1<<23 - 1
+// MaxStoreID maximum allowed ID from package store. Doesn't matter whether
+// we have a website, group or store ID. int24 (8388607) size at the moment.
+const MaxStoreID int64 = 1<<23 - 1
 
 // Hash defines a merged Scope with its ID. The ID can either be from
 // a website, group or store.
@@ -34,7 +35,7 @@ func (h Hash) String() string {
 // Unpack extracts a Scope and its ID from a hash.
 // Returned ID can be -1 when the Hash contains invalid data.
 // An ID of -1 is considered an error.
-func (h Hash) Unpack() (s Scope, id int) {
+func (h Hash) Unpack() (s Scope, id int64) {
 
 	prospectS := h >> 24
 	if prospectS > maxUint8 || prospectS < 0 {
@@ -42,18 +43,19 @@ func (h Hash) Unpack() (s Scope, id int) {
 	}
 	s = Scope(prospectS)
 
-	prospectID := h ^ (h>>24)<<24
+	h64 := int64(h)
+	prospectID := h64 ^ (h64>>24)<<24
 	if prospectID > MaxStoreID || prospectID < 0 {
 		return AbsentID, -1
 	}
 
-	id = int(prospectID)
+	id = int64(prospectID)
 	return
 }
 
 // NewHash creates a new merged value. An error is equal to returning 0.
 // An error occurs when id is greater than MaxStoreID or smaller 0.
-func NewHash(s Scope, id int) Hash {
+func NewHash(s Scope, id int64) Hash {
 	if id > MaxStoreID || id < 0 {
 		return 0
 	}

@@ -38,7 +38,7 @@ func TestFromHashError(t *testing.T) {
 	t.Parallel()
 	scp, id := scope.Hash(math.MaxUint32).Unpack()
 	assert.Exactly(t, scope.AbsentID, scp)
-	assert.Exactly(t, int(-1), id)
+	assert.Exactly(t, int64(-1), id)
 }
 
 func TestHashValid(t *testing.T) {
@@ -53,7 +53,7 @@ func TestHashValid(t *testing.T) {
 
 	var scp = scope.AbsentID
 	for ; scp < math.MaxUint8; scp++ {
-		for id := 0; id < scope.MaxStoreID; id++ {
+		for id := int64(0); id < scope.MaxStoreID; id++ {
 			haveHash := scope.NewHash(scp, id)
 
 			haveScp, haveID := haveHash.Unpack()
