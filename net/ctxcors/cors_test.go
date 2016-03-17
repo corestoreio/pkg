@@ -33,6 +33,8 @@ import (
 	"golang.org/x/net/context"
 )
 
+var _ error = (*ctxcors.Cors)(nil)
+
 var testHandler = func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
 	_, err := w.Write([]byte("bar"))
 	return err

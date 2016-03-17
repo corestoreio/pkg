@@ -20,11 +20,15 @@ import (
 	"strings"
 	"time"
 
+	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/util/log"
 )
 
 // Option defines a function argument for the Cors type to apply options.
 type Option func(*Cors)
+
+// numberOfOptions used to initialize the option array
+const numberOfOptions = 9
 
 // WithExposedHeaders indicates which headers are safe to expose to the
 // API of a CORS API specification.
@@ -149,12 +153,74 @@ func WithLogger(l log.Logger) Option {
 	}
 }
 
-//// WithConfigGetter adding a Getter to the Cors type allows you to run specific
-//// Cors configuration for each defined scope ID (default, website or store).
-//// If you add WithLogger all new created Cors types for a scope will inherit
-//// from that logger.
-//func WithConfigGetter(cg config.Getter) Option {
-//	return func(c *Cors) {
-//		c.config = cg
-//	}
-//}
+// WithBackend allows to add the backend configuration struct and the PkgBackend
+// will be later used in option WithBackendApplied()
+func WithBackend(b *PkgBackend) Option {
+	return func(c *Cors) {
+		c.Backend = b
+	}
+}
+
+// WithBackend allows to add the backend configuration struct and applying
+// all options. This option should only be used within the middleware while
+// creating a new Cors pointer for a specific scope.
+func WithBackendApplied(b *PkgBackend, sg config.ScopedGetter) Option {
+	return func(c *Cors) {
+		c.Backend = b
+
+		var opts [numberOfOptions]Option
+
+		headers, err := b.NetCtxcorsExposedHeaders.Get(sg)
+		if err != nil {
+			c.MultiErr = c.AppendErrors(err)
+		}
+		opts[0] = WithExposedHeaders(headers...)
+
+		ao, err := b.NetCtxcorsAllowedOrigins.Get(sg)
+		if err != nil {
+			c.MultiErr = c.AppendErrors(err)
+		}
+		opts[1] = WithAllowedOrigins(ao...)
+
+		am, err := b.NetCtxcorsAllowedMethods.Get(sg)
+		if err != nil {
+			c.MultiErr = c.AppendErrors(err)
+		}
+		opts[2] = WithAllowedMethods(am...)
+
+		ah, err := b.NetCtxcorsAllowedHeaders.Get(sg)
+		if err != nil {
+			c.MultiErr = c.AppendErrors(err)
+		}
+		opts[3] = WithAllowedHeaders(ah...)
+
+		ac, err := b.NetCtxcorsAllowCredentials.Get(sg)
+		if err != nil {
+			c.MultiErr = c.AppendErrors(err)
+		}
+		if ac {
+			opts[4] = WithAllowCredentials()
+		}
+
+		op, err := b.NetCtxcorsOptionsPassthrough.Get(sg)
+		if err != nil {
+			c.MultiErr = c.AppendErrors(err)
+		}
+		if op {
+			opts[5] = WithOptionsPassthrough()
+		}
+
+		ma, err := b.NetCtxcorsMaxAge.Get(sg)
+		if err != nil {
+			c.MultiErr = c.AppendErrors(err)
+		}
+		opts[6] = WithMaxAge(ma)
+
+		// inherit logger
+		if c.Log != nil {
+			opts[7] = WithLogger(c.Log)
+		}
+
+		c.Options(opts[:]...) // ignore
+	}
+}

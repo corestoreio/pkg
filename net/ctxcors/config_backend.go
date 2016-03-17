@@ -17,6 +17,7 @@ package ctxcors
 import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/config/source"
 )
 
 // PkgBackend just exported for the sake of documentation. See fields
@@ -60,6 +61,12 @@ type PkgBackend struct {
 	// Path: net/ctxcors/allow_credentials
 	NetCtxcorsAllowCredentials cfgmodel.Bool
 
+	// NetCtxcorsOptionsPassthrough instructs preflight to let other potential next handlers to
+	// process the OPTIONS method. Turn this on if your application handles OPTIONS.
+	//
+	// Path: net/ctxcors/options_passthrough
+	NetCtxcorsOptionsPassthrough cfgmodel.Bool
+
 	// NetCtxcorsMaxAge Indicates how long (in seconds) the results
 	// of a preflight request can be cached.
 	//
@@ -82,13 +89,16 @@ func (pp *PkgBackend) Load(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
 
+	// todo: add source models for yes/no
+
 	opt := cfgmodel.WithFieldFromSectionSlice(cfgStruct)
 
 	pp.NetCtxcorsExposedHeaders = cfgmodel.NewStringCSV(`net/ctxcors/exposed_headers`, opt)
 	pp.NetCtxcorsAllowedOrigins = cfgmodel.NewStringCSV(`net/ctxcors/allowed_origins`, opt)
 	pp.NetCtxcorsAllowedMethods = cfgmodel.NewStringCSV(`net/ctxcors/allowed_methods`, opt)
 	pp.NetCtxcorsAllowedHeaders = cfgmodel.NewStringCSV(`net/ctxcors/allowed_headers`, opt)
-	pp.NetCtxcorsAllowCredentials = cfgmodel.NewBool(`net/ctxcors/allow_credentials`, opt)
+	pp.NetCtxcorsAllowCredentials = cfgmodel.NewBool(`net/ctxcors/allow_credentials`, opt, cfgmodel.WithSource(source.YesNo))
+	pp.NetCtxcorsOptionsPassthrough = cfgmodel.NewBool(`net/ctxcors/allow_credentials`, opt, cfgmodel.WithSource(source.YesNo))
 	pp.NetCtxcorsMaxAge = cfgmodel.NewDuration(`net/ctxcors/max_age`, opt)
 
 	return pp

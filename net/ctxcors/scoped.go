@@ -19,6 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/juju/errors"
 )
 
 // scopeCache creates a new Cors type for a website configuration. Why are
@@ -26,18 +27,18 @@ import (
 // and store views are mainly used for languages. but we can change that or
 // make it configurable.
 type scopeCache struct {
-	config config.Getter
 	parent *Cors
 
 	// rwmu protects the map
 	rwmu sync.RWMutex
 	// storage key is the ID and value the current cors config
 	storage map[scope.Hash]*Cors
+	// under very very high load this map will become a bottle neck so we
+	// should switch to a lock free data structure.
 }
 
-func newScopeCache(cg config.Getter, parent *Cors) *scopeCache {
+func newScopeCache(parent *Cors) *scopeCache {
 	return &scopeCache{
-		config:  cg,
 		parent:  parent,
 		storage: make(map[scope.Hash]*Cors),
 	}
@@ -55,16 +56,23 @@ func (cs *scopeCache) get(s scope.Scope, id int64) *Cors {
 	return nil
 }
 
-// create creates a new Cors type and returns it.
-func (cs *scopeCache) insert(s scope.Scope, id int64) *Cors {
+// create creates a new Cors type for a scope and returns it.
+func (cs *scopeCache) insert(sg config.ScopedGetter) (*Cors, error) {
 	cs.rwmu.Lock()
 	defer cs.rwmu.Unlock()
 
-	// pulls the options from the scoped reader
-	//	headers, _ := cs.config.String(config.Path(PathCorsExposedHeaders), config.Scope(cs.scope, id))
-	//	fields, err := PackageConfiguration.FindFieldByPath(PathCorsExposedHeaders)
+	var c *Cors
+	var err error
+	if cs.parent.Backend != nil {
+		c, err = New(WithBackendApplied(cs.parent.Backend, sg))
+	} else {
+		c, err = New(WithLogger(cs.parent.Log)) // inherit more?
+	}
 
-	c := New(WithLogger(cs.parent.Log)) // inherit more?
-	cs.storage[scope.NewHash(s, id)] = c
-	return c
+	if err != nil {
+		return nil, errors.Mask(err)
+	}
+
+	cs.storage[scope.NewHash(sg.Scope())] = c
+	return c, nil
 }

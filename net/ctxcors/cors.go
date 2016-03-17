@@ -24,10 +24,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storenet"
+	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/log"
 	"golang.org/x/net/context"
 )
@@ -41,7 +41,10 @@ import (
 // http://enable-cors.org/server.html
 // http://www.html5rocks.com/en/tutorials/cors/#toc-handling-a-not-so-simple-request
 type Cors struct {
-	config config.Getter
+	*cserr.MultiErr
+	// Backend IF provided and not nil all configuration will be read from the
+	// configuration service depending on the scope.
+	Backend *PkgBackend
 
 	// Log is a logger mainly for debugging. Default Logger writes to a black hole.
 	Log log.Logger
@@ -79,7 +82,7 @@ type Cors struct {
 }
 
 // New creates a new Cors handler with the provided options.
-func New(opts ...Option) *Cors {
+func New(opts ...Option) (*Cors, error) {
 	c := &Cors{
 		// Default is spec's "simple" methods
 		allowedMethods: []string{"GET", "POST"},
@@ -91,26 +94,32 @@ func New(opts ...Option) *Cors {
 }
 
 // Options applies the options
-func (c *Cors) Options(opts ...Option) *Cors {
+func (c *Cors) Options(opts ...Option) (*Cors, error) {
 	for _, opt := range opts {
 		if opt != nil {
 			opt(c)
 		}
 	}
-	return c
+	if c.HasErrors() {
+		return nil, c
+	}
+	return c, nil
 }
 
-// WithCORS to be used as a middleware for ctxhttp.Handler. Arguments can be used
-// to apply the last time any options. This middleware does not take into account
-// different configurations for different store scopes. The applied configuration
-// is used for the all store scopes.
-func (c *Cors) WithCORS(opts ...Option) ctxhttp.Middleware {
-	c.Options(opts...)
+// WithCORS to be used as a middleware for ctxhttp.Handler.
+// The applied configuration
+// is used for the all store scopes or if the PkgBackend has been provided then
+// on a website specific level.
+// Middleware expects to find in a context a storenet.FromContextProvider().
+func (c *Cors) WithCORS() ctxhttp.Middleware {
 	csc := c.initCache()
 
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-			var cc = c.current(csc, ctx)
+			cc, err := c.current(csc, ctx)
+			if err != nil {
+				return err
+			}
 
 			if r.Method == "OPTIONS" {
 				if cc.Log.IsDebug() {
@@ -136,35 +145,32 @@ func (c *Cors) WithCORS(opts ...Option) ctxhttp.Middleware {
 }
 
 // current returns a non-nil pointer to a Cors. current is used within a request.
-func (c *Cors) current(csc *scopeCache, ctx context.Context) *Cors {
-	if c.config == nil || csc == nil {
-		return c
-	}
+func (c *Cors) current(csc *scopeCache, ctx context.Context) (*Cors, error) {
 
 	_, st, err := storenet.FromContextProvider(ctx)
 	if err != nil {
 		if c.Log.IsInfo() {
 			c.Log.Info("ctxcors.Cors.current.store.FromContextReader", "err", err)
 		}
-		return c
+		return nil, err
 	}
 
 	var cc *Cors // cc == current CORS config the current request
 	if cc = csc.get(scope.WebsiteID, st.WebsiteID()); cc == nil {
-		cc = csc.insert(scope.WebsiteID, st.WebsiteID())
+		var err error
+		cc, err = csc.insert(st.Website.Config)
+		if err != nil {
+			// debug log ...
+			return nil, err
+		}
 	}
-	// todo: run a defer or goroutine to check if config changes and if so delete the entry from the map
-	return cc
+	// todo: run a goroutine, subscription, etc to check if config changes and if so delete the entry from the map
+	return cc, nil
 }
 
-// initCache if config.Getter has been set returns an initialized internal
-// cache for different Cors configurations. Returns nil if config.Getter
-// is not in use.
-func (c *Cors) initCache() (cs *scopeCache) {
-	if c.config != nil {
-		cs = newScopeCache(c.config, c)
-	}
-	return
+// initCache
+func (c *Cors) initCache() *scopeCache {
+	return newScopeCache(c)
 }
 
 // handlePreflight handles pre-flight CORS requests

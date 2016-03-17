@@ -108,6 +108,18 @@ user credentials like cookies, HTTP authentication or client side SSL certificat
 							Default:   `false`,
 						},
 						&element.Field{
+							// Path: `net/ctxcors/options_passthrough`,
+							ID:    cfgpath.NewRoute(`options_passthrough`),
+							Label: text.Chars(`Options Passthrough`),
+							Comment: text.Chars(`OptionsPassthrough instructs preflight to let other potential next handlers to
+process the OPTIONS method. Turn this on if your application handles OPTIONS.`),
+							Type:      element.TypeSelect,
+							SortOrder: 60,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermWebsite,
+							Default:   `false`,
+						},
+						&element.Field{
 							// Path: `net/ctxcors/max_age`,
 							ID:    cfgpath.NewRoute(`max_age`),
 							Label: text.Chars(`Max Age`),
@@ -118,7 +130,7 @@ decimal numbers, each with optional fraction and a unit suffix,
 such as "300ms", "-1.5h" or "2h45m".
 Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".`),
 							Type:      element.TypeText,
-							SortOrder: 60,
+							SortOrder: 70,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
 							Default:   nil,
