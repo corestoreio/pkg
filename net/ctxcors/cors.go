@@ -93,6 +93,15 @@ func New(opts ...Option) (*Cors, error) {
 	return c.Options(opts...)
 }
 
+// MustNew same as New() but panics on error. Use only during app start up process.
+func MustNew(opts ...Option) *Cors {
+	c, err := New(opts...)
+	if err != nil {
+		panic(err)
+	}
+	return c
+}
+
 // Options applies the options
 func (c *Cors) Options(opts ...Option) (*Cors, error) {
 	for _, opt := range opts {
@@ -146,6 +155,10 @@ func (c *Cors) WithCORS() ctxhttp.Middleware {
 
 // current returns a non-nil pointer to a Cors. current is used within a request.
 func (c *Cors) current(csc *scopeCache, ctx context.Context) (*Cors, error) {
+	if c.Backend == nil || csc == nil {
+		// return current Cors when we don't want to use store scoped configuration
+		return c, nil
+	}
 
 	_, st, err := storenet.FromContextProvider(ctx)
 	if err != nil {

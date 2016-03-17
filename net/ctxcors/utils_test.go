@@ -68,23 +68,25 @@ func TestParseHeaderListEmpty(t *testing.T) {
 	}
 }
 
+var parseHeaderListResult []string
+
 func BenchmarkParseHeaderList(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		parseHeaderList("header, second-header, THIRD-HEADER")
+		parseHeaderListResult = parseHeaderList("header, second-header, THIRD-HEADER")
 	}
 }
 
 func BenchmarkParseHeaderListSingle(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		parseHeaderList("header")
+		parseHeaderListResult = parseHeaderList("header")
 	}
 }
 
 func BenchmarkParseHeaderListNormalized(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		parseHeaderList("Header1, Header2, Third-Header")
+		parseHeaderListResult = parseHeaderList("Header1, Header2, Third-Header")
 	}
 }

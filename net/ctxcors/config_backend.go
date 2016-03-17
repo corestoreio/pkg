@@ -89,8 +89,6 @@ func (pp *PkgBackend) Load(cfgStruct element.SectionSlice) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
 
-	// todo: add source models for yes/no
-
 	opt := cfgmodel.WithFieldFromSectionSlice(cfgStruct)
 
 	pp.NetCtxcorsExposedHeaders = cfgmodel.NewStringCSV(`net/ctxcors/exposed_headers`, opt)

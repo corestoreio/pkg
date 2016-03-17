@@ -50,7 +50,9 @@ func BenchmarkWithout(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		testHandler(ctx, res, req)
+		if err := testHandler(ctx, res, req); err != nil {
+			b.Fatal(err)
+		}
 	}
 }
 
@@ -58,7 +60,11 @@ func BenchmarkDefault(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	req.Header.Add("Origin", "somedomain.com")
-	handler := ctxcors.New().WithCORS()(testHandler)
+	c, err := ctxcors.New()
+	if err != nil {
+		b.Fatal(err)
+	}
+	handler := c.WithCORS()(testHandler)
 
 	ctx := context.Background()
 	b.ReportAllocs()
@@ -74,7 +80,11 @@ func BenchmarkAllowedOrigin(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	req.Header.Add("Origin", "somedomain.com")
-	handler := ctxcors.New(ctxcors.WithAllowedOrigins("somedomain.com")).WithCORS()(testHandler)
+	c, err := ctxcors.New(ctxcors.WithAllowedOrigins("somedomain.com"))
+	if err != nil {
+		b.Fatal(err)
+	}
+	handler := c.WithCORS()(testHandler)
 
 	ctx := context.Background()
 	b.ReportAllocs()
@@ -90,7 +100,11 @@ func BenchmarkPreflight(b *testing.B) {
 	res := FakeResponse{http.Header{}}
 	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
 	req.Header.Add("Access-Control-Request-Method", "GET")
-	handler := ctxcors.New().WithCORS()(testHandler)
+	c, err := ctxcors.New()
+	if err != nil {
+		b.Fatal(err)
+	}
+	handler := c.WithCORS()(testHandler)
 
 	ctx := context.Background()
 	b.ReportAllocs()
@@ -107,7 +121,11 @@ func BenchmarkPreflightHeader(b *testing.B) {
 	req, _ := http.NewRequest("OPTIONS", "http://example.com/foo", nil)
 	req.Header.Add("Access-Control-Request-Method", "GET")
 	req.Header.Add("Access-Control-Request-Headers", "Accept")
-	handler := ctxcors.New().WithCORS()(testHandler)
+	c, err := ctxcors.New()
+	if err != nil {
+		b.Fatal(err)
+	}
+	handler := c.WithCORS()(testHandler)
 
 	ctx := context.Background()
 	b.ReportAllocs()

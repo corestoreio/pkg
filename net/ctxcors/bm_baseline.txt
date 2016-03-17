@@ -1,0 +1,10 @@
+PASS
+BenchmarkParseHeaderList-4          	 2000000	       739 ns/op	     184 B/op	       6 allocs/op
+BenchmarkParseHeaderListSingle-4    	 5000000	       278 ns/op	      32 B/op	       3 allocs/op
+BenchmarkParseHeaderListNormalized-4	 2000000	       687 ns/op	     160 B/op	       6 allocs/op
+BenchmarkWithout-4                  	30000000	        52.4 ns/op	       8 B/op	       1 allocs/op
+BenchmarkDefault-4                  	 2000000	       663 ns/op	      94 B/op	       1 allocs/op
+BenchmarkAllowedOrigin-4            	 2000000	       912 ns/op	     110 B/op	       2 allocs/op
+BenchmarkPreflight-4                	 1000000	      1289 ns/op	     270 B/op	       0 allocs/op
+BenchmarkPreflightHeader-4          	 1000000	      1266 ns/op	     270 B/op	       0 allocs/op
+ok  	github.com/corestoreio/csfw/net/ctxcors	14.965s

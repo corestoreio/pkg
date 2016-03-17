@@ -22,6 +22,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/util/log"
+	"github.com/juju/errors"
 )
 
 // Option defines a function argument for the Cors type to apply options.
@@ -132,6 +133,8 @@ func WithMaxAge(seconds time.Duration) Option {
 	return func(c *Cors) {
 		if s > 0 {
 			c.maxAge = fmt.Sprintf("%.0f", s)
+		} else {
+			c.MultiErr = c.AppendErrors(errors.Errorf("Invalid Duration seconds: %.0f", seconds.Seconds()))
 		}
 	}
 }

@@ -30,6 +30,7 @@ import (
 
 	"github.com/corestoreio/csfw/net/ctxcors"
 	"github.com/corestoreio/csfw/util/log"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
 
@@ -48,13 +49,25 @@ func assertHeaders(t *testing.T, resHeaders http.Header, reqHeaders map[string]s
 	}
 }
 
+func TestMustNew(t *testing.T) {
+	t.Parallel()
+	defer func() {
+		if r := recover(); r != nil {
+			assert.EqualError(t, r.(error), "Invalid Duration seconds: -2")
+		} else {
+			t.Fatal("Expecting a Panic")
+		}
+	}()
+	_ = ctxcors.MustNew(ctxcors.WithMaxAge(-2 * time.Second))
+}
+
 func TestNoConfig(t *testing.T) {
-	s := ctxcors.New(nil)
+	s := ctxcors.MustNew(nil) // trick it, nil is not a legal argument in your code
 
 	res := httptest.NewRecorder()
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 
-	s.WithCORS()(testHandler)(context.Background(), res, req) // yay that looks terrible!
+	assert.NoError(t, s.WithCORS()(testHandler)(context.Background(), res, req))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin",
@@ -68,7 +81,7 @@ func TestNoConfig(t *testing.T) {
 }
 
 func TestMatchAllOrigin(t *testing.T) {
-	s := ctxcors.New(
+	s := ctxcors.MustNew(
 		ctxcors.WithAllowedOrigins("*"),
 		ctxcors.WithLogger(log.NewBlackHole()),
 	)
@@ -77,7 +90,7 @@ func TestMatchAllOrigin(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	req.Header.Add("Origin", "http://foobar.com")
 
-	s.WithCORS()(testHandler)(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler)(context.Background(), res, req))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin",
@@ -91,7 +104,7 @@ func TestMatchAllOrigin(t *testing.T) {
 }
 
 func TestAllowedOrigin(t *testing.T) {
-	s := ctxcors.New(
+	s := ctxcors.MustNew(
 		ctxcors.WithAllowedOrigins("http://foobar.com"),
 		ctxcors.WithLogger(log.NewBlackHole()),
 	)
@@ -100,7 +113,7 @@ func TestAllowedOrigin(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	req.Header.Add("Origin", "http://foobar.com")
 
-	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin",
@@ -114,7 +127,7 @@ func TestAllowedOrigin(t *testing.T) {
 }
 
 func TestWildcardOrigin(t *testing.T) {
-	s := ctxcors.New(
+	s := ctxcors.MustNew(
 		ctxcors.WithAllowedOrigins("http://*.bar.com"),
 		ctxcors.WithLogger(log.NewBlackHole()),
 	)
@@ -123,7 +136,7 @@ func TestWildcardOrigin(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	req.Header.Add("Origin", "http://foo.bar.com")
 
-	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin",
@@ -137,7 +150,7 @@ func TestWildcardOrigin(t *testing.T) {
 }
 
 func TestDisallowedOrigin(t *testing.T) {
-	s := ctxcors.New(
+	s := ctxcors.MustNew(
 		ctxcors.WithAllowedOrigins("http://foobar.com"),
 		ctxcors.WithLogger(log.NewBlackHole()),
 	)
@@ -146,7 +159,7 @@ func TestDisallowedOrigin(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	req.Header.Add("Origin", "http://barbaz.com")
 
-	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin",
@@ -160,7 +173,7 @@ func TestDisallowedOrigin(t *testing.T) {
 }
 
 func TestDisallowedWildcardOrigin(t *testing.T) {
-	s := ctxcors.New(
+	s := ctxcors.MustNew(
 		ctxcors.WithAllowedOrigins("http://*.bar.com"),
 		ctxcors.WithLogger(log.NewBlackHole()),
 	)
@@ -169,7 +182,7 @@ func TestDisallowedWildcardOrigin(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	req.Header.Add("Origin", "http://foo.baz.com")
 
-	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin",
@@ -184,7 +197,7 @@ func TestDisallowedWildcardOrigin(t *testing.T) {
 
 func TestAllowedOriginFunc(t *testing.T) {
 	r, _ := regexp.Compile("^http://foo")
-	s := ctxcors.New(
+	s := ctxcors.MustNew(
 		ctxcors.WithLogger(log.NewBlackHole()),
 		ctxcors.WithAllowOriginFunc(func(o string) bool {
 			return r.MatchString(o)
@@ -195,21 +208,21 @@ func TestAllowedOriginFunc(t *testing.T) {
 
 	res := httptest.NewRecorder()
 	req.Header.Set("Origin", "http://foobar.com")
-	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req))
 	assertHeaders(t, res.Header(), map[string]string{
 		"Access-Control-Allow-Origin": "http://foobar.com",
 	})
 
 	res = httptest.NewRecorder()
 	req.Header.Set("Origin", "http://barfoo.com")
-	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req))
 	assertHeaders(t, res.Header(), map[string]string{
 		"Access-Control-Allow-Origin": "",
 	})
 }
 
 func TestAllowedMethod(t *testing.T) {
-	s := ctxcors.New(
+	s := ctxcors.MustNew(
 		ctxcors.WithAllowedOrigins("http://foobar.com"),
 		ctxcors.WithAllowedMethods("PUT", "DELETE"),
 		ctxcors.WithLogger(log.NewBlackHole()),
@@ -220,7 +233,7 @@ func TestAllowedMethod(t *testing.T) {
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "PUT")
 
-	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
@@ -234,7 +247,7 @@ func TestAllowedMethod(t *testing.T) {
 }
 
 func TestAllowedMethodPassthrough(t *testing.T) {
-	s := ctxcors.New(
+	s := ctxcors.MustNew(
 		ctxcors.WithAllowedOrigins("http://foobar.com"),
 		ctxcors.WithAllowedMethods("PUT", "DELETE"),
 		ctxcors.WithLogger(log.NewBlackHole()),
@@ -246,7 +259,7 @@ func TestAllowedMethodPassthrough(t *testing.T) {
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "PUT")
 
-	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
@@ -260,7 +273,7 @@ func TestAllowedMethodPassthrough(t *testing.T) {
 }
 
 func TestDisallowedMethod(t *testing.T) {
-	s := ctxcors.New(
+	s := ctxcors.MustNew(
 		ctxcors.WithAllowedOrigins("http://foobar.com"),
 		ctxcors.WithAllowedMethods("PUT", "DELETE"),
 		ctxcors.WithLogger(log.NewBlackHole()),
@@ -271,7 +284,7 @@ func TestDisallowedMethod(t *testing.T) {
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "PATCH")
 
-	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
@@ -285,7 +298,7 @@ func TestDisallowedMethod(t *testing.T) {
 }
 
 func TestAllowedHeader(t *testing.T) {
-	s := ctxcors.New(
+	s := ctxcors.MustNew(
 		ctxcors.WithAllowedOrigins("http://foobar.com"),
 		ctxcors.WithAllowedHeaders("X-Header-1", "x-header-2"),
 		ctxcors.WithLogger(log.NewBlackHole()),
@@ -297,7 +310,7 @@ func TestAllowedHeader(t *testing.T) {
 	req.Header.Add("Access-Control-Request-Method", "GET")
 	req.Header.Add("Access-Control-Request-Headers", "X-Header-2, X-HEADER-1")
 
-	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
@@ -311,7 +324,7 @@ func TestAllowedHeader(t *testing.T) {
 }
 
 func TestAllowedWildcardHeader(t *testing.T) {
-	s := ctxcors.New(
+	s := ctxcors.MustNew(
 		ctxcors.WithLogger(log.NewBlackHole()),
 		ctxcors.WithAllowedOrigins("http://foobar.com"),
 		ctxcors.WithAllowedHeaders("*"),
@@ -323,7 +336,7 @@ func TestAllowedWildcardHeader(t *testing.T) {
 	req.Header.Add("Access-Control-Request-Method", "GET")
 	req.Header.Add("Access-Control-Request-Headers", "X-Header-2, X-HEADER-1")
 
-	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
@@ -337,7 +350,7 @@ func TestAllowedWildcardHeader(t *testing.T) {
 }
 
 func TestDisallowedHeader(t *testing.T) {
-	s := ctxcors.New(
+	s := ctxcors.MustNew(
 		ctxcors.WithLogger(log.NewBlackHole()),
 		ctxcors.WithAllowedOrigins("http://foobar.com"),
 		ctxcors.WithAllowedHeaders("X-Header-1", "x-header-2"),
@@ -349,7 +362,7 @@ func TestDisallowedHeader(t *testing.T) {
 	req.Header.Add("Access-Control-Request-Method", "GET")
 	req.Header.Add("Access-Control-Request-Headers", "X-Header-3, X-Header-1")
 
-	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
@@ -363,7 +376,7 @@ func TestDisallowedHeader(t *testing.T) {
 }
 
 func TestOriginHeader(t *testing.T) {
-	s := ctxcors.New(
+	s := ctxcors.MustNew(
 		ctxcors.WithLogger(log.NewBlackHole()),
 		ctxcors.WithAllowedOrigins("http://foobar.com"),
 	)
@@ -374,7 +387,7 @@ func TestOriginHeader(t *testing.T) {
 	req.Header.Add("Access-Control-Request-Method", "GET")
 	req.Header.Add("Access-Control-Request-Headers", "origin")
 
-	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
@@ -388,7 +401,7 @@ func TestOriginHeader(t *testing.T) {
 }
 
 func TestExposedHeader(t *testing.T) {
-	s := ctxcors.New(
+	s := ctxcors.MustNew(
 		ctxcors.WithLogger(log.NewBlackHole()),
 		ctxcors.WithAllowedOrigins("http://foobar.com"),
 		ctxcors.WithExposedHeaders("X-Header-1", "x-header-2"),
@@ -398,7 +411,7 @@ func TestExposedHeader(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://example.com/foo", nil)
 	req.Header.Add("Origin", "http://foobar.com")
 
-	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin",
@@ -412,7 +425,7 @@ func TestExposedHeader(t *testing.T) {
 }
 
 func TestAllowedCredentials(t *testing.T) {
-	s := ctxcors.New(
+	s := ctxcors.MustNew(
 		ctxcors.WithLogger(log.NewBlackHole()),
 		ctxcors.WithAllowedOrigins("http://foobar.com"),
 		ctxcors.WithAllowCredentials(),
@@ -423,7 +436,7 @@ func TestAllowedCredentials(t *testing.T) {
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "GET")
 
-	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
@@ -437,7 +450,8 @@ func TestAllowedCredentials(t *testing.T) {
 }
 
 func TestMaxAge(t *testing.T) {
-	s := ctxcors.New(
+
+	s := ctxcors.MustNew(
 		ctxcors.WithLogger(log.NewBlackHole()),
 		ctxcors.WithAllowedOrigins("http://foobar.com"),
 		ctxcors.WithMaxAge(time.Second*30),
@@ -448,7 +462,7 @@ func TestMaxAge(t *testing.T) {
 	req.Header.Add("Origin", "http://foobar.com")
 	req.Header.Add("Access-Control-Request-Method", "GET")
 
-	s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req)
+	assert.NoError(t, s.WithCORS()(testHandler).ServeHTTPContext(context.Background(), res, req))
 
 	assertHeaders(t, res.Header(), map[string]string{
 		"Vary": "Origin, Access-Control-Request-Method, Access-Control-Request-Headers",
