@@ -47,12 +47,11 @@ from.`),
 							ID:    cfgpath.NewRoute(`exposed_headers`),
 							Label: text.Chars(`Exposed Headers`),
 							Comment: text.Chars(`Indicates which headers are safe to
-expose to the API of a CORS API specification. Separate via line break`),
+expose to the API of a CORS API specification. Separate via line break (\n)`),
 							Type:      element.TypeTextarea,
 							SortOrder: 10,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
-							Default:   nil,
 						},
 						&element.Field{
 							// Path: `net/ctxcors/allowed_origins`,
@@ -62,7 +61,7 @@ expose to the API of a CORS API specification. Separate via line break`),
 can be executed from. If the special "*" value is present in the list, all origins
 will be allowed. An origin may contain a wildcard (*) to replace 0 or more characters
 (i.e.: http://*.domain.com). Usage of wildcards implies a small performance penality.
-Only one wildcard can be used per origin. Default value is ["*"]`),
+Only one wildcard can be used per origin. Default value is ["*"]. Separate via line break (\n)`),
 							Type:      element.TypeTextarea,
 							SortOrder: 20,
 							Visible:   element.VisibleYes,
@@ -74,12 +73,12 @@ Only one wildcard can be used per origin. Default value is ["*"]`),
 							ID:    cfgpath.NewRoute(`allowed_methods`),
 							Label: text.Chars(`Allowed Methods`),
 							Comment: text.Chars(`A list of methods the client is allowed to
-use with cross-domain requests. Default value is simple methods (GET and POST)`),
+use with cross-domain requests. Default value is simple methods (GET and POST). Separate via line break (\n)`),
 							Type:      element.TypeText,
 							SortOrder: 30,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
-							Default:   `GET,POST`,
+							Default:   "GET\nPOST",
 						},
 						&element.Field{
 							// Path: `net/ctxcors/allowed_headers`,
@@ -88,12 +87,12 @@ use with cross-domain requests. Default value is simple methods (GET and POST)`)
 							Comment: text.Chars(`A list of non simple headers the client is
 allowed to use with cross-domain requests. If the special "*" value is present
 in the list, all headers will be allowed. Default value is [] but "Origin" is
-always appended to the list.`),
+always appended to the list. Separate via line break (\n)`),
 							Type:      element.TypeText,
 							SortOrder: 40,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
-							Default:   `Origin,Accept,Content-Type`,
+							Default:   "Origin\nAccept\nContent-Type",
 						},
 						&element.Field{
 							// Path: `net/ctxcors/allow_credentials`,
@@ -133,7 +132,6 @@ Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".`),
 							SortOrder: 70,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
-							Default:   nil,
 						},
 					},
 				},

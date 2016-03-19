@@ -28,9 +28,6 @@ import (
 // Option defines a function argument for the Cors type to apply options.
 type Option func(*Cors)
 
-// numberOfOptions used to initialize the option array
-const numberOfOptions = 9
-
 // WithExposedHeaders indicates which headers are safe to expose to the
 // API of a CORS API specification.
 func WithExposedHeaders(headers ...string) Option {
@@ -171,7 +168,7 @@ func WithBackendApplied(b *PkgBackend, sg config.ScopedGetter) Option {
 	return func(c *Cors) {
 		c.Backend = b
 
-		var opts [numberOfOptions]Option
+		var opts [8]Option
 
 		headers, err := b.NetCtxcorsExposedHeaders.Get(sg)
 		if err != nil {

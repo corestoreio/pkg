@@ -27,7 +27,8 @@ type PkgBackend struct {
 	cfgmodel.PkgBackend
 
 	// NetCtxcorsExposedHeaders indicates which headers are safe to
-	// expose to the API of a CORS API specification. Separate via line break.
+	// expose to the API of a CORS API specification.
+	// Separate via line break (\n).
 	//
 	// Path: net/ctxcors/exposed_headers
 	NetCtxcorsExposedHeaders cfgmodel.StringCSV
@@ -37,12 +38,14 @@ type PkgBackend struct {
 	// will be allowed. An origin may contain a wildcard (*) to replace 0 or more characters
 	// (i.e.: http://*.domain.com). Usage of wildcards implies a small performance penality.
 	// Only one wildcard can be used per origin. Default value is ["*"]
+	// Separate via line break (\n).
 	//
 	// Path: net/ctxcors/allowed_origins
 	NetCtxcorsAllowedOrigins cfgmodel.StringCSV
 
 	// NetCtxcorsAllowedMethods a list of methods the client is allowed to
 	// use with cross-domain requests. Default value is simple methods (GET and POST)
+	// Separate via line break (\n).
 	//
 	// Path: net/ctxcors/allowed_methods
 	NetCtxcorsAllowedMethods cfgmodel.StringCSV
@@ -51,6 +54,7 @@ type PkgBackend struct {
 	// allowed to use with cross-domain requests. If the special "*" value is present
 	// in the list, all headers will be allowed. Default value is [] but "Origin" is
 	// always appended to the list.
+	// Separate via line break (\n).
 	//
 	// Path: net/ctxcors/allowed_headers
 	NetCtxcorsAllowedHeaders cfgmodel.StringCSV
@@ -91,10 +95,10 @@ func (pp *PkgBackend) Load(cfgStruct element.SectionSlice) *PkgBackend {
 
 	opt := cfgmodel.WithFieldFromSectionSlice(cfgStruct)
 
-	pp.NetCtxcorsExposedHeaders = cfgmodel.NewStringCSV(`net/ctxcors/exposed_headers`, opt)
-	pp.NetCtxcorsAllowedOrigins = cfgmodel.NewStringCSV(`net/ctxcors/allowed_origins`, opt)
-	pp.NetCtxcorsAllowedMethods = cfgmodel.NewStringCSV(`net/ctxcors/allowed_methods`, opt)
-	pp.NetCtxcorsAllowedHeaders = cfgmodel.NewStringCSV(`net/ctxcors/allowed_headers`, opt)
+	pp.NetCtxcorsExposedHeaders = cfgmodel.NewStringCSV(`net/ctxcors/exposed_headers`, opt, cfgmodel.WithCSVSeparator('\n'))
+	pp.NetCtxcorsAllowedOrigins = cfgmodel.NewStringCSV(`net/ctxcors/allowed_origins`, opt, cfgmodel.WithCSVSeparator('\n'))
+	pp.NetCtxcorsAllowedMethods = cfgmodel.NewStringCSV(`net/ctxcors/allowed_methods`, opt, cfgmodel.WithCSVSeparator('\n'))
+	pp.NetCtxcorsAllowedHeaders = cfgmodel.NewStringCSV(`net/ctxcors/allowed_headers`, opt, cfgmodel.WithCSVSeparator('\n'))
 	pp.NetCtxcorsAllowCredentials = cfgmodel.NewBool(`net/ctxcors/allow_credentials`, opt, cfgmodel.WithSource(source.YesNo))
 	pp.NetCtxcorsOptionsPassthrough = cfgmodel.NewBool(`net/ctxcors/allow_credentials`, opt, cfgmodel.WithSource(source.YesNo))
 	pp.NetCtxcorsMaxAge = cfgmodel.NewDuration(`net/ctxcors/max_age`, opt)
