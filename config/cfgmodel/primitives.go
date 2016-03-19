@@ -169,10 +169,12 @@ func (f Float64) Get(sg config.ScopedGetter) (float64, error) {
 	var scp = scope.DefaultID
 	if f.Field != nil {
 		scp = f.Field.Scopes.Top()
-		var err error
-		v, err = conv.ToFloat64E(f.Field.Default)
-		if err != nil {
-			return 0, errors.Mask(err)
+		if d := f.Field.Default; d != nil {
+			var err error
+			v, err = conv.ToFloat64E(d)
+			if err != nil {
+				return 0, errors.Mask(err)
+			}
 		}
 	}
 

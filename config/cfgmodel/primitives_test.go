@@ -237,6 +237,16 @@ func TestBoolGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
 }
 
+func TestBoolIgnoreNilDefaultValues(t *testing.T) {
+	t.Parallel()
+	b := cfgmodel.NewBool("web/cors/bool", cfgmodel.WithField(&element.Field{}))
+	gb, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, false, gb)
+}
+
 func TestBoolWrite(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsCred = "web/cors/allow_credentials"
@@ -325,6 +335,15 @@ func TestStrGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
 }
 
+func TestStrIgnoreNilDefaultValues(t *testing.T) {
+	t.Parallel()
+	b := cfgmodel.NewStr("web/cors/str", cfgmodel.WithField(&element.Field{}))
+	gb, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, "", gb)
+}
 func TestStrWrite(t *testing.T) {
 	t.Parallel()
 	const pathWebCorsHeaders = "web/cors/exposed_headers"
@@ -410,6 +429,16 @@ func TestIntGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	).NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
+}
+
+func TestIntIgnoreNilDefaultValues(t *testing.T) {
+	t.Parallel()
+	b := cfgmodel.NewInt("web/cors/int", cfgmodel.WithField(&element.Field{}))
+	gb, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, int(0), gb)
 }
 
 func TestIntWrite(t *testing.T) {
@@ -499,6 +528,16 @@ func TestFloat64GetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	assert.Empty(t, gb)
 	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
 
+}
+
+func TestFloat64IgnoreNilDefaultValues(t *testing.T) {
+	t.Parallel()
+	b := cfgmodel.NewFloat64("web/cors/float64", cfgmodel.WithField(&element.Field{}))
+	gb, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, float64(0), gb)
 }
 
 func TestFloat64Write(t *testing.T) {

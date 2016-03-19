@@ -22,6 +22,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/cserr"
@@ -112,6 +113,16 @@ func TestTimeGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	).NewScoped(1, 1))
 	assert.Empty(t, gb)
 	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
+}
+
+func TestTimeIgnoreNilDefaultValues(t *testing.T) {
+	t.Parallel()
+	b := cfgmodel.NewTime("web/cors/time", cfgmodel.WithField(&element.Field{}))
+	gb, err := b.Get(cfgmock.NewService().NewScoped(1, 1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, time.Time{}, gb)
 }
 
 func TestTimeWrite(t *testing.T) {
@@ -215,6 +226,16 @@ func TestDurationGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 	).NewScoped(1, 1))
 	assert.Exactly(t, time.Duration(0), gb)
 	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
+}
+
+func TestDurationIgnoreNilDefaultValues(t *testing.T) {
+	t.Parallel()
+	b := cfgmodel.NewDuration("web/cors/duration", cfgmodel.WithField(&element.Field{}))
+	gb, err := b.Get(cfgmock.NewService().NewScoped(1, 1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, time.Duration(0), gb)
 }
 
 func TestDurationWrite(t *testing.T) {

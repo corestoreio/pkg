@@ -43,10 +43,12 @@ func (t Time) Get(sg config.ScopedGetter) (time.Time, error) {
 	var scp = scope.DefaultID
 	if t.Field != nil {
 		scp = t.Field.Scopes.Top()
-		var err error
-		v, err = conv.ToTimeE(t.Field.Default)
-		if err != nil {
-			return time.Time{}, errors.Mask(err)
+		if d := t.Field.Default; d != nil {
+			var err error
+			v, err = conv.ToTimeE(d)
+			if err != nil {
+				return time.Time{}, errors.Mask(err)
+			}
 		}
 	}
 
@@ -89,10 +91,12 @@ func (t Duration) Get(sg config.ScopedGetter) (time.Duration, error) {
 	var scp = scope.DefaultID
 	if t.Field != nil {
 		scp = t.Field.Scopes.Top()
-		var err error
-		v, err = conv.ToDurationE(t.Field.Default)
-		if err != nil {
-			return 0, errors.Mask(err)
+		if d := t.Field.Default; d != nil {
+			var err error
+			v, err = conv.ToDurationE(d)
+			if err != nil {
+				return 0, errors.Mask(err)
+			}
 		}
 	}
 
