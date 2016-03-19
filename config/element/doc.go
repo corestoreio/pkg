@@ -14,20 +14,55 @@
 
 // Package element represents Magento system.xml configuration elements.
 //
-// The three elements Section, Group and Field represents front-end configuration fields and more important
-// default values and their permissions. They do not define how to handle the source and backend model
-// in a Magento sense. Source models are use to load values for displaying in a e.g. HTML select field
-// or also known as option values. Backend models know how to save and load a cfgpath.Path
+// Thw following diagram shows the tree structure:
+//    +---------+
+//    | Section |
+//    +---------+
+//    |
+//    |   +-------+
+//    +-->+ Group |
+//    |   +-------+
+//    |   |
+//    |   |    +--------+
+//    |   +--->+ Field  |
+//    |   |    +--------+
+//    |   |
+//    |   |    +--------+
+//    |   +--->+ Field  |
+//    |   |    +--------+
+//    |   |
+//    |   |    +--------+
+//    |   +--->+ Field  |
+//    |        +--------+
+//    |
+//    |   +-------+
+//    +-->+ Group |
+//    |   +-------+
+//    |   |
+//    |   |    +--------+
+//    |   +--->+ Field  |
+//    |   |    +--------+
+//    |   |
+//    |   |    +--------+
+//    |   +--->+ Field  |
+//    |   |    +--------+
+//    |   |
+//    |   |    +--------+
+//    |   +--->+ Field  |
+//    |        +--------+
+//    |
+//    http://asciiflow.com/
+// The three elements Section, Group and Field represents front-end configuration
+// fields and more important default values and their permissions. A permission
+// is of type scope.Perm and defines which of elements in which scope can be shown.
 //
-// Those three elements represents the PackageConfiguration variable which can be found in any package.
+// Those three elements represents the tree in function NewConfigStructure() which
+// can be found in any package.
 //
-// Your app which includes the csfw must merge all "PackageConfiguration"s into a single slice.
+// Unclear: Your app which includes the csfw must merge all "PackageConfiguration"s into a single slice.
 // You should submit all default values (interface config.Sectioner) to the config.Service.ApplyDefaults()
 // function.
 //
-// The models included in PackageConfiguration will be later used when handling the values
-// for each configuration field.
-//
-// The JSON enconding of the three elements Section, Group and Field are intended to use
+// The JSON encoding of the three elements Section, Group and Field are intended to use
 // on the backend REST API and for debugging and testing. Only used in non performance critical parts.
 package element
