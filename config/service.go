@@ -74,14 +74,6 @@ type (
 	}
 )
 
-// DefaultService provides a standard NewService via init() func loaded.
-var DefaultService *Service
-
-func init() {
-	// todo: think about removing it or explain properly why a global code smell is needed.
-	DefaultService = MustNewService()
-}
-
 // ServiceOption applies options to the NewService.
 type ServiceOption func(*Service)
 

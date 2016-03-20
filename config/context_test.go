@@ -28,12 +28,14 @@ func TestContextMustGetter(t *testing.T) {
 	t.Parallel()
 	mr := cfgmock.NewService()
 	ctx := config.WithContextGetter(context.Background(), mr)
-	mrHave := config.FromContextGetter(ctx)
+	mrHave, ok := config.FromContextGetter(ctx)
+	assert.True(t, ok)
 	assert.Exactly(t, mr, mrHave)
 
 	ctx = config.WithContextGetter(context.Background(), nil)
-	mrHave = config.FromContextGetter(ctx)
-	assert.Exactly(t, config.DefaultService, mrHave)
+	mrHave, ok = config.FromContextGetter(ctx)
+	assert.False(t, ok)
+	assert.Nil(t, mrHave)
 }
 
 func TestContextMustGetterPubSuber(t *testing.T) {

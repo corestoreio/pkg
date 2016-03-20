@@ -19,13 +19,10 @@ import (
 	"golang.org/x/net/context"
 )
 
-// FromContextGetter returns a config.Getter from a context. If not found returns
-// the config.DefaultService
-func FromContextGetter(ctx context.Context) Getter {
-	if r, ok := ctx.Value(cfgctx.KeyGetter{}).(Getter); ok {
-		return r
-	}
-	return DefaultService
+// FromContextGetter returns a config.Getter from a context.
+func FromContextGetter(ctx context.Context) (g Getter, ok bool) {
+	g, ok = ctx.Value(cfgctx.KeyGetter{}).(Getter)
+	return
 }
 
 // WithContextGetter adds a config.Getter to a context
