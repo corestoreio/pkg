@@ -19,7 +19,32 @@ import (
 
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
+	"hash/fnv"
 )
+
+func TestMustSetByCode(t *testing.T) {
+	t.Parallel()
+	defer func() {
+		if r := recover(); r != nil {
+			assert.EqualError(t, r.(error), scope.ErrUnsupportedScopeID.Error())
+		} else {
+			t.Fatal("Expecting a panic")
+		}
+	}()
+	scope.MustSetByCode(99, "Gopher")
+}
+
+func TestMustSetByID(t *testing.T) {
+	t.Parallel()
+	defer func() {
+		if r := recover(); r != nil {
+			assert.EqualError(t, r.(error), scope.ErrUnsupportedScopeID.Error())
+		} else {
+			t.Fatal("Expecting a panic")
+		}
+	}()
+	scope.MustSetByID(99, 444)
+}
 
 func TestApplyCode(t *testing.T) {
 	t.Parallel()
@@ -137,4 +162,48 @@ func TestApplyDefault(t *testing.T) {
 	so := scope.Option{}
 	assert.NotNil(t, so)
 	assert.Exactly(t, scope.DefaultID, so.Scope())
+}
+
+func TestToUint32ByID(t *testing.T) {
+	tests := []struct {
+		so   scope.Option
+		want uint32
+	}{
+		{scope.Option{}, 0},
+		{scope.MustSetByID(scope.WebsiteID, 11), 11},
+		{scope.MustSetByID(scope.GroupID, 12), 12},
+		{scope.MustSetByID(scope.StoreID, 13), 13},
+	}
+	for _, test := range tests {
+		if have := test.so.ToUint32(); have != test.want {
+			t.Errorf("want %d have %d", test.want, have)
+		}
+	}
+}
+
+func TestToUint32ByCode(t *testing.T) {
+	tests := []struct {
+		so   scope.Option
+		want string
+	}{
+		{scope.Option{}, ""},
+		{scope.MustSetByCode(scope.WebsiteID, "ch"), "ch"},
+		{scope.MustSetByCode(scope.StoreID, "de_DE"), "de_DE"},
+		{scope.MustSetByCode(scope.StoreID, "deDE"), "deDE"},
+	}
+	for _, test := range tests {
+
+		var want uint32
+		if test.want != "" {
+			h := fnv.New32a()
+			if _, err := h.Write([]byte(test.want)); err != nil {
+				t.Fatal(err)
+			}
+			want = h.Sum32()
+		}
+
+		if have := test.so.ToUint32(); have != want {
+			t.Errorf("want %d have %d", want, have)
+		}
+	}
 }

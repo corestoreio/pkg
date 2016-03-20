@@ -14,9 +14,9 @@
 
 package scope
 
-import (
-	"errors"
-)
+import "errors"
+
+const maxUint32 = 1<<32 - 1
 
 // ErrUnsupportedScope gets returned when a string does not match
 // StrDefault, StrWebsites or StrStores constants.
@@ -57,6 +57,16 @@ func SetByCode(scp Scope, code string) (o Option, err error) {
 	return
 }
 
+// MustSetByCode same as SetByCode but panics on error. Use only during app
+// initialization.
+func MustSetByCode(scp Scope, code string) Option {
+	so, err := SetByCode(scp, code)
+	if err != nil {
+		panic(err)
+	}
+	return so
+}
+
 // SetByID depending on the scopeType the scopeID int64 gets converted into a
 // [Website|Group|Store]IDer.
 func SetByID(scp Scope, id int64) (o Option, err error) {
@@ -73,6 +83,16 @@ func SetByID(scp Scope, id int64) (o Option, err error) {
 		err = ErrUnsupportedScopeID
 	}
 	return
+}
+
+// MustSetByID same as SetByID but panics on error. Use only during app
+// initialization.
+func MustSetByID(scp Scope, id int64) Option {
+	so, err := SetByID(scp, id)
+	if err != nil {
+		panic(err)
+	}
+	return so
 }
 
 // Scope returns the underlying scope ID depending on which struct field is set.
@@ -113,4 +133,57 @@ func (o Option) WebsiteCode() (code string) {
 		code = wc.WebsiteCode()
 	}
 	return
+}
+
+// ToUint32 generates a non-unique key from the Option.
+// Either the *IDer interfaces gets casted to uint32 or the *Coder
+// interface gets hashed via fnv32a.
+// If both interfaces (*IDer and *Coder) are nil it returns 0 which is default
+// for website, group or store.
+// The returned value depends on the hierarchy: 1. website, 2. group, 3. store
+// and 4. 0.
+func (o Option) ToUint32() uint32 {
+
+	switch {
+	case nil != o.Website:
+		if wC := o.WebsiteCode(); wC != "" {
+			return hashCode(wC)
+		}
+		if id := o.Website.WebsiteID(); id >= 0 && id < maxUint32 {
+			return uint32(id)
+		}
+	case nil != o.Group:
+		if id := o.Group.GroupID(); id >= 0 && id < maxUint32 {
+			return uint32(id)
+		}
+	case nil != o.Store:
+		if sC := o.StoreCode(); sC != "" {
+			return hashCode(sC)
+		}
+		if id := o.Store.StoreID(); id >= 0 && id < maxUint32 {
+			return uint32(id)
+		}
+	}
+
+	return 0
+}
+
+// Copyright 2011 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Package fnv implements FNV-1 and FNV-1a, non-cryptographic hash functions
+// created by Glenn Fowler, Landon Curt Noll, and Phong Vo.
+// See
+// https://en.wikipedia.org/wiki/Fowler-Noll-Vo_hash_function.
+// fnv32a hash
+func hashCode(code string) uint32 {
+
+	data := []byte(code)
+	var hash uint32 = 2166136261 // offset
+	for _, c := range data {
+		hash ^= uint32(c)
+		hash *= 16777619 // prime
+	}
+	return hash
 }
