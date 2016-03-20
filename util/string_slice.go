@@ -40,7 +40,7 @@ func (l StringSlice) Less(i, j int) bool { return l[i] < l[j] }
 func (l StringSlice) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
 
 // Sort is a convenience method.
-func (l StringSlice) Sort() StringSlice { sort.Sort(l); return l }
+func (l StringSlice) Sort() StringSlice { sort.Stable(l); return l }
 
 // Append adds s (variadic) to the StringSlice
 func (l *StringSlice) Append(s ...string) StringSlice {

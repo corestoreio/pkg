@@ -34,10 +34,10 @@ func (l Int64Slice) Less(i, j int) bool { return l[i] < l[j] }
 func (l Int64Slice) Swap(i, j int) { l[i], l[j] = l[j], l[i] }
 
 // Sort is a convenience method.
-func (l Int64Slice) Sort() Int64Slice { sort.Sort(l); return l }
+func (l Int64Slice) Sort() Int64Slice { sort.Stable(l); return l }
 
 // Reverse is a convenience method.
-func (l Int64Slice) Reverse() Int64Slice { sort.Sort(sort.Reverse(l)); return l }
+func (l Int64Slice) Reverse() Int64Slice { sort.Stable(sort.Reverse(l)); return l }
 
 // Append adds s (variadic) to the Int64Slice
 func (l *Int64Slice) Append(s ...int64) Int64Slice {
