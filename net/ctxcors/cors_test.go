@@ -53,7 +53,7 @@ func TestMustNew(t *testing.T) {
 	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
-			assert.EqualError(t, r.(error), "Invalid Duration seconds: -2")
+			assert.EqualError(t, r.(error), "MaxAge: Invalid Duration seconds: -2")
 		} else {
 			t.Fatal("Expecting a Panic")
 		}

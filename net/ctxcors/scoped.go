@@ -68,11 +68,12 @@ func (cs *scopeCache) insert(sg config.ScopedGetter) (*Cors, error) {
 	} else {
 		c, err = New(WithLogger(cs.parent.Log)) // inherit more?
 	}
-
 	if err != nil {
 		return nil, errors.Mask(err)
 	}
 
-	cs.storage[scope.NewHash(sg.Scope())] = c
+	c.scopedTo = scope.NewHash(sg.Scope())
+
+	cs.storage[c.scopedTo] = c
 	return c, nil
 }

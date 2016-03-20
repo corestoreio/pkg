@@ -131,7 +131,7 @@ func WithMaxAge(seconds time.Duration) Option {
 		if s > 0 {
 			c.maxAge = fmt.Sprintf("%.0f", s)
 		} else {
-			c.MultiErr = c.AppendErrors(errors.Errorf("Invalid Duration seconds: %.0f", seconds.Seconds()))
+			c.MultiErr = c.AppendErrors(errors.Errorf("MaxAge: Invalid Duration seconds: %.0f", seconds.Seconds()))
 		}
 	}
 }
@@ -161,7 +161,7 @@ func WithBackend(b *PkgBackend) Option {
 	}
 }
 
-// WithBackend allows to add the backend configuration struct and applying
+// WithBackendApplied allows to add the backend configuration struct and applying
 // all options. This option should only be used within the middleware while
 // creating a new Cors pointer for a specific scope.
 func WithBackendApplied(b *PkgBackend, sg config.ScopedGetter) Option {
@@ -221,6 +221,6 @@ func WithBackendApplied(b *PkgBackend, sg config.ScopedGetter) Option {
 			opts[7] = WithLogger(c.Log)
 		}
 
-		c.Options(opts[:]...) // ignore
+		_, _ = c.Options(opts[:]...) // ignore because already covered
 	}
 }

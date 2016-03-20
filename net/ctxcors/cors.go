@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
+	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/cserr"
@@ -48,20 +49,11 @@ type Cors struct {
 
 	// Log is a logger mainly for debugging. Default Logger writes to a black hole.
 	Log log.Logger
-	// Set to true when allowed origins contains a "*"
-	allowedOriginsAll bool
 	// Normalized list of plain allowed origins
 	allowedOrigins []string
 	// List of allowed origins containing wildcards
 	allowedWOrigins []wildcard
 
-	// AllowOriginFunc is a custom function to validate the origin. It take the origin
-	// as argument and returns true if allowed or false otherwise. If this option is
-	// set, the content of AllowedOrigins is ignored.
-	AllowOriginFunc func(origin string) bool
-
-	// Set to true when allowed headers contains a "*"
-	allowedHeadersAll bool
 	// Normalized list of allowed headers
 	allowedHeaders []string
 	// Normalized list of allowed methods
@@ -72,6 +64,17 @@ type Cors struct {
 	// maxAge in seconds will be added to the header, if set.
 	maxAge string
 
+	// AllowOriginFunc is a custom function to validate the origin. It take the origin
+	// as argument and returns true if allowed or false otherwise. If this option is
+	// set, the content of AllowedOrigins is ignored.
+	AllowOriginFunc func(origin string) bool
+
+	// Set to true when allowed origins contains a "*"
+	allowedOriginsAll bool
+
+	// Set to true when allowed headers contains a "*"
+	allowedHeadersAll bool
+
 	// AllowCredentials indicates whether the request can include user credentials like
 	// cookies, HTTP authentication or client side SSL certificates.
 	AllowCredentials bool
@@ -79,6 +82,8 @@ type Cors struct {
 	// OptionsPassthrough instructs preflight to let other potential next handlers to
 	// process the OPTIONS method. Turn this on if your application handles OPTIONS.
 	OptionsPassthrough bool
+
+	scopedTo scope.Hash
 }
 
 // New creates a new Cors handler with the provided options.
@@ -130,7 +135,7 @@ func (c *Cors) WithCORS() ctxhttp.Middleware {
 				return err
 			}
 
-			if r.Method == "OPTIONS" {
+			if r.Method == httputil.MethodOptions {
 				if cc.Log.IsDebug() {
 					cc.Log.Debug("ctxcors.Cors.WithCORS.handlePreflight", "method", r.Method, "OptionsPassthrough", cc.OptionsPassthrough)
 				}
@@ -191,7 +196,7 @@ func (c *Cors) handlePreflight(w http.ResponseWriter, r *http.Request) {
 	headers := w.Header()
 	origin := r.Header.Get("Origin")
 
-	if r.Method != "OPTIONS" {
+	if r.Method != httputil.MethodOptions {
 		if c.Log.IsDebug() {
 			c.Log.Debug("ctxcors.Cors.handlePreflight.aborted", "method", r.Method)
 		}
@@ -257,7 +262,7 @@ func (c *Cors) handleActualRequest(w http.ResponseWriter, r *http.Request) {
 	headers := w.Header()
 	origin := r.Header.Get("Origin")
 
-	if r.Method == "OPTIONS" {
+	if r.Method == httputil.MethodOptions {
 		if c.Log.IsDebug() {
 			c.Log.Debug("ctxcors.Cors.handleActualRequest.aborted.options", "method", r.Method)
 		}
@@ -331,7 +336,7 @@ func (c *Cors) isMethodAllowed(method string) bool {
 		return false
 	}
 	method = strings.ToUpper(method)
-	if method == "OPTIONS" {
+	if method == httputil.MethodOptions {
 		// Always allow preflight requests
 		return true
 	}

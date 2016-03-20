@@ -22,13 +22,22 @@ package ctxcors
 
 import (
 	"errors"
+	"testing"
+	"time"
+
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/log"
 	"github.com/stretchr/testify/assert"
-	"testing"
-	"time"
 )
+
+func mustToPath(t *testing.T, fqf func(scope.Scope, int64) (string, error), s scope.Scope, id int64) string {
+	fq, err := fqf(s, id)
+	if err != nil {
+		t.Fatal(err, s, id)
+	}
+	return fq
+}
 
 func TestWithOptionsPassthrough(t *testing.T) {
 	t.Parallel()
@@ -57,7 +66,7 @@ func TestWithMaxAge(t *testing.T) {
 
 	c := MustNew()
 	_, err := c.Options(WithMaxAge(-1 * time.Second))
-	assert.EqualError(t, err, "Invalid Duration seconds: -1")
+	assert.EqualError(t, err, "MaxAge: Invalid Duration seconds: -1")
 
 	c = MustNew()
 	_, err = c.Options(WithMaxAge(2 * time.Second))
@@ -101,23 +110,15 @@ func TestWithBackendApplied(t *testing.T) {
 	t.Parallel()
 	be := initBackend(t)
 
-	var mustToPath = func(fqf func(scope.Scope, int64) (string, error), s scope.Scope, id int64) string {
-		fq, err := fqf(s, id)
-		if err != nil {
-			t.Fatal(err, s, id)
-		}
-		return fq
-	}
-
 	cfgGet := cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{
-			mustToPath(be.NetCtxcorsExposedHeaders.FQ, scope.WebsiteID, 2):     "X-CoreStore-ID\nContent-Type\n\n",
-			mustToPath(be.NetCtxcorsAllowedOrigins.FQ, scope.WebsiteID, 2):     "host1.com\nhost2.com\n\n",
-			mustToPath(be.NetCtxcorsAllowedMethods.FQ, scope.DefaultID, 0):     "PATCH\nDELETE",
-			mustToPath(be.NetCtxcorsAllowedHeaders.FQ, scope.DefaultID, 0):     "Date,X-Header1",
-			mustToPath(be.NetCtxcorsAllowCredentials.FQ, scope.WebsiteID, 2):   "1",
-			mustToPath(be.NetCtxcorsOptionsPassthrough.FQ, scope.WebsiteID, 2): "1",
-			mustToPath(be.NetCtxcorsMaxAge.FQ, scope.WebsiteID, 2):             "2h",
+			mustToPath(t, be.NetCtxcorsExposedHeaders.FQ, scope.WebsiteID, 2):     "X-CoreStore-ID\nContent-Type\n\n",
+			mustToPath(t, be.NetCtxcorsAllowedOrigins.FQ, scope.WebsiteID, 2):     "host1.com\nhost2.com\n\n",
+			mustToPath(t, be.NetCtxcorsAllowedMethods.FQ, scope.DefaultID, 0):     "PATCH\nDELETE",
+			mustToPath(t, be.NetCtxcorsAllowedHeaders.FQ, scope.DefaultID, 0):     "Date,X-Header1",
+			mustToPath(t, be.NetCtxcorsAllowCredentials.FQ, scope.WebsiteID, 2):   "1",
+			mustToPath(t, be.NetCtxcorsOptionsPassthrough.FQ, scope.WebsiteID, 2): "1",
+			mustToPath(t, be.NetCtxcorsMaxAge.FQ, scope.WebsiteID, 2):             "2h",
 		}),
 	)
 
@@ -148,5 +149,5 @@ func TestWithBackendAppliedErrors(t *testing.T) {
 
 	c, err := New(WithBackendApplied(be, cfgGet.NewScoped(223, 43213)))
 	assert.Nil(t, c)
-	assert.EqualError(t, err, "Route net/ctxcors/exposed_headers: Test Error\nRoute net/ctxcors/allowed_origins: Test Error\nRoute net/ctxcors/allowed_methods: Test Error\nRoute net/ctxcors/allowed_headers: Test Error\nRoute net/ctxcors/allow_credentials: Test Error\nRoute net/ctxcors/allow_credentials: Test Error\nRoute net/ctxcors/max_age: Test Error\nInvalid Duration seconds: 0")
+	assert.EqualError(t, err, "Route net/ctxcors/exposed_headers: Test Error\nRoute net/ctxcors/allowed_origins: Test Error\nRoute net/ctxcors/allowed_methods: Test Error\nRoute net/ctxcors/allowed_headers: Test Error\nRoute net/ctxcors/allow_credentials: Test Error\nRoute net/ctxcors/allow_credentials: Test Error\nRoute net/ctxcors/max_age: Test Error\nMaxAge: Invalid Duration seconds: 0")
 }

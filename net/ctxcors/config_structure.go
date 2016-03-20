@@ -29,7 +29,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 	return element.NewConfiguration(
 		&element.Section{
 			ID: cfgpath.NewRoute(`net`),
-			Groups: element.GroupSlice{
+			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID:    cfgpath.NewRoute(`ctxcors`),
 					Label: text.Chars(`CORS Cross Origin Resource Sharing`),
@@ -41,7 +41,7 @@ from.`),
 					MoreURL:   text.Chars(`http://en.wikipedia.org/wiki/Cross-origin_resource_sharing|http://enable-cors.org/server.html|http://www.html5rocks.com/en/tutorials/cors/#toc-handling-a-not-so-simple-request`),
 					SortOrder: 160,
 					Scopes:    scope.PermWebsite,
-					Fields: element.FieldSlice{
+					Fields: element.NewFieldSlice(
 						&element.Field{
 							// Path: `net/ctxcors/exposed_headers`,
 							ID:    cfgpath.NewRoute(`exposed_headers`),
@@ -133,9 +133,9 @@ Valid time units are "ns", "us" (or "µs"), "ms", "s", "m", "h".`),
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
 						},
-					},
+					),
 				},
-			},
+			),
 		},
 	)
 }
