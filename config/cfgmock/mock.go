@@ -15,13 +15,16 @@
 package cfgmock
 
 import (
+	"fmt"
 	"reflect"
+	"sort"
 	"time"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/internal/cfgctx"
 	"github.com/corestoreio/csfw/config/storage"
+	"github.com/corestoreio/csfw/util/bufferpool"
 	"github.com/corestoreio/csfw/util/conv"
 	"golang.org/x/net/context"
 )
@@ -65,8 +68,8 @@ type Service struct {
 // This map[string]interface{} is protected by a mutex.
 type PathValue map[string]interface{}
 
-func (m PathValue) set(db storage.Storager) {
-	for fq, v := range m {
+func (pv PathValue) set(db storage.Storager) {
+	for fq, v := range pv {
 		p, err := cfgpath.SplitFQ(fq)
 		if err != nil {
 			panic(err)
@@ -75,6 +78,35 @@ func (m PathValue) set(db storage.Storager) {
 			panic(err)
 		}
 	}
+}
+
+// GoString creates a sorted Go syntax valid map representation.
+// This function panics if it fails to write to the internal buffer.
+// Panicing permitted here because this function is only used in testing.
+func (pv PathValue) GoString() string {
+	keys := make(sort.StringSlice, len(pv))
+	i := 0
+	for k := range pv {
+		keys[i] = k
+		i++
+	}
+	keys.Sort()
+
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	if _, err := buf.WriteString("cfgmock.PathValue{\n"); err != nil {
+		panic(err)
+	}
+
+	for _, p := range keys {
+		if _, err := fmt.Fprintf(buf, "%q: %#v,\n", p, pv[p]); err != nil {
+			panic(err)
+		}
+	}
+	if _, err := buf.WriteRune('}'); err != nil {
+		panic(err)
+	}
+	return buf.String()
 }
 
 // WithString returns a function which can be used in the NewService().

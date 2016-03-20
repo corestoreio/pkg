@@ -19,14 +19,32 @@ import (
 	"testing"
 	"time"
 
+	"fmt"
+
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/stretchr/testify/assert"
 )
 
 var _ config.Getter = (*cfgmock.Service)(nil)
 var _ config.Writer = (*cfgmock.Write)(nil)
 var _ config.GetterPubSuber = (*cfgmock.Service)(nil)
+var _ fmt.GoStringer = (*cfgmock.PathValue)(nil)
+
+func TestPathValueGoStringer(t *testing.T) {
+	pv := cfgmock.PathValue{
+		"bb/cc/dd": true,
+		"rr/ss/tt": 3.141592,
+		"aa/bb/cc": 1,
+	}
+	const want = `cfgmock.PathValue{
+"aa/bb/cc": 1,
+"bb/cc/dd": true,
+"rr/ss/tt": 3.141592,
+}`
+	assert.Exactly(t, want, pv.GoString())
+}
 
 func TestNewMockGetterAllTypes(t *testing.T) {
 	t.Parallel()
