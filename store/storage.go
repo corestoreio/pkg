@@ -55,7 +55,7 @@ type (
 	}
 
 	// Storage contains a mutex and the raw slices from the database. @todo maybe make private?
-	Storage struct {
+	storage struct {
 		*cserr.MultiErr
 		// cr parent config service. can only be set once.
 		cr       config.Getter
@@ -65,6 +65,10 @@ type (
 		stores   TableStoreSlice
 	}
 )
+
+// check if interface has been implemented
+var _ Storager = (*storage)(nil)
+var _ error = (*storage)(nil)
 
 // NewStorage creates a new storage object which handles the raw data from the
 // three database tables for website, group and store. You can either provide
@@ -86,10 +90,8 @@ type (
 //		)
 //		// or alternatively:
 // 		sto, err = store.NewStorage( store.WithDatabaseInit(dbrSession) )
-func NewStorage(opts ...StorageOption) (*Storage, error) {
-	s := &Storage{
-		mu: sync.RWMutex{},
-	}
+func NewStorage(opts ...StorageOption) (Storager, error) {
+	s := &storage{}
 	for _, opt := range opts {
 		if opt != nil {
 			opt(s)
@@ -102,7 +104,7 @@ func NewStorage(opts ...StorageOption) (*Storage, error) {
 }
 
 // MustNewStorage same as NewStorage but panics on error.
-func MustNewStorage(opts ...StorageOption) *Storage {
+func MustNewStorage(opts ...StorageOption) Storager {
 	s, err := NewStorage(opts...)
 	if err != nil {
 		panic(err)
@@ -112,7 +114,7 @@ func MustNewStorage(opts ...StorageOption) *Storage {
 
 // website returns a TableWebsite by using either id or code to find it. If id and code are
 // available then the non-empty code has precedence.
-func (st *Storage) website(r scope.WebsiteIDer) (*TableWebsite, error) {
+func (st *storage) website(r scope.WebsiteIDer) (*TableWebsite, error) {
 	if r == nil {
 		return nil, ErrWebsiteNotFound
 	}
@@ -123,7 +125,7 @@ func (st *Storage) website(r scope.WebsiteIDer) (*TableWebsite, error) {
 }
 
 // Website creates a new Website according to the interface definition.
-func (st *Storage) Website(r scope.WebsiteIDer) (*Website, error) {
+func (st *storage) Website(r scope.WebsiteIDer) (*Website, error) {
 	w, err := st.website(r)
 	if err != nil {
 		return nil, errors.Mask(err)
@@ -132,7 +134,7 @@ func (st *Storage) Website(r scope.WebsiteIDer) (*Website, error) {
 }
 
 // Websites creates a slice of Website pointers according to the interface definition.
-func (st *Storage) Websites() (WebsiteSlice, error) {
+func (st *storage) Websites() (WebsiteSlice, error) {
 	websites := make(WebsiteSlice, len(st.websites), len(st.websites))
 	for i, w := range st.websites {
 		var err error
@@ -149,7 +151,7 @@ func (st *Storage) Websites() (WebsiteSlice, error) {
 
 // group returns a TableGroup by using a group id as argument. If no argument or more than
 // one has been supplied it returns an error.
-func (st *Storage) group(r scope.GroupIDer) (*TableGroup, error) {
+func (st *storage) group(r scope.GroupIDer) (*TableGroup, error) {
 	if r == nil {
 		return nil, ErrGroupNotFound
 	}
@@ -158,7 +160,7 @@ func (st *Storage) group(r scope.GroupIDer) (*TableGroup, error) {
 
 // Group creates a new Group which contains all related stores and its website according to the
 // interface definition.
-func (st *Storage) Group(id scope.GroupIDer) (*Group, error) {
+func (st *storage) Group(id scope.GroupIDer) (*Group, error) {
 	g, err := st.group(id)
 	if err != nil {
 		return nil, errors.Mask(err)
@@ -176,7 +178,7 @@ func (st *Storage) Group(id scope.GroupIDer) (*Group, error) {
 
 // Groups creates a new group slice containing its website all related stores.
 // May panic when a website pointer is nil.
-func (st *Storage) Groups() (GroupSlice, error) {
+func (st *storage) Groups() (GroupSlice, error) {
 	groups := make(GroupSlice, len(st.groups), len(st.groups))
 	for i, g := range st.groups {
 		w, err := st.website(scope.MockID(g.WebsiteID))
@@ -200,7 +202,7 @@ func (st *Storage) Groups() (GroupSlice, error) {
 
 // store returns a TableStore by an id or code.
 // The non-empty code has precedence if available.
-func (st *Storage) store(r scope.StoreIDer) (*TableStore, error) {
+func (st *storage) store(r scope.StoreIDer) (*TableStore, error) {
 	if r == nil {
 		return nil, ErrStoreNotFound
 	}
@@ -212,7 +214,7 @@ func (st *Storage) store(r scope.StoreIDer) (*TableStore, error) {
 
 // Store creates a new Store which contains the the store, its group and website
 // according to the interface definition.
-func (st *Storage) Store(r scope.StoreIDer) (*Store, error) {
+func (st *storage) Store(r scope.StoreIDer) (*Store, error) {
 	s, err := st.store(r)
 	if err != nil {
 		return nil, errors.Mask(err)
@@ -240,7 +242,7 @@ func (st *Storage) Store(r scope.StoreIDer) (*Store, error) {
 
 // Stores creates a new store slice. Can return an error when the website or
 // the group cannot be found.
-func (st *Storage) Stores() (StoreSlice, error) {
+func (st *storage) Stores() (StoreSlice, error) {
 	stores := make(StoreSlice, len(st.stores), len(st.stores))
 	for i, s := range st.stores {
 		var err error
@@ -253,7 +255,7 @@ func (st *Storage) Stores() (StoreSlice, error) {
 
 // DefaultStoreView traverses through the websites to find the default website and gets
 // the default group which has the default store id assigned to. Only one website can be the default one.
-func (st *Storage) DefaultStoreView() (*Store, error) {
+func (st *storage) DefaultStoreView() (*Store, error) {
 	for _, website := range st.websites {
 		if website.IsDefault.Bool && website.IsDefault.Valid {
 			g, err := st.group(scope.MockID(website.DefaultGroupID))
@@ -269,7 +271,7 @@ func (st *Storage) DefaultStoreView() (*Store, error) {
 // ReInit reloads all websites, groups and stores concurrently from the database. If GOMAXPROCS
 // is set to > 1 then in parallel. Returns an error with location or nil. If an error occurs
 // then all internal slices will be reset.
-func (st *Storage) ReInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error {
+func (st *storage) ReInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) error {
 	st.mu.Lock()
 	defer st.mu.Unlock()
 

@@ -70,8 +70,8 @@ func WithContextProvider(ctx context.Context, r store.Provider, requestedStore .
 
 // WithContextMustService creates a new StoreService wrapped in a context.Background().
 // Convenience function. Panics on error.
-func WithContextMustService(so scope.Option, s store.Storager, opts ...store.ServiceOption) context.Context {
-	sm, err := store.NewService(so, s, opts...)
+func WithContextMustService(so scope.Option, s store.Storager) context.Context {
+	sm, err := store.NewService(so, s)
 	if err != nil {
 		panic(err)
 	}

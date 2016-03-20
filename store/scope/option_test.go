@@ -15,11 +15,11 @@
 package scope_test
 
 import (
+	"hash/fnv"
 	"testing"
 
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
-	"hash/fnv"
 )
 
 func TestMustSetByCode(t *testing.T) {
