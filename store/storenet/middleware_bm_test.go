@@ -104,7 +104,7 @@ func Benchmark_WithInitStoreByFormCookie(b *testing.B) {
 	b.ReportAllocs()
 
 	wantStoreCode := "nz"
-	ctx := storenet.WithContextProvider(context.Background(), storemock.NewInitService(scope.Option{Website: scope.MockID(2)}))
+	ctx := storenet.WithContextProvider(context.Background(), storemock.NewEurozzyService(scope.Option{Website: scope.MockID(2)}))
 
 	mw := storenet.WithInitStoreByFormCookie()(benchValidationHandler(b, wantStoreCode))
 

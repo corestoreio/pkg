@@ -268,7 +268,7 @@ func TestWithInitStoreByFormCookie(t *testing.T) {
 
 	for i, test := range testsMWInitByFormCookie {
 
-		ctx := storenet.WithContextProvider(context.Background(), storemock.NewInitService(test.haveSO))
+		ctx := storenet.WithContextProvider(context.Background(), storemock.NewEurozzyService(test.haveSO))
 
 		mw := storenet.WithInitStoreByFormCookie()(finalInitStoreHandler(t, test.wantStoreCode))
 
@@ -312,7 +312,7 @@ func TestWithInitStoreByFormCookie_NilCtx(t *testing.T) {
 }
 
 func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) context.Context {
-	ctx := storenet.WithContextProvider(context.Background(), storemock.NewInitService(initO))
+	ctx := storenet.WithContextProvider(context.Background(), storemock.NewEurozzyService(initO))
 	tok := jwt.New(jwt.SigningMethodHS256)
 	tok.Claims[storenet.ParamName] = tokenStoreCode
 	ctx = ctxjwt.WithContext(ctx, tok)
@@ -335,7 +335,7 @@ func TestWithInitStoreByToken(t *testing.T) {
 		wantErr       error
 	}{
 		{storenet.WithContextProvider(context.Background(), nil), "de", storenet.ErrContextServiceNotFound},
-		{storenet.WithContextProvider(context.Background(), storemock.NewInitService(scope.Option{Store: scope.MockCode("de")})), "de", ctxjwt.ErrContextJWTNotFound},
+		{storenet.WithContextProvider(context.Background(), storemock.NewEurozzyService(scope.Option{Store: scope.MockCode("de")})), "de", ctxjwt.ErrContextJWTNotFound},
 		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "de"), "de", nil},
 		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("at")}, "ch"), "at", store.ErrStoreNotActive},
 		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "at"), "at", nil},

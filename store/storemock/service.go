@@ -113,9 +113,11 @@ func (ms *Storage) ReInit(dbr.SessionRunner, ...dbr.SelectCb) error {
 	return nil
 }
 
-// NewInitService creates a fully initialized store.Service with 3 websites,
+// NewEurozzyService creates a fully initialized store.Service with 3 websites,
 // 4 groups and 7 stores used for testing. Panics on error.
-func NewInitService(so scope.Option) *store.Service {
+// Website 1 contains Europe and website 2 contains Australia/New Zealand.
+func NewEurozzyService(so scope.Option) *store.Service {
+	// Yes weird naming, but feel free to provide a better name 8-)
 	return store.MustNewService(so,
 		store.MustNewStorage(
 			store.SetStorageWebsites(

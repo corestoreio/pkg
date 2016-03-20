@@ -22,13 +22,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewInitService(t *testing.T) {
+func TestNewEurozzyService_Euro(t *testing.T) {
 
-	so, err := scope.SetByID(1, scope.WebsiteID) // website euro
+	so, err := scope.SetByID(scope.WebsiteID, 1) // website euro
 	if err != nil {
 		t.Fatal(err)
 	}
-	ns := storemock.NewInitService(so)
+	ns := storemock.NewEurozzyService(so)
 	assert.NotNil(t, ns)
 
 	s, err := ns.Store(scope.MockID(4))
@@ -36,6 +36,35 @@ func TestNewInitService(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, "uk", s.Data.Code.String)
+
+	s, err = ns.Store()
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, "at", s.Data.Code.String)
+}
+
+func TestNewEurozzyService_ANZ(t *testing.T) {
+
+	so, err := scope.SetByCode(scope.WebsiteID, "oz") // website AU
+	if err != nil {
+		t.Fatal(err)
+	}
+	ns := storemock.NewEurozzyService(so)
+	assert.NotNil(t, ns)
+
+	s, err := ns.Store(scope.MockID(4))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, "uk", s.Data.Code.String)
+
+	s, err = ns.Store()
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, "au", s.Data.Code.String)
+	assert.Exactly(t, int64(2), s.WebsiteID())
 
 	s, err = ns.DefaultStoreView()
 	if err != nil {
