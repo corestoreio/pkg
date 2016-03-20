@@ -36,7 +36,7 @@ const DefaultStoreID int64 = 0
 // have its own configuration settings which overrides the default scope and
 // website scope.
 type Store struct {
-	cr config.Getter // internal root config.Reader which can be overwritten
+	cr config.Getter // internal root config.Getter which can be overwritten
 	// Config contains a config.Service which takes care of the scope based
 	// configuration values.
 	Config config.ScopedGetter
@@ -55,9 +55,6 @@ type Store struct {
 	}
 }
 
-// StoreOption can be used as an argument in NewStore to configure a store.
-type StoreOption func(s *Store)
-
 // ErrStore* are general errors when handling with the Store type.
 // They are self explanatory.
 var (
@@ -69,14 +66,8 @@ var (
 	ErrStoreCodeInvalid      = errors.New("The store code may contain only letters (a-z), numbers (0-9) or underscore(_). The first character must be a letter")
 )
 
-// WithStoreConfig sets the config.Reader to the Store. Default reader is
-// config.DefaultService. You should call this function before calling other
-// option functions otherwise your preferred config.Reader won't be inherited
-// to a Website or a Group.
-func WithStoreConfig(cr config.Getter) StoreOption { return func(s *Store) { s.cr = cr } }
-
 // NewStore creates a new Store. Returns an error if the first three arguments
-// are nil. Returns an error if integrity checks fail. config.Reader will be
+// are nil. Returns an error if integrity checks fail. config.Getter will be
 // also set to Group and Website.
 func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOption) (s *Store, err error) {
 	if ts == nil || tw == nil || tg == nil {
@@ -109,7 +100,6 @@ func NewStore(ts *TableStore, tw *TableWebsite, tg *TableGroup, opts ...StoreOpt
 	}
 
 	s = &Store{
-		cr:      config.DefaultService,
 		Data:    ts,
 		Website: nw,
 		Group:   ng,
@@ -153,7 +143,7 @@ func (s *Store) ApplyOptions(opts ...StoreOption) *Store {
 			opt(s)
 		}
 	}
-	if nil != s.Website && nil != s.Group {
+	if nil != s.Website && nil != s.Group && s.cr != nil {
 		s.Config = s.cr.NewScoped(s.Website.WebsiteID(), s.StoreID())
 	}
 	return s

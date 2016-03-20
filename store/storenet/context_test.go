@@ -30,14 +30,14 @@ func TestContextReaderError(t *testing.T) {
 	haveMr, s, err := storenet.FromContextProvider(context.Background())
 	assert.Nil(t, haveMr)
 	assert.Nil(t, s)
-	assert.EqualError(t, err, storenet.ErrContextServiceNotFound.Error())
+	assert.EqualError(t, err, storenet.ErrContextProviderNotFound.Error())
 
 	ctx := storenet.WithContextProvider(context.Background(), nil)
 	assert.NotNil(t, ctx)
 	haveMr, s, err = storenet.FromContextProvider(ctx)
 	assert.Nil(t, haveMr)
 	assert.Nil(t, s)
-	assert.EqualError(t, err, storenet.ErrContextServiceNotFound.Error())
+	assert.EqualError(t, err, storenet.ErrContextProviderNotFound.Error())
 
 	mr := storemock.NewNullService()
 	ctx = storenet.WithContextProvider(context.Background(), mr)

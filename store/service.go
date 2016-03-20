@@ -25,7 +25,7 @@ import (
 
 type (
 	// Provider specifies a store Service from which you can only read.
-	// A Reader is bound to a scope.Scope.
+	// A Getter is bound to a scope.Scope.
 	Provider interface {
 		IsSingleStoreMode() bool
 		HasSingleStore() bool
@@ -36,13 +36,13 @@ type (
 		Store(r ...scope.StoreIDer) (*Store, error)
 		Stores() (StoreSlice, error)
 
-		// DefaultStoreView because a Reader is bound to a specific scope.Scope,
+		// DefaultStoreView because a Getter is bound to a specific scope.Scope,
 		// this function will return always the default store view depending on
 		// the scope.
 		DefaultStoreView() (*Store, error)
 
 		// RequestedStore figures out the default active store for a scope.Option.
-		// It takes into account that Reader is bound to a specific scope.Scope.
+		// It takes into account that Getter is bound to a specific scope.Scope.
 		// It also prevents running a store from another website or store group,
 		// if website or store group was specified explicitly. RequestedStore returns
 		// either an error or the store.
@@ -54,7 +54,7 @@ type (
 	// Service represents type which handles the underlying storage and takes care
 	// of the default stores. A Service is bound a specific scope.Scope. Depending
 	// on the scope it is possible or not to switch stores. A Service contains also
-	// a config.Reader which gets passed to the scope of a Store(), Group() or
+	// a config.Getter which gets passed to the scope of a Store(), Group() or
 	// Website() so that you always have the possibility to access a scoped based
 	// configuration value.
 	// This Service uses three internal maps to cache the pointers
@@ -113,7 +113,6 @@ func NewService(so scope.Option, storage Storager, opts ...ServiceOption) (*Serv
 	}
 
 	s := &Service{
-		cr:           config.DefaultService,
 		boundToScope: scopeID,
 		storage:      storage,
 		mu:           sync.RWMutex{},
@@ -202,7 +201,7 @@ func (sm *Service) findDefaultStoreByScope(allowedScope scope.Scope, so scope.Op
 	return nil, errors.Mask(scope.ErrUnsupportedScopeID)
 }
 
-// RequestedStore see interface description Reader.RequestedStore
+// RequestedStore see interface description Getter.RequestedStore
 func (sm *Service) RequestedStore(so scope.Option) (activeStore *Store, err error) {
 
 	activeStore, err = sm.findDefaultStoreByScope(so.Scope(), so)

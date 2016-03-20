@@ -28,18 +28,6 @@ import (
 var _ scope.GroupIDer = (*store.Group)(nil)
 var _ scope.StoreIDer = (*store.Group)(nil)
 
-func init() {
-	dbc := csdb.MustConnectTest()
-	defer func() {
-		if err := dbc.Close(); err != nil {
-			panic(err)
-		}
-	}()
-	if err := store.TableCollection.Init(dbc.NewSession()); err != nil {
-		panic(err)
-	}
-}
-
 func TestNewGroup(t *testing.T) {
 	g, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
@@ -69,7 +57,7 @@ func TestNewGroupPanic(t *testing.T) {
 	_ = store.MustNewGroup(nil, nil)
 }
 
-func TestNewGroupPanicWebsiteIncorrect(t *testing.T) {
+func TestNewGroupErrorWebsiteIncorrect(t *testing.T) {
 	ng, err := store.NewGroup(
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "DACH Group", RootCategoryID: 2, DefaultStoreID: 2},
 		store.SetGroupWebsite(&store.TableWebsite{WebsiteID: 2, Code: dbr.NewNullString("oz"), Name: dbr.NewNullString("OZ"), SortOrder: 20, DefaultGroupID: 3, IsDefault: dbr.NewNullBool(false)}),

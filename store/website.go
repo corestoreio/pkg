@@ -16,7 +16,6 @@ package store
 
 import (
 	"encoding/json"
-	"fmt"
 
 	"github.com/corestoreio/csfw/catalog/catconfig"
 	"github.com/corestoreio/csfw/config"
@@ -33,7 +32,7 @@ const DefaultWebsiteID int64 = 0
 // A website defines the default group ID. A website can contain custom configuration
 // settings which overrides the default scope but get itself overridden by the Store scope.
 type Website struct {
-	cr config.Getter // internal root config.Reader which can be overridden
+	cr config.Getter // internal root config.Getter which can be overridden
 
 	// Config contains the scope based configuration reader.
 	Config config.ScopedGetter
@@ -47,9 +46,6 @@ type Website struct {
 	*cserr.MultiErr
 }
 
-// WebsiteOption can be used as an argument in NewWebsite to configure a website.
-type WebsiteOption func(*Website)
-
 // ErrWebsite* are general errors when handling with the Website type.
 // They are self explanatory.
 var (
@@ -57,64 +53,12 @@ var (
 	ErrWebsiteDefaultGroupNotFound = errors.New("Website Default Group not found")
 )
 
-// SetWebsiteConfig sets the config.Reader to the Website. Default reader is
-// config.DefaultManager. You should call this function before calling other
-// option functions otherwise your preferred config.Reader won't be inherited
-// to a Group or Store.
-func SetWebsiteConfig(cr config.Getter) WebsiteOption {
-	return func(w *Website) {
-		w.cr = cr
-	}
-}
-
-// SetWebsiteGroupsStores uses a group slice and a table slice to set the groups associated
-// to this website and the stores associated to this website. It returns an error if
-// the data integrity is incorrect.
-func SetWebsiteGroupsStores(tgs TableGroupSlice, tss TableStoreSlice) WebsiteOption {
-	return func(w *Website) {
-		groups := tgs.Filter(func(tg *TableGroup) bool {
-			return tg.WebsiteID == w.Data.WebsiteID
-		})
-
-		w.Groups = make(GroupSlice, groups.Len(), groups.Len())
-		for i, g := range groups {
-			var err error
-			w.Groups[i], err = NewGroup(g, SetGroupWebsite(w.Data), SetGroupConfig(w.cr), SetGroupStores(tss, nil))
-			if err != nil {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("store.SetWebsiteGroupsStores.NewGroup", "err", err, "g", g, "w", w.Data)
-				}
-				w.MultiErr = w.AppendErrors(errors.Mask(err))
-				return
-			}
-		}
-		stores := tss.FilterByWebsiteID(w.Data.WebsiteID)
-		w.Stores = make(StoreSlice, stores.Len(), stores.Len())
-		for i, s := range stores {
-			group, err := tgs.FindByGroupID(s.GroupID)
-			if err != nil {
-				w.MultiErr = w.AppendErrors(fmt.Errorf("Integrity error. A store %#v must be assigned to a group.\nGroupSlice: %#v\n\n", s, tgs))
-				return
-			}
-			w.Stores[i], err = NewStore(s, w.Data, group, WithStoreConfig(w.cr))
-			if err != nil {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("store.SetWebsiteGroupsStores.NewStore", "err", err, "s", s, "w.Data", w.Data, "group", group)
-				}
-				w.MultiErr = w.AppendErrors(errors.Mask(err))
-				return
-			}
-		}
-	}
-}
-
 // NewWebsite creates a new website pointer with the config.DefaultManager.
 func NewWebsite(tw *TableWebsite, opts ...WebsiteOption) (*Website, error) {
 	if tw == nil {
 		return nil, ErrArgumentCannotBeNil
 	}
 	w := &Website{
-		cr:   config.DefaultService,
 		Data: tw,
 	}
 	return w.ApplyOptions(opts...)
@@ -139,7 +83,9 @@ func (w *Website) ApplyOptions(opts ...WebsiteOption) (*Website, error) {
 	if w.HasErrors() {
 		return nil, w
 	}
-	w.Config = w.cr.NewScoped(w.WebsiteID(), 0) // Scope Store is not available
+	if w.cr != nil {
+		w.Config = w.cr.NewScoped(w.WebsiteID(), 0) // Scope Store is not available
+	}
 	return w, nil
 }
 
@@ -198,7 +144,7 @@ func (w *Website) DefaultStore() (*Store, error) {
 // 	1st argument should be a path to catalog/price/scope
 // 	2nd argument should be a path to currency/options/base
 func (w *Website) BaseCurrency(ps catconfig.PriceScope, cc directory.ConfigCurrency) (directory.Currency, error) {
-
+	// TODO, and also see test: TestWebsiteBaseCurrency
 	isGlobal, err := ps.IsGlobal(w.Config)
 	if err != nil {
 		return directory.Currency{}, errors.Mask(err)

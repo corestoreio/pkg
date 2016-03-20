@@ -57,47 +57,14 @@ type (
 	// Storage contains a mutex and the raw slices from the database. @todo maybe make private?
 	Storage struct {
 		*cserr.MultiErr
+		// cr parent config service. can only be set once.
 		cr       config.Getter
 		mu       sync.RWMutex
 		websites TableWebsiteSlice
 		groups   TableGroupSlice
 		stores   TableStoreSlice
 	}
-
-	// StorageOption option func for NewStorage()
-	StorageOption func(*Storage)
 )
-
-// SetStorageWebsites adds the TableWebsiteSlice to the Storage. By default, the slice is nil.
-func SetStorageWebsites(tws ...*TableWebsite) StorageOption {
-	return func(s *Storage) { s.websites = TableWebsiteSlice(tws) }
-}
-
-// SetStorageGroups adds the TableGroupSlice to the Storage. By default, the slice is nil.
-func SetStorageGroups(tgs ...*TableGroup) StorageOption {
-	return func(s *Storage) { s.groups = TableGroupSlice(tgs) }
-}
-
-// SetStorageStores adds the TableStoreSlice to the Storage. By default, the slice is nil.
-func SetStorageStores(tss ...*TableStore) StorageOption {
-	return func(s *Storage) { s.stores = TableStoreSlice(tss) }
-}
-
-// SetStorageConfig sets the configuration Reader. Optional.
-// Default reader is config.DefaultManager
-func SetStorageConfig(cr config.Getter) StorageOption {
-	return func(s *Storage) { s.cr = cr }
-}
-
-// WithDatabaseInit triggers the ReInit function to load the data from the
-// database.
-func WithDatabaseInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) StorageOption {
-	return func(s *Storage) {
-		if err := s.ReInit(dbrSess, cbs...); err != nil {
-			s.MultiErr = s.AppendErrors(err)
-		}
-	}
-}
 
 // NewStorage creates a new storage object which handles the raw data from the
 // three database tables for website, group and store. You can either provide
@@ -121,7 +88,6 @@ func WithDatabaseInit(dbrSess dbr.SessionRunner, cbs ...dbr.SelectCb) StorageOpt
 // 		sto, err = store.NewStorage( store.WithDatabaseInit(dbrSession) )
 func NewStorage(opts ...StorageOption) (*Storage, error) {
 	s := &Storage{
-		cr: config.DefaultService,
 		mu: sync.RWMutex{},
 	}
 	for _, opt := range opts {

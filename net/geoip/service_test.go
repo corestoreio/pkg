@@ -155,7 +155,7 @@ func TestWithIsCountryAllowedByIPErrorStoreManager(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "http://corestore.io", nil)
 	assert.NoError(t, err)
-	assert.EqualError(t, countryHandler.ServeHTTPContext(context.Background(), rec, req), storenet.ErrContextServiceNotFound.Error())
+	assert.EqualError(t, countryHandler.ServeHTTPContext(context.Background(), rec, req), storenet.ErrContextProviderNotFound.Error())
 }
 
 var managerStoreSimpleTest = storemock.WithContextMustService(scope.Option{}, func(ms *storemock.Storage) {

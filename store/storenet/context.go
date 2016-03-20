@@ -22,8 +22,9 @@ import (
 	"golang.org/x/net/context"
 )
 
-// ErrContextServiceNotFound gets returned when store.Reader cannot be found in context.Context
-var ErrContextServiceNotFound = errors.New("store.Reader not found in context.Context")
+// ErrContextProviderNotFound gets returned when store.Provider cannot be found
+// in context.Context
+var ErrContextProviderNotFound = errors.New("store.Provider not found in context.Context")
 
 type ctxServiceKey struct{}
 type ctxServiceWrapper struct {
@@ -31,16 +32,16 @@ type ctxServiceWrapper struct {
 	requestedStore *store.Store
 }
 
-// FromContextProvider returns a store.Reader and a store.Store from a context.
+// FromContextProvider returns a store.Provider and a store.Store from a context.
 // The *store.Store is either the current requested store (via JWT or cookie or REQUEST
 // parameter) or if those are not set then the default initialized store when
-// instantiating a new Reader. The returned store.Store identifies the current
+// instantiating a new Getter. The returned store.Store identifies the current
 // scope.Scope of a request. If it cannot determine a store.Store then the
 // error ErrStoreNotFound will get returned.
 func FromContextProvider(ctx context.Context) (store.Provider, *store.Store, error) {
 	sw, ok := ctx.Value(ctxServiceKey{}).(ctxServiceWrapper)
 	if !ok || sw.service == nil {
-		return nil, nil, ErrContextServiceNotFound
+		return nil, nil, ErrContextProviderNotFound
 	}
 
 	if sw.requestedStore == nil {
@@ -53,7 +54,7 @@ func FromContextProvider(ctx context.Context) (store.Provider, *store.Store, err
 	return sw.service, sw.requestedStore, nil
 }
 
-// WithContextProvider adds a store.Reader and an optional requestedStore to the context.
+// WithContextProvider adds a store.Provider and an optional requestedStore to the context.
 // requestedStore can be provided 0 or 1 time. If you provide the RequestedStore
 // argument then it will override the default RequestedStore from FromContextReader()
 func WithContextProvider(ctx context.Context, r store.Provider, requestedStore ...*store.Store) context.Context {

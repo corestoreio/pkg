@@ -22,6 +22,18 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func init() {
+	dbc := csdb.MustConnectTest()
+	defer func() {
+		if err := dbc.Close(); err != nil {
+			panic(err)
+		}
+	}()
+	if err := store.TableCollection.Init(dbc.NewSession()); err != nil {
+		panic(err)
+	}
+}
+
 // These constants are here on purpose hard coded
 func TestGetTable(t *testing.T) {
 

@@ -16,10 +16,10 @@ package store
 
 import "github.com/corestoreio/csfw/config"
 
-// ServiceOption option func for NewService(). Not yet used.
-type ServiceOption func(*Service)
+// StoreOption can be used as an argument in NewStore to configure a store.
+type StoreOption func(s *Store)
 
-// WithServiceConfigGetter sets the root config.Getter to the Service.
-func WithServiceConfigGetter(cr config.Getter) ServiceOption {
-	return func(m *Service) { m.cr = cr }
-}
+// WithStoreConfig sets the config.Getter to the Store. You should call this
+// function before calling other option functions otherwise your preferred
+// config.Getter won't be inherited to a Website or a Group.
+func WithStoreConfig(cr config.Getter) StoreOption { return func(s *Store) { s.cr = cr } }

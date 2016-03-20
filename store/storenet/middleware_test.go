@@ -107,7 +107,7 @@ func TestWithValidateBaseUrl_ActivatedAndShouldNotRedirectWithPOSTRequest(t *tes
 	mw := storenet.WithValidateBaseURL(mockReader)(finalHandlerWithValidateBaseURL(t))
 
 	err = mw.ServeHTTPContext(context.Background(), w, req)
-	assert.EqualError(t, err, storenet.ErrContextServiceNotFound.Error())
+	assert.EqualError(t, err, storenet.ErrContextProviderNotFound.Error())
 
 	w = httptest.NewRecorder()
 	req, err = http.NewRequest(httputil.MethodPost, "http://corestore.io/catalog/product/view", strings.NewReader(`{ "k1": "v1",  "k2": { "k3": ["va1"]  }}`))
@@ -308,7 +308,7 @@ func TestWithInitStoreByFormCookie(t *testing.T) {
 func TestWithInitStoreByFormCookie_NilCtx(t *testing.T) {
 	mw := storenet.WithInitStoreByFormCookie()(nil)
 	surfErr := mw.ServeHTTPContext(context.Background(), nil, nil)
-	assert.EqualError(t, surfErr, storenet.ErrContextServiceNotFound.Error())
+	assert.EqualError(t, surfErr, storenet.ErrContextProviderNotFound.Error())
 }
 
 func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) context.Context {
@@ -334,7 +334,7 @@ func TestWithInitStoreByToken(t *testing.T) {
 		wantStoreCode string
 		wantErr       error
 	}{
-		{storenet.WithContextProvider(context.Background(), nil), "de", storenet.ErrContextServiceNotFound},
+		{storenet.WithContextProvider(context.Background(), nil), "de", storenet.ErrContextProviderNotFound},
 		{storenet.WithContextProvider(context.Background(), storemock.NewEurozzyService(scope.Option{Store: scope.MockCode("de")})), "de", ctxjwt.ErrContextJWTNotFound},
 		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "de"), "de", nil},
 		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("at")}, "ch"), "at", store.ErrStoreNotActive},

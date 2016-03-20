@@ -29,8 +29,8 @@ const DefaultGroupID int64 = 0
 // A group is assigned to one website and a group can have multiple stores.
 // A group does not have any kind of configuration setting.
 type Group struct {
-	cr config.Getter // internal root config.Reader which can be overridden
-
+	// cr internal root config.Getter which will be applied to stores and websites
+	cr config.Getter
 	// Data contains the raw group data.
 	Data *TableGroup
 	// Stores contains a slice to all stores associated to this group. Can be nil.
@@ -39,9 +39,6 @@ type Group struct {
 	Website *Website
 	*cserr.MultiErr
 }
-
-// GroupOption can be used as an argument in NewGroup to configure a group.
-type GroupOption func(*Group)
 
 // ErrGroup* are general errors when handling with the Group type.
 // They are self explanatory.
@@ -52,66 +49,6 @@ var (
 	ErrGroupWebsiteIntegrityFailed = errors.New("Groups WebsiteID does not match the Websites ID")
 )
 
-// SetGroupConfig sets the config.Reader to the Group. Default reader is
-// config.DefaultManager. You should call this function before calling other
-// option functions otherwise your preferred config.Reader won't be inherited
-// to a Website or a Store.
-func SetGroupConfig(cr config.Getter) GroupOption { return func(g *Group) { g.cr = cr } }
-
-// SetGroupWebsite assigns a website to a group. If website ID does not match
-// the group website ID then add error will be generated.
-func SetGroupWebsite(tw *TableWebsite) GroupOption {
-	return func(g *Group) {
-		if g.Data == nil {
-			g.AppendErrors(ErrGroupNotFound)
-			return
-		}
-		if tw != nil && g.Data.WebsiteID != tw.WebsiteID {
-			g.AppendErrors(ErrGroupWebsiteNotFound)
-			return
-		}
-		if tw != nil {
-			var err error
-			g.Website, err = NewWebsite(tw, SetWebsiteConfig(g.cr))
-			g.AppendErrors(err)
-		}
-	}
-}
-
-// SetGroupStores uses the full store collection to extract the stores which are
-// assigned to a group. Either Website must be set before calling SetGroupStores() or
-// the second argument may not be nil. Does nothing if tss variable is nil.
-func SetGroupStores(tss TableStoreSlice, w *TableWebsite) GroupOption {
-	return func(g *Group) {
-		if tss == nil {
-			g.Stores = nil
-			return
-		}
-		if g.Website == nil && w == nil {
-			g.AppendErrors(ErrGroupWebsiteNotFound)
-			return
-		}
-		if w == nil {
-			w = g.Website.Data
-		}
-		if w.WebsiteID != g.Data.WebsiteID {
-			g.AppendErrors(ErrGroupWebsiteIntegrityFailed)
-			return
-		}
-		for _, s := range tss.FilterByGroupID(g.Data.GroupID) {
-			ns, err := NewStore(s, w, g.Data, WithStoreConfig(g.cr))
-			if err != nil {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("store.SetGroupStores.NewStore", "err", err, "s", s, "w", w, "g.Data", g.Data)
-				}
-				g.AppendErrors(errors.Mask(err))
-				return
-			}
-			g.Stores = append(g.Stores, ns)
-		}
-	}
-}
-
 // NewGroup creates a new Group. Returns an error if 1st argument is nil.
 // Config will only be set if there has been a Website provided via
 // an option argument,
@@ -121,7 +58,6 @@ func NewGroup(tg *TableGroup, opts ...GroupOption) (*Group, error) {
 	}
 
 	g := &Group{
-		cr:   config.DefaultService,
 		Data: tg,
 	}
 	return g.ApplyOptions(opts...)

@@ -20,9 +20,9 @@ import (
 
 	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
-	"github.com/corestoreio/csfw/config/mock"
 	"github.com/corestoreio/csfw/config/storage"
 	"github.com/corestoreio/csfw/storage/csdb"
 	"github.com/corestoreio/csfw/storage/dbr"
@@ -253,7 +253,7 @@ func TestStoreBaseURLandPath(t *testing.T) {
 		wantPath     string
 	}{
 		{
-			mock.NewService(mock.WithString(
+			cfgmock.NewService(cfgmock.WithString(
 				func(path string) (string, error) {
 
 					switch path {
@@ -269,7 +269,7 @@ func TestStoreBaseURLandPath(t *testing.T) {
 			config.URLTypeWeb, true, "https://corestore.io/", "/",
 		},
 		{
-			mock.NewService(mock.WithString(
+			cfgmock.NewService(cfgmock.WithString(
 				func(path string) (string, error) {
 					switch path {
 					case backend.Backend.WebSecureBaseURL.String():
@@ -283,7 +283,7 @@ func TestStoreBaseURLandPath(t *testing.T) {
 			config.URLTypeWeb, false, "http://myplatform.io/customer1/", "/customer1/",
 		},
 		{
-			mock.NewService(mock.WithString(
+			cfgmock.NewService(cfgmock.WithString(
 				func(p string) (string, error) {
 					switch p {
 					case backend.Backend.WebSecureBaseURL.String():

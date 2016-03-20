@@ -96,7 +96,7 @@ func WithValidateBaseURL(cg config.GetterPubSuber) ctxhttp.Middleware {
 
 // WithInitStoreByToken is a middleware which initializes a request based store
 // via a JSON Web Token.
-// Extracts the store.Reader and jwt.Token from context.Context. If the requested
+// Extracts the store.Provider and jwt.Token from context.Context. If the requested
 // store is different than the initialized requested store than the new requested
 // store will be saved in the context.
 func WithInitStoreByToken() ctxhttp.Middleware {
@@ -151,7 +151,7 @@ func WithInitStoreByToken() ctxhttp.Middleware {
 // Checks if the store code is valid and allowed. If so it adjusts the context.Context
 // to provide the new requestedStore.
 //
-// It calls Reader.RequestedStore() to determine the correct store.
+// It calls Getter.RequestedStore() to determine the correct store.
 // 		1. check cookie store, always a string and the store code
 // 		2. check for GET ___store variable, always a string and the store code
 func WithInitStoreByFormCookie() ctxhttp.Middleware {

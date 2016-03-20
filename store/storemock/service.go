@@ -116,9 +116,10 @@ func (ms *Storage) ReInit(dbr.SessionRunner, ...dbr.SelectCb) error {
 // NewEurozzyService creates a fully initialized store.Service with 3 websites,
 // 4 groups and 7 stores used for testing. Panics on error.
 // Website 1 contains Europe and website 2 contains Australia/New Zealand.
-func NewEurozzyService(so scope.Option) *store.Service {
+func NewEurozzyService(so scope.Option, opts ...store.ServiceOption) *store.Service {
 	// Yes weird naming, but feel free to provide a better name 8-)
-	return store.MustNewService(so,
+	return store.MustNewService(
+		so,
 		store.MustNewStorage(
 			store.SetStorageWebsites(
 				&store.TableWebsite{WebsiteID: 0, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
@@ -141,5 +142,6 @@ func NewEurozzyService(so scope.Option) *store.Service {
 				&store.TableStore{IsActive: false, StoreID: 3, Code: dbr.NewNullString("ch"), WebsiteID: 1, GroupID: 1, Name: "Schweiz", SortOrder: 30},
 			),
 		),
+		opts...,
 	)
 }
