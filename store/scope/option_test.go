@@ -207,3 +207,56 @@ func TestToUint32ByCode(t *testing.T) {
 		}
 	}
 }
+
+var benchmarkToUint32 uint32
+var benchmarkToUintID = scope.MockID(3141)
+var benchmarkToUintCode = scope.MockCode("G0ph€r")
+
+func BenchmarkWebsiteToUint32ByID(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchmarkToUint32 = scope.Option{Website: benchmarkToUintID}.ToUint32()
+	}
+	if benchmarkToUint32 != 3141 {
+		b.Fatal("Expecting result of uint32(3141)")
+	}
+}
+
+func BenchmarkGroupToUint32ByID(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchmarkToUint32 = scope.Option{Group: benchmarkToUintID}.ToUint32()
+	}
+	if benchmarkToUint32 != 3141 {
+		b.Fatal("Expecting result of uint32(3141)")
+	}
+}
+func BenchmarkStoreToUint32ByID(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchmarkToUint32 = scope.Option{Store: benchmarkToUintID}.ToUint32()
+	}
+	if benchmarkToUint32 != 3141 {
+		b.Fatal("Expecting result of uint32(3141)")
+	}
+}
+
+func BenchmarkWebsiteToUint32ByCode(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchmarkToUint32 = scope.Option{Website: benchmarkToUintCode}.ToUint32()
+	}
+	if benchmarkToUint32 != 1816471052 {
+		b.Fatalf("Expecting result of uint32(%d)", benchmarkToUint32)
+	}
+}
+
+func BenchmarkStoreToUint32ByCode(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchmarkToUint32 = scope.Option{Store: benchmarkToUintCode}.ToUint32()
+	}
+	if benchmarkToUint32 != 1816471052 {
+		b.Fatal("Expecting result of uint32(1816471052)")
+	}
+}

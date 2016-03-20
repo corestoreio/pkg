@@ -72,3 +72,32 @@ func TestHashValid(t *testing.T) {
 	}
 	//t.Logf("[Info] Collision Map length: %d", len(collisionCheck))
 }
+
+var benchmarkHash scope.Hash
+var benchmarkHashUnpackHash = scope.Hash(67112005)
+var benchmarkHashUnpackScope scope.Scope
+var benchmarkHashUnpackID int64
+
+func BenchmarkHashPack(b *testing.B) {
+	const want scope.Hash = 67112005
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchmarkHash = scope.NewHash(scope.StoreID, 3141)
+	}
+	if benchmarkHash != want {
+		b.Fatalf("want %d have %d", want, benchmarkHash)
+	}
+}
+
+func BenchmarkHashUnPack(b *testing.B) {
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		benchmarkHashUnpackScope, benchmarkHashUnpackID = benchmarkHashUnpackHash.Unpack()
+	}
+	if benchmarkHashUnpackScope != scope.StoreID {
+		b.Fatal("Expecting scope store")
+	}
+	if benchmarkHashUnpackID != 3141 {
+		b.Fatal("Expecting ID 3141")
+	}
+}
