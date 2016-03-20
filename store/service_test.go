@@ -401,7 +401,7 @@ func runTestsRequestedStore(t *testing.T, sm *store.Service, tests []testNewServ
 func TestNewServiceRequestedStore_ScopeStore(t *testing.T) {
 
 	initScope := scope.Option{Store: scope.MockID(1)}
-	sm := storemock.NewInitService(initScope)
+	sm := storemock.NewEurozzyService(initScope)
 
 	if haveStore, haveErr := sm.RequestedStore(initScope); haveErr != nil {
 		t.Fatal(haveErr)
@@ -447,7 +447,7 @@ func TestNewServiceRequestedStore_ScopeStore(t *testing.T) {
 func TestNewServiceRequestedStore_ScopeGroup(t *testing.T) {
 	initScope := scope.Option{Group: scope.MockID(1)}
 
-	sm := storemock.NewInitService(initScope)
+	sm := storemock.NewEurozzyService(initScope)
 	if haveStore, haveErr := sm.RequestedStore(initScope); haveErr != nil {
 		t.Fatal(haveErr)
 	} else {
@@ -500,7 +500,7 @@ func TestNewServiceRequestedStore_ScopeGroup(t *testing.T) {
 func TestNewServiceRequestedStore_ScopeWebsite(t *testing.T) {
 	initScope := scope.Option{Website: scope.MockID(1)}
 
-	sm := storemock.NewInitService(initScope)
+	sm := storemock.NewEurozzyService(initScope)
 
 	if haveStore, haveErr := sm.RequestedStore(initScope); haveErr != nil {
 		t.Fatal(haveErr)

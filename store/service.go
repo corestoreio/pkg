@@ -150,11 +150,12 @@ func MustNewService(so scope.Option, storage Storager, opts ...ServiceOption) *S
 
 // findDefaultStoreByScope tries to detect the default store by a given scope option.
 // Precedence of detection by passed scope.Option: 1. Store 2. Group 3. Website
-func (sm *Service) findDefaultStoreByScope(allowedScope scope.Scope, so scope.Option) (store *Store, err error) {
+func (sm *Service) findDefaultStoreByScope(allowedScope scope.Scope, so scope.Option) (*Store, error) {
 
 	switch allowedScope {
 	case scope.StoreID:
-		store, err = sm.Store(so.Store)
+		return sm.Store(so.Store)
+
 	case scope.GroupID:
 		g, errG := sm.Group(so.Group)
 		if errG != nil {
@@ -163,40 +164,42 @@ func (sm *Service) findDefaultStoreByScope(allowedScope scope.Scope, so scope.Op
 			}
 			return nil, errors.Mask(errG)
 		}
-		store, err = sm.Store(g) // Group g implements StoreIDer interface to get the default store ID
+		store, err := sm.Store(g) // Group g implements StoreIDer interface to get the default store ID
 		if err != nil {
-			err = errors.Mask(ErrGroupDefaultStoreNotFound)
+			return nil, errors.Mask(ErrGroupDefaultStoreNotFound)
 		}
+		return store, nil
+
 	case scope.WebsiteID:
 		if so.Website == nil { // if so.Website == nil then search default website
-			store, err = sm.storage.DefaultStoreView() // returns a Store containing less data
+			store, err := sm.storage.DefaultStoreView() // returns a Store containing less data
 			if err == nil {
 				store, err = sm.Store(store) // this Store contains more data
 			}
-		} else {
-			w, errW := sm.Website(so.Website)
-			if errW != nil {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("store.Service.findDefaultStoreByScope.Website", "err", errW, "ScopeOption", so)
-				}
-				return nil, errors.Mask(errW)
-			}
-			g, errG := w.DefaultGroup()
-			if errG != nil {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("store.Service.findDefaultStoreByScope.Website.DefaultGroup", "err", errG, "ScopeOption", so)
-				}
-				return nil, errors.Mask(errG)
-			}
-			store, err = sm.Store(g) // Group g implements StoreIDer interface to get the default store ID
-			if err != nil {
-				err = errors.Mask(ErrGroupDefaultStoreNotFound)
-			}
+			return store, err
 		}
-	default:
-		err = errors.Mask(scope.ErrUnsupportedScopeID)
+
+		w, errW := sm.Website(so.Website)
+		if errW != nil {
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("store.Service.findDefaultStoreByScope.Website", "err", errW, "ScopeOption", so)
+			}
+			return nil, errors.Mask(errW)
+		}
+		g, errG := w.DefaultGroup()
+		if errG != nil {
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("store.Service.findDefaultStoreByScope.Website.DefaultGroup", "err", errG, "ScopeOption", so)
+			}
+			return nil, errors.Mask(errG)
+		}
+		store, err := sm.Store(g) // Group g implements StoreIDer interface to get the default store ID
+		if err != nil {
+			return nil, errors.Mask(ErrGroupDefaultStoreNotFound)
+		}
+		return store, nil
 	}
-	return
+	return nil, errors.Mask(scope.ErrUnsupportedScopeID)
 }
 
 // RequestedStore see interface description Reader.RequestedStore
@@ -378,7 +381,8 @@ func (sm *Service) Stores() (StoreSlice, error) {
 	return sm.stores, err
 }
 
-// DefaultStoreView returns the default store view.
+// DefaultStoreView returns the default store view, independent of the
+// applied scope.Option while creating the service.
 func (sm *Service) DefaultStoreView() (*Store, error) {
 	if sm.defaultStore != nil {
 		return sm.defaultStore, nil
