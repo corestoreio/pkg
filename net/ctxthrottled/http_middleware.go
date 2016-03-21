@@ -20,6 +20,7 @@ import (
 	"strconv"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/juju/errors"
 	"golang.org/x/net/context"
@@ -45,19 +46,23 @@ func (hrl *HTTPRateLimit) WithRateLimit() ctxhttp.Middleware {
 			var rl throttled.RateLimiter
 			var ok bool
 
-			hrl.mu.RLock()
-			rl, ok = hrl.scopedRLs[reqStore.WebsiteID()]
-			hrl.mu.RUnlock()
+			// concurrent read from a map is allowed
+			scopeHash := scope.NewHash(scope.WebsiteID, reqStore.WebsiteID())
+			rl, ok = hrl.scopedRLs[scopeHash]
 
-			if !ok {
+			if !ok && hrl.Backend != nil {
 				hrl.mu.Lock()
 				defer hrl.mu.Unlock()
 				var err error
-				rl, err = hrl.RateLimiterFactory(hrl.be, reqStore.Website.Config)
+				rl, err = hrl.RateLimiterFactory(hrl.Backend, reqStore.Website.Config)
 				if err != nil {
 					return errors.Mask(err)
 				}
-				hrl.scopedRLs[reqStore.WebsiteID()] = rl
+				hrl.scopedRLs[scopeHash] = rl
+			}
+
+			if rl == nil {
+				return errors.Errorf("ctxthrottled: RateLimiter is nil. Scope %s, ID %d", scope.WebsiteID, reqStore.WebsiteID())
 			}
 
 			var k string

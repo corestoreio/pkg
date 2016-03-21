@@ -14,7 +14,11 @@
 
 package ctxthrottled
 
-import "gopkg.in/throttled/throttled.v2"
+import (
+	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/store/scope"
+	"gopkg.in/throttled/throttled.v2"
+)
 
 // Option can be used as an argument in NewService to configure a token service.
 type Option func(a *HTTPRateLimit)
@@ -26,11 +30,12 @@ func WithVaryBy(vb VaryByer) Option {
 	}
 }
 
-// WithRateLimiterForWebsite ...
-func WithRateLimiterForWebsite(websiteID int64, rl throttled.RateLimiter) Option {
+// WithScopedRateLimiter creates a rate limiter for a specific scope with its ID.
+// The rate limiter is already warmed up.
+func WithScopedRateLimiter(scp scope.Scope, id int64, rl throttled.RateLimiter) Option {
 	return func(s *HTTPRateLimit) {
 		s.mu.Lock()
-		s.scopedRLs[websiteID] = rl
+		s.scopedRLs[scope.NewHash(scp, id)] = rl
 		s.mu.Unlock()
 	}
 }
@@ -39,5 +44,12 @@ func WithRateLimiterForWebsite(websiteID int64, rl throttled.RateLimiter) Option
 func WithRateLimiterFactory(rlf RateLimiterFactory) Option {
 	return func(s *HTTPRateLimit) {
 		s.RateLimiterFactory = rlf
+	}
+}
+
+// WithBackend creates a new backend model configuration
+func WithBackend(cfgStruct element.SectionSlice) Option {
+	return func(s *HTTPRateLimit) {
+		s.Backend = NewBackend(cfgStruct)
 	}
 }

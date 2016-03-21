@@ -34,9 +34,9 @@ import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/util/cserr"
-	"github.com/juju/errors"
 	"gopkg.in/throttled/throttled.v2"
 
+	"github.com/corestoreio/csfw/store/scope"
 	"golang.org/x/net/context"
 )
 
@@ -50,9 +50,10 @@ type VaryByer interface {
 
 // HTTPRateLimit faciliates using a Limiter to limit HTTP requests.
 type HTTPRateLimit struct {
-	me *cserr.MultiErr
-	// Backend configuration, if nil everything panics.
-	be *PkgBackend
+	*cserr.MultiErr
+	// Backend configuration, if nil you have to set the scope specific
+	// ratelimiter via option function WithScopedRateLimiter
+	Backend *PkgBackend
 
 	// DeniedHandler can be customized instead of showing a HTTP status 429
 	// error page once the HTTPRateLimit has been reached.
@@ -66,22 +67,18 @@ type HTTPRateLimit struct {
 	// limiter. If it is nil, all requests use an empty string key.
 	VaryByer
 
-	mu sync.RWMutex
+	mu sync.Mutex
 	// scopedRLs internal cache of already created rate limiter with their
 	// storage. ID relates to the website ID.
 	// Due to the overall nature I assume that the rate limit is the bottleneck
 	// for an application instead of this mutex protected map.
-	scopedRLs map[int64]throttled.RateLimiter
+	scopedRLs map[scope.Hash]throttled.RateLimiter
 }
 
-func NewHTTPRateLimit(be *PkgBackend, opts ...Option) (*HTTPRateLimit, error) {
-	if be == nil {
-		return nil, errors.New("PkgBackend cannot be nil")
-	}
+func NewHTTPRateLimit(opts ...Option) (*HTTPRateLimit, error) {
 
 	rl := &HTTPRateLimit{
-		be:        be,
-		scopedRLs: make(map[int64]throttled.RateLimiter),
+		scopedRLs: make(map[scope.Hash]throttled.RateLimiter),
 		DeniedHandler: func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
 			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
 			return nil
@@ -103,7 +100,7 @@ func (s *HTTPRateLimit) Options(opts ...Option) error {
 	for _, opt := range opts {
 		opt(s)
 	}
-	if s.me.HasErrors() {
+	if s.HasErrors() {
 		return s
 	}
 	return nil
