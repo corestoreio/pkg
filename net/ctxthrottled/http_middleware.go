@@ -50,7 +50,7 @@ func (hrl *HTTPRateLimit) WithRateLimit() ctxhttp.Middleware {
 			scopeHash := scope.NewHash(scope.WebsiteID, reqStore.WebsiteID())
 			rl, ok = hrl.scopedRLs[scopeHash]
 
-			if !ok && hrl.Backend != nil {
+			if !ok {
 				hrl.mu.Lock()
 				defer hrl.mu.Unlock()
 				var err error
@@ -59,10 +59,6 @@ func (hrl *HTTPRateLimit) WithRateLimit() ctxhttp.Middleware {
 					return errors.Mask(err)
 				}
 				hrl.scopedRLs[scopeHash] = rl
-			}
-
-			if rl == nil {
-				return errors.Errorf("ctxthrottled: RateLimiter is nil. Scope %s, ID %d", scope.WebsiteID, reqStore.WebsiteID())
 			}
 
 			var k string

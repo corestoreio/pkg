@@ -40,6 +40,9 @@ import (
 	"golang.org/x/net/context"
 )
 
+// RateLimiterFactory function to instantiate a new rate limiter within
+// the middleware function. Arguments *PkgBackend and config.ScopedGetter
+// can be nil if you don't provide them during call of NewHTTPRateLimit()
 type RateLimiterFactory func(*PkgBackend, config.ScopedGetter) (throttled.RateLimiter, error)
 
 // VaryByer is called for each request to generate a key for the
@@ -75,6 +78,13 @@ type HTTPRateLimit struct {
 	scopedRLs map[scope.Hash]throttled.RateLimiter
 }
 
+// NewHTTPRateLimit creates a new rate limit middleware.
+//
+// Default DeniedHandler returns http.StatusTooManyRequests.
+//
+// Default RateLimiterFactory is the NewGCRAMemStore(). If *PkgBackend has
+// been provided the values from the configration will be taken otherwise
+// GCRAMemStore() uses the Default* variables.
 func NewHTTPRateLimit(opts ...Option) (*HTTPRateLimit, error) {
 
 	rl := &HTTPRateLimit{

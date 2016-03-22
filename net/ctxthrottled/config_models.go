@@ -21,9 +21,6 @@ import (
 	"gopkg.in/throttled/throttled.v2"
 )
 
-// DefaultDuration per second (s), minute (i), hour (h), day (d)
-const DefaultDuration = "h"
-
 // ConfigDuration handles the allowed duration values like s,i,h and d.
 type ConfigDuration struct {
 	cfgmodel.Str
@@ -46,21 +43,22 @@ func NewConfigDuration(path string, opts ...cfgmodel.Option) ConfigDuration {
 }
 
 // Get returns a new rate. The requests argument declares the number of requests
-// allowed per time period
-func (md ConfigDuration) Get(sg config.ScopedGetter, requests int) (r throttled.Rate, err error) {
+// allowed per time period. Invalid duration setting falls back to hourly calculation.
+func (md ConfigDuration) Get(sg config.ScopedGetter, requests int) (throttled.Rate, error) {
 
-	var val string
-	val, err = md.Str.Get(sg)
+	val, err := md.Str.Get(sg)
 	if err != nil {
-		err = errors.Mask(err)
-		return
+		return throttled.Rate{}, errors.Mask(err)
 	}
 
 	if val == "" {
 		val = DefaultDuration
 	}
+	return calculateRate(val, requests), nil
+}
 
-	switch val {
+func calculateRate(duration string, requests int) (r throttled.Rate) {
+	switch duration {
 	case "s": // second
 		r = throttled.PerSec(requests)
 	case "i": // minute

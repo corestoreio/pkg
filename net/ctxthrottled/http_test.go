@@ -35,11 +35,14 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxthrottled"
+	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/store/storenet"
+	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 	"gopkg.in/throttled/throttled.v2"
 )
@@ -58,9 +61,9 @@ func (sl stubLimiter) RateLimit(key string, quantity int) (bool, throttled.RateL
 	}
 }
 
-func newStubLimiter() ctxthrottled.RateLimiterFactory {
+func newStubLimiter(returnedErr error) ctxthrottled.RateLimiterFactory {
 	return func(*ctxthrottled.PkgBackend, config.ScopedGetter) (throttled.RateLimiter, error) {
-		return stubLimiter{}, nil
+		return stubLimiter{}, returnedErr
 	}
 }
 
@@ -76,17 +79,18 @@ type httpTestCase struct {
 	headers map[string]string
 }
 
-func TestHTTPRateLimit(t *testing.T) {
-	//cfgStruct, err := ctxthrottled.NewConfigStructure()
-	//if err != nil {
-	//	t.Fatal(err)
-	//}
-	//ctxthrottled.WithBackend(cfgStruct),
+var finalHandler200 = ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
+	w.WriteHeader(200)
+	return nil
+})
 
+func TestHTTPRateLimit_WithoutConfig(t *testing.T) {
+	t.Parallel()
 	// this test case runs without the backend configuration because
 	// we're using WithScopedRateLimiter() to set a rate limiter for a specific
 	// website (ID 1). In real life you must create a rate limiter for each website
-	// or we can implement a configurable pass through option which by passes the RL.
+	// or we can implement a configurable pass-through option which bypasses the RL. that
+	// means if a rate limiter cannot be found the next HTTP handler gets called.
 
 	limiter, err := ctxthrottled.NewHTTPRateLimit(
 		ctxthrottled.WithVaryBy(pathGetter{}),
@@ -101,10 +105,7 @@ func TestHTTPRateLimit(t *testing.T) {
 		storemock.NewEurozzyService(scope.MustSetByCode(scope.WebsiteID, "euro")),
 	)
 
-	handler := limiter.WithRateLimit()(ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
-		w.WriteHeader(200)
-		return nil
-	}))
+	handler := limiter.WithRateLimit()(finalHandler200)
 
 	runHTTPTestCases(t, ctx, handler, []httpTestCase{
 		{"ok", 200, map[string]string{"X-Ratelimit-Limit": "1", "X-Ratelimit-Remaining": "2", "X-Ratelimit-Reset": "60"}},
@@ -113,52 +114,126 @@ func TestHTTPRateLimit(t *testing.T) {
 	})
 }
 
-//func TestHTTPRateLimitConfig(t *testing.T) {
-//
-//	cr := cfgmock.NewService(
-//		cfgmock.WithPV(cfgmock.PathValue{
-//		//config.MockPathScopeDefault(ctxthrottled.PathRateLimitBurst):    0,
-//		//config.MockPathScopeDefault(ctxthrottled.PathRateLimitRequests): 1,
-//		//config.MockPathScopeDefault(ctxthrottled.PathRateLimitDuration): "i",
-//		}),
-//	)
-//
-//	limiter := ctxthrottled.HTTPRateLimit{
-//		Config: cr,
-//		VaryBy: &pathGetter{},
-//	}
-//
-//	handler := limiter.WithRateLimit(nil, ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
-//		w.WriteHeader(200)
-//		return nil
-//	}))
-//
-//	runHTTPTestCases(t, handler, []httpTestCase{
-//		{"xx", 200, map[string]string{"X-Ratelimit-Limit": "1", "X-Ratelimit-Remaining": "0", "X-Ratelimit-Reset": "60"}},
-//		{"xx", 429, map[string]string{"X-Ratelimit-Limit": "1", "X-Ratelimit-Remaining": "0", "X-Ratelimit-Reset": "60", "Retry-After": "60"}},
-//	})
-//}
-//
-//func TestCustomHTTPRateLimitHandlers(t *testing.T) {
-//	limiter := ctxthrottled.HTTPRateLimit{
-//		rootRL: &stubLimiter{},
-//		VaryBy: &pathGetter{},
-//		deniedHandler: ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
-//			http.Error(w, "custom limit exceeded", 400)
-//			return nil
-//		}),
-//	}
-//
-//	handler := limiter.WithRateLimit(nil, ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
-//		w.WriteHeader(200)
-//		return nil
-//	}))
-//
-//	runHTTPTestCases(t, handler, []httpTestCase{
-//		{"limit", 400, map[string]string{}},
-//		{"error", 500, map[string]string{}},
-//	})
-//}
+func TestHTTPRateLimit_WithConfig(t *testing.T) {
+	t.Parallel()
+
+	cfgStruct, err := ctxthrottled.NewConfigStructure()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	limiter, err := ctxthrottled.NewHTTPRateLimit(
+		ctxthrottled.WithVaryBy(pathGetter{}),
+		ctxthrottled.WithBackend(cfgStruct),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cr := cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{
+			limiter.Backend.RateLimitBurst.MustFQ(scope.WebsiteID, 1):    0,
+			limiter.Backend.RateLimitRequests.MustFQ(scope.WebsiteID, 1): 1,
+			limiter.Backend.RateLimitDuration.MustFQ(scope.WebsiteID, 1): "i",
+		}),
+	)
+	ctx := storenet.WithContextProvider(
+		context.Background(),
+		storemock.NewEurozzyService(
+			scope.MustSetByCode(scope.WebsiteID, "euro"),
+			store.WithStorageConfig(cr),
+		),
+	)
+
+	handler := limiter.WithRateLimit()(finalHandler200)
+
+	runHTTPTestCases(t, ctx, handler, []httpTestCase{
+		{"xx", 200, map[string]string{"X-Ratelimit-Limit": "1", "X-Ratelimit-Remaining": "0", "X-Ratelimit-Reset": "60"}},
+		{"xx", 429, map[string]string{"X-Ratelimit-Limit": "1", "X-Ratelimit-Remaining": "0", "X-Ratelimit-Reset": "60", "Retry-After": "60"}},
+	})
+}
+
+func TestHTTPRateLimit_CustomHandlers(t *testing.T) {
+	t.Parallel()
+	limiter, err := ctxthrottled.NewHTTPRateLimit(
+		ctxthrottled.WithVaryBy(pathGetter{}),
+		ctxthrottled.WithRateLimiterFactory(newStubLimiter(nil)),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	limiter.DeniedHandler = ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
+		http.Error(w, "custom limit exceeded", 400)
+		return nil
+	})
+
+	ctx := storenet.WithContextProvider(
+		context.Background(),
+		storemock.NewEurozzyService(
+			scope.MustSetByCode(scope.WebsiteID, "euro"),
+		),
+	)
+
+	handler := limiter.WithRateLimit()(finalHandler200)
+
+	runHTTPTestCases(t, ctx, handler, []httpTestCase{
+		{"limit", 400, map[string]string{}},
+		{"error", 500, map[string]string{}},
+	})
+}
+
+func TestHTTPRateLimit_RateLimiterFactoryError(t *testing.T) {
+	t.Parallel()
+
+	testedErr := errors.New("RateLimiterFactory Error")
+
+	limiter, err := ctxthrottled.NewHTTPRateLimit(
+		ctxthrottled.WithVaryBy(pathGetter{}),
+		ctxthrottled.WithRateLimiterFactory(newStubLimiter(testedErr)),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := storenet.WithContextProvider(
+		context.Background(),
+		storemock.NewEurozzyService(
+			scope.MustSetByCode(scope.WebsiteID, "euro"),
+		),
+	)
+
+	req, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = limiter.WithRateLimit()(finalHandler200).ServeHTTPContext(ctx, nil, req)
+	assert.EqualError(t, err, testedErr.Error())
+}
+
+func TestHTTPRateLimit_MissingContext(t *testing.T) {
+	t.Parallel()
+
+	limiter, err := ctxthrottled.NewHTTPRateLimit(
+		ctxthrottled.WithVaryBy(pathGetter{}),
+		ctxthrottled.WithRateLimiterFactory(newStubLimiter(nil)),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := storenet.WithContextProvider(
+		context.Background(),
+		nil,
+	)
+
+	req, err := http.NewRequest("GET", "/", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = limiter.WithRateLimit()(finalHandler200).ServeHTTPContext(ctx, nil, req)
+	assert.EqualError(t, err, storenet.ErrContextProviderNotFound.Error())
+}
 
 func runHTTPTestCases(t *testing.T, ctx context.Context, h ctxhttp.Handler, cs []httpTestCase) {
 	for i, c := range cs {
