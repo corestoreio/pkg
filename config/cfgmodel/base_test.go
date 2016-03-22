@@ -182,6 +182,21 @@ func TestBaseValueFQ(t *testing.T) {
 	assert.Exactly(t, cfgpath.MustNewByParts(pth).Bind(scope.StoreID, 4).String(), fq)
 }
 
+func TestBaseValueMustFQPanic(t *testing.T) {
+	t.Parallel()
+	defer func() {
+		if r := recover(); r != nil {
+			assert.EqualError(t, r.(error), cfgpath.ErrIncorrectPath.Error())
+		} else {
+			t.Fatal("Expecting a panic")
+		}
+	}()
+	const pth = "a/b/c"
+	p := NewValue(pth)
+	fq := p.MustFQ(scope.StoreID, 4)
+	assert.Empty(t, fq)
+}
+
 func TestBaseValueToPath(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

@@ -204,6 +204,15 @@ func (bv baseValue) FQ(s scope.Scope, scopeID int64) (string, error) {
 	return p.String(), err
 }
 
+// MustFQ same as FQ but panics on error. Please use only for testing.
+func (bv baseValue) MustFQ(s scope.Scope, scopeID int64) string {
+	p, err := bv.ToPath(s, scopeID)
+	if err != nil {
+		panic(err)
+	}
+	return p.String()
+}
+
 // ValidateString checks if string v is contained in Source source.Slice.
 func (bv baseValue) ValidateString(v string) (err error) {
 	if bv.Source != nil && false == bv.Source.ContainsValString(v) {
