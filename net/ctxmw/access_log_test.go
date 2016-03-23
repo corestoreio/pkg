@@ -89,7 +89,7 @@ func TestWithAccessLog(t *testing.T) {
 	assert.Exactly(t, `123`, w.Body.String())
 	assert.Exactly(t, http.StatusTeapot, w.Code)
 
-	want1 := `request error: "" method: "GET" uri: "/gopherine" type: "access" status: "error" status_code: 418 duration:`
+	want1 := `method: "GET" uri: "/gopherine" type: "access" status: "error" status_code: 418 duration:`
 	want2 := `size: 3 remote_addr: "127.0.0.1" user_agent: "Mozilla" referer: "http://rustlang.org"`
 	assert.Contains(t, buf.String(), want1)
 	assert.Contains(t, buf.String(), want2)

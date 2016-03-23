@@ -98,30 +98,38 @@ func TestWithCompressorDeflateHeader(t *testing.T) {
 	}
 }
 
-func TestWithCompressorGZIPConcrete(t *testing.T) {
-	testWithCompressorConcrete(t, httputil.CompressGZIP, func(r io.Reader) string {
-		zr, err := gzip.NewReader(r)
-		assert.NoError(t, err)
-		defer zr.Close()
-		var un bytes.Buffer
-		zr.WriteTo(&un)
-		return un.String()
-	})
-}
-
 func TestWithCompressorDeflateConcrete(t *testing.T) {
 	testWithCompressorConcrete(t, httputil.CompressDeflate, func(r io.Reader) string {
 		fr := flate.NewReader(r)
 		defer fr.Close()
-		var un = make([]byte, 1024)
+		var un = make([]byte, 2048)
 		fr.Read(un)
 		return string(un)
 	})
 }
 
+func TestWithCompressorGZIPConcrete(t *testing.T) {
+	testWithCompressorConcrete(t, httputil.CompressGZIP, func(r io.Reader) string {
+		zr, err := gzip.NewReader(r)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer func() {
+			if err := zr.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}()
+		var un bytes.Buffer
+		if _, err := zr.WriteTo(&un); err != nil {
+			t.Fatal(err)
+		}
+		return un.String()
+	})
+}
+
 func testWithCompressorConcrete(t *testing.T, header string, uncompressor func(io.Reader) string) {
 
-	rawData := randSeq(1024)
+	rawData := randSeq(2048)
 
 	finalCH := ctxhttp.Chain(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		return httputil.NewPrinter(w, r).WriteString(http.StatusOK, rawData)
@@ -146,7 +154,7 @@ func testWithCompressorConcrete(t *testing.T, header string, uncompressor func(i
 // BenchmarkWithCompressorGZIP_1024B-4	   20000	     81916 ns/op	    1330 B/op	       5 allocs/op
 func BenchmarkWithCompressorGZIP_1024B(b *testing.B) {
 
-	rawData := randSeq(1024)
+	rawData := randSeq(2048)
 
 	finalCH := ctxhttp.Chain(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		return httputil.NewPrinter(w, r).WriteString(http.StatusOK, rawData)

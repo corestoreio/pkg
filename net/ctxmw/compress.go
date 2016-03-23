@@ -54,6 +54,7 @@ type compressWriter struct {
 func (w compressWriter) Header() http.Header {
 	return w.ResponseWriter.Header()
 }
+
 func (w compressWriter) Write(b []byte) (int, error) {
 	if w.Header().Get(httputil.ContentType) == "" {
 		w.Header().Set(httputil.ContentType, http.DetectContentType(b))
@@ -86,8 +87,9 @@ func (w *compressWriter) CloseNotify() <-chan bool {
 // before deflate.
 func WithCompressor() ctxhttp.Middleware {
 
-	// todo: maybe the sync.Pools can be put in here because then
+	// todo(cs): maybe the sync.Pools can be put in here because then
 	// the developer can set the deflate compression level.
+	// todo(cs) handle compression depending on the website ...
 
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
