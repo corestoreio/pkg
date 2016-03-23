@@ -26,6 +26,10 @@ type Error struct {
 	Code int
 	// Message contains human readable information
 	Message string
+	// Verbose enables more error details like file name and line number
+	// IF the underlying error has been gift wrapped (masked).
+	Verbose bool
+	errors  []error
 }
 
 // NewError creates a new Error. If msg will be passed one time then
@@ -42,14 +46,22 @@ func NewError(code int, msg ...string) *Error {
 // a HTTP error from multiple error interfaces. The function util.Errors()
 // will be used to extract the errors.Locationer interface.
 func NewErrorFromErrors(code int, errs ...error) *Error {
-	e := &Error{Code: code, Message: http.StatusText(code)}
-	if len(errs) > 0 {
-		e.Message = cserr.NewMultiErr(errs...).Error()
+	e := &Error{
+		Code:    code,
+		Message: http.StatusText(code),
+		errors:  errs,
 	}
 	return e
 }
 
 // Error returns message.
 func (e *Error) Error() string {
+	if len(e.errors) > 0 {
+		me := cserr.NewMultiErr(e.errors...)
+		if e.Verbose {
+			me.VerboseErrors()
+		}
+		e.Message = me.Error()
+	}
 	return e.Message
 }

@@ -44,13 +44,15 @@ func TestNewErrorFromErrors(t *testing.T) {
 		code      int
 		errs      []error
 		wantError string
+		verbose   bool
 	}{
-		{http.StatusBadGateway, nil, http.StatusText(http.StatusBadGateway)},
-		{http.StatusTeapot, []error{errors.New("No coffee pot"), errors.New("Not even a milk pot")}, "No coffee pot\nNot even a milk pot"},
-		{http.StatusConflict, []error{errors.New("Now a coffee pot"), errors.New("Not even close to a milk pot")}, "error_test.go"},
+		{http.StatusBadGateway, nil, http.StatusText(http.StatusBadGateway), false},
+		{http.StatusTeapot, []error{errors.New("No coffee pot"), errors.New("Not even a milk pot")}, "No coffee pot\nNot even a milk pot", false},
+		{http.StatusConflict, []error{errors.New("Now a coffee pot"), errors.New("Not even close to a milk pot")}, "error_test.go", true},
 	}
 	for _, test := range tests {
 		he := ctxhttp.NewErrorFromErrors(test.code, test.errs...)
+		he.Verbose = test.verbose
 		assert.Exactly(t, test.code, he.Code)
 		assert.Contains(t, he.Error(), test.wantError)
 	}
