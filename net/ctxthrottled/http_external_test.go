@@ -49,7 +49,6 @@ import (
 
 // Tests for a race condition
 func TestHTTPRateLimit_Concurrent_Map(t *testing.T) {
-	t.Parallel()
 
 	limiter, err := ctxthrottled.NewHTTPRateLimit()
 	if err != nil {
