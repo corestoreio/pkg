@@ -46,19 +46,20 @@ func (hrl *HTTPRateLimit) WithRateLimit() ctxhttp.Middleware {
 			var rl throttled.RateLimiter
 			var ok bool
 
-			// concurrent read from a map is allowed
 			scopeHash := scope.NewHash(scope.WebsiteID, reqStore.WebsiteID())
+			hrl.mu.RLock()
 			rl, ok = hrl.scopedRLs[scopeHash]
+			hrl.mu.RUnlock()
 
 			if !ok {
-				hrl.mu.Lock()
-				defer hrl.mu.Unlock()
 				var err error
 				rl, err = hrl.RateLimiterFactory(hrl.Backend, reqStore.Website.Config)
 				if err != nil {
 					return errors.Mask(err)
 				}
+				hrl.mu.Lock()
 				hrl.scopedRLs[scopeHash] = rl
+				hrl.mu.Unlock()
 			}
 
 			var k string

@@ -29,7 +29,7 @@ var DefaultRequests = 100
 // will be allowed to exceed the rate in a single burst and must be
 // greater than or equal to zero.
 // Used when *PkgBackend has not been provided.
-var DefaultBurst = 10
+var DefaultBurst = 20
 
 // DefaultDuration per second (s), minute (i), hour (h), day (d)
 // Used when *PkgBackend has not been provided.

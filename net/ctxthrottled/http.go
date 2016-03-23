@@ -70,7 +70,7 @@ type HTTPRateLimit struct {
 	// limiter. If it is nil, all requests use an empty string key.
 	VaryByer
 
-	mu sync.Mutex
+	mu sync.RWMutex
 	// scopedRLs internal cache of already created rate limiter with their
 	// storage. ID relates to the website ID.
 	// Due to the overall nature I assume that the rate limit is the bottleneck
