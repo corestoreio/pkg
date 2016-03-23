@@ -21,6 +21,10 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
+// DefaultSigningMethod HMAC-SHA signing with 512 bits. Gets applied if the
+// ConfigSigningMethod model returns an empty string.
+const DefaultSigningMethod = "HS512"
+
 // NewConfigStructure global configuration structure for this package.
 // Used in frontend (to display the user all the settings) and in
 // backend (scope checks and default values). See the source code
@@ -34,14 +38,63 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					ID:        cfgpath.NewRoute("ctxjwt"),
 					Label:     text.Chars(`JSON Web Token (JWT)`),
 					SortOrder: 40,
-					Scopes:    scope.PermStore,
+					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
+						&element.Field{
+							// Path: net/ctxjwt/signing_method
+							ID:        cfgpath.NewRoute("signing_method"),
+							Label:     text.Chars(`Token Signing Algorithm`),
+							Type:      element.TypeSelect,
+							SortOrder: 10,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermWebsite,
+							Default:   DefaultSigningMethod,
+						},
 						&element.Field{
 							// Path: net/ctxjwt/hmac_password
 							ID:        cfgpath.NewRoute("hmac_password"),
-							Label:     text.Chars(`Token Password`),
+							Label:     text.Chars(`HMAC Token Password`),
 							Type:      element.TypeObscure,
 							SortOrder: 10,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermWebsite,
+						},
+						&element.Field{
+							// Path: net/ctxjwt/rsa_key
+							ID:        cfgpath.NewRoute("rsa_key"),
+							Label:     text.Chars(`Private RSA Key`),
+							Type:      element.TypeObscure,
+							SortOrder: 20,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermWebsite,
+						},
+						&element.Field{
+							// Path: net/ctxjwt/rsa_key_password
+							ID:        cfgpath.NewRoute("rsa_key_password"),
+							Label:     text.Chars(`Private RSA Key Password`),
+							Comment:   text.Chars(`If the key has been secured via a password, provide it here.`),
+							Type:      element.TypeObscure,
+							SortOrder: 30,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermWebsite,
+						},
+						&element.Field{
+							// Path: net/ctxjwt/ecdsa_key
+							ID:        cfgpath.NewRoute("ecdsa_key"),
+							Label:     text.Chars(`Private ECDSA Key`),
+							Comment:   text.Chars(`Elliptic Curve Digital Signature Algorithm, as defined in FIPS 186-3.`),
+							Type:      element.TypeObscure,
+							SortOrder: 40,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermWebsite,
+						},
+						&element.Field{
+							// Path: net/ctxjwt/ecdsa_key_password
+							ID:        cfgpath.NewRoute("ecdsa_key_password"),
+							Label:     text.Chars(`Private ECDSA Key Password`),
+							Comment:   text.Chars(`If the key has been secured via a password, provide it here.`),
+							Type:      element.TypeObscure,
+							SortOrder: 50,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
 						},

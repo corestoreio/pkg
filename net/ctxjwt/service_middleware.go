@@ -42,6 +42,8 @@ func SetHeaderAuthorization(req *http.Request, token string) {
 func (s *Service) WithParseAndValidate(errHandler ...ctxhttp.HandlerFunc) ctxhttp.Middleware {
 
 	// todo: move this into the Service struct as a field like in ctxthrottled
+	// and make it depended on the website, IF the website. a website can decided
+	// the signing algorithm and if it want to use JWT.
 	errH := func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
 		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 		return nil

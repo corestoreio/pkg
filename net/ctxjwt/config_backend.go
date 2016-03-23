@@ -27,8 +27,33 @@ type PkgBackend struct {
 
 	// NetCtxjwtHmacPassword handles the password. Will panic if you
 	// do not set the cfgmodel.Encryptor
+	// Path: net/ctxjwt/signing_method @todo
+	NetCtxjwtSigningMethod ConfigSigningMethod
+
+	// NetCtxjwtHmacPassword handles the password. Will panic if you
+	// do not set the cfgmodel.Encryptor
 	// Path: net/ctxjwt/hmac_password
 	NetCtxjwtHmacPassword cfgmodel.Obscure
+
+	// NetCtxjwtRSAKey handles the RSA private key. Will panic if you
+	// do not set the cfgmodel.Encryptor
+	// Path: net/ctxjwt/rsa_key @todo implement
+	NetCtxjwtRSAKey cfgmodel.Obscure
+
+	// NetCtxjwtRSAKeyPassword handles the password for the RSA private key.
+	// Will panic if you do not set the cfgmodel.Encryptor
+	// Path: net/ctxjwt/rsa_key_password @todo implement
+	NetCtxjwtRSAKeyPassword cfgmodel.Obscure
+
+	// NetCtxjwtECDSAKey handles the ECDSA private key. Will panic if you
+	// do not set the cfgmodel.Encryptor
+	// Path: net/ctxjwt/ecdsa_key @todo implement
+	NetCtxjwtECDSAKey cfgmodel.Obscure
+
+	// NetCtxjwtECDSAKeyPassword handles the password for the ECDSA private key.
+	// Will panic if you do not set the cfgmodel.Encryptor
+	// Path: net/ctxjwt/ecdsa_key_password @todo implement
+	NetCtxjwtECDSAKeyPassword cfgmodel.Obscure
 }
 
 // NewBackend initializes the global configuration models containing the
@@ -48,7 +73,12 @@ func (pp *PkgBackend) Load(cfgStruct element.SectionSlice) *PkgBackend {
 
 	opt := cfgmodel.WithFieldFromSectionSlice(cfgStruct)
 
+	pp.NetCtxjwtSigningMethod = NewConfigSigningMethod(`net/ctxjwt/signing_method`, opt)
 	pp.NetCtxjwtHmacPassword = cfgmodel.NewObscure(`net/ctxjwt/hmac_password`, opt)
+	pp.NetCtxjwtRSAKey = cfgmodel.NewObscure(`net/ctxjwt/rsa_key`, opt)
+	pp.NetCtxjwtRSAKeyPassword = cfgmodel.NewObscure(`net/ctxjwt/rsa_key_password`, opt)
+	pp.NetCtxjwtECDSAKey = cfgmodel.NewObscure(`net/ctxjwt/ecdsa_key`, opt)
+	pp.NetCtxjwtECDSAKeyPassword = cfgmodel.NewObscure(`net/ctxjwt/ecdsa_key_password`, opt)
 
 	return pp
 }
