@@ -19,11 +19,15 @@ import (
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
+	"time"
 )
 
 // DefaultSigningMethod HMAC-SHA signing with 512 bits. Gets applied if the
 // ConfigSigningMethod model returns an empty string.
 const DefaultSigningMethod = "HS512"
+
+// DefaultExpire duration when a token expires
+const DefaultExpire = time.Hour
 
 // NewConfigStructure global configuration structure for this package.
 // Used in frontend (to display the user all the settings) and in
@@ -51,11 +55,33 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   DefaultSigningMethod,
 						},
 						&element.Field{
+							// Path: net/ctxjwt/expiration
+							ID:        cfgpath.NewRoute("expiration"),
+							Label:     text.Chars(`Token Expiration`),
+							Comment:   text.Chars(`Per second (s), minute (i), hour (h) or day (d)`),
+							Type:      element.TypeText,
+							SortOrder: 20,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermWebsite,
+							Default:   DefaultExpire.String(),
+						},
+						&element.Field{
+							// Path: net/ctxjwt/enable_jti
+							ID:        cfgpath.NewRoute("enable_jti"),
+							Label:     text.Chars(`Enable Token ID`),
+							Comment:   text.Chars(`Generates a unique token ID`),
+							Type:      element.TypeSelect,
+							SortOrder: 30,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermWebsite,
+							Default:   `false`,
+						},
+						&element.Field{
 							// Path: net/ctxjwt/hmac_password
 							ID:        cfgpath.NewRoute("hmac_password"),
 							Label:     text.Chars(`HMAC Token Password`),
 							Type:      element.TypeObscure,
-							SortOrder: 10,
+							SortOrder: 40,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
 						},
@@ -64,7 +90,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							ID:        cfgpath.NewRoute("rsa_key"),
 							Label:     text.Chars(`Private RSA Key`),
 							Type:      element.TypeObscure,
-							SortOrder: 20,
+							SortOrder: 50,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
 						},
@@ -74,7 +100,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Label:     text.Chars(`Private RSA Key Password`),
 							Comment:   text.Chars(`If the key has been secured via a password, provide it here.`),
 							Type:      element.TypeObscure,
-							SortOrder: 30,
+							SortOrder: 60,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
 						},
@@ -84,7 +110,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Label:     text.Chars(`Private ECDSA Key`),
 							Comment:   text.Chars(`Elliptic Curve Digital Signature Algorithm, as defined in FIPS 186-3.`),
 							Type:      element.TypeObscure,
-							SortOrder: 40,
+							SortOrder: 70,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
 						},
@@ -94,7 +120,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Label:     text.Chars(`Private ECDSA Key Password`),
 							Comment:   text.Chars(`If the key has been secured via a password, provide it here.`),
 							Type:      element.TypeObscure,
-							SortOrder: 50,
+							SortOrder: 80,
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
 						},

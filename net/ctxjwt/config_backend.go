@@ -17,6 +17,7 @@ package ctxjwt
 import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/config/source"
 )
 
 // PkgBackend just exported for the sake of documentation. See fields
@@ -29,6 +30,14 @@ type PkgBackend struct {
 	// do not set the cfgmodel.Encryptor
 	// Path: net/ctxjwt/signing_method @todo
 	NetCtxjwtSigningMethod ConfigSigningMethod
+
+	// NetCtxjwtExpiration defines the duration in which a token expires.
+	// Path: net/ctxjwt/expiration @todo
+	NetCtxjwtExpiration cfgmodel.Duration
+
+	// NetCtxjwtEnableJTI if enabled a new token ID will be generated.
+	// Path: net/ctxjwt/enable_jti @todo
+	NetCtxjwtEnableJTI cfgmodel.Bool
 
 	// NetCtxjwtHmacPassword handles the password. Will panic if you
 	// do not set the cfgmodel.Encryptor
@@ -74,6 +83,8 @@ func (pp *PkgBackend) Load(cfgStruct element.SectionSlice) *PkgBackend {
 	opt := cfgmodel.WithFieldFromSectionSlice(cfgStruct)
 
 	pp.NetCtxjwtSigningMethod = NewConfigSigningMethod(`net/ctxjwt/signing_method`, opt)
+	pp.NetCtxjwtExpiration = cfgmodel.NewDuration(`net/ctxjwt/expiration`, opt)
+	pp.NetCtxjwtEnableJTI = cfgmodel.NewBool(`net/ctxjwt/enable_jti`, opt, source.EnableDisable)
 	pp.NetCtxjwtHmacPassword = cfgmodel.NewObscure(`net/ctxjwt/hmac_password`, opt)
 	pp.NetCtxjwtRSAKey = cfgmodel.NewObscure(`net/ctxjwt/rsa_key`, opt)
 	pp.NetCtxjwtRSAKeyPassword = cfgmodel.NewObscure(`net/ctxjwt/rsa_key_password`, opt)
