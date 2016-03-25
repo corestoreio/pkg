@@ -41,6 +41,7 @@ type (
 	// These functions are also available in the ScopedGetter interface.
 	Getter interface {
 		NewScoped(websiteID, storeID int64) ScopedGetter
+		Byte(cfgpath.Path) ([]byte, error)
 		String(cfgpath.Path) (string, error)
 		Bool(cfgpath.Path) (bool, error)
 		Float64(cfgpath.Path) (float64, error)
@@ -211,6 +212,15 @@ func (s *Service) String(p cfgpath.Path) (string, error) {
 		return "", err
 	}
 	return conv.ToStringE(vs)
+}
+
+// Byte returns a byte slice from the Service. Example usage see String.
+func (s *Service) Byte(p cfgpath.Path) ([]byte, error) {
+	vs, err := s.get(p)
+	if err != nil {
+		return nil, err
+	}
+	return conv.ToByteE(vs)
 }
 
 // Bool returns bool from the Service. Example usage see String.

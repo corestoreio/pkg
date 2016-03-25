@@ -49,7 +49,7 @@ func TestPathValueGoStringer(t *testing.T) {
 func TestNewMockGetterAllTypes(t *testing.T) {
 	t.Parallel()
 
-	types := []interface{}{"a", int(3141), float64(2.7182) * 3.141, true, time.Now()}
+	types := []interface{}{"a", int(3141), float64(2.7182) * 3.141, true, time.Now(), []byte(`H∑llo goph€r`)}
 	p := cfgpath.MustNewByParts("aa/bb/cc")
 
 	for iFaceIDX, wantVal := range types {
@@ -62,6 +62,8 @@ func TestNewMockGetterAllTypes(t *testing.T) {
 		var haveVal interface{}
 		var haveErr error
 		switch wantVal.(type) {
+		case []byte:
+			haveVal, haveErr = mg.Byte(p)
 		case string:
 			haveVal, haveErr = mg.String(p)
 		case bool:

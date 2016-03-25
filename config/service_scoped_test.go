@@ -91,8 +91,7 @@ func TestScopedServicePath(t *testing.T) {
 	}
 
 	// vals stores all possible types for which we have functions in config.ScopedGetter
-	//vals := []interface{}{"Gopher", true, float64(3.14159), int(2016), time.Now()}
-	vals := []interface{}{"Gopher"}
+	vals := []interface{}{"Gopher", true, float64(3.14159), int(2016), time.Now(), []byte(`Hellö Dear Goph€rs`)}
 
 	for vi, wantVal := range vals {
 		for _, test := range tests {
@@ -106,6 +105,8 @@ func TestScopedServicePath(t *testing.T) {
 			var haveVal interface{}
 			var haveErr error
 			switch wantVal.(type) {
+			case []byte:
+				haveVal, haveErr = sg.Byte(test.route, test.perm)
 			case string:
 				haveVal, haveErr = sg.String(test.route, test.perm)
 			case bool:

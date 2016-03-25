@@ -32,11 +32,12 @@ import (
 // website or store scope. See the examples.
 //
 // This interface is mainly implemented in the store package. The functions
-// should be the same as in Getter but only the different is the route
-// argument. A route represents always "a/b/c".
+// should be the same as in Getter but only the different is the route and
+// scope argument. A route represents always "a/b/c".
 // Returned error is mostly of ErrKeyNotFound.
 type ScopedGetter interface {
 	scope.Scoper
+	Byte(r cfgpath.Route, s ...scope.Scope) ([]byte, error)
 	String(r cfgpath.Route, s ...scope.Scope) (string, error)
 	Bool(r cfgpath.Route, s ...scope.Scope) (bool, error)
 	Float64(r cfgpath.Route, s ...scope.Scope) (float64, error)
@@ -80,6 +81,31 @@ func (ss scopedService) Scope() (scope.Scope, int64) {
 	default:
 		return scope.DefaultID, 0
 	}
+}
+
+// Byte traverses through the scopes store->website->default to find
+// a matching byte slice value.
+func (ss scopedService) Byte(r cfgpath.Route, s ...scope.Scope) (v []byte, err error) {
+	// fallback to next parent scope if value does not exists
+	p, err := cfgpath.New(r)
+	if err != nil {
+		err = errors.Mask(err)
+		return
+	}
+
+	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
+		v, err = ss.root.Byte(p.Bind(scope.StoreID, ss.storeID))
+		if NotKeyNotFoundError(err) || err == nil {
+			return // value found or err is not a KeyNotFound error
+		}
+	}
+	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
+		v, err = ss.root.Byte(p.Bind(scope.WebsiteID, ss.websiteID))
+		if NotKeyNotFoundError(err) || err == nil {
+			return // value found or err is not a KeyNotFound error
+		}
+	}
+	return ss.root.Byte(p)
 }
 
 // String traverses through the scopes store->website->default to find

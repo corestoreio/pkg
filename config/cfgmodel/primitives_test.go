@@ -119,6 +119,15 @@ var configStructure = element.MustNewConfiguration(
 						Scopes:    scope.PermStore,
 						Default:   "1h45m",
 					},
+					&element.Field{
+						// Path: `web/cors/byte`,
+						ID:        cfgpath.NewRoute("byte"),
+						Type:      element.TypeText,
+						SortOrder: 110,
+						Visible:   element.VisibleYes,
+						Scopes:    scope.PermWebsite,
+						Default:   []byte(`Hello Dud€`),
+					},
 				),
 			},
 
@@ -258,6 +267,103 @@ func TestBoolWrite(t *testing.T) {
 	assert.NoError(t, b.Write(mw, true, scope.WebsiteID, 3))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, true, mw.ArgValue.(bool))
+}
+
+func TestByteGetWithCfgStruct(t *testing.T) {
+	t.Parallel()
+	const pathWebCorsByte = "web/cors/byte"
+	var defaultWebCorsByte = []byte(`Hello Dud€`)
+	b := cfgmodel.NewByte(pathWebCorsByte, cfgmodel.WithFieldFromSectionSlice(configStructure))
+	assert.Empty(t, b.Options())
+
+	wantPath := cfgpath.MustNewByParts(pathWebCorsByte)
+	tests := []struct {
+		sg   config.ScopedGetter
+		want []byte
+	}{
+		{cfgmock.NewService().NewScoped(0, 0), defaultWebCorsByte}, // because default value in packageConfiguration
+		{cfgmock.NewService().NewScoped(5, 4), defaultWebCorsByte}, // because default value in packageConfiguration
+		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.String(): []byte("X-Gopher")})).NewScoped(0, 0), []byte("X-Gopher")},
+		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.String(): []byte("X-Gopher")})).NewScoped(3, 5), []byte("X-Gopher")},
+		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+			wantPath.String():                         []byte("X-Gopher262"),
+			wantPath.Bind(scope.StoreID, 44).String(): []byte("X-Gopher44"), // because Field.Scopes has PermWebsite
+		})).NewScoped(3, 44), []byte("X-Gopher262")},
+		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
+			wantPath.String():                           []byte("X-Gopher"),
+			wantPath.Bind(scope.WebsiteID, 33).String(): []byte("X-Gopher33"),
+			wantPath.Bind(scope.WebsiteID, 43).String(): []byte("X-GopherW43"),
+			wantPath.Bind(scope.StoreID, 44).String():   []byte("X-Gopher44"),
+		})).NewScoped(33, 43), []byte("X-Gopher33")},
+	}
+	for i, test := range tests {
+		gb, err := b.Get(test.sg)
+		if err != nil {
+			t.Fatal("Index", i, err)
+		}
+		assert.Exactly(t, test.want, gb, "Index %d", i)
+	}
+}
+
+func TestByteGetWithoutCfgStruct(t *testing.T) {
+	t.Parallel()
+	const pathWebCorsHeaders = "web/cors/byte"
+	b := cfgmodel.NewByte(pathWebCorsHeaders)
+	assert.Empty(t, b.Options())
+
+	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders)
+	tests := []struct {
+		sg   config.ScopedGetter
+		want []byte
+	}{
+		{cfgmock.NewService().NewScoped(0, 0), nil},
+		{cfgmock.NewService().NewScoped(5, 4), nil},
+		{cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{wantPath.String(): []byte(`Hello Dud€`)})).NewScoped(0, 0), []byte(`Hello Dud€`)},
+	}
+	for i, test := range tests {
+		gb, err := b.Get(test.sg)
+		if err != nil {
+			t.Fatal("Index", i, err)
+		}
+		assert.Exactly(t, test.want, gb, "Index %d", i)
+	}
+}
+
+func TestByteGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
+	t.Parallel()
+
+	b := cfgmodel.NewByte("web/cors/byte")
+	assert.Empty(t, b.Options())
+
+	haveErr := errors.New("Unexpected error")
+	gb, err := b.Get(cfgmock.NewService(
+		cfgmock.WithByte(func(path string) ([]byte, error) {
+			return nil, haveErr
+		}),
+	).NewScoped(1, 1))
+	assert.Empty(t, gb)
+	assert.Exactly(t, haveErr, cserr.UnwrapMasked(err))
+}
+
+func TestByteIgnoreNilDefaultValues(t *testing.T) {
+	t.Parallel()
+	b := cfgmodel.NewByte("web/cors/byte", cfgmodel.WithField(&element.Field{}))
+	gb, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, []byte(nil), gb)
+}
+func TestByteWrite(t *testing.T) {
+	t.Parallel()
+	const pathWebCorsHeaders = "web/cors/byte"
+	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders)
+	b := cfgmodel.NewByte(pathWebCorsHeaders, cfgmodel.WithFieldFromSectionSlice(configStructure))
+
+	mw := &cfgmock.Write{}
+	assert.NoError(t, b.Write(mw, []byte("dude"), scope.DefaultID, 0))
+	assert.Exactly(t, wantPath.String(), mw.ArgPath)
+	assert.Exactly(t, []byte("dude"), mw.ArgValue.([]byte))
 }
 
 func TestStrGetWithCfgStruct(t *testing.T) {

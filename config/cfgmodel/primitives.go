@@ -65,6 +65,50 @@ func (b Bool) Write(w config.Writer, v bool, s scope.Scope, scopeID int64) error
 	return b.baseValue.Write(w, v, s, scopeID)
 }
 
+// Byte represents a path in config.Getter which handles byte slices.
+type Byte struct{ baseValue }
+
+// NewByte creates a new Byte cfgmodel with a given path.
+func NewByte(path string, opts ...Option) Byte {
+	return Byte{baseValue: NewValue(path, opts...)}
+}
+
+// Get returns a byte slice from ScopedGetter, if empty the
+// *element.Field.Default value will be applied if provided.
+// scope.DefaultID will be enforced if *element.Field.Scopes is empty.
+// The slice is owned by this function. You must copy it away for
+// further modifications.
+func (bt Byte) Get(sg config.ScopedGetter) ([]byte, error) {
+	// This code must be kept in sync with other lookup*() functions
+
+	var v []byte
+	var scp = scope.DefaultID
+	if bt.Field != nil {
+		scp = bt.Field.Scopes.Top()
+		var err error
+		v, err = conv.ToByteE(bt.Field.Default)
+		if err != nil {
+			return nil, errors.Mask(err)
+		}
+	}
+
+	val, err := sg.Byte(bt.route, scp)
+	switch {
+	case err == nil: // we found the value in the config service
+		v = val
+	case config.NotKeyNotFoundError(err):
+		err = errors.Maskf(err, "Route %s", bt.route)
+	default:
+		err = nil // a Err(Section|Group|Field)NotFound error and uninteresting, so reset
+	}
+	return v, err
+}
+
+// Write writes a byte slice without validating it against the source.Slice.
+func (str Byte) Write(w config.Writer, v []byte, s scope.Scope, scopeID int64) error {
+	return str.baseValue.Write(w, v, s, scopeID)
+}
+
 // Str represents a path in config.Getter which handles string values.
 // The name Str has been chosen to avoid conflict with the String() function
 // in the Stringer interface.

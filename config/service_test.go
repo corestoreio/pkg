@@ -74,7 +74,9 @@ func TestService_ApplyDefaults(t *testing.T) {
 		},
 	)
 	s := config.MustNewService()
-	s.ApplyDefaults(pkgCfg)
+	if _, err := s.ApplyDefaults(pkgCfg); err != nil {
+		t.Fatal(err)
+	}
 	cer, err := pkgCfg.FindFieldByID(cfgpath.NewRoute("contact", "email", "recipient_email"))
 	if err != nil {
 		t.Fatal(err)
@@ -151,7 +153,7 @@ func TestService_Types(t *testing.T) {
 	}
 
 	// vals stores all possible types for which we have functions in config.Service
-	values := []interface{}{"Gopher", true, float64(3.14159), int(2016), time.Now()}
+	values := []interface{}{"Gopher", true, float64(3.14159), int(2016), time.Now(), []byte(`Hello Goph€rs`)}
 
 	for vi, wantVal := range values {
 		for i, test := range tests {
@@ -175,6 +177,8 @@ func testServiceTypes(t *testing.T, p cfgpath.Path, writeVal, wantVal interface{
 	var haveVal interface{}
 	var haveErr error
 	switch wantVal.(type) {
+	case []byte:
+		haveVal, haveErr = srv.Byte(p)
 	case string:
 		haveVal, haveErr = srv.String(p)
 	case bool:

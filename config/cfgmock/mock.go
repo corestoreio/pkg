@@ -55,6 +55,7 @@ type OptionFunc func(*Service)
 // Using WithPV() has precedence over the applied functions.
 type Service struct {
 	db              storage.Storager
+	FByte           func(path string) ([]byte, error)
 	FString         func(path string) (string, error)
 	FBool           func(path string) (bool, error)
 	FFloat64        func(path string) (float64, error)
@@ -107,6 +108,13 @@ func (pv PathValue) GoString() string {
 		panic(err)
 	}
 	return buf.String()
+}
+
+// WithByte returns a function which can be used in the NewService().
+// Your function returns a string value from a given cfgpath.
+// Call priority 2.
+func WithByte(f func(path string) ([]byte, error)) OptionFunc {
+	return func(mr *Service) { mr.FByte = f }
 }
 
 // WithString returns a function which can be used in the NewService().
@@ -202,6 +210,18 @@ func (mr *Service) getVal(p cfgpath.Path) interface{} {
 	}
 	v = indirect(v)
 	return v
+}
+
+// Byte returns a byte slice value
+func (mr *Service) Byte(p cfgpath.Path) ([]byte, error) {
+	switch {
+	case mr.hasVal(p):
+		return conv.ToByteE(mr.getVal(p))
+	case mr.FByte != nil:
+		return mr.FByte(p.String())
+	default:
+		return nil, storage.ErrKeyNotFound
+	}
 }
 
 // String returns a string value
