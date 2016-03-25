@@ -17,11 +17,11 @@ package ctxmw_test
 import (
 	"bytes"
 	"io"
-	"math/rand"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
-	"time"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxmw"
@@ -32,6 +32,16 @@ import (
 	"golang.org/x/net/context"
 )
 
+var testJson string
+
+func init() {
+	testJsonB, err := ioutil.ReadFile(filepath.Join("testdata", "config.json"))
+	if err != nil {
+		panic(err)
+	}
+	testJson = string(testJsonB)
+}
+
 func testCompressReqRes() (w *httptest.ResponseRecorder, r *http.Request) {
 	var err error
 	w = httptest.NewRecorder()
@@ -40,17 +50,6 @@ func testCompressReqRes() (w *httptest.ResponseRecorder, r *http.Request) {
 		panic(err)
 	}
 	return
-}
-
-var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-func randSeq(n int) string {
-	rand.Seed(time.Now().UTC().UnixNano())
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(b)
 }
 
 func TestWithCompressorNone(t *testing.T) {
@@ -101,9 +100,19 @@ func TestWithCompressorDeflateHeader(t *testing.T) {
 func TestWithCompressorDeflateConcrete(t *testing.T) {
 	testWithCompressorConcrete(t, httputil.CompressDeflate, func(r io.Reader) string {
 		fr := flate.NewReader(r)
-		defer fr.Close()
-		var un = make([]byte, 2048)
-		fr.Read(un)
+		defer func() {
+			if err := fr.Close(); err != nil {
+				t.Fatal(err)
+			}
+		}()
+		var un = make([]byte, len(testJson))
+		rl, err := fr.Read(un)
+		if err != nil {
+			t.Error(err)
+		}
+		if rl != len(testJson) {
+			t.Errorf("Read only %d from expected %d bytes. Buffer size: %d", rl, len(testJson), len(un))
+		}
 		return string(un)
 	})
 }
@@ -129,10 +138,8 @@ func TestWithCompressorGZIPConcrete(t *testing.T) {
 
 func testWithCompressorConcrete(t *testing.T, header string, uncompressor func(io.Reader) string) {
 
-	rawData := randSeq(2048)
-
 	finalCH := ctxhttp.Chain(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		return httputil.NewPrinter(w, r).WriteString(http.StatusOK, rawData)
+		return httputil.NewPrinter(w, r).WriteString(http.StatusOK, testJson)
 	}, ctxmw.WithCompressor())
 
 	w, r := testCompressReqRes()
@@ -140,11 +147,14 @@ func testWithCompressorConcrete(t *testing.T, header string, uncompressor func(i
 	if err := finalCH.ServeHTTPContext(context.TODO(), w, r); err != nil {
 		t.Fatal(err)
 	}
-	assert.False(t, len(rawData) < len(w.Body.Bytes()))
+	assert.False(t, len(testJson) < len(w.Body.Bytes()))
 
 	uncompressedBody := uncompressor(w.Body)
 
-	assert.Exactly(t, rawData, uncompressedBody)
+	if testJson != uncompressedBody {
+		t.Errorf("Want: %d\n\nHave: %d\n", len(testJson), len(uncompressedBody))
+		t.Logf("Want: %s\n\nHave: %s\n", testJson, uncompressedBody)
+	}
 	assert.Exactly(t, header, w.Header().Get(httputil.ContentEncoding))
 	assert.Exactly(t, httputil.AcceptEncoding, w.Header().Get(httputil.Vary))
 	assert.Exactly(t, httputil.TextPlain, w.Header().Get(httputil.ContentType))
@@ -154,10 +164,8 @@ func testWithCompressorConcrete(t *testing.T, header string, uncompressor func(i
 // BenchmarkWithCompressorGZIP_1024B-4	   20000	     81916 ns/op	    1330 B/op	       5 allocs/op
 func BenchmarkWithCompressorGZIP_1024B(b *testing.B) {
 
-	rawData := randSeq(2048)
-
 	finalCH := ctxhttp.Chain(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		return httputil.NewPrinter(w, r).WriteString(http.StatusOK, rawData)
+		return httputil.NewPrinter(w, r).WriteString(http.StatusOK, testJson)
 	}, ctxmw.WithCompressor())
 
 	w, r := testCompressReqRes()
