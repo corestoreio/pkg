@@ -250,6 +250,45 @@ func ToStringE(i interface{}) (string, error) {
 	}
 }
 
+// ToByteE casts an empty interface to a byte slice. Faster than ToStringE because
+// ToByteE avoids some copying of data. Use wisely.
+func ToByteE(i interface{}) ([]byte, error) {
+
+	switch s := i.(type) {
+	case []byte:
+		return s, nil
+	case string:
+		return []byte(s), nil
+	case bool:
+		var empty = make([]byte, 0, 4)
+		return strconv.AppendBool(empty, s), nil
+	case float64:
+		var empty = make([]byte, 0, 8)
+		return strconv.AppendFloat(empty, i.(float64), 'f', -1, 64), nil
+	case int:
+		var empty = make([]byte, 0, 8)
+		return strconv.AppendInt(empty, int64(i.(int)), 10), nil
+	case int64:
+		var empty = make([]byte, 0, 8)
+		return strconv.AppendInt(empty, i.(int64), 10), nil
+	case text.Chars:
+		return s.Bytes(), nil
+	case cfgpath.Route:
+		return s.Bytes(), nil
+	case cfgpath.Path:
+		sp, err := s.FQ()
+		return sp.Bytes(), err
+	case template.HTML:
+		return []byte(s), nil
+	case template.URL:
+		return []byte(s), nil
+	case nil:
+		return nil, nil
+	default:
+		return nil, fmt.Errorf("Unable to Cast %#v to []byte", i)
+	}
+}
+
 // ToStringMapStringE casts an empty interface to a map[string]string.
 func ToStringMapStringE(i interface{}) (map[string]string, error) {
 	if PkgLog.IsDebug() {

@@ -55,6 +55,28 @@ func TestToString(t *testing.T) {
 	assert.Equal(t, ToString(cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.StoreID, 33)), "stores/33/aa/bb/cc")
 }
 
+func TestToByte(t *testing.T) {
+	t.Parallel()
+	var foo interface{} = []byte("one more time")
+	assert.Equal(t, ToByte(8), []byte("8"))
+	assert.Equal(t, ToByte(int64(8888)), []byte("8888"))
+	assert.Equal(t, ToByte(8.12), []byte("8.12"))
+	assert.Equal(t, ToByte([]byte("one time")), []byte("one time"))
+	assert.Equal(t, ToByte(template.HTML("one time")), []byte("one time"))
+	assert.Equal(t, ToByte(template.URL("http://somehost.foo")), []byte("http://somehost.foo"))
+	assert.Equal(t, ToByte(text.Chars("http://somehost.foo")), []byte("http://somehost.foo"))
+	assert.Equal(t, ToByte(cfgpath.NewRoute("http://somehost.foo")), []byte("http://somehost.foo"))
+	assert.Equal(t, ToByte(foo), []byte("one more time"))
+	assert.Equal(t, ToByte(nil), []byte(nil))
+	assert.Equal(t, ToByte(true), []byte("true"))
+	assert.Equal(t, ToByte(false), []byte("false"))
+	assert.Equal(t, ToByte(cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.StoreID, 33)), []byte("stores/33/aa/bb/cc"))
+
+	b, err := ToByteE(uint8(1))
+	assert.Nil(t, b)
+	assert.EqualError(t, err, "Unable to Cast 0x1 to []byte")
+}
+
 type foo struct {
 	val string
 }

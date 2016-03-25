@@ -37,6 +37,11 @@ func ToString(i interface{}) string {
 	return v
 }
 
+func ToByte(i interface{}) []byte {
+	v, _ := ToByteE(i)
+	return v
+}
+
 func ToStringMapString(i interface{}) map[string]string {
 	v, _ := ToStringMapStringE(i)
 	return v
