@@ -111,7 +111,7 @@ func (str Byte) Write(w config.Writer, v []byte, s scope.Scope, scopeID int64) e
 
 // Str represents a path in config.Getter which handles string values.
 // The name Str has been chosen to avoid conflict with the String() function
-// in the Stringer interface.
+// in the fmt.Stringer interface.
 type Str struct{ baseValue }
 
 // NewStr creates a new Str cfgmodel with a given path.

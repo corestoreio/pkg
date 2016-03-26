@@ -22,8 +22,8 @@ import (
 // Encryptor functions needed for encryption and decryption of
 // string values. For example implements M1 and M2 encryption key functions.
 type Encryptor interface {
-	Encrypt(string) (string, error)
-	Decrypt(string) (string, error)
+	Encrypt([]byte) ([]byte, error)
+	Decrypt([]byte) ([]byte, error)
 }
 
 // NoopEncryptor does nothing and only used for testing.
@@ -35,11 +35,11 @@ type NoopEncryptor struct {
 	DecErr error
 }
 
-func (ne NoopEncryptor) Encrypt(s string) (string, error) {
+func (ne NoopEncryptor) Encrypt(s []byte) ([]byte, error) {
 	return s, ne.EncErr
 }
 
-func (ne NoopEncryptor) Decrypt(s string) (string, error) {
+func (ne NoopEncryptor) Decrypt(s []byte) ([]byte, error) {
 	return s, ne.DecErr
 }
 
@@ -55,14 +55,14 @@ func WithEncryptor(e Encryptor) Option {
 
 // Obscure backend model for handling sensible values
 type Obscure struct {
-	Str
+	Byte
 	Encryptor
 }
 
 // NewObscure creates a new Obscure with validation checks when writing values.
 func NewObscure(path string, opts ...Option) Obscure {
 	ret := Obscure{
-		Str: NewStr(path),
+		Byte: NewByte(path),
 	}
 	(&ret).Option(opts...)
 	return ret
@@ -82,20 +82,20 @@ func (p *Obscure) Option(opts ...Option) (previous Option) {
 	return
 }
 
-// Get returns an encrypted value decrypted.
-func (p Obscure) Get(sg config.ScopedGetter) (string, error) {
-	s, err := p.Str.Get(sg)
+// Get returns an encrypted value decrypted. Panics if Encryptor interface is nil.
+func (p Obscure) Get(sg config.ScopedGetter) ([]byte, error) {
+	s, err := p.Byte.Get(sg)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 	return p.Decrypt(s)
 }
 
-// Write writes a raw value encrypted.
-func (p Obscure) Write(w config.Writer, v string, s scope.Scope, scopeID int64) (err error) {
+// Write writes a raw value encrypted. Panics if Encryptor interface is nil.
+func (p Obscure) Write(w config.Writer, v []byte, s scope.Scope, scopeID int64) (err error) {
 	v, err = p.Encrypt(v)
 	if err != nil {
 		return err
 	}
-	return p.Str.Write(w, v, s, scopeID)
+	return p.Byte.Write(w, v, s, scopeID)
 }

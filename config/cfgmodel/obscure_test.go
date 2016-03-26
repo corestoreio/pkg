@@ -30,7 +30,7 @@ var _ cfgmodel.Encryptor = (*cfgmodel.NoopEncryptor)(nil)
 type rot13 struct {
 }
 
-func (rt rot13) Encrypt(s string) (string, error) {
+func (rt rot13) Encrypt(s []byte) ([]byte, error) {
 	var buf [1024]byte
 	n := copy(buf[:], s)
 	for i, b := range buf[:n] {
@@ -41,17 +41,17 @@ func (rt rot13) Encrypt(s string) (string, error) {
 			buf[i] = b - 13
 		}
 	}
-	return string(buf[:n]), nil
+	return buf[:n], nil
 }
 
-func (rt rot13) Decrypt(s string) (string, error) {
+func (rt rot13) Decrypt(s []byte) ([]byte, error) {
 	return rt.Encrypt(s)
 }
 
 func TestObscure(t *testing.T) {
 	t.Parallel()
-	const wantPlain = `H3llo G0phers`
-	const wantCiphered = `U3yyb T0curef`
+	var wantPlain = []byte(`H3llo G0phers`)
+	var wantCiphered = []byte(`U3yyb T0curef`)
 	const cfgPath = "aa/bb/cc"
 
 	b := cfgmodel.NewObscure(
@@ -82,11 +82,13 @@ func TestNoopEncryptor(t *testing.T) {
 
 	ne := cfgmodel.NoopEncryptor{}
 
-	e, err := ne.Encrypt("a")
-	assert.Exactly(t, "a", e)
+	var a = []byte("a")
+	e, err := ne.Encrypt(a)
+	assert.Exactly(t, a, e)
 	assert.NoError(t, err)
 
-	d, err := ne.Decrypt("b")
-	assert.Exactly(t, "b", d)
+	var b = []byte("b")
+	d, err := ne.Decrypt(b)
+	assert.Exactly(t, b, d)
 	assert.NoError(t, err)
 }
