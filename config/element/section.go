@@ -48,10 +48,15 @@ type Section struct {
 	Groups   GroupSlice
 }
 
+// NewSectionSlice wrapper function, for now.
+func NewSectionSlice(s ...*Section) SectionSlice {
+	return SectionSlice(s)
+}
+
 // NewConfiguration creates a new validated SectionSlice with a three level configuration.
 // Panics if a path is redundant.
 func NewConfiguration(sections ...*Section) (SectionSlice, error) {
-	ss := SectionSlice(sections)
+	ss := NewSectionSlice(sections...)
 	if err := ss.Validate(); err != nil {
 		if PkgLog.IsDebug() {
 			PkgLog.Debug("config.NewConfiguration.Validate", "err", err)

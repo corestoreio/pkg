@@ -27,41 +27,41 @@ var _ element.Sectioner = (*element.SectionSlice)(nil)
 func TestSectionValidateDuplicate(t *testing.T) {
 	// for benchmark tests see package config_bm
 	t.Parallel()
-	ss := element.SectionSlice{
-		0: &element.Section{
+	ss := element.NewSectionSlice(
+		&element.Section{
 			ID: cfgpath.NewRoute(`aa`),
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					ID: cfgpath.NewRoute(`bb`),
-					Fields: element.FieldSlice{
+					Fields: element.NewFieldSlice(
 						&element.Field{ID: cfgpath.NewRoute(`cc`)},
 						&element.Field{ID: cfgpath.NewRoute(`cc`)},
-					},
+					),
 				},
 			),
 		},
-	}
+	)
 
 	err := ss.Validate()
 	assert.EqualError(t, err, "Duplicate entry for path aa/bb/cc :: [{\"ID\":\"aa\",\"Groups\":[{\"ID\":\"bb\",\"Fields\":[{\"ID\":\"cc\"},{\"ID\":\"cc\"}]}]}]\n")
 }
 func TestSectionValidateShortPath(t *testing.T) {
 	t.Parallel()
-	ss := element.SectionSlice{
-		0: &element.Section{
+	ss := element.NewSectionSlice(
+		&element.Section{
 			//ID: cfgpath.NewRoute(`aa`),
 			Groups: element.NewGroupSlice(
 				&element.Group{
 					//ID: cfgpath.NewRoute(`b`),
-					Fields: element.FieldSlice{
+					Fields: element.NewFieldSlice(
 						&element.Field{ID: cfgpath.NewRoute(`ca`)},
 						&element.Field{ID: cfgpath.NewRoute(`cb`)},
 						&element.Field{},
-					},
+					),
 				},
 			),
 		},
-	}
+	)
 
 	err := ss.Validate()
 	assert.EqualError(t, err, cfgpath.ErrRouteEmpty.Error())

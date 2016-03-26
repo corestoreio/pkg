@@ -78,7 +78,7 @@ func (fe *FieldError) Error() string {
 // RenderRoutes merges the PreRoute fields into a string
 func (fe *FieldError) RenderRoutes() string {
 	var r cfgpath.Route
-	r.Append(fe.PreRoutes...)
+	_ = r.Append(fe.PreRoutes...)
 	return r.String()
 }
 
