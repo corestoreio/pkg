@@ -19,13 +19,12 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
-	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPasswordFromConfig(t *testing.T) {
+func TestWithBackend(t *testing.T) {
 	t.Parallel()
 
 	pwp, err := backend.NetCtxjwtHmacPassword.ToPath(scope.DefaultID, 0)
@@ -40,7 +39,7 @@ func TestPasswordFromConfig(t *testing.T) {
 	).NewScoped(1, 2)
 
 	jm, err := ctxjwt.NewService(
-		ctxjwt.WithPasswordFromConfig(srvSG, backend, cfgmodel.NoopEncryptor{}),
+		ctxjwt.WithBackend(backend),
 	)
 	assert.NoError(t, err)
 

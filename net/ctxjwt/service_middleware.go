@@ -18,6 +18,7 @@ import (
 	"net/http"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
+	"github.com/corestoreio/csfw/store"
 	"github.com/dgrijalva/jwt-go"
 	"golang.org/x/net/context"
 )
@@ -39,24 +40,22 @@ func SetHeaderAuthorization(req *http.Request, token string) {
 // ProTip: Instead of passing the token as an HTML Header you can also add the token
 // to a form (multipart/form-data) with an input name of access_token. If the
 // token cannot be found within the Header the fallback triggers the lookup within the form.
-func (s *Service) WithParseAndValidate(errHandler ...ctxhttp.HandlerFunc) ctxhttp.Middleware {
-
-	// todo: move this into the Service struct as a field like in ctxthrottled
-	// and make it depended on the website, IF the website. a website can decided
-	// the signing algorithm and if it want to use JWT.
-	errH := func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
-		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-		return nil
-	}
-
-	if len(errHandler) == 1 && errHandler[0] != nil {
-		errH = errHandler[0]
-	}
+func (s *Service) WithParseAndValidate() ctxhttp.Middleware {
 
 	return func(h ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			token, err := jwt.ParseFromRequest(r, s.keyFunc)
+			_, reqStore, err := store.FromContextProvider(ctx)
+			if err != nil {
+				return err
+			}
+
+			scpCfg, err := s.getConfigByScopedGetter(reqStore.Website.Config)
+			if err != nil {
+				return err
+			}
+
+			token, err := jwt.ParseFromRequest(r, scpCfg.keyFunc)
 
 			var inBL bool
 			if token != nil {
@@ -68,7 +67,7 @@ func (s *Service) WithParseAndValidate(errHandler ...ctxhttp.HandlerFunc) ctxhtt
 			if PkgLog.IsDebug() {
 				PkgLog.Debug("ctxjwt.Service.Authenticate", "err", err, "token", token, "inBlacklist", inBL)
 			}
-			return errH(WithContextError(ctx, err), w, r)
+			return scpCfg.errorHandler(WithContextError(ctx, err), w, r)
 		}
 	}
 }
