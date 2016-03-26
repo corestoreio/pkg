@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storenet_test
+package store_test
 
 import (
 	"testing"
@@ -21,28 +21,27 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
-	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
 
 func TestContextReaderError(t *testing.T) {
-	haveMr, s, err := storenet.FromContextProvider(context.Background())
+	haveMr, s, err := store.FromContextProvider(context.Background())
 	assert.Nil(t, haveMr)
 	assert.Nil(t, s)
-	assert.EqualError(t, err, storenet.ErrContextProviderNotFound.Error())
+	assert.EqualError(t, err, store.ErrContextProviderNotFound.Error())
 
-	ctx := storenet.WithContextProvider(context.Background(), nil)
+	ctx := store.WithContextProvider(context.Background(), nil)
 	assert.NotNil(t, ctx)
-	haveMr, s, err = storenet.FromContextProvider(ctx)
+	haveMr, s, err = store.FromContextProvider(ctx)
 	assert.Nil(t, haveMr)
 	assert.Nil(t, s)
-	assert.EqualError(t, err, storenet.ErrContextProviderNotFound.Error())
+	assert.EqualError(t, err, store.ErrContextProviderNotFound.Error())
 
 	mr := storemock.NewNullService()
-	ctx = storenet.WithContextProvider(context.Background(), mr)
+	ctx = store.WithContextProvider(context.Background(), mr)
 	assert.NotNil(t, ctx)
-	haveMr, s, err = storenet.FromContextProvider(ctx)
+	haveMr, s, err = store.FromContextProvider(ctx)
 	assert.EqualError(t, err, store.ErrStoreNotFound.Error())
 	assert.Nil(t, haveMr)
 	assert.Nil(t, s)
@@ -62,7 +61,7 @@ func TestContextReaderSuccess(t *testing.T) {
 		},
 	)
 
-	haveMr, s, err := storenet.FromContextProvider(ctx)
+	haveMr, s, err := store.FromContextProvider(ctx)
 	assert.NoError(t, err)
 	assert.Exactly(t, int64(6), s.StoreID())
 
@@ -78,5 +77,5 @@ func TestWithContextMustService(t *testing.T) {
 			assert.EqualError(t, r.(error), "runtime error: invalid memory address or nil pointer dereference")
 		}
 	}()
-	storenet.WithContextMustService(scope.Option{}, nil)
+	store.WithContextMustService(scope.Option{}, nil)
 }

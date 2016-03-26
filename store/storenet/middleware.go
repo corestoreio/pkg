@@ -60,7 +60,7 @@ func WithValidateBaseURL(cg config.GetterPubSuber) ctxhttp.Middleware {
 
 			if configRedirectCode > 0 && r.Method != "POST" {
 
-				_, requestedStore, err := FromContextProvider(ctx)
+				_, requestedStore, err := store.FromContextProvider(ctx)
 				if err != nil {
 					if PkgLog.IsDebug() {
 						PkgLog.Debug("ctxhttp.WithValidateBaseUrl.FromContextServiceReader", "err", err, "ctx", ctx)
@@ -104,7 +104,7 @@ func WithInitStoreByToken() ctxhttp.Middleware {
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			storeService, requestedStore, err := FromContextProvider(ctx)
+			storeService, requestedStore, err := store.FromContextProvider(ctx)
 			if err != nil {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.WithInitStoreByToken.FromContextServiceReader", "err", err, "ctx", ctx)
@@ -139,7 +139,7 @@ func WithInitStoreByToken() ctxhttp.Middleware {
 			if newRequestedStore.StoreID() != requestedStore.StoreID() {
 				// this may lead to a bug because the previously set storeService and requestedStore
 				// will still exists and have not been removed.
-				ctx = WithContextProvider(ctx, storeService, newRequestedStore)
+				ctx = store.WithContextProvider(ctx, storeService, newRequestedStore)
 			}
 
 			return hf.ServeHTTPContext(ctx, w, r)
@@ -158,7 +158,7 @@ func WithInitStoreByFormCookie() ctxhttp.Middleware {
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			storeService, requestedStore, err := FromContextProvider(ctx)
+			storeService, requestedStore, err := store.FromContextProvider(ctx)
 			if err != nil {
 				if PkgLog.IsDebug() {
 					PkgLog.Debug("store.WithInitStoreByToken.FromContextServiceReader", "err", err, "ctx", ctx)
@@ -212,7 +212,7 @@ func WithInitStoreByFormCookie() ctxhttp.Middleware {
 					if newRequestedStore.StoreID() != requestedStore.StoreID() {
 						// this may lead to a bug because the previously set storeService and requestedStore
 						// will still exists and have not been removed.
-						ctx = WithContextProvider(ctx, storeService, newRequestedStore)
+						ctx = store.WithContextProvider(ctx, storeService, newRequestedStore)
 					}
 				}
 			}

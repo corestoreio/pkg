@@ -12,12 +12,11 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package storenet
+package store
 
 import (
 	"errors"
 
-	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"golang.org/x/net/context"
 )
@@ -28,8 +27,8 @@ var ErrContextProviderNotFound = errors.New("store.Provider not found in context
 
 type ctxServiceKey struct{}
 type ctxServiceWrapper struct {
-	service        store.Provider
-	requestedStore *store.Store
+	service        Provider
+	requestedStore *Store
 }
 
 // FromContextProvider returns a store.Provider and a store.Store from a context.
@@ -38,7 +37,7 @@ type ctxServiceWrapper struct {
 // instantiating a new Getter. The returned store.Store identifies the current
 // scope.Scope of a request. If it cannot determine a store.Store then the
 // error ErrStoreNotFound will get returned.
-func FromContextProvider(ctx context.Context) (store.Provider, *store.Store, error) {
+func FromContextProvider(ctx context.Context) (Provider, *Store, error) {
 	sw, ok := ctx.Value(ctxServiceKey{}).(ctxServiceWrapper)
 	if !ok || sw.service == nil {
 		return nil, nil, ErrContextProviderNotFound
@@ -57,8 +56,8 @@ func FromContextProvider(ctx context.Context) (store.Provider, *store.Store, err
 // WithContextProvider adds a store.Provider and an optional requestedStore to the context.
 // requestedStore can be provided 0 or 1 time. If you provide the RequestedStore
 // argument then it will override the default RequestedStore from FromContextReader()
-func WithContextProvider(ctx context.Context, r store.Provider, requestedStore ...*store.Store) context.Context {
-	var rs *store.Store
+func WithContextProvider(ctx context.Context, r Provider, requestedStore ...*Store) context.Context {
+	var rs *Store
 	if len(requestedStore) == 1 {
 		rs = requestedStore[0]
 	}
@@ -70,8 +69,8 @@ func WithContextProvider(ctx context.Context, r store.Provider, requestedStore .
 
 // WithContextMustService creates a new StoreService wrapped in a context.Background().
 // Convenience function. Panics on error.
-func WithContextMustService(so scope.Option, s store.Storager) context.Context {
-	sm, err := store.NewService(so, s)
+func WithContextMustService(so scope.Option, s Storager) context.Context {
+	sm, err := NewService(so, s)
 	if err != nil {
 		panic(err)
 	}
