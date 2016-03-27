@@ -33,6 +33,7 @@ func (b nullBL) Has(_ string) bool                   { return false }
 // production as the underlying mutex will become a bottleneck with higher
 // throughput.
 type SimpleMapBlackList struct {
+	// TODO: implement github.com/coocood/freecache
 	mu     sync.RWMutex
 	tokens map[string]time.Time
 }

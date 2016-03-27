@@ -15,15 +15,15 @@
 package ctxjwt
 
 import (
-	"crypto/ecdsa"
-	"crypto/rsa"
 	"fmt"
+	"sync"
 	"time"
 
+	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/juju/errors"
-	"github.com/pborman/uuid"
 )
 
 // ErrUnexpectedSigningMethod will be returned if some outside dude tries to trick us
@@ -39,23 +39,19 @@ type Blacklister interface {
 // Service main object for handling JWT authentication, generation, blacklists and log outs.
 type Service struct {
 	*cserr.MultiErr
-	rsapk        *rsa.PrivateKey
-	ecdsapk      *ecdsa.PrivateKey
-	hmacPassword []byte // password for hmac
-	hasKey       bool   // must be set to true if one of the three above keys has been set
 
-	// Expire defines the duration when the token is about to expire
-	Expire time.Duration
-	// SigningMethod how to sign the JWT. For default value see the OptionFuncs
-	SigningMethod jwt.SigningMethod
-	// EnableJTI activates the (JWT ID) Claim, a unique identifier. UUID.
-	EnableJTI bool
-	// JTI represents the interface to generate a new UUID
+	mu sync.Mutex
+	// scopeCache internal cache of already created token configurations
+	// scoped.Hash relates to the website ID.
+	scopeCache map[scope.Hash]scopedConfig // see freecache to create high concurrent thru put
+
+	// JTI represents the interface to generate a new UUID aka JWT ID
 	JTI interface {
 		Get() string
 	}
 	// Blacklist concurrent safe black list service
 	Blacklist Blacklister
+	backend   *PkgBackend
 }
 
 // NewService creates a new token service. If key option will not be
@@ -69,14 +65,12 @@ func NewService(opts ...Option) (*Service, error) {
 		return nil, s
 	}
 
-	if !s.hasKey {
-		s.hasKey = true
-		s.SigningMethod = jwt.SigningMethodHS512
-		s.hmacPassword = []byte(uuid.NewRandom()) // @todo can be better ...
+	if len(s.scopeCache) == 0 {
+		if err := s.Options(WithDefaultConfig(scope.DefaultID, 0)); err != nil {
+			return nil, s
+		}
 	}
-	if s.Expire.Seconds() < 1 {
-		s.Expire = DefaultExpire
-	}
+
 	if s.Blacklist == nil {
 		s.Blacklist = nullBL{}
 	}
@@ -112,30 +106,35 @@ func (s *Service) Options(opts ...Option) error {
 // For details of the registered claim names please see
 // http://self-issued.info/docs/draft-ietf-oauth-json-web-token.html#rfc.section.4.1
 // This function is thread safe.
-func (s *Service) GenerateToken(claims map[string]interface{}) (token, jti string, err error) {
+func (s *Service) GenerateToken(scp scope.Scope, id int64, claims map[string]interface{}) (token, jti string, err error) {
+
+	cfg, err := s.getConfigByScopeID(scp, id)
+	if err != nil {
+		return "", "", err
+	}
+
 	now := time.Now()
-	t := jwt.New(s.SigningMethod)
-	t.Claims["exp"] = now.Add(s.Expire).Unix()
+	t := jwt.New(cfg.signingMethod)
+	t.Claims["exp"] = now.Add(cfg.expire).Unix()
 	t.Claims["iat"] = now.Unix()
 	for k, v := range claims {
 		t.Claims[k] = v
 	}
-	if s.EnableJTI && s.JTI != nil {
+	if cfg.enableJTI && s.JTI != nil {
 		jti = s.JTI.Get()
 		t.Claims["jti"] = jti
 	}
 
-	switch t.Method.Alg() {
+	switch cfg.signingMethod.Alg() {
 	case jwt.SigningMethodRS256.Alg(), jwt.SigningMethodRS384.Alg(), jwt.SigningMethodRS512.Alg():
-		token, err = t.SignedString(s.rsapk)
+		token, err = t.SignedString(cfg.rsapk)
 	case jwt.SigningMethodES256.Alg(), jwt.SigningMethodES384.Alg(), jwt.SigningMethodES512.Alg():
-		token, err = t.SignedString(s.ecdsapk)
+		token, err = t.SignedString(cfg.ecdsapk)
 	case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
-		token, err = t.SignedString(s.hmacPassword)
+		token, err = t.SignedString(cfg.hmacPassword)
 	default:
-		return "", "", fmt.Errorf("GenerateToken: Unknown algorithm %s", t.Method.Alg())
+		return "", "", ErrUnexpectedSigningMethod
 	}
-
 	return
 }
 
@@ -158,30 +157,19 @@ func (s *Service) Logout(token *jwt.Token) error {
 	return s.Blacklist.Set(token.Raw, exp)
 }
 
-// keyFunc runs parallel and concurrent
-func (s *Service) keyFunc(t *jwt.Token) (interface{}, error) {
-	if t.Method.Alg() != s.SigningMethod.Alg() {
-		if PkgLog.IsDebug() {
-			PkgLog.Debug("ctxjwt.AuthManager.Authenticate.SigningMethod", "err", ErrUnexpectedSigningMethod, "token", t, "method", s.SigningMethod.Alg())
-		}
-		return nil, ErrUnexpectedSigningMethod
-	}
-
-	switch t.Method.Alg() {
-	case jwt.SigningMethodRS256.Alg(), jwt.SigningMethodRS384.Alg(), jwt.SigningMethodRS512.Alg():
-		return &s.rsapk.PublicKey, nil
-	case jwt.SigningMethodES256.Alg(), jwt.SigningMethodES384.Alg(), jwt.SigningMethodES512.Alg():
-		return &s.ecdsapk.PublicKey, nil
-	case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
-		return s.hmacPassword, nil
-	default:
-		return nil, fmt.Errorf("ctxjwt.Service.keyFunc: Unknown algorithm %s", t.Method.Alg())
-	}
-}
-
 // Parse parses a token string and returns the valid token or an error
 func (s *Service) Parse(rawToken string) (*jwt.Token, error) {
-	token, err := jwt.Parse(rawToken, s.keyFunc)
+	return s.ParseScoped(scope.DefaultID, 0, rawToken)
+}
+
+// ParseScoped parses a token based on the applied scope and the scope ID.
+// Different configurations are passed to the token parsing function.
+// The black list will be checked for containing entries.
+func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken string) (*jwt.Token, error) {
+
+	sc, err := s.getConfigByScopeID(scp, id)
+
+	token, err := jwt.Parse(rawToken, sc.keyFunc)
 	var inBL bool
 	if token != nil {
 		inBL = s.Blacklist.Has(token.Raw)
@@ -193,4 +181,79 @@ func (s *Service) Parse(rawToken string) (*jwt.Token, error) {
 		PkgLog.Debug("ctxjwt.Service.Parse", "err", err, "inBlackList", inBL, "rawToken", rawToken, "token", token)
 	}
 	return nil, errors.Mask(err)
+}
+
+func (s *Service) getConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig, error) {
+
+	sc, err := s.getConfigByScopeID(sg.Scope())
+	if err == nil {
+		// cached entry found!
+		return sc, nil
+	}
+	if s.backend == nil {
+		return scopedConfig{}, errors.Errorf("[ctxjwt.Service] Backend configuration has not been set")
+	}
+
+	if err := s.Options(optionsByBackend(s.backend, sg)[:]...); err != nil {
+		return scopedConfig{}, errors.Mask(err)
+	}
+
+	// after applying the new config try to fetch the new scoped token configuration
+	return s.getConfigByScopeID(sg.Scope())
+}
+
+func (s *Service) getConfigByScopeID(scp scope.Scope, id int64) (scopedConfig, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	// requested scope plus ID
+	if scpJWT, ok := s.getScopedConfig(scope.NewHash(scp, id)); ok {
+		return scpJWT, nil
+	}
+
+	// fallback to default scope
+	if scpJWT, ok := s.getScopedConfig(scope.NewHash(scope.DefaultID, 0)); ok {
+		return scpJWT, nil
+	}
+
+	// give up, nothing found
+	return scopedConfig{}, errors.Errorf("[ctxjwt.Service] Cannot find JWT configuration for Scope(%s) and ID %d", scp, id)
+}
+
+// getScopedConfig part of lookupScopedConfig and doesn't use a lock because the lock
+// has been acquired in lookupScopedConfig()
+func (s *Service) getScopedConfig(h scope.Hash) (sc scopedConfig, ok bool) {
+	sc, ok = s.scopeCache[h]
+	if ok {
+		if nil == sc.keyFunc {
+			// set the keyFunc and cache it
+			s.scopeCache[h] = keyFunc(sc)
+		}
+	}
+	return sc, ok
+}
+
+// keyFunc generates the key function for a specific scope and to used in caching
+func keyFunc(scpCfg scopedConfig) scopedConfig {
+	scpCfg.keyFunc = func(t *jwt.Token) (interface{}, error) {
+
+		if t.Method.Alg() != scpCfg.signingMethod.Alg() {
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("ctxjwt.keyFunc.SigningMethod", "err", ErrUnexpectedSigningMethod, "token", t, "method", scpCfg.signingMethod.Alg())
+			}
+			return nil, ErrUnexpectedSigningMethod
+		}
+
+		switch t.Method.Alg() {
+		case jwt.SigningMethodRS256.Alg(), jwt.SigningMethodRS384.Alg(), jwt.SigningMethodRS512.Alg():
+			return &scpCfg.rsapk.PublicKey, nil
+		case jwt.SigningMethodES256.Alg(), jwt.SigningMethodES384.Alg(), jwt.SigningMethodES512.Alg():
+			return &scpCfg.ecdsapk.PublicKey, nil
+		case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
+			return scpCfg.hmacPassword, nil
+		default:
+			return nil, ErrUnexpectedSigningMethod
+		}
+	}
+	return scpCfg
 }

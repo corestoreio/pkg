@@ -17,6 +17,7 @@ package ctxjwt
 import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/config/source"
 )
 
 // PkgBackend just exported for the sake of documentation. See fields
@@ -75,20 +76,21 @@ func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
 // Load creates the configuration models for each PkgBackend field.
 // Internal mutex will protect the fields during loading.
 // The argument SectionSlice will be applied to all models.
-func (pp *PkgBackend) Load(cfgStruct element.SectionSlice) *PkgBackend {
+// Obscure types needs the cfgmodel.Encryptor to be set.
+func (pp *PkgBackend) Load(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *PkgBackend {
 	pp.Lock()
 	defer pp.Unlock()
 
-	opt := cfgmodel.WithFieldFromSectionSlice(cfgStruct)
+	opts = append(opts, cfgmodel.WithFieldFromSectionSlice(cfgStruct))
 
-	pp.NetCtxjwtSigningMethod = NewConfigSigningMethod(`net/ctxjwt/signing_method`, opt)
-	pp.NetCtxjwtExpiration = cfgmodel.NewDuration(`net/ctxjwt/expiration`, opt)
-	pp.NetCtxjwtEnableJTI = cfgmodel.NewBool(`net/ctxjwt/enable_jti`, opt)
-	pp.NetCtxjwtHmacPassword = cfgmodel.NewObscure(`net/ctxjwt/hmac_password`, opt)
-	pp.NetCtxjwtRSAKey = cfgmodel.NewObscure(`net/ctxjwt/rsa_key`, opt)
-	pp.NetCtxjwtRSAKeyPassword = cfgmodel.NewObscure(`net/ctxjwt/rsa_key_password`, opt)
-	pp.NetCtxjwtECDSAKey = cfgmodel.NewObscure(`net/ctxjwt/ecdsa_key`, opt)
-	pp.NetCtxjwtECDSAKeyPassword = cfgmodel.NewObscure(`net/ctxjwt/ecdsa_key_password`, opt)
+	pp.NetCtxjwtSigningMethod = NewConfigSigningMethod(`net/ctxjwt/signing_method`, opts...)
+	pp.NetCtxjwtExpiration = cfgmodel.NewDuration(`net/ctxjwt/expiration`, opts...)
+	pp.NetCtxjwtEnableJTI = cfgmodel.NewBool(`net/ctxjwt/enable_jti`, append(opts, cfgmodel.WithSource(source.EnableDisable))...)
+	pp.NetCtxjwtHmacPassword = cfgmodel.NewObscure(`net/ctxjwt/hmac_password`, opts...)
+	pp.NetCtxjwtRSAKey = cfgmodel.NewObscure(`net/ctxjwt/rsa_key`, opts...)
+	pp.NetCtxjwtRSAKeyPassword = cfgmodel.NewObscure(`net/ctxjwt/rsa_key_password`, opts...)
+	pp.NetCtxjwtECDSAKey = cfgmodel.NewObscure(`net/ctxjwt/ecdsa_key`, opts...)
+	pp.NetCtxjwtECDSAKeyPassword = cfgmodel.NewObscure(`net/ctxjwt/ecdsa_key_password`, opts...)
 
 	return pp
 }

@@ -15,11 +15,12 @@
 package ctxjwt
 
 import (
+	"time"
+
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
-	"time"
 )
 
 // DefaultSigningMethod HMAC-SHA signing with 512 bits. Gets applied if the
@@ -45,16 +46,6 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
 						element.Field{
-							// Path: net/ctxjwt/signing_method
-							ID:        cfgpath.NewRoute("signing_method"),
-							Label:     text.Chars(`Token Signing Algorithm`),
-							Type:      element.TypeSelect,
-							SortOrder: 10,
-							Visible:   element.VisibleYes,
-							Scopes:    scope.PermWebsite,
-							Default:   DefaultSigningMethod,
-						},
-						element.Field{
 							// Path: net/ctxjwt/expiration
 							ID:        cfgpath.NewRoute("expiration"),
 							Label:     text.Chars(`Token Expiration`),
@@ -75,6 +66,16 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
 							Default:   `false`,
+						},
+						element.Field{
+							// Path: net/ctxjwt/signing_method
+							ID:        cfgpath.NewRoute("signing_method"),
+							Label:     text.Chars(`Token Signing Algorithm`),
+							Type:      element.TypeSelect,
+							SortOrder: 35,
+							Visible:   element.VisibleYes,
+							Scopes:    scope.PermWebsite,
+							Default:   DefaultSigningMethod,
 						},
 						element.Field{
 							// Path: net/ctxjwt/hmac_password
