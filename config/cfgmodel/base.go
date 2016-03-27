@@ -53,12 +53,12 @@ type Option func(*optionBox) Option
 // checking.
 func WithFieldFromSectionSlice(cfgStruct element.SectionSlice) Option {
 	return func(b *optionBox) Option {
-		f, err := cfgStruct.FindFieldByID(b.route)
+		f, _, err := cfgStruct.FindField(b.route)
 		if err != nil {
-			b.AppendErrors(err)
+			b.MultiErr = b.AppendErrors(err)
 		}
 		prev := b.Field
-		b.Field = f // can be nil
+		b.Field = &f
 		return WithField(prev)
 	}
 }
@@ -142,10 +142,14 @@ func (bv *baseValue) Option(opts ...Option) (previous Option) {
 	return
 }
 
+func (bv baseValue) hasField() bool {
+	return bv.Field != nil && bv.Field.ID.IsEmpty() == false
+}
+
 // Write writes a value v to the config.Writer without checking if the value
 // has changed. Checks if the Scope matches as defined in the non-nil ConfigStructure.
 func (bv baseValue) Write(w config.Writer, v interface{}, s scope.Scope, scopeID int64) error {
-	if bv.Field != nil {
+	if bv.hasField() {
 		if false == bv.Field.Scopes.Has(s) {
 			return errors.Errorf("Scope permission insufficient: Have '%s'; Want '%s'", s, bv.Field.Scopes)
 		}
@@ -180,7 +184,7 @@ func (bv baseValue) Route() cfgpath.Route {
 // Returns nil on success.
 func (bv baseValue) InScope(sg scope.Scoper) (err error) {
 	s, _ := sg.Scope()
-	if bv.Field != nil && false == bv.Field.Scopes.Has(s) {
+	if bv.hasField() && false == bv.Field.Scopes.Has(s) {
 		err = errors.Errorf("Scope permission insufficient: Have '%s'; Want '%s'", s, bv.Field.Scopes)
 	}
 	return

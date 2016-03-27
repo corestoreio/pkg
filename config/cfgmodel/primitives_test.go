@@ -33,16 +33,16 @@ import (
 // configStructure might be a duplicate of base_test but note that the
 // test package names are different.
 var configStructure = element.MustNewConfiguration(
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("web"),
 		Groups: element.NewGroupSlice(
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("cors"),
 				Label:     text.Chars(`CORS Cross Origin Resource Sharing`),
 				SortOrder: 150,
 				Scopes:    scope.PermDefault,
 				Fields: element.NewFieldSlice(
-					&element.Field{
+					element.Field{
 						// Path: `web/cors/exposed_headers`,
 						ID:        cfgpath.NewRoute("exposed_headers"),
 						Label:     text.Chars(`Exposed Headers`),
@@ -53,7 +53,7 @@ var configStructure = element.MustNewConfiguration(
 						Scopes:    scope.PermWebsite,
 						Default:   "Content-Type,X-CoreStore-ID",
 					},
-					&element.Field{
+					element.Field{
 						// Path: `web/cors/allowed_origins`,
 						ID:        cfgpath.NewRoute("allowed_origins"),
 						Label:     text.Chars(`Allowed Origins`),
@@ -64,7 +64,7 @@ var configStructure = element.MustNewConfiguration(
 						Scopes:    scope.PermWebsite,
 						Default:   "corestore.io,cs.io",
 					},
-					&element.Field{
+					element.Field{
 						// Path: `web/cors/allow_credentials`,
 						ID:        cfgpath.NewRoute("allow_credentials"),
 						Label:     text.Chars(`Allowed Credentials`),
@@ -74,7 +74,7 @@ var configStructure = element.MustNewConfiguration(
 						Scopes:    scope.PermWebsite,
 						Default:   "true",
 					},
-					&element.Field{
+					element.Field{
 						// Path: `web/cors/int`,
 						ID:        cfgpath.NewRoute("int"),
 						Type:      element.TypeText,
@@ -83,7 +83,7 @@ var configStructure = element.MustNewConfiguration(
 						Scopes:    scope.PermWebsite,
 						Default:   2015,
 					},
-					&element.Field{
+					element.Field{
 						// Path: `web/cors/int_slice`,
 						ID:        cfgpath.NewRoute("int_slice"),
 						Type:      element.TypeSelect,
@@ -92,7 +92,7 @@ var configStructure = element.MustNewConfiguration(
 						Scopes:    scope.PermStore,
 						Default:   "2014,2015,2016",
 					},
-					&element.Field{
+					element.Field{
 						// Path: `web/cors/float64`,
 						ID:        cfgpath.NewRoute("float64"),
 						Type:      element.TypeText,
@@ -101,7 +101,7 @@ var configStructure = element.MustNewConfiguration(
 						Scopes:    scope.PermWebsite,
 						Default:   2015.1000001,
 					},
-					&element.Field{
+					element.Field{
 						// Path: `web/cors/time`,
 						ID:        cfgpath.NewRoute("time"),
 						Type:      element.TypeText,
@@ -110,7 +110,7 @@ var configStructure = element.MustNewConfiguration(
 						Scopes:    scope.PermStore,
 						Default:   "2012-08-23 09:20:13",
 					},
-					&element.Field{
+					element.Field{
 						// Path: `web/cors/duration`,
 						ID:        cfgpath.NewRoute("duration"),
 						Type:      element.TypeText,
@@ -119,7 +119,7 @@ var configStructure = element.MustNewConfiguration(
 						Scopes:    scope.PermStore,
 						Default:   "1h45m",
 					},
-					&element.Field{
+					element.Field{
 						// Path: `web/cors/byte`,
 						ID:        cfgpath.NewRoute("byte"),
 						Type:      element.TypeText,
@@ -131,14 +131,14 @@ var configStructure = element.MustNewConfiguration(
 				),
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("unsecure"),
 				Label:     text.Chars(`Base URLs`),
 				Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
 				Fields: element.NewFieldSlice(
-					&element.Field{
+					element.Field{
 						// Path: `web/unsecure/base_url`,
 						ID:        cfgpath.NewRoute("base_url"),
 						Label:     text.Chars(`Base URL`),
@@ -151,7 +151,7 @@ var configStructure = element.MustNewConfiguration(
 						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/unsecure/base_link_url`,
 						ID:        cfgpath.NewRoute("base_link_url"),
 						Label:     text.Chars(`Base Link URL`),
@@ -164,7 +164,7 @@ var configStructure = element.MustNewConfiguration(
 						//BackendModel: nil, // Magento\Config\Model\Config\Backend\Baseurl
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/unsecure/base_static_url`,
 						ID:        cfgpath.NewRoute("base_static_url"),
 						Label:     text.Chars(`Base URL for Static View Files`),
@@ -248,7 +248,7 @@ func TestBoolGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 
 func TestBoolIgnoreNilDefaultValues(t *testing.T) {
 	t.Parallel()
-	b := cfgmodel.NewBool("web/cors/bool", cfgmodel.WithField(&element.Field{}))
+	b := cfgmodel.NewBool("web/cors/bool", cfgmodel.WithField(nil))
 	gb, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
 	if err != nil {
 		t.Fatal(err)
@@ -443,7 +443,7 @@ func TestStrGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 
 func TestStrIgnoreNilDefaultValues(t *testing.T) {
 	t.Parallel()
-	b := cfgmodel.NewStr("web/cors/str", cfgmodel.WithField(&element.Field{}))
+	b := cfgmodel.NewStr("web/cors/str", cfgmodel.WithField(nil))
 	gb, err := b.Get(cfgmock.NewService().NewScoped(0, 0))
 	if err != nil {
 		t.Fatal(err)

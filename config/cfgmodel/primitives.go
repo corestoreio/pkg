@@ -39,7 +39,7 @@ func (b Bool) Get(sg config.ScopedGetter) (bool, error) {
 
 	var v bool
 	var scp = scope.DefaultID
-	if b.Field != nil {
+	if b.hasField() {
 		scp = b.Field.Scopes.Top()
 		var err error
 		v, err = conv.ToBoolE(b.Field.Default)
@@ -83,7 +83,7 @@ func (bt Byte) Get(sg config.ScopedGetter) ([]byte, error) {
 
 	var v []byte
 	var scp = scope.DefaultID
-	if bt.Field != nil {
+	if bt.hasField() {
 		scp = bt.Field.Scopes.Top()
 		var err error
 		v, err = conv.ToByteE(bt.Field.Default)
@@ -127,7 +127,7 @@ func (str Str) Get(sg config.ScopedGetter) (string, error) {
 
 	var v string
 	var scp = scope.DefaultID
-	if str.Field != nil {
+	if str.hasField() {
 		scp = str.Field.Scopes.Top()
 		var err error
 		v, err = conv.ToStringE(str.Field.Default)
@@ -169,7 +169,7 @@ func (i Int) Get(sg config.ScopedGetter) (int, error) {
 
 	var v int
 	var scp = scope.DefaultID
-	if i.Field != nil {
+	if i.hasField() {
 		scp = i.Field.Scopes.Top()
 		var err error
 		v, err = conv.ToIntE(i.Field.Default)
@@ -211,7 +211,7 @@ func (f Float64) Get(sg config.ScopedGetter) (float64, error) {
 
 	var v float64
 	var scp = scope.DefaultID
-	if f.Field != nil {
+	if f.hasField() {
 		scp = f.Field.Scopes.Top()
 		if d := f.Field.Default; d != nil {
 			var err error

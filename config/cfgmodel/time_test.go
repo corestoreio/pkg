@@ -230,7 +230,7 @@ func TestDurationGetWithoutCfgStructShouldReturnUnexpectedError(t *testing.T) {
 
 func TestDurationIgnoreNilDefaultValues(t *testing.T) {
 	t.Parallel()
-	b := cfgmodel.NewDuration("web/cors/duration", cfgmodel.WithField(&element.Field{}))
+	b := cfgmodel.NewDuration("web/cors/duration", cfgmodel.WithField(nil))
 	gb, err := b.Get(cfgmock.NewService().NewScoped(1, 1))
 	if err != nil {
 		t.Fatal(err)

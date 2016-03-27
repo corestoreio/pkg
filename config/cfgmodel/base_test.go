@@ -33,16 +33,16 @@ var _ source.Optioner = (*baseValue)(nil)
 // configStructure might be a duplicate of primitives_test but note that the
 // test package names are different.
 var configStructure = element.MustNewConfiguration(
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("web"),
 		Groups: element.NewGroupSlice(
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("cors"),
 				Label:     text.Chars(`CORS Cross Origin Resource Sharing`),
 				SortOrder: 150,
 				Scopes:    scope.PermDefault,
 				Fields: element.NewFieldSlice(
-					&element.Field{
+					element.Field{
 						// Path: `web/cors/exposed_headers`,
 						ID:        cfgpath.NewRoute("exposed_headers"),
 						Label:     text.Chars(`Exposed Headers`),
@@ -53,7 +53,7 @@ var configStructure = element.MustNewConfiguration(
 						Scopes:    scope.PermWebsite,
 						Default:   "Content-Type,X-CoreStore-ID",
 					},
-					&element.Field{
+					element.Field{
 						// Path: `web/cors/allow_credentials`,
 						ID:        cfgpath.NewRoute("allow_credentials"),
 						Label:     text.Chars(`Allowed Credentials`),
@@ -63,7 +63,7 @@ var configStructure = element.MustNewConfiguration(
 						Scopes:    scope.PermWebsite,
 						Default:   "true",
 					},
-					&element.Field{
+					element.Field{
 						// Path: `web/cors/int`,
 						ID:        cfgpath.NewRoute("int"),
 						Type:      element.TypeText,
@@ -72,7 +72,7 @@ var configStructure = element.MustNewConfiguration(
 						Scopes:    scope.PermWebsite,
 						Default:   2015,
 					},
-					&element.Field{
+					element.Field{
 						// Path: `web/cors/float64`,
 						ID:        cfgpath.NewRoute("float64"),
 						Type:      element.TypeSelect,
@@ -116,10 +116,17 @@ func TestBaseValueString(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Exactly(t, "X-CoreStore-TOKEN", customStr)
 
-	// now change a default value in the packageConfiguration and see it reflects to p1
-	f, err := configStructure.FindFieldByID(wantPath.Route)
-	assert.NoError(t, err)
-	f.Default = "Content-Size,Y-CoreStore-ID"
+	// now change a default value in the packageConfiguration and see it reflects to p1.
+	// but this is not the way to go. You can directly change the field in p1
+	// with p1.Field.Default
+	if err := configStructure.UpdateField(wantPath.Route, element.Field{
+		Default: "Content-Size,Y-CoreStore-ID",
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// update p1 to apply the change field data
+	p1.Option(WithFieldFromSectionSlice(configStructure))
 
 	ws, err := p1.Get(cfgmock.NewService().NewScoped(wantWebsiteID, 0))
 	assert.NoError(t, err)
@@ -161,6 +168,7 @@ func TestBaseValueInScope(t *testing.T) {
 	}
 	for i, test := range tests {
 		p1 := NewValue("a/b/c", WithField(&element.Field{
+			ID:     cfgpath.NewRoute(`c`),
 			Scopes: test.p,
 		}))
 		haveErr := p1.InScope(test.sg)
