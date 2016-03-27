@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "tax",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "weee",
 					Label:     `Fixed Product Taxes`,
 					SortOrder: 100,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: tax/weee/enable
 							ID:        "enable",
 							Label:     `Enable FPT`,
@@ -34,7 +34,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/weee/display_list
 							ID:        "display_list",
 							Label:     `Display Prices In Product Lists`,
@@ -46,7 +46,7 @@ func init() {
 							// SourceModel: Magento\Weee\Model\Config\Source\Display
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/weee/display
 							ID:        "display",
 							Label:     `Display Prices On Product View Page`,
@@ -58,7 +58,7 @@ func init() {
 							// SourceModel: Magento\Weee\Model\Config\Source\Display
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/weee/display_sales
 							ID:        "display_sales",
 							Label:     `Display Prices In Sales Modules`,
@@ -70,7 +70,7 @@ func init() {
 							// SourceModel: Magento\Weee\Model\Config\Source\Display
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/weee/display_email
 							ID:        "display_email",
 							Label:     `Display Prices In Emails`,
@@ -82,7 +82,7 @@ func init() {
 							// SourceModel: Magento\Weee\Model\Config\Source\Display
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/weee/apply_vat
 							ID:        "apply_vat",
 							Label:     `Apply Tax To FPT`,
@@ -94,7 +94,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/weee/include_in_subtotal
 							ID:        "include_in_subtotal",
 							Label:     `Include FPT In Subtotal`,
@@ -109,13 +109,13 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "sales",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "totals_sort",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales/totals_sort/weee
 							ID:        "weee",
 							Label:     `Fixed Product Tax`,
@@ -131,13 +131,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "sales",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "totals_sort",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales/totals_sort/weee_tax
 							ID:      `weee_tax`,
 							Type:    element.TypeHidden,
@@ -148,13 +148,13 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "general",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "validator_data",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: general/validator_data/input_types
 							ID:      `input_types`,
 							Type:    element.TypeHidden,

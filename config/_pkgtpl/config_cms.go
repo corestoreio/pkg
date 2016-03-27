@@ -13,13 +13,13 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "web",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "default",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: web/default/cms_home_page
 							ID:        "cms_home_page",
 							Label:     `CMS Home Page`,
@@ -31,7 +31,7 @@ func init() {
 							// SourceModel: Magento\Cms\Model\Config\Source\Page
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/default/cms_no_route
 							ID:        "cms_no_route",
 							Label:     `CMS No Route Page`,
@@ -43,7 +43,7 @@ func init() {
 							// SourceModel: Magento\Cms\Model\Config\Source\Page
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/default/cms_no_cookies
 							ID:        "cms_no_cookies",
 							Label:     `CMS No Cookies Page`,
@@ -55,7 +55,7 @@ func init() {
 							// SourceModel: Magento\Cms\Model\Config\Source\Page
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/default/show_cms_breadcrumbs
 							ID:        "show_cms_breadcrumbs",
 							Label:     `Show Breadcrumbs for CMS Pages`,
@@ -69,13 +69,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "browser_capabilities",
 					Label:     `Browser Capabilities Detection`,
 					SortOrder: 200,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: web/browser_capabilities/cookies
 							ID:        "cookies",
 							Label:     `Redirect to CMS-page if Cookies are Disabled`,
@@ -86,7 +86,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/browser_capabilities/javascript
 							ID:        "javascript",
 							Label:     `Show Notice if JavaScript is Disabled`,
@@ -97,7 +97,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/browser_capabilities/local_storage
 							ID:        "local_storage",
 							Label:     `Show Notice if Local Storage is Disabled`,
@@ -111,20 +111,20 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID:        "cms",
 			Label:     `Content Management`,
 			SortOrder: 1001,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Cms::config_cms
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "wysiwyg",
 					Label:     `WYSIWYG Options`,
 					SortOrder: 100,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: cms/wysiwyg/enabled
 							ID:        "enabled",
 							Label:     `Enable WYSIWYG Editor`,
@@ -141,13 +141,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "web",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "default",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: web/default/front
 							ID:      `front`,
 							Type:    element.TypeHidden,
@@ -155,7 +155,7 @@ func init() {
 							Default: `cms`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/default/no_route
 							ID:      `no_route`,
 							Type:    element.TypeHidden,
@@ -166,13 +166,13 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "system",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "media_storage_configuration",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/media_storage_configuration/allowed_resources
 							ID:      `allowed_resources`,
 							Type:    element.TypeHidden,

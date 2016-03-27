@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "system",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "full_page_cache",
 					Label:     `Full Page Cache`,
 					SortOrder: 600,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/full_page_cache/caching_application
 							ID:      "caching_application",
 							Label:   `Caching Application`,
@@ -33,7 +33,7 @@ func init() {
 							// SourceModel: Magento\PageCache\Model\System\Config\Source\Application
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/full_page_cache/ttl
 							ID:        "ttl",
 							Label:     `TTL for public content`,
@@ -51,13 +51,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "system",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "full_page_cache",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/full_page_cache/varnish3
 							ID:      `varnish3`,
 							Type:    element.TypeHidden,
@@ -65,7 +65,7 @@ func init() {
 							Default: `{"path":"varnish3.vcl"}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/full_page_cache/varnish4
 							ID:      `varnish4`,
 							Type:    element.TypeHidden,
@@ -73,7 +73,7 @@ func init() {
 							Default: `{"path":"varnish4.vcl"}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/full_page_cache/default
 							ID:      `default`,
 							Type:    element.TypeHidden,

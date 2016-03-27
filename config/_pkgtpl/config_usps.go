@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "carriers",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "usps",
 					Label:     `USPS`,
 					SortOrder: 110,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/active
 							ID:        "active",
 							Label:     `Enabled for Checkout`,
@@ -34,7 +34,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/active_rma
 							ID:        "active_rma",
 							Label:     `Enabled for RMA`,
@@ -46,7 +46,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/gateway_url
 							ID:        "gateway_url",
 							Label:     `Gateway URL`,
@@ -57,7 +57,7 @@ func init() {
 							Default:   `http://production.shippingapis.com/ShippingAPI.dll`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/gateway_secure_url
 							ID:        "gateway_secure_url",
 							Label:     `Secure Gateway URL`,
@@ -68,7 +68,7 @@ func init() {
 							Default:   `https://secure.shippingapis.com/ShippingAPI.dll`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/title
 							ID:        "title",
 							Label:     `Title`,
@@ -79,7 +79,7 @@ func init() {
 							Default:   `United States Postal Service`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/userid
 							ID:        "userid",
 							Label:     `User ID`,
@@ -91,7 +91,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/password
 							ID:        "password",
 							Label:     `Password`,
@@ -103,7 +103,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/mode
 							ID:        "mode",
 							Label:     `Mode`,
@@ -114,7 +114,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Config\Source\Online\Mode
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/shipment_requesttype
 							ID:        "shipment_requesttype",
 							Label:     `Packages Request Type`,
@@ -126,7 +126,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Config\Source\Online\Requesttype
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/container
 							ID:        "container",
 							Label:     `Container`,
@@ -138,7 +138,7 @@ func init() {
 							// SourceModel: Magento\Usps\Model\Source\Container
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/size
 							ID:        "size",
 							Label:     `Size`,
@@ -150,7 +150,7 @@ func init() {
 							// SourceModel: Magento\Usps\Model\Source\Size
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/width
 							ID:        "width",
 							Label:     `Width`,
@@ -160,7 +160,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/length
 							ID:        "length",
 							Label:     `Length`,
@@ -170,7 +170,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/height
 							ID:        "height",
 							Label:     `Height`,
@@ -180,7 +180,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/girth
 							ID:        "girth",
 							Label:     `Girth`,
@@ -190,7 +190,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/machinable
 							ID:        "machinable",
 							Label:     `Machinable`,
@@ -202,7 +202,7 @@ func init() {
 							// SourceModel: Magento\Usps\Model\Source\Machinable
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/max_package_weight
 							ID:        "max_package_weight",
 							Label:     `Maximum Package Weight (Please consult your shipping carrier for maximum supported shipping weight)`,
@@ -213,7 +213,7 @@ func init() {
 							Default:   70,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/handling_type
 							ID:        "handling_type",
 							Label:     `Calculate Handling Fee`,
@@ -225,7 +225,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Source\HandlingType
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/handling_action
 							ID:        "handling_action",
 							Label:     `Handling Applied`,
@@ -237,7 +237,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Source\HandlingAction
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/handling_fee
 							ID:        "handling_fee",
 							Label:     `Handling Fee`,
@@ -247,7 +247,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/allowed_methods
 							ID:         "allowed_methods",
 							Label:      `Allowed Methods`,
@@ -260,7 +260,7 @@ func init() {
 							// SourceModel: Magento\Usps\Model\Source\Method
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/free_method
 							ID:        "free_method",
 							Label:     `Free Method`,
@@ -271,7 +271,7 @@ func init() {
 							// SourceModel: Magento\Usps\Model\Source\Freemethod
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/free_shipping_enable
 							ID:        "free_shipping_enable",
 							Label:     `Free Shipping Amount Threshold`,
@@ -282,7 +282,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/free_shipping_subtotal
 							ID:        "free_shipping_subtotal",
 							Label:     `Free Shipping Amount Threshold`,
@@ -292,7 +292,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/specificerrmsg
 							ID:        "specificerrmsg",
 							Label:     `Displayed Error Message`,
@@ -303,7 +303,7 @@ func init() {
 							Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/sallowspecific
 							ID:        "sallowspecific",
 							Label:     `Ship to Applicable Countries`,
@@ -315,7 +315,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/specificcountry
 							ID:         "specificcountry",
 							Label:      `Ship to Specific Countries`,
@@ -327,7 +327,7 @@ func init() {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/debug
 							ID:        "debug",
 							Label:     `Debug`,
@@ -338,7 +338,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/showmethod
 							ID:        "showmethod",
 							Label:     `Show Method if Not Applicable`,
@@ -349,7 +349,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/sort_order
 							ID:        "sort_order",
 							Label:     `Sort Order`,
@@ -364,41 +364,41 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "carriers",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "usps",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/cutoff_cost
 							ID:      `cutoff_cost`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/free_method
 							ID:      `free_method`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/handling
 							ID:      `handling`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/methods
 							ID:      `methods`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
@@ -406,7 +406,7 @@ func init() {
 							Default: `Magento\Usps\Model\Carrier`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/isproduction
 							ID:      `isproduction`,
 							Type:    element.TypeHidden,
@@ -414,7 +414,7 @@ func init() {
 							Default: false,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/usps/is_online
 							ID:      `is_online`,
 							Type:    element.TypeHidden,

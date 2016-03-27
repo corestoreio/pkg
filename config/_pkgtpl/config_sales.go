@@ -13,20 +13,20 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "sales",
 			Label:     `Sales`,
 			SortOrder: 300,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Sales::config_sales
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "general",
 					Label:     `General`,
 					SortOrder: 5,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales/general/hide_customer_ip
 							ID:      "hide_customer_ip",
 							Label:   `Hide Customer IP`,
@@ -39,13 +39,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "totals_sort",
 					Label:     `Checkout Totals Sort Order`,
 					SortOrder: 10,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales/totals_sort/discount
 							ID:        "discount",
 							Label:     `Discount`,
@@ -56,7 +56,7 @@ func init() {
 							Default:   20,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/totals_sort/grand_total
 							ID:        "grand_total",
 							Label:     `Grand Total`,
@@ -67,7 +67,7 @@ func init() {
 							Default:   100,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/totals_sort/shipping
 							ID:        "shipping",
 							Label:     `Shipping`,
@@ -78,7 +78,7 @@ func init() {
 							Default:   30,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/totals_sort/subtotal
 							ID:        "subtotal",
 							Label:     `Subtotal`,
@@ -89,7 +89,7 @@ func init() {
 							Default:   10,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/totals_sort/tax
 							ID:        "tax",
 							Label:     `Tax`,
@@ -102,13 +102,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "reorder",
 					Label:     `Reorder`,
 					SortOrder: 20,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales/reorder/allow
 							ID:        "allow",
 							Label:     `Allow Reorder`,
@@ -122,13 +122,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "identity",
 					Label:     `Invoice and Packing Slip Design`,
 					SortOrder: 40,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales/identity/logo
 							ID:        "logo",
 							Label:     `Logo for PDF Print-outs (200x50)`,
@@ -140,7 +140,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Image\Pdf
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/identity/logo_html
 							ID:        "logo_html",
 							Label:     `Logo for HTML Print View`,
@@ -152,7 +152,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Image
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/identity/address
 							ID:        "address",
 							Label:     `Address`,
@@ -164,13 +164,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "minimum_order",
 					Label:     `Minimum Order Amount`,
 					SortOrder: 50,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales/minimum_order/active
 							ID:        "active",
 							Label:     `Enable`,
@@ -181,7 +181,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/minimum_order/amount
 							ID:        "amount",
 							Label:     `Minimum Amount`,
@@ -192,7 +192,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/minimum_order/tax_including
 							ID:        "tax_including",
 							Label:     `Include Tax to Amount`,
@@ -204,7 +204,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/minimum_order/description
 							ID:        "description",
 							Label:     `Description Message`,
@@ -215,7 +215,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/minimum_order/error_message
 							ID:        "error_message",
 							Label:     `Error to Show in Shopping Cart`,
@@ -225,7 +225,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/minimum_order/multi_address
 							ID:        "multi_address",
 							Label:     `Validate Each Address Separately in Multi-address Checkout`,
@@ -236,7 +236,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/minimum_order/multi_address_description
 							ID:        "multi_address_description",
 							Label:     `Multi-address Description Message`,
@@ -247,7 +247,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/minimum_order/multi_address_error_message
 							ID:        "multi_address_error_message",
 							Label:     `Multi-address Error to Show in Shopping Cart`,
@@ -260,13 +260,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "dashboard",
 					Label:     `Dashboard`,
 					SortOrder: 60,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales/dashboard/use_aggregated_data
 							ID:        "use_aggregated_data",
 							Label:     `Use Aggregated Data (beta)`,
@@ -280,13 +280,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "orders",
 					Label:     `Orders Cron Settings`,
 					SortOrder: 70,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales/orders/delete_pending_after
 							ID:        "delete_pending_after",
 							Label:     `Pending Payment Order Lifetime (minutes)`,
@@ -300,19 +300,19 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID:        "sales_email",
 			Label:     `Sales Emails`,
 			SortOrder: 301,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Sales::sales_email
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:     "general",
 					Label:  `General Settings`,
 					Scopes: scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales_email/general/async_sending
 							ID:        "async_sending",
 							Label:     `Asynchronous sending`,
@@ -327,13 +327,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "order",
 					Label:     `Order`,
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales_email/order/enabled
 							ID:      "enabled",
 							Label:   `Enabled`,
@@ -344,7 +344,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/order/identity
 							ID:        "identity",
 							Label:     `New Order Confirmation Email Sender`,
@@ -356,7 +356,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/order/template
 							ID:        "template",
 							Label:     `New Order Confirmation Template`,
@@ -369,7 +369,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/order/guest_template
 							ID:        "guest_template",
 							Label:     `New Order Confirmation Template for Guest`,
@@ -382,7 +382,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/order/copy_to
 							ID:        "copy_to",
 							Label:     `Send Order Email Copy To`,
@@ -393,7 +393,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/order/copy_method
 							ID:        "copy_method",
 							Label:     `Send Order Email Copy Method`,
@@ -407,13 +407,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "order_comment",
 					Label:     `Order Comments`,
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales_email/order_comment/enabled
 							ID:      "enabled",
 							Label:   `Enabled`,
@@ -424,7 +424,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/order_comment/identity
 							ID:        "identity",
 							Label:     `Order Comment Email Sender`,
@@ -436,7 +436,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/order_comment/template
 							ID:        "template",
 							Label:     `Order Comment Email Template`,
@@ -449,7 +449,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/order_comment/guest_template
 							ID:        "guest_template",
 							Label:     `Order Comment Email Template for Guest`,
@@ -462,7 +462,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/order_comment/copy_to
 							ID:        "copy_to",
 							Label:     `Send Order Comment Email Copy To`,
@@ -473,7 +473,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/order_comment/copy_method
 							ID:        "copy_method",
 							Label:     `Send Order Comments Email Copy Method`,
@@ -487,13 +487,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "invoice",
 					Label:     `Invoice`,
 					SortOrder: 3,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales_email/invoice/enabled
 							ID:      "enabled",
 							Label:   `Enabled`,
@@ -504,7 +504,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/invoice/identity
 							ID:        "identity",
 							Label:     `Invoice Email Sender`,
@@ -516,7 +516,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/invoice/template
 							ID:        "template",
 							Label:     `Invoice Email Template`,
@@ -529,7 +529,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/invoice/guest_template
 							ID:        "guest_template",
 							Label:     `Invoice Email Template for Guest`,
@@ -542,7 +542,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/invoice/copy_to
 							ID:        "copy_to",
 							Label:     `Send Invoice Email Copy To`,
@@ -553,7 +553,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/invoice/copy_method
 							ID:        "copy_method",
 							Label:     `Send Invoice Email Copy Method`,
@@ -567,13 +567,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "invoice_comment",
 					Label:     `Invoice Comments`,
 					SortOrder: 4,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales_email/invoice_comment/enabled
 							ID:      "enabled",
 							Label:   `Enabled`,
@@ -584,7 +584,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/invoice_comment/identity
 							ID:        "identity",
 							Label:     `Invoice Comment Email Sender`,
@@ -596,7 +596,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/invoice_comment/template
 							ID:        "template",
 							Label:     `Invoice Comment Email Template`,
@@ -609,7 +609,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/invoice_comment/guest_template
 							ID:        "guest_template",
 							Label:     `Invoice Comment Email Template for Guest`,
@@ -622,7 +622,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/invoice_comment/copy_to
 							ID:        "copy_to",
 							Label:     `Send Invoice Comment Email Copy To`,
@@ -633,7 +633,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/invoice_comment/copy_method
 							ID:        "copy_method",
 							Label:     `Send Invoice Comments Email Copy Method`,
@@ -647,13 +647,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "shipment",
 					Label:     `Shipment`,
 					SortOrder: 5,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales_email/shipment/enabled
 							ID:      "enabled",
 							Label:   `Enabled`,
@@ -664,7 +664,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/shipment/identity
 							ID:        "identity",
 							Label:     `Shipment Email Sender`,
@@ -676,7 +676,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/shipment/template
 							ID:        "template",
 							Label:     `Shipment Email Template`,
@@ -689,7 +689,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/shipment/guest_template
 							ID:        "guest_template",
 							Label:     `Shipment Email Template for Guest`,
@@ -702,7 +702,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/shipment/copy_to
 							ID:        "copy_to",
 							Label:     `Send Shipment Email Copy To`,
@@ -713,7 +713,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/shipment/copy_method
 							ID:        "copy_method",
 							Label:     `Send Shipment Email Copy Method`,
@@ -727,13 +727,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "shipment_comment",
 					Label:     `Shipment Comments`,
 					SortOrder: 6,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales_email/shipment_comment/enabled
 							ID:      "enabled",
 							Label:   `Enabled`,
@@ -744,7 +744,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/shipment_comment/identity
 							ID:        "identity",
 							Label:     `Shipment Comment Email Sender`,
@@ -756,7 +756,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/shipment_comment/template
 							ID:        "template",
 							Label:     `Shipment Comment Email Template`,
@@ -769,7 +769,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/shipment_comment/guest_template
 							ID:        "guest_template",
 							Label:     `Shipment Comment Email Template for Guest`,
@@ -782,7 +782,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/shipment_comment/copy_to
 							ID:        "copy_to",
 							Label:     `Send Shipment Comment Email Copy To`,
@@ -793,7 +793,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/shipment_comment/copy_method
 							ID:        "copy_method",
 							Label:     `Send Shipment Comments Email Copy Method`,
@@ -807,13 +807,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "creditmemo",
 					Label:     `Credit Memo`,
 					SortOrder: 7,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales_email/creditmemo/enabled
 							ID:      "enabled",
 							Label:   `Enabled`,
@@ -824,7 +824,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/creditmemo/identity
 							ID:        "identity",
 							Label:     `Credit Memo Email Sender`,
@@ -836,7 +836,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/creditmemo/template
 							ID:        "template",
 							Label:     `Credit Memo Email Template`,
@@ -849,7 +849,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/creditmemo/guest_template
 							ID:        "guest_template",
 							Label:     `Credit Memo Email Template for Guest`,
@@ -862,7 +862,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/creditmemo/copy_to
 							ID:        "copy_to",
 							Label:     `Send Credit Memo Email Copy To`,
@@ -873,7 +873,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/creditmemo/copy_method
 							ID:        "copy_method",
 							Label:     `Send Credit Memo Email Copy Method`,
@@ -887,13 +887,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "creditmemo_comment",
 					Label:     `Credit Memo Comments`,
 					SortOrder: 8,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales_email/creditmemo_comment/enabled
 							ID:      "enabled",
 							Label:   `Enabled`,
@@ -904,7 +904,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/creditmemo_comment/identity
 							ID:        "identity",
 							Label:     `Credit Memo Comment Email Sender`,
@@ -916,7 +916,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/creditmemo_comment/template
 							ID:        "template",
 							Label:     `Credit Memo Comment Email Template`,
@@ -929,7 +929,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/creditmemo_comment/guest_template
 							ID:        "guest_template",
 							Label:     `Credit Memo Comment Email Template for Guest`,
@@ -942,7 +942,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/creditmemo_comment/copy_to
 							ID:        "copy_to",
 							Label:     `Send Credit Memo Comment Email Copy To`,
@@ -953,7 +953,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales_email/creditmemo_comment/copy_method
 							ID:        "copy_method",
 							Label:     `Send Credit Memo Comments Email Copy Method`,
@@ -968,20 +968,20 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID:        "sales_pdf",
 			Label:     `PDF Print-outs`,
 			SortOrder: 302,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Sales::sales_pdf
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "invoice",
 					Label:     `Invoice`,
 					SortOrder: 10,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales_pdf/invoice/put_order_id
 							ID:        "put_order_id",
 							Label:     `Display Order ID in Header`,
@@ -995,13 +995,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "shipment",
 					Label:     `Shipment`,
 					SortOrder: 20,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales_pdf/shipment/put_order_id
 							ID:        "put_order_id",
 							Label:     `Display Order ID in Header`,
@@ -1015,13 +1015,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "creditmemo",
 					Label:     `Credit Memo`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales_pdf/creditmemo/put_order_id
 							ID:        "put_order_id",
 							Label:     `Display Order ID in Header`,
@@ -1036,16 +1036,16 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "rss",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "order",
 					Label:     `Order`,
 					SortOrder: 4,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: rss/order/status
 							ID:        "status",
 							Label:     `Customer Order Status Notification`,
@@ -1059,16 +1059,16 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "dev",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "grid",
 					Label:     `Grid Settings`,
 					SortOrder: 131,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: dev/grid/async_indexing
 							ID:        "async_indexing",
 							Label:     `Asynchronous indexing`,

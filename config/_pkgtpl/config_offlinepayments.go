@@ -13,18 +13,18 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "payment",
 			SortOrder: 400,
 			Scopes:    scope.PermStore,
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "checkmo",
 					Label:     `Check / Money Order`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: payment/checkmo/active
 							ID:        "active",
 							Label:     `Enabled`,
@@ -36,7 +36,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/checkmo/order_status
 							ID:        "order_status",
 							Label:     `New Order Status`,
@@ -48,7 +48,7 @@ func init() {
 							// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\NewStatus
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/checkmo/sort_order
 							ID:        "sort_order",
 							Label:     `Sort Order`,
@@ -58,7 +58,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/checkmo/title
 							ID:        "title",
 							Label:     `Title`,
@@ -69,7 +69,7 @@ func init() {
 							Default:   `Check / Money order`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/checkmo/allowspecific
 							ID:        "allowspecific",
 							Label:     `Payment from Applicable Countries`,
@@ -80,7 +80,7 @@ func init() {
 							// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/checkmo/specificcountry
 							ID:         "specificcountry",
 							Label:      `Payment from Specific Countries`,
@@ -92,7 +92,7 @@ func init() {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/checkmo/payable_to
 							ID:        "payable_to",
 							Label:     `Make Check Payable to`,
@@ -102,7 +102,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/checkmo/mailing_address
 							ID:        "mailing_address",
 							Label:     `Send Check to`,
@@ -112,7 +112,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/checkmo/min_order_total
 							ID:        "min_order_total",
 							Label:     `Minimum Order Total`,
@@ -122,7 +122,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/checkmo/max_order_total
 							ID:        "max_order_total",
 							Label:     `Maximum Order Total`,
@@ -132,7 +132,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/checkmo/cfgmodel
 							ID:      "model",
 							Type:    element.Type,
@@ -142,13 +142,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "purchaseorder",
 					Label:     `Purchase Order`,
 					SortOrder: 32,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: payment/purchaseorder/active
 							ID:        "active",
 							Label:     `Enabled`,
@@ -160,7 +160,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/purchaseorder/order_status
 							ID:        "order_status",
 							Label:     `New Order Status`,
@@ -172,7 +172,7 @@ func init() {
 							// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\NewStatus
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/purchaseorder/sort_order
 							ID:        "sort_order",
 							Label:     `Sort Order`,
@@ -182,7 +182,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/purchaseorder/title
 							ID:        "title",
 							Label:     `Title`,
@@ -193,7 +193,7 @@ func init() {
 							Default:   `Purchase Order`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/purchaseorder/allowspecific
 							ID:        "allowspecific",
 							Label:     `Payment from Applicable Countries`,
@@ -204,7 +204,7 @@ func init() {
 							// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/purchaseorder/specificcountry
 							ID:         "specificcountry",
 							Label:      `Payment from Specific Countries`,
@@ -216,7 +216,7 @@ func init() {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/purchaseorder/min_order_total
 							ID:        "min_order_total",
 							Label:     `Minimum Order Total`,
@@ -226,7 +226,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/purchaseorder/max_order_total
 							ID:        "max_order_total",
 							Label:     `Maximum Order Total`,
@@ -236,7 +236,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/purchaseorder/cfgmodel
 							ID:      "model",
 							Type:    element.Type,
@@ -246,13 +246,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "banktransfer",
 					Label:     `Bank Transfer Payment`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: payment/banktransfer/active
 							ID:        "active",
 							Label:     `Enabled`,
@@ -264,7 +264,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/banktransfer/title
 							ID:        "title",
 							Label:     `Title`,
@@ -275,7 +275,7 @@ func init() {
 							Default:   `Bank Transfer Payment`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/banktransfer/order_status
 							ID:        "order_status",
 							Label:     `New Order Status`,
@@ -287,7 +287,7 @@ func init() {
 							// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\NewStatus
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/banktransfer/allowspecific
 							ID:        "allowspecific",
 							Label:     `Payment from Applicable Countries`,
@@ -298,7 +298,7 @@ func init() {
 							// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/banktransfer/specificcountry
 							ID:         "specificcountry",
 							Label:      `Payment from Specific Countries`,
@@ -310,7 +310,7 @@ func init() {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/banktransfer/instructions
 							ID:        "instructions",
 							Label:     `Instructions`,
@@ -320,7 +320,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/banktransfer/min_order_total
 							ID:        "min_order_total",
 							Label:     `Minimum Order Total`,
@@ -330,7 +330,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/banktransfer/max_order_total
 							ID:        "max_order_total",
 							Label:     `Maximum Order Total`,
@@ -340,7 +340,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/banktransfer/sort_order
 							ID:        "sort_order",
 							Label:     `Sort Order`,
@@ -352,13 +352,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "cashondelivery",
 					Label:     `Cash On Delivery Payment`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: payment/cashondelivery/active
 							ID:        "active",
 							Label:     `Enabled`,
@@ -370,7 +370,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/cashondelivery/title
 							ID:        "title",
 							Label:     `Title`,
@@ -381,7 +381,7 @@ func init() {
 							Default:   `Cash On Delivery`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/cashondelivery/order_status
 							ID:        "order_status",
 							Label:     `New Order Status`,
@@ -393,7 +393,7 @@ func init() {
 							// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\NewStatus
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/cashondelivery/allowspecific
 							ID:        "allowspecific",
 							Label:     `Payment from Applicable Countries`,
@@ -404,7 +404,7 @@ func init() {
 							// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/cashondelivery/specificcountry
 							ID:         "specificcountry",
 							Label:      `Payment from Specific Countries`,
@@ -416,7 +416,7 @@ func init() {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/cashondelivery/instructions
 							ID:        "instructions",
 							Label:     `Instructions`,
@@ -426,7 +426,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/cashondelivery/min_order_total
 							ID:        "min_order_total",
 							Label:     `Minimum Order Total`,
@@ -436,7 +436,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/cashondelivery/max_order_total
 							ID:        "max_order_total",
 							Label:     `Maximum Order Total`,
@@ -446,7 +446,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/cashondelivery/sort_order
 							ID:        "sort_order",
 							Label:     `Sort Order`,
@@ -458,13 +458,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "free",
 					Label:     `Zero Subtotal Checkout`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: payment/free/active
 							ID:        "active",
 							Label:     `Enabled`,
@@ -475,7 +475,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/free/order_status
 							ID:        "order_status",
 							Label:     `New Order Status`,
@@ -486,7 +486,7 @@ func init() {
 							// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\Newprocessing
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/free/payment_action
 							ID:        "payment_action",
 							Label:     `Automatically Invoice All Items`,
@@ -497,7 +497,7 @@ func init() {
 							// SourceModel: Magento\Payment\Model\Source\Invoice
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/free/sort_order
 							ID:        "sort_order",
 							Label:     `Sort Order`,
@@ -507,7 +507,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/free/title
 							ID:        "title",
 							Label:     `Title`,
@@ -517,7 +517,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/free/allowspecific
 							ID:        "allowspecific",
 							Label:     `Payment from Applicable Countries`,
@@ -528,7 +528,7 @@ func init() {
 							// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/free/specificcountry
 							ID:         "specificcountry",
 							Label:      `Payment from Specific Countries`,
@@ -540,7 +540,7 @@ func init() {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/free/cfgmodel
 							ID:      "model",
 							Type:    element.Type,
@@ -552,13 +552,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "payment",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "checkmo",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: payment/checkmo/group
 							ID:      `group`,
 							Type:    element.TypeHidden,
@@ -568,10 +568,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "purchaseorder",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: payment/purchaseorder/group
 							ID:      `group`,
 							Type:    element.TypeHidden,
@@ -581,10 +581,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "banktransfer",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: payment/banktransfer/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
@@ -592,7 +592,7 @@ func init() {
 							Default: `Magento\OfflinePayments\Model\Banktransfer`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/banktransfer/group
 							ID:      `group`,
 							Type:    element.TypeHidden,
@@ -602,10 +602,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "cashondelivery",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: payment/cashondelivery/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
@@ -613,7 +613,7 @@ func init() {
 							Default: `Magento\OfflinePayments\Model\Cashondelivery`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/cashondelivery/group
 							ID:      `group`,
 							Type:    element.TypeHidden,
@@ -623,10 +623,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "free",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: payment/free/group
 							ID:      `group`,
 							Type:    element.TypeHidden,

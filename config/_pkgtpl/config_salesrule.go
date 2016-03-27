@@ -13,20 +13,20 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "promo",
 			Label:     `Promotions`,
 			SortOrder: 400,
 			Scopes:    scope.PermDefault,
 			Resource:  0, // Magento_SalesRule::config_promo
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "auto_generated_coupon_codes",
 					Label:     `Auto Generated Specific Coupon Codes`,
 					SortOrder: 10,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: promo/auto_generated_coupon_codes/length
 							ID:        "length",
 							Label:     `Code Length`,
@@ -38,7 +38,7 @@ func init() {
 							Default:   12,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: promo/auto_generated_coupon_codes/format
 							ID:        "format",
 							Label:     `Code Format`,
@@ -50,7 +50,7 @@ func init() {
 							// SourceModel: Magento\SalesRule\Model\System\Config\Source\Coupon\Format
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: promo/auto_generated_coupon_codes/prefix
 							ID:        "prefix",
 							Label:     `Code Prefix`,
@@ -60,7 +60,7 @@ func init() {
 							Scopes:    scope.PermDefault,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: promo/auto_generated_coupon_codes/suffix
 							ID:        "suffix",
 							Label:     `Code Suffix`,
@@ -70,7 +70,7 @@ func init() {
 							Scopes:    scope.PermDefault,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: promo/auto_generated_coupon_codes/dash
 							ID:        "dash",
 							Label:     `Dash Every X Characters`,
@@ -84,13 +84,13 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "rss",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "catalog",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: rss/catalog/discounts
 							ID:        "discounts",
 							Label:     `Coupons/Discounts`,

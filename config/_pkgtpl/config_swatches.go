@@ -13,17 +13,17 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "catalog",
 			SortOrder: 40,
 			Scopes:    scope.PermStore,
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "frontend",
 					SortOrder: 100,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/frontend/swatches_per_product
 							ID:        "swatches_per_product",
 							Label:     `Swatches per Product`,
@@ -39,13 +39,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "general",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "validator_data",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: general/validator_data/input_types
 							ID:      `input_types`,
 							Type:    element.TypeHidden,

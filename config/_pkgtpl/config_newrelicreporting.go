@@ -13,20 +13,20 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "newrelicreporting",
 			Label:     `New Relic Reporting`,
 			SortOrder: 1100,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_NewRelicReporting::config_newrelicreporting
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "general",
 					Label:     `General`,
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: newrelicreporting/general/enable
 							ID:        "enable",
 							Label:     `Enable New Relic Integration`,
@@ -38,7 +38,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: newrelicreporting/general/api_url
 							ID:        "api_url",
 							Label:     `New Relic API URL`,
@@ -49,7 +49,7 @@ func init() {
 							Default:   `https://api.newrelic.com/deployments.xml`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: newrelicreporting/general/insights_api_url
 							ID:        "insights_api_url",
 							Label:     `Insights API URL`,
@@ -61,7 +61,7 @@ func init() {
 							Default:   `https://insights-collector.newrelic.com/v1/accounts/%s/events`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: newrelicreporting/general/account_id
 							ID:        "account_id",
 							Label:     `New Relic Account ID`,
@@ -72,7 +72,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: newrelicreporting/general/app_id
 							ID:        "app_id",
 							Label:     `New Relic Application ID`,
@@ -83,7 +83,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: newrelicreporting/general/api
 							ID:        "api",
 							Label:     `New Relic API Key`,
@@ -95,7 +95,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: newrelicreporting/general/insights_insert_key
 							ID:        "insights_insert_key",
 							Label:     `Insights API Key`,
@@ -107,7 +107,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: newrelicreporting/general/app_name
 							ID:        "app_name",
 							Label:     `New Relic Application Name`,
@@ -120,13 +120,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "cron",
 					Label:     `Cron`,
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: newrelicreporting/cron/enable_cron
 							ID:        "enable_cron",
 							Label:     `Enable Cron`,

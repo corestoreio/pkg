@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "web",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "cookie",
 					Label:     `Default Cookie Settings`,
 					SortOrder: 50,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: web/cookie/cookie_lifetime
 							ID:        "cookie_lifetime",
 							Label:     `Cookie Lifetime`,
@@ -34,7 +34,7 @@ func init() {
 							// BackendModel: Magento\Cookie\Model\Config\Backend\Lifetime
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/cookie/cookie_path
 							ID:        "cookie_path",
 							Label:     `Cookie Path`,
@@ -45,7 +45,7 @@ func init() {
 							// BackendModel: Magento\Cookie\Model\Config\Backend\Path
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/cookie/cookie_domain
 							ID:        "cookie_domain",
 							Label:     `Cookie Domain`,
@@ -56,7 +56,7 @@ func init() {
 							// BackendModel: Magento\Cookie\Model\Config\Backend\Domain
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/cookie/cookie_httponly
 							ID:        "cookie_httponly",
 							Label:     `Use HTTP Only`,
@@ -69,7 +69,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/cookie/cookie_restriction
 							ID:        "cookie_restriction",
 							Label:     `Cookie Restriction Mode`,
@@ -87,13 +87,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "web",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "cookie",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: web/cookie/cookie_restriction_lifetime
 							ID:      `cookie_restriction_lifetime`,
 							Type:    element.TypeHidden,

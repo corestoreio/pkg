@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "catalog",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "product_video",
 					Label:     `Product Video`,
 					SortOrder: 350,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/product_video/youtube_api_key
 							ID:        "youtube_api_key",
 							Label:     `YouTube API Key`,
@@ -32,7 +32,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/product_video/play_if_base
 							ID:        "play_if_base",
 							Label:     `Autostart base video`,
@@ -44,7 +44,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/product_video/show_related
 							ID:        "show_related",
 							Label:     `Show related video`,
@@ -56,7 +56,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/product_video/video_auto_restart
 							ID:        "video_auto_restart",
 							Label:     `Auto restart video`,

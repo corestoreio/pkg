@@ -13,18 +13,18 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "catalog",
 			SortOrder: 40,
 			Scopes:    scope.PermStore,
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "layered_navigation",
 					Label:     `Layered Navigation`,
 					SortOrder: 490,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/layered_navigation/display_product_count
 							ID:        "display_product_count",
 							Label:     `Display Product Count`,
@@ -36,7 +36,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/layered_navigation/price_range_calculation
 							ID:        "price_range_calculation",
 							Label:     `Price Navigation Step Calculation`,
@@ -48,7 +48,7 @@ func init() {
 							// SourceModel: Magento\Catalog\Model\Config\Source\Price\Step
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/layered_navigation/price_range_step
 							ID:        "price_range_step",
 							Label:     `Default Price Navigation Step`,
@@ -59,7 +59,7 @@ func init() {
 							Default:   100,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/layered_navigation/price_range_max_intervals
 							ID:        "price_range_max_intervals",
 							Label:     `Maximum Number of Price Intervals`,
@@ -71,7 +71,7 @@ func init() {
 							Default:   10,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/layered_navigation/one_price_interval
 							ID:        "one_price_interval",
 							Label:     `Display Price Interval as One Price`,
@@ -84,7 +84,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/layered_navigation/interval_division_limit
 							ID:        "interval_division_limit",
 							Label:     `Interval Division Limit`,

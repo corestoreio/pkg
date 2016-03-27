@@ -13,20 +13,20 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "sitemap",
 			Label:     `XML Sitemap`,
 			SortOrder: 70,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Sitemap::config_sitemap
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "category",
 					Label:     `Categories Options`,
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sitemap/category/changefreq
 							ID:        "changefreq",
 							Label:     `Frequency`,
@@ -38,7 +38,7 @@ func init() {
 							// SourceModel: Magento\Sitemap\Model\Config\Source\Frequency
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sitemap/category/priority
 							ID:        "priority",
 							Label:     `Priority`,
@@ -53,13 +53,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "product",
 					Label:     `Products Options`,
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sitemap/product/changefreq
 							ID:        "changefreq",
 							Label:     `Frequency`,
@@ -71,7 +71,7 @@ func init() {
 							// SourceModel: Magento\Sitemap\Model\Config\Source\Frequency
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sitemap/product/priority
 							ID:        "priority",
 							Label:     `Priority`,
@@ -84,7 +84,7 @@ func init() {
 							// BackendModel: Magento\Sitemap\Model\Config\Backend\Priority
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sitemap/product/image_include
 							ID:        "image_include",
 							Label:     `Add Images into Sitemap`,
@@ -98,13 +98,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "page",
 					Label:     `CMS Pages Options`,
 					SortOrder: 3,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sitemap/page/changefreq
 							ID:        "changefreq",
 							Label:     `Frequency`,
@@ -116,7 +116,7 @@ func init() {
 							// SourceModel: Magento\Sitemap\Model\Config\Source\Frequency
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sitemap/page/priority
 							ID:        "priority",
 							Label:     `Priority`,
@@ -131,13 +131,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "generate",
 					Label:     `Generation Settings`,
 					SortOrder: 4,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sitemap/generate/enabled
 							ID:        "enabled",
 							Label:     `Enabled`,
@@ -149,7 +149,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sitemap/generate/error_email
 							ID:        "error_email",
 							Label:     `Error Email Recipient`,
@@ -159,7 +159,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sitemap/generate/error_email_identity
 							ID:        "error_email_identity",
 							Label:     `Error Email Sender`,
@@ -171,7 +171,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sitemap/generate/error_email_template
 							ID:        "error_email_template",
 							Label:     `Error Email Template`,
@@ -184,7 +184,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sitemap/generate/frequency
 							ID:        "frequency",
 							Label:     `Frequency`,
@@ -196,7 +196,7 @@ func init() {
 							// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sitemap/generate/time
 							ID:        "time",
 							Label:     `Start Time`,
@@ -208,13 +208,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "limit",
 					Label:     `Sitemap File Limits`,
 					SortOrder: 5,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sitemap/limit/max_lines
 							ID:        "max_lines",
 							Label:     `Maximum No of URLs Per File`,
@@ -225,7 +225,7 @@ func init() {
 							Default:   50000,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sitemap/limit/max_file_size
 							ID:        "max_file_size",
 							Label:     `Maximum File Size`,
@@ -239,13 +239,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "search_engines",
 					Label:     `Search Engine Submission Settings`,
 					SortOrder: 6,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sitemap/search_engines/submission_robots
 							ID:        "submission_robots",
 							Label:     `Enable Submission to Robots.txt`,
@@ -262,13 +262,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "sitemap",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "generate",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sitemap/generate/error_email
 							ID:      `error_email`,
 							Type:    element.TypeHidden,
@@ -277,10 +277,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "file",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sitemap/file/valid_paths
 							ID:      `valid_paths`,
 							Type:    element.TypeHidden,

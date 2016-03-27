@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "payment",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "authorizenet_directpost",
 					Label:     `Authorize.net Direct Post`,
 					SortOrder: 34,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/active
 							ID:        "active",
 							Label:     `Enabled`,
@@ -34,7 +34,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/payment_action
 							ID:        "payment_action",
 							Label:     `Payment Action`,
@@ -46,7 +46,7 @@ func init() {
 							// SourceModel: Magento\Authorizenet\Model\Source\PaymentAction
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/title
 							ID:        "title",
 							Label:     `Title`,
@@ -57,7 +57,7 @@ func init() {
 							Default:   `Credit Card Direct Post (Authorize.net)`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/login
 							ID:        "login",
 							Label:     `API Login ID`,
@@ -69,7 +69,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/trans_key
 							ID:        "trans_key",
 							Label:     `Transaction Key`,
@@ -81,7 +81,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/trans_md5
 							ID:        "trans_md5",
 							Label:     `Merchant MD5`,
@@ -93,7 +93,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/order_status
 							ID:        "order_status",
 							Label:     `New Order Status`,
@@ -105,7 +105,7 @@ func init() {
 							// SourceModel: Magento\Sales\Model\Config\Source\Order\Status\Processing
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/test
 							ID:        "test",
 							Label:     `Test Mode`,
@@ -117,7 +117,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/cgi_url
 							ID:        "cgi_url",
 							Label:     `Gateway URL`,
@@ -128,7 +128,7 @@ func init() {
 							Default:   `https://secure.authorize.net/gateway/transact.dll`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/cgi_url_td
 							ID:        "cgi_url_td",
 							Label:     `Transaction Details URL`,
@@ -139,7 +139,7 @@ func init() {
 							Default:   `https://api2.authorize.net/xml/v1/request.api`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/currency
 							ID:        "currency",
 							Label:     `Accepted Currency`,
@@ -151,7 +151,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/debug
 							ID:        "debug",
 							Label:     `Debug`,
@@ -163,7 +163,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/email_customer
 							ID:        "email_customer",
 							Label:     `Email Customer`,
@@ -175,7 +175,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/merchant_email
 							ID:        "merchant_email",
 							Label:     `Merchant's Email`,
@@ -185,7 +185,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/cctypes
 							ID:        "cctypes",
 							Label:     `Credit Card Types`,
@@ -197,7 +197,7 @@ func init() {
 							// SourceModel: Magento\Authorizenet\Model\Source\Cctype
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/useccv
 							ID:        "useccv",
 							Label:     `Credit Card Verification`,
@@ -208,7 +208,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/allowspecific
 							ID:        "allowspecific",
 							Label:     `Payment from Applicable Countries`,
@@ -219,7 +219,7 @@ func init() {
 							// SourceModel: Magento\Payment\Model\Config\Source\Allspecificcountries
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/specificcountry
 							ID:        "specificcountry",
 							Label:     `Payment from Specific Countries`,
@@ -230,7 +230,7 @@ func init() {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/min_order_total
 							ID:        "min_order_total",
 							Label:     `Minimum Order Total`,
@@ -240,7 +240,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/max_order_total
 							ID:        "max_order_total",
 							Label:     `Maximum Order Total`,
@@ -250,7 +250,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/sort_order
 							ID:        "sort_order",
 							Label:     `Sort Order`,
@@ -265,20 +265,20 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "payment",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "authorizenet_directpost",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/merchant_email
 							ID:      `merchant_email`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
@@ -286,7 +286,7 @@ func init() {
 							Default: `Magento\Authorizenet\Model\Directpost`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/create_order_before
 							ID:      `create_order_before`,
 							Type:    element.TypeHidden,
@@ -294,7 +294,7 @@ func init() {
 							Default: true,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/date_delim
 							ID:      `date_delim`,
 							Type:    element.TypeHidden,
@@ -302,7 +302,7 @@ func init() {
 							Default: `/`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/ccfields
 							ID:      `ccfields`,
 							Type:    element.TypeHidden,
@@ -310,7 +310,7 @@ func init() {
 							Default: `x_card_code,x_exp_date,x_card_num`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/place_order_url
 							ID:      `place_order_url`,
 							Type:    element.TypeHidden,
@@ -318,7 +318,7 @@ func init() {
 							Default: `authorizenet/directpost_payment/place`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/cgi_url_test_mode
 							ID:      `cgi_url_test_mode`,
 							Type:    element.TypeHidden,
@@ -326,7 +326,7 @@ func init() {
 							Default: `https://test.authorize.net/gateway/transact.dll`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/authorizenet_directpost/cgi_url_td_test_mode
 							ID:      `cgi_url_td_test_mode`,
 							Type:    element.TypeHidden,

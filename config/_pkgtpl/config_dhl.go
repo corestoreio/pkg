@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "carriers",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "dhl",
 					Label:     `DHL`,
 					SortOrder: 140,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/active
 							ID:        "active",
 							Label:     `Enabled for Checkout`,
@@ -34,7 +34,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/active_rma
 							ID:        "active_rma",
 							Label:     `Enabled for RMA`,
@@ -46,7 +46,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/gateway_url
 							ID:        "gateway_url",
 							Label:     `Gateway URL`,
@@ -57,7 +57,7 @@ func init() {
 							Default:   `https://xmlpi-ea.dhl.com/XMLShippingServlet`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/title
 							ID:        "title",
 							Label:     `Title`,
@@ -68,7 +68,7 @@ func init() {
 							Default:   `DHL`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/id
 							ID:        "id",
 							Label:     `Access ID`,
@@ -80,7 +80,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/password
 							ID:        "password",
 							Label:     `Password`,
@@ -92,7 +92,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/account
 							ID:        "account",
 							Label:     `Account Number`,
@@ -102,7 +102,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/content_type
 							ID:        "content_type",
 							Label:     `Content Type`,
@@ -114,7 +114,7 @@ func init() {
 							// SourceModel: Magento\Dhl\Model\Source\Contenttype
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/handling_type
 							ID:        "handling_type",
 							Label:     `Calculate Handling Fee`,
@@ -126,7 +126,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Source\HandlingType
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/handling_action
 							ID:        "handling_action",
 							Label:     `Handling Applied`,
@@ -139,7 +139,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Source\HandlingAction
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/handling_fee
 							ID:        "handling_fee",
 							Label:     `Handling Fee`,
@@ -149,7 +149,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/divide_order_weight
 							ID:        "divide_order_weight",
 							Label:     `Divide Order Weight`,
@@ -162,7 +162,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/unit_of_measure
 							ID:        "unit_of_measure",
 							Label:     `Weight Unit`,
@@ -174,7 +174,7 @@ func init() {
 							// SourceModel: Magento\Dhl\Model\Source\Method\Unitofmeasure
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/size
 							ID:        "size",
 							Label:     `Size`,
@@ -186,7 +186,7 @@ func init() {
 							// SourceModel: Magento\Dhl\Model\Source\Method\Size
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/height
 							ID:        "height",
 							Label:     `Height`,
@@ -196,7 +196,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/depth
 							ID:        "depth",
 							Label:     `Depth`,
@@ -206,7 +206,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/width
 							ID:        "width",
 							Label:     `Width`,
@@ -216,7 +216,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/doc_methods
 							ID:        "doc_methods",
 							Label:     `Allowed Methods`,
@@ -228,7 +228,7 @@ func init() {
 							// SourceModel: Magento\Dhl\Model\Source\Method\Doc
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/nondoc_methods
 							ID:        "nondoc_methods",
 							Label:     `Allowed Methods`,
@@ -240,7 +240,7 @@ func init() {
 							// SourceModel: Magento\Dhl\Model\Source\Method\Nondoc
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/ready_time
 							ID:        "ready_time",
 							Label:     `Ready time`,
@@ -251,7 +251,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/specificerrmsg
 							ID:        "specificerrmsg",
 							Label:     `Displayed Error Message`,
@@ -262,7 +262,7 @@ func init() {
 							Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/free_method_doc
 							ID:        "free_method_doc",
 							Label:     `Free Method`,
@@ -273,7 +273,7 @@ func init() {
 							// SourceModel: Magento\Dhl\Model\Source\Method\Freedoc
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/free_method_nondoc
 							ID:        "free_method_nondoc",
 							Label:     `Free Method`,
@@ -284,7 +284,7 @@ func init() {
 							// SourceModel: Magento\Dhl\Model\Source\Method\Freenondoc
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/free_shipping_enable
 							ID:        "free_shipping_enable",
 							Label:     `Free Shipping Amount Threshold`,
@@ -295,7 +295,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/free_shipping_subtotal
 							ID:        "free_shipping_subtotal",
 							Label:     `Free Shipping Amount Threshold`,
@@ -305,7 +305,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/sallowspecific
 							ID:        "sallowspecific",
 							Label:     `Ship to Applicable Countries`,
@@ -317,7 +317,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/specificcountry
 							ID:         "specificcountry",
 							Label:      `Ship to Specific Countries`,
@@ -329,7 +329,7 @@ func init() {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/showmethod
 							ID:        "showmethod",
 							Label:     `Show Method if Not Applicable`,
@@ -340,7 +340,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/sort_order
 							ID:        "sort_order",
 							Label:     `Sort Order`,
@@ -350,7 +350,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/debug
 							ID:        "debug",
 							Label:     `Debug`,
@@ -366,13 +366,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "system",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "media_storage_configuration",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/media_storage_configuration/allowed_resources
 							ID:      `allowed_resources`,
 							Type:    element.TypeHidden,
@@ -383,13 +383,13 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "carriers",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "dhl",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
@@ -397,14 +397,14 @@ func init() {
 							Default: `Magento\Dhl\Model\Carrier`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/account
 							ID:      `account`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/free_method
 							ID:      `free_method`,
 							Type:    element.TypeHidden,
@@ -412,7 +412,7 @@ func init() {
 							Default: `G`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/shipment_days
 							ID:      `shipment_days`,
 							Type:    element.TypeHidden,
@@ -420,7 +420,7 @@ func init() {
 							Default: `Mon,Tue,Wed,Thu,Fri`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/dhl/is_online
 							ID:      `is_online`,
 							Type:    element.TypeHidden,

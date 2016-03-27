@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "dev",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "front_end_development_workflow",
 					Label:     `Frontend Development Workflow`,
 					SortOrder: 8,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: dev/front_end_development_workflow/type
 							ID:        "type",
 							Label:     `Workflow type`,
@@ -37,13 +37,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "restrict",
 					Label:     `Developer Client Restrictions`,
 					SortOrder: 10,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: dev/restrict/allow_ips
 							ID:        "allow_ips",
 							Label:     `Allowed IPs (comma separated)`,
@@ -60,13 +60,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "dev",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "restrict",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: dev/restrict/allow_ips
 							ID:      `allow_ips`,
 							Type:    element.TypeHidden,

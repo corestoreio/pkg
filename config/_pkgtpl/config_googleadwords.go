@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "google",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "adwords",
 					Label:     `Google AdWords`,
 					SortOrder: 15,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: google/adwords/active
 							ID:        "active",
 							Label:     `Enable`,
@@ -34,7 +34,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: google/adwords/conversion_id
 							ID:        "conversion_id",
 							Label:     `Conversion ID`,
@@ -45,7 +45,7 @@ func init() {
 							// BackendModel: Magento\GoogleAdwords\Model\Config\Backend\ConversionId
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: google/adwords/conversion_language
 							ID:        "conversion_language",
 							Label:     `Conversion Language`,
@@ -57,7 +57,7 @@ func init() {
 							// SourceModel: Magento\GoogleAdwords\Model\Config\Source\Language
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: google/adwords/conversion_format
 							ID:        "conversion_format",
 							Label:     `Conversion Format`,
@@ -68,7 +68,7 @@ func init() {
 							Default:   2,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: google/adwords/conversion_color
 							ID:        "conversion_color",
 							Label:     `Conversion Color`,
@@ -80,7 +80,7 @@ func init() {
 							// BackendModel: Magento\GoogleAdwords\Model\Config\Backend\Color
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: google/adwords/conversion_label
 							ID:        "conversion_label",
 							Label:     `Conversion Label`,
@@ -90,7 +90,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: google/adwords/conversion_value_type
 							ID:        "conversion_value_type",
 							Label:     `Conversion Value Type`,
@@ -102,7 +102,7 @@ func init() {
 							// SourceModel: Magento\GoogleAdwords\Model\Config\Source\ValueType
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: google/adwords/conversion_value
 							ID:        "conversion_value",
 							Label:     `Conversion Value`,
@@ -117,13 +117,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "google",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "adwords",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: google/adwords/languages
 							ID:      `languages`,
 							Type:    element.TypeHidden,
@@ -131,7 +131,7 @@ func init() {
 							Default: `{"ar":"ar","bg":"bg","ca":"ca","cs":"cs","da":"da","de":"de","el":"el","en":"en","es":"es","et":"et","fi":"fi","fr":"fr","hi":"hi","hr":"hr","hu":"hu","id":"id","is":"is","it":"it","iw":"iw","ja":"ja","ko":"ko","lt":"lt","lv":"lv","nl":"nl","no":"no","pl":"pl","pt":"pt","ro":"ro","ru":"ru","sk":"sk","sl":"sl","sr":"sr","sv":"sv","th":"th","tl":"tl","tr":"tr","uk":"uk","ur":"ur","vi":"vi","zh_TW":"zh_TW","zh_CN":"zh_CN"}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: google/adwords/language_convert
 							ID:      `language_convert`,
 							Type:    element.TypeHidden,
@@ -139,7 +139,7 @@ func init() {
 							Default: `{"zh_CN":"zh_Hans","zh_TW":"zh_Hant","iw":"he"}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: google/adwords/conversion_js_src
 							ID:      `conversion_js_src`,
 							Type:    element.TypeHidden,
@@ -147,7 +147,7 @@ func init() {
 							Default: `https://www.googleadservices.com/pagead/conversion.js`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: google/adwords/conversion_img_src
 							ID:      `conversion_img_src`,
 							Type:    element.TypeHidden,

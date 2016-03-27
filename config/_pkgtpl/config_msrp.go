@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "sales",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "msrp",
 					Label:     `Minimum Advertised Price`,
 					SortOrder: 110,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales/msrp/enabled
 							ID:        "enabled",
 							Label:     `Enable MAP`,
@@ -35,7 +35,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/msrp/display_price_type
 							ID:        "display_price_type",
 							Label:     `Display Actual Price`,
@@ -47,7 +47,7 @@ func init() {
 							// SourceModel: Magento\Msrp\Model\Product\Attribute\Source\Type
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/msrp/explanation_message
 							ID:        "explanation_message",
 							Label:     `Default Popup Text Message`,
@@ -58,7 +58,7 @@ func init() {
 							Default:   `Our price is lower than the manufacturer's "minimum advertised price." As a result, we cannot show you the price in catalog or the product page. <br /><br /> You have no obligation to purchase the product once you know the price. You can simply remove the item from your cart.`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/msrp/explanation_message_whats_this
 							ID:        "explanation_message_whats_this",
 							Label:     `Default "What's This" Text Message`,

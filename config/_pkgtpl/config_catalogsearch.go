@@ -13,13 +13,13 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "catalog",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "seo",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/seo/search_terms
 							ID:        "search_terms",
 							Label:     `Popular Search Terms`,
@@ -33,13 +33,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "search",
 					Label:     `Catalog Search`,
 					SortOrder: 500,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/search/engine
 							ID:      "engine",
 							Type:    element.Type,
@@ -48,7 +48,7 @@ func init() {
 							// BackendModel: Magento\CatalogSearch\Model\Adminhtml\System\Config\Backend\Engine
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/search/min_query_length
 							ID:        "min_query_length",
 							Label:     `Minimal Query Length`,
@@ -59,7 +59,7 @@ func init() {
 							Default:   1,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/search/max_query_length
 							ID:        "max_query_length",
 							Label:     `Maximum Query Length`,

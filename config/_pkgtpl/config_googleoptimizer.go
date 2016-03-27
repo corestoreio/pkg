@@ -13,13 +13,13 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "google",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "analytics",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: google/analytics/experiments
 							ID:        "experiments",
 							Label:     `Enable Content Experiments`,
@@ -35,13 +35,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "google",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "optimizer",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: google/optimizer/active
 							ID:      `active`,
 							Type:    element.TypeHidden,

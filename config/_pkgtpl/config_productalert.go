@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "catalog",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "productalert",
 					Label:     `Product Alerts`,
 					SortOrder: 250,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/productalert/allow_price
 							ID:        "allow_price",
 							Label:     `Allow Alert When Product Price Changes`,
@@ -34,7 +34,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/productalert/allow_stock
 							ID:        "allow_stock",
 							Label:     `Allow Alert When Product Comes Back in Stock`,
@@ -46,7 +46,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/productalert/email_price_template
 							ID:        "email_price_template",
 							Label:     `Price Alert Email Template`,
@@ -59,7 +59,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/productalert/email_stock_template
 							ID:        "email_stock_template",
 							Label:     `Stock Alert Email Template`,
@@ -72,7 +72,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/productalert/email_identity
 							ID:        "email_identity",
 							Label:     `Alert Email Sender`,
@@ -86,13 +86,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "productalert_cron",
 					Label:     `Product Alerts Run Settings`,
 					SortOrder: 260,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/productalert_cron/frequency
 							ID:        "frequency",
 							Label:     `Frequency`,
@@ -104,7 +104,7 @@ func init() {
 							// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/productalert_cron/time
 							ID:        "time",
 							Label:     `Start Time`,
@@ -114,7 +114,7 @@ func init() {
 							Scopes:    scope.PermDefault,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/productalert_cron/error_email
 							ID:        "error_email",
 							Label:     `Error Email Recipient`,
@@ -124,7 +124,7 @@ func init() {
 							Scopes:    scope.PermDefault,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/productalert_cron/error_email_identity
 							ID:        "error_email_identity",
 							Label:     `Error Email Sender`,
@@ -136,7 +136,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/productalert_cron/error_email_template
 							ID:        "error_email_template",
 							Label:     `Error Email Template`,
@@ -154,13 +154,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "catalog",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "productalert_cron",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/productalert_cron/error_email
 							ID:      `error_email`,
 							Type:    element.TypeHidden,

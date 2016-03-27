@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "catalog",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "review",
 					Label:     `Product Reviews`,
 					SortOrder: 100,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/review/allow_guest
 							ID:        "allow_guest",
 							Label:     `Allow Guests to Write Reviews`,

@@ -13,20 +13,20 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "oauth",
 			Label:     `OAuth`,
 			SortOrder: 300,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Integration::config_oauth
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "cleanup",
 					Label:     `Cleanup Settings`,
 					SortOrder: 300,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: oauth/cleanup/cleanup_probability
 							ID:        "cleanup_probability",
 							Label:     `Cleanup Probability`,
@@ -38,7 +38,7 @@ func init() {
 							Default:   100,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: oauth/cleanup/expiration_period
 							ID:        "expiration_period",
 							Label:     `Expiration Period`,
@@ -52,13 +52,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "consumer",
 					Label:     `Consumer Settings`,
 					SortOrder: 400,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: oauth/consumer/expiration_period
 							ID:        "expiration_period",
 							Label:     `Expiration Period`,
@@ -70,7 +70,7 @@ func init() {
 							Default:   300,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: oauth/consumer/post_maxredirects
 							ID:        "post_maxredirects",
 							Label:     `OAuth consumer credentials HTTP Post maxredirects`,
@@ -81,7 +81,7 @@ func init() {
 							Scopes:    scope.PermDefault,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: oauth/consumer/post_timeout
 							ID:        "post_timeout",
 							Label:     `OAuth consumer credentials HTTP Post timeout`,

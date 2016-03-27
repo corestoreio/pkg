@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "sales",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "gift_options",
 					Label:     `Gift Options`,
 					SortOrder: 100,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales/gift_options/allow_order
 							ID:        "allow_order",
 							Label:     `Allow Gift Messages on Order Level`,
@@ -33,7 +33,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/gift_options/allow_items
 							ID:        "allow_items",
 							Label:     `Allow Gift Messages for Order Items`,
@@ -49,13 +49,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "sales",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "gift_messages",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sales/gift_messages/allow_items
 							ID:      `allow_items`,
 							Type:    element.TypeHidden,
@@ -63,7 +63,7 @@ func init() {
 							Default: false,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sales/gift_messages/allow_order
 							ID:      `allow_order`,
 							Type:    element.TypeHidden,

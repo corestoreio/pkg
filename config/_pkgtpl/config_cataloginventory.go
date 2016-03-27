@@ -13,20 +13,20 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "cataloginventory",
 			Label:     `Inventory`,
 			SortOrder: 50,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_CatalogInventory::cataloginventory
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "options",
 					Label:     `Stock Options`,
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: cataloginventory/options/can_subtract
 							ID:        "can_subtract",
 							Label:     `Decrease Stock When Order is Placed`,
@@ -38,7 +38,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: cataloginventory/options/can_back_in_stock
 							ID:        "can_back_in_stock",
 							Label:     `Set Items' Status to be In Stock When Order is Cancelled`,
@@ -50,7 +50,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: cataloginventory/options/show_out_of_stock
 							ID:        "show_out_of_stock",
 							Label:     `Display Out of Stock Products`,
@@ -64,7 +64,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: cataloginventory/options/stock_threshold_qty
 							ID:        "stock_threshold_qty",
 							Label:     `Only X left Threshold`,
@@ -74,7 +74,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: cataloginventory/options/display_product_stock_status
 							ID:        "display_product_stock_status",
 							Label:     `Display Products Availability in Stock on Storefront`,
@@ -88,14 +88,14 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "item_options",
 					Label:     `Product Stock Options`,
 					Comment:   text.Long(`Please note that these settings apply to individual items in the cart, not to the entire cart.`),
 					SortOrder: 10,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: cataloginventory/item_options/manage_stock
 							ID:        "manage_stock",
 							Label:     `Manage Stock`,
@@ -109,7 +109,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: cataloginventory/item_options/backorders
 							ID:        "backorders",
 							Label:     `Backorders`,
@@ -123,7 +123,7 @@ func init() {
 							// SourceModel: Magento\CatalogInventory\Model\Source\Backorders
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: cataloginventory/item_options/max_sale_qty
 							ID:        "max_sale_qty",
 							Label:     `Maximum Qty Allowed in Shopping Cart`,
@@ -134,7 +134,7 @@ func init() {
 							Default:   10000,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: cataloginventory/item_options/min_qty
 							ID:        "min_qty",
 							Label:     `Out-of-Stock Threshold`,
@@ -145,7 +145,7 @@ func init() {
 							// BackendModel: Magento\CatalogInventory\Model\System\Config\Backend\Minqty
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: cataloginventory/item_options/min_sale_qty
 							ID:        "min_sale_qty",
 							Label:     `Minimum Qty Allowed in Shopping Cart`,
@@ -157,7 +157,7 @@ func init() {
 							// BackendModel: Magento\CatalogInventory\Model\System\Config\Backend\Minsaleqty
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: cataloginventory/item_options/notify_stock_qty
 							ID:        "notify_stock_qty",
 							Label:     `Notify for Quantity Below`,
@@ -168,7 +168,7 @@ func init() {
 							Default:   1,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: cataloginventory/item_options/auto_return
 							ID:        "auto_return",
 							Label:     `Automatically Return Credit Memo Item to Stock`,
@@ -179,7 +179,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: cataloginventory/item_options/enable_qty_increments
 							ID:        "enable_qty_increments",
 							Label:     `Enable Qty Increments`,
@@ -191,7 +191,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: cataloginventory/item_options/qty_increments
 							ID:        "qty_increments",
 							Label:     `Qty Increments`,

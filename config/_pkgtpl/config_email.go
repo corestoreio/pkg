@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "design",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "email",
 					Label:     `Emails`,
 					SortOrder: 510,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: design/email/logo
 							ID:        "logo",
 							Label:     `Logo Image`,
@@ -34,7 +34,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Logo
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/email/logo_alt
 							ID:        "logo_alt",
 							Label:     `Logo Image Alt`,
@@ -44,7 +44,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/email/logo_width
 							ID:        "logo_width",
 							Label:     `Logo Width`,
@@ -55,7 +55,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/email/logo_height
 							ID:        "logo_height",
 							Label:     `Logo Height`,
@@ -66,7 +66,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/email/header_template
 							ID:        "header_template",
 							Label:     `Header Template`,
@@ -79,7 +79,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/email/footer_template
 							ID:        "footer_template",
 							Label:     `Footer Template`,
@@ -97,13 +97,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "system",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "media_storage_configuration",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/media_storage_configuration/allowed_resources
 							ID:      `allowed_resources`,
 							Type:    element.TypeHidden,
@@ -113,10 +113,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "emails",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/emails/forgot_email_template
 							ID:      `forgot_email_template`,
 							Type:    element.TypeHidden,
@@ -124,7 +124,7 @@ func init() {
 							Default: `system_emails_forgot_email_template`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/emails/forgot_email_identity
 							ID:      `forgot_email_identity`,
 							Type:    element.TypeHidden,
@@ -134,10 +134,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "smtp",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/smtp/disable
 							ID:      `disable`,
 							Type:    element.TypeHidden,
@@ -145,7 +145,7 @@ func init() {
 							Default: false,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/smtp/host
 							ID:      `host`,
 							Type:    element.TypeHidden,
@@ -153,7 +153,7 @@ func init() {
 							Default: `localhost`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/smtp/port
 							ID:      `port`,
 							Type:    element.TypeHidden,
@@ -164,13 +164,13 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "trans_email",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "ident_custom1",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_custom1/email
 							ID:      `email`,
 							Type:    element.TypeHidden,
@@ -178,7 +178,7 @@ func init() {
 							Default: `custom1@example.com`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_custom1/name
 							ID:      `name`,
 							Type:    element.TypeHidden,
@@ -188,10 +188,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "ident_custom2",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_custom2/email
 							ID:      `email`,
 							Type:    element.TypeHidden,
@@ -199,7 +199,7 @@ func init() {
 							Default: `custom2@example.com`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_custom2/name
 							ID:      `name`,
 							Type:    element.TypeHidden,
@@ -209,10 +209,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "ident_general",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_general/email
 							ID:      `email`,
 							Type:    element.TypeHidden,
@@ -220,7 +220,7 @@ func init() {
 							Default: `owner@example.com`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_general/name
 							ID:      `name`,
 							Type:    element.TypeHidden,
@@ -230,10 +230,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "ident_sales",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_sales/email
 							ID:      `email`,
 							Type:    element.TypeHidden,
@@ -241,7 +241,7 @@ func init() {
 							Default: `sales@example.com`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_sales/name
 							ID:      `name`,
 							Type:    element.TypeHidden,
@@ -251,10 +251,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "ident_support",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_support/email
 							ID:      `email`,
 							Type:    element.TypeHidden,
@@ -262,7 +262,7 @@ func init() {
 							Default: `support@example.com`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_support/name
 							ID:      `name`,
 							Type:    element.TypeHidden,

@@ -13,20 +13,20 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "google",
 			Label:     `Google API`,
 			SortOrder: 340,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_GoogleAnalytics::google
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "analytics",
 					Label:     `Google Analytics`,
 					SortOrder: 10,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: google/analytics/active
 							ID:        "active",
 							Label:     `Enable`,
@@ -37,7 +37,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: google/analytics/account
 							ID:        "account",
 							Label:     `Account Number`,

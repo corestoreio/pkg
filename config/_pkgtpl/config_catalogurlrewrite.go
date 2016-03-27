@@ -13,14 +13,14 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "catalog",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:    "seo",
 					Label: `Search Engine Optimization`,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/seo/category_url_suffix
 							ID:        "category_url_suffix",
 							Label:     `Category URL Suffix`,
@@ -32,7 +32,7 @@ func init() {
 							// BackendModel: Magento\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/seo/product_url_suffix
 							ID:        "product_url_suffix",
 							Label:     `Product URL Suffix`,
@@ -44,7 +44,7 @@ func init() {
 							// BackendModel: Magento\Catalog\Model\System\Config\Backend\Catalog\Url\Rewrite\Suffix
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/seo/product_use_categories
 							ID:        "product_use_categories",
 							Label:     `Use Categories Path for Product URLs`,
@@ -55,7 +55,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/seo/save_rewrites_history
 							ID:        "save_rewrites_history",
 							Label:     `Create Permanent Redirect for URLs if URL Key Changed`,

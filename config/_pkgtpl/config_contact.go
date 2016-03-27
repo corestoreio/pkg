@@ -13,20 +13,20 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "contact",
 			Label:     `Contacts`,
 			SortOrder: 100,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Contact::contact
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "contact",
 					Label:     `Contact Us`,
 					SortOrder: 10,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: contact/contact/enabled
 							ID:        "enabled",
 							Label:     `Enable Contact Us`,
@@ -41,13 +41,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "email",
 					Label:     `Email Options`,
 					SortOrder: 50,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: contact/email/recipient_email
 							ID:        "recipient_email",
 							Label:     `Send Emails To`,
@@ -58,7 +58,7 @@ func init() {
 							Default:   `hello@example.com`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: contact/email/sender_email_identity
 							ID:        "sender_email_identity",
 							Label:     `Email Sender`,
@@ -70,7 +70,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: contact/email/email_template
 							ID:        "email_template",
 							Label:     `Email Template`,

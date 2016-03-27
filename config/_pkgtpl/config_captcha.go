@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "admin",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "captcha",
 					Label:     `CAPTCHA`,
 					SortOrder: 50,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: admin/captcha/enable
 							ID:        "enable",
 							Label:     `Enable CAPTCHA in Admin`,
@@ -34,7 +34,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/captcha/font
 							ID:        "font",
 							Label:     `Font`,
@@ -46,7 +46,7 @@ func init() {
 							// SourceModel: Magento\Captcha\Model\Config\Font
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/captcha/forms
 							ID:        "forms",
 							Label:     `Forms`,
@@ -58,7 +58,7 @@ func init() {
 							// SourceModel: Magento\Captcha\Model\Config\Form\Backend
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/captcha/mode
 							ID:        "mode",
 							Label:     `Displaying Mode`,
@@ -70,7 +70,7 @@ func init() {
 							// SourceModel: Magento\Captcha\Model\Config\Mode
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/captcha/failed_attempts_login
 							ID:        "failed_attempts_login",
 							Label:     `Number of Unsuccessful Attempts to Login`,
@@ -82,7 +82,7 @@ func init() {
 							Default:   3,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/captcha/timeout
 							ID:        "timeout",
 							Label:     `CAPTCHA Timeout (minutes)`,
@@ -93,7 +93,7 @@ func init() {
 							Default:   7,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/captcha/length
 							ID:        "length",
 							Label:     `Number of Symbols`,
@@ -105,7 +105,7 @@ func init() {
 							Default:   `4-5`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/captcha/symbols
 							ID:        "symbols",
 							Label:     `Symbols Used in CAPTCHA`,
@@ -117,7 +117,7 @@ func init() {
 							Default:   `ABCDEFGHJKMnpqrstuvwxyz23456789`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/captcha/case_sensitive
 							ID:        "case_sensitive",
 							Label:     `Case Sensitive`,
@@ -132,16 +132,16 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "customer",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "captcha",
 					Label:     `CAPTCHA`,
 					SortOrder: 110,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: customer/captcha/enable
 							ID:        "enable",
 							Label:     `Enable CAPTCHA on Storefront`,
@@ -153,7 +153,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/captcha/font
 							ID:        "font",
 							Label:     `Font`,
@@ -165,7 +165,7 @@ func init() {
 							// SourceModel: Magento\Captcha\Model\Config\Font
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/captcha/forms
 							ID:        "forms",
 							Label:     `Forms`,
@@ -178,7 +178,7 @@ func init() {
 							// SourceModel: Magento\Captcha\Model\Config\Form\Frontend
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/captcha/mode
 							ID:        "mode",
 							Label:     `Displaying Mode`,
@@ -190,7 +190,7 @@ func init() {
 							// SourceModel: Magento\Captcha\Model\Config\Mode
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/captcha/failed_attempts_login
 							ID:        "failed_attempts_login",
 							Label:     `Number of Unsuccessful Attempts to Login`,
@@ -202,7 +202,7 @@ func init() {
 							Default:   3,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/captcha/timeout
 							ID:        "timeout",
 							Label:     `CAPTCHA Timeout (minutes)`,
@@ -213,7 +213,7 @@ func init() {
 							Default:   7,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/captcha/length
 							ID:        "length",
 							Label:     `Number of Symbols`,
@@ -225,7 +225,7 @@ func init() {
 							Default:   `4-5`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/captcha/symbols
 							ID:        "symbols",
 							Label:     `Symbols Used in CAPTCHA`,
@@ -237,7 +237,7 @@ func init() {
 							Default:   `ABCDEFGHJKMnpqrstuvwxyz23456789`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/captcha/case_sensitive
 							ID:        "case_sensitive",
 							Label:     `Case Sensitive`,
@@ -254,13 +254,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "system",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "media_storage_configuration",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/media_storage_configuration/allowed_resources
 							ID:      `allowed_resources`,
 							Type:    element.TypeHidden,
@@ -271,13 +271,13 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "admin",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "captcha",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: admin/captcha/type
 							ID:      `type`,
 							Type:    element.TypeHidden,
@@ -285,7 +285,7 @@ func init() {
 							Default: `default`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/captcha/failed_attempts_ip
 							ID:      `failed_attempts_ip`,
 							Type:    element.TypeHidden,
@@ -293,14 +293,14 @@ func init() {
 							Default: 1000,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/captcha/shown_to_logged_in_user
 							ID:      `shown_to_logged_in_user`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/captcha/always_for
 							ID:      `always_for`,
 							Type:    element.TypeHidden,
@@ -311,13 +311,13 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "customer",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "captcha",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: customer/captcha/type
 							ID:      `type`,
 							Type:    element.TypeHidden,
@@ -325,7 +325,7 @@ func init() {
 							Default: `default`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/captcha/failed_attempts_ip
 							ID:      `failed_attempts_ip`,
 							Type:    element.TypeHidden,
@@ -333,7 +333,7 @@ func init() {
 							Default: 1000,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/captcha/shown_to_logged_in_user
 							ID:      `shown_to_logged_in_user`,
 							Type:    element.TypeHidden,
@@ -341,7 +341,7 @@ func init() {
 							Default: `{"contact_us":"1"}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/captcha/always_for
 							ID:      `always_for`,
 							Type:    element.TypeHidden,
@@ -352,13 +352,13 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "captcha",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "_value",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: captcha/_value/fonts
 							ID:      `fonts`,
 							Type:    element.TypeHidden,
@@ -366,7 +366,7 @@ func init() {
 							Default: `{"linlibertine":{"label":"LinLibertine","path":"LinLibertineFont\/LinLibertine_Bd-2.8.1.ttf"}}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: captcha/_value/frontend
 							ID:      `frontend`,
 							Type:    element.TypeHidden,
@@ -374,7 +374,7 @@ func init() {
 							Default: `{"areas":{"user_create":{"label":"Create user"},"user_login":{"label":"Login"},"user_forgotpassword":{"label":"Forgot password"},"guest_checkout":{"label":"Check Out as Guest"},"register_during_checkout":{"label":"Register during Checkout"},"contact_us":{"label":"Contact Us"}}}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: captcha/_value/backend
 							ID:      `backend`,
 							Type:    element.TypeHidden,
@@ -384,10 +384,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "_attribute",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: captcha/_attribute/translate
 							ID:      `translate`,
 							Type:    element.TypeHidden,

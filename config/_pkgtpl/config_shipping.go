@@ -13,20 +13,20 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "shipping",
 			Label:     `Shipping Settings`,
 			SortOrder: 310,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Shipping::config_shipping
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "origin",
 					Label:     `Origin`,
 					SortOrder: 1,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: shipping/origin/country_id
 							ID:        "country_id",
 							Label:     `Country`,
@@ -38,7 +38,7 @@ func init() {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: shipping/origin/region_id
 							ID:        "region_id",
 							Label:     `Region/State`,
@@ -49,7 +49,7 @@ func init() {
 							Default:   12,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: shipping/origin/postcode
 							ID:        "postcode",
 							Label:     `ZIP/Postal Code`,
@@ -60,7 +60,7 @@ func init() {
 							Default:   90034,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: shipping/origin/city
 							ID:        "city",
 							Label:     `City`,
@@ -70,7 +70,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: shipping/origin/street_line1
 							ID:        "street_line1",
 							Label:     `Street Address`,
@@ -80,7 +80,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: shipping/origin/street_line2
 							ID:        "street_line2",
 							Label:     `Street Address Line 2`,
@@ -92,13 +92,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "shipping_policy",
 					Label:     `Shipping Policy Parameters`,
 					SortOrder: 120,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: shipping/shipping_policy/enable_shipping_policy
 							ID:        "enable_shipping_policy",
 							Label:     `Apply custom Shipping Policy`,
@@ -109,7 +109,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: shipping/shipping_policy/shipping_policy_content
 							ID:        "shipping_policy_content",
 							Label:     `Shipping Policy`,
@@ -122,7 +122,7 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID:        "carriers",
 			Label:     `Shipping Methods`,
 			SortOrder: 320,

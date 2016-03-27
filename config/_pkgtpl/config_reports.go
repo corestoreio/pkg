@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "catalog",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "recently_products",
 					Label:     `Recently Viewed/Compared Products`,
 					SortOrder: 350,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/recently_products/scope
 							ID:        "scope",
 							Label:     `Show for Current`,
@@ -34,7 +34,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Reports\Scope
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/recently_products/viewed_count
 							ID:        "viewed_count",
 							Label:     `Default Recently Viewed Products Count`,
@@ -45,7 +45,7 @@ func init() {
 							Default:   5,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/recently_products/compared_count
 							ID:        "compared_count",
 							Label:     `Default Recently Compared Products Count`,
@@ -59,20 +59,20 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID:        "reports",
 			Label:     `Reports`,
 			SortOrder: 1000,
 			Scopes:    scope.PermDefault,
 			Resource:  0, // Magento_Reports::reports
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "dashboard",
 					Label:     `Dashboard`,
 					SortOrder: 1,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: reports/dashboard/ytd_start
 							ID:        "ytd_start",
 							Label:     `Year-To-Date Starts`,
@@ -83,7 +83,7 @@ func init() {
 							Default:   `1,1`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: reports/dashboard/mtd_start
 							ID:        "mtd_start",
 							Label:     `Current Month Starts`,

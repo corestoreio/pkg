@@ -13,20 +13,20 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "wishlist",
 			Label:     `Wish List`,
 			SortOrder: 140,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Wishlist::config_wishlist
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "email",
 					Label:     `Share Options`,
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: wishlist/email/email_identity
 							ID:        "email_identity",
 							Label:     `Email Sender`,
@@ -38,7 +38,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: wishlist/email/email_template
 							ID:        "email_template",
 							Label:     `Email Template`,
@@ -51,7 +51,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: wishlist/email/number_limit
 							ID:        "number_limit",
 							Label:     `Max Emails Allowed to be Sent`,
@@ -63,7 +63,7 @@ func init() {
 							Default:   10,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: wishlist/email/text_limit
 							ID:        "text_limit",
 							Label:     `Email Text Length Limit`,
@@ -77,13 +77,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "general",
 					Label:     `General Options`,
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: wishlist/general/active
 							ID:        "active",
 							Label:     `Enabled`,
@@ -97,13 +97,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "wishlist_link",
 					Label:     `My Wish List Link`,
 					SortOrder: 3,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: wishlist/wishlist_link/use_qty
 							ID:        "use_qty",
 							Label:     `Display Wish List Summary`,
@@ -117,16 +117,16 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "rss",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "wishlist",
 					Label:     `Wish List`,
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: rss/wishlist/active
 							ID:        "active",
 							Label:     `Enable RSS`,

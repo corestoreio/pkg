@@ -13,13 +13,13 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "catalog",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "search",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/search/engine
 							ID:        "engine",
 							Label:     `Search Engine`,
@@ -30,7 +30,7 @@ func init() {
 							// SourceModel: Magento\Search\Model\Adminhtml\System\Config\Source\Engine
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/search/search_type
 							ID:      "search_type",
 							Type:    element.Type,

@@ -13,20 +13,20 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "sendfriend",
 			Label:     `Email to a Friend`,
 			SortOrder: 120,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::sendfriend
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "email",
 					Label:     `Email Templates`,
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: sendfriend/email/enabled
 							ID:        "enabled",
 							Label:     `Enabled`,
@@ -38,7 +38,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sendfriend/email/template
 							ID:        "template",
 							Label:     `Select Email Template`,
@@ -51,7 +51,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sendfriend/email/allow_guest
 							ID:        "allow_guest",
 							Label:     `Allow for Guests`,
@@ -63,7 +63,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sendfriend/email/max_recipients
 							ID:        "max_recipients",
 							Label:     `Max Recipients`,
@@ -74,7 +74,7 @@ func init() {
 							Default:   5,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sendfriend/email/max_per_hour
 							ID:        "max_per_hour",
 							Label:     `Max Products Sent in 1 Hour`,
@@ -85,7 +85,7 @@ func init() {
 							Default:   5,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: sendfriend/email/check_by
 							ID:        "check_by",
 							Label:     `Limit Sending By`,

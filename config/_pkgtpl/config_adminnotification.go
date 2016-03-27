@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "system",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "adminnotification",
 					Label:     `Notifications`,
 					SortOrder: 250,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/adminnotification/use_https
 							ID:        "use_https",
 							Label:     `Use HTTPS to Get Feed`,
@@ -34,7 +34,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/adminnotification/frequency
 							ID:        "frequency",
 							Label:     `Update Frequency`,
@@ -46,7 +46,7 @@ func init() {
 							// SourceModel: Magento\AdminNotification\Model\Config\Source\Frequency
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/adminnotification/last_update
 							ID:        "last_update",
 							Label:     `Last Update`,
@@ -61,13 +61,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "system",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "adminnotification",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/adminnotification/feed_url
 							ID:      `feed_url`,
 							Type:    element.TypeHidden,
@@ -75,7 +75,7 @@ func init() {
 							Default: `notifications.magentocommerce.com/magento2/community/notifications.rss`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/adminnotification/popup_url
 							ID:      `popup_url`,
 							Type:    element.TypeHidden,
@@ -83,7 +83,7 @@ func init() {
 							Default: `widgets.magentocommerce.com/notificationPopup`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/adminnotification/severity_icons_url
 							ID:      `severity_icons_url`,
 							Type:    element.TypeHidden,

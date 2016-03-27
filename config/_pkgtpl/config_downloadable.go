@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "catalog",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "downloadable",
 					Label:     `Downloadable Product Options`,
 					SortOrder: 600,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/downloadable/order_item_status
 							ID:        "order_item_status",
 							Label:     `Order Item Status to Enable Downloads`,
@@ -34,7 +34,7 @@ func init() {
 							// SourceModel: Magento\Downloadable\Model\System\Config\Source\Orderitemstatus
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/downloadable/downloads_number
 							ID:        "downloads_number",
 							Label:     `Default Maximum Number of Downloads`,
@@ -44,7 +44,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/downloadable/shareable
 							ID:        "shareable",
 							Label:     `Shareable`,
@@ -55,7 +55,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/downloadable/samples_title
 							ID:        "samples_title",
 							Label:     `Default Sample Title`,
@@ -66,7 +66,7 @@ func init() {
 							Default:   `Samples`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/downloadable/links_title
 							ID:        "links_title",
 							Label:     `Default Link Title`,
@@ -77,7 +77,7 @@ func init() {
 							Default:   `Links`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/downloadable/links_target_new_window
 							ID:        "links_target_new_window",
 							Label:     `Open Links in New Window`,
@@ -89,7 +89,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/downloadable/content_disposition
 							ID:        "content_disposition",
 							Label:     `Use Content-Disposition`,
@@ -101,7 +101,7 @@ func init() {
 							// SourceModel: Magento\Downloadable\Model\System\Config\Source\Contentdisposition
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/downloadable/disable_guest_checkout
 							ID:        "disable_guest_checkout",
 							Label:     `Disable Guest Checkout if Cart Contains Downloadable Items`,

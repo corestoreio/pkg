@@ -13,7 +13,7 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "payment",
 			Label:     `Payment Methods`,
 			SortOrder: 400,
@@ -23,13 +23,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "payment",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "free",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: payment/free/active
 							ID:      `active`,
 							Type:    element.TypeHidden,
@@ -37,7 +37,7 @@ func init() {
 							Default: true,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/free/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
@@ -45,7 +45,7 @@ func init() {
 							Default: `Magento\Payment\Model\Method\Free`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/free/order_status
 							ID:      `order_status`,
 							Type:    element.TypeHidden,
@@ -53,7 +53,7 @@ func init() {
 							Default: `pending`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/free/title
 							ID:      `title`,
 							Type:    element.TypeHidden,
@@ -61,7 +61,7 @@ func init() {
 							Default: `No Payment Information Required`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/free/allowspecific
 							ID:      `allowspecific`,
 							Type:    element.TypeHidden,
@@ -69,7 +69,7 @@ func init() {
 							Default: false,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/free/sort_order
 							ID:      `sort_order`,
 							Type:    element.TypeHidden,
@@ -79,10 +79,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "substitution",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: payment/substitution/active
 							ID:      `active`,
 							Type:    element.TypeHidden,
@@ -90,7 +90,7 @@ func init() {
 							Default: false,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/substitution/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
@@ -98,7 +98,7 @@ func init() {
 							Default: `Magento\Payment\Model\Method\Substitution`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/substitution/allowspecific
 							ID:      `allowspecific`,
 							Type:    element.TypeHidden,

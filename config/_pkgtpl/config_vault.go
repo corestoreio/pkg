@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "payment",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "vault",
 					Label:     `Vault Provider`,
 					SortOrder: 2,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: payment/vault/vault_payment
 							ID:      "vault_payment",
 							Label:   `Vault Provider`,
@@ -38,13 +38,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "payment",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "vault",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: payment/vault/debug
 							ID:      `debug`,
 							Type:    element.TypeHidden,
@@ -52,7 +52,7 @@ func init() {
 							Default: true,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: payment/vault/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,

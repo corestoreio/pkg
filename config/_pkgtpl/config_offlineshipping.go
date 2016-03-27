@@ -13,18 +13,18 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "carriers",
 			SortOrder: 320,
 			Scopes:    scope.PermStore,
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "flatrate",
 					Label:     `Flat Rate`,
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: carriers/flatrate/active
 							ID:        "active",
 							Label:     `Enabled`,
@@ -36,7 +36,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/flatrate/name
 							ID:        "name",
 							Label:     `Method Name`,
@@ -47,7 +47,7 @@ func init() {
 							Default:   `Fixed`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/flatrate/price
 							ID:        "price",
 							Label:     `Price`,
@@ -58,7 +58,7 @@ func init() {
 							Default:   5.00,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/flatrate/handling_type
 							ID:        "handling_type",
 							Label:     `Calculate Handling Fee`,
@@ -70,7 +70,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Source\HandlingType
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/flatrate/handling_fee
 							ID:        "handling_fee",
 							Label:     `Handling Fee`,
@@ -80,7 +80,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/flatrate/sort_order
 							ID:        "sort_order",
 							Label:     `Sort Order`,
@@ -90,7 +90,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/flatrate/title
 							ID:        "title",
 							Label:     `Title`,
@@ -101,7 +101,7 @@ func init() {
 							Default:   `Flat Rate`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/flatrate/type
 							ID:        "type",
 							Label:     `Type`,
@@ -113,7 +113,7 @@ func init() {
 							// SourceModel: Magento\OfflineShipping\Model\Config\Source\Flatrate
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/flatrate/sallowspecific
 							ID:        "sallowspecific",
 							Label:     `Ship to Applicable Countries`,
@@ -125,7 +125,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/flatrate/specificcountry
 							ID:         "specificcountry",
 							Label:      `Ship to Specific Countries`,
@@ -137,7 +137,7 @@ func init() {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/flatrate/showmethod
 							ID:        "showmethod",
 							Label:     `Show Method if Not Applicable`,
@@ -148,7 +148,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/flatrate/specificerrmsg
 							ID:        "specificerrmsg",
 							Label:     `Displayed Error Message`,
@@ -161,13 +161,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "tablerate",
 					Label:     `Table Rates`,
 					SortOrder: 3,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: carriers/tablerate/handling_type
 							ID:        "handling_type",
 							Label:     `Calculate Handling Fee`,
@@ -179,7 +179,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Source\HandlingType
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/tablerate/handling_fee
 							ID:        "handling_fee",
 							Label:     `Handling Fee`,
@@ -189,7 +189,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/tablerate/active
 							ID:        "active",
 							Label:     `Enabled`,
@@ -201,7 +201,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/tablerate/condition_name
 							ID:        "condition_name",
 							Label:     `Condition`,
@@ -213,7 +213,7 @@ func init() {
 							// SourceModel: Magento\OfflineShipping\Model\Config\Source\Tablerate
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/tablerate/include_virtual_price
 							ID:        "include_virtual_price",
 							Label:     `Include Virtual Products in Price Calculation`,
@@ -225,7 +225,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/tablerate/export
 							ID:        "export",
 							Label:     `Export`,
@@ -235,7 +235,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/tablerate/import
 							ID:        "import",
 							Label:     `Import`,
@@ -246,7 +246,7 @@ func init() {
 							// BackendModel: Magento\OfflineShipping\Model\Config\Backend\Tablerate
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/tablerate/name
 							ID:        "name",
 							Label:     `Method Name`,
@@ -257,7 +257,7 @@ func init() {
 							Default:   `Table Rate`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/tablerate/sort_order
 							ID:        "sort_order",
 							Label:     `Sort Order`,
@@ -267,7 +267,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/tablerate/title
 							ID:        "title",
 							Label:     `Title`,
@@ -278,7 +278,7 @@ func init() {
 							Default:   `Best Way`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/tablerate/sallowspecific
 							ID:        "sallowspecific",
 							Label:     `Ship to Applicable Countries`,
@@ -290,7 +290,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/tablerate/specificcountry
 							ID:         "specificcountry",
 							Label:      `Ship to Specific Countries`,
@@ -302,7 +302,7 @@ func init() {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/tablerate/showmethod
 							ID:        "showmethod",
 							Label:     `Show Method if Not Applicable`,
@@ -313,7 +313,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/tablerate/specificerrmsg
 							ID:        "specificerrmsg",
 							Label:     `Displayed Error Message`,
@@ -326,13 +326,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "freeshipping",
 					Label:     `Free Shipping`,
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: carriers/freeshipping/active
 							ID:        "active",
 							Label:     `Enabled`,
@@ -344,7 +344,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/freeshipping/free_shipping_subtotal
 							ID:        "free_shipping_subtotal",
 							Label:     `Minimum Order Amount`,
@@ -354,7 +354,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/freeshipping/name
 							ID:        "name",
 							Label:     `Method Name`,
@@ -365,7 +365,7 @@ func init() {
 							Default:   `Free`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/freeshipping/sort_order
 							ID:        "sort_order",
 							Label:     `Sort Order`,
@@ -375,7 +375,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/freeshipping/title
 							ID:        "title",
 							Label:     `Title`,
@@ -386,7 +386,7 @@ func init() {
 							Default:   `Free Shipping`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/freeshipping/sallowspecific
 							ID:        "sallowspecific",
 							Label:     `Ship to Applicable Countries`,
@@ -398,7 +398,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/freeshipping/specificcountry
 							ID:         "specificcountry",
 							Label:      `Ship to Specific Countries`,
@@ -410,7 +410,7 @@ func init() {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/freeshipping/showmethod
 							ID:        "showmethod",
 							Label:     `Show Method if Not Applicable`,
@@ -421,7 +421,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/freeshipping/specificerrmsg
 							ID:        "specificerrmsg",
 							Label:     `Displayed Error Message`,
@@ -437,13 +437,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "carriers",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "flatrate",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: carriers/flatrate/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
@@ -453,10 +453,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "tablerate",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: carriers/tablerate/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
@@ -466,10 +466,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "freeshipping",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: carriers/freeshipping/cutoff_cost
 							ID:      `cutoff_cost`,
 							Type:    element.TypeHidden,
@@ -477,7 +477,7 @@ func init() {
 							Default: 50,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/freeshipping/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,

@@ -13,20 +13,20 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "currency",
 			Label:     `Currency Setup`,
 			SortOrder: 60,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::currency
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "options",
 					Label:     `Currency Options`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: currency/options/base
 							ID:        "base",
 							Label:     `Base Currency`,
@@ -40,7 +40,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: currency/options/default
 							ID:        "default",
 							Label:     `Default Display Currency`,
@@ -53,7 +53,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: currency/options/allow
 							ID:         "allow",
 							Label:      `Allowed Currencies`,
@@ -69,13 +69,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "webservicex",
 					Label:     `Webservicex`,
 					SortOrder: 40,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: currency/webservicex/timeout
 							ID:      "timeout",
 							Label:   `Connection Timeout in Seconds`,
@@ -87,13 +87,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "import",
 					Label:     `Scheduled Import Settings`,
 					SortOrder: 50,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: currency/import/enabled
 							ID:        "enabled",
 							Label:     `Enabled`,
@@ -105,7 +105,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: currency/import/error_email
 							ID:        "error_email",
 							Label:     `Error Email Recipient`,
@@ -115,7 +115,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: currency/import/error_email_identity
 							ID:        "error_email_identity",
 							Label:     `Error Email Sender`,
@@ -127,7 +127,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: currency/import/error_email_template
 							ID:        "error_email_template",
 							Label:     `Error Email Template`,
@@ -140,7 +140,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: currency/import/frequency
 							ID:        "frequency",
 							Label:     `Frequency`,
@@ -151,7 +151,7 @@ func init() {
 							// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: currency/import/service
 							ID:        "service",
 							Label:     `Service`,
@@ -163,7 +163,7 @@ func init() {
 							// SourceModel: Magento\Directory\Model\Currency\Import\Source\Service
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: currency/import/time
 							ID:        "time",
 							Label:     `Start Time`,
@@ -176,16 +176,16 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "system",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "currency",
 					Label:     `Currency`,
 					SortOrder: 50,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/currency/installed
 							ID:         "installed",
 							Label:      `Installed Currencies`,
@@ -202,13 +202,13 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "general",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "country",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: general/country/optional_zip_countries
 							ID:         "optional_zip_countries",
 							Label:      `Zip/Postal Code is Optional for`,
@@ -223,13 +223,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "region",
 					Label:     `State Options`,
 					SortOrder: 4,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: general/region/state_required
 							ID:        "state_required",
 							Label:     `State is Required for`,
@@ -240,7 +240,7 @@ func init() {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/region/display_all
 							ID:        "display_all",
 							Label:     `Allow to Choose State if It is Optional for Country`,
@@ -253,10 +253,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "locale",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: general/locale/weight_unit
 							ID:        "weight_unit",
 							Label:     `Weight Unit`,
@@ -273,13 +273,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "currency",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "import",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: currency/import/error_email
 							ID:      `error_email`,
 							Type:    element.TypeHidden,
@@ -289,13 +289,13 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "general",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "country",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: general/country/allow
 							ID:      `allow`,
 							Type:    element.TypeHidden,
@@ -303,7 +303,7 @@ func init() {
 							Default: `AF,AL,DZ,AS,AD,AO,AI,AQ,AG,AR,AM,AW,AU,AT,AX,AZ,BS,BH,BD,BB,BY,BE,BZ,BJ,BM,BL,BT,BO,BA,BW,BV,BR,IO,VG,BN,BG,BF,BI,KH,CM,CA,CD,CV,KY,CF,TD,CL,CN,CX,CC,CO,KM,CG,CK,CR,HR,CU,CY,CZ,DK,DJ,DM,DO,EC,EG,SV,GQ,ER,EE,ET,FK,FO,FJ,FI,FR,GF,PF,TF,GA,GM,GE,DE,GG,GH,GI,GR,GL,GD,GP,GU,GT,GN,GW,GY,HT,HM,HN,HK,HU,IS,IM,IN,ID,IR,IQ,IE,IL,IT,CI,JE,JM,JP,JO,KZ,KE,KI,KW,KG,LA,LV,LB,LS,LR,LY,LI,LT,LU,ME,MF,MO,MK,MG,MW,MY,MV,ML,MT,MH,MQ,MR,MU,YT,FX,MX,FM,MD,MC,MN,MS,MA,MZ,MM,NA,NR,NP,NL,AN,NC,NZ,NI,NE,NG,NU,NF,KP,MP,NO,OM,PK,PW,PA,PG,PY,PE,PH,PN,PL,PS,PT,PR,QA,RE,RO,RS,RU,RW,SH,KN,LC,PM,VC,WS,SM,ST,SA,SN,SC,SL,SG,SK,SI,SB,SO,ZA,GS,KR,ES,LK,SD,SR,SJ,SZ,SE,CH,SY,TL,TW,TJ,TZ,TH,TG,TK,TO,TT,TN,TR,TM,TC,TV,VI,UG,UA,AE,GB,US,UM,UY,UZ,VU,VA,VE,VN,WF,EH,YE,ZM,ZW`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/country/default
 							ID:      `default`,
 							Type:    element.TypeHidden,
@@ -313,10 +313,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "locale",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: general/locale/datetime_format_long
 							ID:      `datetime_format_long`,
 							Type:    element.TypeHidden,
@@ -324,7 +324,7 @@ func init() {
 							Default: `%A, %B %e %Y [%I:%M %p]`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/datetime_format_medium
 							ID:      `datetime_format_medium`,
 							Type:    element.TypeHidden,
@@ -332,7 +332,7 @@ func init() {
 							Default: `%a, %b %e %Y [%I:%M %p]`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/datetime_format_short
 							ID:      `datetime_format_short`,
 							Type:    element.TypeHidden,
@@ -340,7 +340,7 @@ func init() {
 							Default: `%m/%d/%y [%I:%M %p]`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/date_format_long
 							ID:      `date_format_long`,
 							Type:    element.TypeHidden,
@@ -348,7 +348,7 @@ func init() {
 							Default: `%A, %B %e %Y`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/date_format_medium
 							ID:      `date_format_medium`,
 							Type:    element.TypeHidden,
@@ -356,7 +356,7 @@ func init() {
 							Default: `%a, %b %e %Y`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/date_format_short
 							ID:      `date_format_short`,
 							Type:    element.TypeHidden,
@@ -364,7 +364,7 @@ func init() {
 							Default: `%m/%d/%y`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/language
 							ID:      `language`,
 							Type:    element.TypeHidden,
@@ -372,7 +372,7 @@ func init() {
 							Default: `en`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/code
 							ID:      `code`,
 							Type:    element.TypeHidden,
@@ -380,7 +380,7 @@ func init() {
 							Default: `en_US`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/timezone
 							ID:      `timezone`,
 							Type:    element.TypeHidden,

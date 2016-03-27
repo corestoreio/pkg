@@ -13,13 +13,13 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "dev",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "js",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: dev/js/session_storage_logging
 							ID:        "session_storage_logging",
 							Label:     `Log JS Errors to Session Storage`,
@@ -32,7 +32,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: dev/js/session_storage_key
 							ID:        "session_storage_key",
 							Label:     `Log JS Errors to Session Storage Key`,

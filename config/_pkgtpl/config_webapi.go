@@ -13,20 +13,20 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "webapi",
 			Label:     `Magento Web API`,
 			SortOrder: 102,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Webapi::config_webapi
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "soap",
 					Label:     `SOAP Settings`,
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: webapi/soap/charset
 							ID:        "charset",
 							Label:     `Default Response Charset`,

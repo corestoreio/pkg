@@ -13,20 +13,20 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "rss",
 			Label:     `RSS Feeds`,
 			SortOrder: 80,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Rss::rss
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "config",
 					Label:     `Rss Config`,
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: rss/config/active
 							ID:        "active",
 							Label:     `Enable RSS`,

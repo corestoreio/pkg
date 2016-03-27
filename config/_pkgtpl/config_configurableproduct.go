@@ -13,13 +13,13 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "checkout",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "cart",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: checkout/cart/configurable_product_image
 							ID:        "configurable_product_image",
 							Label:     `Configurable Product Image`,

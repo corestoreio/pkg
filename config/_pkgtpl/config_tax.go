@@ -13,20 +13,20 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "tax",
 			Label:     `Tax`,
 			SortOrder: 303,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Tax::config_tax
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "classes",
 					Label:     `Tax Classes`,
 					SortOrder: 10,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: tax/classes/shipping_tax_class
 							ID:        "shipping_tax_class",
 							Label:     `Tax Class for Shipping`,
@@ -38,7 +38,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\TaxClass\Source\Product
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/classes/default_product_tax_class
 							ID:        "default_product_tax_class",
 							Label:     `Default Tax Class for Product`,
@@ -51,7 +51,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\TaxClass\Source\Product
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/classes/default_customer_tax_class
 							ID:        "default_customer_tax_class",
 							Label:     `Default Tax Class for Customer`,
@@ -65,13 +65,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "calculation",
 					Label:     `Calculation Settings`,
 					SortOrder: 20,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: tax/calculation/algorithm
 							ID:        "algorithm",
 							Label:     `Tax Calculation Method Based On`,
@@ -83,7 +83,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Algorithm
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/calculation/based_on
 							ID:        "based_on",
 							Label:     `Tax Calculation Based On`,
@@ -96,7 +96,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\Config\Source\Basedon
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/calculation/price_includes_tax
 							ID:        "price_includes_tax",
 							Label:     `Catalog Prices`,
@@ -110,7 +110,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\System\Config\Source\PriceType
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/calculation/shipping_includes_tax
 							ID:        "shipping_includes_tax",
 							Label:     `Shipping Prices`,
@@ -124,7 +124,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\System\Config\Source\PriceType
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/calculation/apply_after_discount
 							ID:        "apply_after_discount",
 							Label:     `Apply Customer Tax`,
@@ -137,7 +137,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Apply
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/calculation/discount_tax
 							ID:        "discount_tax",
 							Label:     `Apply Discount On Prices`,
@@ -151,7 +151,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\System\Config\Source\PriceType
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/calculation/apply_tax_on
 							ID:        "apply_tax_on",
 							Label:     `Apply Tax On`,
@@ -163,7 +163,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\Config\Source\Apply\On
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/calculation/cross_border_trade_enabled
 							ID:        "cross_border_trade_enabled",
 							Label:     `Enable Cross Border Trade`,
@@ -177,13 +177,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "defaults",
 					Label:     `Default Tax Destination Calculation`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: tax/defaults/country
 							ID:        "country",
 							Label:     `Default Country`,
@@ -195,7 +195,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/defaults/region
 							ID:        "region",
 							Label:     `Default State`,
@@ -207,7 +207,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Region
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/defaults/postcode
 							ID:        "postcode",
 							Label:     `Default Post Code`,
@@ -219,13 +219,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "display",
 					Label:     `Price Display Settings`,
 					SortOrder: 40,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: tax/display/type
 							ID:        "type",
 							Label:     `Display Product Prices In Catalog`,
@@ -238,7 +238,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/display/shipping
 							ID:        "shipping",
 							Label:     `Display Shipping Prices`,
@@ -253,13 +253,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "cart_display",
 					Label:     `Shopping Cart Display Settings`,
 					SortOrder: 50,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: tax/cart_display/price
 							ID:        "price",
 							Label:     `Display Prices`,
@@ -272,7 +272,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/cart_display/subtotal
 							ID:        "subtotal",
 							Label:     `Display Subtotal`,
@@ -285,7 +285,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/cart_display/shipping
 							ID:        "shipping",
 							Label:     `Display Shipping Amount`,
@@ -298,7 +298,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/cart_display/grandtotal
 							ID:        "grandtotal",
 							Label:     `Include Tax In Order Total`,
@@ -310,7 +310,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/cart_display/full_summary
 							ID:        "full_summary",
 							Label:     `Display Full Tax Summary`,
@@ -322,7 +322,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/cart_display/zero_tax
 							ID:        "zero_tax",
 							Label:     `Display Zero Tax Subtotal`,
@@ -336,13 +336,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "sales_display",
 					Label:     `Orders, Invoices, Credit Memos Display Settings`,
 					SortOrder: 60,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: tax/sales_display/price
 							ID:        "price",
 							Label:     `Display Prices`,
@@ -355,7 +355,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/sales_display/subtotal
 							ID:        "subtotal",
 							Label:     `Display Subtotal`,
@@ -368,7 +368,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/sales_display/shipping
 							ID:        "shipping",
 							Label:     `Display Shipping Amount`,
@@ -381,7 +381,7 @@ func init() {
 							// SourceModel: Magento\Tax\Model\System\Config\Source\Tax\Display\Type
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/sales_display/grandtotal
 							ID:        "grandtotal",
 							Label:     `Include Tax In Order Total`,
@@ -393,7 +393,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/sales_display/full_summary
 							ID:        "full_summary",
 							Label:     `Display Full Tax Summary`,
@@ -405,7 +405,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: tax/sales_display/zero_tax
 							ID:        "zero_tax",
 							Label:     `Display Zero Tax Subtotal`,
@@ -422,13 +422,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "tax",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "cart_display",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: tax/cart_display/discount
 							ID:      `discount`,
 							Type:    element.TypeHidden,
@@ -438,10 +438,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "sales_display",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: tax/sales_display/discount
 							ID:      `discount`,
 							Type:    element.TypeHidden,
@@ -451,10 +451,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "notification",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: tax/notification/info_url
 							ID:      `info_url`,
 							Type:    element.TypeHidden,

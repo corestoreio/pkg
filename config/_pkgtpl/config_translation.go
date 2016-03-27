@@ -13,13 +13,13 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "dev",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "js",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: dev/js/translate_strategy
 							ID:        "translate_strategy",
 							Label:     `Translation Strategy`,
@@ -37,13 +37,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "dev",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "translate_inline",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: dev/translate_inline/active
 							ID:      `active`,
 							Type:    element.TypeHidden,
@@ -51,7 +51,7 @@ func init() {
 							Default: false,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: dev/translate_inline/active_admin
 							ID:      `active_admin`,
 							Type:    element.TypeHidden,
@@ -59,7 +59,7 @@ func init() {
 							Default: false,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: dev/translate_inline/invalid_caches
 							ID:      `invalid_caches`,
 							Type:    element.TypeHidden,

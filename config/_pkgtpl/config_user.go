@@ -13,13 +13,13 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "admin",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "emails",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: admin/emails/reset_password_template
 							ID:        "reset_password_template",
 							Label:     `Reset Password Template`,
@@ -34,10 +34,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "security",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: admin/security/lockout_failures
 							ID:        "lockout_failures",
 							Label:     `Maximum Login Failures to Lockout Account`,
@@ -49,7 +49,7 @@ func init() {
 							Default:   6,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/security/lockout_threshold
 							ID:        "lockout_threshold",
 							Label:     `Lockout Time (minutes)`,
@@ -60,7 +60,7 @@ func init() {
 							Default:   30,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/security/password_lifetime
 							ID:        "password_lifetime",
 							Label:     `Password Lifetime (days)`,
@@ -72,7 +72,7 @@ func init() {
 							Default:   90,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/security/password_is_forced
 							ID:        "password_is_forced",
 							Label:     `Password Change`,
@@ -89,13 +89,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "admin",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "emails",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: admin/emails/forgot_email_template
 							ID:      `forgot_email_template`,
 							Type:    element.TypeHidden,
@@ -103,7 +103,7 @@ func init() {
 							Default: `admin_emails_forgot_email_template`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/emails/forgot_email_identity
 							ID:      `forgot_email_identity`,
 							Type:    element.TypeHidden,
@@ -111,7 +111,7 @@ func init() {
 							Default: `general`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/emails/password_reset_link_expiration_period
 							ID:      `password_reset_link_expiration_period`,
 							Type:    element.TypeHidden,

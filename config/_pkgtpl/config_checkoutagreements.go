@@ -13,13 +13,13 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "checkout",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "options",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: checkout/options/enable_agreements
 							ID:        "enable_agreements",
 							Label:     `Enable Terms and Conditions`,

@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "design",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "head",
 					Label:     `HTML Head`,
 					SortOrder: 20,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: design/head/shortcut_icon
 							ID:        "shortcut_icon",
 							Label:     `Favicon Icon`,
@@ -34,7 +34,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Image\Favicon
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/head/default_title
 							ID:        "default_title",
 							Label:     `Default Title`,
@@ -44,7 +44,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/head/title_prefix
 							ID:        "title_prefix",
 							Label:     `Title Prefix`,
@@ -54,7 +54,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/head/title_suffix
 							ID:        "title_suffix",
 							Label:     `Title Suffix`,
@@ -64,7 +64,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/head/default_description
 							ID:        "default_description",
 							Label:     `Default Description`,
@@ -74,7 +74,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/head/default_keywords
 							ID:        "default_keywords",
 							Label:     `Default Keywords`,
@@ -84,7 +84,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/head/includes
 							ID:        "includes",
 							Label:     `Miscellaneous Scripts`,
@@ -95,7 +95,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/head/demonotice
 							ID:        "demonotice",
 							Label:     `Display Demo Store Notice`,
@@ -108,13 +108,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "search_engine_robots",
 					Label:     `Search Engine Robots`,
 					SortOrder: 25,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: design/search_engine_robots/default_robots
 							ID:        "default_robots",
 							Label:     `Default Robots`,
@@ -127,7 +127,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Design\Robots
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/search_engine_robots/custom_instructions
 							ID:        "custom_instructions",
 							Label:     `Edit custom instruction of robots.txt File`,
@@ -138,7 +138,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Robots
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/search_engine_robots/reset_to_defaults
 							ID:        "reset_to_defaults",
 							Label:     `Reset to Defaults`,
@@ -151,13 +151,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "header",
 					Label:     `Header`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: design/header/logo_src
 							ID:        "logo_src",
 							Label:     `Logo Image`,
@@ -169,7 +169,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Image\Logo
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/header/logo_width
 							ID:        "logo_width",
 							Label:     `Logo Image Width`,
@@ -179,7 +179,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/header/logo_height
 							ID:        "logo_height",
 							Label:     `Logo Image Height`,
@@ -189,7 +189,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/header/logo_alt
 							ID:        "logo_alt",
 							Label:     `Logo Image Alt`,
@@ -199,7 +199,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/header/welcome
 							ID:        "welcome",
 							Label:     `Welcome Text`,
@@ -211,13 +211,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "footer",
 					Label:     `Footer`,
 					SortOrder: 40,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: design/footer/copyright
 							ID:        "copyright",
 							Label:     `Copyright`,
@@ -227,7 +227,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/footer/absolute_footer
 							ID:        "absolute_footer",
 							Label:     `Miscellaneous HTML`,
@@ -243,27 +243,27 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "design",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "invalid_caches",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: design/invalid_caches/block_html
 							ID:      `block_html`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/invalid_caches/layout
 							ID:      `layout`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/invalid_caches/translate
 							ID:      `translate`,
 							Type:    element.TypeHidden,
@@ -272,10 +272,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "head",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: design/head/_value
 							ID:      `_value`,
 							Type:    element.TypeHidden,
@@ -283,7 +283,7 @@ func init() {
 							Default: `{"default_title":"Magento Commerce","default_description":"Default Description","default_keywords":"Magento, Varien, E-commerce","default_media_type":"text\/html","default_charset":"utf-8"}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/head/_attribute
 							ID:      `_attribute`,
 							Type:    element.TypeHidden,
@@ -293,10 +293,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "search_engine_robots",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: design/search_engine_robots/default_custom_instructions
 							ID:      `default_custom_instructions`,
 							Type:    element.TypeHidden,
@@ -322,10 +322,10 @@ Disallow: /*SID=
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "header",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: design/header/_value
 							ID:      `_value`,
 							Type:    element.TypeHidden,
@@ -333,7 +333,7 @@ Disallow: /*SID=
 							Default: `{"logo_alt":"Magento Commerce","welcome":"Default welcome msg!"}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/header/_attribute
 							ID:      `_attribute`,
 							Type:    element.TypeHidden,
@@ -343,10 +343,10 @@ Disallow: /*SID=
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "footer",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: design/footer/_value
 							ID:      `_value`,
 							Type:    element.TypeHidden,
@@ -354,7 +354,7 @@ Disallow: /*SID=
 							Default: `{"copyright":"Copyright \u00a9 2015 Magento. All rights reserved."}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/footer/_attribute
 							ID:      `_attribute`,
 							Type:    element.TypeHidden,
@@ -365,13 +365,13 @@ Disallow: /*SID=
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "theme",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "customization",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: theme/customization/custom_css
 							ID:      `custom_css`,
 							Type:    element.TypeHidden,
@@ -382,13 +382,13 @@ Disallow: /*SID=
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "system",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "media_storage_configuration",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/media_storage_configuration/allowed_resources
 							ID:      `allowed_resources`,
 							Type:    element.TypeHidden,

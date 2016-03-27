@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "carriers",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "fedex",
 					Label:     `FedEx`,
 					SortOrder: 120,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/active
 							ID:        "active",
 							Label:     `Enabled for Checkout`,
@@ -34,7 +34,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/active_rma
 							ID:        "active_rma",
 							Label:     `Enabled for RMA`,
@@ -46,7 +46,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/title
 							ID:        "title",
 							Label:     `Title`,
@@ -57,7 +57,7 @@ func init() {
 							Default:   `Federal Express`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/account
 							ID:        "account",
 							Label:     `Account ID`,
@@ -70,7 +70,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/meter_number
 							ID:        "meter_number",
 							Label:     `Meter Number`,
@@ -82,7 +82,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/key
 							ID:        "key",
 							Label:     `Key`,
@@ -94,7 +94,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/password
 							ID:        "password",
 							Label:     `Password`,
@@ -106,7 +106,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Encrypted @todo Magento\Config\Model\Config\Backend\Encrypted
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/sandbox_mode
 							ID:        "sandbox_mode",
 							Label:     `Sandbox Mode`,
@@ -118,7 +118,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/production_webservices_url
 							ID:        "production_webservices_url",
 							Label:     `Web-Services URL (Production)`,
@@ -129,7 +129,7 @@ func init() {
 							Default:   `https://ws.fedex.com:443/web-services/`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/sandbox_webservices_url
 							ID:        "sandbox_webservices_url",
 							Label:     `Web-Services URL (Sandbox)`,
@@ -140,7 +140,7 @@ func init() {
 							Default:   `https://wsbeta.fedex.com:443/web-services/`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/shipment_requesttype
 							ID:        "shipment_requesttype",
 							Label:     `Packages Request Type`,
@@ -152,7 +152,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Config\Source\Online\Requesttype
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/packaging
 							ID:        "packaging",
 							Label:     `Packaging`,
@@ -164,7 +164,7 @@ func init() {
 							// SourceModel: Magento\Fedex\Model\Source\Packaging
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/dropoff
 							ID:        "dropoff",
 							Label:     `Dropoff`,
@@ -176,7 +176,7 @@ func init() {
 							// SourceModel: Magento\Fedex\Model\Source\Dropoff
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/unit_of_measure
 							ID:        "unit_of_measure",
 							Label:     `Weight Unit`,
@@ -188,7 +188,7 @@ func init() {
 							// SourceModel: Magento\Fedex\Model\Source\Unitofmeasure
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/max_package_weight
 							ID:        "max_package_weight",
 							Label:     `Maximum Package Weight (Please consult your shipping carrier for maximum supported shipping weight)`,
@@ -199,7 +199,7 @@ func init() {
 							Default:   150,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/handling_type
 							ID:        "handling_type",
 							Label:     `Calculate Handling Fee`,
@@ -211,7 +211,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Source\HandlingType
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/handling_action
 							ID:        "handling_action",
 							Label:     `Handling Applied`,
@@ -223,7 +223,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Source\HandlingAction
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/handling_fee
 							ID:        "handling_fee",
 							Label:     `Handling Fee`,
@@ -233,7 +233,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/residence_delivery
 							ID:        "residence_delivery",
 							Label:     `Residential Delivery`,
@@ -244,7 +244,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/allowed_methods
 							ID:         "allowed_methods",
 							Label:      `Allowed Methods`,
@@ -257,7 +257,7 @@ func init() {
 							// SourceModel: Magento\Fedex\Model\Source\Method
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/smartpost_hubid
 							ID:        "smartpost_hubid",
 							Label:     `Hub ID`,
@@ -268,7 +268,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/free_method
 							ID:        "free_method",
 							Label:     `Free Method`,
@@ -280,7 +280,7 @@ func init() {
 							// SourceModel: Magento\Fedex\Model\Source\Freemethod
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/free_shipping_enable
 							ID:        "free_shipping_enable",
 							Label:     `Free Shipping Amount Threshold`,
@@ -291,7 +291,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/free_shipping_subtotal
 							ID:        "free_shipping_subtotal",
 							Label:     `Free Shipping Amount Threshold`,
@@ -301,7 +301,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/specificerrmsg
 							ID:        "specificerrmsg",
 							Label:     `Displayed Error Message`,
@@ -312,7 +312,7 @@ func init() {
 							Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/sallowspecific
 							ID:        "sallowspecific",
 							Label:     `Ship to Applicable Countries`,
@@ -324,7 +324,7 @@ func init() {
 							// SourceModel: Magento\Shipping\Model\Config\Source\Allspecificcountries
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/specificcountry
 							ID:         "specificcountry",
 							Label:      `Ship to Specific Countries`,
@@ -336,7 +336,7 @@ func init() {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/debug
 							ID:        "debug",
 							Label:     `Debug`,
@@ -347,7 +347,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/showmethod
 							ID:        "showmethod",
 							Label:     `Show Method if Not Applicable`,
@@ -358,7 +358,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/sort_order
 							ID:        "sort_order",
 							Label:     `Sort Order`,
@@ -373,20 +373,20 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "carriers",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "fedex",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/cutoff_cost
 							ID:      `cutoff_cost`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/handling
 							ID:      `handling`,
 							Type:    element.TypeHidden,
@@ -394,7 +394,7 @@ func init() {
 							Default: false,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/cfgmodel
 							ID:      `model`,
 							Type:    element.TypeHidden,
@@ -402,7 +402,7 @@ func init() {
 							Default: `Magento\Fedex\Model\Carrier`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: carriers/fedex/is_online
 							ID:      `is_online`,
 							Type:    element.TypeHidden,

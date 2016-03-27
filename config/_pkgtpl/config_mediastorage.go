@@ -13,18 +13,18 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "system",
 			SortOrder: 900,
 			Scopes:    scope.PermStore,
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "media_storage_configuration",
 					Label:     `Storage Configuration for Media`,
 					SortOrder: 900,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/media_storage_configuration/media_storage
 							ID:        "media_storage",
 							Label:     `Media Storage`,
@@ -35,7 +35,7 @@ func init() {
 							// SourceModel: Magento\MediaStorage\Model\Config\Source\Storage\Media\Storage
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/media_storage_configuration/media_database
 							ID:        "media_database",
 							Label:     `Select Media Database`,
@@ -47,7 +47,7 @@ func init() {
 							// SourceModel: Magento\MediaStorage\Model\Config\Source\Storage\Media\Database
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/media_storage_configuration/synchronize
 							ID:        "synchronize",
 							Comment:   text.Long(`After selecting a new media storage location, press the Synchronize button to transfer all media to that location. Media will not be available in the new location until the synchronization process is complete.`),
@@ -57,7 +57,7 @@ func init() {
 							Scopes:    scope.PermDefault,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/media_storage_configuration/configuration_update_time
 							ID:        "configuration_update_time",
 							Label:     `Environment Update Time`,

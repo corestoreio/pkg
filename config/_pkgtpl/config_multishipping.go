@@ -13,20 +13,20 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "multishipping",
 			Label:     `Multishipping Settings`,
 			SortOrder: 311,
 			Scopes:    scope.PermWebsite,
 			Resource:  0, // Magento_Multishipping::config_multishipping
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "options",
 					Label:     `Options`,
 					SortOrder: 2,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: multishipping/options/checkout_multiple
 							ID:        "checkout_multiple",
 							Label:     `Allow Shipping to Multiple Addresses`,
@@ -38,7 +38,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: multishipping/options/checkout_multiple_maximum_qty
 							ID:        "checkout_multiple_maximum_qty",
 							Label:     `Maximum Qty Allowed for Shipping to Multiple Addresses`,

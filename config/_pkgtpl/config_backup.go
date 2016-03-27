@@ -13,16 +13,16 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: "system",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        "backup",
 					Label:     `Scheduled Backup Settings`,
 					SortOrder: 500,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/backup/enabled
 							ID:        "enabled",
 							Label:     `Enable Scheduled Backup`,
@@ -33,7 +33,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/backup/type
 							ID:        "type",
 							Label:     `Backup Type`,
@@ -44,7 +44,7 @@ func init() {
 							// SourceModel: Magento\Backup\Model\Config\Source\Type
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/backup/time
 							ID:        "time",
 							Label:     `Start Time`,
@@ -54,7 +54,7 @@ func init() {
 							Scopes:    scope.PermDefault,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/backup/frequency
 							ID:        "frequency",
 							Label:     `Frequency`,
@@ -66,7 +66,7 @@ func init() {
 							// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/backup/maintenance
 							ID:        "maintenance",
 							Label:     `Maintenance Mode`,

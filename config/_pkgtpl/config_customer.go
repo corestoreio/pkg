@@ -13,21 +13,21 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        "customer",
 			Label:     `Customer Configuration`,
 			SortOrder: 130,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Customer::config_customer
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:                    "account_share",
 					Label:                 `Account Sharing Options`,
 					SortOrder:             10,
 					Scopes:                scope.PermDefault,
 					HideInSingleStoreMode: true,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: customer/account_share/scope
 							ID:        "scope",
 							Label:     `Share Customer Accounts`,
@@ -42,13 +42,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "create_account",
 					Label:     `Create New Account Options`,
 					SortOrder: 20,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/auto_group_assign
 							ID:        "auto_group_assign",
 							Label:     `Enable Automatic Assignment to Customer Group`,
@@ -59,7 +59,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/tax_calculation_address_type
 							ID:        "tax_calculation_address_type",
 							Label:     `Tax Calculation Based On`,
@@ -71,7 +71,7 @@ func init() {
 							// SourceModel: Magento\Customer\Model\Config\Source\Address\Type
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/default_group
 							ID:        "default_group",
 							Label:     `Default Group`,
@@ -83,7 +83,7 @@ func init() {
 							// SourceModel: Magento\Customer\Model\Config\Source\Group
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/viv_domestic_group
 							ID:        "viv_domestic_group",
 							Label:     `Group for Valid VAT ID - Domestic`,
@@ -94,7 +94,7 @@ func init() {
 							// SourceModel: Magento\Customer\Model\Config\Source\Group
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/viv_intra_union_group
 							ID:        "viv_intra_union_group",
 							Label:     `Group for Valid VAT ID - Intra-Union`,
@@ -105,7 +105,7 @@ func init() {
 							// SourceModel: Magento\Customer\Model\Config\Source\Group
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/viv_invalid_group
 							ID:        "viv_invalid_group",
 							Label:     `Group for Invalid VAT ID`,
@@ -116,7 +116,7 @@ func init() {
 							// SourceModel: Magento\Customer\Model\Config\Source\Group
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/viv_error_group
 							ID:        "viv_error_group",
 							Label:     `Validation Error Group`,
@@ -127,7 +127,7 @@ func init() {
 							// SourceModel: Magento\Customer\Model\Config\Source\Group
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/viv_on_each_transaction
 							ID:        "viv_on_each_transaction",
 							Label:     `Validate on Each Transaction`,
@@ -138,7 +138,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/viv_disable_auto_group_assign_default
 							ID:        "viv_disable_auto_group_assign_default",
 							Label:     `Default Value for Disable Automatic Group Changes Based on VAT ID`,
@@ -150,7 +150,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/vat_frontend_visibility
 							ID:        "vat_frontend_visibility",
 							Label:     `Show VAT Number on Storefront`,
@@ -163,7 +163,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/email_domain
 							ID:        "email_domain",
 							Label:     `Default Email Domain`,
@@ -174,7 +174,7 @@ func init() {
 							Default:   `example.com`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/email_template
 							ID:        "email_template",
 							Label:     `Default Welcome Email`,
@@ -187,7 +187,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/email_no_password_template
 							ID:        "email_no_password_template",
 							Label:     `Default Welcome Email Without Password`,
@@ -200,7 +200,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/email_identity
 							ID:        "email_identity",
 							Label:     `Email Sender`,
@@ -212,7 +212,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/confirm
 							ID:        "confirm",
 							Label:     `Require Emails Confirmation`,
@@ -224,7 +224,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/email_confirmation_template
 							ID:        "email_confirmation_template",
 							Label:     `Confirmation Link Email`,
@@ -237,7 +237,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/email_confirmed_template
 							ID:        "email_confirmed_template",
 							Label:     `Welcome Email`,
@@ -250,7 +250,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/create_account/generate_human_friendly_id
 							ID:        "generate_human_friendly_id",
 							Label:     `Generate Human-Friendly Customer ID`,
@@ -263,13 +263,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "password",
 					Label:     `Password Options`,
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: customer/password/forgot_email_template
 							ID:        "forgot_email_template",
 							Label:     `Forgot Email Template`,
@@ -282,7 +282,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/password/remind_email_template
 							ID:        "remind_email_template",
 							Label:     `Remind Email Template`,
@@ -295,7 +295,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/password/reset_password_template
 							ID:        "reset_password_template",
 							Label:     `Reset Password Template`,
@@ -308,7 +308,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/password/forgot_email_identity
 							ID:        "forgot_email_identity",
 							Label:     `Password Template Email Sender`,
@@ -320,7 +320,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/password/reset_link_expiration_period
 							ID:        "reset_link_expiration_period",
 							Label:     `Recovery Link Expiration Period (days)`,
@@ -335,13 +335,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "address",
 					Label:     `Name and Address Options`,
 					SortOrder: 40,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: customer/address/street_lines
 							ID:        "street_lines",
 							Label:     `Number of Lines in a Street Address`,
@@ -354,7 +354,7 @@ func init() {
 							// BackendModel: Magento\Customer\Model\Config\Backend\Address\Street
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address/prefix_show
 							ID:        "prefix_show",
 							Label:     `Show Prefix`,
@@ -367,7 +367,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address/prefix_options
 							ID:        "prefix_options",
 							Label:     `Prefix Dropdown Options`,
@@ -378,7 +378,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address/middlename_show
 							ID:        "middlename_show",
 							Label:     `Show Middle Name (initial)`,
@@ -391,7 +391,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address/suffix_show
 							ID:        "suffix_show",
 							Label:     `Show Suffix`,
@@ -404,7 +404,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address/suffix_options
 							ID:        "suffix_options",
 							Label:     `Suffix Dropdown Options`,
@@ -415,7 +415,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address/dob_show
 							ID:        "dob_show",
 							Label:     `Show Date of Birth`,
@@ -427,7 +427,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address/taxvat_show
 							ID:        "taxvat_show",
 							Label:     `Show Tax/VAT Number`,
@@ -439,7 +439,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Nooptreq
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address/gender_show
 							ID:        "gender_show",
 							Label:     `Show Gender`,
@@ -453,13 +453,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "startup",
 					Label:     `Login Options`,
 					SortOrder: 90,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: customer/startup/redirect_dashboard
 							ID:        "redirect_dashboard",
 							Label:     `Redirect Customer to Account Dashboard after Logging in`,
@@ -474,13 +474,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "address_templates",
 					Label:     `Address Templates`,
 					SortOrder: 100,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: customer/address_templates/text
 							ID:        "text",
 							Label:     `Text`,
@@ -502,7 +502,7 @@ T: {{var telephone}}
 {{depend vat_id}}VAT: {{var vat_id}}{{/depend}}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address_templates/oneline
 							ID:        "oneline",
 							Label:     `Text One Line`,
@@ -513,7 +513,7 @@ T: {{var telephone}}
 							Default:   `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}, {{var street}}, {{var city}}, {{var region}} {{var postcode}}, {{var country}}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address_templates/html
 							ID:        "html",
 							Label:     `HTML`,
@@ -534,7 +534,7 @@ T: {{var telephone}}
 {{depend vat_id}}<br/>VAT: {{var vat_id}}{{/depend}}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address_templates/pdf
 							ID:        "pdf",
 							Label:     `PDF`,
@@ -559,13 +559,13 @@ T: {{var telephone}}
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        "online_customers",
 					Label:     `Online Customers Options`,
 					SortOrder: 10,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: customer/online_customers/online_minutes_interval
 							ID:        "online_minutes_interval",
 							Label:     `Online Minutes Interval`,
@@ -579,13 +579,13 @@ T: {{var telephone}}
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: "general",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "store_information",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: general/store_information/validate_vat_number
 							ID:        "validate_vat_number",
 							Type:      element.Type,
@@ -596,10 +596,10 @@ T: {{var telephone}}
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "restriction",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: general/restriction/autocomplete_on_storefront
 							ID:        "autocomplete_on_storefront",
 							Label:     `Enable Autocomplete on login/forgot password forms`,
@@ -616,13 +616,13 @@ T: {{var telephone}}
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: "customer",
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: "default",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: customer/default/group
 							ID:      `group`,
 							Type:    element.TypeHidden,
@@ -632,52 +632,52 @@ T: {{var telephone}}
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: "address",
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: customer/address/prefix_show
 							ID:      `prefix_show`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address/prefix_options
 							ID:      `prefix_options`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address/middlename_show
 							ID:      `middlename_show`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address/suffix_show
 							ID:      `suffix_show`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address/suffix_options
 							ID:      `suffix_options`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address/dob_show
 							ID:      `dob_show`,
 							Type:    element.TypeHidden,
 							Visible: element.VisibleNo,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: customer/address/gender_show
 							ID:      `gender_show`,
 							Type:    element.TypeHidden,
