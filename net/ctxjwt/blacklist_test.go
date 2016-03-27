@@ -22,6 +22,31 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+type testBL struct {
+	*testing.T
+	theToken string
+	exp      time.Duration
+}
+
+func (b *testBL) Set(theToken string, exp time.Duration) error {
+	b.theToken = theToken
+	b.exp = exp
+	return nil
+}
+func (b *testBL) Has(_ string) bool { return false }
+
+type testRealBL struct {
+	theToken string
+	exp      time.Duration
+}
+
+func (b *testRealBL) Set(t string, exp time.Duration) error {
+	b.theToken = t
+	b.exp = exp
+	return nil
+}
+func (b *testRealBL) Has(t string) bool { return b.theToken == t }
+
 func TestSimpleMapBlackListSet(t *testing.T) {
 	t.Parallel()
 

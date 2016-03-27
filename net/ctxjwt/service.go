@@ -15,7 +15,6 @@
 package ctxjwt
 
 import (
-	"fmt"
 	"sync"
 	"time"
 
@@ -59,16 +58,15 @@ type Service struct {
 // Default expire is one hour as in variable DefaultExpire. Default signing
 // method is HMAC512. The auto generated password will not be outputted.
 func NewService(opts ...Option) (*Service, error) {
-	s := new(Service)
-
-	if err := s.Options(opts...); err != nil {
-		return nil, s
+	s := &Service{
+		scopeCache: make(map[scope.Hash]scopedConfig),
 	}
 
-	if len(s.scopeCache) == 0 {
-		if err := s.Options(WithDefaultConfig(scope.DefaultID, 0)); err != nil {
-			return nil, s
-		}
+	if err := s.Options(WithDefaultConfig(scope.DefaultID, 0)); err != nil {
+		return nil, s
+	}
+	if err := s.Options(opts...); err != nil {
+		return nil, s
 	}
 
 	if s.Blacklist == nil {
@@ -168,6 +166,9 @@ func (s *Service) Parse(rawToken string) (*jwt.Token, error) {
 func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken string) (*jwt.Token, error) {
 
 	sc, err := s.getConfigByScopeID(scp, id)
+	if err != nil {
+		return nil, err
+	}
 
 	token, err := jwt.Parse(rawToken, sc.keyFunc)
 	var inBL bool
@@ -194,8 +195,8 @@ func (s *Service) getConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig,
 		return scopedConfig{}, errors.Errorf("[ctxjwt.Service] Backend configuration has not been set")
 	}
 
-	if err := s.Options(optionsByBackend(s.backend, sg)[:]...); err != nil {
-		return scopedConfig{}, errors.Mask(err)
+	if err := s.Options(optionsByBackend(s.backend, sg)...); err != nil {
+		return scopedConfig{}, err
 	}
 
 	// after applying the new config try to fetch the new scoped token configuration
@@ -227,33 +228,9 @@ func (s *Service) getScopedConfig(h scope.Hash) (sc scopedConfig, ok bool) {
 	if ok {
 		if nil == sc.keyFunc {
 			// set the keyFunc and cache it
-			s.scopeCache[h] = keyFunc(sc)
+			sc.keyFunc = getKeyFunc(sc)
+			s.scopeCache[h] = sc
 		}
 	}
 	return sc, ok
-}
-
-// keyFunc generates the key function for a specific scope and to used in caching
-func keyFunc(scpCfg scopedConfig) scopedConfig {
-	scpCfg.keyFunc = func(t *jwt.Token) (interface{}, error) {
-
-		if t.Method.Alg() != scpCfg.signingMethod.Alg() {
-			if PkgLog.IsDebug() {
-				PkgLog.Debug("ctxjwt.keyFunc.SigningMethod", "err", ErrUnexpectedSigningMethod, "token", t, "method", scpCfg.signingMethod.Alg())
-			}
-			return nil, ErrUnexpectedSigningMethod
-		}
-
-		switch t.Method.Alg() {
-		case jwt.SigningMethodRS256.Alg(), jwt.SigningMethodRS384.Alg(), jwt.SigningMethodRS512.Alg():
-			return &scpCfg.rsapk.PublicKey, nil
-		case jwt.SigningMethodES256.Alg(), jwt.SigningMethodES384.Alg(), jwt.SigningMethodES512.Alg():
-			return &scpCfg.ecdsapk.PublicKey, nil
-		case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
-			return scpCfg.hmacPassword, nil
-		default:
-			return nil, ErrUnexpectedSigningMethod
-		}
-	}
-	return scpCfg
 }

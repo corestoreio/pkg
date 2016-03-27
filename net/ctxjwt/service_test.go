@@ -15,65 +15,67 @@
 package ctxjwt_test
 
 import (
-	"crypto/x509"
-	"fmt"
-	"net/http"
-	"net/http/httptest"
-	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
-	"golang.org/x/net/context"
 )
 
 var _ error = (*ctxjwt.Service)(nil)
 
 const uuidLen = 36
 
-func TestNewDefault(t *testing.T) {
+func TestServiceMustNewServicePanic(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			assert.EqualError(t, r.(error), "open non-existent.pem: no such file or directory")
+		} else {
+			t.Fatal("Expecting a panic")
+		}
+	}()
+	_ = ctxjwt.MustNewService(ctxjwt.WithECDSAFromFile(scope.DefaultID, 0, "non-existent.pem"))
+}
+
+func TestServiceNewDefault(t *testing.T) {
 	t.Parallel()
-	jm, err := ctxjwt.NewService()
-	assert.NoError(t, err)
-	assert.Equal(t, time.Hour, jm.Expire)
+	jwts := ctxjwt.MustNewService()
 
-	assert.Nil(t, jm.Blacklist.Set("test", time.Hour))
-	assert.False(t, jm.Blacklist.Has("test"))
+	assert.Nil(t, jwts.Blacklist.Set("test", time.Hour))
+	assert.False(t, jwts.Blacklist.Has("test"))
 
-	assert.Len(t, jm.JTI.Get(), uuidLen)
+	assert.Len(t, jwts.JTI.Get(), uuidLen)
 
 	testClaims := map[string]interface{}{
 		"mascot": "gopher",
 	}
-	theToken, jti, err := jm.GenerateToken(testClaims)
+	theToken, jti, err := jwts.GenerateToken(scope.DefaultID, 0, testClaims)
 	assert.NoError(t, err)
 	assert.Empty(t, jti)
 	assert.NotEmpty(t, theToken)
 
-	haveToken, err := jm.Parse(theToken)
+	haveToken, err := jwts.Parse(theToken)
 	assert.NoError(t, err)
 	assert.True(t, haveToken.Valid)
 	assert.Equal(t, "gopher", haveToken.Claims["mascot"])
 
-	failedToken, err := jm.Parse(theToken + "c")
+	failedToken, err := jwts.Parse(theToken + "c")
 	assert.Error(t, err)
 	assert.Nil(t, failedToken)
 
-	jmRSA, err := ctxjwt.NewService(ctxjwt.WithRSAFromFile("invalid.key"))
+	jmRSA, err := ctxjwt.NewService(ctxjwt.WithRSAFromFile(scope.DefaultID, 0, "invalid.key"))
 	assert.Nil(t, jmRSA)
 	assert.Contains(t, err.Error(), "open invalid.key:") //  no such file or directory OR The system cannot find the file specified.
 }
 
-func TestInvalidSigningMethod(t *testing.T) {
+func TestServiceParseInvalidSigningMethod(t *testing.T) {
 	t.Parallel()
 	password := []byte(`Rump3lst!lzch3n`)
-	jm, err := ctxjwt.NewService(
-		ctxjwt.WithPassword(password),
+	jwts := ctxjwt.MustNewService(
+		ctxjwt.WithPassword(scope.DefaultID, 0, password),
 	)
-	assert.NoError(t, err)
 
 	tk := jwt.New(jwt.SigningMethodHS256)
 	tk.Claims["exp"] = time.Now().Add(time.Hour).Unix()
@@ -82,233 +84,28 @@ func TestInvalidSigningMethod(t *testing.T) {
 	malformedToken, err := tk.SignedString(password)
 	assert.NoError(t, err)
 
-	mt, err := jm.Parse(malformedToken)
+	mt, err := jwts.Parse(malformedToken)
 	assert.EqualError(t, err, ctxjwt.ErrUnexpectedSigningMethod.Error())
 	assert.Nil(t, mt)
 }
 
-func TestJTI(t *testing.T) {
-	t.Parallel()
-	jm, err := ctxjwt.NewService()
-	assert.NoError(t, err)
-	jm.EnableJTI = true
-
-	theToken, jti, err := jm.GenerateToken(nil)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, jti)
-	assert.NotEmpty(t, theToken)
-	assert.Len(t, jti, uuidLen)
-}
-
-type testBL struct {
-	*testing.T
-	theToken string
-	exp      time.Duration
-}
-
-func (b *testBL) Set(theToken string, exp time.Duration) error {
-	b.theToken = theToken
-	b.exp = exp
-	return nil
-}
-func (b *testBL) Has(_ string) bool { return false }
-
-func TestLogout(t *testing.T) {
+func TestServiceLogout(t *testing.T) {
 	t.Parallel()
 
 	tbl := &testBL{T: t}
-	jm, err := ctxjwt.NewService(
+	jwts := ctxjwt.MustNewService(
 		ctxjwt.WithBlacklist(tbl),
 	)
+
+	theToken, _, err := jwts.GenerateToken(scope.DefaultID, 0, nil)
 	assert.NoError(t, err)
 
-	theToken, _, err := jm.GenerateToken(nil)
-	assert.NoError(t, err)
-
-	tk, err := jm.Parse(theToken)
+	tk, err := jwts.Parse(theToken)
 	assert.NoError(t, err)
 	assert.NotNil(t, tk)
 
-	assert.Nil(t, jm.Logout(nil))
-	assert.Nil(t, jm.Logout(tk))
+	assert.Nil(t, jwts.Logout(nil))
+	assert.Nil(t, jwts.Logout(tk))
 	assert.Equal(t, int(time.Hour.Seconds()), 1+int(tbl.exp.Seconds()))
 	assert.Equal(t, theToken, tbl.theToken)
 }
-
-// var pkFile = filepath.Join(cstesting.RootPath, "net", "ctxjwt", "testdata", "test_rsa")
-var pkFile = filepath.Join("testdata", "test_rsa")
-
-func TestRSAEncryptedNoOrFailedPassword(t *testing.T) {
-	t.Parallel()
-	jm, err := ctxjwt.NewService(ctxjwt.WithRSAFromFile(pkFile))
-	assert.EqualError(t, err, ctxjwt.ErrPrivateKeyNoPassword.Error())
-	assert.Nil(t, jm)
-
-	jm2, err2 := ctxjwt.NewService(ctxjwt.WithRSAFromFile(pkFile, []byte(`adfasdf`)))
-	assert.EqualError(t, err2, x509.IncorrectPasswordError.Error())
-	assert.Nil(t, jm2)
-}
-
-func testRsaOption(t *testing.T, opt ctxjwt.Option) {
-	jm, err := ctxjwt.NewService(opt)
-	assert.NoError(t, err)
-	assert.NotNil(t, jm)
-
-	theToken, _, err := jm.GenerateToken(nil)
-	assert.NoError(t, err)
-	assert.NotEmpty(t, theToken)
-
-	tk, err := jm.Parse(theToken)
-	assert.NoError(t, err)
-	assert.NotNil(t, tk)
-	assert.True(t, tk.Valid)
-}
-
-func TestRSAEncryptedPassword(t *testing.T) {
-	t.Parallel()
-	pw := []byte("cccamp")
-	testRsaOption(t, ctxjwt.WithRSAFromFile(pkFile, pw))
-}
-
-func TestRSAWithoutPassword(t *testing.T) {
-	t.Parallel()
-	// pkFileNP := filepath.Join(cstesting.RootPath, "net", "ctxjwt", "test_rsa_np")
-	pkFileNP := filepath.Join("testdata", "test_rsa_np")
-	testRsaOption(t, ctxjwt.WithRSAFromFile(pkFileNP))
-}
-
-func TestRSAGenerate(t *testing.T) {
-	t.Parallel()
-	if testing.Short() {
-		t.Skip("Test skipped in short mode")
-	}
-	testRsaOption(t, ctxjwt.WithRSAGenerator())
-}
-
-func testAuth(t *testing.T, errH ctxhttp.HandlerFunc, opts ...ctxjwt.Option) (ctxhttp.Handler, string) {
-	jm, err := ctxjwt.NewService(opts...)
-	assert.NoError(t, err)
-	theToken, _, err := jm.GenerateToken(map[string]interface{}{
-		"xfoo": "bar",
-		"zfoo": 4711,
-	})
-	assert.NoError(t, err)
-
-	final := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		w.WriteHeader(http.StatusOK)
-		return nil
-	})
-	authHandler := jm.WithParseAndValidate(errH)(final)
-	return authHandler, theToken
-}
-
-func TestWithParseAndValidateNoToken(t *testing.T) {
-	t.Parallel()
-
-	authHandler, _ := testAuth(t, nil)
-
-	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
-	assert.NoError(t, err)
-	w := httptest.NewRecorder()
-	assert.NoError(t, authHandler.ServeHTTPContext(context.Background(), w, req))
-	assert.Equal(t, http.StatusUnauthorized, w.Code)
-	assert.Equal(t, w.Body.String(), http.StatusText(http.StatusUnauthorized)+"\n")
-}
-
-func TestWithParseAndValidateHTTPErrorHandler(t *testing.T) {
-	t.Parallel()
-
-	authHandler, _ := testAuth(t, func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		tok, err := ctxjwt.FromContext(ctx)
-		assert.Nil(t, tok)
-		w.WriteHeader(http.StatusTeapot)
-		_, err = w.Write([]byte(err.Error()))
-		return err
-	})
-
-	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
-	assert.NoError(t, err)
-	w := httptest.NewRecorder()
-	assert.NoError(t, authHandler.ServeHTTPContext(context.Background(), w, req))
-	assert.Equal(t, http.StatusTeapot, w.Code)
-	assert.Equal(t, "no token present in request", w.Body.String())
-}
-
-func TestWithParseAndValidateSuccess(t *testing.T) {
-	t.Parallel()
-	jm, err := ctxjwt.NewService()
-	assert.NoError(t, err)
-
-	theToken, _, err := jm.GenerateToken(map[string]interface{}{
-		"xfoo": "bar",
-		"zfoo": 4711,
-	})
-	assert.NoError(t, err)
-	assert.NotEmpty(t, theToken)
-
-	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
-	assert.NoError(t, err)
-	ctxjwt.SetHeaderAuthorization(req, theToken)
-
-	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		w.WriteHeader(http.StatusTeapot)
-		fmt.Fprintf(w, "I'm more of a coffee pot")
-
-		ctxToken, err := ctxjwt.FromContext(ctx)
-		assert.NoError(t, err)
-		assert.NotNil(t, ctxToken)
-		assert.Exactly(t, "bar", ctxToken.Claims["xfoo"].(string))
-
-		return nil
-	})
-	authHandler := jm.WithParseAndValidate()(finalHandler)
-
-	wRec := httptest.NewRecorder()
-	assert.NoError(t, authHandler.ServeHTTPContext(context.Background(), wRec, req))
-	assert.Equal(t, http.StatusTeapot, wRec.Code)
-	assert.Equal(t, `I'm more of a coffee pot`, wRec.Body.String())
-}
-
-type testRealBL struct {
-	token string
-	exp   time.Duration
-}
-
-func (b *testRealBL) Set(t string, exp time.Duration) error {
-	b.token = t
-	b.exp = exp
-	return nil
-}
-func (b *testRealBL) Has(t string) bool { return b.token == t }
-
-func TestWithParseAndValidateInBlackList(t *testing.T) {
-	t.Parallel()
-	bl := &testRealBL{}
-	jm, err := ctxjwt.NewService(
-		ctxjwt.WithBlacklist(bl),
-	)
-	assert.NoError(t, err)
-
-	theToken, _, err := jm.GenerateToken(nil)
-	bl.token = theToken
-	assert.NoError(t, err)
-	assert.NotEmpty(t, theToken)
-
-	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
-	assert.NoError(t, err)
-	ctxjwt.SetHeaderAuthorization(req, theToken)
-
-	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		w.WriteHeader(http.StatusTeapot)
-		return nil
-	})
-	authHandler := jm.WithParseAndValidate()(finalHandler)
-
-	wRec := httptest.NewRecorder()
-	assert.NoError(t, authHandler.ServeHTTPContext(context.Background(), wRec, req))
-
-	assert.NotEqual(t, http.StatusTeapot, wRec.Code)
-	assert.Equal(t, http.StatusUnauthorized, wRec.Code)
-}
-
-// todo add test for form with input field: access_token

@@ -21,6 +21,7 @@ import (
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
+	"github.com/corestoreio/csfw/store/scope"
 	"golang.org/x/net/context"
 )
 
@@ -29,7 +30,7 @@ func bmServeHTTP(b *testing.B, opts ...ctxjwt.Option) {
 	if err != nil {
 		b.Error(err)
 	}
-	token, _, err := service.GenerateToken(map[string]interface{}{
+	token, _, err := service.GenerateToken(scope.DefaultID, 0, map[string]interface{}{
 		"xfoo": "bar",
 		"zfoo": 4711,
 	})
@@ -67,7 +68,7 @@ func bmServeHTTP(b *testing.B, opts ...ctxjwt.Option) {
 // BenchmarkServeHTTPHMAC-4        	  100000	     15550 ns/op	    4016 B/op	      72 allocs/op Go 1.6.0
 func BenchmarkServeHTTPHMAC(b *testing.B) {
 	password := []byte(`Rump3lst!lzch3n`)
-	bmServeHTTP(b, ctxjwt.WithPassword(password))
+	bmServeHTTP(b, ctxjwt.WithPassword(scope.DefaultID, 0, password))
 }
 
 // BenchmarkServeHTTPHMACSimpleBL-4	  100000	     16037 ns/op	    3808 B/op	      82 allocs/op Go 1.5.0
@@ -76,7 +77,7 @@ func BenchmarkServeHTTPHMACSimpleBL(b *testing.B) {
 	bl := ctxjwt.NewSimpleMapBlackList()
 	password := []byte(`Rump3lst!lzch3n`)
 	bmServeHTTP(b,
-		ctxjwt.WithPassword(password),
+		ctxjwt.WithPassword(scope.DefaultID, 0, password),
 		ctxjwt.WithBlacklist(bl),
 	)
 	// b.Logf("Blacklist Items %d", bl.Len())
@@ -85,5 +86,5 @@ func BenchmarkServeHTTPHMACSimpleBL(b *testing.B) {
 // BenchmarkServeHTTPRSAGenerator-4	    5000	    328220 ns/op	   34544 B/op	     105 allocs/op Go 1.5.0
 // BenchmarkServeHTTPRSAGenerator-4	    5000	    327690 ns/op	   34752 B/op	      95 allocs/op Go 1.6.0
 func BenchmarkServeHTTPRSAGenerator(b *testing.B) {
-	bmServeHTTP(b, ctxjwt.WithRSAGenerator())
+	bmServeHTTP(b, ctxjwt.WithRSAGenerator(scope.DefaultID, 0))
 }

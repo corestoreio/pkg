@@ -19,7 +19,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -34,6 +33,16 @@ import (
 	"github.com/pborman/uuid"
 	"golang.org/x/net/context"
 )
+
+// ErrPrivateKeyNotFound will be returned when the PK cannot be read from the Reader
+var ErrPrivateKeyNotFound = errors.New("Private Key from io.Reader no found")
+
+// ErrPrivateKeyNoPassword will be returned when the PK is encrypted but you
+// forgot to provide a password.
+var ErrPrivateKeyNoPassword = errors.New("Private Key is encrypted but password was not set")
+
+// PrivateKeyBits used when auto generating a private key
+const PrivateKeyBits = 4096
 
 type scopedConfig struct {
 	rsapk        *rsa.PrivateKey
@@ -52,17 +61,29 @@ type scopedConfig struct {
 	keyFunc jwt.Keyfunc
 }
 
-// ErrPrivateKeyNotFound will be returned when the PK cannot be read from the Reader
-var ErrPrivateKeyNotFound = errors.New("Private Key from io.Reader no found")
+// getKeyFunc generates the key function for a specific scope and to used in caching
+func getKeyFunc(scpCfg scopedConfig) jwt.Keyfunc {
+	return func(t *jwt.Token) (interface{}, error) {
 
-// ErrPrivateKeyNoPassword will be returned when the PK is encrypted but you
-// forgot to provide a password.
-var ErrPrivateKeyNoPassword = errors.New("Private Key is encrypted but password was not set")
+		if t.Method.Alg() != scpCfg.signingMethod.Alg() {
+			if PkgLog.IsDebug() {
+				PkgLog.Debug("ctxjwt.keyFunc.SigningMethod", "err", ErrUnexpectedSigningMethod, "token", t, "method", scpCfg.signingMethod.Alg())
+			}
+			return nil, ErrUnexpectedSigningMethod
+		}
 
-// PrivateKeyBits used when auto generating a private key
-const PrivateKeyBits = 4096
-
-// @todo add more WithKeyFrom...()
+		switch t.Method.Alg() {
+		case jwt.SigningMethodRS256.Alg(), jwt.SigningMethodRS384.Alg(), jwt.SigningMethodRS512.Alg():
+			return &scpCfg.rsapk.PublicKey, nil
+		case jwt.SigningMethodES256.Alg(), jwt.SigningMethodES384.Alg(), jwt.SigningMethodES512.Alg():
+			return &scpCfg.ecdsapk.PublicKey, nil
+		case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
+			return scpCfg.hmacPassword, nil
+		default:
+			return nil, ErrUnexpectedSigningMethod
+		}
+	}
+}
 
 // Option can be used as an argument in NewService to configure a token service.
 type Option func(*Service)
@@ -343,29 +364,30 @@ func withRSA(h scope.Hash, pk *rsa.PrivateKey, err error) Option {
 
 // optionsByBackend creates an option array containing the Options based
 // on the configuration
-func optionsByBackend(be *PkgBackend, sg config.ScopedGetter) (opts [5]Option) {
-	var emptySC scopedConfig
+func optionsByBackend(be *PkgBackend, sg config.ScopedGetter) (opts []Option) {
 	scp, id := sg.Scope()
 
-	if val, err := be.NetCtxjwtExpiration.Get(sg); err != nil {
-		return emptySC, errors.Mask(err)
-	} else {
-		// golint is wrong here because we make use of the block scope in an if/else block
-		// and also we don't want to spread the val variable all over the place.
-		opts[0] = WithExpiration(scp, id, val)
+	exp, err := be.NetCtxjwtExpiration.Get(sg)
+	if err != nil {
+		return append(opts, func(s *Service) {
+			s.MultiErr = s.AppendErrors(errors.Mask(err))
+		})
 	}
+	opts = append(opts, WithExpiration(scp, id, exp))
 
-	if val, err := be.NetCtxjwtEnableJTI.Get(sg); err != nil {
-		return emptySC, errors.Mask(err)
-	} else {
-		// golint is wrong here because we make use of the block scope in an if/else block
-		// and also we don't want to spread the val variable all over the place.
-		opts[1] = WithTokenID(scp, id, val)
+	isJTI, err := be.NetCtxjwtEnableJTI.Get(sg)
+	if err != nil {
+		return append(opts, func(s *Service) {
+			s.MultiErr = s.AppendErrors(errors.Mask(err))
+		})
 	}
+	opts = append(opts, WithTokenID(scp, id, isJTI))
 
 	sm, err := be.NetCtxjwtSigningMethod.Get(sg)
 	if err != nil {
-		return emptySC, errors.Mask(err)
+		return append(opts, func(s *Service) {
+			s.MultiErr = s.AppendErrors(errors.Mask(err))
+		})
 	}
 
 	switch sm.Alg() {
@@ -373,39 +395,48 @@ func optionsByBackend(be *PkgBackend, sg config.ScopedGetter) (opts [5]Option) {
 
 		rsaKey, err := be.NetCtxjwtRSAKey.Get(sg)
 		if err != nil {
-			return emptySC, errors.Mask(err)
+			return append(opts, func(s *Service) {
+				s.MultiErr = s.AppendErrors(errors.Mask(err))
+			})
 		}
 		rsaPassword, err := be.NetCtxjwtRSAKeyPassword.Get(sg)
 		if err != nil {
-			return emptySC, errors.Mask(err)
+			return append(opts, func(s *Service) {
+				s.MultiErr = s.AppendErrors(errors.Mask(err))
+			})
 		}
-
-		opts[2] = WithRSA(scp, id, rsaKey, rsaPassword)
+		opts = append(opts, WithRSA(scp, id, rsaKey, rsaPassword))
 
 	case jwt.SigningMethodES256.Alg(), jwt.SigningMethodES384.Alg(), jwt.SigningMethodES512.Alg():
 
 		ecdsaKey, err := be.NetCtxjwtECDSAKey.Get(sg)
 		if err != nil {
-			return emptySC, errors.Mask(err)
+			return append(opts, func(s *Service) {
+				s.MultiErr = s.AppendErrors(errors.Mask(err))
+			})
 		}
 		ecdsaPassword, err := be.NetCtxjwtECDSAKeyPassword.Get(sg)
 		if err != nil {
-			return emptySC, errors.Mask(err)
+			return append(opts, func(s *Service) {
+				s.MultiErr = s.AppendErrors(errors.Mask(err))
+			})
 		}
-
-		opts[3] = WithECDSA(scp, id, ecdsaKey, ecdsaPassword)
+		opts = append(opts, WithECDSA(scp, id, ecdsaKey, ecdsaPassword))
 
 	case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
 
 		password, err := be.NetCtxjwtHmacPassword.Get(sg)
 		if err != nil {
-			return emptySC, errors.Mask(err)
+			return append(opts, func(s *Service) {
+				s.MultiErr = s.AppendErrors(errors.Mask(err))
+			})
 		}
-
-		opts[4] = WithPassword(scp, id, password)
+		opts = append(opts, WithPassword(scp, id, password))
 
 	default:
-		return emptySC, ErrUnexpectedSigningMethod
+		opts = append(opts, func(s *Service) {
+			s.MultiErr = s.AppendErrors(ErrUnexpectedSigningMethod)
+		})
 	}
 	return opts
 }

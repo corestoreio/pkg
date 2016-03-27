@@ -15,46 +15,87 @@
 package ctxjwt_test
 
 import (
-	"bytes"
+	"crypto/x509"
+	"path/filepath"
 	"testing"
 
-	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestWithBackend(t *testing.T) {
+func TestOptionWithTokenID(t *testing.T) {
 	t.Parallel()
-
-	pwp, err := backend.NetCtxjwtHmacPassword.ToPath(scope.DefaultID, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	srvSG := cfgmock.NewService(
-		cfgmock.WithPV(cfgmock.PathValue{
-			pwp.String(): `Rump3lst!lzch3n`,
-		}),
-	).NewScoped(1, 2)
-
-	jm, err := ctxjwt.NewService(
-		ctxjwt.WithBackend(backend),
-	)
+	jwts, err := ctxjwt.NewService(ctxjwt.WithTokenID(scope.DefaultID, 0, true))
 	assert.NoError(t, err)
 
-	theToken, _, err := jm.GenerateToken(nil)
+	theToken, jti, err := jwts.GenerateToken(scope.DefaultID, 0, nil)
 	assert.NoError(t, err)
+	assert.NotEmpty(t, jti)
 	assert.NotEmpty(t, theToken)
-
+	assert.Len(t, jti, uuidLen)
 }
 
-func TestWithRSAReaderFail(t *testing.T) {
+func TestOptionWithRSAReaderFail(t *testing.T) {
 	t.Parallel()
 	jm, err := ctxjwt.NewService(
-		ctxjwt.WithRSA(bytes.NewReader([]byte(`invalid pem data`))),
+		ctxjwt.WithRSA(scope.DefaultID, 0, []byte(`invalid pem data`)),
 	)
 	assert.Nil(t, jm)
 	assert.Equal(t, "Private Key from io.Reader no found", err.Error())
 
+}
+
+var pkFile = filepath.Join("testdata", "test_rsa")
+
+func TestOptionWithRSAFromFileNoOrFailedPassword(t *testing.T) {
+	t.Parallel()
+	jm, err := ctxjwt.NewService(ctxjwt.WithRSAFromFile(scope.DefaultID, 0, pkFile))
+	assert.EqualError(t, err, ctxjwt.ErrPrivateKeyNoPassword.Error())
+	assert.Nil(t, jm)
+
+	jm2, err2 := ctxjwt.NewService(ctxjwt.WithRSAFromFile(scope.DefaultID, 0, pkFile, []byte(`adfasdf`)))
+	assert.EqualError(t, err2, x509.IncorrectPasswordError.Error())
+	assert.Nil(t, jm2)
+}
+
+func testRsaOption(t *testing.T, opt ctxjwt.Option) {
+	jm, err := ctxjwt.NewService(opt)
+	assert.NoError(t, err)
+	assert.NotNil(t, jm)
+
+	theToken, _, err := jm.GenerateToken(scope.DefaultID, 0, nil)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, theToken)
+
+	tk, err := jm.Parse(theToken)
+	assert.NoError(t, err)
+	assert.NotNil(t, tk)
+	assert.True(t, tk.Valid)
+}
+
+func TestOptionWithRSAFromFilePassword(t *testing.T) {
+	t.Parallel()
+	pw := []byte("cccamp")
+	testRsaOption(t, ctxjwt.WithRSAFromFile(scope.DefaultID, 0, pkFile, pw))
+}
+
+func TestOptionWithRSAFromFileNoPassword(t *testing.T) {
+	t.Parallel()
+	// pkFileNP := filepath.Join(cstesting.RootPath, "net", "ctxjwt", "test_rsa_np")
+	pkFileNP := filepath.Join("testdata", "test_rsa_np")
+	testRsaOption(t, ctxjwt.WithRSAFromFile(scope.DefaultID, 0, pkFileNP))
+}
+
+func TestOptionWithRSAGenerator(t *testing.T) {
+	t.Parallel()
+	if testing.Short() {
+		t.Skip("Test skipped in short mode")
+	}
+	testRsaOption(t, ctxjwt.WithRSAGenerator(scope.DefaultID, 0))
+}
+
+func TestOptionWithBackend(t *testing.T) {
+	t.Parallel()
+	t.Log("todo")
 }
