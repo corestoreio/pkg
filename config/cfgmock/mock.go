@@ -175,10 +175,18 @@ func WithContextScopedGetter(websiteID, storeID int64, ctx context.Context, opts
 	return context.WithValue(ctx, cfgctx.KeyScopedGetter{}, NewService(opts...).NewScoped(websiteID, storeID))
 }
 
+// WithStorage sets another storage engine to the mock service. This option function
+// must be applied at first or your already added values will be lost.
+func WithStorage(s storage.Storager) OptionFunc {
+	return func(mr *Service) {
+		mr.db = s
+	}
+}
+
 // NewService creates a new Service used in testing.
-// Allows you to set different options duration creation or you can
-// set the struct fields afterwards.
+// Allows you to set different options or you can set the struct fields afterwards.
 // WithPV() option has priority over With<T>() functions.
+// The simple KV acts as the default storage engine.
 func NewService(opts ...OptionFunc) *Service {
 	mr := &Service{
 		db: storage.NewKV(),
