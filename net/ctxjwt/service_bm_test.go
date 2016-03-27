@@ -19,9 +19,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
+	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storemock"
 	"golang.org/x/net/context"
 )
 
@@ -50,7 +53,13 @@ func bmServeHTTP(b *testing.B, opts ...ctxjwt.Option) {
 	}
 	ctxjwt.SetHeaderAuthorization(req, token)
 	w := httptest.NewRecorder()
-	ctx := context.Background()
+
+	cr := cfgmock.NewService()
+	srv := storemock.NewEurozzyService(
+		scope.MustSetByCode(scope.WebsiteID, "euro"),
+		store.WithStorageConfig(cr),
+	)
+	ctx := store.WithContextProvider(context.Background(), srv)
 
 	b.ReportAllocs()
 	b.ResetTimer()

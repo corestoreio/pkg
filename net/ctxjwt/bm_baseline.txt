@@ -1,5 +1,5 @@
 PASS
-BenchmarkServeHTTPHMAC-4        	  100000	     15413 ns/op	    4016 B/op	      72 allocs/op
-BenchmarkServeHTTPHMACSimpleBL-4	  100000	     15420 ns/op	    4016 B/op	      72 allocs/op
-BenchmarkServeHTTPRSAGenerator-4	    5000	    336728 ns/op	   34752 B/op	      95 allocs/op
-ok  	github.com/corestoreio/csfw/net/ctxjwt	14.871s
+BenchmarkServeHTTPHMAC-4        	  100000	     15940 ns/op	    4016 B/op	      72 allocs/op
+BenchmarkServeHTTPHMACSimpleBL-4	  100000	     16011 ns/op	    4016 B/op	      72 allocs/op
+BenchmarkServeHTTPRSAGenerator-4	    5000	    328292 ns/op	   34752 B/op	      95 allocs/op
+ok  	github.com/corestoreio/csfw/net/ctxjwt	17.987s
