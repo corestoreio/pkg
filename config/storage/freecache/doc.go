@@ -15,7 +15,9 @@
 // Package freecache uses the freecache in-memory database for reading and
 // writing configuration paths.
 //
-// github.com/coocood/freecache
+// Freecache delivers under high concurrent and parallel load better results
+// than a simple key value mutex protected map.
+//
 // Maybe implements synchronization with MySQL core_config_data table.
 // Converts all values to byte slices.
 package freecache
