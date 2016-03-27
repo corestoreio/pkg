@@ -56,20 +56,21 @@ func BenchmarkSectionSliceToJson(b *testing.B) {
 	}
 }
 
-var sectionSliceFindFieldByID1 *element.Field
+var sectionSliceFindFieldByID1 element.Field
 
 // BenchmarkSectionSliceFindFieldByID1		20000000	       92.9 ns/op	       0 B/op	       0 allocs/op => Go 1.4.2 strings
 // BenchmarkSectionSliceFindFieldByID1		20000000	       84.1 ns/op	       0 B/op	       0 allocs/op => Go 1.5.0 strings
 // BenchmarkSectionSliceFindFieldByID1		20000000	        86.6 ns/op	       0 B/op	       0 allocs/op => Go 1.5.2 strings
 // BenchmarkSectionSliceFindFieldByID1	 	 2000000	       890 ns/op	       0 B/op	       0 allocs/op => cfgpath.Routes
 // BenchmarkSectionSliceFindFieldByID1-4	 2000000	       751 ns/op	       0 B/op	       0 allocs/op => cfgpath.Routes with Sum32
-// BenchmarkSectionSliceFindFieldByID1-4	10000000	       137 ns/op	       0 B/op	       0 allocs/op => cfgpath.Routes with Sum32 + array
+// BenchmarkSectionSliceFindFieldByID1-4	10000000	       137 ns/op	       0 B/op	       0 allocs/op => cfgpath.Routes with Sum32 + array with pointers
+// BenchmarkSectionSliceFindFieldByID1-4	 3000000	       484 ns/op	       0 B/op	       0 allocs/op => removed pointers
 func BenchmarkSectionSliceFindFieldByID1(b *testing.B) {
 	r := cfgpath.NewRoute("carriers", "usps", "gateway_url")
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var err error
-		if sectionSliceFindFieldByID1, err = packageAllConfiguration.FindFieldByID(r); err != nil {
+		if sectionSliceFindFieldByID1, _, err = packageAllConfiguration.FindField(r); err != nil {
 			b.Error(err)
 		}
 	}
@@ -83,9 +84,10 @@ func BenchmarkSectionSliceFindFieldByID1(b *testing.B) {
 // BenchmarkSectionSliceFindFieldByID5	 	 3000000	       564 ns/op	       0 B/op	       0 allocs/op => Go 1.5.2
 // BenchmarkSectionSliceFindFieldByID5	  	  300000	      6077 ns/op	       0 B/op	       0 allocs/op => cfgpath.Routes
 // BenchmarkSectionSliceFindFieldByID5-4	  300000	      4580 ns/op	       0 B/op	       0 allocs/op => cfgpath.Routes with Sum32
-// BenchmarkSectionSliceFindFieldByID5-4	 2000000	       851 ns/op	       0 B/op	       0 allocs/op => cfgpath.Routes with Sum32 + array
+// BenchmarkSectionSliceFindFieldByID5-4	 2000000	       851 ns/op	       0 B/op	       0 allocs/op => cfgpath.Routes with Sum32 + array with pointers
+// BenchmarkSectionSliceFindFieldByID5-4	  500000	      3045 ns/op	       0 B/op	       0 allocs/op => removed pointers
 func BenchmarkSectionSliceFindFieldByID5(b *testing.B) {
-	var routePaths = []cfgpath.Route{
+	var routePaths = [...]cfgpath.Route{
 		cfgpath.NewRoute("carriers", "usps", "gateway_url"),
 		cfgpath.NewRoute("wishlist", "email", "number_limit"),
 		cfgpath.NewRoute("tax", "calculation", "apply_tax_on"),
@@ -98,9 +100,33 @@ func BenchmarkSectionSliceFindFieldByID5(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		for _, r := range routePaths {
 			var err error
-			if sectionSliceFindFieldByID1, err = packageAllConfiguration.FindFieldByID(r); err != nil {
+			if sectionSliceFindFieldByID1, _, err = packageAllConfiguration.FindField(r); err != nil {
 				b.Error(err)
 			}
 		}
 	}
+}
+
+// BenchmarkSectionSliceFindFieldByID5_Parallel-4	 1000000	      1576 ns/op	       0 B/op	       0 allocs/op
+func BenchmarkSectionSliceFindFieldByID5_Parallel(b *testing.B) {
+	var routePaths = [...]cfgpath.Route{
+		cfgpath.NewRoute("carriers", "usps", "gateway_url"),
+		cfgpath.NewRoute("wishlist", "email", "number_limit"),
+		cfgpath.NewRoute("tax", "calculation", "apply_tax_on"),
+		cfgpath.NewRoute("sitemap", "generate", "frequency"),
+		cfgpath.NewRoute("sales_email", "creditmemo_comment", "guest_template"),
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			for _, r := range routePaths {
+				var err error
+				if sectionSliceFindFieldByID1, _, err = packageAllConfiguration.FindField(r); err != nil {
+					b.Error(err)
+				}
+			}
+		}
+	})
 }

@@ -30,7 +30,7 @@ var ErrGroupNotFound = errors.New("Group not found")
 
 // GroupSlice contains a set of Groups.
 //  Thread safe for reading but not for modifying.
-type GroupSlice []*Group
+type GroupSlice []Group
 
 // Group defines the layout of a group containing multiple Fields
 //  Thread safe for reading but not for modifying.
@@ -53,47 +53,39 @@ type Group struct {
 }
 
 // NewGroupSlice wrapper function, for now.
-func NewGroupSlice(gs ...*Group) GroupSlice {
+func NewGroupSlice(gs ...Group) GroupSlice {
 	return GroupSlice(gs)
 }
 
 // FindByID returns a Group pointer or ErrGroupNotFound.
 // Route must be a single part. E.g. if you have path "a/b/c" route would be in
 // this case "b". For comparison the field Sum32 of a route will be used.
-func (gs GroupSlice) FindByID(id cfgpath.Route) (*Group, error) {
-	for _, g := range gs {
-		if g != nil && g.ID.Sum32 == id.Sum32 {
-			return g, nil
+func (gs GroupSlice) FindByID(id cfgpath.Route) (Group, int, error) {
+	for i, g := range gs {
+		if g.ID.Sum32 > 0 && g.ID.Sum32 == id.Sum32 {
+			return g, i, nil
 		}
 	}
-	return nil, ErrGroupNotFound
-}
-
-// Append adds *Group (variadic) to the GroupSlice. Not thread safe.
-func (gs *GroupSlice) Append(g ...*Group) *GroupSlice {
-	*gs = append(*gs, g...)
-	return gs
+	return Group{}, 0, ErrGroupNotFound
 }
 
 // Merge copies the data from a groups into this slice. Appends if ID is not found
 // in this slice otherwise overrides struct fields if not empty. Not thread safe.
-func (gs *GroupSlice) Merge(groups ...*Group) error {
+func (gs *GroupSlice) Merge(groups ...Group) error {
 	for _, g := range groups {
-		if err := (*gs).merge(g); err != nil {
+		if err := gs.merge(g); err != nil {
 			return errors.Mask(err)
 		}
 	}
 	return nil
 }
 
-func (gs *GroupSlice) merge(g *Group) error {
-	if g == nil {
-		return nil
-	}
-	cg, err := (*gs).FindByID(g.ID) // cg current group
-	if cg == nil || err != nil {
+func (gs *GroupSlice) merge(g Group) error {
+	cg, idx, err := (*gs).FindByID(g.ID) // cg current group
+	if err != nil {
 		cg = g
-		(*gs).Append(cg)
+		*gs = append(*gs, cg)
+		idx = len(*gs) - 1
 	}
 
 	if !g.Label.IsEmpty() {
@@ -108,7 +100,12 @@ func (gs *GroupSlice) merge(g *Group) error {
 	if g.SortOrder != 0 {
 		cg.SortOrder = g.SortOrder
 	}
-	return cg.Fields.Merge(g.Fields...)
+	if err := cg.Fields.Merge(g.Fields...); err != nil {
+		return err
+	}
+
+	(*gs)[idx] = cg
+	return nil
 }
 
 // ToJSON transforms the whole slice into JSON
@@ -122,19 +119,19 @@ func (gs GroupSlice) ToJSON() string {
 }
 
 // Sort convenience helper. Not thread safe.
-func (gs *GroupSlice) Sort() *GroupSlice {
+func (gs GroupSlice) Sort() GroupSlice {
 	sort.Sort(gs)
 	return gs
 }
 
-func (gs *GroupSlice) Len() int {
-	return len(*gs)
+func (gs GroupSlice) Len() int {
+	return len(gs)
 }
 
-func (gs *GroupSlice) Swap(i, j int) {
-	(*gs)[i], (*gs)[j] = (*gs)[j], (*gs)[i]
+func (gs GroupSlice) Swap(i, j int) {
+	gs[i], gs[j] = gs[j], gs[i]
 }
 
-func (gs *GroupSlice) Less(i, j int) bool {
-	return (*gs)[i].SortOrder < (*gs)[j].SortOrder
+func (gs GroupSlice) Less(i, j int) bool {
+	return gs[i].SortOrder < gs[j].SortOrder
 }

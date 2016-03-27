@@ -31,7 +31,7 @@ var ErrSectionNotFound = errors.New("Section not found")
 // SectionSlice contains a set of Sections. Some nifty helper functions
 // exists. Thread safe for reading. A section slice can be used in many
 // goroutines. It must remain lock-free.
-type SectionSlice []*Section
+type SectionSlice []Section
 
 // Section defines the layout for the configuration section which contains
 // groups and fields. Thread safe for reading but not for modifying.
@@ -49,13 +49,13 @@ type Section struct {
 }
 
 // NewSectionSlice wrapper function, for now.
-func NewSectionSlice(s ...*Section) SectionSlice {
+func NewSectionSlice(s ...Section) SectionSlice {
 	return SectionSlice(s)
 }
 
 // NewConfiguration creates a new validated SectionSlice with a three level configuration.
 // Panics if a path is redundant.
-func NewConfiguration(sections ...*Section) (SectionSlice, error) {
+func NewConfiguration(sections ...Section) (SectionSlice, error) {
 	ss := NewSectionSlice(sections...)
 	if err := ss.Validate(); err != nil {
 		if PkgLog.IsDebug() {
@@ -67,7 +67,7 @@ func NewConfiguration(sections ...*Section) (SectionSlice, error) {
 }
 
 // MustNewConfiguration same as NewConfiguration but panics on error.
-func MustNewConfiguration(sections ...*Section) SectionSlice {
+func MustNewConfiguration(sections ...Section) SectionSlice {
 	s, err := NewConfiguration(sections...)
 	if err != nil {
 		panic(err)
@@ -78,7 +78,7 @@ func MustNewConfiguration(sections ...*Section) SectionSlice {
 // NewConfigurationMerge creates a new validated SectionSlice with a three level configuration.
 // Before validation, slices are all merged together. Panics if a path is redundant.
 // Only use this function if your package elementuration really has duplicated entries.
-func NewConfigurationMerge(sections ...*Section) (SectionSlice, error) {
+func NewConfigurationMerge(sections ...Section) (SectionSlice, error) {
 	var ss SectionSlice
 	if err := ss.Merge(sections...); err != nil {
 		if PkgLog.IsDebug() {
@@ -96,7 +96,7 @@ func NewConfigurationMerge(sections ...*Section) (SectionSlice, error) {
 }
 
 // MustNewConfigurationMerge same as NewConfigurationMerge but panics on error.
-func MustNewConfigurationMerge(sections ...*Section) SectionSlice {
+func MustNewConfigurationMerge(sections ...Section) SectionSlice {
 	s, err := NewConfigurationMerge(sections...)
 	if err != nil {
 		panic(err)
@@ -139,7 +139,7 @@ func (ss SectionSlice) TotalFields() int {
 // duplicates: Last item wins. Not thread safe.
 func (ss *SectionSlice) MergeMultiple(sSlices ...SectionSlice) error {
 	for _, sl := range sSlices {
-		if err := (*ss).Merge(sl...); err != nil {
+		if err := ss.Merge(sl...); err != nil {
 			return err
 		}
 	}
@@ -148,12 +148,10 @@ func (ss *SectionSlice) MergeMultiple(sSlices ...SectionSlice) error {
 
 // Merge merges n Sections into the current slice. Behaviour for duplicates:
 // Last item wins. Not thread safe.
-func (ss *SectionSlice) Merge(sections ...*Section) error {
+func (ss *SectionSlice) Merge(sections ...Section) error {
 	for _, s := range sections {
-		if s != nil {
-			if err := (*ss).merge(s); err != nil {
-				return errors.Mask(err)
-			}
+		if err := ss.merge(s); err != nil {
+			return errors.Mask(err)
 		}
 	}
 	return nil
@@ -161,16 +159,14 @@ func (ss *SectionSlice) Merge(sections ...*Section) error {
 
 // Merge copies the data from a Section into this slice. Appends if ID is not found
 // in this slice otherwise overrides struct fields if not empty. Not thread safe.
-func (ss *SectionSlice) merge(s *Section) error {
-	if s == nil {
-		return nil
-	}
-	cs, err := (*ss).FindByID(s.ID) // cs current section
-	if cs == nil || err != nil {
-		cs = &Section{ID: s.ID}
-		(*ss).Append(cs)
+func (ss *SectionSlice) merge(s Section) error {
+	cs, idx, err := (*ss).Find(s.ID) // cs current section
+	if err != nil {
+		(*ss) = append(*ss, s)
+		idx = len(*ss) - 1
 	}
 
+	cs.ID = s.ID.Clone()
 	if s.Label.IsEmpty() == false {
 		cs.Label = s.Label.Clone()
 	}
@@ -183,69 +179,113 @@ func (ss *SectionSlice) merge(s *Section) error {
 	if s.Resource > 0 {
 		cs.Resource = s.Resource
 	}
-	return cs.Groups.Merge(s.Groups...)
+	if err := cs.Groups.Merge(s.Groups...); err != nil {
+		return errors.Mask(err)
+	}
+
+	(*ss)[idx] = cs
+	return nil
 }
 
-// FindByID returns a Section pointer or ErrSectionNotFound.
+// Find returns a Section pointer or ErrSectionNotFound.
 // Route must be a single part. E.g. if you have path "a/b/c" route would be in
 // this case "a". For comparison the field Sum32 of a route will be used.
-func (ss SectionSlice) FindByID(id cfgpath.Route) (*Section, error) {
-	for _, s := range ss {
-		if s != nil && s.ID.Sum32 == id.Sum32 {
-			return s, nil
+// 2nd return parameter contains the position of the Section within the
+// SectionSlice.
+func (ss SectionSlice) Find(id cfgpath.Route) (Section, int, error) {
+	for i, s := range ss {
+		if s.ID.Sum32 > 0 && s.ID.Sum32 == id.Sum32 {
+			return s, i, nil
 		}
 	}
-	return nil, ErrSectionNotFound
+	return Section{}, 0, ErrSectionNotFound
 }
 
-// FindGroupByID searches for a group using the first two path segments.
+// FindGroup searches for a group using the first two path segments.
 // Route must have the format a/b/c.
-func (ss SectionSlice) FindGroupByID(r cfgpath.Route) (*Group, error) {
+// 2nd return parameter contains the position of the Group within the
+// GgroupSlice of a Section.
+func (ss SectionSlice) FindGroup(r cfgpath.Route) (Group, int, error) {
 
 	spl, err := r.Split()
 	if err != nil {
 		// debug log?
-		return nil, ErrGroupNotFound
+		return Group{}, 0, ErrGroupNotFound
 	}
-	cs, err := ss.FindByID(spl[0])
+	cs, _, err := ss.Find(spl[0])
 	if err != nil {
-		return nil, errors.Mask(err)
+		return Group{}, 0, errors.Mask(err)
 	}
 	return cs.Groups.FindByID(spl[1])
 }
 
-// FindFieldByID searches for a field using all three path segments.
+// FindField searches for a field using all three path segments.
 // Route must have the format a/b/c.
-func (ss SectionSlice) FindFieldByID(r cfgpath.Route) (*Field, error) {
+func (ss SectionSlice) FindField(r cfgpath.Route) (Field, int, error) {
 	spl, err := r.Split()
 	if err != nil {
-		return nil, errors.Mask(err)
+		return Field{}, 0, errors.Mask(err)
 	}
-	sec, err := ss.FindByID(spl[0])
+	sec, _, err := ss.Find(spl[0])
 	if err != nil {
-		return nil, errors.Mask(err)
+		return Field{}, 0, errors.Mask(err)
 	}
-	cg, err := sec.Groups.FindByID(spl[1])
+	cg, _, err := sec.Groups.FindByID(spl[1])
 	if err != nil {
-		return nil, errors.Mask(err)
+		return Field{}, 0, errors.Mask(err)
 	}
 	return cg.Fields.FindByID(spl[2])
 }
 
-// Append adds 0..n *Section. Not thread safe.
-func (ss *SectionSlice) Append(s ...*Section) *SectionSlice {
+// UpdateField searches for a field using all three path segments and updates
+// the found field with the new field data.
+// Not thread safe!
+func (ss SectionSlice) UpdateField(r cfgpath.Route, new Field) error {
+	spl, err := r.Split()
+	if err != nil {
+		return errors.Mask(err)
+	}
+	sec, sIDX, err := ss.Find(spl[0])
+	if err != nil {
+		return errors.Mask(err)
+	}
+	cg, gIDX, err := sec.Groups.FindByID(spl[1])
+	if err != nil {
+		return errors.Mask(err)
+	}
+	cf, fIDX, err := cg.Fields.FindByID(spl[2])
+	if err != nil {
+		return errors.Mask(err)
+	}
+
+	ss[sIDX].Groups[gIDX].Fields[fIDX] = cf.Update(new)
+
+	return nil
+}
+
+// Append adds 0..n Section. Not thread safe.
+func (ss *SectionSlice) Append(s ...Section) *SectionSlice {
 	*ss = append(*ss, s...)
 	return ss
 }
 
 // AppendFields adds 0..n *Fields. Path must have at least two path parts like a/b
 // more path parts gets ignored. Not thread safe.
-func (ss SectionSlice) AppendFields(r cfgpath.Route, fs ...*Field) error {
-	g, err := ss.FindGroupByID(r)
+func (ss *SectionSlice) AppendFields(r cfgpath.Route, fs ...Field) error {
+	spl, err := r.Split()
+	if err != nil {
+		return ErrGroupNotFound
+	}
+	cs, sIDX, err := ss.Find(spl[0])
 	if err != nil {
 		return errors.Mask(err)
 	}
-	g.Fields.Append(fs...)
+	cg, gIDX, err := cs.Groups.FindByID(spl[1])
+	if err != nil {
+		return errors.Mask(err)
+	}
+	cg.Fields.Append(fs...)
+	(*ss)[sIDX].Groups[gIDX] = cg
 	return nil
 }
 
@@ -296,8 +336,8 @@ func (ss SectionSlice) Validate() error {
 }
 
 // SortAll recursively sorts all slices. Not thread safe.
-func (ss *SectionSlice) SortAll() *SectionSlice {
-	for _, s := range *ss {
+func (ss SectionSlice) SortAll() SectionSlice {
+	for _, s := range ss {
 		for _, g := range s.Groups {
 			g.Fields.Sort()
 		}
@@ -307,19 +347,19 @@ func (ss *SectionSlice) SortAll() *SectionSlice {
 }
 
 // Sort convenience helper. Not thread safe.
-func (ss *SectionSlice) Sort() *SectionSlice {
+func (ss SectionSlice) Sort() SectionSlice {
 	sort.Sort(ss)
 	return ss
 }
 
-func (ss *SectionSlice) Len() int {
-	return len(*ss)
+func (ss SectionSlice) Len() int {
+	return len(ss)
 }
 
-func (ss *SectionSlice) Swap(i, j int) {
-	(*ss)[i], (*ss)[j] = (*ss)[j], (*ss)[i]
+func (ss SectionSlice) Swap(i, j int) {
+	ss[i], ss[j] = ss[j], ss[i]
 }
 
-func (ss *SectionSlice) Less(i, j int) bool {
-	return (*ss)[i].SortOrder < (*ss)[j].SortOrder
+func (ss SectionSlice) Less(i, j int) bool {
+	return ss[i].SortOrder < ss[j].SortOrder
 }

@@ -28,7 +28,7 @@ var ErrFieldNotFound = errors.New("Field not found")
 
 // FieldSlice contains a set of Fields. Has several method receivers attached.
 //  Thread safe for reading but not for modifying.
-type FieldSlice []*Field
+type FieldSlice []Field
 
 // Field contains the final path element of a configuration. Includes several options.
 //  Thread safe for reading but not for modifying.
@@ -66,48 +66,49 @@ type Field struct {
 // FieldError shows detailed information about an error when calling FQPathDefault()
 type FieldError struct {
 	Err       error           // Main error
-	*Field                    // Affected field
+	Field                     // Affected field
 	PreRoutes []cfgpath.Route // prepended routes
 }
 
 // Error implements the error interface
-func (fe *FieldError) Error() string {
+func (fe FieldError) Error() string {
 	return fe.Err.Error()
 }
 
 // RenderRoutes merges the PreRoute fields into a string
-func (fe *FieldError) RenderRoutes() string {
+func (fe FieldError) RenderRoutes() string {
 	var r cfgpath.Route
 	_ = r.Append(fe.PreRoutes...)
 	return r.String()
 }
 
 // NewFieldSlice wrapper to create a new FieldSlice
-func NewFieldSlice(fs ...*Field) FieldSlice {
+func NewFieldSlice(fs ...Field) FieldSlice {
 	return FieldSlice(fs)
 }
 
 // FindByID returns a Field pointer or ErrFieldNotFound.
 // Route must be a single part. E.g. if you have path "a/b/c" route would be in
 // this case "c". For comparison the field Sum32 of a route will be used.
-func (fs FieldSlice) FindByID(id cfgpath.Route) (*Field, error) {
-	for _, f := range fs {
-		if f != nil && f.ID.Sum32 == id.Sum32 {
-			return f, nil
+// 2nd argument int contains the slice index of the field.
+func (fs FieldSlice) FindByID(id cfgpath.Route) (Field, int, error) {
+	for i, f := range fs {
+		if f.ID.Sum32 == id.Sum32 {
+			return f, i, nil
 		}
 	}
-	return nil, ErrFieldNotFound
+	return Field{}, 0, ErrFieldNotFound
 }
 
 // Append adds *Field (variadic) to the FieldSlice. Not thread safe.
-func (fs *FieldSlice) Append(f ...*Field) *FieldSlice {
+func (fs *FieldSlice) Append(f ...Field) *FieldSlice {
 	*fs = append(*fs, f...)
 	return fs
 }
 
 // Merge copies the data from a Field into this slice. Appends if ID is not found
 // in this slice otherwise overrides struct fields if not empty. Not thread safe.
-func (fs *FieldSlice) Merge(fields ...*Field) error {
+func (fs *FieldSlice) Merge(fields ...Field) error {
 	for _, f := range fields {
 		if err := (*fs).merge(f); err != nil {
 			return errors.Mask(err)
@@ -117,67 +118,74 @@ func (fs *FieldSlice) Merge(fields ...*Field) error {
 }
 
 // merge merges field f into the slice. Appends the field if the Id is new.
-func (fs *FieldSlice) merge(f *Field) error {
-	if f == nil {
-		return nil
-	}
-	cf, err := (*fs).FindByID(f.ID) // cf current field
-	if cf == nil || err != nil {
+func (fs *FieldSlice) merge(f Field) error {
+
+	cf, idx, err := (*fs).FindByID(f.ID) // cf current field
+	if err != nil {
 		cf = f
-		(*fs).Append(cf)
+		*fs = append(*fs, cf)
+		idx = len(*fs) - 1
 	}
 
-	if f.Type != nil {
-		cf.Type = f.Type
-	}
-	if !f.Label.IsEmpty() {
-		cf.Label = f.Label.Clone()
-	}
-	if !f.Comment.IsEmpty() {
-		cf.Comment = f.Comment.Clone()
-	}
-	if !f.Tooltip.IsEmpty() {
-		cf.Tooltip = f.Tooltip.Clone()
-	}
-	if f.Scopes > 0 {
-		cf.Scopes = f.Scopes
-	}
-	if f.SortOrder != 0 {
-		cf.SortOrder = f.SortOrder
-	}
-	if f.Visible > VisibleAbsent {
-		cf.Visible = f.Visible
-	}
-	cf.CanBeEmpty = f.CanBeEmpty
-	if f.Default != nil {
-		cf.Default = f.Default
-	}
-
+	(*fs)[idx] = cf.Update(f)
 	return nil
 }
 
 // Sort convenience helper. Not thread safe.
-func (fs *FieldSlice) Sort() *FieldSlice {
+func (fs FieldSlice) Sort() FieldSlice {
 	sort.Sort(fs)
 	return fs
 }
 
-func (fs *FieldSlice) Len() int {
-	return len(*fs)
+func (fs FieldSlice) Len() int {
+	return len(fs)
 }
 
-func (fs *FieldSlice) Swap(i, j int) {
-	(*fs)[i], (*fs)[j] = (*fs)[j], (*fs)[i]
+func (fs FieldSlice) Swap(i, j int) {
+	fs[i], fs[j] = fs[j], fs[i]
 }
 
-func (fs *FieldSlice) Less(i, j int) bool {
-	return (*fs)[i].SortOrder < (*fs)[j].SortOrder
+func (fs FieldSlice) Less(i, j int) bool {
+	return fs[i].SortOrder < fs[j].SortOrder
+}
+
+// Update applies the data from the new Field to the old field
+// and returns the updated Field. Only non-empty values will
+// be copied and byte slices gets cloned. The returned Field
+// allows modifications.
+func (f Field) Update(new Field) Field {
+	if new.Type != nil {
+		f.Type = new.Type
+	}
+	if !new.Label.IsEmpty() {
+		f.Label = new.Label.Clone()
+	}
+	if !new.Comment.IsEmpty() {
+		f.Comment = new.Comment.Clone()
+	}
+	if !new.Tooltip.IsEmpty() {
+		f.Tooltip = new.Tooltip.Clone()
+	}
+	if new.Scopes > 0 {
+		f.Scopes = new.Scopes
+	}
+	if new.SortOrder != 0 {
+		f.SortOrder = new.SortOrder
+	}
+	if new.Visible > VisibleAbsent {
+		f.Visible = new.Visible
+	}
+	f.CanBeEmpty = new.CanBeEmpty
+	if new.Default != nil {
+		f.Default = new.Default
+	}
+	return f
 }
 
 // Route returns the merged route of either
 // Section.ID + Group.ID + Field.ID OR Field.ConfgPath if set.
 // Returns on error *FieldError. Owner of the cfgpath.Route is *Field.
-func (f *Field) Route(preRoutes ...cfgpath.Route) (cfgpath.Route, error) {
+func (f Field) Route(preRoutes ...cfgpath.Route) (cfgpath.Route, error) {
 	var p cfgpath.Path
 	var err error
 	if nil != f.ConfigPath && !f.ConfigPath.SelfRoute().IsEmpty() {
@@ -194,7 +202,7 @@ func (f *Field) Route(preRoutes ...cfgpath.Route) (cfgpath.Route, error) {
 // RouteHash returns the 64-bit FNV-1a hash of either
 // Section.ID + Group.ID + Field.ID OR Field.ConfgPath if set.
 // Returns on error *FieldError
-func (f *Field) RouteHash(preRoutes ...cfgpath.Route) (uint64, error) {
+func (f Field) RouteHash(preRoutes ...cfgpath.Route) (uint64, error) {
 	var r cfgpath.Route
 
 	if nil != f.ConfigPath && false == f.ConfigPath.SelfRoute().IsEmpty() {

@@ -26,16 +26,16 @@ import (
 )
 
 var packageAllConfiguration = element.MustNewConfigurationMerge(
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("system"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("adminnotification"),
 				Label:     text.Chars(`Notifications`),
 				SortOrder: 250,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/adminnotification/use_https`,
 						ID:        cfgpath.NewRoute("use_https"),
 						Label:     text.Chars(`Use HTTPS to Get Feed`),
@@ -46,7 +46,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/adminnotification/frequency`,
 						ID:        cfgpath.NewRoute("frequency"),
 						Label:     text.Chars(`Update Frequency`),
@@ -57,7 +57,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/adminnotification/last_update`,
 						ID:        cfgpath.NewRoute("last_update"),
 						Label:     text.Chars(`Last Update`),
@@ -73,13 +73,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("system"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("adminnotification"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/adminnotification/feed_url`,
 						ID:      cfgpath.NewRoute("feed_url"),
 						Type:    element.TypeHidden,
@@ -88,7 +88,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default: `notifications.magentocommerce.com/magento2/community/notifications.rss`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/adminnotification/popup_url`,
 						ID:      cfgpath.NewRoute("popup_url"),
 						Type:    element.TypeHidden,
@@ -97,7 +97,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default: `widgets.magentocommerce.com/notificationPopup`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/adminnotification/severity_icons_url`,
 						ID:      cfgpath.NewRoute("severity_icons_url"),
 						Type:    element.TypeHidden,
@@ -109,13 +109,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("advanced"),
 		Label:     text.Chars("Advanced"),
 		SortOrder: 910,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("modules_disable_output"),
 				Label:     text.Chars(`Disable Modules Output`),
 				SortOrder: 2,
@@ -124,19 +124,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("trans_email"),
 		Label:     text.Chars("Store Email Addresses"),
 		SortOrder: 90,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("ident_custom1"),
 				Label:     text.Chars(`Custom Email 1`),
 				SortOrder: 4,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `trans_email/ident_custom1/email`,
 						ID:        cfgpath.NewRoute("email"),
 						Label:     text.Chars(`Sender Email`),
@@ -147,7 +147,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `trans_email/ident_custom1/name`,
 						ID:        cfgpath.NewRoute("name"),
 						Label:     text.Chars(`Sender Name`),
@@ -160,13 +160,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("ident_custom2"),
 				Label:     text.Chars(`Custom Email 2`),
 				SortOrder: 5,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `trans_email/ident_custom2/email`,
 						ID:        cfgpath.NewRoute("email"),
 						Label:     text.Chars(`Sender Email`),
@@ -177,7 +177,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `trans_email/ident_custom2/name`,
 						ID:        cfgpath.NewRoute("name"),
 						Label:     text.Chars(`Sender Name`),
@@ -190,13 +190,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("ident_general"),
 				Label:     text.Chars(`General Contact`),
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `trans_email/ident_general/email`,
 						ID:        cfgpath.NewRoute("email"),
 						Label:     text.Chars(`Sender Email`),
@@ -207,7 +207,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `trans_email/ident_general/name`,
 						ID:        cfgpath.NewRoute("name"),
 						Label:     text.Chars(`Sender Name`),
@@ -220,13 +220,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("ident_sales"),
 				Label:     text.Chars(`Sales Representative`),
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `trans_email/ident_sales/email`,
 						ID:        cfgpath.NewRoute("email"),
 						Label:     text.Chars(`Sender Email`),
@@ -237,7 +237,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `trans_email/ident_sales/name`,
 						ID:        cfgpath.NewRoute("name"),
 						Label:     text.Chars(`Sender Name`),
@@ -250,13 +250,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("ident_support"),
 				Label:     text.Chars(`Customer Support`),
 				SortOrder: 3,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `trans_email/ident_support/email`,
 						ID:        cfgpath.NewRoute("email"),
 						Label:     text.Chars(`Sender Email`),
@@ -267,7 +267,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `trans_email/ident_support/name`,
 						ID:        cfgpath.NewRoute("name"),
 						Label:     text.Chars(`Sender Name`),
@@ -281,19 +281,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("design"),
 		Label:     text.Chars("Design"),
 		SortOrder: 30,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("theme"),
 				Label:     text.Chars(`Design Theme`),
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `design/theme/theme_id`,
 						ID:        cfgpath.NewRoute("theme_id"),
 						Label:     text.Chars(`Design Theme`),
@@ -305,7 +305,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/theme/ua_regexp`,
 						ID:        cfgpath.NewRoute("ua_regexp"),
 						Label:     text.Chars(`User-Agent Exceptions`),
@@ -319,13 +319,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("pagination"),
 				Label:     text.Chars(`Pagination`),
 				SortOrder: 500,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `design/pagination/pagination_frame`,
 						ID:        cfgpath.NewRoute("pagination_frame"),
 						Label:     text.Chars(`Pagination Frame`),
@@ -337,7 +337,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/pagination/pagination_frame_skip`,
 						ID:        cfgpath.NewRoute("pagination_frame_skip"),
 						Label:     text.Chars(`Pagination Frame Skip`),
@@ -349,7 +349,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/pagination/anchor_text_for_previous`,
 						ID:        cfgpath.NewRoute("anchor_text_for_previous"),
 						Label:     text.Chars(`Anchor Text for Previous`),
@@ -361,7 +361,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/pagination/anchor_text_for_next`,
 						ID:        cfgpath.NewRoute("anchor_text_for_next"),
 						Label:     text.Chars(`Anchor Text for Next`),
@@ -375,13 +375,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("email"),
 				Label:     text.Chars(`Transactional Emails`),
 				SortOrder: 510,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `design/email/logo`,
 						ID:        cfgpath.NewRoute("logo"),
 						Label:     text.Chars(`Logo Image`),
@@ -393,7 +393,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/email/logo_alt`,
 						ID:        cfgpath.NewRoute("logo_alt"),
 						Label:     text.Chars(`Logo Image Alt`),
@@ -407,19 +407,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("dev"),
 		Label:     text.Chars("Developer"),
 		SortOrder: 920,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("debug"),
 				Label:     text.Chars(`Debug`),
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `dev/debug/template_hints`,
 						ID:        cfgpath.NewRoute("template_hints"),
 						Label:     text.Chars(`Template Path Hints`),
@@ -430,7 +430,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `dev/debug/template_hints_blocks`,
 						ID:        cfgpath.NewRoute("template_hints_blocks"),
 						Label:     text.Chars(`Add Block Names to Hints`),
@@ -443,13 +443,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("template"),
 				Label:     text.Chars(`Template Settings`),
 				SortOrder: 25,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `dev/template/allow_symlink`,
 						ID:        cfgpath.NewRoute("allow_symlink"),
 						Label:     text.Chars(`Allow Symlinks`),
@@ -461,7 +461,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `dev/template/minify_html`,
 						ID:        cfgpath.NewRoute("minify_html"),
 						Label:     text.Chars(`Minify Html`),
@@ -474,13 +474,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("translate_inline"),
 				Label:     text.Chars(`Translate Inline`),
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `dev/translate_inline/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enabled for Frontend`),
@@ -491,7 +491,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `dev/translate_inline/active_admin`,
 						ID:        cfgpath.NewRoute("active_admin"),
 						Label:     text.Chars(`Enabled for Admin`),
@@ -505,13 +505,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("js"),
 				Label:     text.Chars(`JavaScript Settings`),
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `dev/js/merge_files`,
 						ID:        cfgpath.NewRoute("merge_files"),
 						Label:     text.Chars(`Merge JavaScript Files`),
@@ -522,7 +522,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `dev/js/enable_js_bundling`,
 						ID:        cfgpath.NewRoute("enable_js_bundling"),
 						Label:     text.Chars(`Enable Javascript Bundling`),
@@ -533,7 +533,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `dev/js/minify_files`,
 						ID:        cfgpath.NewRoute("minify_files"),
 						Label:     text.Chars(`Minify JavaScript Files`),
@@ -546,13 +546,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("css"),
 				Label:     text.Chars(`CSS Settings`),
 				SortOrder: 110,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `dev/css/merge_css_files`,
 						ID:        cfgpath.NewRoute("merge_css_files"),
 						Label:     text.Chars(`Merge CSS Files`),
@@ -563,7 +563,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `dev/css/minify_files`,
 						ID:        cfgpath.NewRoute("minify_files"),
 						Label:     text.Chars(`Minify CSS Files`),
@@ -576,13 +576,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("image"),
 				Label:     text.Chars(`Image Processing Settings`),
 				SortOrder: 120,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `dev/image/default_adapter`,
 						ID:        cfgpath.NewRoute("default_adapter"),
 						Label:     text.Chars(`Image Adapter`),
@@ -596,13 +596,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("static"),
 				Label:     text.Chars(`Static Files Settings`),
 				SortOrder: 130,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `dev/static/sign`,
 						ID:        cfgpath.NewRoute("sign"),
 						Label:     text.Chars(`Sign Static Files`),
@@ -616,19 +616,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("general"),
 		Label:     text.Chars("General"),
 		SortOrder: 10,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("country"),
 				Label:     text.Chars(`Country Options`),
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `general/country/allow`,
 						ID:        cfgpath.NewRoute("allow"),
 						Label:     text.Chars(`Allow Countries`),
@@ -639,7 +639,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `general/country/default`,
 						ID:        cfgpath.NewRoute("default"),
 						Label:     text.Chars(`Default Country`),
@@ -650,7 +650,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `general/country/eu_countries`,
 						ID:        cfgpath.NewRoute("eu_countries"),
 						Label:     text.Chars(`European Union Countries`),
@@ -663,13 +663,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("locale"),
 				Label:     text.Chars(`Locale Options`),
 				SortOrder: 8,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `general/locale/timezone`,
 						ID:        cfgpath.NewRoute("timezone"),
 						Label:     text.Chars(`Timezone`),
@@ -680,7 +680,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `general/locale/code`,
 						ID:        cfgpath.NewRoute("code"),
 						Label:     text.Chars(`Locale`),
@@ -691,7 +691,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `general/locale/firstday`,
 						ID:        cfgpath.NewRoute("firstday"),
 						Label:     text.Chars(`First Day of Week`),
@@ -702,7 +702,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `general/locale/weekend`,
 						ID:        cfgpath.NewRoute("weekend"),
 						Label:     text.Chars(`Weekend Days`),
@@ -715,13 +715,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("store_information"),
 				Label:     text.Chars(`Store Information`),
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `general/store_information/name`,
 						ID:        cfgpath.NewRoute("name"),
 						Label:     text.Chars(`Store Name`),
@@ -732,7 +732,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `general/store_information/phone`,
 						ID:        cfgpath.NewRoute("phone"),
 						Label:     text.Chars(`Store Phone Number`),
@@ -743,7 +743,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `general/store_information/country_id`,
 						ID:        cfgpath.NewRoute("country_id"),
 						Label:     text.Chars(`Country`),
@@ -754,7 +754,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `general/store_information/region_id`,
 						ID:        cfgpath.NewRoute("region_id"),
 						Label:     text.Chars(`Region/State`),
@@ -765,7 +765,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `general/store_information/postcode`,
 						ID:        cfgpath.NewRoute("postcode"),
 						Label:     text.Chars(`ZIP/Postal Code`),
@@ -776,7 +776,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `general/store_information/city`,
 						ID:        cfgpath.NewRoute("city"),
 						Label:     text.Chars(`City`),
@@ -787,7 +787,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `general/store_information/street_line1`,
 						ID:        cfgpath.NewRoute("street_line1"),
 						Label:     text.Chars(`Street Address`),
@@ -798,7 +798,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `general/store_information/street_line2`,
 						ID:        cfgpath.NewRoute("street_line2"),
 						Label:     text.Chars(`Street Address Line 2`),
@@ -809,7 +809,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `general/store_information/merchant_vat_number`,
 						ID:        cfgpath.NewRoute("merchant_vat_number"),
 						Label:     text.Chars(`VAT Number`),
@@ -822,13 +822,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("single_store_mode"),
 				Label:     text.Chars(`Single-Store Mode`),
 				SortOrder: 150,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `general/single_store_mode/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enable Single-Store Mode`),
@@ -843,19 +843,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("system"),
 		Label:     text.Chars("System"),
 		SortOrder: 900,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("smtp"),
 				Label:     text.Chars(`Mail Sending Settings`),
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/smtp/disable`,
 						ID:        cfgpath.NewRoute("disable"),
 						Label:     text.Chars(`Disable Email Communications`),
@@ -866,7 +866,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/smtp/host`,
 						ID:        cfgpath.NewRoute("host"),
 						Label:     text.Chars(`Host`),
@@ -878,7 +878,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/smtp/port`,
 						ID:        cfgpath.NewRoute("port"),
 						Label:     text.Chars(`Port (25)`),
@@ -890,7 +890,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/smtp/set_return_path`,
 						ID:        cfgpath.NewRoute("set_return_path"),
 						Label:     text.Chars(`Set Return-Path`),
@@ -901,7 +901,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/smtp/return_path_email`,
 						ID:        cfgpath.NewRoute("return_path_email"),
 						Label:     text.Chars(`Return-Path Email`),
@@ -915,19 +915,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("admin"),
 		Label:     text.Chars("Admin"),
 		SortOrder: 20,
 		Scopes:    scope.PermDefault,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("emails"),
 				Label:     text.Chars(`Admin User Emails`),
 				SortOrder: 10,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `admin/emails/forgot_email_template`,
 						ID:        cfgpath.NewRoute("forgot_email_template"),
 						Label:     text.Chars(`Forgot Password Email Template`),
@@ -938,7 +938,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/emails/forgot_email_identity`,
 						ID:        cfgpath.NewRoute("forgot_email_identity"),
 						Label:     text.Chars(`Forgot and Reset Email Sender`),
@@ -949,7 +949,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/emails/password_reset_link_expiration_period`,
 						ID:        cfgpath.NewRoute("password_reset_link_expiration_period"),
 						Label:     text.Chars(`Recovery Link Expiration Period (days)`),
@@ -963,13 +963,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("startup"),
 				Label:     text.Chars(`Startup Page`),
 				SortOrder: 20,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `admin/startup/menu_item_id`,
 						ID:        cfgpath.NewRoute("menu_item_id"),
 						Label:     text.Chars(`Startup Page`),
@@ -982,13 +982,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("url"),
 				Label:     text.Chars(`Admin Base URL`),
 				SortOrder: 30,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `admin/url/use_custom`,
 						ID:        cfgpath.NewRoute("use_custom"),
 						Label:     text.Chars(`Use Custom Admin URL`),
@@ -999,7 +999,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/url/custom`,
 						ID:        cfgpath.NewRoute("custom"),
 						Label:     text.Chars(`Custom Admin URL`),
@@ -1011,7 +1011,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/url/use_custom_path`,
 						ID:        cfgpath.NewRoute("use_custom_path"),
 						Label:     text.Chars(`Use Custom Admin Path`),
@@ -1022,7 +1022,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/url/custom_path`,
 						ID:        cfgpath.NewRoute("custom_path"),
 						Label:     text.Chars(`Custom Admin Path`),
@@ -1036,13 +1036,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("security"),
 				Label:     text.Chars(`Security`),
 				SortOrder: 35,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `admin/security/use_form_key`,
 						ID:        cfgpath.NewRoute("use_form_key"),
 						Label:     text.Chars(`Add Secret Key to URLs`),
@@ -1053,7 +1053,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/security/use_case_sensitive_login`,
 						ID:        cfgpath.NewRoute("use_case_sensitive_login"),
 						Label:     text.Chars(`Login is Case Sensitive`),
@@ -1064,7 +1064,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/security/session_lifetime`,
 						ID:        cfgpath.NewRoute("session_lifetime"),
 						Label:     text.Chars(`Admin Session Lifetime (seconds)`),
@@ -1078,13 +1078,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("dashboard"),
 				Label:     text.Chars(`Dashboard`),
 				SortOrder: 40,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `admin/dashboard/enable_charts`,
 						ID:        cfgpath.NewRoute("enable_charts"),
 						Label:     text.Chars(`Enable Charts`),
@@ -1098,19 +1098,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("web"),
 		Label:     text.Chars("Web"),
 		SortOrder: 20,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("url"),
 				Label:     text.Chars(`Url Options`),
 				SortOrder: 3,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `web/url/use_store`,
 						ID:        cfgpath.NewRoute("use_store"),
 						Label:     text.Chars(`Add Store Code to Urls`),
@@ -1122,7 +1122,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/url/redirect_to_base`,
 						ID:        cfgpath.NewRoute("redirect_to_base"),
 						Label:     text.Chars(`Auto-redirect to Base URL`),
@@ -1136,13 +1136,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("seo"),
 				Label:     text.Chars(`Search Engine Optimization`),
 				SortOrder: 5,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `web/seo/use_rewrites`,
 						ID:        cfgpath.NewRoute("use_rewrites"),
 						Label:     text.Chars(`Use Web Server Rewrites`),
@@ -1155,14 +1155,14 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("unsecure"),
 				Label:     text.Chars(`Base URLs`),
 				Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `web/unsecure/base_url`,
 						ID:        cfgpath.NewRoute("base_url"),
 						Label:     text.Chars(`Base URL`),
@@ -1174,7 +1174,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/unsecure/base_link_url`,
 						ID:        cfgpath.NewRoute("base_link_url"),
 						Label:     text.Chars(`Base Link URL`),
@@ -1186,7 +1186,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/unsecure/base_static_url`,
 						ID:        cfgpath.NewRoute("base_static_url"),
 						Label:     text.Chars(`Base URL for Static View Files`),
@@ -1198,7 +1198,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/unsecure/base_media_url`,
 						ID:        cfgpath.NewRoute("base_media_url"),
 						Label:     text.Chars(`Base URL for User Media Files`),
@@ -1212,14 +1212,14 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("secure"),
 				Label:     text.Chars(`Base URLs (Secure)`),
 				Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`),
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `web/secure/base_url`,
 						ID:        cfgpath.NewRoute("base_url"),
 						Label:     text.Chars(`Secure Base URL`),
@@ -1231,7 +1231,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/secure/base_link_url`,
 						ID:        cfgpath.NewRoute("base_link_url"),
 						Label:     text.Chars(`Secure Base Link URL`),
@@ -1243,7 +1243,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/secure/base_static_url`,
 						ID:        cfgpath.NewRoute("base_static_url"),
 						Label:     text.Chars(`Secure Base URL for Static View Files`),
@@ -1255,7 +1255,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/secure/base_media_url`,
 						ID:        cfgpath.NewRoute("base_media_url"),
 						Label:     text.Chars(`Secure Base URL for User Media Files`),
@@ -1267,7 +1267,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/secure/use_in_frontend`,
 						ID:        cfgpath.NewRoute("use_in_frontend"),
 						Label:     text.Chars(`Use Secure URLs in Frontend`),
@@ -1279,7 +1279,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/secure/use_in_adminhtml`,
 						ID:        cfgpath.NewRoute("use_in_adminhtml"),
 						Label:     text.Chars(`Use Secure URLs in Admin`),
@@ -1291,7 +1291,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/secure/offloader_header`,
 						ID:        cfgpath.NewRoute("offloader_header"),
 						Label:     text.Chars(`Offloader header`),
@@ -1304,13 +1304,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("default"),
 				Label:     text.Chars(`Default Pages`),
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `web/default/front`,
 						ID:        cfgpath.NewRoute("front"),
 						Label:     text.Chars(`Default Web URL`),
@@ -1321,7 +1321,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/default/no_route`,
 						ID:        cfgpath.NewRoute("no_route"),
 						Label:     text.Chars(`Default No-route URL`),
@@ -1334,13 +1334,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("session"),
 				Label:     text.Chars(`Session Validation Settings`),
 				SortOrder: 60,
 				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `web/session/use_remote_addr`,
 						ID:        cfgpath.NewRoute("use_remote_addr"),
 						Label:     text.Chars(`Validate REMOTE_ADDR`),
@@ -1351,7 +1351,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/session/use_http_via`,
 						ID:        cfgpath.NewRoute("use_http_via"),
 						Label:     text.Chars(`Validate HTTP_VIA`),
@@ -1362,7 +1362,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/session/use_http_x_forwarded_for`,
 						ID:        cfgpath.NewRoute("use_http_x_forwarded_for"),
 						Label:     text.Chars(`Validate HTTP_X_FORWARDED_FOR`),
@@ -1373,7 +1373,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/session/use_http_user_agent`,
 						ID:        cfgpath.NewRoute("use_http_user_agent"),
 						Label:     text.Chars(`Validate HTTP_USER_AGENT`),
@@ -1384,7 +1384,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/session/use_frontend_sid`,
 						ID:        cfgpath.NewRoute("use_frontend_sid"),
 						Label:     text.Chars(`Use SID on Frontend`),
@@ -1401,13 +1401,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("system"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("media_storage_configuration"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
 						ID:      cfgpath.NewRoute("allowed_resources"),
 						Type:    element.TypeHidden,
@@ -1418,10 +1418,10 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("emails"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/emails/forgot_email_template`,
 						ID:      cfgpath.NewRoute("forgot_email_template"),
 						Type:    element.TypeHidden,
@@ -1430,7 +1430,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default: `system_emails_forgot_email_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/emails/forgot_email_identity`,
 						ID:      cfgpath.NewRoute("forgot_email_identity"),
 						Type:    element.TypeHidden,
@@ -1441,10 +1441,10 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("dashboard"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/dashboard/enable_charts`,
 						ID:      cfgpath.NewRoute("enable_charts"),
 						Type:    element.TypeHidden,
@@ -1456,13 +1456,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("general"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("validator_data"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `general/validator_data/input_types`,
 						ID:      cfgpath.NewRoute("input_types"),
 						Type:    element.TypeHidden,
@@ -1474,19 +1474,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("system"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("backup"),
 				Label:     text.Chars(`Scheduled Backup Settings`),
 				SortOrder: 500,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/backup/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enable Scheduled Backup`),
@@ -1497,7 +1497,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/backup/type`,
 						ID:        cfgpath.NewRoute("type"),
 						Label:     text.Chars(`Backup Type`),
@@ -1508,7 +1508,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/backup/time`,
 						ID:        cfgpath.NewRoute("time"),
 						Label:     text.Chars(`Start Time`),
@@ -1519,7 +1519,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/backup/frequency`,
 						ID:        cfgpath.NewRoute("frequency"),
 						Label:     text.Chars(`Frequency`),
@@ -1530,7 +1530,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/backup/maintenance`,
 						ID:        cfgpath.NewRoute("maintenance"),
 						Label:     text.Chars(`Maintenance Mode`),
@@ -1545,19 +1545,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("admin"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("captcha"),
 				Label:     text.Chars(`CAPTCHA`),
 				SortOrder: 50,
 				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `admin/captcha/enable`,
 						ID:        cfgpath.NewRoute("enable"),
 						Label:     text.Chars(`Enable CAPTCHA in Admin`),
@@ -1568,7 +1568,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/captcha/font`,
 						ID:        cfgpath.NewRoute("font"),
 						Label:     text.Chars(`Font`),
@@ -1579,7 +1579,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `linlibertine`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/captcha/forms`,
 						ID:        cfgpath.NewRoute("forms"),
 						Label:     text.Chars(`Forms`),
@@ -1590,7 +1590,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `backend_forgotpassword`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/captcha/mode`,
 						ID:        cfgpath.NewRoute("mode"),
 						Label:     text.Chars(`Displaying Mode`),
@@ -1601,7 +1601,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `after_fail`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/captcha/failed_attempts_login`,
 						ID:        cfgpath.NewRoute("failed_attempts_login"),
 						Label:     text.Chars(`Number of Unsuccessful Attempts to Login`),
@@ -1613,7 +1613,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   3,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/captcha/timeout`,
 						ID:        cfgpath.NewRoute("timeout"),
 						Label:     text.Chars(`CAPTCHA Timeout (minutes)`),
@@ -1624,7 +1624,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   7,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/captcha/length`,
 						ID:        cfgpath.NewRoute("length"),
 						Label:     text.Chars(`Number of Symbols`),
@@ -1636,7 +1636,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `4-5`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/captcha/symbols`,
 						ID:        cfgpath.NewRoute("symbols"),
 						Label:     text.Chars(`Symbols Used in CAPTCHA`),
@@ -1648,7 +1648,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `ABCDEFGHJKMnpqrstuvwxyz23456789`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/captcha/case_sensitive`,
 						ID:        cfgpath.NewRoute("case_sensitive"),
 						Label:     text.Chars(`Case Sensitive`),
@@ -1662,19 +1662,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("customer"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("captcha"),
 				Label:     text.Chars(`CAPTCHA`),
 				SortOrder: 110,
 				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `customer/captcha/enable`,
 						ID:        cfgpath.NewRoute("enable"),
 						Label:     text.Chars(`Enable CAPTCHA on Frontend`),
@@ -1685,7 +1685,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/captcha/font`,
 						ID:        cfgpath.NewRoute("font"),
 						Label:     text.Chars(`Font`),
@@ -1696,7 +1696,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `linlibertine`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/captcha/forms`,
 						ID:        cfgpath.NewRoute("forms"),
 						Label:     text.Chars(`Forms`),
@@ -1708,7 +1708,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `user_forgotpassword`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/captcha/mode`,
 						ID:        cfgpath.NewRoute("mode"),
 						Label:     text.Chars(`Displaying Mode`),
@@ -1719,7 +1719,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `after_fail`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/captcha/failed_attempts_login`,
 						ID:        cfgpath.NewRoute("failed_attempts_login"),
 						Label:     text.Chars(`Number of Unsuccessful Attempts to Login`),
@@ -1731,7 +1731,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   3,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/captcha/timeout`,
 						ID:        cfgpath.NewRoute("timeout"),
 						Label:     text.Chars(`CAPTCHA Timeout (minutes)`),
@@ -1742,7 +1742,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   7,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/captcha/length`,
 						ID:        cfgpath.NewRoute("length"),
 						Label:     text.Chars(`Number of Symbols`),
@@ -1754,7 +1754,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `4-5`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/captcha/symbols`,
 						ID:        cfgpath.NewRoute("symbols"),
 						Label:     text.Chars(`Symbols Used in CAPTCHA`),
@@ -1766,7 +1766,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `ABCDEFGHJKMnpqrstuvwxyz23456789`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/captcha/case_sensitive`,
 						ID:        cfgpath.NewRoute("case_sensitive"),
 						Label:     text.Chars(`Case Sensitive`),
@@ -1782,13 +1782,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("system"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("media_storage_configuration"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
 						ID:      cfgpath.NewRoute("allowed_resources"),
 						Type:    element.TypeHidden,
@@ -1800,13 +1800,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("admin"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("captcha"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `admin/captcha/type`,
 						ID:      cfgpath.NewRoute("type"),
 						Type:    element.TypeHidden,
@@ -1815,7 +1815,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default: `default`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/captcha/failed_attempts_ip`,
 						ID:      cfgpath.NewRoute("failed_attempts_ip"),
 						Type:    element.TypeHidden,
@@ -1824,7 +1824,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default: 1000,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/captcha/shown_to_logged_in_user`,
 						ID:      cfgpath.NewRoute("shown_to_logged_in_user"),
 						Type:    element.TypeHidden,
@@ -1833,7 +1833,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default: nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/captcha/always_for`,
 						ID:      cfgpath.NewRoute("always_for"),
 						Type:    element.TypeHidden,
@@ -1845,13 +1845,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("customer"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("captcha"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `customer/captcha/type`,
 						ID:      cfgpath.NewRoute("type"),
 						Type:    element.TypeHidden,
@@ -1860,7 +1860,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default: `default`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/captcha/failed_attempts_ip`,
 						ID:      cfgpath.NewRoute("failed_attempts_ip"),
 						Type:    element.TypeHidden,
@@ -1869,7 +1869,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default: 1000,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/captcha/shown_to_logged_in_user`,
 						ID:      cfgpath.NewRoute("shown_to_logged_in_user"),
 						Type:    element.TypeHidden,
@@ -1878,7 +1878,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default: `{"contact_us":"1"}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/captcha/always_for`,
 						ID:      cfgpath.NewRoute("always_for"),
 						Type:    element.TypeHidden,
@@ -1890,13 +1890,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("captcha"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("_value"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `captcha/_value/fonts`,
 						ID:      cfgpath.NewRoute("fonts"),
 						Type:    element.TypeHidden,
@@ -1905,7 +1905,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default: `{"linlibertine":{"label":"LinLibertine","path":"LinLibertineFont\/LinLibertine_Bd-2.8.1.ttf"}}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `captcha/_value/frontend`,
 						ID:      cfgpath.NewRoute("frontend"),
 						Type:    element.TypeHidden,
@@ -1914,7 +1914,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default: `{"areas":{"user_create":{"label":"Create user"},"user_login":{"label":"Login"},"user_forgotpassword":{"label":"Forgot password"},"guest_checkout":{"label":"Checkout as Guest"},"register_during_checkout":{"label":"Register during Checkout"},"contact_us":{"label":"Contact Us"}}}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `captcha/_value/backend`,
 						ID:      cfgpath.NewRoute("backend"),
 						Type:    element.TypeHidden,
@@ -1925,10 +1925,10 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("_attribute"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `captcha/_attribute/translate`,
 						ID:      cfgpath.NewRoute("translate"),
 						Type:    element.TypeHidden,
@@ -1941,19 +1941,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("catalog"),
 		Label:     text.Chars("Catalog"),
 		SortOrder: 40,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("fields_masks"),
 				Label:     text.Chars(`Product Fields Auto-Generation`),
 				SortOrder: 90,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/fields_masks/sku`,
 						ID:        cfgpath.NewRoute("sku"),
 						Label:     text.Chars(`Mask for SKU`),
@@ -1965,7 +1965,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `{{name}}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/fields_masks/meta_title`,
 						ID:        cfgpath.NewRoute("meta_title"),
 						Label:     text.Chars(`Mask for Meta Title`),
@@ -1977,7 +1977,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `{{name}}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/fields_masks/meta_keyword`,
 						ID:        cfgpath.NewRoute("meta_keyword"),
 						Label:     text.Chars(`Mask for Meta Keywords`),
@@ -1989,7 +1989,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `{{name}}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/fields_masks/meta_description`,
 						ID:        cfgpath.NewRoute("meta_description"),
 						Label:     text.Chars(`Mask for Meta Description`),
@@ -2003,13 +2003,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("frontend"),
 				Label:     text.Chars(`Frontend`),
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/frontend/list_mode`,
 						ID:        cfgpath.NewRoute("list_mode"),
 						Label:     text.Chars(`List Mode`),
@@ -2020,7 +2020,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `grid-list`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/frontend/grid_per_page_values`,
 						ID:        cfgpath.NewRoute("grid_per_page_values"),
 						Label:     text.Chars(`Products per Page on Grid Allowed Values`),
@@ -2032,7 +2032,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `9,15,30`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/frontend/grid_per_page`,
 						ID:        cfgpath.NewRoute("grid_per_page"),
 						Label:     text.Chars(`Products per Page on Grid Default Value`),
@@ -2044,7 +2044,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   9,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/frontend/list_per_page_values`,
 						ID:        cfgpath.NewRoute("list_per_page_values"),
 						Label:     text.Chars(`Products per Page on List Allowed Values`),
@@ -2056,7 +2056,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `5,10,15,20,25`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/frontend/list_per_page`,
 						ID:        cfgpath.NewRoute("list_per_page"),
 						Label:     text.Chars(`Products per Page on List Default Value`),
@@ -2068,7 +2068,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   10,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/frontend/flat_catalog_category`,
 						ID:        cfgpath.NewRoute("flat_catalog_category"),
 						Label:     text.Chars(`Use Flat Catalog Category`),
@@ -2079,7 +2079,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/frontend/flat_catalog_product`,
 						ID:        cfgpath.NewRoute("flat_catalog_product"),
 						Label:     text.Chars(`Use Flat Catalog Product`),
@@ -2090,7 +2090,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/frontend/default_sort_by`,
 						ID:        cfgpath.NewRoute("default_sort_by"),
 						Label:     text.Chars(`Product Listing Sort by`),
@@ -2101,7 +2101,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `position`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/frontend/list_allow_all`,
 						ID:        cfgpath.NewRoute("list_allow_all"),
 						Label:     text.Chars(`Allow All Products per Page`),
@@ -2113,7 +2113,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/frontend/parse_url_directives`,
 						ID:        cfgpath.NewRoute("parse_url_directives"),
 						Label:     text.Chars(`Allow Dynamic Media URLs in Products and Categories`),
@@ -2127,13 +2127,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("placeholder"),
 				Label:     text.Chars(`Product Image Placeholders`),
 				SortOrder: 300,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/placeholder/placeholder`,
 						ID:        cfgpath.NewRoute("placeholder"),
 						Label:     nil,
@@ -2146,13 +2146,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("seo"),
 				Label:     text.Chars(`Search Engine Optimization`),
 				SortOrder: 500,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/seo/title_separator`,
 						ID:        cfgpath.NewRoute("title_separator"),
 						Label:     text.Chars(`Page Title Separator`),
@@ -2163,7 +2163,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `-`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/seo/category_canonical_tag`,
 						ID:        cfgpath.NewRoute("category_canonical_tag"),
 						Label:     text.Chars(`Use Canonical Link Meta Tag For Categories`),
@@ -2174,7 +2174,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/seo/product_canonical_tag`,
 						ID:        cfgpath.NewRoute("product_canonical_tag"),
 						Label:     text.Chars(`Use Canonical Link Meta Tag For Products`),
@@ -2187,13 +2187,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("price"),
 				Label:     text.Chars(`Price`),
 				SortOrder: 400,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/price/scope`,
 						ID:        cfgpath.NewRoute("scope"),
 						Label:     text.Chars(`Catalog Price Scope`),
@@ -2207,13 +2207,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("navigation"),
 				Label:     text.Chars(`Category Top Navigation`),
 				SortOrder: 500,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/navigation/max_depth`,
 						ID:        cfgpath.NewRoute("max_depth"),
 						Label:     text.Chars(`Maximal Depth`),
@@ -2226,13 +2226,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("custom_options"),
 				Label:     text.Chars(`Date & Time Custom Options`),
 				SortOrder: 700,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/custom_options/use_calendar`,
 						ID:        cfgpath.NewRoute("use_calendar"),
 						Label:     text.Chars(`Use JavaScript Calendar`),
@@ -2243,7 +2243,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/custom_options/date_fields_order`,
 						ID:        cfgpath.NewRoute("date_fields_order"),
 						Label:     text.Chars(`Date Fields Order`),
@@ -2254,7 +2254,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `m,d,y`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/custom_options/time_format`,
 						ID:        cfgpath.NewRoute("time_format"),
 						Label:     text.Chars(`Time Format`),
@@ -2265,7 +2265,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `12h`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/custom_options/year_range`,
 						ID:        cfgpath.NewRoute("year_range"),
 						Label:     text.Chars(`Year Range`),
@@ -2280,19 +2280,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("design"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("watermark"),
 				Label:     text.Chars(`Product Image Watermarks`),
 				SortOrder: 400,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `design/watermark/size`,
 						ID:        cfgpath.NewRoute("size"),
 						Label:     text.Chars(`Watermark Default Size`),
@@ -2304,7 +2304,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/watermark/imageOpacity`,
 						ID:        cfgpath.NewRoute("imageOpacity"),
 						Label:     text.Chars(`Watermark Opacity, Percent`),
@@ -2315,7 +2315,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/watermark/image`,
 						ID:        cfgpath.NewRoute("image"),
 						Label:     text.Chars(`Watermark`),
@@ -2327,7 +2327,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/watermark/position`,
 						ID:        cfgpath.NewRoute("position"),
 						Label:     text.Chars(`Watermark Position`),
@@ -2341,19 +2341,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("cms"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("wysiwyg"),
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `cms/wysiwyg/use_static_urls_in_catalog`,
 						ID:        cfgpath.NewRoute("use_static_urls_in_catalog"),
 						Label:     text.Chars(`Use Static URLs for Media Content in WYSIWYG for Catalog`),
@@ -2368,19 +2368,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("rss"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("catalog"),
 				Label:     text.Chars(`Catalog`),
 				SortOrder: 3,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `rss/catalog/new`,
 						ID:        cfgpath.NewRoute("new"),
 						Label:     text.Chars(`New Products`),
@@ -2391,7 +2391,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `rss/catalog/special`,
 						ID:        cfgpath.NewRoute("special"),
 						Label:     text.Chars(`Special Products`),
@@ -2402,7 +2402,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `rss/catalog/category`,
 						ID:        cfgpath.NewRoute("category"),
 						Label:     text.Chars(`Top Level Category`),
@@ -2418,13 +2418,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("catalog"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("product"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/product/flat`,
 						ID:      cfgpath.NewRoute("flat"),
 						Type:    element.TypeHidden,
@@ -2433,7 +2433,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default: `{"max_index_count":"64"}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/product/default_tax_group`,
 						ID:      cfgpath.NewRoute("default_tax_group"),
 						Type:    element.TypeHidden,
@@ -2444,10 +2444,10 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("seo"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/seo/product_url_suffix`,
 						ID:      cfgpath.NewRoute("product_url_suffix"),
 						Type:    element.TypeHidden,
@@ -2456,7 +2456,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default: `.html`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/seo/category_url_suffix`,
 						ID:      cfgpath.NewRoute("category_url_suffix"),
 						Type:    element.TypeHidden,
@@ -2465,7 +2465,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default: `.html`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/seo/product_use_categories`,
 						ID:      cfgpath.NewRoute("product_use_categories"),
 						Type:    element.TypeHidden,
@@ -2474,7 +2474,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default: false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/seo/save_rewrites_history`,
 						ID:      cfgpath.NewRoute("save_rewrites_history"),
 						Type:    element.TypeHidden,
@@ -2485,10 +2485,10 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("custom_options"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/custom_options/forbidden_extensions`,
 						ID:      cfgpath.NewRoute("forbidden_extensions"),
 						Type:    element.TypeHidden,
@@ -2500,13 +2500,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("system"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("media_storage_configuration"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
 						ID:      cfgpath.NewRoute("allowed_resources"),
 						Type:    element.TypeHidden,
@@ -2519,19 +2519,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("cataloginventory"),
 		Label:     text.Chars("Inventory"),
 		SortOrder: 50,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("options"),
 				Label:     text.Chars(`Stock Options`),
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `cataloginventory/options/can_subtract`,
 						ID:        cfgpath.NewRoute("can_subtract"),
 						Label:     text.Chars(`Decrease Stock When Order is Placed`),
@@ -2542,7 +2542,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `cataloginventory/options/can_back_in_stock`,
 						ID:        cfgpath.NewRoute("can_back_in_stock"),
 						Label:     text.Chars(`Set Items' Status to be In Stock When Order is Cancelled`),
@@ -2553,7 +2553,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `cataloginventory/options/show_out_of_stock`,
 						ID:        cfgpath.NewRoute("show_out_of_stock"),
 						Label:     text.Chars(`Display Out of Stock Products`),
@@ -2565,7 +2565,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `cataloginventory/options/stock_threshold_qty`,
 						ID:        cfgpath.NewRoute("stock_threshold_qty"),
 						Label:     text.Chars(`Only X left Threshold`),
@@ -2576,7 +2576,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   0,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `cataloginventory/options/display_product_stock_status`,
 						ID:        cfgpath.NewRoute("display_product_stock_status"),
 						Label:     text.Chars(`Display products availability in stock in the frontend`),
@@ -2589,14 +2589,14 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("item_options"),
 				Label:     text.Chars(`Product Stock Options`),
 				Comment:   text.Chars(`Please note that these settings apply to individual items in the cart, not to the entire cart.`),
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `cataloginventory/item_options/manage_stock`,
 						ID:        cfgpath.NewRoute("manage_stock"),
 						Label:     text.Chars(`Manage Stock`),
@@ -2608,7 +2608,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `cataloginventory/item_options/backorders`,
 						ID:        cfgpath.NewRoute("backorders"),
 						Label:     text.Chars(`Backorders`),
@@ -2620,7 +2620,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `cataloginventory/item_options/max_sale_qty`,
 						ID:        cfgpath.NewRoute("max_sale_qty"),
 						Label:     text.Chars(`Maximum Qty Allowed in Shopping Cart`),
@@ -2631,7 +2631,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   10000,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `cataloginventory/item_options/min_qty`,
 						ID:        cfgpath.NewRoute("min_qty"),
 						Label:     text.Chars(`Qty for Item's Status to Become Out of Stock`),
@@ -2642,7 +2642,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   0,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `cataloginventory/item_options/min_sale_qty`,
 						ID:        cfgpath.NewRoute("min_sale_qty"),
 						Label:     text.Chars(`Minimum Qty Allowed in Shopping Cart`),
@@ -2653,7 +2653,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   1,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `cataloginventory/item_options/notify_stock_qty`,
 						ID:        cfgpath.NewRoute("notify_stock_qty"),
 						Label:     text.Chars(`Notify for Quantity Below`),
@@ -2664,7 +2664,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   1,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `cataloginventory/item_options/auto_return`,
 						ID:        cfgpath.NewRoute("auto_return"),
 						Label:     text.Chars(`Automatically Return Credit Memo Item to Stock`),
@@ -2675,7 +2675,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `cataloginventory/item_options/enable_qty_increments`,
 						ID:        cfgpath.NewRoute("enable_qty_increments"),
 						Label:     text.Chars(`Enable Qty Increments`),
@@ -2686,7 +2686,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `cataloginventory/item_options/qty_increments`,
 						ID:        cfgpath.NewRoute("qty_increments"),
 						Label:     text.Chars(`Qty Increments`),
@@ -2701,19 +2701,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("seo"),
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/seo/search_terms`,
 						ID:        cfgpath.NewRoute("search_terms"),
 						Label:     text.Chars(`Popular Search Terms`),
@@ -2726,13 +2726,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("search"),
 				Label:     text.Chars(`Catalog Search`),
 				SortOrder: 500,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/search/engine`,
 						ID:        cfgpath.NewRoute("engine"),
 						Label:     nil,
@@ -2743,7 +2743,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `mysql`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/search/min_query_length`,
 						ID:        cfgpath.NewRoute("min_query_length"),
 						Label:     text.Chars(`Minimal Query Length`),
@@ -2754,7 +2754,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   1,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/search/max_query_length`,
 						ID:        cfgpath.NewRoute("max_query_length"),
 						Label:     text.Chars(`Maximum Query Length`),
@@ -2765,7 +2765,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   128,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/search/use_layered_navigation_count`,
 						ID:        cfgpath.NewRoute("use_layered_navigation_count"),
 						Label:     text.Chars(`Apply Layered Navigation if Search Results are Less Than`),
@@ -2781,19 +2781,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("seo"),
 				Label:     text.Chars(`Search Engine Optimization`),
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/seo/category_url_suffix`,
 						ID:        cfgpath.NewRoute("category_url_suffix"),
 						Label:     text.Chars(`Category URL Suffix`),
@@ -2805,7 +2805,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/seo/product_url_suffix`,
 						ID:        cfgpath.NewRoute("product_url_suffix"),
 						Label:     text.Chars(`Product URL Suffix`),
@@ -2817,7 +2817,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/seo/product_use_categories`,
 						ID:        cfgpath.NewRoute("product_use_categories"),
 						Label:     text.Chars(`Use Categories Path for Product URLs`),
@@ -2828,7 +2828,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/seo/save_rewrites_history`,
 						ID:        cfgpath.NewRoute("save_rewrites_history"),
 						Label:     text.Chars(`Create Permanent Redirect for URLs if URL Key Changed`),
@@ -2843,19 +2843,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("payment_services"),
 		Label:     text.Chars("Payment Services"),
 		SortOrder: 450,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("centinel"),
 				Label:     text.Chars(`3D Secure Credit Card Validation`),
 				SortOrder: 1,
 				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `payment_services/centinel/processor_id`,
 						ID:        cfgpath.NewRoute("processor_id"),
 						Label:     text.Chars(`Processor ID`),
@@ -2866,7 +2866,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment_services/centinel/merchant_id`,
 						ID:        cfgpath.NewRoute("merchant_id"),
 						Label:     text.Chars(`Merchant ID`),
@@ -2877,7 +2877,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment_services/centinel/password`,
 						ID:        cfgpath.NewRoute("password"),
 						Label:     text.Chars(`Password`),
@@ -2888,7 +2888,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment_services/centinel/test_mode`,
 						ID:        cfgpath.NewRoute("test_mode"),
 						Label:     text.Chars(`Test Mode`),
@@ -2900,7 +2900,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment_services/centinel/debug`,
 						ID:        cfgpath.NewRoute("debug"),
 						Label:     text.Chars(`Debug Mode`),
@@ -2915,19 +2915,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("checkout"),
 		Label:     text.Chars("Checkout"),
 		SortOrder: 305,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("options"),
 				Label:     text.Chars(`Checkout Options`),
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `checkout/options/onepage_checkout_enabled`,
 						ID:        cfgpath.NewRoute("onepage_checkout_enabled"),
 						Label:     text.Chars(`Enable Onepage Checkout`),
@@ -2938,7 +2938,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `checkout/options/guest_checkout`,
 						ID:        cfgpath.NewRoute("guest_checkout"),
 						Label:     text.Chars(`Allow Guest Checkout`),
@@ -2949,7 +2949,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `checkout/options/customer_must_be_logged`,
 						ID:        cfgpath.NewRoute("customer_must_be_logged"),
 						Label:     text.Chars(`Require Customer To Be Logged In To Checkout`),
@@ -2962,13 +2962,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("cart"),
 				Label:     text.Chars(`Shopping Cart`),
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `checkout/cart/delete_quote_after`,
 						ID:        cfgpath.NewRoute("delete_quote_after"),
 						Label:     text.Chars(`Quote Lifetime (days)`),
@@ -2979,7 +2979,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   30,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `checkout/cart/redirect_to_cart`,
 						ID:        cfgpath.NewRoute("redirect_to_cart"),
 						Label:     text.Chars(`After Adding a Product Redirect to Shopping Cart`),
@@ -2992,13 +2992,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("cart_link"),
 				Label:     text.Chars(`My Cart Link`),
 				SortOrder: 3,
 				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `checkout/cart_link/use_qty`,
 						ID:        cfgpath.NewRoute("use_qty"),
 						Label:     text.Chars(`Display Cart Summary`),
@@ -3011,13 +3011,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("sidebar"),
 				Label:     text.Chars(`Shopping Cart Sidebar`),
 				SortOrder: 4,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `checkout/sidebar/display`,
 						ID:        cfgpath.NewRoute("display"),
 						Label:     text.Chars(`Display Shopping Cart Sidebar`),
@@ -3028,7 +3028,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `checkout/sidebar/count`,
 						ID:        cfgpath.NewRoute("count"),
 						Label:     text.Chars(`Maximum Display Recently Added Item(s)`),
@@ -3041,13 +3041,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("payment_failed"),
 				Label:     text.Chars(`Payment Failed Emails`),
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `checkout/payment_failed/identity`,
 						ID:        cfgpath.NewRoute("identity"),
 						Label:     text.Chars(`Payment Failed Email Sender`),
@@ -3058,7 +3058,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `general`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `checkout/payment_failed/receiver`,
 						ID:        cfgpath.NewRoute("receiver"),
 						Label:     text.Chars(`Payment Failed Email Receiver`),
@@ -3069,7 +3069,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `general`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `checkout/payment_failed/template`,
 						ID:        cfgpath.NewRoute("template"),
 						Label:     text.Chars(`Payment Failed Template`),
@@ -3080,7 +3080,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `checkout_payment_failed_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `checkout/payment_failed/copy_to`,
 						ID:        cfgpath.NewRoute("copy_to"),
 						Label:     text.Chars(`Send Payment Failed Email Copy To`),
@@ -3092,7 +3092,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `checkout/payment_failed/copy_method`,
 						ID:        cfgpath.NewRoute("copy_method"),
 						Label:     text.Chars(`Send Payment Failed Email Copy Method`),
@@ -3107,19 +3107,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("checkout"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("options"),
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `checkout/options/enable_agreements`,
 						ID:        cfgpath.NewRoute("enable_agreements"),
 						Label:     text.Chars(`Enable Terms and Conditions`),
@@ -3134,19 +3134,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("web"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("default"),
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `web/default/cms_home_page`,
 						ID:        cfgpath.NewRoute("cms_home_page"),
 						Label:     text.Chars(`CMS Home Page`),
@@ -3157,7 +3157,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `home`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/default/cms_no_route`,
 						ID:        cfgpath.NewRoute("cms_no_route"),
 						Label:     text.Chars(`CMS No Route Page`),
@@ -3168,7 +3168,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `no-route`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/default/cms_no_cookies`,
 						ID:        cfgpath.NewRoute("cms_no_cookies"),
 						Label:     text.Chars(`CMS No Cookies Page`),
@@ -3179,7 +3179,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `enable-cookies`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/default/show_cms_breadcrumbs`,
 						ID:        cfgpath.NewRoute("show_cms_breadcrumbs"),
 						Label:     text.Chars(`Show Breadcrumbs for CMS Pages`),
@@ -3192,13 +3192,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("browser_capabilities"),
 				Label:     text.Chars(`Browser Capabilities Detection`),
 				SortOrder: 200,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `web/browser_capabilities/cookies`,
 						ID:        cfgpath.NewRoute("cookies"),
 						Label:     text.Chars(`Redirect to CMS-page if Cookies are Disabled`),
@@ -3209,7 +3209,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/browser_capabilities/javascript`,
 						ID:        cfgpath.NewRoute("javascript"),
 						Label:     text.Chars(`Show Notice if JavaScript is Disabled`),
@@ -3220,7 +3220,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/browser_capabilities/local_storage`,
 						ID:        cfgpath.NewRoute("local_storage"),
 						Label:     text.Chars(`Show Notice if Local Storage is Disabled`),
@@ -3234,19 +3234,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("cms"),
 		Label:     text.Chars("Content Management"),
 		SortOrder: 1001,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("wysiwyg"),
 				Label:     text.Chars(`WYSIWYG Options`),
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `cms/wysiwyg/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enable WYSIWYG Editor`),
@@ -3262,13 +3262,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("web"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("default"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `web/default/front`,
 						ID:      cfgpath.NewRoute("front"),
 						Type:    element.TypeHidden,
@@ -3277,7 +3277,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default: `cms`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/default/no_route`,
 						ID:      cfgpath.NewRoute("no_route"),
 						Type:    element.TypeHidden,
@@ -3289,13 +3289,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("system"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("media_storage_configuration"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
 						ID:      cfgpath.NewRoute("allowed_resources"),
 						Type:    element.TypeHidden,
@@ -3308,19 +3308,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("checkout"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("cart"),
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `checkout/cart/configurable_product_image`,
 						ID:        cfgpath.NewRoute("configurable_product_image"),
 						Label:     text.Chars(`Configurable Product Image`),
@@ -3335,19 +3335,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("contact"),
 		Label:     text.Chars("Contacts"),
 		SortOrder: 100,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("contact"),
 				Label:     text.Chars(`Contact Us`),
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `contact/contact/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enable Contact Us`),
@@ -3360,13 +3360,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("email"),
 				Label:     text.Chars(`Email Options`),
 				SortOrder: 50,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `contact/email/recipient_email`,
 						ID:        cfgpath.NewRoute("recipient_email"),
 						Label:     text.Chars(`Send Emails To`),
@@ -3377,7 +3377,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `hello@example.com`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `contact/email/sender_email_identity`,
 						ID:        cfgpath.NewRoute("sender_email_identity"),
 						Label:     text.Chars(`Email Sender`),
@@ -3388,7 +3388,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `custom2`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `contact/email/email_template`,
 						ID:        cfgpath.NewRoute("email_template"),
 						Label:     text.Chars(`Email Template`),
@@ -3403,19 +3403,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("web"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("cookie"),
 				Label:     text.Chars(`Default Cookie Settings`),
 				SortOrder: 50,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `web/cookie/cookie_lifetime`,
 						ID:        cfgpath.NewRoute("cookie_lifetime"),
 						Label:     text.Chars(`Cookie Lifetime`),
@@ -3426,7 +3426,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   3600,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/cookie/cookie_path`,
 						ID:        cfgpath.NewRoute("cookie_path"),
 						Label:     text.Chars(`Cookie Path`),
@@ -3437,7 +3437,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/cookie/cookie_domain`,
 						ID:        cfgpath.NewRoute("cookie_domain"),
 						Label:     text.Chars(`Cookie Domain`),
@@ -3448,7 +3448,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/cookie/cookie_httponly`,
 						ID:        cfgpath.NewRoute("cookie_httponly"),
 						Label:     text.Chars(`Use HTTP Only`),
@@ -3460,7 +3460,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `web/cookie/cookie_restriction`,
 						ID:        cfgpath.NewRoute("cookie_restriction"),
 						Label:     text.Chars(`Cookie Restriction Mode`),
@@ -3476,13 +3476,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("web"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("cookie"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `web/cookie/cookie_restriction_lifetime`,
 						ID:      cfgpath.NewRoute("cookie_restriction_lifetime"),
 						Type:    element.TypeHidden,
@@ -3495,13 +3495,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("system"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("cron"),
 				Label:     text.Chars(`Cron (Scheduled Tasks) - all the times are in minutes`),
 				Comment:   text.Chars(`For correct URLs generated during cron runs please make sure that Web > Secure and Unsecure Base URLs are explicitly set.`),
@@ -3512,19 +3512,19 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("customer"),
 		Label:     text.Chars("Customer Configuration"),
 		SortOrder: 130,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("account_share"),
 				Label:     text.Chars(`Account Sharing Options`),
 				SortOrder: 10,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `customer/account_share/scope`,
 						ID:        cfgpath.NewRoute("scope"),
 						Label:     text.Chars(`Share Customer Accounts`),
@@ -3537,13 +3537,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("create_account"),
 				Label:     text.Chars(`Create New Account Options`),
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/auto_group_assign`,
 						ID:        cfgpath.NewRoute("auto_group_assign"),
 						Label:     text.Chars(`Enable Automatic Assignment to Customer Group`),
@@ -3554,7 +3554,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/tax_calculation_address_type`,
 						ID:        cfgpath.NewRoute("tax_calculation_address_type"),
 						Label:     text.Chars(`Tax Calculation Based On`),
@@ -3565,7 +3565,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `billing`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/default_group`,
 						ID:        cfgpath.NewRoute("default_group"),
 						Label:     text.Chars(`Default Group`),
@@ -3576,7 +3576,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/viv_domestic_group`,
 						ID:        cfgpath.NewRoute("viv_domestic_group"),
 						Label:     text.Chars(`Group for Valid VAT ID - Domestic`),
@@ -3587,7 +3587,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/viv_intra_union_group`,
 						ID:        cfgpath.NewRoute("viv_intra_union_group"),
 						Label:     text.Chars(`Group for Valid VAT ID - Intra-Union`),
@@ -3598,7 +3598,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/viv_invalid_group`,
 						ID:        cfgpath.NewRoute("viv_invalid_group"),
 						Label:     text.Chars(`Group for Invalid VAT ID`),
@@ -3609,7 +3609,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/viv_error_group`,
 						ID:        cfgpath.NewRoute("viv_error_group"),
 						Label:     text.Chars(`Validation Error Group`),
@@ -3620,7 +3620,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/viv_on_each_transaction`,
 						ID:        cfgpath.NewRoute("viv_on_each_transaction"),
 						Label:     text.Chars(`Validate on Each Transaction`),
@@ -3631,7 +3631,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/viv_disable_auto_group_assign_default`,
 						ID:        cfgpath.NewRoute("viv_disable_auto_group_assign_default"),
 						Label:     text.Chars(`Default Value for Disable Automatic Group Changes Based on VAT ID`),
@@ -3642,7 +3642,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/vat_frontend_visibility`,
 						ID:        cfgpath.NewRoute("vat_frontend_visibility"),
 						Label:     text.Chars(`Show VAT Number on Frontend`),
@@ -3654,7 +3654,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/email_domain`,
 						ID:        cfgpath.NewRoute("email_domain"),
 						Label:     text.Chars(`Default Email Domain`),
@@ -3665,7 +3665,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `example.com`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/email_template`,
 						ID:        cfgpath.NewRoute("email_template"),
 						Label:     text.Chars(`Default Welcome Email`),
@@ -3676,7 +3676,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `customer_create_account_email_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/email_identity`,
 						ID:        cfgpath.NewRoute("email_identity"),
 						Label:     text.Chars(`Email Sender`),
@@ -3687,7 +3687,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `general`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/confirm`,
 						ID:        cfgpath.NewRoute("confirm"),
 						Label:     text.Chars(`Require Emails Confirmation`),
@@ -3698,7 +3698,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/email_confirmation_template`,
 						ID:        cfgpath.NewRoute("email_confirmation_template"),
 						Label:     text.Chars(`Confirmation Link Email`),
@@ -3709,7 +3709,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `customer_create_account_email_confirmation_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/email_confirmed_template`,
 						ID:        cfgpath.NewRoute("email_confirmed_template"),
 						Label:     text.Chars(`Welcome Email`),
@@ -3721,7 +3721,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `customer_create_account_email_confirmed_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/create_account/generate_human_friendly_id`,
 						ID:        cfgpath.NewRoute("generate_human_friendly_id"),
 						Label:     text.Chars(`Generate Human-Friendly Customer ID`),
@@ -3734,13 +3734,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("password"),
 				Label:     text.Chars(`Password Options`),
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `customer/password/forgot_email_template`,
 						ID:        cfgpath.NewRoute("forgot_email_template"),
 						Label:     text.Chars(`Forgot Email Template`),
@@ -3751,7 +3751,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `customer_password_forgot_email_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/password/remind_email_template`,
 						ID:        cfgpath.NewRoute("remind_email_template"),
 						Label:     text.Chars(`Remind Email Template`),
@@ -3762,7 +3762,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `customer_password_remind_email_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/password/reset_password_template`,
 						ID:        cfgpath.NewRoute("reset_password_template"),
 						Label:     text.Chars(`Reset Password Template`),
@@ -3773,7 +3773,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `customer_password_reset_password_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/password/forgot_email_identity`,
 						ID:        cfgpath.NewRoute("forgot_email_identity"),
 						Label:     text.Chars(`Password Template Email Sender`),
@@ -3784,7 +3784,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   `support`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/password/reset_link_expiration_period`,
 						ID:        cfgpath.NewRoute("reset_link_expiration_period"),
 						Label:     text.Chars(`Recovery Link Expiration Period (days)`),
@@ -3798,13 +3798,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("address"),
 				Label:     text.Chars(`Name and Address Options`),
 				SortOrder: 40,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `customer/address/street_lines`,
 						ID:        cfgpath.NewRoute("street_lines"),
 						Label:     text.Chars(`Number of Lines in a Street Address`),
@@ -3816,7 +3816,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   2,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address/prefix_show`,
 						ID:        cfgpath.NewRoute("prefix_show"),
 						Label:     text.Chars(`Show Prefix`),
@@ -3828,7 +3828,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address/prefix_options`,
 						ID:        cfgpath.NewRoute("prefix_options"),
 						Label:     text.Chars(`Prefix Dropdown Options`),
@@ -3840,7 +3840,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address/middlename_show`,
 						ID:        cfgpath.NewRoute("middlename_show"),
 						Label:     text.Chars(`Show Middle Name (initial)`),
@@ -3852,7 +3852,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address/suffix_show`,
 						ID:        cfgpath.NewRoute("suffix_show"),
 						Label:     text.Chars(`Show Suffix`),
@@ -3864,7 +3864,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address/suffix_options`,
 						ID:        cfgpath.NewRoute("suffix_options"),
 						Label:     text.Chars(`Suffix Dropdown Options`),
@@ -3876,7 +3876,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address/dob_show`,
 						ID:        cfgpath.NewRoute("dob_show"),
 						Label:     text.Chars(`Show Date of Birth`),
@@ -3887,7 +3887,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address/taxvat_show`,
 						ID:        cfgpath.NewRoute("taxvat_show"),
 						Label:     text.Chars(`Show Tax/VAT Number`),
@@ -3898,7 +3898,7 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address/gender_show`,
 						ID:        cfgpath.NewRoute("gender_show"),
 						Label:     text.Chars(`Show Gender`),
@@ -3911,13 +3911,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("startup"),
 				Label:     text.Chars(`Login Options`),
 				SortOrder: 90,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `customer/startup/redirect_dashboard`,
 						ID:        cfgpath.NewRoute("redirect_dashboard"),
 						Label:     text.Chars(`Redirect Customer to Account Dashboard after Logging in`),
@@ -3931,13 +3931,13 @@ var packageAllConfiguration = element.MustNewConfigurationMerge(
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("address_templates"),
 				Label:     text.Chars(`Address Templates`),
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `customer/address_templates/text`,
 						ID:        cfgpath.NewRoute("text"),
 						Label:     text.Chars(`Text`),
@@ -3959,7 +3959,7 @@ T: {{var telephone}}
 {{depend vat_id}}VAT: {{var vat_id}}{{/depend}}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address_templates/oneline`,
 						ID:        cfgpath.NewRoute("oneline"),
 						Label:     text.Chars(`Text One Line`),
@@ -3970,7 +3970,7 @@ T: {{var telephone}}
 						Default:   `{{depend prefix}}{{var prefix}} {{/depend}}{{var firstname}} {{depend middlename}}{{var middlename}} {{/depend}}{{var lastname}}{{depend suffix}} {{var suffix}}{{/depend}}, {{var street}}, {{var city}}, {{var region}} {{var postcode}}, {{var country}}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address_templates/html`,
 						ID:        cfgpath.NewRoute("html"),
 						Label:     text.Chars(`HTML`),
@@ -3991,7 +3991,7 @@ T: {{var telephone}}
 {{depend vat_id}}<br/>VAT: {{var vat_id}}{{/depend}}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address_templates/pdf`,
 						ID:        cfgpath.NewRoute("pdf"),
 						Label:     text.Chars(`PDF`),
@@ -4017,19 +4017,19 @@ T: {{var telephone}}
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("general"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("store_information"),
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `general/store_information/validate_vat_number`,
 						ID:        cfgpath.NewRoute("validate_vat_number"),
 						Label:     nil,
@@ -4045,13 +4045,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("customer"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("default"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `customer/default/group`,
 						ID:      cfgpath.NewRoute("group"),
 						Type:    element.TypeHidden,
@@ -4062,10 +4062,10 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("address"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `customer/address/prefix_show`,
 						ID:      cfgpath.NewRoute("prefix_show"),
 						Type:    element.TypeHidden,
@@ -4074,7 +4074,7 @@ T: {{var telephone}}
 						Default: nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address/prefix_options`,
 						ID:      cfgpath.NewRoute("prefix_options"),
 						Type:    element.TypeHidden,
@@ -4083,7 +4083,7 @@ T: {{var telephone}}
 						Default: nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address/middlename_show`,
 						ID:      cfgpath.NewRoute("middlename_show"),
 						Type:    element.TypeHidden,
@@ -4092,7 +4092,7 @@ T: {{var telephone}}
 						Default: nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address/suffix_show`,
 						ID:      cfgpath.NewRoute("suffix_show"),
 						Type:    element.TypeHidden,
@@ -4101,7 +4101,7 @@ T: {{var telephone}}
 						Default: nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address/suffix_options`,
 						ID:      cfgpath.NewRoute("suffix_options"),
 						Type:    element.TypeHidden,
@@ -4110,7 +4110,7 @@ T: {{var telephone}}
 						Default: nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address/dob_show`,
 						ID:      cfgpath.NewRoute("dob_show"),
 						Type:    element.TypeHidden,
@@ -4119,7 +4119,7 @@ T: {{var telephone}}
 						Default: nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `customer/address/gender_show`,
 						ID:      cfgpath.NewRoute("gender_show"),
 						Type:    element.TypeHidden,
@@ -4132,19 +4132,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("dev"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("front_end_development_workflow"),
 				Label:     text.Chars(`Front-end development workflow`),
 				SortOrder: 8,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `dev/front_end_development_workflow/type`,
 						ID:        cfgpath.NewRoute("type"),
 						Label:     text.Chars(`Workflow type`),
@@ -4158,13 +4158,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("restrict"),
 				Label:     text.Chars(`Developer Client Restrictions`),
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `dev/restrict/allow_ips`,
 						ID:        cfgpath.NewRoute("allow_ips"),
 						Label:     text.Chars(`Allowed IPs (comma separated)`),
@@ -4181,13 +4181,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("dev"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("restrict"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `dev/restrict/allow_ips`,
 						ID:      cfgpath.NewRoute("allow_ips"),
 						Type:    element.TypeHidden,
@@ -4200,19 +4200,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("carriers"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("dhl"),
 				Label:     text.Chars(`DHL`),
 				SortOrder: 140,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enabled for Checkout`),
@@ -4223,7 +4223,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/gateway_url`,
 						ID:        cfgpath.NewRoute("gateway_url"),
 						Label:     text.Chars(`Gateway URL`),
@@ -4234,7 +4234,7 @@ T: {{var telephone}}
 						Default:   `https://xmlpi-ea.dhl.com/XMLShippingServlet`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/title`,
 						ID:        cfgpath.NewRoute("title"),
 						Label:     text.Chars(`Title`),
@@ -4245,7 +4245,7 @@ T: {{var telephone}}
 						Default:   `DHL`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/id`,
 						ID:        cfgpath.NewRoute("id"),
 						Label:     text.Chars(`Access ID`),
@@ -4256,7 +4256,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/password`,
 						ID:        cfgpath.NewRoute("password"),
 						Label:     text.Chars(`Password`),
@@ -4267,7 +4267,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/account`,
 						ID:        cfgpath.NewRoute("account"),
 						Label:     text.Chars(`Account Number`),
@@ -4278,7 +4278,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/content_type`,
 						ID:        cfgpath.NewRoute("content_type"),
 						Label:     text.Chars(`Content Type`),
@@ -4289,7 +4289,7 @@ T: {{var telephone}}
 						Default:   `N`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/handling_type`,
 						ID:        cfgpath.NewRoute("handling_type"),
 						Label:     text.Chars(`Calculate Handling Fee`),
@@ -4300,7 +4300,7 @@ T: {{var telephone}}
 						Default:   `F`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/handling_action`,
 						ID:        cfgpath.NewRoute("handling_action"),
 						Label:     text.Chars(`Handling Applied`),
@@ -4312,7 +4312,7 @@ T: {{var telephone}}
 						Default:   `O`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/handling_fee`,
 						ID:        cfgpath.NewRoute("handling_fee"),
 						Label:     text.Chars(`Handling Fee`),
@@ -4323,7 +4323,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/divide_order_weight`,
 						ID:        cfgpath.NewRoute("divide_order_weight"),
 						Label:     text.Chars(`Divide Order Weight`),
@@ -4335,7 +4335,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/unit_of_measure`,
 						ID:        cfgpath.NewRoute("unit_of_measure"),
 						Label:     text.Chars(`Weight Unit`),
@@ -4346,7 +4346,7 @@ T: {{var telephone}}
 						Default:   `K`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/size`,
 						ID:        cfgpath.NewRoute("size"),
 						Label:     text.Chars(`Size`),
@@ -4357,7 +4357,7 @@ T: {{var telephone}}
 						Default:   `R`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/height`,
 						ID:        cfgpath.NewRoute("height"),
 						Label:     text.Chars(`Height`),
@@ -4368,7 +4368,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/depth`,
 						ID:        cfgpath.NewRoute("depth"),
 						Label:     text.Chars(`Depth`),
@@ -4379,7 +4379,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/width`,
 						ID:        cfgpath.NewRoute("width"),
 						Label:     text.Chars(`Width`),
@@ -4390,7 +4390,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/doc_methods`,
 						ID:        cfgpath.NewRoute("doc_methods"),
 						Label:     text.Chars(`Allowed Methods`),
@@ -4401,7 +4401,7 @@ T: {{var telephone}}
 						Default:   `2,5,6,7,9,B,C,D,U,K,L,G,W,I,N,O,R,S,T,X`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/nondoc_methods`,
 						ID:        cfgpath.NewRoute("nondoc_methods"),
 						Label:     text.Chars(`Allowed Methods`),
@@ -4412,7 +4412,7 @@ T: {{var telephone}}
 						Default:   `1,3,4,8,P,Q,E,F,H,J,M,V,Y`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/ready_time`,
 						ID:        cfgpath.NewRoute("ready_time"),
 						Label:     text.Chars(`Ready time`),
@@ -4424,7 +4424,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/specificerrmsg`,
 						ID:        cfgpath.NewRoute("specificerrmsg"),
 						Label:     text.Chars(`Displayed Error Message`),
@@ -4435,7 +4435,7 @@ T: {{var telephone}}
 						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/free_method_doc`,
 						ID:        cfgpath.NewRoute("free_method_doc"),
 						Label:     text.Chars(`Free Method`),
@@ -4446,7 +4446,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/free_method_nondoc`,
 						ID:        cfgpath.NewRoute("free_method_nondoc"),
 						Label:     text.Chars(`Free Method`),
@@ -4457,7 +4457,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/free_shipping_enable`,
 						ID:        cfgpath.NewRoute("free_shipping_enable"),
 						Label:     text.Chars(`Free Shipping Amount Threshold`),
@@ -4468,7 +4468,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/free_shipping_subtotal`,
 						ID:        cfgpath.NewRoute("free_shipping_subtotal"),
 						Label:     text.Chars(`Free Shipping Amount Threshold`),
@@ -4479,7 +4479,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/sallowspecific`,
 						ID:        cfgpath.NewRoute("sallowspecific"),
 						Label:     text.Chars(`Ship to Applicable Countries`),
@@ -4490,7 +4490,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/specificcountry`,
 						ID:        cfgpath.NewRoute("specificcountry"),
 						Label:     text.Chars(`Ship to Specific Countries`),
@@ -4501,7 +4501,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/showmethod`,
 						ID:        cfgpath.NewRoute("showmethod"),
 						Label:     text.Chars(`Show Method if Not Applicable`),
@@ -4512,7 +4512,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/sort_order`,
 						ID:        cfgpath.NewRoute("sort_order"),
 						Label:     text.Chars(`Sort Order`),
@@ -4523,7 +4523,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/debug`,
 						ID:        cfgpath.NewRoute("debug"),
 						Label:     text.Chars(`Debug`),
@@ -4539,13 +4539,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("system"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("media_storage_configuration"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
 						ID:      cfgpath.NewRoute("allowed_resources"),
 						Type:    element.TypeHidden,
@@ -4557,13 +4557,13 @@ T: {{var telephone}}
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("carriers"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("dhl"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/model`,
 						ID:      cfgpath.NewRoute("model"),
 						Type:    element.TypeHidden,
@@ -4572,7 +4572,7 @@ T: {{var telephone}}
 						Default: `Magento\Dhl\Model\Carrier`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/account`,
 						ID:      cfgpath.NewRoute("account"),
 						Type:    element.TypeHidden,
@@ -4581,7 +4581,7 @@ T: {{var telephone}}
 						Default: nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/free_method`,
 						ID:      cfgpath.NewRoute("free_method"),
 						Type:    element.TypeHidden,
@@ -4590,7 +4590,7 @@ T: {{var telephone}}
 						Default: `G`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/shipment_days`,
 						ID:      cfgpath.NewRoute("shipment_days"),
 						Type:    element.TypeHidden,
@@ -4599,7 +4599,7 @@ T: {{var telephone}}
 						Default: `Mon,Tue,Wed,Thu,Fri`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/active_rma`,
 						ID:      cfgpath.NewRoute("active_rma"),
 						Type:    element.TypeHidden,
@@ -4608,7 +4608,7 @@ T: {{var telephone}}
 						Default: false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/dhl/is_online`,
 						ID:      cfgpath.NewRoute("is_online"),
 						Type:    element.TypeHidden,
@@ -4621,19 +4621,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("downloadable"),
 				Label:     text.Chars(`Downloadable Product Options`),
 				SortOrder: 600,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/downloadable/order_item_status`,
 						ID:        cfgpath.NewRoute("order_item_status"),
 						Label:     text.Chars(`Order Item Status to Enable Downloads`),
@@ -4644,7 +4644,7 @@ T: {{var telephone}}
 						Default:   9,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/downloadable/downloads_number`,
 						ID:        cfgpath.NewRoute("downloads_number"),
 						Label:     text.Chars(`Default Maximum Number of Downloads`),
@@ -4655,7 +4655,7 @@ T: {{var telephone}}
 						Default:   0,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/downloadable/shareable`,
 						ID:        cfgpath.NewRoute("shareable"),
 						Label:     text.Chars(`Shareable`),
@@ -4666,7 +4666,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/downloadable/samples_title`,
 						ID:        cfgpath.NewRoute("samples_title"),
 						Label:     text.Chars(`Default Sample Title`),
@@ -4677,7 +4677,7 @@ T: {{var telephone}}
 						Default:   `Samples`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/downloadable/links_title`,
 						ID:        cfgpath.NewRoute("links_title"),
 						Label:     text.Chars(`Default Link Title`),
@@ -4688,7 +4688,7 @@ T: {{var telephone}}
 						Default:   `Links`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/downloadable/links_target_new_window`,
 						ID:        cfgpath.NewRoute("links_target_new_window"),
 						Label:     text.Chars(`Open Links in New Window`),
@@ -4699,7 +4699,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/downloadable/content_disposition`,
 						ID:        cfgpath.NewRoute("content_disposition"),
 						Label:     text.Chars(`Use Content-Disposition`),
@@ -4710,7 +4710,7 @@ T: {{var telephone}}
 						Default:   `inline`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/downloadable/disable_guest_checkout`,
 						ID:        cfgpath.NewRoute("disable_guest_checkout"),
 						Label:     text.Chars(`Disable Guest Checkout if Cart Contains Downloadable Items`),
@@ -4726,19 +4726,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("carriers"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("fedex"),
 				Label:     text.Chars(`FedEx`),
 				SortOrder: 120,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enabled for Checkout`),
@@ -4749,7 +4749,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/title`,
 						ID:        cfgpath.NewRoute("title"),
 						Label:     text.Chars(`Title`),
@@ -4760,7 +4760,7 @@ T: {{var telephone}}
 						Default:   `Federal Express`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/account`,
 						ID:        cfgpath.NewRoute("account"),
 						Label:     text.Chars(`Account ID`),
@@ -4772,7 +4772,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/meter_number`,
 						ID:        cfgpath.NewRoute("meter_number"),
 						Label:     text.Chars(`Meter Number`),
@@ -4783,7 +4783,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/key`,
 						ID:        cfgpath.NewRoute("key"),
 						Label:     text.Chars(`Key`),
@@ -4794,7 +4794,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/password`,
 						ID:        cfgpath.NewRoute("password"),
 						Label:     text.Chars(`Password`),
@@ -4805,7 +4805,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/sandbox_mode`,
 						ID:        cfgpath.NewRoute("sandbox_mode"),
 						Label:     text.Chars(`Sandbox Mode`),
@@ -4816,7 +4816,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/production_webservices_url`,
 						ID:        cfgpath.NewRoute("production_webservices_url"),
 						Label:     text.Chars(`Web-Services URL (Production)`),
@@ -4827,7 +4827,7 @@ T: {{var telephone}}
 						Default:   `https://ws.fedex.com:443/web-services/`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/sandbox_webservices_url`,
 						ID:        cfgpath.NewRoute("sandbox_webservices_url"),
 						Label:     text.Chars(`Web-Services URL (Sandbox)`),
@@ -4838,7 +4838,7 @@ T: {{var telephone}}
 						Default:   `https://wsbeta.fedex.com:443/web-services/`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/shipment_requesttype`,
 						ID:        cfgpath.NewRoute("shipment_requesttype"),
 						Label:     text.Chars(`Packages Request Type`),
@@ -4849,7 +4849,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/packaging`,
 						ID:        cfgpath.NewRoute("packaging"),
 						Label:     text.Chars(`Packaging`),
@@ -4860,7 +4860,7 @@ T: {{var telephone}}
 						Default:   `YOUR_PACKAGING`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/dropoff`,
 						ID:        cfgpath.NewRoute("dropoff"),
 						Label:     text.Chars(`Dropoff`),
@@ -4871,7 +4871,7 @@ T: {{var telephone}}
 						Default:   `REGULAR_PICKUP`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/unit_of_measure`,
 						ID:        cfgpath.NewRoute("unit_of_measure"),
 						Label:     text.Chars(`Weight Unit`),
@@ -4882,7 +4882,7 @@ T: {{var telephone}}
 						Default:   `LB`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/max_package_weight`,
 						ID:        cfgpath.NewRoute("max_package_weight"),
 						Label:     text.Chars(`Maximum  (Please consult your shipping carrier for maximum supported shipping weight)`),
@@ -4893,7 +4893,7 @@ T: {{var telephone}}
 						Default:   150,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/handling_type`,
 						ID:        cfgpath.NewRoute("handling_type"),
 						Label:     text.Chars(`Calculate Handling Fee`),
@@ -4904,7 +4904,7 @@ T: {{var telephone}}
 						Default:   `F`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/handling_action`,
 						ID:        cfgpath.NewRoute("handling_action"),
 						Label:     text.Chars(`Handling Applied`),
@@ -4915,7 +4915,7 @@ T: {{var telephone}}
 						Default:   `O`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/handling_fee`,
 						ID:        cfgpath.NewRoute("handling_fee"),
 						Label:     text.Chars(`Handling Fee`),
@@ -4926,7 +4926,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/residence_delivery`,
 						ID:        cfgpath.NewRoute("residence_delivery"),
 						Label:     text.Chars(`Residential Delivery`),
@@ -4937,7 +4937,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/allowed_methods`,
 						ID:        cfgpath.NewRoute("allowed_methods"),
 						Label:     text.Chars(`Allowed Methods`),
@@ -4948,7 +4948,7 @@ T: {{var telephone}}
 						Default:   `EUROPE_FIRST_INTERNATIONAL_PRIORITY,FEDEX_1_DAY_FREIGHT,FEDEX_2_DAY_FREIGHT,FEDEX_2_DAY,FEDEX_2_DAY_AM,FEDEX_3_DAY_FREIGHT,FEDEX_EXPRESS_SAVER,FEDEX_GROUND,FIRST_OVERNIGHT,GROUND_HOME_DELIVERY,INTERNATIONAL_ECONOMY,INTERNATIONAL_ECONOMY_FREIGHT,INTERNATIONAL_FIRST,INTERNATIONAL_GROUND,INTERNATIONAL_PRIORITY,INTERNATIONAL_PRIORITY_FREIGHT,PRIORITY_OVERNIGHT,SMART_POST,STANDARD_OVERNIGHT,FEDEX_FREIGHT,FEDEX_NATIONAL_FREIGHT`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/smartpost_hubid`,
 						ID:        cfgpath.NewRoute("smartpost_hubid"),
 						Label:     text.Chars(`Hub ID`),
@@ -4960,7 +4960,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/free_method`,
 						ID:        cfgpath.NewRoute("free_method"),
 						Label:     text.Chars(`Free Method`),
@@ -4971,7 +4971,7 @@ T: {{var telephone}}
 						Default:   `FEDEX_GROUND`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/free_shipping_enable`,
 						ID:        cfgpath.NewRoute("free_shipping_enable"),
 						Label:     text.Chars(`Free Shipping Amount Threshold`),
@@ -4982,7 +4982,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/free_shipping_subtotal`,
 						ID:        cfgpath.NewRoute("free_shipping_subtotal"),
 						Label:     text.Chars(`Free Shipping Amount Threshold`),
@@ -4993,7 +4993,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/specificerrmsg`,
 						ID:        cfgpath.NewRoute("specificerrmsg"),
 						Label:     text.Chars(`Displayed Error Message`),
@@ -5004,7 +5004,7 @@ T: {{var telephone}}
 						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/sallowspecific`,
 						ID:        cfgpath.NewRoute("sallowspecific"),
 						Label:     text.Chars(`Ship to Applicable Countries`),
@@ -5015,7 +5015,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/specificcountry`,
 						ID:        cfgpath.NewRoute("specificcountry"),
 						Label:     text.Chars(`Ship to Specific Countries`),
@@ -5026,7 +5026,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/debug`,
 						ID:        cfgpath.NewRoute("debug"),
 						Label:     text.Chars(`Debug`),
@@ -5037,7 +5037,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/showmethod`,
 						ID:        cfgpath.NewRoute("showmethod"),
 						Label:     text.Chars(`Show Method if Not Applicable`),
@@ -5048,7 +5048,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/sort_order`,
 						ID:        cfgpath.NewRoute("sort_order"),
 						Label:     text.Chars(`Sort Order`),
@@ -5064,13 +5064,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("carriers"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("fedex"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/cutoff_cost`,
 						ID:      cfgpath.NewRoute("cutoff_cost"),
 						Type:    element.TypeHidden,
@@ -5079,7 +5079,7 @@ T: {{var telephone}}
 						Default: nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/handling`,
 						ID:      cfgpath.NewRoute("handling"),
 						Type:    element.TypeHidden,
@@ -5088,7 +5088,7 @@ T: {{var telephone}}
 						Default: false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/model`,
 						ID:      cfgpath.NewRoute("model"),
 						Type:    element.TypeHidden,
@@ -5097,7 +5097,7 @@ T: {{var telephone}}
 						Default: `Magento\Fedex\Model\Carrier`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/active_rma`,
 						ID:      cfgpath.NewRoute("active_rma"),
 						Type:    element.TypeHidden,
@@ -5106,7 +5106,7 @@ T: {{var telephone}}
 						Default: false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/fedex/is_online`,
 						ID:      cfgpath.NewRoute("is_online"),
 						Type:    element.TypeHidden,
@@ -5119,19 +5119,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("sales"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("gift_options"),
 				Label:     text.Chars(`Gift Options`),
 				SortOrder: 100,
 				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales/gift_options/allow_order`,
 						ID:        cfgpath.NewRoute("allow_order"),
 						Label:     text.Chars(`Allow Gift Messages on Order Level`),
@@ -5142,7 +5142,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/gift_options/allow_items`,
 						ID:        cfgpath.NewRoute("allow_items"),
 						Label:     text.Chars(`Allow Gift Messages for Order Items`),
@@ -5158,13 +5158,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("sales"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("gift_messages"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales/gift_messages/allow_items`,
 						ID:      cfgpath.NewRoute("allow_items"),
 						Type:    element.TypeHidden,
@@ -5173,7 +5173,7 @@ T: {{var telephone}}
 						Default: false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/gift_messages/allow_order`,
 						ID:      cfgpath.NewRoute("allow_order"),
 						Type:    element.TypeHidden,
@@ -5186,19 +5186,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("google"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("adwords"),
 				Label:     text.Chars(`Google AdWords`),
 				SortOrder: 15,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `google/adwords/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enable`),
@@ -5209,7 +5209,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/adwords/conversion_id`,
 						ID:        cfgpath.NewRoute("conversion_id"),
 						Label:     text.Chars(`Conversion ID`),
@@ -5220,7 +5220,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/adwords/conversion_language`,
 						ID:        cfgpath.NewRoute("conversion_language"),
 						Label:     text.Chars(`Conversion Language`),
@@ -5231,7 +5231,7 @@ T: {{var telephone}}
 						Default:   `en`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/adwords/conversion_format`,
 						ID:        cfgpath.NewRoute("conversion_format"),
 						Label:     text.Chars(`Conversion Format`),
@@ -5242,7 +5242,7 @@ T: {{var telephone}}
 						Default:   2,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/adwords/conversion_color`,
 						ID:        cfgpath.NewRoute("conversion_color"),
 						Label:     text.Chars(`Conversion Color`),
@@ -5253,7 +5253,7 @@ T: {{var telephone}}
 						Default:   `FFFFFF`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/adwords/conversion_label`,
 						ID:        cfgpath.NewRoute("conversion_label"),
 						Label:     text.Chars(`Conversion Label`),
@@ -5264,7 +5264,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/adwords/conversion_value_type`,
 						ID:        cfgpath.NewRoute("conversion_value_type"),
 						Label:     text.Chars(`Conversion Value Type`),
@@ -5275,7 +5275,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/adwords/conversion_value`,
 						ID:        cfgpath.NewRoute("conversion_value"),
 						Label:     text.Chars(`Conversion Value`),
@@ -5291,13 +5291,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("google"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("adwords"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `google/adwords/languages`,
 						ID:      cfgpath.NewRoute("languages"),
 						Type:    element.TypeHidden,
@@ -5306,7 +5306,7 @@ T: {{var telephone}}
 						Default: `{"ar":"ar","bg":"bg","ca":"ca","cs":"cs","da":"da","de":"de","el":"el","en":"en","es":"es","et":"et","fi":"fi","fr":"fr","hi":"hi","hr":"hr","hu":"hu","id":"id","is":"is","it":"it","iw":"iw","ja":"ja","ko":"ko","lt":"lt","lv":"lv","nl":"nl","no":"no","pl":"pl","pt":"pt","ro":"ro","ru":"ru","sk":"sk","sl":"sl","sr":"sr","sv":"sv","th":"th","tl":"tl","tr":"tr","uk":"uk","ur":"ur","vi":"vi","zh_TW":"zh_TW","zh_CN":"zh_CN"}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/adwords/language_convert`,
 						ID:      cfgpath.NewRoute("language_convert"),
 						Type:    element.TypeHidden,
@@ -5315,7 +5315,7 @@ T: {{var telephone}}
 						Default: `{"zh_CN":"zh_Hans","zh_TW":"zh_Hant","iw":"he"}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/adwords/conversion_js_src`,
 						ID:      cfgpath.NewRoute("conversion_js_src"),
 						Type:    element.TypeHidden,
@@ -5324,7 +5324,7 @@ T: {{var telephone}}
 						Default: `https://www.googleadservices.com/pagead/conversion.js`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/adwords/conversion_img_src`,
 						ID:      cfgpath.NewRoute("conversion_img_src"),
 						Type:    element.TypeHidden,
@@ -5337,19 +5337,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("google"),
 		Label:     text.Chars("Google API"),
 		SortOrder: 340,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("analytics"),
 				Label:     text.Chars(`Google Analytics`),
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `google/analytics/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enable`),
@@ -5360,7 +5360,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/analytics/account`,
 						ID:        cfgpath.NewRoute("account"),
 						Label:     text.Chars(`Account Number`),
@@ -5375,19 +5375,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("google"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("analytics"),
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `google/analytics/experiments`,
 						ID:        cfgpath.NewRoute("experiments"),
 						Label:     text.Chars(`Enable Content Experiments`),
@@ -5403,13 +5403,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("google"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("optimizer"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `google/optimizer/active`,
 						ID:      cfgpath.NewRoute("active"),
 						Type:    element.TypeHidden,
@@ -5422,19 +5422,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("google"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("googleshopping"),
 				Label:     text.Chars(`Google Shopping`),
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `google/googleshopping/account_id`,
 						ID:        cfgpath.NewRoute("account_id"),
 						Label:     text.Chars(`Account ID`),
@@ -5445,7 +5445,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/googleshopping/login`,
 						ID:        cfgpath.NewRoute("login"),
 						Label:     text.Chars(`Account Login`),
@@ -5456,7 +5456,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/googleshopping/password`,
 						ID:        cfgpath.NewRoute("password"),
 						Label:     text.Chars(`Account Password`),
@@ -5467,7 +5467,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/googleshopping/account_type`,
 						ID:        cfgpath.NewRoute("account_type"),
 						Label:     text.Chars(`Account Type`),
@@ -5478,7 +5478,7 @@ T: {{var telephone}}
 						Default:   `HOSTED_OR_GOOGLE`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/googleshopping/target_country`,
 						ID:        cfgpath.NewRoute("target_country"),
 						Label:     text.Chars(`Target Country`),
@@ -5489,7 +5489,7 @@ T: {{var telephone}}
 						Default:   `US`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/googleshopping/observed`,
 						ID:        cfgpath.NewRoute("observed"),
 						Label:     text.Chars(`Update Google Shopping Item when Product is Updated`),
@@ -5500,7 +5500,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/googleshopping/verify_meta_tag`,
 						ID:        cfgpath.NewRoute("verify_meta_tag"),
 						Label:     text.Chars(`Verifying Meta Tag`),
@@ -5511,7 +5511,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/googleshopping/debug`,
 						ID:        cfgpath.NewRoute("debug"),
 						Label:     text.Chars(`Debug`),
@@ -5522,7 +5522,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/googleshopping/destinations`,
 						ID:        cfgpath.NewRoute("destinations"),
 						Label:     text.Chars(`Destinations`),
@@ -5533,7 +5533,7 @@ T: {{var telephone}}
 						Default:   `{"product_search":"ProductSearch","product_ads":"ProductAds","commerce_search":"CommerceSearch"}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/googleshopping/product_search`,
 						ID:        cfgpath.NewRoute("product_search"),
 						Label:     text.Chars(`Google Product Search`),
@@ -5544,7 +5544,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/googleshopping/product_ads`,
 						ID:        cfgpath.NewRoute("product_ads"),
 						Label:     text.Chars(`Product Ads`),
@@ -5555,7 +5555,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/googleshopping/commerce_search`,
 						ID:        cfgpath.NewRoute("commerce_search"),
 						Label:     text.Chars(`Commerce Search`),
@@ -5571,13 +5571,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("google"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("googleshopping"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `google/googleshopping/allowed_countries`,
 						ID:      cfgpath.NewRoute("allowed_countries"),
 						Type:    element.TypeHidden,
@@ -5586,7 +5586,7 @@ T: {{var telephone}}
 						Default: `{"AU":{"_value":{"name":"Australia","language":"en","currency":"AUD","currency_name":"Australian Dollar"},"_attribute":{"translate":"name currency_name"}},"BR":{"_value":{"name":"Brazil","language":"pt","locale":"pt_BR","currency":"BRL","currency_name":"Brazilian Real"},"_attribute":{"translate":"name currency_name"}},"CN":{"_value":{"name":"China","language":"zh_CN","currency":"CNY","currency_name":"Chinese Yuan Renminbi"},"_attribute":{"translate":"name currency_name"}},"FR":{"_value":{"name":"France","language":"fr","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"DE":{"_value":{"name":"Germany","language":"de","locale":"de_DE","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"IT":{"_value":{"name":"Italy","language":"it","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"JP":{"_value":{"name":"Japan","language":"ja","currency":"JPY","currency_name":"Japanese Yen"},"_attribute":{"translate":"name currency_name"}},"NL":{"_value":{"name":"Netherlands","language":"nl","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"ES":{"_value":{"name":"Spain","language":"es","currency":"EUR","currency_name":"Euro"},"_attribute":{"translate":"name currency_name"}},"CH":{"_value":{"name":"Switzerland","language":"de","locale":"de_CH","currency":"CHF","currency_name":"Swiss Franc"},"_attribute":{"translate":"name currency_name"}},"GB":{"_value":{"name":"United Kingdom","language":"en","locale":"en_GB","currency":"GBP","currency_name":"British Pound Sterling"},"_attribute":{"translate":"name currency_name"}},"US":{"_value":{"name":"United States","language":"en","locale":"en_US","currency":"USD","currency_name":"US Dollar"},"_attribute":{"translate":"name currency_name"}}}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/googleshopping/attributes`,
 						ID:      cfgpath.NewRoute("attributes"),
 						Type:    element.TypeHidden,
@@ -5595,7 +5595,7 @@ T: {{var telephone}}
 						Default: `{"Item":{"title":{"_value":{"name":"Title","required":"1"},"_attribute":{"translate":"name"}},"content":{"_value":{"name":"Description","required":"1"},"_attribute":{"translate":"name"}},"expiration_date":{"_value":{"name":"Expiration date","required":"0"},"_attribute":{"translate":"name"}},"adult":{"_value":{"name":"Adult","required":"0"},"_attribute":{"translate":"name"}}},"ProductSearch":{"condition":{"_value":{"name":"Condition","required":"1"},"_attribute":{"translate":"name"}},"price":{"_value":{"name":"Price","required":"1"},"_attribute":{"translate":"name"}},"sale_price":{"_value":{"name":"Sale Price","required":"0","country":"US"},"_attribute":{"translate":"name"}},"sale_price_effective_date_from":{"_value":{"name":"Sale Price Effective From Date","required":"0","country":"US"},"_attribute":{"translate":"name"}},"sale_price_effective_date_to":{"_value":{"name":"Sale Price Effective To Date","required":"0","country":"US"},"_attribute":{"translate":"name"}},"age_group":{"_value":{"name":"Age Group","required":"1"},"_attribute":{"translate":"name"}},"brand":{"_value":{"name":"Brand","required":"1"},"_attribute":{"translate":"name"}},"color":{"_value":{"name":"Color","required":"1"},"_attribute":{"translate":"name"}},"gender":{"_value":{"name":"Gender","required":"1"},"_attribute":{"translate":"name"}},"mpn":{"_value":{"name":"Manufacturer\\'s Part Number (MPN)","required":"1"},"_attribute":{"translate":"name"}},"online_only":{"_value":{"name":"Online Only","required":"0"},"_attribute":{"translate":"name"}},"gtin":{"_value":{"name":"GTIN","required":"1"},"_attribute":{"translate":"name"}},"product_type":{"_value":{"name":"Product Type (Category)","required":"0"},"_attribute":{"translate":"name"}},"product_review_average":{"_value":{"name":"Product Review Average","required":"0"},"_attribute":{"translate":"name"}},"product_review_count":{"_value":{"name":"Product Review Count","required":"0"},"_attribute":{"translate":"name"}},"shipping_weight":{"_value":{"name":"Shipping Weight","required":"0"},"_attribute":{"translate":"name"}},"size":{"_value":{"name":"Size","required":"1"},"_attribute":{"translate":"name"}},"material":{"_value":{"name":"Material","required":"1"},"_attribute":{"translate":"name"}},"pattern":{"_value":{"name":"Pattern\/Graphic","required":"1"},"_attribute":{"translate":"name"}}},"ProductAds":{"adwords_grouping":{"_value":{"name":"Grouping","required":"0"},"_attribute":{"translate":"name"}},"adwords_labels":{"_value":{"name":"Labels","required":"0"},"_attribute":{"translate":"name"}},"adwords_redirect":{"_value":{"name":"Redirect","required":"0"},"_attribute":{"translate":"name"}},"adwords_queryparam":{"_value":{"name":"Query Param","required":"0"},"_attribute":{"translate":"name"}}}}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/googleshopping/attribute_groups`,
 						ID:      cfgpath.NewRoute("attribute_groups"),
 						Type:    element.TypeHidden,
@@ -5604,7 +5604,7 @@ T: {{var telephone}}
 						Default: `{"price":{"sale_price":null,"tax":null,"sale_price_effective_date":null,"sale_price_effective_date_from":null,"sale_price_effective_date_to":null},"shipping_weight":{"weight":null},"title":{"name":null},"content":{"description":null}}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `google/googleshopping/base_attributes`,
 						ID:      cfgpath.NewRoute("base_attributes"),
 						Type:    element.TypeHidden,
@@ -5617,19 +5617,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("checkout"),
 		Label:     nil,
 		SortOrder: 305,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("cart"),
 				Label:     nil,
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `checkout/cart/grouped_product_image`,
 						ID:        cfgpath.NewRoute("grouped_product_image"),
 						Label:     text.Chars(`Grouped Product Image`),
@@ -5644,19 +5644,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("oauth"),
 		Label:     text.Chars("OAuth"),
 		SortOrder: 300,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("cleanup"),
 				Label:     text.Chars(`Cleanup Settings`),
 				SortOrder: 300,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `oauth/cleanup/cleanup_probability`,
 						ID:        cfgpath.NewRoute("cleanup_probability"),
 						Label:     text.Chars(`Cleanup Probability`),
@@ -5668,7 +5668,7 @@ T: {{var telephone}}
 						Default:   100,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `oauth/cleanup/expiration_period`,
 						ID:        cfgpath.NewRoute("expiration_period"),
 						Label:     text.Chars(`Expiration Period`),
@@ -5682,13 +5682,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("consumer"),
 				Label:     text.Chars(`Consumer Settings`),
 				SortOrder: 400,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `oauth/consumer/expiration_period`,
 						ID:        cfgpath.NewRoute("expiration_period"),
 						Label:     text.Chars(`Expiration Period`),
@@ -5700,7 +5700,7 @@ T: {{var telephone}}
 						Default:   300,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `oauth/consumer/post_maxredirects`,
 						ID:        cfgpath.NewRoute("post_maxredirects"),
 						Label:     text.Chars(`OAuth consumer credentials HTTP Post maxredirects`),
@@ -5712,7 +5712,7 @@ T: {{var telephone}}
 						Default:   0,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `oauth/consumer/post_timeout`,
 						ID:        cfgpath.NewRoute("post_timeout"),
 						Label:     text.Chars(`OAuth consumer credentials HTTP Post timeout`),
@@ -5728,19 +5728,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 40,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("layered_navigation"),
 				Label:     text.Chars(`Layered Navigation`),
 				SortOrder: 490,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/layered_navigation/display_product_count`,
 						ID:        cfgpath.NewRoute("display_product_count"),
 						Label:     text.Chars(`Display Product Count`),
@@ -5751,7 +5751,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/layered_navigation/price_range_calculation`,
 						ID:        cfgpath.NewRoute("price_range_calculation"),
 						Label:     text.Chars(`Price Navigation Step Calculation`),
@@ -5762,7 +5762,7 @@ T: {{var telephone}}
 						Default:   `auto`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/layered_navigation/price_range_step`,
 						ID:        cfgpath.NewRoute("price_range_step"),
 						Label:     text.Chars(`Default Price Navigation Step`),
@@ -5773,7 +5773,7 @@ T: {{var telephone}}
 						Default:   100,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/layered_navigation/price_range_max_intervals`,
 						ID:        cfgpath.NewRoute("price_range_max_intervals"),
 						Label:     text.Chars(`Maximum Number of Price Intervals`),
@@ -5785,7 +5785,7 @@ T: {{var telephone}}
 						Default:   10,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/layered_navigation/one_price_interval`,
 						ID:        cfgpath.NewRoute("one_price_interval"),
 						Label:     text.Chars(`Display Price Interval as One Price`),
@@ -5797,7 +5797,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/layered_navigation/interval_division_limit`,
 						ID:        cfgpath.NewRoute("interval_division_limit"),
 						Label:     text.Chars(`Interval Division Limit`),
@@ -5813,19 +5813,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("customer"),
 		Label:     nil,
 		SortOrder: 130,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("online_customers"),
 				Label:     text.Chars(`Online Customers Options`),
 				SortOrder: 10,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `customer/online_customers/online_minutes_interval`,
 						ID:        cfgpath.NewRoute("online_minutes_interval"),
 						Label:     text.Chars(`Online Minutes Interval`),
@@ -5840,19 +5840,19 @@ T: {{var telephone}}
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("system"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("log"),
 				Label:     text.Chars(`Log Cleaning`),
 				SortOrder: 200,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/log/clean_after_day`,
 						ID:        cfgpath.NewRoute("clean_after_day"),
 						Label:     text.Chars(`Save Log, Days`),
@@ -5863,7 +5863,7 @@ T: {{var telephone}}
 						Default:   180,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/log/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enable Log Cleaning`),
@@ -5874,7 +5874,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/log/time`,
 						ID:        cfgpath.NewRoute("time"),
 						Label:     text.Chars(`Start Time`),
@@ -5885,7 +5885,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/log/frequency`,
 						ID:        cfgpath.NewRoute("frequency"),
 						Label:     text.Chars(`Frequency`),
@@ -5896,7 +5896,7 @@ T: {{var telephone}}
 						Default:   `D`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/log/error_email`,
 						ID:        cfgpath.NewRoute("error_email"),
 						Label:     text.Chars(`Error Email Recipient`),
@@ -5907,7 +5907,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/log/error_email_identity`,
 						ID:        cfgpath.NewRoute("error_email_identity"),
 						Label:     text.Chars(`Error Email Sender`),
@@ -5918,7 +5918,7 @@ T: {{var telephone}}
 						Default:   `general`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/log/error_email_template`,
 						ID:        cfgpath.NewRoute("error_email_template"),
 						Label:     text.Chars(`Error Email Template`),
@@ -5934,13 +5934,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("log"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("visitor"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `log/visitor/online_update_frequency`,
 						ID:      cfgpath.NewRoute("online_update_frequency"),
 						Type:    element.TypeHidden,
@@ -5952,13 +5952,13 @@ T: {{var telephone}}
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("system"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("log"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/log/time`,
 						ID:      cfgpath.NewRoute("time"),
 						Type:    element.TypeHidden,
@@ -5967,7 +5967,7 @@ T: {{var telephone}}
 						Default: nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/log/error_email`,
 						ID:      cfgpath.NewRoute("error_email"),
 						Type:    element.TypeHidden,
@@ -5980,19 +5980,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("system"),
 		Label:     nil,
 		SortOrder: 900,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("media_storage_configuration"),
 				Label:     text.Chars(`Storage Configuration for Media`),
 				SortOrder: 900,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/media_storage_configuration/media_storage`,
 						ID:        cfgpath.NewRoute("media_storage"),
 						Label:     text.Chars(`Media Storage`),
@@ -6003,7 +6003,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/media_storage_configuration/media_database`,
 						ID:        cfgpath.NewRoute("media_database"),
 						Label:     text.Chars(`Select Media Database`),
@@ -6014,7 +6014,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/media_storage_configuration/synchronize`,
 						ID:        cfgpath.NewRoute("synchronize"),
 						Label:     nil,
@@ -6026,7 +6026,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/media_storage_configuration/configuration_update_time`,
 						ID:        cfgpath.NewRoute("configuration_update_time"),
 						Label:     text.Chars(`Environment Update Time`),
@@ -6041,19 +6041,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("sales"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("msrp"),
 				Label:     text.Chars(`Minimum Advertised Price`),
 				SortOrder: 110,
 				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales/msrp/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enable MAP`),
@@ -6065,7 +6065,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/msrp/display_price_type`,
 						ID:        cfgpath.NewRoute("display_price_type"),
 						Label:     text.Chars(`Display Actual Price`),
@@ -6076,7 +6076,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/msrp/explanation_message`,
 						ID:        cfgpath.NewRoute("explanation_message"),
 						Label:     text.Chars(`Default Popup Text Message`),
@@ -6087,7 +6087,7 @@ T: {{var telephone}}
 						Default:   `Our price is lower than the manufacturer's "minimum advertised price." As a result, we cannot show you the price in catalog or the product page. <br /><br /> You have no obligation to purchase the product once you know the price. You can simply remove the item from your cart.`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/msrp/explanation_message_whats_this`,
 						ID:        cfgpath.NewRoute("explanation_message_whats_this"),
 						Label:     text.Chars(`Default "What's This" Text Message`),
@@ -6102,19 +6102,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("multishipping"),
 		Label:     text.Chars("Multishipping Settings"),
 		SortOrder: 311,
 		Scopes:    scope.PermWebsite,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("options"),
 				Label:     text.Chars(`Options`),
 				SortOrder: 2,
 				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `multishipping/options/checkout_multiple`,
 						ID:        cfgpath.NewRoute("checkout_multiple"),
 						Label:     text.Chars(`Allow Shipping to Multiple Addresses`),
@@ -6125,7 +6125,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `multishipping/options/checkout_multiple_maximum_qty`,
 						ID:        cfgpath.NewRoute("checkout_multiple_maximum_qty"),
 						Label:     text.Chars(`Maximum Qty Allowed for Shipping to Multiple Addresses`),
@@ -6140,19 +6140,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("newsletter"),
 		Label:     text.Chars("Newsletter"),
 		SortOrder: 110,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("subscription"),
 				Label:     text.Chars(`Subscription Options`),
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `newsletter/subscription/allow_guest_subscribe`,
 						ID:        cfgpath.NewRoute("allow_guest_subscribe"),
 						Label:     text.Chars(`Allow Guest Subscription`),
@@ -6163,7 +6163,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `newsletter/subscription/confirm`,
 						ID:        cfgpath.NewRoute("confirm"),
 						Label:     text.Chars(`Need to Confirm`),
@@ -6174,7 +6174,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `newsletter/subscription/confirm_email_identity`,
 						ID:        cfgpath.NewRoute("confirm_email_identity"),
 						Label:     text.Chars(`Confirmation Email Sender`),
@@ -6185,7 +6185,7 @@ T: {{var telephone}}
 						Default:   `support`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `newsletter/subscription/confirm_email_template`,
 						ID:        cfgpath.NewRoute("confirm_email_template"),
 						Label:     text.Chars(`Confirmation Email Template`),
@@ -6196,7 +6196,7 @@ T: {{var telephone}}
 						Default:   `newsletter_subscription_confirm_email_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `newsletter/subscription/success_email_identity`,
 						ID:        cfgpath.NewRoute("success_email_identity"),
 						Label:     text.Chars(`Success Email Sender`),
@@ -6207,7 +6207,7 @@ T: {{var telephone}}
 						Default:   `general`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `newsletter/subscription/success_email_template`,
 						ID:        cfgpath.NewRoute("success_email_template"),
 						Label:     text.Chars(`Success Email Template`),
@@ -6218,7 +6218,7 @@ T: {{var telephone}}
 						Default:   `newsletter_subscription_success_email_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `newsletter/subscription/un_email_identity`,
 						ID:        cfgpath.NewRoute("un_email_identity"),
 						Label:     text.Chars(`Unsubscription Email Sender`),
@@ -6229,7 +6229,7 @@ T: {{var telephone}}
 						Default:   `support`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `newsletter/subscription/un_email_template`,
 						ID:        cfgpath.NewRoute("un_email_template"),
 						Label:     text.Chars(`Unsubscription Email Template`),
@@ -6245,13 +6245,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("newsletter"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("sending"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `newsletter/sending/set_return_path`,
 						ID:      cfgpath.NewRoute("set_return_path"),
 						Type:    element.TypeHidden,
@@ -6264,19 +6264,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("payment"),
 		Label:     nil,
 		SortOrder: 400,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("checkmo"),
 				Label:     text.Chars(`Check / Money Order`),
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `payment/checkmo/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enabled`),
@@ -6287,7 +6287,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/checkmo/order_status`,
 						ID:        cfgpath.NewRoute("order_status"),
 						Label:     text.Chars(`New Order Status`),
@@ -6298,7 +6298,7 @@ T: {{var telephone}}
 						Default:   `pending`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/checkmo/sort_order`,
 						ID:        cfgpath.NewRoute("sort_order"),
 						Label:     text.Chars(`Sort Order`),
@@ -6309,7 +6309,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/checkmo/title`,
 						ID:        cfgpath.NewRoute("title"),
 						Label:     text.Chars(`Title`),
@@ -6320,7 +6320,7 @@ T: {{var telephone}}
 						Default:   `Check / Money order`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/checkmo/allowspecific`,
 						ID:        cfgpath.NewRoute("allowspecific"),
 						Label:     text.Chars(`Payment from Applicable Countries`),
@@ -6331,7 +6331,7 @@ T: {{var telephone}}
 						Default:   0,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/checkmo/specificcountry`,
 						ID:        cfgpath.NewRoute("specificcountry"),
 						Label:     text.Chars(`Payment from Specific Countries`),
@@ -6342,7 +6342,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/checkmo/payable_to`,
 						ID:        cfgpath.NewRoute("payable_to"),
 						Label:     text.Chars(`Make Check Payable to`),
@@ -6353,7 +6353,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/checkmo/mailing_address`,
 						ID:        cfgpath.NewRoute("mailing_address"),
 						Label:     text.Chars(`Send Check to`),
@@ -6364,7 +6364,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/checkmo/min_order_total`,
 						ID:        cfgpath.NewRoute("min_order_total"),
 						Label:     text.Chars(`Minimum Order Total`),
@@ -6375,7 +6375,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/checkmo/max_order_total`,
 						ID:        cfgpath.NewRoute("max_order_total"),
 						Label:     text.Chars(`Maximum Order Total`),
@@ -6386,7 +6386,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/checkmo/model`,
 						ID:        cfgpath.NewRoute("model"),
 						Label:     nil,
@@ -6399,13 +6399,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("purchaseorder"),
 				Label:     text.Chars(`Purchase Order`),
 				SortOrder: 32,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `payment/purchaseorder/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enabled`),
@@ -6416,7 +6416,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/purchaseorder/order_status`,
 						ID:        cfgpath.NewRoute("order_status"),
 						Label:     text.Chars(`New Order Status`),
@@ -6427,7 +6427,7 @@ T: {{var telephone}}
 						Default:   `pending`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/purchaseorder/sort_order`,
 						ID:        cfgpath.NewRoute("sort_order"),
 						Label:     text.Chars(`Sort Order`),
@@ -6438,7 +6438,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/purchaseorder/title`,
 						ID:        cfgpath.NewRoute("title"),
 						Label:     text.Chars(`Title`),
@@ -6449,7 +6449,7 @@ T: {{var telephone}}
 						Default:   `Purchase Order`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/purchaseorder/allowspecific`,
 						ID:        cfgpath.NewRoute("allowspecific"),
 						Label:     text.Chars(`Payment from Applicable Countries`),
@@ -6460,7 +6460,7 @@ T: {{var telephone}}
 						Default:   0,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/purchaseorder/specificcountry`,
 						ID:        cfgpath.NewRoute("specificcountry"),
 						Label:     text.Chars(`Payment from Specific Countries`),
@@ -6471,7 +6471,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/purchaseorder/min_order_total`,
 						ID:        cfgpath.NewRoute("min_order_total"),
 						Label:     text.Chars(`Minimum Order Total`),
@@ -6482,7 +6482,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/purchaseorder/max_order_total`,
 						ID:        cfgpath.NewRoute("max_order_total"),
 						Label:     text.Chars(`Maximum Order Total`),
@@ -6493,7 +6493,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/purchaseorder/model`,
 						ID:        cfgpath.NewRoute("model"),
 						Label:     nil,
@@ -6506,13 +6506,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("banktransfer"),
 				Label:     text.Chars(`Bank Transfer Payment`),
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `payment/banktransfer/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enabled`),
@@ -6523,7 +6523,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/banktransfer/title`,
 						ID:        cfgpath.NewRoute("title"),
 						Label:     text.Chars(`Title`),
@@ -6534,7 +6534,7 @@ T: {{var telephone}}
 						Default:   `Bank Transfer Payment`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/banktransfer/order_status`,
 						ID:        cfgpath.NewRoute("order_status"),
 						Label:     text.Chars(`New Order Status`),
@@ -6545,7 +6545,7 @@ T: {{var telephone}}
 						Default:   `pending`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/banktransfer/allowspecific`,
 						ID:        cfgpath.NewRoute("allowspecific"),
 						Label:     text.Chars(`Payment from Applicable Countries`),
@@ -6556,7 +6556,7 @@ T: {{var telephone}}
 						Default:   0,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/banktransfer/specificcountry`,
 						ID:        cfgpath.NewRoute("specificcountry"),
 						Label:     text.Chars(`Payment from Specific Countries`),
@@ -6567,7 +6567,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/banktransfer/instructions`,
 						ID:        cfgpath.NewRoute("instructions"),
 						Label:     text.Chars(`Instructions`),
@@ -6578,7 +6578,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/banktransfer/min_order_total`,
 						ID:        cfgpath.NewRoute("min_order_total"),
 						Label:     text.Chars(`Minimum Order Total`),
@@ -6589,7 +6589,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/banktransfer/max_order_total`,
 						ID:        cfgpath.NewRoute("max_order_total"),
 						Label:     text.Chars(`Maximum Order Total`),
@@ -6600,7 +6600,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/banktransfer/sort_order`,
 						ID:        cfgpath.NewRoute("sort_order"),
 						Label:     text.Chars(`Sort Order`),
@@ -6613,13 +6613,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("cashondelivery"),
 				Label:     text.Chars(`Cash On Delivery Payment`),
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `payment/cashondelivery/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enabled`),
@@ -6630,7 +6630,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/cashondelivery/title`,
 						ID:        cfgpath.NewRoute("title"),
 						Label:     text.Chars(`Title`),
@@ -6641,7 +6641,7 @@ T: {{var telephone}}
 						Default:   `Cash On Delivery`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/cashondelivery/order_status`,
 						ID:        cfgpath.NewRoute("order_status"),
 						Label:     text.Chars(`New Order Status`),
@@ -6652,7 +6652,7 @@ T: {{var telephone}}
 						Default:   `pending`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/cashondelivery/allowspecific`,
 						ID:        cfgpath.NewRoute("allowspecific"),
 						Label:     text.Chars(`Payment from Applicable Countries`),
@@ -6663,7 +6663,7 @@ T: {{var telephone}}
 						Default:   0,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/cashondelivery/specificcountry`,
 						ID:        cfgpath.NewRoute("specificcountry"),
 						Label:     text.Chars(`Payment from Specific Countries`),
@@ -6674,7 +6674,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/cashondelivery/instructions`,
 						ID:        cfgpath.NewRoute("instructions"),
 						Label:     text.Chars(`Instructions`),
@@ -6685,7 +6685,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/cashondelivery/min_order_total`,
 						ID:        cfgpath.NewRoute("min_order_total"),
 						Label:     text.Chars(`Minimum Order Total`),
@@ -6696,7 +6696,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/cashondelivery/max_order_total`,
 						ID:        cfgpath.NewRoute("max_order_total"),
 						Label:     text.Chars(`Maximum Order Total`),
@@ -6707,7 +6707,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/cashondelivery/sort_order`,
 						ID:        cfgpath.NewRoute("sort_order"),
 						Label:     text.Chars(`Sort Order`),
@@ -6720,13 +6720,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("free"),
 				Label:     text.Chars(`Zero Subtotal Checkout`),
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `payment/free/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enabled`),
@@ -6737,7 +6737,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/free/order_status`,
 						ID:        cfgpath.NewRoute("order_status"),
 						Label:     text.Chars(`New Order Status`),
@@ -6748,7 +6748,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/free/payment_action`,
 						ID:        cfgpath.NewRoute("payment_action"),
 						Label:     text.Chars(`Automatically Invoice All Items`),
@@ -6759,7 +6759,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/free/sort_order`,
 						ID:        cfgpath.NewRoute("sort_order"),
 						Label:     text.Chars(`Sort Order`),
@@ -6770,7 +6770,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/free/title`,
 						ID:        cfgpath.NewRoute("title"),
 						Label:     text.Chars(`Title`),
@@ -6781,7 +6781,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/free/allowspecific`,
 						ID:        cfgpath.NewRoute("allowspecific"),
 						Label:     text.Chars(`Payment from Applicable Countries`),
@@ -6792,7 +6792,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/free/specificcountry`,
 						ID:        cfgpath.NewRoute("specificcountry"),
 						Label:     text.Chars(`Payment from Specific Countries`),
@@ -6803,7 +6803,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/free/model`,
 						ID:        cfgpath.NewRoute("model"),
 						Label:     nil,
@@ -6819,13 +6819,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("payment"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("checkmo"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `payment/checkmo/group`,
 						ID:      cfgpath.NewRoute("group"),
 						Type:    element.TypeHidden,
@@ -6836,10 +6836,10 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("purchaseorder"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `payment/purchaseorder/group`,
 						ID:      cfgpath.NewRoute("group"),
 						Type:    element.TypeHidden,
@@ -6850,10 +6850,10 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("banktransfer"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `payment/banktransfer/model`,
 						ID:      cfgpath.NewRoute("model"),
 						Type:    element.TypeHidden,
@@ -6862,7 +6862,7 @@ T: {{var telephone}}
 						Default: `Magento\OfflinePayments\Model\Banktransfer`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/banktransfer/group`,
 						ID:      cfgpath.NewRoute("group"),
 						Type:    element.TypeHidden,
@@ -6873,10 +6873,10 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("cashondelivery"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `payment/cashondelivery/model`,
 						ID:      cfgpath.NewRoute("model"),
 						Type:    element.TypeHidden,
@@ -6885,7 +6885,7 @@ T: {{var telephone}}
 						Default: `Magento\OfflinePayments\Model\Cashondelivery`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/cashondelivery/group`,
 						ID:      cfgpath.NewRoute("group"),
 						Type:    element.TypeHidden,
@@ -6896,10 +6896,10 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("free"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `payment/free/group`,
 						ID:      cfgpath.NewRoute("group"),
 						Type:    element.TypeHidden,
@@ -6912,19 +6912,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("carriers"),
 		Label:     nil,
 		SortOrder: 320,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("flatrate"),
 				Label:     text.Chars(`Flat Rate`),
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `carriers/flatrate/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enabled`),
@@ -6935,7 +6935,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/flatrate/name`,
 						ID:        cfgpath.NewRoute("name"),
 						Label:     text.Chars(`Method Name`),
@@ -6946,7 +6946,7 @@ T: {{var telephone}}
 						Default:   `Fixed`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/flatrate/price`,
 						ID:        cfgpath.NewRoute("price"),
 						Label:     text.Chars(`Price`),
@@ -6957,7 +6957,7 @@ T: {{var telephone}}
 						Default:   5.00,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/flatrate/handling_type`,
 						ID:        cfgpath.NewRoute("handling_type"),
 						Label:     text.Chars(`Calculate Handling Fee`),
@@ -6968,7 +6968,7 @@ T: {{var telephone}}
 						Default:   `F`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/flatrate/handling_fee`,
 						ID:        cfgpath.NewRoute("handling_fee"),
 						Label:     text.Chars(`Handling Fee`),
@@ -6979,7 +6979,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/flatrate/sort_order`,
 						ID:        cfgpath.NewRoute("sort_order"),
 						Label:     text.Chars(`Sort Order`),
@@ -6990,7 +6990,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/flatrate/title`,
 						ID:        cfgpath.NewRoute("title"),
 						Label:     text.Chars(`Title`),
@@ -7001,7 +7001,7 @@ T: {{var telephone}}
 						Default:   `Flat Rate`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/flatrate/type`,
 						ID:        cfgpath.NewRoute("type"),
 						Label:     text.Chars(`Type`),
@@ -7012,7 +7012,7 @@ T: {{var telephone}}
 						Default:   `I`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/flatrate/sallowspecific`,
 						ID:        cfgpath.NewRoute("sallowspecific"),
 						Label:     text.Chars(`Ship to Applicable Countries`),
@@ -7023,7 +7023,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/flatrate/specificcountry`,
 						ID:        cfgpath.NewRoute("specificcountry"),
 						Label:     text.Chars(`Ship to Specific Countries`),
@@ -7034,7 +7034,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/flatrate/showmethod`,
 						ID:        cfgpath.NewRoute("showmethod"),
 						Label:     text.Chars(`Show Method if Not Applicable`),
@@ -7045,7 +7045,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/flatrate/specificerrmsg`,
 						ID:        cfgpath.NewRoute("specificerrmsg"),
 						Label:     text.Chars(`Displayed Error Message`),
@@ -7058,13 +7058,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("tablerate"),
 				Label:     text.Chars(`Table Rates`),
 				SortOrder: 3,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `carriers/tablerate/handling_type`,
 						ID:        cfgpath.NewRoute("handling_type"),
 						Label:     text.Chars(`Calculate Handling Fee`),
@@ -7075,7 +7075,7 @@ T: {{var telephone}}
 						Default:   `F`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/tablerate/handling_fee`,
 						ID:        cfgpath.NewRoute("handling_fee"),
 						Label:     text.Chars(`Handling Fee`),
@@ -7086,7 +7086,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/tablerate/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enabled`),
@@ -7097,7 +7097,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/tablerate/condition_name`,
 						ID:        cfgpath.NewRoute("condition_name"),
 						Label:     text.Chars(`Condition`),
@@ -7108,7 +7108,7 @@ T: {{var telephone}}
 						Default:   `package_weight`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/tablerate/include_virtual_price`,
 						ID:        cfgpath.NewRoute("include_virtual_price"),
 						Label:     text.Chars(`Include Virtual Products in Price Calculation`),
@@ -7119,7 +7119,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/tablerate/export`,
 						ID:        cfgpath.NewRoute("export"),
 						Label:     text.Chars(`Export`),
@@ -7130,7 +7130,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/tablerate/import`,
 						ID:        cfgpath.NewRoute("import"),
 						Label:     text.Chars(`Import`),
@@ -7141,7 +7141,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/tablerate/name`,
 						ID:        cfgpath.NewRoute("name"),
 						Label:     text.Chars(`Method Name`),
@@ -7152,7 +7152,7 @@ T: {{var telephone}}
 						Default:   `Table Rate`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/tablerate/sort_order`,
 						ID:        cfgpath.NewRoute("sort_order"),
 						Label:     text.Chars(`Sort Order`),
@@ -7163,7 +7163,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/tablerate/title`,
 						ID:        cfgpath.NewRoute("title"),
 						Label:     text.Chars(`Title`),
@@ -7174,7 +7174,7 @@ T: {{var telephone}}
 						Default:   `Best Way`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/tablerate/sallowspecific`,
 						ID:        cfgpath.NewRoute("sallowspecific"),
 						Label:     text.Chars(`Ship to Applicable Countries`),
@@ -7185,7 +7185,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/tablerate/specificcountry`,
 						ID:        cfgpath.NewRoute("specificcountry"),
 						Label:     text.Chars(`Ship to Specific Countries`),
@@ -7196,7 +7196,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/tablerate/showmethod`,
 						ID:        cfgpath.NewRoute("showmethod"),
 						Label:     text.Chars(`Show Method if Not Applicable`),
@@ -7207,7 +7207,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/tablerate/specificerrmsg`,
 						ID:        cfgpath.NewRoute("specificerrmsg"),
 						Label:     text.Chars(`Displayed Error Message`),
@@ -7220,13 +7220,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("freeshipping"),
 				Label:     text.Chars(`Free Shipping`),
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `carriers/freeshipping/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enabled`),
@@ -7237,7 +7237,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/freeshipping/free_shipping_subtotal`,
 						ID:        cfgpath.NewRoute("free_shipping_subtotal"),
 						Label:     text.Chars(`Minimum Order Amount`),
@@ -7248,7 +7248,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/freeshipping/name`,
 						ID:        cfgpath.NewRoute("name"),
 						Label:     text.Chars(`Method Name`),
@@ -7259,7 +7259,7 @@ T: {{var telephone}}
 						Default:   `Free`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/freeshipping/sort_order`,
 						ID:        cfgpath.NewRoute("sort_order"),
 						Label:     text.Chars(`Sort Order`),
@@ -7270,7 +7270,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/freeshipping/title`,
 						ID:        cfgpath.NewRoute("title"),
 						Label:     text.Chars(`Title`),
@@ -7281,7 +7281,7 @@ T: {{var telephone}}
 						Default:   `Free Shipping`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/freeshipping/sallowspecific`,
 						ID:        cfgpath.NewRoute("sallowspecific"),
 						Label:     text.Chars(`Ship to Applicable Countries`),
@@ -7292,7 +7292,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/freeshipping/specificcountry`,
 						ID:        cfgpath.NewRoute("specificcountry"),
 						Label:     text.Chars(`Ship to Specific Countries`),
@@ -7303,7 +7303,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/freeshipping/showmethod`,
 						ID:        cfgpath.NewRoute("showmethod"),
 						Label:     text.Chars(`Show Method if Not Applicable`),
@@ -7314,7 +7314,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/freeshipping/specificerrmsg`,
 						ID:        cfgpath.NewRoute("specificerrmsg"),
 						Label:     text.Chars(`Displayed Error Message`),
@@ -7330,13 +7330,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("carriers"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("flatrate"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `carriers/flatrate/model`,
 						ID:      cfgpath.NewRoute("model"),
 						Type:    element.TypeHidden,
@@ -7347,10 +7347,10 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("tablerate"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `carriers/tablerate/model`,
 						ID:      cfgpath.NewRoute("model"),
 						Type:    element.TypeHidden,
@@ -7361,10 +7361,10 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("freeshipping"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `carriers/freeshipping/cutoff_cost`,
 						ID:      cfgpath.NewRoute("cutoff_cost"),
 						Type:    element.TypeHidden,
@@ -7373,7 +7373,7 @@ T: {{var telephone}}
 						Default: 50,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/freeshipping/model`,
 						ID:      cfgpath.NewRoute("model"),
 						Type:    element.TypeHidden,
@@ -7386,19 +7386,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("system"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("full_page_cache"),
 				Label:     text.Chars(`Full Page Cache`),
 				SortOrder: 600,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/full_page_cache/caching_application`,
 						ID:        cfgpath.NewRoute("caching_application"),
 						Label:     text.Chars(`Caching Application`),
@@ -7409,7 +7409,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/full_page_cache/ttl`,
 						ID:        cfgpath.NewRoute("ttl"),
 						Label:     text.Chars(`TTL for public content`),
@@ -7426,13 +7426,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("system"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("full_page_cache"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/full_page_cache/varnish3`,
 						ID:      cfgpath.NewRoute("varnish3"),
 						Type:    element.TypeHidden,
@@ -7441,7 +7441,7 @@ T: {{var telephone}}
 						Default: `{"path":"Magento\/PageCache\/etc\/varnish3.vcl"}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/full_page_cache/varnish4`,
 						ID:      cfgpath.NewRoute("varnish4"),
 						Type:    element.TypeHidden,
@@ -7450,7 +7450,7 @@ T: {{var telephone}}
 						Default: `{"path":"Magento\/PageCache\/etc\/varnish4.vcl"}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `system/full_page_cache/default`,
 						ID:      cfgpath.NewRoute("default"),
 						Type:    element.TypeHidden,
@@ -7463,7 +7463,7 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("payment"),
 		Label:     text.Chars("Payment Methods"),
 		SortOrder: 400,
@@ -7472,13 +7472,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("payment"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("free"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `payment/free/active`,
 						ID:      cfgpath.NewRoute("active"),
 						Type:    element.TypeHidden,
@@ -7487,7 +7487,7 @@ T: {{var telephone}}
 						Default: true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/free/model`,
 						ID:      cfgpath.NewRoute("model"),
 						Type:    element.TypeHidden,
@@ -7496,7 +7496,7 @@ T: {{var telephone}}
 						Default: `Magento\Payment\Model\Method\Free`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/free/order_status`,
 						ID:      cfgpath.NewRoute("order_status"),
 						Type:    element.TypeHidden,
@@ -7505,7 +7505,7 @@ T: {{var telephone}}
 						Default: `pending`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/free/title`,
 						ID:      cfgpath.NewRoute("title"),
 						Type:    element.TypeHidden,
@@ -7514,7 +7514,7 @@ T: {{var telephone}}
 						Default: `No Payment Information Required`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/free/allowspecific`,
 						ID:      cfgpath.NewRoute("allowspecific"),
 						Type:    element.TypeHidden,
@@ -7523,7 +7523,7 @@ T: {{var telephone}}
 						Default: false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/free/sort_order`,
 						ID:      cfgpath.NewRoute("sort_order"),
 						Type:    element.TypeHidden,
@@ -7534,10 +7534,10 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("substitution"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `payment/substitution/active`,
 						ID:      cfgpath.NewRoute("active"),
 						Type:    element.TypeHidden,
@@ -7546,7 +7546,7 @@ T: {{var telephone}}
 						Default: false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/substitution/model`,
 						ID:      cfgpath.NewRoute("model"),
 						Type:    element.TypeHidden,
@@ -7555,7 +7555,7 @@ T: {{var telephone}}
 						Default: `Magento\Payment\Model\Method\Substitution`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `payment/substitution/allowspecific`,
 						ID:      cfgpath.NewRoute("allowspecific"),
 						Type:    element.TypeHidden,
@@ -7568,19 +7568,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("persistent"),
 		Label:     text.Chars("Persistent Shopping Cart"),
 		SortOrder: 500,
 		Scopes:    scope.PermWebsite,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("options"),
 				Label:     text.Chars(`General Options`),
 				SortOrder: 10,
 				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `persistent/options/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enable Persistence`),
@@ -7591,7 +7591,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `persistent/options/lifetime`,
 						ID:        cfgpath.NewRoute("lifetime"),
 						Label:     text.Chars(`Persistence Lifetime (seconds)`),
@@ -7602,7 +7602,7 @@ T: {{var telephone}}
 						Default:   31536000,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `persistent/options/remember_enabled`,
 						ID:        cfgpath.NewRoute("remember_enabled"),
 						Label:     text.Chars(`Enable "Remember Me"`),
@@ -7613,7 +7613,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `persistent/options/remember_default`,
 						ID:        cfgpath.NewRoute("remember_default"),
 						Label:     text.Chars(`"Remember Me" Default Value`),
@@ -7624,7 +7624,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `persistent/options/logout_clear`,
 						ID:        cfgpath.NewRoute("logout_clear"),
 						Label:     text.Chars(`Clear Persistence on Log Out`),
@@ -7635,7 +7635,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `persistent/options/shopping_cart`,
 						ID:        cfgpath.NewRoute("shopping_cart"),
 						Label:     text.Chars(`Persist Shopping Cart`),
@@ -7650,19 +7650,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("productalert"),
 				Label:     text.Chars(`Product Alerts`),
 				SortOrder: 250,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/productalert/allow_price`,
 						ID:        cfgpath.NewRoute("allow_price"),
 						Label:     text.Chars(`Allow Alert When Product Price Changes`),
@@ -7673,7 +7673,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/productalert/allow_stock`,
 						ID:        cfgpath.NewRoute("allow_stock"),
 						Label:     text.Chars(`Allow Alert When Product Comes Back in Stock`),
@@ -7684,7 +7684,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/productalert/email_price_template`,
 						ID:        cfgpath.NewRoute("email_price_template"),
 						Label:     text.Chars(`Price Alert Email Template`),
@@ -7695,7 +7695,7 @@ T: {{var telephone}}
 						Default:   `catalog_productalert_email_price_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/productalert/email_stock_template`,
 						ID:        cfgpath.NewRoute("email_stock_template"),
 						Label:     text.Chars(`Stock Alert Email Template`),
@@ -7706,7 +7706,7 @@ T: {{var telephone}}
 						Default:   `catalog_productalert_email_stock_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/productalert/email_identity`,
 						ID:        cfgpath.NewRoute("email_identity"),
 						Label:     text.Chars(`Alert Email Sender`),
@@ -7719,13 +7719,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("productalert_cron"),
 				Label:     text.Chars(`Product Alerts Run Settings`),
 				SortOrder: 260,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/productalert_cron/frequency`,
 						ID:        cfgpath.NewRoute("frequency"),
 						Label:     text.Chars(`Frequency`),
@@ -7736,7 +7736,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/productalert_cron/time`,
 						ID:        cfgpath.NewRoute("time"),
 						Label:     text.Chars(`Start Time`),
@@ -7747,7 +7747,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/productalert_cron/error_email`,
 						ID:        cfgpath.NewRoute("error_email"),
 						Label:     text.Chars(`Error Email Recipient`),
@@ -7758,7 +7758,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/productalert_cron/error_email_identity`,
 						ID:        cfgpath.NewRoute("error_email_identity"),
 						Label:     text.Chars(`Error Email Sender`),
@@ -7769,7 +7769,7 @@ T: {{var telephone}}
 						Default:   `general`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/productalert_cron/error_email_template`,
 						ID:        cfgpath.NewRoute("error_email_template"),
 						Label:     text.Chars(`Error Email Template`),
@@ -7785,13 +7785,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("catalog"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("productalert_cron"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/productalert_cron/error_email`,
 						ID:      cfgpath.NewRoute("error_email"),
 						Type:    element.TypeHidden,
@@ -7804,19 +7804,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("recently_products"),
 				Label:     text.Chars(`Recently Viewed/Compared Products`),
 				SortOrder: 350,
 				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/recently_products/scope`,
 						ID:        cfgpath.NewRoute("scope"),
 						Label:     text.Chars(`Show for Current`),
@@ -7827,7 +7827,7 @@ T: {{var telephone}}
 						Default:   `website`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/recently_products/viewed_count`,
 						ID:        cfgpath.NewRoute("viewed_count"),
 						Label:     text.Chars(`Default Recently Viewed Products Count`),
@@ -7838,7 +7838,7 @@ T: {{var telephone}}
 						Default:   5,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/recently_products/compared_count`,
 						ID:        cfgpath.NewRoute("compared_count"),
 						Label:     text.Chars(`Default Recently Compared Products Count`),
@@ -7852,19 +7852,19 @@ T: {{var telephone}}
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("reports"),
 		Label:     text.Chars("Reports"),
 		SortOrder: 1000,
 		Scopes:    scope.PermDefault,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("dashboard"),
 				Label:     text.Chars(`Dashboard`),
 				SortOrder: 1,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `reports/dashboard/ytd_start`,
 						ID:        cfgpath.NewRoute("ytd_start"),
 						Label:     text.Chars(`Year-To-Date Starts`),
@@ -7875,7 +7875,7 @@ T: {{var telephone}}
 						Default:   `1,1`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `reports/dashboard/mtd_start`,
 						ID:        cfgpath.NewRoute("mtd_start"),
 						Label:     text.Chars(`Current Month Starts`),
@@ -7891,19 +7891,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("review"),
 				Label:     text.Chars(`Product Reviews`),
 				SortOrder: 100,
 				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/review/allow_guest`,
 						ID:        cfgpath.NewRoute("allow_guest"),
 						Label:     text.Chars(`Allow Guests to Write Reviews`),
@@ -7918,19 +7918,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("rss"),
 		Label:     text.Chars("RSS Feeds"),
 		SortOrder: 80,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("config"),
 				Label:     text.Chars(`Rss Config`),
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `rss/config/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enable RSS`),
@@ -7945,19 +7945,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("sales"),
 		Label:     text.Chars("Sales"),
 		SortOrder: 300,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("general"),
 				Label:     text.Chars(`General`),
 				SortOrder: 5,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales/general/hide_customer_ip`,
 						ID:        cfgpath.NewRoute("hide_customer_ip"),
 						Label:     text.Chars(`Hide Customer IP`),
@@ -7971,13 +7971,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("totals_sort"),
 				Label:     text.Chars(`Checkout Totals Sort Order`),
 				SortOrder: 10,
 				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales/totals_sort/discount`,
 						ID:        cfgpath.NewRoute("discount"),
 						Label:     text.Chars(`Discount`),
@@ -7988,7 +7988,7 @@ T: {{var telephone}}
 						Default:   20,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/totals_sort/grand_total`,
 						ID:        cfgpath.NewRoute("grand_total"),
 						Label:     text.Chars(`Grand Total`),
@@ -7999,7 +7999,7 @@ T: {{var telephone}}
 						Default:   100,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/totals_sort/shipping`,
 						ID:        cfgpath.NewRoute("shipping"),
 						Label:     text.Chars(`Shipping`),
@@ -8010,7 +8010,7 @@ T: {{var telephone}}
 						Default:   30,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/totals_sort/subtotal`,
 						ID:        cfgpath.NewRoute("subtotal"),
 						Label:     text.Chars(`Subtotal`),
@@ -8021,7 +8021,7 @@ T: {{var telephone}}
 						Default:   10,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/totals_sort/tax`,
 						ID:        cfgpath.NewRoute("tax"),
 						Label:     text.Chars(`Tax`),
@@ -8034,13 +8034,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("reorder"),
 				Label:     text.Chars(`Reorder`),
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales/reorder/allow`,
 						ID:        cfgpath.NewRoute("allow"),
 						Label:     text.Chars(`Allow Reorder`),
@@ -8053,13 +8053,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("identity"),
 				Label:     text.Chars(`Invoice and Packing Slip Design`),
 				SortOrder: 40,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales/identity/logo`,
 						ID:        cfgpath.NewRoute("logo"),
 						Label:     text.Chars(`Logo for PDF Print-outs (200x50)`),
@@ -8071,7 +8071,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/identity/logo_html`,
 						ID:        cfgpath.NewRoute("logo_html"),
 						Label:     text.Chars(`Logo for HTML Print View`),
@@ -8083,7 +8083,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/identity/address`,
 						ID:        cfgpath.NewRoute("address"),
 						Label:     text.Chars(`Address`),
@@ -8096,13 +8096,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("minimum_order"),
 				Label:     text.Chars(`Minimum Order Amount`),
 				SortOrder: 50,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales/minimum_order/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enable`),
@@ -8113,7 +8113,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/minimum_order/amount`,
 						ID:        cfgpath.NewRoute("amount"),
 						Label:     text.Chars(`Minimum Amount`),
@@ -8125,7 +8125,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/minimum_order/tax_including`,
 						ID:        cfgpath.NewRoute("tax_including"),
 						Label:     text.Chars(`Include Tax to Amount`),
@@ -8136,7 +8136,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/minimum_order/description`,
 						ID:        cfgpath.NewRoute("description"),
 						Label:     text.Chars(`Description Message`),
@@ -8148,7 +8148,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/minimum_order/error_message`,
 						ID:        cfgpath.NewRoute("error_message"),
 						Label:     text.Chars(`Error to Show in Shopping Cart`),
@@ -8159,7 +8159,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/minimum_order/multi_address`,
 						ID:        cfgpath.NewRoute("multi_address"),
 						Label:     text.Chars(`Validate Each Address Separately in Multi-address Checkout`),
@@ -8170,7 +8170,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/minimum_order/multi_address_description`,
 						ID:        cfgpath.NewRoute("multi_address_description"),
 						Label:     text.Chars(`Multi-address Description Message`),
@@ -8182,7 +8182,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales/minimum_order/multi_address_error_message`,
 						ID:        cfgpath.NewRoute("multi_address_error_message"),
 						Label:     text.Chars(`Multi-address Error to Show in Shopping Cart`),
@@ -8196,13 +8196,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("dashboard"),
 				Label:     text.Chars(`Dashboard`),
 				SortOrder: 60,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales/dashboard/use_aggregated_data`,
 						ID:        cfgpath.NewRoute("use_aggregated_data"),
 						Label:     text.Chars(`Use Aggregated Data (beta)`),
@@ -8217,19 +8217,19 @@ T: {{var telephone}}
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("sales_email"),
 		Label:     text.Chars("Sales Emails"),
 		SortOrder: 301,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("general"),
 				Label:     text.Chars(`General Settings`),
 				SortOrder: 0,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/general/async_sending`,
 						ID:        cfgpath.NewRoute("async_sending"),
 						Label:     text.Chars(`Asynchronous sending`),
@@ -8242,13 +8242,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("order"),
 				Label:     text.Chars(`Order`),
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/order/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enabled`),
@@ -8259,7 +8259,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/order/identity`,
 						ID:        cfgpath.NewRoute("identity"),
 						Label:     text.Chars(`New Order Confirmation Email Sender`),
@@ -8270,7 +8270,7 @@ T: {{var telephone}}
 						Default:   `sales`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/order/template`,
 						ID:        cfgpath.NewRoute("template"),
 						Label:     text.Chars(`New Order Confirmation Template`),
@@ -8281,7 +8281,7 @@ T: {{var telephone}}
 						Default:   `sales_email_order_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/order/guest_template`,
 						ID:        cfgpath.NewRoute("guest_template"),
 						Label:     text.Chars(`New Order Confirmation Template for Guest`),
@@ -8292,7 +8292,7 @@ T: {{var telephone}}
 						Default:   `sales_email_order_guest_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/order/copy_to`,
 						ID:        cfgpath.NewRoute("copy_to"),
 						Label:     text.Chars(`Send Order Email Copy To`),
@@ -8304,7 +8304,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/order/copy_method`,
 						ID:        cfgpath.NewRoute("copy_method"),
 						Label:     text.Chars(`Send Order Email Copy Method`),
@@ -8317,13 +8317,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("order_comment"),
 				Label:     text.Chars(`Order Comments`),
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/order_comment/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enabled`),
@@ -8334,7 +8334,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/order_comment/identity`,
 						ID:        cfgpath.NewRoute("identity"),
 						Label:     text.Chars(`Order Comment Email Sender`),
@@ -8345,7 +8345,7 @@ T: {{var telephone}}
 						Default:   `sales`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/order_comment/template`,
 						ID:        cfgpath.NewRoute("template"),
 						Label:     text.Chars(`Order Comment Email Template`),
@@ -8356,7 +8356,7 @@ T: {{var telephone}}
 						Default:   `sales_email_order_comment_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/order_comment/guest_template`,
 						ID:        cfgpath.NewRoute("guest_template"),
 						Label:     text.Chars(`Order Comment Email Template for Guest`),
@@ -8367,7 +8367,7 @@ T: {{var telephone}}
 						Default:   `sales_email_order_comment_guest_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/order_comment/copy_to`,
 						ID:        cfgpath.NewRoute("copy_to"),
 						Label:     text.Chars(`Send Order Comment Email Copy To`),
@@ -8379,7 +8379,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/order_comment/copy_method`,
 						ID:        cfgpath.NewRoute("copy_method"),
 						Label:     text.Chars(`Send Order Comments Email Copy Method`),
@@ -8392,13 +8392,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("invoice"),
 				Label:     text.Chars(`Invoice`),
 				SortOrder: 3,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/invoice/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enabled`),
@@ -8409,7 +8409,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/invoice/identity`,
 						ID:        cfgpath.NewRoute("identity"),
 						Label:     text.Chars(`Invoice Email Sender`),
@@ -8420,7 +8420,7 @@ T: {{var telephone}}
 						Default:   `sales`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/invoice/template`,
 						ID:        cfgpath.NewRoute("template"),
 						Label:     text.Chars(`Invoice Email Template`),
@@ -8431,7 +8431,7 @@ T: {{var telephone}}
 						Default:   `sales_email_invoice_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/invoice/guest_template`,
 						ID:        cfgpath.NewRoute("guest_template"),
 						Label:     text.Chars(`Invoice Email Template for Guest`),
@@ -8442,7 +8442,7 @@ T: {{var telephone}}
 						Default:   `sales_email_invoice_guest_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/invoice/copy_to`,
 						ID:        cfgpath.NewRoute("copy_to"),
 						Label:     text.Chars(`Send Invoice Email Copy To`),
@@ -8454,7 +8454,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/invoice/copy_method`,
 						ID:        cfgpath.NewRoute("copy_method"),
 						Label:     text.Chars(`Send Invoice Email Copy Method`),
@@ -8467,13 +8467,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("invoice_comment"),
 				Label:     text.Chars(`Invoice Comments`),
 				SortOrder: 4,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/invoice_comment/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enabled`),
@@ -8484,7 +8484,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/invoice_comment/identity`,
 						ID:        cfgpath.NewRoute("identity"),
 						Label:     text.Chars(`Invoice Comment Email Sender`),
@@ -8495,7 +8495,7 @@ T: {{var telephone}}
 						Default:   `sales`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/invoice_comment/template`,
 						ID:        cfgpath.NewRoute("template"),
 						Label:     text.Chars(`Invoice Comment Email Template`),
@@ -8506,7 +8506,7 @@ T: {{var telephone}}
 						Default:   `sales_email_invoice_comment_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/invoice_comment/guest_template`,
 						ID:        cfgpath.NewRoute("guest_template"),
 						Label:     text.Chars(`Invoice Comment Email Template for Guest`),
@@ -8517,7 +8517,7 @@ T: {{var telephone}}
 						Default:   `sales_email_invoice_comment_guest_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/invoice_comment/copy_to`,
 						ID:        cfgpath.NewRoute("copy_to"),
 						Label:     text.Chars(`Send Invoice Comment Email Copy To`),
@@ -8529,7 +8529,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/invoice_comment/copy_method`,
 						ID:        cfgpath.NewRoute("copy_method"),
 						Label:     text.Chars(`Send Invoice Comments Email Copy Method`),
@@ -8542,13 +8542,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("shipment"),
 				Label:     text.Chars(`Shipment`),
 				SortOrder: 5,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/shipment/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enabled`),
@@ -8559,7 +8559,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/shipment/identity`,
 						ID:        cfgpath.NewRoute("identity"),
 						Label:     text.Chars(`Shipment Email Sender`),
@@ -8570,7 +8570,7 @@ T: {{var telephone}}
 						Default:   `sales`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/shipment/template`,
 						ID:        cfgpath.NewRoute("template"),
 						Label:     text.Chars(`Shipment Email Template`),
@@ -8581,7 +8581,7 @@ T: {{var telephone}}
 						Default:   `sales_email_shipment_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/shipment/guest_template`,
 						ID:        cfgpath.NewRoute("guest_template"),
 						Label:     text.Chars(`Shipment Email Template for Guest`),
@@ -8592,7 +8592,7 @@ T: {{var telephone}}
 						Default:   `sales_email_shipment_guest_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/shipment/copy_to`,
 						ID:        cfgpath.NewRoute("copy_to"),
 						Label:     text.Chars(`Send Shipment Email Copy To`),
@@ -8604,7 +8604,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/shipment/copy_method`,
 						ID:        cfgpath.NewRoute("copy_method"),
 						Label:     text.Chars(`Send Shipment Email Copy Method`),
@@ -8617,13 +8617,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("shipment_comment"),
 				Label:     text.Chars(`Shipment Comments`),
 				SortOrder: 6,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/shipment_comment/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enabled`),
@@ -8634,7 +8634,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/shipment_comment/identity`,
 						ID:        cfgpath.NewRoute("identity"),
 						Label:     text.Chars(`Shipment Comment Email Sender`),
@@ -8645,7 +8645,7 @@ T: {{var telephone}}
 						Default:   `sales`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/shipment_comment/template`,
 						ID:        cfgpath.NewRoute("template"),
 						Label:     text.Chars(`Shipment Comment Email Template`),
@@ -8656,7 +8656,7 @@ T: {{var telephone}}
 						Default:   `sales_email_shipment_comment_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/shipment_comment/guest_template`,
 						ID:        cfgpath.NewRoute("guest_template"),
 						Label:     text.Chars(`Shipment Comment Email Template for Guest`),
@@ -8667,7 +8667,7 @@ T: {{var telephone}}
 						Default:   `sales_email_shipment_comment_guest_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/shipment_comment/copy_to`,
 						ID:        cfgpath.NewRoute("copy_to"),
 						Label:     text.Chars(`Send Shipment Comment Email Copy To`),
@@ -8679,7 +8679,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/shipment_comment/copy_method`,
 						ID:        cfgpath.NewRoute("copy_method"),
 						Label:     text.Chars(`Send Shipment Comments Email Copy Method`),
@@ -8692,13 +8692,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("creditmemo"),
 				Label:     text.Chars(`Credit Memo`),
 				SortOrder: 7,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/creditmemo/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enabled`),
@@ -8709,7 +8709,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/creditmemo/identity`,
 						ID:        cfgpath.NewRoute("identity"),
 						Label:     text.Chars(`Credit Memo Email Sender`),
@@ -8720,7 +8720,7 @@ T: {{var telephone}}
 						Default:   `sales`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/creditmemo/template`,
 						ID:        cfgpath.NewRoute("template"),
 						Label:     text.Chars(`Credit Memo Email Template`),
@@ -8731,7 +8731,7 @@ T: {{var telephone}}
 						Default:   `sales_email_creditmemo_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/creditmemo/guest_template`,
 						ID:        cfgpath.NewRoute("guest_template"),
 						Label:     text.Chars(`Credit Memo Email Template for Guest`),
@@ -8742,7 +8742,7 @@ T: {{var telephone}}
 						Default:   `sales_email_creditmemo_guest_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/creditmemo/copy_to`,
 						ID:        cfgpath.NewRoute("copy_to"),
 						Label:     text.Chars(`Send Credit Memo Email Copy To`),
@@ -8754,7 +8754,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/creditmemo/copy_method`,
 						ID:        cfgpath.NewRoute("copy_method"),
 						Label:     text.Chars(`Send Credit Memo Email Copy Method`),
@@ -8767,13 +8767,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("creditmemo_comment"),
 				Label:     text.Chars(`Credit Memo Comments`),
 				SortOrder: 8,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/creditmemo_comment/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enabled`),
@@ -8784,7 +8784,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/creditmemo_comment/identity`,
 						ID:        cfgpath.NewRoute("identity"),
 						Label:     text.Chars(`Credit Memo Comment Email Sender`),
@@ -8795,7 +8795,7 @@ T: {{var telephone}}
 						Default:   `sales`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/creditmemo_comment/template`,
 						ID:        cfgpath.NewRoute("template"),
 						Label:     text.Chars(`Credit Memo Comment Email Template`),
@@ -8806,7 +8806,7 @@ T: {{var telephone}}
 						Default:   `sales_email_creditmemo_comment_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/creditmemo_comment/guest_template`,
 						ID:        cfgpath.NewRoute("guest_template"),
 						Label:     text.Chars(`Credit Memo Comment Email Template for Guest`),
@@ -8817,7 +8817,7 @@ T: {{var telephone}}
 						Default:   `sales_email_creditmemo_comment_guest_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/creditmemo_comment/copy_to`,
 						ID:        cfgpath.NewRoute("copy_to"),
 						Label:     text.Chars(`Send Credit Memo Comment Email Copy To`),
@@ -8829,7 +8829,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sales_email/creditmemo_comment/copy_method`,
 						ID:        cfgpath.NewRoute("copy_method"),
 						Label:     text.Chars(`Send Credit Memo Comments Email Copy Method`),
@@ -8843,19 +8843,19 @@ T: {{var telephone}}
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("sales_pdf"),
 		Label:     text.Chars("PDF Print-outs"),
 		SortOrder: 302,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("invoice"),
 				Label:     text.Chars(`Invoice`),
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales_pdf/invoice/put_order_id`,
 						ID:        cfgpath.NewRoute("put_order_id"),
 						Label:     text.Chars(`Display Order ID in Header`),
@@ -8868,13 +8868,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("shipment"),
 				Label:     text.Chars(`Shipment`),
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales_pdf/shipment/put_order_id`,
 						ID:        cfgpath.NewRoute("put_order_id"),
 						Label:     text.Chars(`Display Order ID in Header`),
@@ -8887,13 +8887,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("creditmemo"),
 				Label:     text.Chars(`Credit Memo`),
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales_pdf/creditmemo/put_order_id`,
 						ID:        cfgpath.NewRoute("put_order_id"),
 						Label:     text.Chars(`Display Order ID in Header`),
@@ -8907,19 +8907,19 @@ T: {{var telephone}}
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("rss"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("order"),
 				Label:     text.Chars(`Order`),
 				SortOrder: 4,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `rss/order/status`,
 						ID:        cfgpath.NewRoute("status"),
 						Label:     text.Chars(`Customer Order Status Notification`),
@@ -8933,19 +8933,19 @@ T: {{var telephone}}
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("dev"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("grid"),
 				Label:     text.Chars(`Grid Settings`),
 				SortOrder: 131,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `dev/grid/async_indexing`,
 						ID:        cfgpath.NewRoute("async_indexing"),
 						Label:     text.Chars(`Asynchronous indexing`),
@@ -8960,19 +8960,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("promo"),
 		Label:     text.Chars("Promotions"),
 		SortOrder: 400,
 		Scopes:    scope.PermDefault,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("auto_generated_coupon_codes"),
 				Label:     text.Chars(`Auto Generated Specific Coupon Codes`),
 				SortOrder: 10,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `promo/auto_generated_coupon_codes/length`,
 						ID:        cfgpath.NewRoute("length"),
 						Label:     text.Chars(`Code Length`),
@@ -8984,7 +8984,7 @@ T: {{var telephone}}
 						Default:   12,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `promo/auto_generated_coupon_codes/format`,
 						ID:        cfgpath.NewRoute("format"),
 						Label:     text.Chars(`Code Format`),
@@ -8995,7 +8995,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `promo/auto_generated_coupon_codes/prefix`,
 						ID:        cfgpath.NewRoute("prefix"),
 						Label:     text.Chars(`Code Prefix`),
@@ -9006,7 +9006,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `promo/auto_generated_coupon_codes/suffix`,
 						ID:        cfgpath.NewRoute("suffix"),
 						Label:     text.Chars(`Code Suffix`),
@@ -9017,7 +9017,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `promo/auto_generated_coupon_codes/dash`,
 						ID:        cfgpath.NewRoute("dash"),
 						Label:     text.Chars(`Dash Every X Characters`),
@@ -9032,19 +9032,19 @@ T: {{var telephone}}
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("rss"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("catalog"),
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `rss/catalog/discounts`,
 						ID:        cfgpath.NewRoute("discounts"),
 						Label:     text.Chars(`Coupons/Discounts`),
@@ -9059,19 +9059,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("catalog"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("search"),
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `catalog/search/engine`,
 						ID:        cfgpath.NewRoute("engine"),
 						Label:     text.Chars(`Search Engine`),
@@ -9082,7 +9082,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/search/search_type`,
 						ID:        cfgpath.NewRoute("search_type"),
 						Label:     nil,
@@ -9093,7 +9093,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `catalog/search/use_layered_navigation_count`,
 						ID:        cfgpath.NewRoute("use_layered_navigation_count"),
 						Label:     nil,
@@ -9108,19 +9108,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("sendfriend"),
 		Label:     text.Chars("Email to a Friend"),
 		SortOrder: 120,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("email"),
 				Label:     text.Chars(`Email Templates`),
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sendfriend/email/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enabled`),
@@ -9131,7 +9131,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sendfriend/email/template`,
 						ID:        cfgpath.NewRoute("template"),
 						Label:     text.Chars(`Select Email Template`),
@@ -9142,7 +9142,7 @@ T: {{var telephone}}
 						Default:   `sendfriend_email_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sendfriend/email/allow_guest`,
 						ID:        cfgpath.NewRoute("allow_guest"),
 						Label:     text.Chars(`Allow for Guests`),
@@ -9153,7 +9153,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sendfriend/email/max_recipients`,
 						ID:        cfgpath.NewRoute("max_recipients"),
 						Label:     text.Chars(`Max Recipients`),
@@ -9164,7 +9164,7 @@ T: {{var telephone}}
 						Default:   5,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sendfriend/email/max_per_hour`,
 						ID:        cfgpath.NewRoute("max_per_hour"),
 						Label:     text.Chars(`Max Products Sent in 1 Hour`),
@@ -9175,7 +9175,7 @@ T: {{var telephone}}
 						Default:   5,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sendfriend/email/check_by`,
 						ID:        cfgpath.NewRoute("check_by"),
 						Label:     text.Chars(`Limit Sending By`),
@@ -9190,19 +9190,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("shipping"),
 		Label:     text.Chars("Shipping Settings"),
 		SortOrder: 310,
 		Scopes:    scope.PermWebsite,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("origin"),
 				Label:     text.Chars(`Origin`),
 				SortOrder: 1,
 				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `shipping/origin/country_id`,
 						ID:        cfgpath.NewRoute("country_id"),
 						Label:     text.Chars(`Country`),
@@ -9213,7 +9213,7 @@ T: {{var telephone}}
 						Default:   `US`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `shipping/origin/region_id`,
 						ID:        cfgpath.NewRoute("region_id"),
 						Label:     text.Chars(`Region/State`),
@@ -9224,7 +9224,7 @@ T: {{var telephone}}
 						Default:   12,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `shipping/origin/postcode`,
 						ID:        cfgpath.NewRoute("postcode"),
 						Label:     text.Chars(`ZIP/Postal Code`),
@@ -9235,7 +9235,7 @@ T: {{var telephone}}
 						Default:   90034,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `shipping/origin/city`,
 						ID:        cfgpath.NewRoute("city"),
 						Label:     text.Chars(`City`),
@@ -9246,7 +9246,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `shipping/origin/street_line1`,
 						ID:        cfgpath.NewRoute("street_line1"),
 						Label:     text.Chars(`Street Address`),
@@ -9257,7 +9257,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `shipping/origin/street_line2`,
 						ID:        cfgpath.NewRoute("street_line2"),
 						Label:     text.Chars(`Street Address Line 2`),
@@ -9271,7 +9271,7 @@ T: {{var telephone}}
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("carriers"),
 		Label:     text.Chars("Shipping Methods"),
 		SortOrder: 320,
@@ -9279,19 +9279,19 @@ T: {{var telephone}}
 		Groups:    element.GroupSlice{},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("sitemap"),
 		Label:     text.Chars("XML Sitemap"),
 		SortOrder: 70,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("category"),
 				Label:     text.Chars(`Categories Options`),
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/category/changefreq`,
 						ID:        cfgpath.NewRoute("changefreq"),
 						Label:     text.Chars(`Frequency`),
@@ -9302,7 +9302,7 @@ T: {{var telephone}}
 						Default:   `daily`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/category/priority`,
 						ID:        cfgpath.NewRoute("priority"),
 						Label:     text.Chars(`Priority`),
@@ -9316,13 +9316,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("product"),
 				Label:     text.Chars(`Products Options`),
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/product/changefreq`,
 						ID:        cfgpath.NewRoute("changefreq"),
 						Label:     text.Chars(`Frequency`),
@@ -9333,7 +9333,7 @@ T: {{var telephone}}
 						Default:   `daily`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/product/priority`,
 						ID:        cfgpath.NewRoute("priority"),
 						Label:     text.Chars(`Priority`),
@@ -9345,7 +9345,7 @@ T: {{var telephone}}
 						Default:   1,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/product/image_include`,
 						ID:        cfgpath.NewRoute("image_include"),
 						Label:     text.Chars(`Add Images into Sitemap`),
@@ -9358,13 +9358,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("page"),
 				Label:     text.Chars(`CMS Pages Options`),
 				SortOrder: 3,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/page/changefreq`,
 						ID:        cfgpath.NewRoute("changefreq"),
 						Label:     text.Chars(`Frequency`),
@@ -9375,7 +9375,7 @@ T: {{var telephone}}
 						Default:   `daily`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/page/priority`,
 						ID:        cfgpath.NewRoute("priority"),
 						Label:     text.Chars(`Priority`),
@@ -9389,13 +9389,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("generate"),
 				Label:     text.Chars(`Generation Settings`),
 				SortOrder: 4,
 				Scopes:    scope.PermDefault,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/generate/enabled`,
 						ID:        cfgpath.NewRoute("enabled"),
 						Label:     text.Chars(`Enabled`),
@@ -9406,7 +9406,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/generate/error_email`,
 						ID:        cfgpath.NewRoute("error_email"),
 						Label:     text.Chars(`Error Email Recipient`),
@@ -9417,7 +9417,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/generate/error_email_identity`,
 						ID:        cfgpath.NewRoute("error_email_identity"),
 						Label:     text.Chars(`Error Email Sender`),
@@ -9428,7 +9428,7 @@ T: {{var telephone}}
 						Default:   `general`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/generate/error_email_template`,
 						ID:        cfgpath.NewRoute("error_email_template"),
 						Label:     text.Chars(`Error Email Template`),
@@ -9439,7 +9439,7 @@ T: {{var telephone}}
 						Default:   `sitemap_generate_error_email_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/generate/frequency`,
 						ID:        cfgpath.NewRoute("frequency"),
 						Label:     text.Chars(`Frequency`),
@@ -9450,7 +9450,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/generate/time`,
 						ID:        cfgpath.NewRoute("time"),
 						Label:     text.Chars(`Start Time`),
@@ -9463,13 +9463,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("limit"),
 				Label:     text.Chars(`Sitemap File Limits`),
 				SortOrder: 5,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/limit/max_lines`,
 						ID:        cfgpath.NewRoute("max_lines"),
 						Label:     text.Chars(`Maximum No of URLs Per File`),
@@ -9480,7 +9480,7 @@ T: {{var telephone}}
 						Default:   50000,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/limit/max_file_size`,
 						ID:        cfgpath.NewRoute("max_file_size"),
 						Label:     text.Chars(`Maximum File Size`),
@@ -9494,13 +9494,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("search_engines"),
 				Label:     text.Chars(`Search Engine Submission Settings`),
 				SortOrder: 6,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/search_engines/submission_robots`,
 						ID:        cfgpath.NewRoute("submission_robots"),
 						Label:     text.Chars(`Enable Submission to Robots.txt`),
@@ -9516,13 +9516,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("sitemap"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("generate"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/generate/error_email`,
 						ID:      cfgpath.NewRoute("error_email"),
 						Type:    element.TypeHidden,
@@ -9533,10 +9533,10 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("file"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sitemap/file/valid_paths`,
 						ID:      cfgpath.NewRoute("valid_paths"),
 						Type:    element.TypeHidden,
@@ -9549,19 +9549,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("tax"),
 		Label:     text.Chars("Tax"),
 		SortOrder: 303,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("classes"),
 				Label:     text.Chars(`Tax Classes`),
 				SortOrder: 10,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `tax/classes/shipping_tax_class`,
 						ID:        cfgpath.NewRoute("shipping_tax_class"),
 						Label:     text.Chars(`Tax Class for Shipping`),
@@ -9572,7 +9572,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/classes/default_product_tax_class`,
 						ID:        cfgpath.NewRoute("default_product_tax_class"),
 						Label:     text.Chars(`Default Tax Class for Product`),
@@ -9583,7 +9583,7 @@ T: {{var telephone}}
 						Default:   2,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/classes/default_customer_tax_class`,
 						ID:        cfgpath.NewRoute("default_customer_tax_class"),
 						Label:     text.Chars(`Default Tax Class for Customer`),
@@ -9596,13 +9596,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("calculation"),
 				Label:     text.Chars(`Calculation Settings`),
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `tax/calculation/algorithm`,
 						ID:        cfgpath.NewRoute("algorithm"),
 						Label:     text.Chars(`Tax Calculation Method Based On`),
@@ -9613,7 +9613,7 @@ T: {{var telephone}}
 						Default:   `TOTAL_BASE_CALCULATION`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/calculation/based_on`,
 						ID:        cfgpath.NewRoute("based_on"),
 						Label:     text.Chars(`Tax Calculation Based On`),
@@ -9624,7 +9624,7 @@ T: {{var telephone}}
 						Default:   `shipping`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/calculation/price_includes_tax`,
 						ID:        cfgpath.NewRoute("price_includes_tax"),
 						Label:     text.Chars(`Catalog Prices`),
@@ -9636,7 +9636,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/calculation/shipping_includes_tax`,
 						ID:        cfgpath.NewRoute("shipping_includes_tax"),
 						Label:     text.Chars(`Shipping Prices`),
@@ -9648,7 +9648,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/calculation/apply_after_discount`,
 						ID:        cfgpath.NewRoute("apply_after_discount"),
 						Label:     text.Chars(`Apply Customer Tax`),
@@ -9659,7 +9659,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/calculation/discount_tax`,
 						ID:        cfgpath.NewRoute("discount_tax"),
 						Label:     text.Chars(`Apply Discount On Prices`),
@@ -9671,7 +9671,7 @@ T: {{var telephone}}
 						Default:   `["0","0"]`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/calculation/apply_tax_on`,
 						ID:        cfgpath.NewRoute("apply_tax_on"),
 						Label:     text.Chars(`Apply Tax On`),
@@ -9682,7 +9682,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/calculation/cross_border_trade_enabled`,
 						ID:        cfgpath.NewRoute("cross_border_trade_enabled"),
 						Label:     text.Chars(`Enable Cross Border Trade`),
@@ -9696,13 +9696,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("defaults"),
 				Label:     text.Chars(`Default Tax Destination Calculation`),
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `tax/defaults/country`,
 						ID:        cfgpath.NewRoute("country"),
 						Label:     text.Chars(`Default Country`),
@@ -9713,7 +9713,7 @@ T: {{var telephone}}
 						Default:   `US`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/defaults/region`,
 						ID:        cfgpath.NewRoute("region"),
 						Label:     text.Chars(`Default State`),
@@ -9724,7 +9724,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/defaults/postcode`,
 						ID:        cfgpath.NewRoute("postcode"),
 						Label:     text.Chars(`Default Post Code`),
@@ -9737,13 +9737,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("display"),
 				Label:     text.Chars(`Price Display Settings`),
 				SortOrder: 40,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `tax/display/type`,
 						ID:        cfgpath.NewRoute("type"),
 						Label:     text.Chars(`Display Product Prices In Catalog`),
@@ -9754,7 +9754,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/display/shipping`,
 						ID:        cfgpath.NewRoute("shipping"),
 						Label:     text.Chars(`Display Shipping Prices`),
@@ -9767,13 +9767,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("cart_display"),
 				Label:     text.Chars(`Shopping Cart Display Settings`),
 				SortOrder: 50,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `tax/cart_display/price`,
 						ID:        cfgpath.NewRoute("price"),
 						Label:     text.Chars(`Display Prices`),
@@ -9784,7 +9784,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/cart_display/subtotal`,
 						ID:        cfgpath.NewRoute("subtotal"),
 						Label:     text.Chars(`Display Subtotal`),
@@ -9795,7 +9795,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/cart_display/shipping`,
 						ID:        cfgpath.NewRoute("shipping"),
 						Label:     text.Chars(`Display Shipping Amount`),
@@ -9806,7 +9806,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/cart_display/grandtotal`,
 						ID:        cfgpath.NewRoute("grandtotal"),
 						Label:     text.Chars(`Include Tax In Grand Total`),
@@ -9817,7 +9817,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/cart_display/full_summary`,
 						ID:        cfgpath.NewRoute("full_summary"),
 						Label:     text.Chars(`Display Full Tax Summary`),
@@ -9828,7 +9828,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/cart_display/zero_tax`,
 						ID:        cfgpath.NewRoute("zero_tax"),
 						Label:     text.Chars(`Display Zero Tax Subtotal`),
@@ -9841,13 +9841,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("sales_display"),
 				Label:     text.Chars(`Orders, Invoices, Credit Memos Display Settings`),
 				SortOrder: 60,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `tax/sales_display/price`,
 						ID:        cfgpath.NewRoute("price"),
 						Label:     text.Chars(`Display Prices`),
@@ -9858,7 +9858,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/sales_display/subtotal`,
 						ID:        cfgpath.NewRoute("subtotal"),
 						Label:     text.Chars(`Display Subtotal`),
@@ -9869,7 +9869,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/sales_display/shipping`,
 						ID:        cfgpath.NewRoute("shipping"),
 						Label:     text.Chars(`Display Shipping Amount`),
@@ -9880,7 +9880,7 @@ T: {{var telephone}}
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/sales_display/grandtotal`,
 						ID:        cfgpath.NewRoute("grandtotal"),
 						Label:     text.Chars(`Include Tax In Grand Total`),
@@ -9891,7 +9891,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/sales_display/full_summary`,
 						ID:        cfgpath.NewRoute("full_summary"),
 						Label:     text.Chars(`Display Full Tax Summary`),
@@ -9902,7 +9902,7 @@ T: {{var telephone}}
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/sales_display/zero_tax`,
 						ID:        cfgpath.NewRoute("zero_tax"),
 						Label:     text.Chars(`Display Zero Tax Subtotal`),
@@ -9918,13 +9918,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("tax"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("cart_display"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `tax/cart_display/discount`,
 						ID:      cfgpath.NewRoute("discount"),
 						Type:    element.TypeHidden,
@@ -9935,10 +9935,10 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("sales_display"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `tax/sales_display/discount`,
 						ID:      cfgpath.NewRoute("discount"),
 						Type:    element.TypeHidden,
@@ -9949,10 +9949,10 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("notification"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `tax/notification/url`,
 						ID:      cfgpath.NewRoute("url"),
 						Type:    element.TypeHidden,
@@ -9965,19 +9965,19 @@ T: {{var telephone}}
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("design"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("head"),
 				Label:     text.Chars(`HTML Head`),
 				SortOrder: 20,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `design/head/shortcut_icon`,
 						ID:        cfgpath.NewRoute("shortcut_icon"),
 						Label:     text.Chars(`Favicon Icon`),
@@ -9989,7 +9989,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/head/default_title`,
 						ID:        cfgpath.NewRoute("default_title"),
 						Label:     text.Chars(`Default Title`),
@@ -10000,7 +10000,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/head/title_prefix`,
 						ID:        cfgpath.NewRoute("title_prefix"),
 						Label:     text.Chars(`Title Prefix`),
@@ -10011,7 +10011,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/head/title_suffix`,
 						ID:        cfgpath.NewRoute("title_suffix"),
 						Label:     text.Chars(`Title Suffix`),
@@ -10022,7 +10022,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/head/default_description`,
 						ID:        cfgpath.NewRoute("default_description"),
 						Label:     text.Chars(`Default Description`),
@@ -10033,7 +10033,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/head/default_keywords`,
 						ID:        cfgpath.NewRoute("default_keywords"),
 						Label:     text.Chars(`Default Keywords`),
@@ -10044,7 +10044,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/head/includes`,
 						ID:        cfgpath.NewRoute("includes"),
 						Label:     text.Chars(`Miscellaneous Scripts`),
@@ -10056,7 +10056,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/head/demonotice`,
 						ID:        cfgpath.NewRoute("demonotice"),
 						Label:     text.Chars(`Display Demo Store Notice`),
@@ -10069,13 +10069,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("search_engine_robots"),
 				Label:     text.Chars(`Search Engine Robots`),
 				SortOrder: 25,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `design/search_engine_robots/default_robots`,
 						ID:        cfgpath.NewRoute("default_robots"),
 						Label:     text.Chars(`Default Robots`),
@@ -10087,7 +10087,7 @@ T: {{var telephone}}
 						Default:   `INDEX,FOLLOW`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/search_engine_robots/custom_instructions`,
 						ID:        cfgpath.NewRoute("custom_instructions"),
 						Label:     text.Chars(`Edit custom instruction of robots.txt File`),
@@ -10098,7 +10098,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/search_engine_robots/reset_to_defaults`,
 						ID:        cfgpath.NewRoute("reset_to_defaults"),
 						Label:     text.Chars(`Reset to Defaults`),
@@ -10112,13 +10112,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("header"),
 				Label:     text.Chars(`Header`),
 				SortOrder: 30,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `design/header/logo_src`,
 						ID:        cfgpath.NewRoute("logo_src"),
 						Label:     text.Chars(`Logo Image`),
@@ -10130,7 +10130,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/header/logo_alt`,
 						ID:        cfgpath.NewRoute("logo_alt"),
 						Label:     text.Chars(`Logo Image Alt`),
@@ -10141,7 +10141,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/header/welcome`,
 						ID:        cfgpath.NewRoute("welcome"),
 						Label:     text.Chars(`Welcome Text`),
@@ -10154,13 +10154,13 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("footer"),
 				Label:     text.Chars(`Footer`),
 				SortOrder: 40,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `design/footer/copyright`,
 						ID:        cfgpath.NewRoute("copyright"),
 						Label:     text.Chars(`Copyright`),
@@ -10171,7 +10171,7 @@ T: {{var telephone}}
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/footer/absolute_footer`,
 						ID:        cfgpath.NewRoute("absolute_footer"),
 						Label:     text.Chars(`Miscellaneous HTML`),
@@ -10188,13 +10188,13 @@ T: {{var telephone}}
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("design"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("head"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `design/head/_value`,
 						ID:      cfgpath.NewRoute("_value"),
 						Type:    element.TypeHidden,
@@ -10203,7 +10203,7 @@ T: {{var telephone}}
 						Default: `{"default_title":"Magento Commerce","default_description":"Default Description","default_keywords":"Magento, Varien, E-commerce","default_media_type":"text\/html","default_charset":"utf-8"}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/head/_attribute`,
 						ID:      cfgpath.NewRoute("_attribute"),
 						Type:    element.TypeHidden,
@@ -10214,10 +10214,10 @@ T: {{var telephone}}
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("search_engine_robots"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `design/search_engine_robots/default_custom_instructions`,
 						ID:      cfgpath.NewRoute("default_custom_instructions"),
 						Type:    element.TypeHidden,
@@ -10247,10 +10247,10 @@ Disallow: /*SID=
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("header"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `design/header/_value`,
 						ID:      cfgpath.NewRoute("_value"),
 						Type:    element.TypeHidden,
@@ -10259,7 +10259,7 @@ Disallow: /*SID=
 						Default: `{"logo_alt":"Magento Commerce","welcome":"Default welcome msg!"}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/header/_attribute`,
 						ID:      cfgpath.NewRoute("_attribute"),
 						Type:    element.TypeHidden,
@@ -10270,10 +10270,10 @@ Disallow: /*SID=
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("footer"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `design/footer/_value`,
 						ID:      cfgpath.NewRoute("_value"),
 						Type:    element.TypeHidden,
@@ -10282,7 +10282,7 @@ Disallow: /*SID=
 						Default: `{"copyright":"&copy; 2014 Magento Demo Store. All Rights Reserved."}`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `design/footer/_attribute`,
 						ID:      cfgpath.NewRoute("_attribute"),
 						Type:    element.TypeHidden,
@@ -10294,13 +10294,13 @@ Disallow: /*SID=
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("theme"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("customization"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `theme/customization/custom_css`,
 						ID:      cfgpath.NewRoute("custom_css"),
 						Type:    element.TypeHidden,
@@ -10312,13 +10312,13 @@ Disallow: /*SID=
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("system"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("media_storage_configuration"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `system/media_storage_configuration/allowed_resources`,
 						ID:      cfgpath.NewRoute("allowed_resources"),
 						Type:    element.TypeHidden,
@@ -10331,19 +10331,19 @@ Disallow: /*SID=
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("dev"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("js"),
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `dev/js/translate_strategy`,
 						ID:        cfgpath.NewRoute("translate_strategy"),
 						Label:     text.Chars(`Translation Strategy`),
@@ -10360,13 +10360,13 @@ Disallow: /*SID=
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("dev"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("translate_inline"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `dev/translate_inline/active`,
 						ID:      cfgpath.NewRoute("active"),
 						Type:    element.TypeHidden,
@@ -10375,7 +10375,7 @@ Disallow: /*SID=
 						Default: false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `dev/translate_inline/active_admin`,
 						ID:      cfgpath.NewRoute("active_admin"),
 						Type:    element.TypeHidden,
@@ -10384,7 +10384,7 @@ Disallow: /*SID=
 						Default: false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `dev/translate_inline/invalid_caches`,
 						ID:      cfgpath.NewRoute("invalid_caches"),
 						Type:    element.TypeHidden,
@@ -10397,19 +10397,19 @@ Disallow: /*SID=
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("carriers"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("ups"),
 				Label:     text.Chars(`UPS`),
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/access_license_number`,
 						ID:        cfgpath.NewRoute("access_license_number"),
 						Label:     text.Chars(`Access License Number`),
@@ -10420,7 +10420,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enabled for Checkout`),
@@ -10431,7 +10431,7 @@ Disallow: /*SID=
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/allowed_methods`,
 						ID:        cfgpath.NewRoute("allowed_methods"),
 						Label:     text.Chars(`Allowed Methods`),
@@ -10442,7 +10442,7 @@ Disallow: /*SID=
 						Default:   `1DM,1DML,1DA,1DAL,1DAPI,1DP,1DPL,2DM,2DML,2DA,2DAL,3DS,GND,GNDCOM,GNDRES,STD,XPR,WXS,XPRL,XDM,XDML,XPD,01,02,03,07,08,11,12,14,54,59,65`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/shipment_requesttype`,
 						ID:        cfgpath.NewRoute("shipment_requesttype"),
 						Label:     text.Chars(`Packages Request Type`),
@@ -10453,7 +10453,7 @@ Disallow: /*SID=
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/container`,
 						ID:        cfgpath.NewRoute("container"),
 						Label:     text.Chars(`Container`),
@@ -10464,7 +10464,7 @@ Disallow: /*SID=
 						Default:   `CP`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/free_shipping_enable`,
 						ID:        cfgpath.NewRoute("free_shipping_enable"),
 						Label:     text.Chars(`Free Shipping Amount Threshold`),
@@ -10475,7 +10475,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/free_shipping_subtotal`,
 						ID:        cfgpath.NewRoute("free_shipping_subtotal"),
 						Label:     text.Chars(`Free Shipping Amount Threshold`),
@@ -10486,7 +10486,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/dest_type`,
 						ID:        cfgpath.NewRoute("dest_type"),
 						Label:     text.Chars(`Destination Type`),
@@ -10497,7 +10497,7 @@ Disallow: /*SID=
 						Default:   `RES`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/free_method`,
 						ID:        cfgpath.NewRoute("free_method"),
 						Label:     text.Chars(`Free Method`),
@@ -10508,7 +10508,7 @@ Disallow: /*SID=
 						Default:   `GND`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/gateway_url`,
 						ID:        cfgpath.NewRoute("gateway_url"),
 						Label:     text.Chars(`Gateway URL`),
@@ -10519,7 +10519,7 @@ Disallow: /*SID=
 						Default:   `http://www.ups.com/using/services/rave/qcostcgi.cgi`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/gateway_xml_url`,
 						ID:        cfgpath.NewRoute("gateway_xml_url"),
 						Label:     text.Chars(`Gateway XML URL`),
@@ -10530,7 +10530,7 @@ Disallow: /*SID=
 						Default:   `https://onlinetools.ups.com/ups.app/xml/Rate`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/handling_type`,
 						ID:        cfgpath.NewRoute("handling_type"),
 						Label:     text.Chars(`Calculate Handling Fee`),
@@ -10541,7 +10541,7 @@ Disallow: /*SID=
 						Default:   `F`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/handling_action`,
 						ID:        cfgpath.NewRoute("handling_action"),
 						Label:     text.Chars(`Handling Applied`),
@@ -10552,7 +10552,7 @@ Disallow: /*SID=
 						Default:   `O`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/handling_fee`,
 						ID:        cfgpath.NewRoute("handling_fee"),
 						Label:     text.Chars(`Handling Fee`),
@@ -10563,7 +10563,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/max_package_weight`,
 						ID:        cfgpath.NewRoute("max_package_weight"),
 						Label:     text.Chars(`Maximum  (Please consult your shipping carrier for maximum supported shipping weight)`),
@@ -10574,7 +10574,7 @@ Disallow: /*SID=
 						Default:   150,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/min_package_weight`,
 						ID:        cfgpath.NewRoute("min_package_weight"),
 						Label:     text.Chars(`Minimum  (Please consult your shipping carrier for minimum supported shipping weight)`),
@@ -10585,7 +10585,7 @@ Disallow: /*SID=
 						Default:   0.1,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/origin_shipment`,
 						ID:        cfgpath.NewRoute("origin_shipment"),
 						Label:     text.Chars(`Origin of the Shipment`),
@@ -10596,7 +10596,7 @@ Disallow: /*SID=
 						Default:   `Shipments Originating in United States`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/password`,
 						ID:        cfgpath.NewRoute("password"),
 						Label:     text.Chars(`Password`),
@@ -10607,7 +10607,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/pickup`,
 						ID:        cfgpath.NewRoute("pickup"),
 						Label:     text.Chars(`Pickup Method`),
@@ -10618,7 +10618,7 @@ Disallow: /*SID=
 						Default:   `CC`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/sort_order`,
 						ID:        cfgpath.NewRoute("sort_order"),
 						Label:     text.Chars(`Sort Order`),
@@ -10629,7 +10629,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/title`,
 						ID:        cfgpath.NewRoute("title"),
 						Label:     text.Chars(`Title`),
@@ -10640,7 +10640,7 @@ Disallow: /*SID=
 						Default:   `United Parcel Service`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/tracking_xml_url`,
 						ID:        cfgpath.NewRoute("tracking_xml_url"),
 						Label:     text.Chars(`Tracking XML URL`),
@@ -10651,7 +10651,7 @@ Disallow: /*SID=
 						Default:   `https://www.ups.com/ups.app/xml/Track`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/type`,
 						ID:        cfgpath.NewRoute("type"),
 						Label:     text.Chars(`UPS Type`),
@@ -10662,7 +10662,7 @@ Disallow: /*SID=
 						Default:   `UPS`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/is_account_live`,
 						ID:        cfgpath.NewRoute("is_account_live"),
 						Label:     text.Chars(`Live account`),
@@ -10673,7 +10673,7 @@ Disallow: /*SID=
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/unit_of_measure`,
 						ID:        cfgpath.NewRoute("unit_of_measure"),
 						Label:     text.Chars(`Weight Unit`),
@@ -10684,7 +10684,7 @@ Disallow: /*SID=
 						Default:   `LBS`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/username`,
 						ID:        cfgpath.NewRoute("username"),
 						Label:     text.Chars(`User ID`),
@@ -10695,7 +10695,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/negotiated_active`,
 						ID:        cfgpath.NewRoute("negotiated_active"),
 						Label:     text.Chars(`Enable Negotiated Rates`),
@@ -10706,7 +10706,7 @@ Disallow: /*SID=
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/shipper_number`,
 						ID:        cfgpath.NewRoute("shipper_number"),
 						Label:     text.Chars(`Shipper Number`),
@@ -10718,7 +10718,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/sallowspecific`,
 						ID:        cfgpath.NewRoute("sallowspecific"),
 						Label:     text.Chars(`Ship to Applicable Countries`),
@@ -10729,7 +10729,7 @@ Disallow: /*SID=
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/specificcountry`,
 						ID:        cfgpath.NewRoute("specificcountry"),
 						Label:     text.Chars(`Ship to Specific Countries`),
@@ -10740,7 +10740,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/showmethod`,
 						ID:        cfgpath.NewRoute("showmethod"),
 						Label:     text.Chars(`Show Method if Not Applicable`),
@@ -10751,7 +10751,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/specificerrmsg`,
 						ID:        cfgpath.NewRoute("specificerrmsg"),
 						Label:     text.Chars(`Displayed Error Message`),
@@ -10762,7 +10762,7 @@ Disallow: /*SID=
 						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/mode_xml`,
 						ID:        cfgpath.NewRoute("mode_xml"),
 						Label:     text.Chars(`Mode`),
@@ -10774,7 +10774,7 @@ Disallow: /*SID=
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/debug`,
 						ID:        cfgpath.NewRoute("debug"),
 						Label:     text.Chars(`Debug`),
@@ -10790,13 +10790,13 @@ Disallow: /*SID=
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("carriers"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("ups"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/cutoff_cost`,
 						ID:      cfgpath.NewRoute("cutoff_cost"),
 						Type:    element.TypeHidden,
@@ -10805,7 +10805,7 @@ Disallow: /*SID=
 						Default: nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/handling`,
 						ID:      cfgpath.NewRoute("handling"),
 						Type:    element.TypeHidden,
@@ -10814,7 +10814,7 @@ Disallow: /*SID=
 						Default: false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/model`,
 						ID:      cfgpath.NewRoute("model"),
 						Type:    element.TypeHidden,
@@ -10823,7 +10823,7 @@ Disallow: /*SID=
 						Default: `Magento\Ups\Model\Carrier`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/active_rma`,
 						ID:      cfgpath.NewRoute("active_rma"),
 						Type:    element.TypeHidden,
@@ -10832,7 +10832,7 @@ Disallow: /*SID=
 						Default: false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/ups/is_online`,
 						ID:      cfgpath.NewRoute("is_online"),
 						Type:    element.TypeHidden,
@@ -10845,19 +10845,19 @@ Disallow: /*SID=
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("admin"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("emails"),
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `admin/emails/reset_password_template`,
 						ID:        cfgpath.NewRoute("reset_password_template"),
 						Label:     text.Chars(`Reset Password Template`),
@@ -10873,13 +10873,13 @@ Disallow: /*SID=
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("admin"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("emails"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `admin/emails/forgot_email_template`,
 						ID:      cfgpath.NewRoute("forgot_email_template"),
 						Type:    element.TypeHidden,
@@ -10888,7 +10888,7 @@ Disallow: /*SID=
 						Default: `admin_emails_forgot_email_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/emails/forgot_email_identity`,
 						ID:      cfgpath.NewRoute("forgot_email_identity"),
 						Type:    element.TypeHidden,
@@ -10897,7 +10897,7 @@ Disallow: /*SID=
 						Default: `general`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `admin/emails/password_reset_link_expiration_period`,
 						ID:      cfgpath.NewRoute("password_reset_link_expiration_period"),
 						Type:    element.TypeHidden,
@@ -10910,19 +10910,19 @@ Disallow: /*SID=
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("carriers"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("usps"),
 				Label:     text.Chars(`USPS`),
 				SortOrder: 110,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enabled for Checkout`),
@@ -10933,7 +10933,7 @@ Disallow: /*SID=
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/gateway_url`,
 						ID:        cfgpath.NewRoute("gateway_url"),
 						Label:     text.Chars(`Gateway URL`),
@@ -10944,7 +10944,7 @@ Disallow: /*SID=
 						Default:   `http://production.shippingapis.com/ShippingAPI.dll`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/gateway_secure_url`,
 						ID:        cfgpath.NewRoute("gateway_secure_url"),
 						Label:     text.Chars(`Secure Gateway URL`),
@@ -10955,7 +10955,7 @@ Disallow: /*SID=
 						Default:   `https://secure.shippingapis.com/ShippingAPI.dll`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/title`,
 						ID:        cfgpath.NewRoute("title"),
 						Label:     text.Chars(`Title`),
@@ -10966,7 +10966,7 @@ Disallow: /*SID=
 						Default:   `United States Postal Service`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/userid`,
 						ID:        cfgpath.NewRoute("userid"),
 						Label:     text.Chars(`User ID`),
@@ -10977,7 +10977,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/password`,
 						ID:        cfgpath.NewRoute("password"),
 						Label:     text.Chars(`Password`),
@@ -10988,7 +10988,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/mode`,
 						ID:        cfgpath.NewRoute("mode"),
 						Label:     text.Chars(`Mode`),
@@ -10999,7 +10999,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/shipment_requesttype`,
 						ID:        cfgpath.NewRoute("shipment_requesttype"),
 						Label:     text.Chars(`Packages Request Type`),
@@ -11010,7 +11010,7 @@ Disallow: /*SID=
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/container`,
 						ID:        cfgpath.NewRoute("container"),
 						Label:     text.Chars(`Container`),
@@ -11021,7 +11021,7 @@ Disallow: /*SID=
 						Default:   `VARIABLE`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/size`,
 						ID:        cfgpath.NewRoute("size"),
 						Label:     text.Chars(`Size`),
@@ -11032,7 +11032,7 @@ Disallow: /*SID=
 						Default:   `REGULAR`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/width`,
 						ID:        cfgpath.NewRoute("width"),
 						Label:     text.Chars(`Width`),
@@ -11043,7 +11043,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/length`,
 						ID:        cfgpath.NewRoute("length"),
 						Label:     text.Chars(`Length`),
@@ -11054,7 +11054,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/height`,
 						ID:        cfgpath.NewRoute("height"),
 						Label:     text.Chars(`Height`),
@@ -11065,7 +11065,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/girth`,
 						ID:        cfgpath.NewRoute("girth"),
 						Label:     text.Chars(`Girth`),
@@ -11076,7 +11076,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/machinable`,
 						ID:        cfgpath.NewRoute("machinable"),
 						Label:     text.Chars(`Machinable`),
@@ -11087,7 +11087,7 @@ Disallow: /*SID=
 						Default:   `true`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/max_package_weight`,
 						ID:        cfgpath.NewRoute("max_package_weight"),
 						Label:     text.Chars(`Maximum  (Please consult your shipping carrier for maximum supported shipping weight)`),
@@ -11098,7 +11098,7 @@ Disallow: /*SID=
 						Default:   70,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/handling_type`,
 						ID:        cfgpath.NewRoute("handling_type"),
 						Label:     text.Chars(`Calculate Handling Fee`),
@@ -11109,7 +11109,7 @@ Disallow: /*SID=
 						Default:   `F`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/handling_action`,
 						ID:        cfgpath.NewRoute("handling_action"),
 						Label:     text.Chars(`Handling Applied`),
@@ -11120,7 +11120,7 @@ Disallow: /*SID=
 						Default:   `O`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/handling_fee`,
 						ID:        cfgpath.NewRoute("handling_fee"),
 						Label:     text.Chars(`Handling Fee`),
@@ -11131,7 +11131,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/allowed_methods`,
 						ID:        cfgpath.NewRoute("allowed_methods"),
 						Label:     text.Chars(`Allowed Methods`),
@@ -11142,7 +11142,7 @@ Disallow: /*SID=
 						Default:   `0_FCLE,0_FCL,0_FCP,1,2,3,4,6,7,13,16,17,22,23,25,27,28,33,34,35,36,37,42,43,53,55,56,57,61,INT_1,INT_2,INT_4,INT_6,INT_7,INT_8,INT_9,INT_10,INT_11,INT_12,INT_13,INT_14,INT_15,INT_16,INT_20,INT_26`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/free_method`,
 						ID:        cfgpath.NewRoute("free_method"),
 						Label:     text.Chars(`Free Method`),
@@ -11153,7 +11153,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/free_shipping_enable`,
 						ID:        cfgpath.NewRoute("free_shipping_enable"),
 						Label:     text.Chars(`Free Shipping Amount Threshold`),
@@ -11164,7 +11164,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/free_shipping_subtotal`,
 						ID:        cfgpath.NewRoute("free_shipping_subtotal"),
 						Label:     text.Chars(`Free Shipping Amount Threshold`),
@@ -11175,7 +11175,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/specificerrmsg`,
 						ID:        cfgpath.NewRoute("specificerrmsg"),
 						Label:     text.Chars(`Displayed Error Message`),
@@ -11186,7 +11186,7 @@ Disallow: /*SID=
 						Default:   `This shipping method is currently unavailable. If you would like to ship using this shipping method, please contact us.`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/sallowspecific`,
 						ID:        cfgpath.NewRoute("sallowspecific"),
 						Label:     text.Chars(`Ship to Applicable Countries`),
@@ -11197,7 +11197,7 @@ Disallow: /*SID=
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/specificcountry`,
 						ID:        cfgpath.NewRoute("specificcountry"),
 						Label:     text.Chars(`Ship to Specific Countries`),
@@ -11208,7 +11208,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/debug`,
 						ID:        cfgpath.NewRoute("debug"),
 						Label:     text.Chars(`Debug`),
@@ -11219,7 +11219,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/showmethod`,
 						ID:        cfgpath.NewRoute("showmethod"),
 						Label:     text.Chars(`Show Method if Not Applicable`),
@@ -11230,7 +11230,7 @@ Disallow: /*SID=
 						Default:   nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/sort_order`,
 						ID:        cfgpath.NewRoute("sort_order"),
 						Label:     text.Chars(`Sort Order`),
@@ -11246,13 +11246,13 @@ Disallow: /*SID=
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("carriers"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("usps"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/cutoff_cost`,
 						ID:      cfgpath.NewRoute("cutoff_cost"),
 						Type:    element.TypeHidden,
@@ -11261,7 +11261,7 @@ Disallow: /*SID=
 						Default: nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/free_method`,
 						ID:      cfgpath.NewRoute("free_method"),
 						Type:    element.TypeHidden,
@@ -11270,7 +11270,7 @@ Disallow: /*SID=
 						Default: nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/handling`,
 						ID:      cfgpath.NewRoute("handling"),
 						Type:    element.TypeHidden,
@@ -11279,7 +11279,7 @@ Disallow: /*SID=
 						Default: nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/methods`,
 						ID:      cfgpath.NewRoute("methods"),
 						Type:    element.TypeHidden,
@@ -11288,7 +11288,7 @@ Disallow: /*SID=
 						Default: nil,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/model`,
 						ID:      cfgpath.NewRoute("model"),
 						Type:    element.TypeHidden,
@@ -11297,7 +11297,7 @@ Disallow: /*SID=
 						Default: `Magento\Usps\Model\Carrier`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/isproduction`,
 						ID:      cfgpath.NewRoute("isproduction"),
 						Type:    element.TypeHidden,
@@ -11306,7 +11306,7 @@ Disallow: /*SID=
 						Default: false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/active_rma`,
 						ID:      cfgpath.NewRoute("active_rma"),
 						Type:    element.TypeHidden,
@@ -11315,7 +11315,7 @@ Disallow: /*SID=
 						Default: false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `carriers/usps/is_online`,
 						ID:      cfgpath.NewRoute("is_online"),
 						Type:    element.TypeHidden,
@@ -11328,19 +11328,19 @@ Disallow: /*SID=
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("webapi"),
 		Label:     text.Chars("Magento Web API"),
 		SortOrder: 102,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("soap"),
 				Label:     text.Chars(`SOAP Settings`),
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `webapi/soap/charset`,
 						ID:        cfgpath.NewRoute("charset"),
 						Label:     text.Chars(`Default Response Charset`),
@@ -11356,19 +11356,19 @@ Disallow: /*SID=
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("tax"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("weee"),
 				Label:     text.Chars(`Fixed Product Taxes`),
 				SortOrder: 100,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `tax/weee/enable`,
 						ID:        cfgpath.NewRoute("enable"),
 						Label:     text.Chars(`Enable FPT`),
@@ -11379,7 +11379,7 @@ Disallow: /*SID=
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/weee/display_list`,
 						ID:        cfgpath.NewRoute("display_list"),
 						Label:     text.Chars(`Display Prices In Product Lists`),
@@ -11390,7 +11390,7 @@ Disallow: /*SID=
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/weee/display`,
 						ID:        cfgpath.NewRoute("display"),
 						Label:     text.Chars(`Display Prices On Product View Page`),
@@ -11401,7 +11401,7 @@ Disallow: /*SID=
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/weee/display_sales`,
 						ID:        cfgpath.NewRoute("display_sales"),
 						Label:     text.Chars(`Display Prices In Sales Modules`),
@@ -11412,7 +11412,7 @@ Disallow: /*SID=
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/weee/display_email`,
 						ID:        cfgpath.NewRoute("display_email"),
 						Label:     text.Chars(`Display Prices In Emails`),
@@ -11423,7 +11423,7 @@ Disallow: /*SID=
 						Default:   true,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/weee/apply_vat`,
 						ID:        cfgpath.NewRoute("apply_vat"),
 						Label:     text.Chars(`Apply Tax To FPT`),
@@ -11434,7 +11434,7 @@ Disallow: /*SID=
 						Default:   false,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `tax/weee/include_in_subtotal`,
 						ID:        cfgpath.NewRoute("include_in_subtotal"),
 						Label:     text.Chars(`Include FPT In Subtotal`),
@@ -11448,19 +11448,19 @@ Disallow: /*SID=
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("sales"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("totals_sort"),
 				Label:     nil,
 				SortOrder: 0,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales/totals_sort/weee`,
 						ID:        cfgpath.NewRoute("weee"),
 						Label:     text.Chars(`Fixed Product Tax`),
@@ -11476,13 +11476,13 @@ Disallow: /*SID=
 	},
 
 	// Hidden Configuration
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("sales"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("totals_sort"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `sales/totals_sort/weee_tax`,
 						ID:      cfgpath.NewRoute("weee_tax"),
 						Type:    element.TypeHidden,
@@ -11494,13 +11494,13 @@ Disallow: /*SID=
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID: cfgpath.NewRoute("general"),
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID: cfgpath.NewRoute("validator_data"),
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `general/validator_data/input_types`,
 						ID:      cfgpath.NewRoute("input_types"),
 						Type:    element.TypeHidden,
@@ -11513,19 +11513,19 @@ Disallow: /*SID=
 		},
 	},
 
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("wishlist"),
 		Label:     text.Chars("Wishlist"),
 		SortOrder: 140,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("email"),
 				Label:     text.Chars(`Share Options`),
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `wishlist/email/email_identity`,
 						ID:        cfgpath.NewRoute("email_identity"),
 						Label:     text.Chars(`Email Sender`),
@@ -11536,7 +11536,7 @@ Disallow: /*SID=
 						Default:   `general`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `wishlist/email/email_template`,
 						ID:        cfgpath.NewRoute("email_template"),
 						Label:     text.Chars(`Email Template`),
@@ -11547,7 +11547,7 @@ Disallow: /*SID=
 						Default:   `wishlist_email_email_template`,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `wishlist/email/number_limit`,
 						ID:        cfgpath.NewRoute("number_limit"),
 						Label:     text.Chars(`Max Emails Allowed to be Sent`),
@@ -11559,7 +11559,7 @@ Disallow: /*SID=
 						Default:   10,
 					},
 
-					&element.Field{
+					element.Field{
 						// Path: `wishlist/email/text_limit`,
 						ID:        cfgpath.NewRoute("text_limit"),
 						Label:     text.Chars(`Email Text Length Limit`),
@@ -11573,13 +11573,13 @@ Disallow: /*SID=
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("general"),
 				Label:     text.Chars(`General Options`),
 				SortOrder: 1,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `wishlist/general/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enabled`),
@@ -11592,13 +11592,13 @@ Disallow: /*SID=
 				},
 			},
 
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("wishlist_link"),
 				Label:     text.Chars(`My Wish List Link`),
 				SortOrder: 3,
 				Scopes:    scope.PermWebsite,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `wishlist/wishlist_link/use_qty`,
 						ID:        cfgpath.NewRoute("use_qty"),
 						Label:     text.Chars(`Display Wish List Summary`),
@@ -11612,19 +11612,19 @@ Disallow: /*SID=
 			},
 		},
 	},
-	&element.Section{
+	element.Section{
 		ID:        cfgpath.NewRoute("rss"),
 		Label:     nil,
 		SortOrder: 0,
 		Scopes:    scope.PermStore,
 		Groups: element.GroupSlice{
-			&element.Group{
+			element.Group{
 				ID:        cfgpath.NewRoute("wishlist"),
 				Label:     text.Chars(`Wishlist`),
 				SortOrder: 2,
 				Scopes:    scope.PermStore,
 				Fields: element.FieldSlice{
-					&element.Field{
+					element.Field{
 						// Path: `rss/wishlist/active`,
 						ID:        cfgpath.NewRoute("active"),
 						Label:     text.Chars(`Enable RSS`),

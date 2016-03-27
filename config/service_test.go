@@ -37,33 +37,33 @@ func TestService_ApplyDefaults(t *testing.T) {
 	t.Parallel()
 
 	pkgCfg := element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: cfgpath.NewRoute("contact"),
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: cfgpath.NewRoute("contact"),
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: `contact/contact/enabled`,
 							ID:      cfgpath.NewRoute("enabled"),
 							Default: true,
 						},
 					),
 				},
-				&element.Group{
+				element.Group{
 					ID: cfgpath.NewRoute("email"),
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: `contact/email/recipient_email`,
 							ID:      cfgpath.NewRoute("recipient_email"),
 							Default: `hello@example.com`,
 						},
-						&element.Field{
+						element.Field{
 							// Path: `contact/email/sender_email_identity`,
 							ID:      cfgpath.NewRoute("sender_email_identity"),
 							Default: 2.7182818284590452353602874713527,
 						},
-						&element.Field{
+						element.Field{
 							// Path: `contact/email/email_template`,
 							ID:      cfgpath.NewRoute("email_template"),
 							Default: 4711,
@@ -77,7 +77,7 @@ func TestService_ApplyDefaults(t *testing.T) {
 	if _, err := s.ApplyDefaults(pkgCfg); err != nil {
 		t.Fatal(err)
 	}
-	cer, err := pkgCfg.FindFieldByID(cfgpath.NewRoute("contact", "email", "recipient_email"))
+	cer, _, err := pkgCfg.FindField(cfgpath.NewRoute("contact", "email", "recipient_email"))
 	if err != nil {
 		t.Fatal(err)
 	}
