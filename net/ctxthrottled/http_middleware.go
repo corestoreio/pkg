@@ -20,8 +20,8 @@ import (
 	"strconv"
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
+	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/juju/errors"
 	"golang.org/x/net/context"
 	"gopkg.in/throttled/throttled.v2"
@@ -38,7 +38,7 @@ func (hrl *HTTPRateLimit) WithRateLimit() ctxhttp.Middleware {
 	return func(h ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			_, reqStore, err := storenet.FromContextProvider(ctx)
+			_, reqStore, err := store.FromContextProvider(ctx)
 			if err != nil {
 				return err
 			}

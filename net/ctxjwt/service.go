@@ -29,9 +29,6 @@ import (
 // ErrUnexpectedSigningMethod will be returned if some outside dude tries to trick us
 var ErrUnexpectedSigningMethod = errors.New("JWT: Unexpected signing method")
 
-// DefaultExpire duration when a token expires
-var DefaultExpire time.Duration = time.Hour
-
 // Blacklister a backend storage to handle blocked tokens.
 // Default black hole storage. Must be thread safe.
 type Blacklister interface {

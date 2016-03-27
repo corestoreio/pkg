@@ -41,7 +41,6 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
-	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 	"gopkg.in/throttled/throttled.v2"
@@ -100,7 +99,7 @@ func TestHTTPRateLimit_WithoutConfig(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx := storenet.WithContextProvider(
+	ctx := store.WithContextProvider(
 		context.Background(),
 		storemock.NewEurozzyService(scope.MustSetByCode(scope.WebsiteID, "euro")),
 	)
@@ -137,7 +136,7 @@ func TestHTTPRateLimit_WithConfig(t *testing.T) {
 			limiter.Backend.RateLimitDuration.MustFQ(scope.WebsiteID, 1): "i",
 		}),
 	)
-	ctx := storenet.WithContextProvider(
+	ctx := store.WithContextProvider(
 		context.Background(),
 		storemock.NewEurozzyService(
 			scope.MustSetByCode(scope.WebsiteID, "euro"),
@@ -168,7 +167,7 @@ func TestHTTPRateLimit_CustomHandlers(t *testing.T) {
 		return nil
 	})
 
-	ctx := storenet.WithContextProvider(
+	ctx := store.WithContextProvider(
 		context.Background(),
 		storemock.NewEurozzyService(
 			scope.MustSetByCode(scope.WebsiteID, "euro"),
@@ -196,7 +195,7 @@ func TestHTTPRateLimit_RateLimiterFactoryError(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx := storenet.WithContextProvider(
+	ctx := store.WithContextProvider(
 		context.Background(),
 		storemock.NewEurozzyService(
 			scope.MustSetByCode(scope.WebsiteID, "euro"),
@@ -222,7 +221,7 @@ func TestHTTPRateLimit_MissingContext(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx := storenet.WithContextProvider(
+	ctx := store.WithContextProvider(
 		context.Background(),
 		nil,
 	)
@@ -232,7 +231,7 @@ func TestHTTPRateLimit_MissingContext(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = limiter.WithRateLimit()(finalHandler200).ServeHTTPContext(ctx, nil, req)
-	assert.EqualError(t, err, storenet.ErrContextProviderNotFound.Error())
+	assert.EqualError(t, err, store.ErrContextProviderNotFound.Error())
 }
 
 func runHTTPTestCases(t *testing.T, ctx context.Context, h ctxhttp.Handler, cs []httpTestCase) {

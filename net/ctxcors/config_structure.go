@@ -27,10 +27,10 @@ import (
 // of this function for the overall available sections, groups and fields.
 func NewConfigStructure() (element.SectionSlice, error) {
 	return element.NewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: cfgpath.NewRoute(`net`),
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:    cfgpath.NewRoute(`ctxcors`),
 					Label: text.Chars(`CORS Cross Origin Resource Sharing`),
 					Comment: text.Chars(`CORS describes the CrossOriginResourceSharing
@@ -42,7 +42,7 @@ from.`),
 					SortOrder: 160,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: `net/ctxcors/exposed_headers`,
 							ID:    cfgpath.NewRoute(`exposed_headers`),
 							Label: text.Chars(`Exposed Headers`),
@@ -53,7 +53,7 @@ expose to the API of a CORS API specification. Separate via line break (\n)`),
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
 						},
-						&element.Field{
+						element.Field{
 							// Path: `net/ctxcors/allowed_origins`,
 							ID:    cfgpath.NewRoute(`allowed_origins`),
 							Label: text.Chars(`Allowed Origins`),
@@ -68,7 +68,7 @@ Only one wildcard can be used per origin. Default value is ["*"]. Separate via l
 							Scopes:    scope.PermWebsite,
 							Default:   `*`,
 						},
-						&element.Field{
+						element.Field{
 							// Path: `net/ctxcors/allowed_methods`,
 							ID:    cfgpath.NewRoute(`allowed_methods`),
 							Label: text.Chars(`Allowed Methods`),
@@ -80,7 +80,7 @@ use with cross-domain requests. Default value is simple methods (GET and POST). 
 							Scopes:    scope.PermWebsite,
 							Default:   "GET\nPOST",
 						},
-						&element.Field{
+						element.Field{
 							// Path: `net/ctxcors/allowed_headers`,
 							ID:    cfgpath.NewRoute(`allowed_headers`),
 							Label: text.Chars(`Allowed Headers`),
@@ -94,7 +94,7 @@ always appended to the list. Separate via line break (\n)`),
 							Scopes:    scope.PermWebsite,
 							Default:   "Origin\nAccept\nContent-Type",
 						},
-						&element.Field{
+						element.Field{
 							// Path: `net/ctxcors/allow_credentials`,
 							ID:    cfgpath.NewRoute(`allow_credentials`),
 							Label: text.Chars(`Allow Credentials`),
@@ -106,7 +106,7 @@ user credentials like cookies, HTTP authentication or client side SSL certificat
 							Scopes:    scope.PermWebsite,
 							Default:   `false`,
 						},
-						&element.Field{
+						element.Field{
 							// Path: `net/ctxcors/options_passthrough`,
 							ID:    cfgpath.NewRoute(`options_passthrough`),
 							Label: text.Chars(`Options Passthrough`),
@@ -118,7 +118,7 @@ process the OPTIONS method. Turn this on if your application handles OPTIONS.`),
 							Scopes:    scope.PermWebsite,
 							Default:   `false`,
 						},
-						&element.Field{
+						element.Field{
 							// Path: `net/ctxcors/max_age`,
 							ID:    cfgpath.NewRoute(`max_age`),
 							Label: text.Chars(`Max Age`),

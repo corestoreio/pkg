@@ -35,16 +35,16 @@ const DefaultExpire = time.Hour
 // of this function for the overall available sections, groups and fields.
 func NewConfigStructure() (element.SectionSlice, error) {
 	return element.NewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: cfgpath.NewRoute("net"),
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("ctxjwt"),
 					Label:     text.Chars(`JSON Web Token (JWT)`),
 					SortOrder: 40,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: net/ctxjwt/signing_method
 							ID:        cfgpath.NewRoute("signing_method"),
 							Label:     text.Chars(`Token Signing Algorithm`),
@@ -54,7 +54,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermWebsite,
 							Default:   DefaultSigningMethod,
 						},
-						&element.Field{
+						element.Field{
 							// Path: net/ctxjwt/expiration
 							ID:        cfgpath.NewRoute("expiration"),
 							Label:     text.Chars(`Token Expiration`),
@@ -65,7 +65,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermWebsite,
 							Default:   DefaultExpire.String(),
 						},
-						&element.Field{
+						element.Field{
 							// Path: net/ctxjwt/enable_jti
 							ID:        cfgpath.NewRoute("enable_jti"),
 							Label:     text.Chars(`Enable Token ID`),
@@ -76,7 +76,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermWebsite,
 							Default:   `false`,
 						},
-						&element.Field{
+						element.Field{
 							// Path: net/ctxjwt/hmac_password
 							ID:        cfgpath.NewRoute("hmac_password"),
 							Label:     text.Chars(`HMAC Token Password`),
@@ -85,7 +85,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
 						},
-						&element.Field{
+						element.Field{
 							// Path: net/ctxjwt/rsa_key
 							ID:        cfgpath.NewRoute("rsa_key"),
 							Label:     text.Chars(`Private RSA Key`),
@@ -94,7 +94,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
 						},
-						&element.Field{
+						element.Field{
 							// Path: net/ctxjwt/rsa_key_password
 							ID:        cfgpath.NewRoute("rsa_key_password"),
 							Label:     text.Chars(`Private RSA Key Password`),
@@ -104,7 +104,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
 						},
-						&element.Field{
+						element.Field{
 							// Path: net/ctxjwt/ecdsa_key
 							ID:        cfgpath.NewRoute("ecdsa_key"),
 							Label:     text.Chars(`Private ECDSA Key`),
@@ -114,7 +114,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Visible:   element.VisibleYes,
 							Scopes:    scope.PermWebsite,
 						},
-						&element.Field{
+						element.Field{
 							// Path: net/ctxjwt/ecdsa_key_password
 							ID:        cfgpath.NewRoute("ecdsa_key_password"),
 							Label:     text.Chars(`Private ECDSA Key Password`),

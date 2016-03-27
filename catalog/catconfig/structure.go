@@ -36,20 +36,20 @@ func MustNewConfigStructure() element.SectionSlice {
 // of this function for the overall available sections, groups and fields.
 func NewConfigStructure() (element.SectionSlice, error) {
 	return element.NewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        cfgpath.NewRoute("catalog"),
 			Label:     text.Chars(`Catalog`),
 			SortOrder: 40,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Catalog::config_catalog
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("fields_masks"),
 					Label:     text.Chars(`Product Fields Auto-Generation`),
 					SortOrder: 90,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/fields_masks/sku
 							ID:        cfgpath.NewRoute("sku"),
 							Label:     text.Chars(`Mask for SKU`),
@@ -61,7 +61,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   `{{name}}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/fields_masks/meta_title
 							ID:        cfgpath.NewRoute("meta_title"),
 							Label:     text.Chars(`Mask for Meta Title`),
@@ -73,7 +73,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   `{{name}}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/fields_masks/meta_keyword
 							ID:        cfgpath.NewRoute("meta_keyword"),
 							Label:     text.Chars(`Mask for Meta Keywords`),
@@ -85,7 +85,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   `{{name}}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/fields_masks/meta_description
 							ID:        cfgpath.NewRoute("meta_description"),
 							Label:     text.Chars(`Mask for Meta Description`),
@@ -99,13 +99,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("frontend"),
 					Label:     text.Chars(`Storefront`),
 					SortOrder: 100,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/frontend/list_mode
 							ID:        cfgpath.NewRoute("list_mode"),
 							Label:     text.Chars(`List Mode`),
@@ -117,7 +117,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Catalog\Model\Config\Source\ListMode
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/frontend/grid_per_page_values
 							ID:        cfgpath.NewRoute("grid_per_page_values"),
 							Label:     text.Chars(`Products per Page on Grid Allowed Values`),
@@ -129,7 +129,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   `9,15,30`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/frontend/grid_per_page
 							ID:        cfgpath.NewRoute("grid_per_page"),
 							Label:     text.Chars(`Products per Page on Grid Default Value`),
@@ -141,7 +141,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   9,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/frontend/list_per_page_values
 							ID:        cfgpath.NewRoute("list_per_page_values"),
 							Label:     text.Chars(`Products per Page on List Allowed Values`),
@@ -153,7 +153,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   `5,10,15,20,25`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/frontend/list_per_page
 							ID:        cfgpath.NewRoute("list_per_page"),
 							Label:     text.Chars(`Products per Page on List Default Value`),
@@ -165,7 +165,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   10,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/frontend/flat_catalog_category
 							ID:        cfgpath.NewRoute("flat_catalog_category"),
 							Label:     text.Chars(`Use Flat Catalog Category`),
@@ -178,7 +178,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/frontend/flat_catalog_product
 							ID:        cfgpath.NewRoute("flat_catalog_product"),
 							Label:     text.Chars(`Use Flat Catalog Product`),
@@ -190,7 +190,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/frontend/default_sort_by
 							ID:        cfgpath.NewRoute("default_sort_by"),
 							Label:     text.Chars(`Product Listing Sort by`),
@@ -202,7 +202,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Catalog\Model\Config\Source\ListSort
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/frontend/list_allow_all
 							ID:        cfgpath.NewRoute("list_allow_all"),
 							Label:     text.Chars(`Allow All Products per Page`),
@@ -214,7 +214,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/frontend/parse_url_directives
 							ID:        cfgpath.NewRoute("parse_url_directives"),
 							Label:     text.Chars(`Allow Dynamic Media URLs in Products and Categories`),
@@ -229,13 +229,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("placeholder"),
 					Label:     text.Chars(`Product Image Placeholders`),
 					SortOrder: 300,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/placeholder/placeholder
 							ID:        cfgpath.NewRoute("placeholder"),
 							Type:      element.TypeImage,
@@ -247,13 +247,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("seo"),
 					Label:     text.Chars(`Search Engine Optimization`),
 					SortOrder: 500,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/seo/title_separator
 							ID:        cfgpath.NewRoute("title_separator"),
 							Label:     text.Chars(`Page Title Separator`),
@@ -264,7 +264,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   `-`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/seo/category_canonical_tag
 							ID:        cfgpath.NewRoute("category_canonical_tag"),
 							Label:     text.Chars(`Use Canonical Link Meta Tag For Categories`),
@@ -276,7 +276,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/seo/product_canonical_tag
 							ID:        cfgpath.NewRoute("product_canonical_tag"),
 							Label:     text.Chars(`Use Canonical Link Meta Tag For Products`),
@@ -290,13 +290,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("price"),
 					Label:     text.Chars(`Price`),
 					SortOrder: 400,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/price/scope
 							ID:        cfgpath.NewRoute("scope"),
 							Label:     text.Chars(`Catalog Price Scope`),
@@ -311,13 +311,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("navigation"),
 					Label:     text.Chars(`Category Top Navigation`),
 					SortOrder: 500,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/navigation/max_depth
 							ID:        cfgpath.NewRoute("max_depth"),
 							Label:     text.Chars(`Maximal Depth`),
@@ -329,13 +329,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("custom_options"),
 					Label:     text.Chars(`Date & Time Custom Options`),
 					SortOrder: 700,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/custom_options/use_calendar
 							ID:        cfgpath.NewRoute("use_calendar"),
 							Label:     text.Chars(`Use JavaScript Calendar`),
@@ -346,7 +346,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/custom_options/date_fields_order
 							ID:        cfgpath.NewRoute("date_fields_order"),
 							Label:     text.Chars(`Date Fields Order`),
@@ -357,7 +357,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default:   `m,d,y`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/custom_options/time_format
 							ID:        cfgpath.NewRoute("time_format"),
 							Label:     text.Chars(`Time Format`),
@@ -369,7 +369,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Catalog\Model\Config\Source\TimeFormat
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/custom_options/year_range
 							ID:        cfgpath.NewRoute("year_range"),
 							Label:     text.Chars(`Year Range`),
@@ -383,16 +383,16 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: cfgpath.NewRoute("design"),
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("watermark"),
 					Label:     text.Chars(`Product Image Watermarks`),
 					SortOrder: 400,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: design/watermark/size
 							ID:        cfgpath.NewRoute("size"),
 							Label:     text.Chars(`Watermark Default Size`),
@@ -403,7 +403,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/watermark/imageOpacity
 							ID:        cfgpath.NewRoute("imageOpacity"),
 							Label:     text.Chars(`Watermark Opacity, Percent`),
@@ -413,7 +413,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/watermark/image
 							ID:        cfgpath.NewRoute("image"),
 							Label:     text.Chars(`Watermark`),
@@ -425,7 +425,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// BackendModel: Magento\Config\Model\Config\Backend\Image
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/watermark/position
 							ID:        cfgpath.NewRoute("position"),
 							Label:     text.Chars(`Watermark Position`),
@@ -439,13 +439,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: cfgpath.NewRoute("cms"),
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: cfgpath.NewRoute("wysiwyg"),
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: cms/wysiwyg/use_static_urls_in_catalog
 							ID:        cfgpath.NewRoute("use_static_urls_in_catalog"),
 							Label:     text.Chars(`Use Static URLs for Media Content in WYSIWYG for Catalog`),
@@ -460,16 +460,16 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: cfgpath.NewRoute("rss"),
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("catalog"),
 					Label:     text.Chars(`Catalog`),
 					SortOrder: 3,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: rss/catalog/new
 							ID:        cfgpath.NewRoute("new"),
 							Label:     text.Chars(`New Products`),
@@ -480,7 +480,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: rss/catalog/special
 							ID:        cfgpath.NewRoute("special"),
 							Label:     text.Chars(`Special Products`),
@@ -491,7 +491,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Config\Model\Config\Source\Enabledisable
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: rss/catalog/category
 							ID:        cfgpath.NewRoute("category"),
 							Label:     text.Chars(`Top Level Category`),
@@ -507,13 +507,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: cfgpath.NewRoute("catalog"),
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: cfgpath.NewRoute("product"),
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/product/flat
 							ID:      cfgpath.NewRoute(`flat`),
 							Type:    element.TypeHidden,
@@ -521,7 +521,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default: `{"max_index_count":"64"}`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/product/default_tax_group
 							ID:      cfgpath.NewRoute(`default_tax_group`),
 							Type:    element.TypeHidden,
@@ -531,10 +531,10 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: cfgpath.NewRoute("seo"),
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/seo/product_url_suffix
 							ID:      cfgpath.NewRoute(`product_url_suffix`),
 							Type:    element.TypeHidden,
@@ -542,7 +542,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default: `.html`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/seo/category_url_suffix
 							ID:      cfgpath.NewRoute(`category_url_suffix`),
 							Type:    element.TypeHidden,
@@ -550,7 +550,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default: `.html`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/seo/product_use_categories
 							ID:      cfgpath.NewRoute(`product_use_categories`),
 							Type:    element.TypeHidden,
@@ -558,7 +558,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default: false,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: catalog/seo/save_rewrites_history
 							ID:      cfgpath.NewRoute(`save_rewrites_history`),
 							Type:    element.TypeHidden,
@@ -568,10 +568,10 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: cfgpath.NewRoute("custom_options"),
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: catalog/custom_options/forbidden_extensions
 							ID:      cfgpath.NewRoute(`forbidden_extensions`),
 							Type:    element.TypeHidden,
@@ -582,13 +582,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: cfgpath.NewRoute("system"),
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: cfgpath.NewRoute("media_storage_configuration"),
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/media_storage_configuration/allowed_resources
 							ID:      cfgpath.NewRoute(`allowed_resources`),
 							Type:    element.TypeHidden,

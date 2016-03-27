@@ -27,20 +27,20 @@ import (
 // of this function for the overall available sections, groups and fields.
 func NewConfigStructure() (element.SectionSlice, error) {
 	return element.NewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        cfgpath.NewRoute("currency"),
 			Label:     text.Chars(`Currency Setup`),
 			SortOrder: 60,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::currency
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("options"),
 					Label:     text.Chars(`Currency Options`),
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: currency/options/base
 							ID:        cfgpath.NewRoute("base"),
 							Label:     text.Chars(`Base Currency`),
@@ -54,7 +54,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: currency/options/default
 							ID:        cfgpath.NewRoute("default"),
 							Label:     text.Chars(`Default Display Currency`),
@@ -67,7 +67,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Currency
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: currency/options/allow
 							ID:         cfgpath.NewRoute("allow"),
 							Label:      text.Chars(`Allowed Currencies`),
@@ -83,13 +83,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("webservicex"),
 					Label:     text.Chars(`Webservicex`),
 					SortOrder: 40,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: currency/webservicex/timeout
 							ID:      cfgpath.NewRoute("timeout"),
 							Label:   text.Chars(`Connection Timeout in Seconds`),
@@ -101,13 +101,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("import"),
 					Label:     text.Chars(`Scheduled Import Settings`),
 					SortOrder: 50,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: currency/import/enabled
 							ID:        cfgpath.NewRoute("enabled"),
 							Label:     text.Chars(`Enabled`),
@@ -119,7 +119,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: currency/import/error_email
 							ID:        cfgpath.NewRoute("error_email"),
 							Label:     text.Chars(`Error Email Recipient`),
@@ -129,7 +129,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: currency/import/error_email_identity
 							ID:        cfgpath.NewRoute("error_email_identity"),
 							Label:     text.Chars(`Error Email Sender`),
@@ -141,7 +141,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: currency/import/error_email_template
 							ID:        cfgpath.NewRoute("error_email_template"),
 							Label:     text.Chars(`Error Email Template`),
@@ -154,7 +154,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: currency/import/frequency
 							ID:        cfgpath.NewRoute("frequency"),
 							Label:     text.Chars(`Frequency`),
@@ -165,7 +165,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Cron\Model\Config\Source\Frequency
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: currency/import/service
 							ID:        cfgpath.NewRoute("service"),
 							Label:     text.Chars(`Service`),
@@ -177,7 +177,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Directory\Model\Currency\Import\Source\Service
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: currency/import/time
 							ID:        cfgpath.NewRoute("time"),
 							Label:     text.Chars(`Start Time`),
@@ -190,16 +190,16 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: cfgpath.NewRoute("system"),
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("currency"),
 					Label:     text.Chars(`Currency`),
 					SortOrder: 50,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/currency/installed
 							ID:         cfgpath.NewRoute("installed"),
 							Label:      text.Chars(`Installed Currencies`),
@@ -216,16 +216,16 @@ func NewConfigStructure() (element.SectionSlice, error) {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: cfgpath.NewRoute("general"),
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("country"),
 					Label:     text.Chars(`Country Options`),
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: general/country/allow
 							ID:         cfgpath.NewRoute("allow"),
 							Label:      text.Chars(`Allow Countries`),
@@ -238,7 +238,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/country/default
 							ID:        cfgpath.NewRoute("default"),
 							Label:     text.Chars(`Default Country`),
@@ -249,7 +249,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/country/eu_countries
 							ID:        cfgpath.NewRoute("eu_countries"),
 							Label:     text.Chars(`European Union Countries`),
@@ -260,7 +260,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/country/destinations
 							ID:        cfgpath.NewRoute("destinations"),
 							Label:     text.Chars(`Top destinations`),
@@ -271,7 +271,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermDefault,
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
-						&element.Field{
+						element.Field{
 							// Path: general/country/optional_zip_countries
 							ID:         cfgpath.NewRoute("optional_zip_countries"),
 							Label:      text.Chars(`Zip/Postal Code is Optional for`),
@@ -286,13 +286,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("locale"),
 					Label:     text.Chars(`Locale Options`),
 					SortOrder: 8,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: general/locale/timezone
 							ID:        cfgpath.NewRoute("timezone"),
 							Label:     text.Chars(`Timezone`),
@@ -305,7 +305,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Timezone
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/code
 							ID:        cfgpath.NewRoute("code"),
 							Label:     text.Chars(`Locale`),
@@ -317,7 +317,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Config\Model\Config\Source\Locale
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/firstday
 							ID:        cfgpath.NewRoute("firstday"),
 							Label:     text.Chars(`First Day of Week`),
@@ -328,7 +328,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Weekdays
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/weekend
 							ID:         cfgpath.NewRoute("weekend"),
 							Label:      text.Chars(`Weekend Days`),
@@ -339,7 +339,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							CanBeEmpty: true,
 							// SourceModel: Magento\Config\Model\Config\Source\Locale\Weekdays
 						},
-						&element.Field{
+						element.Field{
 							// Path: general/locale/weight_unit
 							ID:        cfgpath.NewRoute("weight_unit"),
 							Label:     text.Chars(`Weight Unit`),
@@ -352,13 +352,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 						},
 					),
 				},
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("region"),
 					Label:     text.Chars(`State Options`),
 					SortOrder: 4,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: general/region/state_required
 							ID:        cfgpath.NewRoute("state_required"),
 							Label:     text.Chars(`State is Required for`),
@@ -369,7 +369,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/region/display_all
 							ID:        cfgpath.NewRoute("display_all"),
 							Label:     text.Chars(`Allow to Choose State if It is Optional for Country`),
@@ -385,13 +385,13 @@ func NewConfigStructure() (element.SectionSlice, error) {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: cfgpath.NewRoute("general"),
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: cfgpath.NewRoute("locale"),
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: general/locale/datetime_format_long
 							ID:      cfgpath.NewRoute("datetime_format_long"),
 							Type:    element.TypeHidden,
@@ -399,7 +399,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default: `%A, %B %e %Y [%I:%M %p]`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/datetime_format_medium
 							ID:      cfgpath.NewRoute("datetime_format_medium"),
 							Type:    element.TypeHidden,
@@ -407,7 +407,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default: `%a, %b %e %Y [%I:%M %p]`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/datetime_format_short
 							ID:      cfgpath.NewRoute("datetime_format_short"),
 							Type:    element.TypeHidden,
@@ -415,7 +415,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default: `%m/%d/%y [%I:%M %p]`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/date_format_long
 							ID:      cfgpath.NewRoute("date_format_long"),
 							Type:    element.TypeHidden,
@@ -423,7 +423,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default: `%A, %B %e %Y`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/date_format_medium
 							ID:      cfgpath.NewRoute("date_format_medium"),
 							Type:    element.TypeHidden,
@@ -431,7 +431,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default: `%a, %b %e %Y`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/date_format_short
 							ID:      cfgpath.NewRoute("date_format_short"),
 							Type:    element.TypeHidden,
@@ -439,7 +439,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Default: `%m/%d/%y`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/locale/language
 							ID:      cfgpath.NewRoute("language"),
 							Type:    element.TypeHidden,

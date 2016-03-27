@@ -17,7 +17,6 @@ package ctxjwt
 import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/element"
-	"github.com/corestoreio/csfw/config/source"
 )
 
 // PkgBackend just exported for the sake of documentation. See fields
@@ -84,7 +83,7 @@ func (pp *PkgBackend) Load(cfgStruct element.SectionSlice) *PkgBackend {
 
 	pp.NetCtxjwtSigningMethod = NewConfigSigningMethod(`net/ctxjwt/signing_method`, opt)
 	pp.NetCtxjwtExpiration = cfgmodel.NewDuration(`net/ctxjwt/expiration`, opt)
-	pp.NetCtxjwtEnableJTI = cfgmodel.NewBool(`net/ctxjwt/enable_jti`, opt, source.EnableDisable)
+	pp.NetCtxjwtEnableJTI = cfgmodel.NewBool(`net/ctxjwt/enable_jti`, opt)
 	pp.NetCtxjwtHmacPassword = cfgmodel.NewObscure(`net/ctxjwt/hmac_password`, opt)
 	pp.NetCtxjwtRSAKey = cfgmodel.NewObscure(`net/ctxjwt/rsa_key`, opt)
 	pp.NetCtxjwtRSAKeyPassword = cfgmodel.NewObscure(`net/ctxjwt/rsa_key_password`, opt)

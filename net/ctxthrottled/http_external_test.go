@@ -28,18 +28,17 @@
 package ctxthrottled_test
 
 import (
+	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 	"time"
 
-	"io/ioutil"
-
-	"fmt"
-	"sync"
-
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxthrottled"
+	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/store/storenet"
@@ -55,7 +54,7 @@ func TestHTTPRateLimit_Concurrent_Map(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ctx := storenet.WithContextProvider(
+	ctx := store.WithContextProvider(
 		context.Background(),
 		storemock.NewEurozzyService(
 			scope.MustSetByCode(scope.WebsiteID, "euro"),
@@ -66,7 +65,7 @@ func TestHTTPRateLimit_Concurrent_Map(t *testing.T) {
 		ctx,
 		ctxhttp.Chain(
 			ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-				_, reqStore, err := storenet.FromContextProvider(ctx)
+				_, reqStore, err := store.FromContextProvider(ctx)
 				if err != nil {
 					return err
 				}

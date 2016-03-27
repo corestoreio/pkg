@@ -22,7 +22,6 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
-	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -56,7 +55,7 @@ func TestCorsCurrent_ShouldCreateANewScopedBasedCors(t *testing.T) {
 	if dftStore.Website.Config == nil {
 		t.Fatalf("Website Config unexpected nil: %#v", dftStore.Website)
 	}
-	ctx := storenet.WithContextProvider(context.Background(), storeSrv, dftStore)
+	ctx := store.WithContextProvider(context.Background(), storeSrv, dftStore)
 
 	c := MustNew(WithBackendApplied(be, dftStore.Website.Config)) // OZ website ID = 2 and AU store ID = 5
 

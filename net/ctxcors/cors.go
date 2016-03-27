@@ -26,8 +26,8 @@ import (
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/httputil"
+	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/log"
 	"golang.org/x/net/context"
@@ -124,7 +124,7 @@ func (c *Cors) Options(opts ...Option) (*Cors, error) {
 // The applied configuration
 // is used for the all store scopes or if the PkgBackend has been provided then
 // on a website specific level.
-// Middleware expects to find in a context a storenet.FromContextProvider().
+// Middleware expects to find in a context a store.FromContextProvider().
 func (c *Cors) WithCORS() ctxhttp.Middleware {
 	csc := c.initCache()
 
@@ -165,7 +165,7 @@ func (c *Cors) current(csc *scopeCache, ctx context.Context) (*Cors, error) {
 		return c, nil
 	}
 
-	_, st, err := storenet.FromContextProvider(ctx)
+	_, st, err := store.FromContextProvider(ctx)
 	if err != nil {
 		if c.Log.IsInfo() {
 			c.Log.Info("ctxcors.Cors.current.store.FromContextReader", "err", err)

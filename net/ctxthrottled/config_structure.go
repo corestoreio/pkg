@@ -27,16 +27,16 @@ import (
 // of this function for the overall available sections, groups and fields.
 func NewConfigStructure() (element.SectionSlice, error) {
 	return element.NewConfiguration(
-		&element.Section{
+		element.Section{
 			ID: cfgpath.NewRoute("net"),
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("ctxthrottled"),
 					Label:     text.Chars(`Rate throtteling`),
 					SortOrder: 40,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: net/ctxthrottled/burst
 							ID:        cfgpath.NewRoute("burst"),
 							Label:     text.Chars(`Burst`),
@@ -47,7 +47,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermWebsite,
 							Default:   5,
 						},
-						&element.Field{
+						element.Field{
 							// Path: net/ctxthrottled/requests
 							ID:        cfgpath.NewRoute("requests"),
 							Label:     text.Chars(`Requests`),
@@ -58,7 +58,7 @@ func NewConfigStructure() (element.SectionSlice, error) {
 							Scopes:    scope.PermWebsite,
 							Default:   100,
 						},
-						&element.Field{
+						element.Field{
 							// Path: net/ctxthrottled/duration
 							ID:        cfgpath.NewRoute("duration"),
 							Label:     text.Chars(`Duration`),
