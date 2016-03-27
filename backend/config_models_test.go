@@ -19,6 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
@@ -32,7 +33,7 @@ func TestConfigRedirectToBase(t *testing.T) {
 		cfgmodel.WithFieldFromSectionSlice(backend.ConfigStructure),
 	)
 
-	redirCode, err := r.Get(config.NewMockGetter().NewScoped(0, 0, 0))
+	redirCode, err := r.Get(cfgmock.NewService().NewScoped(0, 0))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,7 +43,7 @@ func TestConfigRedirectToBase(t *testing.T) {
 		redirCode,
 	)
 
-	redirCode, err = r.Get(config.NewMockGetter().NewScoped(10, 0, 13))
+	redirCode, err = r.Get(cfgmock.NewService().NewScoped(10, 13))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -54,8 +55,8 @@ func TestConfigRedirectToBase(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cr := config.NewMockGetter(
-		config.WithMockValues(config.MockPV{
+	cr := cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{
 			webURLRedirectToBasePath.String():                         2,
 			webURLRedirectToBasePath.Bind(scope.StoreID, 33).String(): 34,
 		}),
@@ -65,9 +66,9 @@ func TestConfigRedirectToBase(t *testing.T) {
 		sg   config.ScopedGetter
 		want int
 	}{
-		{cr.NewScoped(0, 0, 0), 2},
-		{cr.NewScoped(1, 1, 2), 2},
-		{cr.NewScoped(1, 1, 33), 34},
+		{cr.NewScoped(0, 0), 2},
+		{cr.NewScoped(1, 2), 2},
+		{cr.NewScoped(1, 33), 34},
 	}
 	for i, test := range tests {
 		code, err := r.Get(test.sg)
@@ -78,7 +79,7 @@ func TestConfigRedirectToBase(t *testing.T) {
 		assert.False(t, r.HasErrors(), "Index %d", i)
 	}
 
-	mw := new(config.MockWrite)
+	mw := new(cfgmock.Write)
 	assert.EqualError(t, r.Write(mw, 200, scope.DefaultID, 0),
 		"The value '200' cannot be found within the allowed Options():\n[{\"Value\":0,\"Label\":\"No\"},{\"Value\":1,\"Label\":\"Yes (302 Found)\"},{\"Value\":302,\"Label\":\"Yes (302 Found)\"},{\"Value\":301,\"Label\":\"Yes (301 Moved Permanently)\"}]\n\nJSON Error: %!s(<nil>)",
 	) // 200 not allowed
@@ -94,12 +95,12 @@ func BenchmarkConfigRedirectToBase(b *testing.B) {
 		b.Fatal(err)
 	}
 
-	sg := config.NewMockGetter(
-		config.WithMockValues(config.MockPV{
+	sg := cfgmock.NewService(
+		cfgmock.WithPV(cfgmock.PathValue{
 			webURLRedirectToBasePath.String():                           2,
 			webURLRedirectToBasePath.Bind(scope.WebsiteID, 33).String(): 34,
 		}),
-	).NewScoped(33, 0, 1)
+	).NewScoped(33, 1)
 
 	b.ReportAllocs()
 	b.ResetTimer()

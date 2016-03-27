@@ -29,14 +29,14 @@ var ConfigStructure element.SectionSlice
 
 func init() {
 	ConfigStructure = element.MustNewConfiguration(
-		&element.Section{
+		element.Section{
 			ID:        cfgpath.NewRoute("advanced"),
 			Label:     text.Chars(`Advanced`),
 			SortOrder: 910,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::advanced
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("modules_disable_output"),
 					Label:     text.Chars(`Disable Modules Output`),
 					SortOrder: 2,
@@ -45,20 +45,20 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID:        cfgpath.NewRoute("trans_email"),
 			Label:     text.Chars(`Store Email Addresses`),
 			SortOrder: 90,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::trans_email
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("ident_custom1"),
 					Label:     text.Chars(`Custom Email 1`),
 					SortOrder: 4,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_custom1/email
 							ID:        cfgpath.NewRoute("email"),
 							Label:     text.Chars(`Sender Email`),
@@ -69,7 +69,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_custom1/name
 							ID:        cfgpath.NewRoute("name"),
 							Label:     text.Chars(`Sender Name`),
@@ -82,13 +82,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("ident_custom2"),
 					Label:     text.Chars(`Custom Email 2`),
 					SortOrder: 5,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_custom2/email
 							ID:        cfgpath.NewRoute("email"),
 							Label:     text.Chars(`Sender Email`),
@@ -99,7 +99,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_custom2/name
 							ID:        cfgpath.NewRoute("name"),
 							Label:     text.Chars(`Sender Name`),
@@ -112,13 +112,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("ident_general"),
 					Label:     text.Chars(`General Contact`),
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_general/email
 							ID:        cfgpath.NewRoute("email"),
 							Label:     text.Chars(`Sender Email`),
@@ -129,7 +129,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_general/name
 							ID:        cfgpath.NewRoute("name"),
 							Label:     text.Chars(`Sender Name`),
@@ -142,13 +142,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("ident_sales"),
 					Label:     text.Chars(`Sales Representative`),
 					SortOrder: 2,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_sales/email
 							ID:        cfgpath.NewRoute("email"),
 							Label:     text.Chars(`Sender Email`),
@@ -159,7 +159,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_sales/name
 							ID:        cfgpath.NewRoute("name"),
 							Label:     text.Chars(`Sender Name`),
@@ -172,13 +172,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("ident_support"),
 					Label:     text.Chars(`Customer Support`),
 					SortOrder: 3,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_support/email
 							ID:        cfgpath.NewRoute("email"),
 							Label:     text.Chars(`Sender Email`),
@@ -189,7 +189,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Email\Address
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: trans_email/ident_support/name
 							ID:        cfgpath.NewRoute("name"),
 							Label:     text.Chars(`Sender Name`),
@@ -203,20 +203,20 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID:        cfgpath.NewRoute("design"),
 			Label:     text.Chars(`Design`),
 			SortOrder: 30,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Config::config_design
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("theme"),
 					Label:     text.Chars(`Design Theme`),
 					SortOrder: 1,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: design/theme/theme_id
 							ID:        cfgpath.NewRoute("theme_id"),
 							Label:     text.Chars(`Design Theme`),
@@ -229,7 +229,7 @@ func init() {
 							// SourceModel: Magento\Framework\View\Design\Theme\Label::getLabelsCollectionForSystemConfiguration
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/theme/ua_regexp
 							ID:        cfgpath.NewRoute("ua_regexp"),
 							Label:     text.Chars(`User-Agent Exceptions`),
@@ -244,13 +244,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("pagination"),
 					Label:     text.Chars(`Pagination`),
 					SortOrder: 500,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: design/pagination/pagination_frame
 							ID:        cfgpath.NewRoute("pagination_frame"),
 							Label:     text.Chars(`Pagination Frame`),
@@ -261,7 +261,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/pagination/pagination_frame_skip
 							ID:        cfgpath.NewRoute("pagination_frame_skip"),
 							Label:     text.Chars(`Pagination Frame Skip`),
@@ -272,7 +272,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/pagination/anchor_text_for_previous
 							ID:        cfgpath.NewRoute("anchor_text_for_previous"),
 							Label:     text.Chars(`Anchor Text for Previous`),
@@ -283,7 +283,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: design/pagination/anchor_text_for_next
 							ID:        cfgpath.NewRoute("anchor_text_for_next"),
 							Label:     text.Chars(`Anchor Text for Next`),
@@ -297,20 +297,20 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID:        cfgpath.NewRoute("dev"),
 			Label:     text.Chars(`Developer`),
 			SortOrder: 920,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::dev
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("debug"),
 					Label:     text.Chars(`Debug`),
 					SortOrder: 20,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: dev/debug/template_hints_storefront
 							ID:        cfgpath.NewRoute("template_hints_storefront"),
 							Label:     text.Chars(`Enabled Template Path Hints for Storefront`),
@@ -321,7 +321,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: dev/debug/template_hints_admin
 							ID:        cfgpath.NewRoute("template_hints_admin"),
 							Label:     text.Chars(`Enabled Template Path Hints for Admin`),
@@ -332,7 +332,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: dev/debug/template_hints_blocks
 							ID:        cfgpath.NewRoute("template_hints_blocks"),
 							Label:     text.Chars(`Add Block Names to Hints`),
@@ -345,13 +345,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("template"),
 					Label:     text.Chars(`Template Settings`),
 					SortOrder: 25,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: dev/template/allow_symlink
 							ID:        cfgpath.NewRoute("allow_symlink"),
 							Label:     text.Chars(`Allow Symlinks`),
@@ -363,7 +363,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: dev/template/minify_html
 							ID:        cfgpath.NewRoute("minify_html"),
 							Label:     text.Chars(`Minify Html`),
@@ -377,13 +377,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("translate_inline"),
 					Label:     text.Chars(`Translate Inline`),
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: dev/translate_inline/active
 							ID:        cfgpath.NewRoute("active"),
 							Label:     text.Chars(`Enabled for Storefront`),
@@ -395,7 +395,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: dev/translate_inline/active_admin
 							ID:        cfgpath.NewRoute("active_admin"),
 							Label:     text.Chars(`Enabled for Admin`),
@@ -410,13 +410,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("js"),
 					Label:     text.Chars(`JavaScript Settings`),
 					SortOrder: 100,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: dev/js/merge_files
 							ID:        cfgpath.NewRoute("merge_files"),
 							Label:     text.Chars(`Merge JavaScript Files`),
@@ -427,7 +427,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: dev/js/enable_js_bundling
 							ID:        cfgpath.NewRoute("enable_js_bundling"),
 							Label:     text.Chars(`Enable JavaScript Bundling`),
@@ -438,7 +438,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: dev/js/minify_files
 							ID:        cfgpath.NewRoute("minify_files"),
 							Label:     text.Chars(`Minify JavaScript Files`),
@@ -451,13 +451,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("css"),
 					Label:     text.Chars(`CSS Settings`),
 					SortOrder: 110,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: dev/css/merge_css_files
 							ID:        cfgpath.NewRoute("merge_css_files"),
 							Label:     text.Chars(`Merge CSS Files`),
@@ -468,7 +468,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: dev/css/minify_files
 							ID:        cfgpath.NewRoute("minify_files"),
 							Label:     text.Chars(`Minify CSS Files`),
@@ -481,13 +481,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("image"),
 					Label:     text.Chars(`Image Processing Settings`),
 					SortOrder: 120,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: dev/image/default_adapter
 							ID:        cfgpath.NewRoute("default_adapter"),
 							Label:     text.Chars(`Image Adapter`),
@@ -502,13 +502,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("static"),
 					Label:     text.Chars(`Static Files Settings`),
 					SortOrder: 130,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: dev/static/sign
 							ID:        cfgpath.NewRoute("sign"),
 							Label:     text.Chars(`Sign Static Files`),
@@ -522,20 +522,20 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID:        cfgpath.NewRoute("general"),
 			Label:     text.Chars(`General`),
 			SortOrder: 10,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Config::config_general
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("store_information"),
 					Label:     text.Chars(`Store Information`),
 					SortOrder: 100,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: general/store_information/name
 							ID:        cfgpath.NewRoute("name"),
 							Label:     text.Chars(`Store Name`),
@@ -545,7 +545,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/store_information/phone
 							ID:        cfgpath.NewRoute("phone"),
 							Label:     text.Chars(`Store Phone Number`),
@@ -555,7 +555,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/store_information/hours
 							ID:        cfgpath.NewRoute("hours"),
 							Label:     text.Chars(`Store Hours of Operation`),
@@ -565,7 +565,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/store_information/country_id
 							ID:         cfgpath.NewRoute("country_id"),
 							Label:      text.Chars(`Country`),
@@ -577,7 +577,7 @@ func init() {
 							// SourceModel: Magento\Directory\Model\Config\Source\Country
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/store_information/region_id
 							ID:        cfgpath.NewRoute("region_id"),
 							Label:     text.Chars(`Region/State`),
@@ -587,7 +587,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/store_information/postcode
 							ID:        cfgpath.NewRoute("postcode"),
 							Label:     text.Chars(`ZIP/Postal Code`),
@@ -597,7 +597,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/store_information/city
 							ID:        cfgpath.NewRoute("city"),
 							Label:     text.Chars(`City`),
@@ -607,7 +607,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/store_information/street_line1
 							ID:        cfgpath.NewRoute("street_line1"),
 							Label:     text.Chars(`Street Address`),
@@ -617,7 +617,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/store_information/street_line2
 							ID:        cfgpath.NewRoute("street_line2"),
 							Label:     text.Chars(`Street Address Line 2`),
@@ -627,7 +627,7 @@ func init() {
 							Scopes:    scope.PermWebsite,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: general/store_information/merchant_vat_number
 							ID:         cfgpath.NewRoute("merchant_vat_number"),
 							Label:      text.Chars(`VAT Number`),
@@ -640,13 +640,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("single_store_mode"),
 					Label:     text.Chars(`Single-Store Mode`),
 					SortOrder: 150,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: general/single_store_mode/enabled
 							ID:        cfgpath.NewRoute("enabled"),
 							Label:     text.Chars(`Enable Single-Store Mode`),
@@ -661,20 +661,20 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID:        cfgpath.NewRoute("system"),
 			Label:     text.Chars(`System`),
 			SortOrder: 900,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Config::config_system
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("smtp"),
 					Label:     text.Chars(`Mail Sending Settings`),
 					SortOrder: 20,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/smtp/disable
 							ID:        cfgpath.NewRoute("disable"),
 							Label:     text.Chars(`Disable Email Communications`),
@@ -685,7 +685,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/smtp/host
 							ID:        cfgpath.NewRoute("host"),
 							Label:     text.Chars(`Host`),
@@ -696,7 +696,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/smtp/port
 							ID:        cfgpath.NewRoute("port"),
 							Label:     text.Chars(`Port (25)`),
@@ -707,7 +707,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/smtp/set_return_path
 							ID:        cfgpath.NewRoute("set_return_path"),
 							Label:     text.Chars(`Set Return-Path`),
@@ -718,7 +718,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesnocustom
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/smtp/return_path_email
 							ID:        cfgpath.NewRoute("return_path_email"),
 							Label:     text.Chars(`Return-Path Email`),
@@ -732,20 +732,20 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID:        cfgpath.NewRoute("admin"),
 			Label:     text.Chars(`Admin`),
 			SortOrder: 20,
 			Scopes:    scope.PermDefault,
 			Resource:  0, // Magento_Config::config_admin
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("emails"),
 					Label:     text.Chars(`Admin User Emails`),
 					SortOrder: 10,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: admin/emails/forgot_email_template
 							ID:        cfgpath.NewRoute("forgot_email_template"),
 							Label:     text.Chars(`Forgot Password Email Template`),
@@ -757,7 +757,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Template
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/emails/forgot_email_identity
 							ID:        cfgpath.NewRoute("forgot_email_identity"),
 							Label:     text.Chars(`Forgot and Reset Email Sender`),
@@ -768,7 +768,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Email\Identity
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/emails/password_reset_link_expiration_period
 							ID:        cfgpath.NewRoute("password_reset_link_expiration_period"),
 							Label:     text.Chars(`Recovery Link Expiration Period (days)`),
@@ -782,13 +782,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("startup"),
 					Label:     text.Chars(`Startup Page`),
 					SortOrder: 20,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: admin/startup/menu_item_id
 							ID:        cfgpath.NewRoute("menu_item_id"),
 							Label:     text.Chars(`Startup Page`),
@@ -801,13 +801,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("url"),
 					Label:     text.Chars(`Admin Base URL`),
 					SortOrder: 30,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: admin/url/use_custom
 							ID:        cfgpath.NewRoute("use_custom"),
 							Label:     text.Chars(`Use Custom Admin URL`),
@@ -819,7 +819,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/url/custom
 							ID:        cfgpath.NewRoute("custom"),
 							Label:     text.Chars(`Custom Admin URL`),
@@ -831,7 +831,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Admin\Custom
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/url/use_custom_path
 							ID:        cfgpath.NewRoute("use_custom_path"),
 							Label:     text.Chars(`Use Custom Admin Path`),
@@ -843,7 +843,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/url/custom_path
 							ID:        cfgpath.NewRoute("custom_path"),
 							Label:     text.Chars(`Custom Admin Path`),
@@ -857,13 +857,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("security"),
 					Label:     text.Chars(`Security`),
 					SortOrder: 35,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: admin/security/use_form_key
 							ID:        cfgpath.NewRoute("use_form_key"),
 							Label:     text.Chars(`Add Secret Key to URLs`),
@@ -875,7 +875,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/security/use_case_sensitive_login
 							ID:        cfgpath.NewRoute("use_case_sensitive_login"),
 							Label:     text.Chars(`Login is Case Sensitive`),
@@ -886,7 +886,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: admin/security/session_lifetime
 							ID:        cfgpath.NewRoute("session_lifetime"),
 							Label:     text.Chars(`Admin Session Lifetime (seconds)`),
@@ -899,13 +899,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("dashboard"),
 					Label:     text.Chars(`Dashboard`),
 					SortOrder: 40,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: admin/dashboard/enable_charts
 							ID:        cfgpath.NewRoute("enable_charts"),
 							Label:     text.Chars(`Enable Charts`),
@@ -919,20 +919,20 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID:        cfgpath.NewRoute("web"),
 			Label:     text.Chars(`Web`),
 			SortOrder: 20,
 			Scopes:    scope.PermStore,
 			Resource:  0, // Magento_Backend::web
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("url"),
 					Label:     text.Chars(`Url Options`),
 					SortOrder: 3,
 					Scopes:    scope.PermDefault,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: web/url/use_store
 							ID:        cfgpath.NewRoute("use_store"),
 							Label:     text.Chars(`Add Store Code to Urls`),
@@ -946,7 +946,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/url/redirect_to_base
 							ID:        cfgpath.NewRoute("redirect_to_base"),
 							Label:     text.Chars(`Auto-redirect to Base URL`),
@@ -961,13 +961,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("seo"),
 					Label:     text.Chars(`Search Engine Optimization`),
 					SortOrder: 5,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: web/seo/use_rewrites
 							ID:        cfgpath.NewRoute("use_rewrites"),
 							Label:     text.Chars(`Use Web Server Rewrites`),
@@ -981,14 +981,14 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("unsecure"),
 					Label:     text.Chars(`Base URLs`),
 					Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. http://example.com/magento/`),
 					SortOrder: 10,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: web/unsecure/base_url
 							ID:        cfgpath.NewRoute("base_url"),
 							Label:     text.Chars(`Base URL`),
@@ -1000,7 +1000,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/unsecure/base_link_url
 							ID:        cfgpath.NewRoute("base_link_url"),
 							Label:     text.Chars(`Base Link URL`),
@@ -1012,7 +1012,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/unsecure/base_static_url
 							ID:        cfgpath.NewRoute("base_static_url"),
 							Label:     text.Chars(`Base URL for Static View Files`),
@@ -1024,7 +1024,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/unsecure/base_media_url
 							ID:        cfgpath.NewRoute("base_media_url"),
 							Label:     text.Chars(`Base URL for User Media Files`),
@@ -1038,14 +1038,14 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("secure"),
 					Label:     text.Chars(`Base URLs (Secure)`),
 					Comment:   text.Chars(`Any of the fields allow fully qualified URLs that end with '/' (slash) e.g. https://example.com/magento/`),
 					SortOrder: 20,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: web/secure/base_url
 							ID:        cfgpath.NewRoute("base_url"),
 							Label:     text.Chars(`Secure Base URL`),
@@ -1057,7 +1057,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/secure/base_link_url
 							ID:        cfgpath.NewRoute("base_link_url"),
 							Label:     text.Chars(`Secure Base Link URL`),
@@ -1069,7 +1069,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/secure/base_static_url
 							ID:        cfgpath.NewRoute("base_static_url"),
 							Label:     text.Chars(`Secure Base URL for Static View Files`),
@@ -1081,7 +1081,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/secure/base_media_url
 							ID:        cfgpath.NewRoute("base_media_url"),
 							Label:     text.Chars(`Secure Base URL for User Media Files`),
@@ -1093,7 +1093,7 @@ func init() {
 							// BackendModel: Magento\Config\Model\Config\Backend\Baseurl
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/secure/use_in_frontend
 							ID:        cfgpath.NewRoute("use_in_frontend"),
 							Label:     text.Chars(`Use Secure URLs on Storefront`),
@@ -1106,7 +1106,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/secure/use_in_adminhtml
 							ID:        cfgpath.NewRoute("use_in_adminhtml"),
 							Label:     text.Chars(`Use Secure URLs in Admin`),
@@ -1119,7 +1119,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/secure/enable_hsts
 							ID:        cfgpath.NewRoute("enable_hsts"),
 							Label:     text.Chars(`Enable HTTP Strict Transport Security (HSTS)`),
@@ -1132,7 +1132,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/secure/enable_upgrade_insecure
 							ID:        cfgpath.NewRoute("enable_upgrade_insecure"),
 							Label:     text.Chars(`Upgrade Insecure Requests`),
@@ -1145,7 +1145,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/secure/offloader_header
 							ID:        cfgpath.NewRoute("offloader_header"),
 							Label:     text.Chars(`Offloader header`),
@@ -1157,13 +1157,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("default"),
 					Label:     text.Chars(`Default Pages`),
 					SortOrder: 30,
 					Scopes:    scope.PermStore,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: web/default/front
 							ID:        cfgpath.NewRoute("front"),
 							Label:     text.Chars(`Default Web URL`),
@@ -1173,7 +1173,7 @@ func init() {
 							Scopes:    scope.PermStore,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/default/no_route
 							ID:        cfgpath.NewRoute("no_route"),
 							Label:     text.Chars(`Default No-route URL`),
@@ -1185,13 +1185,13 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID:        cfgpath.NewRoute("session"),
 					Label:     text.Chars(`Session Validation Settings`),
 					SortOrder: 60,
 					Scopes:    scope.PermWebsite,
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: web/session/use_remote_addr
 							ID:        cfgpath.NewRoute("use_remote_addr"),
 							Label:     text.Chars(`Validate REMOTE_ADDR`),
@@ -1202,7 +1202,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/session/use_http_via
 							ID:        cfgpath.NewRoute("use_http_via"),
 							Label:     text.Chars(`Validate HTTP_VIA`),
@@ -1213,7 +1213,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/session/use_http_x_forwarded_for
 							ID:        cfgpath.NewRoute("use_http_x_forwarded_for"),
 							Label:     text.Chars(`Validate HTTP_X_FORWARDED_FOR`),
@@ -1224,7 +1224,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/session/use_http_user_agent
 							ID:        cfgpath.NewRoute("use_http_user_agent"),
 							Label:     text.Chars(`Validate HTTP_USER_AGENT`),
@@ -1235,7 +1235,7 @@ func init() {
 							// SourceModel: Magento\Config\Model\Config\Source\Yesno
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: web/session/use_frontend_sid
 							ID:        cfgpath.NewRoute("use_frontend_sid"),
 							Label:     text.Chars(`Use SID on Storefront`),
@@ -1252,13 +1252,13 @@ func init() {
 		},
 
 		// Hidden Configuration, may be visible somewhere else ...
-		&element.Section{
+		element.Section{
 			ID: cfgpath.NewRoute("system"),
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: cfgpath.NewRoute("media_storage_configuration"),
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/media_storage_configuration/allowed_resources
 							ID:      cfgpath.NewRoute(`allowed_resources`),
 							Type:    element.TypeHidden,
@@ -1268,10 +1268,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: cfgpath.NewRoute("emails"),
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/emails/forgot_email_template
 							ID:      cfgpath.NewRoute(`forgot_email_template`),
 							Type:    element.TypeHidden,
@@ -1279,7 +1279,7 @@ func init() {
 							Default: `system_emails_forgot_email_template`,
 						},
 
-						&element.Field{
+						element.Field{
 							// Path: system/emails/forgot_email_identity
 							ID:      cfgpath.NewRoute(`forgot_email_identity`),
 							Type:    element.TypeHidden,
@@ -1289,10 +1289,10 @@ func init() {
 					),
 				},
 
-				&element.Group{
+				element.Group{
 					ID: cfgpath.NewRoute("dashboard"),
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: system/dashboard/enable_charts
 							ID:      cfgpath.NewRoute(`enable_charts`),
 							Type:    element.TypeHidden,
@@ -1303,13 +1303,13 @@ func init() {
 				},
 			),
 		},
-		&element.Section{
+		element.Section{
 			ID: cfgpath.NewRoute("general"),
 			Groups: element.NewGroupSlice(
-				&element.Group{
+				element.Group{
 					ID: cfgpath.NewRoute("validator_data"),
 					Fields: element.NewFieldSlice(
-						&element.Field{
+						element.Field{
 							// Path: general/validator_data/input_types
 							ID:      cfgpath.NewRoute(`input_types`),
 							Type:    element.TypeHidden,

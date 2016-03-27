@@ -1,11 +1,12 @@
 package backend_test
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/backend"
-	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/source"
-	"testing"
 )
 
 // benchmarkGlobalStruct trick the compiler to not optimize anything
@@ -13,7 +14,7 @@ var benchmarkGlobalStruct bool
 
 func Benchmark_StructGlobal(b *testing.B) {
 
-	sg := config.NewMockGetter().NewScoped(1, 1, 1)
+	sg := cfgmock.NewService().NewScoped(1, 1)
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -27,7 +28,7 @@ func Benchmark_StructGlobal(b *testing.B) {
 
 func Benchmark_StructSpecific(b *testing.B) {
 
-	sg := config.NewMockGetter().NewScoped(1, 1, 1)
+	sg := cfgmock.NewService().NewScoped(1, 1)
 
 	mb := cfgmodel.NewBool("aa/bb/cc", cfgmodel.WithFieldFromSectionSlice(backend.ConfigStructure), cfgmodel.WithSource(source.YesNo))
 
