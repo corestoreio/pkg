@@ -87,13 +87,13 @@ func NewFieldSlice(fs ...Field) FieldSlice {
 	return FieldSlice(fs)
 }
 
-// FindByID returns a Field pointer or ErrFieldNotFound.
+// Find returns a Field pointer or ErrFieldNotFound.
 // Route must be a single part. E.g. if you have path "a/b/c" route would be in
 // this case "c". For comparison the field Sum32 of a route will be used.
 // 2nd argument int contains the slice index of the field.
-func (fs FieldSlice) FindByID(id cfgpath.Route) (Field, int, error) {
+func (fs FieldSlice) Find(id cfgpath.Route) (Field, int, error) {
 	for i, f := range fs {
-		if f.ID.Sum32 == id.Sum32 {
+		if f.ID.Sum32 > 0 && f.ID.Sum32 == id.Sum32 {
 			return f, i, nil
 		}
 	}
@@ -120,7 +120,7 @@ func (fs *FieldSlice) Merge(fields ...Field) error {
 // merge merges field f into the slice. Appends the field if the Id is new.
 func (fs *FieldSlice) merge(f Field) error {
 
-	cf, idx, err := (*fs).FindByID(f.ID) // cf current field
+	cf, idx, err := (*fs).Find(f.ID) // cf current field
 	if err != nil {
 		cf = f
 		*fs = append(*fs, cf)

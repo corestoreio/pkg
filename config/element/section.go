@@ -216,7 +216,7 @@ func (ss SectionSlice) FindGroup(r cfgpath.Route) (Group, int, error) {
 	if err != nil {
 		return Group{}, 0, errors.Mask(err)
 	}
-	return cs.Groups.FindByID(spl[1])
+	return cs.Groups.Find(spl[1])
 }
 
 // FindField searches for a field using all three path segments.
@@ -230,11 +230,11 @@ func (ss SectionSlice) FindField(r cfgpath.Route) (Field, int, error) {
 	if err != nil {
 		return Field{}, 0, errors.Mask(err)
 	}
-	cg, _, err := sec.Groups.FindByID(spl[1])
+	cg, _, err := sec.Groups.Find(spl[1])
 	if err != nil {
 		return Field{}, 0, errors.Mask(err)
 	}
-	return cg.Fields.FindByID(spl[2])
+	return cg.Fields.Find(spl[2])
 }
 
 // UpdateField searches for a field using all three path segments and updates
@@ -249,11 +249,11 @@ func (ss SectionSlice) UpdateField(r cfgpath.Route, new Field) error {
 	if err != nil {
 		return errors.Mask(err)
 	}
-	cg, gIDX, err := sec.Groups.FindByID(spl[1])
+	cg, gIDX, err := sec.Groups.Find(spl[1])
 	if err != nil {
 		return errors.Mask(err)
 	}
-	cf, fIDX, err := cg.Fields.FindByID(spl[2])
+	cf, fIDX, err := cg.Fields.Find(spl[2])
 	if err != nil {
 		return errors.Mask(err)
 	}
@@ -280,7 +280,7 @@ func (ss *SectionSlice) AppendFields(r cfgpath.Route, fs ...Field) error {
 	if err != nil {
 		return errors.Mask(err)
 	}
-	cg, gIDX, err := cs.Groups.FindByID(spl[1])
+	cg, gIDX, err := cs.Groups.Find(spl[1])
 	if err != nil {
 		return errors.Mask(err)
 	}
