@@ -15,9 +15,14 @@
 package cfgmodel
 
 import (
+	"errors"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
 )
+
+// ErrMissingEncryptor gets returned if you have forgotten to set the
+// Encryptor interface on the Obscure struct.
+var ErrMissingEncryptor = errors.New("cfgmodel: Missing Encryptor")
 
 // Encryptor functions needed for encryption and decryption of
 // string values. For example implements M1 and M2 encryption key functions.
@@ -84,6 +89,9 @@ func (p *Obscure) Option(opts ...Option) (previous Option) {
 
 // Get returns an encrypted value decrypted. Panics if Encryptor interface is nil.
 func (p Obscure) Get(sg config.ScopedGetter) ([]byte, error) {
+	if p.Encryptor == nil {
+		return nil, ErrMissingEncryptor
+	}
 	s, err := p.Byte.Get(sg)
 	if err != nil {
 		return nil, err
@@ -93,6 +101,9 @@ func (p Obscure) Get(sg config.ScopedGetter) ([]byte, error) {
 
 // Write writes a raw value encrypted. Panics if Encryptor interface is nil.
 func (p Obscure) Write(w config.Writer, v []byte, s scope.Scope, scopeID int64) (err error) {
+	if p.Encryptor == nil {
+		return ErrMissingEncryptor
+	}
 	v, err = p.Encrypt(v)
 	if err != nil {
 		return err

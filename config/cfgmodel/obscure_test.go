@@ -47,6 +47,14 @@ func (rt rot13) Encrypt(s []byte) ([]byte, error) {
 func (rt rot13) Decrypt(s []byte) ([]byte, error) {
 	return rt.Encrypt(s)
 }
+func TestObscureMissingEncryptor(t *testing.T) {
+	t.Parallel()
+	m := cfgmodel.NewObscure(`aa/bb/cc`)
+	val, err := m.Get(nil)
+	assert.Nil(t, val)
+	assert.EqualError(t, err, cfgmodel.ErrMissingEncryptor.Error())
+	assert.EqualError(t, m.Write(nil, nil, scope.DefaultID, 0), cfgmodel.ErrMissingEncryptor.Error())
+}
 
 func TestObscure(t *testing.T) {
 	t.Parallel()
