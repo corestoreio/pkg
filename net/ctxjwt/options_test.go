@@ -94,8 +94,3 @@ func TestOptionWithRSAGenerator(t *testing.T) {
 	}
 	testRsaOption(t, ctxjwt.WithRSAGenerator(scope.DefaultID, 0))
 }
-
-func TestOptionWithBackend(t *testing.T) {
-	t.Parallel()
-	t.Log("todo")
-}

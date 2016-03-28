@@ -45,6 +45,7 @@ var ErrPrivateKeyNoPassword = errors.New("Private Key is encrypted but password 
 const PrivateKeyBits = 4096
 
 type scopedConfig struct {
+	scopeHash    scope.Hash
 	rsapk        *rsa.PrivateKey
 	ecdsapk      *ecdsa.PrivateKey
 	hmacPassword []byte // password for hmac
@@ -88,30 +89,39 @@ func getKeyFunc(scpCfg scopedConfig) jwt.Keyfunc {
 // Option can be used as an argument in NewService to configure a token service.
 type Option func(*Service)
 
+// DefaultErrorHandler global default error handler. Will also be used when
+// creating a new configuration for a scope. Used in WithDefaultConfig().
+var DefaultErrorHandler = ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
+	http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+	return nil
+})
+
+func defaultScopedConfig() scopedConfig {
+	return scopedConfig{
+		scopeHash:     scope.DefaultHash,
+		expire:        DefaultExpire,
+		hmacPassword:  []byte(uuid.NewRandom()), // @todo can be better ...
+		signingMethod: jwt.SigningMethodHS256,
+		enableJTI:     false,
+		errorHandler:  DefaultErrorHandler,
+	}
+}
+
 // WithDefaultConfig applies the default JWT configuration settings based for
 // a specific scope.
 //
 // Default values are:
 //		- constant DefaultExpire
-//		- HMAC Password: uuid.NewRandom()
+//		- HMAC Password: uuid.NewRandom(), for each scope different
 //		- Signing Method HMAC SHA 256
 //		- HTTP error handler returns http.StatusUnauthorized
+//		- JTI disabled
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-
-		s.scopeCache[h] = scopedConfig{
-			expire:        DefaultExpire,
-			hmacPassword:  []byte(uuid.NewRandom()), // @todo can be better ...
-			signingMethod: jwt.SigningMethodHS256,
-			enableJTI:     false,
-			errorHandler: ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
-				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-				return nil
-			}),
-		}
+		s.scopeCache[h] = defaultScopedConfig()
 	}
 }
 
@@ -150,6 +160,7 @@ func WithPassword(scp scope.Scope, id int64, key []byte) Option {
 			sc.hmacPassword = scNew.hmacPassword
 			scNew = sc
 		}
+		scNew.scopeHash = scope.NewHash(scp, id)
 		s.scopeCache[h] = scNew
 	}
 }
@@ -169,6 +180,7 @@ func WithSigningMethod(scp scope.Scope, id int64, sm jwt.SigningMethod) Option {
 			sc.signingMethod = sm
 			scNew = sc
 		}
+		scNew.scopeHash = scope.NewHash(scp, id)
 		s.scopeCache[h] = scNew
 	}
 }
@@ -186,6 +198,7 @@ func WithErrorHandler(scp scope.Scope, id int64, handler ctxhttp.HandlerFunc) Op
 			sc.errorHandler = scNew.errorHandler
 			scNew = sc
 		}
+		scNew.scopeHash = scope.NewHash(scp, id)
 		s.scopeCache[h] = scNew
 	}
 }
@@ -205,6 +218,7 @@ func WithExpiration(scp scope.Scope, id int64, d time.Duration) Option {
 			sc.expire = scNew.expire
 			scNew = sc
 		}
+		scNew.scopeHash = scope.NewHash(scp, id)
 		s.scopeCache[h] = scNew
 	}
 }
@@ -224,6 +238,7 @@ func WithTokenID(scp scope.Scope, id int64, enable bool) Option {
 			sc.enableJTI = scNew.enableJTI
 			scNew = sc
 		}
+		scNew.scopeHash = scope.NewHash(scp, id)
 		s.scopeCache[h] = scNew
 	}
 }
@@ -268,6 +283,7 @@ func withECDSA(h scope.Hash, ecdsapk *ecdsa.PrivateKey, err error) Option {
 			sc.rsapk = scNew.rsapk
 			scNew = sc
 		}
+		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
 	}
 }
@@ -358,6 +374,7 @@ func withRSA(h scope.Hash, pk *rsa.PrivateKey, err error) Option {
 			sc.rsapk = scNew.rsapk
 			scNew = sc
 		}
+		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
 	}
 }
@@ -383,14 +400,14 @@ func optionsByBackend(be *PkgBackend, sg config.ScopedGetter) (opts []Option) {
 	}
 	opts = append(opts, WithTokenID(scp, id, isJTI))
 
-	sm, err := be.NetCtxjwtSigningMethod.Get(sg)
+	signingMethod, err := be.NetCtxjwtSigningMethod.Get(sg)
 	if err != nil {
 		return append(opts, func(s *Service) {
 			s.MultiErr = s.AppendErrors(errors.Mask(err))
 		})
 	}
 
-	switch sm.Alg() {
+	switch signingMethod.Alg() {
 	case jwt.SigningMethodRS256.Alg(), jwt.SigningMethodRS384.Alg(), jwt.SigningMethodRS512.Alg():
 
 		rsaKey, err := be.NetCtxjwtRSAKey.Get(sg)
@@ -405,7 +422,7 @@ func optionsByBackend(be *PkgBackend, sg config.ScopedGetter) (opts []Option) {
 				s.MultiErr = s.AppendErrors(errors.Mask(err))
 			})
 		}
-		opts = append(opts, WithRSA(scp, id, rsaKey, rsaPassword))
+		opts = append(opts, WithRSA(scp, id, rsaKey, rsaPassword), WithSigningMethod(scp, id, signingMethod))
 
 	case jwt.SigningMethodES256.Alg(), jwt.SigningMethodES384.Alg(), jwt.SigningMethodES512.Alg():
 
@@ -421,7 +438,7 @@ func optionsByBackend(be *PkgBackend, sg config.ScopedGetter) (opts []Option) {
 				s.MultiErr = s.AppendErrors(errors.Mask(err))
 			})
 		}
-		opts = append(opts, WithECDSA(scp, id, ecdsaKey, ecdsaPassword))
+		opts = append(opts, WithECDSA(scp, id, ecdsaKey, ecdsaPassword), WithSigningMethod(scp, id, signingMethod))
 
 	case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
 
@@ -431,12 +448,14 @@ func optionsByBackend(be *PkgBackend, sg config.ScopedGetter) (opts []Option) {
 				s.MultiErr = s.AppendErrors(errors.Mask(err))
 			})
 		}
-		opts = append(opts, WithPassword(scp, id, password))
-
+		opts = append(opts, WithPassword(scp, id, password), WithSigningMethod(scp, id, signingMethod))
 	default:
 		opts = append(opts, func(s *Service) {
 			s.MultiErr = s.AppendErrors(ErrUnexpectedSigningMethod)
 		})
 	}
+
+	opts = append(opts, WithErrorHandler(scp, id, DefaultErrorHandler))
+
 	return opts
 }

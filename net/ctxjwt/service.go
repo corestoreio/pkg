@@ -20,6 +20,7 @@ import (
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/juju/errors"
@@ -107,7 +108,7 @@ func (s *Service) Options(opts ...Option) error {
 // This function is thread safe.
 func (s *Service) GenerateToken(scp scope.Scope, id int64, claims map[string]interface{}) (token, jti string, err error) {
 
-	cfg, err := s.getConfigByScopeID(scp, id)
+	cfg, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
 		return "", "", err
 	}
@@ -145,14 +146,14 @@ func (s *Service) Logout(token *jwt.Token) error {
 
 	var exp time.Duration
 	if cexp, ok := token.Claims["exp"]; ok {
-		if fexp, ok := cexp.(float64); ok {
+		fexp := conv.ToFloat64(cexp)
+		if fexp > 0.001 {
 			tm := time.Unix(int64(fexp), 0)
 			if remainer := tm.Sub(time.Now()); remainer > 0 {
 				exp = remainer
 			}
 		}
 	}
-
 	return s.Blacklist.Set(token.Raw, exp)
 }
 
@@ -166,7 +167,7 @@ func (s *Service) Parse(rawToken string) (*jwt.Token, error) {
 // The black list will be checked for containing entries.
 func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken string) (*jwt.Token, error) {
 
-	sc, err := s.getConfigByScopeID(scp, id)
+	sc, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
 		return nil, err
 	}
@@ -185,40 +186,44 @@ func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken string) (*jwt.
 	return nil, errors.Mask(err)
 }
 
+// getConfigByScopedGetter used in the middleware where sg comes from the store.Website.Config
 func (s *Service) getConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig, error) {
 
-	sc, err := s.getConfigByScopeID(sg.Scope())
+	h := scope.NewHash(sg.Scope())
+	sc, err := s.getConfigByScopeID(false, h)
 	if err == nil {
 		// cached entry found!
 		return sc, nil
 	}
-	if s.backend == nil {
-		return scopedConfig{}, errors.Errorf("[ctxjwt.Service] Backend configuration has not been set")
-	}
 
-	if err := s.Options(optionsByBackend(s.backend, sg)...); err != nil {
-		return scopedConfig{}, err
+	if s.backend != nil {
+		if err := s.Options(optionsByBackend(s.backend, sg)...); err != nil {
+			return scopedConfig{}, err
+		}
 	}
 
 	// after applying the new config try to fetch the new scoped token configuration
-	return s.getConfigByScopeID(sg.Scope())
+	return s.getConfigByScopeID(true, h)
 }
 
-func (s *Service) getConfigByScopeID(scp scope.Scope, id int64) (scopedConfig, error) {
+func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConfig, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	// requested scope plus ID
-	if scpJWT, ok := s.getScopedConfig(scope.NewHash(scp, id)); ok {
+	if scpJWT, ok := s.getScopedConfig(hash); ok {
 		return scpJWT, nil
 	}
 
-	// fallback to default scope
-	if scpJWT, ok := s.getScopedConfig(scope.NewHash(scope.DefaultID, 0)); ok {
-		return scpJWT, nil
+	if fallback {
+		// fallback to default scope
+		if scpJWT, ok := s.getScopedConfig(scope.DefaultHash); ok {
+			return scpJWT, nil
+		}
 	}
 
 	// give up, nothing found
+	scp, id := hash.Unpack()
 	return scopedConfig{}, errors.Errorf("[ctxjwt.Service] Cannot find JWT configuration for Scope(%s) and ID %d", scp, id)
 }
 

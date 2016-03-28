@@ -29,6 +29,7 @@ var _ error = (*ctxjwt.Service)(nil)
 const uuidLen = 36
 
 func TestServiceMustNewServicePanic(t *testing.T) {
+	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
 			assert.EqualError(t, r.(error), "open non-existent.pem: no such file or directory")

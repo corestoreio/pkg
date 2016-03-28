@@ -69,8 +69,8 @@ type PkgBackend struct {
 // cfgpath.Route variable to the appropriate entry.
 // The function Load() will be executed to apply the SectionSlice
 // to all models. See Load() for more details.
-func NewBackend(cfgStruct element.SectionSlice) *PkgBackend {
-	return (&PkgBackend{}).Load(cfgStruct)
+func NewBackend(cfgStruct element.SectionSlice, opts ...cfgmodel.Option) *PkgBackend {
+	return (&PkgBackend{}).Load(cfgStruct, opts...)
 }
 
 // Load creates the configuration models for each PkgBackend field.

@@ -73,6 +73,7 @@ func (bl *BlackListSimpleMap) Set(token string, expires time.Duration) error {
 	bl.mu.Lock()
 	defer bl.mu.Unlock()
 
+	// this operation is not performance friendly
 	for k, v := range bl.tokens {
 		if time.Since(v) > 0 {
 			delete(bl.tokens, k)
