@@ -23,16 +23,17 @@ import (
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/juju/errors"
+	"github.com/pborman/uuid"
 )
 
 // ErrUnexpectedSigningMethod will be returned if some outside dude tries to trick us
 var ErrUnexpectedSigningMethod = errors.New("JWT: Unexpected signing method")
 
-// Blacklister a backend storage to handle blocked tokens.
-// Default black hole storage. Must be thread safe.
-type Blacklister interface {
-	Set(token string, expires time.Duration) error
-	Has(token string) bool
+// jti type to generate a JTI for a token, a unique ID
+type jti struct{}
+
+func (j jti) Get() string {
+	return uuid.New()
 }
 
 // Service main object for handling JWT authentication, generation, blacklists and log outs.

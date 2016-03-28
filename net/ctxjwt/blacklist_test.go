@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/net/ctxjwt"
+	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -47,31 +48,75 @@ func (b *testRealBL) Set(t string, exp time.Duration) error {
 }
 func (b *testRealBL) Has(t string) bool { return b.theToken == t }
 
-func TestSimpleMapBlackListSet(t *testing.T) {
+func TestBlackLists(t *testing.T) {
 	t.Parallel()
-
-	token := "My new token cannot be spoken."
-	bl := ctxjwt.NewSimpleMapBlackList()
-
-	assert.NoError(t, bl.Set(token, time.Millisecond*1))
-	assert.NoError(t, bl.Set(token+"2", time.Millisecond*3))
-	assert.True(t, bl.Has(token))
-	time.Sleep(time.Millisecond * 4)
-	assert.NoError(t, bl.Set(token+"3", time.Millisecond*3))
-	assert.False(t, bl.Has(token))
-	assert.False(t, bl.Has(token+"2"))
-	assert.False(t, bl.Has(token))
+	tests := []struct {
+		bl    ctxjwt.Blacklister
+		token string
+	}{
+		{
+			ctxjwt.NewBlackListSimpleMap(),
+			`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NTkxNTI3NTEsImlhdCI6MTQ1OTE0OTE1MSwibWFzY290IjoiZ29waGVyIn0.QzUJ5snl685Wmx4wXlCUykvBQMKn3OyL5MpnSaKrkdw`,
+		},
+		{
+			ctxjwt.NewBlackListFreeCache(0),
+			`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NTkxNTI3NTEsImlhdCI6MTQ1OTE0OTE1MSwibWFzY290IjoiZ29waGVyIn0.QzUJ5snl685Wmx4wXlCUykvBQMKn3OyL5MpnSaKrkdw`,
+		},
+	}
+	for i, test := range tests {
+		assert.NoError(t, test.bl.Set(test.token, time.Second*1), "Index %d", i)
+		assert.NoError(t, test.bl.Set(test.token+"2", time.Second*2), "Index %d", i)
+		assert.True(t, test.bl.Has(test.token), "Index %d", i)
+		time.Sleep(time.Second * 3)
+		assert.NoError(t, test.bl.Set(test.token+"3", time.Second*2), "Index %d", i)
+		assert.False(t, test.bl.Has(test.token), "Index %d", i)
+		assert.False(t, test.bl.Has(test.token+"2"), "Index %d", i)
+		assert.False(t, test.bl.Has(test.token), "Index %d", i)
+		assert.True(t, test.bl.Has(test.token+"3"), "Index %d", i)
+	}
 }
 
-func TestSimpleMapBlackListHas(t *testing.T) {
-	t.Parallel()
+const benchTokenCount = 100
 
-	token := "My new token cannot be spoken."
-	bl := ctxjwt.NewSimpleMapBlackList()
+func benchBlackList(b *testing.B, bl ctxjwt.Blacklister) {
+	jwts := ctxjwt.MustNewService()
+	var tokens [benchTokenCount]string
 
-	assert.NoError(t, bl.Set(token, time.Millisecond*1))
-	assert.True(t, bl.Has(token))
-	time.Sleep(time.Millisecond * 4)
-	assert.False(t, bl.Has(token))
-	assert.False(t, bl.Has(token))
+	for i := 0; i < benchTokenCount; i++ {
+		claim := map[string]interface{}{
+			"someKey": i,
+		}
+		var err error
+		tokens[i], _, err = jwts.GenerateToken(scope.DefaultID, 0, claim)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			for i := 0; i < benchTokenCount; i++ {
+				if err := bl.Set(tokens[i], time.Minute); err != nil {
+					b.Fatal(err)
+				}
+				if bl.Has(tokens[i]) == false {
+					b.Fatalf("Cannot find token %s with index %d", tokens[i], i)
+				}
+			}
+		}
+	})
+}
+
+// BenchmarkBlackListMap_Parallel-4      	    2000	    586726 ns/op	   31686 B/op	     200 allocs/op
+func BenchmarkBlackListMap_Parallel(b *testing.B) {
+	bl := ctxjwt.NewBlackListSimpleMap()
+	benchBlackList(b, bl)
+}
+
+// BenchmarkBlackListFreeCache_Parallel-4	   30000	     59542 ns/op	   31781 B/op	     300 allocs/op
+func BenchmarkBlackListFreeCache_Parallel(b *testing.B) {
+	bl := ctxjwt.NewBlackListFreeCache(0)
+	benchBlackList(b, bl)
 }

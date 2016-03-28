@@ -55,7 +55,6 @@ func TestServiceNewDefault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Empty(t, jti)
 	assert.NotEmpty(t, theToken)
-
 	haveToken, err := jwts.Parse(theToken)
 	assert.NoError(t, err)
 	assert.True(t, haveToken.Valid)

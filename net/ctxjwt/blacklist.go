@@ -18,8 +18,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/pborman/uuid"
+	"github.com/coocood/freecache"
 )
+
+// Blacklister a backend storage to handle blocked tokens.
+// Default black hole storage. Must be thread safe.
+type Blacklister interface {
+	Set(token string, expires time.Duration) error
+	Has(token string) bool
+}
 
 // nullBL is the black hole black list
 type nullBL struct{}
@@ -27,43 +34,42 @@ type nullBL struct{}
 func (b nullBL) Set(_ string, _ time.Duration) error { return nil }
 func (b nullBL) Has(_ string) bool                   { return false }
 
-// SimpleMapBlackList creates an in-memory map which holds as a key the
+// BlackListSimpleMap creates an in-memory map which holds as a key the
 // tokens and as value the token expiration duration. Once a Set() operation
 // will be called the tokens list get purged. Don't use this feature in
 // production as the underlying mutex will become a bottleneck with higher
-// throughput.
-type SimpleMapBlackList struct {
-	// TODO: implement github.com/coocood/freecache
-	mu     sync.RWMutex
-	tokens map[string]time.Time
+// throughput, but still faster as a connection to Redis ;-)
+type BlackListSimpleMap struct {
+	mu     sync.Mutex
+	tokens map[uint64]time.Time
 }
 
-// NewSimpleMapBlackList creates a new blacklist map.
-func NewSimpleMapBlackList() *SimpleMapBlackList {
-	return &SimpleMapBlackList{
-		tokens: make(map[string]time.Time),
+// NewBlackListSimpleMap creates a new blacklist map.
+func NewBlackListSimpleMap() *BlackListSimpleMap {
+	return &BlackListSimpleMap{
+		tokens: make(map[uint64]time.Time),
 	}
 }
 
 // Has checks if token is within the blacklist.
-func (bl *SimpleMapBlackList) Has(token string) bool {
+func (bl *BlackListSimpleMap) Has(token string) bool {
 	bl.mu.Lock()
 	defer bl.mu.Unlock()
-
-	d, ok := bl.tokens[token]
+	h := hash(token)
+	d, ok := bl.tokens[h]
 	if !ok {
 		return false
 	}
 	isValid := time.Since(d) < 0
 
 	if false == isValid {
-		delete(bl.tokens, token)
+		delete(bl.tokens, h)
 	}
 	return isValid
 }
 
 // Set adds a token to the map and performs a purge operation.
-func (bl *SimpleMapBlackList) Set(token string, expires time.Duration) error {
+func (bl *BlackListSimpleMap) Set(token string, expires time.Duration) error {
 	bl.mu.Lock()
 	defer bl.mu.Unlock()
 
@@ -72,20 +78,72 @@ func (bl *SimpleMapBlackList) Set(token string, expires time.Duration) error {
 			delete(bl.tokens, k)
 		}
 	}
-	bl.tokens[token] = time.Now().Add(expires)
+	bl.tokens[hash(token)] = time.Now().Add(expires)
 	return nil
 }
 
 // Len returns the number of entries in the blacklist
-func (bl *SimpleMapBlackList) Len() int {
-	bl.mu.RLock()
-	defer bl.mu.RUnlock()
+func (bl *BlackListSimpleMap) Len() int {
+	bl.mu.Lock()
+	defer bl.mu.Unlock()
 	return len(bl.tokens)
 }
 
-// jti type to generate a JTI for a token, a unique ID
-type jti struct{}
+// BlackListFreeCache high performance cache for concurrent/parallel use cases
+// like in net/http needed.
+type BlackListFreeCache struct {
+	*freecache.Cache
+	emptyVal []byte
+}
 
-func (j jti) Get() string {
-	return uuid.New()
+// NewBlackListFreeCache creates a new cache instance with a minimum size to be
+// set to 512KB.
+// If the size is set relatively large, you should call `debug.SetGCPercent()`,
+// set it to a much smaller value to limit the memory consumption and GC pause time.
+func NewBlackListFreeCache(size int) *BlackListFreeCache {
+	return &BlackListFreeCache{
+		Cache:    freecache.NewCache(size),
+		emptyVal: []byte(`1`),
+	}
+}
+
+// Set sets a token. If expires <=0 the cached item will not expire.
+func (fc *BlackListFreeCache) Set(token string, expires time.Duration) error {
+	return fc.Cache.Set([]byte(token), fc.emptyVal, int(expires.Seconds()))
+}
+
+// Has checks if the cache contains the token.
+func (fc *BlackListFreeCache) Has(token string) bool {
+	val, err := fc.Cache.Get([]byte(token))
+	if err == freecache.ErrNotFound {
+		return false
+	}
+	if err != nil {
+		return false
+	}
+	return val != nil
+}
+
+// Copyright 2011 The Go Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style
+// license that can be found in the LICENSE file.
+
+// Package fnv implements FNV-1 and FNV-1a, non-cryptographic hash functions
+// created by Glenn Fowler, Landon Curt Noll, and Phong Vo.
+// See
+// https://en.wikipedia.org/wiki/Fowler-Noll-Vo_hash_function.
+
+const (
+	offset64 uint64 = 14695981039346656037
+	prime64  uint64 = 1099511628211
+)
+
+// fnv64a
+func hash(data string) uint64 {
+	hash := offset64
+	for _, c := range []byte(data) {
+		hash ^= uint64(c)
+		hash *= prime64
+	}
+	return hash
 }

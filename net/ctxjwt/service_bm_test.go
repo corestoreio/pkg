@@ -83,7 +83,7 @@ func BenchmarkServeHTTPHMAC(b *testing.B) {
 // BenchmarkServeHTTPHMACSimpleBL-4	  100000	     16037 ns/op	    3808 B/op	      82 allocs/op Go 1.5.0
 // BenchmarkServeHTTPHMACSimpleBL-4	  100000	     15765 ns/op	    4016 B/op	      72 allocs/op
 func BenchmarkServeHTTPHMACSimpleBL(b *testing.B) {
-	bl := ctxjwt.NewSimpleMapBlackList()
+	bl := ctxjwt.NewBlackListSimpleMap()
 	password := []byte(`Rump3lst!lzch3n`)
 	bmServeHTTP(b,
 		ctxjwt.WithPassword(scope.DefaultID, 0, password),
