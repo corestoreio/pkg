@@ -49,9 +49,12 @@ func (ne NoopEncryptor) Decrypt(s []byte) ([]byte, error) {
 }
 
 // WithEncryptor sets the functions for reading and writing encrypted data
-// to the configuration service
+// to the configuration service. May return nil.
 func WithEncryptor(e Encryptor) Option {
 	return func(b *optionBox) Option {
+		if b.Obscure == nil {
+			return nil
+		}
 		prev := b.Obscure.Encryptor
 		b.Obscure.Encryptor = e
 		return WithEncryptor(prev)
