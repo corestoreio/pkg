@@ -49,7 +49,6 @@ type scopedConfig struct {
 	rsapk        *rsa.PrivateKey
 	ecdsapk      *ecdsa.PrivateKey
 	hmacPassword []byte // password for hmac
-	hasKey       bool   // must be set to true if one of the three above keys has been set
 
 	// expire defines the duration when the token is about to expire
 	expire time.Duration
@@ -126,6 +125,7 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 }
 
 // WithBlacklist sets a new global black list service.
+// Convenience helper function.
 func WithBlacklist(blacklist Blacklister) Option {
 	return func(s *Service) {
 		s.Blacklist = blacklist
@@ -135,9 +135,10 @@ func WithBlacklist(blacklist Blacklister) Option {
 // WithBackend applies the backend configuration to the service.
 // Once this has been set all other option functions are not really
 // needed.
+// Convenience helper function.
 func WithBackend(pb *PkgBackend) Option {
 	return func(s *Service) {
-		s.backend = pb
+		s.Backend = pb
 	}
 }
 
@@ -150,12 +151,10 @@ func WithPassword(scp scope.Scope, id int64, key []byte) Option {
 		defer s.mu.Unlock()
 
 		scNew := scopedConfig{
-			hasKey:        true,
 			signingMethod: jwt.SigningMethodHS256,
 			hmacPassword:  key,
 		}
 		if sc, ok := s.scopeCache[h]; ok {
-			sc.hasKey = scNew.hasKey
 			sc.signingMethod = scNew.signingMethod
 			sc.hmacPassword = scNew.hmacPassword
 			scNew = sc
@@ -272,13 +271,11 @@ func withECDSA(h scope.Hash, ecdsapk *ecdsa.PrivateKey, err error) Option {
 		defer s.mu.Unlock()
 
 		scNew := scopedConfig{
-			hasKey:        true,
 			signingMethod: jwt.SigningMethodES256,
 			ecdsapk:       ecdsapk,
 		}
 
 		if sc, ok := s.scopeCache[h]; ok {
-			sc.hasKey = scNew.hasKey
 			sc.signingMethod = scNew.signingMethod
 			sc.rsapk = scNew.rsapk
 			scNew = sc
@@ -363,13 +360,11 @@ func withRSA(h scope.Hash, pk *rsa.PrivateKey, err error) Option {
 		defer s.mu.Unlock()
 
 		scNew := scopedConfig{
-			hasKey:        true,
 			signingMethod: jwt.SigningMethodRS256,
 			rsapk:         pk,
 		}
 
 		if sc, ok := s.scopeCache[h]; ok {
-			sc.hasKey = scNew.hasKey
 			sc.signingMethod = scNew.signingMethod
 			sc.rsapk = scNew.rsapk
 			scNew = sc

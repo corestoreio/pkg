@@ -52,7 +52,8 @@ type Service struct {
 	}
 	// Blacklist concurrent safe black list service
 	Blacklist Blacklister
-	backend   *PkgBackend
+	// Backend optional configuration, can be nil.
+	Backend *PkgBackend
 }
 
 // NewService creates a new token service. If key option will not be
@@ -187,17 +188,22 @@ func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken string) (*jwt.
 }
 
 // getConfigByScopedGetter used in the middleware where sg comes from the store.Website.Config
+// A nil argument falls back to the default scope configuration.
 func (s *Service) getConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig, error) {
 
-	h := scope.NewHash(sg.Scope())
+	h := scope.DefaultHash
+	if sg != nil {
+		h = scope.NewHash(sg.Scope())
+	}
+
 	sc, err := s.getConfigByScopeID(false, h)
 	if err == nil {
 		// cached entry found!
 		return sc, nil
 	}
 
-	if s.backend != nil {
-		if err := s.Options(optionsByBackend(s.backend, sg)...); err != nil {
+	if s.Backend != nil {
+		if err := s.Options(optionsByBackend(s.Backend, sg)...); err != nil {
 			return scopedConfig{}, err
 		}
 	}

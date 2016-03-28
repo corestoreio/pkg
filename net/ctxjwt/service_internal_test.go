@@ -211,3 +211,24 @@ func TestServiceWithBackend_RSAFail(t *testing.T) {
 	assert.EqualError(t, err, "Private Key from io.Reader no found")
 	assert.Exactly(t, scopedConfig{}, sc)
 }
+
+func TestServiceWithBackend_NilScopedGetter(t *testing.T) {
+	t.Parallel()
+
+	pb := NewBackend(nil)
+	jwts := MustNewService(WithBackend(pb))
+
+	sc, err := jwts.getConfigByScopedGetter(nil)
+	assert.NoError(t, err)
+
+	assert.Exactly(t, scope.DefaultHash, sc.scopeHash)
+	assert.Nil(t, sc.rsapk)
+	assert.Nil(t, sc.ecdsapk)
+	assert.NotEmpty(t, sc.hmacPassword)
+	assert.Exactly(t, DefaultExpire, sc.expire)
+	assert.Exactly(t, jwt.SigningMethodHS256, sc.signingMethod)
+	assert.False(t, sc.enableJTI)
+	assert.NotNil(t, sc.errorHandler)
+	assert.NotNil(t, sc.keyFunc)
+
+}
