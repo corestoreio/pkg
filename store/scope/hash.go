@@ -20,6 +20,10 @@ import "fmt"
 // we have a website, group or store ID. int24 (8388607) size at the moment.
 const MaxStoreID int64 = 1<<23 - 1
 
+// DefaultHash default Hash value for Default Scope and ID 0. Avoids typing
+// 		scope.NewHash(DefaultID,0)
+const DefaultHash Hash = Hash(DefaultID)<<24 | 0
+
 // Hash defines a merged Scope with its ID. The ID can either be from
 // a website, group or store.
 type Hash uint32
@@ -53,11 +57,23 @@ func (h Hash) Unpack() (s Scope, id int64) {
 	return
 }
 
+const hashBitAnd Hash = 255
+
+// Segment generates an 0 < ID <= 255 from a hash. Only used within an array index
+// to optimize map[] usage in high concurrent situations.
+func (h Hash) Segment() uint8 {
+	return uint8(h & hashBitAnd)
+}
+
 // NewHash creates a new merged value. An error is equal to returning 0.
 // An error occurs when id is greater than MaxStoreID or smaller 0.
+// An errors occurs when the Scope is Default and id anything else than 0.
 func NewHash(s Scope, id int64) Hash {
 	if id > MaxStoreID || id < 0 {
 		return 0
+	}
+	if s < WebsiteID {
+		id = 0
 	}
 	return Hash(s)<<24 | Hash(id)
 }

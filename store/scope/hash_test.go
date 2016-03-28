@@ -20,12 +20,45 @@ import (
 
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
+	"sync"
 )
 
 func TestHashString(t *testing.T) {
 	t.Parallel()
 	s := scope.NewHash(scope.StoreID, 33).String()
 	assert.Exactly(t, "Scope(Store) ID(33)", s)
+}
+
+func TestHashSegment(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		h    scope.Hash
+		want uint8
+	}{
+		{scope.DefaultHash, 0},
+		{scope.NewHash(scope.Scope(0), 0), 0},
+		{scope.NewHash(scope.Scope(1), 0), 0},
+		{scope.NewHash(scope.DefaultID, -1), 0},
+		{scope.NewHash(scope.DefaultID, 1), 0},
+		{scope.NewHash(scope.DefaultID, 0), 0},
+		{scope.NewHash(scope.StoreID, 0), 0},
+		{scope.NewHash(scope.StoreID, 1), 1},
+		{scope.NewHash(scope.StoreID, 2), 2},
+		{scope.NewHash(scope.StoreID, 255), 255},
+		{scope.NewHash(scope.StoreID, 256), 0},
+		{scope.NewHash(scope.StoreID, 257), 1},
+		{scope.NewHash(scope.StoreID, scope.MaxStoreID-1), 254},
+		{scope.NewHash(scope.StoreID, scope.MaxStoreID), 255},
+		{scope.NewHash(scope.StoreID, scope.MaxStoreID+1), 0},
+		{scope.NewHash(scope.StoreID, scope.MaxStoreID+2), 0},
+		{scope.NewHash(scope.StoreID, -scope.MaxStoreID), 0},
+		{scope.NewHash(scope.Scope(7), 1), 1},
+	}
+	for i, test := range tests {
+		if want, have := test.want, test.h.Segment(); want != have {
+			t.Errorf("Index %03d: Want %03d Have %03d", i, want, have)
+		}
+	}
 }
 
 func TestNewHashError(t *testing.T) {
@@ -50,26 +83,36 @@ func TestHashValid(t *testing.T) {
 	}
 
 	//var collisionCheck = make(map[scope.Hash]bool) // just in case ...
-
+	var wg sync.WaitGroup
 	var scp = scope.AbsentID
 	for ; scp < math.MaxUint8; scp++ {
-		for id := int64(0); id < scope.MaxStoreID; id++ {
-			haveHash := scope.NewHash(scp, id)
+		wg.Add(1)
+		go func(theScp scope.Scope) {
+			defer wg.Done()
+			for id := int64(0); id < scope.MaxStoreID; id++ {
+				haveHash := scope.NewHash(theScp, id)
 
-			haveScp, haveID := haveHash.Unpack()
-			if haveScp != scp {
-				t.Fatalf("Have Scope: %d, Want Scope: %d", haveScp, scp)
-			}
-			if haveID != id {
-				t.Fatalf("Have ID: %d, Want ID: %d", haveID, id)
-			}
+				haveScp, haveID := haveHash.Unpack()
+				if haveScp != theScp {
+					t.Fatalf("Have Scope: %d, Want Scope: %d", haveScp, theScp)
+				}
 
-			//if ok := collisionCheck[haveHash]; ok {
-			//	t.Fatalf("Collision Detected: %d", haveHash)
-			//}
-			//collisionCheck[haveHash] = true
-		}
+				wantID := id
+				if theScp < scope.WebsiteID {
+					wantID = 0
+				}
+				if haveID != wantID {
+					t.Fatalf("Have Scope(%d) ScopeID: %d, Want: Scope(%d) ScopeID: %d", haveScp, haveID, scp, wantID)
+				}
+
+				//if ok := collisionCheck[haveHash]; ok {
+				//	t.Fatalf("Collision Detected: %d", haveHash)
+				//}
+				//collisionCheck[haveHash] = true
+			}
+		}(scp)
 	}
+	wg.Wait()
 	//t.Logf("[Info] Collision Map length: %d", len(collisionCheck))
 }
 

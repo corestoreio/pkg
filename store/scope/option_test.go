@@ -165,6 +165,7 @@ func TestApplyDefault(t *testing.T) {
 }
 
 func TestToUint32ByID(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		so   scope.Option
 		want uint32
@@ -182,6 +183,7 @@ func TestToUint32ByID(t *testing.T) {
 }
 
 func TestToUint32ByCode(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		so   scope.Option
 		want string
