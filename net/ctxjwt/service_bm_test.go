@@ -17,6 +17,7 @@ package ctxjwt_test
 import (
 	"net/http"
 	"net/http/httptest"
+	"sync"
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
@@ -27,7 +28,6 @@ import (
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/store/storenet"
 	"golang.org/x/net/context"
-	"sync"
 )
 
 func bmServeHTTP(b *testing.B, opts ...ctxjwt.Option) {
@@ -106,19 +106,30 @@ const benchServeHTTPTokenCount = 100
 // middleware. Allocations are not that interesting because they include
 // also NewRequest and ResponseRecorder.
 // the number of allocs depends on the number of benchServeHTTPTokenCount.
-// Map: BenchmarkServeHTTP_HMAC_DefaultConfig_BlackList_Parallel-4	    2000	   1780693 ns/op	  468966 B/op	    8077 allocs/op
-// FC : BenchmarkServeHTTP_HMAC_DefaultConfig_BlackList_Parallel-4	    1000	   1956859 ns/op	  469153 B/op	    8080 allocs/op
+// Map:  BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel-4	    1000	   2333499 ns/op	  468948 B/op	    8077 allocs/op
+// FC :  BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel-4	    1000	   2239810 ns/op	  469178 B/op	    8080 allocs/op
+// Null: BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel-4	    2000	   2576187 ns/op	  452330 B/op	    7991 allocs/op
 func BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel(b *testing.B) {
 
-	jwts := ctxjwt.MustNewService()
+	jwts := ctxjwt.MustNewService(
+		ctxjwt.WithErrorHandler(scope.DefaultID, 0, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+			_, err := ctxjwt.FromContext(ctx)
+			if err != nil {
+				return err
+			}
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return nil
+		})),
+	)
+	// below two lines comment out enables the null black list
 	jwts.Blacklist = ctxjwt.NewBlackListFreeCache(0)
 	//jwts.Blacklist = ctxjwt.NewBlackListSimpleMap()
 
 	srv := storemock.NewEurozzyService(
 		scope.MustSetByCode(scope.WebsiteID, "euro"),
-		//store.WithStorageConfig(cr),
+		//store.WithStorageConfig(cr), no configuration so config.ScopedGetter is nil
 	)
-	ctx := store.WithContextProvider(context.Background(), srv)
+	ctx := store.WithContextProvider(context.Background(), srv) // root context
 
 	var tokens [benchServeHTTPTokenCount]string
 	for i := 0; i < benchServeHTTPTokenCount; i++ {
@@ -135,7 +146,11 @@ func BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel(b *testing.B) {
 		}
 	}
 
-	final := ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
+	final := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+		_, err := ctxjwt.FromContext(ctx)
+		if err != nil {
+			return err
+		}
 		w.WriteHeader(http.StatusUnavailableForLegalReasons)
 		return nil
 	})

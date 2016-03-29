@@ -44,8 +44,9 @@ func TestServiceNewDefault(t *testing.T) {
 	t.Parallel()
 	jwts := ctxjwt.MustNewService()
 
-	assert.Nil(t, jwts.Blacklist.Set("test", time.Hour))
-	assert.False(t, jwts.Blacklist.Has("test"))
+	key := []byte("test")
+	assert.Nil(t, jwts.Blacklist.Set(key, time.Hour))
+	assert.False(t, jwts.Blacklist.Has(key))
 
 	assert.Len(t, jwts.JTI.Get(), uuidLen)
 
@@ -107,5 +108,5 @@ func TestServiceLogout(t *testing.T) {
 	assert.Nil(t, jwts.Logout(nil))
 	assert.Nil(t, jwts.Logout(tk))
 	assert.Equal(t, int(time.Hour.Seconds()), 1+int(tbl.exp.Seconds()))
-	assert.Equal(t, theToken, tbl.theToken)
+	assert.Equal(t, theToken, string(tbl.theToken))
 }

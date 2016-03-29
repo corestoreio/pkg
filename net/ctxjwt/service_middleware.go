@@ -24,7 +24,7 @@ import (
 )
 
 // SetHeaderAuthorization convenience function to set the Authorization Bearer
-// Header on a request.
+// Header on a request for a given token.
 func SetHeaderAuthorization(req *http.Request, token string) {
 	req.Header.Set("Authorization", "Bearer "+token)
 }
@@ -59,14 +59,13 @@ func (s *Service) WithParseAndValidate() ctxhttp.Middleware {
 
 			var inBL bool
 			if token != nil {
-				inBL = s.Blacklist.Has(token.Raw)
+				inBL = s.Blacklist.Has([]byte(token.Raw))
 			}
+
 			if token != nil && err == nil && token.Valid && !inBL {
 				return h.ServeHTTPContext(WithContext(ctx, token), w, r)
 			}
-			if PkgLog.IsDebug() {
-				PkgLog.Debug("ctxjwt.Service.Authenticate", "err", err, "token", token, "inBlacklist", inBL)
-			}
+
 			return scpCfg.errorHandler(WithContextError(ctx, err), w, r)
 		}
 	}

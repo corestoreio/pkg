@@ -24,15 +24,15 @@ import (
 // Blacklister a backend storage to handle blocked tokens.
 // Default black hole storage. Must be thread safe.
 type Blacklister interface {
-	Set(token string, expires time.Duration) error
-	Has(token string) bool
+	Set(token []byte, expires time.Duration) error
+	Has(token []byte) bool
 }
 
 // nullBL is the black hole black list
 type nullBL struct{}
 
-func (b nullBL) Set(_ string, _ time.Duration) error { return nil }
-func (b nullBL) Has(_ string) bool                   { return false }
+func (b nullBL) Set(_ []byte, _ time.Duration) error { return nil }
+func (b nullBL) Has(_ []byte) bool                   { return false }
 
 // BlackListSimpleMap creates an in-memory map which holds as a key the
 // tokens and as value the token expiration duration. Once a Set() operation
@@ -52,7 +52,7 @@ func NewBlackListSimpleMap() *BlackListSimpleMap {
 }
 
 // Has checks if token is within the blacklist.
-func (bl *BlackListSimpleMap) Has(token string) bool {
+func (bl *BlackListSimpleMap) Has(token []byte) bool {
 	bl.mu.Lock()
 	defer bl.mu.Unlock()
 	h := hash(token)
@@ -69,7 +69,7 @@ func (bl *BlackListSimpleMap) Has(token string) bool {
 }
 
 // Set adds a token to the map and performs a purge operation.
-func (bl *BlackListSimpleMap) Set(token string, expires time.Duration) error {
+func (bl *BlackListSimpleMap) Set(token []byte, expires time.Duration) error {
 	bl.mu.Lock()
 	defer bl.mu.Unlock()
 
@@ -109,13 +109,13 @@ func NewBlackListFreeCache(size int) *BlackListFreeCache {
 }
 
 // Set sets a token. If expires <=0 the cached item will not expire.
-func (fc *BlackListFreeCache) Set(token string, expires time.Duration) error {
-	return fc.Cache.Set([]byte(token), fc.emptyVal, int(expires.Seconds()))
+func (fc *BlackListFreeCache) Set(token []byte, expires time.Duration) error {
+	return fc.Cache.Set(token, fc.emptyVal, int(expires.Seconds()))
 }
 
 // Has checks if the cache contains the token.
-func (fc *BlackListFreeCache) Has(token string) bool {
-	val, err := fc.Cache.Get([]byte(token))
+func (fc *BlackListFreeCache) Has(token []byte) bool {
+	val, err := fc.Cache.Get(token)
 	if err == freecache.ErrNotFound {
 		return false
 	}
@@ -140,9 +140,9 @@ const (
 )
 
 // fnv64a
-func hash(data string) uint64 {
+func hash(data []byte) uint64 {
 	hash := offset64
-	for _, c := range []byte(data) {
+	for _, c := range data {
 		hash ^= uint64(c)
 		hash *= prime64
 	}

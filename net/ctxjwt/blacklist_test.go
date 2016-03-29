@@ -18,6 +18,8 @@ import (
 	"testing"
 	"time"
 
+	"bytes"
+
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
@@ -25,54 +27,61 @@ import (
 
 type testBL struct {
 	*testing.T
-	theToken string
+	theToken []byte
 	exp      time.Duration
 }
 
-func (b *testBL) Set(theToken string, exp time.Duration) error {
+func (b *testBL) Set(theToken []byte, exp time.Duration) error {
 	b.theToken = theToken
 	b.exp = exp
 	return nil
 }
-func (b *testBL) Has(_ string) bool { return false }
+func (b *testBL) Has(_ []byte) bool { return false }
 
 type testRealBL struct {
-	theToken string
+	theToken []byte
 	exp      time.Duration
 }
 
-func (b *testRealBL) Set(t string, exp time.Duration) error {
+func (b *testRealBL) Set(t []byte, exp time.Duration) error {
 	b.theToken = t
 	b.exp = exp
 	return nil
 }
-func (b *testRealBL) Has(t string) bool { return b.theToken == t }
+func (b *testRealBL) Has(t []byte) bool { return bytes.Equal(b.theToken, t) }
+
+func appendTo(b1 []byte, s string) []byte {
+	bNew := make([]byte, len(b1)+len([]byte(s)))
+	n := copy(bNew, b1)
+	copy(bNew[n:], s)
+	return bNew
+}
 
 func TestBlackLists(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		bl    ctxjwt.Blacklister
-		token string
+		token []byte
 	}{
 		{
 			ctxjwt.NewBlackListSimpleMap(),
-			`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NTkxNTI3NTEsImlhdCI6MTQ1OTE0OTE1MSwibWFzY290IjoiZ29waGVyIn0.QzUJ5snl685Wmx4wXlCUykvBQMKn3OyL5MpnSaKrkdw`,
+			[]byte(`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NTkxNTI3NTEsImlhdCI6MTQ1OTE0OTE1MSwibWFzY290IjoiZ29waGVyIn0.QzUJ5snl685Wmx4wXlCUykvBQMKn3OyL5MpnSaKrkdw`),
 		},
 		{
 			ctxjwt.NewBlackListFreeCache(0),
-			`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NTkxNTI3NTEsImlhdCI6MTQ1OTE0OTE1MSwibWFzY290IjoiZ29waGVyIn0.QzUJ5snl685Wmx4wXlCUykvBQMKn3OyL5MpnSaKrkdw`,
+			[]byte(`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NTkxNTI3NTEsImlhdCI6MTQ1OTE0OTE1MSwibWFzY290IjoiZ29waGVyIn0.QzUJ5snl685Wmx4wXlCUykvBQMKn3OyL5MpnSaKrkdw`),
 		},
 	}
 	for i, test := range tests {
 		assert.NoError(t, test.bl.Set(test.token, time.Second*1), "Index %d", i)
-		assert.NoError(t, test.bl.Set(test.token+"2", time.Second*2), "Index %d", i)
+		assert.NoError(t, test.bl.Set(appendTo(test.token, "2"), time.Second*2), "Index %d", i)
 		assert.True(t, test.bl.Has(test.token), "Index %d", i)
 		time.Sleep(time.Second * 3)
-		assert.NoError(t, test.bl.Set(test.token+"3", time.Second*2), "Index %d", i)
+		assert.NoError(t, test.bl.Set(appendTo(test.token, "3"), time.Second*2), "Index %d", i)
 		assert.False(t, test.bl.Has(test.token), "Index %d", i)
-		assert.False(t, test.bl.Has(test.token+"2"), "Index %d", i)
+		assert.False(t, test.bl.Has(appendTo(test.token, "2")), "Index %d", i)
 		assert.False(t, test.bl.Has(test.token), "Index %d", i)
-		assert.True(t, test.bl.Has(test.token+"3"), "Index %d", i)
+		assert.True(t, test.bl.Has(appendTo(test.token, "3")), "Index %d", i)
 	}
 }
 
@@ -80,17 +89,17 @@ const benchTokenCount = 100
 
 func benchBlackList(b *testing.B, bl ctxjwt.Blacklister) {
 	jwts := ctxjwt.MustNewService()
-	var tokens [benchTokenCount]string
+	var tokens [benchTokenCount][]byte
 
 	for i := 0; i < benchTokenCount; i++ {
 		claim := map[string]interface{}{
 			"someKey": i,
 		}
-		var err error
-		tokens[i], _, err = jwts.GenerateToken(scope.DefaultID, 0, claim)
+		tk, _, err := jwts.GenerateToken(scope.DefaultID, 0, claim)
 		if err != nil {
 			b.Fatal(err)
 		}
+		tokens[i] = []byte(tk)
 	}
 
 	b.ReportAllocs()

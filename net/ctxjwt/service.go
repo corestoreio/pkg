@@ -155,7 +155,7 @@ func (s *Service) Logout(token *jwt.Token) error {
 			}
 		}
 	}
-	return s.Blacklist.Set(token.Raw, exp)
+	return s.Blacklist.Set([]byte(token.Raw), exp)
 }
 
 // Parse parses a token string and returns the valid token or an error
@@ -176,7 +176,7 @@ func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken string) (*jwt.
 	token, err := jwt.Parse(rawToken, sc.keyFunc)
 	var inBL bool
 	if token != nil {
-		inBL = s.Blacklist.Has(token.Raw)
+		inBL = s.Blacklist.Has([]byte(token.Raw))
 	}
 	if token != nil && err == nil && token.Valid && !inBL {
 		return token, nil

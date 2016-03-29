@@ -148,7 +148,7 @@ func TestMiddlewareWithParseAndValidateInBlackList(t *testing.T) {
 	assert.NoError(t, err)
 
 	theToken, _, err := jm.GenerateToken(scope.DefaultID, 0, nil)
-	bl.theToken = theToken
+	bl.theToken = []byte(theToken)
 	assert.NoError(t, err)
 	assert.NotEmpty(t, theToken)
 
