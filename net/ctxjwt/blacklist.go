@@ -24,7 +24,11 @@ import (
 // Blacklister a backend storage to handle blocked tokens.
 // Default black hole storage. Must be thread safe.
 type Blacklister interface {
+	// Set adds a token to the blacklist and may perform a
+	// purge operation. Set should be called when you log out a user.
 	Set(token []byte, expires time.Duration) error
+	// Has checks if a token has been stored in the blacklist and may
+	// delete the token if expiration time is up.
 	Has(token []byte) bool
 }
 
@@ -40,7 +44,7 @@ func (b nullBL) Has(_ []byte) bool                   { return false }
 // production as the underlying mutex will become a bottleneck with higher
 // throughput, but still faster as a connection to Redis ;-)
 type BlackListSimpleMap struct {
-	mu     sync.Mutex
+	mu     sync.RWMutex
 	tokens map[uint64]time.Time
 }
 
@@ -53,17 +57,19 @@ func NewBlackListSimpleMap() *BlackListSimpleMap {
 
 // Has checks if token is within the blacklist.
 func (bl *BlackListSimpleMap) Has(token []byte) bool {
-	bl.mu.Lock()
-	defer bl.mu.Unlock()
 	h := hash(token)
+	bl.mu.RLock()
 	d, ok := bl.tokens[h]
+	bl.mu.RUnlock()
 	if !ok {
 		return false
 	}
 	isValid := time.Since(d) < 0
 
 	if false == isValid {
+		bl.mu.Lock()
 		delete(bl.tokens, h)
+		bl.mu.Unlock()
 	}
 	return isValid
 }
@@ -73,7 +79,6 @@ func (bl *BlackListSimpleMap) Set(token []byte, expires time.Duration) error {
 	bl.mu.Lock()
 	defer bl.mu.Unlock()
 
-	// this operation is not performance friendly
 	for k, v := range bl.tokens {
 		if time.Since(v) > 0 {
 			delete(bl.tokens, k)
@@ -85,8 +90,8 @@ func (bl *BlackListSimpleMap) Set(token []byte, expires time.Duration) error {
 
 // Len returns the number of entries in the blacklist
 func (bl *BlackListSimpleMap) Len() int {
-	bl.mu.Lock()
-	defer bl.mu.Unlock()
+	bl.mu.RLock()
+	defer bl.mu.RUnlock()
 	return len(bl.tokens)
 }
 
