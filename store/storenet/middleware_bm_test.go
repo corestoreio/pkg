@@ -115,7 +115,7 @@ func Benchmark_WithInitStoreByFormCookie(b *testing.B) {
 	}
 
 	req.AddCookie(&http.Cookie{
-		Name:  storenet.ParamName,
+		Name:  store.ParamName,
 		Value: wantStoreCode,
 	})
 

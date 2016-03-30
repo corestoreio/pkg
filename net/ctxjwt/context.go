@@ -22,8 +22,8 @@ import (
 )
 
 type (
-	keyJSONWebToken struct{}
-	keyctxErr       struct{}
+	keyCtxToken struct{}
+	keyCtxErr   struct{}
 )
 
 // ErrContextJWTNotFound gets returned when the jwt cannot be found.
@@ -31,18 +31,18 @@ var ErrContextJWTNotFound = errors.New("Cannot extract ctxjwt nor an error from 
 
 // WithContext creates a new context with jwt.Token attached.
 func WithContext(ctx context.Context, t *jwt.Token) context.Context {
-	return context.WithValue(ctx, keyJSONWebToken{}, t)
+	return context.WithValue(ctx, keyCtxToken{}, t)
 }
 
 // FromContext returns the jwt.Token in ctx if it exists or an error.
 // Check the ok bool value if an error or jwt.Token is within the
 // context.Context
 func FromContext(ctx context.Context) (*jwt.Token, error) {
-	err, ok := ctx.Value(keyctxErr{}).(error)
+	err, ok := ctx.Value(keyCtxErr{}).(error)
 	if ok {
 		return nil, err
 	}
-	t, ok := ctx.Value(keyJSONWebToken{}).(*jwt.Token)
+	t, ok := ctx.Value(keyCtxToken{}).(*jwt.Token)
 	if !ok || t == nil {
 		return nil, ErrContextJWTNotFound
 	}
@@ -51,5 +51,5 @@ func FromContext(ctx context.Context) (*jwt.Token, error) {
 
 // WithContextError creates a new context with an error attached.
 func WithContextError(ctx context.Context, err error) context.Context {
-	return context.WithValue(ctx, keyctxErr{}, err)
+	return context.WithValue(ctx, keyCtxErr{}, err)
 }

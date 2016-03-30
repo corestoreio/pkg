@@ -20,17 +20,12 @@ import (
 	"github.com/corestoreio/csfw/backend"
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/ctxhttp"
-	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/juju/errors"
 	"golang.org/x/net/context"
 )
-
-// HTTPRequestParamStore name of the GET parameter to set a new store in a
-// current website/group context
-const HTTPRequestParamStore = `___store`
 
 // WithValidateBaseURL is a middleware which checks if the request base URL
 // is equal to the one store in the configuration, if not
@@ -90,59 +85,6 @@ func WithValidateBaseURL(cg config.GetterPubSuber) ctxhttp.Middleware {
 				}
 			}
 			return hf(ctx, w, r)
-		}
-	}
-}
-
-// WithInitStoreByToken is a middleware which initializes a request based store
-// via a JSON Web Token.
-// Extracts the store.Provider and jwt.Token from context.Context. If the requested
-// store is different than the initialized requested store than the new requested
-// store will be saved in the context.
-func WithInitStoreByToken() ctxhttp.Middleware {
-
-	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
-		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-
-			storeService, requestedStore, err := store.FromContextProvider(ctx)
-			if err != nil {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("store.WithInitStoreByToken.FromContextServiceReader", "err", err, "ctx", ctx)
-				}
-				return errors.Mask(err)
-			}
-
-			token, err := ctxjwt.FromContext(ctx)
-			if err != nil {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("store.WithInitStoreByToken.ctxjwt.FromContext.err", "err", err, "ctx", ctx)
-				}
-				return errors.Mask(err)
-			}
-
-			scopeOption, err := CodeFromClaim(token.Claims)
-			if err != nil {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("store.WithInitStoreByToken.StoreCodeFromClaim", "err", err, "token", token, "ctx", ctx)
-				}
-				return errors.Mask(err)
-			}
-
-			newRequestedStore, err := storeService.RequestedStore(scopeOption)
-			if err != nil {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("store.WithInitStoreByToken.RequestedStore", "err", err, "token", token, "scopeOption", scopeOption, "ctx", ctx)
-				}
-				return errors.Mask(err)
-			}
-
-			if newRequestedStore.StoreID() != requestedStore.StoreID() {
-				// this may lead to a bug because the previously set storeService and requestedStore
-				// will still exists and have not been removed.
-				ctx = store.WithContextProvider(ctx, storeService, newRequestedStore)
-			}
-
-			return hf.ServeHTTPContext(ctx, w, r)
 		}
 	}
 }

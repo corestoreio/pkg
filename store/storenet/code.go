@@ -21,22 +21,15 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 )
 
-// CodeFromClaim returns a valid store code from a JSON web token or ErrStoreNotFound.
-// Token argument is a map like being used by jwt.Token.Claims.
-func CodeFromClaim(token map[string]interface{}) (o scope.Option, err error) {
-	err = store.ErrStoreNotFound
-	if 0 == len(token) {
-		return
-	}
+// ParamName use in Cookie and JWT important when the user selects a different
+// store within the current website/group context. This name will be used in
+// a cookie or as key value in a token to permanently save the new selected
+// store code.
+const ParamName = `store`
 
-	tokVal, ok := token[ParamName]
-	scopeCode, okcs := tokVal.(string)
-
-	if okcs && ok {
-		return setByCode(scopeCode)
-	}
-	return
-}
+// HTTPRequestParamStore name of the GET parameter to set a new store in a
+// current website/group context
+const HTTPRequestParamStore = `___store`
 
 // CodeFromCookie returns from a Request the value of the store cookie or
 // an ErrStoreNotFound.
@@ -69,10 +62,4 @@ func setByCode(scopeCode string) (o scope.Option, err error) {
 		o, err = scope.SetByCode(scope.StoreID, scopeCode)
 	}
 	return
-}
-
-// CodeAddToClaim adds the store code to a JSON web token.
-// tokenClaim may be *jwt.Token.Claim
-func CodeAddToClaim(s *store.Store, tokenClaim map[string]interface{}) {
-	tokenClaim[ParamName] = s.Data.Code.String
 }

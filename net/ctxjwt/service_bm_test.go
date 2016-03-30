@@ -47,7 +47,7 @@ func bmServeHTTP(b *testing.B, opts ...ctxjwt.Option) {
 		w.WriteHeader(http.StatusTeapot)
 		return nil
 	})
-	jwtHandler := jwts.WithParseAndValidate()(final)
+	jwtHandler := jwts.WithInitTokenAndStore()(final)
 
 	req, err := http.NewRequest("GET", "http://abc.xyz", nil)
 	if err != nil {
@@ -154,7 +154,7 @@ func BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel(b *testing.B) {
 		w.WriteHeader(http.StatusUnavailableForLegalReasons)
 		return nil
 	})
-	jwtHandler := jwts.WithParseAndValidate()(final)
+	jwtHandler := jwts.WithInitTokenAndStore()(final)
 
 	b.ReportAllocs()
 	b.ResetTimer()

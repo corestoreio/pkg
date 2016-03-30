@@ -20,7 +20,6 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"io/ioutil"
-	"net/http"
 	"time"
 
 	"crypto/rand"
@@ -31,7 +30,6 @@ import (
 	"github.com/dgrijalva/jwt-go"
 	"github.com/juju/errors"
 	"github.com/pborman/uuid"
-	"golang.org/x/net/context"
 )
 
 // ErrPrivateKeyNotFound will be returned when the PK cannot be read from the Reader
@@ -40,6 +38,9 @@ var ErrPrivateKeyNotFound = errors.New("Private Key from io.Reader no found")
 // ErrPrivateKeyNoPassword will be returned when the PK is encrypted but you
 // forgot to provide a password.
 var ErrPrivateKeyNoPassword = errors.New("Private Key is encrypted but password was not set")
+
+// ErrUnexpectedSigningMethod will be returned if some outside dude tries to trick us
+var ErrUnexpectedSigningMethod = errors.New("JWT: Unexpected signing method")
 
 // PrivateKeyBits used when auto generating a private key
 const PrivateKeyBits = 4096
@@ -55,21 +56,23 @@ type scopedConfig struct {
 	// signingMethod how to sign the JWT. For default value see the OptionFuncs
 	signingMethod jwt.SigningMethod
 	// enableJTI activates the (JWT ID) Claim, a unique identifier. UUID.
-	enableJTI    bool
-	errorHandler ctxhttp.HandlerFunc
+	enableJTI bool
+	// errorHandler specific for this scope. if nil, fallback to global one
+	// stored in the Service
+	errorHandler ctxhttp.Handler
 	// keyFunc will receive the parsed token and should return the key for validating.
 	keyFunc jwt.Keyfunc
+	// initStore if set to true the store depending on the store code, found in the token,
+	// gets initialized.
+	initStore bool
 }
 
 // getKeyFunc generates the key function for a specific scope and to used in caching
 func getKeyFunc(scpCfg scopedConfig) jwt.Keyfunc {
 	return func(t *jwt.Token) (interface{}, error) {
 
-		if t.Method.Alg() != scpCfg.signingMethod.Alg() {
-			if PkgLog.IsDebug() {
-				PkgLog.Debug("ctxjwt.keyFunc.SigningMethod", "err", ErrUnexpectedSigningMethod, "token", t, "method", scpCfg.signingMethod.Alg())
-			}
-			return nil, ErrUnexpectedSigningMethod
+		if have, want := t.Method.Alg(), scpCfg.signingMethod.Alg(); have != want {
+			return nil, errors.Errorf("%s - Have: %s Want: %s", ErrUnexpectedSigningMethod, have, want)
 		}
 
 		switch t.Method.Alg() {
@@ -88,13 +91,6 @@ func getKeyFunc(scpCfg scopedConfig) jwt.Keyfunc {
 // Option can be used as an argument in NewService to configure a token service.
 type Option func(*Service)
 
-// DefaultErrorHandler global default error handler. Will also be used when
-// creating a new configuration for a scope. Used in WithDefaultConfig().
-var DefaultErrorHandler = ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
-	http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-	return nil
-})
-
 func defaultScopedConfig() scopedConfig {
 	return scopedConfig{
 		scopeHash:     scope.DefaultHash,
@@ -102,7 +98,6 @@ func defaultScopedConfig() scopedConfig {
 		hmacPassword:  []byte(uuid.NewRandom()), // @todo can be better ...
 		signingMethod: jwt.SigningMethodHS256,
 		enableJTI:     false,
-		errorHandler:  DefaultErrorHandler,
 	}
 }
 
@@ -184,8 +179,10 @@ func WithSigningMethod(scp scope.Scope, id int64, sm jwt.SigningMethod) Option {
 	}
 }
 
-// WithErrorHandler sets the error handler for a scope and its ID.
-func WithErrorHandler(scp scope.Scope, id int64, handler ctxhttp.HandlerFunc) Option {
+// WithErrorHandler sets the error handler for a scope and its ID. If the
+// scope.DefaultID will be set the handler gets also applid to the global
+// handler
+func WithErrorHandler(scp scope.Scope, id int64, handler ctxhttp.Handler) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) {
 		s.mu.Lock()
@@ -199,6 +196,7 @@ func WithErrorHandler(scp scope.Scope, id int64, handler ctxhttp.HandlerFunc) Op
 		}
 		scNew.scopeHash = scope.NewHash(scp, id)
 		s.scopeCache[h] = scNew
+		s.DefaultErrorHandler = handler
 	}
 }
 
@@ -449,8 +447,6 @@ func optionsByBackend(be *PkgBackend, sg config.ScopedGetter) (opts []Option) {
 			s.MultiErr = s.AppendErrors(ErrUnexpectedSigningMethod)
 		})
 	}
-
-	opts = append(opts, WithErrorHandler(scp, id, DefaultErrorHandler))
 
 	return opts
 }

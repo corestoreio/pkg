@@ -20,8 +20,17 @@ import (
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/store"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/juju/errors"
 	"golang.org/x/net/context"
 )
+
+// ErrTokenBlacklisted returned by the middleware if the token can be found
+// within the black list.
+var ErrTokenBlacklisted = errors.New("Token has been black listed")
+
+// ErrTokenInvalid returned by the middleware to make understandable that
+// a token has been invalidated.
+var ErrTokenInvalid = errors.New("Token has become invalid")
 
 // SetHeaderAuthorization convenience function to set the Authorization Bearer
 // Header on a request for a given token.
@@ -29,44 +38,84 @@ func SetHeaderAuthorization(req *http.Request, token string) {
 	req.Header.Set("Authorization", "Bearer "+token)
 }
 
-// WithParseAndValidate represent a middleware handler. For POST or
-// PUT requests, it also parses the request body as a form. The extracted valid
-// token will be added to the context. The extracted token will be checked
-// against the Blacklist. errHandler is an optional argument. Only the first
-// item in the slice will be considered. Default errHandler is:
+// WithInitToken represent a middleware handler which parses and validates a
+// token and adds it to the context. For a POST or a PUT request, it also parses the
+// request body as a form. The extracted valid
+// token will be added to the context or if an error has occurred, that error will
+// be added to the context. The extracted token will be checked
+// against the Blacklist.
 //
-//		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-//
-// ProTip: Instead of passing the token as an HTML Header you can also add the token
+// Tip: Instead of passing the token as an HTML Header you can also add the token
 // to a form (multipart/form-data) with an input name of access_token. If the
 // token cannot be found within the Header the fallback triggers the lookup within the form.
-func (s *Service) WithParseAndValidate() ctxhttp.Middleware {
+//func (s *Service) WithInitToken() ctxhttp.Middleware {
+//
+//	return func(h ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+//		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+//
+//		}
+//	}
+//}
 
-	return func(h ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+// WithInitTokenAndStore  represent a middleware handler which parses and validates a
+// token, adds the token to the context and initializes the requested store
+// and scope.is a middleware which initializes a request based store
+// via a JSON Web Token.
+// Extracts the store.Provider and jwt.Token from context.Context. If the requested
+// store is different than the initialized requested store than the new requested
+// store will be saved in the context.
+func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
+
+	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			_, reqStore, err := store.FromContextProvider(ctx)
+			storeService, requestedStore, err := store.FromContextProvider(ctx)
 			if err != nil {
-				return err
+				return s.DefaultErrorHandler.ServeHTTPContext(WithContextError(ctx, err), w, r)
 			}
 
-			scpCfg, err := s.getConfigByScopedGetter(reqStore.Website.Config)
+			// the scpCfg depends on how you have initialized the storeService during app boot.
+			scpCfg, err := s.getConfigByScopedGetter(requestedStore.Website.Config)
 			if err != nil {
-				return err
+				return s.DefaultErrorHandler.ServeHTTPContext(WithContextError(ctx, err), w, r)
+			}
+
+			errHandler := s.DefaultErrorHandler
+			if scpCfg.errorHandler != nil {
+				errHandler = scpCfg.errorHandler
 			}
 
 			token, err := jwt.ParseFromRequest(r, scpCfg.keyFunc)
-
-			var inBL bool
-			if token != nil {
-				inBL = s.Blacklist.Has([]byte(token.Raw))
+			if err != nil {
+				return errHandler.ServeHTTPContext(WithContextError(ctx, err), w, r)
 			}
 
-			if token != nil && err == nil && token.Valid && !inBL {
-				return h.ServeHTTPContext(WithContext(ctx, token), w, r)
+			if s.Blacklist.Has([]byte(token.Raw)) {
+				return errHandler.ServeHTTPContext(WithContextError(ctx, ErrTokenBlacklisted), w, r)
 			}
 
-			return scpCfg.errorHandler(WithContextError(ctx, err), w, r)
+			if false == token.Valid {
+				return errHandler.ServeHTTPContext(WithContextError(ctx, ErrTokenInvalid), w, r)
+			}
+
+			scopeOption, err := ScopeOptionFromClaim(token.Claims)
+			if err != nil {
+				// can be a store.ErrStoreNotFound when the token does not contain the store code.
+				return errHandler.ServeHTTPContext(WithContextError(ctx, err), w, r)
+			}
+
+			newRequestedStore, err := storeService.RequestedStore(scopeOption)
+			if err != nil {
+				return errHandler.ServeHTTPContext(WithContextError(ctx, err), w, r)
+			}
+
+			if newRequestedStore.StoreID() != requestedStore.StoreID() {
+				// this may lead to a bug because the previously set storeService and requestedStore
+				// will still exists and have not been removed.
+				ctx = store.WithContextProvider(ctx, storeService, newRequestedStore)
+			}
+			// yay! we made it! the token and the requested store is valid!
+			return hf.ServeHTTPContext(ctx, w, r)
 		}
 	}
 }

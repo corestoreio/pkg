@@ -107,7 +107,7 @@ func TestWithValidateBaseUrl_ActivatedAndShouldNotRedirectWithPOSTRequest(t *tes
 	mw := storenet.WithValidateBaseURL(mockReader)(finalHandlerWithValidateBaseURL(t))
 
 	err = mw.ServeHTTPContext(context.Background(), w, req)
-	assert.EqualError(t, err, storenet.ErrContextProviderNotFound.Error())
+	assert.EqualError(t, err, store.ErrContextProviderNotFound.Error())
 
 	w = httptest.NewRecorder()
 	req, err = http.NewRequest(httputil.MethodPost, "http://corestore.io/catalog/product/view", strings.NewReader(`{ "k1": "v1",  "k2": { "k3": ["va1"]  }}`))
@@ -182,7 +182,7 @@ func getMWTestRequest(m, u string, c *http.Cookie) *http.Request {
 
 func finalInitStoreHandler(t *testing.T, wantStoreCode string) ctxhttp.HandlerFunc {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		_, haveReqStore, err := storenet.FromContextProvider(ctx)
+		_, haveReqStore, err := store.FromContextProvider(ctx)
 		if err != nil {
 			return err
 		}
@@ -268,7 +268,7 @@ func TestWithInitStoreByFormCookie(t *testing.T) {
 
 	for i, test := range testsMWInitByFormCookie {
 
-		ctx := storenet.WithContextProvider(context.Background(), storemock.NewEurozzyService(test.haveSO))
+		ctx := store.WithContextProvider(context.Background(), storemock.NewEurozzyService(test.haveSO))
 
 		mw := storenet.WithInitStoreByFormCookie()(finalInitStoreHandler(t, test.wantStoreCode))
 
@@ -308,104 +308,5 @@ func TestWithInitStoreByFormCookie(t *testing.T) {
 func TestWithInitStoreByFormCookie_NilCtx(t *testing.T) {
 	mw := storenet.WithInitStoreByFormCookie()(nil)
 	surfErr := mw.ServeHTTPContext(context.Background(), nil, nil)
-	assert.EqualError(t, surfErr, storenet.ErrContextProviderNotFound.Error())
-}
-
-func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) context.Context {
-	ctx := storenet.WithContextProvider(context.Background(), storemock.NewEurozzyService(initO))
-	tok := jwt.New(jwt.SigningMethodHS256)
-	tok.Claims[storenet.ParamName] = tokenStoreCode
-	ctx = ctxjwt.WithContext(ctx, tok)
-	return ctx
-}
-
-func TestWithInitStoreByToken(t *testing.T) {
-
-	var newReq = func(i int) *http.Request {
-		req, err := http.NewRequest(httputil.MethodGet, fmt.Sprintf("https://corestore.io/store/list/%d", i), nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		return req
-	}
-
-	tests := []struct {
-		ctx           context.Context
-		wantStoreCode string
-		wantErr       error
-	}{
-		{storenet.WithContextProvider(context.Background(), nil), "de", storenet.ErrContextProviderNotFound},
-		{storenet.WithContextProvider(context.Background(), storemock.NewEurozzyService(scope.Option{Store: scope.MockCode("de")})), "de", ctxjwt.ErrContextJWTNotFound},
-		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "de"), "de", nil},
-		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("at")}, "ch"), "at", store.ErrStoreNotActive},
-		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "at"), "at", nil},
-		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "a$t"), "de", store.ErrStoreCodeInvalid},
-		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("at")}, ""), "at", store.ErrStoreCodeInvalid},
-
-		{newStoreServiceWithTokenCtx(scope.Option{Group: scope.MockID(1)}, "de"), "de", nil},
-		{newStoreServiceWithTokenCtx(scope.Option{Group: scope.MockID(1)}, "ch"), "at", store.ErrStoreNotActive},
-		{newStoreServiceWithTokenCtx(scope.Option{Group: scope.MockID(1)}, " ch"), "at", store.ErrStoreCodeInvalid},
-		{newStoreServiceWithTokenCtx(scope.Option{Group: scope.MockID(1)}, "uk"), "at", store.ErrStoreChangeNotAllowed},
-
-		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "uk"), "au", store.ErrStoreChangeNotAllowed},
-		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "nz"), "nz", nil},
-		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "n z"), "au", store.ErrStoreCodeInvalid},
-		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "au"), "au", nil},
-		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, ""), "au", store.ErrStoreCodeInvalid},
-	}
-	for i, test := range tests {
-
-		mw := storenet.WithInitStoreByToken()(finalInitStoreHandler(t, test.wantStoreCode))
-		rec := httptest.NewRecorder()
-		surfErr := mw.ServeHTTPContext(test.ctx, rec, newReq(i))
-		if test.wantErr != nil {
-			assert.EqualError(t, surfErr, test.wantErr.Error(), "Index %d", i)
-			continue
-		}
-		assert.NoError(t, surfErr, "Index %d", i)
-	}
-}
-
-func TestWithInitStoreByToken_EqualPointers(t *testing.T) {
-	// this Test is related to Benchmark_WithInitStoreByToken
-	// The returned pointers from store.FromContextReader must be the
-	// same for each request with the same request pattern.
-
-	ctx := newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "nz")
-	rec := httptest.NewRecorder()
-	req, err := http.NewRequest(httputil.MethodGet, "https://corestore.io/store/list", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var equalStorePointer *store.Store
-	mw := storenet.WithInitStoreByToken()(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		_, haveReqStore, err := storenet.FromContextProvider(ctx)
-		if err != nil {
-			return err
-		}
-
-		if equalStorePointer == nil {
-			equalStorePointer = haveReqStore
-		}
-
-		if "nz" != haveReqStore.StoreCode() {
-			t.Errorf("Have: %s\nWant: nz", haveReqStore.StoreCode())
-		}
-
-		wantP := reflect.ValueOf(equalStorePointer)
-		haveP := reflect.ValueOf(haveReqStore)
-
-		if wantP.Pointer() != haveP.Pointer() {
-			t.Errorf("Expecting equal pointers for each request.\nWant: %p\nHave: %p", equalStorePointer, haveReqStore)
-		}
-
-		return nil
-	}))
-
-	for i := 0; i < 10; i++ {
-		if err := mw.ServeHTTPContext(ctx, rec, req); err != nil {
-			t.Error(err)
-		}
-	}
+	assert.EqualError(t, surfErr, store.ErrContextProviderNotFound.Error())
 }

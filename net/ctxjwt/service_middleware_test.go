@@ -26,24 +26,31 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/csfw/store/storenet"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
 
-func TestMiddlewareWithParseAndValidateNoStoreProvider(t *testing.T) {
+func TestMiddlewareWithInitTokenNoStoreProvider(t *testing.T) {
 	t.Parallel()
 
-	authHandler, _ := testAuth(t)
+	authHandler, _ := testAuth(t, ctxjwt.WithErrorHandler(scope.DefaultID, 0, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+		tk, err := ctxjwt.FromContext(ctx)
+		assert.Nil(t, tk)
+		assert.EqualError(t, err, store.ErrContextProviderNotFound.Error())
+		return nil
+	})))
 
 	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
 	assert.NoError(t, err)
 	w := httptest.NewRecorder()
-	assert.EqualError(t, authHandler.ServeHTTPContext(context.Background(), w, req), store.ErrContextProviderNotFound.Error())
+	assert.NoError(t, authHandler.ServeHTTPContext(context.Background(), w, req))
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Empty(t, w.Body.String())
 }
 
-func TestMiddlewareWithParseAndValidateNoToken(t *testing.T) {
+func TestMiddlewareWithInitTokenNoToken(t *testing.T) {
 	t.Parallel()
 
 	cr := cfgmock.NewService()
@@ -62,7 +69,7 @@ func TestMiddlewareWithParseAndValidateNoToken(t *testing.T) {
 	assert.Equal(t, w.Body.String(), http.StatusText(http.StatusUnauthorized)+"\n")
 }
 
-func TestMiddlewareWithParseAndValidateHTTPErrorHandler(t *testing.T) {
+func TestMiddlewareWithInitTokenHTTPErrorHandler(t *testing.T) {
 	t.Parallel()
 
 	cr := cfgmock.NewService()
@@ -72,13 +79,13 @@ func TestMiddlewareWithParseAndValidateHTTPErrorHandler(t *testing.T) {
 	)
 	ctx := store.WithContextProvider(context.Background(), srv)
 
-	authHandler, _ := testAuth(t, ctxjwt.WithErrorHandler(scope.DefaultID, 0, func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	authHandler, _ := testAuth(t, ctxjwt.WithErrorHandler(scope.DefaultID, 0, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		tok, err := ctxjwt.FromContext(ctx)
 		assert.Nil(t, tok)
 		w.WriteHeader(http.StatusTeapot)
 		_, err = w.Write([]byte(err.Error()))
 		return err
-	}))
+	})))
 
 	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
 	assert.NoError(t, err)
@@ -88,7 +95,7 @@ func TestMiddlewareWithParseAndValidateHTTPErrorHandler(t *testing.T) {
 	assert.Equal(t, "no token present in request", w.Body.String())
 }
 
-func TestMiddlewareWithParseAndValidateSuccess(t *testing.T) {
+func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
 	t.Parallel()
 
 	cr := cfgmock.NewService()
@@ -123,7 +130,7 @@ func TestMiddlewareWithParseAndValidateSuccess(t *testing.T) {
 
 		return nil
 	})
-	authHandler := jm.WithParseAndValidate()(finalHandler)
+	authHandler := jm.WithInitTokenAndStore()(finalHandler)
 
 	wRec := httptest.NewRecorder()
 	assert.NoError(t, authHandler.ServeHTTPContext(ctx, wRec, req))
@@ -131,7 +138,7 @@ func TestMiddlewareWithParseAndValidateSuccess(t *testing.T) {
 	assert.Equal(t, `I'm more of a coffee pot`, wRec.Body.String())
 }
 
-func TestMiddlewareWithParseAndValidateInBlackList(t *testing.T) {
+func TestMiddlewareWithInitTokenInBlackList(t *testing.T) {
 	t.Parallel()
 
 	cr := cfgmock.NewService()
@@ -160,7 +167,7 @@ func TestMiddlewareWithParseAndValidateInBlackList(t *testing.T) {
 		w.WriteHeader(http.StatusTeapot)
 		return nil
 	})
-	authHandler := jm.WithParseAndValidate()(finalHandler)
+	authHandler := jm.WithInitTokenAndStore()(finalHandler)
 
 	wRec := httptest.NewRecorder()
 	assert.NoError(t, authHandler.ServeHTTPContext(ctx, wRec, req))
@@ -187,6 +194,116 @@ func testAuth(t *testing.T, opts ...ctxjwt.Option) (ctxhttp.Handler, string) {
 		w.WriteHeader(http.StatusOK)
 		return nil
 	})
-	authHandler := jm.WithParseAndValidate()(final)
+	authHandler := jm.WithInitTokenAndStore()(final)
 	return authHandler, theToken
 }
+
+func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) context.Context {
+	ctx := store.WithContextProvider(context.Background(), storemock.NewEurozzyService(initO))
+	tok := jwt.New(jwt.SigningMethodHS256)
+	tok.Claims[storenet.ParamName] = tokenStoreCode
+	ctx = ctxjwt.WithContext(ctx, tok)
+	return ctx
+}
+
+func finalInitStoreHandler(t *testing.T, wantStoreCode string) ctxhttp.HandlerFunc {
+	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		_, haveReqStore, err := store.FromContextProvider(ctx)
+		if err != nil {
+			return err
+		}
+		assert.Exactly(t, wantStoreCode, haveReqStore.StoreCode())
+		return nil
+	}
+}
+
+//func TestWithInitTokenAndStore(t *testing.T) {
+//
+//	var newReq = func(i int) *http.Request {
+//		req, err := http.NewRequest(httputil.MethodGet, fmt.Sprintf("https://corestore.io/store/list/%d", i), nil)
+//		if err != nil {
+//			t.Fatal(err)
+//		}
+//		return req
+//	}
+//
+//	tests := []struct {
+//		ctx           context.Context
+//		wantStoreCode string
+//		wantErr       error
+//	}{
+//		{store.WithContextProvider(context.Background(), nil), "de", store.ErrContextProviderNotFound},
+//		{store.WithContextProvider(context.Background(), storemock.NewEurozzyService(scope.Option{Store: scope.MockCode("de")})), "de", ctxjwt.ErrContextJWTNotFound},
+//		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "de"), "de", nil},
+//		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("at")}, "ch"), "at", store.ErrStoreNotActive},
+//		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "at"), "at", nil},
+//		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("de")}, "a$t"), "de", store.ErrStoreCodeInvalid},
+//		{newStoreServiceWithTokenCtx(scope.Option{Store: scope.MockCode("at")}, ""), "at", store.ErrStoreCodeInvalid},
+//
+//		{newStoreServiceWithTokenCtx(scope.Option{Group: scope.MockID(1)}, "de"), "de", nil},
+//		{newStoreServiceWithTokenCtx(scope.Option{Group: scope.MockID(1)}, "ch"), "at", store.ErrStoreNotActive},
+//		{newStoreServiceWithTokenCtx(scope.Option{Group: scope.MockID(1)}, " ch"), "at", store.ErrStoreCodeInvalid},
+//		{newStoreServiceWithTokenCtx(scope.Option{Group: scope.MockID(1)}, "uk"), "at", store.ErrStoreChangeNotAllowed},
+//
+//		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "uk"), "au", store.ErrStoreChangeNotAllowed},
+//		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "nz"), "nz", nil},
+//		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "n z"), "au", store.ErrStoreCodeInvalid},
+//		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "au"), "au", nil},
+//		{newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, ""), "au", store.ErrStoreCodeInvalid},
+//	}
+//	for i, test := range tests {
+//
+//		mw := ctxjwt.WithInitTokenAndStore()(finalInitStoreHandler(t, test.wantStoreCode))
+//		rec := httptest.NewRecorder()
+//		surfErr := mw.ServeHTTPContext(test.ctx, rec, newReq(i))
+//		if test.wantErr != nil {
+//			assert.EqualError(t, surfErr, test.wantErr.Error(), "Index %d", i)
+//			continue
+//		}
+//		assert.NoError(t, surfErr, "Index %d", i)
+//	}
+//}
+
+//func TestWithInitTokenAndStore_EqualPointers(t *testing.T) {
+//	// this Test is related to Benchmark_WithInitTokenAndStore
+//	// The returned pointers from store.FromContextReader must be the
+//	// same for each request with the same request pattern.
+//
+//	ctx := newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "nz")
+//	rec := httptest.NewRecorder()
+//	req, err := http.NewRequest(httputil.MethodGet, "https://corestore.io/store/list", nil)
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//
+//	var equalStorePointer *store.Store
+//	mw := ctxjwt.WithInitTokenAndStore()(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+//		_, haveReqStore, err := store.FromContextProvider(ctx)
+//		if err != nil {
+//			return err
+//		}
+//
+//		if equalStorePointer == nil {
+//			equalStorePointer = haveReqStore
+//		}
+//
+//		if "nz" != haveReqStore.StoreCode() {
+//			t.Errorf("Have: %s\nWant: nz", haveReqStore.StoreCode())
+//		}
+//
+//		wantP := reflect.ValueOf(equalStorePointer)
+//		haveP := reflect.ValueOf(haveReqStore)
+//
+//		if wantP.Pointer() != haveP.Pointer() {
+//			t.Errorf("Expecting equal pointers for each request.\nWant: %p\nHave: %p", equalStorePointer, haveReqStore)
+//		}
+//
+//		return nil
+//	}))
+//
+//	for i := 0; i < 10; i++ {
+//		if err := mw.ServeHTTPContext(ctx, rec, req); err != nil {
+//			t.Error(err)
+//		}
+//	}
+//}

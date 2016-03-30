@@ -18,17 +18,18 @@ import (
 	"sync"
 	"time"
 
+	"net/http"
+
 	"github.com/corestoreio/csfw/config"
+	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/juju/errors"
 	"github.com/pborman/uuid"
+	"golang.org/x/net/context"
 )
-
-// ErrUnexpectedSigningMethod will be returned if some outside dude tries to trick us
-var ErrUnexpectedSigningMethod = errors.New("JWT: Unexpected signing method")
 
 // jti type to generate a JTI for a token, a unique ID
 type jti struct{}
@@ -54,15 +55,25 @@ type Service struct {
 	Blacklist Blacklister
 	// Backend optional configuration, can be nil.
 	Backend *PkgBackend
+	// DefaultErrorHandler global default error handler. Used in the middleware. Fallback to
+	// this handler when a scoped based handler isn't available.
+	DefaultErrorHandler ctxhttp.Handler
 }
 
 // NewService creates a new token service. If key option will not be
 // passed then a HMAC password will be generated.
 // Default expire is one hour as in variable DefaultExpire. Default signing
 // method is HMAC512. The auto generated password will not be outputted.
+// The DefaultErrorHandler returns a http.StatusUnauthorized.
 func NewService(opts ...Option) (*Service, error) {
 	s := &Service{
 		scopeCache: make(map[scope.Hash]scopedConfig),
+		JTI:        jti{},
+		Blacklist:  nullBL{},
+		DefaultErrorHandler: ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return nil
+		}),
 	}
 
 	if err := s.Options(WithDefaultConfig(scope.DefaultID, 0)); err != nil {
@@ -70,13 +81,6 @@ func NewService(opts ...Option) (*Service, error) {
 	}
 	if err := s.Options(opts...); err != nil {
 		return nil, s
-	}
-
-	if s.Blacklist == nil {
-		s.Blacklist = nullBL{}
-	}
-	if s.JTI == nil {
-		s.JTI = jti{}
 	}
 	return s, nil
 }

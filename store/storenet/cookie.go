@@ -21,12 +21,6 @@ import (
 	"github.com/corestoreio/csfw/store"
 )
 
-// ParamName use in Cookie and JWT important when the user selects a different
-// store within the current website/group context. This name will be used in
-// a cookie or as key value in a token to permanently save the new selected
-// store code.
-const ParamName = `store`
-
 // Cookie allows to set and delete the store cookie
 type Cookie struct {
 	Store *store.Store
