@@ -19,6 +19,9 @@ package money
 	- http://unicode.org/reports/tr35/tr35-numbers.html#Supplemental_Currency_Data to automatically
 	- set the Swedish rounding
 	- Currency
+	- https://github.com/golang/go/issues/12127 decimal type coming to math/big package
+	- github.com/shopspring/decimal -> get inspiration
+	- github.com/EricLagergren/decimal -> get inspiration
 */
 
 import (
@@ -74,7 +77,7 @@ type (
 	// with floats. Includes options for printing, Swedish rounding,
 	// database scanning and JSON en/decoding.
 	Money struct {
-		// Multi collects multiple errors. Can be nil.
+		// Multi collects multiple errors. Can be nil. todo refactor because cannot be used as embbeded struct due to fmt.Sprintf and preferring error.Error() before fmt.Stringer
 		*cserr.MultiErr
 		// m money in Guard/DP
 		m int64
