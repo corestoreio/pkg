@@ -98,9 +98,17 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 				return errHandler.ServeHTTPContext(WithContextError(ctx, ErrTokenInvalid), w, r)
 			}
 
+			// add token to the context
+			ctx = WithContext(ctx, token)
+
 			scopeOption, err := ScopeOptionFromClaim(token.Claims)
+			if err == store.ErrStoreNotFound {
+				// move on when the store code cannot be found in the token.
+				return hf.ServeHTTPContext(ctx, w, r)
+			}
+
 			if err != nil {
-				// can be a store.ErrStoreNotFound when the token does not contain the store code.
+				// invalid syntax of store code
 				return errHandler.ServeHTTPContext(WithContextError(ctx, err), w, r)
 			}
 
@@ -110,8 +118,8 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 			}
 
 			if newRequestedStore.StoreID() != requestedStore.StoreID() {
-				// this may lead to a bug because the previously set storeService and requestedStore
-				// will still exists and have not been removed.
+				// this should not lead to a bug because the previously set store.Provider and requestedStore
+				// will still exists and have not been/cannot be removed.
 				ctx = store.WithContextProvider(ctx, storeService, newRequestedStore)
 			}
 			// yay! we made it! the token and the requested store is valid!

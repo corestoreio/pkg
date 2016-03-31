@@ -60,8 +60,9 @@ func TestServiceWithBackend_DefaultConfig(t *testing.T) {
 	assert.Exactly(t, sc.signingMethod, jwt.SigningMethodHS256)
 	assert.Exactly(t, dsc.ecdsapk, sc.ecdsapk)
 	assert.Exactly(t, dsc.rsapk, sc.rsapk)
-	assert.NotNil(t, dsc.errorHandler)
-	assert.NotNil(t, sc.errorHandler)
+	assert.True(t, dsc.errorHandler == nil)
+	assert.True(t, sc.errorHandler == nil)
+	assert.True(t, jwts.DefaultErrorHandler != nil)
 	assert.Exactly(t, DefaultExpire, dsc.expire)
 	assert.NotEqual(t, dsc.hmacPassword, sc.hmacPassword)
 }
@@ -101,7 +102,8 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 	assert.Exactly(t, "5m1s", scNew.expire.String())
 	assert.Exactly(t, "HS512", scNew.signingMethod.Alg())
 	assert.Exactly(t, []byte("pw2"), scNew.hmacPassword)
-	assert.NotNil(t, scNew.errorHandler)
+	assert.Nil(t, scNew.errorHandler)
+	assert.NotNil(t, jwts.DefaultErrorHandler)
 
 	// test if cache returns the same scopedConfig
 	scCached, err := jwts.getConfigByScopedGetter(sg)
@@ -228,7 +230,6 @@ func TestServiceWithBackend_NilScopedGetter(t *testing.T) {
 	assert.Exactly(t, DefaultExpire, sc.expire)
 	assert.Exactly(t, jwt.SigningMethodHS256, sc.signingMethod)
 	assert.False(t, sc.enableJTI)
-	assert.NotNil(t, sc.errorHandler)
-	assert.NotNil(t, sc.keyFunc)
-
+	assert.True(t, sc.errorHandler == nil)
+	assert.True(t, sc.keyFunc != nil)
 }

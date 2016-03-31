@@ -62,9 +62,6 @@ type scopedConfig struct {
 	errorHandler ctxhttp.Handler
 	// keyFunc will receive the parsed token and should return the key for validating.
 	keyFunc jwt.Keyfunc
-	// initStore if set to true the store depending on the store code, found in the token,
-	// gets initialized.
-	initStore bool
 }
 
 // getKeyFunc generates the key function for a specific scope and to used in caching
@@ -180,7 +177,7 @@ func WithSigningMethod(scp scope.Scope, id int64, sm jwt.SigningMethod) Option {
 }
 
 // WithErrorHandler sets the error handler for a scope and its ID. If the
-// scope.DefaultID will be set the handler gets also applid to the global
+// scope.DefaultID will be set the handler gets also applied to the global
 // handler
 func WithErrorHandler(scp scope.Scope, id int64, handler ctxhttp.Handler) Option {
 	h := scope.NewHash(scp, id)
@@ -196,7 +193,9 @@ func WithErrorHandler(scp scope.Scope, id int64, handler ctxhttp.Handler) Option
 		}
 		scNew.scopeHash = scope.NewHash(scp, id)
 		s.scopeCache[h] = scNew
-		s.DefaultErrorHandler = handler
+		if scp == scope.DefaultID && id == 0 {
+			s.DefaultErrorHandler = handler
+		}
 	}
 }
 

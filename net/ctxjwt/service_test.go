@@ -86,7 +86,7 @@ func TestServiceParseInvalidSigningMethod(t *testing.T) {
 	assert.NoError(t, err)
 
 	mt, err := jwts.Parse(malformedToken)
-	assert.EqualError(t, err, ctxjwt.ErrUnexpectedSigningMethod.Error())
+	assert.EqualError(t, err, ctxjwt.ErrUnexpectedSigningMethod.Error()+" - Have: HS384 Want: HS256")
 	assert.Nil(t, mt)
 }
 
