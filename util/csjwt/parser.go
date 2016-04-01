@@ -6,12 +6,13 @@ import (
 	"fmt"
 )
 
+// Parser allows to parse a token with custom options.
 type Parser struct {
 	ValidMethods  []string // If populated, only these methods will be considered valid
 	UseJSONNumber bool     // Use JSON Number format in JSON decoder
 }
 
-// Parse, validate, and return a token.
+// Parse validate, and return a token.
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
 func (p Parser) Parse(rawToken []byte, keyFunc Keyfunc) (Token, error) {
@@ -37,7 +38,7 @@ func (p Parser) Parse(rawToken []byte, keyFunc Keyfunc) (Token, error) {
 	if claimBytes, err := DecodeSegment(token.Raw[pos[0]+1 : pos[1]]); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	} else {
-		dec := json.NewDecoder(bytes.NewBuffer(claimBytes))
+		dec := json.NewDecoder(bytes.NewReader(claimBytes))
 		if p.UseJSONNumber {
 			dec.UseNumber()
 		}

@@ -1,5 +1,3 @@
-// +build go1.4
-
 package csjwt
 
 import (
@@ -8,7 +6,7 @@ import (
 	"crypto/rsa"
 )
 
-// Implements the RSAPSS family of signing methods signing methods
+// SigningMethodRSAPSS implements the RSAPSS family of signing methods signing methods
 type SigningMethodRSAPSS struct {
 	*SigningMethodRSA
 	Options *rsa.PSSOptions
@@ -33,9 +31,7 @@ func init() {
 			Hash:       crypto.SHA256,
 		},
 	}
-	RegisterSigningMethod(SigningMethodPS256.Alg(), func() SigningMethod {
-		return SigningMethodPS256
-	})
+	RegisterSigningMethod(SigningMethodPS256)
 
 	// PS384
 	SigningMethodPS384 = &SigningMethodRSAPSS{
@@ -48,9 +44,7 @@ func init() {
 			Hash:       crypto.SHA384,
 		},
 	}
-	RegisterSigningMethod(SigningMethodPS384.Alg(), func() SigningMethod {
-		return SigningMethodPS384
-	})
+	RegisterSigningMethod(SigningMethodPS384)
 
 	// PS512
 	SigningMethodPS512 = &SigningMethodRSAPSS{
@@ -63,13 +57,11 @@ func init() {
 			Hash:       crypto.SHA512,
 		},
 	}
-	RegisterSigningMethod(SigningMethodPS512.Alg(), func() SigningMethod {
-		return SigningMethodPS512
-	})
+	RegisterSigningMethod(SigningMethodPS512)
 }
 
-// Implements the Verify method from SigningMethod
-// For this verify method, key must be an rsa.PublicKey struct
+// Verify implements the Verify method from SigningMethod interface.
+// For the key you can use any of the WithRSAPublicKey*() functions.
 func (m *SigningMethodRSAPSS) Verify(signingString, signature []byte, key Key) error {
 	if key.Error != nil {
 		return key.Error
@@ -96,8 +88,8 @@ func (m *SigningMethodRSAPSS) Verify(signingString, signature []byte, key Key) e
 	return rsa.VerifyPSS(key.rsaKeyPub, m.Hash, hasher.Sum(nil), sig, m.Options)
 }
 
-// Implements the Sign method from SigningMethod
-// For this signing method, key must be an rsa.PrivateKey struct
+// Sign implements the Sign method from SigningMethod interface.
+// For the key you can use any of the WithRSAPrivateKey*() functions.
 func (m *SigningMethodRSAPSS) Sign(signingString []byte, key Key) ([]byte, error) {
 	if key.Error != nil {
 		return nil, key.Error

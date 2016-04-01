@@ -8,7 +8,10 @@ import (
 	"time"
 )
 
+// HTTPHeaderAuthorization identifies the bearer token in this header key
 const HTTPHeaderAuthorization = `Authorization`
+
+// HTTPFormInputName HTML form field name
 const HTTPFormInputName = `access_token`
 
 // TimeFunc provides the current time when parsing token to validate "exp" claim (expiration time).
@@ -16,19 +19,19 @@ const HTTPFormInputName = `access_token`
 // server uses a different time zone than your tokens.
 var TimeFunc = time.Now
 
-// A JWT Token.  Different fields will be used depending on whether you're
-// creating or parsing/verifying a token.
+// Token represents a JWT Token.  Different fields will be used depending on
+// whether you're creating or parsing/verifying a token.
 type Token struct {
 	Raw       []byte                 // The raw token.  Populated when you Parse a token
-	Method    SigningMethod          // The signing method used or to be used
+	Method    Signer                 // The signing method used or to be used
 	Header    map[string]interface{} // The first segment of the token
 	Claims    map[string]interface{} // The second segment of the token
 	Signature []byte                 // The third segment of the token.  Populated when you Parse a token
 	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
 }
 
-// Create a new Token.  Takes a signing method
-func New(method SigningMethod) Token {
+// New creates a new Token. Takes a signing method
+func New(method Signer) Token {
 	return Token{
 		Header: map[string]interface{}{
 			"typ": "JWT",
@@ -39,7 +42,7 @@ func New(method SigningMethod) Token {
 	}
 }
 
-// Get the complete, signed token.
+// SignedString gets the complete, signed token.
 // Returns a byte slice, save for further processing.
 func (t Token) SignedString(key Key) ([]byte, error) {
 	sstr, err := t.SigningString()
@@ -60,7 +63,7 @@ func (t Token) SignedString(key Key) ([]byte, error) {
 	return sstr.Bytes(), nil
 }
 
-// Generate the signing string.  This is the
+// SigningString generates the signing string.  This is the
 // most expensive part of the whole deal.  Unless you
 // need this for something special, just go straight for
 // the SignedString.
@@ -97,14 +100,14 @@ func marshalBase64(source map[string]interface{}) ([]byte, error) {
 	return EncodeSegment(buf.Bytes()), nil
 }
 
-// Parse, validate, and return a token.
+// Parse validates and returns a token.
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
 func Parse(tokenString []byte, keyFunc Keyfunc) (Token, error) {
 	return Parser{}.Parse(tokenString, keyFunc)
 }
 
-// Try to find the token in an http.Request.
+// ParseFromRequest tries to find the token in an http.Request.
 // This method will call ParseMultipartForm if there's no token in the header.
 // Currently, it looks in the Authorization header as well as
 // looking for an 'access_token' request parameter in req.Form.
@@ -128,7 +131,7 @@ func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token Token, err erro
 	return Token{}, ErrNoTokenInRequest
 }
 
-// Encode JWT specific base64url encoding with padding stripped.
+// EncodeSegment encodes JWT specific base64url encoding with padding stripped.
 // Returns a new byte slice.
 func EncodeSegment(seg []byte) []byte {
 	dbuf := make([]byte, base64.RawURLEncoding.EncodedLen(len(seg)))
@@ -136,7 +139,7 @@ func EncodeSegment(seg []byte) []byte {
 	return dbuf
 }
 
-// Decode JWT specific base64url encoding with padding stripped.
+// DecodeSegment decodes JWT specific base64url encoding with padding stripped.
 // Returns a new byte slice.
 func DecodeSegment(seg []byte) ([]byte, error) {
 	dbuf := make([]byte, base64.RawURLEncoding.DecodedLen(len(seg)))

@@ -219,7 +219,7 @@ func TestParseRequest(t *testing.T) {
 }
 
 // Helper method for benchmarking various methods
-func benchmarkSigning(b *testing.B, method csjwt.SigningMethod, key csjwt.Key) {
+func benchmarkSigning(b *testing.B, method csjwt.Signer, key csjwt.Key) {
 	t := csjwt.New(method)
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -276,7 +276,7 @@ func BenchmarkParseFromRequest_HS512(b *testing.B) {
 	)
 }
 
-func benchmarkParseFromRequest(b *testing.B, sm csjwt.SigningMethod, key csjwt.Key, keyFunc csjwt.Keyfunc) {
+func benchmarkParseFromRequest(b *testing.B, sm csjwt.Signer, key csjwt.Key, keyFunc csjwt.Keyfunc) {
 	token := csjwt.New(sm)
 	token.Claims["foo"] = "bar"
 	token.Claims["user_id"] = "hello_gophers"

@@ -98,21 +98,25 @@ func WithRSAPrivateKey(privateKey *rsa.PrivateKey) (k Key) {
 	return
 }
 
+// WithECPublicKeyFromPEM parses PEM encoded Elliptic Curve Public Key Structure
 func WithECPublicKeyFromPEM(publicKey []byte) (k Key) {
-	k.ecdsaKeyPub, k.Error = ParseECPublicKeyFromPEM(publicKey)
+	k.ecdsaKeyPub, k.Error = parseECPublicKeyFromPEM(publicKey)
 	return
 }
 
+// WithECPublicKey sets the ECDSA public key
 func WithECPublicKey(publicKey *ecdsa.PublicKey) (k Key) {
 	k.ecdsaKeyPub = publicKey
 	return
 }
 
+// WithECPrivateKeyFromPEM parses PEM encoded Elliptic Curve Private Key Structure
 func WithECPrivateKeyFromPEM(privateKey []byte) (k Key) {
-	k.ecdsaKeyPriv, k.Error = ParseECPrivateKeyFromPEM(privateKey)
+	k.ecdsaKeyPriv, k.Error = parseECPrivateKeyFromPEM(privateKey)
 	return
 }
 
+// WithECPrivateKey sets the ECDSA private key
 func WithECPrivateKey(privateKey *ecdsa.PrivateKey) (k Key) {
 	k.ecdsaKeyPriv = privateKey
 	return

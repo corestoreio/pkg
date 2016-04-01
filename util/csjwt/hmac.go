@@ -6,7 +6,7 @@ import (
 	"errors"
 )
 
-// Implements the HMAC-SHA family of signing methods signing methods
+// SigningMethodHMAC implements the HMAC-SHA family of signing methods signing methods
 type SigningMethodHMAC struct {
 	Name string
 	Hash crypto.Hash
@@ -23,21 +23,15 @@ var (
 func init() {
 	// HS256
 	SigningMethodHS256 = &SigningMethodHMAC{"HS256", crypto.SHA256}
-	RegisterSigningMethod(SigningMethodHS256.Alg(), func() SigningMethod {
-		return SigningMethodHS256
-	})
+	RegisterSigningMethod(SigningMethodHS256)
 
 	// HS384
 	SigningMethodHS384 = &SigningMethodHMAC{"HS384", crypto.SHA384}
-	RegisterSigningMethod(SigningMethodHS384.Alg(), func() SigningMethod {
-		return SigningMethodHS384
-	})
+	RegisterSigningMethod(SigningMethodHS384)
 
 	// HS512
 	SigningMethodHS512 = &SigningMethodHMAC{"HS512", crypto.SHA512}
-	RegisterSigningMethod(SigningMethodHS512.Alg(), func() SigningMethod {
-		return SigningMethodHS512
-	})
+	RegisterSigningMethod(SigningMethodHS512)
 }
 
 func (m *SigningMethodHMAC) Alg() string {
@@ -45,6 +39,7 @@ func (m *SigningMethodHMAC) Alg() string {
 }
 
 // Verify the signature of HSXXX tokens.  Returns nil if the signature is valid.
+// For the key you can use any of the WithPassword*() functions.
 func (m *SigningMethodHMAC) Verify(signingString, signature []byte, key Key) error {
 	// Verify the key is the right type
 	if key.Error != nil {
@@ -81,8 +76,8 @@ func (m *SigningMethodHMAC) Verify(signingString, signature []byte, key Key) err
 	return nil
 }
 
-// Implements the Sign method from SigningMethod for this signing method.
-// Key must be []byte
+// Sign implements the Sign method from SigningMethod interface.
+// For the key you can use any of the WithPassword*() functions.
 func (m *SigningMethodHMAC) Sign(signingString []byte, key Key) ([]byte, error) {
 
 	if key.Error != nil {

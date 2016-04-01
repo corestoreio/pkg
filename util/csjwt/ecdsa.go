@@ -9,11 +9,11 @@ import (
 )
 
 var (
-	// Sadly this is missing from crypto/ecdsa compared to crypto/rsa
+	// ErrECDSAVerification sadly this is missing from crypto/ecdsa compared to crypto/rsa
 	ErrECDSAVerification = errors.New("crypto/ecdsa: verification error")
 )
 
-// Implements the ECDSA family of signing methods signing methods
+// SigningMethodECDSA implements the ECDSA family of signing methods signing methods
 type SigningMethodECDSA struct {
 	Name      string
 	Hash      crypto.Hash
@@ -31,29 +31,23 @@ var (
 func init() {
 	// ES256
 	SigningMethodES256 = &SigningMethodECDSA{"ES256", crypto.SHA256, 32, 256}
-	RegisterSigningMethod(SigningMethodES256.Alg(), func() SigningMethod {
-		return SigningMethodES256
-	})
+	RegisterSigningMethod(SigningMethodES256)
 
 	// ES384
 	SigningMethodES384 = &SigningMethodECDSA{"ES384", crypto.SHA384, 48, 384}
-	RegisterSigningMethod(SigningMethodES384.Alg(), func() SigningMethod {
-		return SigningMethodES384
-	})
+	RegisterSigningMethod(SigningMethodES384)
 
 	// ES512
 	SigningMethodES512 = &SigningMethodECDSA{"ES512", crypto.SHA512, 66, 521}
-	RegisterSigningMethod(SigningMethodES512.Alg(), func() SigningMethod {
-		return SigningMethodES512
-	})
+	RegisterSigningMethod(SigningMethodES512)
 }
 
 func (m *SigningMethodECDSA) Alg() string {
 	return m.Name
 }
 
-// Implements the Verify method from SigningMethod
-// For this verify method, key must be an ecdsa.PublicKey struct
+// Verify implements the Verify method from SigningMethod interface.
+// For the key you can use any of the WithECPublicKey*() functions
 func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key Key) error {
 	// Get the key
 	if key.Error != nil {
@@ -81,7 +75,8 @@ func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key Key) er
 		return ErrHashUnavailable
 	}
 	hasher := m.Hash.New()
-	if _, err := hasher.Write(signingString); err != nil {
+	_, err = hasher.Write(signingString)
+	if err != nil {
 		return err
 	}
 
@@ -93,8 +88,8 @@ func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key Key) er
 	return err
 }
 
-// Implements the Sign method from SigningMethod
-// For this signing method, key must be an ecdsa.PrivateKey struct
+// Sign implements the Sign method from SigningMethod.
+// For the key you can use any of the WithECPrivateKey*() functions
 func (m *SigningMethodECDSA) Sign(signingString []byte, key Key) ([]byte, error) {
 	if key.Error != nil {
 		return nil, key.Error
@@ -127,7 +122,7 @@ func (m *SigningMethodECDSA) Sign(signingString []byte, key Key) ([]byte, error)
 
 	keyBytes := curveBits / 8
 	if curveBits%8 > 0 {
-		keyBytes += 1
+		keyBytes++
 	}
 
 	// We serialize the outpus (r and s) into big-endian byte arrays and pad

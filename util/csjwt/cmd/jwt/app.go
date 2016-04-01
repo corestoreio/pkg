@@ -122,7 +122,7 @@ func verifyToken() error {
 			return nil, err
 		}
 		if isEs() {
-			return csjwt.ParseECPublicKeyFromPEM(data)
+			return csjwt.parseECPublicKeyFromPEM(data)
 		}
 		return data, nil
 	})
@@ -189,7 +189,7 @@ func signToken() error {
 		if k, ok := key.([]byte); !ok {
 			return fmt.Errorf("Couldn't convert key data to key")
 		} else {
-			key, err = csjwt.ParseECPrivateKeyFromPEM(k)
+			key, err = csjwt.parseECPrivateKeyFromPEM(k)
 			if err != nil {
 				return err
 			}

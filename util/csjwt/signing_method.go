@@ -1,24 +1,28 @@
 package csjwt
 
-var signingMethods = map[string]func() SigningMethod{}
+var signingMethods = make(map[string]Signer)
 
-// Implement SigningMethod to add new methods for signing or verifying tokens.
-type SigningMethod interface {
-	Verify(signingString, signature []byte, key Key) error // Returns nil if signature is valid
-	Sign(signingString []byte, key Key) ([]byte, error)    // Returns encoded signature or error
-	Alg() string                                           // returns the alg identifier for this method (example: 'HS256')
+// Signer interface to add new methods for signing or verifying tokens.
+type Signer interface {
+	// Verify returns nil if signature is valid
+	Verify(signingString, signature []byte, key Key) error
+	// Sign returns encoded signature or error
+	Sign(signingString []byte, key Key) ([]byte, error)
+	// Alg returns the alg identifier for this method (example: 'HS256')
+	Alg() string
 }
 
-// Register the "alg" name and a factory function for signing method.
-// This is typically done during init() in the method's implementation
-func RegisterSigningMethod(alg string, f func() SigningMethod) {
-	signingMethods[alg] = f
+// RegisterSigningMethod registers the "alg" name and Signer interface
+// implementation for a signing method.
+func RegisterSigningMethod(s Signer) {
+	signingMethods[s.Alg()] = s
 }
 
-// Get a signing method from an "alg" string
-func GetSigningMethod(alg string) (method SigningMethod) {
-	if methodF, ok := signingMethods[alg]; ok {
-		method = methodF()
+// GetSigningMethod returns a signing method from an "alg" string.
+// Returns nil for not found.
+func GetSigningMethod(alg string) Signer {
+	if s, ok := signingMethods[alg]; ok {
+		return s
 	}
-	return
+	return nil
 }

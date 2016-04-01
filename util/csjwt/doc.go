@@ -1,4 +1,5 @@
-// Package jwt is a Go implementation of JSON Web Tokens: http://self-issued.info/docs/draft-jones-json-web-token.html
+// Package csjwt handles JSON Web Tokens
 //
 // See README.md for more info.
+// http://self-issued.info/docs/draft-jones-json-web-token.html
 package csjwt

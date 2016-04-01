@@ -6,7 +6,7 @@ import (
 	"crypto/rsa"
 )
 
-// Implements the RSA family of signing methods signing methods
+// SigningMethodRSA implements the RSA family of signing methods signing methods
 type SigningMethodRSA struct {
 	Name string
 	Hash crypto.Hash
@@ -22,30 +22,23 @@ var (
 func init() {
 	// RS256
 	SigningMethodRS256 = &SigningMethodRSA{"RS256", crypto.SHA256}
-	RegisterSigningMethod(SigningMethodRS256.Alg(), func() SigningMethod {
-		return SigningMethodRS256
-	})
+	RegisterSigningMethod(SigningMethodRS256)
 
 	// RS384
 	SigningMethodRS384 = &SigningMethodRSA{"RS384", crypto.SHA384}
-	RegisterSigningMethod(SigningMethodRS384.Alg(), func() SigningMethod {
-		return SigningMethodRS384
-	})
+	RegisterSigningMethod(SigningMethodRS384)
 
 	// RS512
 	SigningMethodRS512 = &SigningMethodRSA{"RS512", crypto.SHA512}
-	RegisterSigningMethod(SigningMethodRS512.Alg(), func() SigningMethod {
-		return SigningMethodRS512
-	})
+	RegisterSigningMethod(SigningMethodRS512)
 }
 
 func (m *SigningMethodRSA) Alg() string {
 	return m.Name
 }
 
-// Implements the Verify method from SigningMethod
-// For this signing method, must be either a PEM encoded PKCS1 or PKCS8 RSA public key as
-// []byte, or an rsa.PublicKey structure.
+// Verify implements the Verify method from SigningMethod interface.
+// For the key you can use any of the WithRSAPublicKey*() functions.
 func (m *SigningMethodRSA) Verify(signingString, signature []byte, key Key) error {
 	if key.Error != nil {
 		return key.Error
@@ -73,9 +66,8 @@ func (m *SigningMethodRSA) Verify(signingString, signature []byte, key Key) erro
 	return rsa.VerifyPKCS1v15(key.rsaKeyPub, m.Hash, hasher.Sum(nil), sig)
 }
 
-// Implements the Sign method from SigningMethod
-// For this signing method, must be either a PEM encoded PKCS1 or PKCS8 RSA private key as
-// []byte, or an rsa.PrivateKey structure.
+// Sign implements the Sign method from SigningMethod interface.
+// For the key you can use any of the WithRSAPrivateKey*() functions.
 func (m *SigningMethodRSA) Sign(signingString []byte, key Key) ([]byte, error) {
 	if key.Error != nil {
 		return nil, key.Error
