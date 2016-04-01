@@ -14,14 +14,14 @@ type Parser struct {
 // Parse, validate, and return a token.
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
-func (p Parser) Parse(tokenString []byte, keyFunc Keyfunc) (*Token, error) {
+func (p Parser) Parse(rawToken []byte, keyFunc Keyfunc) (Token, error) {
 
-	pos, valid := dotPositions(tokenString)
+	pos, valid := dotPositions(rawToken)
 	if !valid {
-		return nil, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
+		return Token{}, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
 	}
 
-	token := &Token{Raw: tokenString} // maybe: cloneBytes()
+	token := Token{Raw: rawToken}
 
 	// parse Header
 	if headerBytes, err := DecodeSegment(token.Raw[:pos[0]]); err != nil {
@@ -115,12 +115,12 @@ func (p Parser) Parse(tokenString []byte, keyFunc Keyfunc) (*Token, error) {
 
 // SplitForVerify splits the token into two parts: the payload and the signature.
 // An error gets returned if the number of dots don't match with the JWT standard.
-func SplitForVerify(token []byte) (signingString, signature []byte, err error) {
-	pos, valid := dotPositions(token)
+func SplitForVerify(rawToken []byte) (signingString, signature []byte, err error) {
+	pos, valid := dotPositions(rawToken)
 	if !valid {
 		return nil, nil, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
 	}
-	return token[:pos[1]], token[pos[1]+1:], nil
+	return rawToken[:pos[1]], rawToken[pos[1]+1:], nil
 }
 
 // dotPositions returns the position of the dots within the token slice

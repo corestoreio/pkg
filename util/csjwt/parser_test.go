@@ -10,13 +10,15 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/util/csjwt"
+	"runtime"
+	"runtime/debug"
 )
 
 var (
 	jwtTestDefaultKey []byte
-	defaultKeyFunc    csjwt.Keyfunc = func(t *csjwt.Token) (interface{}, error) { return jwtTestDefaultKey, nil }
-	emptyKeyFunc      csjwt.Keyfunc = func(t *csjwt.Token) (interface{}, error) { return nil, nil }
-	errorKeyFunc      csjwt.Keyfunc = func(t *csjwt.Token) (interface{}, error) { return nil, fmt.Errorf("error loading key") }
+	defaultKeyFunc    csjwt.Keyfunc = func(t csjwt.Token) (interface{}, error) { return jwtTestDefaultKey, nil }
+	emptyKeyFunc      csjwt.Keyfunc = func(t csjwt.Token) (interface{}, error) { return nil, nil }
+	errorKeyFunc      csjwt.Keyfunc = func(t csjwt.Token) (interface{}, error) { return nil, fmt.Errorf("error loading key") }
 	nilKeyFunc        csjwt.Keyfunc = nil
 )
 
@@ -159,7 +161,7 @@ func TestParser_Parse(t *testing.T) {
 			data.tokenString = makeSample(data.claims)
 		}
 
-		var token *csjwt.Token
+		var token csjwt.Token
 		var err error
 		if data.parser != nil {
 			token, err = data.parser.Parse(data.tokenString, data.keyfunc)
@@ -209,7 +211,7 @@ func TestParseRequest(t *testing.T) {
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", data.tokenString))
 		token, err := csjwt.ParseFromRequest(r, data.keyfunc)
 
-		if token == nil {
+		if token.Raw == nil {
 			t.Errorf("[%v] Token was not found: %v", data.name, err)
 			continue
 		}
@@ -244,7 +246,7 @@ func BenchmarkParseFromRequest_HS256(b *testing.B) {
 		b,
 		csjwt.SigningMethodHS256,
 		key,
-		func(t *csjwt.Token) (interface{}, error) {
+		func(t csjwt.Token) (interface{}, error) {
 			if have, want := t.Method.Alg(), csjwt.SigningMethodHS256.Alg(); have != want {
 				return nil, fmt.Errorf("Have: %s Want: %s", have, want)
 			}
@@ -258,7 +260,7 @@ func BenchmarkParseFromRequest_HS384(b *testing.B) {
 		b,
 		csjwt.SigningMethodHS384,
 		key,
-		func(t *csjwt.Token) (interface{}, error) {
+		func(t csjwt.Token) (interface{}, error) {
 			if have, want := t.Method.Alg(), csjwt.SigningMethodHS384.Alg(); have != want {
 				return nil, fmt.Errorf("Have: %s Want: %s", have, want)
 			}
@@ -272,7 +274,7 @@ func BenchmarkParseFromRequest_HS512(b *testing.B) {
 		b,
 		csjwt.SigningMethodHS512,
 		key,
-		func(t *csjwt.Token) (interface{}, error) {
+		func(t csjwt.Token) (interface{}, error) {
 			if have, want := t.Method.Alg(), csjwt.SigningMethodHS512.Alg(); have != want {
 				return nil, fmt.Errorf("Have: %s Want: %s", have, want)
 			}
@@ -309,4 +311,12 @@ func benchmarkParseFromRequest(b *testing.B, sm csjwt.SigningMethod, key interfa
 			b.Fatalf("Token not valid: %#v", rToken)
 		}
 	}
+	//b.Log("GC Pause:", gcPause())
+}
+
+func gcPause() time.Duration {
+	runtime.GC()
+	var stats debug.GCStats
+	debug.ReadGCStats(&stats)
+	return stats.Pause[0]
 }
