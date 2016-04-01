@@ -3,8 +3,6 @@
 package csjwt_test
 
 import (
-	"crypto/rsa"
-	"io/ioutil"
 	"testing"
 
 	"bytes"
@@ -50,14 +48,7 @@ var rsaPSSTestData = []struct {
 }
 
 func TestRSAPSSVerify(t *testing.T) {
-	var err error
-
-	key, _ := ioutil.ReadFile("test/sample_key.pub")
-	var rsaPSSKey *rsa.PublicKey
-	if rsaPSSKey, err = csjwt.ParseRSAPublicKeyFromPEM(key); err != nil {
-		t.Errorf("Unable to parse RSA public key: %v", err)
-	}
-
+	key := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
 	for _, data := range rsaPSSTestData {
 
 		signing, signature, err := csjwt.SplitForVerify(data.tokenString)
@@ -66,7 +57,7 @@ func TestRSAPSSVerify(t *testing.T) {
 		}
 
 		method := csjwt.GetSigningMethod(data.alg)
-		err = method.Verify(signing, signature, rsaPSSKey)
+		err = method.Verify(signing, signature, key)
 		if data.valid && err != nil {
 			t.Errorf("[%v] Error while verifying key: %v", data.name, err)
 		}
@@ -77,14 +68,7 @@ func TestRSAPSSVerify(t *testing.T) {
 }
 
 func TestRSAPSSSign(t *testing.T) {
-	var err error
-
-	key, _ := ioutil.ReadFile("test/sample_key")
-	var rsaPSSKey *rsa.PrivateKey
-	if rsaPSSKey, err = csjwt.ParseRSAPrivateKeyFromPEM(key); err != nil {
-		t.Errorf("Unable to parse RSA private key: %v", err)
-	}
-
+	key := csjwt.WithRSAPrivateKeyFromFile("test/sample_key")
 	for _, data := range rsaPSSTestData {
 		if data.valid {
 			signing, signature, err := csjwt.SplitForVerify(data.tokenString)
@@ -93,7 +77,7 @@ func TestRSAPSSSign(t *testing.T) {
 			}
 
 			method := csjwt.GetSigningMethod(data.alg)
-			sig, err := method.Sign(signing, rsaPSSKey)
+			sig, err := method.Sign(signing, key)
 			if err != nil {
 				t.Errorf("[%v] Error signing token: %v", data.name, err)
 			}

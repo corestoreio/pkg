@@ -4,9 +4,9 @@ var signingMethods = map[string]func() SigningMethod{}
 
 // Implement SigningMethod to add new methods for signing or verifying tokens.
 type SigningMethod interface {
-	Verify(signingString, signature []byte, key interface{}) error // Returns nil if signature is valid
-	Sign(signingString []byte, key interface{}) ([]byte, error)    // Returns encoded signature or error
-	Alg() string                                                   // returns the alg identifier for this method (example: 'HS256')
+	Verify(signingString, signature []byte, key Key) error // Returns nil if signature is valid
+	Sign(signingString []byte, key Key) ([]byte, error)    // Returns encoded signature or error
+	Alg() string                                           // returns the alg identifier for this method (example: 'HS256')
 }
 
 // Register the "alg" name and a factory function for signing method.

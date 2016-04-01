@@ -70,21 +70,18 @@ func init() {
 
 // Implements the Verify method from SigningMethod
 // For this verify method, key must be an rsa.PublicKey struct
-func (m *SigningMethodRSAPSS) Verify(signingString, signature []byte, key interface{}) error {
-	var err error
-
-	// Decode the signature
-	var sig []byte
-	if sig, err = DecodeSegment(signature); err != nil {
-		return err
+func (m *SigningMethodRSAPSS) Verify(signingString, signature []byte, key Key) error {
+	if key.Error != nil {
+		return key.Error
+	}
+	if key.rsaKeyPub == nil {
+		return ErrInvalidKey
 	}
 
-	var rsaKey *rsa.PublicKey
-	switch k := key.(type) {
-	case *rsa.PublicKey:
-		rsaKey = k
-	default:
-		return ErrInvalidKey
+	// Decode the signature
+	sig, err := DecodeSegment(signature)
+	if err != nil {
+		return err
 	}
 
 	// Create hasher
@@ -96,18 +93,16 @@ func (m *SigningMethodRSAPSS) Verify(signingString, signature []byte, key interf
 		return err
 	}
 
-	return rsa.VerifyPSS(rsaKey, m.Hash, hasher.Sum(nil), sig, m.Options)
+	return rsa.VerifyPSS(key.rsaKeyPub, m.Hash, hasher.Sum(nil), sig, m.Options)
 }
 
 // Implements the Sign method from SigningMethod
 // For this signing method, key must be an rsa.PrivateKey struct
-func (m *SigningMethodRSAPSS) Sign(signingString []byte, key interface{}) ([]byte, error) {
-	var rsaKey *rsa.PrivateKey
-
-	switch k := key.(type) {
-	case *rsa.PrivateKey:
-		rsaKey = k
-	default:
+func (m *SigningMethodRSAPSS) Sign(signingString []byte, key Key) ([]byte, error) {
+	if key.Error != nil {
+		return nil, key.Error
+	}
+	if key.rsaKeyPriv == nil {
 		return nil, ErrInvalidKey
 	}
 
@@ -122,9 +117,9 @@ func (m *SigningMethodRSAPSS) Sign(signingString []byte, key interface{}) ([]byt
 	}
 
 	// Sign the string and return the encoded bytes
-	if sigBytes, err := rsa.SignPSS(rand.Reader, rsaKey, m.Hash, hasher.Sum(nil), m.Options); err == nil {
-		return EncodeSegment(sigBytes), nil
-	} else {
+	sigBytes, err := rsa.SignPSS(rand.Reader, key.rsaKeyPriv, m.Hash, hasher.Sum(nil), m.Options)
+	if err != nil {
 		return nil, err
 	}
+	return EncodeSegment(sigBytes), nil
 }

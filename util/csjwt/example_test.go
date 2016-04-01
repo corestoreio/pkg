@@ -7,8 +7,8 @@ import (
 	"github.com/corestoreio/csfw/util/csjwt"
 )
 
-func ExampleParse(myToken []byte, myLookupKey func(interface{}) (interface{}, error)) {
-	token, err := csjwt.Parse(myToken, func(token csjwt.Token) (interface{}, error) {
+func ExampleParse(myToken []byte, myLookupKey func(interface{}) (csjwt.Key, error)) {
+	token, err := csjwt.Parse(myToken, func(token csjwt.Token) (csjwt.Key, error) {
 		return myLookupKey(token.Header["kid"])
 	})
 
@@ -26,11 +26,11 @@ func ExampleNew(mySigningKey []byte) ([]byte, error) {
 	token.Claims["foo"] = "bar"
 	token.Claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
 	// Sign and get the complete encoded token as a string
-	return token.SignedString(mySigningKey)
+	return token.SignedString(csjwt.WithPassword(mySigningKey))
 }
 
-func ExampleParse_errorChecking(myToken []byte, myLookupKey func(interface{}) (interface{}, error)) {
-	token, err := csjwt.Parse(myToken, func(token csjwt.Token) (interface{}, error) {
+func ExampleParse_errorChecking(myToken []byte, myLookupKey func(interface{}) (csjwt.Key, error)) {
+	token, err := csjwt.Parse(myToken, func(token csjwt.Token) (csjwt.Key, error) {
 		return myLookupKey(token.Header["kid"])
 	})
 

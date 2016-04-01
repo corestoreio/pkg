@@ -1,7 +1,6 @@
 package csjwt_test
 
 import (
-	"io/ioutil"
 	"testing"
 
 	"bytes"
@@ -47,8 +46,7 @@ var rsaTestData = []struct {
 }
 
 func TestRSAVerify(t *testing.T) {
-	key, _ := ioutil.ReadFile("test/sample_key.pub")
-
+	key := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
 	for _, data := range rsaTestData {
 		signing, signature, err := csjwt.SplitForVerify(data.tokenString)
 		if err != nil {
@@ -67,7 +65,7 @@ func TestRSAVerify(t *testing.T) {
 }
 
 func TestRSASign(t *testing.T) {
-	key, _ := ioutil.ReadFile("test/sample_key")
+	key := csjwt.WithRSAPrivateKeyFromFile("test/sample_key")
 
 	for _, data := range rsaTestData {
 		if data.valid {
@@ -89,11 +87,8 @@ func TestRSASign(t *testing.T) {
 }
 
 func TestRSAVerifyWithPreParsedPrivateKey(t *testing.T) {
-	key, _ := ioutil.ReadFile("test/sample_key.pub")
-	parsedKey, err := csjwt.ParseRSAPublicKeyFromPEM(key)
-	if err != nil {
-		t.Fatal(err)
-	}
+	key := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
+
 	testData := rsaTestData[0]
 
 	signing, signature, err := csjwt.SplitForVerify(testData.tokenString)
@@ -101,18 +96,15 @@ func TestRSAVerifyWithPreParsedPrivateKey(t *testing.T) {
 		t.Fatal(err, "\n", string(testData.tokenString))
 	}
 
-	err = csjwt.SigningMethodRS256.Verify(signing, signature, parsedKey)
+	err = csjwt.SigningMethodRS256.Verify(signing, signature, key)
 	if err != nil {
 		t.Errorf("[%v] Error while verifying key: %v", testData.name, err)
 	}
 }
 
 func TestRSAWithPreParsedPrivateKey(t *testing.T) {
-	key, _ := ioutil.ReadFile("test/sample_key")
-	parsedKey, err := csjwt.ParseRSAPrivateKeyFromPEM(key)
-	if err != nil {
-		t.Fatal(err)
-	}
+	key := csjwt.WithRSAPrivateKeyFromFile("test/sample_key")
+
 	testData := rsaTestData[0]
 
 	signing, signature, err := csjwt.SplitForVerify(testData.tokenString)
@@ -120,7 +112,7 @@ func TestRSAWithPreParsedPrivateKey(t *testing.T) {
 		t.Fatal(err, "\n", string(testData.tokenString))
 	}
 
-	sig, err := csjwt.SigningMethodRS256.Sign(signing, parsedKey)
+	sig, err := csjwt.SigningMethodRS256.Sign(signing, key)
 	if err != nil {
 		t.Errorf("[%v] Error signing token: %v", testData.name, err)
 	}
@@ -129,65 +121,17 @@ func TestRSAWithPreParsedPrivateKey(t *testing.T) {
 	}
 }
 
-func TestRSAKeyParsing(t *testing.T) {
-	key, _ := ioutil.ReadFile("test/sample_key")
-	pubKey, _ := ioutil.ReadFile("test/sample_key.pub")
-	badKey := []byte("All your base are belong to key")
-
-	// Test parsePrivateKey
-	if _, e := csjwt.ParseRSAPrivateKeyFromPEM(key); e != nil {
-		t.Errorf("Failed to parse valid private key: %v", e)
-	}
-
-	if k, e := csjwt.ParseRSAPrivateKeyFromPEM(pubKey); e == nil {
-		t.Errorf("Parsed public key as valid private key: %v", k)
-	}
-
-	if k, e := csjwt.ParseRSAPrivateKeyFromPEM(badKey); e == nil {
-		t.Errorf("Parsed invalid key as valid private key: %v", k)
-	}
-
-	// Test parsePublicKey
-	if _, e := csjwt.ParseRSAPublicKeyFromPEM(pubKey); e != nil {
-		t.Errorf("Failed to parse valid public key: %v", e)
-	}
-
-	if k, e := csjwt.ParseRSAPublicKeyFromPEM(key); e == nil {
-		t.Errorf("Parsed private key as valid public key: %v", k)
-	}
-
-	if k, e := csjwt.ParseRSAPublicKeyFromPEM(badKey); e == nil {
-		t.Errorf("Parsed invalid key as valid private key: %v", k)
-	}
-
-}
-
 func BenchmarkRS256Signing(b *testing.B) {
-	key, _ := ioutil.ReadFile("test/sample_key")
-	parsedKey, err := csjwt.ParseRSAPrivateKeyFromPEM(key)
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	benchmarkSigning(b, csjwt.SigningMethodRS256, parsedKey)
+	key := csjwt.WithRSAPrivateKeyFromFile("test/sample_key")
+	benchmarkSigning(b, csjwt.SigningMethodRS256, key)
 }
 
 func BenchmarkRS384Signing(b *testing.B) {
-	key, _ := ioutil.ReadFile("test/sample_key")
-	parsedKey, err := csjwt.ParseRSAPrivateKeyFromPEM(key)
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	benchmarkSigning(b, csjwt.SigningMethodRS384, parsedKey)
+	key := csjwt.WithRSAPrivateKeyFromFile("test/sample_key")
+	benchmarkSigning(b, csjwt.SigningMethodRS384, key)
 }
 
 func BenchmarkRS512Signing(b *testing.B) {
-	key, _ := ioutil.ReadFile("test/sample_key")
-	parsedKey, err := csjwt.ParseRSAPrivateKeyFromPEM(key)
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	benchmarkSigning(b, csjwt.SigningMethodRS512, parsedKey)
+	key := csjwt.WithRSAPrivateKeyFromFile("test/sample_key")
+	benchmarkSigning(b, csjwt.SigningMethodRS512, key)
 }

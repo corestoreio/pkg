@@ -1,11 +1,11 @@
 PASS
-BenchmarkHS256Signing-4          	  500000	      3756 ns/op	    1453 B/op	      25 allocs/op
-BenchmarkHS384Signing-4          	  500000	      4490 ns/op	    1776 B/op	      25 allocs/op
-BenchmarkHS512Signing-4          	  500000	      4300 ns/op	    1872 B/op	      25 allocs/op
-BenchmarkParseFromRequest_HS256-4	   50000	     28972 ns/op	    5008 B/op	      84 allocs/op
-BenchmarkParseFromRequest_HS384-4	   50000	     27943 ns/op	    5360 B/op	      84 allocs/op
-BenchmarkParseFromRequest_HS512-4	   50000	     28156 ns/op	    5424 B/op	      84 allocs/op
-BenchmarkRS256Signing-4          	    1000	   2078684 ns/op	  631365 B/op	    4887 allocs/op
-BenchmarkRS384Signing-4          	     500	   2107099 ns/op	  630041 B/op	    4876 allocs/op
-BenchmarkRS512Signing-4          	    1000	   2002318 ns/op	  631935 B/op	    4886 allocs/op
-ok  	github.com/corestoreio/csfw/util/csjwt	18.442s
+BenchmarkHS256Signing-4          	  500000	      3751 ns/op	    1453 B/op	      25 allocs/op
+BenchmarkHS384Signing-4          	  500000	      4268 ns/op	    1776 B/op	      25 allocs/op
+BenchmarkHS512Signing-4          	  500000	      4091 ns/op	    1873 B/op	      25 allocs/op
+BenchmarkParseFromRequest_HS256-4	   50000	     29602 ns/op	    4976 B/op	      83 allocs/op
+BenchmarkParseFromRequest_HS384-4	   50000	     28625 ns/op	    5328 B/op	      83 allocs/op
+BenchmarkParseFromRequest_HS512-4	   50000	     28108 ns/op	    5392 B/op	      83 allocs/op
+BenchmarkRS256Signing-4          	    1000	   2052860 ns/op	  630639 B/op	    4880 allocs/op
+BenchmarkRS384Signing-4          	    1000	   2205697 ns/op	  630742 B/op	    4881 allocs/op
+BenchmarkRS512Signing-4          	    1000	   2047541 ns/op	  630996 B/op	    4883 allocs/op
+ok  	github.com/corestoreio/csfw/util/csjwt	18.316s

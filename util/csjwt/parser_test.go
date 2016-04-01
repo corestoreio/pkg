@@ -3,23 +3,24 @@ package csjwt_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/corestoreio/csfw/util/csjwt"
 	"runtime"
 	"runtime/debug"
+
+	"github.com/corestoreio/csfw/util/csjwt"
 )
 
 var (
-	jwtTestDefaultKey []byte
-	defaultKeyFunc    csjwt.Keyfunc = func(t csjwt.Token) (interface{}, error) { return jwtTestDefaultKey, nil }
-	emptyKeyFunc      csjwt.Keyfunc = func(t csjwt.Token) (interface{}, error) { return nil, nil }
-	errorKeyFunc      csjwt.Keyfunc = func(t csjwt.Token) (interface{}, error) { return nil, fmt.Errorf("error loading key") }
-	nilKeyFunc        csjwt.Keyfunc = nil
+	defaultKeyFunc csjwt.Keyfunc = func(t csjwt.Token) (csjwt.Key, error) {
+		return csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub"), nil
+	}
+	emptyKeyFunc csjwt.Keyfunc = func(t csjwt.Token) (csjwt.Key, error) { return csjwt.Key{}, nil }
+	errorKeyFunc csjwt.Keyfunc = func(t csjwt.Token) (csjwt.Key, error) { return csjwt.Key{}, fmt.Errorf("error loading key") }
+	nilKeyFunc   csjwt.Keyfunc = nil
 )
 
 var jwtTestData = []struct {
@@ -132,18 +133,8 @@ var jwtTestData = []struct {
 	},
 }
 
-func init() {
-	var e error
-	if jwtTestDefaultKey, e = ioutil.ReadFile("test/sample_key.pub"); e != nil {
-		panic(e)
-	}
-}
-
 func makeSample(c map[string]interface{}) []byte {
-	key, err := ioutil.ReadFile("test/sample_key")
-	if err != nil {
-		panic(err)
-	}
+	key := csjwt.WithRSAPrivateKeyFromFile("test/sample_key")
 
 	token := csjwt.New(csjwt.SigningMethodRS256)
 	token.Claims = c
@@ -228,8 +219,10 @@ func TestParseRequest(t *testing.T) {
 }
 
 // Helper method for benchmarking various methods
-func benchmarkSigning(b *testing.B, method csjwt.SigningMethod, key interface{}) {
+func benchmarkSigning(b *testing.B, method csjwt.SigningMethod, key csjwt.Key) {
 	t := csjwt.New(method)
+	b.ResetTimer()
+	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
 			if _, err := t.SignedString(key); err != nil {
@@ -241,49 +234,49 @@ func benchmarkSigning(b *testing.B, method csjwt.SigningMethod, key interface{})
 }
 
 func BenchmarkParseFromRequest_HS256(b *testing.B) {
-	key := []byte(`csjwt.SigningMethodHS256!`)
+	key := csjwt.WithPassword([]byte(`csjwt.SigningMethodHS256!`))
 	benchmarkParseFromRequest(
 		b,
 		csjwt.SigningMethodHS256,
 		key,
-		func(t csjwt.Token) (interface{}, error) {
+		func(t csjwt.Token) (csjwt.Key, error) {
 			if have, want := t.Method.Alg(), csjwt.SigningMethodHS256.Alg(); have != want {
-				return nil, fmt.Errorf("Have: %s Want: %s", have, want)
+				return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 			}
 			return key, nil
 		},
 	)
 }
 func BenchmarkParseFromRequest_HS384(b *testing.B) {
-	key := []byte(`csjwt.SigningMethodHS384!`)
+	key := csjwt.WithPassword([]byte(`csjwt.SigningMethodHS384!`))
 	benchmarkParseFromRequest(
 		b,
 		csjwt.SigningMethodHS384,
 		key,
-		func(t csjwt.Token) (interface{}, error) {
+		func(t csjwt.Token) (csjwt.Key, error) {
 			if have, want := t.Method.Alg(), csjwt.SigningMethodHS384.Alg(); have != want {
-				return nil, fmt.Errorf("Have: %s Want: %s", have, want)
+				return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 			}
 			return key, nil
 		},
 	)
 }
 func BenchmarkParseFromRequest_HS512(b *testing.B) {
-	key := []byte(`csjwt.SigningMethodHS512!`)
+	key := csjwt.WithPassword([]byte(`csjwt.SigningMethodHS512!`))
 	benchmarkParseFromRequest(
 		b,
 		csjwt.SigningMethodHS512,
 		key,
-		func(t csjwt.Token) (interface{}, error) {
+		func(t csjwt.Token) (csjwt.Key, error) {
 			if have, want := t.Method.Alg(), csjwt.SigningMethodHS512.Alg(); have != want {
-				return nil, fmt.Errorf("Have: %s Want: %s", have, want)
+				return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 			}
 			return key, nil
 		},
 	)
 }
 
-func benchmarkParseFromRequest(b *testing.B, sm csjwt.SigningMethod, key interface{}, keyFunc csjwt.Keyfunc) {
+func benchmarkParseFromRequest(b *testing.B, sm csjwt.SigningMethod, key csjwt.Key, keyFunc csjwt.Keyfunc) {
 	token := csjwt.New(sm)
 	token.Claims["foo"] = "bar"
 	token.Claims["user_id"] = "hello_gophers"

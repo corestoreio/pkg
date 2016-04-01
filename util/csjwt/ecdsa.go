@@ -54,20 +54,19 @@ func (m *SigningMethodECDSA) Alg() string {
 
 // Implements the Verify method from SigningMethod
 // For this verify method, key must be an ecdsa.PublicKey struct
-func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key interface{}) error {
+func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key Key) error {
+	// Get the key
+	if key.Error != nil {
+		return key.Error
+	}
+	if key.ecdsaKeyPub == nil {
+		return ErrInvalidKey
+	}
+
 	// Decode the signature
 	sig, err := DecodeSegment(signature)
 	if err != nil {
 		return err
-	}
-
-	// Get the key
-	var ecdsaKey *ecdsa.PublicKey
-	switch k := key.(type) {
-	case *ecdsa.PublicKey:
-		ecdsaKey = k
-	default:
-		return ErrInvalidKey
 	}
 
 	if len(sig) != 2*m.KeySize {
@@ -88,7 +87,7 @@ func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key interfa
 
 	// Verify the signature
 	err = ErrECDSAVerification
-	if ecdsa.Verify(ecdsaKey, hasher.Sum(nil), r, s) {
+	if ecdsa.Verify(key.ecdsaKeyPub, hasher.Sum(nil), r, s) {
 		err = nil
 	}
 	return err
@@ -96,13 +95,11 @@ func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key interfa
 
 // Implements the Sign method from SigningMethod
 // For this signing method, key must be an ecdsa.PrivateKey struct
-func (m *SigningMethodECDSA) Sign(signingString []byte, key interface{}) ([]byte, error) {
-	// Get the key
-	var ecdsaKey *ecdsa.PrivateKey
-	switch k := key.(type) {
-	case *ecdsa.PrivateKey:
-		ecdsaKey = k
-	default:
+func (m *SigningMethodECDSA) Sign(signingString []byte, key Key) ([]byte, error) {
+	if key.Error != nil {
+		return nil, key.Error
+	}
+	if key.ecdsaKeyPriv == nil {
 		return nil, ErrInvalidKey
 	}
 
@@ -117,12 +114,12 @@ func (m *SigningMethodECDSA) Sign(signingString []byte, key interface{}) ([]byte
 	}
 
 	// Sign the string and return r, s
-	r, s, err := ecdsa.Sign(rand.Reader, ecdsaKey, hasher.Sum(nil))
+	r, s, err := ecdsa.Sign(rand.Reader, key.ecdsaKeyPriv, hasher.Sum(nil))
 	if err != nil {
 		return nil, err
 	}
 
-	curveBits := ecdsaKey.Curve.Params().BitSize
+	curveBits := key.ecdsaKeyPriv.Curve.Params().BitSize
 
 	if m.CurveBits != curveBits {
 		return nil, ErrInvalidKey

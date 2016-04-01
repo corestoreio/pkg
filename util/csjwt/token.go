@@ -16,12 +16,6 @@ const HTTPFormInputName = `access_token`
 // server uses a different time zone than your tokens.
 var TimeFunc = time.Now
 
-// Keyfunc used by Parse methods, this callback function supplies
-// the key for verification.  The function receives the parsed,
-// but unverified Token.  This allows you to use propries in the
-// Header of the token (such as `kid`) to identify which key to use.
-type Keyfunc func(Token) (interface{}, error)
-
 // A JWT Token.  Different fields will be used depending on whether you're
 // creating or parsing/verifying a token.
 type Token struct {
@@ -47,7 +41,7 @@ func New(method SigningMethod) Token {
 
 // Get the complete, signed token.
 // Returns a byte slice, save for further processing.
-func (t Token) SignedString(key interface{}) ([]byte, error) {
+func (t Token) SignedString(key Key) ([]byte, error) {
 	sstr, err := t.SigningString()
 	if err != nil {
 		return nil, err

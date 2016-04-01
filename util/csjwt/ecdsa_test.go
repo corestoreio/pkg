@@ -1,7 +1,6 @@
 package csjwt_test
 
 import (
-	"crypto/ecdsa"
 	"io/ioutil"
 	"testing"
 
@@ -54,23 +53,19 @@ var ecdsaTestData = []struct {
 
 func TestECDSAVerify(t *testing.T) {
 	for _, data := range ecdsaTestData {
-		var err error
 
-		key, _ := ioutil.ReadFile(data.keys["public"])
-
-		var ecdsaKey *ecdsa.PublicKey
-		if ecdsaKey, err = csjwt.ParseECPublicKeyFromPEM(key); err != nil {
-			t.Errorf("Unable to parse ECDSA public key: %v", err)
+		key, err := ioutil.ReadFile(data.keys["public"])
+		if err != nil {
+			t.Fatal(err)
 		}
 
-		var signing, signature []byte
-		signing, signature, err = csjwt.SplitForVerify(data.tokenString)
+		signing, signature, err := csjwt.SplitForVerify(data.tokenString)
 		if err != nil {
 			t.Fatal(err, "\n", string(data.tokenString))
 		}
 
 		method := csjwt.GetSigningMethod(data.alg)
-		err = method.Verify(signing, signature, ecdsaKey)
+		err = method.Verify(signing, signature, csjwt.WithECPublicKeyFromPEM(key))
 		if data.valid && err != nil {
 			t.Errorf("[%v] Error while verifying key: %v", data.name, err)
 		}
@@ -82,12 +77,10 @@ func TestECDSAVerify(t *testing.T) {
 
 func TestECDSASign(t *testing.T) {
 	for _, data := range ecdsaTestData {
-		var err error
-		key, _ := ioutil.ReadFile(data.keys["private"])
 
-		var ecdsaKey *ecdsa.PrivateKey
-		if ecdsaKey, err = csjwt.ParseECPrivateKeyFromPEM(key); err != nil {
-			t.Errorf("Unable to parse ECDSA private key: %v", err)
+		key, err := ioutil.ReadFile(data.keys["private"])
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		if data.valid {
@@ -98,7 +91,7 @@ func TestECDSASign(t *testing.T) {
 			}
 
 			method := csjwt.GetSigningMethod(data.alg)
-			sig, err := method.Sign(signing, ecdsaKey)
+			sig, err := method.Sign(signing, csjwt.WithECPrivateKeyFromPEM(key))
 			if err != nil {
 				t.Errorf("[%v] Error signing token: %v", data.name, err)
 			}

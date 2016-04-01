@@ -46,26 +46,18 @@ func (m *SigningMethodRSA) Alg() string {
 // Implements the Verify method from SigningMethod
 // For this signing method, must be either a PEM encoded PKCS1 or PKCS8 RSA public key as
 // []byte, or an rsa.PublicKey structure.
-func (m *SigningMethodRSA) Verify(signingString, signature []byte, key interface{}) error {
-	var err error
-
-	// Decode the signature
-	var sig []byte
-	if sig, err = DecodeSegment(signature); err != nil {
-		return err
+func (m *SigningMethodRSA) Verify(signingString, signature []byte, key Key) error {
+	if key.Error != nil {
+		return key.Error
+	}
+	if key.rsaKeyPub == nil {
+		return ErrInvalidKey
 	}
 
-	var rsaKey *rsa.PublicKey
-
-	switch k := key.(type) {
-	case []byte:
-		if rsaKey, err = ParseRSAPublicKeyFromPEM(k); err != nil {
-			return err
-		}
-	case *rsa.PublicKey:
-		rsaKey = k
-	default:
-		return ErrInvalidKey
+	// Decode the signature
+	sig, err := DecodeSegment(signature)
+	if err != nil {
+		return err
 	}
 
 	// Create hasher
@@ -78,24 +70,17 @@ func (m *SigningMethodRSA) Verify(signingString, signature []byte, key interface
 	}
 
 	// Verify the signature
-	return rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig)
+	return rsa.VerifyPKCS1v15(key.rsaKeyPub, m.Hash, hasher.Sum(nil), sig)
 }
 
 // Implements the Sign method from SigningMethod
 // For this signing method, must be either a PEM encoded PKCS1 or PKCS8 RSA private key as
 // []byte, or an rsa.PrivateKey structure.
-func (m *SigningMethodRSA) Sign(signingString []byte, key interface{}) ([]byte, error) {
-	var err error
-	var rsaKey *rsa.PrivateKey
-
-	switch k := key.(type) {
-	case []byte:
-		if rsaKey, err = ParseRSAPrivateKeyFromPEM(k); err != nil {
-			return nil, err
-		}
-	case *rsa.PrivateKey:
-		rsaKey = k
-	default:
+func (m *SigningMethodRSA) Sign(signingString []byte, key Key) ([]byte, error) {
+	if key.Error != nil {
+		return nil, key.Error
+	}
+	if key.rsaKeyPriv == nil {
 		return nil, ErrInvalidKey
 	}
 
@@ -110,9 +95,9 @@ func (m *SigningMethodRSA) Sign(signingString []byte, key interface{}) ([]byte, 
 	}
 
 	// Sign the string and return the encoded bytes
-	if sigBytes, err := rsa.SignPKCS1v15(rand.Reader, rsaKey, m.Hash, hasher.Sum(nil)); err == nil {
-		return EncodeSegment(sigBytes), nil
-	} else {
+	sigBytes, err := rsa.SignPKCS1v15(rand.Reader, key.rsaKeyPriv, m.Hash, hasher.Sum(nil))
+	if err != nil {
 		return nil, err
 	}
+	return EncodeSegment(sigBytes), nil
 }

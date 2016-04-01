@@ -57,7 +57,7 @@ func TestHMACVerify(t *testing.T) {
 		}
 
 		method := csjwt.GetSigningMethod(data.alg)
-		err = method.Verify(signing, signature, hmacTestKey)
+		err = method.Verify(signing, signature, csjwt.WithPassword(hmacTestKey))
 		if data.valid && err != nil {
 			t.Errorf("[%v] Method %s Error while verifying key: %v", data.name, data.alg, err)
 		}
@@ -76,7 +76,7 @@ func TestHMACSign(t *testing.T) {
 			}
 
 			method := csjwt.GetSigningMethod(data.alg)
-			sig, err := method.Sign(signing, hmacTestKey)
+			sig, err := method.Sign(signing, csjwt.WithPassword(hmacTestKey))
 			if err != nil {
 				t.Errorf("[%v] Error signing token: %v", data.name, err)
 			}
@@ -88,13 +88,13 @@ func TestHMACSign(t *testing.T) {
 }
 
 func BenchmarkHS256Signing(b *testing.B) {
-	benchmarkSigning(b, csjwt.SigningMethodHS256, hmacTestKey)
+	benchmarkSigning(b, csjwt.SigningMethodHS256, csjwt.WithPassword(hmacTestKey))
 }
 
 func BenchmarkHS384Signing(b *testing.B) {
-	benchmarkSigning(b, csjwt.SigningMethodHS384, hmacTestKey)
+	benchmarkSigning(b, csjwt.SigningMethodHS384, csjwt.WithPassword(hmacTestKey))
 }
 
 func BenchmarkHS512Signing(b *testing.B) {
-	benchmarkSigning(b, csjwt.SigningMethodHS512, hmacTestKey)
+	benchmarkSigning(b, csjwt.SigningMethodHS512, csjwt.WithPassword(hmacTestKey))
 }
