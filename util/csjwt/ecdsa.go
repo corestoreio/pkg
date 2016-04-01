@@ -55,11 +55,9 @@ func (m *SigningMethodECDSA) Alg() string {
 // Implements the Verify method from SigningMethod
 // For this verify method, key must be an ecdsa.PublicKey struct
 func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key interface{}) error {
-	var err error
-
 	// Decode the signature
-	var sig []byte
-	if sig, err = DecodeSegment(signature); err != nil {
+	sig, err := DecodeSegment(signature)
+	if err != nil {
 		return err
 	}
 
@@ -89,11 +87,11 @@ func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key interfa
 	}
 
 	// Verify the signature
-	if verifystatus := ecdsa.Verify(ecdsaKey, hasher.Sum(nil), r, s); verifystatus == true {
-		return nil
-	} else {
-		return ErrECDSAVerification
+	err = ErrECDSAVerification
+	if ecdsa.Verify(ecdsaKey, hasher.Sum(nil), r, s) {
+		err = nil
 	}
+	return err
 }
 
 // Implements the Sign method from SigningMethod

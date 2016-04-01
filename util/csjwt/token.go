@@ -6,8 +6,6 @@ import (
 	"encoding/json"
 	"net/http"
 	"time"
-
-	"github.com/corestoreio/csfw/util/bufferpool"
 )
 
 const HTTPHeaderAuthorization = `Authorization`
@@ -97,8 +95,8 @@ func (t *Token) SigningString() (buf bytes.Buffer, err error) {
 }
 
 func marshalBase64(source map[string]interface{}) ([]byte, error) {
-	buf := bufferpool.Get()
-	defer bufferpool.Put(buf)
+	buf := bufPool.Get()
+	defer bufPool.Put(buf)
 	if err := json.NewEncoder(buf).Encode(source); err != nil {
 		return nil, err
 	}
@@ -109,7 +107,7 @@ func marshalBase64(source map[string]interface{}) ([]byte, error) {
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
 func Parse(tokenString []byte, keyFunc Keyfunc) (*Token, error) {
-	return new(Parser).Parse(tokenString, keyFunc)
+	return Parser{}.Parse(tokenString, keyFunc)
 }
 
 // Try to find the token in an http.Request.
@@ -136,25 +134,9 @@ func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err err
 	return nil, ErrNoTokenInRequest
 }
 
-const equalSign byte = '='
-
 // Encode JWT specific base64url encoding with padding stripped.
 // Returns a new byte slice.
 func EncodeSegment(seg []byte) []byte {
-
-	//dbuf := make([]byte, base64.URLEncoding.EncodedLen(len(seg)))
-	//base64.URLEncoding.Encode(dbuf, seg)
-	//
-	//lastPos := len(dbuf)
-	//for i := lastPos; i > 0; i-- {
-	//	if dbuf[i-1] == equalSign {
-	//		lastPos = i - 1
-	//	} else {
-	//		return dbuf[:lastPos]
-	//	}
-	//}
-	//return dbuf[:lastPos]
-
 	dbuf := make([]byte, base64.RawURLEncoding.EncodedLen(len(seg)))
 	base64.RawURLEncoding.Encode(dbuf, seg)
 	return dbuf
@@ -163,17 +145,6 @@ func EncodeSegment(seg []byte) []byte {
 // Decode JWT specific base64url encoding with padding stripped.
 // Returns a new byte slice.
 func DecodeSegment(seg []byte) ([]byte, error) {
-
-	//if l := utf8.RuneCount(seg) % 4; l > 0 {
-	//	for i := 0; i < l; i++ {
-	//		seg = append(seg, equalSign)
-	//	}
-	//}
-	//
-	//dbuf := make([]byte, base64.URLEncoding.DecodedLen(len(seg)))
-	//n, err := base64.URLEncoding.Decode(dbuf, seg)
-	//return dbuf[:n], err
-
 	dbuf := make([]byte, base64.RawURLEncoding.DecodedLen(len(seg)))
 	n, err := base64.RawURLEncoding.Decode(dbuf, seg)
 	return dbuf[:n], err

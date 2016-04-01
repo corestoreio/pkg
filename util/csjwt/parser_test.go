@@ -305,7 +305,7 @@ func benchmarkParseFromRequest(b *testing.B, sm csjwt.SigningMethod, key interfa
 		if err != nil {
 			b.Fatal(err)
 		}
-		if rToken.Valid == false {
+		if !rToken.Valid {
 			b.Fatalf("Token not valid: %#v", rToken)
 		}
 	}

@@ -81,7 +81,7 @@ func TestRSASign(t *testing.T) {
 			if err != nil {
 				t.Errorf("[%v] Error signing token: %v", data.name, err)
 			}
-			if bytes.Equal(sig, signature) == false {
+			if !bytes.Equal(sig, signature) {
 				t.Errorf("[%v] Incorrect signature.\nwas:\n%v\nexpecting:\n%v", data.name, string(sig), string(signature))
 			}
 		}
@@ -124,7 +124,7 @@ func TestRSAWithPreParsedPrivateKey(t *testing.T) {
 	if err != nil {
 		t.Errorf("[%v] Error signing token: %v", testData.name, err)
 	}
-	if bytes.Equal(sig, signature) == false {
+	if !bytes.Equal(sig, signature) {
 		t.Errorf("[%v] Incorrect signature.\nwas:\n%v\nexpecting:\n%v", testData.name, string(sig), string(signature))
 	}
 }

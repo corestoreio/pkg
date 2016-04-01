@@ -14,38 +14,36 @@ type Parser struct {
 // Parse, validate, and return a token.
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
-func (p *Parser) Parse(tokenString []byte, keyFunc Keyfunc) (*Token, error) {
+func (p Parser) Parse(tokenString []byte, keyFunc Keyfunc) (*Token, error) {
 
 	pos, valid := dotPositions(tokenString)
-	if false == valid {
+	if !valid {
 		return nil, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
 	}
 
-	var err error
 	token := &Token{Raw: tokenString} // maybe: cloneBytes()
+
 	// parse Header
-	var headerBytes []byte
-	if headerBytes, err = DecodeSegment(tokenString[:pos[0]]); err != nil {
-		if startsWithBearer(tokenString) {
+	if headerBytes, err := DecodeSegment(token.Raw[:pos[0]]); err != nil {
+		if startsWithBearer(token.Raw) {
 			return token, &ValidationError{err: "tokenstring should not contain 'bearer '", Errors: ValidationErrorMalformed}
 		}
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
-	}
-	if err = json.Unmarshal(headerBytes, &token.Header); err != nil {
+	} else if err := json.Unmarshal(headerBytes, &token.Header); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	}
 
 	// parse Claims
-	var claimBytes []byte
-	if claimBytes, err = DecodeSegment(tokenString[pos[0]+1 : pos[1]]); err != nil {
+	if claimBytes, err := DecodeSegment(token.Raw[pos[0]+1 : pos[1]]); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
-	}
-	dec := json.NewDecoder(bytes.NewBuffer(claimBytes))
-	if p.UseJSONNumber {
-		dec.UseNumber()
-	}
-	if err = dec.Decode(&token.Claims); err != nil {
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+	} else {
+		dec := json.NewDecoder(bytes.NewBuffer(claimBytes))
+		if p.UseJSONNumber {
+			dec.UseNumber()
+		}
+		if err := dec.Decode(&token.Claims); err != nil {
+			return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+		}
 	}
 
 	// Lookup signature method
@@ -74,12 +72,12 @@ func (p *Parser) Parse(tokenString []byte, keyFunc Keyfunc) (*Token, error) {
 	}
 
 	// Lookup key
-	var key interface{}
 	if keyFunc == nil {
 		// keyFunc was not provided.  short circuiting validation
 		return token, &ValidationError{err: "no Keyfunc was provided.", Errors: ValidationErrorUnverifiable}
 	}
-	if key, err = keyFunc(token); err != nil {
+	key, err := keyFunc(token)
+	if err != nil {
 		// keyFunc returned an error
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable}
 	}
@@ -101,8 +99,8 @@ func (p *Parser) Parse(tokenString []byte, keyFunc Keyfunc) (*Token, error) {
 	}
 
 	// Perform validation
-	token.Signature = cloneBytes(tokenString[pos[1]+1:])
-	if err = token.Method.Verify(tokenString[:pos[1]], token.Signature, key); err != nil {
+	token.Signature = token.Raw[pos[1]+1:]
+	if err = token.Method.Verify(token.Raw[:pos[1]], token.Signature, key); err != nil {
 		vErr.err = err.Error()
 		vErr.Errors |= ValidationErrorSignatureInvalid
 	}
@@ -119,7 +117,7 @@ func (p *Parser) Parse(tokenString []byte, keyFunc Keyfunc) (*Token, error) {
 // An error gets returned if the number of dots don't match with the JWT standard.
 func SplitForVerify(token []byte) (signingString, signature []byte, err error) {
 	pos, valid := dotPositions(token)
-	if false == valid {
+	if !valid {
 		return nil, nil, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
 	}
 	return token[:pos[1]], token[pos[1]+1:], nil
@@ -153,10 +151,4 @@ func startsWithBearer(token []byte) bool {
 	havePrefix := token[0:len(prefixBearer)]
 	havePrefix = bytes.ToLower(havePrefix)
 	return bytes.Equal(havePrefix, prefixBearer)
-}
-
-func cloneBytes(in []byte) []byte {
-	out := make([]byte, len(in))
-	copy(out, in)
-	return out
 }
