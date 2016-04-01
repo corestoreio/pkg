@@ -235,12 +235,17 @@ func benchmarkSigning(b *testing.B, method csjwt.Signer, key csjwt.Key) {
 
 func BenchmarkParseFromRequest_HS256(b *testing.B) {
 	key := csjwt.WithPassword([]byte(`csjwt.SigningMethodHS256!`))
+	hmacFast, err := csjwt.NewHMACFast256(key)
+	if err != nil {
+		b.Fatal(err)
+	}
+	csjwt.RegisterSigningMethod(hmacFast)
 	benchmarkParseFromRequest(
 		b,
-		csjwt.SigningMethodHS256,
+		hmacFast, // csjwt.SigningMethodHS256,
 		key,
 		func(t csjwt.Token) (csjwt.Key, error) {
-			if have, want := t.Method.Alg(), csjwt.SigningMethodHS256.Alg(); have != want {
+			if have, want := t.Method.Alg(), hmacFast.Alg(); have != want {
 				return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 			}
 			return key, nil
@@ -249,12 +254,17 @@ func BenchmarkParseFromRequest_HS256(b *testing.B) {
 }
 func BenchmarkParseFromRequest_HS384(b *testing.B) {
 	key := csjwt.WithPassword([]byte(`csjwt.SigningMethodHS384!`))
+	hmacFast, err := csjwt.NewHMACFast384(key)
+	if err != nil {
+		b.Fatal(err)
+	}
+	csjwt.RegisterSigningMethod(hmacFast)
 	benchmarkParseFromRequest(
 		b,
-		csjwt.SigningMethodHS384,
+		hmacFast, // csjwt.SigningMethodHS384,
 		key,
 		func(t csjwt.Token) (csjwt.Key, error) {
-			if have, want := t.Method.Alg(), csjwt.SigningMethodHS384.Alg(); have != want {
+			if have, want := t.Method.Alg(), hmacFast.Alg(); have != want {
 				return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 			}
 			return key, nil
@@ -263,12 +273,17 @@ func BenchmarkParseFromRequest_HS384(b *testing.B) {
 }
 func BenchmarkParseFromRequest_HS512(b *testing.B) {
 	key := csjwt.WithPassword([]byte(`csjwt.SigningMethodHS512!`))
+	hmacFast, err := csjwt.NewHMACFast512(key)
+	if err != nil {
+		b.Fatal(err)
+	}
+	csjwt.RegisterSigningMethod(hmacFast)
 	benchmarkParseFromRequest(
 		b,
-		csjwt.SigningMethodHS512,
+		hmacFast, // csjwt.SigningMethodHS512,
 		key,
 		func(t csjwt.Token) (csjwt.Key, error) {
-			if have, want := t.Method.Alg(), csjwt.SigningMethodHS512.Alg(); have != want {
+			if have, want := t.Method.Alg(), hmacFast.Alg(); have != want {
 				return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 			}
 			return key, nil

@@ -12,8 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csjwt
+package csjwt_test
 
-import "github.com/corestoreio/csfw/util/bufferpool"
+import "testing"
 
-var bufPool = bufferpool.New(8192) // estimated *cough* average size of JWT 8kb
+func TestSigningMethodHMACFastNew(t *testing.T) {
+	t.Log("todo")
+	//tests := []struct {
+	//}{
+	//	{},
+	//}
+	//for _, test := range tests {
+	//
+	//}
+}
