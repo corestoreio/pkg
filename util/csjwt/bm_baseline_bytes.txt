@@ -1,0 +1,11 @@
+PASS
+BenchmarkHS256Signing-4          	  500000	      3543 ns/op	    1444 B/op	      25 allocs/op
+BenchmarkHS384Signing-4          	  500000	      7132 ns/op	    1765 B/op	      25 allocs/op
+BenchmarkHS512Signing-4          	  500000	      4525 ns/op	    1861 B/op	      25 allocs/op
+BenchmarkParseFromRequest_HS256-4	   50000	     29218 ns/op	    5056 B/op	      85 allocs/op
+BenchmarkParseFromRequest_HS384-4	   50000	     42301 ns/op	    5424 B/op	      85 allocs/op
+BenchmarkParseFromRequest_HS512-4	   50000	     28669 ns/op	    5520 B/op	      85 allocs/op
+BenchmarkRS256Signing-4          	    1000	   1991790 ns/op	  625505 B/op	    4882 allocs/op
+BenchmarkRS384Signing-4          	    1000	   1949569 ns/op	  625748 B/op	    4882 allocs/op
+BenchmarkRS512Signing-4          	    1000	   2129995 ns/op	  625217 B/op	    4878 allocs/op
+ok  	github.com/corestoreio/csfw/util/csjwt	21.478s

@@ -54,7 +54,7 @@ func (m *SigningMethodECDSA) Alg() string {
 
 // Implements the Verify method from SigningMethod
 // For this verify method, key must be an ecdsa.PublicKey struct
-func (m *SigningMethodECDSA) Verify(signingString, signature string, key interface{}) error {
+func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key interface{}) error {
 	var err error
 
 	// Decode the signature
@@ -84,7 +84,9 @@ func (m *SigningMethodECDSA) Verify(signingString, signature string, key interfa
 		return ErrHashUnavailable
 	}
 	hasher := m.Hash.New()
-	hasher.Write([]byte(signingString))
+	if _, err := hasher.Write(signingString); err != nil {
+		return err
+	}
 
 	// Verify the signature
 	if verifystatus := ecdsa.Verify(ecdsaKey, hasher.Sum(nil), r, s); verifystatus == true {
@@ -96,52 +98,56 @@ func (m *SigningMethodECDSA) Verify(signingString, signature string, key interfa
 
 // Implements the Sign method from SigningMethod
 // For this signing method, key must be an ecdsa.PrivateKey struct
-func (m *SigningMethodECDSA) Sign(signingString string, key interface{}) (string, error) {
+func (m *SigningMethodECDSA) Sign(signingString []byte, key interface{}) ([]byte, error) {
 	// Get the key
 	var ecdsaKey *ecdsa.PrivateKey
 	switch k := key.(type) {
 	case *ecdsa.PrivateKey:
 		ecdsaKey = k
 	default:
-		return "", ErrInvalidKey
+		return nil, ErrInvalidKey
 	}
 
 	// Create the hasher
 	if !m.Hash.Available() {
-		return "", ErrHashUnavailable
+		return nil, ErrHashUnavailable
 	}
 
 	hasher := m.Hash.New()
-	hasher.Write([]byte(signingString))
+	if _, err := hasher.Write(signingString); err != nil {
+		return nil, err
+	}
 
 	// Sign the string and return r, s
-	if r, s, err := ecdsa.Sign(rand.Reader, ecdsaKey, hasher.Sum(nil)); err == nil {
-		curveBits := ecdsaKey.Curve.Params().BitSize
-
-		if m.CurveBits != curveBits {
-			return "", ErrInvalidKey
-		}
-
-		keyBytes := curveBits / 8
-		if curveBits%8 > 0 {
-			keyBytes += 1
-		}
-
-		// We serialize the outpus (r and s) into big-endian byte arrays and pad
-		// them with zeros on the left to make sure the sizes work out. Both arrays
-		// must be keyBytes long, and the output must be 2*keyBytes long.
-		rBytes := r.Bytes()
-		rBytesPadded := make([]byte, keyBytes)
-		copy(rBytesPadded[keyBytes-len(rBytes):], rBytes)
-
-		sBytes := s.Bytes()
-		sBytesPadded := make([]byte, keyBytes)
-		copy(sBytesPadded[keyBytes-len(sBytes):], sBytes)
-
-		out := append(rBytesPadded, sBytesPadded...)
-
-		return EncodeSegment(out), nil
-	} else {
-		return "", err
+	r, s, err := ecdsa.Sign(rand.Reader, ecdsaKey, hasher.Sum(nil))
+	if err != nil {
+		return nil, err
 	}
+
+	curveBits := ecdsaKey.Curve.Params().BitSize
+
+	if m.CurveBits != curveBits {
+		return nil, ErrInvalidKey
+	}
+
+	keyBytes := curveBits / 8
+	if curveBits%8 > 0 {
+		keyBytes += 1
+	}
+
+	// We serialize the outpus (r and s) into big-endian byte arrays and pad
+	// them with zeros on the left to make sure the sizes work out. Both arrays
+	// must be keyBytes long, and the output must be 2*keyBytes long.
+	rBytes := r.Bytes()
+	rBytesPadded := make([]byte, keyBytes)
+	copy(rBytesPadded[keyBytes-len(rBytes):], rBytes)
+
+	sBytes := s.Bytes()
+	sBytesPadded := make([]byte, keyBytes)
+	copy(sBytesPadded[keyBytes-len(sBytes):], sBytes)
+
+	out := append(rBytesPadded, sBytesPadded...)
+
+	return EncodeSegment(out), nil
+
 }

@@ -1,12 +1,17 @@
 package csjwt
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"net/http"
-	"strings"
 	"time"
+
+	"github.com/corestoreio/csfw/util/bufferpool"
 )
+
+const HTTPHeaderAuthorization = `Authorization`
+const HTTPFormInputName = `access_token`
 
 // TimeFunc provides the current time when parsing token to validate "exp" claim (expiration time).
 // You can override it to use another time value.  This is useful for testing or if your
@@ -22,11 +27,11 @@ type Keyfunc func(*Token) (interface{}, error)
 // A JWT Token.  Different fields will be used depending on whether you're
 // creating or parsing/verifying a token.
 type Token struct {
-	Raw       string                 // The raw token.  Populated when you Parse a token
+	Raw       []byte                 // The raw token.  Populated when you Parse a token
 	Method    SigningMethod          // The signing method used or to be used
 	Header    map[string]interface{} // The first segment of the token
 	Claims    map[string]interface{} // The second segment of the token
-	Signature string                 // The third segment of the token.  Populated when you Parse a token
+	Signature []byte                 // The third segment of the token.  Populated when you Parse a token
 	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
 }
 
@@ -42,48 +47,68 @@ func New(method SigningMethod) *Token {
 	}
 }
 
-// Get the complete, signed token
-func (t *Token) SignedString(key interface{}) (string, error) {
-	var sig, sstr string
-	var err error
-	if sstr, err = t.SigningString(); err != nil {
-		return "", err
+// Get the complete, signed token.
+// Returns a byte slice, save for further processing.
+func (t *Token) SignedString(key interface{}) ([]byte, error) {
+	sstr, err := t.SigningString()
+	if err != nil {
+		return nil, err
 	}
-	if sig, err = t.Method.Sign(sstr, key); err != nil {
-		return "", err
+	sig, err := t.Method.Sign(sstr.Bytes(), key)
+	if err != nil {
+		return nil, err
 	}
-	return strings.Join([]string{sstr, sig}, "."), nil
+
+	if _, err := sstr.WriteRune('.'); err != nil {
+		return nil, err
+	}
+	if _, err := sstr.Write(sig); err != nil {
+		return nil, err
+	}
+	return sstr.Bytes(), nil
 }
 
 // Generate the signing string.  This is the
 // most expensive part of the whole deal.  Unless you
 // need this for something special, just go straight for
 // the SignedString.
-func (t *Token) SigningString() (string, error) {
-	var err error
-	parts := make([]string, 2)
-	for i := range parts {
-		var source map[string]interface{}
-		if i == 0 {
-			source = t.Header
-		} else {
-			source = t.Claims
-		}
+// Returns a buffer which can be used for further modifications.
+func (t *Token) SigningString() (buf bytes.Buffer, err error) {
 
-		var jsonValue []byte
-		if jsonValue, err = json.Marshal(source); err != nil {
-			return "", err
-		}
-
-		parts[i] = EncodeSegment(jsonValue)
+	var j []byte
+	j, err = marshalBase64(t.Header)
+	if err != nil {
+		return
 	}
-	return strings.Join(parts, "."), nil
+	if _, err = buf.Write(j); err != nil {
+		return
+	}
+	if _, err = buf.WriteRune('.'); err != nil {
+		return
+	}
+	j, err = marshalBase64(t.Claims)
+	if err != nil {
+		return
+	}
+	if _, err = buf.Write(j); err != nil {
+		return
+	}
+	return
+}
+
+func marshalBase64(source map[string]interface{}) ([]byte, error) {
+	buf := bufferpool.Get()
+	defer bufferpool.Put(buf)
+	if err := json.NewEncoder(buf).Encode(source); err != nil {
+		return nil, err
+	}
+	return EncodeSegment(buf.Bytes()), nil
 }
 
 // Parse, validate, and return a token.
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
-func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
+func Parse(tokenString []byte, keyFunc Keyfunc) (*Token, error) {
 	return new(Parser).Parse(tokenString, keyFunc)
 }
 
@@ -94,33 +119,62 @@ func Parse(tokenString string, keyFunc Keyfunc) (*Token, error) {
 func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token *Token, err error) {
 
 	// Look for an Authorization header
-	if ah := req.Header.Get("Authorization"); ah != "" {
+	if ah := req.Header.Get(HTTPHeaderAuthorization); ah != "" {
 		// Should be a bearer token
-		if len(ah) > 6 && strings.ToUpper(ah[0:7]) == "BEARER " {
-			return Parse(ah[7:], keyFunc)
+		auth := []byte(ah)
+		if startsWithBearer(auth) {
+			return Parse(auth[7:], keyFunc)
 		}
 	}
 
 	// Look for "access_token" parameter
-	req.ParseMultipartForm(10e6)
-	if tokStr := req.Form.Get("access_token"); tokStr != "" {
-		return Parse(tokStr, keyFunc)
+	_ = req.ParseMultipartForm(10e6) // ignore errors
+	if tokStr := req.Form.Get(HTTPFormInputName); tokStr != "" {
+		return Parse([]byte(tokStr), keyFunc)
 	}
 
 	return nil, ErrNoTokenInRequest
-
 }
 
-// Encode JWT specific base64url encoding with padding stripped
-func EncodeSegment(seg []byte) string {
-	return strings.TrimRight(base64.URLEncoding.EncodeToString(seg), "=")
+const equalSign byte = '='
+
+// Encode JWT specific base64url encoding with padding stripped.
+// Returns a new byte slice.
+func EncodeSegment(seg []byte) []byte {
+
+	//dbuf := make([]byte, base64.URLEncoding.EncodedLen(len(seg)))
+	//base64.URLEncoding.Encode(dbuf, seg)
+	//
+	//lastPos := len(dbuf)
+	//for i := lastPos; i > 0; i-- {
+	//	if dbuf[i-1] == equalSign {
+	//		lastPos = i - 1
+	//	} else {
+	//		return dbuf[:lastPos]
+	//	}
+	//}
+	//return dbuf[:lastPos]
+
+	dbuf := make([]byte, base64.RawURLEncoding.EncodedLen(len(seg)))
+	base64.RawURLEncoding.Encode(dbuf, seg)
+	return dbuf
 }
 
-// Decode JWT specific base64url encoding with padding stripped
-func DecodeSegment(seg string) ([]byte, error) {
-	if l := len(seg) % 4; l > 0 {
-		seg += strings.Repeat("=", 4-l)
-	}
+// Decode JWT specific base64url encoding with padding stripped.
+// Returns a new byte slice.
+func DecodeSegment(seg []byte) ([]byte, error) {
 
-	return base64.URLEncoding.DecodeString(seg)
+	//if l := utf8.RuneCount(seg) % 4; l > 0 {
+	//	for i := 0; i < l; i++ {
+	//		seg = append(seg, equalSign)
+	//	}
+	//}
+	//
+	//dbuf := make([]byte, base64.URLEncoding.DecodedLen(len(seg)))
+	//n, err := base64.URLEncoding.Decode(dbuf, seg)
+	//return dbuf[:n], err
+
+	dbuf := make([]byte, base64.RawURLEncoding.DecodedLen(len(seg)))
+	n, err := base64.RawURLEncoding.Decode(dbuf, seg)
+	return dbuf[:n], err
 }

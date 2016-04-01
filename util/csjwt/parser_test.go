@@ -22,7 +22,7 @@ var (
 
 var jwtTestData = []struct {
 	name        string
-	tokenString string
+	tokenString []byte
 	keyfunc     csjwt.Keyfunc
 	claims      map[string]interface{}
 	valid       bool
@@ -31,7 +31,7 @@ var jwtTestData = []struct {
 }{
 	{
 		"basic",
-		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
+		[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
 		defaultKeyFunc,
 		map[string]interface{}{"foo": "bar"},
 		true,
@@ -40,7 +40,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"basic expired",
-		"", // autogen
+		nil, // autogen
 		defaultKeyFunc,
 		map[string]interface{}{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
 		false,
@@ -49,7 +49,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"basic nbf",
-		"", // autogen
+		nil, // autogen
 		defaultKeyFunc,
 		map[string]interface{}{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
 		false,
@@ -58,7 +58,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"expired and nbf",
-		"", // autogen
+		nil, // autogen
 		defaultKeyFunc,
 		map[string]interface{}{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
 		false,
@@ -67,7 +67,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"basic invalid",
-		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.EhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
+		[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.EhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
 		defaultKeyFunc,
 		map[string]interface{}{"foo": "bar"},
 		false,
@@ -76,7 +76,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"basic nokeyfunc",
-		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
+		[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
 		nilKeyFunc,
 		map[string]interface{}{"foo": "bar"},
 		false,
@@ -85,7 +85,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"basic nokey",
-		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
+		[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
 		emptyKeyFunc,
 		map[string]interface{}{"foo": "bar"},
 		false,
@@ -94,7 +94,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"basic errorkey",
-		"eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg",
+		[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
 		errorKeyFunc,
 		map[string]interface{}{"foo": "bar"},
 		false,
@@ -103,7 +103,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"invalid signing method",
-		"",
+		nil,
 		defaultKeyFunc,
 		map[string]interface{}{"foo": "bar"},
 		false,
@@ -112,7 +112,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"valid signing method",
-		"",
+		nil,
 		defaultKeyFunc,
 		map[string]interface{}{"foo": "bar"},
 		true,
@@ -121,7 +121,7 @@ var jwtTestData = []struct {
 	},
 	{
 		"JSON Number",
-		"",
+		nil,
 		defaultKeyFunc,
 		map[string]interface{}{"foo": json.Number("123.4")},
 		true,
@@ -137,18 +137,17 @@ func init() {
 	}
 }
 
-func makeSample(c map[string]interface{}) string {
-	key, e := ioutil.ReadFile("test/sample_key")
-	if e != nil {
-		panic(e.Error())
+func makeSample(c map[string]interface{}) []byte {
+	key, err := ioutil.ReadFile("test/sample_key")
+	if err != nil {
+		panic(err)
 	}
 
 	token := csjwt.New(csjwt.SigningMethodRS256)
 	token.Claims = c
-	s, e := token.SignedString(key)
-
-	if e != nil {
-		panic(e.Error())
+	s, err := token.SignedString(key)
+	if err != nil {
+		panic(err)
 	}
 
 	return s
@@ -156,7 +155,7 @@ func makeSample(c map[string]interface{}) string {
 
 func TestParser_Parse(t *testing.T) {
 	for _, data := range jwtTestData {
-		if data.tokenString == "" {
+		if len(data.tokenString) == 0 {
 			data.tokenString = makeSample(data.claims)
 		}
 
@@ -187,7 +186,7 @@ func TestParser_Parse(t *testing.T) {
 				}
 			}
 		}
-		if data.valid && token.Signature == "" {
+		if data.valid && len(token.Signature) == 0 {
 			t.Errorf("[%v] Signature is left unpopulated after parsing", data.name)
 		}
 	}
@@ -202,12 +201,12 @@ func TestParseRequest(t *testing.T) {
 			continue
 		}
 
-		if data.tokenString == "" {
+		if len(data.tokenString) == 0 {
 			data.tokenString = makeSample(data.claims)
 		}
 
 		r, _ := http.NewRequest("GET", "/", nil)
-		r.Header.Set("Authorization", fmt.Sprintf("Bearer %v", data.tokenString))
+		r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", data.tokenString))
 		token, err := csjwt.ParseFromRequest(r, data.keyfunc)
 
 		if token == nil {

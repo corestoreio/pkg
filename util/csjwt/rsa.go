@@ -46,7 +46,7 @@ func (m *SigningMethodRSA) Alg() string {
 // Implements the Verify method from SigningMethod
 // For this signing method, must be either a PEM encoded PKCS1 or PKCS8 RSA public key as
 // []byte, or an rsa.PublicKey structure.
-func (m *SigningMethodRSA) Verify(signingString, signature string, key interface{}) error {
+func (m *SigningMethodRSA) Verify(signingString, signature []byte, key interface{}) error {
 	var err error
 
 	// Decode the signature
@@ -73,7 +73,9 @@ func (m *SigningMethodRSA) Verify(signingString, signature string, key interface
 		return ErrHashUnavailable
 	}
 	hasher := m.Hash.New()
-	hasher.Write([]byte(signingString))
+	if _, err := hasher.Write(signingString); err != nil {
+		return err
+	}
 
 	// Verify the signature
 	return rsa.VerifyPKCS1v15(rsaKey, m.Hash, hasher.Sum(nil), sig)
@@ -82,33 +84,35 @@ func (m *SigningMethodRSA) Verify(signingString, signature string, key interface
 // Implements the Sign method from SigningMethod
 // For this signing method, must be either a PEM encoded PKCS1 or PKCS8 RSA private key as
 // []byte, or an rsa.PrivateKey structure.
-func (m *SigningMethodRSA) Sign(signingString string, key interface{}) (string, error) {
+func (m *SigningMethodRSA) Sign(signingString []byte, key interface{}) ([]byte, error) {
 	var err error
 	var rsaKey *rsa.PrivateKey
 
 	switch k := key.(type) {
 	case []byte:
 		if rsaKey, err = ParseRSAPrivateKeyFromPEM(k); err != nil {
-			return "", err
+			return nil, err
 		}
 	case *rsa.PrivateKey:
 		rsaKey = k
 	default:
-		return "", ErrInvalidKey
+		return nil, ErrInvalidKey
 	}
 
 	// Create the hasher
 	if !m.Hash.Available() {
-		return "", ErrHashUnavailable
+		return nil, ErrHashUnavailable
 	}
 
 	hasher := m.Hash.New()
-	hasher.Write([]byte(signingString))
+	if _, err := hasher.Write(signingString); err != nil {
+		return nil, err
+	}
 
 	// Sign the string and return the encoded bytes
 	if sigBytes, err := rsa.SignPKCS1v15(rand.Reader, rsaKey, m.Hash, hasher.Sum(nil)); err == nil {
 		return EncodeSegment(sigBytes), nil
 	} else {
-		return "", err
+		return nil, err
 	}
 }
