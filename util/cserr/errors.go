@@ -38,6 +38,16 @@ func NewMultiErr(errs ...error) *MultiErr {
 // AppendErrors adds multiple errors to the container. Does not add a location.
 // If *MultiErr is nil it creates a new pointer and returns it.
 func (m *MultiErr) AppendErrors(errs ...error) *MultiErr {
+	errNilCount := 0
+	for _, err := range errs {
+		if err == nil {
+			errNilCount++
+		}
+	}
+	if errNilCount == len(errs) {
+		return m
+	}
+
 	if m == nil {
 		m = new(MultiErr)
 	}

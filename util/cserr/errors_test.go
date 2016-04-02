@@ -68,13 +68,29 @@ func TestHasErrorsNil(t *testing.T) {
 	assert.False(t, e.HasErrors())
 }
 
-func TestMultiNil(t *testing.T) {
+func TestMultiAppendToNil(t *testing.T) {
 	t.Parallel()
 	var e *cserr.MultiErr
 	e = e.AppendErrors(errors.New("Err74"))
 
 	assert.True(t, e.HasErrors())
 	assert.Equal(t, "Err74", e.Error())
+}
+
+func TestMultiAppendNilToNil1(t *testing.T) {
+	t.Parallel()
+	var e *cserr.MultiErr
+	e = e.AppendErrors()
+	assert.False(t, e.HasErrors())
+	assert.Nil(t, e)
+}
+
+func TestMultiAppendNilToNil2(t *testing.T) {
+	t.Parallel()
+	var e *cserr.MultiErr
+	e = e.AppendErrors(nil, nil)
+	assert.False(t, e.HasErrors())
+	assert.Nil(t, e)
 }
 
 var benchmarkError string
