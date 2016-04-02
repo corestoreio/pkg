@@ -101,3 +101,45 @@ func TestECDSASign(t *testing.T) {
 		}
 	}
 }
+
+func BenchmarkES256Signing(b *testing.B) {
+	key := csjwt.WithECPrivateKeyFromFile("test/ec256-private.pem")
+	benchmarkSigning(b, csjwt.SigningMethodES256, key)
+}
+
+func BenchmarkES256Verify(b *testing.B) {
+	signing, signature, err := csjwt.SplitForVerify(ecdsaTestData[0].tokenString)
+	if err != nil {
+		b.Fatal(err)
+	}
+	key := csjwt.WithECPublicKeyFromFile("test/ec256-public.pem")
+	benchmarkMethodVerify(b, csjwt.SigningMethodES256, signing, signature, key)
+}
+
+func BenchmarkES384Signing(b *testing.B) {
+	key := csjwt.WithECPrivateKeyFromFile("test/ec384-private.pem")
+	benchmarkSigning(b, csjwt.SigningMethodES384, key)
+}
+
+func BenchmarkES384Verify(b *testing.B) {
+	signing, signature, err := csjwt.SplitForVerify(ecdsaTestData[1].tokenString)
+	if err != nil {
+		b.Fatal(err)
+	}
+	key := csjwt.WithECPublicKeyFromFile("test/ec384-public.pem")
+	benchmarkMethodVerify(b, csjwt.SigningMethodES384, signing, signature, key)
+}
+
+func BenchmarkES512Signing(b *testing.B) {
+	key := csjwt.WithECPrivateKeyFromFile("test/ec512-private.pem")
+	benchmarkSigning(b, csjwt.SigningMethodES512, key)
+}
+
+func BenchmarkES512Verify(b *testing.B) {
+	signing, signature, err := csjwt.SplitForVerify(ecdsaTestData[2].tokenString)
+	if err != nil {
+		b.Fatal(err)
+	}
+	key := csjwt.WithECPublicKeyFromFile("test/ec512-public.pem")
+	benchmarkMethodVerify(b, csjwt.SigningMethodES512, signing, signature, key)
+}

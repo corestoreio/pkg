@@ -17,39 +17,14 @@ package csjwt
 import (
 	"crypto"
 	"crypto/hmac"
-	"hash"
-	"sync"
 )
-
-type hashTank struct {
-	p *sync.Pool
-}
-
-func (t hashTank) Get() hash.Hash {
-	return t.p.Get().(hash.Hash)
-}
-
-func (t hashTank) Put(h hash.Hash) {
-	h.Reset()
-	t.p.Put(h)
-}
-
-func newHashTank(ch crypto.Hash, key []byte) hashTank {
-	return hashTank{
-		p: &sync.Pool{
-			New: func() interface{} {
-				return hmac.New(ch.New, key)
-			},
-		},
-	}
-}
 
 // SigningMethodHMACFast implements the HMAC-SHA family of pre-warmed signing methods.
 // Less allocations, bytes and a little bit faster but maybe the underlying
 // mutex can become the bottleneck.
 type SigningMethodHMACFast struct {
 	Name string
-	ht   hashTank
+	ht   hmacTank
 }
 
 func newHMACFast(n string, h crypto.Hash, key Key) (*SigningMethodHMACFast, error) {
@@ -64,7 +39,7 @@ func newHMACFast(n string, h crypto.Hash, key Key) (*SigningMethodHMACFast, erro
 	if !h.Available() {
 		return nil, ErrHashUnavailable
 	}
-	sm.ht = newHashTank(h, key.hmacPassword)
+	sm.ht = newHMACTank(h, key.hmacPassword)
 	return sm, nil
 }
 
@@ -96,8 +71,8 @@ func (m *SigningMethodHMACFast) Verify(signingString, signature []byte, _ Key) e
 	// This signing method is symmetric, so we validate the signature
 	// by reproducing the signature from the signing string and key, then
 	// comparing that against the provided signature.
-	hasher := m.ht.Get()
-	defer m.ht.Put(hasher)
+	hasher := m.ht.get()
+	defer m.ht.put(hasher)
 
 	if _, err := hasher.Write(signingString); err != nil {
 		return err
@@ -114,8 +89,8 @@ func (m *SigningMethodHMACFast) Verify(signingString, signature []byte, _ Key) e
 // Sign implements the Sign method from SigningMethod interface.
 func (m *SigningMethodHMACFast) Sign(signingString []byte, _ Key) ([]byte, error) {
 
-	hasher := m.ht.Get()
-	defer m.ht.Put(hasher)
+	hasher := m.ht.get()
+	defer m.ht.put(hasher)
 
 	if _, err := hasher.Write(signingString); err != nil {
 		return nil, err

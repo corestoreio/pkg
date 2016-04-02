@@ -218,7 +218,6 @@ func TestParseRequest(t *testing.T) {
 	}
 }
 
-// Helper method for benchmarking various methods
 func benchmarkSigning(b *testing.B, method csjwt.Signer, key csjwt.Key) {
 	t := csjwt.New(method)
 	b.ResetTimer()
@@ -230,7 +229,18 @@ func benchmarkSigning(b *testing.B, method csjwt.Signer, key csjwt.Key) {
 			}
 		}
 	})
+}
 
+func benchmarkMethodVerify(b *testing.B, method csjwt.Signer, signingString []byte, signature []byte, key csjwt.Key) {
+	b.ResetTimer()
+	b.ReportAllocs()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			if err := method.Verify(signingString, signature, key); err != nil {
+				b.Fatal(err)
+			}
+		}
+	})
 }
 
 func BenchmarkParseFromRequest_HS256(b *testing.B) {

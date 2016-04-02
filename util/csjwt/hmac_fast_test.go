@@ -14,15 +14,46 @@
 
 package csjwt_test
 
-import "testing"
+import (
+	"bytes"
+	"github.com/corestoreio/csfw/util/csjwt"
+	"testing"
+)
 
-func TestSigningMethodHMACFastNew(t *testing.T) {
-	t.Log("todo")
-	//tests := []struct {
-	//}{
-	//	{},
-	//}
-	//for _, test := range tests {
-	//
-	//}
+func TestHMACVerifyFast(t *testing.T) {
+	for _, data := range hmacTestData {
+		signing, signature, err := csjwt.SplitForVerify(data.tokenString)
+		if err != nil {
+			t.Fatal(err, "\n", string(data.tokenString))
+		}
+
+		method := csjwt.GetSigningMethod(data.alg + HMACFastSuffix)
+		err = method.Verify(signing, signature, csjwt.Key{})
+		if data.valid && err != nil {
+			t.Errorf("[%v] Method %s Error while verifying key: %v", data.name, data.alg, err)
+		}
+		if !data.valid && err == nil {
+			t.Errorf("[%v] Invalid key passed validation", data.name)
+		}
+	}
+}
+
+func TestHMACSignFast(t *testing.T) {
+	for _, data := range hmacTestData {
+		if data.valid {
+			signing, signature, err := csjwt.SplitForVerify(data.tokenString)
+			if err != nil {
+				t.Fatal(err, "\n", string(data.tokenString))
+			}
+
+			method := csjwt.GetSigningMethod(data.alg + HMACFastSuffix)
+			sig, err := method.Sign(signing, csjwt.Key{})
+			if err != nil {
+				t.Errorf("[%v] Error signing token: %v", data.name, err)
+			}
+			if !bytes.Equal(sig, signature) {
+				t.Errorf("[%v] Incorrect signature.\nwas:\n%v\nexpecting:\n%v", data.name, string(sig), string(signature))
+			}
+		}
+	}
 }

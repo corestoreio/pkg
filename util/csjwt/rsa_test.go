@@ -135,3 +135,30 @@ func BenchmarkRS512Signing(b *testing.B) {
 	key := csjwt.WithRSAPrivateKeyFromFile("test/sample_key")
 	benchmarkSigning(b, csjwt.SigningMethodRS512, key)
 }
+
+func BenchmarkRS256Verify(b *testing.B) {
+	signing, signature, err := csjwt.SplitForVerify(rsaTestData[0].tokenString)
+	if err != nil {
+		b.Fatal(err)
+	}
+	key := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
+	benchmarkMethodVerify(b, csjwt.SigningMethodRS256, signing, signature, key)
+}
+
+func BenchmarkRS384Verify(b *testing.B) {
+	signing, signature, err := csjwt.SplitForVerify(rsaTestData[1].tokenString)
+	if err != nil {
+		b.Fatal(err)
+	}
+	key := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
+	benchmarkMethodVerify(b, csjwt.SigningMethodRS384, signing, signature, key)
+}
+
+func BenchmarkRS512Verify(b *testing.B) {
+	signing, signature, err := csjwt.SplitForVerify(rsaTestData[2].tokenString)
+	if err != nil {
+		b.Fatal(err)
+	}
+	key := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
+	benchmarkMethodVerify(b, csjwt.SigningMethodRS512, signing, signature, key)
+}

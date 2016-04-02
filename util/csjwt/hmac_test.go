@@ -9,6 +9,40 @@ import (
 	"github.com/corestoreio/csfw/util/csjwt"
 )
 
+// Sample data from http://tools.ietf.org/html/draft-jones-json-web-signature-04#appendix-A.1
+var hmacTestKey []byte
+
+const HMACFastSuffix = "Fast"
+
+func init() {
+	var err error
+	hmacTestKey, err = ioutil.ReadFile("test/hmacTestKey")
+	if err != nil {
+		panic(err)
+	}
+
+	hf, err := csjwt.NewHMACFast256(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		panic(err)
+	}
+	hf.Name += HMACFastSuffix
+	csjwt.RegisterSigningMethod(hf)
+
+	hf, err = csjwt.NewHMACFast384(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		panic(err)
+	}
+	hf.Name += HMACFastSuffix
+	csjwt.RegisterSigningMethod(hf)
+
+	hf, err = csjwt.NewHMACFast512(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		panic(err)
+	}
+	hf.Name += HMACFastSuffix
+	csjwt.RegisterSigningMethod(hf)
+}
+
 var hmacTestData = []struct {
 	name        string
 	tokenString []byte
@@ -45,9 +79,6 @@ var hmacTestData = []struct {
 		false,
 	},
 }
-
-// Sample data from http://tools.ietf.org/html/draft-jones-json-web-signature-04#appendix-A.1
-var hmacTestKey, _ = ioutil.ReadFile("test/hmacTestKey")
 
 func TestHMACVerify(t *testing.T) {
 	for _, data := range hmacTestData {
@@ -97,4 +128,84 @@ func BenchmarkHS384Signing(b *testing.B) {
 
 func BenchmarkHS512Signing(b *testing.B) {
 	benchmarkSigning(b, csjwt.SigningMethodHS512, csjwt.WithPassword(hmacTestKey))
+}
+
+func BenchmarkHS256SigningFast(b *testing.B) {
+	hf, err := csjwt.NewHMACFast256(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		b.Fatal(err)
+	}
+	benchmarkSigning(b, hf, csjwt.Key{})
+}
+
+func BenchmarkHS384SigningFast(b *testing.B) {
+	hf, err := csjwt.NewHMACFast384(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		b.Fatal(err)
+	}
+	benchmarkSigning(b, hf, csjwt.Key{})
+}
+
+func BenchmarkHS512SigningFast(b *testing.B) {
+	hf, err := csjwt.NewHMACFast512(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		b.Fatal(err)
+	}
+	benchmarkSigning(b, hf, csjwt.Key{})
+}
+
+func BenchmarkHS256Verify(b *testing.B) {
+	signing, signature, err := csjwt.SplitForVerify(hmacTestData[0].tokenString) // HS256 token
+	if err != nil {
+		b.Fatal(err)
+	}
+	benchmarkMethodVerify(b, csjwt.SigningMethodHS256, signing, signature, csjwt.WithPassword(hmacTestKey))
+}
+func BenchmarkHS384Verify(b *testing.B) {
+	signing, signature, err := csjwt.SplitForVerify(hmacTestData[1].tokenString) // HS384 token
+	if err != nil {
+		b.Fatal(err)
+	}
+	benchmarkMethodVerify(b, csjwt.SigningMethodHS384, signing, signature, csjwt.WithPassword(hmacTestKey))
+}
+func BenchmarkHS512Verify(b *testing.B) {
+	signing, signature, err := csjwt.SplitForVerify(hmacTestData[2].tokenString) // HS512 token
+	if err != nil {
+		b.Fatal(err)
+	}
+	benchmarkMethodVerify(b, csjwt.SigningMethodHS512, signing, signature, csjwt.WithPassword(hmacTestKey))
+}
+
+func BenchmarkHS256VerifyFast(b *testing.B) {
+	signing, signature, err := csjwt.SplitForVerify(hmacTestData[0].tokenString) // HS256 token
+	if err != nil {
+		b.Fatal(err)
+	}
+	hf, err := csjwt.NewHMACFast256(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		b.Fatal(err)
+	}
+	benchmarkMethodVerify(b, hf, signing, signature, csjwt.Key{})
+}
+func BenchmarkHS384VerifyFast(b *testing.B) {
+	signing, signature, err := csjwt.SplitForVerify(hmacTestData[1].tokenString) // HS384 token
+	if err != nil {
+		b.Fatal(err)
+	}
+	hf, err := csjwt.NewHMACFast384(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		b.Fatal(err)
+	}
+	benchmarkMethodVerify(b, hf, signing, signature, csjwt.Key{})
+}
+func BenchmarkHS512VerifyFast(b *testing.B) {
+	signing, signature, err := csjwt.SplitForVerify(hmacTestData[2].tokenString) // HS512 token
+	if err != nil {
+		b.Fatal(err)
+	}
+	hf, err := csjwt.NewHMACFast512(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		b.Fatal(err)
+	}
+	benchmarkMethodVerify(b, hf, signing, signature, csjwt.Key{})
 }
