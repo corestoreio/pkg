@@ -1,8 +1,16 @@
+# CoreStore optimized version
+
+- no empty interfaces
+- refactored code
+- higher performance
+- TODO(CS) update this readme for the code examples which are all ...
+
 A [go](http://www.golang.org) (or 'golang' for search engine friendliness) implementation of [JSON Web Tokens](http://self-issued.info/docs/draft-jones-json-web-token.html)
 
 [![Build Status](https://travis-ci.org/dgrijalva/jwt-go.svg?branch=master)](https://travis-ci.org/dgrijalva/jwt-go)
 
 **NOTICE:** A vulnerability in JWT was [recently published](https://auth0.com/blog/2015/03/31/critical-vulnerabilities-in-json-web-token-libraries/).  As this library doesn't force users to validate the `alg` is what they expected, it's possible your usage is effected.  There will be an update soon to remedy this, and it will likey require backwards-incompatible changes to the API.  In the short term, please make sure your implementation verifies the `alg` is what you expect.
+
 
 ## What the heck is a JWT?
 
@@ -35,18 +43,18 @@ Parsing and verifying tokens is pretty straight forward.  You pass in the token 
 		deliverUtterRejection(":(")
 	}
 ```
-	
+
 ## Create a token
 
 ```go
 	// Create the token
-	token := csjwt.New(csjwt.SigningMethodHS256)
-	// Set some claims
-	token.Claims["foo"] = "bar"
-	token.Claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+	token := csjwt.NewWithClaims(csjwt.SigningMethodHS256, csjwt.MapClaims{
+		"foo": "bar",
+		"exp": time.Now().Add(time.Hour * 72).Unix(),
+	})
 	// Sign and get the complete encoded token as a string
 	tokenString, err := token.SignedString(mySigningKey)
-```	
+```
 
 ## Extensions
 
@@ -61,6 +69,63 @@ This library is considered production ready.  Feedback and feature requests are 
 This project uses [Semantic Versioning 2.0.0](http://semver.org).  Accepted pull requests will land on `master`.  Periodically, versions will be tagged from `master`.  You can find all the releases on [the project releases page](https://github.com/dgrijalva/jwt-go/releases).
 
 While we try to make it obvious when we make breaking changes, there isn't a great mechanism for pushing announcements out to users.  You may want to use this alternative package include: `gopkg.in/dgrijalva/jwt-go.v2`.  It will do the right thing WRT semantic versioning.
+
+## Migration Guide from v2 -> v3
+
+Added the ability to supply a typed object for the claims section of the token.
+
+Unfortunately this requires a breaking change. A few new methods were added to support this,
+and the old default of `map[string]interface{}` was changed to `csjwt.MapClaims`.
+
+The old example for creating a token looked like this..
+
+```go
+	token := csjwt.New(csjwt.SigningMethodHS256)
+	token.Claims["foo"] = "bar"
+	token.Claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+```
+
+is now directly mapped to...
+
+```go
+	token := csjwt.New(csjwt.SigningMethodHS256)
+	claims := token.Claims.(csjwt.MapClaims)
+	claims["foo"] = "bar"
+	claims["exp"] = time.Now().Add(time.Hour * 72).Unix()
+```
+
+However, we added a helper `csjwt.NewWithClaims` which accepts a claims object.
+
+Any type can now be used as the claim object for inside a token so long as it implements the interface `csjwt.Claims`.
+
+So, we added an additional claim type `csjwt.StandardClaims` was added.
+This is intended to be used as a base for creating your own types from,
+and includes a few helper functions for verifying the claims defined [here](https://tools.ietf.org/html/rfc7519#section-4.1).
+
+```go
+	claims := csjwt.StandardClaims{
+		Audience: "myapi"
+		ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
+	}
+	token := csjwt.NewWithClaims(csjwt.SigningMethodHS256, claims)
+```
+
+On the other end of usage all of the `csjwt.Parse` and friends got a `WithClaims` suffix added to them.
+
+```go
+	token, err := csjwt.Parse(token, keyFunc)
+	claims := token.Claims.(csjwt.MapClaim)
+	//like you used to..
+	claims["foo"]
+	claims["bar"]
+```
+
+New method usage:
+```go
+	token, err := csjwt.ParseWithClaims(token, keyFunc, &csjwt.StandardClaims{})
+	claims := token.Claims.(csjwt.StandardClaims)
+	fmt.Println(claims.IssuedAt)
+```
 
 ## Usage Tips
 

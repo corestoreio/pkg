@@ -15,8 +15,6 @@ import (
 	"os"
 	"regexp"
 	"strings"
-
-	"github.com/corestoreio/csfw/util/csjwt"
 )
 
 var (
@@ -122,7 +120,7 @@ func verifyToken() error {
 			return nil, err
 		}
 		if isEs() {
-			return csjwt.parseECPublicKeyFromPEM(data)
+			return csjwt.ParseECPublicKeyFromPEM(data)
 		}
 		return data, nil
 	})
@@ -163,7 +161,7 @@ func signToken() error {
 	}
 
 	// parse the JSON of the claims
-	var claims map[string]interface{}
+	var claims csjwt.MapClaims
 	if err := json.Unmarshal(tokData, &claims); err != nil {
 		return fmt.Errorf("Couldn't parse claims JSON: %v", err)
 	}
@@ -182,14 +180,13 @@ func signToken() error {
 	}
 
 	// create a new token
-	token := csjwt.New(alg)
-	token.Claims = claims
+	token := csjwt.NewWithClaims(alg, claims)
 
 	if isEs() {
 		if k, ok := key.([]byte); !ok {
 			return fmt.Errorf("Couldn't convert key data to key")
 		} else {
-			key, err = csjwt.parseECPrivateKeyFromPEM(k)
+			key, err = csjwt.ParseECPrivateKeyFromPEM(k)
 			if err != nil {
 				return err
 			}

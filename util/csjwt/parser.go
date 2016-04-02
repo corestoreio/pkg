@@ -16,13 +16,19 @@ type Parser struct {
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
 func (p Parser) Parse(rawToken []byte, keyFunc Keyfunc) (Token, error) {
+	return p.ParseWithClaims(rawToken, keyFunc, &MapClaims{})
+}
 
+func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer) (Token, error) {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
 		return Token{}, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
 	}
 
-	token := Token{Raw: rawToken}
+	token := Token{
+		Raw:    rawToken,
+		Claims: claims,
+	}
 
 	// parse Header
 	if headerBytes, err := DecodeSegment(token.Raw[:pos[0]]); err != nil {
@@ -42,7 +48,7 @@ func (p Parser) Parse(rawToken []byte, keyFunc Keyfunc) (Token, error) {
 		if p.UseJSONNumber {
 			dec.UseNumber()
 		}
-		if err := dec.Decode(&token.Claims); err != nil {
+		if err := dec.Decode(token.Claims); err != nil {
 			return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 		}
 	}
@@ -83,19 +89,17 @@ func (p Parser) Parse(rawToken []byte, keyFunc Keyfunc) (Token, error) {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable}
 	}
 
-	// Check expiration times
 	vErr := &ValidationError{}
-	now := TimeFunc().Unix()
-	if exp, ok := token.Claims["exp"].(float64); ok {
-		if now > int64(exp) {
-			vErr.err = "token is expired"
-			vErr.Errors |= ValidationErrorExpired
-		}
-	}
-	if nbf, ok := token.Claims["nbf"].(float64); ok {
-		if now < int64(nbf) {
-			vErr.err = "token is not valid yet"
-			vErr.Errors |= ValidationErrorNotValidYet
+
+	// Validate Claims
+	if err := token.Claims.Valid(); err != nil {
+
+		// If the Claims Valid returned an error, check if it is a validation error,
+		// If it was another error type, create a ValidationError with a generic ClaimsInvalid flag set
+		if e, ok := err.(*ValidationError); !ok {
+			vErr = &ValidationError{err: err.Error(), Errors: ValidationErrorClaimsInvalid}
+		} else {
+			vErr = e
 		}
 	}
 

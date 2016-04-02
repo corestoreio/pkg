@@ -1,9 +1,8 @@
 package csjwt_test
 
 import (
-	"testing"
-
 	"bytes"
+	"testing"
 
 	"github.com/corestoreio/csfw/util/csjwt"
 )

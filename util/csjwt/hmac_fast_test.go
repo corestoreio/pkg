@@ -16,8 +16,9 @@ package csjwt_test
 
 import (
 	"bytes"
-	"github.com/corestoreio/csfw/util/csjwt"
 	"testing"
+
+	"github.com/corestoreio/csfw/util/csjwt"
 )
 
 func TestHMACVerifyFast(t *testing.T) {

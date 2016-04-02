@@ -25,19 +25,23 @@ type Token struct {
 	Raw       []byte                 // The raw token.  Populated when you Parse a token
 	Method    Signer                 // The signing method used or to be used
 	Header    map[string]interface{} // The first segment of the token
-	Claims    map[string]interface{} // The second segment of the token
+	Claims    Claimer                // The second segment of the token
 	Signature []byte                 // The third segment of the token.  Populated when you Parse a token
 	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
 }
 
 // New creates a new Token. Takes a signing method
 func New(method Signer) Token {
+	return NewWithClaims(method, MapClaims{})
+}
+
+func NewWithClaims(method Signer, c Claimer) Token {
 	return Token{
 		Header: map[string]interface{}{
 			"typ": "JWT",
 			"alg": method.Alg(),
 		},
-		Claims: make(map[string]interface{}),
+		Claims: c,
 		Method: method,
 	}
 }
@@ -91,10 +95,10 @@ func (t Token) SigningString() (buf bytes.Buffer, err error) {
 	return
 }
 
-func marshalBase64(source map[string]interface{}) ([]byte, error) {
+func marshalBase64(v interface{}) ([]byte, error) {
 	buf := bufPool.Get()
 	defer bufPool.Put(buf)
-	if err := json.NewEncoder(buf).Encode(source); err != nil {
+	if err := json.NewEncoder(buf).Encode(v); err != nil {
 		return nil, err
 	}
 	return EncodeSegment(buf.Bytes()), nil
@@ -103,8 +107,12 @@ func marshalBase64(source map[string]interface{}) ([]byte, error) {
 // Parse validates and returns a token.
 // keyFunc will receive the parsed token and should return the key for validating.
 // If everything is kosher, err will be nil
-func Parse(tokenString []byte, keyFunc Keyfunc) (Token, error) {
-	return Parser{}.Parse(tokenString, keyFunc)
+func Parse(rawToken []byte, keyFunc Keyfunc) (Token, error) {
+	return Parser{}.Parse(rawToken, keyFunc)
+}
+
+func ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer) (Token, error) {
+	return Parser{}.ParseWithClaims(rawToken, keyFunc, claims)
 }
 
 // ParseFromRequest tries to find the token in an http.Request.
@@ -112,20 +120,23 @@ func Parse(tokenString []byte, keyFunc Keyfunc) (Token, error) {
 // Currently, it looks in the Authorization header as well as
 // looking for an 'access_token' request parameter in req.Form.
 func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token Token, err error) {
+	return ParseFromRequestWithClaims(req, keyFunc, MapClaims{})
+}
 
+func ParseFromRequestWithClaims(req *http.Request, keyFunc Keyfunc, claims Claimer) (Token, error) {
 	// Look for an Authorization header
 	if ah := req.Header.Get(HTTPHeaderAuthorization); ah != "" {
 		// Should be a bearer token
 		auth := []byte(ah)
 		if startsWithBearer(auth) {
-			return Parse(auth[7:], keyFunc)
+			return ParseWithClaims(auth[7:], keyFunc, claims)
 		}
 	}
 
 	// Look for "access_token" parameter
 	_ = req.ParseMultipartForm(10e6) // ignore errors
 	if tokStr := req.Form.Get(HTTPFormInputName); tokStr != "" {
-		return Parse([]byte(tokStr), keyFunc)
+		return ParseWithClaims([]byte(tokStr), keyFunc, claims)
 	}
 
 	return Token{}, ErrNoTokenInRequest
