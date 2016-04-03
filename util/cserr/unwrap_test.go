@@ -31,5 +31,7 @@ func TestUnwrapMasked(t *testing.T) {
 
 	e2 := errors.New("Scala")
 	assert.Exactly(t, e2, cserr.UnwrapMasked(errors.Mask(e2)))
+	assert.Exactly(t, nil, cserr.UnwrapMasked(errors.Mask(nil)))
 	assert.Exactly(t, e2, cserr.UnwrapMasked(e2))
+	assert.Exactly(t, nil, cserr.UnwrapMasked(nil))
 }

@@ -124,6 +124,8 @@ func TestMultiErrContains(t *testing.T) {
 	assert.True(t, me.Contains(errors.Mask(e2)))
 	assert.True(t, me.Contains(e1))
 	assert.True(t, me.Contains(e4))
+	assert.True(t, me.Contains(fmt.Errorf("Err4")))
+	assert.False(t, me.Contains(fmt.Errorf("Err5")))
 	assert.False(t, me.Contains(nil))
 }
 

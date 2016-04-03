@@ -76,7 +76,12 @@ func (m *MultiErr) Contains(search error) bool {
 	}
 	sUnMasked := UnwrapMasked(search)
 	for _, err := range m.errs {
-		if err != nil && sUnMasked == UnwrapMasked(err) {
+		err = UnwrapMasked(err)
+		if err != nil && sUnMasked == err {
+			return true
+		}
+		// now go the hard way, string comparisons:
+		if err != nil && sUnMasked.Error() == err.Error() {
 			return true
 		}
 	}

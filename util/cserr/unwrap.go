@@ -20,6 +20,9 @@ import "github.com/juju/errors"
 // comparison with Err* variables. Recursive function.
 // Only in use with github.com/juju/errors package.
 func UnwrapMasked(err error) error {
+	if err == nil {
+		return nil
+	}
 	if theErr, ok := err.(*errors.Err); ok {
 		if uErr := theErr.Underlying(); uErr != nil {
 			return UnwrapMasked(uErr)
