@@ -141,6 +141,8 @@ func TestContains(t *testing.T) {
 	me = me.AppendErrors(e2, e1, errors.Mask(e4))
 	assert.NotNil(t, me)
 
+	assert.True(t, cserr.Contains(e1, errors.New("Err1")))
+	assert.False(t, cserr.Contains(e1, errors.New("Err5")))
 	assert.True(t, cserr.Contains(e1, e1))
 	assert.False(t, cserr.Contains(e1, e2))
 	assert.False(t, cserr.Contains(e4, e2))

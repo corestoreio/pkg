@@ -91,11 +91,18 @@ func (m *MultiErr) Contains(search error) bool {
 // Contains checks if search1 can be found within search2 and vice versa.
 // One or both parameters can be of type *cserr.MultiErr
 func Contains(search1, search2 error) bool {
+	if search1 == nil && search1 == search2 {
+		return false
+	}
 	search1 = UnwrapMasked(search1)
 	search2 = UnwrapMasked(search2)
 	if search1 != nil && search1 == search2 {
 		return true
 	}
+	if search1 != nil && search2 != nil && search1.Error() == search2.Error() {
+		return true
+	}
+
 	me, ok := search1.(*MultiErr)
 	if ok && me.Contains(search2) {
 		return true
