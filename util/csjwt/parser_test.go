@@ -11,6 +11,7 @@ import (
 	"runtime/debug"
 
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/stretchr/testify/assert"
 )
 
 var (
@@ -40,96 +41,87 @@ var jwtTestData = []struct {
 		0,
 		nil,
 	},
-	//{
-	//	"basic expired",
-	//	nil, // autogen
-	//	defaultKeyFunc,
-	//	csjwt.MapClaims{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
-	//	false,
-	//	csjwt.ValidationErrorExpired,
-	//	nil,
-	//},
-	//{
-	//	"basic nbf",
-	//	nil, // autogen
-	//	defaultKeyFunc,
-	//	csjwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
-	//	false,
-	//	csjwt.ValidationErrorNotValidYet,
-	//	nil,
-	//},
-	//{
-	//	"expired and nbf",
-	//	nil, // autogen
-	//	defaultKeyFunc,
-	//	csjwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
-	//	false,
-	//	csjwt.ValidationErrorNotValidYet | csjwt.ValidationErrorExpired,
-	//	nil,
-	//},
-	//{
-	//	"basic invalid",
-	//	[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.EhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
-	//	defaultKeyFunc,
-	//	csjwt.MapClaims{"foo": "bar"},
-	//	false,
-	//	csjwt.ValidationErrorSignatureInvalid,
-	//	nil,
-	//},
-	//{
-	//	"basic nokeyfunc",
-	//	[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
-	//	nilKeyFunc,
-	//	csjwt.MapClaims{"foo": "bar"},
-	//	false,
-	//	csjwt.ValidationErrorUnverifiable,
-	//	nil,
-	//},
-	//{
-	//	"basic nokey",
-	//	[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
-	//	emptyKeyFunc,
-	//	csjwt.MapClaims{"foo": "bar"},
-	//	false,
-	//	csjwt.ValidationErrorSignatureInvalid,
-	//	nil,
-	//},
-	//{
-	//	"basic errorkey",
-	//	[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
-	//	errorKeyFunc,
-	//	csjwt.MapClaims{"foo": "bar"},
-	//	false,
-	//	csjwt.ValidationErrorUnverifiable,
-	//	nil,
-	//},
-	//{
-	//	"invalid signing method",
-	//	nil,
-	//	defaultKeyFunc,
-	//	map[string]interface{}{"foo": "bar"},
-	//	false,
-	//	csjwt.ValidationErrorSignatureInvalid,
-	//	&csjwt.Parser{ValidMethods: []string{"HS256"}},
-	//},
-	//{
-	//	"valid signing method",
-	//	nil,
-	//	defaultKeyFunc,
-	//	map[string]interface{}{"foo": "bar"},
-	//	true,
-	//	0,
-	//	&csjwt.Parser{ValidMethods: []string{"RS256", "HS256"}},
-	//},
-	//{
-	//	"JSON Number",
-	//	nil,
-	//	defaultKeyFunc,
-	//	map[string]interface{}{"foo": json.Number("123.4")},
-	//	true,
-	//	0,
-	//	&csjwt.Parser{UseJSONNumber: true},
-	//},
+	{
+		"basic expired",
+		nil, // autogen
+		defaultKeyFunc,
+		csjwt.MapClaims{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
+		false,
+		csjwt.ValidationErrorExpired,
+		nil,
+	},
+	{
+		"basic nbf",
+		nil, // autogen
+		defaultKeyFunc,
+		csjwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
+		false,
+		csjwt.ValidationErrorNotValidYet,
+		nil,
+	},
+	{
+		"expired and nbf",
+		nil, // autogen
+		defaultKeyFunc,
+		csjwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
+		false,
+		csjwt.ValidationErrorNotValidYet | csjwt.ValidationErrorExpired,
+		nil,
+	},
+	{
+		"basic invalid",
+		[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.EhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
+		defaultKeyFunc,
+		csjwt.MapClaims{"foo": "bar"},
+		false,
+		csjwt.ValidationErrorSignatureInvalid,
+		nil,
+	},
+	{
+		"basic nokeyfunc",
+		[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
+		nilKeyFunc,
+		csjwt.MapClaims{"foo": "bar"},
+		false,
+		csjwt.ValidationErrorUnverifiable,
+		nil,
+	},
+	{
+		"basic nokey",
+		[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
+		emptyKeyFunc,
+		csjwt.MapClaims{"foo": "bar"},
+		false,
+		csjwt.ValidationErrorSignatureInvalid,
+		nil,
+	},
+	{
+		"basic errorkey",
+		[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
+		errorKeyFunc,
+		csjwt.MapClaims{"foo": "bar"},
+		false,
+		csjwt.ValidationErrorUnverifiable,
+		nil,
+	},
+	{
+		"invalid signing method",
+		nil,
+		defaultKeyFunc,
+		map[string]interface{}{"foo": "bar"},
+		false,
+		csjwt.ValidationErrorSignatureInvalid,
+		&csjwt.Parser{ValidMethods: []string{"HS256"}},
+	},
+	{
+		"valid signing method",
+		nil,
+		defaultKeyFunc,
+		map[string]interface{}{"foo": "bar"},
+		true,
+		0,
+		&csjwt.Parser{ValidMethods: []string{"RS256", "HS256"}},
+	},
 }
 
 func makeSample(c csjwt.MapClaims) []byte {
@@ -212,6 +204,39 @@ func TestParseRequest(t *testing.T) {
 			t.Errorf("[%v] Invalid token passed validation", data.name)
 		}
 	}
+}
+
+func TestParseFromRequest(t *testing.T) {
+	key := csjwt.WithPassword([]byte(`csjwt.SigningMethodHS512!`))
+	clm := csjwt.MapClaims{
+		"foo":               "bar",
+		"user_id":           "hello_gophers",
+		"cart_items":        "234234,12;34234,34;234234,1;123123,12;234234,12;34234,34;234234,1;123123,12;234234,12;34234,34;234234,1;123123,12;",
+		"last_viewed_items": "234234,12;34234,34;234234,1;123123,12;234234,12;34234,34;234234,1;123123,12;234234,12;34234,34;234234,1;123123,12;",
+		"requested_price":   float64(3.141592 * 2.718281 / 3),
+		"checkout_step":     float64(3),
+		"payment_valid":     true,
+		"exp":               float64(time.Now().Add(time.Hour * 72).Unix()),
+	}
+	token := csjwt.NewWithClaims(csjwt.SigningMethodHS512, clm)
+	tokenString, err := token.SignedString(key)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r, _ := http.NewRequest("GET", "/", nil)
+	r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tokenString))
+
+	rToken, err := csjwt.ParseFromRequest(r, func(t csjwt.Token) (csjwt.Key, error) {
+		if have, want := t.Method.Alg(), csjwt.SigningMethodHS512.Alg(); have != want {
+			return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
+		}
+		return key, nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, rToken.Claims, &clm)
 }
 
 func benchmarkSigning(b *testing.B, method csjwt.Signer, key csjwt.Key) {

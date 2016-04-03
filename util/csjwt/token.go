@@ -14,6 +14,15 @@ const HTTPHeaderAuthorization = `Authorization`
 // HTTPFormInputName HTML form field name
 const HTTPFormInputName = `access_token`
 
+// ContentTypeJWT defines the content type of a token. At the moment only JWT
+// is supported. JWE may be added in the future JSON Web Encryption (JWE).
+// https://tools.ietf.org/html/rfc7519
+const ContentTypeJWT = `JWT`
+
+// ContentTypeJWE JSON Web Encryption (JWE) not supported.
+// http://www.rfc-editor.org/info/rfc7516
+const ContentTypeJWE = `JWE`
+
 // TimeFunc provides the current time when parsing token to validate "exp" claim (expiration time).
 // You can override it to use another time value.  This is useful for testing or if your
 // server uses a different time zone than your tokens.
@@ -38,7 +47,7 @@ func New(method Signer) Token {
 func NewWithClaims(method Signer, c Claimer) Token {
 	return Token{
 		Header: map[string]interface{}{
-			"typ": "JWT",
+			"typ": ContentTypeJWT,
 			"alg": method.Alg(),
 		},
 		Claims: c,
@@ -111,6 +120,8 @@ func Parse(rawToken []byte, keyFunc Keyfunc) (Token, error) {
 	return Parser{}.Parse(rawToken, keyFunc)
 }
 
+// ParseWithClaims same as Parse() but allows to set a custom Claimer.
+// Claimer must be a pointer.
 func ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer) (Token, error) {
 	return Parser{}.ParseWithClaims(rawToken, keyFunc, claims)
 }
@@ -120,9 +131,11 @@ func ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer) (Token, e
 // Currently, it looks in the Authorization header as well as
 // looking for an 'access_token' request parameter in req.Form.
 func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token Token, err error) {
-	return ParseFromRequestWithClaims(req, keyFunc, MapClaims{})
+	return ParseFromRequestWithClaims(req, keyFunc, &MapClaims{})
 }
 
+// ParseFromRequestWithClaims same as ParseFromRequest but allows to add a custer Claimer.
+// Claimer must be a pointer.
 func ParseFromRequestWithClaims(req *http.Request, keyFunc Keyfunc, claims Claimer) (Token, error) {
 	// Look for an Authorization header
 	if ah := req.Header.Get(HTTPHeaderAuthorization); ah != "" {

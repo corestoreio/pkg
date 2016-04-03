@@ -8,8 +8,30 @@ import (
 
 // Parser allows to parse a token with custom options.
 type Parser struct {
-	ValidMethods  []string // If populated, only these methods will be considered valid
-	UseJSONNumber bool     // Use JSON Number format in JSON decoder
+	// ValidMethods if populated, only these methods will be considered valid
+	ValidMethods []string
+	// UseJSONNumber format in JSON decoder
+	UseJSONNumber bool
+	// JSONer interface to pass in a custom JSON parser.
+	// Can be nil
+	JSONer interface {
+		Unmarshal(data []byte, v interface{}) error
+	}
+}
+
+type jsonParser struct {
+	useJSONNumber bool
+}
+
+func (jp jsonParser) Unmarshal(data []byte, v interface{}) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	if jp.useJSONNumber {
+		dec.UseNumber()
+	}
+	if err := dec.Decode(v); err != nil {
+		return &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+	}
+	return nil
 }
 
 // Parse validate, and return a token.
@@ -19,6 +41,8 @@ func (p Parser) Parse(rawToken []byte, keyFunc Keyfunc) (Token, error) {
 	return p.ParseWithClaims(rawToken, keyFunc, &MapClaims{})
 }
 
+// ParseWithClaims same as Parse() but lets you specify your own Claimer.
+// Claimer must be a pointer.
 func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer) (Token, error) {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
@@ -30,26 +54,28 @@ func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer
 		Claims: claims,
 	}
 
+	if p.JSONer == nil {
+		p.JSONer = jsonParser{
+			useJSONNumber: p.UseJSONNumber,
+		}
+	}
+
 	// parse Header
 	if headerBytes, err := DecodeSegment(token.Raw[:pos[0]]); err != nil {
 		if startsWithBearer(token.Raw) {
 			return token, &ValidationError{err: "tokenstring should not contain 'bearer '", Errors: ValidationErrorMalformed}
 		}
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
-	} else if err := json.Unmarshal(headerBytes, &token.Header); err != nil {
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+	} else if err := p.JSONer.Unmarshal(headerBytes, &token.Header); err != nil {
+		return token, err
 	}
 
 	// parse Claims
 	if claimBytes, err := DecodeSegment(token.Raw[pos[0]+1 : pos[1]]); err != nil {
 		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
 	} else {
-		dec := json.NewDecoder(bytes.NewReader(claimBytes))
-		if p.UseJSONNumber {
-			dec.UseNumber()
-		}
-		if err := dec.Decode(token.Claims); err != nil {
-			return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+		if err := p.JSONer.Unmarshal(claimBytes, token.Claims); err != nil {
+			return token, err
 		}
 	}
 

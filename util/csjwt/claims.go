@@ -1,27 +1,76 @@
 package csjwt
 
-import "crypto/subtle"
+import (
+	"crypto/subtle"
+
+	"github.com/corestoreio/csfw/util/conv"
+)
 
 // Claimer for a type to be a Claims object
 type Claimer interface {
-	// Valid method that determines if the token is invalid for any supported reason
+	// Valid method that determines if the token is invalid for any supported reason.
+	// Returns nil on success
 	Valid() error
 }
 
 // StandardClaims represents a structured version of Claims Section, as
 // referenced at https://tools.ietf.org/html/rfc7519#section-4.1
 type StandardClaims struct {
-	Audience  string `json:"aud,omitempty"`
-	ExpiresAt int64  `json:"exp,omitempty"`
-	Id        string `json:"jti,omitempty"`
-	IssuedAt  int64  `json:"iat,omitempty"`
-	// Issuer - The "iss" (issuer) claim identifies the principal that issued the
+	// Audience claim identifies the recipients that the JWT is
+	// intended for.  Each principal intended to process the JWT MUST
+	// identify itself with a value in the audience claim.  If the principal
+	// processing the claim does not identify itself with a value in the
+	// "aud" claim when this claim is present, then the JWT MUST be
+	// rejected.  In the general case, the "aud" value is an array of case-
+	// sensitive strings, each containing a StringOrURI value.  In the
+	// special case when the JWT has one audience, the "aud" value MAY be a
+	// single case-sensitive string containing a StringOrURI value.  The
+	// interpretation of audience values is generally application specific.
+	// Use of this claim is OPTIONAL.
+	Audience string `json:"aud,omitempty"`
+	// ExpiresAt claim identifies the expiration time on
+	// or after which the JWT MUST NOT be accepted for processing.  The
+	// processing of the "exp" claim requires that the current date/time
+	// MUST be before the expiration date/time listed in the "exp" claim.
+	// Implementers MAY provide for some small leeway, usually no more than
+	// a few minutes, to account for clock skew.  Its value MUST be a number
+	// containing a NumericDate value.  Use of this claim is OPTIONAL.
+	ExpiresAt int64 `json:"exp,omitempty"`
+	// ID claim provides a unique identifier for the JWT.
+	// The identifier value MUST be assigned in a manner that ensures that
+	// there is a negligible probability that the same value will be
+	// accidentally assigned to a different data object; if the application
+	// uses multiple issuers, collisions MUST be prevented among values
+	// produced by different issuers as well.  The "jti" claim can be used
+	// to prevent the JWT from being replayed.  The "jti" value is a case-
+	// sensitive string.  Use of this claim is OPTIONAL.
+	ID string `json:"jti,omitempty"`
+	// IssuedAt claim identifies the time at which the JWT was
+	// issued.  This claim can be used to determine the age of the JWT.  Its
+	// value MUST be a number containing a NumericDate value.  Use of this
+	// claim is OPTIONAL.
+	IssuedAt int64 `json:"iat,omitempty"`
+	// Issuer claim identifies the principal that issued the
 	// JWT.  The processing of this claim is generally application specific.
 	// The "iss" value is a case-sensitive string containing a StringOrURI
 	// value.  Use of this claim is OPTIONAL.
-	Issuer    string `json:"iss,omitempty"`
-	NotBefore int64  `json:"nbf,omitempty"`
-	Subject   string `json:"sub,omitempty"`
+	Issuer string `json:"iss,omitempty"`
+	// NotBefore claim identifies the time before which the JWT
+	// MUST NOT be accepted for processing.  The processing of the "nbf"
+	// claim requires that the current date/time MUST be after or equal to
+	// the not-before date/time listed in the "nbf" claim.  Implementers MAY
+	// provide for some small leeway, usually no more than a few minutes, to
+	// account for clock skew.  Its value MUST be a number containing a
+	// NumericDate value.  Use of this claim is OPTIONAL.
+	NotBefore int64 `json:"nbf,omitempty"`
+	// Subject claim identifies the principal that is the
+	// subject of the JWT.  The claims in a JWT are normally statements
+	// about the subject.  The subject value MUST either be scoped to be
+	// locally unique in the context of the issuer or be globally unique.
+	// The processing of this claim is generally application specific.  The
+	// "sub" value is a case-sensitive string containing a StringOrURI
+	// value.  Use of this claim is OPTIONAL.
+	Subject string `json:"sub,omitempty"`
 }
 
 // Valid validates time based claims "exp, iat, nbf".
@@ -56,31 +105,31 @@ func (c StandardClaims) Valid() error {
 	return vErr
 }
 
-// Compares the aud claim against cmp.
+// VerifyAudience compares the aud claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyAudience(cmp string, req bool) bool {
-	return verifyAud(c.Audience, cmp, req)
+	return verifyConstantTime([]byte(c.Audience), []byte(cmp), req)
 }
 
-// Compares the exp claim against cmp.
+// VerifyExpiresAt compares the exp claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyExpiresAt(cmp int64, req bool) bool {
 	return verifyExp(c.ExpiresAt, cmp, req)
 }
 
-// Compares the iat claim against cmp.
+// VerifyIssuedAt compares the iat claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyIssuedAt(cmp int64, req bool) bool {
 	return verifyIat(c.IssuedAt, cmp, req)
 }
 
-// Compares the iss claim against cmp.
+// VerifyIssuer compares the iss claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyIssuer(cmp string, req bool) bool {
-	return verifyIss(c.Issuer, cmp, req)
+	return verifyConstantTime([]byte(c.Issuer), []byte(cmp), req)
 }
 
-// Compares the nbf claim against cmp.
+// VerifyNotBefore compares the nbf claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (c *StandardClaims) VerifyNotBefore(cmp int64, req bool) bool {
 	return verifyNbf(c.NotBefore, cmp, req)
@@ -89,11 +138,11 @@ func (c *StandardClaims) VerifyNotBefore(cmp int64, req bool) bool {
 // MapClaims default type for the Claim field in a token. You can provide
 type MapClaims map[string]interface{}
 
-// Compares the aud claim against cmp.
+// VerifyAudience compares the aud claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyAudience(cmp string, req bool) bool {
-	aud, _ := m["aud"].(string)
-	return verifyAud(aud, cmp, req)
+	aud := conv.ToByte(m["aud"])
+	return verifyConstantTime(aud, []byte(cmp), req)
 }
 
 // Compares the exp claim against cmp.
@@ -113,8 +162,8 @@ func (m MapClaims) VerifyIssuedAt(cmp int64, req bool) bool {
 // Compares the iss claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyIssuer(cmp string, req bool) bool {
-	iss, _ := m["iss"].(string)
-	return verifyIss(iss, cmp, req)
+	iss := conv.ToByte(m["iss"])
+	return verifyConstantTime(iss, []byte(cmp), req)
 }
 
 // Compares the nbf claim against cmp.
@@ -154,15 +203,11 @@ func (m MapClaims) Valid() error {
 	return vErr
 }
 
-func verifyAud(aud string, cmp string, required bool) bool {
-	if aud == "" {
+func verifyConstantTime(aud, cmp []byte, required bool) bool {
+	if len(aud) == 0 {
 		return !required
 	}
-	if subtle.ConstantTimeCompare([]byte(aud), []byte(cmp)) != 0 {
-		return true
-	} else {
-		return false
-	}
+	return subtle.ConstantTimeCompare(aud, cmp) == 1
 }
 
 func verifyExp(exp int64, now int64, required bool) bool {
@@ -177,17 +222,6 @@ func verifyIat(iat int64, now int64, required bool) bool {
 		return !required
 	}
 	return now >= iat
-}
-
-func verifyIss(iss string, cmp string, required bool) bool {
-	if iss == "" {
-		return !required
-	}
-	if subtle.ConstantTimeCompare([]byte(iss), []byte(cmp)) != 0 {
-		return true
-	} else {
-		return false
-	}
 }
 
 func verifyNbf(nbf int64, now int64, required bool) bool {
