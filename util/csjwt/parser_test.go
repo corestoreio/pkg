@@ -241,6 +241,44 @@ func TestParseFromRequest(t *testing.T) {
 	assert.Exactly(t, rToken.Claims, &clm)
 }
 
+func TestSplitForVerify(t *testing.T) {
+	tests := []struct {
+		rawToken      []byte
+		signingString []byte
+		signature     []byte
+		wantErr       error
+	}{
+		{
+			[]byte(`Hello.World.Gophers`),
+			[]byte(`Hello.World`),
+			[]byte(`Gophers`),
+			nil,
+		},
+		{
+			[]byte(`Hello.WorldGophers`),
+			nil,
+			nil,
+			csjwt.ErrTokenInvalidSegmentCounts,
+		},
+		{
+			[]byte(`Hello.World.Gop.hers`),
+			nil,
+			nil,
+			csjwt.ErrTokenInvalidSegmentCounts,
+		},
+	}
+	for _, test := range tests {
+		haveSS, haveSig, haveErr := csjwt.SplitForVerify(test.rawToken)
+		if test.wantErr != nil {
+			assert.EqualError(t, haveErr, test.wantErr.Error())
+		} else {
+			assert.NoError(t, haveErr)
+		}
+		assert.Exactly(t, test.signingString, haveSS)
+		assert.Exactly(t, test.signature, haveSig)
+	}
+}
+
 func benchmarkSigning(b *testing.B, method csjwt.Signer, key csjwt.Key) {
 	t := csjwt.New(method)
 	b.ResetTimer()
