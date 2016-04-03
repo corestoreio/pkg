@@ -53,7 +53,12 @@ func (m *MultiErr) AppendErrors(errs ...error) *MultiErr {
 	}
 	for _, err := range errs {
 		if err != nil {
-			m.errs = append(m.errs, err)
+			// unwrap MultiErr recursively because in errs can be a MultiErr
+			if mErr2, ok := err.(*MultiErr); ok {
+				m = m.AppendErrors(mErr2.errs...)
+			} else {
+				m.errs = append(m.errs, err)
+			}
 		}
 	}
 	return m

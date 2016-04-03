@@ -16,6 +16,8 @@ package cserr_test
 
 import (
 	goerr "errors"
+	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/corestoreio/csfw/util/cserr"
@@ -28,7 +30,7 @@ var _ error = (*cserr.MultiErr)(nil)
 func TestMultiErrors(t *testing.T) {
 	t.Parallel()
 	assert.Equal(t,
-		"[{github.com/corestoreio/csfw/util/cserr/errors_test.go:36: Err1}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:36: Err2}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:36: Err3}]",
+		"[{github.com/corestoreio/csfw/util/cserr/errors_test.go:38: Err1}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:38: Err2}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:38: Err3}]",
 		cserr.NewMultiErr(
 			errors.New("Err1"),
 			errors.New("Err2"),
@@ -49,7 +51,7 @@ func TestMultiAppend(t *testing.T) {
 	)
 	assert.True(t, e.HasErrors())
 	assert.Equal(t,
-		"[{github.com/corestoreio/csfw/util/cserr/errors_test.go:45: Err5}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:47: Err6}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:48: Err7}]",
+		"[{github.com/corestoreio/csfw/util/cserr/errors_test.go:47: Err5}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:49: Err6}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:50: Err7}]",
 		e.VerboseErrors().Error(),
 	)
 }
@@ -92,6 +94,18 @@ func TestMultiAppendNilToNil2(t *testing.T) {
 	e = e.AppendErrors(nil, nil)
 	assert.False(t, e.HasErrors())
 	assert.Nil(t, e)
+}
+
+func TestMultiAppendRecursive(t *testing.T) {
+	t.Parallel()
+
+	me := cserr.NewMultiErr(goerr.New("Err1"))
+	me.AppendErrors(cserr.NewMultiErr(goerr.New("Err2"), cserr.NewMultiErr(goerr.New("Err3"))))
+	assert.Exactly(t, "Err1\nErr2\nErr3", me.Error())
+	fmtd := fmt.Sprintf("%#v", me)
+	// "&cserr.MultiErr{errs:[]error{(*errors.errorString)(0xc82000f590), (*errors.errorString)(0xc82000f5b0), (*errors.errorString)(0xc82000f5c0)}, details:false}" (actual)
+	assert.Exactly(t, 1, strings.Count(fmtd, "MultiErr"))
+	assert.Exactly(t, 3, strings.Count(fmtd, "*errors.errorString"))
 }
 
 func TestMultiErrContains(t *testing.T) {
