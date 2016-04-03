@@ -15,6 +15,7 @@
 package cserr_test
 
 import (
+	goerr "errors"
 	"testing"
 
 	"github.com/corestoreio/csfw/util/cserr"
@@ -27,7 +28,7 @@ var _ error = (*cserr.MultiErr)(nil)
 func TestMultiErrors(t *testing.T) {
 	t.Parallel()
 	assert.Equal(t,
-		"[{github.com/corestoreio/csfw/util/cserr/errors_test.go:35: Err1}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:35: Err2}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:35: Err3}]",
+		"[{github.com/corestoreio/csfw/util/cserr/errors_test.go:36: Err1}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:36: Err2}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:36: Err3}]",
 		cserr.NewMultiErr(
 			errors.New("Err1"),
 			errors.New("Err2"),
@@ -48,7 +49,7 @@ func TestMultiAppend(t *testing.T) {
 	)
 	assert.True(t, e.HasErrors())
 	assert.Equal(t,
-		"[{github.com/corestoreio/csfw/util/cserr/errors_test.go:44: Err5}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:46: Err6}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:47: Err7}]",
+		"[{github.com/corestoreio/csfw/util/cserr/errors_test.go:45: Err5}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:47: Err6}]\n[{github.com/corestoreio/csfw/util/cserr/errors_test.go:48: Err7}]",
 		e.VerboseErrors().Error(),
 	)
 }
@@ -91,6 +92,25 @@ func TestMultiAppendNilToNil2(t *testing.T) {
 	e = e.AppendErrors(nil, nil)
 	assert.False(t, e.HasErrors())
 	assert.Nil(t, e)
+}
+
+func TestMultiErrContains(t *testing.T) {
+	t.Parallel()
+	var me *cserr.MultiErr
+
+	e1 := errors.New("Err1")
+	e2 := errors.New("Err2")
+	e3 := errors.New("Err3")
+	e4 := goerr.New("Err4")
+
+	me = me.AppendErrors(e2, e1, errors.Mask(e4))
+	assert.NotNil(t, me)
+	assert.False(t, me.Contains(e3))
+	assert.True(t, me.Contains(e2))
+	assert.True(t, me.Contains(errors.Mask(e2)))
+	assert.True(t, me.Contains(e1))
+	assert.True(t, me.Contains(e4))
+	assert.False(t, me.Contains(nil))
 }
 
 var benchmarkError string

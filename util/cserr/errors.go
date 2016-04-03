@@ -64,6 +64,20 @@ func (m *MultiErr) HasErrors() bool {
 	return m != nil && len(m.errs) > 0
 }
 
+// Contains checks if search has been added to the internal error stack.
+func (m *MultiErr) Contains(search error) bool {
+	if m == nil || search == nil {
+		return false
+	}
+	sUnMasked := UnwrapMasked(search)
+	for _, err := range m.errs {
+		if err != nil && sUnMasked == UnwrapMasked(err) {
+			return true
+		}
+	}
+	return false
+}
+
 // VerboseErrors enables more error details like the location. Use in chaining:
 // 		e := NewMultiErr(err1, err2).Details()
 func (m *MultiErr) VerboseErrors() *MultiErr {
@@ -93,7 +107,7 @@ func (m *MultiErr) Error() string {
 		}
 
 		if i < le {
-			if _, err := buf.WriteString("\n"); err != nil {
+			if _, err := buf.WriteRune('\n'); err != nil {
 				return fmt.Sprintf("buf.WriteString (2) internal error (%s):\n%s", err, buf.String())
 			}
 		}

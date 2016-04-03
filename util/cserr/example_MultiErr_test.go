@@ -17,6 +17,7 @@ package cserr_test
 import (
 	"errors"
 	"fmt"
+
 	"github.com/corestoreio/csfw/util/cserr"
 )
 
