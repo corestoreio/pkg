@@ -3,7 +3,9 @@ package csjwt
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
+
+	"github.com/corestoreio/csfw/util/cserr"
+	"github.com/juju/errors"
 )
 
 // Parser allows to parse a token with custom options.
@@ -14,9 +16,13 @@ type Parser struct {
 	UseJSONNumber bool
 	// JSONer interface to pass in a custom JSON parser.
 	// Can be nil
-	JSONer interface {
-		Unmarshal(data []byte, v interface{}) error
-	}
+	JSONer
+}
+
+// JSONer interface to pass in a custom JSON parser.
+// Can be nil in the Parser type.
+type JSONer interface {
+	Unmarshal(data []byte, v interface{}) error
 }
 
 type jsonParser struct {
@@ -29,7 +35,7 @@ func (jp jsonParser) Unmarshal(data []byte, v interface{}) error {
 		dec.UseNumber()
 	}
 	if err := dec.Decode(v); err != nil {
-		return &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+		return cserr.NewMultiErr(ErrTokenMalformed, err)
 	}
 	return nil
 }
@@ -46,7 +52,7 @@ func (p Parser) Parse(rawToken []byte, keyFunc Keyfunc) (Token, error) {
 func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer) (Token, error) {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
-		return Token{}, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
+		return Token{}, ErrTokenInvalidSegmentCounts
 	}
 
 	token := Token{
@@ -63,16 +69,16 @@ func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer
 	// parse Header
 	if headerBytes, err := DecodeSegment(token.Raw[:pos[0]]); err != nil {
 		if startsWithBearer(token.Raw) {
-			return token, &ValidationError{err: "tokenstring should not contain 'bearer '", Errors: ValidationErrorMalformed}
+			return token, ErrTokenShouldNotContainBearer
 		}
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+		return token, cserr.NewMultiErr(ErrTokenMalformed, err)
 	} else if err := p.JSONer.Unmarshal(headerBytes, &token.Header); err != nil {
 		return token, err
 	}
 
 	// parse Claims
 	if claimBytes, err := DecodeSegment(token.Raw[pos[0]+1 : pos[1]]); err != nil {
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorMalformed}
+		return token, cserr.NewMultiErr(ErrTokenMalformed, err)
 	} else {
 		if err := p.JSONer.Unmarshal(claimBytes, token.Claims); err != nil {
 			return token, err
@@ -80,12 +86,8 @@ func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer
 	}
 
 	// Lookup signature method
-	if method, ok := token.Header["alg"].(string); ok {
-		if token.Method = GetSigningMethod(method); token.Method == nil {
-			return token, &ValidationError{err: "signing method (alg) is unavailable.", Errors: ValidationErrorUnverifiable}
-		}
-	} else {
-		return token, &ValidationError{err: "signing method (alg) is unspecified.", Errors: ValidationErrorUnverifiable}
+	if err := token.updateMethod(); err != nil {
+		return token, err
 	}
 
 	// Verify signing method is in the required set
@@ -99,49 +101,33 @@ func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer
 			}
 		}
 		if !signingMethodValid {
-			// signing method is not in the listed set
-			return token, &ValidationError{err: fmt.Sprintf("signing method %v is invalid", alg), Errors: ValidationErrorSignatureInvalid}
+			return token, errors.Errorf("Token signing method %s is invalid", alg)
 		}
+	}
+
+	// Validate Claims
+	if err := token.Claims.Valid(); err != nil {
+		return token, cserr.NewMultiErr(ErrValidationClaimsInvalid, err)
 	}
 
 	// Lookup key
 	if keyFunc == nil {
 		// keyFunc was not provided.  short circuiting validation
-		return token, &ValidationError{err: "no Keyfunc was provided.", Errors: ValidationErrorUnverifiable}
+		return token, ErrMissingKeyFunc
 	}
 	key, err := keyFunc(token)
 	if err != nil {
-		// keyFunc returned an error
-		return token, &ValidationError{err: err.Error(), Errors: ValidationErrorUnverifiable}
-	}
-
-	vErr := &ValidationError{}
-
-	// Validate Claims
-	if err := token.Claims.Valid(); err != nil {
-
-		// If the Claims Valid returned an error, check if it is a validation error,
-		// If it was another error type, create a ValidationError with a generic ClaimsInvalid flag set
-		if e, ok := err.(*ValidationError); !ok {
-			vErr = &ValidationError{err: err.Error(), Errors: ValidationErrorClaimsInvalid}
-		} else {
-			vErr = e
-		}
+		return token, cserr.NewMultiErr(ErrTokenUnverifiable, err)
 	}
 
 	// Perform validation
 	token.Signature = token.Raw[pos[1]+1:]
-	if err = token.Method.Verify(token.Raw[:pos[1]], token.Signature, key); err != nil {
-		vErr.err = err.Error()
-		vErr.Errors |= ValidationErrorSignatureInvalid
+	if err := token.Method.Verify(token.Raw[:pos[1]], token.Signature, key); err != nil {
+		return token, cserr.NewMultiErr(ErrSignatureInvalid, err)
 	}
 
-	if vErr.valid() {
-		token.Valid = true
-		return token, nil
-	}
-
-	return token, vErr
+	token.Valid = true
+	return token, nil
 }
 
 // SplitForVerify splits the token into two parts: the payload and the signature.
@@ -149,7 +135,7 @@ func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer
 func SplitForVerify(rawToken []byte) (signingString, signature []byte, err error) {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
-		return nil, nil, &ValidationError{err: "token contains an invalid number of segments", Errors: ValidationErrorMalformed}
+		return nil, nil, ErrTokenInvalidSegmentCounts
 	}
 	return rawToken[:pos[1]], rawToken[pos[1]+1:], nil
 }

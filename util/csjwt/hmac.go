@@ -3,7 +3,6 @@ package csjwt
 import (
 	"crypto"
 	"crypto/hmac"
-	"errors"
 )
 
 // SigningMethodHMAC implements the HMAC-SHA family of signing methods signing methods
@@ -14,10 +13,9 @@ type SigningMethodHMAC struct {
 
 // Specific instances for HS256 and company
 var (
-	SigningMethodHS256  *SigningMethodHMAC
-	SigningMethodHS384  *SigningMethodHMAC
-	SigningMethodHS512  *SigningMethodHMAC
-	ErrSignatureInvalid = errors.New("signature is invalid")
+	SigningMethodHS256 *SigningMethodHMAC
+	SigningMethodHS384 *SigningMethodHMAC
+	SigningMethodHS512 *SigningMethodHMAC
 )
 
 func init() {

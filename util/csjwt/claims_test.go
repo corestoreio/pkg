@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"errors"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/stretchr/testify/assert"
 )
@@ -53,7 +52,7 @@ func TestStandardClaimsValid(t *testing.T) {
 			&csjwt.StandardClaims{
 				ExpiresAt: time.Now().Add(-time.Second).Unix(),
 			},
-			errors.New("Token is expired"),
+			csjwt.ErrValidationExpired,
 		},
 	}
 	for i, test := range tests {

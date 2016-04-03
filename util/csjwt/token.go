@@ -104,6 +104,18 @@ func (t Token) SigningString() (buf bytes.Buffer, err error) {
 	return
 }
 
+func (t *Token) updateMethod() (err error) {
+	err = ErrValidationUnknownAlg
+	method, ok := t.Header["alg"].(string)
+	if ok {
+		t.Method = GetSigningMethod(method)
+		if t.Method != nil {
+			err = nil
+		}
+	}
+	return
+}
+
 func marshalBase64(v interface{}) ([]byte, error) {
 	buf := bufPool.Get()
 	defer bufPool.Put(buf)

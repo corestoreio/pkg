@@ -4,6 +4,7 @@ import (
 	"crypto/subtle"
 
 	"github.com/corestoreio/csfw/util/conv"
+	"github.com/corestoreio/csfw/util/cserr"
 )
 
 // Claimer for a type to be a Claims object
@@ -78,31 +79,27 @@ type StandardClaims struct {
 // As well, if any of the above claims are not in the token, it will still
 // be considered a valid claim.
 func (c StandardClaims) Valid() error {
-	vErr := new(ValidationError)
+	var vErr *cserr.MultiErr
 	now := TimeFunc().Unix()
 
 	// The claims below are optional, by default, so if they are set to the
 	// default value in Go, let's not fail the verification for them.
 	if c.VerifyExpiresAt(now, false) == false {
-		vErr.err = "Token is expired"
-		vErr.Errors |= ValidationErrorExpired
+		vErr = vErr.AppendErrors(ErrValidationExpired)
 	}
 
 	if c.VerifyIssuedAt(now, false) == false {
-		vErr.err = "Token used before issued, clock skew issue?"
-		vErr.Errors |= ValidationErrorIssuedAt
+		vErr = vErr.AppendErrors(ErrValidationUsedBeforeIssued)
 	}
 
 	if c.VerifyNotBefore(now, false) == false {
-		vErr.err = "Token is not valid yet"
-		vErr.Errors |= ValidationErrorNotValidYet
+		vErr = vErr.AppendErrors(ErrValidationNotValidYet)
 	}
 
-	if vErr.valid() {
-		return nil
+	if vErr.HasErrors() {
+		return vErr
 	}
-
-	return vErr
+	return nil
 }
 
 // VerifyAudience compares the aud claim against cmp.
@@ -178,29 +175,25 @@ func (m MapClaims) VerifyNotBefore(cmp int64, req bool) bool {
 // As well, if any of the above claims are not in the token, it will still
 // be considered a valid claim.
 func (m MapClaims) Valid() error {
-	vErr := new(ValidationError)
+	var vErr *cserr.MultiErr
 	now := TimeFunc().Unix()
 
 	if m.VerifyExpiresAt(now, false) == false {
-		vErr.err = "Token is expired"
-		vErr.Errors |= ValidationErrorExpired
+		vErr = vErr.AppendErrors(ErrValidationExpired)
 	}
 
 	if m.VerifyIssuedAt(now, false) == false {
-		vErr.err = "Token used before issued, clock skew issue?"
-		vErr.Errors |= ValidationErrorIssuedAt
+		vErr = vErr.AppendErrors(ErrValidationUsedBeforeIssued)
 	}
 
 	if m.VerifyNotBefore(now, false) == false {
-		vErr.err = "Token is not valid yet"
-		vErr.Errors |= ValidationErrorNotValidYet
+		vErr = vErr.AppendErrors(ErrValidationNotValidYet)
 	}
 
-	if vErr.valid() {
-		return nil
+	if vErr.HasErrors() {
+		return vErr
 	}
-
-	return vErr
+	return nil
 }
 
 func verifyConstantTime(aud, cmp []byte, required bool) bool {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
 )
 
@@ -74,19 +75,23 @@ func ExampleParse_errorChecking(myToken []byte, myLookupKey func(interface{}) (c
 		return myLookupKey(token.Header["kid"])
 	})
 
+	if err != nil {
+		switch {
+		case cserr.Contains(err, csjwt.ErrTokenMalformed):
+			fmt.Println("That's not even a token")
+		case cserr.Contains(err, csjwt.ErrValidationExpired):
+			fmt.Println("Token Expired")
+		case cserr.Contains(err, csjwt.ErrValidationNotValidYet):
+			fmt.Println("Token not yet valid!")
+		default:
+			fmt.Println(err.Error())
+		}
+		return
+	}
+
 	if token.Valid {
 		fmt.Println("You look nice today")
-	} else if ve, ok := err.(*csjwt.ValidationError); ok {
-		if ve.Errors&csjwt.ValidationErrorMalformed != 0 {
-			fmt.Println("That's not even a token")
-		} else if ve.Errors&(csjwt.ValidationErrorExpired|csjwt.ValidationErrorNotValidYet) != 0 {
-			// Token is either expired or not active yet
-			fmt.Println("Timing is everything")
-		} else {
-			fmt.Println("Couldn't handle this token:", err)
-		}
 	} else {
 		fmt.Println("Couldn't handle this token:", err)
 	}
-
 }

@@ -10,6 +10,8 @@ import (
 	"runtime"
 	"runtime/debug"
 
+	"errors"
+	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,7 +31,7 @@ var jwtTestData = []struct {
 	keyfunc     csjwt.Keyfunc
 	claims      csjwt.MapClaims
 	valid       bool
-	errors      uint32
+	wantErr     error
 	parser      *csjwt.Parser
 }{
 	{
@@ -38,7 +40,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		csjwt.MapClaims{"foo": "bar"},
 		true,
-		0,
+		nil,
 		nil,
 	},
 	{
@@ -47,7 +49,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		csjwt.MapClaims{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
 		false,
-		csjwt.ValidationErrorExpired,
+		csjwt.ErrValidationExpired,
 		nil,
 	},
 	{
@@ -56,7 +58,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		csjwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
 		false,
-		csjwt.ValidationErrorNotValidYet,
+		csjwt.ErrValidationNotValidYet,
 		nil,
 	},
 	{
@@ -65,7 +67,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		csjwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
 		false,
-		csjwt.ValidationErrorNotValidYet | csjwt.ValidationErrorExpired,
+		cserr.NewMultiErr(csjwt.ErrValidationNotValidYet, csjwt.ErrValidationExpired),
 		nil,
 	},
 	{
@@ -74,7 +76,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		csjwt.MapClaims{"foo": "bar"},
 		false,
-		csjwt.ValidationErrorSignatureInvalid,
+		csjwt.ErrSignatureInvalid,
 		nil,
 	},
 	{
@@ -83,7 +85,7 @@ var jwtTestData = []struct {
 		nilKeyFunc,
 		csjwt.MapClaims{"foo": "bar"},
 		false,
-		csjwt.ValidationErrorUnverifiable,
+		csjwt.ErrMissingKeyFunc,
 		nil,
 	},
 	{
@@ -92,7 +94,7 @@ var jwtTestData = []struct {
 		emptyKeyFunc,
 		csjwt.MapClaims{"foo": "bar"},
 		false,
-		csjwt.ValidationErrorSignatureInvalid,
+		csjwt.ErrSignatureInvalid,
 		nil,
 	},
 	{
@@ -101,7 +103,7 @@ var jwtTestData = []struct {
 		errorKeyFunc,
 		csjwt.MapClaims{"foo": "bar"},
 		false,
-		csjwt.ValidationErrorUnverifiable,
+		csjwt.ErrTokenUnverifiable,
 		nil,
 	},
 	{
@@ -110,7 +112,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		map[string]interface{}{"foo": "bar"},
 		false,
-		csjwt.ValidationErrorSignatureInvalid,
+		errors.New("Token signing method RS256 is invalid"),
 		&csjwt.Parser{ValidMethods: []string{"HS256"}},
 	},
 	{
@@ -119,7 +121,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		map[string]interface{}{"foo": "bar"},
 		true,
-		0,
+		nil,
 		&csjwt.Parser{ValidMethods: []string{"RS256", "HS256"}},
 	},
 }
@@ -157,13 +159,13 @@ func TestParser_Parse(t *testing.T) {
 		if !data.valid && err == nil {
 			t.Errorf("[%v] Invalid token passed validation", data.name)
 		}
-		if data.errors != 0 {
+		if data.wantErr != nil {
 			if err == nil {
 				t.Errorf("[%v] Expecting error.  Didn't get one.", data.name)
 			} else {
-				// compare the bitfield part of the error
-				if e := err.(*csjwt.ValidationError).Errors; e != data.errors {
-					t.Errorf("[%v] Errors don't match expectation.  %v != %v", data.name, e, data.errors)
+
+				if !cserr.Contains(err, data.wantErr) {
+					t.Errorf("[%v] Errors don't match expectation:\n@%#v@ != |%#v|\n", data.name, err, data.wantErr)
 				}
 			}
 		}

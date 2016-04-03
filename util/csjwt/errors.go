@@ -6,45 +6,22 @@ import (
 
 // Error variables predefined
 var (
-	ErrInvalidKey            = errors.New("key is invalid or of invalid type")
-	ErrHashUnavailable       = errors.New("the requested hash function is unavailable")
-	ErrNoTokenInRequest      = errors.New("no token present in request")
-	ErrTokenExpired          = errors.New("token is expired")
-	ErrTokenUsedBeforeIssued = errors.New("Token used before issued, clock skew issue?")
-	ErrTokenNotValidYet      = errors.New("Token is not valid yet")
+	ErrSignatureInvalid            = errors.New("signature is invalid")
+	ErrInvalidKey                  = errors.New("key is invalid or of invalid type")
+	ErrHashUnavailable             = errors.New("the requested hash function is unavailable")
+	ErrNoTokenInRequest            = errors.New("no token present in request")
+	ErrTokenMalformed              = errors.New("token is malformed")
+	ErrTokenInvalidSegmentCounts   = errors.New("token contains an invalid number of segments")
+	ErrTokenShouldNotContainBearer = errors.New("tokenstring should not contain 'bearer '")
+	ErrTokenUnverifiable           = errors.New("token is unverifiable")
+	ErrMissingKeyFunc              = errors.New("missing KeyFunc")
+
+	ErrValidationUnknownAlg       = errors.New("unknown token signing algorithm")
+	ErrValidationExpired          = errors.New("token is expired")
+	ErrValidationUsedBeforeIssued = errors.New("token used before issued, clock skew issue?")
+	ErrValidationNotValidYet      = errors.New("token is not valid yet")
+	ErrValidationAudience         = errors.New("token is not valid for current audience")
+	ErrValidationIssuer           = errors.New("token issue validation failed")
+	ErrValidationJTI              = errors.New("token JTI validation failed")
+	ErrValidationClaimsInvalid    = errors.New("token claims validation failed")
 )
-
-// The errors that might occur when parsing and validating a token
-const (
-	ValidationErrorMalformed        uint32 = 1 << iota // Token is malformed
-	ValidationErrorUnverifiable                        // Token could not be verified because of signing problems
-	ValidationErrorSignatureInvalid                    // Signature validation failed
-
-	// Standard Claim validation errors
-	ValidationErrorAudience      // AUD validation failed
-	ValidationErrorExpired       // EXP validation failed
-	ValidationErrorIssuedAt      // IAT validation failed
-	ValidationErrorIssuer        // ISS validation failed
-	ValidationErrorNotValidYet   // NBF validation failed
-	ValidationErrorId            // JTI validation failed
-	ValidationErrorClaimsInvalid // Generic claims validation error
-)
-
-// The error from Parse if token is not valid
-type ValidationError struct {
-	err    string
-	Errors uint32 // bitfield.  see ValidationError... constants
-}
-
-// Validation error is an error type
-func (e ValidationError) Error() string {
-	if e.err == "" {
-		return "token is invalid"
-	}
-	return e.err
-}
-
-// No errors
-func (e ValidationError) valid() bool {
-	return e.Errors == 0
-}
