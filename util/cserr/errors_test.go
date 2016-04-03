@@ -113,6 +113,41 @@ func TestMultiErrContains(t *testing.T) {
 	assert.False(t, me.Contains(nil))
 }
 
+func TestContains(t *testing.T) {
+	t.Parallel()
+
+	e1 := errors.New("Err1")
+	e2 := errors.New("Err2")
+	e3 := errors.New("Err3")
+	e4 := goerr.New("Err4")
+
+	var me *cserr.MultiErr
+	me = me.AppendErrors(e2, e1, errors.Mask(e4))
+	assert.NotNil(t, me)
+
+	assert.True(t, cserr.Contains(e1, e1))
+	assert.False(t, cserr.Contains(e1, e2))
+	assert.False(t, cserr.Contains(e4, e2))
+	assert.True(t, cserr.Contains(e4, errors.Mask(e4)))
+	assert.True(t, cserr.Contains(e4, e4))
+	assert.False(t, cserr.Contains(nil, e4))
+	assert.False(t, cserr.Contains(e4, nil))
+	assert.False(t, cserr.Contains(nil, nil))
+
+	assert.False(t, cserr.Contains(me, nil))
+	assert.True(t, cserr.Contains(me, e2))
+	assert.True(t, cserr.Contains(me, e1))
+	assert.True(t, cserr.Contains(e1, me))
+	assert.True(t, cserr.Contains(errors.Mask(me), e4))
+	assert.True(t, cserr.Contains(e4, errors.Mask(me)))
+	assert.False(t, cserr.Contains(me, e3))
+	assert.False(t, cserr.Contains(e3, me))
+
+	assert.True(t, cserr.Contains(cserr.NewMultiErr(e3, e1), me))
+	assert.True(t, cserr.Contains(me, cserr.NewMultiErr(e3, e1)))
+	assert.False(t, cserr.Contains(me, cserr.NewMultiErr(e3)))
+}
+
 var benchmarkError string
 
 // BenchmarkError-4	  500000	      3063 ns/op	    1312 B/op	      22 allocs/op

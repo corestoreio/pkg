@@ -66,7 +66,7 @@ func (m *MultiErr) HasErrors() bool {
 
 // Contains checks if search has been added to the internal error stack.
 func (m *MultiErr) Contains(search error) bool {
-	if m == nil || search == nil {
+	if !m.HasErrors() || search == nil {
 		return false
 	}
 	sUnMasked := UnwrapMasked(search)
@@ -75,6 +75,44 @@ func (m *MultiErr) Contains(search error) bool {
 			return true
 		}
 	}
+	return false
+}
+
+// Contains checks if search1 can be found within search2 and vice versa.
+// One or both parameters can be of type *cserr.MultiErr
+func Contains(search1, search2 error) bool {
+	search1 = UnwrapMasked(search1)
+	search2 = UnwrapMasked(search2)
+	if search1 != nil && search1 == search2 {
+		return true
+	}
+	me, ok := search1.(*MultiErr)
+	if ok && me.Contains(search2) {
+		return true
+	}
+
+	// flip the search
+	me2, ok2 := search2.(*MultiErr)
+	if ok2 && me2.Contains(search1) {
+		return true
+	}
+
+	if !ok || !ok2 {
+		return false
+	}
+
+	for _, err := range me.errs {
+		if err != nil {
+			for _, err2 := range me2.errs {
+				err = UnwrapMasked(err)
+				err2 = UnwrapMasked(err2)
+				if err == err2 {
+					return true
+				}
+			}
+		}
+	}
+
 	return false
 }
 
