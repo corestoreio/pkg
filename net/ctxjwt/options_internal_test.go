@@ -15,11 +15,12 @@
 package ctxjwt
 
 import (
+	"net/http"
+
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"golang.org/x/net/context"
-	"net/http"
 
 	"testing"
 )

@@ -19,7 +19,7 @@ import (
 
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/store"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/juju/errors"
 	"golang.org/x/net/context"
 )
@@ -61,7 +61,7 @@ func SetHeaderAuthorization(req *http.Request, token string) {
 // token, adds the token to the context and initializes the requested store
 // and scope.is a middleware which initializes a request based store
 // via a JSON Web Token.
-// Extracts the store.Provider and jwt.Token from context.Context. If the requested
+// Extracts the store.Provider and csjwt.Token from context.Context. If the requested
 // store is different than the initialized requested store than the new requested
 // store will be saved in the context.
 func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
@@ -85,7 +85,7 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 				errHandler = scpCfg.errorHandler
 			}
 
-			token, err := jwt.ParseFromRequest(r, scpCfg.keyFunc)
+			token, err := csjwt.ParseFromRequest(r, scpCfg.keyFunc)
 			if err != nil {
 				return errHandler.ServeHTTPContext(WithContextError(ctx, err), w, r)
 			}

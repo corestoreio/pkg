@@ -20,7 +20,7 @@ import (
 
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -78,7 +78,7 @@ func TestServiceParseInvalidSigningMethod(t *testing.T) {
 		ctxjwt.WithPassword(scope.DefaultID, 0, password),
 	)
 
-	tk := jwt.New(jwt.SigningMethodHS256)
+	tk := csjwt.New(csjwt.SigningMethodHS256)
 	tk.Claims["exp"] = time.Now().Add(time.Hour).Unix()
 	tk.Claims["iat"] = time.Now().Unix()
 	tk.Header["alg"] = "HS384"

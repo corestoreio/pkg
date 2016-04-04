@@ -22,7 +22,7 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storenet"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,7 +33,7 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 	)
-	token := jwt.New(jwt.SigningMethodHS256)
+	token := csjwt.New(csjwt.SigningMethodHS256)
 	ctxjwt.StoreCodeAddToClaim(s, token.Claims)
 
 	so, err := ctxjwt.ScopeOptionFromClaim(token.Claims)
@@ -46,7 +46,7 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 	assert.Nil(t, so.Group)
 	assert.Nil(t, so.Store)
 
-	token2 := jwt.New(jwt.SigningMethodHS256)
+	token2 := csjwt.New(csjwt.SigningMethodHS256)
 	token2.Claims[storenet.ParamName] = "Invalid Cod€"
 	so, err = ctxjwt.ScopeOptionFromClaim(token2.Claims)
 	assert.EqualError(t, store.ErrStoreCodeInvalid, err.Error())

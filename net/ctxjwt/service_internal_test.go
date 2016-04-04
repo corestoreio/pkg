@@ -23,7 +23,7 @@ import (
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -57,7 +57,7 @@ func TestServiceWithBackend_DefaultConfig(t *testing.T) {
 	sc, err := jwts.getConfigByScopedGetter(cr.NewScoped(0, 0))
 	assert.NoError(t, err)
 	dsc := defaultScopedConfig()
-	assert.Exactly(t, sc.signingMethod, jwt.SigningMethodHS256)
+	assert.Exactly(t, sc.signingMethod, csjwt.SigningMethodHS256)
 	assert.Exactly(t, dsc.ecdsapk, sc.ecdsapk)
 	assert.Exactly(t, dsc.rsapk, sc.rsapk)
 	assert.True(t, dsc.errorHandler == nil)
@@ -228,7 +228,7 @@ func TestServiceWithBackend_NilScopedGetter(t *testing.T) {
 	assert.Nil(t, sc.ecdsapk)
 	assert.NotEmpty(t, sc.hmacPassword)
 	assert.Exactly(t, DefaultExpire, sc.expire)
-	assert.Exactly(t, jwt.SigningMethodHS256, sc.signingMethod)
+	assert.Exactly(t, csjwt.SigningMethodHS256, sc.signingMethod)
 	assert.False(t, sc.enableJTI)
 	assert.True(t, sc.errorHandler == nil)
 	assert.True(t, sc.keyFunc != nil)

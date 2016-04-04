@@ -17,7 +17,7 @@ package ctxjwt
 import (
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/config/cfgmodel"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/juju/errors"
 )
 
@@ -32,24 +32,24 @@ func NewConfigSigningMethod(path string, opts ...cfgmodel.Option) ConfigSigningM
 		Str: cfgmodel.NewStr(path, append(
 			opts,
 			cfgmodel.WithSourceByString(
-				jwt.SigningMethodRS256.Alg(), "RSA 256",
-				jwt.SigningMethodRS384.Alg(), "RSA 384",
-				jwt.SigningMethodRS512.Alg(), "RSA 512",
+				csjwt.SigningMethodRS256.Alg(), "RSA 256",
+				csjwt.SigningMethodRS384.Alg(), "RSA 384",
+				csjwt.SigningMethodRS512.Alg(), "RSA 512",
 
-				jwt.SigningMethodES256.Alg(), "ECDSA 256",
-				jwt.SigningMethodES384.Alg(), "ECDSA 384",
-				jwt.SigningMethodES512.Alg(), "ECDSA 512",
+				csjwt.SigningMethodES256.Alg(), "ECDSA 256",
+				csjwt.SigningMethodES384.Alg(), "ECDSA 384",
+				csjwt.SigningMethodES512.Alg(), "ECDSA 512",
 
-				jwt.SigningMethodHS256.Alg(), "HMAC-SHA 256",
-				jwt.SigningMethodHS384.Alg(), "HMAC-SHA 384",
-				jwt.SigningMethodHS512.Alg(), "HMAC-SHA 512",
+				csjwt.SigningMethodHS256.Alg(), "HMAC-SHA 256",
+				csjwt.SigningMethodHS384.Alg(), "HMAC-SHA 384",
+				csjwt.SigningMethodHS512.Alg(), "HMAC-SHA 512",
 			),
 		)...),
 	}
 }
 
 // Get returns a signing method definied for a scope.
-func (cc ConfigSigningMethod) Get(sg config.ScopedGetter) (sm jwt.SigningMethod, err error) {
+func (cc ConfigSigningMethod) Get(sg config.ScopedGetter) (sm csjwt.Signer, err error) {
 	raw, err := cc.Str.Get(sg)
 	if err != nil {
 		err = errors.Mask(err)
@@ -61,26 +61,26 @@ func (cc ConfigSigningMethod) Get(sg config.ScopedGetter) (sm jwt.SigningMethod,
 	}
 
 	switch raw {
-	case jwt.SigningMethodRS256.Alg():
-		sm = jwt.SigningMethodRS256
-	case jwt.SigningMethodRS384.Alg():
-		sm = jwt.SigningMethodRS384
-	case jwt.SigningMethodRS512.Alg():
-		sm = jwt.SigningMethodRS512
+	case csjwt.SigningMethodRS256.Alg():
+		sm = csjwt.SigningMethodRS256
+	case csjwt.SigningMethodRS384.Alg():
+		sm = csjwt.SigningMethodRS384
+	case csjwt.SigningMethodRS512.Alg():
+		sm = csjwt.SigningMethodRS512
 
-	case jwt.SigningMethodES256.Alg():
-		sm = jwt.SigningMethodES256
-	case jwt.SigningMethodES384.Alg():
-		sm = jwt.SigningMethodES384
-	case jwt.SigningMethodES512.Alg():
-		sm = jwt.SigningMethodES512
+	case csjwt.SigningMethodES256.Alg():
+		sm = csjwt.SigningMethodES256
+	case csjwt.SigningMethodES384.Alg():
+		sm = csjwt.SigningMethodES384
+	case csjwt.SigningMethodES512.Alg():
+		sm = csjwt.SigningMethodES512
 
-	case jwt.SigningMethodHS256.Alg():
-		sm = jwt.SigningMethodHS256
-	case jwt.SigningMethodHS384.Alg():
-		sm = jwt.SigningMethodHS384
-	case jwt.SigningMethodHS512.Alg():
-		sm = jwt.SigningMethodHS512
+	case csjwt.SigningMethodHS256.Alg():
+		sm = csjwt.SigningMethodHS256
+	case csjwt.SigningMethodHS384.Alg():
+		sm = csjwt.SigningMethodHS384
+	case csjwt.SigningMethodHS512.Alg():
+		sm = csjwt.SigningMethodHS512
 	default:
 		err = errors.Errorf("ctxjwt.ConfigSigningMethod: Unknown algorithm %s", raw)
 	}

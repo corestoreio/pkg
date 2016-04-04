@@ -21,7 +21,7 @@ import (
 )
 
 // CodeFromClaim returns a valid store code from a JSON web token or ErrStoreNotFound.
-// Token argument is a map like being used by jwt.Token.Claims.
+// Token argument is a map like being used by csjwt.Token.Claims.
 func ScopeOptionFromClaim(token map[string]interface{}) (o scope.Option, err error) {
 	err = store.ErrStoreNotFound
 	if 0 == len(token) {
@@ -38,7 +38,7 @@ func ScopeOptionFromClaim(token map[string]interface{}) (o scope.Option, err err
 }
 
 // CodeAddToClaim adds the store code to a JSON web token.
-// tokenClaim may be *jwt.Token.Claim
+// tokenClaim may be csjwt.Token.Claim
 func StoreCodeAddToClaim(s *store.Store, tokenClaim map[string]interface{}) {
 	tokenClaim[storenet.ParamName] = s.Data.Code.String
 }

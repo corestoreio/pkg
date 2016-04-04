@@ -17,7 +17,8 @@ package ctxjwt
 import (
 	"errors"
 
-	"github.com/dgrijalva/jwt-go"
+	"github.com/corestoreio/csfw/util/csjwt"
+
 	"golang.org/x/net/context"
 )
 
@@ -29,24 +30,26 @@ type (
 // ErrContextJWTNotFound gets returned when the jwt cannot be found.
 var ErrContextJWTNotFound = errors.New("Cannot extract ctxjwt nor an error from context")
 
-// WithContext creates a new context with jwt.Token attached.
-func WithContext(ctx context.Context, t *jwt.Token) context.Context {
+// WithContext creates a new context with csjwt.Token attached.
+func WithContext(ctx context.Context, t csjwt.Token) context.Context {
 	return context.WithValue(ctx, keyCtxToken{}, t)
 }
 
-// FromContext returns the jwt.Token in ctx if it exists or an error.
-// Check the ok bool value if an error or jwt.Token is within the
+// FromContext returns the csjwt.Token in ctx if it exists or an error.
+// Check the ok bool value if an error or csjwt.Token is within the
 // context.Context
-func FromContext(ctx context.Context) (*jwt.Token, error) {
-	err, ok := ctx.Value(keyCtxErr{}).(error)
-	if ok {
-		return nil, err
+func FromContext(ctx context.Context) (t csjwt.Token, err error) {
+	var ok bool
+	err, ok = ctx.Value(keyCtxErr{}).(error)
+	if ok && err != nil {
+		return
 	}
-	t, ok := ctx.Value(keyCtxToken{}).(*jwt.Token)
-	if !ok || t == nil {
-		return nil, ErrContextJWTNotFound
+	err = ErrContextJWTNotFound
+	t, ok = ctx.Value(keyCtxToken{}).(csjwt.Token)
+	if ok && len(t.Raw) > 5 {
+		err = nil
 	}
-	return t, nil
+	return
 }
 
 // WithContextError creates a new context with an error attached.

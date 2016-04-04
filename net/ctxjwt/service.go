@@ -25,7 +25,7 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/cserr"
-	"github.com/dgrijalva/jwt-go"
+	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/juju/errors"
 	"github.com/pborman/uuid"
 	"golang.org/x/net/context"
@@ -105,37 +105,69 @@ func (s *Service) Options(opts ...Option) error {
 	return nil
 }
 
+func (s *Service) ClaimsStandard(scp scope.Scope, id int64) (*csjwt.StandardClaims, error) {
+	cfg, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
+	if err != nil {
+		return nil, err
+	}
+
+	now := csjwt.TimeFunc()
+
+	c := &csjwt.StandardClaims{
+		ExpiresAt: now.Add(cfg.expire).Unix(),
+		IssuedAt:  now.Unix(),
+	}
+
+	if cfg.enableJTI && s.JTI != nil {
+		c.ID = s.JTI.Get()
+	}
+
+	return c, nil
+}
+
+func (s *Service) ClaimsMap(scp scope.Scope, id int64, mc csjwt.MapClaims) (csjwt.MapClaims, error) {
+	cfg, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
+	if err != nil {
+		return nil, err
+	}
+
+	now := csjwt.TimeFunc()
+
+	c := make(csjwt.MapClaims)
+	c["exp"] = now.Add(cfg.expire).Unix()
+	c["iat"] = now.Unix()
+
+	if cfg.enableJTI && s.JTI != nil {
+		c["jti"] = s.JTI.Get()
+	}
+	for k, v := range mc {
+		c[k] = v
+	}
+	return c, nil
+}
+
 // GenerateToken creates a new JSON web token. The claims argument will be
 // assigned after the registered claim names exp and iat have been set.
 // If EnableJTI is false the returned argument jti is empty.
 // For details of the registered claim names please see
 // http://self-issued.info/docs/draft-ietf-oauth-json-web-token.html#rfc.section.4.1
 // This function is thread safe.
-func (s *Service) GenerateToken(scp scope.Scope, id int64, claims map[string]interface{}) (token, jti string, err error) {
+func (s *Service) GenerateToken(scp scope.Scope, id int64, claims csjwt.Claimer) (token, jti string, err error) {
 
 	cfg, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
 		return "", "", err
 	}
 
-	now := time.Now()
-	t := jwt.New(cfg.signingMethod)
-	t.Claims["exp"] = now.Add(cfg.expire).Unix()
-	t.Claims["iat"] = now.Unix()
-	for k, v := range claims {
-		t.Claims[k] = v
-	}
-	if cfg.enableJTI && s.JTI != nil {
-		jti = s.JTI.Get()
-		t.Claims["jti"] = jti
-	}
+	t := csjwt.New(cfg.signingMethod)
+	t.Claims = claims
 
 	switch cfg.signingMethod.Alg() {
-	case jwt.SigningMethodRS256.Alg(), jwt.SigningMethodRS384.Alg(), jwt.SigningMethodRS512.Alg():
+	case csjwt.SigningMethodRS256.Alg(), csjwt.SigningMethodRS384.Alg(), csjwt.SigningMethodRS512.Alg():
 		token, err = t.SignedString(cfg.rsapk)
-	case jwt.SigningMethodES256.Alg(), jwt.SigningMethodES384.Alg(), jwt.SigningMethodES512.Alg():
+	case csjwt.SigningMethodES256.Alg(), csjwt.SigningMethodES384.Alg(), csjwt.SigningMethodES512.Alg():
 		token, err = t.SignedString(cfg.ecdsapk)
-	case jwt.SigningMethodHS256.Alg(), jwt.SigningMethodHS384.Alg(), jwt.SigningMethodHS512.Alg():
+	case csjwt.SigningMethodHS256.Alg(), csjwt.SigningMethodHS384.Alg(), csjwt.SigningMethodHS512.Alg():
 		token, err = t.SignedString(cfg.hmacPassword)
 	default:
 		return "", "", ErrUnexpectedSigningMethod
@@ -144,7 +176,7 @@ func (s *Service) GenerateToken(scp scope.Scope, id int64, claims map[string]int
 }
 
 // Logout adds a token securely to a blacklist with the expiration duration
-func (s *Service) Logout(token *jwt.Token) error {
+func (s *Service) Logout(token csjwt.Token) error {
 	if token == nil || token.Raw == "" || token.Valid == false {
 		return nil
 	}
@@ -162,22 +194,23 @@ func (s *Service) Logout(token *jwt.Token) error {
 	return s.Blacklist.Set([]byte(token.Raw), exp)
 }
 
-// Parse parses a token string and returns the valid token or an error
-func (s *Service) Parse(rawToken string) (*jwt.Token, error) {
+// Parse parses a token string with the DefaultID scope and returns the
+// valid token or an error.
+func (s *Service) Parse(rawToken string) (csjwt.Token, error) {
 	return s.ParseScoped(scope.DefaultID, 0, rawToken)
 }
 
 // ParseScoped parses a token based on the applied scope and the scope ID.
 // Different configurations are passed to the token parsing function.
 // The black list will be checked for containing entries.
-func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken string) (*jwt.Token, error) {
+func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken string) (csjwt.Token, error) {
 
 	sc, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
 		return nil, err
 	}
 
-	token, err := jwt.Parse(rawToken, sc.keyFunc)
+	token, err := csjwt.Parse(rawToken, sc.keyFunc)
 	var inBL bool
 	if token != nil {
 		inBL = s.Blacklist.Has([]byte(token.Raw))
