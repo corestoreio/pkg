@@ -15,38 +15,43 @@ var _ fmt.GoStringer = (*Key)(nil)
 var _ fmt.Stringer = (*Key)(nil)
 
 func TestKeyParsing(t *testing.T) {
+	t.Parallel()
 	badKey := []byte("All your base are belong to key")
 	tests := []struct {
 		key     Key
+		wantAlg Algorithm
 		wantErr error
 		wantKey interface{}
 	}{
-		{WithPassword(badKey), nil, []byte{}},
-		{WithPassword(nil), ErrHMACEmptyPassword, nil},
-		{WithPasswordFromFile("test/hmacTestKey"), nil, []byte{}},
-		{WithPasswordFromFile("test/hmacTestKeyNONEXIST"), errors.New("open test/hmacTestKeyNONEXIST: no such file or directory"), nil},
+		{WithPassword(badKey), HS, nil, []byte{}},
+		{WithPassword(nil), 0, ErrHMACEmptyPassword, nil},
+		{WithPasswordFromFile("test/hmacTestKey"), HS, nil, []byte{}},
+		{WithPasswordFromFile("test/hmacTestKeyNONEXIST"), 0, errors.New("open test/hmacTestKeyNONEXIST: no such file or directory"), nil},
 
-		{WithRSAPrivateKey(new(rsa.PrivateKey)), nil, new(rsa.PrivateKey)},
-		{WithRSAPrivateKeyFromFile("test/sample_keyOFF"), errors.New("open test/sample_keyOFF: no such file or directory"), nil},
-		{WithRSAPrivateKeyFromFile("test/sample_key"), nil, new(rsa.PrivateKey)},
-		{WithRSAPrivateKeyFromFile("test/sample_key.pub"), errors.New("asn1: structure error: tags don't match (2 vs {class:0 tag:16 length:13 isCompound:true}) {optional:false explicit:false application:false defaultValue:<nil> tag:<nil> stringType:0 timeType:0 set:false omitEmpty:false} int @2"), nil},
-		{WithRSAPrivateKeyFromPEM(badKey), ErrKeyMustBePEMEncoded, nil},
+		{WithRSAPrivateKey(new(rsa.PrivateKey)), RS, nil, new(rsa.PrivateKey)},
+		{WithRSAPrivateKeyFromFile("test/sample_keyOFF"), 0, errors.New("open test/sample_keyOFF: no such file or directory"), nil},
+		{WithRSAPrivateKeyFromFile("test/sample_key"), RS, nil, new(rsa.PrivateKey)},
+		{WithRSAPrivateKeyFromFile("test/test_rsa", []byte("cccamp")), RS, nil, new(rsa.PrivateKey)},
+		{WithRSAPrivateKeyFromFile("test/test_rsa", []byte("cCcamp")), 0, errors.New("x509: decryption password incorrect"), nil},
+		{WithRSAPrivateKeyFromFile("test/test_rsa"), 0, ErrPrivateKeyMissingPassword, nil},
+		{WithRSAPrivateKeyFromFile("test/sample_key.pub"), 0, errors.New("asn1: structure error: tags don't match (2 vs {class:0 tag:16 length:13 isCompound:true}) {optional:false explicit:false application:false defaultValue:<nil> tag:<nil> stringType:0 timeType:0 set:false omitEmpty:false} int @2"), nil},
+		{WithRSAPrivateKeyFromPEM(badKey), 0, ErrKeyMustBePEMEncoded, nil},
 
-		{WithRSAPublicKeyFromFile("test/sample_key.pubOFF"), errors.New("open test/sample_key.pubOFF: no such file or directory with file test/sample_key.pubOFF"), nil},
-		{WithRSAPublicKeyFromFile("test/sample_key.pub"), nil, new(rsa.PublicKey)},
-		{WithRSAPublicKeyFromFile("test/sample_key"), errors.New("asn1: structure error: tags don't match (16 vs {class:0 tag:2 length:1 isCompound:false}) {optional:false explicit:false application:false defaultValue:<nil> tag:<nil> stringType:0 timeType:0 set:false omitEmpty:false} tbsCertificate @2"), nil},
-		{WithRSAPublicKeyFromPEM(badKey), ErrKeyMustBePEMEncoded, nil},
-		{WithRSAPublicKey(new(rsa.PublicKey)), nil, new(rsa.PublicKey)},
+		{WithRSAPublicKeyFromFile("test/sample_key.pubOFF"), 0, errors.New("open test/sample_key.pubOFF: no such file or directory with file test/sample_key.pubOFF"), nil},
+		{WithRSAPublicKeyFromFile("test/sample_key.pub"), RS, nil, new(rsa.PublicKey)},
+		{WithRSAPublicKeyFromFile("test/sample_key"), 0, errors.New("asn1: structure error: tags don't match (16 vs {class:0 tag:2 length:1 isCompound:false}) {optional:false explicit:false application:false defaultValue:<nil> tag:<nil> stringType:0 timeType:0 set:false omitEmpty:false} tbsCertificate @2"), nil},
+		{WithRSAPublicKeyFromPEM(badKey), 0, ErrKeyMustBePEMEncoded, nil},
+		{WithRSAPublicKey(new(rsa.PublicKey)), RS, nil, new(rsa.PublicKey)},
 
-		{WithECPublicKeyFromPEM(badKey), errors.New("Invalid Key: Key must be PEM encoded PKCS1 or PKCS8 private key"), nil},
-		{WithECPublicKey(new(ecdsa.PublicKey)), nil, new(ecdsa.PublicKey)},
-		{WithECPublicKeyFromFile("test/nothingecdsa"), errors.New("open test/nothingecdsa: no such file or directory"), nil},
-		{WithECPublicKeyFromFile("test/ec512-public.pem"), nil, new(ecdsa.PublicKey)},
+		{WithECPublicKeyFromPEM(badKey), 0, errors.New("Invalid Key: Key must be PEM encoded PKCS1 or PKCS8 private key"), nil},
+		{WithECPublicKey(new(ecdsa.PublicKey)), ES, nil, new(ecdsa.PublicKey)},
+		{WithECPublicKeyFromFile("test/nothingecdsa"), 0, errors.New("open test/nothingecdsa: no such file or directory"), nil},
+		{WithECPublicKeyFromFile("test/ec512-public.pem"), ES, nil, new(ecdsa.PublicKey)},
 
-		{WithECPrivateKeyFromPEM(badKey), errors.New("Invalid Key: Key must be PEM encoded PKCS1 or PKCS8 private key"), nil},
-		{WithECPrivateKey(new(ecdsa.PrivateKey)), nil, new(ecdsa.PrivateKey)},
-		{WithECPrivateKeyFromFile("test/nothingecdsa"), errors.New("open test/nothingecdsa: no such file or directory"), nil},
-		{WithECPrivateKeyFromFile("test/ec512-private.pem"), nil, new(ecdsa.PrivateKey)},
+		{WithECPrivateKeyFromPEM(badKey), 0, errors.New("Invalid Key: Key must be PEM encoded PKCS1 or PKCS8 private key"), nil},
+		{WithECPrivateKey(new(ecdsa.PrivateKey)), ES, nil, new(ecdsa.PrivateKey)},
+		{WithECPrivateKeyFromFile("test/nothingecdsa"), 0, errors.New("open test/nothingecdsa: no such file or directory"), nil},
+		{WithECPrivateKeyFromFile("test/ec512-private.pem"), ES, nil, new(ecdsa.PrivateKey)},
 	}
 	for i, test := range tests {
 
@@ -72,9 +77,26 @@ func TestKeyParsing(t *testing.T) {
 		default:
 			t.Fatal("Dude! You missed an entry in this list!")
 		}
-
+		assert.Exactly(t, test.wantAlg, test.key.Algorithm(), "Index %d", i)
 		assert.Exactly(t, goStringTpl, fmt.Sprintf("%#v", test.key))
 		assert.Exactly(t, goStringTpl, fmt.Sprintf("%v", test.key))
 		assert.Exactly(t, goStringTpl, fmt.Sprintf("%s", test.key))
 	}
+}
+
+func TestKeyWithPasswordRandom(t *testing.T) {
+	key := WithPasswordRandom()
+	assert.Len(t, key.hmacPassword, randomPasswordLenght)
+	if len(fmt.Sprintf("%x", key.hmacPassword)) < randomPasswordLenght {
+		t.Fatalf("Generated password is too short: %x", key.hmacPassword)
+	}
+}
+
+func TestKeyWithRSAGenerator(t *testing.T) {
+	t.Parallel()
+	//if testing.Short() {
+	//	t.Skip("Test skipped in short mode")
+	//}
+	key := WithRSAGenerated()
+	assert.Exactly(t, RS, key.Algorithm())
 }

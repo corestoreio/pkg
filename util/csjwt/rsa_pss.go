@@ -20,10 +20,10 @@ var (
 )
 
 func init() {
-	// PS256
+
 	SigningMethodPS256 = &SigningMethodRSAPSS{
 		&SigningMethodRSA{
-			Name: "PS256",
+			Name: PS256,
 			Hash: crypto.SHA256,
 		},
 		&rsa.PSSOptions{
@@ -33,10 +33,9 @@ func init() {
 	}
 	RegisterSigningMethod(SigningMethodPS256)
 
-	// PS384
 	SigningMethodPS384 = &SigningMethodRSAPSS{
 		&SigningMethodRSA{
-			Name: "PS384",
+			Name: PS384,
 			Hash: crypto.SHA384,
 		},
 		&rsa.PSSOptions{
@@ -46,10 +45,9 @@ func init() {
 	}
 	RegisterSigningMethod(SigningMethodPS384)
 
-	// PS512
 	SigningMethodPS512 = &SigningMethodRSAPSS{
 		&SigningMethodRSA{
-			Name: "PS512",
+			Name: PS512,
 			Hash: crypto.SHA512,
 		},
 		&rsa.PSSOptions{
@@ -61,7 +59,7 @@ func init() {
 }
 
 // Verify implements the Verify method from SigningMethod interface.
-// For the key you can use any of the WithRSAPublicKey*() functions.
+// For the key you can use any of the WithRSA*Key*() functions.
 func (m *SigningMethodRSAPSS) Verify(signingString, signature []byte, key Key) error {
 	if key.Error != nil {
 		return key.Error

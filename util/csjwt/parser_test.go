@@ -11,6 +11,7 @@ import (
 	"runtime/debug"
 
 	"errors"
+
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/stretchr/testify/assert"

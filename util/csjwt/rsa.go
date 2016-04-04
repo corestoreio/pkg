@@ -8,7 +8,7 @@ import (
 
 // SigningMethodRSA implements the RSA family of signing methods signing methods
 type SigningMethodRSA struct {
-	Name string
+	Name Algorithm
 	Hash crypto.Hash
 }
 
@@ -21,24 +21,24 @@ var (
 
 func init() {
 	// RS256
-	SigningMethodRS256 = &SigningMethodRSA{"RS256", crypto.SHA256}
+	SigningMethodRS256 = &SigningMethodRSA{RS256, crypto.SHA256}
 	RegisterSigningMethod(SigningMethodRS256)
 
 	// RS384
-	SigningMethodRS384 = &SigningMethodRSA{"RS384", crypto.SHA384}
+	SigningMethodRS384 = &SigningMethodRSA{RS384, crypto.SHA384}
 	RegisterSigningMethod(SigningMethodRS384)
 
 	// RS512
-	SigningMethodRS512 = &SigningMethodRSA{"RS512", crypto.SHA512}
+	SigningMethodRS512 = &SigningMethodRSA{RS512, crypto.SHA512}
 	RegisterSigningMethod(SigningMethodRS512)
 }
 
 func (m *SigningMethodRSA) Alg() string {
-	return m.Name
+	return m.Name.String()
 }
 
 // Verify implements the Verify method from SigningMethod interface.
-// For the key you can use any of the WithRSAPublicKey*() functions.
+// For the key you can use any of the WithRSA*Key*() functions.
 func (m *SigningMethodRSA) Verify(signingString, signature []byte, key Key) error {
 	if key.Error != nil {
 		return key.Error

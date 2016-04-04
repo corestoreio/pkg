@@ -23,18 +23,20 @@ import (
 // Less allocations, bytes and a little bit faster but maybe the underlying
 // mutex can become the bottleneck.
 type SigningMethodHMACFast struct {
-	Name string
+	Name Algorithm
 	ht   hmacTank
 }
 
-func newHMACFast(n string, h crypto.Hash, key Key) (*SigningMethodHMACFast, error) {
+func newHMACFast(a Algorithm, h crypto.Hash, key Key) (*SigningMethodHMACFast, error) {
 	sm := &SigningMethodHMACFast{
-		Name: n,
+		Name: a,
 	}
 	if key.Error != nil {
 		return nil, key.Error
 	}
-
+	if len(key.hmacPassword) == 0 {
+		return nil, ErrInvalidKey
+	}
 	// Can we use the specified hashing method?
 	if !h.Available() {
 		return nil, ErrHashUnavailable
@@ -44,19 +46,19 @@ func newHMACFast(n string, h crypto.Hash, key Key) (*SigningMethodHMACFast, erro
 }
 
 func NewHMACFast256(key Key) (*SigningMethodHMACFast, error) {
-	return newHMACFast("HS256", crypto.SHA256, key)
+	return newHMACFast(HS256, crypto.SHA256, key)
 }
 
 func NewHMACFast384(key Key) (*SigningMethodHMACFast, error) {
-	return newHMACFast("HS384", crypto.SHA384, key)
+	return newHMACFast(HS384, crypto.SHA384, key)
 }
 
 func NewHMACFast512(key Key) (*SigningMethodHMACFast, error) {
-	return newHMACFast("HS512", crypto.SHA512, key)
+	return newHMACFast(HS512, crypto.SHA512, key)
 }
 
 func (m *SigningMethodHMACFast) Alg() string {
-	return m.Name
+	return m.Name.String()
 }
 
 // Verify the signature of HSXXX tokens.  Returns nil if the signature is valid.

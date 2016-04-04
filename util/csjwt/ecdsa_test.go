@@ -9,6 +9,13 @@ import (
 	"github.com/corestoreio/csfw/util/csjwt"
 )
 
+// check if interface has been implemented.
+var _ csjwt.Signer = (*csjwt.SigningMethodECDSA)(nil)
+var _ csjwt.Signer = (*csjwt.SigningMethodRSA)(nil)
+var _ csjwt.Signer = (*csjwt.SigningMethodRSAPSS)(nil)
+var _ csjwt.Signer = (*csjwt.SigningMethodHMAC)(nil)
+var _ csjwt.Signer = (*csjwt.SigningMethodHMACFast)(nil)
+
 var ecdsaTestData = []struct {
 	name        string
 	keys        map[string]string

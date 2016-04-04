@@ -15,7 +15,7 @@ var (
 
 // SigningMethodECDSA implements the ECDSA family of signing methods signing methods
 type SigningMethodECDSA struct {
-	Name      string
+	Name      Algorithm
 	Hash      crypto.Hash
 	KeySize   int
 	CurveBits int
@@ -29,25 +29,23 @@ var (
 )
 
 func init() {
-	// ES256
-	SigningMethodES256 = &SigningMethodECDSA{"ES256", crypto.SHA256, 32, 256}
+
+	SigningMethodES256 = &SigningMethodECDSA{ES256, crypto.SHA256, 32, 256}
 	RegisterSigningMethod(SigningMethodES256)
 
-	// ES384
-	SigningMethodES384 = &SigningMethodECDSA{"ES384", crypto.SHA384, 48, 384}
+	SigningMethodES384 = &SigningMethodECDSA{ES384, crypto.SHA384, 48, 384}
 	RegisterSigningMethod(SigningMethodES384)
 
-	// ES512
-	SigningMethodES512 = &SigningMethodECDSA{"ES512", crypto.SHA512, 66, 521}
+	SigningMethodES512 = &SigningMethodECDSA{ES512, crypto.SHA512, 66, 521}
 	RegisterSigningMethod(SigningMethodES512)
 }
 
 func (m *SigningMethodECDSA) Alg() string {
-	return m.Name
+	return m.Name.String()
 }
 
 // Verify implements the Verify method from SigningMethod interface.
-// For the key you can use any of the WithECPublicKey*() functions
+// For the key you can use any of the WithEC*Key*() functions
 func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key Key) error {
 	// Get the key
 	if key.Error != nil {

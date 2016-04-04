@@ -27,8 +27,8 @@ func TestHMACVerifyFast(t *testing.T) {
 		if err != nil {
 			t.Fatal(err, "\n", string(data.tokenString))
 		}
-
-		method := csjwt.GetSigningMethod(data.alg + HMACFastSuffix)
+		alg := csjwt.ToAlgorithm(data.alg) * HMACFastSuffix
+		method := csjwt.GetSigningMethod(alg.String())
 		err = method.Verify(signing, signature, csjwt.Key{})
 		if data.valid && err != nil {
 			t.Errorf("[%v] Method %s Error while verifying key: %v", data.name, data.alg, err)
@@ -47,7 +47,8 @@ func TestHMACSignFast(t *testing.T) {
 				t.Fatal(err, "\n", string(data.tokenString))
 			}
 
-			method := csjwt.GetSigningMethod(data.alg + HMACFastSuffix)
+			alg := csjwt.ToAlgorithm(data.alg) * HMACFastSuffix
+			method := csjwt.GetSigningMethod(alg.String())
 			sig, err := method.Sign(signing, csjwt.Key{})
 			if err != nil {
 				t.Errorf("[%v] Error signing token: %v", data.name, err)
