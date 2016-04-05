@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 
+	"crypto/x509"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,7 +33,7 @@ func TestKeyParsing(t *testing.T) {
 		{WithRSAPrivateKeyFromFile("test/sample_keyOFF"), 0, errors.New("open test/sample_keyOFF: no such file or directory"), nil},
 		{WithRSAPrivateKeyFromFile("test/sample_key"), RS, nil, new(rsa.PrivateKey)},
 		{WithRSAPrivateKeyFromFile("test/test_rsa", []byte("cccamp")), RS, nil, new(rsa.PrivateKey)},
-		{WithRSAPrivateKeyFromFile("test/test_rsa", []byte("cCcamp")), 0, errors.New("x509: decryption password incorrect"), nil},
+		{WithRSAPrivateKeyFromFile("test/test_rsa", []byte("cCcamp")), 0, x509.IncorrectPasswordError, nil},
 		{WithRSAPrivateKeyFromFile("test/test_rsa"), 0, ErrPrivateKeyMissingPassword, nil},
 		{WithRSAPrivateKeyFromFile("test/sample_key.pub"), 0, errors.New("asn1: structure error: tags don't match (2 vs {class:0 tag:16 length:13 isCompound:true}) {optional:false explicit:false application:false defaultValue:<nil> tag:<nil> stringType:0 timeType:0 set:false omitEmpty:false} int @2"), nil},
 		{WithRSAPrivateKeyFromPEM(badKey), 0, ErrKeyMustBePEMEncoded, nil},

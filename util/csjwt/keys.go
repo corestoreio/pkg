@@ -143,7 +143,7 @@ func WithRSAPublicKey(publicKey *rsa.PublicKey) (k Key) {
 }
 
 // WithRSAPrivateKeyFromPEM parses PEM encoded PKCS1 or PKCS8 private key.
-// Password as second argument is only required when the
+// Provide a password as a second argument when the
 // private key is encrypted. Public key will be derived from the private key.
 func WithRSAPrivateKeyFromPEM(privateKey []byte, password ...[]byte) (k Key) {
 	k.rsaKeyPriv, k.Error = parseRSAPrivateKeyFromPEM(privateKey, password...)
@@ -155,7 +155,7 @@ func WithRSAPrivateKeyFromPEM(privateKey []byte, password ...[]byte) (k Key) {
 
 // WithRSAPrivateKeyFromFile parses PEM encoded PKCS1 or PKCS8 private key
 // found in a file.
-// Password as second argument is only required when the
+// Provide a password as a second argument when the
 // private key is encrypted. Public key will be derived from the private key.
 func WithRSAPrivateKeyFromFile(pathToFile string, password ...[]byte) (k Key) {
 	pk, err := ioutil.ReadFile(pathToFile)
@@ -212,9 +212,10 @@ func WithECPublicKey(publicKey *ecdsa.PublicKey) (k Key) {
 }
 
 // WithECPrivateKeyFromPEM parses PEM encoded Elliptic Curve Private Key Structure.
-// Public key will be derived from the private key.
-func WithECPrivateKeyFromPEM(privateKey []byte) (k Key) {
-	k.ecdsaKeyPriv, k.Error = parseECPrivateKeyFromPEM(privateKey)
+// Provide a password as a second argument when the
+// private key is encrypted. Public key will be derived from the private key.
+func WithECPrivateKeyFromPEM(privateKey []byte, password ...[]byte) (k Key) {
+	k.ecdsaKeyPriv, k.Error = parseECPrivateKeyFromPEM(privateKey, password...)
 	if k.ecdsaKeyPriv != nil {
 		k.ecdsaKeyPub = &k.ecdsaKeyPriv.PublicKey
 	}
@@ -223,13 +224,15 @@ func WithECPrivateKeyFromPEM(privateKey []byte) (k Key) {
 
 // WithECPrivateKeyFromFile parses file PEM encoded Elliptic Curve Private Key Structure.
 // Public key will be derived from the private key.
-func WithECPrivateKeyFromFile(pathToFile string) (k Key) {
+// Provide a password as a second argument when the
+// private key is encrypted. Public key will be derived from the private key.
+func WithECPrivateKeyFromFile(pathToFile string, password ...[]byte) (k Key) {
 	pk, err := ioutil.ReadFile(pathToFile)
 	if err != nil {
 		k.Error = err
 		return k
 	}
-	return WithECPrivateKeyFromPEM(pk)
+	return WithECPrivateKeyFromPEM(pk, password...)
 }
 
 // WithECPrivateKey sets the ECDSA private key.
