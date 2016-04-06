@@ -66,7 +66,7 @@ func (k Key) IsEmpty() bool {
 
 // Algorithm returns the supported algorithm but not the bit size.
 // Returns 0 on error, or one of the constants: ES, HS or RS.
-func (k Key) Algorithm() (a Algorithm) {
+func (k Key) Algorithm() (a string) {
 	switch {
 	case len(k.hmacPassword) > 0:
 		a = HS
@@ -100,10 +100,10 @@ const randomPasswordLenght = 32
 // cannot obtain. Whenever you restart your app with a random password, all
 // HMAC-SHA tokens get invalided.
 func WithPasswordRandom() Key {
-	pw := make([]byte, randomPasswordLenght)
-	_, err := rand.Read(pw)
+	var pw [randomPasswordLenght]byte
+	_, err := rand.Read(pw[:])
 	return Key{
-		hmacPassword: pw,
+		hmacPassword: pw[:],
 		Error:        err,
 	}
 }

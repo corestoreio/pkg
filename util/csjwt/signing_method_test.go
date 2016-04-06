@@ -13,31 +13,3 @@
 // limitations under the License.
 
 package csjwt_test
-
-import (
-	"testing"
-
-	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/stretchr/testify/assert"
-)
-
-func TestAlgorithm(t *testing.T) {
-	tests := []struct {
-		a    csjwt.Algorithm
-		s    string
-		want string
-	}{
-		{0, "Algorithm(0)", "Algorithm(0)"},
-		{0, "Algorithm(-10)", "Algorithm(0)"},
-		{0, "Algorithm(x'x)", "Algorithm(0)"},
-		{csjwt.ES256, "ES256", "ES256"},
-		{csjwt.HS256, "HS256", "HS256"},
-		{csjwt.RS512, "RS512", "RS512"},
-		{4711, "Algorithm(4711)", "Algorithm(4711)"},
-		{0, "Algorithm(47232876482736486723411)", "Algorithm(0)"},
-	}
-	for i, test := range tests {
-		assert.Exactly(t, test.want, test.a.String(), "Index %d", i)
-		assert.Exactly(t, test.a, csjwt.ToAlgorithm(test.s), "Index %d", i)
-	}
-}

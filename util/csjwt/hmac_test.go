@@ -11,7 +11,7 @@ import (
 // Sample data from http://tools.ietf.org/html/draft-jones-json-web-signature-04#appendix-A.1
 var hmacTestKey []byte
 
-const HMACFastSuffix csjwt.Algorithm = 10
+const HMACFastSuffix = "Fast"
 
 func init() {
 	var err error
@@ -24,21 +24,21 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
-	hf.Name *= HMACFastSuffix
+	hf.Name += HMACFastSuffix
 	csjwt.RegisterSigningMethod(hf)
 
 	hf, err = csjwt.NewHMACFast384(csjwt.WithPassword(hmacTestKey))
 	if err != nil {
 		panic(err)
 	}
-	hf.Name *= HMACFastSuffix
+	hf.Name += HMACFastSuffix
 	csjwt.RegisterSigningMethod(hf)
 
 	hf, err = csjwt.NewHMACFast512(csjwt.WithPassword(hmacTestKey))
 	if err != nil {
 		panic(err)
 	}
-	hf.Name *= HMACFastSuffix
+	hf.Name += HMACFastSuffix
 	csjwt.RegisterSigningMethod(hf)
 }
 

@@ -15,7 +15,7 @@ var (
 
 // SigningMethodECDSA implements the ECDSA family of signing methods signing methods
 type SigningMethodECDSA struct {
-	Name      Algorithm
+	Name      string
 	Hash      crypto.Hash
 	KeySize   int
 	CurveBits int
@@ -41,7 +41,7 @@ func init() {
 }
 
 func (m *SigningMethodECDSA) Alg() string {
-	return m.Name.String()
+	return m.Name
 }
 
 // Verify implements the Verify method from SigningMethod interface.

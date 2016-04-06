@@ -8,7 +8,7 @@ import (
 
 // SigningMethodRSA implements the RSA family of signing methods signing methods
 type SigningMethodRSA struct {
-	Name Algorithm
+	Name string
 	Hash crypto.Hash
 }
 
@@ -34,7 +34,7 @@ func init() {
 }
 
 func (m *SigningMethodRSA) Alg() string {
-	return m.Name.String()
+	return m.Name
 }
 
 // Verify implements the Verify method from SigningMethod interface.

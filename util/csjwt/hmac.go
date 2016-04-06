@@ -7,7 +7,7 @@ import (
 
 // SigningMethodHMAC implements the HMAC-SHA family of signing methods signing methods
 type SigningMethodHMAC struct {
-	Name Algorithm
+	Name string
 	Hash crypto.Hash
 }
 
@@ -30,7 +30,7 @@ func init() {
 }
 
 func (m *SigningMethodHMAC) Alg() string {
-	return m.Name.String()
+	return m.Name
 }
 
 // Verify the signature of HSXXX tokens.  Returns nil if the signature is valid.

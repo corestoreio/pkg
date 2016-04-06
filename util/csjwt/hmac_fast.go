@@ -23,11 +23,11 @@ import (
 // Less allocations, bytes and a little bit faster but maybe the underlying
 // mutex can become the bottleneck.
 type SigningMethodHMACFast struct {
-	Name Algorithm
+	Name string
 	ht   hmacTank
 }
 
-func newHMACFast(a Algorithm, h crypto.Hash, key Key) (*SigningMethodHMACFast, error) {
+func newHMACFast(a string, h crypto.Hash, key Key) (*SigningMethodHMACFast, error) {
 	sm := &SigningMethodHMACFast{
 		Name: a,
 	}
@@ -58,7 +58,7 @@ func NewHMACFast512(key Key) (*SigningMethodHMACFast, error) {
 }
 
 func (m *SigningMethodHMACFast) Alg() string {
-	return m.Name.String()
+	return m.Name
 }
 
 // Verify the signature of HSXXX tokens.  Returns nil if the signature is valid.
