@@ -3,6 +3,7 @@ package csjwt
 import (
 	"bytes"
 	"encoding/json"
+	"unicode"
 
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/juju/errors"
@@ -159,13 +160,20 @@ func dotPositions(t []byte) (pos [2]int, valid bool) {
 	return
 }
 
+// length of the string "bearer "
+const prefixBearerLen = 7
+
 var prefixBearer = []byte(`bearer `)
 
+// startsWithBearer checks if token starts with bearer
 func startsWithBearer(token []byte) bool {
-	if len(token) <= len(prefixBearer) {
+	if len(token) <= prefixBearerLen {
 		return false
 	}
-	havePrefix := token[0:len(prefixBearer)]
-	havePrefix = bytes.ToLower(havePrefix)
-	return bytes.Equal(havePrefix, prefixBearer)
+	var havePrefix [prefixBearerLen]byte
+	copy(havePrefix[:], token[0:prefixBearerLen])
+	for i, b := range havePrefix {
+		havePrefix[i] = byte(unicode.ToLower(rune(b)))
+	}
+	return bytes.Equal(havePrefix[:], prefixBearer)
 }

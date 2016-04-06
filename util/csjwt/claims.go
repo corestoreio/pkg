@@ -2,6 +2,7 @@ package csjwt
 
 import (
 	"crypto/subtle"
+	"time"
 
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/cserr"
@@ -12,6 +13,10 @@ type Claimer interface {
 	// Valid method that determines if the token is invalid for any supported reason.
 	// Returns nil on success
 	Valid() error
+	// Expires declares when a token expires. A duration smaller or equal
+	// to zero means that the token has already expired.
+	// Useful when adding a token to a blacklist.
+	Expires() time.Duration
 }
 
 // StandardClaims represents a structured version of Claims Section, as
@@ -82,6 +87,10 @@ func (c StandardClaims) Valid() error {
 	var vErr *cserr.MultiErr
 	now := TimeFunc().Unix()
 
+	if c.ExpiresAt == 0 && c.IssuedAt == 0 && c.NotBefore == 0 {
+		return ErrValidationClaimsInvalid
+	}
+
 	// The claims below are optional, by default, so if they are set to the
 	// default value in Go, let's not fail the verification for them.
 	if c.VerifyExpiresAt(now, false) == false {
@@ -100,6 +109,17 @@ func (c StandardClaims) Valid() error {
 		return vErr
 	}
 	return nil
+}
+
+// Expires duration when a token expires.
+func (c StandardClaims) Expires() (exp time.Duration) {
+	if c.ExpiresAt > 0 {
+		tm := time.Unix(c.ExpiresAt, 0)
+		if remainer := tm.Sub(time.Now()); remainer > 0 {
+			exp = remainer
+		}
+	}
+	return
 }
 
 // VerifyAudience compares the aud claim against cmp.
@@ -145,14 +165,14 @@ func (m MapClaims) VerifyAudience(cmp string, req bool) bool {
 // Compares the exp claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyExpiresAt(cmp int64, req bool) bool {
-	exp, _ := m["exp"].(float64)
+	exp := conv.ToFloat64(m["exp"])
 	return verifyExp(int64(exp), cmp, req)
 }
 
 // Compares the iat claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyIssuedAt(cmp int64, req bool) bool {
-	iat, _ := m["iat"].(float64)
+	iat := conv.ToFloat64(m["iat"])
 	return verifyIat(int64(iat), cmp, req)
 }
 
@@ -166,7 +186,7 @@ func (m MapClaims) VerifyIssuer(cmp string, req bool) bool {
 // Compares the nbf claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyNotBefore(cmp int64, req bool) bool {
-	nbf, _ := m["nbf"].(float64)
+	nbf := conv.ToFloat64(m["nbf"])
 	return verifyNbf(int64(nbf), cmp, req)
 }
 
@@ -177,6 +197,10 @@ func (m MapClaims) VerifyNotBefore(cmp int64, req bool) bool {
 func (m MapClaims) Valid() error {
 	var vErr *cserr.MultiErr
 	now := TimeFunc().Unix()
+
+	if len(m) == 0 {
+		return ErrValidationClaimsInvalid
+	}
 
 	if m.VerifyExpiresAt(now, false) == false {
 		vErr = vErr.AppendErrors(ErrValidationExpired)
@@ -194,6 +218,20 @@ func (m MapClaims) Valid() error {
 		return vErr
 	}
 	return nil
+}
+
+// Expires duration when a token expires.
+func (m MapClaims) Expires() (exp time.Duration) {
+	if cexp, ok := m["exp"]; ok {
+		fexp := conv.ToFloat64(cexp)
+		if fexp > 0.001 {
+			tm := time.Unix(int64(fexp), 0)
+			if remainer := tm.Sub(time.Now()); remainer > 0 {
+				exp = remainer
+			}
+		}
+	}
+	return
 }
 
 func verifyConstantTime(aud, cmp []byte, required bool) bool {

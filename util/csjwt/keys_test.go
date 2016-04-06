@@ -1,14 +1,13 @@
 package csjwt
 
 import (
-	"testing"
-
 	"crypto/ecdsa"
 	"crypto/rsa"
+	"crypto/x509"
 	"errors"
 	"fmt"
+	"testing"
 
-	"crypto/x509"
 	"github.com/stretchr/testify/assert"
 )
 

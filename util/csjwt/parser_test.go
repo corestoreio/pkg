@@ -1,16 +1,15 @@
 package csjwt_test
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
 	"net/http"
 	"reflect"
-	"testing"
-	"time"
-
 	"runtime"
 	"runtime/debug"
-
-	"errors"
+	"testing"
+	"time"
 
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
@@ -240,6 +239,18 @@ func TestParseFromRequest(t *testing.T) {
 		t.Fatal(err)
 	}
 	assert.Exactly(t, rToken.Claims, &clm)
+}
+
+func TestParseWithClaimsBearerInHeader(t *testing.T) {
+	token := []byte(`BEaRER `)
+	token = append(token, jwtTestData[0].tokenString...)
+
+	haveToken, haveErr := csjwt.Parse(token, nil)
+	assert.NotNil(t, haveToken)
+	assert.NotNil(t, haveToken.Claims)
+	assert.Exactly(t, haveToken.Raw, token)
+	assert.EqualError(t, haveErr, csjwt.ErrTokenShouldNotContainBearer.Error())
+	assert.True(t, bytes.Contains(haveToken.Raw, token))
 }
 
 func TestSplitForVerify(t *testing.T) {
