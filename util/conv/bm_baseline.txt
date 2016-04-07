@@ -1,0 +1,8 @@
+PASS
+BenchmarkToString_String-4     	 5000000	       291 ns/op	      96 B/op	       3 allocs/op
+BenchmarkToString_Bytes-4      	 5000000	       552 ns/op	     160 B/op	       4 allocs/op
+BenchmarkToString_Float64-4    	 2000000	       749 ns/op	     160 B/op	       5 allocs/op
+BenchmarkToString_Int-4        	 3000000	       389 ns/op	     101 B/op	       4 allocs/op
+BenchmarkToString_CfgPathPath-4	 2000000	       829 ns/op	     240 B/op	       5 allocs/op
+BenchmarkToString_Error-4      	 5000000	       349 ns/op	      96 B/op	       3 allocs/op
+ok  	github.com/corestoreio/csfw/util/conv	13.422s

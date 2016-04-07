@@ -195,13 +195,13 @@ func indirect(a interface{}) interface{} {
 // indirectToStringerOrError returns the value, after dereferencing as many times
 // as necessary to reach the base type (or nil) or an implementation of fmt.Stringer
 // or error,
+var errorType = reflect.TypeOf((*error)(nil)).Elem()
+var fmtStringerType = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
+
 func indirectToStringerOrError(a interface{}) interface{} {
 	if a == nil {
 		return nil
 	}
-
-	var errorType = reflect.TypeOf((*error)(nil)).Elem()
-	var fmtStringerType = reflect.TypeOf((*fmt.Stringer)(nil)).Elem()
 
 	v := reflect.ValueOf(a)
 	for !v.Type().Implements(fmtStringerType) && !v.Type().Implements(errorType) && v.Kind() == reflect.Ptr && !v.IsNil() {
@@ -212,7 +212,7 @@ func indirectToStringerOrError(a interface{}) interface{} {
 
 // ToStringE casts an empty interface to a string.
 func ToStringE(i interface{}) (string, error) {
-	i = indirectToStringerOrError(i)
+	i = indirectToStringerOrError(i) // does not cost neither B/op nor allocs/op
 	if PkgLog.IsDebug() {
 		PkgLog.Debug("conv.ToStringE", "type", reflect.TypeOf(i), "value", i)
 	}
