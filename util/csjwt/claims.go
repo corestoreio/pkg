@@ -6,6 +6,7 @@ import (
 
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/cserr"
+	"github.com/juju/errors"
 )
 
 // Claimer for a type to be a Claims object
@@ -17,7 +18,26 @@ type Claimer interface {
 	// to zero means that the token has already expired.
 	// Useful when adding a token to a blacklist.
 	Expires() time.Duration
+	// Set sets a value to the claim and may overwrite existing values
+	Set(key string, value interface{}) error
+	// Get retrieves a value from the claim.
+	Get(key string) (value interface{}, err error)
 }
+
+// I personally don't like the Set() and Get() functions but there is no
+// other way around it.
+
+// Claim constants define the main claims used for Set() and Get() functions.
+// Those constants are implemented in the StandardClaims type.
+const (
+	ClaimAudience  = "aud"
+	ClaimExpiresAt = "exp"
+	ClaimID        = "jti"
+	ClaimIssuedAt  = "iat"
+	ClaimIssuer    = "iss"
+	ClaimNotBefore = "nbf"
+	ClaimSubject   = "sub"
+)
 
 // StandardClaims represents a structured version of Claims Section, as
 // referenced at https://tools.ietf.org/html/rfc7519#section-4.1
@@ -111,8 +131,56 @@ func (c StandardClaims) Valid() error {
 	return nil
 }
 
+// Set sets a value. Key must be one of the constants Claim*.
+func (c *StandardClaims) Set(key string, value interface{}) error {
+	var ok bool
+	switch key {
+	case ClaimAudience:
+		c.Audience, ok = value.(string)
+	case ClaimExpiresAt:
+		c.ExpiresAt, ok = value.(int64)
+	case ClaimID:
+		c.ID, ok = value.(string)
+	case ClaimIssuedAt:
+		c.IssuedAt, ok = value.(int64)
+	case ClaimIssuer:
+		c.Issuer, ok = value.(string)
+	case ClaimNotBefore:
+		c.NotBefore, ok = value.(int64)
+	case ClaimSubject:
+		c.Subject, ok = value.(string)
+	default:
+		return errors.Errorf("Claim %q not supported. Please see constants Claim*.", key)
+	}
+	if !ok {
+		return errors.Errorf("Cannot convert key %q with value %#v to string or int64", key, value)
+	}
+	return nil
+}
+
+// Get returns a value or nil or an error. Key must be one of the constants Claim*.
+func (c *StandardClaims) Get(key string) (value interface{}, err error) {
+	switch key {
+	case ClaimAudience:
+		return c.Audience, nil
+	case ClaimExpiresAt:
+		return c.ExpiresAt, nil
+	case ClaimID:
+		return c.ID, nil
+	case ClaimIssuedAt:
+		return c.IssuedAt, nil
+	case ClaimIssuer:
+		return c.Issuer, nil
+	case ClaimNotBefore:
+		return c.NotBefore, nil
+	case ClaimSubject:
+		return c.Subject, nil
+	}
+	return nil, errors.Errorf("Claim %q not supported. Please see constants Claim*.", key)
+}
+
 // Expires duration when a token expires.
-func (c StandardClaims) Expires() (exp time.Duration) {
+func (c *StandardClaims) Expires() (exp time.Duration) {
 	if c.ExpiresAt > 0 {
 		tm := time.Unix(c.ExpiresAt, 0)
 		if remainer := tm.Sub(time.Now()); remainer > 0 {
@@ -218,6 +286,15 @@ func (m MapClaims) Valid() error {
 		return vErr
 	}
 	return nil
+}
+
+func (m MapClaims) Set(key string, value interface{}) error {
+	m[key] = value
+	return nil
+}
+
+func (m MapClaims) Get(key string) (value interface{}, err error) {
+	return m[key], nil
 }
 
 // Expires duration when a token expires.

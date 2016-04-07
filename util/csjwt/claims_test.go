@@ -6,8 +6,10 @@ import (
 	"testing"
 	"time"
 
+	"errors"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/stretchr/testify/assert"
+	"math"
 )
 
 var _ csjwt.Claimer = (*csjwt.StandardClaims)(nil)
@@ -80,6 +82,46 @@ func TestClaimsValid(t *testing.T) {
 			assert.EqualError(t, test.sc.Valid(), test.wantValid.Error(), "Index %d", i)
 		} else {
 			assert.NoError(t, test.sc.Valid(), "Index %d", i)
+		}
+	}
+}
+
+func TestClaimsGetSet(t *testing.T) {
+	tests := []struct {
+		sc         csjwt.Claimer
+		key        string
+		val        interface{}
+		wantSetErr error
+		wantGetErr error
+	}{
+		{&csjwt.StandardClaims{}, csjwt.ClaimAudience, '', errors.New("Cannot convert key \"aud\" with value 63743 to string or int64"), nil},
+		{&csjwt.StandardClaims{}, csjwt.ClaimAudience, "Go", nil, nil},
+		{&csjwt.StandardClaims{}, csjwt.ClaimExpiresAt, time.Now().Unix(), nil, nil},
+		{&csjwt.StandardClaims{}, "Not Supported", time.Now().Unix(), errors.New("Claim \"Not Supported\" not supported. Please see constants Claim*."), errors.New("Claim \"Not Supported\" not supported. Please see constants Claim*.")},
+
+		{csjwt.MapClaims{}, csjwt.ClaimAudience, "Go", nil, nil},
+		{csjwt.MapClaims{}, csjwt.ClaimExpiresAt, time.Now().Unix(), nil, nil},
+		{csjwt.MapClaims{}, "Not Supported", math.Pi, nil, nil},
+	}
+	for i, test := range tests {
+
+		haveSetErr := test.sc.Set(test.key, test.val)
+		if test.wantSetErr != nil {
+			assert.EqualError(t, haveSetErr, test.wantSetErr.Error(), "Index %d", i)
+		} else {
+			assert.NoError(t, haveSetErr, "Index %d", i)
+		}
+
+		haveVal, haveGetErr := test.sc.Get(test.key)
+		if test.wantGetErr != nil {
+			assert.EqualError(t, haveGetErr, test.wantGetErr.Error(), "Index %d", i)
+			continue
+		} else {
+			assert.NoError(t, haveGetErr, "Index %d", i)
+		}
+
+		if test.wantSetErr == nil {
+			assert.Exactly(t, test.val, haveVal, "Index %d", i)
 		}
 	}
 }
