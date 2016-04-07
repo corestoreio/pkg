@@ -166,6 +166,13 @@ func TestContains(t *testing.T) {
 	assert.False(t, cserr.Contains(me, cserr.NewMultiErr(e3)))
 }
 
+var _ error = (*cserr.Error)(nil)
+
+func TestError(t *testing.T) {
+	const err cserr.Error = "I'm a constant Error"
+	assert.EqualError(t, err, "I'm a constant Error")
+}
+
 var benchmarkError string
 
 // BenchmarkError-4	  500000	      3063 ns/op	    1312 B/op	      22 allocs/op

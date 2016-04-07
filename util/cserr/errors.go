@@ -21,6 +21,13 @@ import (
 	"github.com/juju/errors"
 )
 
+// Error type can be used for constant errors
+// http://dave.cheney.net/2016/04/07/constant-errors
+type Error string
+
+// Error implements the error interface
+func (e Error) Error() string { return string(e) }
+
 // MultiErr represents a container for collecting and printing multiple errors.
 // Mostly used for embedding in functional options.
 type MultiErr struct {
