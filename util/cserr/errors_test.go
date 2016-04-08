@@ -192,3 +192,35 @@ func BenchmarkError(b *testing.B) {
 		benchmarkError = e.Error()
 	}
 }
+
+var errorPointer = goerr.New("I'm an error pointer")
+var errorPointer2 = goerr.New("I'm an error pointer2")
+
+const errorConstant cserr.Error = `I'm an error constant`
+const errorConstant2 cserr.Error = `I'm an error constant2`
+
+var errorHave string
+
+func BenchmarkErrorPointer(b *testing.B) {
+	merr := cserr.NewMultiErr(errorPointer, errorPointer2)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		errorHave = merr.Error()
+		if errorHave == "" {
+			b.Fatal("errorHave is empty")
+		}
+	}
+}
+
+func BenchmarkErrorConstant(b *testing.B) {
+	merr := cserr.NewMultiErr(errorConstant, errorConstant2)
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		errorHave = merr.Error()
+		if errorHave == "" {
+			b.Fatal("errorHave is empty")
+		}
+	}
+}
