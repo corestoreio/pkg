@@ -26,9 +26,6 @@ import (
 // PrivateKeyBits used when auto generating a private key
 const PrivateKeyBits = 2048
 
-// ErrHMACEmptyPassword whenever the password length is 0.
-var ErrHMACEmptyPassword = errors.New("Empty passwords are forbidden")
-
 // Keyfunc used by Parse methods, this callback function supplies
 // the key for verification.  The function receives the parsed,
 // but unverified Token.  This allows you to use propries in the
@@ -86,7 +83,7 @@ func (k Key) Algorithm() (a string) {
 func WithPassword(password []byte) Key {
 	var err error
 	if len(password) == 0 {
-		err = ErrHMACEmptyPassword
+		err = errKeyEmptyPassword
 	}
 	return Key{
 		hmacPassword: password,

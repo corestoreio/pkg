@@ -3,8 +3,6 @@ package csjwt
 import (
 	"crypto"
 	"crypto/hmac"
-
-	"github.com/corestoreio/csfw/util/cserr"
 )
 
 // SigningMethodHMAC implements the HMAC-SHA family of signing methods signing methods
@@ -33,12 +31,6 @@ func NewSigningMethodHS384() Signer {
 func NewSigningMethodHS512() Signer {
 	return newSigningMethodHMAC(HS512, crypto.SHA512)
 }
-
-const (
-	errHmacPasswordEmpty    cserr.Error = `[csjwt] HMAC-SHA Password not provided`
-	errHmacHashUnavailable  cserr.Error = `[csjwt] HMAC-SHA Hash unavaiable`
-	errHmacSignatureInvalid cserr.Error = `[csjwt] HMAC-SHA Signature invalid`
-)
 
 func (m *SigningMethodHMAC) Alg() string {
 	return m.Name

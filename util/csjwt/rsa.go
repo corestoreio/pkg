@@ -4,7 +4,6 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
-	"github.com/corestoreio/csfw/util/cserr"
 )
 
 // SigningMethodRSA implements the RSA family of signing methods signing methods
@@ -33,12 +32,6 @@ func NewSigningMethodRS384() Signer {
 func NewSigningMethodRS512() Signer {
 	return newSigningMethodRSA(RS512, crypto.SHA512)
 }
-
-const (
-	errRSAPublicKeyEmpty  cserr.Error = `[csjwt] RSA Public Key not provided`
-	errRSAPrivateKeyEmpty cserr.Error = `[csjwt] RSA Private Key not provided`
-	errRSAHashUnavailable cserr.Error = `[csjwt] RSA Hash unavaiable`
-)
 
 func (m *SigningMethodRSA) Alg() string {
 	return m.Name

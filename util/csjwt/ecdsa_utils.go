@@ -4,11 +4,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
 )
-
-// ErrNotECPublicKey gets returned when type assertion to ecdas.PublicKey fails.
-var ErrNotECPublicKey = errors.New("Key is not a valid ECDSA public key")
 
 // Parse PEM encoded Elliptic Curve Private Key Structure
 func parseECPrivateKeyFromPEM(key []byte, password ...[]byte) (*ecdsa.PrivateKey, error) {
@@ -16,13 +12,13 @@ func parseECPrivateKeyFromPEM(key []byte, password ...[]byte) (*ecdsa.PrivateKey
 	// Parse PEM block
 	pemBlock, _ := pem.Decode(key)
 	if pemBlock == nil {
-		return nil, ErrKeyMustBePEMEncoded
+		return nil, errKeyMustBePEMEncoded
 	}
 
 	var blockBytes []byte
 	if x509.IsEncryptedPEMBlock(pemBlock) {
 		if len(password) != 1 || len(password[0]) == 0 {
-			return nil, ErrPrivateKeyMissingPassword
+			return nil, errKeyMissingPassword
 		}
 		var errPEM error
 		if blockBytes, errPEM = x509.DecryptPEMBlock(pemBlock, password[0]); errPEM != nil {
@@ -42,7 +38,7 @@ func parseECPublicKeyFromPEM(key []byte) (*ecdsa.PublicKey, error) {
 	// Parse PEM block
 	block, _ := pem.Decode(key)
 	if block == nil {
-		return nil, ErrKeyMustBePEMEncoded
+		return nil, errKeyMustBePEMEncoded
 	}
 
 	// Parse the key
@@ -58,5 +54,5 @@ func parseECPublicKeyFromPEM(key []byte) (*ecdsa.PublicKey, error) {
 	if pkey, ok := parsedKey.(*ecdsa.PublicKey); ok {
 		return pkey, nil
 	}
-	return nil, ErrNotECPublicKey
+	return nil, errKeyNonECDSAPublicKey
 }

@@ -4,13 +4,6 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
-	"errors"
-)
-
-var (
-	ErrKeyMustBePEMEncoded       = errors.New("Invalid Key: Key must be PEM encoded PKCS1 or PKCS8 private key")
-	ErrNotRSAPrivateKey          = errors.New("Key is not a valid RSA private key")
-	ErrPrivateKeyMissingPassword = errors.New("Missing password to decrypt private key")
 )
 
 // Parse PEM encoded PKCS1 or PKCS8 private key. Provide optionally a password if
@@ -18,13 +11,13 @@ var (
 func parseRSAPrivateKeyFromPEM(privateKey []byte, password ...[]byte) (*rsa.PrivateKey, error) {
 	var prKeyPEM *pem.Block
 	if prKeyPEM, _ = pem.Decode(privateKey); prKeyPEM == nil {
-		return nil, ErrKeyMustBePEMEncoded
+		return nil, errKeyMustBePEMEncoded
 	}
 
 	var block []byte
 	if x509.IsEncryptedPEMBlock(prKeyPEM) {
 		if len(password) != 1 || len(password[0]) == 0 {
-			return nil, ErrPrivateKeyMissingPassword
+			return nil, errKeyMissingPassword
 		}
 		var errPEM error
 		if block, errPEM = x509.DecryptPEMBlock(prKeyPEM, password[0]); errPEM != nil {
@@ -45,7 +38,7 @@ func parseRSAPrivateKeyFromPEM(privateKey []byte, password ...[]byte) (*rsa.Priv
 	var pkey *rsa.PrivateKey
 	var ok bool
 	if pkey, ok = parsedKey.(*rsa.PrivateKey); !ok {
-		return nil, ErrNotRSAPrivateKey
+		return nil, errKeyNonRSAPrivateKey
 	}
 
 	return pkey, nil
@@ -58,7 +51,7 @@ func parseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
 	// Parse PEM block
 	var block *pem.Block
 	if block, _ = pem.Decode(key); block == nil {
-		return nil, ErrKeyMustBePEMEncoded
+		return nil, errKeyMustBePEMEncoded
 	}
 
 	// Parse the key
@@ -74,7 +67,7 @@ func parseRSAPublicKeyFromPEM(key []byte) (*rsa.PublicKey, error) {
 	var pkey *rsa.PublicKey
 	var ok bool
 	if pkey, ok = parsedKey.(*rsa.PublicKey); !ok {
-		return nil, ErrNotRSAPrivateKey
+		return nil, errKeyNonRSAPrivateKey
 	}
 
 	return pkey, nil

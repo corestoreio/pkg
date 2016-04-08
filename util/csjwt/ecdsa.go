@@ -5,8 +5,6 @@ import (
 	"crypto/ecdsa"
 	"crypto/rand"
 	"math/big"
-
-	"github.com/corestoreio/csfw/util/cserr"
 )
 
 // SigningMethodECDSA implements the ECDSA family of signing methods signing methods
@@ -37,15 +35,6 @@ func NewSigningMethodES384() Signer {
 func NewSigningMethodES512() Signer {
 	return newSigningMethodECDSA(ES512, crypto.SHA512, 66, 521)
 }
-
-// ErrECDSAVerification sadly this is missing from crypto/ecdsa compared to crypto/rsa
-const ErrECDSAVerification cserr.Error = "crypto/ecdsa: verification error"
-const (
-	errECDSAPublicKeyEmpty     cserr.Error = `[csjwt] ECDSA Public Key not provided`
-	errECDSAPrivateKeyEmpty    cserr.Error = `[csjwt] ECDSA Private Key not provided`
-	errECDSAPrivateInvalidBits cserr.Error = `[csjwt] ECDSA Private Key has invalid curve bits`
-	errECDSAHashUnavailable    cserr.Error = `[csjwt] ECDSA Hash unavaiable`
-)
 
 func (m *SigningMethodECDSA) Alg() string {
 	return m.Name

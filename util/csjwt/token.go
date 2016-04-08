@@ -164,7 +164,7 @@ func ParseFromRequestWithClaims(req *http.Request, keyFunc Keyfunc, claims Claim
 		return ParseWithClaims([]byte(tokStr), keyFunc, claims)
 	}
 
-	return Token{}, ErrNoTokenInRequest
+	return Token{}, ErrTokenNotInRequest
 }
 
 // EncodeSegment encodes JWT specific base64url encoding with padding stripped.

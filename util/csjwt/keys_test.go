@@ -24,7 +24,7 @@ func TestKeyParsing(t *testing.T) {
 		wantKey interface{}
 	}{
 		{WithPassword(badKey), HS, nil, []byte{}},
-		{WithPassword(nil), "", ErrHMACEmptyPassword, nil},
+		{WithPassword(nil), "", errKeyEmptyPassword, nil},
 		{WithPasswordFromFile("test/hmacTestKey"), HS, nil, []byte{}},
 		{WithPasswordFromFile("test/hmacTestKeyNONEXIST"), "", errors.New("open test/hmacTestKeyNONEXIST: no such file or directory"), nil},
 
@@ -33,22 +33,22 @@ func TestKeyParsing(t *testing.T) {
 		{WithRSAPrivateKeyFromFile("test/sample_key"), RS, nil, new(rsa.PrivateKey)},
 		{WithRSAPrivateKeyFromFile("test/test_rsa", []byte("cccamp")), RS, nil, new(rsa.PrivateKey)},
 		{WithRSAPrivateKeyFromFile("test/test_rsa", []byte("cCcamp")), "", x509.IncorrectPasswordError, nil},
-		{WithRSAPrivateKeyFromFile("test/test_rsa"), "", ErrPrivateKeyMissingPassword, nil},
+		{WithRSAPrivateKeyFromFile("test/test_rsa"), "", errKeyMissingPassword, nil},
 		{WithRSAPrivateKeyFromFile("test/sample_key.pub"), "", errors.New("asn1: structure error: tags don't match (2 vs {class:0 tag:16 length:13 isCompound:true}) {optional:false explicit:false application:false defaultValue:<nil> tag:<nil> stringType:0 timeType:0 set:false omitEmpty:false} int @2"), nil},
-		{WithRSAPrivateKeyFromPEM(badKey), "", ErrKeyMustBePEMEncoded, nil},
+		{WithRSAPrivateKeyFromPEM(badKey), "", errKeyMustBePEMEncoded, nil},
 
 		{WithRSAPublicKeyFromFile("test/sample_key.pubOFF"), "", errors.New("open test/sample_key.pubOFF: no such file or directory with file test/sample_key.pubOFF"), nil},
 		{WithRSAPublicKeyFromFile("test/sample_key.pub"), RS, nil, new(rsa.PublicKey)},
 		{WithRSAPublicKeyFromFile("test/sample_key"), "", errors.New("asn1: structure error: tags don't match (16 vs {class:0 tag:2 length:1 isCompound:false}) {optional:false explicit:false application:false defaultValue:<nil> tag:<nil> stringType:0 timeType:0 set:false omitEmpty:false} tbsCertificate @2"), nil},
-		{WithRSAPublicKeyFromPEM(badKey), "", ErrKeyMustBePEMEncoded, nil},
+		{WithRSAPublicKeyFromPEM(badKey), "", errKeyMustBePEMEncoded, nil},
 		{WithRSAPublicKey(new(rsa.PublicKey)), RS, nil, new(rsa.PublicKey)},
 
-		{WithECPublicKeyFromPEM(badKey), "", errors.New("Invalid Key: Key must be PEM encoded PKCS1 or PKCS8 private key"), nil},
+		{WithECPublicKeyFromPEM(badKey), "", errKeyMustBePEMEncoded, nil}, // 17
 		{WithECPublicKey(new(ecdsa.PublicKey)), ES, nil, new(ecdsa.PublicKey)},
 		{WithECPublicKeyFromFile("test/nothingecdsa"), "", errors.New("open test/nothingecdsa: no such file or directory"), nil},
 		{WithECPublicKeyFromFile("test/ec512-public.pem"), ES, nil, new(ecdsa.PublicKey)},
 
-		{WithECPrivateKeyFromPEM(badKey), "", errors.New("Invalid Key: Key must be PEM encoded PKCS1 or PKCS8 private key"), nil},
+		{WithECPrivateKeyFromPEM(badKey), "", errKeyMustBePEMEncoded, nil},
 		{WithECPrivateKey(new(ecdsa.PrivateKey)), ES, nil, new(ecdsa.PrivateKey)},
 		{WithECPrivateKeyFromFile("test/nothingecdsa"), "", errors.New("open test/nothingecdsa: no such file or directory"), nil},
 		{WithECPrivateKeyFromFile("test/ec512-private.pem"), ES, nil, new(ecdsa.PrivateKey)},
