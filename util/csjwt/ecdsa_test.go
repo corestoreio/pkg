@@ -16,6 +16,12 @@ var _ csjwt.Signer = (*csjwt.SigningMethodRSAPSS)(nil)
 var _ csjwt.Signer = (*csjwt.SigningMethodHMAC)(nil)
 var _ csjwt.Signer = (*csjwt.SigningMethodHMACFast)(nil)
 
+func init() {
+	_ = csjwt.NewSigningMethodES256()
+	_ = csjwt.NewSigningMethodES384()
+	_ = csjwt.NewSigningMethodES512()
+}
+
 var ecdsaTestData = []struct {
 	name        string
 	keys        map[string]string
@@ -71,7 +77,10 @@ func TestECDSAVerify(t *testing.T) {
 			t.Fatal(err, "\n", string(data.tokenString))
 		}
 
-		method := csjwt.GetSigningMethod(data.alg)
+		method, err := csjwt.GetSigningMethod(data.alg)
+		if err != nil {
+			t.Fatal(err)
+		}
 		err = method.Verify(signing, signature, csjwt.WithECPublicKeyFromPEM(key))
 		if data.valid && err != nil {
 			t.Errorf("[%v] Error while verifying key: %v", data.name, err)
@@ -97,7 +106,10 @@ func TestECDSASign(t *testing.T) {
 				t.Fatal(err, "\n", string(data.tokenString))
 			}
 
-			method := csjwt.GetSigningMethod(data.alg)
+			method, err := csjwt.GetSigningMethod(data.alg)
+			if err != nil {
+				t.Fatal(err)
+			}
 			sig, err := method.Sign(signing, csjwt.WithECPrivateKeyFromPEM(key))
 			if err != nil {
 				t.Errorf("[%v] Error signing token: %v", data.name, err)
@@ -111,7 +123,7 @@ func TestECDSASign(t *testing.T) {
 
 func BenchmarkES256Signing(b *testing.B) {
 	key := csjwt.WithECPrivateKeyFromFile("test/ec256-private.pem")
-	benchmarkSigning(b, csjwt.SigningMethodES256, key)
+	benchmarkSigning(b, csjwt.NewSigningMethodES256(), key)
 }
 
 func BenchmarkES256Verify(b *testing.B) {
@@ -120,12 +132,12 @@ func BenchmarkES256Verify(b *testing.B) {
 		b.Fatal(err)
 	}
 	key := csjwt.WithECPublicKeyFromFile("test/ec256-public.pem")
-	benchmarkMethodVerify(b, csjwt.SigningMethodES256, signing, signature, key)
+	benchmarkMethodVerify(b, csjwt.NewSigningMethodES256(), signing, signature, key)
 }
 
 func BenchmarkES384Signing(b *testing.B) {
 	key := csjwt.WithECPrivateKeyFromFile("test/ec384-private.pem")
-	benchmarkSigning(b, csjwt.SigningMethodES384, key)
+	benchmarkSigning(b, csjwt.NewSigningMethodES384(), key)
 }
 
 func BenchmarkES384Verify(b *testing.B) {
@@ -134,12 +146,12 @@ func BenchmarkES384Verify(b *testing.B) {
 		b.Fatal(err)
 	}
 	key := csjwt.WithECPublicKeyFromFile("test/ec384-public.pem")
-	benchmarkMethodVerify(b, csjwt.SigningMethodES384, signing, signature, key)
+	benchmarkMethodVerify(b, csjwt.NewSigningMethodES384(), signing, signature, key)
 }
 
 func BenchmarkES512Signing(b *testing.B) {
 	key := csjwt.WithECPrivateKeyFromFile("test/ec512-private.pem")
-	benchmarkSigning(b, csjwt.SigningMethodES512, key)
+	benchmarkSigning(b, csjwt.NewSigningMethodES512(), key)
 }
 
 func BenchmarkES512Verify(b *testing.B) {
@@ -148,5 +160,5 @@ func BenchmarkES512Verify(b *testing.B) {
 		b.Fatal(err)
 	}
 	key := csjwt.WithECPublicKeyFromFile("test/ec512-public.pem")
-	benchmarkMethodVerify(b, csjwt.SigningMethodES512, signing, signature, key)
+	benchmarkMethodVerify(b, csjwt.NewSigningMethodES512(), signing, signature, key)
 }

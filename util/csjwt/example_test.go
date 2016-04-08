@@ -22,7 +22,7 @@ func ExampleParse(myToken []byte, myLookupKey func(interface{}) (csjwt.Key, erro
 
 func ExampleNew() {
 	// Create the token
-	token := csjwt.New(csjwt.SigningMethodRS256)
+	token := csjwt.New(csjwt.NewSigningMethodRS256())
 
 	// Set some claims
 	claims := token.Claims.(csjwt.MapClaims)
@@ -42,7 +42,7 @@ func ExampleNewWithClaims() {
 		Issuer:    "test",
 	}
 
-	token := csjwt.NewWithClaims(csjwt.SigningMethodHS256, claims)
+	token := csjwt.NewWithClaims(csjwt.NewSigningMethodHS256(), claims)
 	ss, err := token.SignedString(csjwt.WithPassword([]byte("AllYourBase")))
 	fmt.Printf("%s %v", string(ss), err)
 	//Output: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9Cg.eyJleHAiOjE1MDAwLCJpc3MiOiJ0ZXN0In0K.SY9CGIVRoJ_TBDxtPfv3C8h_qsmOLqd9YrYQcMp-rFM <nil>
@@ -64,7 +64,7 @@ func ExampleNewWithClaims_customType() {
 		},
 	}
 
-	token := csjwt.NewWithClaims(csjwt.SigningMethodHS256, &claims)
+	token := csjwt.NewWithClaims(csjwt.NewSigningMethodHS256(), &claims)
 	ss, err := token.SignedString(csjwt.WithPassword([]byte("AllYourBase")))
 	fmt.Printf("%s %v", string(ss), err)
 	//Output: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9Cg.eyJmb28iOiJiYXIiLCJleHAiOjE1MDAwLCJpc3MiOiJ0ZXN0In0K.5T_mKrp6g5d6lWwsRNO67lHorKoEXAOVoUmnFOox6GA <nil>

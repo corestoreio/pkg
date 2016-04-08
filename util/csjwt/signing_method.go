@@ -1,5 +1,7 @@
 package csjwt
 
+import "github.com/juju/errors"
+
 var signingMethods = make(map[string]Signer)
 
 // Signer interface to add new methods for signing or verifying tokens.
@@ -19,12 +21,11 @@ func RegisterSigningMethod(s Signer) {
 }
 
 // GetSigningMethod returns a signing method from an "alg" string.
-// Returns nil for not found.
-func GetSigningMethod(alg string) Signer {
+func GetSigningMethod(alg string) (Signer, error) {
 	if s, ok := signingMethods[alg]; ok {
-		return s
+		return s, nil
 	}
-	return nil
+	return nil, errors.Errorf("SigningMethod %q not registered", alg)
 }
 
 // All available algorithms which can be supported

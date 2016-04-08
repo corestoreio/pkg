@@ -35,24 +35,31 @@ func newHMACFast(a string, h crypto.Hash, key Key) (*SigningMethodHMACFast, erro
 		return nil, key.Error
 	}
 	if len(key.hmacPassword) == 0 {
-		return nil, ErrInvalidKey
+		return nil, errHmacPasswordEmpty
 	}
 	// Can we use the specified hashing method?
 	if !h.Available() {
-		return nil, ErrHashUnavailable
+		return nil, errHmacHashUnavailable
 	}
 	sm.ht = newHMACTank(h, key.hmacPassword)
+	// we cannot register it globally because of testing
 	return sm, nil
 }
 
+// NewHMACFast256 creates a new HMAC-SHA hash with a preset password and
+// does not register it globally.
 func NewHMACFast256(key Key) (*SigningMethodHMACFast, error) {
 	return newHMACFast(HS256, crypto.SHA256, key)
 }
 
+// NewHMACFast384 creates a new HMAC-SHA hash with a preset password and
+// does not register it globally.
 func NewHMACFast384(key Key) (*SigningMethodHMACFast, error) {
 	return newHMACFast(HS384, crypto.SHA384, key)
 }
 
+// NewHMACFast512 creates a new HMAC-SHA hash with a preset password and
+// does not register it globally.
 func NewHMACFast512(key Key) (*SigningMethodHMACFast, error) {
 	return newHMACFast(HS512, crypto.SHA512, key)
 }
@@ -81,7 +88,7 @@ func (m *SigningMethodHMACFast) Verify(signingString, signature []byte, _ Key) e
 	}
 
 	if !hmac.Equal(sig, hasher.Sum(nil)) {
-		return ErrSignatureInvalid
+		return errHmacSignatureInvalid
 	}
 
 	// No validation errors.  Signature is good.

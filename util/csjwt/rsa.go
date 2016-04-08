@@ -4,6 +4,7 @@ import (
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
+	"github.com/corestoreio/csfw/util/cserr"
 )
 
 // SigningMethodRSA implements the RSA family of signing methods signing methods
@@ -12,26 +13,32 @@ type SigningMethodRSA struct {
 	Hash crypto.Hash
 }
 
-// Specific instances for RS256 and company
-var (
-	SigningMethodRS256 *SigningMethodRSA
-	SigningMethodRS384 *SigningMethodRSA
-	SigningMethodRS512 *SigningMethodRSA
-)
-
-func init() {
-	// RS256
-	SigningMethodRS256 = &SigningMethodRSA{RS256, crypto.SHA256}
-	RegisterSigningMethod(SigningMethodRS256)
-
-	// RS384
-	SigningMethodRS384 = &SigningMethodRSA{RS384, crypto.SHA384}
-	RegisterSigningMethod(SigningMethodRS384)
-
-	// RS512
-	SigningMethodRS512 = &SigningMethodRSA{RS512, crypto.SHA512}
-	RegisterSigningMethod(SigningMethodRS512)
+func newSigningMethodRSA(n string, h crypto.Hash) Signer {
+	sm := &SigningMethodRSA{Name: n, Hash: h}
+	RegisterSigningMethod(sm)
+	return sm
 }
+
+// NewSigningMethodRS256 creates a new 256bit RSA SHA instance and registers it.
+func NewSigningMethodRS256() Signer {
+	return newSigningMethodRSA(RS256, crypto.SHA256)
+}
+
+// NewSigningMethodRS384 creates a new 384bit RSA SHA instance and registers it.
+func NewSigningMethodRS384() Signer {
+	return newSigningMethodRSA(RS384, crypto.SHA384)
+}
+
+// NewSigningMethodRS512 creates a new 512bit RSA SHA instance and registers it.
+func NewSigningMethodRS512() Signer {
+	return newSigningMethodRSA(RS512, crypto.SHA512)
+}
+
+const (
+	errRSAPublicKeyEmpty  cserr.Error = `[csjwt] RSA Public Key not provided`
+	errRSAPrivateKeyEmpty cserr.Error = `[csjwt] RSA Private Key not provided`
+	errRSAHashUnavailable cserr.Error = `[csjwt] RSA Hash unavaiable`
+)
 
 func (m *SigningMethodRSA) Alg() string {
 	return m.Name
@@ -44,7 +51,7 @@ func (m *SigningMethodRSA) Verify(signingString, signature []byte, key Key) erro
 		return key.Error
 	}
 	if key.rsaKeyPub == nil {
-		return ErrInvalidKey
+		return errRSAPublicKeyEmpty
 	}
 
 	// Decode the signature
@@ -55,7 +62,7 @@ func (m *SigningMethodRSA) Verify(signingString, signature []byte, key Key) erro
 
 	// Create hasher
 	if !m.Hash.Available() {
-		return ErrHashUnavailable
+		return errRSAHashUnavailable
 	}
 	hasher := m.Hash.New()
 	if _, err := hasher.Write(signingString); err != nil {
@@ -73,12 +80,12 @@ func (m *SigningMethodRSA) Sign(signingString []byte, key Key) ([]byte, error) {
 		return nil, key.Error
 	}
 	if key.rsaKeyPriv == nil {
-		return nil, ErrInvalidKey
+		return nil, errRSAPrivateKeyEmpty
 	}
 
 	// Create the hasher
 	if !m.Hash.Available() {
-		return nil, ErrHashUnavailable
+		return nil, errRSAHashUnavailable
 	}
 
 	hasher := m.Hash.New()

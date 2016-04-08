@@ -85,7 +85,7 @@ var jwtTestData = []struct {
 		nilKeyFunc,
 		csjwt.MapClaims{"foo": "bar"},
 		false,
-		csjwt.ErrMissingKeyFunc,
+		errors.New("[csjwt] Missing KeyFunc"),
 		nil,
 	},
 	{
@@ -128,7 +128,7 @@ var jwtTestData = []struct {
 
 func makeSample(c csjwt.MapClaims) []byte {
 	key := csjwt.WithRSAPrivateKeyFromFile("test/sample_key")
-	token := csjwt.NewWithClaims(csjwt.SigningMethodRS256, c)
+	token := csjwt.NewWithClaims(csjwt.NewSigningMethodRS256(), c)
 	s, err := token.SignedString(key)
 	if err != nil {
 		panic(err)
@@ -220,7 +220,8 @@ func TestParseFromRequest(t *testing.T) {
 		"payment_valid":     true,
 		"exp":               float64(time.Now().Add(time.Hour * 72).Unix()),
 	}
-	token := csjwt.NewWithClaims(csjwt.SigningMethodHS512, clm)
+	sm512 := csjwt.NewSigningMethodHS512()
+	token := csjwt.NewWithClaims(sm512, clm)
 	tokenString, err := token.SignedString(key)
 	if err != nil {
 		t.Fatal(err)
@@ -230,7 +231,7 @@ func TestParseFromRequest(t *testing.T) {
 	r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tokenString))
 
 	rToken, err := csjwt.ParseFromRequest(r, func(t csjwt.Token) (csjwt.Key, error) {
-		if have, want := t.Method.Alg(), csjwt.SigningMethodHS512.Alg(); have != want {
+		if have, want := t.Method.Alg(), sm512.Alg(); have != want {
 			return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 		}
 		return key, nil
@@ -249,7 +250,7 @@ func TestParseWithClaimsBearerInHeader(t *testing.T) {
 	assert.NotNil(t, haveToken)
 	assert.NotNil(t, haveToken.Claims)
 	assert.Exactly(t, haveToken.Raw, token)
-	assert.EqualError(t, haveErr, csjwt.ErrTokenShouldNotContainBearer.Error())
+	assert.EqualError(t, haveErr, `[csjwt] tokenstring should not contain 'bearer '`)
 	assert.True(t, bytes.Contains(haveToken.Raw, token))
 }
 
@@ -270,13 +271,13 @@ func TestSplitForVerify(t *testing.T) {
 			[]byte(`Hello.WorldGophers`),
 			nil,
 			nil,
-			csjwt.ErrTokenInvalidSegmentCounts,
+			errors.New("[csjwt] token contains an invalid number of segments"),
 		},
 		{
 			[]byte(`Hello.World.Gop.hers`),
 			nil,
 			nil,
-			csjwt.ErrTokenInvalidSegmentCounts,
+			errors.New("[csjwt] token contains an invalid number of segments"),
 		},
 	}
 	for _, test := range tests {

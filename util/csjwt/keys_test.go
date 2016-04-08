@@ -15,7 +15,7 @@ var _ fmt.GoStringer = (*Key)(nil)
 var _ fmt.Stringer = (*Key)(nil)
 
 func TestKeyParsing(t *testing.T) {
-	t.Parallel()
+
 	badKey := []byte("All your base are belong to key")
 	tests := []struct {
 		key     Key
@@ -93,7 +93,7 @@ func TestKeyWithPasswordRandom(t *testing.T) {
 }
 
 func TestKeyWithRSAGenerator(t *testing.T) {
-	t.Parallel()
+
 	//if testing.Short() {
 	//	t.Skip("Test skipped in short mode")
 	//}

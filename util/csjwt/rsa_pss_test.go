@@ -10,6 +10,12 @@ import (
 	"github.com/corestoreio/csfw/util/csjwt"
 )
 
+func init() {
+	_ = csjwt.NewSigningMethodPS256()
+	_ = csjwt.NewSigningMethodPS384()
+	_ = csjwt.NewSigningMethodPS512()
+}
+
 var rsaPSSTestData = []struct {
 	name        string
 	tokenString []byte
@@ -56,7 +62,10 @@ func TestRSAPSSVerify(t *testing.T) {
 			t.Fatal(err, "\n", string(data.tokenString))
 		}
 
-		method := csjwt.GetSigningMethod(data.alg)
+		method, err := csjwt.GetSigningMethod(data.alg)
+		if err != nil {
+			t.Fatal(err)
+		}
 		err = method.Verify(signing, signature, key)
 		if data.valid && err != nil {
 			t.Errorf("[%v] Error while verifying key: %v", data.name, err)
@@ -76,7 +85,10 @@ func TestRSAPSSSign(t *testing.T) {
 				t.Fatal(err, "\n", string(data.tokenString))
 			}
 
-			method := csjwt.GetSigningMethod(data.alg)
+			method, err := csjwt.GetSigningMethod(data.alg)
+			if err != nil {
+				t.Fatal(err)
+			}
 			sig, err := method.Sign(signing, key)
 			if err != nil {
 				t.Errorf("[%v] Error signing token: %v", data.name, err)

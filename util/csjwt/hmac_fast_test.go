@@ -18,17 +18,55 @@ import (
 	"bytes"
 	"testing"
 
+	"io/ioutil"
+
 	"github.com/corestoreio/csfw/util/csjwt"
 )
 
+// only for testing
+const hmacFastSuffix = "Fast"
+
+func init() {
+	var err error
+	hmacTestKey, err = ioutil.ReadFile("test/hmacTestKey")
+	if err != nil {
+		panic(err)
+	}
+
+	hf, err := csjwt.NewHMACFast256(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		panic(err)
+	}
+	hf.Name += hmacFastSuffix
+	csjwt.RegisterSigningMethod(hf)
+
+	hf, err = csjwt.NewHMACFast384(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		panic(err)
+	}
+	hf.Name += hmacFastSuffix
+	csjwt.RegisterSigningMethod(hf)
+
+	hf, err = csjwt.NewHMACFast512(csjwt.WithPassword(hmacTestKey))
+	if err != nil {
+		panic(err)
+	}
+	hf.Name += hmacFastSuffix
+	csjwt.RegisterSigningMethod(hf)
+
+}
 func TestHMACVerifyFast(t *testing.T) {
 	for _, data := range hmacTestData {
 		signing, signature, err := csjwt.SplitForVerify(data.tokenString)
 		if err != nil {
 			t.Fatal(err, "\n", string(data.tokenString))
 		}
-		alg := data.alg + HMACFastSuffix
-		method := csjwt.GetSigningMethod(alg)
+		alg := data.alg + hmacFastSuffix
+		method, err := csjwt.GetSigningMethod(alg)
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		err = method.Verify(signing, signature, csjwt.Key{})
 		if data.valid && err != nil {
 			t.Errorf("[%v] Method %s Error while verifying key: %v", data.name, data.alg, err)
@@ -47,8 +85,11 @@ func TestHMACSignFast(t *testing.T) {
 				t.Fatal(err, "\n", string(data.tokenString))
 			}
 
-			alg := data.alg + HMACFastSuffix
-			method := csjwt.GetSigningMethod(alg)
+			alg := data.alg + hmacFastSuffix
+			method, err := csjwt.GetSigningMethod(alg)
+			if err != nil {
+				t.Fatal(err)
+			}
 			sig, err := method.Sign(signing, csjwt.Key{})
 			if err != nil {
 				t.Errorf("[%v] Error signing token: %v", data.name, err)

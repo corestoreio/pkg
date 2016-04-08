@@ -108,7 +108,7 @@ func (t *Token) updateMethod() (err error) {
 	err = ErrValidationUnknownAlg
 	method, ok := t.Header["alg"].(string)
 	if ok {
-		t.Method = GetSigningMethod(method)
+		t.Method, err = GetSigningMethod(method)
 		if t.Method != nil {
 			err = nil
 		}

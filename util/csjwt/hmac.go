@@ -3,6 +3,8 @@ package csjwt
 import (
 	"crypto"
 	"crypto/hmac"
+
+	"github.com/corestoreio/csfw/util/cserr"
 )
 
 // SigningMethodHMAC implements the HMAC-SHA family of signing methods signing methods
@@ -11,23 +13,32 @@ type SigningMethodHMAC struct {
 	Hash crypto.Hash
 }
 
-// Specific instances for HS256 and company
-var (
-	SigningMethodHS256 *SigningMethodHMAC
-	SigningMethodHS384 *SigningMethodHMAC
-	SigningMethodHS512 *SigningMethodHMAC
-)
-
-func init() {
-	SigningMethodHS256 = &SigningMethodHMAC{HS256, crypto.SHA256}
-	RegisterSigningMethod(SigningMethodHS256)
-
-	SigningMethodHS384 = &SigningMethodHMAC{HS384, crypto.SHA384}
-	RegisterSigningMethod(SigningMethodHS384)
-
-	SigningMethodHS512 = &SigningMethodHMAC{HS512, crypto.SHA512}
-	RegisterSigningMethod(SigningMethodHS512)
+func newSigningMethodHMAC(n string, h crypto.Hash) Signer {
+	sm := &SigningMethodHMAC{Name: n, Hash: h}
+	RegisterSigningMethod(sm)
+	return sm
 }
+
+// NewSigningMethodHS256 creates a new 256bit HMAC SHA instance and registers it.
+func NewSigningMethodHS256() Signer {
+	return newSigningMethodHMAC(HS256, crypto.SHA256)
+}
+
+// NewSigningMethodHS384 creates a new 384bit HMAC SHA instance and registers it.
+func NewSigningMethodHS384() Signer {
+	return newSigningMethodHMAC(HS384, crypto.SHA384)
+}
+
+// NewSigningMethodHS512 creates a new 512bit HMAC SHA instance and registers it.
+func NewSigningMethodHS512() Signer {
+	return newSigningMethodHMAC(HS512, crypto.SHA512)
+}
+
+const (
+	errHmacPasswordEmpty    cserr.Error = `[csjwt] HMAC-SHA Password not provided`
+	errHmacHashUnavailable  cserr.Error = `[csjwt] HMAC-SHA Hash unavaiable`
+	errHmacSignatureInvalid cserr.Error = `[csjwt] HMAC-SHA Signature invalid`
+)
 
 func (m *SigningMethodHMAC) Alg() string {
 	return m.Name
@@ -41,7 +52,7 @@ func (m *SigningMethodHMAC) Verify(signingString, signature []byte, key Key) err
 		return key.Error
 	}
 	if len(key.hmacPassword) == 0 {
-		return ErrInvalidKey
+		return errHmacPasswordEmpty
 	}
 
 	// Decode signature, for comparison
@@ -52,7 +63,7 @@ func (m *SigningMethodHMAC) Verify(signingString, signature []byte, key Key) err
 
 	// Can we use the specified hashing method?
 	if !m.Hash.Available() {
-		return ErrHashUnavailable
+		return errHmacHashUnavailable
 	}
 
 	// This signing method is symmetric, so we validate the signature
@@ -64,7 +75,7 @@ func (m *SigningMethodHMAC) Verify(signingString, signature []byte, key Key) err
 	}
 
 	if !hmac.Equal(sig, hasher.Sum(nil)) {
-		return ErrSignatureInvalid
+		return errHmacSignatureInvalid
 	}
 
 	// No validation errors.  Signature is good.
@@ -79,11 +90,11 @@ func (m *SigningMethodHMAC) Sign(signingString []byte, key Key) ([]byte, error) 
 		return nil, key.Error
 	}
 	if key.hmacPassword == nil {
-		return nil, ErrInvalidKey
+		return nil, errHmacPasswordEmpty
 	}
 
 	if !m.Hash.Available() {
-		return nil, ErrHashUnavailable
+		return nil, errHmacHashUnavailable
 	}
 
 	hasher := hmac.New(m.Hash.New, key.hmacPassword)

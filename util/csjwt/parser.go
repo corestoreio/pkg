@@ -53,7 +53,7 @@ func (p Parser) Parse(rawToken []byte, keyFunc Keyfunc) (Token, error) {
 func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer) (Token, error) {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
-		return Token{}, ErrTokenInvalidSegmentCounts
+		return Token{}, errTokenInvalidSegmentCounts
 	}
 
 	token := Token{
@@ -70,7 +70,7 @@ func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer
 	// parse Header
 	if headerBytes, err := DecodeSegment(token.Raw[:pos[0]]); err != nil {
 		if startsWithBearer(token.Raw) {
-			return token, ErrTokenShouldNotContainBearer
+			return token, errTokenShouldNotContainBearer
 		}
 		return token, cserr.NewMultiErr(ErrTokenMalformed, err)
 	} else if err := p.JSONer.Unmarshal(headerBytes, &token.Header); err != nil {
@@ -113,8 +113,7 @@ func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer
 
 	// Lookup key
 	if keyFunc == nil {
-		// keyFunc was not provided.  short circuiting validation
-		return token, ErrMissingKeyFunc
+		return token, errMissingKeyFunc
 	}
 	key, err := keyFunc(token)
 	if err != nil {
@@ -136,7 +135,7 @@ func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer
 func SplitForVerify(rawToken []byte) (signingString, signature []byte, err error) {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
-		return nil, nil, ErrTokenInvalidSegmentCounts
+		return nil, nil, errTokenInvalidSegmentCounts
 	}
 	return rawToken[:pos[1]], rawToken[pos[1]+1:], nil
 }

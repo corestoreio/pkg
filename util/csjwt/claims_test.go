@@ -7,9 +7,10 @@ import (
 	"time"
 
 	"errors"
+	"math"
+
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/stretchr/testify/assert"
-	"math"
 )
 
 var _ csjwt.Claimer = (*csjwt.StandardClaims)(nil)

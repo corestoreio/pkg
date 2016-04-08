@@ -1,27 +1,29 @@
 package csjwt
 
 import (
-	"errors"
+	"github.com/corestoreio/csfw/util/cserr"
 )
 
 // Error variables predefined
-var (
-	ErrSignatureInvalid            = errors.New("signature is invalid")
-	ErrInvalidKey                  = errors.New("key is invalid or of invalid type")
-	ErrHashUnavailable             = errors.New("the requested hash function is unavailable")
-	ErrNoTokenInRequest            = errors.New("no token present in request")
-	ErrTokenMalformed              = errors.New("token is malformed")
-	ErrTokenInvalidSegmentCounts   = errors.New("token contains an invalid number of segments")
-	ErrTokenShouldNotContainBearer = errors.New("tokenstring should not contain 'bearer '")
-	ErrTokenUnverifiable           = errors.New("token is unverifiable")
-	ErrMissingKeyFunc              = errors.New("missing KeyFunc")
+const (
+	ErrSignatureInvalid  cserr.Error = `[csjwt] signature is invalid`
+	ErrNoTokenInRequest  cserr.Error = `[csjwt] no token present in request`
+	ErrTokenMalformed    cserr.Error = `[csjwt] token is malformed`
+	ErrTokenUnverifiable cserr.Error = `[csjwt] token is unverifiable`
 
-	ErrValidationUnknownAlg       = errors.New("unknown token signing algorithm")
-	ErrValidationExpired          = errors.New("token is expired")
-	ErrValidationUsedBeforeIssued = errors.New("token used before issued, clock skew issue?")
-	ErrValidationNotValidYet      = errors.New("token is not valid yet")
-	ErrValidationAudience         = errors.New("token is not valid for current audience")
-	ErrValidationIssuer           = errors.New("token issue validation failed")
-	ErrValidationJTI              = errors.New("token JTI validation failed")
-	ErrValidationClaimsInvalid    = errors.New("token claims validation failed")
+	ErrValidationUnknownAlg       cserr.Error = `[csjwt] unknown token signing algorithm`
+	ErrValidationExpired          cserr.Error = `[csjwt] token is expired`
+	ErrValidationUsedBeforeIssued cserr.Error = `[csjwt] token used before issued, clock skew issue?`
+	ErrValidationNotValidYet      cserr.Error = `[csjwt] token is not valid yet`
+	ErrValidationAudience         cserr.Error = `[csjwt] token is not valid for current audience`
+	ErrValidationIssuer           cserr.Error = `[csjwt] token issue validation failed`
+	ErrValidationJTI              cserr.Error = `[csjwt] token JTI validation failed`
+	ErrValidationClaimsInvalid    cserr.Error = `[csjwt] token claims validation failed`
+)
+
+// Private errors no need to make them public
+const (
+	errTokenInvalidSegmentCounts   cserr.Error = `[csjwt] token contains an invalid number of segments`
+	errMissingKeyFunc              cserr.Error = `[csjwt] Missing KeyFunc`
+	errTokenShouldNotContainBearer cserr.Error = `[csjwt] tokenstring should not contain 'bearer '`
 )

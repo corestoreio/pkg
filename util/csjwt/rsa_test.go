@@ -7,6 +7,12 @@ import (
 	"github.com/corestoreio/csfw/util/csjwt"
 )
 
+func init() {
+	_ = csjwt.NewSigningMethodRS256()
+	_ = csjwt.NewSigningMethodRS384()
+	_ = csjwt.NewSigningMethodRS512()
+}
+
 var rsaTestData = []struct {
 	name        string
 	tokenString []byte
@@ -52,7 +58,10 @@ func TestRSAVerify(t *testing.T) {
 			t.Fatal(err, "\n", string(data.tokenString))
 		}
 
-		method := csjwt.GetSigningMethod(data.alg)
+		method, err := csjwt.GetSigningMethod(data.alg)
+		if err != nil {
+			t.Fatal(err)
+		}
 		err = method.Verify(signing, signature, key)
 		if data.valid && err != nil {
 			t.Errorf("[%v] Error while verifying key: %v", data.name, err)
@@ -73,7 +82,10 @@ func TestRSASign(t *testing.T) {
 				t.Fatal(err, "\n", string(data.tokenString))
 			}
 
-			method := csjwt.GetSigningMethod(data.alg)
+			method, err := csjwt.GetSigningMethod(data.alg)
+			if err != nil {
+				t.Fatal(err)
+			}
 			sig, err := method.Sign(signing, key)
 			if err != nil {
 				t.Errorf("[%v] Error signing token: %v", data.name, err)
@@ -95,7 +107,8 @@ func TestRSAVerifyWithPreParsedPrivateKey(t *testing.T) {
 		t.Fatal(err, "\n", string(testData.tokenString))
 	}
 
-	err = csjwt.SigningMethodRS256.Verify(signing, signature, key)
+	sm256 := csjwt.NewSigningMethodRS256()
+	err = sm256.Verify(signing, signature, key)
 	if err != nil {
 		t.Errorf("[%v] Error while verifying key: %v", testData.name, err)
 	}
@@ -111,7 +124,8 @@ func TestRSAWithPreParsedPrivateKey(t *testing.T) {
 		t.Fatal(err, "\n", string(testData.tokenString))
 	}
 
-	sig, err := csjwt.SigningMethodRS256.Sign(signing, key)
+	sm256 := csjwt.NewSigningMethodRS256()
+	sig, err := sm256.Sign(signing, key)
 	if err != nil {
 		t.Errorf("[%v] Error signing token: %v", testData.name, err)
 	}
@@ -122,17 +136,17 @@ func TestRSAWithPreParsedPrivateKey(t *testing.T) {
 
 func BenchmarkRS256Signing(b *testing.B) {
 	key := csjwt.WithRSAPrivateKeyFromFile("test/sample_key")
-	benchmarkSigning(b, csjwt.SigningMethodRS256, key)
+	benchmarkSigning(b, csjwt.NewSigningMethodRS256(), key)
 }
 
 func BenchmarkRS384Signing(b *testing.B) {
 	key := csjwt.WithRSAPrivateKeyFromFile("test/sample_key")
-	benchmarkSigning(b, csjwt.SigningMethodRS384, key)
+	benchmarkSigning(b, csjwt.NewSigningMethodRS384(), key)
 }
 
 func BenchmarkRS512Signing(b *testing.B) {
 	key := csjwt.WithRSAPrivateKeyFromFile("test/sample_key")
-	benchmarkSigning(b, csjwt.SigningMethodRS512, key)
+	benchmarkSigning(b, csjwt.NewSigningMethodRS512(), key)
 }
 
 func BenchmarkRS256Verify(b *testing.B) {
@@ -141,7 +155,7 @@ func BenchmarkRS256Verify(b *testing.B) {
 		b.Fatal(err)
 	}
 	key := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
-	benchmarkMethodVerify(b, csjwt.SigningMethodRS256, signing, signature, key)
+	benchmarkMethodVerify(b, csjwt.NewSigningMethodRS256(), signing, signature, key)
 }
 
 func BenchmarkRS384Verify(b *testing.B) {
@@ -150,7 +164,7 @@ func BenchmarkRS384Verify(b *testing.B) {
 		b.Fatal(err)
 	}
 	key := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
-	benchmarkMethodVerify(b, csjwt.SigningMethodRS384, signing, signature, key)
+	benchmarkMethodVerify(b, csjwt.NewSigningMethodRS384(), signing, signature, key)
 }
 
 func BenchmarkRS512Verify(b *testing.B) {
@@ -159,5 +173,5 @@ func BenchmarkRS512Verify(b *testing.B) {
 		b.Fatal(err)
 	}
 	key := csjwt.WithRSAPublicKeyFromFile("test/sample_key.pub")
-	benchmarkMethodVerify(b, csjwt.SigningMethodRS512, signing, signature, key)
+	benchmarkMethodVerify(b, csjwt.NewSigningMethodRS512(), signing, signature, key)
 }

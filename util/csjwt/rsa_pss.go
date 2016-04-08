@@ -12,50 +12,34 @@ type SigningMethodRSAPSS struct {
 	Options *rsa.PSSOptions
 }
 
-// Specific instances for RS/PS and company
-var (
-	SigningMethodPS256 *SigningMethodRSAPSS
-	SigningMethodPS384 *SigningMethodRSAPSS
-	SigningMethodPS512 *SigningMethodRSAPSS
-)
-
-func init() {
-
-	SigningMethodPS256 = &SigningMethodRSAPSS{
+func newSigningMethodRSAPSS(n string, h crypto.Hash) *SigningMethodRSAPSS {
+	sm := &SigningMethodRSAPSS{
 		&SigningMethodRSA{
-			Name: PS256,
-			Hash: crypto.SHA256,
+			Name: n,
+			Hash: h,
 		},
 		&rsa.PSSOptions{
 			SaltLength: rsa.PSSSaltLengthAuto,
-			Hash:       crypto.SHA256,
+			Hash:       h,
 		},
 	}
-	RegisterSigningMethod(SigningMethodPS256)
+	RegisterSigningMethod(sm)
+	return sm
+}
 
-	SigningMethodPS384 = &SigningMethodRSAPSS{
-		&SigningMethodRSA{
-			Name: PS384,
-			Hash: crypto.SHA384,
-		},
-		&rsa.PSSOptions{
-			SaltLength: rsa.PSSSaltLengthAuto,
-			Hash:       crypto.SHA384,
-		},
-	}
-	RegisterSigningMethod(SigningMethodPS384)
+// NewSigningMethodPS256 creates a new 256bit RSAPSS SHA instance and registers it.
+func NewSigningMethodPS256() *SigningMethodRSAPSS {
+	return newSigningMethodRSAPSS(PS256, crypto.SHA256)
+}
 
-	SigningMethodPS512 = &SigningMethodRSAPSS{
-		&SigningMethodRSA{
-			Name: PS512,
-			Hash: crypto.SHA512,
-		},
-		&rsa.PSSOptions{
-			SaltLength: rsa.PSSSaltLengthAuto,
-			Hash:       crypto.SHA512,
-		},
-	}
-	RegisterSigningMethod(SigningMethodPS512)
+// NewSigningMethodPS384 creates a new 384bit RSAPSS SHA instance and registers it.
+func NewSigningMethodPS384() *SigningMethodRSAPSS {
+	return newSigningMethodRSAPSS(PS384, crypto.SHA384)
+}
+
+// NewSigningMethodPS512 creates a new 512bit RSAPSS SHA instance and registers it.
+func NewSigningMethodPS512() *SigningMethodRSAPSS {
+	return newSigningMethodRSAPSS(PS512, crypto.SHA512)
 }
 
 // Verify implements the Verify method from SigningMethod interface.
@@ -65,7 +49,7 @@ func (m *SigningMethodRSAPSS) Verify(signingString, signature []byte, key Key) e
 		return key.Error
 	}
 	if key.rsaKeyPub == nil {
-		return ErrInvalidKey
+		return errRSAPublicKeyEmpty
 	}
 
 	// Decode the signature
@@ -76,7 +60,7 @@ func (m *SigningMethodRSAPSS) Verify(signingString, signature []byte, key Key) e
 
 	// Create hasher
 	if !m.Hash.Available() {
-		return ErrHashUnavailable
+		return errRSAHashUnavailable
 	}
 	hasher := m.Hash.New()
 	if _, err := hasher.Write(signingString); err != nil {
@@ -93,12 +77,12 @@ func (m *SigningMethodRSAPSS) Sign(signingString []byte, key Key) ([]byte, error
 		return nil, key.Error
 	}
 	if key.rsaKeyPriv == nil {
-		return nil, ErrInvalidKey
+		return nil, errRSAPrivateKeyEmpty
 	}
 
 	// Create the hasher
 	if !m.Hash.Available() {
-		return nil, ErrHashUnavailable
+		return nil, errRSAHashUnavailable
 	}
 
 	hasher := m.Hash.New()

@@ -4,13 +4,9 @@ import (
 	"crypto"
 	"crypto/ecdsa"
 	"crypto/rand"
-	"errors"
 	"math/big"
-)
 
-var (
-	// ErrECDSAVerification sadly this is missing from crypto/ecdsa compared to crypto/rsa
-	ErrECDSAVerification = errors.New("crypto/ecdsa: verification error")
+	"github.com/corestoreio/csfw/util/cserr"
 )
 
 // SigningMethodECDSA implements the ECDSA family of signing methods signing methods
@@ -21,24 +17,35 @@ type SigningMethodECDSA struct {
 	CurveBits int
 }
 
-// Specific instances for EC256 and company
-var (
-	SigningMethodES256 *SigningMethodECDSA
-	SigningMethodES384 *SigningMethodECDSA
-	SigningMethodES512 *SigningMethodECDSA
-)
-
-func init() {
-
-	SigningMethodES256 = &SigningMethodECDSA{ES256, crypto.SHA256, 32, 256}
-	RegisterSigningMethod(SigningMethodES256)
-
-	SigningMethodES384 = &SigningMethodECDSA{ES384, crypto.SHA384, 48, 384}
-	RegisterSigningMethod(SigningMethodES384)
-
-	SigningMethodES512 = &SigningMethodECDSA{ES512, crypto.SHA512, 66, 521}
-	RegisterSigningMethod(SigningMethodES512)
+func newSigningMethodECDSA(n string, h crypto.Hash, keySize, curveBits int) Signer {
+	sm := &SigningMethodECDSA{Name: n, Hash: h, KeySize: keySize, CurveBits: curveBits}
+	RegisterSigningMethod(sm)
+	return sm
 }
+
+// NewSigningMethodES256 creates a new 256bit ECDSA SHA instance and registers it.
+func NewSigningMethodES256() Signer {
+	return newSigningMethodECDSA(ES256, crypto.SHA256, 32, 256)
+}
+
+// NewSigningMethodES384 creates a new 384bit ECDSA SHA instance and registers it.
+func NewSigningMethodES384() Signer {
+	return newSigningMethodECDSA(ES384, crypto.SHA384, 48, 384)
+}
+
+// NewSigningMethodES512 creates a new 512bit ECDSA SHA instance and registers it.
+func NewSigningMethodES512() Signer {
+	return newSigningMethodECDSA(ES512, crypto.SHA512, 66, 521)
+}
+
+// ErrECDSAVerification sadly this is missing from crypto/ecdsa compared to crypto/rsa
+const ErrECDSAVerification cserr.Error = "crypto/ecdsa: verification error"
+const (
+	errECDSAPublicKeyEmpty     cserr.Error = `[csjwt] ECDSA Public Key not provided`
+	errECDSAPrivateKeyEmpty    cserr.Error = `[csjwt] ECDSA Private Key not provided`
+	errECDSAPrivateInvalidBits cserr.Error = `[csjwt] ECDSA Private Key has invalid curve bits`
+	errECDSAHashUnavailable    cserr.Error = `[csjwt] ECDSA Hash unavaiable`
+)
 
 func (m *SigningMethodECDSA) Alg() string {
 	return m.Name
@@ -52,7 +59,7 @@ func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key Key) er
 		return key.Error
 	}
 	if key.ecdsaKeyPub == nil {
-		return ErrInvalidKey
+		return errECDSAPublicKeyEmpty
 	}
 
 	// Decode the signature
@@ -70,7 +77,7 @@ func (m *SigningMethodECDSA) Verify(signingString, signature []byte, key Key) er
 
 	// Create hasher
 	if !m.Hash.Available() {
-		return ErrHashUnavailable
+		return errECDSAHashUnavailable
 	}
 	hasher := m.Hash.New()
 	_, err = hasher.Write(signingString)
@@ -93,12 +100,12 @@ func (m *SigningMethodECDSA) Sign(signingString []byte, key Key) ([]byte, error)
 		return nil, key.Error
 	}
 	if key.ecdsaKeyPriv == nil {
-		return nil, ErrInvalidKey
+		return nil, errECDSAPrivateKeyEmpty
 	}
 
 	// Create the hasher
 	if !m.Hash.Available() {
-		return nil, ErrHashUnavailable
+		return nil, errECDSAHashUnavailable
 	}
 
 	hasher := m.Hash.New()
@@ -115,7 +122,7 @@ func (m *SigningMethodECDSA) Sign(signingString []byte, key Key) ([]byte, error)
 	curveBits := key.ecdsaKeyPriv.Curve.Params().BitSize
 
 	if m.CurveBits != curveBits {
-		return nil, ErrInvalidKey
+		return nil, errECDSAPrivateInvalidBits
 	}
 
 	keyBytes := curveBits / 8
