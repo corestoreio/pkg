@@ -10,12 +10,13 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/corestoreio/csfw/util/csjwt"
 	"io"
 	"io/ioutil"
 	"os"
 	"regexp"
 	"strings"
+
+	"github.com/corestoreio/csfw/util/csjwt"
 )
 
 var (

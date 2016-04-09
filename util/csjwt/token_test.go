@@ -12,22 +12,40 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csjwt
+package csjwt_test
 
 import (
-	"fmt"
 	"testing"
 
+	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ fmt.Stringer = (*methods)(nil)
-
-func TestMethodsSlice(t *testing.T) {
+func TestTokenAlg(t *testing.T) {
 	t.Parallel()
-	var ms methods = []Signer{NewSigningMethodRS256(), NewSigningMethodPS256()}
-	assert.Exactly(t, `RS256, PS256`, ms.String())
-
-	ms = []Signer{NewSigningMethodRS256()}
-	assert.Exactly(t, `RS256`, ms.String())
+	tests := []struct {
+		tok     csjwt.Token
+		wantAlg string
+	}{
+		{csjwt.NewToken(nil), ""},
+		{
+			csjwt.Token{
+				Header: map[string]interface{}{
+					"alg": 3,
+				},
+			},
+			"",
+		},
+		{
+			csjwt.Token{
+				Header: map[string]interface{}{
+					"alg": "Gopher",
+				},
+			},
+			"Gopher",
+		},
+	}
+	for i, test := range tests {
+		assert.Exactly(t, test.wantAlg, test.tok.Alg(), "Index %d", i)
+	}
 }

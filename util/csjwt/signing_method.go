@@ -1,8 +1,6 @@
 package csjwt
 
-import "github.com/juju/errors"
-
-var signingMethods = make(map[string]Signer)
+import "bytes"
 
 // Signer interface to add new methods for signing or verifying tokens.
 type Signer interface {
@@ -14,21 +12,7 @@ type Signer interface {
 	Alg() string
 }
 
-// RegisterSigningMethod registers the "alg" name and Signer interface
-// implementation for a signing method.
-func RegisterSigningMethod(s Signer) {
-	signingMethods[s.Alg()] = s
-}
-
-// GetSigningMethod returns a signing method from an "alg" string.
-func GetSigningMethod(alg string) (Signer, error) {
-	if s, ok := signingMethods[alg]; ok {
-		return s, nil
-	}
-	return nil, errors.Errorf("SigningMethod %q not registered", alg)
-}
-
-// All available algorithms which can be supported
+// All available algorithms which are supported by this package.
 const (
 	ES256 = `ES256`
 	ES384 = `ES384`
@@ -44,5 +28,19 @@ const (
 	RS512 = `RS512`
 	ES    = `ES`
 	HS    = `HS`
+	PS    = `PS`
 	RS    = `RS`
 )
+
+type methods []Signer
+
+func (ms methods) String() string {
+	var buf bytes.Buffer
+	for i, m := range ms {
+		_, _ = buf.WriteString(m.Alg())
+		if i < len(ms)-1 {
+			_, _ = buf.WriteString(`, `)
+		}
+	}
+	return buf.String()
+}

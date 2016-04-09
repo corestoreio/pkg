@@ -27,10 +27,7 @@ type SigningMethodHMACFast struct {
 	ht   hmacTank
 }
 
-func newHMACFast(a string, h crypto.Hash, key Key) (*SigningMethodHMACFast, error) {
-	sm := &SigningMethodHMACFast{
-		Name: a,
-	}
+func newHMACFast(a string, h crypto.Hash, key Key) (Signer, error) {
 	if key.Error != nil {
 		return nil, key.Error
 	}
@@ -41,26 +38,27 @@ func newHMACFast(a string, h crypto.Hash, key Key) (*SigningMethodHMACFast, erro
 	if !h.Available() {
 		return nil, errHmacHashUnavailable
 	}
-	sm.ht = newHMACTank(h, key.hmacPassword)
-	// we cannot register it globally because of testing
-	return sm, nil
+	return &SigningMethodHMACFast{
+		Name: a,
+		ht:   newHMACTank(h, key.hmacPassword),
+	}, nil
 }
 
 // NewHMACFast256 creates a new HMAC-SHA hash with a preset password and
 // does not register it globally.
-func NewHMACFast256(key Key) (*SigningMethodHMACFast, error) {
+func NewHMACFast256(key Key) (Signer, error) {
 	return newHMACFast(HS256, crypto.SHA256, key)
 }
 
 // NewHMACFast384 creates a new HMAC-SHA hash with a preset password and
 // does not register it globally.
-func NewHMACFast384(key Key) (*SigningMethodHMACFast, error) {
+func NewHMACFast384(key Key) (Signer, error) {
 	return newHMACFast(HS384, crypto.SHA384, key)
 }
 
 // NewHMACFast512 creates a new HMAC-SHA hash with a preset password and
 // does not register it globally.
-func NewHMACFast512(key Key) (*SigningMethodHMACFast, error) {
+func NewHMACFast512(key Key) (Signer, error) {
 	return newHMACFast(HS512, crypto.SHA512, key)
 }
 

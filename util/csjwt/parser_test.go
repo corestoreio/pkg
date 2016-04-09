@@ -33,7 +33,7 @@ var jwtTestData = []struct {
 	claims      csjwt.MapClaims
 	valid       bool
 	wantErr     error
-	parser      *csjwt.Parser
+	parser      *csjwt.Verification
 }{
 	{
 		"basic",
@@ -42,7 +42,7 @@ var jwtTestData = []struct {
 		csjwt.MapClaims{"foo": "bar"},
 		true,
 		nil,
-		nil,
+		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
 	},
 	{
 		"basic expired",
@@ -51,7 +51,7 @@ var jwtTestData = []struct {
 		csjwt.MapClaims{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
 		false,
 		csjwt.ErrValidationExpired,
-		nil,
+		csjwt.NewVerification(),
 	},
 	{
 		"basic nbf",
@@ -60,7 +60,7 @@ var jwtTestData = []struct {
 		csjwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
 		false,
 		csjwt.ErrValidationNotValidYet,
-		nil,
+		csjwt.NewVerification(),
 	},
 	{
 		"expired and nbf",
@@ -69,7 +69,7 @@ var jwtTestData = []struct {
 		csjwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
 		false,
 		cserr.NewMultiErr(csjwt.ErrValidationNotValidYet, csjwt.ErrValidationExpired),
-		nil,
+		csjwt.NewVerification(),
 	},
 	{
 		"basic invalid",
@@ -78,7 +78,7 @@ var jwtTestData = []struct {
 		csjwt.MapClaims{"foo": "bar"},
 		false,
 		csjwt.ErrSignatureInvalid,
-		nil,
+		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
 	},
 	{
 		"basic nokeyfunc",
@@ -87,7 +87,7 @@ var jwtTestData = []struct {
 		csjwt.MapClaims{"foo": "bar"},
 		false,
 		errors.New("[csjwt] Missing KeyFunc"),
-		nil,
+		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
 	},
 	{
 		"basic nokey",
@@ -96,7 +96,7 @@ var jwtTestData = []struct {
 		csjwt.MapClaims{"foo": "bar"},
 		false,
 		csjwt.ErrSignatureInvalid,
-		nil,
+		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
 	},
 	{
 		"basic errorkey",
@@ -105,16 +105,16 @@ var jwtTestData = []struct {
 		csjwt.MapClaims{"foo": "bar"},
 		false,
 		csjwt.ErrTokenUnverifiable,
-		nil,
+		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
 	},
 	{
 		"invalid signing method",
-		nil,
+		nil, // token gets generated with RS256 method
 		defaultKeyFunc,
 		map[string]interface{}{"foo": "bar"},
 		false,
-		errors.New("Token signing method RS256 is invalid"),
-		&csjwt.Parser{ValidMethods: []string{"HS256"}},
+		errors.New("[csjwt] Algorithm \"RS256\" not found in method list \"HS256\""),
+		csjwt.NewVerification(), // default signing method is HS256
 	},
 	{
 		"valid signing method",
@@ -123,33 +123,27 @@ var jwtTestData = []struct {
 		map[string]interface{}{"foo": "bar"},
 		true,
 		nil,
-		&csjwt.Parser{ValidMethods: []string{"RS256", "HS256"}},
+		csjwt.NewVerification(csjwt.NewSigningMethodES256(), csjwt.NewSigningMethodRS256()),
 	},
 }
 
 func makeSample(c csjwt.MapClaims) []byte {
-	key := csjwt.WithRSAPrivateKeyFromFile("test/sample_key")
-	token := csjwt.NewWithClaims(csjwt.NewSigningMethodRS256(), c)
-	s, err := token.SignedString(key)
+	token := csjwt.NewToken(c)
+	s, err := token.SignedString(csjwt.NewSigningMethodRS256(), csjwt.WithRSAPrivateKeyFromFile("test/sample_key"))
 	if err != nil {
 		panic(err)
 	}
 	return s
 }
 
-func TestParser_Parse(t *testing.T) {
+func TestParseWithMap(t *testing.T) {
+	t.Parallel()
 	for _, data := range jwtTestData {
 		if len(data.tokenString) == 0 {
 			data.tokenString = makeSample(data.claims)
 		}
 
-		var token csjwt.Token
-		var err error
-		if data.parser != nil {
-			token, err = data.parser.Parse(data.tokenString, data.keyfunc)
-		} else {
-			token, err = csjwt.Parse(data.tokenString, data.keyfunc)
-		}
+		token, err := data.parser.ParseWithMap(data.tokenString, data.keyfunc)
 
 		if !reflect.DeepEqual(&data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
@@ -176,14 +170,10 @@ func TestParser_Parse(t *testing.T) {
 	}
 }
 
-func TestParseRequest(t *testing.T) {
+func TestParseFromRequest(t *testing.T) {
+	t.Parallel()
 	// Bearer token request
 	for _, data := range jwtTestData {
-		// FIXME: custom parsers are not supported by this helper.  skip tests that require them
-		if data.parser != nil {
-			t.Logf("Skipping [%v].  Custom parsers are not supported by ParseRequest", data.name)
-			continue
-		}
 
 		if len(data.tokenString) == 0 {
 			data.tokenString = makeSample(data.claims)
@@ -191,7 +181,7 @@ func TestParseRequest(t *testing.T) {
 
 		r, _ := http.NewRequest("GET", "/", nil)
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", data.tokenString))
-		token, err := csjwt.ParseFromRequestWithClaims(r, data.keyfunc, &csjwt.MapClaims{})
+		token, err := data.parser.ParseFromRequest(r, data.keyfunc, &csjwt.MapClaims{})
 
 		if token.Raw == nil {
 			t.Errorf("[%v] Token was not found: %v", data.name, err)
@@ -209,7 +199,9 @@ func TestParseRequest(t *testing.T) {
 	}
 }
 
-func TestParseFromRequest(t *testing.T) {
+func TestParseFromRequestComplex(t *testing.T) {
+	t.Parallel()
+
 	key := csjwt.WithPassword([]byte(`csjwt.SigningMethodHS512!`))
 	clm := csjwt.MapClaims{
 		"foo":               "bar",
@@ -222,8 +214,8 @@ func TestParseFromRequest(t *testing.T) {
 		"exp":               float64(time.Now().Add(time.Hour * 72).Unix()),
 	}
 	sm512 := csjwt.NewSigningMethodHS512()
-	token := csjwt.NewWithClaims(sm512, clm)
-	tokenString, err := token.SignedString(key)
+	token := csjwt.NewToken(clm)
+	tokenString, err := token.SignedString(sm512, key)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,12 +223,13 @@ func TestParseFromRequest(t *testing.T) {
 	r, _ := http.NewRequest("GET", "/", nil)
 	r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tokenString))
 
-	rToken, err := csjwt.ParseFromRequest(r, func(t csjwt.Token) (csjwt.Key, error) {
-		if have, want := t.Method.Alg(), sm512.Alg(); have != want {
+	var newClaim = make(csjwt.MapClaims)
+	rToken, err := csjwt.NewVerification(sm512).ParseFromRequest(r, func(t csjwt.Token) (csjwt.Key, error) {
+		if have, want := t.Alg(), sm512.Alg(); have != want {
 			return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 		}
 		return key, nil
-	})
+	}, &newClaim)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -244,10 +237,11 @@ func TestParseFromRequest(t *testing.T) {
 }
 
 func TestParseWithClaimsBearerInHeader(t *testing.T) {
+	t.Parallel()
 	token := text.Chars(`BEaRER `)
 	token = append(token, jwtTestData[0].tokenString...)
 
-	haveToken, haveErr := csjwt.Parse(token, nil)
+	haveToken, haveErr := csjwt.NewVerification().ParseWithMap(token, nil)
 	assert.NotNil(t, haveToken)
 	assert.NotNil(t, haveToken.Claims)
 	assert.Exactly(t, haveToken.Raw, token)
@@ -255,7 +249,15 @@ func TestParseWithClaimsBearerInHeader(t *testing.T) {
 	assert.True(t, bytes.Contains(haveToken.Raw, token))
 }
 
+func TestParseWithClaimInvalidSegments(t *testing.T) {
+	t.Parallel()
+	token, err := csjwt.NewVerification().ParseWithClaim([]byte(`hello.gopher`), nil, nil)
+	assert.False(t, token.Valid)
+	assert.EqualError(t, err, `[csjwt] token contains an invalid number of segments`)
+}
+
 func TestSplitForVerify(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		rawToken      []byte
 		signingString []byte
@@ -294,12 +296,12 @@ func TestSplitForVerify(t *testing.T) {
 }
 
 func benchmarkSigning(b *testing.B, method csjwt.Signer, key csjwt.Key) {
-	t := csjwt.New(method)
+	sc := &csjwt.StandardClaims{}
 	b.ResetTimer()
 	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			if _, err := t.SignedString(key); err != nil {
+			if _, err := csjwt.NewToken(sc).SignedString(method, key); err != nil {
 				b.Fatal(err)
 			}
 		}
@@ -324,13 +326,12 @@ func BenchmarkParseFromRequest_HS256(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	csjwt.RegisterSigningMethod(hmacFast)
 	benchmarkParseFromRequest(
 		b,
 		hmacFast, // csjwt.SigningMethodHS256,
 		key,
 		func(t csjwt.Token) (csjwt.Key, error) {
-			if have, want := t.Method.Alg(), hmacFast.Alg(); have != want {
+			if have, want := t.Alg(), hmacFast.Alg(); have != want {
 				return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 			}
 			return key, nil
@@ -343,13 +344,12 @@ func BenchmarkParseFromRequest_HS384(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	csjwt.RegisterSigningMethod(hmacFast)
 	benchmarkParseFromRequest(
 		b,
 		hmacFast, // csjwt.SigningMethodHS384,
 		key,
 		func(t csjwt.Token) (csjwt.Key, error) {
-			if have, want := t.Method.Alg(), hmacFast.Alg(); have != want {
+			if have, want := t.Alg(), hmacFast.Alg(); have != want {
 				return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 			}
 			return key, nil
@@ -362,13 +362,12 @@ func BenchmarkParseFromRequest_HS512(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	csjwt.RegisterSigningMethod(hmacFast)
 	benchmarkParseFromRequest(
 		b,
 		hmacFast, // csjwt.SigningMethodHS512,
 		key,
 		func(t csjwt.Token) (csjwt.Key, error) {
-			if have, want := t.Method.Alg(), hmacFast.Alg(); have != want {
+			if have, want := t.Alg(), hmacFast.Alg(); have != want {
 				return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 			}
 			return key, nil
@@ -387,24 +386,33 @@ func benchmarkParseFromRequest(b *testing.B, sm csjwt.Signer, key csjwt.Key, key
 		"payment_valid":     true,
 		"exp":               time.Now().Add(time.Hour * 72).Unix(),
 	}
-	token := csjwt.NewWithClaims(sm, clm)
-	tokenString, err := token.SignedString(key)
+	token := csjwt.NewToken(clm)
+	tokenString, err := token.SignedString(sm, key)
 	if err != nil {
 		b.Fatal(err)
 	}
 
 	r, _ := http.NewRequest("GET", "/", nil)
 	r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tokenString))
+
+	veri := csjwt.NewVerification(sm)
+
+	mc := &csjwt.MapClaims{}
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		rToken, err := csjwt.ParseFromRequest(r, keyFunc)
+
+		rToken, err := veri.ParseFromRequest(r, keyFunc, mc)
 		if err != nil {
 			b.Fatal(err)
 		}
 		if !rToken.Valid {
 			b.Fatalf("Token not valid: %#v", rToken)
 		}
+	}
+
+	if have, want := len(*mc), len(clm); have != want {
+		b.Fatalf("Mismatch length of claims: Have %d Want %d", have, want)
 	}
 	//b.Log("GC Pause:", gcPause())
 }

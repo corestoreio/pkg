@@ -5,52 +5,53 @@ import (
 	"encoding/json"
 	"unicode"
 
+	"net/http"
+
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/juju/errors"
 )
 
-// Parser allows to parse a token with custom options.
-type Parser struct {
-	// ValidMethods if populated, only these methods will be considered valid
-	ValidMethods []string
-	// UseJSONNumber format in JSON decoder
-	UseJSONNumber bool
+// HTTPHeaderAuthorization identifies the bearer token in this header key
+const HTTPHeaderAuthorization = `Authorization`
+
+// HTTPFormInputName default name for the HTML form field name
+const HTTPFormInputName = `access_token`
+
+// Verification allows to parse and verify a token with custom options.
+type Verification struct {
+	// FormInputName defines the name of the HTML form input type in which
+	// the token has been stored.
+	FormInputName string
+	// Methods for verifying and signing a token
+	Methods []Signer
+
 	// JSONer interface to pass in a custom JSON parser.
 	// Can be nil
 	JSONer
 }
 
-// JSONer interface to pass in a custom JSON parser.
-// Can be nil in the Parser type.
-type JSONer interface {
-	Unmarshal(data []byte, v interface{}) error
-}
-
-type jsonParser struct {
-	useJSONNumber bool
-}
-
-func (jp jsonParser) Unmarshal(data []byte, v interface{}) error {
-	dec := json.NewDecoder(bytes.NewReader(data))
-	if jp.useJSONNumber {
-		dec.UseNumber()
+// NewVerification creates new verification parser with the default signing
+// method HS256, if availableSigners slice argument is empty.
+// Nil arguments are forbidden.
+func NewVerification(availableSigners ...Signer) *Verification {
+	if len(availableSigners) == 0 {
+		availableSigners = []Signer{NewSigningMethodHS256()}
 	}
-	if err := dec.Decode(v); err != nil {
-		return cserr.NewMultiErr(ErrTokenMalformed, err)
+	return &Verification{
+		FormInputName: HTTPFormInputName,
+		Methods:       availableSigners,
 	}
-	return nil
 }
 
-// Parse validate, and return a token.
+// ParseWithMap validate, and return a token. Uses the MapClaims type.
 // keyFunc will receive the parsed token and should return the key for validating.
-// If everything is kosher, err will be nil
-func (p Parser) Parse(rawToken []byte, keyFunc Keyfunc) (Token, error) {
-	return p.ParseWithClaims(rawToken, keyFunc, &MapClaims{})
+func (vf *Verification) ParseWithMap(rawToken []byte, keyFunc Keyfunc) (Token, error) {
+	return vf.ParseWithClaim(rawToken, keyFunc, &MapClaims{})
 }
 
 // ParseWithClaims same as Parse() but lets you specify your own Claimer.
 // Claimer must be a pointer.
-func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer) (Token, error) {
+func (vf *Verification) ParseWithClaim(rawToken []byte, keyFunc Keyfunc, claims Claimer) (Token, error) {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
 		return Token{}, errTokenInvalidSegmentCounts
@@ -61,10 +62,9 @@ func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer
 		Claims: claims,
 	}
 
-	if p.JSONer == nil {
-		p.JSONer = jsonParser{
-			useJSONNumber: p.UseJSONNumber,
-		}
+	js := vf.JSONer
+	if js == nil {
+		js = JSONDecoder{}
 	}
 
 	// parse Header
@@ -73,7 +73,7 @@ func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer
 			return token, errTokenShouldNotContainBearer
 		}
 		return token, cserr.NewMultiErr(ErrTokenMalformed, err)
-	} else if err := p.JSONer.Unmarshal(headerBytes, &token.Header); err != nil {
+	} else if err := js.Unmarshal(headerBytes, &token.Header); err != nil {
 		return token, err
 	}
 
@@ -81,28 +81,8 @@ func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer
 	if claimBytes, err := DecodeSegment(token.Raw[pos[0]+1 : pos[1]]); err != nil {
 		return token, cserr.NewMultiErr(ErrTokenMalformed, err)
 	} else {
-		if err := p.JSONer.Unmarshal(claimBytes, token.Claims); err != nil {
+		if err := js.Unmarshal(claimBytes, token.Claims); err != nil {
 			return token, err
-		}
-	}
-
-	// Lookup signature method
-	if err := token.updateMethod(); err != nil {
-		return token, err
-	}
-
-	// Verify signing method is in the required set
-	if p.ValidMethods != nil {
-		var signingMethodValid = false
-		var alg = token.Method.Alg()
-		for _, m := range p.ValidMethods {
-			if m == alg {
-				signingMethodValid = true
-				break
-			}
-		}
-		if !signingMethodValid {
-			return token, errors.Errorf("Token signing method %s is invalid", alg)
 		}
 	}
 
@@ -120,14 +100,82 @@ func (p Parser) ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer
 		return token, cserr.NewMultiErr(ErrTokenUnverifiable, err)
 	}
 
+	// Lookup signature method
+	method, err := vf.getMethod(&token)
+	if err != nil {
+		return token, err
+	}
+
 	// Perform validation
 	token.Signature = token.Raw[pos[1]+1:]
-	if err := token.Method.Verify(token.Raw[:pos[1]], token.Signature, key); err != nil {
+	if err := method.Verify(token.Raw[:pos[1]], token.Signature, key); err != nil {
 		return token, cserr.NewMultiErr(ErrSignatureInvalid, err)
 	}
 
 	token.Valid = true
 	return token, nil
+}
+
+func (vf *Verification) getMethod(token *Token) (Signer, error) {
+
+	if len(vf.Methods) == 0 {
+		return nil, errors.New("[csjwt] No methods supplied to the Verfication Method slice")
+	}
+
+	alg := token.Alg()
+	if alg == "" {
+		return nil, errors.Errorf("[csjwt] Cannot find alg entry in token header: %#v", token.Header)
+	}
+
+	for _, m := range vf.Methods {
+		if m.Alg() == alg {
+			return m, nil
+		}
+	}
+	return nil, errors.Errorf("[csjwt] Algorithm %q not found in method list %q", alg, methods(vf.Methods))
+}
+
+// ParseFromRequest same as ParseFromRequest but allows to add a custer Claimer.
+// Claimer must be a pointer.
+func (vf *Verification) ParseFromRequest(req *http.Request, keyFunc Keyfunc, claims Claimer) (Token, error) {
+	// Look for an Authorization header
+	if ah := req.Header.Get(HTTPHeaderAuthorization); ah != "" {
+		// Should be a bearer token
+		auth := []byte(ah)
+		if startsWithBearer(auth) {
+			return vf.ParseWithClaim(auth[7:], keyFunc, claims)
+		}
+	}
+
+	// Look for "access_token" parameter
+	_ = req.ParseMultipartForm(10e6) // ignore errors
+	if tokStr := req.Form.Get(vf.FormInputName); tokStr != "" {
+		return vf.ParseWithClaim([]byte(tokStr), keyFunc, claims)
+	}
+
+	return Token{}, ErrTokenNotInRequest
+}
+
+// JSONer interface to pass in a custom JSON parser.
+// Can be nil in the Parser type.
+type JSONer interface {
+	Unmarshal(data []byte, v interface{}) error
+}
+
+// JSONDecoder default JSON decoder
+type JSONDecoder struct {
+	UseJSONNumber bool
+}
+
+func (jp JSONDecoder) Unmarshal(data []byte, v interface{}) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	if jp.UseJSONNumber {
+		dec.UseNumber()
+	}
+	if err := dec.Decode(v); err != nil {
+		return cserr.NewMultiErr(ErrTokenMalformed, err)
+	}
+	return nil
 }
 
 // SplitForVerify splits the token into two parts: the payload and the signature.

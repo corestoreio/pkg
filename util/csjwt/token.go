@@ -4,25 +4,15 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
-	"github.com/corestoreio/csfw/storage/text"
-	"net/http"
 	"time"
+
+	"github.com/corestoreio/csfw/storage/text"
 )
-
-// HTTPHeaderAuthorization identifies the bearer token in this header key
-const HTTPHeaderAuthorization = `Authorization`
-
-// HTTPFormInputName HTML form field name
-const HTTPFormInputName = `access_token`
 
 // ContentTypeJWT defines the content type of a token. At the moment only JWT
 // is supported. JWE may be added in the future JSON Web Encryption (JWE).
 // https://tools.ietf.org/html/rfc7519
 const ContentTypeJWT = `JWT`
-
-// ContentTypeJWE JSON Web Encryption (JWE) not supported.
-// http://www.rfc-editor.org/info/rfc7516
-const ContentTypeJWE = `JWE`
 
 // TimeFunc provides the current time when parsing token to validate "exp" claim (expiration time).
 // You can override it to use another time value.  This is useful for testing or if your
@@ -33,48 +23,58 @@ var TimeFunc = time.Now
 // whether you're creating or parsing/verifying a token.
 type Token struct {
 	Raw       text.Chars             // The raw token.  Populated when you Parse a token
-	Method    Signer                 // The signing method used or to be used
 	Header    map[string]interface{} // The first segment of the token
 	Claims    Claimer                // The second segment of the token
 	Signature text.Chars             // The third segment of the token.  Populated when you Parse a token
 	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
 }
 
-// New creates a new Token. Takes a signing method
-func New(method Signer) Token {
-	return NewWithClaims(method, MapClaims{})
-}
-
-func NewWithClaims(method Signer, c Claimer) Token {
+// NewToken creates a new Token and presets the header to typ = JWT.
+func NewToken(c Claimer) Token {
 	return Token{
 		Header: map[string]interface{}{
 			"typ": ContentTypeJWT,
-			"alg": method.Alg(),
 		},
 		Claims: c,
-		Method: method,
 	}
 }
 
+// Alg returns the assigned algorithm to this token.
+// Can return an empty string.
+func (t Token) Alg() string {
+	algRaw, ok := t.Header["alg"]
+	if !ok {
+		return ""
+	}
+	if a, ok := algRaw.(string); ok {
+		return a
+	}
+	return ""
+}
+
 // SignedString gets the complete, signed token.
+// Sets the header alg to the provided Signer.Alg() value.
 // Returns a byte slice, save for further processing.
-func (t Token) SignedString(key Key) (text.Chars, error) {
-	sstr, err := t.SigningString()
+func (t Token) SignedString(method Signer, key Key) (text.Chars, error) {
+
+	t.Header["alg"] = method.Alg()
+
+	buf, err := t.SigningString()
 	if err != nil {
 		return nil, err
 	}
-	sig, err := t.Method.Sign(sstr.Bytes(), key)
+	sig, err := method.Sign(buf.Bytes(), key)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err := sstr.WriteRune('.'); err != nil {
+	if _, err := buf.WriteRune('.'); err != nil {
 		return nil, err
 	}
-	if _, err := sstr.Write(sig); err != nil {
+	if _, err := buf.Write(sig); err != nil {
 		return nil, err
 	}
-	return sstr.Bytes(), nil
+	return buf.Bytes(), nil
 }
 
 // SigningString generates the signing string.  This is the
@@ -105,18 +105,6 @@ func (t Token) SigningString() (buf bytes.Buffer, err error) {
 	return
 }
 
-func (t *Token) updateMethod() (err error) {
-	err = ErrValidationUnknownAlg
-	method, ok := t.Header["alg"].(string)
-	if ok {
-		t.Method, err = GetSigningMethod(method)
-		if t.Method != nil {
-			err = nil
-		}
-	}
-	return
-}
-
 func marshalBase64(v interface{}) ([]byte, error) {
 	buf := bufPool.Get()
 	defer bufPool.Put(buf)
@@ -124,48 +112,6 @@ func marshalBase64(v interface{}) ([]byte, error) {
 		return nil, err
 	}
 	return EncodeSegment(buf.Bytes()), nil
-}
-
-// Parse validates and returns a token.
-// keyFunc will receive the parsed token and should return the key for validating.
-// If everything is kosher, err will be nil
-func Parse(rawToken []byte, keyFunc Keyfunc) (Token, error) {
-	return Parser{}.Parse(rawToken, keyFunc)
-}
-
-// ParseWithClaims same as Parse() but allows to set a custom Claimer.
-// Claimer must be a pointer.
-func ParseWithClaims(rawToken []byte, keyFunc Keyfunc, claims Claimer) (Token, error) {
-	return Parser{}.ParseWithClaims(rawToken, keyFunc, claims)
-}
-
-// ParseFromRequest tries to find the token in an http.Request.
-// This method will call ParseMultipartForm if there's no token in the header.
-// Currently, it looks in the Authorization header as well as
-// looking for an 'access_token' request parameter in req.Form.
-func ParseFromRequest(req *http.Request, keyFunc Keyfunc) (token Token, err error) {
-	return ParseFromRequestWithClaims(req, keyFunc, &MapClaims{})
-}
-
-// ParseFromRequestWithClaims same as ParseFromRequest but allows to add a custer Claimer.
-// Claimer must be a pointer.
-func ParseFromRequestWithClaims(req *http.Request, keyFunc Keyfunc, claims Claimer) (Token, error) {
-	// Look for an Authorization header
-	if ah := req.Header.Get(HTTPHeaderAuthorization); ah != "" {
-		// Should be a bearer token
-		auth := []byte(ah)
-		if startsWithBearer(auth) {
-			return ParseWithClaims(auth[7:], keyFunc, claims)
-		}
-	}
-
-	// Look for "access_token" parameter
-	_ = req.ParseMultipartForm(10e6) // ignore errors
-	if tokStr := req.Form.Get(HTTPFormInputName); tokStr != "" {
-		return ParseWithClaims([]byte(tokStr), keyFunc, claims)
-	}
-
-	return Token{}, ErrTokenNotInRequest
 }
 
 // EncodeSegment encodes JWT specific base64url encoding with padding stripped.

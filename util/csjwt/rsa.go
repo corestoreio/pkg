@@ -12,24 +12,22 @@ type SigningMethodRSA struct {
 	Hash crypto.Hash
 }
 
-func newSigningMethodRSA(n string, h crypto.Hash) Signer {
-	sm := &SigningMethodRSA{Name: n, Hash: h}
-	RegisterSigningMethod(sm)
-	return sm
+func newSigningMethodRSA(n string, h crypto.Hash) *SigningMethodRSA {
+	return &SigningMethodRSA{Name: n, Hash: h}
 }
 
 // NewSigningMethodRS256 creates a new 256bit RSA SHA instance and registers it.
-func NewSigningMethodRS256() Signer {
+func NewSigningMethodRS256() *SigningMethodRSA {
 	return newSigningMethodRSA(RS256, crypto.SHA256)
 }
 
 // NewSigningMethodRS384 creates a new 384bit RSA SHA instance and registers it.
-func NewSigningMethodRS384() Signer {
+func NewSigningMethodRS384() *SigningMethodRSA {
 	return newSigningMethodRSA(RS384, crypto.SHA384)
 }
 
 // NewSigningMethodRS512 creates a new 512bit RSA SHA instance and registers it.
-func NewSigningMethodRS512() Signer {
+func NewSigningMethodRS512() *SigningMethodRSA {
 	return newSigningMethodRSA(RS512, crypto.SHA512)
 }
 

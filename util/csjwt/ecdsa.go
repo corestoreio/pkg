@@ -15,24 +15,22 @@ type SigningMethodECDSA struct {
 	CurveBits int
 }
 
-func newSigningMethodECDSA(n string, h crypto.Hash, keySize, curveBits int) Signer {
-	sm := &SigningMethodECDSA{Name: n, Hash: h, KeySize: keySize, CurveBits: curveBits}
-	RegisterSigningMethod(sm)
-	return sm
+func newSigningMethodECDSA(n string, h crypto.Hash, keySize, curveBits int) *SigningMethodECDSA {
+	return &SigningMethodECDSA{Name: n, Hash: h, KeySize: keySize, CurveBits: curveBits}
 }
 
 // NewSigningMethodES256 creates a new 256bit ECDSA SHA instance and registers it.
-func NewSigningMethodES256() Signer {
+func NewSigningMethodES256() *SigningMethodECDSA {
 	return newSigningMethodECDSA(ES256, crypto.SHA256, 32, 256)
 }
 
 // NewSigningMethodES384 creates a new 384bit ECDSA SHA instance and registers it.
-func NewSigningMethodES384() Signer {
+func NewSigningMethodES384() *SigningMethodECDSA {
 	return newSigningMethodECDSA(ES384, crypto.SHA384, 48, 384)
 }
 
 // NewSigningMethodES512 creates a new 512bit ECDSA SHA instance and registers it.
-func NewSigningMethodES512() Signer {
+func NewSigningMethodES512() *SigningMethodECDSA {
 	return newSigningMethodECDSA(ES512, crypto.SHA512, 66, 521)
 }
 

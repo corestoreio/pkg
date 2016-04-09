@@ -8,23 +8,21 @@ import (
 
 // SigningMethodRSAPSS implements the RSAPSS family of signing methods signing methods
 type SigningMethodRSAPSS struct {
-	*SigningMethodRSA
-	Options *rsa.PSSOptions
+	SigningMethodRSA
+	Options rsa.PSSOptions
 }
 
 func newSigningMethodRSAPSS(n string, h crypto.Hash) *SigningMethodRSAPSS {
-	sm := &SigningMethodRSAPSS{
-		&SigningMethodRSA{
+	return &SigningMethodRSAPSS{
+		SigningMethodRSA{
 			Name: n,
 			Hash: h,
 		},
-		&rsa.PSSOptions{
+		rsa.PSSOptions{
 			SaltLength: rsa.PSSSaltLengthAuto,
 			Hash:       h,
 		},
 	}
-	RegisterSigningMethod(sm)
-	return sm
 }
 
 // NewSigningMethodPS256 creates a new 256bit RSAPSS SHA instance and registers it.
@@ -67,7 +65,7 @@ func (m *SigningMethodRSAPSS) Verify(signingString, signature []byte, key Key) e
 		return err
 	}
 
-	return rsa.VerifyPSS(key.rsaKeyPub, m.Hash, hasher.Sum(nil), sig, m.Options)
+	return rsa.VerifyPSS(key.rsaKeyPub, m.Hash, hasher.Sum(nil), sig, &m.Options)
 }
 
 // Sign implements the Sign method from SigningMethod interface.
@@ -91,7 +89,7 @@ func (m *SigningMethodRSAPSS) Sign(signingString []byte, key Key) ([]byte, error
 	}
 
 	// Sign the string and return the encoded bytes
-	sigBytes, err := rsa.SignPSS(rand.Reader, key.rsaKeyPriv, m.Hash, hasher.Sum(nil), m.Options)
+	sigBytes, err := rsa.SignPSS(rand.Reader, key.rsaKeyPriv, m.Hash, hasher.Sum(nil), &m.Options)
 	if err != nil {
 		return nil, err
 	}

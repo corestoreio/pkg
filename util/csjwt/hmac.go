@@ -11,24 +11,22 @@ type SigningMethodHMAC struct {
 	Hash crypto.Hash
 }
 
-func newSigningMethodHMAC(n string, h crypto.Hash) Signer {
-	sm := &SigningMethodHMAC{Name: n, Hash: h}
-	RegisterSigningMethod(sm)
-	return sm
+func newSigningMethodHMAC(n string, h crypto.Hash) *SigningMethodHMAC {
+	return &SigningMethodHMAC{Name: n, Hash: h}
 }
 
 // NewSigningMethodHS256 creates a new 256bit HMAC SHA instance and registers it.
-func NewSigningMethodHS256() Signer {
+func NewSigningMethodHS256() *SigningMethodHMAC {
 	return newSigningMethodHMAC(HS256, crypto.SHA256)
 }
 
 // NewSigningMethodHS384 creates a new 384bit HMAC SHA instance and registers it.
-func NewSigningMethodHS384() Signer {
+func NewSigningMethodHS384() *SigningMethodHMAC {
 	return newSigningMethodHMAC(HS384, crypto.SHA384)
 }
 
 // NewSigningMethodHS512 creates a new 512bit HMAC SHA instance and registers it.
-func NewSigningMethodHS512() Signer {
+func NewSigningMethodHS512() *SigningMethodHMAC {
 	return newSigningMethodHMAC(HS512, crypto.SHA512)
 }
 
