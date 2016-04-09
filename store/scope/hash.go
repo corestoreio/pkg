@@ -57,10 +57,19 @@ func (h Hash) Unpack() (s Scope, id int64) {
 	return
 }
 
+// HashMaxSegments maximum supported segments or also known as shards.
+// This constant can be used to create the segmented array in other packages.
+const HashMaxSegments int = 256
+
 const hashBitAnd Hash = 255
 
 // Segment generates an 0 < ID <= 255 from a hash. Only used within an array index
 // to optimize map[] usage in high concurrent situations.
+// Also known as shard. An array of N shards is created, each shard contains its
+// own instance of the cache with a lock. When an item with unique key needs to
+// be cached a shard for it is chosen at first by the function Segment(). After
+// that the cache lock is acquired and a write to the cache takes place.
+// Reads are analogue.
 func (h Hash) Segment() uint8 {
 	return uint8(h & hashBitAnd)
 }
