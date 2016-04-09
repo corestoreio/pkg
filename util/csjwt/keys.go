@@ -43,7 +43,7 @@ type Key struct {
 	Error        error
 }
 
-const goStringTpl = `csjwt.Key{}`
+const goStringTpl = `csjwt.Key{/*redacted*/}`
 
 // GoString protects keys and enforces privacy.
 func (k Key) GoString() string {

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"github.com/corestoreio/csfw/storage/text"
 	"net/http"
 	"time"
 )
@@ -31,11 +32,11 @@ var TimeFunc = time.Now
 // Token represents a JWT Token.  Different fields will be used depending on
 // whether you're creating or parsing/verifying a token.
 type Token struct {
-	Raw       []byte                 // The raw token.  Populated when you Parse a token
+	Raw       text.Chars             // The raw token.  Populated when you Parse a token
 	Method    Signer                 // The signing method used or to be used
 	Header    map[string]interface{} // The first segment of the token
 	Claims    Claimer                // The second segment of the token
-	Signature []byte                 // The third segment of the token.  Populated when you Parse a token
+	Signature text.Chars             // The third segment of the token.  Populated when you Parse a token
 	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
 }
 
@@ -57,7 +58,7 @@ func NewWithClaims(method Signer, c Claimer) Token {
 
 // SignedString gets the complete, signed token.
 // Returns a byte slice, save for further processing.
-func (t Token) SignedString(key Key) ([]byte, error) {
+func (t Token) SignedString(key Key) (text.Chars, error) {
 	sstr, err := t.SigningString()
 	if err != nil {
 		return nil, err

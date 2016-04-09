@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/stretchr/testify/assert"
@@ -243,7 +244,7 @@ func TestParseFromRequest(t *testing.T) {
 }
 
 func TestParseWithClaimsBearerInHeader(t *testing.T) {
-	token := []byte(`BEaRER `)
+	token := text.Chars(`BEaRER `)
 	token = append(token, jwtTestData[0].tokenString...)
 
 	haveToken, haveErr := csjwt.Parse(token, nil)
