@@ -1,8 +1,11 @@
 PASS
-BenchmarkToString_String-4     	 5000000	       291 ns/op	      96 B/op	       3 allocs/op
-BenchmarkToString_Bytes-4      	 5000000	       552 ns/op	     160 B/op	       4 allocs/op
-BenchmarkToString_Float64-4    	 2000000	       749 ns/op	     160 B/op	       5 allocs/op
-BenchmarkToString_Int-4        	 3000000	       389 ns/op	     101 B/op	       4 allocs/op
-BenchmarkToString_CfgPathPath-4	 2000000	       829 ns/op	     240 B/op	       5 allocs/op
-BenchmarkToString_Error-4      	 5000000	       349 ns/op	      96 B/op	       3 allocs/op
-ok  	github.com/corestoreio/csfw/util/conv	13.422s
+BenchmarkToString_String-4     	20000000	        82.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkToString_Bytes-4      	10000000	       182 ns/op	      64 B/op	       1 allocs/op
+BenchmarkToString_Float64-4    	 3000000	       664 ns/op	      64 B/op	       2 allocs/op
+BenchmarkToString_Int-4        	10000000	       189 ns/op	       5 B/op	       1 allocs/op
+BenchmarkToString_CfgPathPath-4	 2000000	       683 ns/op	     144 B/op	       2 allocs/op
+BenchmarkToString_Error-4      	10000000	       136 ns/op	       0 B/op	       0 allocs/op
+BenchmarkToFloat64_Float64-4   	50000000	        30.8 ns/op	       0 B/op	       0 allocs/op
+BenchmarkToFloat64_Int64-4     	50000000	        30.6 ns/op	       0 B/op	       0 allocs/op
+BenchmarkToFloat64_String-4    	20000000	        92.5 ns/op	       0 B/op	       0 allocs/op
+ok  	github.com/corestoreio/csfw/util/conv	17.083s

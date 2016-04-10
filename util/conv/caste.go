@@ -16,16 +16,14 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/text"
+	"github.com/juju/errors"
 )
 
 // ToTimeE casts an empty interface to time.Time.
 // Supported types: time.Time, string, int64 and float64.
 // float64 fractals gets applied as nsec.
-func ToTimeE(i interface{}) (tim time.Time, err error) {
+func ToTimeE(i interface{}) (time.Time, error) {
 	i = indirect(i)
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("conv.ToTimeE", "type", reflect.TypeOf(i), "value", i)
-	}
 
 	switch s := i.(type) {
 	case time.Time:
@@ -35,23 +33,20 @@ func ToTimeE(i interface{}) (tim time.Time, err error) {
 		if e == nil {
 			return d, nil
 		}
-		return time.Time{}, fmt.Errorf("Could not parse Date/Time format: %v\n", e)
+		return time.Time{}, errors.Errorf("Could not parse Date/Time format: %v\n", e)
 	case int64:
 		return time.Unix(s, 0), nil
 	case float64:
 		fi, frac := math.Modf(s)
 		return time.Unix(int64(fi), int64(frac)), nil
 	default:
-		return time.Time{}, fmt.Errorf("Unable to Cast %#v to Time\n", i)
+		return time.Time{}, errors.Errorf("Unable to cast %#v to Time\n", i)
 	}
 }
 
 // ToDurationE casts an empty interface to time.Duration.
 func ToDurationE(i interface{}) (d time.Duration, err error) {
 	i = indirect(i)
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("conv.ToDurationE", "type", reflect.TypeOf(i), "value", i)
-	}
 
 	switch s := i.(type) {
 	case time.Duration:
@@ -66,7 +61,7 @@ func ToDurationE(i interface{}) (d time.Duration, err error) {
 		d, err = time.ParseDuration(s)
 		return
 	default:
-		err = fmt.Errorf("Unable to Cast %#v to Duration\n", i)
+		err = errors.Errorf("Unable to cast %#v to Duration\n", i)
 		return
 	}
 }
@@ -74,9 +69,7 @@ func ToDurationE(i interface{}) (d time.Duration, err error) {
 // ToBoolE casts an empty interface to a bool.
 func ToBoolE(i interface{}) (bool, error) {
 	i = indirect(i)
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("conv.ToBoolE", "type", reflect.TypeOf(i), "value", i)
-	}
+
 	switch b := i.(type) {
 	case bool:
 		return b, nil
@@ -95,16 +88,13 @@ func ToBoolE(i interface{}) (bool, error) {
 	case string:
 		return strconv.ParseBool(i.(string))
 	default:
-		return false, fmt.Errorf("Unable to Cast %#v to bool", i)
+		return false, errors.Errorf("Unable to cast %#v to bool", i)
 	}
 }
 
 // ToFloat64E casts an empty interface to a float64.
 func ToFloat64E(i interface{}) (float64, error) {
 	i = indirect(i)
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("conv.ToFloat64E", "type", reflect.TypeOf(i), "value", i)
-	}
 
 	switch s := i.(type) {
 	case float64:
@@ -121,23 +111,38 @@ func ToFloat64E(i interface{}) (float64, error) {
 		return float64(s), nil
 	case int:
 		return float64(s), nil
+	case uint64:
+		return float64(s), nil
+	case uint32:
+		return float64(s), nil
+	case uint16:
+		return float64(s), nil
+	case uint8:
+		return float64(s), nil
+	case uint:
+		return float64(s), nil
 	case string:
 		v, err := strconv.ParseFloat(s, 64)
 		if err == nil {
 			return float64(v), nil
 		}
-		return 0.0, fmt.Errorf("Unable to Cast %#v to float", i)
+		return 0.0, errors.Errorf("Unable to cast %#v to float", i)
+	case []byte:
+		// real byte encoded floats will fail here
+		// @see https://github.com/golang/go/issues/2632
+		v, err := strconv.ParseFloat(string(s), 64)
+		if err == nil {
+			return float64(v), nil
+		}
+		return 0.0, errors.Errorf("Unable to cast %#v to float", i)
 	default:
-		return 0.0, fmt.Errorf("Unable to Cast %#v to float", i)
+		return 0.0, errors.Errorf("Unable to cast %#v to float", i)
 	}
 }
 
 // ToIntE casts an empty interface to an int.
 func ToIntE(i interface{}) (int, error) {
 	i = indirect(i)
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("conv.ToIntE", "type", reflect.TypeOf(i), "value", i)
-	}
 
 	switch s := i.(type) {
 	case int:
@@ -155,7 +160,7 @@ func ToIntE(i interface{}) (int, error) {
 		if err == nil {
 			return int(v), nil
 		}
-		return 0, fmt.Errorf("Unable to Cast %#v to int", i)
+		return 0, errors.Errorf("Unable to cast %#v to int", i)
 
 	case float64:
 		return int(s), nil
@@ -167,7 +172,7 @@ func ToIntE(i interface{}) (int, error) {
 	case nil:
 		return 0, nil
 	default:
-		return 0, fmt.Errorf("Unable to Cast %#v to int", i)
+		return 0, errors.Errorf("Unable to cast %#v to int", i)
 	}
 }
 
@@ -213,9 +218,6 @@ func indirectToStringerOrError(a interface{}) interface{} {
 // ToStringE casts an empty interface to a string.
 func ToStringE(i interface{}) (string, error) {
 	i = indirectToStringerOrError(i) // does not cost neither B/op nor allocs/op
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("conv.ToStringE", "type", reflect.TypeOf(i), "value", i)
-	}
 
 	switch s := i.(type) {
 	case string:
@@ -246,7 +248,7 @@ func ToStringE(i interface{}) (string, error) {
 	case error:
 		return s.Error(), nil
 	default:
-		return "", fmt.Errorf("Unable to Cast %#v to string", i)
+		return "", errors.Errorf("Unable to cast %#v to string", i)
 	}
 }
 
@@ -285,15 +287,12 @@ func ToByteE(i interface{}) ([]byte, error) {
 	case nil:
 		return nil, nil
 	default:
-		return nil, fmt.Errorf("Unable to Cast %#v to []byte", i)
+		return nil, errors.Errorf("Unable to cast %#v to []byte", i)
 	}
 }
 
 // ToStringMapStringE casts an empty interface to a map[string]string.
 func ToStringMapStringE(i interface{}) (map[string]string, error) {
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("conv.ToStringMapStringE", "type", reflect.TypeOf(i), "value", i)
-	}
 
 	var m = map[string]string{}
 
@@ -316,15 +315,12 @@ func ToStringMapStringE(i interface{}) (map[string]string, error) {
 		}
 		return m, nil
 	default:
-		return m, fmt.Errorf("Unable to Cast %#v to map[string]string", i)
+		return m, errors.Errorf("Unable to cast %#v to map[string]string", i)
 	}
 }
 
 // ToStringMapStringSliceE casts an empty interface to a map[string][]string.
 func ToStringMapStringSliceE(i interface{}) (map[string][]string, error) {
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("conv.ToStringMapStringSliceE", "type", reflect.TypeOf(i), "value", i)
-	}
 
 	var m = map[string][]string{}
 
@@ -364,25 +360,22 @@ func ToStringMapStringSliceE(i interface{}) (map[string][]string, error) {
 		for k, val := range v {
 			key, err := ToStringE(k)
 			if err != nil {
-				return m, fmt.Errorf("Unable to Cast %#v to map[string][]string", i)
+				return m, errors.Errorf("Unable to cast %#v to map[string][]string", i)
 			}
 			value, err := ToStringSliceE(val)
 			if err != nil {
-				return m, fmt.Errorf("Unable to Cast %#v to map[string][]string", i)
+				return m, errors.Errorf("Unable to cast %#v to map[string][]string", i)
 			}
 			m[key] = value
 		}
 	default:
-		return m, fmt.Errorf("Unable to Cast %#v to map[string][]string", i)
+		return m, errors.Errorf("Unable to cast %#v to map[string][]string", i)
 	}
 	return m, nil
 }
 
 // ToStringMapBoolE casts an empty interface to a map[string]bool.
 func ToStringMapBoolE(i interface{}) (map[string]bool, error) {
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("conv.ToStringMapBoolE", "type", reflect.TypeOf(i), "value", i)
-	}
 
 	var m = map[string]bool{}
 
@@ -400,15 +393,12 @@ func ToStringMapBoolE(i interface{}) (map[string]bool, error) {
 	case map[string]bool:
 		return v, nil
 	default:
-		return m, fmt.Errorf("Unable to Cast %#v to map[string]bool", i)
+		return m, errors.Errorf("Unable to cast %#v to map[string]bool", i)
 	}
 }
 
 // ToStringMapE casts an empty interface to a map[string]interface{}.
 func ToStringMapE(i interface{}) (map[string]interface{}, error) {
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("conv.ToStringMapE", "type", reflect.TypeOf(i), "value", i)
-	}
 
 	var m = map[string]interface{}{}
 
@@ -421,15 +411,12 @@ func ToStringMapE(i interface{}) (map[string]interface{}, error) {
 	case map[string]interface{}:
 		return v, nil
 	default:
-		return m, fmt.Errorf("Unable to Cast %#v to map[string]interface{}", i)
+		return m, errors.Errorf("Unable to cast %#v to map[string]interface{}", i)
 	}
 }
 
 // ToSliceE casts an empty interface to a []interface{}.
 func ToSliceE(i interface{}) ([]interface{}, error) {
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("conv.ToSliceE", "type", reflect.TypeOf(i), "value", i)
-	}
 
 	var s []interface{}
 
@@ -445,15 +432,12 @@ func ToSliceE(i interface{}) ([]interface{}, error) {
 		}
 		return s, nil
 	default:
-		return s, fmt.Errorf("Unable to Cast %#v of type %v to []interface{}", i, reflect.TypeOf(i))
+		return s, errors.Errorf("Unable to cast %#v of type %v to []interface{}", i, reflect.TypeOf(i))
 	}
 }
 
 // ToStringSliceE casts an empty interface to a []string.
 func ToStringSliceE(i interface{}) ([]string, error) {
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("conv.ToStringSliceE", "type", reflect.TypeOf(i), "value", i)
-	}
 
 	var a []string
 
@@ -470,22 +454,19 @@ func ToStringSliceE(i interface{}) ([]string, error) {
 	case interface{}:
 		str, err := ToStringE(v)
 		if err != nil {
-			return a, fmt.Errorf("Unable to Cast %#v to []string", i)
+			return a, errors.Errorf("Unable to cast %#v to []string", i)
 		}
 		return []string{str}, nil
 	default:
-		return a, fmt.Errorf("Unable to Cast %#v to []string", i)
+		return a, errors.Errorf("Unable to cast %#v to []string", i)
 	}
 }
 
 // ToIntSliceE casts an empty interface to a []int.
 func ToIntSliceE(i interface{}) ([]int, error) {
-	if PkgLog.IsDebug() {
-		PkgLog.Debug("conv.ToIntSliceE", "type", reflect.TypeOf(i), "value", i)
-	}
 
 	if i == nil {
-		return []int{}, fmt.Errorf("Unable to Cast %#v to []int", i)
+		return []int{}, errors.Errorf("Unable to cast %#v to []int", i)
 	}
 
 	switch v := i.(type) {
@@ -501,13 +482,13 @@ func ToIntSliceE(i interface{}) ([]int, error) {
 		for j := 0; j < s.Len(); j++ {
 			val, err := ToIntE(s.Index(j).Interface())
 			if err != nil {
-				return []int{}, fmt.Errorf("Unable to Cast %#v to []int", i)
+				return []int{}, errors.Errorf("Unable to cast %#v to []int", i)
 			}
 			a[j] = val
 		}
 		return a, nil
 	default:
-		return []int{}, fmt.Errorf("Unable to Cast %#v to []int", i)
+		return []int{}, errors.Errorf("Unable to cast %#v to []int", i)
 	}
 }
 
@@ -546,5 +527,5 @@ func parseDateWith(s string, dates []string, loc *time.Location) (d time.Time, e
 			return
 		}
 	}
-	return d, fmt.Errorf("Unable to parse date: %s", s)
+	return d, errors.Errorf("Unable to parse date: %s", s)
 }

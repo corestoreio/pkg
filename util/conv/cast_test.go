@@ -12,10 +12,12 @@ import (
 
 	"errors"
 
+	"fmt"
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
+	"math"
 )
 
 func TestToInt(t *testing.T) {
@@ -29,13 +31,55 @@ func TestToInt(t *testing.T) {
 	assert.Equal(t, ToInt(eight), 8)
 }
 
+//func TestToFloat64(t *testing.T) {
+//	t.Parallel()
+//	var eight interface{} = 8
+//	assert.Equal(t, ToFloat64(8), 8.00)
+//	assert.Equal(t, ToFloat64(8.31), 8.31)
+//	assert.Equal(t, ToFloat64("8.31"), 8.31)
+//	assert.Equal(t, ToFloat64(eight), 8.0)
+//}
+
 func TestToFloat64(t *testing.T) {
 	t.Parallel()
-	var eight interface{} = 8
-	assert.Equal(t, ToFloat64(8), 8.00)
-	assert.Equal(t, ToFloat64(8.31), 8.31)
-	assert.Equal(t, ToFloat64("8.31"), 8.31)
-	assert.Equal(t, ToFloat64(eight), 8.0)
+	tests := []struct {
+		have    interface{}
+		want    float64
+		wantErr error
+	}{
+		{8, 8, nil},
+		{math.E, math.E, nil},
+		{float32(4.56789), 4.567890167236328, nil},
+
+		{int64(56789), 56789, nil},
+		{int32(56789), 56789, nil},
+		{int16(math.MaxInt16), float64(math.MaxInt16), nil},
+		{int8(math.MaxInt8), float64(math.MaxInt8), nil},
+		{int(254), 254, nil},
+
+		{uint64(56789), 56789, nil},
+		{uint32(56789), 56789, nil},
+		{uint16(math.MaxUint16), float64(math.MaxUint16), nil},
+		{uint8(math.MaxUint8), float64(math.MaxUint8), nil},
+		{uint(254), 254, nil},
+
+		{fmt.Sprintf("%.10f", math.Phi), 1.6180339887, nil},
+		{`hello`, 0, errors.New("Unable to cast \"hello\" to float")},
+
+		{[]byte(fmt.Sprintf("%.10f", math.Phi)), 1.6180339887, nil},
+		{[]byte(`hello`), 0, errors.New("Unable to cast []byte{0x68, 0x65, 0x6c, 0x6c, 0x6f} to float")},
+		{nil, 0, errors.New("Unable to cast <nil> to float")},
+	}
+	for i, test := range tests {
+		gotF64, gotErr := ToFloat64E(test.have)
+		if test.wantErr != nil {
+			assert.EqualError(t, gotErr, test.wantErr.Error(), "Index %d", i)
+			assert.Exactly(t, float64(0), gotF64, "Index %d", i)
+			continue
+		}
+		assert.NoError(t, gotErr, "Index %d", i)
+		assert.Exactly(t, test.want, gotF64, "Index %d", i)
+	}
 }
 
 func TestToString(t *testing.T) {
@@ -74,7 +118,7 @@ func TestToByte(t *testing.T) {
 
 	b, err := ToByteE(uint8(1))
 	assert.Nil(t, b)
-	assert.EqualError(t, err, "Unable to Cast 0x1 to []byte")
+	assert.EqualError(t, err, "Unable to cast 0x1 to []byte")
 }
 
 type foo struct {
@@ -251,7 +295,7 @@ func TestToTimeE(t *testing.T) {
 		wantErr  error
 	}{
 		{now, now.Unix(), nil},
-		{'r', 0, errors.New("Unable to Cast 114 to Time\n")},
+		{'r', 0, errors.New("Unable to cast 114 to Time\n")},
 		{now.Unix(), now.Unix(), nil},
 		{fUnix, now.Unix(), nil},
 	}
