@@ -61,7 +61,7 @@ func (h Hash) Unpack() (s Scope, id int64) {
 // This constant can be used to create the segmented array in other packages.
 const HashMaxSegments int = 256
 
-const hashBitAnd Hash = 255
+const hashBitAnd Hash = Hash(HashMaxSegments) - 1
 
 // Segment generates an 0 < ID <= 255 from a hash. Only used within an array index
 // to optimize map[] usage in high concurrent situations.
