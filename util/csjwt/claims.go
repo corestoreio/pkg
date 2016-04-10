@@ -220,7 +220,9 @@ func (c *StandardClaims) VerifyNotBefore(cmp int64, req bool) bool {
 	return verifyNbf(c.NotBefore, cmp, req)
 }
 
-// MapClaims default type for the Claim field in a token. You can provide
+// MapClaims default type for the Claim field in a token. Slowest but
+// most flexible type. For speed, use a custom struct type with
+// embedding StandardClaims and ffjson generated en-/decoder.
 type MapClaims map[string]interface{}
 
 // VerifyAudience compares the aud claim against cmp.
@@ -258,10 +260,9 @@ func (m MapClaims) VerifyNotBefore(cmp int64, req bool) bool {
 	return verifyNbf(int64(nbf), cmp, req)
 }
 
-// Validates time based claims "exp, iat, nbf".
-// There is no accounting for clock skew.
-// As well, if any of the above claims are not in the token, it will still
-// be considered a valid claim.
+// Validates time based claims "exp, iat, nbf". There is no accounting for
+// clock skew. As well, if any of the above claims are not in the token, it
+// will still be considered a valid claim.
 func (m MapClaims) Valid() error {
 	var vErr *cserr.MultiErr
 	now := TimeFunc().Unix()

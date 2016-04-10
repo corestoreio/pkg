@@ -2,8 +2,6 @@ package csjwt
 
 import (
 	"bytes"
-	"encoding/base64"
-	"encoding/json"
 	"time"
 
 	"github.com/corestoreio/csfw/storage/text"
@@ -27,6 +25,7 @@ type Token struct {
 	Claims    Claimer                // The second segment of the token
 	Signature text.Chars             // The third segment of the token.  Populated when you Parse a token
 	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
+	Encoder
 }
 
 // NewToken creates a new Token and presets the header to typ = JWT.
@@ -86,8 +85,13 @@ func (t Token) SignedString(method Signer, key Key) (text.Chars, error) {
 // Returns a buffer which can be used for further modifications.
 func (t Token) SigningString() (buf bytes.Buffer, err error) {
 
+	enc := t.Encoder
+	if enc == nil {
+		enc = JSONEncode{}
+	}
+
 	var j []byte
-	j, err = marshalBase64(t.Header)
+	j, err = enc.Marshal(t.Header)
 	if err != nil {
 		return
 	}
@@ -97,7 +101,7 @@ func (t Token) SigningString() (buf bytes.Buffer, err error) {
 	if _, err = buf.WriteRune('.'); err != nil {
 		return
 	}
-	j, err = marshalBase64(t.Claims)
+	j, err = enc.Marshal(t.Claims)
 	if err != nil {
 		return
 	}
@@ -105,29 +109,4 @@ func (t Token) SigningString() (buf bytes.Buffer, err error) {
 		return
 	}
 	return
-}
-
-func marshalBase64(v interface{}) ([]byte, error) {
-	buf := bufPool.Get()
-	defer bufPool.Put(buf)
-	if err := json.NewEncoder(buf).Encode(v); err != nil {
-		return nil, err
-	}
-	return EncodeSegment(buf.Bytes()), nil
-}
-
-// EncodeSegment encodes JWT specific base64url encoding with padding stripped.
-// Returns a new byte slice.
-func EncodeSegment(seg []byte) []byte {
-	dbuf := make([]byte, base64.RawURLEncoding.EncodedLen(len(seg)))
-	base64.RawURLEncoding.Encode(dbuf, seg)
-	return dbuf
-}
-
-// DecodeSegment decodes JWT specific base64url encoding with padding stripped.
-// Returns a new byte slice.
-func DecodeSegment(seg []byte) ([]byte, error) {
-	dbuf := make([]byte, base64.RawURLEncoding.DecodedLen(len(seg)))
-	n, err := base64.RawURLEncoding.Decode(dbuf, seg)
-	return dbuf[:n], err
 }

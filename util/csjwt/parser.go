@@ -2,10 +2,8 @@ package csjwt
 
 import (
 	"bytes"
-	"encoding/json"
-	"unicode"
-
 	"net/http"
+	"unicode"
 
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/juju/errors"
@@ -25,9 +23,9 @@ type Verification struct {
 	// Methods for verifying and signing a token
 	Methods SignerSlice
 
-	// JSONer interface to pass in a custom JSON parser.
-	// Can be nil
-	JSONer
+	// Decoder interface to pass in a custom decoder parser.
+	// Can be nil, falls back to JSON
+	Decoder
 }
 
 // NewVerification creates new verification parser with the default signing
@@ -40,6 +38,7 @@ func NewVerification(availableSigners ...Signer) *Verification {
 	return &Verification{
 		FormInputName: HTTPFormInputName,
 		Methods:       availableSigners,
+		Decoder:       JSONDecode{},
 	}
 }
 
@@ -62,31 +61,26 @@ func (vf *Verification) ParseWithClaim(rawToken []byte, keyFunc Keyfunc, claims 
 		Claims: claims,
 	}
 
-	js := vf.JSONer
-	if js == nil {
-		js = JSONDecoder{}
+	dec := vf.Decoder
+	if dec == nil {
+		dec = JSONDecode{}
+	}
+
+	if startsWithBearer(token.Raw) {
+		return token, errTokenShouldNotContainBearer
 	}
 
 	// parse Header
-	if headerBytes, err := DecodeSegment(token.Raw[:pos[0]]); err != nil {
-		if startsWithBearer(token.Raw) {
-			return token, errTokenShouldNotContainBearer
-		}
+	if err := dec.Unmarshal(token.Raw[:pos[0]], &token.Header); err != nil {
 		return token, cserr.NewMultiErr(ErrTokenMalformed, err)
-	} else if err := js.Unmarshal(headerBytes, &token.Header); err != nil {
-		return token, err
 	}
 
 	// parse Claims
-	if claimBytes, err := DecodeSegment(token.Raw[pos[0]+1 : pos[1]]); err != nil {
+	if err := dec.Unmarshal(token.Raw[pos[0]+1:pos[1]], token.Claims); err != nil {
 		return token, cserr.NewMultiErr(ErrTokenMalformed, err)
-	} else {
-		if err := js.Unmarshal(claimBytes, token.Claims); err != nil {
-			return token, err
-		}
 	}
 
-	// Validate Claims
+	// validate Claims
 	if err := token.Claims.Valid(); err != nil {
 		return token, cserr.NewMultiErr(ErrValidationClaimsInvalid, err)
 	}
@@ -154,28 +148,6 @@ func (vf *Verification) ParseFromRequest(req *http.Request, keyFunc Keyfunc, cla
 	}
 
 	return Token{}, ErrTokenNotInRequest
-}
-
-// JSONer interface to pass in a custom JSON parser.
-// Can be nil in the Parser type.
-type JSONer interface {
-	Unmarshal(data []byte, v interface{}) error
-}
-
-// JSONDecoder default JSON decoder
-type JSONDecoder struct {
-	UseJSONNumber bool
-}
-
-func (jp JSONDecoder) Unmarshal(data []byte, v interface{}) error {
-	dec := json.NewDecoder(bytes.NewReader(data))
-	if jp.UseJSONNumber {
-		dec.UseNumber()
-	}
-	if err := dec.Decode(v); err != nil {
-		return cserr.NewMultiErr(ErrTokenMalformed, err)
-	}
-	return nil
 }
 
 // SplitForVerify splits the token into two parts: the payload and the signature.

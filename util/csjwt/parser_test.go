@@ -375,17 +375,29 @@ func BenchmarkParseFromRequest_HS512(b *testing.B) {
 	)
 }
 
+type ShoppingCartClaim struct {
+	*csjwt.StandardClaims
+	CartPID       []int
+	LastViewedPID []int
+	RequestPrice  float64
+	CheckoutStep  uint8
+	PaymentValid  bool
+}
+
 func benchmarkParseFromRequest(b *testing.B, sm csjwt.Signer, key csjwt.Key, keyFunc csjwt.Keyfunc) {
-	clm := csjwt.MapClaims{
-		"foo":               "bar",
-		"user_id":           "hello_gophers",
-		"cart_items":        "234234,12;34234,34;234234,1;123123,12;234234,12;34234,34;234234,1;123123,12;234234,12;34234,34;234234,1;123123,12;",
-		"last_viewed_items": "234234,12;34234,34;234234,1;123123,12;234234,12;34234,34;234234,1;123123,12;234234,12;34234,34;234234,1;123123,12;",
-		"requested_price":   3.141592 * 2.718281 / 3,
-		"checkout_step":     3,
-		"payment_valid":     true,
-		"exp":               time.Now().Add(time.Hour * 72).Unix(),
+
+	clm := &ShoppingCartClaim{
+		StandardClaims: &csjwt.StandardClaims{
+			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
+			IssuedAt:  time.Now().Unix(),
+		},
+		CartPID:       []int{12345, 6789, 2345, 3456, 7564, 45678, 5678578, 345234, 2345234},
+		LastViewedPID: []int{6456, 3453, 45345, 234235, 345345, 645646, 567567, 345635, 85689, 5678, 5674567, 345635, 4356, 245645},
+		RequestPrice:  2.718281 * 3.141592,
+		CheckoutStep:  3,
+		PaymentValid:  true,
 	}
+
 	token := csjwt.NewToken(clm)
 	tokenString, err := token.SignedString(sm, key)
 	if err != nil {
@@ -397,7 +409,7 @@ func benchmarkParseFromRequest(b *testing.B, sm csjwt.Signer, key csjwt.Key, key
 
 	veri := csjwt.NewVerification(sm)
 
-	mc := &csjwt.MapClaims{}
+	mc := &ShoppingCartClaim{}
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
@@ -411,8 +423,8 @@ func benchmarkParseFromRequest(b *testing.B, sm csjwt.Signer, key csjwt.Key, key
 		}
 	}
 
-	if have, want := len(*mc), len(clm); have != want {
-		b.Fatalf("Mismatch length of claims: Have %d Want %d", have, want)
+	if have, want := mc.ExpiresAt, clm.ExpiresAt; have != want {
+		b.Fatalf("Mismatch of claims: Have %d Want %d", have, want)
 	}
 	//b.Log("GC Pause:", gcPause())
 }
