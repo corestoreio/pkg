@@ -15,6 +15,7 @@
 package ctxjwt
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/corestoreio/csfw/config"
@@ -22,7 +23,6 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/juju/errors"
-	"net/http"
 )
 
 // scopedConfig private internal scoped based configuration

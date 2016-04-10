@@ -23,9 +23,10 @@ import (
 	"golang.org/x/net/context"
 
 	"fmt"
+	"testing"
+
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestInternalOptionWithErrorHandler(t *testing.T) {

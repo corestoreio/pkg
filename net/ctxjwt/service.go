@@ -153,8 +153,7 @@ func (s *Service) NewToken(scp scope.Scope, id int64, claims csjwt.Claimer) (tok
 		}
 	}
 
-	t := csjwt.NewToken(claims)
-	return t.SignedString(cfg.signingMethod, cfg.Key)
+	return csjwt.NewToken(claims).SignedString(cfg.signingMethod, cfg.Key)
 }
 
 // Logout adds a token securely to a blacklist with the expiration duration.

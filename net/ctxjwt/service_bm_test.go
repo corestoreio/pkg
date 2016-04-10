@@ -17,7 +17,6 @@ package ctxjwt_test
 import (
 	"net/http"
 	"net/http/httptest"
-	"sync"
 	"testing"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
@@ -102,15 +101,21 @@ func BenchmarkServeHTTPRSAGenerator(b *testing.B) {
 	bmServeHTTP(b, ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithRSAGenerated()))
 }
 
-const benchServeHTTPTokenCount = 100
+func getReq(b *testing.B, token []byte) *http.Request {
+	req, err := http.NewRequest("GET", "http://abc.xyz", nil)
+	if err != nil {
+		b.Fatal(err)
+	}
+	ctxjwt.SetHeaderAuthorization(req, token)
+	return req
+}
 
 // A nearly real world test as we're doing parallel requests to the
 // middleware. Allocations are not that interesting because they include
 // also NewRequest and ResponseRecorder.
 // the number of allocs depends on the number of benchServeHTTPTokenCount.
-// Map:  BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel-4	    1000	   2333499 ns/op	  468948 B/op	    8077 allocs/op
-// FC :  BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel-4	    1000	   2239810 ns/op	  469178 B/op	    8080 allocs/op
-// Null: BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel-4	    2000	   2576187 ns/op	  452330 B/op	    7991 allocs/op
+// BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel-4	  100000	     18993 ns/op	    9471 B/op	     127 allocs/op
+// TODO(CS) lower to 80 allocs
 func BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel(b *testing.B) {
 
 	jwts := ctxjwt.MustNewService(
@@ -124,8 +129,8 @@ func BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel(b *testing.B) {
 		})),
 	)
 	// below two lines comment out enables the null black list
-	jwts.Blacklist = ctxjwt.NewBlackListFreeCache(0)
-	//jwts.Blacklist = ctxjwt.NewBlackListSimpleMap()
+	//jwts.Blacklist = ctxjwt.NewBlackListFreeCache(0)
+	jwts.Blacklist = ctxjwt.NewBlackListSimpleMap()
 
 	srv := storemock.NewEurozzyService(
 		scope.MustSetByCode(scope.WebsiteID, "euro"),
@@ -133,19 +138,12 @@ func BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel(b *testing.B) {
 	)
 	ctx := store.WithContextProvider(context.Background(), srv) // root context
 
-	var tokens [benchServeHTTPTokenCount][]byte
-	for i := 0; i < benchServeHTTPTokenCount; i++ {
-
-		claim := csjwt.MapClaims{
-			"someKey":          i,
-			storenet.ParamName: "de",
-		}
-
-		var err error
-		tokens[i], err = jwts.NewToken(scope.WebsiteID, 1, claim) // 1 = website euro
-		if err != nil {
-			b.Fatal(err)
-		}
+	token, err := jwts.NewToken(scope.WebsiteID, 1, csjwt.MapClaims{ // 1 = website euro
+		"someKey":          2.718281,
+		storenet.ParamName: "at",
+	})
+	if err != nil {
+		b.Fatal(err)
 	}
 
 	final := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
@@ -154,6 +152,14 @@ func BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel(b *testing.B) {
 			return err
 		}
 		w.WriteHeader(http.StatusUnavailableForLegalReasons)
+
+		_, st, err := store.FromContextProvider(ctx)
+		if err != nil {
+			return err
+		}
+		if st.StoreCode() != "de" && st.StoreCode() != "at" {
+			b.Fatalf("Unexpected Store: %s", st.StoreCode())
+		}
 		return nil
 	})
 	jwtHandler := jwts.WithInitTokenAndStore()(final)
@@ -161,31 +167,84 @@ func BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	b.RunParallel(func(pb *testing.PB) {
-		var wg sync.WaitGroup
 		for pb.Next() {
-
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-
-				req, err := http.NewRequest("GET", "http://abc.xyz", nil)
-				if err != nil {
-					b.Fatal(err)
-				}
-
-				for i := 0; i < benchServeHTTPTokenCount; i++ {
-					w := httptest.NewRecorder()
-					ctxjwt.SetHeaderAuthorization(req, tokens[i])
-
-					if err := jwtHandler.ServeHTTPContext(ctx, w, req); err != nil {
-						b.Fatal(err)
-					}
-					if w.Code != http.StatusUnavailableForLegalReasons {
-						b.Fatalf("Response Code want %d; have %d", http.StatusUnavailableForLegalReasons, w.Code)
-					}
-				}
-			}()
+			w := httptest.NewRecorder() // 3 allocs
+			if err := jwtHandler.ServeHTTPContext(ctx, w, getReq(b, token)); err != nil {
+				b.Fatal(err)
+			}
+			if w.Code != http.StatusUnavailableForLegalReasons {
+				b.Fatalf("Response Code want %d; have %d", http.StatusUnavailableForLegalReasons, w.Code)
+			}
 		}
-		wg.Wait()
 	})
+	//b.Log("GC Pause:", gcPause())
+}
+
+//func gcPause() time.Duration {
+//	runtime.GC()
+//	var stats debug.GCStats
+//	debug.ReadGCStats(&stats)
+//	return stats.Pause[0]
+//}
+
+// BenchmarkServeHTTP_DefaultConfig_BlackList_Single-4  	   50000	     32826 ns/op	   11136 B/op	     127 allocs/op
+// TODO(CS) lower to 80 allocs
+func BenchmarkServeHTTP_DefaultConfig_BlackList_Single(b *testing.B) {
+
+	jwts := ctxjwt.MustNewService(
+		ctxjwt.WithErrorHandler(scope.DefaultID, 0, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+			_, err := ctxjwt.FromContext(ctx)
+			if err != nil {
+				return err
+			}
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return nil
+		})),
+	)
+	// below two lines comment out enables the null black list
+	//jwts.Blacklist = ctxjwt.NewBlackListFreeCache(0)
+	jwts.Blacklist = ctxjwt.NewBlackListSimpleMap()
+
+	srv := storemock.NewEurozzyService(
+		scope.MustSetByCode(scope.WebsiteID, "euro"),
+		//store.WithStorageConfig(cr), no configuration so config.ScopedGetter is nil
+	)
+	ctx := store.WithContextProvider(context.Background(), srv) // root context
+
+	claim := csjwt.MapClaims{
+		"someKey":          3.14159,
+		storenet.ParamName: "at",
+	}
+
+	token, err := jwts.NewToken(scope.WebsiteID, 1, claim) // 1 = website euro
+	if err != nil {
+		b.Fatal(err)
+	}
+
+	final := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+		_, err := ctxjwt.FromContext(ctx)
+		if err != nil {
+			return err
+		}
+		w.WriteHeader(http.StatusUnavailableForLegalReasons)
+
+		//if err := jwts.Logout(tk); err != nil {
+		//	b.Fatal(err)
+		//}
+
+		return nil
+	})
+	jwtHandler := jwts.WithInitTokenAndStore()(final)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		w := httptest.NewRecorder() // 3 allocs
+		if err := jwtHandler.ServeHTTPContext(ctx, w, getReq(b, token)); err != nil {
+			b.Fatal(err)
+		}
+		if w.Code != http.StatusUnavailableForLegalReasons {
+			b.Fatalf("Response Code want %d; have %d", http.StatusUnavailableForLegalReasons, w.Code)
+		}
+	}
 }
