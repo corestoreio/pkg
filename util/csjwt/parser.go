@@ -23,7 +23,7 @@ type Verification struct {
 	// the token has been stored.
 	FormInputName string
 	// Methods for verifying and signing a token
-	Methods []Signer
+	Methods SignerSlice
 
 	// JSONer interface to pass in a custom JSON parser.
 	// Can be nil
@@ -35,7 +35,7 @@ type Verification struct {
 // Nil arguments are forbidden.
 func NewVerification(availableSigners ...Signer) *Verification {
 	if len(availableSigners) == 0 {
-		availableSigners = []Signer{NewSigningMethodHS256()}
+		availableSigners = SignerSlice{NewSigningMethodHS256()}
 	}
 	return &Verification{
 		FormInputName: HTTPFormInputName,
@@ -132,7 +132,7 @@ func (vf *Verification) getMethod(token *Token) (Signer, error) {
 			return m, nil
 		}
 	}
-	return nil, errors.Errorf("[csjwt] Algorithm %q not found in method list %q", alg, methods(vf.Methods))
+	return nil, errors.Errorf("[csjwt] Algorithm %q not found in method list %q", alg, SignerSlice(vf.Methods))
 }
 
 // ParseFromRequest same as ParseFromRequest but allows to add a custer Claimer.

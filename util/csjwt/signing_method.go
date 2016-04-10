@@ -32,9 +32,11 @@ const (
 	RS    = `RS`
 )
 
-type methods []Signer
+// SignerSlice helper type
+type SignerSlice []Signer
 
-func (ms methods) String() string {
+// String returns a list of algorithms, comma separated
+func (ms SignerSlice) String() string {
 	var buf bytes.Buffer
 	for i, m := range ms {
 		_, _ = buf.WriteString(m.Alg())
@@ -43,4 +45,14 @@ func (ms methods) String() string {
 		}
 	}
 	return buf.String()
+}
+
+// Contains checks if the algorithm has already been added
+func (ms SignerSlice) Contains(alg string) bool {
+	for _, m := range ms {
+		if m.Alg() == alg {
+			return true
+		}
+	}
+	return false
 }

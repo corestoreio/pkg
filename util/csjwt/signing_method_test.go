@@ -21,12 +21,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var _ fmt.Stringer = (*methods)(nil)
+var _ fmt.Stringer = (*SignerSlice)(nil)
 
 func TestMethodsSlice(t *testing.T) {
 	t.Parallel()
-	var ms methods = []Signer{NewSigningMethodRS256(), NewSigningMethodPS256()}
+	var ms SignerSlice = []Signer{NewSigningMethodRS256(), NewSigningMethodPS256()}
 	assert.Exactly(t, `RS256, PS256`, ms.String())
+	assert.True(t, ms.Contains("PS256"))
+	assert.False(t, ms.Contains("XS256"))
 
 	ms = []Signer{NewSigningMethodRS256()}
 	assert.Exactly(t, `RS256`, ms.String())

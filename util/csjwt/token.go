@@ -30,6 +30,7 @@ type Token struct {
 }
 
 // NewToken creates a new Token and presets the header to typ = JWT.
+// A new token has not yet an assigned algorithm.
 func NewToken(c Claimer) Token {
 	return Token{
 		Header: map[string]interface{}{
@@ -55,6 +56,7 @@ func (t Token) Alg() string {
 // SignedString gets the complete, signed token.
 // Sets the header alg to the provided Signer.Alg() value.
 // Returns a byte slice, save for further processing.
+// This functions allows to sign a token with different signing methods.
 func (t Token) SignedString(method Signer, key Key) (text.Chars, error) {
 
 	t.Header["alg"] = method.Alg()
