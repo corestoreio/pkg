@@ -22,6 +22,7 @@ import (
 
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -92,10 +93,10 @@ func benchBlackList(b *testing.B, bl ctxjwt.Blacklister) {
 	var tokens [benchTokenCount][]byte
 
 	for i := 0; i < benchTokenCount; i++ {
-		claim := map[string]interface{}{
+		claim := csjwt.MapClaims{
 			"someKey": i,
 		}
-		tk, _, err := jwts.GenerateToken(scope.DefaultID, 0, claim)
+		tk, err := jwts.NewToken(scope.DefaultID, 0, claim)
 		if err != nil {
 			b.Fatal(err)
 		}

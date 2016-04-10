@@ -18,35 +18,25 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storenet"
+	"github.com/corestoreio/csfw/util/csjwt"
 )
 
-// CodeFromClaim returns a valid store code from a JSON web token or ErrStoreNotFound.
-// Token argument is a map like being used by csjwt.Token.Claims.
-func ScopeOptionFromClaim(token map[string]interface{}) (o scope.Option, err error) {
+// ScopeOptionFromClaim returns a valid store code from a JSON web token
+// or ErrStoreNotFound.
+// Please make sure to add the key storenet.ParamName with the store code
+// to the token claim.
+func ScopeOptionFromClaim(tc csjwt.Claimer) (o scope.Option, err error) {
 	err = store.ErrStoreNotFound
-	if 0 == len(token) {
+	if tc == nil {
 		return
 	}
 
-	tokVal, ok := token[storenet.ParamName]
-	scopeCode, okcs := tokVal.(string)
-
-	if okcs && ok {
-		return setByCode(scopeCode)
-	}
-	return
-}
-
-// CodeAddToClaim adds the store code to a JSON web token.
-// tokenClaim may be csjwt.Token.Claim
-func StoreCodeAddToClaim(s *store.Store, tokenClaim map[string]interface{}) {
-	tokenClaim[storenet.ParamName] = s.Data.Code.String
-}
-
-func setByCode(scopeCode string) (o scope.Option, err error) {
-	err = store.CodeIsValid(scopeCode)
-	if err == nil {
-		o, err = scope.SetByCode(scope.StoreID, scopeCode)
+	raw, _ := tc.Get(storenet.ParamName)
+	if scopeCode, ok := raw.(string); ok {
+		err = store.CodeIsValid(scopeCode)
+		if err == nil {
+			o, err = scope.SetByCode(scope.StoreID, scopeCode)
+		}
 	}
 	return
 }

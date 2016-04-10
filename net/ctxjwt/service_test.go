@@ -19,6 +19,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/net/ctxjwt"
+	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/stretchr/testify/assert"
@@ -37,57 +38,81 @@ func TestServiceMustNewServicePanic(t *testing.T) {
 			t.Fatal("Expecting a panic")
 		}
 	}()
-	_ = ctxjwt.MustNewService(ctxjwt.WithECDSAFromFile(scope.DefaultID, 0, "non-existent.pem"))
+	_ = ctxjwt.MustNewService(ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithECPrivateKeyFromFile("non-existent.pem")))
 }
 
-func TestServiceNewDefault(t *testing.T) {
+func TestServiceNewDefaultBlacklist(t *testing.T) {
 	t.Parallel()
 	jwts := ctxjwt.MustNewService()
 
 	key := []byte("test")
 	assert.Nil(t, jwts.Blacklist.Set(key, time.Hour))
 	assert.False(t, jwts.Blacklist.Has(key))
-
 	assert.Len(t, jwts.JTI.Get(), uuidLen)
+}
 
-	testClaims := map[string]interface{}{
-		"mascot": "gopher",
+func TestServiceNewDefault(t *testing.T) {
+	t.Parallel()
+	jwts := ctxjwt.MustNewService()
+
+	testClaims := &csjwt.StandardClaims{
+		Subject: "gopher",
 	}
-	theToken, jti, err := jwts.GenerateToken(scope.DefaultID, 0, testClaims)
+	theToken, err := jwts.NewToken(scope.DefaultID, 0, testClaims)
 	assert.NoError(t, err)
-	assert.Empty(t, jti)
+	assert.Empty(t, testClaims.ID)
 	assert.NotEmpty(t, theToken)
+
 	haveToken, err := jwts.Parse(theToken)
 	assert.NoError(t, err)
 	assert.True(t, haveToken.Valid)
-	assert.Equal(t, "gopher", haveToken.Claims["mascot"])
 
-	failedToken, err := jwts.Parse(theToken + "c")
+	mascot, err := haveToken.Claims.Get(csjwt.ClaimSubject)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Equal(t, "gopher", mascot.(string))
+
+	failedToken, err := jwts.Parse(append(text.Chars(theToken).Clone(), []byte("c")...))
 	assert.Error(t, err)
-	assert.Nil(t, failedToken)
+	assert.False(t, failedToken.Valid)
+}
 
-	jmRSA, err := ctxjwt.NewService(ctxjwt.WithRSAFromFile(scope.DefaultID, 0, "invalid.key"))
+func TestServiceNewDefaultRSAError(t *testing.T) {
+	jmRSA, err := ctxjwt.NewService(ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithRSAPrivateKeyFromFile("invalid.key")))
 	assert.Nil(t, jmRSA)
 	assert.Contains(t, err.Error(), "open invalid.key:") //  no such file or directory OR The system cannot find the file specified.
 }
 
+type malformedSigner struct {
+	*csjwt.SigningMethodHMAC
+}
+
+func (ms malformedSigner) Alg() string {
+	return "None"
+}
+
 func TestServiceParseInvalidSigningMethod(t *testing.T) {
 	t.Parallel()
-	password := []byte(`Rump3lst!lzch3n`)
-	jwts := ctxjwt.MustNewService(
-		ctxjwt.WithPassword(scope.DefaultID, 0, password),
-	)
 
-	tk := csjwt.New(csjwt.SigningMethodHS256)
-	tk.Claims["exp"] = time.Now().Add(time.Hour).Unix()
-	tk.Claims["iat"] = time.Now().Unix()
-	tk.Header["alg"] = "HS384"
-	malformedToken, err := tk.SignedString(password)
+	ms := &malformedSigner{
+		SigningMethodHMAC: csjwt.NewSigningMethodHS256(),
+	}
+
+	keyRand := csjwt.WithPasswordRandom()
+	jwts := ctxjwt.MustNewService(ctxjwt.WithKey(scope.DefaultID, 0, keyRand))
+
+	tk := csjwt.NewToken(csjwt.MapClaims{
+		"exp": time.Now().Add(time.Hour).Unix(),
+		"iat": time.Now().Unix(),
+	})
+
+	malformedToken, err := tk.SignedString(ms, keyRand)
 	assert.NoError(t, err)
 
 	mt, err := jwts.Parse(malformedToken)
-	assert.EqualError(t, err, ctxjwt.ErrUnexpectedSigningMethod.Error()+" - Have: HS384 Want: HS256")
-	assert.Nil(t, mt)
+	assert.EqualError(t, err, "[csjwt] token is unverifiable\n[ctxjwt] Unknown signing method - Have: \"None\" Want: \"HS256\"")
+	assert.False(t, mt.Valid)
 }
 
 func TestServiceLogout(t *testing.T) {
@@ -98,15 +123,15 @@ func TestServiceLogout(t *testing.T) {
 		ctxjwt.WithBlacklist(tbl),
 	)
 
-	theToken, _, err := jwts.GenerateToken(scope.DefaultID, 0, nil)
+	theToken, err := jwts.NewToken(scope.DefaultID, 0, &csjwt.StandardClaims{})
 	assert.NoError(t, err)
 
 	tk, err := jwts.Parse(theToken)
 	assert.NoError(t, err)
 	assert.NotNil(t, tk)
 
-	assert.Nil(t, jwts.Logout(nil))
+	assert.Nil(t, jwts.Logout(csjwt.Token{}))
 	assert.Nil(t, jwts.Logout(tk))
 	assert.Equal(t, int(time.Hour.Seconds()), 1+int(tbl.exp.Seconds()))
-	assert.Equal(t, theToken, string(tbl.theToken))
+	assert.Equal(t, theToken.String(), string(tbl.theToken))
 }

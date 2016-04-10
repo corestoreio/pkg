@@ -44,27 +44,30 @@ func TestServiceWithBackend_NoBackend(t *testing.T) {
 
 	cr := cfgmock.NewService()
 	sc, err := jwts.getConfigByScopedGetter(cr.NewScoped(0, 0))
-	assert.EqualError(t, err, "[ctxjwt.Service] Cannot find JWT configuration for Scope(Default) and ID 0")
+	assert.EqualError(t, err, "[ctxjwt] Cannot find JWT configuration for Scope(Default) ID(0)")
 	assert.Exactly(t, scopedConfig{}, sc)
 }
 
 func TestServiceWithBackend_DefaultConfig(t *testing.T) {
-	t.Parallel()
 
 	jwts := MustNewService()
 
 	cr := cfgmock.NewService()
 	sc, err := jwts.getConfigByScopedGetter(cr.NewScoped(0, 0))
 	assert.NoError(t, err)
-	dsc := defaultScopedConfig()
-	assert.Exactly(t, sc.signingMethod, csjwt.SigningMethodHS256)
-	assert.Exactly(t, dsc.ecdsapk, sc.ecdsapk)
-	assert.Exactly(t, dsc.rsapk, sc.rsapk)
+	dsc, err := defaultScopedConfig()
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, csjwt.HS256, sc.signingMethod.Alg())
+	assert.Exactly(t, dsc.Key.Algorithm(), sc.Key.Algorithm())
+
 	assert.True(t, dsc.errorHandler == nil)
 	assert.True(t, sc.errorHandler == nil)
 	assert.True(t, jwts.DefaultErrorHandler != nil)
 	assert.Exactly(t, DefaultExpire, dsc.expire)
-	assert.NotEqual(t, dsc.hmacPassword, sc.hmacPassword)
+	assert.False(t, dsc.Key.IsEmpty())
+	assert.False(t, sc.Key.IsEmpty())
 }
 
 func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
@@ -101,7 +104,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 	assert.True(t, scNew.enableJTI)
 	assert.Exactly(t, "5m1s", scNew.expire.String())
 	assert.Exactly(t, "HS512", scNew.signingMethod.Alg())
-	assert.Exactly(t, []byte("pw2"), scNew.hmacPassword)
+	assert.False(t, scNew.Key.IsEmpty())
 	assert.Nil(t, scNew.errorHandler)
 	assert.NotNil(t, jwts.DefaultErrorHandler)
 
@@ -144,7 +147,7 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 	assert.False(t, scNew.enableJTI)
 	assert.Exactly(t, "2m0s", scNew.expire.String())
 	assert.Exactly(t, "HS384", scNew.signingMethod.Alg())
-	assert.Exactly(t, []byte("pw1"), scNew.hmacPassword)
+	assert.False(t, scNew.Key.IsEmpty())
 
 	// test if cache returns the same scopedConfig
 	scCached, err := jwts.getConfigByScopedGetter(sg)
@@ -166,7 +169,7 @@ func TestServiceWithBackend_UnknownSigningMethod(t *testing.T) {
 	}))
 
 	sc, err := jwts.getConfigByScopedGetter(cr.NewScoped(1, 1))
-	assert.EqualError(t, err, "ctxjwt.ConfigSigningMethod: Unknown algorithm HS4711")
+	assert.EqualError(t, err, "[ctxjwt] ConfigSigningMethod: Unknown algorithm HS4711")
 	assert.Exactly(t, scopedConfig{}, sc)
 }
 
@@ -210,7 +213,7 @@ func TestServiceWithBackend_RSAFail(t *testing.T) {
 	}))
 
 	sc, err := jwts.getConfigByScopedGetter(cr.NewScoped(1, 1))
-	assert.EqualError(t, err, "Private Key from io.Reader no found")
+	assert.EqualError(t, err, "[csjwt] invalid key: Key must be PEM encoded PKCS1 or PKCS8 private key")
 	assert.Exactly(t, scopedConfig{}, sc)
 }
 
@@ -224,11 +227,9 @@ func TestServiceWithBackend_NilScopedGetter(t *testing.T) {
 	assert.NoError(t, err)
 
 	assert.Exactly(t, scope.DefaultHash, sc.scopeHash)
-	assert.Nil(t, sc.rsapk)
-	assert.Nil(t, sc.ecdsapk)
-	assert.NotEmpty(t, sc.hmacPassword)
+	assert.False(t, sc.Key.IsEmpty())
 	assert.Exactly(t, DefaultExpire, sc.expire)
-	assert.Exactly(t, csjwt.SigningMethodHS256, sc.signingMethod)
+	assert.Exactly(t, csjwt.HS256, sc.signingMethod.Alg())
 	assert.False(t, sc.enableJTI)
 	assert.True(t, sc.errorHandler == nil)
 	assert.True(t, sc.keyFunc != nil)

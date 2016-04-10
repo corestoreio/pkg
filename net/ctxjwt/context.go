@@ -15,10 +15,7 @@
 package ctxjwt
 
 import (
-	"errors"
-
 	"github.com/corestoreio/csfw/util/csjwt"
-
 	"golang.org/x/net/context"
 )
 
@@ -26,9 +23,6 @@ type (
 	keyCtxToken struct{}
 	keyCtxErr   struct{}
 )
-
-// ErrContextJWTNotFound gets returned when the jwt cannot be found.
-var ErrContextJWTNotFound = errors.New("Cannot extract ctxjwt nor an error from context")
 
 // WithContext creates a new context with csjwt.Token attached.
 func WithContext(ctx context.Context, t csjwt.Token) context.Context {
@@ -46,7 +40,7 @@ func FromContext(ctx context.Context) (t csjwt.Token, err error) {
 	}
 	err = ErrContextJWTNotFound
 	t, ok = ctx.Value(keyCtxToken{}).(csjwt.Token)
-	if ok && len(t.Raw) > 5 {
+	if ok && len(t.Raw) > 5 && t.Valid {
 		err = nil
 	}
 	return

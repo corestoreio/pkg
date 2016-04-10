@@ -26,6 +26,7 @@ import (
 type Blacklister interface {
 	// Set adds a token to the blacklist and may perform a
 	// purge operation. Set should be called when you log out a user.
+	// Set must make sure to copy away the token bytes or hash them.
 	Set(token []byte, expires time.Duration) error
 	// Has checks if a token has been stored in the blacklist and may
 	// delete the token if expiration time is up.

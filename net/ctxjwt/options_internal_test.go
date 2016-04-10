@@ -22,12 +22,14 @@ import (
 	"github.com/corestoreio/csfw/util/cstesting"
 	"golang.org/x/net/context"
 
+	"fmt"
+	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestInternalOptionWithErrorHandler(t *testing.T) {
 	t.Parallel()
-
 	jwts := MustNewService()
 
 	defaultErrH := jwts.DefaultErrorHandler
@@ -50,4 +52,13 @@ func TestInternalOptionWithErrorHandler(t *testing.T) {
 	}
 	cstesting.UnEqualPointers(t, defaultErrH, jwts.DefaultErrorHandler)
 	cstesting.EqualPointers(t, wsErrH, jwts.DefaultErrorHandler)
+}
+
+func TestInternalOptionNoLeakage(t *testing.T) {
+	t.Parallel()
+	sc := scopedConfig{
+		Key: csjwt.WithPasswordRandom(),
+	}
+	assert.Exactly(t, `{0 csjwt.Key{/*redacted*/} 0 <nil> <nil> false <nil> <nil> <nil>}`, fmt.Sprintf("%v", sc))
+	assert.Exactly(t, `ctxjwt.scopedConfig{scopeHash:0x0, Key:csjwt.Key{/*redacted*/}, expire:0, signingMethod:csjwt.Signer(nil), jwtVerify:(*csjwt.Verification)(nil), enableJTI:false, errorHandler:ctxhttp.Handler(nil), keyFunc:(csjwt.Keyfunc)(nil), newClaims:(func() csjwt.Claimer)(nil)}`, fmt.Sprintf("%#v", sc))
 }

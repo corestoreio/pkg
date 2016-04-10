@@ -19,42 +19,94 @@ import (
 	"path/filepath"
 	"testing"
 
+	"time"
+
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOptionWithTokenID(t *testing.T) {
+func TestOptionPartialConfigError(t *testing.T) {
 	t.Parallel()
-	jwts, err := ctxjwt.NewService(ctxjwt.WithTokenID(scope.DefaultID, 0, true))
+	jwts, err := ctxjwt.NewService(ctxjwt.WithTokenID(scope.StoreID, 3, true))
 	assert.NoError(t, err)
 
-	theToken, jti, err := jwts.GenerateToken(scope.DefaultID, 0, nil)
+	cl := csjwt.MapClaims{}
+	theToken, err := jwts.NewToken(scope.StoreID, 3, cl)
+	assert.EqualError(t, err, "[ctxjwt] Incomplete configuration for Scope(Store) ID(3). Missing Signing Method and its Key.")
+	assert.Empty(t, theToken)
+}
+
+func TestOptionWithTokenID(t *testing.T) {
+	t.Parallel()
+	jwts, err := ctxjwt.NewService(
+		ctxjwt.WithTokenID(scope.StoreID, 22, true),
+		ctxjwt.WithKey(scope.StoreID, 22, csjwt.WithPasswordRandom()),
+	)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, jti)
+
+	cl := csjwt.MapClaims{}
+	theToken, err := jwts.NewToken(scope.StoreID, 22, cl) // must be a pointer the cl or Get() returns nil
+	assert.NoError(t, err)
 	assert.NotEmpty(t, theToken)
-	assert.Len(t, jti, uuidLen)
+	id, err := cl.Get(csjwt.ClaimID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Len(t, id, uuidLen)
+}
+
+func TestOptionScopedDefaultExpire(t *testing.T) {
+	t.Parallel()
+	jwts, err := ctxjwt.NewService(
+		ctxjwt.WithTokenID(scope.StoreID, 33, true),
+		ctxjwt.WithKey(scope.StoreID, 33, csjwt.WithPasswordRandom()),
+	)
+	assert.NoError(t, err)
+
+	cl := csjwt.MapClaims{}
+
+	now := time.Now()
+	theToken, err := jwts.NewToken(scope.StoreID, 33, cl) // must be a pointer the cl or Get() returns nil
+	assert.NoError(t, err)
+	assert.NotEmpty(t, theToken)
+	exp, err := cl.Get(csjwt.ClaimExpiresAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	iat, err := cl.Get(csjwt.ClaimIssuedAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Exactly(t, now.Unix(), iat.(int64))
+	assert.Exactly(t, int(ctxjwt.DefaultExpire.Seconds()), int(time.Unix(exp.(int64), 0).Sub(now).Seconds()+1))
 }
 
 func TestOptionWithRSAReaderFail(t *testing.T) {
 	t.Parallel()
 	jm, err := ctxjwt.NewService(
-		ctxjwt.WithRSA(scope.DefaultID, 0, []byte(`invalid pem data`)),
+		ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithRSAPrivateKeyFromPEM([]byte(`invalid pem data`))),
 	)
 	assert.Nil(t, jm)
-	assert.Equal(t, "Private Key from io.Reader no found", err.Error())
-
+	assert.EqualError(t, err, `[csjwt] invalid key: Key must be PEM encoded PKCS1 or PKCS8 private key`)
 }
 
-var pkFile = filepath.Join("testdata", "test_rsa")
+var (
+	rsaPrivateKeyFileName        = filepath.Join("..", "..", "util", "csjwt", "test", "test_rsa")
+	keyRsaPrivateNoPassword      = ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName))
+	keyRsaPrivateWrongPassword   = ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte(`adfasdf`)))
+	keyRsaPrivateCorrectPassword = ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte("cccamp")))
+)
 
 func TestOptionWithRSAFromFileNoOrFailedPassword(t *testing.T) {
 	t.Parallel()
-	jm, err := ctxjwt.NewService(ctxjwt.WithRSAFromFile(scope.DefaultID, 0, pkFile))
-	assert.EqualError(t, err, ctxjwt.ErrPrivateKeyNoPassword.Error())
+	jm, err := ctxjwt.NewService(keyRsaPrivateNoPassword)
+	assert.EqualError(t, err, "[csjwt] Missing password to decrypt private key")
 	assert.Nil(t, jm)
 
-	jm2, err2 := ctxjwt.NewService(ctxjwt.WithRSAFromFile(scope.DefaultID, 0, pkFile, []byte(`adfasdf`)))
+	jm2, err2 := ctxjwt.NewService(keyRsaPrivateWrongPassword)
 	assert.EqualError(t, err2, x509.IncorrectPasswordError.Error())
 	assert.Nil(t, jm2)
 }
@@ -64,7 +116,7 @@ func testRsaOption(t *testing.T, opt ctxjwt.Option) {
 	assert.NoError(t, err)
 	assert.NotNil(t, jm)
 
-	theToken, _, err := jm.GenerateToken(scope.DefaultID, 0, nil)
+	theToken, err := jm.NewToken(scope.DefaultID, 0, csjwt.MapClaims{})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, theToken)
 
@@ -76,21 +128,10 @@ func testRsaOption(t *testing.T, opt ctxjwt.Option) {
 
 func TestOptionWithRSAFromFilePassword(t *testing.T) {
 	t.Parallel()
-	pw := []byte("cccamp")
-	testRsaOption(t, ctxjwt.WithRSAFromFile(scope.DefaultID, 0, pkFile, pw))
+	testRsaOption(t, keyRsaPrivateCorrectPassword)
 }
 
 func TestOptionWithRSAFromFileNoPassword(t *testing.T) {
 	t.Parallel()
-	// pkFileNP := filepath.Join(cstesting.RootPath, "net", "ctxjwt", "test_rsa_np")
-	pkFileNP := filepath.Join("testdata", "test_rsa_np")
-	testRsaOption(t, ctxjwt.WithRSAFromFile(scope.DefaultID, 0, pkFileNP))
-}
-
-func TestOptionWithRSAGenerator(t *testing.T) {
-	t.Parallel()
-	if testing.Short() {
-		t.Skip("Test skipped in short mode")
-	}
-	testRsaOption(t, ctxjwt.WithRSAGenerator(scope.DefaultID, 0))
+	testRsaOption(t, ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithRSAPrivateKeyFromFile(filepath.Join("..", "..", "util", "csjwt", "test", "test_rsa_np"))))
 }

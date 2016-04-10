@@ -21,11 +21,12 @@ import (
 	"github.com/corestoreio/csfw/config/element"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/csjwt"
 )
 
 // DefaultSigningMethod HMAC-SHA signing with 512 bits. Gets applied if the
 // ConfigSigningMethod model returns an empty string.
-const DefaultSigningMethod = "HS512"
+const DefaultSigningMethod = csjwt.HS512
 
 // DefaultExpire duration when a token expires
 const DefaultExpire = time.Hour

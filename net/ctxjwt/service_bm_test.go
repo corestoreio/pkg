@@ -27,6 +27,7 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
 	"github.com/corestoreio/csfw/store/storenet"
+	"github.com/corestoreio/csfw/util/csjwt"
 	"golang.org/x/net/context"
 )
 
@@ -35,10 +36,11 @@ func bmServeHTTP(b *testing.B, opts ...ctxjwt.Option) {
 	if err != nil {
 		b.Error(err)
 	}
-	token, _, err := jwts.GenerateToken(scope.DefaultID, 0, map[string]interface{}{
+	cl := csjwt.MapClaims{
 		"xfoo": "bar",
 		"zfoo": 4711,
-	})
+	}
+	token, err := jwts.NewToken(scope.DefaultID, 0, cl)
 	if err != nil {
 		b.Error(err)
 	}
@@ -75,20 +77,20 @@ func bmServeHTTP(b *testing.B, opts ...ctxjwt.Option) {
 	}
 }
 
+var keyBenchmarkHMACPW = ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithPassword([]byte(`Rump3lst!lzch3n`)))
+
 // BenchmarkServeHTTPHMAC-4        	  100000	     15851 ns/op	    3808 B/op	      82 allocs/op Go 1.5.0
 // BenchmarkServeHTTPHMAC-4        	  100000	     15550 ns/op	    4016 B/op	      72 allocs/op Go 1.6.0
 func BenchmarkServeHTTPHMAC(b *testing.B) {
-	password := []byte(`Rump3lst!lzch3n`)
-	bmServeHTTP(b, ctxjwt.WithPassword(scope.DefaultID, 0, password))
+	bmServeHTTP(b, keyBenchmarkHMACPW)
 }
 
 // BenchmarkServeHTTPHMACSimpleBL-4	  100000	     16037 ns/op	    3808 B/op	      82 allocs/op Go 1.5.0
 // BenchmarkServeHTTPHMACSimpleBL-4	  100000	     15765 ns/op	    4016 B/op	      72 allocs/op
 func BenchmarkServeHTTPHMACSimpleBL(b *testing.B) {
 	bl := ctxjwt.NewBlackListSimpleMap()
-	password := []byte(`Rump3lst!lzch3n`)
 	bmServeHTTP(b,
-		ctxjwt.WithPassword(scope.DefaultID, 0, password),
+		keyBenchmarkHMACPW,
 		ctxjwt.WithBlacklist(bl),
 	)
 	// b.Logf("Blacklist Items %d", bl.Len())
@@ -97,7 +99,7 @@ func BenchmarkServeHTTPHMACSimpleBL(b *testing.B) {
 // BenchmarkServeHTTPRSAGenerator-4	    5000	    328220 ns/op	   34544 B/op	     105 allocs/op Go 1.5.0
 // BenchmarkServeHTTPRSAGenerator-4	    5000	    327690 ns/op	   34752 B/op	      95 allocs/op Go 1.6.0
 func BenchmarkServeHTTPRSAGenerator(b *testing.B) {
-	bmServeHTTP(b, ctxjwt.WithRSAGenerator(scope.DefaultID, 0))
+	bmServeHTTP(b, ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithRSAGenerated()))
 }
 
 const benchServeHTTPTokenCount = 100
@@ -131,16 +133,16 @@ func BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel(b *testing.B) {
 	)
 	ctx := store.WithContextProvider(context.Background(), srv) // root context
 
-	var tokens [benchServeHTTPTokenCount]string
+	var tokens [benchServeHTTPTokenCount][]byte
 	for i := 0; i < benchServeHTTPTokenCount; i++ {
 
-		claim := map[string]interface{}{
+		claim := csjwt.MapClaims{
 			"someKey":          i,
 			storenet.ParamName: "de",
 		}
 
 		var err error
-		tokens[i], _, err = jwts.GenerateToken(scope.WebsiteID, 1, claim) // 1 = website euro
+		tokens[i], err = jwts.NewToken(scope.WebsiteID, 1, claim) // 1 = website euro
 		if err != nil {
 			b.Fatal(err)
 		}

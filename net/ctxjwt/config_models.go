@@ -32,17 +32,17 @@ func NewConfigSigningMethod(path string, opts ...cfgmodel.Option) ConfigSigningM
 		Str: cfgmodel.NewStr(path, append(
 			opts,
 			cfgmodel.WithSourceByString(
-				csjwt.SigningMethodRS256.Alg(), "RSA 256",
-				csjwt.SigningMethodRS384.Alg(), "RSA 384",
-				csjwt.SigningMethodRS512.Alg(), "RSA 512",
+				csjwt.RS256, "RSA 256",
+				csjwt.RS384, "RSA 384",
+				csjwt.RS512, "RSA 512",
 
-				csjwt.SigningMethodES256.Alg(), "ECDSA 256",
-				csjwt.SigningMethodES384.Alg(), "ECDSA 384",
-				csjwt.SigningMethodES512.Alg(), "ECDSA 512",
+				csjwt.ES256, "ECDSA 256",
+				csjwt.ES384, "ECDSA 384",
+				csjwt.ES512, "ECDSA 512",
 
-				csjwt.SigningMethodHS256.Alg(), "HMAC-SHA 256",
-				csjwt.SigningMethodHS384.Alg(), "HMAC-SHA 384",
-				csjwt.SigningMethodHS512.Alg(), "HMAC-SHA 512",
+				csjwt.HS256, "HMAC-SHA 256",
+				csjwt.HS384, "HMAC-SHA 384",
+				csjwt.HS512, "HMAC-SHA 512",
 			),
 		)...),
 	}
@@ -61,28 +61,28 @@ func (cc ConfigSigningMethod) Get(sg config.ScopedGetter) (sm csjwt.Signer, err 
 	}
 
 	switch raw {
-	case csjwt.SigningMethodRS256.Alg():
-		sm = csjwt.SigningMethodRS256
-	case csjwt.SigningMethodRS384.Alg():
-		sm = csjwt.SigningMethodRS384
-	case csjwt.SigningMethodRS512.Alg():
-		sm = csjwt.SigningMethodRS512
+	case csjwt.RS256:
+		sm = csjwt.NewSigningMethodRS256()
+	case csjwt.RS384:
+		sm = csjwt.NewSigningMethodRS384()
+	case csjwt.RS512:
+		sm = csjwt.NewSigningMethodRS512()
 
-	case csjwt.SigningMethodES256.Alg():
-		sm = csjwt.SigningMethodES256
-	case csjwt.SigningMethodES384.Alg():
-		sm = csjwt.SigningMethodES384
-	case csjwt.SigningMethodES512.Alg():
-		sm = csjwt.SigningMethodES512
+	case csjwt.ES256:
+		sm = csjwt.NewSigningMethodES256()
+	case csjwt.ES384:
+		sm = csjwt.NewSigningMethodES384()
+	case csjwt.ES512:
+		sm = csjwt.NewSigningMethodES512()
 
-	case csjwt.SigningMethodHS256.Alg():
-		sm = csjwt.SigningMethodHS256
-	case csjwt.SigningMethodHS384.Alg():
-		sm = csjwt.SigningMethodHS384
-	case csjwt.SigningMethodHS512.Alg():
-		sm = csjwt.SigningMethodHS512
+	case csjwt.HS256:
+		sm = csjwt.NewSigningMethodHS256()
+	case csjwt.HS384:
+		sm = csjwt.NewSigningMethodHS384()
+	case csjwt.HS512:
+		sm = csjwt.NewSigningMethodHS512()
 	default:
-		err = errors.Errorf("ctxjwt.ConfigSigningMethod: Unknown algorithm %s", raw)
+		err = errors.Errorf("[ctxjwt] ConfigSigningMethod: Unknown algorithm %s", raw)
 	}
 	return
 }

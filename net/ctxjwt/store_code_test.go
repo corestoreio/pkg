@@ -33,8 +33,10 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 		&store.TableWebsite{WebsiteID: 1, Code: dbr.NewNullString("admin"), Name: dbr.NewNullString("Admin"), SortOrder: 0, DefaultGroupID: 0, IsDefault: dbr.NewNullBool(false)},
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 	)
-	token := csjwt.New(csjwt.SigningMethodHS256)
-	ctxjwt.StoreCodeAddToClaim(s, token.Claims)
+
+	token := csjwt.NewToken(csjwt.MapClaims{
+		storenet.ParamName: s.StoreCode(),
+	})
 
 	so, err := ctxjwt.ScopeOptionFromClaim(token.Claims)
 	assert.NoError(t, err)
@@ -46,9 +48,16 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 	assert.Nil(t, so.Group)
 	assert.Nil(t, so.Store)
 
-	token2 := csjwt.New(csjwt.SigningMethodHS256)
-	token2.Claims[storenet.ParamName] = "Invalid Cod€"
-	so, err = ctxjwt.ScopeOptionFromClaim(token2.Claims)
+}
+
+func TestStoreCodeFromClaimInvalid(t *testing.T) {
+	t.Parallel()
+
+	token2 := csjwt.NewToken(csjwt.MapClaims{
+		storenet.ParamName: "Invalid Cod€",
+	})
+
+	so, err := ctxjwt.ScopeOptionFromClaim(token2.Claims)
 	assert.EqualError(t, store.ErrStoreCodeInvalid, err.Error())
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)
@@ -58,35 +67,35 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 func TestStoreCodeFromClaimNoToken(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
-		token     map[string]interface{}
+		token     csjwt.Claimer
 		wantErr   error
 		wantScope scope.Scope
 		wantCode  string
 		wantID    int64
 	}{
 		{
-			map[string]interface{}{},
+			csjwt.MapClaims{},
 			store.ErrStoreNotFound,
 			scope.DefaultID,
 			"",
 			0,
 		},
 		{
-			map[string]interface{}{storenet.ParamName: "dede"},
+			csjwt.MapClaims{storenet.ParamName: "dede"},
 			nil,
 			scope.StoreID,
 			"dede",
 			scope.UnavailableStoreID,
 		},
 		{
-			map[string]interface{}{storenet.ParamName: "de'de"},
+			csjwt.MapClaims{storenet.ParamName: "de'de"},
 			store.ErrStoreCodeInvalid,
 			scope.DefaultID,
 			"",
 			scope.UnavailableStoreID,
 		},
 		{
-			map[string]interface{}{storenet.ParamName: 1},
+			csjwt.MapClaims{storenet.ParamName: 1},
 			store.ErrStoreNotFound,
 			scope.DefaultID,
 			"",

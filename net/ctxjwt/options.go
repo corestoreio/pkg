@@ -15,12 +15,6 @@
 package ctxjwt
 
 import (
-	"crypto/ecdsa"
-	"crypto/rand"
-	"crypto/rsa"
-	"crypto/x509"
-	"encoding/pem"
-	"io/ioutil"
 	"time"
 
 	"github.com/corestoreio/csfw/config"
@@ -28,33 +22,26 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/juju/errors"
-	"github.com/pborman/uuid"
+	"net/http"
 )
 
-// ErrPrivateKeyNotFound will be returned when the PK cannot be read from the Reader
-var ErrPrivateKeyNotFound = errors.New("Private Key from io.Reader no found")
-
-// ErrPrivateKeyNoPassword will be returned when the PK is encrypted but you
-// forgot to provide a password.
-var ErrPrivateKeyNoPassword = errors.New("Private Key is encrypted but password was not set")
-
-// ErrUnexpectedSigningMethod will be returned if some outside dude tries to trick us
-var ErrUnexpectedSigningMethod = errors.New("JWT: Unexpected signing method")
-
-// PrivateKeyBits used when auto generating a private key
-const PrivateKeyBits = 4096
-
+// scopedConfig private internal scoped based configuration
 type scopedConfig struct {
 	scopeHash scope.Hash
-	//rsapk        *rsa.PrivateKey
-	//ecdsapk      *ecdsa.PrivateKey
-	//hmacPassword []byte // password for hmac
-	key csjwt.Key
-
+	// Key contains the HMAC, RSA or ECDSA sensitive data. Yes the csjwt.Key
+	// must not be embedded into this struct because otherwise when printing
+	// or logging the sensitive data from csjwt.Key gets leaked into loggers
+	// or where ever. If key would be lower case then %#v still prints
+	// every field of the csjwt.Key.
+	Key csjwt.Key
 	// expire defines the duration when the token is about to expire
 	expire time.Duration
 	// signingMethod how to sign the JWT. For default value see the OptionFuncs
 	signingMethod csjwt.Signer
+	// jwtVerify token parser and verifier bound to ONE signing method. Setting
+	// a new SigningMethod also overwrites the JWTVerify pointer.
+	// TODO: add Option for setting custom Unmarshaler and HTTP FORM input name
+	jwtVerify *csjwt.Verification
 	// enableJTI activates the (JWT ID) Claim, a unique identifier. UUID.
 	enableJTI bool
 	// errorHandler specific for this scope. if nil, fallback to global one
@@ -62,40 +49,65 @@ type scopedConfig struct {
 	errorHandler ctxhttp.Handler
 	// keyFunc will receive the parsed token and should return the key for validating.
 	keyFunc csjwt.Keyfunc
+	// newClaims function to a create a new empty claim when parsing a token in a request.
+	// Default value nil. Returned Claimer must be a pointer.
+	newClaims func() csjwt.Claimer
+}
+
+// isValid a configuration for a scope is only then valid when the Key has been
+// supplied and a applied non-nil signing method.
+func (sc *scopedConfig) isValid() bool {
+	return !sc.Key.IsEmpty() && sc.signingMethod != nil && sc.jwtVerify != nil
+}
+
+func (sc scopedConfig) parseFromRequest(r *http.Request) (csjwt.Token, error) {
+	var claim csjwt.Claimer
+	if sc.newClaims != nil {
+		claim = sc.newClaims()
+	} else {
+		claim = &csjwt.MapClaims{}
+	}
+	return sc.jwtVerify.ParseFromRequest(r, sc.keyFunc, claim)
+}
+
+func (sc scopedConfig) parseWithClaim(rawToken []byte) (csjwt.Token, error) {
+	var claim csjwt.Claimer
+	if sc.newClaims != nil {
+		claim = sc.newClaims()
+	} else {
+		claim = &csjwt.MapClaims{}
+	}
+	return sc.jwtVerify.ParseWithClaim(rawToken, sc.keyFunc, claim)
 }
 
 // getKeyFunc generates the key function for a specific scope and to used in caching
 func getKeyFunc(scpCfg scopedConfig) csjwt.Keyfunc {
 	return func(t csjwt.Token) (csjwt.Key, error) {
 
-		if have, want := t.Method.Alg(), scpCfg.signingMethod.Alg(); have != want {
-			return csjwt.Key{}, errors.Errorf("%s - Have: %s Want: %s", ErrUnexpectedSigningMethod, have, want)
+		if have, want := t.Alg(), scpCfg.signingMethod.Alg(); have != want {
+			return csjwt.Key{}, errors.Errorf("[ctxjwt] Unknown signing method - Have: %q Want: %q", have, want)
 		}
-
-		switch t.Method.Alg() {
-		case csjwt.SigningMethodRS256.Alg(), csjwt.SigningMethodRS384.Alg(), csjwt.SigningMethodRS512.Alg():
-			return csjwt.WithRSAPublicKey(&scpCfg.rsapk.PublicKey), nil
-		case csjwt.SigningMethodES256.Alg(), csjwt.SigningMethodES384.Alg(), csjwt.SigningMethodES512.Alg():
-			return csjwt.WithECPublicKey(&scpCfg.ecdsapk.PublicKey), nil
-		case csjwt.SigningMethodHS256.Alg(), csjwt.SigningMethodHS384.Alg(), csjwt.SigningMethodHS512.Alg():
-			return csjwt.WithPassword(scpCfg.hmacPassword), nil
-		default:
-			return csjwt.Key{}, ErrUnexpectedSigningMethod
+		if scpCfg.Key.Error != nil {
+			return csjwt.Key{}, errors.Mask(scpCfg.Key.Error)
 		}
+		return scpCfg.Key, nil
 	}
 }
 
 // Option can be used as an argument in NewService to configure a token service.
 type Option func(*Service)
 
-func defaultScopedConfig() scopedConfig {
+func defaultScopedConfig() (scopedConfig, error) {
+	key := csjwt.WithPasswordRandom()
+	hs256, err := csjwt.NewHMACFast256(key)
 	return scopedConfig{
 		scopeHash:     scope.DefaultHash,
 		expire:        DefaultExpire,
-		hmacPassword:  []byte(uuid.NewRandom()), // @todo can be better ...
-		signingMethod: csjwt.SigningMethodHS256,
+		Key:           key,
+		signingMethod: hs256,
+		jwtVerify:     csjwt.NewVerification(hs256),
 		enableJTI:     false,
-	}
+	}, err
 }
 
 // WithDefaultConfig applies the default JWT configuration settings based for
@@ -103,8 +115,8 @@ func defaultScopedConfig() scopedConfig {
 //
 // Default values are:
 //		- constant DefaultExpire
-//		- HMAC Password: uuid.NewRandom(), for each scope different
-//		- Signing Method HMAC SHA 256
+//		- HMAC Password: random bytes, for each scope different.
+//		- Signing Method HMAC SHA 256 (fast version from pkg csjwt)
 //		- HTTP error handler returns http.StatusUnauthorized
 //		- JTI disabled
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
@@ -112,7 +124,9 @@ func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	return func(s *Service) {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		s.scopeCache[h] = defaultScopedConfig()
+		var err error
+		s.scopeCache[h], err = defaultScopedConfig()
+		s.MultiErr = s.AppendErrors(err)
 	}
 }
 
@@ -134,24 +148,24 @@ func WithBackend(pb *PkgBackend) Option {
 	}
 }
 
-// WithPassword sets the HMAC 256 bit signing method with a password.
-// Useful to use Magento encryption key as the key.
-func WithPassword(scp scope.Scope, id int64, key []byte) Option {
+// WithNewClaims set a custom Claimer for each scope when parsing a token
+// in a request. Function f will generate a new Claim for each request.
+// This allows you to choose for using a map based claim or a struct based.
+// The returned Claimer interface by predicate f must be a pointer.
+func WithNewClaims(scp scope.Scope, id int64, f func() csjwt.Claimer) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
 		scNew := scopedConfig{
-			signingMethod: csjwt.SigningMethodHS256,
-			hmacPassword:  key,
+			newClaims: f,
 		}
 		if sc, ok := s.scopeCache[h]; ok {
-			sc.signingMethod = scNew.signingMethod
-			sc.hmacPassword = scNew.hmacPassword
+			sc.newClaims = scNew.newClaims
 			scNew = sc
 		}
-		scNew.scopeHash = scope.NewHash(scp, id)
+		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
 	}
 }
@@ -166,12 +180,14 @@ func WithSigningMethod(scp scope.Scope, id int64, sm csjwt.Signer) Option {
 
 		scNew := scopedConfig{
 			signingMethod: sm,
+			jwtVerify:     csjwt.NewVerification(sm),
 		}
 		if sc, ok := s.scopeCache[h]; ok {
-			sc.signingMethod = sm
+			sc.signingMethod = scNew.signingMethod
+			sc.jwtVerify = scNew.jwtVerify
 			scNew = sc
 		}
-		scNew.scopeHash = scope.NewHash(scp, id)
+		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
 	}
 }
@@ -191,7 +207,7 @@ func WithErrorHandler(scp scope.Scope, id int64, handler ctxhttp.Handler) Option
 			sc.errorHandler = scNew.errorHandler
 			scNew = sc
 		}
-		scNew.scopeHash = scope.NewHash(scp, id)
+		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
 		if scp == scope.DefaultID && id == 0 {
 			s.DefaultErrorHandler = handler
@@ -214,7 +230,7 @@ func WithExpiration(scp scope.Scope, id int64, d time.Duration) Option {
 			sc.expire = scNew.expire
 			scNew = sc
 		}
-		scNew.scopeHash = scope.NewHash(scp, id)
+		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
 	}
 }
@@ -234,136 +250,57 @@ func WithTokenID(scp scope.Scope, id int64, enable bool) Option {
 			sc.enableJTI = scNew.enableJTI
 			scNew = sc
 		}
-		scNew.scopeHash = scope.NewHash(scp, id)
-		s.scopeCache[h] = scNew
-	}
-}
-
-// WithECDSAFromFile loads the ECDSA key from a file @todo
-func WithECDSAFromFile(scp scope.Scope, id int64, fileName string, password ...[]byte) Option {
-	fpk, err := ioutil.ReadFile(fileName)
-	if err != nil {
-		return func(s *Service) {
-			s.MultiErr = s.AppendErrors(err)
-		}
-	}
-	return WithECDSA(scp, id, fpk, password...)
-}
-
-// WithECDSA @todo
-// Default Signing bits 256.
-func WithECDSA(scp scope.Scope, id int64, privateKey []byte, password ...[]byte) Option {
-	err := errors.New("WithECDSA: TODO: implement")
-	return withECDSA(scope.NewHash(scp, id), nil, err)
-}
-
-func withECDSA(h scope.Hash, ecdsapk *ecdsa.PrivateKey, err error) Option {
-	return func(s *Service) {
-		if err != nil {
-			s.MultiErr = s.AppendErrors(err)
-			return
-		}
-
-		s.mu.Lock()
-		defer s.mu.Unlock()
-
-		scNew := scopedConfig{
-			signingMethod: csjwt.SigningMethodES256,
-			ecdsapk:       ecdsapk,
-		}
-
-		if sc, ok := s.scopeCache[h]; ok {
-			sc.signingMethod = scNew.signingMethod
-			sc.rsapk = scNew.rsapk
-			scNew = sc
-		}
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
 	}
 }
 
-// WithRSAFromFile reads an RSA private key from a file and applies it as an option
-// to the AuthManager. Password as second argument is only required when the
-// private key is encrypted. Public key will be derived from the private key.
-func WithRSAFromFile(scp scope.Scope, id int64, fileName string, password ...[]byte) Option {
-	fpk, err := ioutil.ReadFile(fileName)
-	if err != nil {
+// WithKey sets the key for the default signing method of 256 bits.
+// You can also provide your own signing method by using additionally
+// the function WithSigningMethod(), which must be called after this function :-/.
+func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
+	h := scope.NewHash(scp, id)
+	if key.Error != nil {
 		return func(s *Service) {
-			s.MultiErr = s.AppendErrors(err)
+			s.MultiErr = s.AppendErrors(key.Error)
 		}
 	}
-	return WithRSA(scp, id, fpk, password...)
-}
-
-// WithRSA reads PEM byte data and decodes it and parses the private key.
-// Applies the private and the public key to the AuthManager. Password as second
-// argument is only required when the private key is encrypted.
-// Checks for io.Close and closes the resource. Public key will be derived from
-// the private key. Default Signing bits 256.
-func WithRSA(scp scope.Scope, id int64, privateKey []byte, password ...[]byte) Option {
-
-	var prKeyPEM *pem.Block
-	if prKeyPEM, _ = pem.Decode(privateKey); prKeyPEM == nil {
+	if key.IsEmpty() {
 		return func(s *Service) {
-			s.MultiErr = s.AppendErrors(ErrPrivateKeyNotFound)
+			s.MultiErr = s.AppendErrors(errors.New("[ctxjwt] Provided key argument is empty"))
 		}
 	}
-
-	var rsaPrivateKey *rsa.PrivateKey
-	var err error
-	if x509.IsEncryptedPEMBlock(prKeyPEM) {
-		if len(password) != 1 || len(password[0]) == 0 {
-			return func(s *Service) {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("ctxjwt.WithRSA.IsEncryptedPEMBlock", "err", ErrPrivateKeyNoPassword)
-				}
-				s.MultiErr = s.AppendErrors(ErrPrivateKeyNoPassword)
-			}
-		}
-		var dd []byte
-		var errPEM error
-		if dd, errPEM = x509.DecryptPEMBlock(prKeyPEM, password[0]); errPEM != nil {
-			return func(s *Service) {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("ctxjwt.WithRSA.DecryptPEMBlock", "err", errPEM)
-				}
-				s.MultiErr = s.AppendErrors(errPEM)
-			}
-		}
-		rsaPrivateKey, err = x509.ParsePKCS1PrivateKey(dd)
-	} else {
-		rsaPrivateKey, err = x509.ParsePKCS1PrivateKey(prKeyPEM.Bytes)
-	}
-
-	return withRSA(scope.NewHash(scp, id), rsaPrivateKey, err)
-}
-
-// WithRSAGenerator creates an in-memory RSA key without persisting it.
-// This function may run around ~3secs.
-func WithRSAGenerator(scp scope.Scope, id int64) Option {
-	pk, err := rsa.GenerateKey(rand.Reader, PrivateKeyBits)
-	return withRSA(scope.NewHash(scp, id), pk, err)
-}
-
-// withRSA internal option functions which adds a RSA private key to the Service
-func withRSA(h scope.Hash, pk *rsa.PrivateKey, err error) Option {
 	return func(s *Service) {
-		if err != nil {
-			s.MultiErr = s.AppendErrors(err)
-			return
-		}
-
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
 		scNew := scopedConfig{
-			signingMethod: csjwt.SigningMethodRS256,
-			rsapk:         pk,
+			Key: key,
+		}
+
+		// if you are not satisfied with the bit size of 256 you can change it
+		// by using WithSigningMethod
+		switch key.Algorithm() {
+		case csjwt.ES:
+			scNew.signingMethod = csjwt.NewSigningMethodES256()
+		case csjwt.HS:
+			var err error
+			scNew.signingMethod, err = csjwt.NewHMACFast256(key)
+			if err != nil {
+				s.MultiErr = s.AppendErrors(errors.Mask(err))
+				return
+			}
+		case csjwt.RS:
+			scNew.signingMethod = csjwt.NewSigningMethodRS256()
+		default:
+			s.MultiErr = s.AppendErrors(errors.Errorf("[ctxjwt] Unknown signing method - Have: %q Want: ES, HS or RS", key.Algorithm()))
+			return
 		}
 
 		if sc, ok := s.scopeCache[h]; ok {
+			sc.Key = scNew.Key
 			sc.signingMethod = scNew.signingMethod
-			sc.rsapk = scNew.rsapk
+			sc.jwtVerify = csjwt.NewVerification(scNew.signingMethod)
 			scNew = sc
 		}
 		scNew.scopeHash = h
@@ -399,8 +336,10 @@ func optionsByBackend(be *PkgBackend, sg config.ScopedGetter) (opts []Option) {
 		})
 	}
 
+	var key csjwt.Key
+
 	switch signingMethod.Alg() {
-	case csjwt.SigningMethodRS256.Alg(), csjwt.SigningMethodRS384.Alg(), csjwt.SigningMethodRS512.Alg():
+	case csjwt.RS256, csjwt.RS384, csjwt.RS512:
 
 		rsaKey, err := be.NetCtxjwtRSAKey.Get(sg)
 		if err != nil {
@@ -408,15 +347,15 @@ func optionsByBackend(be *PkgBackend, sg config.ScopedGetter) (opts []Option) {
 				s.MultiErr = s.AppendErrors(errors.Mask(err))
 			})
 		}
-		rsaPassword, err := be.NetCtxjwtRSAKeyPassword.Get(sg)
+		rsaPW, err := be.NetCtxjwtRSAKeyPassword.Get(sg)
 		if err != nil {
 			return append(opts, func(s *Service) {
 				s.MultiErr = s.AppendErrors(errors.Mask(err))
 			})
 		}
-		opts = append(opts, WithRSA(scp, id, rsaKey, rsaPassword), WithSigningMethod(scp, id, signingMethod))
+		key = csjwt.WithRSAPrivateKeyFromPEM(rsaKey, rsaPW)
 
-	case csjwt.SigningMethodES256.Alg(), csjwt.SigningMethodES384.Alg(), csjwt.SigningMethodES512.Alg():
+	case csjwt.ES256, csjwt.ES384, csjwt.ES512:
 
 		ecdsaKey, err := be.NetCtxjwtECDSAKey.Get(sg)
 		if err != nil {
@@ -424,15 +363,15 @@ func optionsByBackend(be *PkgBackend, sg config.ScopedGetter) (opts []Option) {
 				s.MultiErr = s.AppendErrors(errors.Mask(err))
 			})
 		}
-		ecdsaPassword, err := be.NetCtxjwtECDSAKeyPassword.Get(sg)
+		ecdsaPW, err := be.NetCtxjwtECDSAKeyPassword.Get(sg)
 		if err != nil {
 			return append(opts, func(s *Service) {
 				s.MultiErr = s.AppendErrors(errors.Mask(err))
 			})
 		}
-		opts = append(opts, WithECDSA(scp, id, ecdsaKey, ecdsaPassword), WithSigningMethod(scp, id, signingMethod))
+		key = csjwt.WithECPrivateKeyFromPEM(ecdsaKey, ecdsaPW)
 
-	case csjwt.SigningMethodHS256.Alg(), csjwt.SigningMethodHS384.Alg(), csjwt.SigningMethodHS512.Alg():
+	case csjwt.HS256, csjwt.HS384, csjwt.HS512:
 
 		password, err := be.NetCtxjwtHmacPassword.Get(sg)
 		if err != nil {
@@ -440,12 +379,14 @@ func optionsByBackend(be *PkgBackend, sg config.ScopedGetter) (opts []Option) {
 				s.MultiErr = s.AppendErrors(errors.Mask(err))
 			})
 		}
-		opts = append(opts, WithPassword(scp, id, password), WithSigningMethod(scp, id, signingMethod))
+		key = csjwt.WithPassword(password)
+
 	default:
 		opts = append(opts, func(s *Service) {
-			s.MultiErr = s.AppendErrors(ErrUnexpectedSigningMethod)
+			s.MultiErr = s.AppendErrors(errors.Errorf("[ctxjwt] Unknown signing method: %q", signingMethod.Alg()))
 		})
 	}
 
-	return opts
+	// WithSigningMethod must be added at the end of the slice to overwrite default signing methods
+	return append(opts, WithKey(scp, id, key), WithSigningMethod(scp, id, signingMethod))
 }

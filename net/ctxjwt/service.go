@@ -15,15 +15,13 @@
 package ctxjwt
 
 import (
-	"sync"
-	"time"
-
 	"net/http"
+	"sync"
 
 	"github.com/corestoreio/csfw/config"
 	"github.com/corestoreio/csfw/net/ctxhttp"
+	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/juju/errors"
@@ -42,9 +40,12 @@ func (j jti) Get() string {
 type Service struct {
 	*cserr.MultiErr
 
-	mu sync.Mutex
+	mu sync.RWMutex
 	// scopeCache internal cache of already created token configurations
 	// scoped.Hash relates to the website ID.
+	// this can become a bottle neck when multiple website IDs supplied by a
+	// request try to access the map. we can use the same pattern like in freecache
+	// to create a segment of 256 slice items to evenly distribute the lock.
 	scopeCache map[scope.Hash]scopedConfig // see freecache to create high concurrent thru put
 
 	// JTI represents the interface to generate a new UUID aka JWT ID
@@ -105,6 +106,7 @@ func (s *Service) Options(opts ...Option) error {
 	return nil
 }
 
+// ClaimsStandard creates a new struct with preset ExpiresAt, IssuedAt and ID.
 func (s *Service) ClaimsStandard(scp scope.Scope, id int64) (*csjwt.StandardClaims, error) {
 	cfg, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
@@ -125,7 +127,12 @@ func (s *Service) ClaimsStandard(scp scope.Scope, id int64) (*csjwt.StandardClai
 	return c, nil
 }
 
-func (s *Service) ClaimsMap(scp scope.Scope, id int64, mc csjwt.MapClaims) (csjwt.MapClaims, error) {
+// NewToken creates a new JSON web token based on the Claimer interface and
+// depending on the scope and the scoped based configuration. The returned token slice
+// is owned by the caller. ExpiresAt, IssuedAt and ID are already set and cannot
+// be overwritten.
+func (s *Service) NewToken(scp scope.Scope, id int64, claims csjwt.Claimer) (token text.Chars, err error) {
+
 	cfg, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
 		return nil, err
@@ -133,95 +140,65 @@ func (s *Service) ClaimsMap(scp scope.Scope, id int64, mc csjwt.MapClaims) (csjw
 
 	now := csjwt.TimeFunc()
 
-	c := make(csjwt.MapClaims)
-	c["exp"] = now.Add(cfg.expire).Unix()
-	c["iat"] = now.Unix()
+	if err := claims.Set(csjwt.ClaimExpiresAt, now.Add(cfg.expire).Unix()); err != nil {
+		return nil, errors.Mask(err)
+	}
+	if err := claims.Set(csjwt.ClaimIssuedAt, now.Unix()); err != nil {
+		return nil, errors.Mask(err)
+	}
 
 	if cfg.enableJTI && s.JTI != nil {
-		c["jti"] = s.JTI.Get()
+		if err := claims.Set(csjwt.ClaimID, s.JTI.Get()); err != nil {
+			return nil, errors.Mask(err)
+		}
 	}
-	for k, v := range mc {
-		c[k] = v
-	}
-	return c, nil
+
+	t := csjwt.NewToken(claims)
+	return t.SignedString(cfg.signingMethod, cfg.Key)
 }
 
-// GenerateToken creates a new JSON web token. The claims argument will be
-// assigned after the registered claim names exp and iat have been set.
-// If EnableJTI is false the returned argument jti is empty.
-// For details of the registered claim names please see
-// http://self-issued.info/docs/draft-ietf-oauth-json-web-token.html#rfc.section.4.1
-// This function is thread safe.
-func (s *Service) GenerateToken(scp scope.Scope, id int64, claims csjwt.Claimer) (token, jti string, err error) {
-
-	cfg, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
-	if err != nil {
-		return "", "", err
-	}
-
-	t := csjwt.New(cfg.signingMethod)
-	t.Claims = claims
-
-	switch cfg.signingMethod.Alg() {
-	case csjwt.SigningMethodRS256.Alg(), csjwt.SigningMethodRS384.Alg(), csjwt.SigningMethodRS512.Alg():
-		token, err = t.SignedString(cfg.rsapk)
-	case csjwt.SigningMethodES256.Alg(), csjwt.SigningMethodES384.Alg(), csjwt.SigningMethodES512.Alg():
-		token, err = t.SignedString(cfg.ecdsapk)
-	case csjwt.SigningMethodHS256.Alg(), csjwt.SigningMethodHS384.Alg(), csjwt.SigningMethodHS512.Alg():
-		token, err = t.SignedString(cfg.hmacPassword)
-	default:
-		return "", "", ErrUnexpectedSigningMethod
-	}
-	return
-}
-
-// Logout adds a token securely to a blacklist with the expiration duration
+// Logout adds a token securely to a blacklist with the expiration duration.
 func (s *Service) Logout(token csjwt.Token) error {
-	if token == nil || token.Raw == "" || token.Valid == false {
+	if len(token.Raw) == 0 || token.Valid == false {
 		return nil
 	}
 
-	var exp time.Duration
-	if cexp, ok := token.Claims["exp"]; ok {
-		fexp := conv.ToFloat64(cexp)
-		if fexp > 0.001 {
-			tm := time.Unix(int64(fexp), 0)
-			if remainer := tm.Sub(time.Now()); remainer > 0 {
-				exp = remainer
-			}
-		}
-	}
-	return s.Blacklist.Set([]byte(token.Raw), exp)
+	return s.Blacklist.Set(token.Raw, token.Claims.Expires())
 }
 
 // Parse parses a token string with the DefaultID scope and returns the
 // valid token or an error.
-func (s *Service) Parse(rawToken string) (csjwt.Token, error) {
+func (s *Service) Parse(rawToken []byte) (csjwt.Token, error) {
 	return s.ParseScoped(scope.DefaultID, 0, rawToken)
 }
 
 // ParseScoped parses a token based on the applied scope and the scope ID.
 // Different configurations are passed to the token parsing function.
 // The black list will be checked for containing entries.
-func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken string) (csjwt.Token, error) {
-
+func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken []byte) (csjwt.Token, error) {
+	var emptyTok csjwt.Token
 	sc, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
-		return nil, err
+		return emptyTok, err
 	}
 
-	token, err := csjwt.Parse(rawToken, sc.keyFunc)
-	var inBL bool
-	if token != nil {
-		inBL = s.Blacklist.Has([]byte(token.Raw))
+	token, err := sc.parseWithClaim(rawToken)
+	if err != nil {
+		return emptyTok, errors.Mask(err)
 	}
-	if token != nil && err == nil && token.Valid && !inBL {
+
+	var inBL bool
+	isValid := token.Valid && len(token.Raw) > 0
+	if isValid {
+		inBL = s.Blacklist.Has(token.Raw)
+	}
+	if isValid && !inBL {
 		return token, nil
 	}
 	if PkgLog.IsDebug() {
-		PkgLog.Debug("ctxjwt.Service.Parse", "err", err, "inBlackList", inBL, "rawToken", rawToken, "token", token)
+		PkgLog.Debug("ctxjwt.Service.Parse", "err", err, "inBlackList", inBL, "rawToken", string(rawToken), "token", token)
 	}
-	return nil, errors.Mask(err)
+	return emptyTok, errors.Mask(err)
 }
 
 // getConfigByScopedGetter used in the middleware where sg comes from the store.Website.Config
@@ -235,7 +212,8 @@ func (s *Service) getConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig,
 
 	sc, err := s.getConfigByScopeID(false, h)
 	if err == nil {
-		// cached entry found!
+		// cached entry found and ignore the error because we fall back to
+		// default scope at the end of this function.
 		return sc, nil
 	}
 
@@ -250,35 +228,48 @@ func (s *Service) getConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig,
 }
 
 func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConfig, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
+	var empty scopedConfig
 	// requested scope plus ID
-	if scpJWT, ok := s.getScopedConfig(hash); ok {
-		return scpJWT, nil
+	scpCfg, ok := s.getScopedConfig(hash)
+	if ok {
+		if scpCfg.isValid() {
+			return scpCfg, nil
+		}
+		return empty, errors.Errorf("[ctxjwt] Incomplete configuration for %s. Missing Signing Method and its Key.", hash)
 	}
 
 	if fallback {
 		// fallback to default scope
-		if scpJWT, ok := s.getScopedConfig(scope.DefaultHash); ok {
-			return scpJWT, nil
+		if scpCfg, ok := s.getScopedConfig(scope.DefaultHash); ok {
+			return scpCfg, nil
 		}
 	}
 
 	// give up, nothing found
-	scp, id := hash.Unpack()
-	return scopedConfig{}, errors.Errorf("[ctxjwt.Service] Cannot find JWT configuration for Scope(%s) and ID %d", scp, id)
+	return empty, errors.Errorf("[ctxjwt] Cannot find JWT configuration for %s", hash)
 }
 
 // getScopedConfig part of lookupScopedConfig and doesn't use a lock because the lock
 // has been acquired in lookupScopedConfig()
 func (s *Service) getScopedConfig(h scope.Hash) (sc scopedConfig, ok bool) {
+	s.mu.RLock()
 	sc, ok = s.scopeCache[h]
+	s.mu.RUnlock()
+
 	if ok {
+		var hasChanges bool
 		if nil == sc.keyFunc {
-			// set the keyFunc and cache it
 			sc.keyFunc = getKeyFunc(sc)
+			hasChanges = true
+		}
+		if sc.expire < 1 {
+			sc.expire = DefaultExpire
+			hasChanges = true
+		}
+		if hasChanges {
+			s.mu.Lock()
 			s.scopeCache[h] = sc
+			s.mu.Unlock()
 		}
 	}
 	return sc, ok

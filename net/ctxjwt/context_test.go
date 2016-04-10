@@ -19,6 +19,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/net/ctxjwt"
+	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -31,17 +32,19 @@ func TestContextWithError(t *testing.T) {
 	assert.NotNil(t, ctx)
 
 	haveToken, haveErr := ctxjwt.FromContext(ctx)
-	assert.Nil(t, haveToken)
+	assert.NotNil(t, haveToken)
+	assert.False(t, haveToken.Valid)
 	assert.EqualError(t, haveErr, wantErr.Error())
 }
 
 func TestFromContext(t *testing.T) {
 	t.Parallel()
 
-	ctx := ctxjwt.WithContext(context.Background(), nil)
+	ctx := ctxjwt.WithContext(context.Background(), csjwt.Token{})
 	assert.NotNil(t, ctx)
 
 	haveToken, haveErr := ctxjwt.FromContext(ctx)
-	assert.Nil(t, haveToken)
+	assert.NotNil(t, haveToken)
+	assert.False(t, haveToken.Valid)
 	assert.EqualError(t, haveErr, ctxjwt.ErrContextJWTNotFound.Error())
 }
