@@ -410,7 +410,7 @@ func benchmarkParseFromRequest(b *testing.B, sm csjwt.Signer, key csjwt.Key, key
 
 	veri := csjwt.NewVerification(sm)
 
-	mc := &ShoppingCartClaim{}
+	mc := &ShoppingCartClaim{Standard: new(jwtclaim.Standard)}
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {

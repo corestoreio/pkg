@@ -11,68 +11,6 @@ import (
 	fflib "github.com/pquerna/ffjson/fflib/v1"
 )
 
-func (mj *Standard) MarshalJSON() ([]byte, error) {
-	var buf fflib.Buffer
-	if mj == nil {
-		buf.WriteString("null")
-		return buf.Bytes(), nil
-	}
-	err := mj.MarshalJSONBuf(&buf)
-	if err != nil {
-		return nil, err
-	}
-	return buf.Bytes(), nil
-}
-func (mj *Standard) MarshalJSONBuf(buf fflib.EncodingBuffer) error {
-	if mj == nil {
-		buf.WriteString("null")
-		return nil
-	}
-	var err error
-	var obj []byte
-	_ = obj
-	_ = err
-	buf.WriteString(`{ `)
-	if len(mj.Audience) != 0 {
-		buf.WriteString(`"aud":`)
-		fflib.WriteJsonString(buf, string(mj.Audience))
-		buf.WriteByte(',')
-	}
-	if mj.ExpiresAt != 0 {
-		buf.WriteString(`"exp":`)
-		fflib.FormatBits2(buf, uint64(mj.ExpiresAt), 10, mj.ExpiresAt < 0)
-		buf.WriteByte(',')
-	}
-	if len(mj.ID) != 0 {
-		buf.WriteString(`"jti":`)
-		fflib.WriteJsonString(buf, string(mj.ID))
-		buf.WriteByte(',')
-	}
-	if mj.IssuedAt != 0 {
-		buf.WriteString(`"iat":`)
-		fflib.FormatBits2(buf, uint64(mj.IssuedAt), 10, mj.IssuedAt < 0)
-		buf.WriteByte(',')
-	}
-	if len(mj.Issuer) != 0 {
-		buf.WriteString(`"iss":`)
-		fflib.WriteJsonString(buf, string(mj.Issuer))
-		buf.WriteByte(',')
-	}
-	if mj.NotBefore != 0 {
-		buf.WriteString(`"nbf":`)
-		fflib.FormatBits2(buf, uint64(mj.NotBefore), 10, mj.NotBefore < 0)
-		buf.WriteByte(',')
-	}
-	if len(mj.Subject) != 0 {
-		buf.WriteString(`"sub":`)
-		fflib.WriteJsonString(buf, string(mj.Subject))
-		buf.WriteByte(',')
-	}
-	buf.Rewind(1)
-	buf.WriteByte('}')
-	return nil
-}
-
 const (
 	ffj_t_Standardbase = iota
 	ffj_t_Standardno_such_key

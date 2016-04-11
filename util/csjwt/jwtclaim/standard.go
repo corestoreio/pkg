@@ -12,6 +12,7 @@ import (
 
 // Standard represents a structured version of Claims Section, as
 // referenced at https://tools.ietf.org/html/rfc7519#section-4.1
+// ffjson: noencoder
 type Standard struct {
 	// Audience claim identifies the recipients that the JWT is
 	// intended for.  Each principal intended to process the JWT MUST

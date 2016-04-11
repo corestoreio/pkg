@@ -28,9 +28,18 @@ const (
 	ClaimUserID = "userid"
 )
 
+// NewStore creates a new Store pointer and makes sure that all sub pointer
+// types will also be created.
+func NewStore() *Store {
+	return &Store{
+		Standard: new(Standard),
+	}
+}
+
 // Store extends the StandardClaim with important fields for requesting the
 // correct store view, user ID and maybe some more useful fields.
 // This struct is for your convenience.
+// ffjson: noencoder
 type Store struct {
 	*Standard
 	Store string `json:"store,omitempty"`
