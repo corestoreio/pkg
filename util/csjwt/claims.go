@@ -132,30 +132,33 @@ func (c StandardClaims) Valid() error {
 }
 
 // Set sets a value. Key must be one of the constants Claim*.
-func (c *StandardClaims) Set(key string, value interface{}) error {
-	var ok bool
+func (c *StandardClaims) Set(key string, value interface{}) (err error) {
 	switch key {
 	case ClaimAudience:
-		c.Audience, ok = value.(string)
+		c.Audience, err = conv.ToStringE(value)
+		err = errors.Mask(err)
 	case ClaimExpiresAt:
-		c.ExpiresAt, ok = value.(int64)
+		c.ExpiresAt, err = conv.ToInt64E(value)
+		err = errors.Mask(err)
 	case ClaimID:
-		c.ID, ok = value.(string)
+		c.ID, err = conv.ToStringE(value)
+		err = errors.Mask(err)
 	case ClaimIssuedAt:
-		c.IssuedAt, ok = value.(int64)
+		c.IssuedAt, err = conv.ToInt64E(value)
+		err = errors.Mask(err)
 	case ClaimIssuer:
-		c.Issuer, ok = value.(string)
+		c.Issuer, err = conv.ToStringE(value)
+		err = errors.Mask(err)
 	case ClaimNotBefore:
-		c.NotBefore, ok = value.(int64)
+		c.NotBefore, err = conv.ToInt64E(value)
+		err = errors.Mask(err)
 	case ClaimSubject:
-		c.Subject, ok = value.(string)
+		c.Subject, err = conv.ToStringE(value)
+		err = errors.Mask(err)
 	default:
 		return errors.Errorf("Claim %q not supported. Please see constants Claim*.", key)
 	}
-	if !ok {
-		return errors.Errorf("Cannot convert key %q with value %#v to string or int64", key, value)
-	}
-	return nil
+	return err
 }
 
 // Get returns a value or nil or an error. Key must be one of the constants Claim*.
@@ -235,15 +238,15 @@ func (m MapClaims) VerifyAudience(cmp string, req bool) bool {
 // Compares the exp claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyExpiresAt(cmp int64, req bool) bool {
-	exp := conv.ToFloat64(m["exp"])
-	return verifyExp(int64(exp), cmp, req)
+	exp := conv.ToInt64(m["exp"])
+	return verifyExp(exp, cmp, req)
 }
 
 // Compares the iat claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyIssuedAt(cmp int64, req bool) bool {
-	iat := conv.ToFloat64(m["iat"])
-	return verifyIat(int64(iat), cmp, req)
+	iat := conv.ToInt64(m["iat"])
+	return verifyIat(iat, cmp, req)
 }
 
 // Compares the iss claim against cmp.
@@ -256,8 +259,8 @@ func (m MapClaims) VerifyIssuer(cmp string, req bool) bool {
 // Compares the nbf claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (m MapClaims) VerifyNotBefore(cmp int64, req bool) bool {
-	nbf := conv.ToFloat64(m["nbf"])
-	return verifyNbf(int64(nbf), cmp, req)
+	nbf := conv.ToInt64(m["nbf"])
+	return verifyNbf(nbf, cmp, req)
 }
 
 // Validates time based claims "exp, iat, nbf". There is no accounting for

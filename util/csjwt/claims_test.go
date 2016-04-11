@@ -109,7 +109,7 @@ func TestClaimsGetSet(t *testing.T) {
 		wantSetErr error
 		wantGetErr error
 	}{
-		{&csjwt.StandardClaims{}, csjwt.ClaimAudience, '', errors.New("Cannot convert key \"aud\" with value 63743 to string or int64"), nil},
+		{&csjwt.StandardClaims{}, csjwt.ClaimAudience, '', errors.New("Unable to cast 63743 to string"), nil},
 		{&csjwt.StandardClaims{}, csjwt.ClaimAudience, "Go", nil, nil},
 		{&csjwt.StandardClaims{}, csjwt.ClaimExpiresAt, time.Now().Unix(), nil, nil},
 		{&csjwt.StandardClaims{}, "Not Supported", time.Now().Unix(), errors.New("Claim \"Not Supported\" not supported. Please see constants Claim*."), errors.New("Claim \"Not Supported\" not supported. Please see constants Claim*.")},
