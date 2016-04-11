@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 )
 
 var (
@@ -115,8 +116,11 @@ func verifyToken() error {
 		fmt.Fprintf(os.Stderr, "Token len: %v bytes\n", len(tokData))
 	}
 
+	v := csjwt.NewVerification(csjwt.NewSigningMethodES256(), csjwt.NewSigningMethodHS256())
+
+	mc := &jwtclaim.Map{}
 	// Parse the token.  Load the key from command line option
-	token, err := csjwt.Parse(tokData, func(t csjwt.Token) (csjwt.Key, error) {
+	token, err := v.ParseWithClaim(tokData, func(t csjwt.Token) (csjwt.Key, error) {
 		data, err := loadData(*flagKey)
 		if err != nil {
 			return csjwt.Key{}, err
@@ -125,7 +129,7 @@ func verifyToken() error {
 			return csjwt.WithECPublicKeyFromPEM(data), nil
 		}
 		return csjwt.WithPassword(data), nil
-	})
+	}, mc)
 
 	// Print some debug data
 	if *flagDebug && token.Raw != nil {
@@ -163,7 +167,7 @@ func signToken() error {
 	}
 
 	// parse the JSON of the claims
-	var claims csjwt.MapClaims
+	var claims jwtclaim.Map
 	if err := json.Unmarshal(tokData, &claims); err != nil {
 		return fmt.Errorf("Couldn't parse claims JSON: %v", err)
 	}
@@ -176,13 +180,13 @@ func signToken() error {
 	}
 
 	// get the signing alg
-	alg, err := csjwt.GetSigningMethod(*flagAlg)
-	if alg == nil || err != nil {
+	sMethod, err := csjwt.NewSigningMethodByAlg(*flagAlg)
+	if sMethod == nil || err != nil {
 		return fmt.Errorf("Couldn't find signing method: %q - Error: %s", *flagAlg, err)
 	}
 
 	// create a new token
-	token := csjwt.NewWithClaims(alg, claims)
+	token := csjwt.NewToken(claims)
 
 	var key csjwt.Key
 	if isEs() {
@@ -191,7 +195,7 @@ func signToken() error {
 		key = csjwt.WithPassword(rawKey)
 	}
 
-	if out, err := token.SignedString(key); err == nil {
+	if out, err := token.SignedString(sMethod, key); err == nil {
 		fmt.Println(out)
 	} else {
 		return fmt.Errorf("Error signing token: %v", err)

@@ -12,27 +12,27 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package csjwt_test
+package jwtclaim_test
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
-	"errors"
-	"math"
-
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
 )
 
-var _ csjwt.Claimer = (*csjwt.StandardClaims)(nil)
-var _ csjwt.Claimer = (*csjwt.MapClaims)(nil)
+var _ csjwt.Claimer = (*jwtclaim.Standard)(nil)
+var _ csjwt.Claimer = (*jwtclaim.Map)(nil)
 
 func TestStandardClaimsParseJSON(t *testing.T) {
 
-	sc := csjwt.StandardClaims{
+	sc := jwtclaim.Standard{
 		Audience:  `LOTR`,
 		ExpiresAt: time.Now().Add(time.Hour).Unix(),
 
@@ -47,7 +47,7 @@ func TestStandardClaimsParseJSON(t *testing.T) {
 	}
 	assert.Len(t, rawJSON, 102, "JSON: %s", rawJSON)
 
-	scNew := csjwt.StandardClaims{}
+	scNew := jwtclaim.Standard{}
 	if err := json.Unmarshal(rawJSON, &scNew); err != nil {
 		t.Fatal(err)
 	}
@@ -60,15 +60,15 @@ func TestClaimsValid(t *testing.T) {
 		sc        csjwt.Claimer
 		wantValid error
 	}{
-		{&csjwt.StandardClaims{}, csjwt.ErrValidationClaimsInvalid},
-		{&csjwt.StandardClaims{ExpiresAt: time.Now().Add(time.Second).Unix()}, nil},
-		{&csjwt.StandardClaims{ExpiresAt: time.Now().Add(-time.Second).Unix()}, csjwt.ErrValidationExpired},
-		{&csjwt.StandardClaims{IssuedAt: time.Now().Add(-time.Second).Unix()}, nil},
-		{&csjwt.StandardClaims{IssuedAt: time.Now().Add(time.Second * 5).Unix()}, csjwt.ErrValidationUsedBeforeIssued},
-		{&csjwt.StandardClaims{NotBefore: time.Now().Add(-time.Second).Unix()}, nil},
-		{&csjwt.StandardClaims{NotBefore: time.Now().Add(time.Second * 5).Unix()}, csjwt.ErrValidationNotValidYet},
+		{&jwtclaim.Standard{}, csjwt.ErrValidationClaimsInvalid},
+		{&jwtclaim.Standard{ExpiresAt: time.Now().Add(time.Second).Unix()}, nil},
+		{&jwtclaim.Standard{ExpiresAt: time.Now().Add(-time.Second).Unix()}, csjwt.ErrValidationExpired},
+		{&jwtclaim.Standard{IssuedAt: time.Now().Add(-time.Second).Unix()}, nil},
+		{&jwtclaim.Standard{IssuedAt: time.Now().Add(time.Second * 5).Unix()}, csjwt.ErrValidationUsedBeforeIssued},
+		{&jwtclaim.Standard{NotBefore: time.Now().Add(-time.Second).Unix()}, nil},
+		{&jwtclaim.Standard{NotBefore: time.Now().Add(time.Second * 5).Unix()}, csjwt.ErrValidationNotValidYet},
 		{
-			&csjwt.StandardClaims{
+			&jwtclaim.Standard{
 				ExpiresAt: time.Now().Add(-time.Second).Unix(),
 				IssuedAt:  time.Now().Add(time.Second * 5).Unix(),
 				NotBefore: time.Now().Add(time.Second * 5).Unix(),
@@ -76,15 +76,15 @@ func TestClaimsValid(t *testing.T) {
 			fmt.Errorf("%s\n%s\n%s", csjwt.ErrValidationExpired, csjwt.ErrValidationUsedBeforeIssued, csjwt.ErrValidationNotValidYet),
 		},
 
-		{csjwt.MapClaims{}, csjwt.ErrValidationClaimsInvalid},                                         // 7
-		{csjwt.MapClaims{"exp": time.Now().Add(time.Second).Unix()}, nil},                             // 8
-		{csjwt.MapClaims{"exp": time.Now().Add(-time.Second * 2).Unix()}, csjwt.ErrValidationExpired}, // 9
-		{csjwt.MapClaims{"iat": time.Now().Add(-time.Second).Unix()}, nil},                            // 10
-		{csjwt.MapClaims{"iat": time.Now().Add(time.Second * 5).Unix()}, csjwt.ErrValidationUsedBeforeIssued},
-		{csjwt.MapClaims{"nbf": time.Now().Add(-time.Second).Unix()}, nil},
-		{csjwt.MapClaims{"nbf": time.Now().Add(time.Second * 5).Unix()}, csjwt.ErrValidationNotValidYet},
+		{jwtclaim.Map{}, csjwt.ErrValidationClaimsInvalid},                                         // 7
+		{jwtclaim.Map{"exp": time.Now().Add(time.Second).Unix()}, nil},                             // 8
+		{jwtclaim.Map{"exp": time.Now().Add(-time.Second * 2).Unix()}, csjwt.ErrValidationExpired}, // 9
+		{jwtclaim.Map{"iat": time.Now().Add(-time.Second).Unix()}, nil},                            // 10
+		{jwtclaim.Map{"iat": time.Now().Add(time.Second * 5).Unix()}, csjwt.ErrValidationUsedBeforeIssued},
+		{jwtclaim.Map{"nbf": time.Now().Add(-time.Second).Unix()}, nil},
+		{jwtclaim.Map{"nbf": time.Now().Add(time.Second * 5).Unix()}, csjwt.ErrValidationNotValidYet},
 		{
-			csjwt.MapClaims{
+			jwtclaim.Map{
 				"exp": time.Now().Add(-time.Second).Unix(),
 				"iat": time.Now().Add(time.Second * 5).Unix(),
 				"nbf": time.Now().Add(time.Second * 5).Unix(),
@@ -109,14 +109,14 @@ func TestClaimsGetSet(t *testing.T) {
 		wantSetErr error
 		wantGetErr error
 	}{
-		{&csjwt.StandardClaims{}, csjwt.ClaimAudience, '', errors.New("Unable to cast 63743 to string"), nil},
-		{&csjwt.StandardClaims{}, csjwt.ClaimAudience, "Go", nil, nil},
-		{&csjwt.StandardClaims{}, csjwt.ClaimExpiresAt, time.Now().Unix(), nil, nil},
-		{&csjwt.StandardClaims{}, "Not Supported", time.Now().Unix(), errors.New("Claim \"Not Supported\" not supported. Please see constants Claim*."), errors.New("Claim \"Not Supported\" not supported. Please see constants Claim*.")},
+		{&jwtclaim.Standard{}, jwtclaim.ClaimAudience, '', errors.New("Unable to cast 63743 to string"), nil},
+		{&jwtclaim.Standard{}, jwtclaim.ClaimAudience, "Go", nil, nil},
+		{&jwtclaim.Standard{}, jwtclaim.ClaimExpiresAt, time.Now().Unix(), nil, nil},
+		{&jwtclaim.Standard{}, "Not Supported", time.Now().Unix(), errors.New("Claim \"Not Supported\" not supported. Please see constants Claim*."), errors.New("Claim \"Not Supported\" not supported. Please see constants Claim*.")},
 
-		{csjwt.MapClaims{}, csjwt.ClaimAudience, "Go", nil, nil},
-		{csjwt.MapClaims{}, csjwt.ClaimExpiresAt, time.Now().Unix(), nil, nil},
-		{csjwt.MapClaims{}, "Not Supported", math.Pi, nil, nil},
+		{jwtclaim.Map{}, jwtclaim.ClaimAudience, "Go", nil, nil},
+		{jwtclaim.Map{}, jwtclaim.ClaimExpiresAt, time.Now().Unix(), nil, nil},
+		{jwtclaim.Map{}, "Not Supported", math.Pi, nil, nil},
 	}
 	for i, test := range tests {
 
@@ -147,16 +147,16 @@ func TestClaimsExpires(t *testing.T) {
 		sc      csjwt.Claimer
 		wantExp time.Duration
 	}{
-		{&csjwt.StandardClaims{ExpiresAt: tm.Add(time.Second * 2).Unix()}, time.Second * 1},
-		{&csjwt.StandardClaims{ExpiresAt: tm.Add(time.Second * 5).Unix()}, time.Second * 4},
-		{&csjwt.StandardClaims{ExpiresAt: -123123}, time.Duration(0)},
-		{&csjwt.StandardClaims{}, time.Duration(0)},
+		{&jwtclaim.Standard{ExpiresAt: tm.Add(time.Second * 2).Unix()}, time.Second * 1},
+		{&jwtclaim.Standard{ExpiresAt: tm.Add(time.Second * 5).Unix()}, time.Second * 4},
+		{&jwtclaim.Standard{ExpiresAt: -123123}, time.Duration(0)},
+		{&jwtclaim.Standard{}, time.Duration(0)},
 
-		{csjwt.MapClaims{"exp": tm.Add(time.Second * 2).Unix()}, time.Second * 1},
-		{csjwt.MapClaims{"exp": tm.Add(time.Second * 22).Unix()}, time.Second * 21},
-		{csjwt.MapClaims{"exp": -123123}, time.Duration(0)},
-		{csjwt.MapClaims{"eXp": 23}, time.Duration(0)},
-		{csjwt.MapClaims{"exp": fmt.Sprintf("%d", tm.Unix()+10)}, time.Second * 9},
+		{jwtclaim.Map{"exp": tm.Add(time.Second * 2).Unix()}, time.Second * 1},
+		{jwtclaim.Map{"exp": tm.Add(time.Second * 22).Unix()}, time.Second * 21},
+		{jwtclaim.Map{"exp": -123123}, time.Duration(0)},
+		{jwtclaim.Map{"eXp": 23}, time.Duration(0)},
+		{jwtclaim.Map{"exp": fmt.Sprintf("%d", tm.Unix()+10)}, time.Second * 9},
 	}
 	for i, test := range tests {
 		assert.Exactly(t, int64(test.wantExp.Seconds()), int64(test.sc.Expires().Seconds()), "Index %d", i)

@@ -33,3 +33,36 @@ func TestMethodsSlice(t *testing.T) {
 	ms = []Signer{NewSigningMethodRS256()}
 	assert.Exactly(t, `RS256`, ms.String())
 }
+
+func TestMustNewSigningMethodByAlg(t *testing.T) {
+	defer func() {
+		if r := recover(); r != nil {
+			assert.EqualError(t, r.(error), "[csjwt] Unknown signing algorithm \"rot13\"")
+		} else {
+			t.Fatal("Missing a panic!")
+		}
+	}()
+	_ = MustNewSigningMethodByAlg("rot13")
+}
+
+func TestNewSigningMethodByAlg(t *testing.T) {
+	tests := []struct {
+		alg string
+	}{
+		{ES256},
+		{ES384},
+		{ES512},
+		{HS256},
+		{HS384},
+		{HS512},
+		{PS256},
+		{PS384},
+		{PS512},
+		{RS256},
+		{RS384},
+		{RS512},
+	}
+	for _, test := range tests {
+		assert.NotNil(t, MustNewSigningMethodByAlg(test.alg), "Index %s", test.alg)
+	}
+}

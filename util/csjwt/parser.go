@@ -42,12 +42,6 @@ func NewVerification(availableSigners ...Signer) *Verification {
 	}
 }
 
-// ParseWithMap validate, and return a token. Uses the MapClaims type.
-// keyFunc will receive the parsed token and should return the key for validating.
-func (vf *Verification) ParseWithMap(rawToken []byte, keyFunc Keyfunc) (Token, error) {
-	return vf.ParseWithClaim(rawToken, keyFunc, &MapClaims{})
-}
-
 // ParseWithClaims same as Parse() but lets you specify your own Claimer.
 // Claimer must be a pointer.
 func (vf *Verification) ParseWithClaim(rawToken []byte, keyFunc Keyfunc, claims Claimer) (Token, error) {

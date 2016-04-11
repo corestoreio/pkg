@@ -14,6 +14,7 @@ import (
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +31,7 @@ var jwtTestData = []struct {
 	name        string
 	tokenString []byte
 	keyfunc     csjwt.Keyfunc
-	claims      csjwt.MapClaims
+	claims      jwtclaim.Map
 	valid       bool
 	wantErr     error
 	parser      *csjwt.Verification
@@ -39,7 +40,7 @@ var jwtTestData = []struct {
 		"basic",
 		[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
 		defaultKeyFunc,
-		csjwt.MapClaims{"foo": "bar"},
+		jwtclaim.Map{"foo": "bar"},
 		true,
 		nil,
 		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
@@ -48,7 +49,7 @@ var jwtTestData = []struct {
 		"basic expired",
 		nil, // autogen
 		defaultKeyFunc,
-		csjwt.MapClaims{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
+		jwtclaim.Map{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
 		false,
 		csjwt.ErrValidationExpired,
 		csjwt.NewVerification(),
@@ -57,7 +58,7 @@ var jwtTestData = []struct {
 		"basic nbf",
 		nil, // autogen
 		defaultKeyFunc,
-		csjwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
+		jwtclaim.Map{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
 		false,
 		csjwt.ErrValidationNotValidYet,
 		csjwt.NewVerification(),
@@ -66,7 +67,7 @@ var jwtTestData = []struct {
 		"expired and nbf",
 		nil, // autogen
 		defaultKeyFunc,
-		csjwt.MapClaims{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
+		jwtclaim.Map{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
 		false,
 		cserr.NewMultiErr(csjwt.ErrValidationNotValidYet, csjwt.ErrValidationExpired),
 		csjwt.NewVerification(),
@@ -75,7 +76,7 @@ var jwtTestData = []struct {
 		"basic invalid",
 		[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.EhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
 		defaultKeyFunc,
-		csjwt.MapClaims{"foo": "bar"},
+		jwtclaim.Map{"foo": "bar"},
 		false,
 		csjwt.ErrSignatureInvalid,
 		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
@@ -84,7 +85,7 @@ var jwtTestData = []struct {
 		"basic nokeyfunc",
 		[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
 		nilKeyFunc,
-		csjwt.MapClaims{"foo": "bar"},
+		jwtclaim.Map{"foo": "bar"},
 		false,
 		errors.New("[csjwt] Missing KeyFunc"),
 		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
@@ -93,7 +94,7 @@ var jwtTestData = []struct {
 		"basic nokey",
 		[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
 		emptyKeyFunc,
-		csjwt.MapClaims{"foo": "bar"},
+		jwtclaim.Map{"foo": "bar"},
 		false,
 		csjwt.ErrSignatureInvalid,
 		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
@@ -102,7 +103,7 @@ var jwtTestData = []struct {
 		"basic errorkey",
 		[]byte("eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiJ9.eyJmb28iOiJiYXIifQ.FhkiHkoESI_cG3NPigFrxEk9Z60_oXrOT2vGm9Pn6RDgYNovYORQmmA0zs1AoAOf09ly2Nx2YAg6ABqAYga1AcMFkJljwxTT5fYphTuqpWdy4BELeSYJx5Ty2gmr8e7RonuUztrdD5WfPqLKMm1Ozp_T6zALpRmwTIW0QPnaBXaQD90FplAg46Iy1UlDKr-Eupy0i5SLch5Q-p2ZpaL_5fnTIUDlxC3pWhJTyx_71qDI-mAA_5lE_VdroOeflG56sSmDxopPEG3bFlSu1eowyBfxtu0_CuVd-M42RU75Zc4Gsj6uV77MBtbMrf4_7M_NUTSgoIF3fRqxrj0NzihIBg"),
 		errorKeyFunc,
-		csjwt.MapClaims{"foo": "bar"},
+		jwtclaim.Map{"foo": "bar"},
 		false,
 		csjwt.ErrTokenUnverifiable,
 		csjwt.NewVerification(csjwt.NewSigningMethodRS256()),
@@ -127,7 +128,7 @@ var jwtTestData = []struct {
 	},
 }
 
-func makeSample(c csjwt.MapClaims) []byte {
+func makeSample(c jwtclaim.Map) []byte {
 	token := csjwt.NewToken(c)
 	s, err := token.SignedString(csjwt.NewSigningMethodRS256(), csjwt.WithRSAPrivateKeyFromFile("test/sample_key"))
 	if err != nil {
@@ -143,7 +144,7 @@ func TestParseWithMap(t *testing.T) {
 			data.tokenString = makeSample(data.claims)
 		}
 
-		token, err := data.parser.ParseWithMap(data.tokenString, data.keyfunc)
+		token, err := data.parser.ParseWithClaim(data.tokenString, data.keyfunc, &jwtclaim.Map{})
 
 		if !reflect.DeepEqual(&data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
@@ -181,7 +182,7 @@ func TestParseFromRequest(t *testing.T) {
 
 		r, _ := http.NewRequest("GET", "/", nil)
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", data.tokenString))
-		token, err := data.parser.ParseFromRequest(r, data.keyfunc, &csjwt.MapClaims{})
+		token, err := data.parser.ParseFromRequest(r, data.keyfunc, &jwtclaim.Map{})
 
 		if token.Raw == nil {
 			t.Errorf("[%v] Token was not found: %v", data.name, err)
@@ -203,7 +204,7 @@ func TestParseFromRequestComplex(t *testing.T) {
 	t.Parallel()
 
 	key := csjwt.WithPassword([]byte(`csjwt.SigningMethodHS512!`))
-	clm := csjwt.MapClaims{
+	clm := jwtclaim.Map{
 		"foo":               "bar",
 		"user_id":           "hello_gophers",
 		"cart_items":        "234234,12;34234,34;234234,1;123123,12;234234,12;34234,34;234234,1;123123,12;234234,12;34234,34;234234,1;123123,12;",
@@ -223,7 +224,7 @@ func TestParseFromRequestComplex(t *testing.T) {
 	r, _ := http.NewRequest("GET", "/", nil)
 	r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tokenString))
 
-	var newClaim = make(csjwt.MapClaims)
+	var newClaim = make(jwtclaim.Map)
 	rToken, err := csjwt.NewVerification(sm512).ParseFromRequest(r, func(t csjwt.Token) (csjwt.Key, error) {
 		if have, want := t.Alg(), sm512.Alg(); have != want {
 			return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
@@ -241,7 +242,7 @@ func TestParseWithClaimsBearerInHeader(t *testing.T) {
 	token := text.Chars(`BEaRER `)
 	token = append(token, jwtTestData[0].tokenString...)
 
-	haveToken, haveErr := csjwt.NewVerification().ParseWithMap(token, nil)
+	haveToken, haveErr := csjwt.NewVerification().ParseWithClaim(token, nil, &jwtclaim.Map{})
 	assert.NotNil(t, haveToken)
 	assert.NotNil(t, haveToken.Claims)
 	assert.Exactly(t, haveToken.Raw, token)
@@ -296,7 +297,7 @@ func TestSplitForVerify(t *testing.T) {
 }
 
 func benchmarkSigning(b *testing.B, method csjwt.Signer, key csjwt.Key) {
-	sc := &csjwt.StandardClaims{}
+	sc := &jwtclaim.Standard{}
 	b.ResetTimer()
 	b.ReportAllocs()
 	b.RunParallel(func(pb *testing.PB) {
@@ -376,7 +377,7 @@ func BenchmarkParseFromRequest_HS512(b *testing.B) {
 }
 
 type ShoppingCartClaim struct {
-	*csjwt.StandardClaims
+	*jwtclaim.Standard
 	CartPID       []int
 	LastViewedPID []int
 	RequestPrice  float64
@@ -387,7 +388,7 @@ type ShoppingCartClaim struct {
 func benchmarkParseFromRequest(b *testing.B, sm csjwt.Signer, key csjwt.Key, keyFunc csjwt.Keyfunc) {
 
 	clm := &ShoppingCartClaim{
-		StandardClaims: &csjwt.StandardClaims{
+		Standard: &jwtclaim.Standard{
 			ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
 			IssuedAt:  time.Now().Unix(),
 		},

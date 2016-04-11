@@ -1,6 +1,9 @@
 package csjwt
 
-import "bytes"
+import (
+	"bytes"
+	"github.com/juju/errors"
+)
 
 // Signer interface to add new methods for signing or verifying tokens.
 type Signer interface {
@@ -31,6 +34,56 @@ const (
 	PS    = `PS`
 	RS    = `RS`
 )
+
+// NewSigningMethodByAlg creates a new signing method by an algorithm.
+// Returns an error for an unknown signing method.
+func NewSigningMethodByAlg(alg string) (s Signer, err error) {
+	switch alg {
+
+	case ES256:
+		s = NewSigningMethodES256()
+	case ES384:
+		s = NewSigningMethodES384()
+	case ES512:
+		s = NewSigningMethodES512()
+
+	case HS256:
+		s = NewSigningMethodHS256()
+	case HS384:
+		s = NewSigningMethodHS384()
+	case HS512:
+		s = NewSigningMethodHS512()
+
+	case PS256:
+		s = NewSigningMethodPS256()
+	case PS384:
+		s = NewSigningMethodPS384()
+	case PS512:
+		s = NewSigningMethodPS512()
+
+	case RS256:
+		s = NewSigningMethodRS256()
+	case RS384:
+		s = NewSigningMethodRS384()
+	case RS512:
+		s = NewSigningMethodRS512()
+
+	}
+	if s == nil {
+		err = errors.Errorf("[csjwt] Unknown signing algorithm %q", alg)
+	}
+	return s, err
+}
+
+// MustNewSigningMethodByAlg same as NewSigningMethodByAlg but panics on error.
+// You should only use the Must* functions during init process or testing.
+func MustNewSigningMethodByAlg(alg string) Signer {
+	s, err := NewSigningMethodByAlg(alg)
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
 
 // SignerSlice helper type
 type SignerSlice []Signer
