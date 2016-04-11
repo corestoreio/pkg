@@ -13,32 +13,37 @@ import (
 	"errors"
 
 	"fmt"
+	"math"
+
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/stretchr/testify/assert"
-	"math"
 )
 
 func TestToInt(t *testing.T) {
 	t.Parallel()
 	var eight interface{} = 8
-	assert.Equal(t, ToInt(8), 8)
-	assert.Equal(t, ToInt(8.31), 8)
-	assert.Equal(t, ToInt("8"), 8)
-	assert.Equal(t, ToInt(true), 1)
-	assert.Equal(t, ToInt(false), 0)
-	assert.Equal(t, ToInt(eight), 8)
+	i_8 := int(8)
+	assert.Exactly(t, i_8, ToInt(8))
+	assert.Exactly(t, i_8, ToInt(8.31))
+	assert.Exactly(t, i_8, ToInt("8"))
+	assert.Exactly(t, int(1), ToInt(true))
+	assert.Exactly(t, int(0), ToInt(false))
+	assert.Exactly(t, i_8, ToInt(eight))
 }
 
-//func TestToFloat64(t *testing.T) {
-//	t.Parallel()
-//	var eight interface{} = 8
-//	assert.Equal(t, ToFloat64(8), 8.00)
-//	assert.Equal(t, ToFloat64(8.31), 8.31)
-//	assert.Equal(t, ToFloat64("8.31"), 8.31)
-//	assert.Equal(t, ToFloat64(eight), 8.0)
-//}
+func TestToInt64(t *testing.T) {
+	t.Parallel()
+	var eight interface{} = 8
+	var i64_8 = int64(8)
+	assert.Exactly(t, i64_8, ToInt64(8))
+	assert.Exactly(t, i64_8, ToInt64(8.31))
+	assert.Exactly(t, i64_8, ToInt64("8"))
+	assert.Exactly(t, int64(1), ToInt64(true))
+	assert.Exactly(t, int64(0), ToInt64(false))
+	assert.Exactly(t, i64_8, ToInt64(eight))
+}
 
 func TestToFloat64(t *testing.T) {
 	t.Parallel()

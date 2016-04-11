@@ -176,6 +176,43 @@ func ToIntE(i interface{}) (int, error) {
 	}
 }
 
+// ToInt64E casts an empty interface to an int64.
+func ToInt64E(i interface{}) (int64, error) {
+	i = indirect(i)
+
+	switch s := i.(type) {
+	case int:
+		return int64(s), nil
+	case int64:
+		return s, nil
+	case int32:
+		return int64(s), nil
+	case int16:
+		return int64(s), nil
+	case int8:
+		return int64(s), nil
+	case string:
+		v, err := strconv.ParseInt(s, 0, 64)
+		if err == nil {
+			return v, nil
+		}
+		return 0, errors.Errorf("Unable to cast %#v to int64", i)
+	case float64:
+		return int64(s), nil
+	case float32:
+		return int64(s), nil
+	case bool:
+		if bool(s) {
+			return 1, nil
+		}
+		return 0, nil
+	case nil:
+		return 0, nil
+	default:
+		return 0, errors.Errorf("Unable to cast %#v to int64", i)
+	}
+}
+
 // From html/template/content.go
 // Copyright 2011 The Go Authors. All rights reserved.
 // indirect returns the value, after dereferencing as many times

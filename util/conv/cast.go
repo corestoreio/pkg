@@ -32,6 +32,11 @@ func ToInt(i interface{}) int {
 	return v
 }
 
+func ToInt64(i interface{}) int64 {
+	v, _ := ToInt64E(i)
+	return v
+}
+
 func ToString(i interface{}) string {
 	v, _ := ToStringE(i)
 	return v
