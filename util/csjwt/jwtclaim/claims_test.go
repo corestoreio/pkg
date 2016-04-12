@@ -109,13 +109,13 @@ func TestClaimsGetSet(t *testing.T) {
 		wantSetErr error
 		wantGetErr error
 	}{
-		{&jwtclaim.Standard{}, jwtclaim.ClaimAudience, '', errors.New("Unable to cast 63743 to string"), nil},
-		{&jwtclaim.Standard{}, jwtclaim.ClaimAudience, "Go", nil, nil},
-		{&jwtclaim.Standard{}, jwtclaim.ClaimExpiresAt, time.Now().Unix(), nil, nil},
+		{&jwtclaim.Standard{}, jwtclaim.KeyAudience, '', errors.New("Unable to cast 63743 to string"), nil},
+		{&jwtclaim.Standard{}, jwtclaim.KeyAudience, "Go", nil, nil},
+		{&jwtclaim.Standard{}, jwtclaim.KeyExpiresAt, time.Now().Unix(), nil, nil},
 		{&jwtclaim.Standard{}, "Not Supported", time.Now().Unix(), errors.New("Claim \"Not Supported\" not supported. Please see constants Claim*."), errors.New("Claim \"Not Supported\" not supported. Please see constants Claim*.")},
 
-		{jwtclaim.Map{}, jwtclaim.ClaimAudience, "Go", nil, nil},
-		{jwtclaim.Map{}, jwtclaim.ClaimExpiresAt, time.Now().Unix(), nil, nil},
+		{jwtclaim.Map{}, jwtclaim.KeyAudience, "Go", nil, nil},
+		{jwtclaim.Map{}, jwtclaim.KeyExpiresAt, time.Now().Unix(), nil, nil},
 		{jwtclaim.Map{}, "Not Supported", math.Pi, nil, nil},
 	}
 	for i, test := range tests {

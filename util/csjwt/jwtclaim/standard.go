@@ -106,25 +106,25 @@ func (s *Standard) Valid() error {
 // Set sets a value. Key must be one of the constants Claim*.
 func (s *Standard) Set(key string, value interface{}) (err error) {
 	switch key {
-	case ClaimAudience:
+	case KeyAudience:
 		s.Audience, err = conv.ToStringE(value)
 		err = errors.Mask(err)
-	case ClaimExpiresAt:
+	case KeyExpiresAt:
 		s.ExpiresAt, err = conv.ToInt64E(value)
 		err = errors.Mask(err)
-	case ClaimID:
+	case KeyID:
 		s.ID, err = conv.ToStringE(value)
 		err = errors.Mask(err)
-	case ClaimIssuedAt:
+	case KeyIssuedAt:
 		s.IssuedAt, err = conv.ToInt64E(value)
 		err = errors.Mask(err)
-	case ClaimIssuer:
+	case KeyIssuer:
 		s.Issuer, err = conv.ToStringE(value)
 		err = errors.Mask(err)
-	case ClaimNotBefore:
+	case KeyNotBefore:
 		s.NotBefore, err = conv.ToInt64E(value)
 		err = errors.Mask(err)
-	case ClaimSubject:
+	case KeySubject:
 		s.Subject, err = conv.ToStringE(value)
 		err = errors.Mask(err)
 	default:
@@ -136,19 +136,19 @@ func (s *Standard) Set(key string, value interface{}) (err error) {
 // Get returns a value or nil or an error. Key must be one of the constants Claim*.
 func (s *Standard) Get(key string) (value interface{}, err error) {
 	switch key {
-	case ClaimAudience:
+	case KeyAudience:
 		return s.Audience, nil
-	case ClaimExpiresAt:
+	case KeyExpiresAt:
 		return s.ExpiresAt, nil
-	case ClaimID:
+	case KeyID:
 		return s.ID, nil
-	case ClaimIssuedAt:
+	case KeyIssuedAt:
 		return s.IssuedAt, nil
-	case ClaimIssuer:
+	case KeyIssuer:
 		return s.Issuer, nil
-	case ClaimNotBefore:
+	case KeyNotBefore:
 		return s.NotBefore, nil
-	case ClaimSubject:
+	case KeySubject:
 		return s.Subject, nil
 	}
 	return nil, errors.Errorf("Claim %q not supported. Please see constants Claim*.", key)

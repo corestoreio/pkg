@@ -21,11 +21,11 @@ import (
 
 //go:generate ffjson $GOFILE
 
-// Available claims in struct StoreClaim.
-// ClaimStore is equal to github.com/corestoreio/csfw/store/storenet.ParamName
+// Key.... are available claims in struct Store.
+// KeyStore is equal to github.com/corestoreio/csfw/store/storenet.ParamName
 const (
-	ClaimStore  = "store"
-	ClaimUserID = "userid"
+	KeyStore  = "store"
+	KeyUserID = "userid"
 )
 
 // NewStore creates a new Store pointer and makes sure that all sub pointer
@@ -55,10 +55,10 @@ type Store struct {
 func (s *Store) Set(key string, value interface{}) (err error) {
 
 	switch key {
-	case ClaimStore:
+	case KeyStore:
 		s.Store, err = conv.ToStringE(value)
 		err = errors.Mask(err)
-	case ClaimUserID:
+	case KeyUserID:
 		s.UserID, err = conv.ToStringE(value)
 		err = errors.Mask(err)
 	}
@@ -73,9 +73,9 @@ func (s *Store) Set(key string, value interface{}) (err error) {
 // StandardClaims Get function.
 func (s *Store) Get(key string) (value interface{}, err error) {
 	switch key {
-	case ClaimStore:
+	case KeyStore:
 		return s.Store, nil
-	case ClaimUserID:
+	case KeyUserID:
 		return s.UserID, nil
 	}
 	return s.Standard.Get(key)

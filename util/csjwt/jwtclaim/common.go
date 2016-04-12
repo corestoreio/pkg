@@ -19,16 +19,16 @@ import (
 	"time"
 )
 
-// Claim constants define the main claims used for Set() and Get() functions.
+// Key constants define the main claims used for Set() and Get() functions.
 // Those constants are implemented in the StandardClaims type.
 const (
-	ClaimAudience  = "aud"
-	ClaimExpiresAt = "exp"
-	ClaimID        = "jti"
-	ClaimIssuedAt  = "iat"
-	ClaimIssuer    = "iss"
-	ClaimNotBefore = "nbf"
-	ClaimSubject   = "sub"
+	KeyAudience  = "aud"
+	KeyExpiresAt = "exp"
+	KeyID        = "jti"
+	KeyIssuedAt  = "iat"
+	KeyIssuer    = "iss"
+	KeyNotBefore = "nbf"
+	KeySubject   = "sub"
 )
 
 // TimeFunc provides the current time when parsing token to validate "exp" claim (expiration time).
