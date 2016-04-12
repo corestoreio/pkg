@@ -30,6 +30,7 @@ import (
 	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
@@ -116,7 +117,7 @@ func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
 		return nil
 	})
 
-	theToken, err := jwts.NewToken(scope.DefaultID, 0, csjwt.MapClaims{
+	theToken, err := jwts.NewToken(scope.DefaultID, 0, jwtclaim.Map{
 		"xfoo": "bar",
 		"zfoo": 4711,
 	})
@@ -165,7 +166,7 @@ func TestMiddlewareWithInitTokenInBlackList(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	theToken, err := jm.NewToken(scope.DefaultID, 0, &csjwt.StandardClaims{})
+	theToken, err := jm.NewToken(scope.DefaultID, 0, &jwtclaim.Standard{})
 	bl.theToken = theToken
 	assert.NoError(t, err)
 	assert.NotEmpty(t, theToken)
@@ -195,7 +196,7 @@ func testAuth(t *testing.T, opts ...ctxjwt.Option) (ctxhttp.Handler, []byte) {
 		t.Fatal(err)
 	}
 
-	theToken, err := jm.NewToken(scope.DefaultID, 0, csjwt.MapClaims{
+	theToken, err := jm.NewToken(scope.DefaultID, 0, jwtclaim.Map{
 		"xfoo": "bar",
 		"zfoo": 4711,
 	})
@@ -266,7 +267,7 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 	for i, test := range tests {
 		jwts := ctxjwt.MustNewService(ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithPasswordRandom()))
 
-		token, err := jwts.NewToken(scope.DefaultID, 0, csjwt.MapClaims{
+		token, err := jwts.NewToken(scope.DefaultID, 0, jwtclaim.Map{
 			storenet.ParamName: test.tokenStoreCode,
 		})
 		if err != nil {
@@ -290,7 +291,7 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 
 func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) context.Context {
 	ctx := store.WithContextProvider(context.Background(), storemock.NewEurozzyService(initO))
-	tok := csjwt.NewToken(csjwt.MapClaims{
+	tok := csjwt.NewToken(jwtclaim.Map{
 		storenet.ParamName: tokenStoreCode,
 	})
 	ctx = ctxjwt.WithContext(ctx, tok)

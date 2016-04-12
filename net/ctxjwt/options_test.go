@@ -24,6 +24,7 @@ import (
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -32,7 +33,7 @@ func TestOptionPartialConfigError(t *testing.T) {
 	jwts, err := ctxjwt.NewService(ctxjwt.WithTokenID(scope.StoreID, 3, true))
 	assert.NoError(t, err)
 
-	cl := csjwt.MapClaims{}
+	cl := jwtclaim.Map{}
 	theToken, err := jwts.NewToken(scope.StoreID, 3, cl)
 	assert.EqualError(t, err, "[ctxjwt] Incomplete configuration for Scope(Store) ID(3). Missing Signing Method and its Key.")
 	assert.Empty(t, theToken)
@@ -46,11 +47,11 @@ func TestOptionWithTokenID(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	cl := csjwt.MapClaims{}
+	cl := jwtclaim.Map{}
 	theToken, err := jwts.NewToken(scope.StoreID, 22, cl) // must be a pointer the cl or Get() returns nil
 	assert.NoError(t, err)
 	assert.NotEmpty(t, theToken)
-	id, err := cl.Get(csjwt.ClaimID)
+	id, err := cl.Get(jwtclaim.KeyID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,17 +66,17 @@ func TestOptionScopedDefaultExpire(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	cl := csjwt.MapClaims{}
+	cl := jwtclaim.Map{}
 
 	now := time.Now()
 	theToken, err := jwts.NewToken(scope.StoreID, 33, cl) // must be a pointer the cl or Get() returns nil
 	assert.NoError(t, err)
 	assert.NotEmpty(t, theToken)
-	exp, err := cl.Get(csjwt.ClaimExpiresAt)
+	exp, err := cl.Get(jwtclaim.KeyExpiresAt)
 	if err != nil {
 		t.Fatal(err)
 	}
-	iat, err := cl.Get(csjwt.ClaimIssuedAt)
+	iat, err := cl.Get(jwtclaim.KeyIssuedAt)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -116,7 +117,7 @@ func testRsaOption(t *testing.T, opt ctxjwt.Option) {
 	assert.NoError(t, err)
 	assert.NotNil(t, jm)
 
-	theToken, err := jm.NewToken(scope.DefaultID, 0, csjwt.MapClaims{})
+	theToken, err := jm.NewToken(scope.DefaultID, 0, jwtclaim.Map{})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, theToken)
 

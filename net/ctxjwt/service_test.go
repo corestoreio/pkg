@@ -22,6 +22,7 @@ import (
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -55,7 +56,7 @@ func TestServiceNewDefault(t *testing.T) {
 	t.Parallel()
 	jwts := ctxjwt.MustNewService()
 
-	testClaims := &csjwt.StandardClaims{
+	testClaims := &jwtclaim.Standard{
 		Subject: "gopher",
 	}
 	theToken, err := jwts.NewToken(scope.DefaultID, 0, testClaims)
@@ -67,7 +68,7 @@ func TestServiceNewDefault(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, haveToken.Valid)
 
-	mascot, err := haveToken.Claims.Get(csjwt.ClaimSubject)
+	mascot, err := haveToken.Claims.Get(jwtclaim.KeySubject)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -102,7 +103,7 @@ func TestServiceParseInvalidSigningMethod(t *testing.T) {
 	keyRand := csjwt.WithPasswordRandom()
 	jwts := ctxjwt.MustNewService(ctxjwt.WithKey(scope.DefaultID, 0, keyRand))
 
-	tk := csjwt.NewToken(csjwt.MapClaims{
+	tk := csjwt.NewToken(jwtclaim.Map{
 		"exp": time.Now().Add(time.Hour).Unix(),
 		"iat": time.Now().Unix(),
 	})
@@ -123,7 +124,7 @@ func TestServiceLogout(t *testing.T) {
 		ctxjwt.WithBlacklist(tbl),
 	)
 
-	theToken, err := jwts.NewToken(scope.DefaultID, 0, &csjwt.StandardClaims{})
+	theToken, err := jwts.NewToken(scope.DefaultID, 0, jwtclaim.NewStore())
 	assert.NoError(t, err)
 
 	tk, err := jwts.Parse(theToken)

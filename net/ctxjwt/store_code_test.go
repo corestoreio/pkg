@@ -23,6 +23,7 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +35,7 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 		&store.TableGroup{GroupID: 1, WebsiteID: 1, Name: "Default", RootCategoryID: 0, DefaultStoreID: 0},
 	)
 
-	token := csjwt.NewToken(csjwt.MapClaims{
+	token := csjwt.NewToken(jwtclaim.Map{
 		storenet.ParamName: s.StoreCode(),
 	})
 
@@ -53,7 +54,7 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 func TestStoreCodeFromClaimInvalid(t *testing.T) {
 	t.Parallel()
 
-	token2 := csjwt.NewToken(csjwt.MapClaims{
+	token2 := csjwt.NewToken(jwtclaim.Map{
 		storenet.ParamName: "Invalid Cod€",
 	})
 
@@ -74,28 +75,28 @@ func TestStoreCodeFromClaimNoToken(t *testing.T) {
 		wantID    int64
 	}{
 		{
-			csjwt.MapClaims{},
+			jwtclaim.Map{},
 			store.ErrStoreNotFound,
 			scope.DefaultID,
 			"",
 			0,
 		},
 		{
-			csjwt.MapClaims{storenet.ParamName: "dede"},
+			jwtclaim.Map{storenet.ParamName: "dede"},
 			nil,
 			scope.StoreID,
 			"dede",
 			scope.UnavailableStoreID,
 		},
 		{
-			csjwt.MapClaims{storenet.ParamName: "de'de"},
+			jwtclaim.Map{storenet.ParamName: "de'de"},
 			store.ErrStoreCodeInvalid,
 			scope.DefaultID,
 			"",
 			scope.UnavailableStoreID,
 		},
 		{
-			csjwt.MapClaims{storenet.ParamName: 1},
+			jwtclaim.Map{storenet.ParamName: 1},
 			store.ErrStoreNotFound,
 			scope.DefaultID,
 			"",

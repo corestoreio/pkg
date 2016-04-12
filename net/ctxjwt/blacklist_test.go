@@ -15,14 +15,13 @@
 package ctxjwt_test
 
 import (
+	"bytes"
 	"testing"
 	"time"
 
-	"bytes"
-
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -93,7 +92,7 @@ func benchBlackList(b *testing.B, bl ctxjwt.Blacklister) {
 	var tokens [benchTokenCount][]byte
 
 	for i := 0; i < benchTokenCount; i++ {
-		claim := csjwt.MapClaims{
+		claim := jwtclaim.Map{
 			"someKey": i,
 		}
 		tk, err := jwts.NewToken(scope.DefaultID, 0, claim)

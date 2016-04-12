@@ -22,6 +22,7 @@ import (
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/juju/errors"
 )
 
@@ -65,7 +66,7 @@ func (sc scopedConfig) parseFromRequest(r *http.Request) (csjwt.Token, error) {
 	if sc.newClaims != nil {
 		claim = sc.newClaims()
 	} else {
-		claim = &csjwt.MapClaims{}
+		claim = &jwtclaim.Map{}
 	}
 	return sc.jwtVerify.ParseFromRequest(r, sc.keyFunc, claim)
 }
@@ -75,7 +76,7 @@ func (sc scopedConfig) parseWithClaim(rawToken []byte) (csjwt.Token, error) {
 	if sc.newClaims != nil {
 		claim = sc.newClaims()
 	} else {
-		claim = &csjwt.MapClaims{}
+		claim = &jwtclaim.Map{}
 	}
 	return sc.jwtVerify.ParseWithClaim(rawToken, sc.keyFunc, claim)
 }

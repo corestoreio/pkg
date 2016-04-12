@@ -15,22 +15,11 @@
 package ctxjwt_test
 
 import (
-	std "log"
-
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/util/log"
 )
 
-var debugLogBuf *log.MutexBuffer
-var infoLogBuf *log.MutexBuffer
-
 func init() {
-	debugLogBuf = new(log.MutexBuffer)
-	infoLogBuf = new(log.MutexBuffer)
-
-	ctxjwt.PkgLog = log.NewStdLogger(
-		log.SetStdDebug(debugLogBuf, "testDebug: ", std.Lshortfile),
-		log.SetStdInfo(infoLogBuf, "testInfo: ", std.Lshortfile),
-	)
-	ctxjwt.PkgLog.SetLevel(log.StdLevelDebug)
+	ctxjwt.PkgLog = log.NewBlackHole()
+	ctxjwt.PkgLog.SetLevel(log.StdLevelFatal)
 }

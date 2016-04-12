@@ -25,8 +25,8 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
-	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"golang.org/x/net/context"
 )
 
@@ -35,7 +35,7 @@ func bmServeHTTP(b *testing.B, opts ...ctxjwt.Option) {
 	if err != nil {
 		b.Error(err)
 	}
-	cl := csjwt.MapClaims{
+	cl := jwtclaim.Map{
 		"xfoo": "bar",
 		"zfoo": 4711,
 	}
@@ -138,9 +138,9 @@ func BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel(b *testing.B) {
 	)
 	ctx := store.WithContextProvider(context.Background(), srv) // root context
 
-	token, err := jwts.NewToken(scope.WebsiteID, 1, csjwt.MapClaims{ // 1 = website euro
-		"someKey":          2.718281,
-		storenet.ParamName: "at",
+	token, err := jwts.NewToken(scope.WebsiteID, 1, jwtclaim.Map{ // 1 = website euro
+		"someKey":         2.718281,
+		jwtclaim.KeyStore: "at",
 	})
 	if err != nil {
 		b.Fatal(err)
@@ -211,9 +211,9 @@ func BenchmarkServeHTTP_DefaultConfig_BlackList_Single(b *testing.B) {
 	)
 	ctx := store.WithContextProvider(context.Background(), srv) // root context
 
-	claim := csjwt.MapClaims{
-		"someKey":          3.14159,
-		storenet.ParamName: "at",
+	claim := jwtclaim.Map{
+		"someKey":         3.14159,
+		jwtclaim.KeyStore: "at",
 	}
 
 	token, err := jwts.NewToken(scope.WebsiteID, 1, claim) // 1 = website euro

@@ -197,7 +197,7 @@ func TestServiceWithBackend_InvalidJTI(t *testing.T) {
 	}))
 
 	sc, err := jwts.getConfigByScopedGetter(cr.NewScoped(1, 1))
-	assert.EqualError(t, err, "Route net/ctxjwt/enable_jti: Unable to Cast []byte{0x31} to bool")
+	assert.EqualError(t, err, "Route net/ctxjwt/enable_jti: Unable to cast []byte{0x31} to bool")
 	assert.Exactly(t, scopedConfig{}, sc)
 }
 

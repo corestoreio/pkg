@@ -24,6 +24,7 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/juju/errors"
 	"github.com/pborman/uuid"
 	"golang.org/x/net/context"
@@ -106,19 +107,17 @@ func (s *Service) Options(opts ...Option) error {
 	return nil
 }
 
-// ClaimsStandard creates a new struct with preset ExpiresAt, IssuedAt and ID.
-func (s *Service) ClaimsStandard(scp scope.Scope, id int64) (*csjwt.StandardClaims, error) {
+// ClaimStore creates a new struct with preset ExpiresAt, IssuedAt and ID.
+func (s *Service) ClaimStore(scp scope.Scope, id int64) (*jwtclaim.Store, error) {
 	cfg, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
 		return nil, err
 	}
 
 	now := csjwt.TimeFunc()
-
-	c := &csjwt.StandardClaims{
-		ExpiresAt: now.Add(cfg.expire).Unix(),
-		IssuedAt:  now.Unix(),
-	}
+	c := jwtclaim.NewStore()
+	c.ExpiresAt = now.Add(cfg.expire).Unix()
+	c.IssuedAt = now.Unix()
 
 	if cfg.enableJTI && s.JTI != nil {
 		c.ID = s.JTI.Get()
@@ -140,15 +139,15 @@ func (s *Service) NewToken(scp scope.Scope, id int64, claims csjwt.Claimer) (tok
 
 	now := csjwt.TimeFunc()
 
-	if err := claims.Set(csjwt.ClaimExpiresAt, now.Add(cfg.expire).Unix()); err != nil {
+	if err := claims.Set(jwtclaim.KeyExpiresAt, now.Add(cfg.expire).Unix()); err != nil {
 		return nil, errors.Mask(err)
 	}
-	if err := claims.Set(csjwt.ClaimIssuedAt, now.Unix()); err != nil {
+	if err := claims.Set(jwtclaim.KeyIssuedAt, now.Unix()); err != nil {
 		return nil, errors.Mask(err)
 	}
 
 	if cfg.enableJTI && s.JTI != nil {
-		if err := claims.Set(csjwt.ClaimID, s.JTI.Get()); err != nil {
+		if err := claims.Set(jwtclaim.KeyID, s.JTI.Get()); err != nil {
 			return nil, errors.Mask(err)
 		}
 	}
