@@ -60,36 +60,36 @@ func TestClaimsValid(t *testing.T) {
 		sc        csjwt.Claimer
 		wantValid error
 	}{
-		{&jwtclaim.Standard{}, csjwt.ErrValidationClaimsInvalid},
+		{&jwtclaim.Standard{}, jwtclaim.ErrValidationClaimsInvalid},
 		{&jwtclaim.Standard{ExpiresAt: time.Now().Add(time.Second).Unix()}, nil},
-		{&jwtclaim.Standard{ExpiresAt: time.Now().Add(-time.Second).Unix()}, csjwt.ErrValidationExpired},
+		{&jwtclaim.Standard{ExpiresAt: time.Now().Add(-time.Second).Unix()}, jwtclaim.ErrValidationExpired},
 		{&jwtclaim.Standard{IssuedAt: time.Now().Add(-time.Second).Unix()}, nil},
-		{&jwtclaim.Standard{IssuedAt: time.Now().Add(time.Second * 5).Unix()}, csjwt.ErrValidationUsedBeforeIssued},
+		{&jwtclaim.Standard{IssuedAt: time.Now().Add(time.Second * 5).Unix()}, jwtclaim.ErrValidationUsedBeforeIssued},
 		{&jwtclaim.Standard{NotBefore: time.Now().Add(-time.Second).Unix()}, nil},
-		{&jwtclaim.Standard{NotBefore: time.Now().Add(time.Second * 5).Unix()}, csjwt.ErrValidationNotValidYet},
+		{&jwtclaim.Standard{NotBefore: time.Now().Add(time.Second * 5).Unix()}, jwtclaim.ErrValidationNotValidYet},
 		{
 			&jwtclaim.Standard{
 				ExpiresAt: time.Now().Add(-time.Second).Unix(),
 				IssuedAt:  time.Now().Add(time.Second * 5).Unix(),
 				NotBefore: time.Now().Add(time.Second * 5).Unix(),
 			},
-			fmt.Errorf("%s\n%s\n%s", csjwt.ErrValidationExpired, csjwt.ErrValidationUsedBeforeIssued, csjwt.ErrValidationNotValidYet),
+			fmt.Errorf("%s\n%s\n%s", jwtclaim.ErrValidationExpired, jwtclaim.ErrValidationUsedBeforeIssued, jwtclaim.ErrValidationNotValidYet),
 		},
 
-		{jwtclaim.Map{}, csjwt.ErrValidationClaimsInvalid},                                         // 7
-		{jwtclaim.Map{"exp": time.Now().Add(time.Second).Unix()}, nil},                             // 8
-		{jwtclaim.Map{"exp": time.Now().Add(-time.Second * 2).Unix()}, csjwt.ErrValidationExpired}, // 9
-		{jwtclaim.Map{"iat": time.Now().Add(-time.Second).Unix()}, nil},                            // 10
-		{jwtclaim.Map{"iat": time.Now().Add(time.Second * 5).Unix()}, csjwt.ErrValidationUsedBeforeIssued},
+		{jwtclaim.Map{}, jwtclaim.ErrValidationClaimsInvalid},                                         // 7
+		{jwtclaim.Map{"exp": time.Now().Add(time.Second).Unix()}, nil},                                // 8
+		{jwtclaim.Map{"exp": time.Now().Add(-time.Second * 2).Unix()}, jwtclaim.ErrValidationExpired}, // 9
+		{jwtclaim.Map{"iat": time.Now().Add(-time.Second).Unix()}, nil},                               // 10
+		{jwtclaim.Map{"iat": time.Now().Add(time.Second * 5).Unix()}, jwtclaim.ErrValidationUsedBeforeIssued},
 		{jwtclaim.Map{"nbf": time.Now().Add(-time.Second).Unix()}, nil},
-		{jwtclaim.Map{"nbf": time.Now().Add(time.Second * 5).Unix()}, csjwt.ErrValidationNotValidYet},
+		{jwtclaim.Map{"nbf": time.Now().Add(time.Second * 5).Unix()}, jwtclaim.ErrValidationNotValidYet},
 		{
 			jwtclaim.Map{
 				"exp": time.Now().Add(-time.Second).Unix(),
 				"iat": time.Now().Add(time.Second * 5).Unix(),
 				"nbf": time.Now().Add(time.Second * 5).Unix(),
 			},
-			fmt.Errorf("%s\n%s\n%s", csjwt.ErrValidationExpired, csjwt.ErrValidationUsedBeforeIssued, csjwt.ErrValidationNotValidYet),
+			fmt.Errorf("%s\n%s\n%s", jwtclaim.ErrValidationExpired, jwtclaim.ErrValidationUsedBeforeIssued, jwtclaim.ErrValidationNotValidYet),
 		},
 	}
 	for i, test := range tests {

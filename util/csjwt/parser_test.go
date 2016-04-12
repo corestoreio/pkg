@@ -51,7 +51,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwtclaim.Map{"foo": "bar", "exp": float64(time.Now().Unix() - 100)},
 		false,
-		csjwt.ErrValidationExpired,
+		jwtclaim.ErrValidationExpired,
 		csjwt.NewVerification(),
 	},
 	{
@@ -60,7 +60,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwtclaim.Map{"foo": "bar", "nbf": float64(time.Now().Unix() + 100)},
 		false,
-		csjwt.ErrValidationNotValidYet,
+		jwtclaim.ErrValidationNotValidYet,
 		csjwt.NewVerification(),
 	},
 	{
@@ -69,7 +69,7 @@ var jwtTestData = []struct {
 		defaultKeyFunc,
 		jwtclaim.Map{"foo": "bar", "nbf": float64(time.Now().Unix() + 100), "exp": float64(time.Now().Unix() - 100)},
 		false,
-		cserr.NewMultiErr(csjwt.ErrValidationNotValidYet, csjwt.ErrValidationExpired),
+		cserr.NewMultiErr(jwtclaim.ErrValidationNotValidYet, jwtclaim.ErrValidationExpired),
 		csjwt.NewVerification(),
 	},
 	{

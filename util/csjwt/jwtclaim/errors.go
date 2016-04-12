@@ -20,8 +20,12 @@ import (
 
 // Error variables predefined
 const (
-	ErrValidationExpired          cserr.Error = `[csjwt] token is expired`
-	ErrValidationUsedBeforeIssued cserr.Error = `[csjwt] token used before issued, clock skew issue?`
-	ErrValidationNotValidYet      cserr.Error = `[csjwt] token is not valid yet`
-	ErrValidationClaimsInvalid    cserr.Error = `[csjwt] token claims validation failed`
+	ErrValidationUnknownAlg       cserr.Error = `[jwtclaim] unknown token signing algorithm`
+	ErrValidationExpired          cserr.Error = `[jwtclaim] token is expired`
+	ErrValidationUsedBeforeIssued cserr.Error = `[jwtclaim] token used before issued, clock skew issue?`
+	ErrValidationNotValidYet      cserr.Error = `[jwtclaim] token is not valid yet`
+	ErrValidationAudience         cserr.Error = `[jwtclaim] token is not valid for current audience`
+	ErrValidationIssuer           cserr.Error = `[jwtclaim] token issue validation failed`
+	ErrValidationJTI              cserr.Error = `[jwtclaim] token JTI validation failed`
+	ErrValidationClaimsInvalid    cserr.Error = `[jwtclaim] token claims validation failed`
 )
