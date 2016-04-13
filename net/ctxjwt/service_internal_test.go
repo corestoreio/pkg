@@ -15,15 +15,27 @@
 package ctxjwt
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
+
+	"golang.org/x/net/context"
 
 	"fmt"
 
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/config/cfgmodel"
 	"github.com/corestoreio/csfw/config/cfgpath"
+	"github.com/corestoreio/csfw/net/ctxhttp"
+	"github.com/corestoreio/csfw/net/httputil"
+	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/csfw/store/storenet"
+	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -49,6 +61,7 @@ func TestServiceWithBackend_NoBackend(t *testing.T) {
 }
 
 func TestServiceWithBackend_DefaultConfig(t *testing.T) {
+	t.Parallel()
 
 	jwts := MustNewService()
 
@@ -94,7 +107,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 		mustToPath(t, pb.NetCtxjwtHmacPassword.ToPath, scope.DefaultID, 0): "pw1",
 		mustToPath(t, pb.NetCtxjwtHmacPassword.ToPath, scope.WebsiteID, 1): "pw2",
 	}
-	sg := cfgmock.NewService(cfgmock.WithPV(pv)).NewScoped(1, 1)
+	sg := cfgmock.NewService(cfgmock.WithPV(pv)).NewScoped(1, 0) // only website scope supported
 
 	scNew, err := jwts.getConfigByScopedGetter(sg)
 	if err != nil {
@@ -137,11 +150,12 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 
 		mustToPath(t, pb.NetCtxjwtHmacPassword.ToPath, scope.DefaultID, 0): "pw1",
 	}
-	sg := cfgmock.NewService(cfgmock.WithPV(pv)).NewScoped(1, 1)
+
+	sg := cfgmock.NewService(cfgmock.WithPV(pv)).NewScoped(1, 0) // 1 = website euro and 0 no store ID provided like in the middleware
 
 	scNew, err := jwts.getConfigByScopedGetter(sg)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
 	}
 
 	assert.False(t, scNew.enableJTI)
@@ -233,4 +247,53 @@ func TestServiceWithBackend_NilScopedGetter(t *testing.T) {
 	assert.False(t, sc.enableJTI)
 	assert.True(t, sc.errorHandler == nil)
 	assert.True(t, sc.keyFunc != nil)
+}
+
+func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) context.Context {
+	ctx := store.WithContextProvider(context.Background(), storemock.NewEurozzyService(initO))
+	tok := csjwt.NewToken(jwtclaim.Map{
+		storenet.ParamName: tokenStoreCode,
+	})
+	ctx = withContext(ctx, tok)
+	return ctx
+}
+
+func TestWithInitTokenAndStore_EqualPointers(t *testing.T) {
+	t.Parallel()
+	// this Test is related to Benchmark_WithInitTokenAndStore
+	// The returned pointers from store.FromContextReader must be the
+	// same for each request with the same request pattern.
+
+	ctx := newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "nz")
+	rec := httptest.NewRecorder()
+	req, err := http.NewRequest(httputil.MethodGet, "https://corestore.io/store/list", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	var equalStorePointer *store.Store
+	jwts := MustNewService()
+	mw := jwts.WithInitTokenAndStore()(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+		_, haveReqStore, err := store.FromContextProvider(ctx)
+		if err != nil {
+			return err
+		}
+
+		if equalStorePointer == nil {
+			equalStorePointer = haveReqStore
+		}
+
+		if "nz" != haveReqStore.StoreCode() {
+			t.Errorf("Have: %s\nWant: nz", haveReqStore.StoreCode())
+		}
+		cstesting.EqualPointers(t, equalStorePointer, haveReqStore)
+
+		return nil
+	}))
+
+	for i := 0; i < 10; i++ {
+		if err := mw.ServeHTTPContext(ctx, rec, req); err != nil {
+			t.Error(err)
+		}
+	}
 }

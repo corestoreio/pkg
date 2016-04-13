@@ -70,14 +70,16 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 
 			storeService, requestedStore, err := store.FromContextProvider(ctx)
 			if err != nil {
-				return s.DefaultErrorHandler.ServeHTTPContext(WithContextError(ctx, err), w, r)
+				return s.DefaultErrorHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
 			}
 
 			// the scpCfg depends on how you have initialized the storeService during app boot.
+			// requestedStore.Website.Config is the reason that all options only support
+			// website scope and not group or store scope.
 			scpCfg, err := s.getConfigByScopedGetter(requestedStore.Website.Config)
 			if err != nil {
 				err = errors.Mask(err)
-				return s.DefaultErrorHandler.ServeHTTPContext(WithContextError(ctx, err), w, r)
+				return s.DefaultErrorHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
 			}
 
 			errHandler := s.DefaultErrorHandler
@@ -88,19 +90,19 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 			token, err := scpCfg.parseFromRequest(r)
 			if err != nil {
 				err = errors.Mask(err)
-				return errHandler.ServeHTTPContext(WithContextError(ctx, err), w, r)
+				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
 			}
 
 			if false == token.Valid {
-				return errHandler.ServeHTTPContext(WithContextError(ctx, ErrTokenInvalid), w, r)
+				return errHandler.ServeHTTPContext(withContextError(ctx, ErrTokenInvalid), w, r)
 			}
 
 			if s.Blacklist.Has(token.Raw) {
-				return errHandler.ServeHTTPContext(WithContextError(ctx, ErrTokenBlacklisted), w, r)
+				return errHandler.ServeHTTPContext(withContextError(ctx, ErrTokenBlacklisted), w, r)
 			}
 
 			// add token to the context
-			ctx = WithContext(ctx, token)
+			ctx = withContext(ctx, token)
 
 			scopeOption, err := ScopeOptionFromClaim(token.Claims)
 
@@ -111,7 +113,7 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 
 			if err != nil {
 				// invalid syntax of store code
-				return errHandler.ServeHTTPContext(WithContextError(ctx, err), w, r)
+				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
 			}
 
 			if PkgLog.IsDebug() {
@@ -121,7 +123,7 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 			newRequestedStore, err := storeService.RequestedStore(scopeOption)
 			if err != nil {
 				err = errors.Mask(err)
-				return errHandler.ServeHTTPContext(WithContextError(ctx, err), w, r)
+				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
 			}
 
 			if newRequestedStore.StoreID() != requestedStore.StoreID() {

@@ -31,7 +31,6 @@ import (
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
-	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
 )
@@ -100,7 +99,7 @@ func TestMiddlewareWithInitTokenHTTPErrorHandler(t *testing.T) {
 }
 
 func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
-
+	t.Parallel()
 	//cr := cfgmock.NewService()
 	srv := storemock.NewEurozzyService(
 		scope.MustSetByCode(scope.WebsiteID, "euro"),
@@ -229,7 +228,7 @@ func finalInitStoreHandler(t *testing.T, wantStoreCode string) ctxhttp.HandlerFu
 }
 
 func TestWithInitTokenAndStore_Request(t *testing.T) {
-
+	t.Parallel()
 	var newReq = func(i int, token []byte) *http.Request {
 		req, err := http.NewRequest(httputil.MethodGet, fmt.Sprintf("https://corestore.io/store/list/%d", i), nil)
 		if err != nil {
@@ -285,55 +284,6 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 		rec := httptest.NewRecorder()
 		if err := mw.ServeHTTPContext(test.ctx, rec, newReq(i, token)); err != nil {
 			t.Fatal(err)
-		}
-	}
-}
-
-func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) context.Context {
-	ctx := store.WithContextProvider(context.Background(), storemock.NewEurozzyService(initO))
-	tok := csjwt.NewToken(jwtclaim.Map{
-		storenet.ParamName: tokenStoreCode,
-	})
-	ctx = ctxjwt.WithContext(ctx, tok)
-	return ctx
-}
-
-func TestWithInitTokenAndStore_EqualPointers(t *testing.T) {
-
-	// this Test is related to Benchmark_WithInitTokenAndStore
-	// The returned pointers from store.FromContextReader must be the
-	// same for each request with the same request pattern.
-
-	ctx := newStoreServiceWithTokenCtx(scope.Option{Website: scope.MockID(2)}, "nz")
-	rec := httptest.NewRecorder()
-	req, err := http.NewRequest(httputil.MethodGet, "https://corestore.io/store/list", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	var equalStorePointer *store.Store
-	jwts := ctxjwt.MustNewService()
-	mw := jwts.WithInitTokenAndStore()(ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		_, haveReqStore, err := store.FromContextProvider(ctx)
-		if err != nil {
-			return err
-		}
-
-		if equalStorePointer == nil {
-			equalStorePointer = haveReqStore
-		}
-
-		if "nz" != haveReqStore.StoreCode() {
-			t.Errorf("Have: %s\nWant: nz", haveReqStore.StoreCode())
-		}
-		cstesting.EqualPointers(t, equalStorePointer, haveReqStore)
-
-		return nil
-	}))
-
-	for i := 0; i < 10; i++ {
-		if err := mw.ServeHTTPContext(ctx, rec, req); err != nil {
-			t.Error(err)
 		}
 	}
 }

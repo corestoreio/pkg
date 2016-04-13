@@ -82,7 +82,7 @@ func NewService(opts ...Option) (*Service, error) {
 		return nil, s
 	}
 	if err := s.Options(opts...); err != nil {
-		return nil, s
+		return nil, err
 	}
 	return s, nil
 }
@@ -104,6 +104,15 @@ func (s *Service) Options(opts ...Option) error {
 	if s.HasErrors() {
 		return s
 	}
+
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for h := range s.scopeCache {
+		if scp, _ := h.Unpack(); scp > scope.WebsiteID {
+			return errors.Errorf("[ctxjwt] Service does not support this: %s. Only default or website are allowed.", h)
+		}
+	}
+
 	return nil
 }
 
@@ -229,6 +238,7 @@ func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConf
 	var empty scopedConfig
 	// requested scope plus ID
 	scpCfg, ok := s.getScopedConfig(hash)
+
 	if ok {
 		if scpCfg.isValid() {
 			return scpCfg, nil
@@ -238,7 +248,8 @@ func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConf
 
 	if fallback {
 		// fallback to default scope
-		if scpCfg, ok := s.getScopedConfig(scope.DefaultHash); ok {
+		scpCfg, ok := s.getScopedConfig(scope.DefaultHash)
+		if ok {
 			return scpCfg, nil
 		}
 	}

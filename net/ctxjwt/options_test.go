@@ -30,26 +30,32 @@ import (
 
 func TestOptionPartialConfigError(t *testing.T) {
 	t.Parallel()
-	jwts, err := ctxjwt.NewService(ctxjwt.WithTokenID(scope.StoreID, 3, true))
-	assert.NoError(t, err)
+	jwts, err := ctxjwt.NewService(ctxjwt.WithTokenID(scope.WebsiteID, 3, true))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	cl := jwtclaim.Map{}
-	theToken, err := jwts.NewToken(scope.StoreID, 3, cl)
-	assert.EqualError(t, err, "[ctxjwt] Incomplete configuration for Scope(Store) ID(3). Missing Signing Method and its Key.")
+	theToken, err := jwts.NewToken(scope.WebsiteID, 3, cl)
+	assert.EqualError(t, err, "[ctxjwt] Incomplete configuration for Scope(Website) ID(3). Missing Signing Method and its Key.")
 	assert.Empty(t, theToken)
 }
 
 func TestOptionWithTokenID(t *testing.T) {
 	t.Parallel()
 	jwts, err := ctxjwt.NewService(
-		ctxjwt.WithTokenID(scope.StoreID, 22, true),
-		ctxjwt.WithKey(scope.StoreID, 22, csjwt.WithPasswordRandom()),
+		ctxjwt.WithTokenID(scope.WebsiteID, 22, true),
+		ctxjwt.WithKey(scope.WebsiteID, 22, csjwt.WithPasswordRandom()),
 	)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	cl := jwtclaim.Map{}
-	theToken, err := jwts.NewToken(scope.StoreID, 22, cl) // must be a pointer the cl or Get() returns nil
-	assert.NoError(t, err)
+	theToken, err := jwts.NewToken(scope.WebsiteID, 22, cl) // must be a pointer the cl or Get() returns nil
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.NotEmpty(t, theToken)
 	id, err := cl.Get(jwtclaim.KeyID)
 	if err != nil {
@@ -61,16 +67,20 @@ func TestOptionWithTokenID(t *testing.T) {
 func TestOptionScopedDefaultExpire(t *testing.T) {
 	t.Parallel()
 	jwts, err := ctxjwt.NewService(
-		ctxjwt.WithTokenID(scope.StoreID, 33, true),
-		ctxjwt.WithKey(scope.StoreID, 33, csjwt.WithPasswordRandom()),
+		ctxjwt.WithTokenID(scope.WebsiteID, 33, true),
+		ctxjwt.WithKey(scope.WebsiteID, 33, csjwt.WithPasswordRandom()),
 	)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	cl := jwtclaim.Map{}
 
 	now := time.Now()
-	theToken, err := jwts.NewToken(scope.StoreID, 33, cl) // must be a pointer the cl or Get() returns nil
-	assert.NoError(t, err)
+	theToken, err := jwts.NewToken(scope.WebsiteID, 33, cl) // must be a pointer the cl or Get() returns nil
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.NotEmpty(t, theToken)
 	exp, err := cl.Get(jwtclaim.KeyExpiresAt)
 	if err != nil {
@@ -114,15 +124,21 @@ func TestOptionWithRSAFromFileNoOrFailedPassword(t *testing.T) {
 
 func testRsaOption(t *testing.T, opt ctxjwt.Option) {
 	jm, err := ctxjwt.NewService(opt)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.NotNil(t, jm)
 
 	theToken, err := jm.NewToken(scope.DefaultID, 0, jwtclaim.Map{})
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.NotEmpty(t, theToken)
 
 	tk, err := jm.Parse(theToken)
-	assert.NoError(t, err)
+	if err != nil {
+		t.Fatal(err)
+	}
 	assert.NotNil(t, tk)
 	assert.True(t, tk.Valid)
 }

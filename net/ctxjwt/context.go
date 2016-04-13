@@ -24,14 +24,14 @@ type (
 	keyCtxErr   struct{}
 )
 
-// WithContext creates a new context with csjwt.Token attached.
-func WithContext(ctx context.Context, t csjwt.Token) context.Context {
+// withContext creates a new context with csjwt.Token attached.
+func withContext(ctx context.Context, t csjwt.Token) context.Context {
 	return context.WithValue(ctx, keyCtxToken{}, t)
 }
 
 // FromContext returns the csjwt.Token in ctx if it exists or an error.
-// Check the ok bool value if an error or csjwt.Token is within the
-// context.Context
+// If there is no token in the context then the error
+// ErrContextJWTNotFound gets returned.
 func FromContext(ctx context.Context) (t csjwt.Token, err error) {
 	var ok bool
 	err, ok = ctx.Value(keyCtxErr{}).(error)
@@ -46,7 +46,7 @@ func FromContext(ctx context.Context) (t csjwt.Token, err error) {
 	return
 }
 
-// WithContextError creates a new context with an error attached.
-func WithContextError(ctx context.Context, err error) context.Context {
+// withContextError creates a new context with an error attached.
+func withContextError(ctx context.Context, err error) context.Context {
 	return context.WithValue(ctx, keyCtxErr{}, err)
 }

@@ -80,6 +80,8 @@ func TestServiceNewDefault(t *testing.T) {
 }
 
 func TestServiceNewDefaultRSAError(t *testing.T) {
+	t.Parallel()
+
 	jmRSA, err := ctxjwt.NewService(ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithRSAPrivateKeyFromFile("invalid.key")))
 	assert.Nil(t, jmRSA)
 	assert.Contains(t, err.Error(), "open invalid.key:") //  no such file or directory OR The system cannot find the file specified.
@@ -135,4 +137,12 @@ func TestServiceLogout(t *testing.T) {
 	assert.Nil(t, jwts.Logout(tk))
 	assert.Equal(t, int(time.Hour.Seconds()), 1+int(tbl.exp.Seconds()))
 	assert.Equal(t, theToken.String(), string(tbl.theToken))
+}
+
+func TestServiceIncorrectConfigurationScope(t *testing.T) {
+	t.Parallel()
+
+	jwts, err := ctxjwt.NewService(ctxjwt.WithKey(scope.StoreID, 33, csjwt.WithPasswordRandom()))
+	assert.Nil(t, jwts)
+	assert.EqualError(t, err, `[ctxjwt] Service does not support this: Scope(Store) ID(33). Only default or website are allowed.`)
 }
