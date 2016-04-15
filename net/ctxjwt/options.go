@@ -210,7 +210,7 @@ func WithErrorHandler(scp scope.Scope, id int64, handler ctxhttp.Handler) Option
 		}
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
-		if scp == scope.DefaultID && id == 0 {
+		if scp == scope.Default && id == 0 {
 			s.DefaultErrorHandler = handler
 		}
 	}

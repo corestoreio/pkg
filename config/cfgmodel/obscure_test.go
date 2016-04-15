@@ -53,7 +53,7 @@ func TestObscureMissingEncryptor(t *testing.T) {
 	val, err := m.Get(nil)
 	assert.Nil(t, val)
 	assert.EqualError(t, err, cfgmodel.ErrMissingEncryptor.Error())
-	assert.EqualError(t, m.Write(nil, nil, scope.DefaultID, 0), cfgmodel.ErrMissingEncryptor.Error())
+	assert.EqualError(t, m.Write(nil, nil, scope.Default, 0), cfgmodel.ErrMissingEncryptor.Error())
 }
 
 func TestObscure(t *testing.T) {
@@ -80,7 +80,7 @@ func TestObscure(t *testing.T) {
 	assert.Exactly(t, wantPlain, haveSL)
 
 	mw := new(cfgmock.Write)
-	b.Write(mw, wantPlain, scope.StoreID, 12)
+	b.Write(mw, wantPlain, scope.Store, 12)
 	assert.Exactly(t, wantCiphered, mw.ArgValue)
 	assert.Exactly(t, "stores/12/aa/bb/cc", mw.ArgPath)
 }

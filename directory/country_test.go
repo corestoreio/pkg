@@ -38,7 +38,7 @@ func TestPathCountryAllowedCustom(t *testing.T) {
 
 	cr := cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{
-			gcaPath.Bind(scope.StoreID, 1).String(): "DE,AU,CH,AT",
+			gcaPath.Bind(scope.Store, 1).String(): "DE,AU,CH,AT",
 		}),
 	)
 

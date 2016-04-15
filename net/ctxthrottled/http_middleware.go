@@ -46,7 +46,7 @@ func (hrl *HTTPRateLimit) WithRateLimit() ctxhttp.Middleware {
 			var rl throttled.RateLimiter
 			var ok bool
 
-			scopeHash := scope.NewHash(scope.WebsiteID, reqStore.WebsiteID())
+			scopeHash := scope.NewHash(scope.Website, reqStore.WebsiteID())
 			hrl.mu.RLock()
 			rl, ok = hrl.scopedRLs[scopeHash]
 			hrl.mu.RUnlock()

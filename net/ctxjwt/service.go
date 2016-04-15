@@ -78,7 +78,7 @@ func NewService(opts ...Option) (*Service, error) {
 		}),
 	}
 
-	if err := s.Options(WithDefaultConfig(scope.DefaultID, 0)); err != nil {
+	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
 		return nil, s
 	}
 	if err := s.Options(opts...); err != nil {
@@ -108,7 +108,7 @@ func (s *Service) Options(opts ...Option) error {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for h := range s.scopeCache {
-		if scp, _ := h.Unpack(); scp > scope.WebsiteID {
+		if scp, _ := h.Unpack(); scp > scope.Website {
 			return errors.Errorf("[ctxjwt] Service does not support this: %s. Only default or website are allowed.", h)
 		}
 	}
@@ -176,7 +176,7 @@ func (s *Service) Logout(token csjwt.Token) error {
 // Parse parses a token string with the DefaultID scope and returns the
 // valid token or an error.
 func (s *Service) Parse(rawToken []byte) (csjwt.Token, error) {
-	return s.ParseScoped(scope.DefaultID, 0, rawToken)
+	return s.ParseScoped(scope.Default, 0, rawToken)
 }
 
 // ParseScoped parses a token based on the applied scope and the scope ID.

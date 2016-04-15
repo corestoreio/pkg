@@ -40,15 +40,15 @@ func TestInternalOptionWithErrorHandler(t *testing.T) {
 		return nil
 	})
 
-	if err := jwts.Options(WithErrorHandler(scope.WebsiteID, 22, wsErrH)); err != nil {
+	if err := jwts.Options(WithErrorHandler(scope.Website, 22, wsErrH)); err != nil {
 		t.Fatal(err)
 	}
 
 	cstesting.EqualPointers(t, defaultErrH, jwts.DefaultErrorHandler)
-	cstesting.EqualPointers(t, wsErrH, jwts.scopeCache[scope.NewHash(scope.WebsiteID, 22)].errorHandler)
-	cstesting.UnEqualPointers(t, defaultErrH, jwts.scopeCache[scope.NewHash(scope.WebsiteID, 22)].errorHandler)
+	cstesting.EqualPointers(t, wsErrH, jwts.scopeCache[scope.NewHash(scope.Website, 22)].errorHandler)
+	cstesting.UnEqualPointers(t, defaultErrH, jwts.scopeCache[scope.NewHash(scope.Website, 22)].errorHandler)
 
-	if err := jwts.Options(WithErrorHandler(scope.DefaultID, 0, wsErrH)); err != nil {
+	if err := jwts.Options(WithErrorHandler(scope.Default, 0, wsErrH)); err != nil {
 		t.Fatal(err)
 	}
 	cstesting.UnEqualPointers(t, defaultErrH, jwts.DefaultErrorHandler)

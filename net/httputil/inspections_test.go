@@ -30,7 +30,7 @@ import (
 
 func TestCtxIsSecure(t *testing.T) {
 	t.Parallel()
-	woh, err := backend.Backend.WebSecureOffloaderHeader.ToPath(scope.DefaultID, 0)
+	woh, err := backend.Backend.WebSecureOffloaderHeader.ToPath(scope.Default, 0)
 	if err != nil {
 		t.Fatal(err)
 	}

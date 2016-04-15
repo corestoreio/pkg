@@ -35,7 +35,7 @@ func ScopeOptionFromClaim(tc csjwt.Claimer) (o scope.Option, err error) {
 	if scopeCode, ok := raw.(string); ok {
 		err = store.CodeIsValid(scopeCode)
 		if err == nil {
-			o, err = scope.SetByCode(scope.StoreID, scopeCode)
+			o, err = scope.SetByCode(scope.Store, scopeCode)
 		}
 	}
 	return

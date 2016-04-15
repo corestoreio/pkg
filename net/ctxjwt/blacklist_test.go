@@ -95,7 +95,7 @@ func benchBlackList(b *testing.B, bl ctxjwt.Blacklister) {
 		claim := jwtclaim.Map{
 			"someKey": i,
 		}
-		tk, err := jwts.NewToken(scope.DefaultID, 0, claim)
+		tk, err := jwts.NewToken(scope.Default, 0, claim)
 		if err != nil {
 			b.Fatal(err)
 		}

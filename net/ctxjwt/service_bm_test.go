@@ -43,7 +43,7 @@ func bmServeHTTP(b *testing.B, opts ...ctxjwt.Option) {
 		"xfoo": "bar",
 		"zfoo": 4711,
 	}
-	token, err := jwts.NewToken(scope.DefaultID, 0, cl)
+	token, err := jwts.NewToken(scope.Default, 0, cl)
 	if err != nil {
 		b.Error(err)
 	}
@@ -63,7 +63,7 @@ func bmServeHTTP(b *testing.B, opts ...ctxjwt.Option) {
 
 	cr := cfgmock.NewService()
 	srv := storemock.NewEurozzyService(
-		scope.MustSetByCode(scope.WebsiteID, "euro"),
+		scope.MustSetByCode(scope.Website, "euro"),
 		store.WithStorageConfig(cr),
 	)
 	ctx := store.WithContextProvider(context.Background(), srv)
@@ -80,7 +80,7 @@ func bmServeHTTP(b *testing.B, opts ...ctxjwt.Option) {
 	}
 }
 
-var keyBenchmarkHMACPW = ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithPassword([]byte(`Rump3lst!lzch3n`)))
+var keyBenchmarkHMACPW = ctxjwt.WithKey(scope.Default, 0, csjwt.WithPassword([]byte(`Rump3lst!lzch3n`)))
 
 func BenchmarkServeHTTPHMAC(b *testing.B) {
 	bmServeHTTP(b, keyBenchmarkHMACPW)
@@ -96,7 +96,7 @@ func BenchmarkServeHTTPHMACSimpleBL(b *testing.B) {
 }
 
 func BenchmarkServeHTTPRSAGenerator(b *testing.B) {
-	bmServeHTTP(b, ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithRSAGenerated()))
+	bmServeHTTP(b, ctxjwt.WithKey(scope.Default, 0, csjwt.WithRSAGenerated()))
 }
 
 func BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel(b *testing.B) {
@@ -127,7 +127,7 @@ func BenchmarkServeHTTP_DefaultConfig_BlackList_Single(b *testing.B) {
 func benchmarkServeHTTPDefaultConfigBlackListSetup(b *testing.B) (ctxhttp.Handler, context.Context, []byte) {
 
 	jwts := ctxjwt.MustNewService(
-		ctxjwt.WithErrorHandler(scope.DefaultID, 0, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+		ctxjwt.WithErrorHandler(scope.Default, 0, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 			_, err := ctxjwt.FromContext(ctx)
 			if err != nil {
 				return err
@@ -141,12 +141,12 @@ func benchmarkServeHTTPDefaultConfigBlackListSetup(b *testing.B) (ctxhttp.Handle
 	jwts.Blacklist = ctxjwt.NewBlackListSimpleMap()
 
 	srv := storemock.NewEurozzyService(
-		scope.MustSetByCode(scope.WebsiteID, "euro"),
+		scope.MustSetByCode(scope.Website, "euro"),
 		//store.WithStorageConfig(cr), no configuration so config.ScopedGetter is nil
 	)
 	ctx := store.WithContextProvider(context.Background(), srv) // root context
 
-	token, err := jwts.NewToken(scope.WebsiteID, 1, jwtclaim.Map{ // 1 = website euro
+	token, err := jwts.NewToken(scope.Website, 1, jwtclaim.Map{ // 1 = website euro
 		"someKey":         2.718281,
 		jwtclaim.KeyStore: "at",
 	})
@@ -205,7 +205,7 @@ func benchmarkServeHTTPDefaultConfigBlackListLoop(b *testing.B, h ctxhttp.Handle
 func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 
 	jwts := ctxjwt.MustNewService(
-		ctxjwt.WithErrorHandler(scope.DefaultID, 0, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+		ctxjwt.WithErrorHandler(scope.Default, 0, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 			_, err := ctxjwt.FromContext(ctx)
 			if err != nil {
 				return err
@@ -213,9 +213,9 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 			return nil
 		})),
-		ctxjwt.WithExpiration(scope.DefaultID, 0, time.Second*15),
-		ctxjwt.WithExpiration(scope.WebsiteID, 1, time.Second*25),
-		ctxjwt.WithKey(scope.WebsiteID, 1, csjwt.WithPasswordRandom()),
+		ctxjwt.WithExpiration(scope.Default, 0, time.Second*15),
+		ctxjwt.WithExpiration(scope.Website, 1, time.Second*25),
+		ctxjwt.WithKey(scope.Website, 1, csjwt.WithPasswordRandom()),
 	)
 
 	// below two lines comment out enables the null black list
@@ -227,7 +227,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 	var generateToken = func(storeCode string) []byte {
 		s := jwtclaim.NewStore()
 		s.Store = storeCode
-		token, err := jwts.NewToken(scope.WebsiteID, 1, s)
+		token, err := jwts.NewToken(scope.Website, 1, s)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -250,7 +250,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 
 	cr := cfgmock.NewService()
 	srv := storemock.NewEurozzyService(
-		scope.MustSetByCode(scope.WebsiteID, "euro"), // euro == website ID 1
+		scope.MustSetByCode(scope.Website, "euro"), // euro == website ID 1
 		store.WithStorageConfig(cr),
 	)
 	ctx := store.WithContextProvider(context.Background(), srv) // root context

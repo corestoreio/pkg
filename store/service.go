@@ -105,8 +105,8 @@ var ErrStoreChangeNotAllowed = errors.New("Store change not allowed")
 // appStore which reflects the default store ID.
 func NewService(so scope.Option, storage Storager) (*Service, error) {
 	scopeID := so.Scope()
-	if scopeID == scope.DefaultID {
-		scopeID = scope.WebsiteID
+	if scopeID == scope.Default {
+		scopeID = scope.Website
 	}
 
 	s := &Service{
@@ -143,10 +143,10 @@ func MustNewService(so scope.Option, storage Storager) *Service {
 func (sm *Service) findDefaultStoreByScope(allowedScope scope.Scope, so scope.Option) (*Store, error) {
 
 	switch allowedScope {
-	case scope.StoreID:
+	case scope.Store:
 		return sm.Store(so.Store)
 
-	case scope.GroupID:
+	case scope.Group:
 		g, errG := sm.Group(so.Group)
 		if errG != nil {
 			if PkgLog.IsDebug() {
@@ -160,7 +160,7 @@ func (sm *Service) findDefaultStoreByScope(allowedScope scope.Scope, so scope.Op
 		}
 		return store, nil
 
-	case scope.WebsiteID:
+	case scope.Website:
 		if so.Website == nil { // if so.Website == nil then search default website
 			store, err := sm.storage.DefaultStoreView() // returns a Store containing less data
 			if err == nil {
@@ -217,13 +217,13 @@ func (sm *Service) RequestedStore(so scope.Option) (activeStore *Store, err erro
 
 	allowStoreChange := false
 	switch sm.boundToScope {
-	case scope.StoreID:
+	case scope.Store:
 		allowStoreChange = true
 		break
-	case scope.GroupID:
+	case scope.Group:
 		allowStoreChange = activeStore.Data.GroupID == sm.appStore.Data.GroupID
 		break
-	case scope.WebsiteID:
+	case scope.Website:
 		allowStoreChange = activeStore.Data.WebsiteID == sm.appStore.Data.WebsiteID
 		break
 	}

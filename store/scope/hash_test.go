@@ -25,7 +25,7 @@ import (
 
 func TestHashString(t *testing.T) {
 	t.Parallel()
-	s := scope.NewHash(scope.StoreID, 33).String()
+	s := scope.NewHash(scope.Store, 33).String()
 	assert.Exactly(t, "Scope(Store) ID(33)", s)
 }
 
@@ -38,20 +38,20 @@ func TestHashSegment(t *testing.T) {
 		{scope.DefaultHash, 0},
 		{scope.NewHash(scope.Scope(0), 0), 0},
 		{scope.NewHash(scope.Scope(1), 0), 0},
-		{scope.NewHash(scope.DefaultID, -1), 0},
-		{scope.NewHash(scope.DefaultID, 1), 0},
-		{scope.NewHash(scope.DefaultID, 0), 0},
-		{scope.NewHash(scope.StoreID, 0), 0},
-		{scope.NewHash(scope.StoreID, 1), 1},
-		{scope.NewHash(scope.StoreID, 2), 2},
-		{scope.NewHash(scope.StoreID, 255), 255},
-		{scope.NewHash(scope.StoreID, 256), 0},
-		{scope.NewHash(scope.StoreID, 257), 1},
-		{scope.NewHash(scope.StoreID, scope.MaxStoreID-1), 254},
-		{scope.NewHash(scope.StoreID, scope.MaxStoreID), 255},
-		{scope.NewHash(scope.StoreID, scope.MaxStoreID+1), 0},
-		{scope.NewHash(scope.StoreID, scope.MaxStoreID+2), 0},
-		{scope.NewHash(scope.StoreID, -scope.MaxStoreID), 0},
+		{scope.NewHash(scope.Default, -1), 0},
+		{scope.NewHash(scope.Default, 1), 0},
+		{scope.NewHash(scope.Default, 0), 0},
+		{scope.NewHash(scope.Store, 0), 0},
+		{scope.NewHash(scope.Store, 1), 1},
+		{scope.NewHash(scope.Store, 2), 2},
+		{scope.NewHash(scope.Store, 255), 255},
+		{scope.NewHash(scope.Store, 256), 0},
+		{scope.NewHash(scope.Store, 257), 1},
+		{scope.NewHash(scope.Store, scope.MaxStoreID-1), 254},
+		{scope.NewHash(scope.Store, scope.MaxStoreID), 255},
+		{scope.NewHash(scope.Store, scope.MaxStoreID+1), 0},
+		{scope.NewHash(scope.Store, scope.MaxStoreID+2), 0},
+		{scope.NewHash(scope.Store, -scope.MaxStoreID), 0},
 		{scope.NewHash(scope.Scope(7), 1), 1},
 	}
 	for i, test := range tests {
@@ -63,14 +63,14 @@ func TestHashSegment(t *testing.T) {
 
 func TestNewHashError(t *testing.T) {
 	t.Parallel()
-	h := scope.NewHash(scope.AbsentID, -1)
+	h := scope.NewHash(scope.Absent, -1)
 	assert.Exactly(t, scope.Hash(0), h)
 }
 
 func TestFromHashError(t *testing.T) {
 	t.Parallel()
 	scp, id := scope.Hash(math.MaxUint32).Unpack()
-	assert.Exactly(t, scope.AbsentID, scp)
+	assert.Exactly(t, scope.Absent, scp)
 	assert.Exactly(t, int64(-1), id)
 }
 
@@ -84,7 +84,7 @@ func TestHashValid(t *testing.T) {
 
 	//var collisionCheck = make(map[scope.Hash]bool) // just in case ...
 	var wg sync.WaitGroup
-	var scp = scope.AbsentID
+	var scp = scope.Absent
 	for ; scp < math.MaxUint8; scp++ {
 		wg.Add(1)
 		go func(theScp scope.Scope) {
@@ -98,7 +98,7 @@ func TestHashValid(t *testing.T) {
 				}
 
 				wantID := id
-				if theScp < scope.WebsiteID {
+				if theScp < scope.Website {
 					wantID = 0
 				}
 				if haveID != wantID {
@@ -125,7 +125,7 @@ func BenchmarkHashPack(b *testing.B) {
 	const want scope.Hash = 67112005
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		benchmarkHash = scope.NewHash(scope.StoreID, 3141)
+		benchmarkHash = scope.NewHash(scope.Store, 3141)
 	}
 	if benchmarkHash != want {
 		b.Fatalf("want %d have %d", want, benchmarkHash)
@@ -137,7 +137,7 @@ func BenchmarkHashUnPack(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		benchmarkHashUnpackScope, benchmarkHashUnpackID = benchmarkHashUnpackHash.Unpack()
 	}
-	if benchmarkHashUnpackScope != scope.StoreID {
+	if benchmarkHashUnpackScope != scope.Store {
 		b.Fatal("Expecting scope store")
 	}
 	if benchmarkHashUnpackID != 3141 {

@@ -93,7 +93,7 @@ func TestHTTPRateLimit_WithoutConfig(t *testing.T) {
 
 	limiter, err := ctxthrottled.NewHTTPRateLimit(
 		ctxthrottled.WithVaryBy(pathGetter{}),
-		ctxthrottled.WithScopedRateLimiter(scope.WebsiteID, 1, stubLimiter{}), // 1 = NewEurozzyService() website euro
+		ctxthrottled.WithScopedRateLimiter(scope.Website, 1, stubLimiter{}), // 1 = NewEurozzyService() website euro
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -101,7 +101,7 @@ func TestHTTPRateLimit_WithoutConfig(t *testing.T) {
 
 	ctx := store.WithContextProvider(
 		context.Background(),
-		storemock.NewEurozzyService(scope.MustSetByCode(scope.WebsiteID, "euro")),
+		storemock.NewEurozzyService(scope.MustSetByCode(scope.Website, "euro")),
 	)
 
 	handler := limiter.WithRateLimit()(finalHandler200)
@@ -131,15 +131,15 @@ func TestHTTPRateLimit_WithConfig(t *testing.T) {
 
 	cr := cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{
-			limiter.Backend.RateLimitBurst.MustFQ(scope.WebsiteID, 1):    0,
-			limiter.Backend.RateLimitRequests.MustFQ(scope.WebsiteID, 1): 1,
-			limiter.Backend.RateLimitDuration.MustFQ(scope.WebsiteID, 1): "i",
+			limiter.Backend.RateLimitBurst.MustFQ(scope.Website, 1):    0,
+			limiter.Backend.RateLimitRequests.MustFQ(scope.Website, 1): 1,
+			limiter.Backend.RateLimitDuration.MustFQ(scope.Website, 1): "i",
 		}),
 	)
 	ctx := store.WithContextProvider(
 		context.Background(),
 		storemock.NewEurozzyService(
-			scope.MustSetByCode(scope.WebsiteID, "euro"),
+			scope.MustSetByCode(scope.Website, "euro"),
 			store.WithStorageConfig(cr),
 		),
 	)
@@ -170,7 +170,7 @@ func TestHTTPRateLimit_CustomHandlers(t *testing.T) {
 	ctx := store.WithContextProvider(
 		context.Background(),
 		storemock.NewEurozzyService(
-			scope.MustSetByCode(scope.WebsiteID, "euro"),
+			scope.MustSetByCode(scope.Website, "euro"),
 		),
 	)
 
@@ -198,7 +198,7 @@ func TestHTTPRateLimit_RateLimiterFactoryError(t *testing.T) {
 	ctx := store.WithContextProvider(
 		context.Background(),
 		storemock.NewEurozzyService(
-			scope.MustSetByCode(scope.WebsiteID, "euro"),
+			scope.MustSetByCode(scope.Website, "euro"),
 		),
 	)
 

@@ -35,18 +35,18 @@ func TestPathSlice_Contains(t *testing.T) {
 	}{
 		{
 			cfgpath.PathSlice{
-				0: cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 3),
-				1: cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 2),
+				0: cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.Website, 3),
+				1: cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.Website, 2),
 			},
-			cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 2),
+			cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.Website, 2),
 			true,
 		},
 		{
 			cfgpath.PathSlice{
-				0: cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 3),
-				1: cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.WebsiteID, 2),
+				0: cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.Website, 3),
+				1: cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.Website, 2),
 			},
-			cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.StoreID, 2),
+			cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.Store, 2),
 			false,
 		},
 	}

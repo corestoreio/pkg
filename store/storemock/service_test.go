@@ -24,7 +24,7 @@ import (
 
 func TestNewEurozzyService_Euro(t *testing.T) {
 
-	so, err := scope.SetByID(scope.WebsiteID, 1) // website euro
+	so, err := scope.SetByID(scope.Website, 1) // website euro
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -46,7 +46,7 @@ func TestNewEurozzyService_Euro(t *testing.T) {
 
 func TestNewEurozzyService_ANZ(t *testing.T) {
 
-	so, err := scope.SetByCode(scope.WebsiteID, "oz") // website AU
+	so, err := scope.SetByCode(scope.Website, "oz") // website AU
 	if err != nil {
 		t.Fatal(err)
 	}

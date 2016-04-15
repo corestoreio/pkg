@@ -25,15 +25,15 @@ const maxUint8 = 1<<8 - 1
 // Func String() attached. Part of type Perm.
 type Scope uint8
 
-// *ID defines the overall scopes. The hierarchical order is always:
+// Those constants define the overall scopes. The hierarchical order is always:
 // 		Absent -> Default -> Website -> Group -> Store
 // These internal IDs may change without notice.
 const (
-	AbsentID Scope = iota // must start with 0
-	DefaultID
-	WebsiteID
-	GroupID
-	StoreID
+	Absent Scope = iota // must start with 0
+	Default
+	Website
+	Group
+	Store
 )
 
 // TODO: rename Scope constants and remove the stupid ID ...
@@ -99,9 +99,9 @@ func (i Scope) StrScope() string {
 // copy it for further use.
 func (i Scope) Bytes() []byte {
 	switch i {
-	case WebsiteID:
+	case Website:
 		return bWebsites
-	case StoreID:
+	case Store:
 		return bStores
 	}
 	return bDefault
@@ -142,11 +142,11 @@ func (s StrScope) String() string {
 func (s StrScope) Scope() Scope {
 	switch s {
 	case StrWebsites:
-		return WebsiteID
+		return Website
 	case StrStores:
-		return StoreID
+		return Store
 	}
-	return DefaultID
+	return Default
 }
 
 // FromString returns the scope ID from a string: default, websites or stores.
@@ -154,19 +154,19 @@ func (s StrScope) Scope() Scope {
 func FromString(s string) Scope {
 	switch StrScope(s) {
 	case StrWebsites:
-		return WebsiteID
+		return Website
 	case StrStores:
-		return StoreID
+		return Store
 	}
-	return DefaultID
+	return Default
 }
 
 // FromScope returns the string representation for a scope ID. Opposite of FromString.
 func FromScope(scopeID Scope) StrScope {
 	switch scopeID {
-	case WebsiteID:
+	case Website:
 		return StrWebsites
-	case StoreID:
+	case Store:
 		return StrStores
 	}
 	return StrDefault
@@ -188,11 +188,11 @@ func Valid(s string) bool {
 func FromBytes(b []byte) Scope {
 	switch {
 	case bytes.Compare(bWebsites, b) == 0:
-		return WebsiteID
+		return Website
 	case bytes.Compare(bStores, b) == 0:
-		return StoreID
+		return Store
 	}
-	return DefaultID
+	return Default
 }
 
 // ValidBytes checks if b is a valid byte Scope of either

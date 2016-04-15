@@ -77,28 +77,28 @@ func TestStoreCodeFromClaimNoToken(t *testing.T) {
 		{
 			jwtclaim.Map{},
 			store.ErrStoreNotFound,
-			scope.DefaultID,
+			scope.Default,
 			"",
 			0,
 		},
 		{
 			jwtclaim.Map{storenet.ParamName: "dede"},
 			nil,
-			scope.StoreID,
+			scope.Store,
 			"dede",
 			scope.UnavailableStoreID,
 		},
 		{
 			jwtclaim.Map{storenet.ParamName: "de'de"},
 			store.ErrStoreCodeInvalid,
-			scope.DefaultID,
+			scope.Default,
 			"",
 			scope.UnavailableStoreID,
 		},
 		{
 			jwtclaim.Map{storenet.ParamName: 1},
 			store.ErrStoreNotFound,
-			scope.DefaultID,
+			scope.Default,
 			"",
 			scope.UnavailableStoreID,
 		},
@@ -115,13 +115,13 @@ func testStoreCodeFrom(t *testing.T, i int, haveErr, wantErr error, haveScope sc
 
 	}
 	switch sos := haveScope.Scope(); sos {
-	case scope.StoreID:
+	case scope.Store:
 		assert.Exactly(t, wantID, haveScope.Store.StoreID(), "Index: %d", i)
-	case scope.GroupID:
+	case scope.Group:
 		assert.Exactly(t, wantID, haveScope.Group.GroupID(), "Index: %d", i)
-	case scope.WebsiteID:
+	case scope.Website:
 		assert.Exactly(t, wantID, haveScope.Website.WebsiteID(), "Index: %d", i)
-	case scope.DefaultID:
+	case scope.Default:
 		assert.Nil(t, haveScope.Store, "Index: %d", i)
 		assert.Nil(t, haveScope.Group, "Index: %d", i)
 		assert.Nil(t, haveScope.Website, "Index: %d", i)

@@ -40,7 +40,7 @@ func (t Time) Get(sg config.ScopedGetter) (time.Time, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v time.Time
-	var scp = scope.DefaultID
+	var scp = scope.Default
 	if t.Field != nil {
 		scp = t.Field.Scopes.Top()
 		if d := t.Field.Default; d != nil {
@@ -88,7 +88,7 @@ func (t Duration) Get(sg config.ScopedGetter) (time.Duration, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v time.Duration
-	var scp = scope.DefaultID
+	var scp = scope.Default
 	if t.Field != nil {
 		scp = t.Field.Scopes.Top()
 		if d := t.Field.Default; d != nil {

@@ -36,7 +36,7 @@ func NewConfigCurrency(path string, opts ...cfgmodel.Option) ConfigCurrency {
 
 // GetDefault returns the default currency without considering the scope.
 func (cc ConfigCurrency) GetDefault(sg config.Getter) (cur Currency, err error) {
-	p, err := cc.ToPath(scope.DefaultID, 0)
+	p, err := cc.ToPath(scope.Default, 0)
 	if err != nil {
 		err = errors.Mask(err)
 		return

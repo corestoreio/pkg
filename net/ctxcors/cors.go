@@ -174,7 +174,7 @@ func (c *Cors) current(csc *scopeCache, ctx context.Context) (*Cors, error) {
 	}
 
 	var cc *Cors // cc == current CORS config the current request
-	if cc = csc.get(scope.WebsiteID, st.WebsiteID()); cc == nil {
+	if cc = csc.get(scope.Website, st.WebsiteID()); cc == nil {
 		var err error
 		cc, err = csc.insert(st.Website.Config)
 		if err != nil {

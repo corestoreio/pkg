@@ -31,9 +31,9 @@ func (sl stubLimiter) RateLimit(key string, quantity int) (bool, throttled.RateL
 func TestWithScopedRateLimiter(t *testing.T) {
 	t.Parallel()
 
-	hashedScoped := scope.NewHash(scope.StoreID, 33)
+	hashedScoped := scope.NewHash(scope.Store, 33)
 	wantSL := stubLimiter{}
-	rl, err := NewHTTPRateLimit(WithScopedRateLimiter(scope.StoreID, 33, wantSL))
+	rl, err := NewHTTPRateLimit(WithScopedRateLimiter(scope.Store, 33, wantSL))
 	if err != nil {
 		t.Fatal(err)
 	}

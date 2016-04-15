@@ -45,10 +45,10 @@ func TestMock(t *testing.T) {
 		s  scope.Scope
 		id int64
 	}{
-		{scope.DefaultID, 0},
-		{scope.WebsiteID, 1},
-		{scope.GroupID, 20},
-		{scope.StoreID, 30},
+		{scope.Default, 0},
+		{scope.Website, 1},
+		{scope.Group, 20},
+		{scope.Store, 30},
 	}
 	for _, test := range tests {
 		m := scope.Mock{

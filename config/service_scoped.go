@@ -75,11 +75,11 @@ func NewScopedService(r Getter, websiteID, storeID int64) scopedService {
 func (ss scopedService) Scope() (scope.Scope, int64) {
 	switch {
 	case ss.storeID > 0:
-		return scope.StoreID, ss.storeID
+		return scope.Store, ss.storeID
 	case ss.websiteID > 0:
-		return scope.WebsiteID, ss.websiteID
+		return scope.Website, ss.websiteID
 	default:
-		return scope.DefaultID, 0
+		return scope.Default, 0
 	}
 }
 
@@ -94,13 +94,13 @@ func (ss scopedService) Byte(r cfgpath.Route, s ...scope.Scope) (v []byte, err e
 	}
 
 	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
-		v, err = ss.root.Byte(p.Bind(scope.StoreID, ss.storeID))
+		v, err = ss.root.Byte(p.Bind(scope.Store, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 	}
 	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
-		v, err = ss.root.Byte(p.Bind(scope.WebsiteID, ss.websiteID))
+		v, err = ss.root.Byte(p.Bind(scope.Website, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
@@ -119,13 +119,13 @@ func (ss scopedService) String(r cfgpath.Route, s ...scope.Scope) (v string, err
 	}
 
 	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
-		v, err = ss.root.String(p.Bind(scope.StoreID, ss.storeID))
+		v, err = ss.root.String(p.Bind(scope.Store, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 	}
 	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
-		v, err = ss.root.String(p.Bind(scope.WebsiteID, ss.websiteID))
+		v, err = ss.root.String(p.Bind(scope.Website, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
@@ -144,14 +144,14 @@ func (ss scopedService) Bool(r cfgpath.Route, s ...scope.Scope) (v bool, err err
 	}
 
 	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
-		v, err = ss.root.Bool(p.Bind(scope.StoreID, ss.storeID))
+		v, err = ss.root.Bool(p.Bind(scope.Store, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 	} // if not found in store scope go to website scope
 
 	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
-		v, err = ss.root.Bool(p.Bind(scope.WebsiteID, ss.websiteID))
+		v, err = ss.root.Bool(p.Bind(scope.Website, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
@@ -170,14 +170,14 @@ func (ss scopedService) Float64(r cfgpath.Route, s ...scope.Scope) (v float64, e
 	}
 
 	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
-		v, err = ss.root.Float64(p.Bind(scope.StoreID, ss.storeID))
+		v, err = ss.root.Float64(p.Bind(scope.Store, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 	} // if not found in store scope go to website scope
 
 	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
-		v, err = ss.root.Float64(p.Bind(scope.WebsiteID, ss.websiteID))
+		v, err = ss.root.Float64(p.Bind(scope.Website, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
@@ -196,14 +196,14 @@ func (ss scopedService) Int(r cfgpath.Route, s ...scope.Scope) (v int, err error
 	}
 
 	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
-		v, err = ss.root.Int(p.Bind(scope.StoreID, ss.storeID))
+		v, err = ss.root.Int(p.Bind(scope.Store, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 	} // if not found in store scope go to website scope
 
 	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
-		v, err = ss.root.Int(p.Bind(scope.WebsiteID, ss.websiteID))
+		v, err = ss.root.Int(p.Bind(scope.Website, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
@@ -222,14 +222,14 @@ func (ss scopedService) Time(r cfgpath.Route, s ...scope.Scope) (v time.Time, er
 	}
 
 	if ss.storeID > 0 && scope.PermStoreReverse.Has(s...) {
-		v, err = ss.root.Time(p.Bind(scope.StoreID, ss.storeID))
+		v, err = ss.root.Time(p.Bind(scope.Store, ss.storeID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}
 	} // if not found in store scope go to website scope
 
 	if ss.websiteID > 0 && scope.PermWebsiteReverse.Has(s...) {
-		v, err = ss.root.Time(p.Bind(scope.WebsiteID, ss.websiteID))
+		v, err = ss.root.Time(p.Bind(scope.Website, ss.websiteID))
 		if NotKeyNotFoundError(err) || err == nil {
 			return // value found or err is not a KeyNotFound error
 		}

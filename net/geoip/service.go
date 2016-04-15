@@ -170,10 +170,10 @@ var defaultAlternativeHandler = func(_ context.Context, w http.ResponseWriter, _
 func (s *Service) altHandlerByID(st *store.Store) ctxhttp.HandlerFunc {
 
 	if s.storeIDs != nil && s.storeAltH != nil {
-		return findHandlerByID(scope.StoreID, st.StoreID(), s.storeIDs, s.storeAltH)
+		return findHandlerByID(scope.Store, st.StoreID(), s.storeIDs, s.storeAltH)
 	}
 	if s.websiteIDs != nil && s.websiteAltH != nil {
-		return findHandlerByID(scope.WebsiteID, st.Website.WebsiteID(), s.websiteIDs, s.websiteAltH)
+		return findHandlerByID(scope.Website, st.Website.WebsiteID(), s.websiteIDs, s.websiteAltH)
 	}
 	return DefaultAlternativeHandler
 }

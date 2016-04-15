@@ -35,7 +35,7 @@ func TestNewConfigCurrencyGetDefault(t *testing.T) {
 
 	cr := cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{
-			cobPath.Bind(scope.DefaultID, 0).String(): "CHF",
+			cobPath.Bind(scope.Default, 0).String(): "CHF",
 		}),
 	)
 
@@ -84,8 +84,8 @@ func TestNewConfigCurrencyGetEmpty(t *testing.T) {
 			// default scope is enforced because NewConfigCurrency() has been created
 			// with the ConfigStructure slice and so we're missing the *element.Field
 			// with the special configuration
-			cobPath.Bind(scope.WebsiteID, 1).String(): "CHF",
-			cobPath.Bind(scope.StoreID, 1).String():   "EUR",
+			cobPath.Bind(scope.Website, 1).String(): "CHF",
+			cobPath.Bind(scope.Store, 1).String():   "EUR",
 		}),
 	)
 
@@ -104,8 +104,8 @@ func TestNewConfigCurrencyGet(t *testing.T) {
 
 	cr := cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{
-			cobPath.Bind(scope.WebsiteID, 1).String(): "EUR",
-			cobPath.Bind(scope.WebsiteID, 2).String(): "WIR", // Special Swiss currency
+			cobPath.Bind(scope.Website, 1).String(): "EUR",
+			cobPath.Bind(scope.Website, 2).String(): "WIR", // Special Swiss currency
 		}),
 	)
 
@@ -145,13 +145,13 @@ func TestNewConfigCurrencyWrite(t *testing.T) {
 	}
 
 	w := new(cfgmock.Write)
-	assert.NoError(t, cc.Write(w, c, scope.WebsiteID, 33))
+	assert.NoError(t, cc.Write(w, c, scope.Website, 33))
 
-	assert.Exactly(t, cobPath.Bind(scope.WebsiteID, 33).String(), w.ArgPath)
+	assert.Exactly(t, cobPath.Bind(scope.Website, 33).String(), w.ArgPath)
 	assert.Exactly(t, "EUR", w.ArgValue)
 
 	assert.EqualError(t,
-		cc.Write(w, directory.Currency{}, scope.WebsiteID, 33),
+		cc.Write(w, directory.Currency{}, scope.Website, 33),
 		"The value 'XXX' cannot be found within the allowed Options():\n[{\"Value\":\"EUR\",\"Label\":\"Euro\"},{\"Value\":\"CHF\",\"Label\":\"Swiss Franc\"},{\"Value\":\"AUD\",\"Label\":\"Australian Dinar ;-)\"}]\n",
 	)
 }

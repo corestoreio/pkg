@@ -62,7 +62,7 @@ type Path struct {
 // New creates a new validated Path. Scope is assigned to Default.
 func New(rs ...Route) (Path, error) {
 	p := Path{
-		Scope: scope.DefaultID,
+		Scope: scope.Default,
 	}
 	if len(rs) == 1 {
 		p.Route = rs[0]
@@ -213,8 +213,8 @@ func (p Path) fq(buf *bytes.Buffer) error {
 		return err
 	}
 
-	if (p.Scope == scope.DefaultID || p.Scope == scope.GroupID) && p.ID > 0 {
-		p.Scope = scope.DefaultID
+	if (p.Scope == scope.Default || p.Scope == scope.Group) && p.ID > 0 {
+		p.Scope = scope.Default
 		p.ID = 0
 	}
 

@@ -47,9 +47,9 @@ func SetByCode(scp Scope, code string) (o Option, err error) {
 	c := MockCode(code)
 	// GroupID does not have a scope code
 	switch scp {
-	case WebsiteID:
+	case Website:
 		o.Website = c
-	case StoreID:
+	case Store:
 		o.Store = c
 	default:
 		err = ErrUnsupportedScopeID
@@ -73,11 +73,11 @@ func SetByID(scp Scope, id int64) (o Option, err error) {
 	i := MockID(id)
 	// the order of the cases is important
 	switch scp {
-	case WebsiteID:
+	case Website:
 		o.Website = i
-	case GroupID:
+	case Group:
 		o.Group = i
-	case StoreID:
+	case Store:
 		o.Store = i
 	default:
 		err = ErrUnsupportedScopeID
@@ -99,15 +99,15 @@ func MustSetByID(scp Scope, id int64) Option {
 // It maintains the hierarchical order: 1. Website, 2. Group, 3. Store.
 // If no field has been set returns DefaultID.
 func (o Option) Scope() (s Scope) {
-	s = DefaultID
+	s = Default
 	// the order of the cases is important
 	switch {
 	case o.Website != nil:
-		s = WebsiteID
+		s = Website
 	case o.Group != nil:
-		s = GroupID
+		s = Group
 	case o.Store != nil:
-		s = StoreID
+		s = Store
 	}
 	return
 }

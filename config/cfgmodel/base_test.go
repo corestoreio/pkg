@@ -94,10 +94,10 @@ func TestBaseValueString(t *testing.T) {
 	assert.Exactly(t, pathWebCorsHeaders, p1.String())
 
 	wantWebsiteID := int64(2) // This number 2 is usually stored in core_website/store_website table in column website_id
-	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).Bind(scope.WebsiteID, wantWebsiteID)
+	wantPath := cfgpath.MustNewByParts(pathWebCorsHeaders).Bind(scope.Website, wantWebsiteID)
 
 	mw := new(cfgmock.Write)
-	assert.NoError(t, p1.Write(mw, "314159", scope.WebsiteID, wantWebsiteID))
+	assert.NoError(t, p1.Write(mw, "314159", scope.Website, wantWebsiteID))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, "314159", mw.ArgValue.(string))
 
@@ -185,9 +185,9 @@ func TestBaseValueFQ(t *testing.T) {
 	t.Parallel()
 	const pth = "aa/bb/cc"
 	p := NewValue(pth)
-	fq, err := p.FQ(scope.StoreID, 4)
+	fq, err := p.FQ(scope.Store, 4)
 	assert.NoError(t, err)
-	assert.Exactly(t, cfgpath.MustNewByParts(pth).Bind(scope.StoreID, 4).String(), fq)
+	assert.Exactly(t, cfgpath.MustNewByParts(pth).Bind(scope.Store, 4).String(), fq)
 }
 
 func TestBaseValueMustFQPanic(t *testing.T) {
@@ -201,7 +201,7 @@ func TestBaseValueMustFQPanic(t *testing.T) {
 	}()
 	const pth = "a/b/c"
 	p := NewValue(pth)
-	fq := p.MustFQ(scope.StoreID, 4)
+	fq := p.MustFQ(scope.Store, 4)
 	assert.Empty(t, fq)
 }
 
@@ -213,8 +213,8 @@ func TestBaseValueToPath(t *testing.T) {
 		sid     int64
 		wantErr error
 	}{
-		{cfgpath.NewRoute("aa/bb/cc"), scope.StoreID, 23, nil},
-		{cfgpath.NewRoute("a/bb/cc"), scope.StoreID, 23, cfgpath.ErrIncorrectPath},
+		{cfgpath.NewRoute("aa/bb/cc"), scope.Store, 23, nil},
+		{cfgpath.NewRoute("a/bb/cc"), scope.Store, 23, cfgpath.ErrIncorrectPath},
 	}
 	for i, test := range tests {
 		bv := NewValue(test.route.String())

@@ -57,7 +57,7 @@ func TestHTTPRateLimit_Concurrent_Map(t *testing.T) {
 	ctx := store.WithContextProvider(
 		context.Background(),
 		storemock.NewEurozzyService(
-			scope.MustSetByCode(scope.WebsiteID, "euro"),
+			scope.MustSetByCode(scope.Website, "euro"),
 		),
 	)
 

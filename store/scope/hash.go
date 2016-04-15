@@ -22,7 +22,7 @@ const MaxStoreID int64 = 1<<23 - 1
 
 // DefaultHash default Hash value for Default Scope and ID 0. Avoids typing
 // 		scope.NewHash(DefaultID,0)
-const DefaultHash Hash = Hash(DefaultID)<<24 | 0
+const DefaultHash Hash = Hash(Default)<<24 | 0
 
 // Hash defines a merged Scope with its ID. The ID can either be from
 // a website, group or store.
@@ -43,14 +43,14 @@ func (h Hash) Unpack() (s Scope, id int64) {
 
 	prospectS := h >> 24
 	if prospectS > maxUint8 || prospectS < 0 {
-		return AbsentID, -1
+		return Absent, -1
 	}
 	s = Scope(prospectS)
 
 	h64 := int64(h)
 	prospectID := h64 ^ (h64>>24)<<24
 	if prospectID > MaxStoreID || prospectID < 0 {
-		return AbsentID, -1
+		return Absent, -1
 	}
 
 	id = int64(prospectID)
@@ -81,7 +81,7 @@ func NewHash(s Scope, id int64) Hash {
 	if id > MaxStoreID || id < 0 {
 		return 0
 	}
-	if s < WebsiteID {
+	if s < Website {
 		id = 0
 	}
 	return Hash(s)<<24 | Hash(id)

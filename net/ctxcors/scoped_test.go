@@ -32,17 +32,17 @@ func TestCorsCurrent_ShouldCreateANewScopedBasedCors(t *testing.T) {
 
 	cfgGet := cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{
-			mustToPath(t, be.NetCtxcorsExposedHeaders.FQ, scope.WebsiteID, 2):     "X-CoreStore-ID\nContent-Type\n\n",
-			mustToPath(t, be.NetCtxcorsAllowedOrigins.FQ, scope.WebsiteID, 2):     "host1.com\nhost2.com\n\n",
-			mustToPath(t, be.NetCtxcorsAllowedMethods.FQ, scope.WebsiteID, 2):     "PATCH\nDELETE",
-			mustToPath(t, be.NetCtxcorsAllowedHeaders.FQ, scope.WebsiteID, 2):     "Date,X-Header1",
-			mustToPath(t, be.NetCtxcorsAllowCredentials.FQ, scope.WebsiteID, 2):   "1",
-			mustToPath(t, be.NetCtxcorsOptionsPassthrough.FQ, scope.WebsiteID, 2): "1",
-			mustToPath(t, be.NetCtxcorsMaxAge.FQ, scope.WebsiteID, 2):             "2h",
+			mustToPath(t, be.NetCtxcorsExposedHeaders.FQ, scope.Website, 2):     "X-CoreStore-ID\nContent-Type\n\n",
+			mustToPath(t, be.NetCtxcorsAllowedOrigins.FQ, scope.Website, 2):     "host1.com\nhost2.com\n\n",
+			mustToPath(t, be.NetCtxcorsAllowedMethods.FQ, scope.Website, 2):     "PATCH\nDELETE",
+			mustToPath(t, be.NetCtxcorsAllowedHeaders.FQ, scope.Website, 2):     "Date,X-Header1",
+			mustToPath(t, be.NetCtxcorsAllowCredentials.FQ, scope.Website, 2):   "1",
+			mustToPath(t, be.NetCtxcorsOptionsPassthrough.FQ, scope.Website, 2): "1",
+			mustToPath(t, be.NetCtxcorsMaxAge.FQ, scope.Website, 2):             "2h",
 		}),
 	)
 
-	scpO, err := scope.SetByCode(scope.WebsiteID, "oz")
+	scpO, err := scope.SetByCode(scope.Website, "oz")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,13 +65,13 @@ func TestCorsCurrent_ShouldCreateANewScopedBasedCors(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Exactly(t, scope.NewHash(scope.WebsiteID, 2), scopedCors.scopedTo)
+	assert.Exactly(t, scope.NewHash(scope.Website, 2), scopedCors.scopedTo)
 
 	// check that we get the same cors back
 	scopedCors2, err := c.current(csc, ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Exactly(t, scope.NewHash(scope.WebsiteID, 2), scopedCors.scopedTo)
+	assert.Exactly(t, scope.NewHash(scope.Website, 2), scopedCors.scopedTo)
 	assert.Exactly(t, scopedCors2, scopedCors)
 }

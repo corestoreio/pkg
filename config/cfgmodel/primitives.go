@@ -38,7 +38,7 @@ func (b Bool) Get(sg config.ScopedGetter) (bool, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v bool
-	var scp = scope.DefaultID
+	var scp = scope.Default
 	if b.hasField() {
 		scp = b.Field.Scopes.Top()
 		var err error
@@ -82,7 +82,7 @@ func (bt Byte) Get(sg config.ScopedGetter) ([]byte, error) {
 	// This code must be kept in sync with other lookup*() functions
 
 	var v []byte
-	var scp = scope.DefaultID
+	var scp = scope.Default
 	if bt.hasField() {
 		scp = bt.Field.Scopes.Top()
 		var err error
@@ -126,7 +126,7 @@ func (str Str) Get(sg config.ScopedGetter) (string, error) {
 	// This code must be kept in sync with other lookup*() functions
 
 	var v string
-	var scp = scope.DefaultID
+	var scp = scope.Default
 	if str.hasField() {
 		scp = str.Field.Scopes.Top()
 		var err error
@@ -168,7 +168,7 @@ func (i Int) Get(sg config.ScopedGetter) (int, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v int
-	var scp = scope.DefaultID
+	var scp = scope.Default
 	if i.hasField() {
 		scp = i.Field.Scopes.Top()
 		var err error
@@ -210,7 +210,7 @@ func (f Float64) Get(sg config.ScopedGetter) (float64, error) {
 	// This code must be kept in sync with other Get() functions
 
 	var v float64
-	var scp = scope.DefaultID
+	var scp = scope.Default
 	if f.hasField() {
 		scp = f.Field.Scopes.Top()
 		if d := f.Field.Default; d != nil {

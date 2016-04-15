@@ -112,13 +112,13 @@ func TestWithBackendApplied(t *testing.T) {
 
 	cfgGet := cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{
-			mustToPath(t, be.NetCtxcorsExposedHeaders.FQ, scope.WebsiteID, 2):     "X-CoreStore-ID\nContent-Type\n\n",
-			mustToPath(t, be.NetCtxcorsAllowedOrigins.FQ, scope.WebsiteID, 2):     "host1.com\nhost2.com\n\n",
-			mustToPath(t, be.NetCtxcorsAllowedMethods.FQ, scope.DefaultID, 0):     "PATCH\nDELETE",
-			mustToPath(t, be.NetCtxcorsAllowedHeaders.FQ, scope.DefaultID, 0):     "Date,X-Header1",
-			mustToPath(t, be.NetCtxcorsAllowCredentials.FQ, scope.WebsiteID, 2):   "1",
-			mustToPath(t, be.NetCtxcorsOptionsPassthrough.FQ, scope.WebsiteID, 2): "1",
-			mustToPath(t, be.NetCtxcorsMaxAge.FQ, scope.WebsiteID, 2):             "2h",
+			mustToPath(t, be.NetCtxcorsExposedHeaders.FQ, scope.Website, 2):     "X-CoreStore-ID\nContent-Type\n\n",
+			mustToPath(t, be.NetCtxcorsAllowedOrigins.FQ, scope.Website, 2):     "host1.com\nhost2.com\n\n",
+			mustToPath(t, be.NetCtxcorsAllowedMethods.FQ, scope.Default, 0):     "PATCH\nDELETE",
+			mustToPath(t, be.NetCtxcorsAllowedHeaders.FQ, scope.Default, 0):     "Date,X-Header1",
+			mustToPath(t, be.NetCtxcorsAllowCredentials.FQ, scope.Website, 2):   "1",
+			mustToPath(t, be.NetCtxcorsOptionsPassthrough.FQ, scope.Website, 2): "1",
+			mustToPath(t, be.NetCtxcorsMaxAge.FQ, scope.Website, 2):             "2h",
 		}),
 	)
 

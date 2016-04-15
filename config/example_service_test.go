@@ -46,14 +46,14 @@ func ExampleService() {
 
 	// scope website. The number 3 is made up and comes usually from DB table
 	// (M1) core_website or (M2) store_website.
-	if err := configSrv.Write(pathString.Bind(scope.WebsiteID, 3), "WebsiteGopher"); err != nil {
+	if err := configSrv.Write(pathString.Bind(scope.Website, 3), "WebsiteGopher"); err != nil {
 		fmt.Printf("Write Error: %s", err)
 		return
 	}
 
 	// scope store. The number 2 is made up and comes usually from DB table
 	// (M1) core_store or (M2) store.
-	if err := configSrv.Write(pathString.Bind(scope.StoreID, 2), "StoreGopher"); err != nil {
+	if err := configSrv.Write(pathString.Bind(scope.Store, 2), "StoreGopher"); err != nil {
 		fmt.Printf("Write Error: %s", err)
 		return
 	}
@@ -67,7 +67,7 @@ func ExampleService() {
 	fmt.Println("Scope1:", val)
 
 	// Scope2
-	val, err = configSrv.String(pathString.Bind(scope.WebsiteID, 3))
+	val, err = configSrv.String(pathString.Bind(scope.Website, 3))
 	if err != nil {
 		fmt.Printf("srvString Error: %s", err)
 		return
@@ -75,7 +75,7 @@ func ExampleService() {
 	fmt.Println("Scope2:", val)
 
 	// Scope3
-	val, err = configSrv.String(pathString.Bind(scope.StoreID, 2))
+	val, err = configSrv.String(pathString.Bind(scope.Store, 2))
 	if err != nil {
 		fmt.Printf("srvString Error: %s", err)
 		return
@@ -83,7 +83,7 @@ func ExampleService() {
 	fmt.Println("Scope3:", val)
 
 	// Scope4
-	val, err = configSrv.String(pathString.Bind(scope.StoreID, 3)) // different scope ID
+	val, err = configSrv.String(pathString.Bind(scope.Store, 3)) // different scope ID
 	if err != nil {
 		fmt.Printf("Scope4: srvString Error: %s\n", err)
 	}

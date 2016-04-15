@@ -55,10 +55,10 @@ func TestApplyCode(t *testing.T) {
 		s               scope.Scope
 		err             error
 	}{
-		{"", "de1", "de1", scope.WebsiteID, nil},
-		{"de2", "", "de2", scope.StoreID, nil},
-		{"", "", "de3", scope.GroupID, scope.ErrUnsupportedScopeID},
-		{"", "", "de4", scope.AbsentID, scope.ErrUnsupportedScopeID},
+		{"", "de1", "de1", scope.Website, nil},
+		{"de2", "", "de2", scope.Store, nil},
+		{"", "", "de3", scope.Group, scope.ErrUnsupportedScopeID},
+		{"", "", "de4", scope.Absent, scope.ErrUnsupportedScopeID},
 	}
 
 	for _, test := range tests {
@@ -86,10 +86,10 @@ func TestApplyID(t *testing.T) {
 		s      scope.Scope
 		err    error
 	}{
-		{scope.MockID(1), nil, nil, 1, scope.WebsiteID, nil},
-		{nil, scope.MockID(3), nil, 3, scope.GroupID, nil},
-		{nil, nil, scope.MockID(2), 2, scope.StoreID, nil},
-		{nil, nil, nil, 4, scope.AbsentID, scope.ErrUnsupportedScopeID},
+		{scope.MockID(1), nil, nil, 1, scope.Website, nil},
+		{nil, scope.MockID(3), nil, 3, scope.Group, nil},
+		{nil, nil, scope.MockID(2), 2, scope.Store, nil},
+		{nil, nil, nil, 4, scope.Absent, scope.ErrUnsupportedScopeID},
 	}
 
 	for _, test := range tests {
@@ -134,7 +134,7 @@ func TestApplyWebsite(t *testing.T) {
 	assert.Equal(t, int64(3), so.Website.WebsiteID())
 	assert.Nil(t, so.Group)
 	assert.Nil(t, so.Store)
-	assert.Exactly(t, scope.WebsiteID.String(), so.String())
+	assert.Exactly(t, scope.Website.String(), so.String())
 }
 
 func TestApplyGroup(t *testing.T) {
@@ -144,7 +144,7 @@ func TestApplyGroup(t *testing.T) {
 	assert.Equal(t, int64(3), so.Group.GroupID())
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Store)
-	assert.Exactly(t, scope.GroupID.String(), so.String())
+	assert.Exactly(t, scope.Group.String(), so.String())
 }
 
 func TestApplyStore(t *testing.T) {
@@ -154,14 +154,14 @@ func TestApplyStore(t *testing.T) {
 	assert.Equal(t, int64(3), so.Store.StoreID())
 	assert.Nil(t, so.Website)
 	assert.Nil(t, so.Group)
-	assert.Exactly(t, scope.StoreID.String(), so.String())
+	assert.Exactly(t, scope.Store.String(), so.String())
 }
 
 func TestApplyDefault(t *testing.T) {
 	t.Parallel()
 	so := scope.Option{}
 	assert.NotNil(t, so)
-	assert.Exactly(t, scope.DefaultID, so.Scope())
+	assert.Exactly(t, scope.Default, so.Scope())
 }
 
 func TestToUint32ByID(t *testing.T) {
@@ -171,9 +171,9 @@ func TestToUint32ByID(t *testing.T) {
 		want uint32
 	}{
 		{scope.Option{}, 0},
-		{scope.MustSetByID(scope.WebsiteID, 11), 11},
-		{scope.MustSetByID(scope.GroupID, 12), 12},
-		{scope.MustSetByID(scope.StoreID, 13), 13},
+		{scope.MustSetByID(scope.Website, 11), 11},
+		{scope.MustSetByID(scope.Group, 12), 12},
+		{scope.MustSetByID(scope.Store, 13), 13},
 	}
 	for _, test := range tests {
 		if have := test.so.ToUint32(); have != test.want {
@@ -189,9 +189,9 @@ func TestToUint32ByCode(t *testing.T) {
 		want string
 	}{
 		{scope.Option{}, ""},
-		{scope.MustSetByCode(scope.WebsiteID, "ch"), "ch"},
-		{scope.MustSetByCode(scope.StoreID, "de_DE"), "de_DE"},
-		{scope.MustSetByCode(scope.StoreID, "deDE"), "deDE"},
+		{scope.MustSetByCode(scope.Website, "ch"), "ch"},
+		{scope.MustSetByCode(scope.Store, "de_DE"), "de_DE"},
+		{scope.MustSetByCode(scope.Store, "deDE"), "deDE"},
 	}
 	for _, test := range tests {
 

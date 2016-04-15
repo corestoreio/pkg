@@ -39,7 +39,7 @@ func TestServiceMustNewServicePanic(t *testing.T) {
 			t.Fatal("Expecting a panic")
 		}
 	}()
-	_ = ctxjwt.MustNewService(ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithECPrivateKeyFromFile("non-existent.pem")))
+	_ = ctxjwt.MustNewService(ctxjwt.WithKey(scope.Default, 0, csjwt.WithECPrivateKeyFromFile("non-existent.pem")))
 }
 
 func TestServiceNewDefaultBlacklist(t *testing.T) {
@@ -59,7 +59,7 @@ func TestServiceNewDefault(t *testing.T) {
 	testClaims := &jwtclaim.Standard{
 		Subject: "gopher",
 	}
-	theToken, err := jwts.NewToken(scope.DefaultID, 0, testClaims)
+	theToken, err := jwts.NewToken(scope.Default, 0, testClaims)
 	assert.NoError(t, err)
 	assert.Empty(t, testClaims.ID)
 	assert.NotEmpty(t, theToken)
@@ -82,7 +82,7 @@ func TestServiceNewDefault(t *testing.T) {
 func TestServiceNewDefaultRSAError(t *testing.T) {
 	t.Parallel()
 
-	jmRSA, err := ctxjwt.NewService(ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithRSAPrivateKeyFromFile("invalid.key")))
+	jmRSA, err := ctxjwt.NewService(ctxjwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile("invalid.key")))
 	assert.Nil(t, jmRSA)
 	assert.Contains(t, err.Error(), "open invalid.key:") //  no such file or directory OR The system cannot find the file specified.
 }
@@ -103,7 +103,7 @@ func TestServiceParseInvalidSigningMethod(t *testing.T) {
 	}
 
 	keyRand := csjwt.WithPasswordRandom()
-	jwts := ctxjwt.MustNewService(ctxjwt.WithKey(scope.DefaultID, 0, keyRand))
+	jwts := ctxjwt.MustNewService(ctxjwt.WithKey(scope.Default, 0, keyRand))
 
 	tk := csjwt.NewToken(jwtclaim.Map{
 		"exp": time.Now().Add(time.Hour).Unix(),
@@ -126,7 +126,7 @@ func TestServiceLogout(t *testing.T) {
 		ctxjwt.WithBlacklist(tbl),
 	)
 
-	theToken, err := jwts.NewToken(scope.DefaultID, 0, jwtclaim.NewStore())
+	theToken, err := jwts.NewToken(scope.Default, 0, jwtclaim.NewStore())
 	assert.NoError(t, err)
 
 	tk, err := jwts.Parse(theToken)
@@ -142,7 +142,7 @@ func TestServiceLogout(t *testing.T) {
 func TestServiceIncorrectConfigurationScope(t *testing.T) {
 	t.Parallel()
 
-	jwts, err := ctxjwt.NewService(ctxjwt.WithKey(scope.StoreID, 33, csjwt.WithPasswordRandom()))
+	jwts, err := ctxjwt.NewService(ctxjwt.WithKey(scope.Store, 33, csjwt.WithPasswordRandom()))
 	assert.Nil(t, jwts)
 	assert.EqualError(t, err, `[ctxjwt] Service does not support this: Scope(Store) ID(33). Only default or website are allowed.`)
 }

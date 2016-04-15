@@ -36,10 +36,10 @@ func TestScopedServiceScope(t *testing.T) {
 		wantScope          scope.Scope
 		wantID             int64
 	}{
-		{0, 0, scope.DefaultID, 0},
-		{1, 0, scope.WebsiteID, 1},
-		{1, 3, scope.StoreID, 3},
-		{0, 3, scope.StoreID, 3},
+		{0, 0, scope.Default, 0},
+		{1, 0, scope.Website, 1},
+		{1, 3, scope.Store, 3},
+		{0, 3, scope.Store, 3},
 	}
 	for i, test := range tests {
 		sg := cfgmock.NewService().NewScoped(test.websiteID, test.storeID)
@@ -62,31 +62,31 @@ func TestScopedServicePath(t *testing.T) {
 	}{
 		{
 			"Default ScopedGetter should return default scope",
-			basePath.String(), cfgpath.NewRoute("aa/bb/cc"), scope.AbsentID, 0, 0, nil,
+			basePath.String(), cfgpath.NewRoute("aa/bb/cc"), scope.Absent, 0, 0, nil,
 		},
 		{
 			"Website ID 1 ScopedGetter should fall back to default scope",
-			basePath.String(), cfgpath.NewRoute("aa/bb/cc"), scope.WebsiteID, 1, 0, nil,
+			basePath.String(), cfgpath.NewRoute("aa/bb/cc"), scope.Website, 1, 0, nil,
 		},
 		{
 			"Website ID 10 ScopedGetter should fall back to website 10 scope",
-			basePath.Bind(scope.WebsiteID, 10).String(), cfgpath.NewRoute("aa/bb/cc"), scope.WebsiteID, 10, 0, nil,
+			basePath.Bind(scope.Website, 10).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Website, 10, 0, nil,
 		},
 		{
 			"Website ID 10 + Store 22 ScopedGetter should fall back to website 10 scope",
-			basePath.Bind(scope.WebsiteID, 10).String(), cfgpath.NewRoute("aa/bb/cc"), scope.StoreID, 10, 22, nil,
+			basePath.Bind(scope.Website, 10).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 22, nil,
 		},
 		{
 			"Website ID 10 + Store 22 ScopedGetter should return Store 22 scope",
-			basePath.Bind(scope.StoreID, 22).String(), cfgpath.NewRoute("aa/bb/cc"), scope.StoreID, 10, 22, nil,
+			basePath.Bind(scope.Store, 22).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 22, nil,
 		},
 		{
 			"Website ID 10 + Store 42 ScopedGetter should return nothing",
-			basePath.Bind(scope.StoreID, 22).String(), cfgpath.NewRoute("aa/bb/cc"), scope.StoreID, 10, 42, storage.ErrKeyNotFound,
+			basePath.Bind(scope.Store, 22).String(), cfgpath.NewRoute("aa/bb/cc"), scope.Store, 10, 42, storage.ErrKeyNotFound,
 		},
 		{
 			"Path consists of only two elements which is incorrect",
-			basePath.String(), cfgpath.NewRoute("aa", "bb"), scope.StoreID, 0, 0, cfgpath.ErrIncorrectPath,
+			basePath.String(), cfgpath.NewRoute("aa", "bb"), scope.Store, 0, 0, cfgpath.ErrIncorrectPath,
 		},
 	}
 
@@ -145,15 +145,15 @@ var benchmarkScopedServiceString string
 // BenchmarkScopedServiceStringStore-4	 1000000	      1821 ns/op	     336 B/op	       3 allocs/op => cfgpath.Path without []ArgFunc
 // BenchmarkScopedServiceStringStore-4   1000000	      1747 ns/op	       0 B/op	       0 allocs/op => Go 1.6 sync.Pool cfgpath.Path without []ArgFunc
 func BenchmarkScopedServiceStringStore(b *testing.B) {
-	benchmarkScopedServiceStringRun(b, 1, 1, scope.StoreID)
+	benchmarkScopedServiceStringRun(b, 1, 1, scope.Store)
 }
 
 func BenchmarkScopedServiceStringWebsite(b *testing.B) {
-	benchmarkScopedServiceStringRun(b, 1, 0, scope.WebsiteID)
+	benchmarkScopedServiceStringRun(b, 1, 0, scope.Website)
 }
 
 func BenchmarkScopedServiceStringDefault(b *testing.B) {
-	benchmarkScopedServiceStringRun(b, 0, 0, scope.DefaultID)
+	benchmarkScopedServiceStringRun(b, 0, 0, scope.Default)
 }
 
 func benchmarkScopedServiceStringRun(b *testing.B, websiteID, storeID int64, s scope.Scope) {
@@ -185,20 +185,20 @@ func TestScopedServicePermission(t *testing.T) {
 	basePath := cfgpath.MustNewByParts("aa/bb/cc")
 
 	sg := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
-		basePath.Bind(scope.DefaultID, 0).String(): "a",
-		basePath.Bind(scope.WebsiteID, 1).String(): "b",
-		basePath.Bind(scope.StoreID, 1).String():   "c",
+		basePath.Bind(scope.Default, 0).String(): "a",
+		basePath.Bind(scope.Website, 1).String(): "b",
+		basePath.Bind(scope.Store, 1).String():   "c",
 	})).NewScoped(1, 1)
 
 	tests := []struct {
 		s    scope.Scope
 		want string
 	}{
-		{scope.DefaultID, "a"},
-		{scope.WebsiteID, "b"},
-		{scope.GroupID, "a"},
-		{scope.StoreID, "c"},
-		{scope.AbsentID, "a"},
+		{scope.Default, "a"},
+		{scope.Website, "b"},
+		{scope.Group, "a"},
+		{scope.Store, "c"},
+		{scope.Absent, "a"},
 	}
 	for i, test := range tests {
 		have, err := sg.String(basePath.Route, test.s)

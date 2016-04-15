@@ -121,12 +121,12 @@ func TestPathNew(t *testing.T) {
 		wantFQ     cfgpath.Route
 		wantNewErr error
 	}{
-		{cfgpath.NewRoute("ab/b\x80/cd"), scope.WebsiteID, 3, cfgpath.NewRoute("websites/3/ab/ba/cd"), cfgpath.ErrRouteInvalidBytes},
-		{cfgpath.NewRoute("ab/ba/cd"), scope.WebsiteID, 3, cfgpath.NewRoute("websites/3/ab/ba/cd"), nil},
-		{cfgpath.NewRoute("ad/ba/ca/sd"), scope.WebsiteID, 3, cfgpath.NewRoute("websites/3/ad/ba/ca/sd"), nil},
-		{cfgpath.NewRoute("as/sb"), scope.WebsiteID, 3, cfgpath.NewRoute("websites/3/a/b/c/d"), cfgpath.ErrIncorrectPath},
-		{cfgpath.NewRoute("aa/bb/cc"), scope.GroupID, 3, cfgpath.NewRoute("default/0/aa/bb/cc"), nil},
-		{cfgpath.NewRoute("aa/bb/cc"), scope.StoreID, 3, cfgpath.NewRoute("stores/3/aa/bb/cc"), nil},
+		{cfgpath.NewRoute("ab/b\x80/cd"), scope.Website, 3, cfgpath.NewRoute("websites/3/ab/ba/cd"), cfgpath.ErrRouteInvalidBytes},
+		{cfgpath.NewRoute("ab/ba/cd"), scope.Website, 3, cfgpath.NewRoute("websites/3/ab/ba/cd"), nil},
+		{cfgpath.NewRoute("ad/ba/ca/sd"), scope.Website, 3, cfgpath.NewRoute("websites/3/ad/ba/ca/sd"), nil},
+		{cfgpath.NewRoute("as/sb"), scope.Website, 3, cfgpath.NewRoute("websites/3/a/b/c/d"), cfgpath.ErrIncorrectPath},
+		{cfgpath.NewRoute("aa/bb/cc"), scope.Group, 3, cfgpath.NewRoute("default/0/aa/bb/cc"), nil},
+		{cfgpath.NewRoute("aa/bb/cc"), scope.Store, 3, cfgpath.NewRoute("stores/3/aa/bb/cc"), nil},
 	}
 	for i, test := range tests {
 		haveP, haveErr := cfgpath.New(test.route)
@@ -325,19 +325,19 @@ func TestPathIsValid(t *testing.T) {
 		have cfgpath.Route
 		want error
 	}{
-		{scope.DefaultID, 0, cfgpath.NewRoute("//"), cfgpath.ErrIncorrectPath},
-		{scope.DefaultID, 0, cfgpath.NewRoute("general/store_information/city"), nil},
-		{scope.DefaultID, 33, cfgpath.NewRoute("general/store_information/city"), nil},
-		{scope.WebsiteID, 33, cfgpath.NewRoute("system/full_page_cache/varnish/backend_port"), nil},
-		{scope.DefaultID, 0, cfgpath.NewRoute(""), cfgpath.ErrRouteEmpty},
-		{scope.DefaultID, 0, cfgpath.NewRoute("general/store_information"), cfgpath.ErrIncorrectPath},
+		{scope.Default, 0, cfgpath.NewRoute("//"), cfgpath.ErrIncorrectPath},
+		{scope.Default, 0, cfgpath.NewRoute("general/store_information/city"), nil},
+		{scope.Default, 33, cfgpath.NewRoute("general/store_information/city"), nil},
+		{scope.Website, 33, cfgpath.NewRoute("system/full_page_cache/varnish/backend_port"), nil},
+		{scope.Default, 0, cfgpath.NewRoute(""), cfgpath.ErrRouteEmpty},
+		{scope.Default, 0, cfgpath.NewRoute("general/store_information"), cfgpath.ErrIncorrectPath},
 		////{cfgpath.NewRoute(cfgpath.MustNew("system/dev/debug").Bind(scope.WebsiteID, 22).String()), cfgpath.ErrIncorrectPath},
-		{scope.DefaultID, 0, cfgpath.NewRoute("groups/33/general/store_information/street"), nil},
-		{scope.DefaultID, 0, cfgpath.NewRoute("groups/33"), cfgpath.ErrIncorrectPath},
-		{scope.DefaultID, 0, cfgpath.NewRoute("system/dEv/inv˚lid"), errors.New("This character \"˚\" is not allowed in Route system/dEv/inv˚lid")},
-		{scope.DefaultID, 0, cfgpath.NewRoute("system/dEv/inv'lid"), errors.New("This character \"'\" is not allowed in Route system/dEv/inv'lid")},
-		{scope.DefaultID, 0, cfgpath.NewRoute("syst3m/dEv/invalid"), nil},
-		{scope.DefaultID, 0, cfgpath.Route{}, cfgpath.ErrRouteEmpty},
+		{scope.Default, 0, cfgpath.NewRoute("groups/33/general/store_information/street"), nil},
+		{scope.Default, 0, cfgpath.NewRoute("groups/33"), cfgpath.ErrIncorrectPath},
+		{scope.Default, 0, cfgpath.NewRoute("system/dEv/inv˚lid"), errors.New("This character \"˚\" is not allowed in Route system/dEv/inv˚lid")},
+		{scope.Default, 0, cfgpath.NewRoute("system/dEv/inv'lid"), errors.New("This character \"'\" is not allowed in Route system/dEv/inv'lid")},
+		{scope.Default, 0, cfgpath.NewRoute("syst3m/dEv/invalid"), nil},
+		{scope.Default, 0, cfgpath.Route{}, cfgpath.ErrRouteEmpty},
 	}
 	for i, test := range tests {
 		p := cfgpath.Path{
@@ -357,14 +357,14 @@ func TestPathIsValid(t *testing.T) {
 func TestPathRouteIsValid(t *testing.T) {
 	t.Parallel()
 	p := cfgpath.Path{
-		Scope: scope.StoreID,
+		Scope: scope.Store,
 		ID:    2,
 		Route: cfgpath.NewRoute(`general/store_information`),
 	}
 	assert.EqualError(t, p.IsValid(), cfgpath.ErrIncorrectPath.Error())
 
 	p = cfgpath.Path{
-		Scope:           scope.StoreID,
+		Scope:           scope.Store,
 		ID:              2,
 		Route:           cfgpath.NewRoute(`general/store_information`),
 		RouteLevelValid: true,
@@ -375,7 +375,7 @@ func TestPathRouteIsValid(t *testing.T) {
 func TestPathHashWebsite(t *testing.T) {
 	t.Parallel()
 
-	p := cfgpath.MustNewByParts("general/single_store_mode/enabled").Bind(scope.WebsiteID, 33)
+	p := cfgpath.MustNewByParts("general/single_store_mode/enabled").Bind(scope.Website, 33)
 	hv, err := p.Hash(-1)
 	if err != nil {
 		t.Fatal(err)
@@ -478,7 +478,7 @@ func TestPathCloneRareUseCase(t *testing.T) {
 	t.Parallel()
 	rs := "aa/bb/cc"
 	pOrg := cfgpath.MustNewByParts(rs)
-	pOrg = pOrg.Bind(scope.StoreID, 3141)
+	pOrg = pOrg.Bind(scope.Store, 3141)
 
 	largerBuff := make(text.Chars, 100, 100)
 	pOrg.Chars = largerBuff[:copy(largerBuff, rs)]
@@ -516,7 +516,7 @@ func TestPathCloneAppend(t *testing.T) {
 	t.Parallel()
 	rs := "aa/bb/cc"
 	pOrg := cfgpath.MustNewByParts(rs)
-	pOrg = pOrg.Bind(scope.StoreID, 3141)
+	pOrg = pOrg.Bind(scope.Store, 3141)
 
 	pAssigned := pOrg
 	assert.Exactly(t, pOrg, pAssigned)

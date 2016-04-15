@@ -57,8 +57,8 @@ func TestConfigRedirectToBase(t *testing.T) {
 
 	cr := cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{
-			webURLRedirectToBasePath.String():                         2,
-			webURLRedirectToBasePath.Bind(scope.StoreID, 33).String(): 34,
+			webURLRedirectToBasePath.String():                       2,
+			webURLRedirectToBasePath.Bind(scope.Store, 33).String(): 34,
 		}),
 	)
 
@@ -80,7 +80,7 @@ func TestConfigRedirectToBase(t *testing.T) {
 	}
 
 	mw := new(cfgmock.Write)
-	assert.EqualError(t, r.Write(mw, 200, scope.DefaultID, 0),
+	assert.EqualError(t, r.Write(mw, 200, scope.Default, 0),
 		"The value '200' cannot be found within the allowed Options():\n[{\"Value\":0,\"Label\":\"No\"},{\"Value\":1,\"Label\":\"Yes (302 Found)\"},{\"Value\":302,\"Label\":\"Yes (302 Found)\"},{\"Value\":301,\"Label\":\"Yes (301 Moved Permanently)\"}]\n\nJSON Error: %!s(<nil>)",
 	) // 200 not allowed
 }
@@ -97,8 +97,8 @@ func BenchmarkConfigRedirectToBase(b *testing.B) {
 
 	sg := cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{
-			webURLRedirectToBasePath.String():                           2,
-			webURLRedirectToBasePath.Bind(scope.WebsiteID, 33).String(): 34,
+			webURLRedirectToBasePath.String():                         2,
+			webURLRedirectToBasePath.Bind(scope.Website, 33).String(): 34,
 		}),
 	).NewScoped(33, 1)
 

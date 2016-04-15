@@ -25,25 +25,25 @@ type Perm uint16
 // PermStore convenient helper contains all scope permission levels.
 // The official core_config_data table and its classes to not support the
 // GroupID scope, so that is the reason why PermStore does not have a GroupID.
-const PermStore Perm = 1<<DefaultID | 1<<WebsiteID | 1<<StoreID
+const PermStore Perm = 1<<Default | 1<<Website | 1<<Store
 
 // PermWebsite convenient helper contains default and website scope permission levels.
-const PermWebsite Perm = 1<<DefaultID | 1<<WebsiteID
+const PermWebsite Perm = 1<<Default | 1<<Website
 
 // PermDefault convenient helper contains default scope permission level.
-const PermDefault Perm = 1 << DefaultID
+const PermDefault Perm = 1 << Default
 
 // PermStoreReverse convenient helper to enforce hierarchy levels.
 // Only used in config.scopedService implementation.
-const PermStoreReverse Perm = 1 << StoreID
+const PermStoreReverse Perm = 1 << Store
 
 // PermWebsiteReverse convenient helper to enforce hierarchy levels
 // Only used in config.scopedService implementation.
-const PermWebsiteReverse Perm = 1<<StoreID | 1<<WebsiteID
+const PermWebsiteReverse Perm = 1<<Store | 1<<Website
 
 // All applies DefaultID, WebsiteID and StoreID scopes
 func (bits Perm) All() Perm {
-	return bits.Set(DefaultID, WebsiteID, StoreID)
+	return bits.Set(Default, Website, Store)
 }
 
 // Set takes a variadic amount of Group to set them to Bits
@@ -59,19 +59,19 @@ func (bits Perm) Set(scopes ...Scope) Perm {
 // Highest scope for a Perm with all scopes is: Store.
 func (bits Perm) Top() Scope {
 	switch {
-	case bits.Has(StoreID):
-		return StoreID
-	case bits.Has(WebsiteID):
-		return WebsiteID
+	case bits.Has(Store):
+		return Store
+	case bits.Has(Website):
+		return Website
 	}
-	return DefaultID
+	return Default
 }
 
 // Has checks if a give scope exists within a Perm. Only the
 // first argument is supported. Providing no argument assumes
 // the scope.DefaultID.
 func (bits Perm) Has(s ...Scope) bool {
-	scp := DefaultID
+	scp := Default
 	if len(s) > 0 {
 		scp = s[0]
 	}

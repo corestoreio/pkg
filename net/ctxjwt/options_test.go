@@ -30,13 +30,13 @@ import (
 
 func TestOptionPartialConfigError(t *testing.T) {
 	t.Parallel()
-	jwts, err := ctxjwt.NewService(ctxjwt.WithTokenID(scope.WebsiteID, 3, true))
+	jwts, err := ctxjwt.NewService(ctxjwt.WithTokenID(scope.Website, 3, true))
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	cl := jwtclaim.Map{}
-	theToken, err := jwts.NewToken(scope.WebsiteID, 3, cl)
+	theToken, err := jwts.NewToken(scope.Website, 3, cl)
 	assert.EqualError(t, err, "[ctxjwt] Incomplete configuration for Scope(Website) ID(3). Missing Signing Method and its Key.")
 	assert.Empty(t, theToken)
 }
@@ -44,15 +44,15 @@ func TestOptionPartialConfigError(t *testing.T) {
 func TestOptionWithTokenID(t *testing.T) {
 	t.Parallel()
 	jwts, err := ctxjwt.NewService(
-		ctxjwt.WithTokenID(scope.WebsiteID, 22, true),
-		ctxjwt.WithKey(scope.WebsiteID, 22, csjwt.WithPasswordRandom()),
+		ctxjwt.WithTokenID(scope.Website, 22, true),
+		ctxjwt.WithKey(scope.Website, 22, csjwt.WithPasswordRandom()),
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	cl := jwtclaim.Map{}
-	theToken, err := jwts.NewToken(scope.WebsiteID, 22, cl) // must be a pointer the cl or Get() returns nil
+	theToken, err := jwts.NewToken(scope.Website, 22, cl) // must be a pointer the cl or Get() returns nil
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -67,8 +67,8 @@ func TestOptionWithTokenID(t *testing.T) {
 func TestOptionScopedDefaultExpire(t *testing.T) {
 	t.Parallel()
 	jwts, err := ctxjwt.NewService(
-		ctxjwt.WithTokenID(scope.WebsiteID, 33, true),
-		ctxjwt.WithKey(scope.WebsiteID, 33, csjwt.WithPasswordRandom()),
+		ctxjwt.WithTokenID(scope.Website, 33, true),
+		ctxjwt.WithKey(scope.Website, 33, csjwt.WithPasswordRandom()),
 	)
 	if err != nil {
 		t.Fatal(err)
@@ -77,7 +77,7 @@ func TestOptionScopedDefaultExpire(t *testing.T) {
 	cl := jwtclaim.Map{}
 
 	now := time.Now()
-	theToken, err := jwts.NewToken(scope.WebsiteID, 33, cl) // must be a pointer the cl or Get() returns nil
+	theToken, err := jwts.NewToken(scope.Website, 33, cl) // must be a pointer the cl or Get() returns nil
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -98,7 +98,7 @@ func TestOptionScopedDefaultExpire(t *testing.T) {
 func TestOptionWithRSAReaderFail(t *testing.T) {
 	t.Parallel()
 	jm, err := ctxjwt.NewService(
-		ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithRSAPrivateKeyFromPEM([]byte(`invalid pem data`))),
+		ctxjwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromPEM([]byte(`invalid pem data`))),
 	)
 	assert.Nil(t, jm)
 	assert.EqualError(t, err, `[csjwt] invalid key: Key must be PEM encoded PKCS1 or PKCS8 private key`)
@@ -106,9 +106,9 @@ func TestOptionWithRSAReaderFail(t *testing.T) {
 
 var (
 	rsaPrivateKeyFileName        = filepath.Join("..", "..", "util", "csjwt", "test", "test_rsa")
-	keyRsaPrivateNoPassword      = ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName))
-	keyRsaPrivateWrongPassword   = ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte(`adfasdf`)))
-	keyRsaPrivateCorrectPassword = ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte("cccamp")))
+	keyRsaPrivateNoPassword      = ctxjwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName))
+	keyRsaPrivateWrongPassword   = ctxjwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte(`adfasdf`)))
+	keyRsaPrivateCorrectPassword = ctxjwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile(rsaPrivateKeyFileName, []byte("cccamp")))
 )
 
 func TestOptionWithRSAFromFileNoOrFailedPassword(t *testing.T) {
@@ -129,7 +129,7 @@ func testRsaOption(t *testing.T, opt ctxjwt.Option) {
 	}
 	assert.NotNil(t, jm)
 
-	theToken, err := jm.NewToken(scope.DefaultID, 0, jwtclaim.Map{})
+	theToken, err := jm.NewToken(scope.Default, 0, jwtclaim.Map{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -150,5 +150,5 @@ func TestOptionWithRSAFromFilePassword(t *testing.T) {
 
 func TestOptionWithRSAFromFileNoPassword(t *testing.T) {
 	t.Parallel()
-	testRsaOption(t, ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithRSAPrivateKeyFromFile(filepath.Join("..", "..", "util", "csjwt", "test", "test_rsa_np"))))
+	testRsaOption(t, ctxjwt.WithKey(scope.Default, 0, csjwt.WithRSAPrivateKeyFromFile(filepath.Join("..", "..", "util", "csjwt", "test", "test_rsa_np"))))
 }

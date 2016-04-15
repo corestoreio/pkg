@@ -38,7 +38,7 @@ import (
 func TestMiddlewareWithInitTokenNoStoreProvider(t *testing.T) {
 	t.Parallel()
 
-	authHandler, _ := testAuth(t, ctxjwt.WithErrorHandler(scope.DefaultID, 0, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
+	authHandler, _ := testAuth(t, ctxjwt.WithErrorHandler(scope.Default, 0, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, _ *http.Request) error {
 		tk, err := ctxjwt.FromContext(ctx)
 		assert.False(t, tk.Valid)
 		assert.EqualError(t, err, store.ErrContextProviderNotFound.Error())
@@ -58,7 +58,7 @@ func TestMiddlewareWithInitTokenNoToken(t *testing.T) {
 
 	cr := cfgmock.NewService()
 	srv := storemock.NewEurozzyService(
-		scope.MustSetByCode(scope.WebsiteID, "euro"),
+		scope.MustSetByCode(scope.Website, "euro"),
 		store.WithStorageConfig(cr),
 	)
 	ctx := store.WithContextProvider(context.Background(), srv)
@@ -77,12 +77,12 @@ func TestMiddlewareWithInitTokenHTTPErrorHandler(t *testing.T) {
 
 	cr := cfgmock.NewService()
 	srv := storemock.NewEurozzyService(
-		scope.MustSetByCode(scope.WebsiteID, "euro"),
+		scope.MustSetByCode(scope.Website, "euro"),
 		store.WithStorageConfig(cr),
 	)
 	ctx := store.WithContextProvider(context.Background(), srv)
 
-	authHandler, _ := testAuth(t, ctxjwt.WithErrorHandler(scope.DefaultID, 0, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+	authHandler, _ := testAuth(t, ctxjwt.WithErrorHandler(scope.Default, 0, ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		tok, err := ctxjwt.FromContext(ctx)
 		assert.False(t, tok.Valid)
 		w.WriteHeader(http.StatusTeapot)
@@ -102,7 +102,7 @@ func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
 	t.Parallel()
 	//cr := cfgmock.NewService()
 	srv := storemock.NewEurozzyService(
-		scope.MustSetByCode(scope.WebsiteID, "euro"),
+		scope.MustSetByCode(scope.Website, "euro"),
 		//store.WithStorageConfig(cr),
 	)
 	ctx := store.WithContextProvider(context.Background(), srv)
@@ -116,7 +116,7 @@ func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
 		return nil
 	})
 
-	theToken, err := jwts.NewToken(scope.DefaultID, 0, jwtclaim.Map{
+	theToken, err := jwts.NewToken(scope.Default, 0, jwtclaim.Map{
 		"xfoo": "bar",
 		"zfoo": 4711,
 	})
@@ -154,7 +154,7 @@ func TestMiddlewareWithInitTokenInBlackList(t *testing.T) {
 
 	cr := cfgmock.NewService()
 	srv := storemock.NewEurozzyService(
-		scope.MustSetByCode(scope.WebsiteID, "euro"),
+		scope.MustSetByCode(scope.Website, "euro"),
 		store.WithStorageConfig(cr),
 	)
 	ctx := store.WithContextProvider(context.Background(), srv)
@@ -165,7 +165,7 @@ func TestMiddlewareWithInitTokenInBlackList(t *testing.T) {
 	)
 	assert.NoError(t, err)
 
-	theToken, err := jm.NewToken(scope.DefaultID, 0, &jwtclaim.Standard{})
+	theToken, err := jm.NewToken(scope.Default, 0, &jwtclaim.Standard{})
 	bl.theToken = theToken
 	assert.NoError(t, err)
 	assert.NotEmpty(t, theToken)
@@ -195,7 +195,7 @@ func testAuth(t *testing.T, opts ...ctxjwt.Option) (ctxhttp.Handler, []byte) {
 		t.Fatal(err)
 	}
 
-	theToken, err := jm.NewToken(scope.DefaultID, 0, jwtclaim.Map{
+	theToken, err := jm.NewToken(scope.Default, 0, jwtclaim.Map{
 		"xfoo": "bar",
 		"zfoo": 4711,
 	})
@@ -264,9 +264,9 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 		{newStoreServiceWithCtx(scope.Option{Website: scope.MockID(2)}), "", "au", store.ErrStoreCodeInvalid},
 	}
 	for i, test := range tests {
-		jwts := ctxjwt.MustNewService(ctxjwt.WithKey(scope.DefaultID, 0, csjwt.WithPasswordRandom()))
+		jwts := ctxjwt.MustNewService(ctxjwt.WithKey(scope.Default, 0, csjwt.WithPasswordRandom()))
 
-		token, err := jwts.NewToken(scope.DefaultID, 0, jwtclaim.Map{
+		token, err := jwts.NewToken(scope.Default, 0, jwtclaim.Map{
 			storenet.ParamName: test.tokenStoreCode,
 		})
 		if err != nil {

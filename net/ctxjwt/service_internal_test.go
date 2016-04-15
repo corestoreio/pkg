@@ -52,7 +52,7 @@ func TestServiceWithBackend_NoBackend(t *testing.T) {
 
 	jwts := MustNewService()
 	// delete() is a hack for testing to remove the default setting
-	delete(jwts.scopeCache, scope.NewHash(scope.DefaultID, 0))
+	delete(jwts.scopeCache, scope.NewHash(scope.Default, 0))
 
 	cr := cfgmock.NewService()
 	sc, err := jwts.getConfigByScopedGetter(cr.NewScoped(0, 0))
@@ -95,17 +95,17 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 		WithBackend(pb),
 	)
 	pv := cfgmock.PathValue{
-		mustToPath(t, pb.NetCtxjwtSigningMethod.ToPath, scope.DefaultID, 0): "ES384",
-		mustToPath(t, pb.NetCtxjwtSigningMethod.ToPath, scope.WebsiteID, 1): "HS512",
+		mustToPath(t, pb.NetCtxjwtSigningMethod.ToPath, scope.Default, 0): "ES384",
+		mustToPath(t, pb.NetCtxjwtSigningMethod.ToPath, scope.Website, 1): "HS512",
 
-		mustToPath(t, pb.NetCtxjwtEnableJTI.ToPath, scope.DefaultID, 0): 0, // disabled
-		mustToPath(t, pb.NetCtxjwtEnableJTI.ToPath, scope.WebsiteID, 1): 1, // enabled
+		mustToPath(t, pb.NetCtxjwtEnableJTI.ToPath, scope.Default, 0): 0, // disabled
+		mustToPath(t, pb.NetCtxjwtEnableJTI.ToPath, scope.Website, 1): 1, // enabled
 
-		mustToPath(t, pb.NetCtxjwtExpiration.ToPath, scope.DefaultID, 0): "2m",
-		mustToPath(t, pb.NetCtxjwtExpiration.ToPath, scope.WebsiteID, 1): "5m1s",
+		mustToPath(t, pb.NetCtxjwtExpiration.ToPath, scope.Default, 0): "2m",
+		mustToPath(t, pb.NetCtxjwtExpiration.ToPath, scope.Website, 1): "5m1s",
 
-		mustToPath(t, pb.NetCtxjwtHmacPassword.ToPath, scope.DefaultID, 0): "pw1",
-		mustToPath(t, pb.NetCtxjwtHmacPassword.ToPath, scope.WebsiteID, 1): "pw2",
+		mustToPath(t, pb.NetCtxjwtHmacPassword.ToPath, scope.Default, 0): "pw1",
+		mustToPath(t, pb.NetCtxjwtHmacPassword.ToPath, scope.Website, 1): "pw2",
 	}
 	sg := cfgmock.NewService(cfgmock.WithPV(pv)).NewScoped(1, 0) // only website scope supported
 
@@ -142,13 +142,13 @@ func TestServiceWithBackend_HMACSHA_Fallback(t *testing.T) {
 		WithBackend(pb),
 	)
 	pv := cfgmock.PathValue{
-		mustToPath(t, pb.NetCtxjwtSigningMethod.ToPath, scope.DefaultID, 0): "HS384",
+		mustToPath(t, pb.NetCtxjwtSigningMethod.ToPath, scope.Default, 0): "HS384",
 
-		mustToPath(t, pb.NetCtxjwtEnableJTI.ToPath, scope.DefaultID, 0): 0, // disabled
+		mustToPath(t, pb.NetCtxjwtEnableJTI.ToPath, scope.Default, 0): 0, // disabled
 
-		mustToPath(t, pb.NetCtxjwtExpiration.ToPath, scope.DefaultID, 0): "2m",
+		mustToPath(t, pb.NetCtxjwtExpiration.ToPath, scope.Default, 0): "2m",
 
-		mustToPath(t, pb.NetCtxjwtHmacPassword.ToPath, scope.DefaultID, 0): "pw1",
+		mustToPath(t, pb.NetCtxjwtHmacPassword.ToPath, scope.Default, 0): "pw1",
 	}
 
 	sg := cfgmock.NewService(cfgmock.WithPV(pv)).NewScoped(1, 0) // 1 = website euro and 0 no store ID provided like in the middleware
@@ -179,7 +179,7 @@ func TestServiceWithBackend_UnknownSigningMethod(t *testing.T) {
 	pb := NewBackend(nil)
 	jwts := MustNewService(WithBackend(pb))
 	cr := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, pb.NetCtxjwtSigningMethod.ToPath, scope.DefaultID, 0): "HS4711",
+		mustToPath(t, pb.NetCtxjwtSigningMethod.ToPath, scope.Default, 0): "HS4711",
 	}))
 
 	sc, err := jwts.getConfigByScopedGetter(cr.NewScoped(1, 1))
@@ -193,7 +193,7 @@ func TestServiceWithBackend_InvalidExpiration(t *testing.T) {
 	pb := NewBackend(nil)
 	jwts := MustNewService(WithBackend(pb))
 	cr := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, pb.NetCtxjwtExpiration.ToPath, scope.DefaultID, 0): "Fail",
+		mustToPath(t, pb.NetCtxjwtExpiration.ToPath, scope.Default, 0): "Fail",
 	}))
 
 	sc, err := jwts.getConfigByScopedGetter(cr.NewScoped(1, 1))
@@ -207,7 +207,7 @@ func TestServiceWithBackend_InvalidJTI(t *testing.T) {
 	pb := NewBackend(nil)
 	jwts := MustNewService(WithBackend(pb))
 	cr := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, pb.NetCtxjwtEnableJTI.ToPath, scope.DefaultID, 0): []byte(`1`),
+		mustToPath(t, pb.NetCtxjwtEnableJTI.ToPath, scope.Default, 0): []byte(`1`),
 	}))
 
 	sc, err := jwts.getConfigByScopedGetter(cr.NewScoped(1, 1))
@@ -221,9 +221,9 @@ func TestServiceWithBackend_RSAFail(t *testing.T) {
 	pb := NewBackend(nil, cfgmodel.WithEncryptor(cfgmodel.NoopEncryptor{}))
 	jwts := MustNewService(WithBackend(pb))
 	cr := cfgmock.NewService(cfgmock.WithPV(cfgmock.PathValue{
-		mustToPath(t, pb.NetCtxjwtSigningMethod.ToPath, scope.DefaultID, 0):  "RS256",
-		mustToPath(t, pb.NetCtxjwtRSAKey.ToPath, scope.DefaultID, 0):         []byte(`1`),
-		mustToPath(t, pb.NetCtxjwtRSAKeyPassword.ToPath, scope.DefaultID, 0): nil,
+		mustToPath(t, pb.NetCtxjwtSigningMethod.ToPath, scope.Default, 0):  "RS256",
+		mustToPath(t, pb.NetCtxjwtRSAKey.ToPath, scope.Default, 0):         []byte(`1`),
+		mustToPath(t, pb.NetCtxjwtRSAKeyPassword.ToPath, scope.Default, 0): nil,
 	}))
 
 	sc, err := jwts.getConfigByScopedGetter(cr.NewScoped(1, 1))

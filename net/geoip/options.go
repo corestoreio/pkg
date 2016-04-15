@@ -39,10 +39,10 @@ func WithAlternativeHandler(so scope.Scope, id int64, hf ctxhttp.HandlerFunc) Op
 	}
 	return func(s *Service) {
 		switch so {
-		case scope.StoreID:
+		case scope.Store:
 			s.storeIDs.Append(id)
 			s.storeAltH = append(s.storeAltH, hf)
-		case scope.WebsiteID:
+		case scope.Website:
 			s.websiteIDs.Append(id)
 			s.websiteAltH = append(s.websiteAltH, hf)
 		default:

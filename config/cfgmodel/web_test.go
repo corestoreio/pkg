@@ -27,7 +27,7 @@ import (
 func TestBaseURLGet(t *testing.T) {
 	t.Parallel()
 	const pathWebUnsecUrl = "web/unsecure/base_url"
-	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).Bind(scope.StoreID, 1)
+	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).Bind(scope.Store, 1)
 	b := cfgmodel.NewBaseURL(pathWebUnsecUrl, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	assert.Empty(t, b.Options())
@@ -53,11 +53,11 @@ func TestBaseURLGet(t *testing.T) {
 func TestBaseURLWrite(t *testing.T) {
 	t.Parallel()
 	const pathWebUnsecUrl = "web/unsecure/base_url"
-	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).Bind(scope.StoreID, 1)
+	wantPath := cfgpath.MustNewByParts(pathWebUnsecUrl).Bind(scope.Store, 1)
 	b := cfgmodel.NewBaseURL(pathWebUnsecUrl, cfgmodel.WithFieldFromSectionSlice(configStructure))
 
 	mw := &cfgmock.Write{}
-	assert.NoError(t, b.Write(mw, "dude", scope.StoreID, 1))
+	assert.NoError(t, b.Write(mw, "dude", scope.Store, 1))
 	assert.Exactly(t, wantPath.String(), mw.ArgPath)
 	assert.Exactly(t, "dude", mw.ArgValue.(string))
 }

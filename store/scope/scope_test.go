@@ -61,10 +61,10 @@ func TestFromString(t *testing.T) {
 		have string
 		want Scope
 	}{
-		{"asdasd", DefaultID},
-		{strDefault, DefaultID},
-		{strWebsites, WebsiteID},
-		{strStores, StoreID},
+		{"asdasd", Default},
+		{strDefault, Default},
+		{strWebsites, Website},
+		{strStores, Store},
 	}
 	for _, test := range tests {
 		assert.Equal(t, test.want, FromString(test.have))
@@ -77,11 +77,11 @@ func TestFromScope(t *testing.T) {
 		have Scope
 		want StrScope
 	}{
-		{DefaultID, StrDefault},
-		{AbsentID, StrDefault},
-		{GroupID, StrDefault},
-		{WebsiteID, StrWebsites},
-		{StoreID, StrStores},
+		{Default, StrDefault},
+		{Absent, StrDefault},
+		{Group, StrDefault},
+		{Website, StrWebsites},
+		{Store, StrStores},
 	}
 	for _, test := range tests {
 		assert.Exactly(t, test.want, FromScope(test.have))
@@ -95,9 +95,9 @@ func TestStrScope(t *testing.T) {
 	assert.Equal(t, strWebsites, StrWebsites.String())
 	assert.Equal(t, strStores, StrStores.String())
 
-	assert.Exactly(t, DefaultID, StrDefault.Scope())
-	assert.Exactly(t, WebsiteID, StrWebsites.Scope())
-	assert.Exactly(t, StoreID, StrStores.Scope())
+	assert.Exactly(t, Default, StrDefault.Scope())
+	assert.Exactly(t, Website, StrWebsites.Scope())
+	assert.Exactly(t, Store, StrStores.Scope())
 }
 
 func TestValid(t *testing.T) {
@@ -124,10 +124,10 @@ func TestFromBytes(t *testing.T) {
 		have []byte
 		want Scope
 	}{
-		{[]byte("asdasd"), DefaultID},
-		{[]byte(strDefault), DefaultID},
-		{[]byte(strWebsites), WebsiteID},
-		{[]byte(strStores), StoreID},
+		{[]byte("asdasd"), Default},
+		{[]byte(strDefault), Default},
+		{[]byte(strWebsites), Website},
+		{[]byte(strStores), Store},
 	}
 	for _, test := range tests {
 		assert.Exactly(t, test.want, FromBytes(test.have))
@@ -157,9 +157,9 @@ func TestStrScopeBytes(t *testing.T) {
 	tests := []struct {
 		id Scope
 	}{
-		{DefaultID},
-		{WebsiteID},
-		{StoreID},
+		{Default},
+		{Website},
+		{Store},
 		{44},
 	}
 	for i, test := range tests {

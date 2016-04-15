@@ -86,11 +86,11 @@ func TestStringCSVWrite(t *testing.T) {
 	mw := &cfgmock.Write{}
 	b.Source.Merge(source.NewByString("a", "a", "b", "b", "c", "c"))
 
-	assert.NoError(t, b.Write(mw, []string{"a", "b", "c"}, scope.DefaultID, 0))
+	assert.NoError(t, b.Write(mw, []string{"a", "b", "c"}, scope.Default, 0))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 	assert.Exactly(t, "a,b,c", mw.ArgValue.(string))
 	assert.EqualError(t,
-		b.Write(mw, []string{"abc"}, scope.DefaultID, 0),
+		b.Write(mw, []string{"abc"}, scope.Default, 0),
 		"The value 'abc' cannot be found within the allowed Options():\n[{\"Value\":\"Content-Type\",\"Label\":\"Content Type\"},{\"Value\":\"X-CoreStore-ID\",\"Label\":\"CoreStore Microservice ID\"},{\"Value\":\"a\",\"Label\":\"a\"},{\"Value\":\"b\",\"Label\":\"b\"},{\"Value\":\"c\",\"Label\":\"c\"}]\n",
 	)
 }
@@ -146,7 +146,7 @@ func TestIntCSV(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Exactly(t, []int{2014, 2015, 2016}, sl) // three years are defined in variable configStructure
 
-	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.StoreID, 4).String()
+	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.Store, 4).String()
 
 	tests := []struct {
 		lenient bool
@@ -192,17 +192,17 @@ func TestIntCSVWrite(t *testing.T) {
 			{2017, "Year 2017"},
 		}),
 	)
-	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.StoreID, 4).String()
+	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.Store, 4).String()
 
 	mw := &cfgmock.Write{}
 	b.Source.Merge(source.NewByInt(source.Ints{
 		{2018, "Year 2018"},
 	}))
-	assert.NoError(t, b.Write(mw, []int{2016, 2017, 2018}, scope.StoreID, 4))
+	assert.NoError(t, b.Write(mw, []int{2016, 2017, 2018}, scope.Store, 4))
 	assert.Exactly(t, wantPath, mw.ArgPath)
 	assert.Exactly(t, "2016,2017,2018", mw.ArgValue.(string))
 	assert.EqualError(t,
-		b.Write(mw, []int{2019}, scope.StoreID, 4),
+		b.Write(mw, []int{2019}, scope.Store, 4),
 		"The value '2019' cannot be found within the allowed Options():\n[{\"Value\":2014,\"Label\":\"Year 2014\"},{\"Value\":2015,\"Label\":\"Year 2015\"},{\"Value\":2016,\"Label\":\"Year 2016\"},{\"Value\":2017,\"Label\":\"Year 2017\"},{\"Value\":2018,\"Label\":\"Year 2018\"}]\n",
 	)
 }
@@ -223,7 +223,7 @@ func TestIntCSVCustomSeparator(t *testing.T) {
 		}),
 		cfgmodel.WithCSVSeparator('|'),
 	)
-	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.WebsiteID, 34).String()
+	wantPath := cfgpath.MustNewByParts(pathWebCorsIntSlice).Bind(scope.Website, 34).String()
 
 	haveSL, haveErr := b.Get(cfgmock.NewService(
 		cfgmock.WithPV(cfgmock.PathValue{

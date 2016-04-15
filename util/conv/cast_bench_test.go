@@ -54,7 +54,7 @@ func BenchmarkToString_Int(b *testing.B) {
 	benchmarkToStringF(b, val)
 }
 func BenchmarkToString_CfgPathPath(b *testing.B) {
-	val := cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.StoreID, 33)
+	val := cfgpath.MustNewByParts("aa/bb/cc").Bind(scope.Store, 33)
 	benchmarkToStringF(b, val)
 }
 func BenchmarkToString_Error(b *testing.B) {

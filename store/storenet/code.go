@@ -59,7 +59,7 @@ func CodeFromRequestGET(req *http.Request) (o scope.Option, err error) {
 func setByCode(scopeCode string) (o scope.Option, err error) {
 	err = store.CodeIsValid(scopeCode)
 	if err == nil {
-		o, err = scope.SetByCode(scope.StoreID, scopeCode)
+		o, err = scope.SetByCode(scope.Store, scopeCode)
 	}
 	return
 }
