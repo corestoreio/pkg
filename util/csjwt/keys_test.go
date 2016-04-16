@@ -16,7 +16,7 @@ var _ fmt.Stringer = (*Key)(nil)
 
 func TestKeyParsing(t *testing.T) {
 
-	badKey := []byte("All your base are belong to key")
+	badKey := []byte("This is a bad key")
 	tests := []struct {
 		key     Key
 		wantAlg string

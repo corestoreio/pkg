@@ -30,7 +30,7 @@ type Token struct {
 }
 
 // NewToken creates a new Token and presets the header to typ = JWT.
-// A new token has not yet an assigned algorithm. The underlying base header
+// A new token has not yet an assigned algorithm. The underlying template header
 // consists of a two field struct for the minimum requirements. If you need
 // more header fields consider using a map or the jwtclaim.HeadSegments type.
 func NewToken(c Claimer) Token {

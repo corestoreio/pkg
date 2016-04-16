@@ -42,17 +42,18 @@ func NewVerification(availableSigners ...Signer) *Verification {
 	}
 }
 
-// Parse parses a rawToken into the base token and returns the fully parsed and
+// Parse parses a rawToken into the template token and returns the fully parsed and
 // verified Token, or an error. You must make sure to set the correct expected
-// headers and claims in the base Token.
-func (vf *Verification) Parse(base Token, rawToken []byte, keyFunc Keyfunc) (Token, error) {
+// headers and claims in the template Token. The Header and Claims field in the
+// template token must be a pointer.
+func (vf *Verification) Parse(template Token, rawToken []byte, keyFunc Keyfunc) (Token, error) {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
 		return Token{}, errTokenInvalidSegmentCounts
 	}
 
-	if base.Header == nil || base.Claims == nil {
-		return base, errTokenBaseNil
+	if template.Header == nil || template.Claims == nil {
+		return template, errTokenBaseNil
 	}
 
 	dec := vf.Decoder
@@ -60,61 +61,61 @@ func (vf *Verification) Parse(base Token, rawToken []byte, keyFunc Keyfunc) (Tok
 		dec = JSONDecode{}
 	}
 
-	base.Raw = rawToken
+	template.Raw = rawToken
 
-	if startsWithBearer(base.Raw) {
-		return base, errTokenShouldNotContainBearer
+	if startsWithBearer(template.Raw) {
+		return template, errTokenShouldNotContainBearer
 	}
 
 	// parse Header
-	if err := dec.Unmarshal(base.Raw[:pos[0]], &base.Header); err != nil {
-		return base, cserr.NewMultiErr(ErrTokenMalformed, err)
+	if err := dec.Unmarshal(template.Raw[:pos[0]], template.Header); err != nil {
+		return template, cserr.NewMultiErr(ErrTokenMalformed, err)
 	}
 
 	// parse Claims
-	if err := dec.Unmarshal(base.Raw[pos[0]+1:pos[1]], base.Claims); err != nil {
-		return base, cserr.NewMultiErr(ErrTokenMalformed, err)
+	if err := dec.Unmarshal(template.Raw[pos[0]+1:pos[1]], template.Claims); err != nil {
+		return template, cserr.NewMultiErr(ErrTokenMalformed, err)
 	}
 
 	// validate Claims
-	if err := base.Claims.Valid(); err != nil {
-		return base, cserr.NewMultiErr(ErrValidationClaimsInvalid, err)
+	if err := template.Claims.Valid(); err != nil {
+		return template, cserr.NewMultiErr(ErrValidationClaimsInvalid, err)
 	}
 
 	// Lookup key
 	if keyFunc == nil {
-		return base, errMissingKeyFunc
+		return template, errMissingKeyFunc
 	}
-	key, err := keyFunc(base)
+	key, err := keyFunc(template)
 	if err != nil {
-		return base, cserr.NewMultiErr(ErrTokenUnverifiable, err)
+		return template, cserr.NewMultiErr(ErrTokenUnverifiable, err)
 	}
 
 	// Lookup signature method
-	method, err := vf.getMethod(&base)
+	method, err := vf.getMethod(&template)
 	if err != nil {
-		return base, err
+		return template, err
 	}
 
 	// Perform validation
-	base.Signature = base.Raw[pos[1]+1:]
-	if err := method.Verify(base.Raw[:pos[1]], base.Signature, key); err != nil {
-		return base, cserr.NewMultiErr(ErrSignatureInvalid, err)
+	template.Signature = template.Raw[pos[1]+1:]
+	if err := method.Verify(template.Raw[:pos[1]], template.Signature, key); err != nil {
+		return template, cserr.NewMultiErr(ErrSignatureInvalid, err)
 	}
 
-	base.Valid = true
-	return base, nil
+	template.Valid = true
+	return template, nil
 }
 
-func (vf *Verification) getMethod(token *Token) (Signer, error) {
+func (vf *Verification) getMethod(t *Token) (Signer, error) {
 
 	if len(vf.Methods) == 0 {
 		return nil, errors.New("[csjwt] No methods supplied to the Verfication Method slice")
 	}
 
-	alg := token.Alg()
+	alg := t.Alg()
 	if alg == "" {
-		return nil, errors.Errorf("[csjwt] Cannot find alg entry in token header: %#v", token.Header)
+		return nil, errors.Errorf("[csjwt] Cannot find alg entry in token header: %#v", t.Header)
 	}
 
 	for _, m := range vf.Methods {
@@ -125,22 +126,24 @@ func (vf *Verification) getMethod(token *Token) (Signer, error) {
 	return nil, errors.Errorf("[csjwt] Algorithm %q not found in method list %q", alg, SignerSlice(vf.Methods))
 }
 
-// ParseFromRequest same as ParseFromRequest but allows to add a custer Claimer.
-// Claimer must be a pointer.
-func (vf *Verification) ParseFromRequest(base Token, keyFunc Keyfunc, req *http.Request) (Token, error) {
+// ParseFromRequest same as Parse but extracts the token from a request.
+// First it searches for the token bearer in the header HTTPHeaderAuthorization.
+// If not found the request POST form gets parsed and the FormInputName gets
+// used to lookup the token value.
+func (vf *Verification) ParseFromRequest(template Token, keyFunc Keyfunc, req *http.Request) (Token, error) {
 	// Look for an Authorization header
 	if ah := req.Header.Get(HTTPHeaderAuthorization); ah != "" {
 		// Should be a bearer token
 		auth := []byte(ah)
 		if startsWithBearer(auth) {
-			return vf.Parse(base, auth[7:], keyFunc)
+			return vf.Parse(template, auth[7:], keyFunc)
 		}
 	}
 
 	// Look for "access_token" parameter
 	_ = req.ParseMultipartForm(10e6) // ignore errors
 	if tokStr := req.Form.Get(vf.FormInputName); tokStr != "" {
-		return vf.Parse(base, []byte(tokStr), keyFunc)
+		return vf.Parse(template, []byte(tokStr), keyFunc)
 	}
 
 	return Token{}, ErrTokenNotInRequest

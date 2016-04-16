@@ -29,7 +29,7 @@ const (
 
 // Private errors no need to make them public
 const (
-	errTokenBaseNil                cserr.Error = `[csjwt] base token header and/or claim are nil`
+	errTokenBaseNil                cserr.Error = `[csjwt] template token header and/or claim are nil`
 	errTokenInvalidSegmentCounts   cserr.Error = `[csjwt] token contains an invalid number of segments`
 	errMissingKeyFunc              cserr.Error = `[csjwt] Missing KeyFunc`
 	errTokenShouldNotContainBearer cserr.Error = `[csjwt] tokenstring should not contain 'bearer '`
