@@ -202,6 +202,7 @@ func benchmarkServeHTTPDefaultConfigBlackListLoop(b *testing.B, h ctxhttp.Handle
 // BenchmarkServeHTTP_MultiToken_MultiScope-4	  200000	     10332 ns/op	    3648 B/op	      64 allocs/op => null blacklist
 // BenchmarkServeHTTP_MultiToken_MultiScope-4	  200000	     11583 ns/op	    3648 B/op	      64 allocs/op => map blacklist
 // BenchmarkServeHTTP_MultiToken_MultiScope-4	  200000	      9800 ns/op	    3647 B/op	      64 allocs/op => freecache
+// BenchmarkServeHTTP_MultiToken_MultiScope-4	  200000	      9580 ns/op	    3657 B/op	      63 allocs/op
 func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 
 	jwts := ctxjwt.MustNewService(
@@ -237,7 +238,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 	// generate 9k tokens randomly distributed over those three scopes.
 	const tokenCount = 9000
 	var tokens [tokenCount][]byte
-	var storeCodes = [...]string{"de", "at", "uk"}
+	var storeCodes = [...]string{"au", "de", "at", "uk", "nz"}
 	for i := range tokens {
 		tokens[i] = generateToken(storeCodes[rand.Intn(len(storeCodes))])
 
@@ -250,7 +251,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 
 	cr := cfgmock.NewService()
 	srv := storemock.NewEurozzyService(
-		scope.MustSetByCode(scope.Website, "euro"), // euro == website ID 1
+		scope.MustSetByCode(scope.Store, "at"), // euro == website ID 1
 		store.WithStorageConfig(cr),
 	)
 	ctx := store.WithContextProvider(context.Background(), srv) // root context
@@ -268,7 +269,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 			return err
 		}
 		switch st.StoreCode() {
-		case "de", "at", "uk":
+		case "de", "at", "uk", "nz", "au":
 		default:
 			b.Fatalf("Unexpected Store: %s", st.StoreCode())
 		}

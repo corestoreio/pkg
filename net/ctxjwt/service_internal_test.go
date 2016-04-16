@@ -51,8 +51,8 @@ func TestServiceWithBackend_NoBackend(t *testing.T) {
 	t.Parallel()
 
 	jwts := MustNewService()
-	// delete() is a hack for testing to remove the default setting
-	delete(jwts.scopeCache, scope.NewHash(scope.Default, 0))
+	// a hack for testing to remove the default setting or make it invalid
+	jwts.defaultScopeCache = scopedConfig{}
 
 	cr := cfgmock.NewService()
 	sc, err := jwts.getConfigByScopedGetter(cr.NewScoped(0, 0))
@@ -75,9 +75,9 @@ func TestServiceWithBackend_DefaultConfig(t *testing.T) {
 	assert.Exactly(t, csjwt.HS256, sc.signingMethod.Alg())
 	assert.Exactly(t, dsc.Key.Algorithm(), sc.Key.Algorithm())
 
-	assert.True(t, dsc.errorHandler == nil)
-	assert.True(t, sc.errorHandler == nil)
-	assert.True(t, jwts.DefaultErrorHandler != nil)
+	assert.NotNil(t, dsc.errorHandler)
+	assert.NotNil(t, sc.errorHandler)
+	assert.True(t, jwts.defaultScopeCache.errorHandler != nil)
 	assert.Exactly(t, DefaultExpire, dsc.expire)
 	assert.False(t, dsc.Key.IsEmpty())
 	assert.False(t, sc.Key.IsEmpty())
@@ -119,7 +119,7 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 	assert.Exactly(t, "HS512", scNew.signingMethod.Alg())
 	assert.False(t, scNew.Key.IsEmpty())
 	assert.Nil(t, scNew.errorHandler)
-	assert.NotNil(t, jwts.DefaultErrorHandler)
+	assert.NotNil(t, jwts.defaultScopeCache.errorHandler)
 
 	// test if cache returns the same scopedConfig
 	scCached, err := jwts.getConfigByScopedGetter(sg)
@@ -245,8 +245,8 @@ func TestServiceWithBackend_NilScopedGetter(t *testing.T) {
 	assert.Exactly(t, DefaultExpire, sc.expire)
 	assert.Exactly(t, csjwt.HS256, sc.signingMethod.Alg())
 	assert.False(t, sc.enableJTI)
-	assert.True(t, sc.errorHandler == nil)
-	assert.True(t, sc.keyFunc != nil)
+	assert.NotNil(t, sc.errorHandler)
+	assert.NotNil(t, sc.keyFunc)
 }
 
 func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) context.Context {

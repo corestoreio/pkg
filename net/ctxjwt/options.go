@@ -24,6 +24,7 @@ import (
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/juju/errors"
+	"golang.org/x/net/context"
 )
 
 // scopedConfig private internal scoped based configuration
@@ -81,17 +82,18 @@ func (sc scopedConfig) parseWithClaim(rawToken []byte) (csjwt.Token, error) {
 	return sc.jwtVerify.ParseWithClaim(rawToken, sc.keyFunc, claim)
 }
 
-// getKeyFunc generates the key function for a specific scope and to used in caching
-func getKeyFunc(scpCfg scopedConfig) csjwt.Keyfunc {
-	return func(t csjwt.Token) (csjwt.Key, error) {
+// getKeyFunc generates a closure for a specific scope to compare if the
+// algortihm in the token matches with the current algorithm.
+func (sc *scopedConfig) initKeyFunc() {
+	sc.keyFunc = func(t csjwt.Token) (csjwt.Key, error) {
 
-		if have, want := t.Alg(), scpCfg.signingMethod.Alg(); have != want {
+		if have, want := t.Alg(), sc.signingMethod.Alg(); have != want {
 			return csjwt.Key{}, errors.Errorf("[ctxjwt] Unknown signing method - Have: %q Want: %q", have, want)
 		}
-		if scpCfg.Key.Error != nil {
-			return csjwt.Key{}, errors.Mask(scpCfg.Key.Error)
+		if sc.Key.Error != nil {
+			return csjwt.Key{}, errors.Mask(sc.Key.Error)
 		}
-		return scpCfg.Key, nil
+		return sc.Key, nil
 	}
 }
 
@@ -101,14 +103,20 @@ type Option func(*Service)
 func defaultScopedConfig() (scopedConfig, error) {
 	key := csjwt.WithPasswordRandom()
 	hs256, err := csjwt.NewHMACFast256(key)
-	return scopedConfig{
+	sc := scopedConfig{
 		scopeHash:     scope.DefaultHash,
 		expire:        DefaultExpire,
 		Key:           key,
 		signingMethod: hs256,
 		jwtVerify:     csjwt.NewVerification(hs256),
 		enableJTI:     false,
-	}, err
+		errorHandler: ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
+			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+			return nil
+		}),
+	}
+	sc.initKeyFunc()
+	return sc, err
 }
 
 // WithDefaultConfig applies the default JWT configuration settings based for
@@ -123,10 +131,17 @@ func defaultScopedConfig() (scopedConfig, error) {
 func WithDefaultConfig(scp scope.Scope, id int64) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) {
-		s.mu.Lock()
-		defer s.mu.Unlock()
 		var err error
+
+		if h == scope.DefaultHash {
+			s.defaultScopeCache, err = defaultScopedConfig()
+			s.MultiErr = s.AppendErrors(err)
+			return
+		}
+
+		s.mu.Lock()
 		s.scopeCache[h], err = defaultScopedConfig()
+		s.mu.Unlock()
 		s.MultiErr = s.AppendErrors(err)
 	}
 }
@@ -156,6 +171,12 @@ func WithBackend(pb *PkgBackend) Option {
 func WithNewClaims(scp scope.Scope, id int64, f func() csjwt.Claimer) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) {
+
+		if h == scope.DefaultHash {
+			s.defaultScopeCache.newClaims = f
+			return
+		}
+
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
@@ -176,6 +197,13 @@ func WithNewClaims(scp scope.Scope, id int64, f func() csjwt.Claimer) Option {
 func WithSigningMethod(scp scope.Scope, id int64, sm csjwt.Signer) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) {
+
+		if h == scope.DefaultHash {
+			s.defaultScopeCache.signingMethod = sm
+			s.defaultScopeCache.jwtVerify = csjwt.NewVerification(sm)
+			return
+		}
+
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
@@ -199,8 +227,15 @@ func WithSigningMethod(scp scope.Scope, id int64, sm csjwt.Signer) Option {
 func WithErrorHandler(scp scope.Scope, id int64, handler ctxhttp.Handler) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) {
+
+		if h == scope.DefaultHash {
+			s.defaultScopeCache.errorHandler = handler
+			return
+		}
+
 		s.mu.Lock()
 		defer s.mu.Unlock()
+
 		scNew := scopedConfig{
 			errorHandler: handler,
 		}
@@ -210,9 +245,6 @@ func WithErrorHandler(scp scope.Scope, id int64, handler ctxhttp.Handler) Option
 		}
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
-		if scp == scope.Default && id == 0 {
-			s.DefaultErrorHandler = handler
-		}
 	}
 }
 
@@ -220,6 +252,12 @@ func WithErrorHandler(scp scope.Scope, id int64, handler ctxhttp.Handler) Option
 func WithExpiration(scp scope.Scope, id int64, d time.Duration) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) {
+
+		if h == scope.DefaultHash {
+			s.defaultScopeCache.expire = d
+			return
+		}
+
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
@@ -240,6 +278,12 @@ func WithExpiration(scp scope.Scope, id int64, d time.Duration) Option {
 func WithTokenID(scp scope.Scope, id int64, enable bool) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) {
+
+		if h == scope.DefaultHash {
+			s.defaultScopeCache.enableJTI = enable
+			return
+		}
+
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
@@ -272,6 +316,7 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 		}
 	}
 	return func(s *Service) {
+
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
@@ -298,6 +343,14 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 			return
 		}
 
+		if h == scope.DefaultHash {
+			s.defaultScopeCache.Key = scNew.Key
+			s.defaultScopeCache.signingMethod = scNew.signingMethod
+			s.defaultScopeCache.jwtVerify = csjwt.NewVerification(scNew.signingMethod)
+			s.defaultScopeCache.initKeyFunc()
+			return
+		}
+
 		if sc, ok := s.scopeCache[h]; ok {
 			sc.Key = scNew.Key
 			sc.signingMethod = scNew.signingMethod
@@ -305,6 +358,7 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 			scNew = sc
 		}
 		scNew.scopeHash = h
+		scNew.initKeyFunc()
 		s.scopeCache[h] = scNew
 	}
 }

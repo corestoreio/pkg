@@ -33,7 +33,7 @@ func TestInternalOptionWithErrorHandler(t *testing.T) {
 	t.Parallel()
 	jwts := MustNewService()
 
-	defaultErrH := jwts.DefaultErrorHandler
+	defaultErrH := jwts.defaultScopeCache.errorHandler
 
 	wsErrH := ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
 		http.Error(w, http.StatusText(http.StatusAccepted), http.StatusAccepted)
@@ -44,15 +44,15 @@ func TestInternalOptionWithErrorHandler(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cstesting.EqualPointers(t, defaultErrH, jwts.DefaultErrorHandler)
+	cstesting.EqualPointers(t, defaultErrH, jwts.defaultScopeCache.errorHandler)
 	cstesting.EqualPointers(t, wsErrH, jwts.scopeCache[scope.NewHash(scope.Website, 22)].errorHandler)
 	cstesting.UnEqualPointers(t, defaultErrH, jwts.scopeCache[scope.NewHash(scope.Website, 22)].errorHandler)
 
 	if err := jwts.Options(WithErrorHandler(scope.Default, 0, wsErrH)); err != nil {
 		t.Fatal(err)
 	}
-	cstesting.UnEqualPointers(t, defaultErrH, jwts.DefaultErrorHandler)
-	cstesting.EqualPointers(t, wsErrH, jwts.DefaultErrorHandler)
+	cstesting.UnEqualPointers(t, defaultErrH, jwts.defaultScopeCache.errorHandler)
+	cstesting.EqualPointers(t, wsErrH, jwts.defaultScopeCache.errorHandler)
 }
 
 func TestInternalOptionNoLeakage(t *testing.T) {

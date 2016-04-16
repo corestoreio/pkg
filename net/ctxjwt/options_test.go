@@ -23,6 +23,7 @@ import (
 
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
@@ -123,19 +124,18 @@ func TestOptionWithRSAFromFileNoOrFailedPassword(t *testing.T) {
 }
 
 func testRsaOption(t *testing.T, opt ctxjwt.Option) {
-	jm, err := ctxjwt.NewService(opt)
+	jwts, err := ctxjwt.NewService(opt)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotNil(t, jm)
 
-	theToken, err := jm.NewToken(scope.Default, 0, jwtclaim.Map{})
+	theToken, err := jwts.NewToken(scope.Default, 0, jwtclaim.Map{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
 	}
 	assert.NotEmpty(t, theToken)
 
-	tk, err := jm.Parse(theToken)
+	tk, err := jwts.Parse(theToken)
 	if err != nil {
 		t.Fatal(err)
 	}

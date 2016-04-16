@@ -75,10 +75,9 @@ func TestMiddlewareWithInitTokenNoToken(t *testing.T) {
 func TestMiddlewareWithInitTokenHTTPErrorHandler(t *testing.T) {
 	t.Parallel()
 
-	cr := cfgmock.NewService()
 	srv := storemock.NewEurozzyService(
 		scope.MustSetByCode(scope.Website, "euro"),
-		store.WithStorageConfig(cr),
+		store.WithStorageConfig(cfgmock.NewService()), // empty config
 	)
 	ctx := store.WithContextProvider(context.Background(), srv)
 
@@ -100,21 +99,25 @@ func TestMiddlewareWithInitTokenHTTPErrorHandler(t *testing.T) {
 
 func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
 	t.Parallel()
-	//cr := cfgmock.NewService()
+
 	srv := storemock.NewEurozzyService(
 		scope.MustSetByCode(scope.Website, "euro"),
-		//store.WithStorageConfig(cr),
+		store.WithStorageConfig(cfgmock.NewService()),
 	)
 	ctx := store.WithContextProvider(context.Background(), srv)
 
 	jwts := ctxjwt.MustNewService()
 
-	jwts.DefaultErrorHandler = ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		token, err := ctxjwt.FromContext(ctx)
-		t.Logf("Token: %#v\n", token)
-		t.Fatal("Unexpected Error:", cserr.NewMultiErr(err).VerboseErrors())
-		return nil
-	})
+	if err := jwts.Options(ctxjwt.WithErrorHandler(scope.Default, 0,
+		ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+			token, err := ctxjwt.FromContext(ctx)
+			t.Logf("Token: %#v\n", token)
+			t.Fatal("Unexpected Error:", cserr.NewMultiErr(err).VerboseErrors())
+			return nil
+		}),
+	)); err != nil {
+		t.Fatal(err)
+	}
 
 	theToken, err := jwts.NewToken(scope.Default, 0, jwtclaim.Map{
 		"xfoo": "bar",
@@ -274,11 +277,15 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 		}
 
 		if test.wantErr != nil {
-			jwts.DefaultErrorHandler = ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-				_, err := ctxjwt.FromContext(ctx)
-				assert.EqualError(t, err, test.wantErr.Error(), "Index %d", i)
-				return nil
-			})
+			if err := jwts.Options(ctxjwt.WithErrorHandler(scope.Default, 0,
+				ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
+					_, err := ctxjwt.FromContext(ctx)
+					assert.EqualError(t, err, test.wantErr.Error(), "Index %d", i)
+					return nil
+				}),
+			)); err != nil {
+				t.Fatal(err)
+			}
 		}
 		mw := jwts.WithInitTokenAndStore()(finalInitStoreHandler(t, test.wantStoreCode))
 		rec := httptest.NewRecorder()

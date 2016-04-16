@@ -15,11 +15,9 @@
 package ctxjwt
 
 import (
-	"net/http"
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cserr"
@@ -27,7 +25,6 @@ import (
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/juju/errors"
 	"github.com/pborman/uuid"
-	"golang.org/x/net/context"
 )
 
 // jti type to generate a JTI for a token, a unique ID
@@ -41,6 +38,19 @@ func (j jti) Get() string {
 type Service struct {
 	*cserr.MultiErr
 
+	// JTI represents the interface to generate a new UUID aka JWT ID
+	JTI interface {
+		Get() string
+	}
+	// Blacklist concurrent safe black list service
+	Blacklist Blacklister
+	// Backend optional configuration, can be nil. If the black list has been set it pulls
+	// out the configuration settings during a request and caches the settings in the
+	// internal map.
+	Backend *PkgBackend
+
+	defaultScopeCache scopedConfig
+
 	mu sync.RWMutex
 	// scopeCache internal cache of already created token configurations
 	// scoped.Hash relates to the website ID.
@@ -48,18 +58,6 @@ type Service struct {
 	// request try to access the map. we can use the same pattern like in freecache
 	// to create a segment of 256 slice items to evenly distribute the lock.
 	scopeCache map[scope.Hash]scopedConfig // see freecache to create high concurrent thru put
-
-	// JTI represents the interface to generate a new UUID aka JWT ID
-	JTI interface {
-		Get() string
-	}
-	// Blacklist concurrent safe black list service
-	Blacklist Blacklister
-	// Backend optional configuration, can be nil.
-	Backend *PkgBackend
-	// DefaultErrorHandler global default error handler. Used in the middleware. Fallback to
-	// this handler when a scoped based handler isn't available.
-	DefaultErrorHandler ctxhttp.Handler
 }
 
 // NewService creates a new token service. If key option will not be
@@ -72,10 +70,6 @@ func NewService(opts ...Option) (*Service, error) {
 		scopeCache: make(map[scope.Hash]scopedConfig),
 		JTI:        jti{},
 		Blacklist:  nullBL{},
-		DefaultErrorHandler: ctxhttp.HandlerFunc(func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
-			http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
-			return nil
-		}),
 	}
 
 	if err := s.Options(WithDefaultConfig(scope.Default, 0)); err != nil {
@@ -143,7 +137,7 @@ func (s *Service) NewToken(scp scope.Scope, id int64, claims csjwt.Claimer) (tok
 
 	cfg, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
-		return nil, err
+		return nil, errors.Mask(err)
 	}
 
 	now := csjwt.TimeFunc()
@@ -217,6 +211,10 @@ func (s *Service) getConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig,
 		h = scope.NewHash(sg.Scope())
 	}
 
+	if (s.Backend == nil || sg == nil) && h == scope.DefaultHash && s.defaultScopeCache.isValid() {
+		return s.defaultScopeCache, nil
+	}
+
 	sc, err := s.getConfigByScopeID(false, h)
 	if err == nil {
 		// cached entry found and ignore the error because we fall back to
@@ -246,16 +244,19 @@ func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConf
 		return empty, errors.Errorf("[ctxjwt] Incomplete configuration for %s. Missing Signing Method and its Key.", hash)
 	}
 
+	const errConfigNotFound = "[ctxjwt] Cannot find JWT configuration for %s"
 	if fallback {
 		// fallback to default scope
-		scpCfg, ok := s.getScopedConfig(scope.DefaultHash)
-		if ok {
-			return scpCfg, nil
+		var err error
+		if !s.defaultScopeCache.isValid() {
+			err = errors.Errorf(errConfigNotFound, scope.DefaultHash)
 		}
+		return s.defaultScopeCache, err
+
 	}
 
 	// give up, nothing found
-	return empty, errors.Errorf("[ctxjwt] Cannot find JWT configuration for %s", hash)
+	return empty, errors.Errorf(errConfigNotFound, hash)
 }
 
 // getScopedConfig part of lookupScopedConfig and doesn't use a lock because the lock
@@ -268,7 +269,7 @@ func (s *Service) getScopedConfig(h scope.Hash) (sc scopedConfig, ok bool) {
 	if ok {
 		var hasChanges bool
 		if nil == sc.keyFunc {
-			sc.keyFunc = getKeyFunc(sc)
+			sc.initKeyFunc()
 			hasChanges = true
 		}
 		if sc.expire < 1 {

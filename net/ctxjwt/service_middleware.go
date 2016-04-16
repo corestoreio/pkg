@@ -68,9 +68,11 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 	return func(hf ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
+			errHandler := s.defaultScopeCache.errorHandler
+
 			storeService, requestedStore, err := store.FromContextProvider(ctx)
 			if err != nil {
-				return s.DefaultErrorHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
+				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
 			}
 
 			// the scpCfg depends on how you have initialized the storeService during app boot.
@@ -79,10 +81,9 @@ func (s *Service) WithInitTokenAndStore() ctxhttp.Middleware {
 			scpCfg, err := s.getConfigByScopedGetter(requestedStore.Website.Config)
 			if err != nil {
 				err = errors.Mask(err)
-				return s.DefaultErrorHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
+				return errHandler.ServeHTTPContext(withContextError(ctx, err), w, r)
 			}
 
-			errHandler := s.DefaultErrorHandler
 			if scpCfg.errorHandler != nil {
 				errHandler = scpCfg.errorHandler
 			}
