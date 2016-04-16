@@ -29,3 +29,8 @@ const (
 	ErrValidationJTI              cserr.Error = `[jwtclaim] token JTI validation failed`
 	ErrValidationClaimsInvalid    cserr.Error = `[jwtclaim] token claims validation failed`
 )
+
+const (
+	errHeaderKeyNotSupported = "[jwtclaim] Header %q not yet supported. Please see constants Header*."
+	errClaimKeyNotSupported  = "[jwtclaim] Claim %q not supported. Please see constants Claim*."
+)

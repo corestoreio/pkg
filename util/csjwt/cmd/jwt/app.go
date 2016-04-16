@@ -118,9 +118,13 @@ func verifyToken() error {
 
 	v := csjwt.NewVerification(csjwt.NewSigningMethodES256(), csjwt.NewSigningMethodHS256())
 
-	mc := &jwtclaim.Map{}
+	tk := csjwt.Token{
+		Header: &jwtclaim.HeadSegments{},
+		Claims: &jwtclaim.Map{},
+	}
+
 	// Parse the token.  Load the key from command line option
-	token, err := v.ParseWithClaim(tokData, func(t csjwt.Token) (csjwt.Key, error) {
+	token, err := v.Parse(tk, tokData, func(t csjwt.Token) (csjwt.Key, error) {
 		data, err := loadData(*flagKey)
 		if err != nil {
 			return csjwt.Key{}, err
@@ -129,7 +133,7 @@ func verifyToken() error {
 			return csjwt.WithECPublicKeyFromPEM(data), nil
 		}
 		return csjwt.WithPassword(data), nil
-	}, mc)
+	})
 
 	// Print some debug data
 	if *flagDebug && token.Raw != nil {

@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/storage/text"
+	"github.com/juju/errors"
 )
 
 // ContentTypeJWT defines the content type of a token. At the moment only JWT
@@ -20,21 +21,21 @@ var TimeFunc = time.Now
 // Token represents a JWT Token.  Different fields will be used depending on
 // whether you're creating or parsing/verifying a token.
 type Token struct {
-	Raw       text.Chars             // The raw token.  Populated when you Parse a token
-	Header    map[string]interface{} // The first segment of the token
-	Claims    Claimer                // The second segment of the token
-	Signature text.Chars             // The third segment of the token.  Populated when you Parse a token
-	Valid     bool                   // Is the token valid?  Populated when you Parse/Verify a token
+	Raw       text.Chars // The raw token.  Populated when you Parse a token
+	Header    Header     // The first segment of the token
+	Claims    Claimer    // The second segment of the token
+	Signature text.Chars // The third segment of the token.  Populated when you Parse a token
+	Valid     bool       // Is the token valid?  Populated when you Parse/Verify a token
 	Encoder
 }
 
 // NewToken creates a new Token and presets the header to typ = JWT.
-// A new token has not yet an assigned algorithm.
+// A new token has not yet an assigned algorithm. The underlying base header
+// consists of a two field struct for the minimum requirements. If you need
+// more header fields consider using a map or the jwtclaim.HeadSegments type.
 func NewToken(c Claimer) Token {
 	return Token{
-		Header: map[string]interface{}{
-			"typ": ContentTypeJWT,
-		},
+		Header: newHead("", ContentTypeJWT),
 		Claims: c,
 	}
 }
@@ -42,14 +43,11 @@ func NewToken(c Claimer) Token {
 // Alg returns the assigned algorithm to this token.
 // Can return an empty string.
 func (t Token) Alg() string {
-	algRaw, ok := t.Header["alg"]
-	if !ok {
+	if t.Header == nil {
 		return ""
 	}
-	if a, ok := algRaw.(string); ok {
-		return a
-	}
-	return ""
+	h, _ := t.Header.Get("alg")
+	return h
 }
 
 // SignedString gets the complete, signed token.
@@ -58,22 +56,24 @@ func (t Token) Alg() string {
 // This functions allows to sign a token with different signing methods.
 func (t Token) SignedString(method Signer, key Key) (text.Chars, error) {
 
-	t.Header["alg"] = method.Alg()
+	if err := t.Header.Set("alg", method.Alg()); err != nil {
+		return nil, errors.Mask(err)
+	}
 
 	buf, err := t.SigningString()
 	if err != nil {
-		return nil, err
+		return nil, errors.Mask(err)
 	}
 	sig, err := method.Sign(buf.Bytes(), key)
 	if err != nil {
-		return nil, err
+		return nil, errors.Mask(err)
 	}
 
 	if _, err := buf.WriteRune('.'); err != nil {
-		return nil, err
+		return nil, errors.Mask(err)
 	}
 	if _, err := buf.Write(sig); err != nil {
-		return nil, err
+		return nil, errors.Mask(err)
 	}
 	return buf.Bytes(), nil
 }
@@ -93,19 +93,24 @@ func (t Token) SigningString() (buf bytes.Buffer, err error) {
 	var j []byte
 	j, err = enc.Marshal(t.Header)
 	if err != nil {
+		err = errors.Mask(err)
 		return
 	}
 	if _, err = buf.Write(j); err != nil {
+		err = errors.Mask(err)
 		return
 	}
 	if _, err = buf.WriteRune('.'); err != nil {
+		err = errors.Mask(err)
 		return
 	}
 	j, err = enc.Marshal(t.Claims)
 	if err != nil {
+		err = errors.Mask(err)
 		return
 	}
 	if _, err = buf.Write(j); err != nil {
+		err = errors.Mask(err)
 		return
 	}
 	return

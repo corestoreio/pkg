@@ -42,17 +42,17 @@ func NewVerification(availableSigners ...Signer) *Verification {
 	}
 }
 
-// ParseWithClaims same as Parse() but lets you specify your own Claimer.
-// Claimer must be a pointer.
-func (vf *Verification) ParseWithClaim(rawToken []byte, keyFunc Keyfunc, claims Claimer) (Token, error) {
+// Parse parses a rawToken into the base token and returns the fully parsed and
+// verified Token, or an error. You must make sure to set the correct expected
+// headers and claims in the base Token.
+func (vf *Verification) Parse(base Token, rawToken []byte, keyFunc Keyfunc) (Token, error) {
 	pos, valid := dotPositions(rawToken)
 	if !valid {
 		return Token{}, errTokenInvalidSegmentCounts
 	}
 
-	token := Token{
-		Raw:    rawToken,
-		Claims: claims,
+	if base.Header == nil || base.Claims == nil {
+		return base, errTokenBaseNil
 	}
 
 	dec := vf.Decoder
@@ -60,48 +60,50 @@ func (vf *Verification) ParseWithClaim(rawToken []byte, keyFunc Keyfunc, claims 
 		dec = JSONDecode{}
 	}
 
-	if startsWithBearer(token.Raw) {
-		return token, errTokenShouldNotContainBearer
+	base.Raw = rawToken
+
+	if startsWithBearer(base.Raw) {
+		return base, errTokenShouldNotContainBearer
 	}
 
 	// parse Header
-	if err := dec.Unmarshal(token.Raw[:pos[0]], &token.Header); err != nil {
-		return token, cserr.NewMultiErr(ErrTokenMalformed, err)
+	if err := dec.Unmarshal(base.Raw[:pos[0]], &base.Header); err != nil {
+		return base, cserr.NewMultiErr(ErrTokenMalformed, err)
 	}
 
 	// parse Claims
-	if err := dec.Unmarshal(token.Raw[pos[0]+1:pos[1]], token.Claims); err != nil {
-		return token, cserr.NewMultiErr(ErrTokenMalformed, err)
+	if err := dec.Unmarshal(base.Raw[pos[0]+1:pos[1]], base.Claims); err != nil {
+		return base, cserr.NewMultiErr(ErrTokenMalformed, err)
 	}
 
 	// validate Claims
-	if err := token.Claims.Valid(); err != nil {
-		return token, cserr.NewMultiErr(ErrValidationClaimsInvalid, err)
+	if err := base.Claims.Valid(); err != nil {
+		return base, cserr.NewMultiErr(ErrValidationClaimsInvalid, err)
 	}
 
 	// Lookup key
 	if keyFunc == nil {
-		return token, errMissingKeyFunc
+		return base, errMissingKeyFunc
 	}
-	key, err := keyFunc(token)
+	key, err := keyFunc(base)
 	if err != nil {
-		return token, cserr.NewMultiErr(ErrTokenUnverifiable, err)
+		return base, cserr.NewMultiErr(ErrTokenUnverifiable, err)
 	}
 
 	// Lookup signature method
-	method, err := vf.getMethod(&token)
+	method, err := vf.getMethod(&base)
 	if err != nil {
-		return token, err
+		return base, err
 	}
 
 	// Perform validation
-	token.Signature = token.Raw[pos[1]+1:]
-	if err := method.Verify(token.Raw[:pos[1]], token.Signature, key); err != nil {
-		return token, cserr.NewMultiErr(ErrSignatureInvalid, err)
+	base.Signature = base.Raw[pos[1]+1:]
+	if err := method.Verify(base.Raw[:pos[1]], base.Signature, key); err != nil {
+		return base, cserr.NewMultiErr(ErrSignatureInvalid, err)
 	}
 
-	token.Valid = true
-	return token, nil
+	base.Valid = true
+	return base, nil
 }
 
 func (vf *Verification) getMethod(token *Token) (Signer, error) {
@@ -125,20 +127,20 @@ func (vf *Verification) getMethod(token *Token) (Signer, error) {
 
 // ParseFromRequest same as ParseFromRequest but allows to add a custer Claimer.
 // Claimer must be a pointer.
-func (vf *Verification) ParseFromRequest(req *http.Request, keyFunc Keyfunc, claims Claimer) (Token, error) {
+func (vf *Verification) ParseFromRequest(base Token, keyFunc Keyfunc, req *http.Request) (Token, error) {
 	// Look for an Authorization header
 	if ah := req.Header.Get(HTTPHeaderAuthorization); ah != "" {
 		// Should be a bearer token
 		auth := []byte(ah)
 		if startsWithBearer(auth) {
-			return vf.ParseWithClaim(auth[7:], keyFunc, claims)
+			return vf.Parse(base, auth[7:], keyFunc)
 		}
 	}
 
 	// Look for "access_token" parameter
 	_ = req.ParseMultipartForm(10e6) // ignore errors
 	if tokStr := req.Form.Get(vf.FormInputName); tokStr != "" {
-		return vf.ParseWithClaim([]byte(tokStr), keyFunc, claims)
+		return vf.Parse(base, []byte(tokStr), keyFunc)
 	}
 
 	return Token{}, ErrTokenNotInRequest

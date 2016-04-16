@@ -2,6 +2,7 @@ package csjwt
 
 import (
 	"bytes"
+
 	"github.com/juju/errors"
 )
 

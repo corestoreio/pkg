@@ -41,15 +41,13 @@ func TestVerificationGetMethod(t *testing.T) {
 			NewVerification(),
 			&Token{},
 			nil,
-			errors.New(`[csjwt] Cannot find alg entry in token header: map[string]interface {}(nil)`),
+			errors.New(`[csjwt] Cannot find alg entry in token header: <nil>`),
 			0,
 		},
 		{
 			NewVerification(NewSigningMethodHS512()),
 			&Token{
-				Header: map[string]interface{}{
-					"alg": "RS4",
-				},
+				Header: newHead("RS4", ""),
 			},
 			nil,
 			errors.New(`[csjwt] Algorithm "RS4" not found in method list "HS512"`),
@@ -58,9 +56,7 @@ func TestVerificationGetMethod(t *testing.T) {
 		{
 			NewVerification(NewSigningMethodPS256(), NewSigningMethodRS512(), NewSigningMethodHS512()),
 			&Token{
-				Header: map[string]interface{}{
-					"alg": HS512,
-				},
+				Header: newHead(HS512, ""),
 			},
 			NewSigningMethodHS512(),
 			nil,
@@ -86,14 +82,10 @@ func BenchmarkVerificationGetMethod(b *testing.B) {
 
 	tokens := [2]*Token{
 		{
-			Header: map[string]interface{}{
-				"alg": HS256,
-			},
+			Header: newHead(HS256, ""),
 		},
 		{
-			Header: map[string]interface{}{
-				"alg": RS384,
-			},
+			Header: newHead(RS384, ""),
 		},
 	}
 	wantAlg := [2]string{

@@ -128,7 +128,7 @@ func (s *Standard) Set(key string, value interface{}) (err error) {
 		s.Subject, err = conv.ToStringE(value)
 		err = errors.Mask(err)
 	default:
-		return errors.Errorf("Claim %q not supported. Please see constants Claim*.", key)
+		return errors.Errorf(errClaimKeyNotSupported, key)
 	}
 	return err
 }
@@ -151,7 +151,7 @@ func (s *Standard) Get(key string) (value interface{}, err error) {
 	case KeySubject:
 		return s.Subject, nil
 	}
-	return nil, errors.Errorf("Claim %q not supported. Please see constants Claim*.", key)
+	return nil, errors.Errorf(errClaimKeyNotSupported, key)
 }
 
 // Expires duration when a token expires.

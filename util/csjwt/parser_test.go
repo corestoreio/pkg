@@ -144,7 +144,7 @@ func TestParseWithMap(t *testing.T) {
 			data.tokenString = makeSample(data.claims)
 		}
 
-		token, err := data.parser.ParseWithClaim(data.tokenString, data.keyfunc, &jwtclaim.Map{})
+		token, err := data.parser.Parse(csjwt.NewToken(&jwtclaim.Map{}), data.tokenString, data.keyfunc)
 
 		if !reflect.DeepEqual(&data.claims, token.Claims) {
 			t.Errorf("[%v] Claims mismatch. Expecting: %v  Got: %v", data.name, data.claims, token.Claims)
@@ -182,7 +182,7 @@ func TestParseFromRequest(t *testing.T) {
 
 		r, _ := http.NewRequest("GET", "/", nil)
 		r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", data.tokenString))
-		token, err := data.parser.ParseFromRequest(r, data.keyfunc, &jwtclaim.Map{})
+		token, err := data.parser.ParseFromRequest(csjwt.NewToken(&jwtclaim.Map{}), data.keyfunc, r)
 
 		if token.Raw == nil {
 			t.Errorf("[%v] Token was not found: %v", data.name, err)
@@ -225,12 +225,12 @@ func TestParseFromRequestComplex(t *testing.T) {
 	r.Header.Set("Authorization", fmt.Sprintf("Bearer %s", tokenString))
 
 	var newClaim = make(jwtclaim.Map)
-	rToken, err := csjwt.NewVerification(sm512).ParseFromRequest(r, func(t csjwt.Token) (csjwt.Key, error) {
+	rToken, err := csjwt.NewVerification(sm512).ParseFromRequest(csjwt.NewToken(&newClaim), func(t csjwt.Token) (csjwt.Key, error) {
 		if have, want := t.Alg(), sm512.Alg(); have != want {
 			return csjwt.Key{}, fmt.Errorf("Have: %s Want: %s", have, want)
 		}
 		return key, nil
-	}, &newClaim)
+	}, r)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -242,7 +242,7 @@ func TestParseWithClaimsBearerInHeader(t *testing.T) {
 	token := text.Chars(`BEaRER `)
 	token = append(token, jwtTestData[0].tokenString...)
 
-	haveToken, haveErr := csjwt.NewVerification().ParseWithClaim(token, nil, &jwtclaim.Map{})
+	haveToken, haveErr := csjwt.NewVerification().Parse(csjwt.NewToken(&jwtclaim.Map{}), token, nil)
 	assert.NotNil(t, haveToken)
 	assert.NotNil(t, haveToken.Claims)
 	assert.Exactly(t, haveToken.Raw, token)
@@ -252,7 +252,7 @@ func TestParseWithClaimsBearerInHeader(t *testing.T) {
 
 func TestParseWithClaimInvalidSegments(t *testing.T) {
 	t.Parallel()
-	token, err := csjwt.NewVerification().ParseWithClaim([]byte(`hello.gopher`), nil, nil)
+	token, err := csjwt.NewVerification().Parse(csjwt.NewToken(nil), []byte(`hello.gopher`), nil)
 	assert.False(t, token.Valid)
 	assert.EqualError(t, err, `[csjwt] token contains an invalid number of segments`)
 }
@@ -411,11 +411,12 @@ func benchmarkParseFromRequest(b *testing.B, sm csjwt.Signer, key csjwt.Key, key
 	veri := csjwt.NewVerification(sm)
 
 	mc := &ShoppingCartClaim{Standard: new(jwtclaim.Standard)}
+
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 
-		rToken, err := veri.ParseFromRequest(r, keyFunc, mc)
+		rToken, err := veri.ParseFromRequest(csjwt.NewToken(mc), keyFunc, r)
 		if err != nil {
 			b.Fatal(err)
 		}

@@ -112,7 +112,7 @@ func TestClaimsGetSet(t *testing.T) {
 		{&jwtclaim.Standard{}, jwtclaim.KeyAudience, '', errors.New("Unable to cast 63743 to string"), nil},
 		{&jwtclaim.Standard{}, jwtclaim.KeyAudience, "Go", nil, nil},
 		{&jwtclaim.Standard{}, jwtclaim.KeyExpiresAt, time.Now().Unix(), nil, nil},
-		{&jwtclaim.Standard{}, "Not Supported", time.Now().Unix(), errors.New("Claim \"Not Supported\" not supported. Please see constants Claim*."), errors.New("Claim \"Not Supported\" not supported. Please see constants Claim*.")},
+		{&jwtclaim.Standard{}, "Not Supported", time.Now().Unix(), errors.New("[jwtclaim] Claim \"Not Supported\" not supported. Please see constants Claim*."), errors.New("[jwtclaim] Claim \"Not Supported\" not supported. Please see constants Claim*.")},
 
 		{jwtclaim.Map{}, jwtclaim.KeyAudience, "Go", nil, nil},
 		{jwtclaim.Map{}, jwtclaim.KeyExpiresAt, time.Now().Unix(), nil, nil},

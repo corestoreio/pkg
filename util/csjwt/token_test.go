@@ -18,6 +18,7 @@ import (
 	"testing"
 
 	"github.com/corestoreio/csfw/util/csjwt"
+	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,17 +31,13 @@ func TestTokenAlg(t *testing.T) {
 		{csjwt.NewToken(nil), ""},
 		{
 			csjwt.Token{
-				Header: map[string]interface{}{
-					"alg": 3,
-				},
+				Header: jwtclaim.NewHeadSegments("3"),
 			},
-			"",
+			"3",
 		},
 		{
 			csjwt.Token{
-				Header: map[string]interface{}{
-					"alg": "Gopher",
-				},
+				Header: jwtclaim.NewHeadSegments("Gopher"),
 			},
 			"Gopher",
 		},
