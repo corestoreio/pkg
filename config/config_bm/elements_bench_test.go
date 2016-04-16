@@ -19,12 +19,15 @@ import (
 
 	"github.com/corestoreio/csfw/config/cfgpath"
 	"github.com/corestoreio/csfw/config/element"
+	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/corestoreio/csfw/util/log"
 )
 
 func init() {
-	log.SetLevel(log.StdLevelInfo)
+	log.SetLevel(log.StdLevelFatal)
 }
+
+const enableGCPauseOutput = false
 
 // BenchmarkSectionSliceValidate	    1000	   1791239 ns/op	  158400 B/op	    4016 allocs/op => Go 1.4.2
 // BenchmarkSectionSliceValidate   	    1000	   1636547 ns/op	  158400 B/op	    3213 allocs/op => Go 1.5.0
@@ -37,6 +40,9 @@ func BenchmarkSectionSliceValidate(b *testing.B) {
 		if err := packageAllConfiguration.Validate(); err != nil {
 			b.Error(err)
 		}
+	}
+	if enableGCPauseOutput {
+		b.Log("GC Pause:", cstesting.GCPause())
 	}
 }
 
@@ -53,6 +59,9 @@ func BenchmarkSectionSliceToJson(b *testing.B) {
 		if bsstj = packageAllConfiguration.ToJSON(); bsstj == "" {
 			b.Error("JSON is empty!")
 		}
+	}
+	if enableGCPauseOutput {
+		b.Log("GC Pause:", cstesting.GCPause())
 	}
 }
 
@@ -129,4 +138,7 @@ func BenchmarkSectionSliceFindFieldByID5_Parallel(b *testing.B) {
 			}
 		}
 	})
+	if enableGCPauseOutput {
+		b.Log("GC Pause:", cstesting.GCPause())
+	}
 }
