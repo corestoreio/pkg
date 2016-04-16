@@ -109,13 +109,6 @@ func BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel(b *testing.B) {
 	//b.Log("GC Pause:", gcPause())
 }
 
-//func gcPause() time.Duration {
-//	runtime.GC()
-//	var stats debug.GCStats
-//	debug.ReadGCStats(&stats)
-//	return stats.Pause[0]
-//}
-
 func BenchmarkServeHTTP_DefaultConfig_BlackList_Single(b *testing.B) {
 	jwtHandler, ctx, token := benchmarkServeHTTPDefaultConfigBlackListSetup(b)
 	for i := 0; i < b.N; i++ {
@@ -292,5 +285,5 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 			i++
 		}
 	})
-
+	// b.Log("GC Pause:", cstesting.GCPause())
 }
