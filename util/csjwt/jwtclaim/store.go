@@ -59,13 +59,10 @@ func (s *Store) Set(key string, value interface{}) (err error) {
 	switch key {
 	case KeyStore:
 		s.Store, err = conv.ToStringE(value)
-		err = errors.Mask(err)
+		return errors.Mask(err)
 	case KeyUserID:
 		s.UserID, err = conv.ToStringE(value)
-		err = errors.Mask(err)
-	}
-	if err != nil {
-		return err
+		return errors.Mask(err)
 	}
 
 	return s.Standard.Set(key, value)

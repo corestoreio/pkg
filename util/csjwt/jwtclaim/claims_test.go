@@ -123,6 +123,7 @@ func TestClaimsGetSet(t *testing.T) {
 		{jwtclaim.Map{}, jwtclaim.KeyAudience, "Go", nil, nil},
 		{jwtclaim.Map{}, jwtclaim.KeyExpiresAt, time.Now().Unix(), nil, nil},
 		{jwtclaim.Map{}, "Not Supported", math.Pi, nil, nil},
+		{&jwtclaim.Store{}, jwtclaim.KeyStore, "xde", nil, nil},
 	}
 	for i, test := range tests {
 
