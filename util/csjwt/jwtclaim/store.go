@@ -15,6 +15,7 @@
 package jwtclaim
 
 import (
+	"encoding/json"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/juju/errors"
 )
@@ -47,8 +48,9 @@ type Store struct {
 	// when adding a numeric auto increment ID, like customer_id from the MySQL
 	// table customer_entity or admin_user you might leak sensitive information.
 	UserID string `json:"userid,omitempty"`
-	// todo extend with more useful fields
 }
+
+// TODO(cs) extend Store type with more useful fields
 
 // Set allows to set StoreClaim specific fields and then falls back to the set
 // function in StandardClaims
@@ -79,4 +81,18 @@ func (s *Store) Get(key string) (value interface{}, err error) {
 		return s.UserID, nil
 	}
 	return s.Standard.Get(key)
+}
+
+// Keys returns all available keys which this type supports.
+func (s *Store) Keys() []string {
+	return allKeys[:]
+}
+
+// String human readable output via JSON, slow.
+func (s *Store) String() string {
+	b, err := json.Marshal(s)
+	if err != nil {
+		return errors.Errorf("[jwtclaim] Store.String(): json.Marshal Error: %s", err).Error()
+	}
+	return string(b)
 }

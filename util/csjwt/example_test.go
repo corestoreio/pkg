@@ -9,7 +9,7 @@ import (
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 )
 
-func ExampleParse(myToken []byte, myLookupKey func(interface{}) (csjwt.Key, error)) {
+func ExampleVerification(myToken []byte, myLookupKey func(interface{}) (csjwt.Key, error)) {
 	base := csjwt.NewToken(&jwtclaim.Map{})
 	token, err := csjwt.NewVerification().Parse(base, myToken, func(token csjwt.Token) (csjwt.Key, error) {
 		kid, err := token.Header.Get("kid")
@@ -26,7 +26,7 @@ func ExampleParse(myToken []byte, myLookupKey func(interface{}) (csjwt.Key, erro
 	}
 }
 
-func ExampleNewToken() {
+func ExampleToken() {
 	// Create the token
 	token := csjwt.NewToken(&jwtclaim.Map{})
 
@@ -44,7 +44,7 @@ func ExampleNewToken() {
 	//Output: <*jwtclaim.Map> foo:bar foo:err:%!s(<nil>) exp:59m
 }
 
-func ExampleNewWithClaims() {
+func ExampleToken_WithClaims() {
 	// {"alg":"HS256","typ":"JWT"}
 
 	// Create the Claims
@@ -59,7 +59,7 @@ func ExampleNewWithClaims() {
 	//Output: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9Cg.eyJleHAiOjE1MDAwLCJpc3MiOiJ0ZXN0In0K.SY9CGIVRoJ_TBDxtPfv3C8h_qsmOLqd9YrYQcMp-rFM <nil>
 }
 
-func ExampleNewWithClaims_customType() {
+func ExampleToken_customType() {
 
 	type MyCustomClaims struct {
 		Foo string `json:"foo"`
@@ -86,7 +86,7 @@ func ExampleNewWithClaims_customType() {
 	// eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9Cg.eyJmb28iOiJiYXIiLCJleHAiOjE1MDAwLCJpc3MiOiJ0ZXN0In0K.zy8pbCUubZKYssrZaHN5riSWvvM7utQO4aeflq9Y5PN_ibL75lEJ3JKOmzgRNGbEUMpGv1MMIFnP9JQ6zUzTMw <nil>
 }
 
-func ExampleParse_errorChecking(myToken []byte, myLookupKey func(interface{}) (csjwt.Key, error)) {
+func ExampleVerification_errorChecking(myToken []byte, myLookupKey func(interface{}) (csjwt.Key, error)) {
 	baseToken := csjwt.Token{
 		Header: jwtclaim.NewHeadSegments(),
 		Claims: jwtclaim.Map{},

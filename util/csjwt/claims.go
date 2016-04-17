@@ -15,6 +15,7 @@
 package csjwt
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/juju/errors"
@@ -33,6 +34,8 @@ type Claimer interface {
 	Set(key string, value interface{}) error
 	// Get retrieves a value from the claim.
 	Get(key string) (value interface{}, err error)
+	// Keys returns a list of all available keys
+	Keys() []string
 }
 
 // (CS) I personally don't like the Set() and Get() functions but there is no
@@ -46,14 +49,17 @@ type Claimer interface {
 // understand the entire contents of the header; otherwise, the JWT MUST be
 // rejected for processing.
 type Header interface {
+	// Alg returns the name of the underlying algorithm
 	Alg() string
+	// Typ identifies the type of the JSON web token
 	Typ() string
 	Set(key, value string) error
 	Get(key string) (value string, err error)
 }
 
-// head minimum default header
-type head struct {
+// Head minimum default header.
+// To extend this header please use the struct jwtclaim.HeadSegments
+type Head struct {
 	// Alg (algorithm) header parameter identifies the cryptographic algorithm
 	// used to secure the JWT. A list of reserved alg values is in Table 4. The
 	// processing of the "alg" (algorithm) header parameter, if present, requires
@@ -67,30 +73,47 @@ type head struct {
 	Type string `json:"typ,omitempty"`
 }
 
-func newHead(a, t string) *head {
-	if t == "" {
-		t = ContentTypeJWT
+// NewHead creates a new minimum default header.
+// Arguments alg can be optionally applied one time to define an algorithm
+// but in all cases the algorithm gets set by the signing method.
+// For test cases you can pass an algorithm argument.
+// To extend this header please use the struct jwtclaim.HeadSegments
+func NewHead(alg ...string) *Head {
+	var a string
+	if len(alg) > 0 {
+		a = alg[0]
 	}
-	return &head{
+	return &Head{
 		Algorithm: a,
-		Type:      t,
+		Type:      ContentTypeJWT,
 	}
 }
 
 // Alg returns the underlying algorithm.
-func (s *head) Alg() string {
+func (s *Head) Alg() string {
 	return s.Algorithm
 }
 
 // Typ returns the token type.
-func (s *head) Typ() string {
+func (s *Head) Typ() string {
 	return s.Type
+}
+
+func (s *Head) String() string {
+	if s.Algorithm == "" {
+		return `csjwt.NewHead()`
+	}
+	return fmt.Sprintf("csjwt.NewHead(%q)", s.Alg())
+}
+
+func (s *Head) GoString() string {
+	return s.String()
 }
 
 const errHeaderKeyNotSupported = "[csjwt] Header %q not yet supported. Please switch to type jwtclaim.HeadSegments."
 
 // Set sets a value. Key must be one of the constants Header*.
-func (s *head) Set(key, value string) (err error) {
+func (s *Head) Set(key, value string) (err error) {
 	switch key {
 	case "alg":
 		s.Algorithm = value
@@ -103,7 +126,7 @@ func (s *head) Set(key, value string) (err error) {
 }
 
 // Get returns a value or nil or an error. Key must be one of the constants Header*.
-func (s *head) Get(key string) (value string, err error) {
+func (s *Head) Get(key string) (value string, err error) {
 	switch key {
 	case "alg":
 		return s.Algorithm, nil

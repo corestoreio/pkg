@@ -28,7 +28,13 @@ import (
 )
 
 var _ csjwt.Claimer = (*jwtclaim.Standard)(nil)
+var _ fmt.Stringer = (*jwtclaim.Standard)(nil)
+
+var _ csjwt.Claimer = (*jwtclaim.Store)(nil)
+var _ fmt.Stringer = (*jwtclaim.Store)(nil)
+
 var _ csjwt.Claimer = (*jwtclaim.Map)(nil)
+var _ fmt.Stringer = (*jwtclaim.Map)(nil)
 
 func TestStandardClaimsParseJSON(t *testing.T) {
 
@@ -161,4 +167,39 @@ func TestClaimsExpires(t *testing.T) {
 	for i, test := range tests {
 		assert.Exactly(t, int64(test.wantExp.Seconds()), int64(test.sc.Expires().Seconds()), "Index %d", i)
 	}
+}
+
+func TestMap_String(t *testing.T) {
+	m := jwtclaim.Map{
+		"k1": "v1",
+		"k2": 3.14159,
+		"k3": false,
+	}
+	assert.Exactly(t, "{\"k1\":\"v1\",\"k2\":3.14159,\"k3\":false}", m.String())
+}
+
+func TestMap_String_error(t *testing.T) {
+	m := jwtclaim.Map{
+		"k1": "v1",
+		"k2": 3.14159,
+		"k3": make(chan int),
+	}
+	assert.Exactly(t, "[jwtclaim] Map.String(): json.Marshal Error: json: unsupported type: chan int", m.String())
+}
+
+func TestStandard_String(t *testing.T) {
+	s := &jwtclaim.Standard{
+		Issuer:    "Corestore",
+		ExpiresAt: 4711,
+	}
+	assert.Exactly(t, "{\"exp\":4711,\"iss\":\"Corestore\"}", s.String())
+}
+
+func TestStore_String(t *testing.T) {
+	s := jwtclaim.NewStore()
+	s.Audience = "Gopher"
+	s.ID = "1"
+	s.Store = "nz"
+	s.UserID = "23642736"
+	assert.Exactly(t, "{\"aud\":\"Gopher\",\"jti\":\"1\",\"store\":\"nz\",\"userid\":\"23642736\"}", s.String())
 }

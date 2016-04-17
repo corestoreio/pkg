@@ -17,15 +17,28 @@ package csjwt
 import (
 	"testing"
 
+	"fmt"
+
 	"github.com/stretchr/testify/assert"
 )
 
-var _ Header = (*head)(nil)
+var _ Header = (*Head)(nil)
+var _ fmt.Stringer = (*Head)(nil)
+var _ fmt.GoStringer = (*Head)(nil)
+
+func TestNewHeadStringer(t *testing.T) {
+	t.Parallel()
+	var h Header
+	h = NewHead("Quantum")
+	assert.Exactly(t, "csjwt.NewHead(\"Quantum\")", fmt.Sprintf("%s", h))
+	assert.Exactly(t, "csjwt.NewHead(\"Quantum\")", fmt.Sprintf("%v", h))
+	assert.Exactly(t, "csjwt.NewHead(\"Quantum\")", fmt.Sprintf("%#v", h))
+}
 
 func TestNewHead(t *testing.T) {
 	t.Parallel()
 	var h Header
-	h = newHead("X", "")
+	h = NewHead("X")
 	assert.Exactly(t, "X", h.Alg())
 	assert.Exactly(t, ContentTypeJWT, h.Typ())
 }
@@ -33,7 +46,7 @@ func TestNewHead(t *testing.T) {
 func TestHeadSetGet(t *testing.T) {
 	t.Parallel()
 	var h Header
-	h = newHead("X", "")
+	h = NewHead("X")
 
 	assert.NoError(t, h.Set("alg", "Y"))
 	g, err := h.Get("alg")

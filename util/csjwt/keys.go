@@ -109,9 +109,10 @@ func WithPasswordRandom() Key {
 // the password for the HMAC-SHA signing method.
 func WithPasswordFromFile(pathToFile string) Key {
 	var k Key
-	k.hmacPassword, k.Error = ioutil.ReadFile(pathToFile)
-	if k.Error != nil {
-		k.Error = k.Error
+	var err error
+	k.hmacPassword, err = ioutil.ReadFile(pathToFile)
+	if err != nil {
+		k.Error = errors.Mask(err)
 	}
 	return k
 }

@@ -123,7 +123,7 @@ func (vf *Verification) getMethod(t *Token) (Signer, error) {
 			return m, nil
 		}
 	}
-	return nil, errors.Errorf("[csjwt] Algorithm %q not found in method list %q", alg, SignerSlice(vf.Methods))
+	return nil, errors.Errorf("[csjwt] Algorithm %q not found in method list %q", alg, vf.Methods)
 }
 
 // ParseFromRequest same as Parse but extracts the token from a request.

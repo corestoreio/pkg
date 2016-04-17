@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/corestoreio/csfw/storage/text"
+	"github.com/corestoreio/csfw/util/conv"
 	"github.com/juju/errors"
 )
 
@@ -30,12 +31,13 @@ type Token struct {
 }
 
 // NewToken creates a new Token and presets the header to typ = JWT.
-// A new token has not yet an assigned algorithm. The underlying template header
-// consists of a two field struct for the minimum requirements. If you need
-// more header fields consider using a map or the jwtclaim.HeadSegments type.
+// A new token has not yet an assigned algorithm. The underlying default
+// template header consists of a two field struct for the minimum
+// requirements. If you need more header fields consider using a map or
+// the jwtclaim.HeadSegments type.
 func NewToken(c Claimer) Token {
 	return Token{
-		Header: newHead("", ContentTypeJWT),
+		Header: NewHead(),
 		Claims: c,
 	}
 }
@@ -47,7 +49,7 @@ func (t Token) Alg() string {
 		return ""
 	}
 	h, _ := t.Header.Get("alg")
-	return h
+	return conv.ToString(h)
 }
 
 // SignedString gets the complete, signed token.
@@ -114,4 +116,22 @@ func (t Token) SigningString() (buf bytes.Buffer, err error) {
 		return
 	}
 	return
+}
+
+// Merge merges the Claimer c into the existing token claims and overwrites
+// existing entries.
+func (t Token) Merge(c Claimer) error {
+	if c == nil {
+		return nil
+	}
+	for _, k := range c.Keys() {
+		v, err := c.Get(k)
+		if err != nil {
+			return errors.Errorf("[csjwt] Cannot get Key %q. Error: %s", k, err)
+		}
+		if err := t.Claims.Set(k, v); err != nil {
+			return errors.Errorf("[csjwt] Cannot set Key %q with value %v. Error: %s", k, v, err)
+		}
+	}
+	return nil
 }

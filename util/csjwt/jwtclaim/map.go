@@ -1,10 +1,11 @@
 package jwtclaim
 
 import (
-	"time"
-
+	"encoding/json"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/cserr"
+	"github.com/juju/errors"
+	"time"
 )
 
 // Map default type for the Claim field in a token. Slowest but
@@ -85,6 +86,16 @@ func (m Map) Get(key string) (value interface{}, err error) {
 	return m[key], nil
 }
 
+func (m Map) Keys() []string {
+	keys := make([]string, len(m))
+	i := 0
+	for k := range m {
+		keys[i] = k
+		i++
+	}
+	return keys
+}
+
 // Expires duration when a token expires.
 func (m Map) Expires() (exp time.Duration) {
 	if cexp, ok := m["exp"]; ok {
@@ -97,4 +108,13 @@ func (m Map) Expires() (exp time.Duration) {
 		}
 	}
 	return
+}
+
+// String human readable output via JSON, slow.
+func (m Map) String() string {
+	b, err := json.Marshal(m)
+	if err != nil {
+		return errors.Errorf("[jwtclaim] Map.String(): json.Marshal Error: %s", err).Error()
+	}
+	return string(b)
 }

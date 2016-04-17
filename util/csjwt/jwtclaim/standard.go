@@ -3,6 +3,7 @@ package jwtclaim
 import (
 	"time"
 
+	"encoding/json"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/juju/errors"
@@ -165,6 +166,11 @@ func (s *Standard) Expires() (exp time.Duration) {
 	return
 }
 
+// Keys returns all available keys which this type supports.
+func (s *Standard) Keys() []string {
+	return allKeys[:7]
+}
+
 // VerifyAudience compares the aud claim against cmp.
 // If required is false, this method will return true if the value matches or is unset
 func (s *Standard) VerifyAudience(cmp string, req bool) bool {
@@ -193,4 +199,13 @@ func (s *Standard) VerifyIssuer(cmp string, req bool) bool {
 // If required is false, this method will return true if the value matches or is unset
 func (s *Standard) VerifyNotBefore(cmp int64, req bool) bool {
 	return verifyNbf(s.NotBefore, cmp, req)
+}
+
+// String human readable output via JSON, slow.
+func (s *Standard) String() string {
+	b, err := json.Marshal(s)
+	if err != nil {
+		return errors.Errorf("[jwtclaim] Standard.String(): json.Marshal Error: %s", err).Error()
+	}
+	return string(b)
 }
