@@ -70,11 +70,11 @@ func TestToken_Merge(t *testing.T) {
 		{csjwt.NewToken(nil), nil, `eyJ0eXAiOiJKV1QifQo.bnVsbAo`, nil},
 		{csjwt.NewToken(jwtclaim.Map{}), claimMerge{}, ``, errors.New("[csjwt] Cannot get Key \"k1\". Error: claimMerge get error")},
 		{csjwt.NewToken(jwtclaim.Map{"k1": "v1"}), jwtclaim.Map{"k2": 2}, `eyJ0eXAiOiJKV1QifQo.eyJrMSI6InYxIiwiazIiOjJ9Cg`, nil},
-		{csjwt.NewToken(jwtclaim.NewStore()), jwtclaim.Map{"k2": 2}, ``, errors.New(`[csjwt] Cannot set Key "k2" with value 2. Error: [jwtclaim] Claim "k2" not supported. Please see constants Claim*.`)},
+		{csjwt.NewToken(jwtclaim.NewStore()), jwtclaim.Map{"k2": 2}, ``, errors.New(`[csjwt] Cannot set Key "k2" with value 2. Error: [jwtclaim] Claim "k2" not supported.`)},
 		{csjwt.NewToken(&jwtclaim.Standard{}), &jwtclaim.Store{
 			Standard: &jwtclaim.Standard{},
 			UserID:   "Gopher",
-		}, ``, errors.New(`[csjwt] Cannot set Key "store" with value . Error: [jwtclaim] Claim "store" not supported. Please see constants Claim*.`)},
+		}, ``, errors.New(`[csjwt] Cannot set Key "store" with value . Error: [jwtclaim] Claim "store" not supported.`)},
 	}
 	for i, test := range tests {
 		haveErr := test.tk.Merge(test.toMerge)

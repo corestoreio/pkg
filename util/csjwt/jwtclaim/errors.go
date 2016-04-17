@@ -32,5 +32,5 @@ const (
 
 const (
 	errHeaderKeyNotSupported = "[jwtclaim] Header %q not yet supported. Please see constants Header*."
-	errClaimKeyNotSupported  = "[jwtclaim] Claim %q not supported. Please see constants Claim*."
+	errClaimKeyNotSupported  = "[jwtclaim] Claim %q not supported."
 )
