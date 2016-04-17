@@ -61,5 +61,5 @@ func TestInternalOptionNoLeakage(t *testing.T) {
 		Key: csjwt.WithPasswordRandom(),
 	}
 	assert.Exactly(t, `{0 csjwt.Key{/*redacted*/} 0 <nil> <nil> false <nil> <nil> <nil>}`, fmt.Sprintf("%v", sc))
-	assert.Exactly(t, `ctxjwt.scopedConfig{scopeHash:0x0, Key:csjwt.Key{/*redacted*/}, expire:0, signingMethod:csjwt.Signer(nil), jwtVerify:(*csjwt.Verification)(nil), enableJTI:false, errorHandler:ctxhttp.Handler(nil), keyFunc:(csjwt.Keyfunc)(nil), newClaims:(func() csjwt.Claimer)(nil)}`, fmt.Sprintf("%#v", sc))
+	assert.Exactly(t, `ctxjwt.scopedConfig{scopeHash:0x0, Key:csjwt.Key{/*redacted*/}, expire:0, signingMethod:csjwt.Signer(nil), jwtVerify:(*csjwt.Verification)(nil), enableJTI:false, errorHandler:ctxhttp.Handler(nil), keyFunc:(csjwt.Keyfunc)(nil), templateTokenFunc:(func() csjwt.Token)(nil)}`, fmt.Sprintf("%#v", sc))
 }

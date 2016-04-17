@@ -124,11 +124,11 @@ func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
 		"zfoo": 4711,
 	})
 	assert.NoError(t, err)
-	assert.NotEmpty(t, theToken)
+	assert.NotEmpty(t, theToken.Raw)
 
 	req, err := http.NewRequest("GET", "http://corestore.io/customer/account", nil)
 	assert.NoError(t, err)
-	ctxjwt.SetHeaderAuthorization(req, theToken)
+	ctxjwt.SetHeaderAuthorization(req, theToken.Raw)
 
 	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusTeapot)
@@ -169,13 +169,13 @@ func TestMiddlewareWithInitTokenInBlackList(t *testing.T) {
 	assert.NoError(t, err)
 
 	theToken, err := jm.NewToken(scope.Default, 0, &jwtclaim.Standard{})
-	bl.theToken = theToken
+	bl.theToken = theToken.Raw
 	assert.NoError(t, err)
-	assert.NotEmpty(t, theToken)
+	assert.NotEmpty(t, theToken.Raw)
 
 	req, err := http.NewRequest("GET", "http://auth.xyz", nil)
 	assert.NoError(t, err)
-	ctxjwt.SetHeaderAuthorization(req, theToken)
+	ctxjwt.SetHeaderAuthorization(req, theToken.Raw)
 
 	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 		w.WriteHeader(http.StatusTeapot)
@@ -209,7 +209,7 @@ func testAuth(t *testing.T, opts ...ctxjwt.Option) (ctxhttp.Handler, []byte) {
 		return nil
 	})
 	authHandler := jm.WithInitTokenAndStore()(final)
-	return authHandler, theToken
+	return authHandler, theToken.Raw
 }
 
 func newStoreServiceWithCtx(initO scope.Option) context.Context {
@@ -289,7 +289,7 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 		}
 		mw := jwts.WithInitTokenAndStore()(finalInitStoreHandler(t, test.wantStoreCode))
 		rec := httptest.NewRecorder()
-		if err := mw.ServeHTTPContext(test.ctx, rec, newReq(i, token)); err != nil {
+		if err := mw.ServeHTTPContext(test.ctx, rec, newReq(i, token.Raw)); err != nil {
 			t.Fatal(err)
 		}
 	}

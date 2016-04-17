@@ -99,7 +99,7 @@ func benchBlackList(b *testing.B, bl ctxjwt.Blacklister) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		tokens[i] = []byte(tk)
+		tokens[i] = tk.Raw
 	}
 
 	b.ReportAllocs()

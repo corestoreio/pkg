@@ -58,7 +58,7 @@ func bmServeHTTP(b *testing.B, opts ...ctxjwt.Option) {
 	if err != nil {
 		b.Error(err)
 	}
-	ctxjwt.SetHeaderAuthorization(req, token)
+	ctxjwt.SetHeaderAuthorization(req, token.Raw)
 	w := httptest.NewRecorder()
 
 	cr := cfgmock.NewService()
@@ -166,7 +166,7 @@ func benchmarkServeHTTPDefaultConfigBlackListSetup(b *testing.B) (ctxhttp.Handle
 	jwtHandler := jwts.WithInitTokenAndStore()(final)
 	b.ReportAllocs()
 	b.ResetTimer()
-	return jwtHandler, ctx, token
+	return jwtHandler, ctx, token.Raw
 }
 
 func getRequestWithToken(b *testing.B, token []byte) *http.Request {
@@ -225,7 +225,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		return token
+		return token.Raw
 	}
 
 	// generate 9k tokens randomly distributed over those three scopes.

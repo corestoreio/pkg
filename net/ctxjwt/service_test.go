@@ -21,6 +21,8 @@ import (
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/conv"
+	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
@@ -62,9 +64,9 @@ func TestServiceNewDefault(t *testing.T) {
 	theToken, err := jwts.NewToken(scope.Default, 0, testClaims)
 	assert.NoError(t, err)
 	assert.Empty(t, testClaims.ID)
-	assert.NotEmpty(t, theToken)
+	assert.NotEmpty(t, theToken.Raw)
 
-	haveToken, err := jwts.Parse(theToken)
+	haveToken, err := jwts.Parse(theToken.Raw)
 	assert.NoError(t, err)
 	assert.True(t, haveToken.Valid)
 
@@ -74,7 +76,7 @@ func TestServiceNewDefault(t *testing.T) {
 	}
 	assert.Equal(t, "gopher", mascot.(string))
 
-	failedToken, err := jwts.Parse(append(text.Chars(theToken).Clone(), []byte("c")...))
+	failedToken, err := jwts.Parse(append(text.Chars(theToken.Raw).Clone(), []byte("c")...))
 	assert.Error(t, err)
 	assert.False(t, failedToken.Valid)
 }
@@ -129,14 +131,14 @@ func TestServiceLogout(t *testing.T) {
 	theToken, err := jwts.NewToken(scope.Default, 0, jwtclaim.NewStore())
 	assert.NoError(t, err)
 
-	tk, err := jwts.Parse(theToken)
+	tk, err := jwts.Parse(theToken.Raw)
 	assert.NoError(t, err)
 	assert.NotNil(t, tk)
 
 	assert.Nil(t, jwts.Logout(csjwt.Token{}))
 	assert.Nil(t, jwts.Logout(tk))
 	assert.Equal(t, int(time.Hour.Seconds()), 1+int(tbl.exp.Seconds()))
-	assert.Equal(t, theToken.String(), string(tbl.theToken))
+	assert.Equal(t, string(theToken.Raw), string(tbl.theToken))
 }
 
 func TestServiceIncorrectConfigurationScope(t *testing.T) {
@@ -145,4 +147,92 @@ func TestServiceIncorrectConfigurationScope(t *testing.T) {
 	jwts, err := ctxjwt.NewService(ctxjwt.WithKey(scope.Store, 33, csjwt.WithPasswordRandom()))
 	assert.Nil(t, jwts)
 	assert.EqualError(t, err, `[ctxjwt] Service does not support this: Scope(Store) ID(33). Only default or website are allowed.`)
+}
+
+func TestService_NewToken_Merge_Maps(t *testing.T) {
+	t.Parallel()
+	jwts, err := ctxjwt.NewService(
+		ctxjwt.WithKey(scope.Website, 3, csjwt.WithPasswordRandom()),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// NewToken has an underlying map as a claimer
+	theToken, err := jwts.NewToken(scope.Website, 3, jwtclaim.Map{
+		"xk1": 2.718281,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.NotEmpty(t, theToken.Raw)
+	id, err := theToken.Claims.Get("xk1")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, 2.718281, id)
+}
+
+func TestService_NewToken_Merge_Structs(t *testing.T) {
+	t.Parallel()
+	jwts, err := ctxjwt.NewService(
+		ctxjwt.WithKey(scope.Website, 4, csjwt.WithPasswordRandom()),
+		ctxjwt.WithTemplateToken(scope.Website, 4, func() csjwt.Token {
+			s := jwtclaim.NewStore()
+			s.Store = "de"
+			return csjwt.NewToken(s)
+		}),
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// NewToken has an underlying jwtclaim.NewStore as a claimer
+	theToken, err := jwts.NewToken(scope.Website, 4, jwtclaim.Map{
+		jwtclaim.KeyUserID: "0815",
+	})
+	if err != nil {
+		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+	}
+	assert.NotEmpty(t, theToken.Raw)
+
+	storeID, err := theToken.Claims.Get(jwtclaim.KeyStore)
+	if err != nil {
+		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+	}
+	assert.Exactly(t, "de", storeID)
+
+	userID, err := theToken.Claims.Get(jwtclaim.KeyUserID)
+	if err != nil {
+		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+	}
+	assert.Exactly(t, "0815", userID)
+
+	expires, err := theToken.Claims.Get(jwtclaim.KeyExpiresAt)
+	if err != nil {
+		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+	}
+	assert.True(t, conv.ToInt64(expires) > time.Now().Unix())
+}
+
+func TestService_NewToken_Merge_Fail(t *testing.T) {
+	t.Parallel()
+	jwts, err := ctxjwt.NewService(
+		ctxjwt.WithKey(scope.Website, 4, csjwt.WithPasswordRandom()),
+		ctxjwt.WithTemplateToken(scope.Website, 4, func() csjwt.Token {
+			return csjwt.NewToken(&jwtclaim.Standard{})
+		}),
+	)
+	if err != nil {
+		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+	}
+
+	// NewToken has an underlying jwtclaim.NewStore as a claimer
+	theToken, err := jwts.NewToken(scope.Website, 4, jwtclaim.Map{
+		jwtclaim.KeyUserID: "0815",
+	})
+
+	assert.EqualError(t, err, `[csjwt] Cannot set Key "userid" with value 0815. Error: [jwtclaim] Claim "userid" not supported.`)
+	assert.Empty(t, theToken.Raw)
+
 }

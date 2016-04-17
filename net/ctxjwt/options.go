@@ -51,9 +51,10 @@ type scopedConfig struct {
 	errorHandler ctxhttp.Handler
 	// keyFunc will receive the parsed token and should return the key for validating.
 	keyFunc csjwt.Keyfunc
-	// newClaims function to a create a new empty claim when parsing a token in a request.
-	// Default value nil. Returned Claimer must be a pointer.
-	newClaims func() csjwt.Claimer
+	// templateTokenFunc function to a create a new template token when parsing
+	// a byte token slice into the template token.
+	// Default value nil.
+	templateTokenFunc func() csjwt.Token
 }
 
 // isValid a configuration for a scope is only then valid when the Key has been
@@ -61,29 +62,23 @@ type scopedConfig struct {
 func (sc *scopedConfig) isValid() bool {
 	return !sc.Key.IsEmpty() && sc.signingMethod != nil && sc.jwtVerify != nil
 }
-
-func (sc scopedConfig) parseFromRequest(r *http.Request) (csjwt.Token, error) {
-	var claim csjwt.Claimer
-	if sc.newClaims != nil {
-		claim = sc.newClaims()
-	} else {
-		claim = &jwtclaim.Map{}
+func (sc scopedConfig) getTemplateToken() csjwt.Token {
+	if sc.templateTokenFunc != nil {
+		return sc.templateTokenFunc()
 	}
-	return sc.jwtVerify.ParseFromRequest(r, sc.keyFunc, claim)
+	return csjwt.NewToken(&jwtclaim.Map{}) // default claim is a map[string]interface{}
 }
 
-func (sc scopedConfig) parseWithClaim(rawToken []byte) (csjwt.Token, error) {
-	var claim csjwt.Claimer
-	if sc.newClaims != nil {
-		claim = sc.newClaims()
-	} else {
-		claim = &jwtclaim.Map{}
-	}
-	return sc.jwtVerify.ParseWithClaim(rawToken, sc.keyFunc, claim)
+func (sc scopedConfig) parseFromRequest(r *http.Request) (csjwt.Token, error) {
+	return sc.jwtVerify.ParseFromRequest(sc.getTemplateToken(), sc.keyFunc, r)
+}
+
+func (sc scopedConfig) parse(rawToken []byte) (csjwt.Token, error) {
+	return sc.jwtVerify.Parse(sc.getTemplateToken(), rawToken, sc.keyFunc)
 }
 
 // getKeyFunc generates a closure for a specific scope to compare if the
-// algortihm in the token matches with the current algorithm.
+// algorithm in the token matches with the current algorithm.
 func (sc *scopedConfig) initKeyFunc() {
 	sc.keyFunc = func(t csjwt.Token) (csjwt.Key, error) {
 
@@ -164,27 +159,28 @@ func WithBackend(pb *PkgBackend) Option {
 	}
 }
 
-// WithNewClaims set a custom Claimer for each scope when parsing a token
-// in a request. Function f will generate a new Claim for each request.
-// This allows you to choose for using a map based claim or a struct based.
-// The returned Claimer interface by predicate f must be a pointer.
-func WithNewClaims(scp scope.Scope, id int64, f func() csjwt.Claimer) Option {
+// WithTemplateToken set a custom csjwt.Header and csjwt.Claimer for each scope
+// when parsing a token in a request. Function f will generate a new base token
+// for each request. This allows you to choose e.g. using a slow map based claim
+// or a fast struct based claim.
+func WithTemplateToken(scp scope.Scope, id int64, f func() csjwt.Token) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) {
 
 		if h == scope.DefaultHash {
-			s.defaultScopeCache.newClaims = f
+			s.defaultScopeCache.templateTokenFunc = f
 			return
 		}
 
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
-		scNew := scopedConfig{
-			newClaims: f,
-		}
+		// inherit default config
+		scNew := s.defaultScopeCache
+		scNew.templateTokenFunc = f
+
 		if sc, ok := s.scopeCache[h]; ok {
-			sc.newClaims = scNew.newClaims
+			sc.templateTokenFunc = scNew.templateTokenFunc
 			scNew = sc
 		}
 		scNew.scopeHash = h
@@ -207,15 +203,18 @@ func WithSigningMethod(scp scope.Scope, id int64, sm csjwt.Signer) Option {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
-		scNew := scopedConfig{
-			signingMethod: sm,
-			jwtVerify:     csjwt.NewVerification(sm),
-		}
+		// inherit default config
+		scNew := s.defaultScopeCache
+
+		scNew.signingMethod = sm
+		scNew.jwtVerify = csjwt.NewVerification(sm)
+
 		if sc, ok := s.scopeCache[h]; ok {
 			sc.signingMethod = scNew.signingMethod
 			sc.jwtVerify = scNew.jwtVerify
 			scNew = sc
 		}
+
 		scNew.scopeHash = h
 		s.scopeCache[h] = scNew
 	}
@@ -236,9 +235,10 @@ func WithErrorHandler(scp scope.Scope, id int64, handler ctxhttp.Handler) Option
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
-		scNew := scopedConfig{
-			errorHandler: handler,
-		}
+		// inherit default config
+		scNew := s.defaultScopeCache
+		scNew.errorHandler = handler
+
 		if sc, ok := s.scopeCache[h]; ok {
 			sc.errorHandler = scNew.errorHandler
 			scNew = sc
@@ -261,9 +261,9 @@ func WithExpiration(scp scope.Scope, id int64, d time.Duration) Option {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
-		scNew := scopedConfig{
-			expire: d,
-		}
+		// inherit default config
+		scNew := s.defaultScopeCache
+		scNew.expire = d
 
 		if sc, ok := s.scopeCache[h]; ok {
 			sc.expire = scNew.expire
@@ -287,9 +287,9 @@ func WithTokenID(scp scope.Scope, id int64, enable bool) Option {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
-		scNew := scopedConfig{
-			enableJTI: enable,
-		}
+		// inherit default config
+		scNew := s.defaultScopeCache
+		scNew.enableJTI = enable
 
 		if sc, ok := s.scopeCache[h]; ok {
 			sc.enableJTI = scNew.enableJTI
@@ -320,9 +320,9 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 		s.mu.Lock()
 		defer s.mu.Unlock()
 
-		scNew := scopedConfig{
-			Key: key,
-		}
+		// inherit default config
+		scNew := s.defaultScopeCache
+		scNew.Key = key
 
 		// if you are not satisfied with the bit size of 256 you can change it
 		// by using WithSigningMethod
@@ -343,22 +343,26 @@ func WithKey(scp scope.Scope, id int64, key csjwt.Key) Option {
 			return
 		}
 
+		scNew.jwtVerify = csjwt.NewVerification(scNew.signingMethod)
+		scNew.initKeyFunc()
+
 		if h == scope.DefaultHash {
 			s.defaultScopeCache.Key = scNew.Key
 			s.defaultScopeCache.signingMethod = scNew.signingMethod
-			s.defaultScopeCache.jwtVerify = csjwt.NewVerification(scNew.signingMethod)
-			s.defaultScopeCache.initKeyFunc()
+			s.defaultScopeCache.jwtVerify = scNew.jwtVerify
+			s.defaultScopeCache.keyFunc = scNew.keyFunc
 			return
 		}
 
 		if sc, ok := s.scopeCache[h]; ok {
 			sc.Key = scNew.Key
 			sc.signingMethod = scNew.signingMethod
-			sc.jwtVerify = csjwt.NewVerification(scNew.signingMethod)
+			sc.jwtVerify = scNew.jwtVerify
+			sc.keyFunc = scNew.keyFunc
 			scNew = sc
 		}
+
 		scNew.scopeHash = h
-		scNew.initKeyFunc()
 		s.scopeCache[h] = scNew
 	}
 }

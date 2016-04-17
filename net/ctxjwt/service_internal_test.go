@@ -118,8 +118,8 @@ func TestServiceWithBackend_HMACSHA_Website(t *testing.T) {
 	assert.Exactly(t, "5m1s", scNew.expire.String())
 	assert.Exactly(t, "HS512", scNew.signingMethod.Alg())
 	assert.False(t, scNew.Key.IsEmpty())
-	assert.Nil(t, scNew.errorHandler)
 	assert.NotNil(t, jwts.defaultScopeCache.errorHandler)
+	cstesting.EqualPointers(t, jwts.defaultScopeCache.errorHandler, scNew.errorHandler)
 
 	// test if cache returns the same scopedConfig
 	scCached, err := jwts.getConfigByScopedGetter(sg)

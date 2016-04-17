@@ -23,23 +23,70 @@ import (
 
 	"github.com/corestoreio/csfw/net/ctxjwt"
 	"github.com/corestoreio/csfw/store/scope"
+	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestOptionPartialConfigError(t *testing.T) {
+func TestOptionWithTemplateToken(t *testing.T) {
 	t.Parallel()
-	jwts, err := ctxjwt.NewService(ctxjwt.WithTokenID(scope.Website, 3, true))
+	jwts, err := ctxjwt.NewService(
+		// ctxjwt.WithKey(scope.Website, 3, csjwt.WithPasswordRandom()),
+		ctxjwt.WithTemplateToken(scope.Website, 3, func() csjwt.Token {
+			sClaim := jwtclaim.NewStore()
+			sClaim.Store = "potato"
+
+			h := jwtclaim.NewHeadSegments()
+			h.JKU = "https://corestore.io/public.key"
+
+			return csjwt.Token{
+				Header: h, // header h has 6 struct fields
+				Claims: sClaim,
+			}
+		}),
+	)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	cl := jwtclaim.Map{}
-	theToken, err := jwts.NewToken(scope.Website, 3, cl)
-	assert.EqualError(t, err, "[ctxjwt] Incomplete configuration for Scope(Website) ID(3). Missing Signing Method and its Key.")
-	assert.Empty(t, theToken)
+	tkDefault, err := jwts.NewToken(scope.Default, 0, jwtclaim.Map{
+		"lang": "ch_DE",
+	})
+	if err != nil {
+		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+	}
+
+	tkWebsite, err := jwts.NewToken(scope.Website, 3, &jwtclaim.Standard{
+		Audience: "Gophers",
+	})
+	if err != nil {
+		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
+	}
+
+	tkDefaultParsed, err := jwts.ParseScoped(scope.Default, 0, tkDefault.Raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// t.Logf("tkMissing: %#v\n", tkDefaultParsed)
+	lng, err := tkDefaultParsed.Claims.Get("lang")
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, "ch_DE", conv.ToString(lng))
+
+	tkWebsiteParsed, err := jwts.ParseScoped(scope.Website, 3, tkWebsite.Raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// t.Logf("tkFull: %#v\n", tkWebsiteParsed)
+	claimStore, err := tkWebsiteParsed.Claims.Get(jwtclaim.KeyStore)
+	if err != nil {
+		t.Fatal(err)
+	}
+	assert.Exactly(t, "potato", conv.ToString(claimStore))
+
 }
 
 func TestOptionWithTokenID(t *testing.T) {
@@ -52,13 +99,13 @@ func TestOptionWithTokenID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cl := jwtclaim.Map{}
-	theToken, err := jwts.NewToken(scope.Website, 22, cl) // must be a pointer the cl or Get() returns nil
+	theToken, err := jwts.NewToken(scope.Website, 22)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEmpty(t, theToken)
-	id, err := cl.Get(jwtclaim.KeyID)
+	assert.NotEmpty(t, theToken.Raw)
+
+	id, err := theToken.Claims.Get(jwtclaim.KeyID)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,25 +122,23 @@ func TestOptionScopedDefaultExpire(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	cl := jwtclaim.Map{}
-
 	now := time.Now()
-	theToken, err := jwts.NewToken(scope.Website, 33, cl) // must be a pointer the cl or Get() returns nil
+	theToken, err := jwts.NewToken(scope.Website, 33) // must be a pointer the cl or Get() returns nil
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.NotEmpty(t, theToken)
-	exp, err := cl.Get(jwtclaim.KeyExpiresAt)
+	assert.NotEmpty(t, theToken.Raw)
+	exp, err := theToken.Claims.Get(jwtclaim.KeyExpiresAt)
 	if err != nil {
 		t.Fatal(err)
 	}
-	iat, err := cl.Get(jwtclaim.KeyIssuedAt)
+	iat, err := theToken.Claims.Get(jwtclaim.KeyIssuedAt)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	assert.Exactly(t, now.Unix(), iat.(int64))
-	assert.Exactly(t, int(ctxjwt.DefaultExpire.Seconds()), int(time.Unix(exp.(int64), 0).Sub(now).Seconds()+1))
+	assert.Exactly(t, now.Unix(), conv.ToInt64(iat))
+	assert.Exactly(t, int(ctxjwt.DefaultExpire.Seconds()), int(time.Unix(conv.ToInt64(exp), 0).Sub(now).Seconds()+1))
 }
 
 func TestOptionWithRSAReaderFail(t *testing.T) {
@@ -133,9 +178,9 @@ func testRsaOption(t *testing.T, opt ctxjwt.Option) {
 	if err != nil {
 		t.Fatal(cserr.NewMultiErr(err).VerboseErrors())
 	}
-	assert.NotEmpty(t, theToken)
+	assert.NotEmpty(t, theToken.Raw)
 
-	tk, err := jwts.Parse(theToken)
+	tk, err := jwts.Parse(theToken.Raw)
 	if err != nil {
 		t.Fatal(err)
 	}

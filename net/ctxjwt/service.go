@@ -18,7 +18,6 @@ import (
 	"sync"
 
 	"github.com/corestoreio/csfw/config"
-	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
@@ -110,52 +109,44 @@ func (s *Service) Options(opts ...Option) error {
 	return nil
 }
 
-// ClaimStore creates a new struct with preset ExpiresAt, IssuedAt and ID.
-func (s *Service) ClaimStore(scp scope.Scope, id int64) (*jwtclaim.Store, error) {
+// NewToken creates a new signed JSON web token based on the predefined scoped
+// based template token function (WithTemplateToken) and merges the optional
+// 3rd argument into the template token claim. Only one claim argument is supported.
+// The returned token is owned by the caller. The tokens Raw field contains the
+// freshly signed byte slice. ExpiresAt, IssuedAt and ID are already set and cannot
+// be overwritten, but you can access them. It panics if the provided template
+// token has a nil Header or Claimer field.
+func (s *Service) NewToken(scp scope.Scope, id int64, claim ...csjwt.Claimer) (csjwt.Token, error) {
+	now := csjwt.TimeFunc()
+	var empty csjwt.Token
 	cfg, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
-		return nil, err
+		return empty, errors.Mask(err)
 	}
 
-	now := csjwt.TimeFunc()
-	c := jwtclaim.NewStore()
-	c.ExpiresAt = now.Add(cfg.expire).Unix()
-	c.IssuedAt = now.Unix()
+	var tk = cfg.getTemplateToken()
 
-	if cfg.enableJTI && s.JTI != nil {
-		c.ID = s.JTI.Get()
-	}
-
-	return c, nil
-}
-
-// NewToken creates a new JSON web token based on the Claimer interface and
-// depending on the scope and the scoped based configuration. The returned token slice
-// is owned by the caller. ExpiresAt, IssuedAt and ID are already set and cannot
-// be overwritten.
-func (s *Service) NewToken(scp scope.Scope, id int64, claims csjwt.Claimer) (token text.Chars, err error) {
-
-	cfg, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
-	if err != nil {
-		return nil, errors.Mask(err)
-	}
-
-	now := csjwt.TimeFunc()
-
-	if err := claims.Set(jwtclaim.KeyExpiresAt, now.Add(cfg.expire).Unix()); err != nil {
-		return nil, errors.Mask(err)
-	}
-	if err := claims.Set(jwtclaim.KeyIssuedAt, now.Unix()); err != nil {
-		return nil, errors.Mask(err)
-	}
-
-	if cfg.enableJTI && s.JTI != nil {
-		if err := claims.Set(jwtclaim.KeyID, s.JTI.Get()); err != nil {
-			return nil, errors.Mask(err)
+	if len(claim) > 0 && claim[0] != nil {
+		if err := tk.Merge(claim[0]); err != nil {
+			return empty, errors.Mask(err)
 		}
 	}
 
-	return csjwt.NewToken(claims).SignedString(cfg.signingMethod, cfg.Key)
+	if err := tk.Claims.Set(jwtclaim.KeyExpiresAt, now.Add(cfg.expire).Unix()); err != nil {
+		return empty, errors.Mask(err)
+	}
+	if err := tk.Claims.Set(jwtclaim.KeyIssuedAt, now.Unix()); err != nil {
+		return empty, errors.Mask(err)
+	}
+
+	if cfg.enableJTI && s.JTI != nil {
+		if err := tk.Claims.Set(jwtclaim.KeyID, s.JTI.Get()); err != nil {
+			return empty, errors.Mask(err)
+		}
+	}
+
+	tk.Raw, err = tk.SignedString(cfg.signingMethod, cfg.Key)
+	return tk, errors.Mask(err)
 }
 
 // Logout adds a token securely to a blacklist with the expiration duration.
@@ -180,10 +171,10 @@ func (s *Service) ParseScoped(scp scope.Scope, id int64, rawToken []byte) (csjwt
 	var emptyTok csjwt.Token
 	sc, err := s.getConfigByScopeID(true, scope.NewHash(scp, id))
 	if err != nil {
-		return emptyTok, err
+		return emptyTok, errors.Mask(err)
 	}
 
-	token, err := sc.parseWithClaim(rawToken)
+	token, err := sc.parse(rawToken)
 	if err != nil {
 		return emptyTok, errors.Mask(err)
 	}
@@ -224,7 +215,7 @@ func (s *Service) getConfigByScopedGetter(sg config.ScopedGetter) (scopedConfig,
 
 	if s.Backend != nil {
 		if err := s.Options(optionsByBackend(s.Backend, sg)...); err != nil {
-			return scopedConfig{}, err
+			return scopedConfig{}, errors.Mask(err)
 		}
 	}
 
@@ -236,7 +227,6 @@ func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConf
 	var empty scopedConfig
 	// requested scope plus ID
 	scpCfg, ok := s.getScopedConfig(hash)
-
 	if ok {
 		if scpCfg.isValid() {
 			return scpCfg, nil
@@ -251,7 +241,7 @@ func (s *Service) getConfigByScopeID(fallback bool, hash scope.Hash) (scopedConf
 		if !s.defaultScopeCache.isValid() {
 			err = errors.Errorf(errConfigNotFound, scope.DefaultHash)
 		}
-		return s.defaultScopeCache, err
+		return s.defaultScopeCache, errors.Mask(err)
 
 	}
 
