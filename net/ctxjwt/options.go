@@ -66,7 +66,8 @@ func (sc scopedConfig) getTemplateToken() csjwt.Token {
 	if sc.templateTokenFunc != nil {
 		return sc.templateTokenFunc()
 	}
-	return csjwt.NewToken(&jwtclaim.Map{}) // default claim is a map[string]interface{}
+	// must be a pointer because of the unmarshalling function
+	return csjwt.NewToken(&jwtclaim.Map{}) // default claim defines a map[string]interface{}
 }
 
 func (sc scopedConfig) parseFromRequest(r *http.Request) (csjwt.Token, error) {
@@ -161,8 +162,8 @@ func WithBackend(pb *PkgBackend) Option {
 
 // WithTemplateToken set a custom csjwt.Header and csjwt.Claimer for each scope
 // when parsing a token in a request. Function f will generate a new base token
-// for each request. This allows you to choose e.g. using a slow map based claim
-// or a fast struct based claim.
+// for each request. This allows you to choose using a slow map as a claim
+// or a fast struct based claim. Same goes with the header.
 func WithTemplateToken(scp scope.Scope, id int64, f func() csjwt.Token) Option {
 	h := scope.NewHash(scp, id)
 	return func(s *Service) {

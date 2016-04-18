@@ -196,6 +196,7 @@ func benchmarkServeHTTPDefaultConfigBlackListLoop(b *testing.B, h ctxhttp.Handle
 // BenchmarkServeHTTP_MultiToken_MultiScope-4	  200000	     11583 ns/op	    3648 B/op	      64 allocs/op => map blacklist
 // BenchmarkServeHTTP_MultiToken_MultiScope-4	  200000	      9800 ns/op	    3647 B/op	      64 allocs/op => freecache
 // BenchmarkServeHTTP_MultiToken_MultiScope-4	  200000	      9580 ns/op	    3657 B/op	      63 allocs/op
+// BenchmarkServeHTTP_MultiToken_MultiScope-4	  200000	      8366 ns/op	    3194 B/op	      43 allocs/op => no maps, freecache
 func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 
 	jwts := ctxjwt.MustNewService(
@@ -210,6 +211,12 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 		ctxjwt.WithExpiration(scope.Default, 0, time.Second*15),
 		ctxjwt.WithExpiration(scope.Website, 1, time.Second*25),
 		ctxjwt.WithKey(scope.Website, 1, csjwt.WithPasswordRandom()),
+		ctxjwt.WithTemplateToken(scope.Website, 1, func() csjwt.Token {
+			return csjwt.Token{
+				Header: csjwt.NewHead(),
+				Claims: jwtclaim.NewStore(),
+			}
+		}),
 	)
 
 	// below two lines comment out enables the null black list
@@ -244,7 +251,12 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 
 	cr := cfgmock.NewService()
 	srv := storemock.NewEurozzyService(
-		scope.MustSetByCode(scope.Store, "at"), // euro == website ID 1
+		// scope store, that means you can switch to any store independent from its
+		// website, no restricts apply. i need to refactor this behaviour to make
+		// the store init process different to allow multiple websites but with
+		// the same restrictions applied. maybe move the SetByCode to the client
+		// side ...
+		scope.MustSetByCode(scope.Store, "at"), // at default store for this context
 		store.WithStorageConfig(cr),
 	)
 	ctx := store.WithContextProvider(context.Background(), srv) // root context
