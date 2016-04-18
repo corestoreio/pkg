@@ -42,7 +42,7 @@ type scopedConfig struct {
 	signingMethod csjwt.Signer
 	// jwtVerify token parser and verifier bound to ONE signing method. Setting
 	// a new SigningMethod also overwrites the JWTVerify pointer.
-	// TODO: add Option for setting custom Unmarshaler and HTTP FORM input name
+	// TODO(newbies): For Verification add Options for setting custom Unmarshaler, HTTP FORM input name and cookie name.
 	jwtVerify *csjwt.Verification
 	// enableJTI activates the (JWT ID) Claim, a unique identifier. UUID.
 	enableJTI bool
