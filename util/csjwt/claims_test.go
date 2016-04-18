@@ -15,10 +15,10 @@
 package csjwt
 
 import (
+	"fmt"
 	"testing"
 
-	"fmt"
-
+	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -48,13 +48,13 @@ func TestHeadSetGet(t *testing.T) {
 	var h Header
 	h = NewHead("X")
 
-	assert.NoError(t, h.Set("alg", "Y"))
-	g, err := h.Get("alg")
+	assert.NoError(t, h.Set(jwtclaim.HeaderAlg, "Y"))
+	g, err := h.Get(jwtclaim.HeaderAlg)
 	assert.NoError(t, err)
 	assert.Exactly(t, "Y", g)
 
-	assert.NoError(t, h.Set("typ", "JWE"))
-	g, err = h.Get("typ")
+	assert.NoError(t, h.Set(jwtclaim.HeaderTyp, "JWE"))
+	g, err = h.Get(jwtclaim.HeaderTyp)
 	assert.NoError(t, err)
 	assert.Exactly(t, "JWE", g)
 

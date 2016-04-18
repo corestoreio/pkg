@@ -15,9 +15,10 @@
 package jwtclaim
 
 import (
+	"testing"
+
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestKeys(t *testing.T) {

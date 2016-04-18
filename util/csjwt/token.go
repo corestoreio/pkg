@@ -48,7 +48,7 @@ func (t Token) Alg() string {
 	if t.Header == nil {
 		return ""
 	}
-	h, _ := t.Header.Get("alg")
+	h, _ := t.Header.Get(headerAlg)
 	return conv.ToString(h)
 }
 
@@ -58,7 +58,7 @@ func (t Token) Alg() string {
 // This functions allows to sign a token with different signing methods.
 func (t Token) SignedString(method Signer, key Key) (text.Chars, error) {
 
-	if err := t.Header.Set("alg", method.Alg()); err != nil {
+	if err := t.Header.Set(headerAlg, method.Alg()); err != nil {
 		return nil, errors.Mask(err)
 	}
 

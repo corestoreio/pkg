@@ -16,6 +16,7 @@ package jwtclaim
 
 import (
 	"encoding/json"
+
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/juju/errors"
 )

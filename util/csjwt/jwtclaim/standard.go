@@ -1,9 +1,9 @@
 package jwtclaim
 
 import (
+	"encoding/json"
 	"time"
 
-	"encoding/json"
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/juju/errors"

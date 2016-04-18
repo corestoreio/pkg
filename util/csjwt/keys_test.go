@@ -14,6 +14,43 @@ import (
 var _ fmt.GoStringer = (*Key)(nil)
 var _ fmt.Stringer = (*Key)(nil)
 
+func TestNewKeyFunc(t *testing.T) {
+	tests := []struct {
+		s       Signer
+		key     Key
+		token   Token
+		wantKey Key
+		wantErr error
+	}{
+		{nil, Key{Error: errors.New("idx1")}, Token{}, Key{}, errors.New("idx1")},
+		{
+			&SigningMethodHMAC{Name: "Rost"},
+			WithPasswordRandom(),
+			NewToken(nil),
+			Key{},
+			ErrTokenUnverifiable,
+		},
+		{
+			NewSigningMethodHS256(),
+			WithPassword([]byte(`123456`)),
+			Token{
+				Header: &Head{Algorithm: HS256},
+			},
+			WithPassword([]byte(`123456`)),
+			nil,
+		},
+	}
+	for i, test := range tests {
+		haveKey, haveErr := NewKeyFunc(test.s, test.key)(test.token)
+		assert.Exactly(t, test.wantKey, haveKey, "Index %d", i)
+		if test.wantErr != nil {
+			assert.EqualError(t, haveErr, test.wantErr.Error(), "Index %d", i)
+			continue
+		}
+		assert.NoError(t, haveErr, "Index %d", i)
+	}
+}
+
 func TestKeyParsing(t *testing.T) {
 
 	badKey := []byte("This is a bad key")

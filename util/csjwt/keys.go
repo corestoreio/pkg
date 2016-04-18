@@ -43,6 +43,25 @@ type Key struct {
 	Error        error
 }
 
+// NewKeyFunc creates a new function for token validation and specific key
+// returning. This function checks only if the token algorithm matches the
+// algorithm of the Signer.
+// csjwt.NewVerification() allows you to add also Signers as arguments to
+// check for the correct signatures, but this function is more specific and
+// returns the correct key to check the signature.
+func NewKeyFunc(s Signer, key Key) Keyfunc {
+	return func(t Token) (Key, error) {
+
+		if key.Error != nil {
+			return Key{}, errors.Mask(key.Error)
+		}
+		if a := s.Alg(); a != "" && a == t.Header.Alg() {
+			return key, nil
+		}
+		return Key{}, errors.Mask(ErrTokenUnverifiable)
+	}
+}
+
 const goStringTpl = `csjwt.Key{/*redacted*/}`
 
 // GoString protects keys and enforces privacy.

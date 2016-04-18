@@ -41,6 +41,11 @@ type Claimer interface {
 // (CS) I personally don't like the Set() and Get() functions but there is no
 // other way around it.
 
+const (
+	headerAlg = "alg"
+	headerTyp = "typ"
+)
+
 // Header defines the contract for a type to act like a header. It must be able
 // to marshal and unmarshal itself.
 // The members of the JSON object represented by the Decoded JWT Header Segment
@@ -115,9 +120,9 @@ const errHeaderKeyNotSupported = "[csjwt] Header %q not yet supported. Please sw
 // Set sets a value. Key must be one of the constants Header*.
 func (s *Head) Set(key, value string) (err error) {
 	switch key {
-	case "alg":
+	case headerAlg:
 		s.Algorithm = value
-	case "typ":
+	case headerTyp:
 		s.Type = value
 	default:
 		return errors.Errorf(errHeaderKeyNotSupported, key)
@@ -128,9 +133,9 @@ func (s *Head) Set(key, value string) (err error) {
 // Get returns a value or nil or an error. Key must be one of the constants Header*.
 func (s *Head) Get(key string) (value string, err error) {
 	switch key {
-	case "alg":
+	case headerAlg:
 		return s.Algorithm, nil
-	case "typ":
+	case headerTyp:
 		return s.Type, nil
 	}
 	return "", errors.Errorf(errHeaderKeyNotSupported, key)

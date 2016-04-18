@@ -2,10 +2,11 @@ package jwtclaim
 
 import (
 	"encoding/json"
+	"time"
+
 	"github.com/corestoreio/csfw/util/conv"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/juju/errors"
-	"time"
 )
 
 // Map default type for the Claim field in a token. Slowest but

@@ -18,8 +18,11 @@ const HTTPFormInputName = `access_token`
 // Verification allows to parse and verify a token with custom options.
 type Verification struct {
 	// FormInputName defines the name of the HTML form input type in which
-	// the token has been stored.
+	// the token has been stored. If empty, the form the gets ignored.
 	FormInputName string
+	// CookieName defines the name of the cookie where the token has been
+	// stored. If empty, cookie parsing gets ignored.
+	CookieName string
 	// Methods for verifying and signing a token
 	Methods SignerSlice
 
@@ -36,9 +39,8 @@ func NewVerification(availableSigners ...Signer) *Verification {
 		availableSigners = SignerSlice{NewSigningMethodHS256()}
 	}
 	return &Verification{
-		FormInputName: HTTPFormInputName,
-		Methods:       availableSigners,
-		Decoder:       JSONDecode{},
+		Methods: availableSigners,
+		Decoder: JSONDecode{},
 	}
 }
 
@@ -140,13 +142,38 @@ func (vf *Verification) ParseFromRequest(template Token, keyFunc Keyfunc, req *h
 		}
 	}
 
-	// Look for "access_token" parameter
+	if vf.CookieName != "" {
+		tk, err := vf.parseCookie(template, keyFunc, req)
+		if err != nil && err != http.ErrNoCookie {
+			return Token{}, errors.Mask(err)
+		}
+		if tk.Valid {
+			return tk, nil
+		}
+		// try next, the form
+	}
+
+	if vf.FormInputName != "" {
+		return vf.parseForm(template, keyFunc, req)
+	}
+
+	return Token{}, errors.Mask(ErrTokenNotInRequest)
+}
+
+func (vf *Verification) parseCookie(template Token, keyFunc Keyfunc, req *http.Request) (Token, error) {
+	keks, err := req.Cookie(vf.CookieName)
+	if keks != nil && keks.Value != "" {
+		return vf.Parse(template, []byte(keks.Value), keyFunc)
+	}
+	return Token{}, err
+}
+
+func (vf *Verification) parseForm(template Token, keyFunc Keyfunc, req *http.Request) (Token, error) {
 	_ = req.ParseMultipartForm(10e6) // ignore errors
 	if tokStr := req.Form.Get(vf.FormInputName); tokStr != "" {
 		return vf.Parse(template, []byte(tokStr), keyFunc)
 	}
-
-	return Token{}, ErrTokenNotInRequest
+	return Token{}, errors.Mask(ErrTokenNotInRequest)
 }
 
 // SplitForVerify splits the token into two parts: the payload and the signature.

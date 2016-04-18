@@ -18,10 +18,11 @@ import (
 	"testing"
 
 	"errors"
+	"time"
+
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
-	"time"
 )
 
 func TestTokenAlg(t *testing.T) {
