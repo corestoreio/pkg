@@ -28,15 +28,15 @@ type PkgBackend struct {
 
 	// NetCtxjwtHmacPassword handles the password. Will panic if you
 	// do not set the cfgmodel.Encryptor
-	// Path: net/ctxjwt/signing_method @todo
+	// Path: net/ctxjwt/signing_method
 	NetCtxjwtSigningMethod ConfigSigningMethod
 
 	// NetCtxjwtExpiration defines the duration in which a token expires.
-	// Path: net/ctxjwt/expiration @todo
+	// Path: net/ctxjwt/expiration
 	NetCtxjwtExpiration cfgmodel.Duration
 
 	// NetCtxjwtEnableJTI if enabled a new token ID will be generated.
-	// Path: net/ctxjwt/enable_jti @todo
+	// Path: net/ctxjwt/enable_jti
 	NetCtxjwtEnableJTI cfgmodel.Bool
 
 	// NetCtxjwtHmacPassword handles the password. Will panic if you
@@ -46,22 +46,22 @@ type PkgBackend struct {
 
 	// NetCtxjwtRSAKey handles the RSA private key. Will panic if you
 	// do not set the cfgmodel.Encryptor
-	// Path: net/ctxjwt/rsa_key @todo implement
+	// Path: net/ctxjwt/rsa_key
 	NetCtxjwtRSAKey cfgmodel.Obscure
 
 	// NetCtxjwtRSAKeyPassword handles the password for the RSA private key.
 	// Will panic if you do not set the cfgmodel.Encryptor
-	// Path: net/ctxjwt/rsa_key_password @todo implement
+	// Path: net/ctxjwt/rsa_key_password
 	NetCtxjwtRSAKeyPassword cfgmodel.Obscure
 
 	// NetCtxjwtECDSAKey handles the ECDSA private key. Will panic if you
 	// do not set the cfgmodel.Encryptor
-	// Path: net/ctxjwt/ecdsa_key @todo implement
+	// Path: net/ctxjwt/ecdsa_key
 	NetCtxjwtECDSAKey cfgmodel.Obscure
 
 	// NetCtxjwtECDSAKeyPassword handles the password for the ECDSA private key.
 	// Will panic if you do not set the cfgmodel.Encryptor
-	// Path: net/ctxjwt/ecdsa_key_password @todo implement
+	// Path: net/ctxjwt/ecdsa_key_password
 	NetCtxjwtECDSAKeyPassword cfgmodel.Obscure
 }
 

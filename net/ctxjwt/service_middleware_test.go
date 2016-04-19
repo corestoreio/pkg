@@ -15,12 +15,13 @@
 package ctxjwt_test
 
 import (
+	"bytes"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
-	"bytes"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
@@ -34,7 +35,6 @@ import (
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
-	"time"
 )
 
 func TestMiddlewareWithInitTokenNoStoreProvider(t *testing.T) {

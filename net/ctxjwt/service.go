@@ -21,7 +21,6 @@ import (
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
-	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/juju/errors"
 	"github.com/pborman/uuid"
 )
@@ -32,6 +31,12 @@ type jti struct{}
 func (j jti) Get() string {
 	return uuid.New()
 }
+
+const (
+	claimExpiresAt = "exp"
+	claimIssuedAt  = "iat"
+	claimKeyID     = "jti"
+)
 
 // Service main object for handling JWT authentication, generation, blacklists and log outs.
 type Service struct {
@@ -134,15 +139,15 @@ func (s *Service) NewToken(scp scope.Scope, id int64, claim ...csjwt.Claimer) (c
 		}
 	}
 
-	if err := tk.Claims.Set(jwtclaim.KeyExpiresAt, now.Add(cfg.expire).Unix()); err != nil {
+	if err := tk.Claims.Set(claimExpiresAt, now.Add(cfg.expire).Unix()); err != nil {
 		return empty, errors.Mask(err)
 	}
-	if err := tk.Claims.Set(jwtclaim.KeyIssuedAt, now.Unix()); err != nil {
+	if err := tk.Claims.Set(claimIssuedAt, now.Unix()); err != nil {
 		return empty, errors.Mask(err)
 	}
 
 	if cfg.enableJTI && s.JTI != nil {
-		if err := tk.Claims.Set(jwtclaim.KeyID, s.JTI.Get()); err != nil {
+		if err := tk.Claims.Set(claimKeyID, s.JTI.Get()); err != nil {
 			return empty, errors.Mask(err)
 		}
 	}

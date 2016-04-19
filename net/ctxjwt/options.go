@@ -54,6 +54,7 @@ type scopedConfig struct {
 	// templateTokenFunc function to a create a new template token when parsing
 	// a byte token slice into the template token.
 	// Default value nil.
+	// TODO(cs) maybe we can replace csjwt.Token with our own interface definition but seems complex.
 	templateTokenFunc func() csjwt.Token
 }
 
@@ -67,7 +68,9 @@ func (sc scopedConfig) getTemplateToken() csjwt.Token {
 		return sc.templateTokenFunc()
 	}
 	// must be a pointer because of the unmarshalling function
-	return csjwt.NewToken(&jwtclaim.Map{}) // default claim defines a map[string]interface{}
+	// default claim defines a map[string]interface{}
+	// TODO(cs) get rid of dependency on jwtclaim.Map
+	return csjwt.NewToken(&jwtclaim.Map{})
 }
 
 func (sc scopedConfig) parseFromRequest(r *http.Request) (csjwt.Token, error) {
