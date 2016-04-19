@@ -19,5 +19,5 @@ import (
 	"github.com/corestoreio/csfw/util/blacklist"
 )
 
-var _ ctxjwt.Blacklister = (*blacklist.BlackListFreeCache)(nil)
-var _ ctxjwt.Blacklister = (*blacklist.BlackListSimpleMap)(nil)
+var _ ctxjwt.Blacklister = (*blacklist.FreeCache)(nil)
+var _ ctxjwt.Blacklister = (*blacklist.Map)(nil)

@@ -15,7 +15,6 @@
 package blacklist_test
 
 import (
-	"bytes"
 	"testing"
 	"time"
 
@@ -28,33 +27,8 @@ type blacklister interface {
 	Has(token []byte) bool
 }
 
-var _ blacklister = (*blacklist.BlackListFreeCache)(nil)
-var _ blacklister = (*blacklist.BlackListSimpleMap)(nil)
-
-type testBL struct {
-	*testing.T
-	theToken []byte
-	exp      time.Duration
-}
-
-func (b *testBL) Set(theToken []byte, exp time.Duration) error {
-	b.theToken = theToken
-	b.exp = exp
-	return nil
-}
-func (b *testBL) Has(_ []byte) bool { return false }
-
-type testRealBL struct {
-	theToken []byte
-	exp      time.Duration
-}
-
-func (b *testRealBL) Set(t []byte, exp time.Duration) error {
-	b.theToken = t
-	b.exp = exp
-	return nil
-}
-func (b *testRealBL) Has(t []byte) bool { return bytes.Equal(b.theToken, t) }
+var _ blacklister = (*blacklist.FreeCache)(nil)
+var _ blacklister = (*blacklist.Map)(nil)
 
 func appendTo(b1 []byte, s string) []byte {
 	bNew := make([]byte, len(b1)+len([]byte(s)))
@@ -70,11 +44,11 @@ func TestBlackLists(t *testing.T) {
 		token []byte
 	}{
 		{
-			blacklist.NewBlackListSimpleMap(),
+			blacklist.NewMap(),
 			[]byte(`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NTkxNTI3NTEsImlhdCI6MTQ1OTE0OTE1MSwibWFzY290IjoiZ29waGVyIn0.QzUJ5snl685Wmx4wXlCUykvBQMKn3OyL5MpnSaKrkdw`),
 		},
 		{
-			blacklist.NewBlackListFreeCache(0),
+			blacklist.NewFreeCache(0),
 			[]byte(`eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE0NTkxNTI3NTEsImlhdCI6MTQ1OTE0OTE1MSwibWFzY290IjoiZ29waGVyIn0.QzUJ5snl685Wmx4wXlCUykvBQMKn3OyL5MpnSaKrkdw`),
 		},
 	}
