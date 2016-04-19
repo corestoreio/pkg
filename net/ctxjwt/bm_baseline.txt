@@ -1,10 +1,10 @@
 PASS
-BenchmarkBlackListMap_Parallel-4                     	    3000	    544241 ns/op	       3 B/op	       0 allocs/op
-BenchmarkBlackListFreeCache_Parallel-4               	   50000	     32026 ns/op	     100 B/op	     100 allocs/op
-BenchmarkServeHTTPHMAC-4                             	  100000	     17383 ns/op	    2346 B/op	      53 allocs/op
-BenchmarkServeHTTPHMACSimpleBL-4                     	  100000	     17707 ns/op	    2346 B/op	      53 allocs/op
-BenchmarkServeHTTPRSAGenerator-4                     	   10000	    130606 ns/op	   12894 B/op	      82 allocs/op
-BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel-4	  200000	     10265 ns/op	    3258 B/op	      58 allocs/op
-BenchmarkServeHTTP_DefaultConfig_BlackList_Single-4  	  100000	     16820 ns/op	    3257 B/op	      58 allocs/op
-BenchmarkServeHTTP_MultiToken_MultiScope-4           	  200000	      8350 ns/op	    3194 B/op	      43 allocs/op
-ok  	github.com/corestoreio/csfw/net/ctxjwt	16.222s
+BenchmarkBlackListMap_Parallel-4                     	    3000	    554567 ns/op	       3 B/op	       0 allocs/op
+BenchmarkBlackListFreeCache_Parallel-4               	   50000	     27735 ns/op	     100 B/op	     100 allocs/op
+BenchmarkServeHTTPHMAC-4                             	  100000	     18527 ns/op	    2346 B/op	      53 allocs/op
+BenchmarkServeHTTPHMACSimpleBL-4                     	  100000	     18567 ns/op	    2346 B/op	      53 allocs/op
+BenchmarkServeHTTPRSAGenerator-4                     	   10000	    125724 ns/op	   12894 B/op	      82 allocs/op
+BenchmarkServeHTTP_DefaultConfig_BlackList_Parallel-4	  200000	     11043 ns/op	    3258 B/op	      58 allocs/op
+BenchmarkServeHTTP_DefaultConfig_BlackList_Single-4  	  100000	     17997 ns/op	    3257 B/op	      58 allocs/op
+BenchmarkServeHTTP_MultiToken_MultiScope-4           	  200000	      9213 ns/op	    3194 B/op	      43 allocs/op
+ok  	github.com/corestoreio/csfw/net/ctxjwt	17.022s

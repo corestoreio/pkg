@@ -28,11 +28,57 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
+	"github.com/corestoreio/csfw/util/blacklist"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"golang.org/x/net/context"
 )
+
+const benchTokenCount = 100
+
+func benchBlackList(b *testing.B, bl ctxjwt.Blacklister) {
+	jwts := ctxjwt.MustNewService()
+	var tokens [benchTokenCount][]byte
+
+	for i := 0; i < benchTokenCount; i++ {
+		claim := jwtclaim.Map{
+			"someKey": i,
+		}
+		tk, err := jwts.NewToken(scope.Default, 0, claim)
+		if err != nil {
+			b.Fatal(err)
+		}
+		tokens[i] = tk.Raw
+	}
+
+	b.ReportAllocs()
+	b.ResetTimer()
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			for i := 0; i < benchTokenCount; i++ {
+				if err := bl.Set(tokens[i], time.Minute); err != nil {
+					b.Fatal(err)
+				}
+				if bl.Has(tokens[i]) == false {
+					b.Fatalf("Cannot find token %s with index %d", tokens[i], i)
+				}
+			}
+		}
+	})
+}
+
+// BenchmarkBlackListMap_Parallel-4      	    2000	    586726 ns/op	   31686 B/op	     200 allocs/op
+func BenchmarkBlackListMap_Parallel(b *testing.B) {
+	bl := blacklist.NewBlackListSimpleMap()
+	benchBlackList(b, bl)
+}
+
+// BenchmarkBlackListFreeCache_Parallel-4	   30000	     59542 ns/op	   31781 B/op	     300 allocs/op
+func BenchmarkBlackListFreeCache_Parallel(b *testing.B) {
+	bl := blacklist.NewBlackListFreeCache(0)
+	benchBlackList(b, bl)
+}
 
 func bmServeHTTP(b *testing.B, opts ...ctxjwt.Option) {
 	jwts, err := ctxjwt.NewService(opts...)
@@ -87,7 +133,7 @@ func BenchmarkServeHTTPHMAC(b *testing.B) {
 }
 
 func BenchmarkServeHTTPHMACSimpleBL(b *testing.B) {
-	bl := ctxjwt.NewBlackListSimpleMap()
+	bl := blacklist.NewBlackListSimpleMap()
 	bmServeHTTP(b,
 		keyBenchmarkHMACPW,
 		ctxjwt.WithBlacklist(bl),
@@ -131,7 +177,7 @@ func benchmarkServeHTTPDefaultConfigBlackListSetup(b *testing.B) (ctxhttp.Handle
 	)
 	// below two lines comment out enables the null black list
 	//jwts.Blacklist = ctxjwt.NewBlackListFreeCache(0)
-	jwts.Blacklist = ctxjwt.NewBlackListSimpleMap()
+	jwts.Blacklist = blacklist.NewBlackListSimpleMap()
 
 	srv := storemock.NewEurozzyService(
 		scope.MustSetByCode(scope.Website, "euro"),
@@ -220,7 +266,7 @@ func BenchmarkServeHTTP_MultiToken_MultiScope(b *testing.B) {
 	)
 
 	// below two lines comment out enables the null black list
-	jwts.Blacklist = ctxjwt.NewBlackListFreeCache(0)
+	jwts.Blacklist = blacklist.NewBlackListFreeCache(0)
 	//jwts.Blacklist = ctxjwt.NewBlackListSimpleMap()
 	// for now it doesn't matter which blacklist version you use as the bottle neck
 	// is somewhere else.

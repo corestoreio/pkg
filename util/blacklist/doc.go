@@ -12,12 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package ctxjwt_test
-
-import (
-	"github.com/corestoreio/csfw/net/ctxjwt"
-	"github.com/corestoreio/csfw/util/blacklist"
-)
-
-var _ ctxjwt.Blacklister = (*blacklist.BlackListFreeCache)(nil)
-var _ ctxjwt.Blacklister = (*blacklist.BlackListSimpleMap)(nil)
+// Package blacklist defines types which can add byte slices with expiration
+// time to a list and can check if those byte slices exists.
+//
+// External packages should define the interface of function which they may need
+// to implement a black list.
+package blacklist

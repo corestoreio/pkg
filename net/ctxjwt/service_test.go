@@ -120,6 +120,21 @@ func TestServiceParseInvalidSigningMethod(t *testing.T) {
 	assert.False(t, mt.Valid)
 }
 
+type testBL struct {
+	*testing.T
+	theToken []byte
+	exp      time.Duration
+}
+
+func (b *testBL) Set(theToken []byte, exp time.Duration) error {
+	b.theToken = theToken
+	b.exp = exp
+	return nil
+}
+func (b *testBL) Has(_ []byte) bool { return false }
+
+var _ ctxjwt.Blacklister = (*testBL)(nil)
+
 func TestServiceLogout(t *testing.T) {
 	t.Parallel()
 

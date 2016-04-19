@@ -20,6 +20,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"bytes"
 	"github.com/corestoreio/csfw/config/cfgmock"
 	"github.com/corestoreio/csfw/net/ctxhttp"
 	"github.com/corestoreio/csfw/net/ctxjwt"
@@ -33,6 +34,7 @@ import (
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
+	"time"
 )
 
 func TestMiddlewareWithInitTokenNoStoreProvider(t *testing.T) {
@@ -151,6 +153,20 @@ func TestMiddlewareWithInitTokenSuccess(t *testing.T) {
 	assert.Equal(t, http.StatusTeapot, wRec.Code)
 	assert.Equal(t, `I'm more of a coffee pot`, wRec.Body.String())
 }
+
+type testRealBL struct {
+	theToken []byte
+	exp      time.Duration
+}
+
+func (b *testRealBL) Set(t []byte, exp time.Duration) error {
+	b.theToken = t
+	b.exp = exp
+	return nil
+}
+func (b *testRealBL) Has(t []byte) bool { return bytes.Equal(b.theToken, t) }
+
+var _ ctxjwt.Blacklister = (*testRealBL)(nil)
 
 func TestMiddlewareWithInitTokenInBlackList(t *testing.T) {
 	t.Parallel()

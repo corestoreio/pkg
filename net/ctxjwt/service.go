@@ -41,8 +41,10 @@ type Service struct {
 	JTI interface {
 		Get() string
 	}
-	// Blacklist concurrent safe black list service
+	// Blacklist concurrent safe black list service which handles blocked tokens.
+	// Default black hole storage. Must be thread safe.
 	Blacklist Blacklister
+
 	// Backend optional configuration, can be nil. If the black list has been set it pulls
 	// out the configuration settings during a request and caches the settings in the
 	// internal map.
