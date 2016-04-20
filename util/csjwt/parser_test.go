@@ -115,7 +115,7 @@ var jwtTestData = []struct {
 		map[string]interface{}{"foo": "bar"},
 		false,
 		errors.New("[csjwt] Algorithm \"RS256\" not found in method list \"HS256\""),
-		csjwt.NewVerification(), // default signing method is HS256
+		csjwt.NewVerification(csjwt.NewSigningMethodHS256()),
 	},
 	{
 		"valid signing method",

@@ -23,6 +23,7 @@ import (
 )
 
 func TestVerificationGetMethod(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		vf           *Verification
 		token        *Token
@@ -38,7 +39,7 @@ func TestVerificationGetMethod(t *testing.T) {
 			0,
 		},
 		{
-			NewVerification(),
+			NewVerification(NewSigningMethodHS256()),
 			&Token{},
 			nil,
 			errors.New(`[csjwt] Cannot find alg entry in token header: <nil>`),

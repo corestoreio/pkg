@@ -15,6 +15,7 @@ var _ fmt.GoStringer = (*Key)(nil)
 var _ fmt.Stringer = (*Key)(nil)
 
 func TestNewKeyFunc(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		s       Signer
 		key     Key
@@ -52,6 +53,7 @@ func TestNewKeyFunc(t *testing.T) {
 }
 
 func TestKeyParsing(t *testing.T) {
+	t.Parallel()
 
 	badKey := []byte("This is a bad key")
 	tests := []struct {
@@ -122,6 +124,7 @@ func TestKeyParsing(t *testing.T) {
 }
 
 func TestKeyWithPasswordRandom(t *testing.T) {
+	t.Parallel()
 	key := WithPasswordRandom()
 	assert.Len(t, key.hmacPassword, randomPasswordLenght)
 	if len(fmt.Sprintf("%x", key.hmacPassword)) < randomPasswordLenght {
@@ -130,10 +133,7 @@ func TestKeyWithPasswordRandom(t *testing.T) {
 }
 
 func TestKeyWithRSAGenerator(t *testing.T) {
-
-	//if testing.Short() {
-	//	t.Skip("Test skipped in short mode")
-	//}
+	t.Parallel()
 	key := WithRSAGenerated()
 	assert.Exactly(t, RS, key.Algorithm())
 }

@@ -35,6 +35,7 @@ func TestMethodsSlice(t *testing.T) {
 }
 
 func TestMustNewSigningMethodByAlg(t *testing.T) {
+	t.Parallel()
 	defer func() {
 		if r := recover(); r != nil {
 			assert.EqualError(t, r.(error), "[csjwt] Unknown signing algorithm \"rot13\"")
@@ -46,6 +47,7 @@ func TestMustNewSigningMethodByAlg(t *testing.T) {
 }
 
 func TestNewSigningMethodByAlg(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		alg string
 	}{
