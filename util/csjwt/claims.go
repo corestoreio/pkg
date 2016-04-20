@@ -140,3 +140,24 @@ func (s *Head) Get(key string) (value string, err error) {
 	}
 	return "", errors.Errorf(errHeaderKeyNotSupported, key)
 }
+
+// MergeClaims merges the sources Claimers into the destination claimer existing token claims and overwrites
+// existing entries. Destination Claimer must be a pointer.
+func MergeClaims(dst Claimer, srcs ...Claimer) error {
+	if dst == nil || len(srcs) == 0 {
+		return nil
+	}
+
+	for idx, c := range srcs {
+		for _, k := range c.Keys() {
+			v, err := c.Get(k)
+			if err != nil {
+				return errors.Errorf("[csjwt] Cannot get Key %q from Claim index %d. Error: %s", k, idx, err)
+			}
+			if err := dst.Set(k, v); err != nil {
+				return errors.Errorf("[csjwt] Cannot set Key %q with value `%v'. Claim index %d. Error: %s", k, v, idx, err)
+			}
+		}
+	}
+	return nil
+}

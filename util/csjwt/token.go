@@ -117,21 +117,3 @@ func (t Token) SigningString() (buf bytes.Buffer, err error) {
 	}
 	return
 }
-
-// Merge merges the Claimer c into the existing token claims and overwrites
-// existing entries.
-func (t Token) Merge(c Claimer) error {
-	if c == nil {
-		return nil
-	}
-	for _, k := range c.Keys() {
-		v, err := c.Get(k)
-		if err != nil {
-			return errors.Errorf("[csjwt] Cannot get Key %q. Error: %s", k, err)
-		}
-		if err := t.Claims.Set(k, v); err != nil {
-			return errors.Errorf("[csjwt] Cannot set Key %q with value %v. Error: %s", k, v, err)
-		}
-	}
-	return nil
-}

@@ -17,13 +17,14 @@ package csjwt_test
 import (
 	"testing"
 
+	"net/http"
+	"net/url"
+
 	"github.com/corestoreio/csfw/storage/text"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
-	"net/http"
-	"net/url"
 )
 
 func genParseTk(t *testing.T) (text.Chars, csjwt.Keyfunc) {
