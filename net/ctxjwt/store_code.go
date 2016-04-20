@@ -17,9 +17,16 @@ package ctxjwt
 import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/csjwt"
 )
+
+// ParamName use in Cookie and JWT important when the user selects a different
+// store within the current website/group context. This name will be used in
+// a cookie or as key value in a token to permanently save the new selected
+// store code.
+//
+// Copied from storenet.ParamName to avoid dependency hell.
+const StoreParamName = `store`
 
 // ScopeOptionFromClaim returns a valid store code from a JSON web token
 // or ErrStoreNotFound.
@@ -31,7 +38,7 @@ func ScopeOptionFromClaim(tc csjwt.Claimer) (o scope.Option, err error) {
 		return
 	}
 
-	raw, _ := tc.Get(storenet.ParamName)
+	raw, _ := tc.Get(StoreParamName)
 	if scopeCode, ok := raw.(string); ok {
 		err = store.CodeIsValid(scopeCode)
 		if err == nil {

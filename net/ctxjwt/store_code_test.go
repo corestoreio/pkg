@@ -21,7 +21,6 @@ import (
 	"github.com/corestoreio/csfw/storage/dbr"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/stretchr/testify/assert"
@@ -36,7 +35,7 @@ func TestStoreCodeFromClaimFullToken(t *testing.T) {
 	)
 
 	token := csjwt.NewToken(jwtclaim.Map{
-		storenet.ParamName: s.StoreCode(),
+		ctxjwt.StoreParamName: s.StoreCode(),
 	})
 
 	so, err := ctxjwt.ScopeOptionFromClaim(token.Claims)
@@ -55,7 +54,7 @@ func TestStoreCodeFromClaimInvalid(t *testing.T) {
 	t.Parallel()
 
 	token2 := csjwt.NewToken(jwtclaim.Map{
-		storenet.ParamName: "Invalid Cod€",
+		ctxjwt.StoreParamName: "Invalid Cod€",
 	})
 
 	so, err := ctxjwt.ScopeOptionFromClaim(token2.Claims)
@@ -82,21 +81,21 @@ func TestStoreCodeFromClaimNoToken(t *testing.T) {
 			0,
 		},
 		{
-			jwtclaim.Map{storenet.ParamName: "dede"},
+			jwtclaim.Map{ctxjwt.StoreParamName: "dede"},
 			nil,
 			scope.Store,
 			"dede",
 			scope.UnavailableStoreID,
 		},
 		{
-			jwtclaim.Map{storenet.ParamName: "de'de"},
+			jwtclaim.Map{ctxjwt.StoreParamName: "de'de"},
 			store.ErrStoreCodeInvalid,
 			scope.Default,
 			"",
 			scope.UnavailableStoreID,
 		},
 		{
-			jwtclaim.Map{storenet.ParamName: 1},
+			jwtclaim.Map{ctxjwt.StoreParamName: 1},
 			store.ErrStoreNotFound,
 			scope.Default,
 			"",

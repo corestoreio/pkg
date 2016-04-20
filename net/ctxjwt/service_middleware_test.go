@@ -29,7 +29,6 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
-	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
@@ -286,7 +285,7 @@ func TestWithInitTokenAndStore_Request(t *testing.T) {
 		jwts := ctxjwt.MustNewService(ctxjwt.WithKey(scope.Default, 0, csjwt.WithPasswordRandom()))
 
 		token, err := jwts.NewToken(scope.Default, 0, jwtclaim.Map{
-			storenet.ParamName: test.tokenStoreCode,
+			ctxjwt.StoreParamName: test.tokenStoreCode,
 		})
 		if err != nil {
 			t.Fatal(err)

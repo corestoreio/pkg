@@ -25,7 +25,6 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
-	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/csjwt"
 	"github.com/corestoreio/csfw/util/csjwt/jwtclaim"
 	"github.com/corestoreio/csfw/util/cstesting"
@@ -72,7 +71,7 @@ func TestServiceWithBackend_DefaultConfig(t *testing.T) {
 func newStoreServiceWithTokenCtx(initO scope.Option, tokenStoreCode string) context.Context {
 	ctx := store.WithContextProvider(context.Background(), storemock.NewEurozzyService(initO))
 	tok := csjwt.NewToken(jwtclaim.Map{
-		storenet.ParamName: tokenStoreCode,
+		StoreParamName: tokenStoreCode,
 	})
 	ctx = withContext(ctx, tok)
 	return ctx
