@@ -20,28 +20,32 @@ import "golang.org/x/net/context"
 // other packages.
 type keyctxCountry struct{}
 
-// keyctxErr type is unexported to prevent collisions with context keys defined in
-// other packages.
-type keyctxErr struct{}
+// ctxCountryWrapper to prevent too much calls to runtime.convT2*
+type ctxCountryWrapper struct {
+	c   *Country
+	err error
+}
 
 // WithContextCountry creates a new context with geoip.Country attached.
 func WithContextCountry(ctx context.Context, c *Country) context.Context {
-	return context.WithValue(ctx, keyctxCountry{}, c)
+	return context.WithValue(ctx, keyctxCountry{}, ctxCountryWrapper{c: c})
 }
 
-// WithContextError creates a new context with an error attached.
-func WithContextError(ctx context.Context, err error) context.Context {
-	return context.WithValue(ctx, keyctxErr{}, err)
+// withContextError creates a new context with an error attached.
+func withContextError(ctx context.Context, err error) context.Context {
+	return context.WithValue(ctx, keyctxCountry{}, ctxCountryWrapper{err: err})
 }
 
 // FromContextCountry returns the geoip.Country in ctx if it exists or
 // and error if that one exists. The error has been previously set
 // by WithContextError.
-func FromContextCountry(ctx context.Context) (*Country, error, bool) {
-	err, ok := ctx.Value(keyctxErr{}).(error)
-	if ok {
-		return nil, err, ok
+func FromContextCountry(ctx context.Context) (*Country, error) {
+	wrp, ok := ctx.Value(keyctxCountry{}).(ctxCountryWrapper)
+	if !ok {
+		return nil, ErrContextCountryNotFound
 	}
-	c, ok := ctx.Value(keyctxCountry{}).(*Country)
-	return c, nil, ok
+	if wrp.err != nil {
+		return nil, wrp.err
+	}
+	return wrp.c, nil
 }

@@ -30,7 +30,6 @@ import (
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
 	"github.com/corestoreio/csfw/store/storemock"
-	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util/cstesting"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/net/context"
@@ -49,9 +48,8 @@ func mustGetTestService(opts ...geoip.Option) *geoip.Service {
 
 func finalHandlerFinland(t *testing.T) ctxhttp.HandlerFunc {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		ipc, err, ok := geoip.FromContextCountry(ctx)
+		ipc, err := geoip.FromContextCountry(ctx)
 		assert.NotNil(t, ipc)
-		assert.True(t, ok)
 		assert.NoError(t, err)
 		assert.Exactly(t, "2a02:d200::", ipc.IP.String())
 		assert.Exactly(t, "FI", ipc.Country.IsoCode)
@@ -114,9 +112,8 @@ func TestWithCountryByIPErrorGetCountryByIP(t *testing.T) {
 	defer deferClose(t, s.GeoIP)
 
 	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		ipc, err, ok := geoip.FromContextCountry(ctx)
+		ipc, err := geoip.FromContextCountry(ctx)
 		assert.Nil(t, ipc)
-		assert.True(t, ok)
 		assert.EqualError(t, err, "Failed to read country from MMDB")
 		return nil
 	})
@@ -144,10 +141,9 @@ func TestWithIsCountryAllowedByIPErrorStoreManager(t *testing.T) {
 	defer deferClose(t, s.GeoIP)
 
 	finalHandler := ctxhttp.HandlerFunc(func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		ipc, err, ok := geoip.FromContextCountry(ctx)
+		ipc, err := geoip.FromContextCountry(ctx)
 		assert.Nil(t, ipc)
-		assert.False(t, ok)
-		assert.NoError(t, err)
+		assert.EqualError(t, err, geoip.ErrContextCountryNotFound.Error())
 		return nil
 	})
 
@@ -155,7 +151,7 @@ func TestWithIsCountryAllowedByIPErrorStoreManager(t *testing.T) {
 	rec := httptest.NewRecorder()
 	req, err := http.NewRequest("GET", "http://corestore.io", nil)
 	assert.NoError(t, err)
-	assert.EqualError(t, countryHandler.ServeHTTPContext(context.Background(), rec, req), storenet.ErrContextProviderNotFound.Error())
+	assert.EqualError(t, countryHandler.ServeHTTPContext(context.Background(), rec, req), store.ErrContextProviderNotFound.Error())
 }
 
 var managerStoreSimpleTest = storemock.WithContextMustService(scope.Option{}, func(ms *storemock.Storage) {
@@ -170,9 +166,8 @@ var managerStoreSimpleTest = storemock.WithContextMustService(scope.Option{}, fu
 
 func ipErrorFinalHandler(t *testing.T) ctxhttp.HandlerFunc {
 	return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
-		ipc, err, ok := geoip.FromContextCountry(ctx)
+		ipc, err := geoip.FromContextCountry(ctx)
 		assert.Nil(t, ipc)
-		assert.True(t, ok)
 		assert.EqualError(t, err, geoip.ErrCannotGetRemoteAddr.Error())
 		return nil
 	}

@@ -16,7 +16,6 @@ package geoip
 
 import (
 	"fmt"
-
 	"net"
 
 	"github.com/corestoreio/csfw/config/cfgmodel"
@@ -33,7 +32,7 @@ type Option func(*Service)
 // on a Service. If the Handler h is nil falls back to the DefaultErrorHandler.
 // This function can be called as many times as you have websites or stores.
 // Group scope is not suppored.
-func WithAlternativeHandler(so scope.Scope, id int64, hf ctxhttp.HandlerFunc) Option {
+func WithAlternativeHandler(so scope.Scope, id int64, hf ctxhttp.Handler) Option {
 	if hf == nil {
 		hf = DefaultAlternativeHandler
 	}

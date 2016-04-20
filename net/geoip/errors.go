@@ -12,19 +12,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package geoip_test
+package geoip
 
 import (
-	"testing"
+	"github.com/corestoreio/csfw/util/cserr"
 )
 
-func TestContextWithError(t *testing.T) {
+// ErrCannotGetRemoteAddr will be returned if there is an invalid or not found
+// RemoteAddr in the request.
+var ErrCannotGetRemoteAddr cserr.Error = `[geoip] Cannot get request.RemoteAddr`
 
-	//var wantErr = errors.New("Contiki Context")
-	//ctx := ctxjwt.WithContextError(context.Background(), wantErr)
-	//assert.NotNil(t, ctx)
-	//
-	//tok, err := ctxjwt.FromContext(ctx)
-	//assert.Nil(t, tok)
-	//assert.EqualError(t, err, wantErr.Error())
-}
+var ErrContextCountryNotFound cserr.Error = `[geoip] Cannot extract token nor an error from the context`

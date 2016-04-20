@@ -22,16 +22,11 @@ import (
 	"github.com/corestoreio/csfw/net/httputil"
 	"github.com/corestoreio/csfw/store"
 	"github.com/corestoreio/csfw/store/scope"
-	"github.com/corestoreio/csfw/store/storenet"
 	"github.com/corestoreio/csfw/util"
 	"github.com/corestoreio/csfw/util/cserr"
 	"github.com/juju/errors"
 	"golang.org/x/net/context"
 )
-
-// ErrCannotGetRemoteAddr will be returned if there is an invalid or not found
-// RemoteAddr in the request.
-var ErrCannotGetRemoteAddr = errors.New("Cannot get request.RemoteAddr")
 
 // Service represents a service manager
 type Service struct {
@@ -50,9 +45,9 @@ type Service struct {
 	// IDs and AltH slices must have both the same length because with the ID
 	// found in IDs slice we take the index key and access the appropriate handler in AltH.
 	websiteIDs  util.Int64Slice
-	websiteAltH []ctxhttp.HandlerFunc
+	websiteAltH []ctxhttp.Handler
 	storeIDs    util.Int64Slice
-	storeAltH   []ctxhttp.HandlerFunc
+	storeAltH   []ctxhttp.Handler
 }
 
 // NewService creates a new GeoIP service to be used as a middleware.
@@ -104,7 +99,7 @@ func (s *Service) WithCountryByIP() ctxhttp.Middleware {
 			var err error
 			ctx, _, err = s.newContextCountryByIP(ctx, r)
 			if err != nil {
-				ctx = WithContextError(ctx, err)
+				ctx = withContextError(ctx, err)
 			}
 			return hf(ctx, w, r)
 		}
@@ -119,18 +114,15 @@ func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 	return func(h ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
 		return func(ctx context.Context, w http.ResponseWriter, r *http.Request) error {
 
-			_, requestedStore, err := storenet.FromContextProvider(ctx)
+			_, requestedStore, err := store.FromContextProvider(ctx)
 			if err != nil {
-				if PkgLog.IsDebug() {
-					PkgLog.Debug("geoip.WithCountryByIP.FromContextManagerReader", "err", err)
-				}
 				return errors.Mask(err)
 			}
 
 			var c *Country
 			ctx, c, err = s.newContextCountryByIP(ctx, r)
 			if err != nil {
-				ctx = WithContextError(ctx, err)
+				ctx = withContextError(ctx, err)
 				return h(ctx, w, r)
 			}
 
@@ -143,7 +135,7 @@ func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 			}
 
 			if false == s.IsAllowed(requestedStore, c, allowedCountries, r) {
-				h = s.altHandlerByID(requestedStore)
+				h = s.altHandlerByID(requestedStore).ServeHTTPContext
 			}
 
 			return h(ctx, w, r)
@@ -151,23 +143,10 @@ func (s *Service) WithIsCountryAllowedByIP() ctxhttp.Middleware {
 	}
 }
 
-// DefaultAlternativeHandler gets called when detected Country cannot be found
-// within the list of allowed countries. This handler can be overridden to provide
-// a fallback for all scopes. To set a alternative handler for a website or store
-// use the With*() options. This function gets called in WithIsCountryAllowedByIP.
-//
-// Status is StatusServiceUnavailable
-var DefaultAlternativeHandler ctxhttp.HandlerFunc = defaultAlternativeHandler
-
-var defaultAlternativeHandler = func(_ context.Context, w http.ResponseWriter, _ *http.Request) error {
-	http.Error(w, http.StatusText(http.StatusServiceUnavailable), http.StatusServiceUnavailable)
-	return nil
-}
-
 // altHandlerByID searches in the hierarchical order of store -> website -> default.
 // the next alternative handler IF a country is not allowed as defined in function
 // type IsAllowedFunc.
-func (s *Service) altHandlerByID(st *store.Store) ctxhttp.HandlerFunc {
+func (s *Service) altHandlerByID(st *store.Store) ctxhttp.Handler {
 
 	if s.storeIDs != nil && s.storeAltH != nil {
 		return findHandlerByID(scope.Store, st.StoreID(), s.storeIDs, s.storeAltH)
@@ -181,7 +160,7 @@ func (s *Service) altHandlerByID(st *store.Store) ctxhttp.HandlerFunc {
 // findHandlerByID returns the Handler for the searchID. If not found
 // or slices have an indifferent length or something is nil it will
 // return the DefaultErrorHandler.
-func findHandlerByID(so scope.Scope, id int64, idsIdx util.Int64Slice, handlers []ctxhttp.HandlerFunc) ctxhttp.HandlerFunc {
+func findHandlerByID(so scope.Scope, id int64, idsIdx util.Int64Slice, handlers []ctxhttp.Handler) ctxhttp.Handler {
 
 	if len(idsIdx) != len(handlers) {
 		return DefaultAlternativeHandler
