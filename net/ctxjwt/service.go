@@ -119,7 +119,7 @@ func (s *Service) Options(opts ...Option) error {
 
 // NewToken creates a new signed JSON web token based on the predefined scoped
 // based template token function (WithTemplateToken) and merges the optional
-// 3rd argument into the template token claim. Only one claim argument is supported.
+// 3rd argument into the template token claim.
 // The returned token is owned by the caller. The tokens Raw field contains the
 // freshly signed byte slice. ExpiresAt, IssuedAt and ID are already set and cannot
 // be overwritten, but you can access them. It panics if the provided template
@@ -135,7 +135,7 @@ func (s *Service) NewToken(scp scope.Scope, id int64, claim ...csjwt.Claimer) (c
 	var tk = cfg.TemplateToken()
 
 	if len(claim) > 0 && claim[0] != nil {
-		if err := tk.Merge(claim[0]); err != nil {
+		if err := csjwt.MergeClaims(tk.Claims, claim...); err != nil {
 			return empty, errors.Mask(err)
 		}
 	}

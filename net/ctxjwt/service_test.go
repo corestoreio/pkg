@@ -247,7 +247,7 @@ func TestService_NewToken_Merge_Fail(t *testing.T) {
 		jwtclaim.KeyUserID: "0815",
 	})
 
-	assert.EqualError(t, err, `[csjwt] Cannot set Key "userid" with value 0815. Error: [jwtclaim] Claim "userid" not supported.`)
+	assert.EqualError(t, err, "[csjwt] Cannot set Key \"userid\" with value `0815'. Claim index 0. Error: [jwtclaim] Claim \"userid\" not supported.")
 	assert.Empty(t, theToken.Raw)
 
 }
